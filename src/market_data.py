@@ -101,6 +101,7 @@ def build_market_snapshot() -> dict[str, Any]:
     """Build a browser-friendly snapshot; one ticker failure never stops others."""
     from src.event_alerts import build_event_snapshot
     from src.momentum_research import build_momentum_snapshot
+    from src.macro_summary import build_macro_summary
     from src.market_history import load_watchlist_history
     from src.research_scan import build_price_action_snapshot
     from src.resonance_scan import build_resonance_snapshot
@@ -118,6 +119,7 @@ def build_market_snapshot() -> dict[str, Any]:
     risk = build_risk_snapshot()
     news = build_news_snapshot()
     events = build_event_snapshot(news, quotes)
+    macro = build_macro_summary(events, risk)
     histories, history_errors = load_watchlist_history(WATCHLIST)
     research = build_price_action_snapshot(WATCHLIST, histories=histories)
     momentum = build_momentum_snapshot(WATCHLIST, histories=histories)
@@ -139,6 +141,7 @@ def build_market_snapshot() -> dict[str, Any]:
         "risk": risk,
         "news": news,
         "events": events,
+        "macro": macro,
         "research": research,
         "momentum": momentum,
         "resonance": resonance,
