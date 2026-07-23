@@ -13,8 +13,12 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=100)
     parser.add_argument("--batch-size", type=int, default=50)
+    parser.add_argument("--offset", type=int, default=0)
     args = parser.parse_args()
     universe = fetch_taiwan_universe()
+    if args.offset < 0:
+        raise ValueError("offset 不可小於 0")
+    universe = universe[args.offset:]
     if args.limit > 0:
         universe = universe[:args.limit]
     records = []
@@ -38,7 +42,7 @@ def main() -> None:
     summary_path = Path("data/taiwan-momentum-summary.json")
     summary_path.write_text(json.dumps({
         "requested": len(universe), "data_complete": len(records), "candidates": len(result),
-        "failed": len(failed), "batch_size": args.batch_size,
+        "failed": len(failed), "batch_size": args.batch_size, "offset": args.offset,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"掃描 {len(universe)} 檔，資料完整 {len(records)} 檔，研究候選 {len(result)} 檔，失敗 {len(failed)} 檔：{destination}、{summary_path}")
 
