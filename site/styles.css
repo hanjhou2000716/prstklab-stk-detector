@@ -38,6 +38,17 @@ time, .tag { color: var(--muted); font-size: .75rem; }
 .watch-list li:last-child { border-bottom: 1px solid var(--line); }
 .watch-list b { color: var(--accent); font-size: .78rem; }
 .watch-list small { display: block; margin-top: 3px; color: var(--muted); font-size: .7rem; }
+.risk-list, .news-list { padding: 0; margin: 0; list-style: none; }
+.risk-list li { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); font-size: .86rem; }
+.risk-list b { color: var(--accent); font-size: .78rem; }
+.risk-list small { display: block; margin-top: 3px; color: var(--muted); font-size: .7rem; }
+.risk-value { text-align: right; }
+.news-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.news-grid h3 { margin: 0 0 10px; color: var(--accent); font-size: .86rem; }
+.news-list li { padding: 10px 0; border-top: 1px solid var(--line); }
+.news-list a { color: #d9e7f5; font-size: .86rem; line-height: 1.5; text-decoration: none; }
+.news-list a:hover { color: var(--accent); text-decoration: underline; }
+.news-list small { display: block; margin-top: 4px; color: var(--muted); font-size: .7rem; }
 .quote-value { text-align: right; }
 .quote-value b { display: block; color: var(--ink); }
 .quote-value small.up { color: #61d8a4; }
@@ -55,6 +66,6 @@ blockquote { max-width: 720px; margin: 14px auto 0; color: #d5e3f1; font-size: .
   .page-shell { width: min(100% - 22px, 1120px); padding-top: 22px; }
   .hero { align-items: flex-start; flex-direction: column-reverse; }
   .logo-slot { width: 58px; height: 58px; border-radius: 14px; }
-  .card-grid, .market-grid { grid-template-columns: 1fr; }
+  .card-grid, .market-grid, .news-grid { grid-template-columns: 1fr; }
   .wide { grid-column: auto; }
 }

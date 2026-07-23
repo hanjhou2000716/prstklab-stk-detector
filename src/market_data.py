@@ -99,6 +99,8 @@ def get_quote(item: dict[str, str]) -> dict[str, Any]:
 
 def build_market_snapshot() -> dict[str, Any]:
     """Build a browser-friendly snapshot; one ticker failure never stops others."""
+    from src.risk_news import build_news_snapshot, build_risk_snapshot
+
     errors: list[dict[str, str]] = []
     quotes: list[dict[str, Any]] = []
     for item in WATCHLIST:
@@ -106,10 +108,18 @@ def build_market_snapshot() -> dict[str, Any]:
             quotes.append(get_quote(item))
         except Exception as exc:  # Individual source failures are disclosed in the UI.
             errors.append({"ticker": item["ticker"], "message": str(exc)})
+    quote_data_status = "即時" if not errors else "部分缺漏"
+    risk = build_risk_snapshot()
+    news = build_news_snapshot()
+    errors.extend({"ticker": "新聞", "message": message} for message in news["errors"])
+    for market in ("taiwan", "us"):
+        errors.extend({"ticker": risk[market]["label"], "message": message} for message in risk[market]["errors"])
     return {
         "generated_at": datetime.now(ZoneInfo("Asia/Taipei")).isoformat(),
-        "data_status": "即時" if not errors else "部分缺漏",
+        "data_status": quote_data_status,
         "markets": {key: get_market_status(key) for key in MARKETS},
         "quotes": quotes,
+        "risk": risk,
+        "news": news,
         "errors": errors,
     }
