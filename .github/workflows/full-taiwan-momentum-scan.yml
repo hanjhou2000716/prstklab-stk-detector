@@ -1,0 +1,21 @@
+name: Full Taiwan momentum scan
+on:
+  workflow_dispatch:
+jobs:
+  scan:
+    strategy:
+      fail-fast: false
+      matrix:
+        offset: [0, 1000, 2000]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r requirements.txt
+      - run: python -m src.run_taiwan_momentum_scan --limit 1000 --batch-size 50 --offset ${{ matrix.offset }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: taiwan-momentum-segment-${{ matrix.offset }}
+          path: data/taiwan-momentum-*
