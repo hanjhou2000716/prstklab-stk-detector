@@ -3,9 +3,13 @@ on:
   workflow_dispatch:
     inputs:
       limit:
-        description: Number of Taiwan stocks to scan (start with 100)
+        description: Number of Taiwan stocks to scan (start with 300)
         required: true
-        default: '100'
+        default: '300'
+      batch_size:
+        description: Symbols per public-data request
+        required: true
+        default: '50'
 jobs:
   scan:
     runs-on: ubuntu-latest
@@ -15,7 +19,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
       - run: pip install -r requirements.txt
-      - run: python -m src.run_taiwan_momentum_scan --limit ${{ inputs.limit }}
+      - run: python -m src.run_taiwan_momentum_scan --limit ${{ inputs.limit }} --batch-size ${{ inputs.batch_size }}
       - uses: actions/upload-artifact@v4
         with:
           name: taiwan-momentum-scan
