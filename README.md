@@ -44,6 +44,10 @@ python -m src.main --send
 
 接著從 **Actions → PRStK Notification → Run workflow** 手動執行，即可發送第一則測試訊息。
 
+## 儀表板
+
+`site/` 包含 GitHub Pages 儀表板。第一次部署後，將 GitHub Pages 網址填入 `DASHBOARD_URL` 變數，Telegram 按鈕便會開啟儀表板。
+
 ## 安全提醒
 
 - `.env` 已被排除，不會提交至 Git。
