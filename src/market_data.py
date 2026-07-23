@@ -103,6 +103,7 @@ def build_market_snapshot() -> dict[str, Any]:
     from src.momentum_research import build_momentum_snapshot
     from src.research_scan import build_price_action_snapshot
     from src.resonance_scan import build_resonance_snapshot
+    from src.value_quality import build_value_snapshot
     from src.risk_news import build_news_snapshot, build_risk_snapshot
 
     errors: list[dict[str, str]] = []
@@ -119,12 +120,14 @@ def build_market_snapshot() -> dict[str, Any]:
     research = build_price_action_snapshot(WATCHLIST)
     momentum = build_momentum_snapshot(WATCHLIST)
     resonance = build_resonance_snapshot(WATCHLIST)
+    value = build_value_snapshot(WATCHLIST)
     errors.extend({"ticker": "新聞", "message": message} for message in news["errors"])
     for market in ("taiwan", "us"):
         errors.extend({"ticker": risk[market]["label"], "message": message} for message in risk[market]["errors"])
     errors.extend({"ticker": "結構研究", "message": message} for message in research["errors"])
     errors.extend({"ticker": "動能研究", "message": message} for message in momentum["errors"])
     errors.extend({"ticker": "共振研究", "message": message} for message in resonance["errors"])
+    errors.extend({"ticker": "價值研究", "message": message} for message in value["errors"])
     return {
         "generated_at": datetime.now(ZoneInfo("Asia/Taipei")).isoformat(),
         "data_status": quote_data_status,
@@ -136,5 +139,6 @@ def build_market_snapshot() -> dict[str, Any]:
         "research": research,
         "momentum": momentum,
         "resonance": resonance,
+        "value": value,
         "errors": errors,
     }

@@ -120,6 +120,20 @@ const renderResonance = (resonance) => {
   container.innerHTML = resonance.candidates.map((item) => `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}｜${escapeHtml(item.status)}</small></span><span class="risk-value"><small>共振分數 ${item.score}</small></span></li>`).join("");
 };
 
+const renderValue = (value) => {
+  if (!value) return;
+  setText("value-tag", value.status || "研究模式");
+  setText("value-notice", value.notice || "公開財務資料研究。");
+  const container = document.getElementById("value-list");
+  if (!container) return;
+  if (!value.candidates?.length) { container.innerHTML = '<li class="empty">財務資料暫時無法取得</li>'; return; }
+  container.innerHTML = value.candidates.map((item) => {
+    const roe = item.roe === null ? "ROE —" : `ROE ${(item.roe * 100).toFixed(1)}%`;
+    const pe = item.pe === null ? "本益比 —" : `本益比 ${item.pe.toFixed(1)}`;
+    return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}｜${roe}｜${pe}</small></span><span class="risk-value"><small>品質欄位 ${item.score}/3</small></span></li>`;
+  }).join("");
+};
+
 const render = (snapshot) => {
   setText("data-status", snapshot.data_status || "資料暫時無法取得");
   setText("updated-at", snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚未更新");
@@ -131,6 +145,7 @@ const render = (snapshot) => {
   renderResearch(snapshot.research);
   renderMomentum(snapshot.momentum);
   renderResonance(snapshot.resonance);
+  renderValue(snapshot.value);
   if (snapshot.errors?.length) setText("data-note", `部分資料暫時無法取得：${snapshot.errors.map((item) => item.ticker).join("、")}`);
 };
 
