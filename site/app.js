@@ -134,6 +134,14 @@ const renderValue = (value) => {
   }).join("");
 };
 
+const renderMacro = (macro) => {
+  if (!macro) return;
+  setText("macro-notice", macro.notice || "公開市場資料整理。");
+  const container = document.getElementById("macro-list");
+  if (!container) return;
+  container.innerHTML = (macro.items || []).map((item) => `<li><b>${escapeHtml(item.label)}</b><small>${escapeHtml(item.text)}</small></li>`).join("") || '<li class="empty">資料暫時無法取得</li>';
+};
+
 const render = (snapshot) => {
   setText("data-status", snapshot.data_status || "資料暫時無法取得");
   setText("updated-at", snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚未更新");
@@ -146,6 +154,7 @@ const render = (snapshot) => {
   renderMomentum(snapshot.momentum);
   renderResonance(snapshot.resonance);
   renderValue(snapshot.value);
+  renderMacro(snapshot.macro);
   if (snapshot.errors?.length) setText("data-note", `部分資料暫時無法取得：${snapshot.errors.map((item) => item.ticker).join("、")}`);
 };
 
