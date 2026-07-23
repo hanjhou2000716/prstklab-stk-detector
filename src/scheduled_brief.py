@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from src.config import get_settings
@@ -24,7 +24,13 @@ SLOT_LABELS = {
 }
 
 
-def resolve_slot(value: str, now: datetime | None = None) -> str:
+def is_new_york_daylight_saving(now: datetime) -> bool:
+    """Return whether New York observes daylight saving time at this instant."""
+    new_york_now = now.astimezone(ZoneInfo("America/New_York"))
+    return new_york_now.dst() not in (None, timedelta(0))
+
+
+def resolve_slot(value: str, now: datetime | None = None) -> str | None:
     """Resolve an explicit slot or choose the nearest Taiwan-time briefing slot."""
     if value != "auto":
         return value
@@ -42,9 +48,14 @@ def resolve_slot(value: str, now: datetime | None = None) -> str:
         return "afternoon"
     if hour < 18:
         return "post_close"
-    if hour < 22:
+    if hour < 21:
         return "us_premarket"
-    return "us_open"
+    # Both 21:00 and 22:00 Taiwan time are 09:00 in New York.  The active
+    # one depends on daylight saving time; the other invocation is skipped.
+    daylight_saving = is_new_york_daylight_saving(local_now)
+    if hour == 21:
+        return "us_premarket" if daylight_saving else None
+    return "us_premarket" if not daylight_saving else None
 
 
 def _pick_quote(snapshot: dict, slot: str) -> dict | None:
@@ -82,8 +93,13 @@ def main() -> None:
     now = datetime.now(ZoneInfo("Asia/Taipei"))
     slot = resolve_slot(args.slot, now)
     if args.print_window:
-        print(f"slot={slot}")
-        print(f"key={now.date().isoformat()}-{slot}")
+        print(f"should_run={'true' if slot else 'false'}")
+        print(f"slot={slot or 'skip'}")
+        print(f"key={now.date().isoformat()}-{slot or 'skip'}")
+        return
+
+    if slot is None:
+        print("此時段不符合目前美國夏令／冬令時間，略過快報。")
         return
 
     settings = get_settings()
