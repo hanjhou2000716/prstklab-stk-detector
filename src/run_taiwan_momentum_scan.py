@@ -13,7 +13,9 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=100)
     parser.add_argument("--batch-size", type=int, default=50)
     args = parser.parse_args()
-    universe = fetch_taiwan_universe()[:args.limit]
+    universe = fetch_taiwan_universe()
+    if args.limit > 0:
+        universe = universe[:args.limit]
     records = []
     failed = []
     for group in batches(universe, args.batch_size):
