@@ -69,6 +69,24 @@ const renderNews = (news) => {
   renderNewsList("us-news", news?.us);
 };
 
+const renderEvents = (events) => {
+  if (!events) return;
+  setText("event-tag", events.status || "持續觀察");
+  setText("event-message", events.message || "今日無重大市場事件，持續觀察。");
+  const container = document.getElementById("event-list");
+  if (!container) return;
+  if (!events.items?.length) {
+    container.innerHTML = '<li class="empty">今日無重大市場事件</li>';
+    return;
+  }
+  container.innerHTML = events.items.map((event) => {
+    const title = `${event.short_label}｜${event.title}`;
+    const url = event.url?.startsWith("https://news.cnyes.com/news/id/") ? event.url : null;
+    const content = url ? `<a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>` : escapeHtml(title);
+    return `<li>${content}<small>${escapeHtml(event.source)}</small></li>`;
+  }).join("");
+};
+
 const render = (snapshot) => {
   setText("data-status", snapshot.data_status || "資料暫時無法取得");
   setText("updated-at", snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚未更新");
@@ -76,6 +94,7 @@ const render = (snapshot) => {
   renderQuotes(snapshot.quotes || []);
   renderRisk(snapshot.risk);
   renderNews(snapshot.news);
+  renderEvents(snapshot.events);
   if (snapshot.errors?.length) setText("data-note", `部分資料暫時無法取得：${snapshot.errors.map((item) => item.ticker).join("、")}`);
 };
 
