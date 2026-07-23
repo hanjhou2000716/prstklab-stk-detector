@@ -1,0 +1,95 @@
+name: Scheduled market brief
+
+on:
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: "快報時段；auto 依台灣時間判斷"
+        required: false
+        default: auto
+        type: choice
+        options: [auto, morning, pre_open, intraday, midday, afternoon, post_close, us_premarket, us_open]
+      force:
+        description: "略過同時段重複推播保護（僅供人工測試）"
+        required: false
+        default: false
+        type: boolean
+  repository_dispatch:
+    types: [scheduled-brief]
+  schedule:
+    # UTC；以下時間均對應台灣時間週一至週五。
+    - cron: "0 22 * * 0-4"  # 06:00 晨報（前一日 UTC）
+    - cron: "45 0 * * 1-5"  # 08:45 盤前
+    - cron: "0 2 * * 1-5"   # 10:00 盤中
+    - cron: "45 3 * * 1-5"  # 11:45 午報
+    - cron: "15 5 * * 1-5"  # 13:15 午盤
+    - cron: "10 6 * * 1-5"  # 14:10 盤後
+    - cron: "0 13 * * 1-5"  # 21:00 美股盤前
+    - cron: "0 14 * * 1-5"  # 22:00 美股開盤
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Serialize all runs. The immutable cache below records a completed date/slot,
+# so an external Cron retry cannot send a second message after the primary run.
+concurrency:
+  group: scheduled-market-brief
+  cancel-in-progress: false
+
+jobs:
+  refresh-notify-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+      SLOT: ${{ inputs.slot || github.event.client_payload.slot || 'auto' }}
+      FORCE: ${{ inputs.force || github.event.client_payload.force || 'false' }}
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+      - name: 設定 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 安裝相依套件
+        run: pip install -r requirements.txt
+      - name: 建立快報時段識別碼
+        id: window
+        run: python -m src.scheduled_brief --slot "$SLOT" --print-window >> "$GITHUB_OUTPUT"
+      - name: 讀取同時段推播紀錄
+        if: env.FORCE != 'true'
+        id: idempotency
+        uses: actions/cache/restore@v4
+        with:
+          path: .scheduled-brief-lock
+          key: scheduled-brief-${{ steps.window.outputs.key }}
+      - name: 更新資料並發送快報
+        if: env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true'
+        run: python -m src.scheduled_brief --slot "$SLOT"
+      - name: 建立同時段推播紀錄
+        if: success() && env.FORCE != 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        run: touch .scheduled-brief-lock
+      - name: 保存同時段推播紀錄
+        if: success() && env.FORCE != 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .scheduled-brief-lock
+          key: scheduled-brief-${{ steps.window.outputs.key }}
+      - name: 設定 GitHub Pages
+        if: env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true'
+        uses: actions/configure-pages@v5
+      - name: 上傳儀表板
+        if: env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: 部署
+        if: env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4
