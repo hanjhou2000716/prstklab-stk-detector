@@ -72,13 +72,16 @@ def build_brief(snapshot: dict, slot: str) -> str:
     """Create a neutral, watch-friendly brief that always stays under 30 characters."""
     label = SLOT_LABELS[slot]
     quote = _pick_quote(snapshot, slot)
+    event = (snapshot.get("events") or {}).get("items", [])
+    event_label = event[0]["short_label"] if event else None
     if not quote:
         return f"{label}｜市場資料暫時無法取得"
     pct = quote.get("change_percent")
     if pct is None:
         return f"{label}｜{quote['ticker']} 資料暫時無法取得"
     icon = "📈" if pct > 1 else "📉" if pct < -1 else "🟰"
-    return f"{label}｜{quote['ticker']}{icon}{pct:+.1f}%"
+    prefix = f"{label}｜{event_label}｜" if event_label else f"{label}｜"
+    return f"{prefix}{quote['ticker']}{icon}{pct:+.1f}%"
 
 
 def parse_args() -> argparse.Namespace:
