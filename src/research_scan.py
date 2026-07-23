@@ -26,6 +26,7 @@ def build_price_action_snapshot(
     watchlist: tuple[dict[str, str], ...],
     scanner: PriceActionResearchScanner | None = None,
     downloader: Callable[[str], pd.DataFrame] = download_daily_bars,
+    histories: dict[str, pd.DataFrame] | None = None,
 ) -> dict[str, Any]:
     """Return public-watchlist research results without creating a trade instruction."""
     scanner = scanner or PriceActionResearchScanner()
@@ -33,7 +34,8 @@ def build_price_action_snapshot(
     errors: list[str] = []
     for item in watchlist:
         try:
-            result = scanner.scan_daily(downloader(item["symbol"]))
+            daily = histories[item["symbol"]] if histories and item["symbol"] in histories else downloader(item["symbol"])
+            result = scanner.scan_daily(daily)
             if result:
                 candidates.append({
                     "ticker": item["ticker"],

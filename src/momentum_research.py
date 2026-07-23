@@ -36,13 +36,14 @@ def features(df: pd.DataFrame) -> dict[str, float] | None:
 
 
 def build_momentum_snapshot(
-    watchlist: tuple[dict[str, str], ...], downloader: Callable[[str], pd.DataFrame] = download_daily_bars
+    watchlist: tuple[dict[str, str], ...], downloader: Callable[[str], pd.DataFrame] = download_daily_bars, histories: dict[str, pd.DataFrame] | None = None
 ) -> dict[str, Any]:
     """Rank available watchlist records; output remains research-only."""
     rows, errors = [], []
     for item in watchlist:
         try:
-            result = features(downloader(item["symbol"]))
+            daily = histories[item["symbol"]] if histories and item["symbol"] in histories else downloader(item["symbol"])
+            result = features(daily)
             if result:
                 rows.append({"ticker": item["ticker"], "name": item["name"], **result})
         except Exception:
