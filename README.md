@@ -52,6 +52,22 @@ python -m src.main --send
 
 從 **Actions → Refresh market dashboard → Run workflow** 可手動更新代表標的收盤價、漲跌幅與台／美交易日狀態，並重新部署儀表板。此階段僅使用公開資料；若個別報價來源暫時無法取得，頁面會明確顯示部分缺漏。
 
+## 正式快報排程
+
+`Scheduled market brief` 會在下列台灣時間的週一至週五執行：06:00、08:45、10:00、11:45、13:15、14:10、21:00、22:00。每次執行都會更新儀表板，並發送一則小於 30 字的 Telegram 快報。
+
+同一日期與時段僅會推播一次。需要人工驗證時，可在 Actions 手動執行並勾選 `force`。
+
+### 外部 Cron 備援
+
+工作流程支援 GitHub `repository_dispatch` 事件 `scheduled-brief`。外部 Cron 必須使用專屬、最小權限的 GitHub Fine-grained PAT，並在確認 GitHub 排程漏跑時才觸發：
+
+```json
+{"event_type":"scheduled-brief","client_payload":{"slot":"intraday"}}
+```
+
+系統會用日期加時段的紀錄避免重複推播。外部 Cron 的實際帳號與 Token 將於下一階段設定，不能寫入 Repository 或對話內容。
+
 ## 安全提醒
 
 - `.env` 已被排除，不會提交至 Git。
