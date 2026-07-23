@@ -22,7 +22,7 @@ pytest -q
 
 ## 首次發送前的 Telegram 設定
 
-1. 在 Telegram 開啟 `@olaf_spark_bot`，按下 **Start**，或傳送任意文字。
+1. 在 Telegram 開啟 `@PRStK_Lab_bot`，按下 **Start**，或傳送任意文字。
 2. 取得 Bot Token：向 `@BotFather` 建立或管理 Bot 後複製 Token。
 3. 取得 Chat ID：使用 Telegram Bot API 的 `getUpdates` 查詢；程式不會保存它。
 4. 複製 `.env.example` 為 `.env`，填入 Token、Chat ID 與暫時的儀表板網址。
@@ -50,7 +50,15 @@ python -m src.main --send
 
 ## 市場資料更新
 
-從 **Actions → Refresh market dashboard → Run workflow** 可手動更新代表標的收盤價、漲跌幅與台／美交易日狀態，並重新部署儀表板。此階段僅使用公開資料；若個別報價來源暫時無法取得，頁面會明確顯示部分缺漏。
+從 **Actions → Refresh market dashboard → Run workflow** 可手動更新代表標的收盤價、漲跌幅與台／美交易日狀態，並重新部署儀表板。系統僅使用公開資料；若個別報價來源暫時無法取得，頁面會明確顯示部分缺漏。
+
+## 新聞與風險觀察
+
+儀表板會另外呈現以下公開資訊，僅作為市場教育與風險觀察，不產生買賣建議：
+
+- 台／美持股關聯新聞：從鉅亨網分類頁篩選與觀察池關鍵字相關的內容，最多各 3 則；沒有相關新聞時會留白，不以無關新聞補足。
+- 美股風險：CNN Fear & Greed 與 CBOE VIX 最新讀值。
+- 台股風險：嘗試取得台指 VIX；若公開來源沒有可用最新數值，會明確標示「暫時無法取得」，不會沿用舊資料。
 
 ## 正式快報排程
 
@@ -72,4 +80,4 @@ python -m src.main --send
 
 - `.env` 已被排除，不會提交至 Git。
 - Token 一旦外流，請立即到 BotFather 撤銷並重新產生。
-- 第一階段不含市場資料、排程或任何交易功能。
+- 系統目前不會連接券商、錢包或帳戶，也不會自動下單。
