@@ -101,6 +101,7 @@ def build_market_snapshot() -> dict[str, Any]:
     """Build a browser-friendly snapshot; one ticker failure never stops others."""
     from src.event_alerts import build_event_snapshot
     from src.momentum_research import build_momentum_snapshot
+    from src.market_history import load_watchlist_history
     from src.research_scan import build_price_action_snapshot
     from src.resonance_scan import build_resonance_snapshot
     from src.value_quality import build_value_snapshot
@@ -117,9 +118,10 @@ def build_market_snapshot() -> dict[str, Any]:
     risk = build_risk_snapshot()
     news = build_news_snapshot()
     events = build_event_snapshot(news, quotes)
-    research = build_price_action_snapshot(WATCHLIST)
-    momentum = build_momentum_snapshot(WATCHLIST)
-    resonance = build_resonance_snapshot(WATCHLIST)
+    histories, history_errors = load_watchlist_history(WATCHLIST)
+    research = build_price_action_snapshot(WATCHLIST, histories=histories)
+    momentum = build_momentum_snapshot(WATCHLIST, histories=histories)
+    resonance = build_resonance_snapshot(WATCHLIST, histories=histories)
     value = build_value_snapshot(WATCHLIST)
     errors.extend({"ticker": "新聞", "message": message} for message in news["errors"])
     for market in ("taiwan", "us"):
@@ -128,6 +130,7 @@ def build_market_snapshot() -> dict[str, Any]:
     errors.extend({"ticker": "動能研究", "message": message} for message in momentum["errors"])
     errors.extend({"ticker": "共振研究", "message": message} for message in resonance["errors"])
     errors.extend({"ticker": "價值研究", "message": message} for message in value["errors"])
+    errors.extend({"ticker": "歷史資料", "message": message} for message in history_errors)
     return {
         "generated_at": datetime.now(ZoneInfo("Asia/Taipei")).isoformat(),
         "data_status": quote_data_status,

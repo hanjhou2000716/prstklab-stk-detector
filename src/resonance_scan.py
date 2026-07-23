@@ -4,11 +4,12 @@ from typing import Any
 from src.research_scan import download_daily_bars
 from src.resonance_research import label, score_bars
 
-def build_resonance_snapshot(watchlist: tuple[dict[str, str], ...]) -> dict[str, Any]:
+def build_resonance_snapshot(watchlist: tuple[dict[str, str], ...], histories=None) -> dict[str, Any]:
     candidates, errors = [], []
     for item in watchlist:
         try:
-            score = score_bars(download_daily_bars(item["symbol"]))
+            daily = histories[item["symbol"]] if histories and item["symbol"] in histories else download_daily_bars(item["symbol"])
+            score = score_bars(daily)
             if score is not None and score < 56:
                 candidates.append({"ticker": item["ticker"], "name": item["name"], "score": score, "status": label(score)})
         except Exception:
