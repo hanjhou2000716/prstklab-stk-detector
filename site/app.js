@@ -87,6 +87,19 @@ const renderEvents = (events) => {
   }).join("");
 };
 
+const renderResearch = (research) => {
+  if (!research) return;
+  setText("research-tag", research.status || "研究模式");
+  setText("research-notice", research.notice || "僅供公開市場結構研究。");
+  const container = document.getElementById("research-list");
+  if (!container) return;
+  if (!research.candidates?.length) {
+    container.innerHTML = '<li class="empty">本次無符合結構的代表標的</li>';
+    return;
+  }
+  container.innerHTML = research.candidates.map((candidate) => `<li><span><b>${escapeHtml(candidate.ticker)}</b><small>${escapeHtml(candidate.name)}｜${escapeHtml(candidate.funnel_labels.join("、"))}</small></span><span class="risk-value"><small>ATR ${candidate.atr}｜風險參考 ${candidate.reference_risk}</small></span></li>`).join("");
+};
+
 const render = (snapshot) => {
   setText("data-status", snapshot.data_status || "資料暫時無法取得");
   setText("updated-at", snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚未更新");
@@ -95,6 +108,7 @@ const render = (snapshot) => {
   renderRisk(snapshot.risk);
   renderNews(snapshot.news);
   renderEvents(snapshot.events);
+  renderResearch(snapshot.research);
   if (snapshot.errors?.length) setText("data-note", `部分資料暫時無法取得：${snapshot.errors.map((item) => item.ticker).join("、")}`);
 };
 

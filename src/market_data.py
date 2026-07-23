@@ -100,6 +100,7 @@ def get_quote(item: dict[str, str]) -> dict[str, Any]:
 def build_market_snapshot() -> dict[str, Any]:
     """Build a browser-friendly snapshot; one ticker failure never stops others."""
     from src.event_alerts import build_event_snapshot
+    from src.research_scan import build_price_action_snapshot
     from src.risk_news import build_news_snapshot, build_risk_snapshot
 
     errors: list[dict[str, str]] = []
@@ -113,9 +114,11 @@ def build_market_snapshot() -> dict[str, Any]:
     risk = build_risk_snapshot()
     news = build_news_snapshot()
     events = build_event_snapshot(news, quotes)
+    research = build_price_action_snapshot(WATCHLIST)
     errors.extend({"ticker": "新聞", "message": message} for message in news["errors"])
     for market in ("taiwan", "us"):
         errors.extend({"ticker": risk[market]["label"], "message": message} for message in risk[market]["errors"])
+    errors.extend({"ticker": "結構研究", "message": message} for message in research["errors"])
     return {
         "generated_at": datetime.now(ZoneInfo("Asia/Taipei")).isoformat(),
         "data_status": quote_data_status,
@@ -124,5 +127,6 @@ def build_market_snapshot() -> dict[str, Any]:
         "risk": risk,
         "news": news,
         "events": events,
+        "research": research,
         "errors": errors,
     }
