@@ -48,6 +48,10 @@ python -m src.main --send
 
 `site/` 包含 GitHub Pages 儀表板。第一次部署後，將 GitHub Pages 網址填入 `DASHBOARD_URL` 變數，Telegram 按鈕便會開啟儀表板。
 
+## 市場資料更新
+
+從 **Actions → Refresh market dashboard → Run workflow** 可手動更新代表標的收盤價、漲跌幅與台／美交易日狀態，並重新部署儀表板。此階段僅使用公開資料；若個別報價來源暫時無法取得，頁面會明確顯示部分缺漏。
+
 ## 安全提醒
 
 - `.env` 已被排除，不會提交至 Git。
