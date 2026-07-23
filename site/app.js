@@ -100,6 +100,16 @@ const renderResearch = (research) => {
   container.innerHTML = research.candidates.map((candidate) => `<li><span><b>${escapeHtml(candidate.ticker)}</b><small>${escapeHtml(candidate.name)}｜${escapeHtml(candidate.funnel_labels.join("、"))}</small></span><span class="risk-value"><small>ATR ${candidate.atr}｜風險參考 ${candidate.reference_risk}</small></span></li>`).join("");
 };
 
+const renderMomentum = (momentum) => {
+  if (!momentum) return;
+  setText("momentum-tag", momentum.status || "研究模式");
+  setText("momentum-notice", momentum.notice || "僅供公開市場動能研究。");
+  const container = document.getElementById("momentum-list");
+  if (!container) return;
+  if (!momentum.candidates?.length) { container.innerHTML = '<li class="empty">本次無符合條件的代表標的</li>'; return; }
+  container.innerHTML = momentum.candidates.map((item) => `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}｜10日變動 ${item.roc10 > 0 ? "+" : ""}${item.roc10}%</small></span><span class="risk-value"><small>動能分數 ${item.score}</small></span></li>`).join("");
+};
+
 const render = (snapshot) => {
   setText("data-status", snapshot.data_status || "資料暫時無法取得");
   setText("updated-at", snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚未更新");
@@ -109,6 +119,7 @@ const render = (snapshot) => {
   renderNews(snapshot.news);
   renderEvents(snapshot.events);
   renderResearch(snapshot.research);
+  renderMomentum(snapshot.momentum);
   if (snapshot.errors?.length) setText("data-note", `部分資料暫時無法取得：${snapshot.errors.map((item) => item.ticker).join("、")}`);
 };
 
