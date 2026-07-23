@@ -1,6 +1,7 @@
 """Command-line runner for a bounded manual Taiwan momentum scan."""
 from __future__ import annotations
 import argparse
+import json
 from pathlib import Path
 import pandas as pd
 import yfinance as yf
@@ -34,6 +35,11 @@ def main() -> None:
     destination = Path("data/taiwan-momentum-scan.csv")
     destination.parent.mkdir(exist_ok=True)
     result.drop(columns=["bars"], errors="ignore").to_csv(destination, index=False, encoding="utf-8-sig")
-    print(f"掃描 {len(universe)} 檔，資料完整 {len(records)} 檔，研究候選 {len(result)} 檔，失敗 {len(failed)} 檔：{destination}")
+    summary_path = Path("data/taiwan-momentum-summary.json")
+    summary_path.write_text(json.dumps({
+        "requested": len(universe), "data_complete": len(records), "candidates": len(result),
+        "failed": len(failed), "batch_size": args.batch_size,
+    }, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"掃描 {len(universe)} 檔，資料完整 {len(records)} 檔，研究候選 {len(result)} 檔，失敗 {len(failed)} 檔：{destination}、{summary_path}")
 
 if __name__ == "__main__": main()
