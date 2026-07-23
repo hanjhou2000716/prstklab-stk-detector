@@ -1,0 +1,41 @@
+name: PRStK Notification
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: "30 字內測試快報（留空使用預設訊息）"
+        required: false
+        type: string
+  # 第一階段先只提供手動執行；確認後才加入正式排程。
+
+permissions:
+  contents: read
+
+jobs:
+  send-test-message:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安裝相依套件
+        run: pip install -r requirements.txt
+
+      - name: 發送測試快報
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+        run: |
+          if [ -n "${{ inputs.message }}" ]; then
+            python -m src.main --send --message "${{ inputs.message }}"
+          else
+            python -m src.main --send
+          fi
+
