@@ -54,7 +54,7 @@ python -m src.main --send
 
 ## 正式快報排程
 
-`Scheduled market brief` 會在下列台灣時間的週一至週五執行：06:00、08:45、10:00、11:45、13:15、14:10、21:00、22:00。每次執行都會更新儀表板，並發送一則小於 30 字的 Telegram 快報。
+`Scheduled market brief` 會在下列台灣時間的週一至週五執行：06:00、08:45、10:00、11:45、13:15、14:10，以及美股盤前時段。美股盤前會依 `America/New_York` 時區自動二選一：美國夏令時間使用 21:00，冬令時間使用 22:00；兩者皆為美東 09:00、開盤前 30 分鐘。每次執行都會更新儀表板，並發送一則小於 30 字的 Telegram 快報。
 
 同一日期與時段僅會推播一次。需要人工驗證時，可在 Actions 手動執行並勾選 `force`。
 
@@ -66,7 +66,7 @@ python -m src.main --send
 {"event_type":"scheduled-brief","client_payload":{"slot":"intraday"}}
 ```
 
-系統會用日期加時段的紀錄避免重複推播。外部 Cron 的實際帳號與 Token 將於下一階段設定，不能寫入 Repository 或對話內容。
+系統會用日期加時段的紀錄避免重複推播。外部 Cron 的實際帳號與 Token 將於下一階段設定，不能寫入 Repository 或對話內容。外部 Cron 的美股盤前備援只需建立一個：時區選 `America/New_York`、時間設 `09:00`、週一至週五，並以 `us_premarket` 作為 slot；cron-job.org 會自動處理夏令／冬令時間。
 
 ## 安全提醒
 
