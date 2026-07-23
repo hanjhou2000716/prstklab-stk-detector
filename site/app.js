@@ -110,6 +110,16 @@ const renderMomentum = (momentum) => {
   container.innerHTML = momentum.candidates.map((item) => `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}｜10日變動 ${item.roc10 > 0 ? "+" : ""}${item.roc10}%</small></span><span class="risk-value"><small>動能分數 ${item.score}</small></span></li>`).join("");
 };
 
+const renderResonance = (resonance) => {
+  if (!resonance) return;
+  setText("resonance-tag", resonance.status || "研究模式");
+  setText("resonance-notice", resonance.notice || "僅供公開市場研究。");
+  const container = document.getElementById("resonance-list");
+  if (!container) return;
+  if (!resonance.candidates?.length) { container.innerHTML = '<li class="empty">本次無 FGI 低於 56 的代表標的</li>'; return; }
+  container.innerHTML = resonance.candidates.map((item) => `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}｜${escapeHtml(item.status)}</small></span><span class="risk-value"><small>共振分數 ${item.score}</small></span></li>`).join("");
+};
+
 const render = (snapshot) => {
   setText("data-status", snapshot.data_status || "資料暫時無法取得");
   setText("updated-at", snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚未更新");
@@ -120,6 +130,7 @@ const render = (snapshot) => {
   renderEvents(snapshot.events);
   renderResearch(snapshot.research);
   renderMomentum(snapshot.momentum);
+  renderResonance(snapshot.resonance);
   if (snapshot.errors?.length) setText("data-note", `部分資料暫時無法取得：${snapshot.errors.map((item) => item.ticker).join("、")}`);
 };
 
