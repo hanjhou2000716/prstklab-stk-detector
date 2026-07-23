@@ -37,6 +37,13 @@ time, .tag { color: var(--muted); font-size: .75rem; }
 .watch-list li { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); font-size: .91rem; }
 .watch-list li:last-child { border-bottom: 1px solid var(--line); }
 .watch-list b { color: var(--accent); font-size: .78rem; }
+.watch-list small { display: block; margin-top: 3px; color: var(--muted); font-size: .7rem; }
+.quote-value { text-align: right; }
+.quote-value b { display: block; color: var(--ink); }
+.quote-value small.up { color: #61d8a4; }
+.quote-value small.down { color: #ff8192; }
+.quote-value small.flat { color: var(--muted); }
+.empty { color: var(--muted); justify-content: center; }
 .bullet-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .bullet-list li { color: #c8d9ea; font-size: .9rem; }
 .bullet-list li::before { content: "•"; color: var(--accent); margin-right: 7px; }

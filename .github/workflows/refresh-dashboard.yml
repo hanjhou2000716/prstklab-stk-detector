@@ -1,0 +1,41 @@
+name: Refresh market dashboard
+
+on:
+  workflow_dispatch:
+  # 正式排程將在外部 Cron 備援設定完成後加入。
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  refresh-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+      - name: 設定 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 安裝相依套件
+        run: pip install -r requirements.txt
+      - name: 更新公開市場資料
+        run: python -m src.refresh_market_data
+      - name: 設定 GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: 上傳儀表板
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: 部署
+        id: deployment
+        uses: actions/deploy-pages@v4
