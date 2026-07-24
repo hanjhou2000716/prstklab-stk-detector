@@ -160,8 +160,10 @@ const strategyLabel = (strategy) => strategy === "price_action" ? "裸 K 結構"
 
 const renderUnifiedReport = (report) => {
   if (!report) return;
-  setText("unified-tag", report.status || "研究模式");
-  setText("unified-notice", report.notice || "跨市場研究摘要。");
+  const health = report.health;
+  setText("unified-tag", health?.status || report.status || "研究模式");
+  const healthNotice = health?.reasons?.length ? `資料狀態：${health.reasons.join("；")}。` : "資料狀態健康。";
+  setText("unified-notice", `${report.notice || "跨市場研究摘要。"} ${healthNotice}`);
   const container = document.getElementById("unified-list");
   if (!container) return;
   if (!report.candidates?.length) {
