@@ -8,7 +8,7 @@ def test_normalize_preserves_missing_strategy_fields_as_none():
     candidate = normalize_frame(frame, "us", "momentum")[0]
     assert candidate["market"] == "us"
     assert candidate["score"] == 88.5
-    assert candidate["structural_stop"] is None
+    assert "structural_stop" not in candidate
 
 
 def test_report_combines_available_sources_and_discloses_missing_ones(tmp_path):
@@ -20,7 +20,8 @@ def test_report_combines_available_sources_and_discloses_missing_ones(tmp_path):
     ])
     assert report["summary"]["total_candidates"] == 1
     assert report["sources"][1]["status"] == "資料暫時無法取得"
-    assert report["candidates"][0]["structural_stop"] == 90
+    assert "reference_price" not in report["candidates"][0]
+    assert "structural_stop" not in report["candidates"][0]
 
 
 def test_empty_source_is_not_replaced_with_old_candidates(tmp_path):

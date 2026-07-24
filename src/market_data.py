@@ -100,7 +100,6 @@ def get_quote(item: dict[str, str]) -> dict[str, Any]:
 def build_market_snapshot() -> dict[str, Any]:
     """Build a browser-friendly snapshot; one ticker failure never stops others."""
     from src.event_alerts import build_event_snapshot
-    from src.active_etf_research import build_research_allocation
     from src.momentum_research import build_momentum_snapshot
     from src.macro_summary import build_macro_summary
     from src.market_history import load_watchlist_history
@@ -129,7 +128,20 @@ def build_market_snapshot() -> dict[str, Any]:
     macro = build_macro_summary(events, risk, program)
     histories, history_errors = load_watchlist_history(WATCHLIST)
     research = build_price_action_snapshot(WATCHLIST, histories=histories)
-    allocation = build_research_allocation(research["candidates"])
+    # The public Mini App may show research methods and non-actionable market
+    # context, but must never publish a reference entry, stop boundary, or
+    # portfolio allocation that could be read as an execution instruction.
+    public_research = {
+        **research,
+        "candidates": [
+            {
+                key: candidate[key]
+                for key in ("ticker", "name", "market", "matched_funnels", "funnel_labels", "atr", "volume", "turnover")
+                if key in candidate
+            }
+            for candidate in research["candidates"]
+        ],
+    }
     momentum = build_momentum_snapshot(WATCHLIST, histories=histories)
     resonance = build_resonance_snapshot(WATCHLIST, histories=histories)
     value = build_value_snapshot(WATCHLIST)
@@ -160,8 +172,7 @@ def build_market_snapshot() -> dict[str, Any]:
         "news": news,
         "events": events,
         "macro": macro,
-        "research": research,
-        "allocation": allocation,
+        "research": public_research,
         "momentum": momentum,
         "resonance": resonance,
         "value": value,

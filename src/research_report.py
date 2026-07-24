@@ -29,8 +29,6 @@ def normalize_frame(frame: pd.DataFrame, market: str, strategy: str) -> list[dic
             "name": _value(row.get("name")),
             "score": _value(row.get("score")),
             "turnover": _value(row.get("turnover")),
-            "reference_price": _value(row.get("reference_close", row.get("close"))),
-            "structural_stop": _value(row.get("reference_stop")),
             "structure": _value(row.get("funnel_labels")),
         })
     return candidates

@@ -134,20 +134,7 @@ const renderResearch = (research) => {
     container.innerHTML = '<li class="empty">本次無符合結構的代表標的</li>';
     return;
   }
-  container.innerHTML = research.candidates.map((candidate) => `<li><span><b>${escapeHtml(candidate.ticker)}</b><small>${escapeHtml(candidate.name)}｜${escapeHtml(candidate.funnel_labels.join("、"))}</small></span><span class="risk-value"><small>ATR ${candidate.atr}｜風險參考 ${candidate.reference_risk}</small></span></li>`).join("");
-};
-
-const renderAllocation = (allocation) => {
-  if (!allocation) return;
-  setText("allocation-tag", allocation.status || "研究模式");
-  setText("allocation-notice", allocation.notice || "僅供研究與風險教育。");
-  const container = document.getElementById("allocation-list");
-  if (!container) return;
-  if (!allocation.allocations?.length) {
-    container.innerHTML = '<li class="empty">本次沒有可計算的結構研究候選</li>';
-    return;
-  }
-  container.innerHTML = allocation.allocations.map((item) => `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}｜結構風險 ${item.risk_percent}%</small></span><span class="risk-value"><small>研究配置 ${item.weight_percent}%</small></span></li>`).join("");
+  container.innerHTML = research.candidates.map((candidate) => `<li><span><b>${escapeHtml(candidate.ticker)}</b><small>${escapeHtml(candidate.name)}｜${escapeHtml(candidate.funnel_labels.join("、"))}</small></span><span class="risk-value"><small>ATR ${candidate.atr}${candidate.turnover ? `｜成交額 ${formatNumber(candidate.turnover)}` : ""}</small></span></li>`).join("");
 };
 
 const renderMomentum = (momentum) => {
@@ -230,7 +217,6 @@ const render = (snapshot) => {
   renderNews(snapshot.news);
   renderEvents(snapshot.events);
   renderResearch(snapshot.research);
-  renderAllocation(snapshot.allocation);
   renderMomentum(snapshot.momentum);
   renderResonance(snapshot.resonance);
   renderValue(snapshot.value);
