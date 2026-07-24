@@ -30,6 +30,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
       - run: pip install -r requirements.txt
@@ -48,7 +50,19 @@ jobs:
             exit 0
           fi
           git commit -m "chore: refresh public research report"
-          git push
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "無法在三次嘗試內回存研究摘要。"
+              exit 1
+            fi
+
+            git fetch origin main
+            git rebase -X theirs origin/main
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: unified-research-report
