@@ -189,7 +189,14 @@ const renderMacro = (macro) => {
   setText("macro-notice", macro.notice || "公開市場資料整理。");
   const container = document.getElementById("macro-list");
   if (!container) return;
-  container.innerHTML = (macro.items || []).map((item) => `<li><b>${escapeHtml(item.label)}</b><small>${escapeHtml(item.text)}</small></li>`).join("") || '<li class="empty">資料暫時無法取得</li>';
+  container.innerHTML = (macro.items || []).map((item) => {
+    const safeUrl = item.url?.startsWith("https://www.youtube.com/") ? item.url : null;
+    const text = safeUrl
+      ? `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.text)}</a>`
+      : escapeHtml(item.text);
+    const source = item.source ? `<small>${escapeHtml(item.source)}</small>` : "";
+    return `<li><b>${escapeHtml(item.label)}</b><small>${text}</small>${source}</li>`;
+  }).join("") || '<li class="empty">資料暫時無法取得</li>';
 };
 
 const marketLabel = (market) => market === "taiwan" ? "台股" : market === "us" ? "美股" : market;
