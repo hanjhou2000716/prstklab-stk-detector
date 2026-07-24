@@ -34,6 +34,33 @@ def mini_app_button(mini_app_url: str) -> dict[str, object]:
     }
 
 
+def mini_app_menu_button(mini_app_url: str) -> dict[str, object]:
+    """Build the persistent Telegram chat-menu entry for this Mini App."""
+    if not mini_app_url.startswith("https://"):
+        raise ValueError("Mini App 網址必須使用 HTTPS。")
+    return {
+        "type": "web_app",
+        "text": "稜量 Mini App",
+        "web_app": {"url": mini_app_url},
+    }
+
+
+def configure_mini_app_menu(*, token: str, chat_id: str, mini_app_url: str) -> None:
+    """Set this private chat's persistent Telegram Mini App menu button."""
+    response = requests.post(
+        f"https://api.telegram.org/bot{token}/setChatMenuButton",
+        json={"chat_id": chat_id, "menu_button": mini_app_menu_button(mini_app_url)},
+        timeout=20,
+    )
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise TelegramError("Telegram 回傳了無法辨識的內容。") from exc
+
+    if not response.ok or not payload.get("ok"):
+        raise TelegramError(payload.get("description", "Mini App 選單設定失敗。"))
+
+
 def send_brief(
     *, token: str, chat_id: str, text: str, dashboard_url: str
 ) -> TelegramResult:
