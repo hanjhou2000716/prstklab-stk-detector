@@ -19,3 +19,21 @@ jobs:
         with:
           name: taiwan-momentum-segment-${{ matrix.offset }}
           path: data/taiwan-momentum-*
+  aggregate:
+    needs: scan
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: taiwan-momentum-segment-*
+          path: data/segments
+      - run: python -m src.merge_momentum_results data/segments
+      - uses: actions/upload-artifact@v4
+        with:
+          name: taiwan-momentum-combined
+          path: data/taiwan-momentum-combined.*
