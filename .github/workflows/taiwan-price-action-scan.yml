@@ -1,0 +1,30 @@
+name: Manual Taiwan Price Action scan
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: Number of Taiwan stocks to scan (default 1000; use 0 for all)
+        required: true
+        default: '1000'
+      batch_size:
+        description: Symbols per public-data request
+        required: true
+        default: '50'
+      offset:
+        description: Start position in public Taiwan stock list
+        required: true
+        default: '0'
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r requirements.txt
+      - run: python -m src.run_taiwan_price_action_scan --limit ${{ inputs.limit }} --batch-size ${{ inputs.batch_size }} --offset ${{ inputs.offset }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: taiwan-price-action-scan
+          path: data/taiwan-price-action-*
