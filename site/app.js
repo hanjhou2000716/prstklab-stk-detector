@@ -215,7 +215,10 @@ const render = (snapshot) => {
   renderResonance(snapshot.resonance);
   renderValue(snapshot.value);
   renderMacro(snapshot.macro);
-  if (snapshot.errors?.length) setText("data-note", `部分資料暫時無法取得：${snapshot.errors.map((item) => item.ticker).join("、")}`);
+  const note = snapshot.errors?.length
+    ? `部分資料暫時無法取得：${snapshot.errors.map((item) => item.ticker).join("、")}`
+    : "公開市場資料已更新；研究結果僅供教育與人工檢視。";
+  setText("data-note", note);
 };
 
 fetch("data/market.json", { cache: "no-store" })

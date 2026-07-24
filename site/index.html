@@ -3,110 +3,93 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="PRStK 稜量投資系統市場資訊儀表板" />
-    <title>PRStK 稜量投資系統</title>
+    <meta name="description" content="PRStK 稜量投資系統 Telegram Mini App" />
+    <title>PRStK 稜量 Mini App</title>
     <link rel="stylesheet" href="styles.css" />
     <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
   </head>
   <body>
-    <main class="page-shell">
-      <header class="hero">
-        <div class="brand">
-          <div class="logo-slot" aria-label="PRStK Logo 預留位置">PRStK</div>
-          <div class="logo-slot secondary" aria-label="D.inv Logo 預留位置">D.inv</div>
+    <main class="app-shell">
+      <header class="app-header">
+        <div class="brand-lockup" aria-label="PRStK 與 D.inv">
+          <img class="brand-prstk" src="assets/PRStK-Remove.png" alt="PRStK" />
+          <span class="brand-divider" aria-hidden="true"></span>
+          <img class="brand-dinv" src="assets/D.inv-removebg-preview.png" alt="D.inv" />
         </div>
-        <div>
-          <p class="eyebrow">PRSTK INVESTMENT SYSTEM</p>
-          <h1>稜量市場儀表板</h1>
-          <p class="status"><span></span><span id="data-status">等待首次更新</span></p>
-        </div>
+        <div class="live-status"><span></span><b id="data-status">資料更新中</b></div>
       </header>
 
-      <section class="notice" aria-label="資料狀態">
-        <span id="data-note">代表標的報價與交易日判斷由公開資料更新；新聞、風險指標與量化觀察清單將於後續模組串接。</span>
+      <section class="hero-panel" aria-labelledby="app-title">
+        <p class="eyebrow">PRSTK INVESTMENT SYSTEM</p>
+        <h1 id="app-title">稜量市場快報</h1>
+        <p id="data-note" class="hero-copy">正在整理公開市場資訊與研究摘要。</p>
+        <div class="update-line"><span>最後更新</span><time id="updated-at">—</time></div>
       </section>
 
-      <section class="card-grid" aria-label="市場資訊">
-        <article class="card wide">
-          <div class="card-heading"><h2>總體市場</h2><time>資料等待中</time></div>
-          <div class="market-grid">
-            <div><span id="taiwan-session">台股｜等待判斷</span><strong id="taiwan-date">—</strong><small>台灣證券交易所行事曆</small></div>
-            <div><span id="us-session">美股｜等待判斷</span><strong id="us-date">—</strong><small>紐約證券交易所行事曆</small></div>
-            <div><span>資料更新</span><strong id="updated-at">—</strong><small>台灣時間</small></div>
-            <div><span>資料來源</span><strong>Yahoo</strong><small>公開市場資料</small></div>
-          </div>
-        </article>
+      <nav class="quick-nav" aria-label="Mini App 章節">
+        <a href="#market">市場</a><a href="#risk">風險</a><a href="#research">研究</a><a href="#news">新聞</a>
+      </nav>
 
-        <article class="card wide">
-          <div class="card-heading"><h2>動能狙擊研究</h2><span id="momentum-tag" class="tag">研究模式</span></div>
-          <p id="momentum-notice" class="card-copy">正在計算相對動能。</p>
-          <ul id="momentum-list" class="research-list"><li class="empty">等待首次更新</li></ul>
+      <section id="market" class="section-block" aria-labelledby="market-title">
+        <div class="section-heading"><div><p class="section-kicker">NOW</p><h2 id="market-title">市場脈動</h2></div><span class="source-chip">公開資料</span></div>
+        <div class="session-grid">
+          <article class="session-card"><span id="taiwan-session">台股｜等待判斷</span><strong id="taiwan-date">—</strong><small>台灣證券交易所</small></article>
+          <article class="session-card"><span id="us-session">美股｜等待判斷</span><strong id="us-date">—</strong><small>紐約證券交易所</small></article>
+        </div>
+        <article class="panel quote-panel">
+          <div class="panel-heading"><h3>代表標的</h3><span>觀測池</span></div>
+          <ul id="quote-list" class="watch-list"><li class="empty">資料更新中</li></ul>
         </article>
+      </section>
 
-        <article class="card wide">
-          <div class="card-heading"><h2>三維共振研究</h2><span id="resonance-tag" class="tag">研究模式</span></div>
-          <p id="resonance-notice" class="card-copy">正在計算價格、波動與量價共振。</p>
-          <ul id="resonance-list" class="research-list"><li class="empty">等待首次更新</li></ul>
+      <section id="risk" class="section-block" aria-labelledby="risk-title">
+        <div class="section-heading"><div><p class="section-kicker">SIGNAL</p><h2 id="risk-title">事件與風險</h2></div></div>
+        <article class="panel emphasis-panel">
+          <div class="panel-heading"><h3>重大市場事件</h3><span id="event-tag" class="tag neutral">更新中</span></div>
+          <p id="event-message" class="panel-copy">正在比對重大事件門檻。</p>
+          <ul id="event-list" class="event-list"><li class="empty">資料更新中</li></ul>
         </article>
-
-        <article class="card wide">
-          <div class="card-heading"><h2>價值品質研究</h2><span id="value-tag" class="tag">研究模式</span></div>
-          <p id="value-notice" class="card-copy">正在讀取公開財務資料。</p>
-          <ul id="value-list" class="research-list"><li class="empty">等待首次更新</li></ul>
+        <article class="panel">
+          <div class="panel-heading"><h3>風控資訊</h3><span id="risk-tag" class="tag neutral">更新中</span></div>
+          <p id="risk-notice" class="panel-copy">公開情緒與波動率觀察。</p>
+          <ul id="risk-list" class="risk-list"><li class="empty">資料更新中</li></ul>
         </article>
+        <article class="panel compact-panel">
+          <div class="panel-heading"><h3>總經摘要</h3><span>公開資料</span></div>
+          <p id="macro-notice" class="panel-copy">本次市場脈絡整理。</p>
+          <ul id="macro-list" class="event-list"><li class="empty">資料更新中</li></ul>
+        </article>
+      </section>
 
-        <article class="card wide">
-          <div class="card-heading"><h2>台美全市場研究摘要</h2><span id="unified-tag" class="tag neutral">尚未執行</span></div>
-          <p id="unified-notice" class="card-copy">可從 GitHub Actions 手動產生台美動能與裸 K 結構研究摘要。</p>
+      <section id="research" class="section-block" aria-labelledby="research-title">
+        <div class="section-heading"><div><p class="section-kicker">RESEARCH</p><h2 id="research-title">研究摘要</h2></div><span id="unified-tag" class="tag neutral">尚未執行</span></div>
+        <article class="panel research-hero">
+          <p id="unified-notice" class="panel-copy">台美公開研究摘要。</p>
           <ul id="unified-list" class="research-list"><li class="empty">尚無全市場研究報表</li></ul>
         </article>
 
-        <article class="card">
-          <div class="card-heading"><h2>代表標的</h2><span class="tag">觀測池</span></div>
-          <ul id="quote-list" class="watch-list"><li class="empty">等待首次更新</li></ul>
-        </article>
-
-        <article class="card">
-          <div class="card-heading"><h2>重大市場事件</h2><span id="event-tag" class="tag neutral">更新中</span></div>
-          <p id="event-message" class="card-copy">正在比對重大事件門檻。</p>
-          <ul id="event-list" class="event-list"><li class="empty">等待首次更新</li></ul>
-        </article>
-
-        <article class="card">
-          <div class="card-heading"><h2>風控資訊</h2><span id="risk-tag" class="tag neutral">更新中</span></div>
-          <p id="risk-notice" class="card-copy">正在讀取公開情緒與波動率資料。</p>
-          <ul id="risk-list" class="risk-list"><li class="empty">等待首次更新</li></ul>
-        </article>
-
-        <article class="card">
-          <div class="card-heading"><h2>裸 K 結構研究</h2><span id="research-tag" class="tag">研究模式</span></div>
-          <p id="research-notice" class="card-copy">正在掃描代表觀測池。</p>
-          <ul id="research-list" class="research-list"><li class="empty">等待首次更新</li></ul>
-        </article>
-
-        <article class="card">
-          <div class="card-heading"><h2>主動型 ETF 研究配置</h2><span id="allocation-tag" class="tag">研究模式</span></div>
-          <p id="allocation-notice" class="card-copy">依裸 K 結構候選計算風險比例，不會執行交易。</p>
-          <ul id="allocation-list" class="research-list"><li class="empty">等待首次更新</li></ul>
-        </article>
-
-        <article class="card wide">
-          <div class="card-heading"><h2>持股關聯新聞</h2><span class="tag neutral">鉅亨網</span></div>
-          <div class="news-grid">
-            <section><h3>台股</h3><ul id="taiwan-news" class="news-list"><li class="empty">等待首次更新</li></ul></section>
-            <section><h3>美股</h3><ul id="us-news" class="news-list"><li class="empty">等待首次更新</li></ul></section>
+        <details class="detail-panel">
+          <summary>查看策略研究與配置</summary>
+          <div class="detail-content">
+            <article class="sub-panel"><div class="panel-heading"><h3>動能狙擊</h3><span id="momentum-tag" class="tag">研究模式</span></div><p id="momentum-notice" class="panel-copy">正在計算相對動能。</p><ul id="momentum-list" class="research-list"><li class="empty">資料更新中</li></ul></article>
+            <article class="sub-panel"><div class="panel-heading"><h3>三維共振</h3><span id="resonance-tag" class="tag">研究模式</span></div><p id="resonance-notice" class="panel-copy">正在計算價格、波動與量價共振。</p><ul id="resonance-list" class="research-list"><li class="empty">資料更新中</li></ul></article>
+            <article class="sub-panel"><div class="panel-heading"><h3>價值品質</h3><span id="value-tag" class="tag">研究模式</span></div><p id="value-notice" class="panel-copy">公開財務資料研究。</p><ul id="value-list" class="research-list"><li class="empty">資料更新中</li></ul></article>
+            <article class="sub-panel"><div class="panel-heading"><h3>裸 K 結構</h3><span id="research-tag" class="tag">研究模式</span></div><p id="research-notice" class="panel-copy">代表觀測池結構研究。</p><ul id="research-list" class="research-list"><li class="empty">資料更新中</li></ul></article>
+            <article class="sub-panel"><div class="panel-heading"><h3>研究配置</h3><span id="allocation-tag" class="tag">研究模式</span></div><p id="allocation-notice" class="panel-copy">僅供風險教育與人工檢視。</p><ul id="allocation-list" class="research-list"><li class="empty">資料更新中</li></ul></article>
           </div>
-        </article>
+        </details>
+      </section>
 
-        <article class="card">
-          <div class="card-heading"><h2>總經摘要</h2><span class="tag neutral">公開資料</span></div>
-          <p id="macro-notice" class="card-copy">正在整理本次市場脈絡。</p>
-          <ul id="macro-list" class="event-list"><li class="empty">等待首次更新</li></ul>
-        </article>
+      <section id="news" class="section-block" aria-labelledby="news-title">
+        <div class="section-heading"><div><p class="section-kicker">HEADLINES</p><h2 id="news-title">持股關聯新聞</h2></div><span class="source-chip">鉅亨網</span></div>
+        <div class="news-grid">
+          <article class="panel compact-panel"><div class="panel-heading"><h3>台股</h3></div><ul id="taiwan-news" class="news-list"><li class="empty">資料更新中</li></ul></article>
+          <article class="panel compact-panel"><div class="panel-heading"><h3>美股</h3></div><ul id="us-news" class="news-list"><li class="empty">資料更新中</li></ul></article>
+        </div>
       </section>
 
       <footer>
-        <p>本頁為公開市場資訊整理與研究展示，不構成投資建議。</p>
+        <p>公開市場資訊與研究展示，不構成投資建議。</p>
         <blockquote>每天都是好棒的一天！會有好事發生在你我身上！我會盡力幫助身邊的人，讓他們過得更好！</blockquote>
       </footer>
     </main>
