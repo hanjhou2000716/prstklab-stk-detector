@@ -33,6 +33,12 @@ def test_invalid_structural_risk_is_excluded_instead_of_guessed():
     assert [item["ticker"] for item in plan["allocations"]] == ["ok"]
 
 
+def test_price_action_reference_fields_can_feed_the_research_plan():
+    plan = build_research_allocation([{"ticker": "PA", "reference_close": 120, "reference_stop": 100}])
+    assert plan["allocations"][0]["reference_price"] == 120
+    assert plan["allocations"][0]["structural_stop"] == 100
+
+
 def test_invalid_configurations_are_rejected():
     with pytest.raises(ValueError):
         build_research_allocation([], capital=0)
