@@ -20,6 +20,11 @@ on:
         description: Maximum research holding days per signal
         required: true
         default: '60'
+      free_roll:
+        description: Enable 5R half-exit and cost-boundary research mode
+        type: boolean
+        required: true
+        default: false
 jobs:
   backtest:
     runs-on: ubuntu-latest
@@ -29,7 +34,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
       - run: pip install -r requirements.txt
-      - run: python -m src.run_price_action_backtest --symbol '${{ inputs.symbol }}' --market '${{ inputs.market }}' --period '${{ inputs.period }}' --max-holding-days '${{ inputs.max_holding_days }}'
+      - run: python -m src.run_price_action_backtest --symbol '${{ inputs.symbol }}' --market '${{ inputs.market }}' --period '${{ inputs.period }}' --max-holding-days '${{ inputs.max_holding_days }}' ${{ inputs.free_roll && '--free-roll' || '' }}
       - uses: actions/upload-artifact@v4
         with:
           name: price-action-backtest-${{ inputs.symbol }}

@@ -44,3 +44,21 @@ def test_signal_invalidated_before_entry_is_disclosed():
     report = walk_forward_price_action(data, "TEST", "us", scanner=SignalAtLength(3), min_history=3)
     assert report["trades"] == []
     assert report["skipped_signals"][0]["reason"] == "下一根開盤已低於結構風險邊界"
+
+
+def test_free_roll_locks_half_at_5r_then_marks_remaining_half_at_cost_boundary():
+    data = bars([row(), row(), row(), row(100, 151, 101, 150), row(100, 120, 95, 100), row()])
+    report = walk_forward_price_action(data, "TEST", "us", scanner=SignalAtLength(3), min_history=3, free_roll_enabled=True)
+    trade = report["trades"][0]
+    assert trade["outcome"] == "5R後保本研究邊界"
+    assert trade["target_5r"] == 150
+    assert trade["free_roll_enabled"] is True
+    assert 20 < trade["gross_return_percent"] < 30
+
+
+def test_free_roll_same_day_cost_boundary_and_10r_is_disclosed_as_ambiguous():
+    data = bars([row(), row(), row(), row(100, 151, 101, 150), row(100, 205, 95, 120), row()])
+    report = walk_forward_price_action(data, "TEST", "taiwan", scanner=SignalAtLength(3), min_history=3, free_roll_enabled=True)
+    trade = report["trades"][0]
+    assert trade["outcome"] == "5R後保本／10R順序不明"
+    assert trade["ambiguous"] is True

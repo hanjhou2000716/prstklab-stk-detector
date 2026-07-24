@@ -38,9 +38,11 @@ def main() -> None:
     parser.add_argument("--market", required=True, choices=("taiwan", "us"))
     parser.add_argument("--period", default="5y", help="公開日 K 資料範圍，例如 1y、5y")
     parser.add_argument("--max-holding-days", type=int, default=60)
+    parser.add_argument("--free-roll", action="store_true", help="啟用 5R 半數研究退出與保本邊界模式")
     args = parser.parse_args()
     report = walk_forward_price_action(
-        download_bars(args.symbol, args.period), args.symbol, args.market, max_holding_days=args.max_holding_days,
+        download_bars(args.symbol, args.period), args.symbol, args.market,
+        max_holding_days=args.max_holding_days, free_roll_enabled=args.free_roll,
     )
     json_path, csv_path = write_report(report, Path("data"))
     print(f"{report['status']}：{len(report['trades'])} 筆研究紀錄；輸出 {json_path}、{csv_path}")
