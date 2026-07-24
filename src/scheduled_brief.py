@@ -22,6 +22,7 @@ SLOT_LABELS = {
     "us_premarket": "美股盤前",
     "us_open": "美股開盤",
 }
+MAX_BRIEF_LENGTH = 30
 
 
 def is_new_york_daylight_saving(now: datetime) -> bool:
@@ -80,8 +81,18 @@ def build_brief(snapshot: dict, slot: str) -> str:
     if pct is None:
         return f"{label}｜{quote['ticker']} 資料暫時無法取得"
     icon = "📈" if pct > 1 else "📉" if pct < -1 else "🟰"
-    prefix = f"{label}｜{event_label}｜" if event_label else f"{label}｜"
-    return f"{prefix}{quote['ticker']}{icon}{pct:+.1f}%"
+    suffix = f"{quote['ticker']}{icon}{pct:+.1f}%"
+    if not event_label:
+        return f"{label}｜{suffix}"
+
+    # Keep the market and move first. If a news label is unusually long,
+    # truncate only that optional context instead of letting Telegram reject
+    # the entire watch-sized brief.
+    prefix = f"{label}｜"
+    available = MAX_BRIEF_LENGTH - len(prefix) - len(suffix) - 1  # final separator
+    if available <= 0:
+        return f"{prefix}{suffix}"
+    return f"{prefix}{str(event_label)[:available]}｜{suffix}"
 
 
 def parse_args() -> argparse.Namespace:
