@@ -1,15 +1,401 @@
 {
-  "generated_at": null,
-  "data_status": "等待首次更新",
-  "markets": {},
-  "quotes": [],
-  "errors": [],
-  "risk": null,
-  "news": {"taiwan": [], "us": [], "errors": []},
-  "events": null,
-  "research": null,
-  "momentum": null,
-  "resonance": null,
-  "value": null,
-  "macro": null
+  "generated_at": "2026-07-24T09:33:58.958712+08:00",
+  "data_status": "即時",
+  "markets": {
+    "taiwan": {
+      "label": "台股",
+      "timezone": "Asia/Taipei",
+      "calendar": "XTAI",
+      "date": "2026-07-24",
+      "is_trading_day": true,
+      "session": "交易中",
+      "market_open": "2026-07-24T09:00:00+08:00",
+      "market_close": "2026-07-24T13:30:00+08:00"
+    },
+    "us": {
+      "label": "美股",
+      "timezone": "America/New_York",
+      "calendar": "NYSE",
+      "date": "2026-07-23",
+      "is_trading_day": true,
+      "session": "收盤後",
+      "market_open": "2026-07-23T09:30:00-04:00",
+      "market_close": "2026-07-23T16:00:00-04:00"
+    }
+  },
+  "quotes": [
+    {
+      "symbol": "006208.TW",
+      "ticker": "006208",
+      "name": "富邦台50",
+      "market": "taiwan",
+      "price": 235.0,
+      "change": -2.4,
+      "change_percent": -1.01,
+      "quote_date": "2026-07-24",
+      "currency": "TWD"
+    },
+    {
+      "symbol": "00685L.TW",
+      "ticker": "00685L",
+      "name": "國泰美國道瓊正2",
+      "market": "taiwan",
+      "price": 11.19,
+      "change": -0.19,
+      "change_percent": -1.67,
+      "quote_date": "2026-07-24",
+      "currency": "TWD"
+    },
+    {
+      "symbol": "2330.TW",
+      "ticker": "2330",
+      "name": "台積電",
+      "market": "taiwan",
+      "price": 2360.0,
+      "change": -45.0,
+      "change_percent": -1.87,
+      "quote_date": "2026-07-24",
+      "currency": "TWD"
+    },
+    {
+      "symbol": "QQQM",
+      "ticker": "QQQM",
+      "name": "Invesco NASDAQ 100 ETF",
+      "market": "us",
+      "price": 284.98,
+      "change": -5.44,
+      "change_percent": -1.87,
+      "quote_date": "2026-07-23",
+      "currency": "USD"
+    },
+    {
+      "symbol": "QLD",
+      "ticker": "QLD",
+      "name": "ProShares Ultra QQQ",
+      "market": "us",
+      "price": 85.0,
+      "change": -3.28,
+      "change_percent": -3.72,
+      "quote_date": "2026-07-23",
+      "currency": "USD"
+    },
+    {
+      "symbol": "TSM",
+      "ticker": "TSM",
+      "name": "台積電 ADR",
+      "market": "us",
+      "price": 415.58,
+      "change": -5.63,
+      "change_percent": -1.34,
+      "quote_date": "2026-07-23",
+      "currency": "USD"
+    },
+    {
+      "symbol": "NVDA",
+      "ticker": "NVDA",
+      "name": "NVIDIA",
+      "market": "us",
+      "price": 208.76,
+      "change": -3.3,
+      "change_percent": -1.56,
+      "quote_date": "2026-07-23",
+      "currency": "USD"
+    }
+  ],
+  "risk": {
+    "notice": "情緒與波動率僅供市場風險觀察，不構成投資建議。",
+    "taiwan": {
+      "label": "台股",
+      "sentiment": null,
+      "vix": null,
+      "errors": [
+        "波動率資料暫時無法取得"
+      ],
+      "summary": "波動率觀察"
+    },
+    "us": {
+      "label": "美股",
+      "sentiment": {
+        "score": 39.6,
+        "label": "中立／偏恐慌",
+        "source_label": "CNN Fear & Greed",
+        "source_url": "https://www.cnn.com/markets/fear-and-greed",
+        "updated_at": "2026-07-23T23:59:49+00:00"
+      },
+      "vix": {
+        "value": 18.7,
+        "change_percent": 12.38,
+        "date": "2026-07-23"
+      },
+      "errors": [],
+      "summary": "情緒：中立／偏恐慌"
+    }
+  },
+  "news": {
+    "taiwan": [],
+    "us": [
+      {
+        "title": "2. 〈美股早盤〉AI支出與百美元油價施壓！主要指數開低 道指一度崩逾600點",
+        "url": "https://news.cnyes.com/news/id/6544141",
+        "source": "鉅亨網"
+      }
+    ],
+    "errors": []
+  },
+  "events": {
+    "is_major": true,
+    "status": "重大市場事件",
+    "message": "符合重大事件門檻，請查看來源與完整市場脈絡。",
+    "items": [
+      {
+        "title": "QLD 單日波動 -3.7%",
+        "url": "",
+        "source": "公開市場報價",
+        "short_label": "波動顯著"
+      }
+    ]
+  },
+  "macro": {
+    "notice": "僅整理本次公開資料的已知事實與風險觀察，不構成投資建議。",
+    "items": [
+      {
+        "label": "事件",
+        "text": "波動顯著：QLD 單日波動 -3.7%"
+      },
+      {
+        "label": "風險",
+        "text": "台股：波動率觀察"
+      },
+      {
+        "label": "風險",
+        "text": "美股情緒：中立／偏恐慌"
+      }
+    ]
+  },
+  "research": {
+    "status": "已有結構研究候選",
+    "notice": "僅供公開市場結構研究與風險觀察，不構成買賣建議。",
+    "candidates": [
+      {
+        "ticker": "NVDA",
+        "name": "NVIDIA",
+        "market": "us",
+        "matched_funnels": [
+          "Funnel_4"
+        ],
+        "funnel_labels": [
+          "訂單塊回踩"
+        ],
+        "reference_close": 208.76,
+        "support_edge": 204.01,
+        "atr": 7.35,
+        "reference_stop": 196.66,
+        "reference_risk": 12.1,
+        "volume": 110032215.0,
+        "turnover": 22970324598.97
+      },
+      {
+        "ticker": "TSM",
+        "name": "台積電 ADR",
+        "market": "us",
+        "matched_funnels": [
+          "Funnel_2"
+        ],
+        "funnel_labels": [
+          "雙底右腳確認"
+        ],
+        "reference_close": 415.58,
+        "support_edge": 405.51,
+        "atr": 16.18,
+        "reference_stop": 389.33,
+        "reference_risk": 26.25,
+        "volume": 11001914.0,
+        "turnover": 4572175272.39
+      },
+      {
+        "ticker": "QQQM",
+        "name": "Invesco NASDAQ 100 ETF",
+        "market": "us",
+        "matched_funnels": [
+          "Funnel_2",
+          "Funnel_4"
+        ],
+        "funnel_labels": [
+          "雙底右腳確認",
+          "訂單塊回踩"
+        ],
+        "reference_close": 284.98,
+        "support_edge": 284.83,
+        "atr": 5.49,
+        "reference_stop": 279.34,
+        "reference_risk": 5.64,
+        "volume": 3885218.0,
+        "turnover": 1107209468.32
+      },
+      {
+        "ticker": "006208",
+        "name": "富邦台50",
+        "market": "taiwan",
+        "matched_funnels": [
+          "Funnel_4"
+        ],
+        "funnel_labels": [
+          "訂單塊回踩"
+        ],
+        "reference_close": 235.0,
+        "support_edge": 231.9,
+        "atr": 5.77,
+        "reference_stop": 226.12,
+        "reference_risk": 8.88,
+        "volume": 142255.0,
+        "turnover": 33429925.0
+      }
+    ],
+    "errors": []
+  },
+  "allocation": {
+    "status": "研究配置草案",
+    "notice": "僅供研究與風險教育；不構成買賣建議，也不會執行交易。",
+    "capital": 100000,
+    "max_weight_percent": 45.0,
+    "allocations": [
+      {
+        "ticker": "NVDA",
+        "name": "NVIDIA",
+        "reference_price": 208.76,
+        "structural_stop": 196.66,
+        "risk_percent": 5.8,
+        "weight_percent": 15.94,
+        "capital_amount": 15935.07
+      },
+      {
+        "ticker": "TSM",
+        "name": "台積電 ADR",
+        "reference_price": 415.58,
+        "structural_stop": 389.33,
+        "risk_percent": 6.32,
+        "weight_percent": 14.62,
+        "capital_amount": 14622.36
+      },
+      {
+        "ticker": "QQQM",
+        "name": "Invesco NASDAQ 100 ETF",
+        "reference_price": 284.98,
+        "structural_stop": 279.34,
+        "risk_percent": 1.98,
+        "weight_percent": 45.0,
+        "capital_amount": 45000.0
+      },
+      {
+        "ticker": "006208",
+        "name": "富邦台50",
+        "reference_price": 235.0,
+        "structural_stop": 226.12,
+        "risk_percent": 3.78,
+        "weight_percent": 24.44,
+        "capital_amount": 24442.57
+      }
+    ],
+    "skipped": [],
+    "rebalance_timing": "每日收盤後檢視，次一交易日再由使用者自行決定是否採用。"
+  },
+  "momentum": {
+    "status": "動能研究排序",
+    "notice": "價格與波動特徵的相對排名；僅供研究，不構成買賣建議。",
+    "candidates": [
+      {
+        "ticker": "TSM",
+        "name": "台積電 ADR",
+        "close": 415.58,
+        "score": 69.6,
+        "roc10": -4.89
+      },
+      {
+        "ticker": "NVDA",
+        "name": "NVIDIA",
+        "close": 208.76,
+        "score": 66.9,
+        "roc10": 2.95
+      },
+      {
+        "ticker": "00685L",
+        "name": "國泰美國道瓊正2",
+        "close": 11.19,
+        "score": 65.0,
+        "roc10": -7.44
+      },
+      {
+        "ticker": "006208",
+        "name": "富邦台50",
+        "close": 235.0,
+        "score": 46.9,
+        "roc10": -4.35
+      }
+    ],
+    "errors": []
+  },
+  "resonance": {
+    "status": "三維共振研究",
+    "notice": "僅呈現 FGI 低於 56 的研究候選，不構成買賣建議。",
+    "candidates": [],
+    "errors": []
+  },
+  "value": {
+    "status": "價值品質研究",
+    "notice": "公開財務欄位可能因市場與公司而缺漏；僅供研究，不構成買賣建議。",
+    "candidates": [
+      {
+        "ticker": "2330",
+        "name": "台積電",
+        "score": 3,
+        "roe": 0.39969003,
+        "pe": 32.069576,
+        "dividend_yield": 1.0,
+        "net_income": 2216808939520.0
+      },
+      {
+        "ticker": "TSM",
+        "name": "台積電 ADR",
+        "score": 3,
+        "roe": 0.39969003,
+        "pe": 37.039215,
+        "dividend_yield": 0.9,
+        "net_income": 2216808939520.0
+      },
+      {
+        "ticker": "NVDA",
+        "name": "NVIDIA",
+        "score": 3,
+        "roe": 1.14288,
+        "pe": 32.466564,
+        "dividend_yield": 0.47,
+        "net_income": 159612993536.0
+      },
+      {
+        "ticker": "006208",
+        "name": "富邦台50",
+        "score": 1,
+        "roe": null,
+        "pe": 30.673435,
+        "dividend_yield": 1.79,
+        "net_income": null
+      },
+      {
+        "ticker": "QQQM",
+        "name": "Invesco NASDAQ 100 ETF",
+        "score": 1,
+        "roe": null,
+        "pe": 30.739254,
+        "dividend_yield": 0.43,
+        "net_income": null
+      }
+    ],
+    "errors": []
+  },
+  "errors": [
+    {
+      "ticker": "台股",
+      "message": "波動率資料暫時無法取得"
+    }
+  ]
 }
