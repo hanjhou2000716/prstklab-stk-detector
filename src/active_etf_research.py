@@ -73,8 +73,8 @@ def build_research_allocation(
     skipped: list[str] = []
     for candidate in candidates:
         ticker = str(candidate.get("ticker") or candidate.get("Ticker") or "未命名標的")
-        price = _number(candidate, "reference_price", "entry_price", "Entry_Price", "close", "Close")
-        stop = _number(candidate, "stop_loss", "dynamic_stop_loss", "Dynamic_Stop_Loss")
+        price = _number(candidate, "reference_price", "reference_close", "entry_price", "Entry_Price", "close", "Close")
+        stop = _number(candidate, "stop_loss", "reference_stop", "dynamic_stop_loss", "Dynamic_Stop_Loss")
         if price is None or stop is None or price <= 0 or stop < 0 or stop >= price:
             skipped.append(ticker)
             continue
