@@ -129,7 +129,17 @@ def build_market_snapshot() -> dict[str, Any]:
     value = build_value_snapshot(WATCHLIST)
     errors.extend({"ticker": "新聞", "message": message} for message in news["errors"])
     for market in ("taiwan", "us"):
-        errors.extend({"ticker": risk[market]["label"], "message": message} for message in risk[market]["errors"])
+        # A risk-provider outage does not mean that the whole market or its
+        # representative quotes are unavailable. Keep the affected source in
+        # the public health notice so the Mini App can explain it precisely.
+        errors.extend(
+            {
+                "ticker": f"{risk[market]['label']}風險指標",
+                "message": message,
+                "scope": "risk",
+            }
+            for message in risk[market]["errors"]
+        )
     errors.extend({"ticker": "結構研究", "message": message} for message in research["errors"])
     errors.extend({"ticker": "動能研究", "message": message} for message in momentum["errors"])
     errors.extend({"ticker": "共振研究", "message": message} for message in resonance["errors"])

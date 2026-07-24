@@ -215,8 +215,9 @@ const render = (snapshot) => {
   renderResonance(snapshot.resonance);
   renderValue(snapshot.value);
   renderMacro(snapshot.macro);
-  const note = snapshot.errors?.length
-    ? `部分資料暫時無法取得：${snapshot.errors.map((item) => item.ticker).join("、")}`
+  const unavailable = [...new Set((snapshot.errors || []).map((item) => item.ticker).filter(Boolean))];
+  const note = unavailable.length
+    ? `部分公開來源暫時無法取得：${unavailable.join("、")}；其餘報價仍持續更新。`
     : "公開市場資料已更新；研究結果僅供教育與人工檢視。";
   setText("data-note", note);
 };
