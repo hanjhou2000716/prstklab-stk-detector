@@ -1,5 +1,7 @@
 # PRStK Investment System
 
+新手操作請直接閱讀 [研究版 Beta 操作手冊](docs/BETA_OPERATION_GUIDE.md)；上線前檢查請使用 [Beta 驗收清單](docs/BETA_ACCEPTANCE.md)。
+
 第一階段目標：從 GitHub Actions 安全地發出一則 Telegram 測試快報。
 
 ## 目前已完成的功能
