@@ -1,0 +1,54 @@
+name: Unified Taiwan-US research report
+on:
+  workflow_dispatch:
+    inputs:
+      taiwan_limit:
+        description: Taiwan public symbols per research scan
+        required: true
+        default: '100'
+      us_limit:
+        description: US large-cap symbols per research scan
+        required: true
+        default: '100'
+      batch_size:
+        description: Symbols per public-data request
+        required: true
+        default: '50'
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r requirements.txt
+      - run: python -m src.run_taiwan_momentum_scan --limit ${{ inputs.taiwan_limit }} --batch-size ${{ inputs.batch_size }} --offset 0
+      - run: python -m src.run_us_momentum_scan --limit ${{ inputs.us_limit }} --batch-size ${{ inputs.batch_size }}
+      - run: python -m src.run_taiwan_price_action_scan --limit ${{ inputs.taiwan_limit }} --batch-size ${{ inputs.batch_size }} --offset 0
+      - run: python -m src.run_us_price_action_scan --limit ${{ inputs.us_limit }} --batch-size ${{ inputs.batch_size }}
+      - run: python -m src.run_research_report
+      - run: python -m src.refresh_market_data
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unified-research-report
+          path: |
+            data/*scan*.csv
+            data/*summary*.json
+            site/data/research-report.json
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - uses: actions/deploy-pages@v4
+        id: deployment
