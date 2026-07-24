@@ -4,8 +4,8 @@ import argparse
 import json
 from pathlib import Path
 import pandas as pd
-import yfinance as yf
 from src.batch_download import batches
+from src.public_download import download_daily_batch
 from src.taiwan_universe import fetch_taiwan_universe
 from src.taiwan_momentum_scan import rank_records
 
@@ -26,7 +26,7 @@ def main() -> None:
     for group in batches(universe, args.batch_size):
         symbols = [item["symbol"] for item in group]
         try:
-            data = yf.download(symbols, period="6mo", interval="1d", group_by="ticker", auto_adjust=False, progress=False, threads=True)
+            data = download_daily_batch(symbols)
             for item in group:
                 try:
                     bars = data[item["symbol"]].dropna() if len(group) > 1 else data.dropna()

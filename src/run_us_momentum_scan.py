@@ -2,8 +2,8 @@
 from __future__ import annotations
 import argparse, json
 from pathlib import Path
-import yfinance as yf
 from src.batch_download import batches
+from src.public_download import download_daily_batch
 from src.taiwan_momentum_scan import rank_records
 from src.us_universe import fetch_us_large_cap_universe
 
@@ -13,7 +13,7 @@ def main() -> None:
     records, failed = [], []
     for group in batches(universe, args.batch_size):
         try:
-            data = yf.download([item["symbol"] for item in group], period="6mo", interval="1d", group_by="ticker", auto_adjust=False, progress=False, threads=True)
+            data = download_daily_batch([item["symbol"] for item in group])
             for item in group:
                 try: records.append({"ticker": item["ticker"], "name": item["name"], "bars": data[item["symbol"]].dropna() if len(group)>1 else data.dropna()})
                 except Exception: failed.append(item["ticker"])
