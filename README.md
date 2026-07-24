@@ -84,6 +84,8 @@ python -m src.main --send
 
 `src/price_action_backtest.py` 以逐根 K 線方式重播裸 K 結構掃描：訊號只看當時已完成的歷史資料，並從下一根 K 線開盤開始評估結構風險邊界與 10R 研究目標。若同一根 K 線同時觸及停損與 10R，OHLCV 無法判斷先後順序，系統會標示「順序不明」並採保守的風險邊界結果，而不假設獲利。
 
+在 **Actions → Price Action walk-forward backtest → Run workflow** 可選擇公開 Yahoo Finance 代碼（例如 `2330.TW` 或 `NVDA`）、市場成本模型與歷史區間，下載 JSON 與 CSV 研究報表。這是手動驗證工具，不會納入正式快報排程。
+
 ## 正式快報排程
 
 `Scheduled market brief` 會在下列台灣時間的週一至週五執行：06:00、08:45、10:00、11:45、13:15、14:10，以及美股盤前時段。美股盤前會依 `America/New_York` 時區自動二選一：美國夏令時間使用 21:00，冬令時間使用 22:00；兩者皆為美東 09:00、開盤前 30 分鐘。每次執行都會更新儀表板，並發送一則小於 30 字的 Telegram 快報。

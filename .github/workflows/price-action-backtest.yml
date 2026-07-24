@@ -1,0 +1,36 @@
+name: Price Action walk-forward backtest
+on:
+  workflow_dispatch:
+    inputs:
+      symbol:
+        description: Yahoo Finance symbol, for example 2330.TW or NVDA
+        required: true
+        default: '2330.TW'
+      market:
+        description: Cost model market
+        type: choice
+        required: true
+        default: taiwan
+        options: [taiwan, us]
+      period:
+        description: Public daily-history range
+        required: true
+        default: '5y'
+      max_holding_days:
+        description: Maximum research holding days per signal
+        required: true
+        default: '60'
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r requirements.txt
+      - run: python -m src.run_price_action_backtest --symbol '${{ inputs.symbol }}' --market '${{ inputs.market }}' --period '${{ inputs.period }}' --max-holding-days '${{ inputs.max_holding_days }}'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: price-action-backtest-${{ inputs.symbol }}
+          path: data/price-action-backtest*
