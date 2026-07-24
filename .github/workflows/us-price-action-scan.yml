@@ -1,0 +1,26 @@
+name: Manual US Price Action scan
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: US large-cap symbols to scan (0 means full public list)
+        required: true
+        default: '100'
+      batch_size:
+        description: Symbols per public-data request
+        required: true
+        default: '50'
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r requirements.txt
+      - run: python -m src.run_us_price_action_scan --limit ${{ inputs.limit }} --batch-size ${{ inputs.batch_size }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: us-price-action-scan
+          path: data/us-price-action-*

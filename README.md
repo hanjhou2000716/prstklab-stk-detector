@@ -96,6 +96,8 @@ python -m src.main --send
 
 在 **Actions → Manual Taiwan Price Action scan → Run workflow** 可分批掃描公開台股清單。工作流程使用公開日 K、四大裸 K 結構與最低成交金額篩選，按最新成交金額排序最多 5 檔研究候選，並將 CSV／JSON 作為可下載 Artifact。這是手動研究工具，不會納入快報或自動交易流程。
 
+**Actions → Manual US Price Action scan → Run workflow** 提供對應的美股大型股掃描；資料來源為公開 S&P 500 成分表作為大型股研究樣本，而非宣稱為 VOO 的精確成分股。結果同樣僅供研究，並輸出可下載 Artifact。
+
 ## 正式快報排程
 
 `Scheduled market brief` 會在下列台灣時間的週一至週五執行：06:00、08:45、10:00、11:45、13:15、14:10，以及美股盤前時段。美股盤前會依 `America/New_York` 時區自動二選一：美國夏令時間使用 21:00，冬令時間使用 22:00；兩者皆為美東 09:00、開盤前 30 分鐘。每次執行都會更新儀表板，並發送一則小於 30 字的 Telegram 快報。
