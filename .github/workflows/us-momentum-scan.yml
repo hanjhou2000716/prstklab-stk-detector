@@ -1,0 +1,17 @@
+name: Manual US momentum scan
+on:
+  workflow_dispatch:
+    inputs:
+      limit: { description: 'US large-cap symbols to scan', required: true, default: '100' }
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r requirements.txt
+      - run: python -m src.run_us_momentum_scan --limit ${{ inputs.limit }}
+      - uses: actions/upload-artifact@v4
+        with: { name: us-momentum-scan, path: data/us-momentum-* }
