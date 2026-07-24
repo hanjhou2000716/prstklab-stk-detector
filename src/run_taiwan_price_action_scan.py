@@ -8,7 +8,7 @@ from pathlib import Path
 from src.batch_download import batches
 from src.public_download import download_daily_batch
 from src.taiwan_price_action_scan import rank_records
-from src.taiwan_universe import fetch_taiwan_universe
+from src.taiwan_universe import load_or_fetch_taiwan_universe
 
 
 def main() -> None:
@@ -16,10 +16,11 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=100)
     parser.add_argument("--batch-size", type=int, default=50)
     parser.add_argument("--offset", type=int, default=0)
+    parser.add_argument("--universe-file", default=None, help="同一次工作共用的最新公開台股清單")
     args = parser.parse_args()
     if args.offset < 0:
         raise ValueError("offset 不可小於 0")
-    universe = fetch_taiwan_universe()[args.offset:]
+    universe = load_or_fetch_taiwan_universe(args.universe_file)[args.offset:]
     if args.limit > 0:
         universe = universe[:args.limit]
 
