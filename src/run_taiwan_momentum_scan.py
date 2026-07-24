@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 from src.batch_download import batches
 from src.public_download import download_daily_batch
-from src.taiwan_universe import fetch_taiwan_universe
+from src.taiwan_universe import load_or_fetch_taiwan_universe
 from src.taiwan_momentum_scan import rank_records
 
 def main() -> None:
@@ -14,8 +14,9 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=100)
     parser.add_argument("--batch-size", type=int, default=50)
     parser.add_argument("--offset", type=int, default=0)
+    parser.add_argument("--universe-file", default=None, help="同一次工作共用的最新公開台股清單")
     args = parser.parse_args()
-    universe = fetch_taiwan_universe()
+    universe = load_or_fetch_taiwan_universe(args.universe_file)
     if args.offset < 0:
         raise ValueError("offset 不可小於 0")
     universe = universe[args.offset:]

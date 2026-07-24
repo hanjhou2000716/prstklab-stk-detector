@@ -1,6 +1,8 @@
 """Public Taiwan listed/OTC stock-universe discovery for research scans."""
 from __future__ import annotations
 from io import StringIO
+import json
+from pathlib import Path
 from typing import Any
 import pandas as pd
 import requests
@@ -20,10 +22,34 @@ def parse_isin_table(html: str, suffix: str) -> list[dict[str, str]]:
     return items
 
 def fetch_taiwan_universe(session: Any = requests) -> list[dict[str, str]]:
-    """Fetch listed and OTC ordinary-share identifiers; source errors propagate."""
-    items = []
-    for mode, suffix in ((2, ".TW"), (4, ".TWO")):
-        response = session.get(ISIN_URL.format(mode=mode), headers=HEADERS, timeout=20)
-        response.raise_for_status()
-        items.extend(parse_isin_table(response.text, suffix))
+    """Fetch listed and OTC ordinary-share identifiers, retrying the source once."""
+    last_error: Exception | None = None
+    for _ in range(2):
+        try:
+            items = []
+            for mode, suffix in ((2, ".TW"), (4, ".TWO")):
+                response = session.get(ISIN_URL.format(mode=mode), headers=HEADERS, timeout=20)
+                response.raise_for_status()
+                items.extend(parse_isin_table(response.text, suffix))
+            return items
+        except requests.RequestException as error:
+            last_error = error
+    assert last_error is not None
+    raise last_error
+
+
+def load_or_fetch_taiwan_universe(cache_path: str | Path | None = None) -> list[dict[str, str]]:
+    """Reuse a same-run public snapshot when supplied; otherwise fetch a fresh one."""
+    if cache_path is not None:
+        path = Path(cache_path)
+        if path.exists():
+            saved = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(saved, list) and all(isinstance(item, dict) for item in saved):
+                return saved
+
+    items = fetch_taiwan_universe()
+    if cache_path is not None:
+        path = Path(cache_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
     return items
