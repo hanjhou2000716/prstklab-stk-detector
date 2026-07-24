@@ -102,6 +102,8 @@ python -m src.main --send
 
 `src/research_report.py` 將台股／美股的動能與裸 K 結構掃描 CSV 轉為共同欄位（市場、策略、排序、標的、成交金額、參考價格、結構風險邊界與資料狀態）。不同策略的分數不會被混為同一排名；缺少或空白的來源會明確標記，而不使用舊資料補足。
 
+在 **Actions → Unified Taiwan-US research report → Run workflow** 可一鍵執行台股與美股的動能、裸 K 結構掃描，更新代表標的資料，將統一研究摘要部署到 GitHub Pages，並保留所有 CSV／JSON 為可下載 Artifact。這個工作流程是手動研究工具，不會推播 Telegram 或執行任何交易。
+
 ## 正式快報排程
 
 `Scheduled market brief` 會在下列台灣時間的週一至週五執行：06:00、08:45、10:00、11:45、13:15、14:10，以及美股盤前時段。美股盤前會依 `America/New_York` 時區自動二選一：美國夏令時間使用 21:00，冬令時間使用 22:00；兩者皆為美東 09:00、開盤前 30 分鐘。每次執行都會更新儀表板，並發送一則小於 30 字的 Telegram 快報。

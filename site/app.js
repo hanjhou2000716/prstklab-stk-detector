@@ -155,6 +155,25 @@ const renderMacro = (macro) => {
   container.innerHTML = (macro.items || []).map((item) => `<li><b>${escapeHtml(item.label)}</b><small>${escapeHtml(item.text)}</small></li>`).join("") || '<li class="empty">資料暫時無法取得</li>';
 };
 
+const marketLabel = (market) => market === "taiwan" ? "台股" : market === "us" ? "美股" : market;
+const strategyLabel = (strategy) => strategy === "price_action" ? "裸 K 結構" : strategy === "momentum" ? "動能" : strategy;
+
+const renderUnifiedReport = (report) => {
+  if (!report) return;
+  setText("unified-tag", report.status || "研究模式");
+  setText("unified-notice", report.notice || "跨市場研究摘要。");
+  const container = document.getElementById("unified-list");
+  if (!container) return;
+  if (!report.candidates?.length) {
+    container.innerHTML = '<li class="empty">本次沒有可整合的研究候選</li>';
+    return;
+  }
+  container.innerHTML = report.candidates.slice(0, 10).map((item) => {
+    const metric = item.turnover ? `成交額 ${formatNumber(item.turnover)}` : item.score === null || item.score === undefined ? "資料欄位暫時無法取得" : `研究分數 ${item.score}`;
+    return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name || item.ticker)}｜${marketLabel(item.market)}・${strategyLabel(item.strategy)}</small></span><span class="risk-value"><small>${metric}</small></span></li>`;
+  }).join("");
+};
+
 const render = (snapshot) => {
   setText("data-status", snapshot.data_status || "資料暫時無法取得");
   setText("updated-at", snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚未更新");
@@ -176,3 +195,8 @@ fetch("data/market.json", { cache: "no-store" })
   .then((response) => response.ok ? response.json() : Promise.reject(new Error("資料檔讀取失敗")))
   .then(render)
   .catch(() => setText("data-status", "資料暫時無法取得"));
+
+fetch("data/research-report.json", { cache: "no-store" })
+  .then((response) => response.ok ? response.json() : Promise.reject(new Error("研究報表尚未建立")))
+  .then(renderUnifiedReport)
+  .catch(() => setText("unified-tag", "尚未執行"));
