@@ -54,6 +54,18 @@ const renderQuotes = (quotes) => {
   }).join("");
 };
 
+const renderQuoteFreshness = (quotes) => {
+  const quoteDates = new Map();
+  for (const quote of quotes) {
+    if (quote.market && quote.quote_date) quoteDates.set(quote.market, quote.quote_date);
+  }
+  const labels = [
+    ["taiwan", "台股"],
+    ["us", "美股"],
+  ].flatMap(([market, label]) => quoteDates.has(market) ? [`${label} ${quoteDates.get(market)}`] : []);
+  setText("quote-as-of", labels.length ? `報價基準日：${labels.join("｜")}` : "報價基準日：暫時無法取得");
+};
+
 const escapeHtml = (value) => String(value).replace(/[&<>"]/g, (character) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;",
 })[character]);
@@ -206,6 +218,7 @@ const render = (snapshot) => {
   setText("updated-at", snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚未更新");
   renderMarkets(snapshot.markets || {});
   renderQuotes(snapshot.quotes || []);
+  renderQuoteFreshness(snapshot.quotes || []);
   renderRisk(snapshot.risk);
   renderNews(snapshot.news);
   renderEvents(snapshot.events);
