@@ -15,7 +15,7 @@ on:
         required: true
         default: '50'
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 concurrency:
@@ -39,6 +39,16 @@ jobs:
       - run: python -m src.run_us_price_action_scan --limit ${{ inputs.us_limit }} --batch-size ${{ inputs.batch_size }}
       - run: python -m src.run_research_report
       - run: python -m src.refresh_market_data
+      - name: 保存最新公開研究摘要
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/research-report.json site/data/market.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore: refresh public research report"
+          git push
       - uses: actions/upload-artifact@v4
         with:
           name: unified-research-report
