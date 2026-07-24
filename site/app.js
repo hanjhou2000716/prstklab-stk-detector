@@ -83,7 +83,7 @@ const renderRisk = (risk) => {
       : `${market.sentiment.source_label} ${market.sentiment.score}｜${market.sentiment.label}`;
     const vix = market.vix?.value === undefined || market.vix?.value === null
       ? "VIX 暫時無法取得"
-      : `VIX ${market.vix.value}${market.vix.change_percent === null ? "" : `（${market.vix.change_percent > 0 ? "+" : ""}${market.vix.change_percent}%）`}`;
+      : `VIX ${market.vix.value}${market.vix.change_percent === null ? "" : `（${market.vix.change_percent > 0 ? "+" : ""}${market.vix.change_percent}%）`}${market.vix.source_label ? `｜${market.vix.source_label}` : ""}`;
     return `<li><span><b>${market.label}</b><small>${sentiment}</small></span><span class="risk-value"><small>${vix}</small></span></li>`;
   }).join("");
 };
