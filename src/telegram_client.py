@@ -24,6 +24,16 @@ def validate_brief(text: str) -> None:
         raise ValueError(f"快報超過 30 字，目前為 {len(text)} 字：{text}")
 
 
+def mini_app_button(mini_app_url: str) -> dict[str, object]:
+    """Build an Inline Keyboard button that opens inside Telegram."""
+    if not mini_app_url.startswith("https://"):
+        raise ValueError("Mini App 網址必須使用 HTTPS。")
+    return {
+        "text": "開啟稜量 Mini App",
+        "web_app": {"url": mini_app_url},
+    }
+
+
 def send_brief(
     *, token: str, chat_id: str, text: str, dashboard_url: str
 ) -> TelegramResult:
@@ -37,7 +47,7 @@ def send_brief(
             "disable_web_page_preview": True,
             "reply_markup": {
                 "inline_keyboard": [
-                    [{"text": "🔘 查看完整儀表板", "url": dashboard_url}]
+                    [mini_app_button(dashboard_url)]
                 ]
             },
         },
@@ -52,4 +62,3 @@ def send_brief(
         raise TelegramError(payload.get("description", "Telegram 發送失敗。"))
 
     return TelegramResult(message_id=payload["result"]["message_id"])
-

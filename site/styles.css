@@ -7,10 +7,20 @@
   --line: #243b58;
   --accent: #62d5c1;
   --accent-soft: #163d42;
+  --tg-bg: var(--canvas);
+  --tg-secondary-bg: var(--card);
+  --tg-text: var(--ink);
+  --tg-hint: var(--muted);
+  --tg-link: var(--accent);
+  --tg-button: var(--accent);
 }
 
 * { box-sizing: border-box; }
 body { margin: 0; background: radial-gradient(circle at top right, #173557 0, var(--canvas) 44%); color: var(--ink); font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif; }
+html[data-telegram-app="true"] body { background: var(--tg-bg); color: var(--tg-text); }
+html[data-telegram-app="true"] .page-shell { padding-top: calc(22px + env(safe-area-inset-top)); padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+html[data-telegram-app="true"] .card { background: var(--tg-secondary-bg); }
+html[data-telegram-app="true"] a { color: var(--tg-link); }
 .page-shell { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 42px 0 32px; }
 .hero { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 26px; }
 .brand { display: flex; gap: 10px; }
