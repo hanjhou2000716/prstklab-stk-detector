@@ -36,10 +36,10 @@ def main() -> None:
         except Exception:
             failed.extend(item["ticker"] for item in group)
     result = rank_records(records)
-    destination = Path("data/taiwan-momentum-scan.csv")
+    destination = Path(f"data/taiwan-momentum-scan-{args.offset}.csv")
     destination.parent.mkdir(exist_ok=True)
     result.drop(columns=["bars"], errors="ignore").to_csv(destination, index=False, encoding="utf-8-sig")
-    summary_path = Path("data/taiwan-momentum-summary.json")
+    summary_path = Path(f"data/taiwan-momentum-summary-{args.offset}.json")
     summary_path.write_text(json.dumps({
         "requested": len(universe), "data_complete": len(records), "candidates": len(result),
         "failed": len(failed), "batch_size": args.batch_size, "offset": args.offset,
