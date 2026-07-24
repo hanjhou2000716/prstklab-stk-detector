@@ -30,3 +30,15 @@ def test_brief_uses_slot_label_and_market_direction():
 
 def test_brief_handles_missing_data_neutrally():
     assert build_brief({"quotes": []}, "morning") == "晨報｜市場資料暫時無法取得"
+
+
+def test_brief_preserves_market_move_when_event_label_is_too_long():
+    snapshot = {
+        "quotes": [{"ticker": "NVDA", "change_percent": -3.25}],
+        "events": {"items": [{"short_label": "重大政策與半導體供應鏈長篇事件標籤"}]},
+    }
+
+    brief = build_brief(snapshot, "morning")
+
+    assert len(brief) <= 30
+    assert brief.endswith("NVDA📉-3.2%")
