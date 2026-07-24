@@ -104,6 +104,7 @@ def build_market_snapshot() -> dict[str, Any]:
     from src.momentum_research import build_momentum_snapshot
     from src.macro_summary import build_macro_summary
     from src.market_history import load_watchlist_history
+    from src.macro_program_feed import fetch_yutinghao_latest_program
     from src.research_scan import build_price_action_snapshot
     from src.resonance_scan import build_resonance_snapshot
     from src.value_quality import build_value_snapshot
@@ -120,7 +121,12 @@ def build_market_snapshot() -> dict[str, Any]:
     risk = build_risk_snapshot()
     news = build_news_snapshot()
     events = build_event_snapshot(news, quotes)
-    macro = build_macro_summary(events, risk)
+    try:
+        program = fetch_yutinghao_latest_program()
+    except Exception:
+        program = None
+        errors.append({"ticker": "總經節目", "message": "最新公開節目暫時無法取得", "scope": "macro"})
+    macro = build_macro_summary(events, risk, program)
     histories, history_errors = load_watchlist_history(WATCHLIST)
     research = build_price_action_snapshot(WATCHLIST, histories=histories)
     allocation = build_research_allocation(research["candidates"])
