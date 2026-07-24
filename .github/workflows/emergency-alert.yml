@@ -1,0 +1,38 @@
+name: Emergency market alert
+
+on:
+  workflow_dispatch:
+    inputs:
+      category:
+        description: "重大事件類別"
+        required: true
+        type: choice
+        options: [fed, macro, policy, conflict, semiconductor, market]
+      summary:
+        description: "中立摘要；加上系統前綴後必須不超過 30 字"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  send-emergency-alert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+      - name: 設定 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 安裝相依套件
+        run: pip install -r requirements.txt
+      - name: 發送重大市場快訊
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+          CATEGORY: ${{ inputs.category }}
+          SUMMARY: ${{ inputs.summary }}
+        run: python -m src.emergency_alert --category "$CATEGORY" --summary "$SUMMARY"
