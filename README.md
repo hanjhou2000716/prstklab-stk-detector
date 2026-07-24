@@ -7,7 +7,7 @@
 ## 目前已完成的功能
 
 - 30 字內快報驗證
-- Telegram Inline Button（完整儀表板連結）
+- Telegram Mini App 按鈕（在 Telegram 內開啟完整儀表板）
 - 預設模擬模式，避免誤發送
 - 可由 GitHub Actions 手動執行的測試工作流程
 - 機敏資料使用 GitHub Secrets，不寫入程式碼
@@ -48,7 +48,7 @@ python -m src.main --send
 
 ## 儀表板
 
-`site/` 包含 GitHub Pages 儀表板。第一次部署後，將 GitHub Pages 網址填入 `DASHBOARD_URL` 變數，Telegram 按鈕便會開啟儀表板。
+`site/` 包含 GitHub Pages 儀表板。第一次部署後，將 GitHub Pages 網址填入 `DASHBOARD_URL` 變數，Telegram 按鈕便會在 App 內開啟 Mini App。BotFather 的一次性啟用步驟請見 [Mini App 設定](docs/MINI_APP_SETUP.md)。
 
 ## 市場資料更新
 

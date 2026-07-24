@@ -3,6 +3,31 @@ const formatNumber = (value) => new Intl.NumberFormat("zh-TW", {
   maximumFractionDigits: 2,
 }).format(value);
 
+const initTelegramMiniApp = () => {
+  const webApp = window.Telegram?.WebApp;
+  if (!webApp) {
+    document.documentElement.dataset.telegramApp = "false";
+    return;
+  }
+
+  document.documentElement.dataset.telegramApp = "true";
+  webApp.ready();
+  webApp.expand();
+
+  const colors = webApp.themeParams || {};
+  const applyColor = (cssVariable, telegramColor) => {
+    if (telegramColor) document.documentElement.style.setProperty(cssVariable, telegramColor);
+  };
+  applyColor("--tg-bg", colors.bg_color);
+  applyColor("--tg-secondary-bg", colors.secondary_bg_color);
+  applyColor("--tg-text", colors.text_color);
+  applyColor("--tg-hint", colors.hint_color);
+  applyColor("--tg-link", colors.link_color);
+  applyColor("--tg-button", colors.button_color);
+};
+
+initTelegramMiniApp();
+
 const setText = (id, value) => {
   const element = document.getElementById(id);
   if (element) element.textContent = value;
