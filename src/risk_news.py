@@ -169,23 +169,30 @@ def build_risk_snapshot() -> dict[str, Any]:
 
 
 def _news_from_html(html: str, market: str, limit: int = 3) -> list[dict[str, str]]:
-    """Extract only holding-related article links from a public Anue category page."""
+    """Extract holding-related headlines, falling back to disclosed market focus."""
     from bs4 import BeautifulSoup
 
     terms = tuple(term.lower() for term in NEWS_TERMS[market])
     soup = BeautifulSoup(html, "html.parser")
-    stories: list[dict[str, str]] = []
+    related: list[dict[str, str]] = []
+    market_focus: list[dict[str, str]] = []
     seen: set[str] = set()
     for link in soup.select('a[href^="/news/id/"]'):
         href = link.get("href", "")
         title = " ".join(link.stripped_strings)
-        if not title or href in seen or not any(term in title.lower() for term in terms):
+        if not title or href in seen:
             continue
         seen.add(href)
-        stories.append({"title": title, "url": f"https://news.cnyes.com{href}", "source": "鉅亨網"})
-        if len(stories) == limit:
+        story = {"title": title, "url": f"https://news.cnyes.com{href}"}
+        if any(term in title.lower() for term in terms):
+            related.append({**story, "source": "鉅亨網｜持股關聯", "relevance": "holding"})
+        else:
+            market_focus.append({**story, "source": "鉅亨網｜市場焦點", "relevance": "market"})
+        if len(related) >= limit:
             break
-    return stories
+    if related:
+        return related[:limit] + market_focus[: max(0, limit - len(related))]
+    return market_focus[:limit]
 
 
 def fetch_market_news(market: str) -> list[dict[str, str]]:
