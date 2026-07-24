@@ -1,4 +1,4 @@
-from src.risk_news import _news_from_html, sentiment_label
+from src.risk_news import _market_risk, _news_from_html, _parse_taifex_vix_file, sentiment_label
 
 
 def test_sentiment_labels_cover_fixed_thresholds():
@@ -22,3 +22,23 @@ def test_news_extraction_keeps_only_relevant_unique_article_links():
         "https://news.cnyes.com/news/id/1",
         "https://news.cnyes.com/news/id/3",
     ]
+
+
+def test_taifex_vix_parser_uses_the_final_intraday_observation():
+    content = b"header\r\n20260723\t9000000\t\t\t35.77\r\n20260723\t13450000\t\t\t36.21\r\n"
+
+    assert _parse_taifex_vix_file(content) == {
+        "value": 36.21,
+        "date": "2026-07-23",
+        "source_label": "臺灣期貨交易所",
+    }
+
+
+def test_taifex_fallback_keeps_taiwan_vix_available(monkeypatch):
+    monkeypatch.setattr("src.risk_news._latest_close", lambda symbol: (_ for _ in ()).throw(ValueError("unavailable")))
+    result = _market_risk("台股", "^VIXTWN", fallback=lambda: {
+        "value": 36.21, "date": "2026-07-23", "change_percent": 1.2, "source_label": "臺灣期貨交易所",
+    })
+
+    assert result["vix"]["source_label"] == "臺灣期貨交易所"
+    assert result["errors"] == []

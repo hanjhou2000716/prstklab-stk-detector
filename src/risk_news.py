@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import re
+from datetime import datetime
 from typing import Any
 
 import requests
 
 
 CNN_FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
+TAIFEX_VIX_INDEX_URL = "https://www.taifex.com.tw/cht/7/vixMinNew"
+TAIFEX_VIX_DATA_URL = "https://www.taifex.com.tw/cht/7/getVixData?filesname={date}"
 ANUE_CATEGORY_URLS = {
     "taiwan": "https://news.cnyes.com/news/cat/tw_stock_news",
     "us": "https://news.cnyes.com/news/cat/us_stock",
@@ -55,7 +59,51 @@ def _latest_close(symbol: str) -> dict[str, Any]:
         "value": round(current, 2),
         "change_percent": change_percent,
         "date": close.index[-1].date().isoformat(),
+        "source_label": "Yahoo Finance",
     }
+
+
+def _parse_taifex_vix_file(content: bytes) -> dict[str, Any]:
+    """Read the final intraday observation from a TAIFEX VIX download."""
+    text = content.decode("big5", errors="replace")
+    for line in reversed(text.splitlines()):
+        fields = line.split()
+        if len(fields) < 3 or not re.fullmatch(r"\d{8}", fields[0]):
+            continue
+        try:
+            value = float(fields[-1])
+        except ValueError:
+            continue
+        return {
+            "value": round(value, 2),
+            "date": datetime.strptime(fields[0], "%Y%m%d").date().isoformat(),
+            "source_label": "臺灣期貨交易所",
+        }
+    raise ValueError("臺指波動率檔案沒有可用數值。")
+
+
+def fetch_taifex_vix() -> dict[str, Any]:
+    """Use TAIFEX's public VIX download as a fallback for ``^VIXTWN``."""
+    index = requests.get(TAIFEX_VIX_INDEX_URL, headers=HEADERS, timeout=15)
+    index.raise_for_status()
+    dates = list(dict.fromkeys(re.findall(r"getVixData\?filesname=(\d{8})", index.text)))
+    if not dates:
+        raise ValueError("期交所未提供可下載的臺指波動率檔案。")
+
+    def download(date: str) -> dict[str, Any]:
+        response = requests.get(TAIFEX_VIX_DATA_URL.format(date=date), headers=HEADERS, timeout=15)
+        response.raise_for_status()
+        return _parse_taifex_vix_file(response.content)
+
+    latest = download(dates[0])
+    if len(dates) > 1:
+        previous = download(dates[1])
+        latest["change_percent"] = (
+            None if previous["value"] == 0 else round((latest["value"] / previous["value"] - 1) * 100, 2)
+        )
+    else:
+        latest["change_percent"] = None
+    return latest
 
 
 def fetch_cnn_fear_greed() -> dict[str, Any]:
@@ -73,13 +121,23 @@ def fetch_cnn_fear_greed() -> dict[str, Any]:
     }
 
 
-def _market_risk(label: str, vix_symbol: str, sentiment: dict[str, Any] | None = None) -> dict[str, Any]:
+def _market_risk(
+    label: str,
+    vix_symbol: str,
+    sentiment: dict[str, Any] | None = None,
+    fallback: Any | None = None,
+) -> dict[str, Any]:
     """Build a transparent market risk card from fresh public indicators."""
     result: dict[str, Any] = {"label": label, "sentiment": sentiment, "vix": None, "errors": []}
     try:
         result["vix"] = _latest_close(vix_symbol)
     except Exception:
-        result["errors"].append("波動率資料暫時無法取得")
+        try:
+            result["vix"] = fallback() if fallback else None
+        except Exception:
+            result["vix"] = None
+        if result["vix"] is None:
+            result["errors"].append("波動率資料暫時無法取得")
     if sentiment is None:
         result["summary"] = "波動率觀察"
     else:
@@ -100,7 +158,7 @@ def build_risk_snapshot() -> dict[str, Any]:
             "updated_at": None,
         }
     us = _market_risk("美股", "^VIX", us_sentiment)
-    taiwan = _market_risk("台股", "^VIXTWN")
+    taiwan = _market_risk("台股", "^VIXTWN", fallback=fetch_taifex_vix)
     if us_sentiment["score"] is None:
         us["errors"].append("美股情緒資料暫時無法取得")
     return {
