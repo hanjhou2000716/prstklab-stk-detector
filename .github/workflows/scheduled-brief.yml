@@ -28,14 +28,14 @@ on:
     - cron: "0 14 * * 1-5"  # 22:00，美國冬令時間時的美股盤前
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
 # Serialize all runs. The immutable cache below records a completed date/slot,
 # so an external Cron retry cannot send a second message after the primary run.
 concurrency:
-  group: scheduled-market-brief
+  group: pages
   cancel-in-progress: false
 
 jobs:
@@ -53,6 +53,8 @@ jobs:
     steps:
       - name: 取得程式碼
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: 設定 Python
         uses: actions/setup-python@v5
         with:
@@ -72,6 +74,29 @@ jobs:
       - name: 更新資料並發送快報
         if: steps.window.outputs.should_run == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true')
         run: python -m src.scheduled_brief --slot "$SLOT"
+      - name: 保存最新市場快照
+        if: steps.window.outputs.should_run == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true')
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/market.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore: refresh public market snapshot"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "無法在三次嘗試內回存市場快照。"
+              exit 1
+            fi
+
+            git fetch origin main
+            git rebase -X theirs origin/main
+          done
       - name: 建立同時段推播紀錄
         if: success() && steps.window.outputs.should_run == 'true' && env.FORCE != 'true' && steps.idempotency.outputs.cache-hit != 'true'
         run: touch .scheduled-brief-lock
