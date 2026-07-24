@@ -35,10 +35,18 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
       - run: pip install -r requirements.txt
-      - run: python -m src.run_taiwan_momentum_scan --limit ${{ inputs.taiwan_limit }} --batch-size ${{ inputs.batch_size }} --offset 0 --universe-file data/runtime-taiwan-universe.json
-      - run: python -m src.run_us_momentum_scan --limit ${{ inputs.us_limit }} --batch-size ${{ inputs.batch_size }}
-      - run: python -m src.run_taiwan_price_action_scan --limit ${{ inputs.taiwan_limit }} --batch-size ${{ inputs.batch_size }} --offset 0 --universe-file data/runtime-taiwan-universe.json
-      - run: python -m src.run_us_price_action_scan --limit ${{ inputs.us_limit }} --batch-size ${{ inputs.batch_size }}
+      - name: 台股動能研究掃描
+        continue-on-error: true
+        run: python -m src.run_taiwan_momentum_scan --limit ${{ inputs.taiwan_limit }} --batch-size ${{ inputs.batch_size }} --offset 0 --universe-file data/runtime-taiwan-universe.json
+      - name: 美股動能研究掃描
+        continue-on-error: true
+        run: python -m src.run_us_momentum_scan --limit ${{ inputs.us_limit }} --batch-size ${{ inputs.batch_size }}
+      - name: 台股裸 K 結構研究掃描
+        continue-on-error: true
+        run: python -m src.run_taiwan_price_action_scan --limit ${{ inputs.taiwan_limit }} --batch-size ${{ inputs.batch_size }} --offset 0 --universe-file data/runtime-taiwan-universe.json
+      - name: 美股裸 K 結構研究掃描
+        continue-on-error: true
+        run: python -m src.run_us_price_action_scan --limit ${{ inputs.us_limit }} --batch-size ${{ inputs.batch_size }}
       - run: python -m src.run_research_report
       - run: python -m src.refresh_market_data
       - name: 保存最新公開研究摘要
