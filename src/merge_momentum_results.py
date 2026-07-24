@@ -7,8 +7,17 @@ import pandas as pd
 
 def merge_results(directory: Path) -> pd.DataFrame:
     files = list(directory.rglob("taiwan-momentum-scan-*.csv"))
-    if not files: return pd.DataFrame()
-    return pd.concat([pd.read_csv(path) for path in files], ignore_index=True).sort_values("score", ascending=False).head(10).reset_index(drop=True)
+    frames = []
+    for path in files:
+        try:
+            frame = pd.read_csv(path)
+        except pd.errors.EmptyDataError:
+            continue
+        if "score" in frame.columns and not frame.empty:
+            frames.append(frame)
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True).sort_values("score", ascending=False).head(10).reset_index(drop=True)
 
 def main() -> None:
     parser = argparse.ArgumentParser(); parser.add_argument("directory"); parser.add_argument("--output", default="data/taiwan-momentum-combined.csv")
