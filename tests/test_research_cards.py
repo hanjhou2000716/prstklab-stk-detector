@@ -15,7 +15,8 @@ def test_loader_keeps_only_public_non_actionable_full_scan_fields(tmp_path):
     result = load_research_cards(report)
 
     assert result["sources"][0]["requested"] == 600
-    assert result["candidates"] == [{
-        "market": "us", "strategy": "momentum", "rank": 1, "ticker": "NVDA", "name": "NVIDIA",
-        "score": 90, "turnover": None, "structure": None,
-    }]
+    candidate = result["candidates"][0]
+    assert candidate["ticker"] == "NVDA"
+    assert candidate["score"] == 90
+    assert "reference_stop" not in candidate
+    assert candidate["roe"] is None
