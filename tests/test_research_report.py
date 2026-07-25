@@ -30,3 +30,12 @@ def test_empty_source_is_not_replaced_with_old_candidates(tmp_path):
     report = build_research_report([{"path": str(empty), "market": "taiwan", "strategy": "momentum"}])
     assert report["status"] == "目前沒有可整合的研究候選"
     assert report["sources"][0]["status"] == "本次無研究候選"
+
+
+def test_price_action_report_backfills_structure_match_score_from_existing_labels():
+    frame = pd.DataFrame([{
+        "ticker": "3037", "name": "欣興", "score": None,
+        "funnel_labels": "['雙底右腳確認', '訂單塊回踩']",
+    }])
+    candidate = normalize_frame(frame, "taiwan", "price_action")[0]
+    assert candidate["score"] == 70

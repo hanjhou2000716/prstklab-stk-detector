@@ -19,6 +19,26 @@ FUNNEL_LABELS = {
     "Funnel_3": "假跌破收復",
     "Funnel_4": "訂單塊回踩",
 }
+FUNNEL_SCORE = {
+    "Funnel_1": 50,  # confirmed support-resistance flip
+    "Funnel_2": 60,  # double-bottom right-foot confirmation
+    "Funnel_3": 70,  # sweep and recovery of prior support
+    "Funnel_4": 60,  # return to a confirmed order block
+}
+
+
+def structure_match_score(funnels: list[str]) -> int:
+    """Return a transparent 0-100 Price Action strategy-match score.
+
+    This measures how many and which documented structure filters are present;
+    it is not a forecast or a probability of future price movement.
+    """
+    matched = [funnel for funnel in funnels if funnel in FUNNEL_SCORE]
+    if not matched:
+        return 0
+    primary = max(FUNNEL_SCORE[funnel] for funnel in matched)
+    confirmation_bonus = min(10 * (len(set(matched)) - 1), 30)
+    return min(primary + confirmation_bonus, 100)
 
 
 class PriceActionResearchScanner:
@@ -129,10 +149,11 @@ class PriceActionResearchScanner:
             "reference_risk": round(reference_risk, 2),
             "volume": float(current["Volume"]),
             "turnover": round(float(current["Volume"] * current["Close"]), 2),
+            "score": structure_match_score(matched),
         }
 
     def screen(self, market_data: dict[str, pd.DataFrame], limit: int = 5) -> pd.DataFrame:
-        """Return qualifying research candidates ranked by latest trading turnover."""
+        """Return qualifying research candidates by structure match then liquidity."""
         candidates: list[dict[str, Any]] = []
         for ticker, daily in market_data.items():
             result = self.scan_daily(daily)
@@ -140,4 +161,6 @@ class PriceActionResearchScanner:
                 candidates.append({"ticker": ticker, **result})
         if not candidates:
             return pd.DataFrame()
-        return pd.DataFrame(candidates).sort_values("turnover", ascending=False).head(limit).reset_index(drop=True)
+        return pd.DataFrame(candidates).sort_values(
+            ["score", "turnover"], ascending=[False, False]
+        ).head(limit).reset_index(drop=True)

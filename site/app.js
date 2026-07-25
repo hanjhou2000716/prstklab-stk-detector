@@ -106,9 +106,24 @@ const renderResearchList = (id, items, empty) => {
   const container = document.getElementById(id);
   if (!container) return;
   if (!items?.length) { container.innerHTML = `<li class="empty">${empty}</li>`; return; }
-  container.innerHTML = items.map((item) => {
+  const structureText = (value) => String(value || "").replace(/[\[\]'\"]/g, "").split(",").map((item) => item.trim()).filter(Boolean).join("、");
+  const strategyScore = (item) => {
+    if (item.strategy === "price_action") {
+      const labels = structureText(item.structure).split("、").filter(Boolean);
+      const weights = { "撐壓互換回踩": 50, "雙底右腳確認": 60, "假跌破收復": 70, "訂單塊回踩": 60 };
+      const fallback = labels.length ? Math.min(Math.max(...labels.map((label) => weights[label] || 0)) + Math.min((new Set(labels).size - 1) * 10, 30), 100) : null;
+      const score = item.score ?? fallback;
+      return score === null ? "裸 K相符度 暫時無法取得" : `裸 K相符度 ${Number(score).toFixed(1)} / 100`;
+    }
+    if (item.score === null || item.score === undefined) return "策略相符度 暫時無法取得";
+    if (item.strategy === "resonance") return `共振相符度 ${Math.max(0, Math.min(100, (56 - Number(item.score)) / 56 * 100)).toFixed(1)} / 100`;
+    if (item.strategy === "value") return `價值相符度 ${Number(item.score).toFixed(0)} / 5`;
+    return `動能相符度 ${Number(item.score).toFixed(1)} / 100`;
+  };
+  container.innerHTML = items.slice(0, 5).map((item) => {
     const valueMetrics = item.strategy === "value" ? `｜ROE ${item.roe === null || item.roe === undefined ? "—" : `${(Number(item.roe) * 100).toFixed(1)}%`}｜本益比 ${item.pe === null || item.pe === undefined ? "—" : Number(item.pe).toFixed(1)}` : "";
-    return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name || item.ticker)}｜${item.market === "taiwan" ? "台股" : "美股"}${item.structure ? `｜${escapeHtml(item.structure)}` : ""}${valueMetrics}</small></span><span class="risk-value"><small>${item.strategy === "value" ? `覆核分數 ${item.score ?? "—"}` : `掃描排序 ${item.rank ?? "—"}`}</small></span></li>`;
+    const structure = structureText(item.structure);
+    return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name || item.ticker)}${structure ? `｜${escapeHtml(structure)}` : ""}${valueMetrics}</small></span><span class="risk-value"><small>${escapeHtml(strategyScore(item))}</small></span></li>`;
   }).join("");
 };
 

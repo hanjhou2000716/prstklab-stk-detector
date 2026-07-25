@@ -8,15 +8,15 @@ class StubScanner:
         return bars.attrs.get("result")
 
 
-def record(ticker, turnover):
+def record(ticker, turnover, score=0):
     bars = pd.DataFrame({"Open": [1], "High": [1], "Low": [1], "Close": [1], "Volume": [1]})
-    bars.attrs["result"] = {"turnover": turnover, "reference_stop": 1, "reference_close": 2}
+    bars.attrs["result"] = {"turnover": turnover, "reference_stop": 1, "reference_close": 2, "score": score}
     return {"ticker": ticker, "name": ticker, "bars": bars}
 
 
-def test_price_action_candidates_are_liquidity_filtered_ranked_and_limited():
-    result = rank_records([record("A", 6_000_000), record("B", 9_000_000), record("C", 4_000_000)], StubScanner())
-    assert list(result["ticker"]) == ["B", "A"]
+def test_price_action_candidates_are_liquidity_filtered_and_ranked_by_match_score():
+    result = rank_records([record("A", 6_000_000, 80), record("B", 9_000_000, 70), record("C", 4_000_000, 90)], StubScanner())
+    assert list(result["ticker"]) == ["A", "B"]
 
 
 def test_empty_scan_returns_empty_frame():

@@ -1,6 +1,6 @@
 import pandas as pd
 
-from src.price_action import PriceActionResearchScanner
+from src.price_action import PriceActionResearchScanner, structure_match_score
 
 
 def bars(rows):
@@ -31,16 +31,23 @@ def test_fake_breakdown_that_recovers_matches_funnel_three():
     assert result is not None
     assert "Funnel_3" in result["matched_funnels"]
     assert result["reference_stop"] < result["support_edge"]
+    assert result["score"] >= 70
 
 
-def test_screen_returns_only_candidates_ranked_by_turnover(monkeypatch):
+def test_screen_returns_candidates_ranked_by_structure_score_then_turnover(monkeypatch):
     scanner = PriceActionResearchScanner()
     result_by_volume = {
-        100: {"turnover": 1000, "reference_close": 10},
-        200: {"turnover": 3000, "reference_close": 15},
+        100: {"turnover": 1000, "reference_close": 10, "score": 80},
+        200: {"turnover": 3000, "reference_close": 15, "score": 70},
     }
     monkeypatch.setattr(scanner, "scan_daily", lambda frame: result_by_volume[int(frame.iloc[0]["Volume"])])
     low = bars([{"Open": 1, "High": 1, "Low": 1, "Close": 1, "Volume": 100}])
     high = bars([{"Open": 1, "High": 1, "Low": 1, "Close": 1, "Volume": 200}])
     screened = scanner.screen({"LOW": low, "HIGH": high})
-    assert list(screened["ticker"]) == ["HIGH", "LOW"]
+    assert list(screened["ticker"]) == ["LOW", "HIGH"]
+
+
+def test_structure_match_score_rewards_confirming_funnels_without_becoming_a_forecast():
+    assert structure_match_score([]) == 0
+    assert structure_match_score(["Funnel_3"]) == 70
+    assert structure_match_score(["Funnel_2", "Funnel_4"]) == 70
