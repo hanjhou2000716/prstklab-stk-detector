@@ -49,3 +49,13 @@ def test_mini_app_has_a_detailed_alert_card_and_compact_brief_title():
     assert 'id="alert-quote-grid"' in page
     assert "renderAlertCard" in app
     assert "event.brief_title" in app
+
+
+def test_mini_app_has_slot_aware_briefing_cards():
+    root = Path(__file__).resolve().parents[1]
+    page = (root / "site" / "index.html").read_text(encoding="utf-8")
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert 'id="briefing-market-grid"' in page
+    assert 'id="briefing-observations"' in page
+    assert "renderBriefing(snapshot.briefing" in app

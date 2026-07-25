@@ -35,6 +35,21 @@ const renderFocus = (events) => {
   setText("market-focus", event ? (event.brief_title || `${event.short_label}｜${event.title}`) : "今日無重大市場事件，持續觀察。");
 };
 
+const renderBriefing = (briefing, generatedAt) => {
+  const data = briefing || {};
+  setText("briefing-slot", data.slot === "live" || !data.slot ? "即時資料" : "排程快報");
+  setText("briefing-card-title", data.title || "即時市場儀表板");
+  setText("briefing-time", generatedAt ? `${new Date(generatedAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })} CST` : "公開資料更新中");
+  setText("briefing-overview", data.overview || "正在整理公開市場資訊。");
+  setText("briefing-reminder", data.reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
+  const marketGrid = document.getElementById("briefing-market-grid");
+  const marketItems = data.markets || [];
+  marketGrid.innerHTML = marketItems.length ? marketItems.map((item) => formatAlertQuote(item)).join("") : '<p class="empty">全球主要市場資料暫時無法取得</p>';
+  const observationGrid = document.getElementById("briefing-observations");
+  const observations = data.observations || [];
+  observationGrid.innerHTML = observations.length ? observations.map((item) => `<article class="observation-card"><h3>${escapeHtml(item.title)}</h3><p><b>事件：</b>${escapeHtml(item.event)}</p><p><b>為何重要：</b>${escapeHtml(item.importance)}</p><p><b>市場關聯：</b>${escapeHtml(item.market_impact)}</p><p><b>後續觀察：</b>${escapeHtml(item.watch)}</p></article>`).join("") : '<p class="empty">尚無符合門檻的公開觀察項目</p>';
+};
+
 const formatAlertQuote = (item) => {
   if (!item || item.price === null || item.price === undefined) return "";
   const state = item.change_percent > 0 ? "up" : item.change_percent < 0 ? "down" : "flat";
@@ -130,6 +145,7 @@ const render = (snapshot) => {
   setText("data-status", snapshot.data_status || "資料更新中");
   setText("updated-at", snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚未更新");
   renderFocus(snapshot.events);
+  renderBriefing(snapshot.briefing, snapshot.generated_at);
   renderMarkets(snapshot.markets || {});
   renderQuoteList("index-list", snapshot.indices || []);
   renderQuoteList("quote-list", snapshot.quotes || []);
