@@ -138,6 +138,30 @@ Telegram 快報一律小於 30 字；有重大事件時會優先顯示事件類�
 
 系統會用日期加時段的紀錄避免重複推播。外部 Cron 的實際帳號與 Token 將於下一階段設定，不能寫入 Repository 或對話內容。外部 Cron 的美股盤前備援只需建立一個：時區選 `America/New_York`、時間設 `09:00`、週一至週五，並以 `us_premarket` 作為 slot；cron-job.org 會自動處理夏令／冬令時間。
 
+### 官方事件監測備援（cron-job.org）
+
+「Official macro event monitor」已由 GitHub 每 15 分鐘檢查一次，且只在 **Fed、BLS、BEA 出現新的合格官方發布** 時才會推播。若要用 cron-job.org 備援，新增第二條工作（不取代既有的 `scheduled-brief` 工作）：
+
+- 排程：每 15 分鐘、週一至週五；時區選 `Asia/Taipei`。
+- 方法：`POST`
+- URL：`https://api.github.com/repos/hanjhou2000716/prstklab-stk-detector/dispatches`
+- Headers：
+
+```text
+Accept: application/vnd.github+json
+Authorization: Bearer <你的 Fine-grained PAT>
+X-GitHub-Api-Version: 2022-11-28
+Content-Type: application/json
+```
+
+- 請求本體：
+
+```json
+{"event_type":"official-event-check"}
+```
+
+此 PAT 僅需對本 Repository 保有 dispatch 所需權限；切勿寫進 README、程式碼或 Telegram。即使 GitHub 原排程與 cron-job.org 同時觸發，同一事件仍會用公告指紋去重，不會重複發送。
+
 ## 安全提醒
 
 - `.env` 已被排除，不會提交至 Git。
