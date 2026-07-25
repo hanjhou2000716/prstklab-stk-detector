@@ -22,7 +22,22 @@ def test_snapshot_has_no_event_conclusion_when_no_threshold_is_met():
 
 def test_large_representative_move_becomes_market_volatility_event():
     snapshot = build_event_snapshot({"taiwan": [], "us": []}, [{"ticker": "NVDA", "change_percent": -3.5}])
-    assert snapshot["items"][0]["short_label"] == "波動顯著"
+    assert snapshot["items"][0]["short_label"] == "NVDA價格訊號觸發"
+
+
+def test_taiex_large_drop_creates_a_detailed_high_risk_alert_card():
+    snapshot = build_event_snapshot(
+        {"taiwan": [], "us": []}, [], indices=[
+            {"ticker": "TAIEX", "name": "臺灣加權指數", "price": 43769.19, "change": -1082,
+             "change_percent": -2.41, "currency": "點"},
+            {"ticker": "NASDAQ", "name": "那斯達克綜合指數", "price": 25137.69, "change": -553.21,
+             "change_percent": -2.15, "currency": "點"},
+        ],
+    )
+    event = snapshot["items"][0]
+    assert event["brief_title"] == "台指價格訊號觸發｜急跌｜高風險"
+    assert "-2.0% 高風險門檻" in event["trigger"]
+    assert event["related"][0]["ticker"] == "NASDAQ"
 
 
 def test_brief_prefers_major_event_category_but_remains_watch_friendly():
@@ -33,3 +48,11 @@ def test_brief_prefers_major_event_category_but_remains_watch_friendly():
     brief = build_brief(snapshot, "intraday")
     assert brief == "盤中｜關稅／政策｜2330📈+1.2%"
     assert len(brief) <= 30
+
+
+def test_brief_uses_compact_event_pattern_and_risk_title():
+    snapshot = {
+        "quotes": [{"ticker": "2330", "change_percent": -2.41}],
+        "events": {"items": [{"brief_title": "台指價格訊號觸發｜急跌｜高風險"}]},
+    }
+    assert build_brief(snapshot, "intraday") == "盤中｜台指價格訊號觸發｜急跌｜高風險"
