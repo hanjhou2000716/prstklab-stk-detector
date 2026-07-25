@@ -8,6 +8,8 @@ from typing import Any
 
 import requests
 
+from src.taiwan_macro_fgi import calculate_taiwan_macro_fgi
+
 
 CNN_FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
 TAIFEX_VIX_INDEX_URL = "https://www.taifex.com.tw/cht/7/vixMinNew"
@@ -158,9 +160,24 @@ def build_risk_snapshot() -> dict[str, Any]:
             "updated_at": None,
         }
     us = _market_risk("美股", "^VIX", us_sentiment)
-    taiwan = _market_risk("台股", "^VIXTWN", fallback=fetch_taifex_vix)
+    try:
+        taiwan_sentiment = calculate_taiwan_macro_fgi()
+    except Exception:
+        # Never substitute an old score. The Mini App will say explicitly that
+        # this particular public source could not be refreshed.
+        taiwan_sentiment = {
+            "score": None,
+            "label": "資料暫時無法取得",
+            "source_label": "TAIEX Macro FGI",
+            "date": None,
+            "index_level": None,
+            "sub_scores": {},
+        }
+    taiwan = _market_risk("台股", "^VIXTWN", taiwan_sentiment, fallback=fetch_taifex_vix)
     if us_sentiment["score"] is None:
         us["errors"].append("美股情緒資料暫時無法取得")
+    if taiwan_sentiment["score"] is None:
+        taiwan["errors"].append("台股 Macro FGI 資料暫時無法取得")
     return {
         "notice": "情緒與波動率僅供市場風險觀察，不構成投資建議。",
         "taiwan": taiwan,

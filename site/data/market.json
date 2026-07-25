@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-25T18:43:40.130080+08:00",
+  "generated_at": "2026-07-25T20:09:17.309347+08:00",
   "data_status": "即時",
   "markets": {
     "taiwan": {
@@ -102,7 +102,7 @@
     {
       "symbol": "00685L.TW",
       "ticker": "00685L",
-      "name": "國泰美國道瓊正2",
+      "name": "群益臺灣加權正二",
       "market": "taiwan",
       "price": 10.95,
       "change": -0.52,
@@ -170,7 +170,21 @@
     "notice": "情緒與波動率僅供市場風險觀察，不構成投資建議。",
     "taiwan": {
       "label": "台股",
-      "sentiment": null,
+      "sentiment": {
+        "score": 6.5,
+        "label": "極度恐慌",
+        "source_label": "TAIEX Macro FGI",
+        "date": "2026-07-24",
+        "index_level": 43654.84,
+        "sub_scores": {
+          "動能": 10.0,
+          "波動": 0.0,
+          "內資投機": 3.3,
+          "外資流向": 16.7,
+          "量能": 2.5
+        },
+        "method": "加權、櫃買、成交量、歷史波動率、美元兌台幣匯率的 120 日百分位模型"
+      },
       "vix": {
         "value": 38.19,
         "date": "2026-07-24",
@@ -178,7 +192,7 @@
         "change_percent": 6.86
       },
       "errors": [],
-      "summary": "波動率觀察"
+      "summary": "情緒：極度恐慌"
     },
     "us": {
       "label": "美股",
@@ -202,13 +216,13 @@
   "news": {
     "taiwan": [
       {
-        "title": "2. 台積電、美光壓力來了！韓美晶片同盟再加碼 三星SK海力士吞下9500億美元大餅",
+        "title": "1. 台積電、美光壓力來了！韓美晶片同盟再加碼 三星SK海力士吞下9500億美元大餅",
         "url": "https://news.cnyes.com/news/id/6545720",
         "source": "鉅亨網｜持股關聯",
         "relevance": "holding"
       },
       {
-        "title": "1. 〈熱門股〉AI伺服器強推華碩月營收上千億元 除息後外資連17買惦惦吃貨",
+        "title": "2. 〈熱門股〉AI伺服器強推華碩月營收上千億元 除息後外資連17買惦惦吃貨",
         "url": "https://news.cnyes.com/news/id/6545501",
         "source": "鉅亨網｜市場焦點",
         "relevance": "market"
@@ -222,20 +236,20 @@
     ],
     "us": [
       {
-        "title": "1. 〈美股盤後〉AI燒錢疑慮升溫 晶片股遭拋售 費半重挫4.5%",
-        "url": "https://news.cnyes.com/news/id/6545273",
+        "title": "5. 輝達、SK集團宣布5000億美元AI計畫 強化記憶體與資料中心合作",
+        "url": "https://news.cnyes.com/news/id/6545621",
         "source": "鉅亨網｜持股關聯",
         "relevance": "holding"
       },
       {
-        "title": "2. 特斯拉周跌18%、SpaceX續挫 馬斯克蒸發千億美元自嘲「前兆元富豪」",
-        "url": "https://news.cnyes.com/news/id/6545571",
+        "title": "1. 台積電、美光壓力來了！韓美晶片同盟再加碼 三星SK海力士吞下9500億美元大餅",
+        "url": "https://news.cnyes.com/news/id/6545720",
         "source": "鉅亨網｜市場焦點",
         "relevance": "market"
       },
       {
-        "title": "3. 〈能源盤後〉中國斡旋美伊和談 國際油價重挫逾3%但周線仍大漲",
-        "url": "https://news.cnyes.com/news/id/6545450",
+        "title": "2. 〈熱門股〉AI伺服器強推華碩月營收上千億元 除息後外資連17買惦惦吃貨",
+        "url": "https://news.cnyes.com/news/id/6545501",
         "source": "鉅亨網｜市場焦點",
         "relevance": "market"
       }
@@ -270,7 +284,7 @@
       },
       {
         "label": "風險",
-        "text": "台股：波動率觀察"
+        "text": "台股：情緒：極度恐慌"
       },
       {
         "label": "風險",
