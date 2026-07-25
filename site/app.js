@@ -46,8 +46,9 @@ const renderAlertCard = (events, generatedAt) => {
     card.dataset.risk = "neutral";
     setText("alert-banner", "今日無重大市場事件，持續觀察");
     setText("alert-headline", "市場訊號尚未達提醒門檻");
-    setText("alert-summary", "持續整理公開市場報價與已核對事件。");
-    setText("alert-trigger", ""); setText("alert-context", "");
+    setText("alert-summary", "目前沒有需優先提示的重大市場事件。");
+    setText("alert-trigger", "日內價格訊號尚未觸及提醒門檻。");
+    setText("alert-context", "市場關聯：持續觀察公開資料與主要市場變化。");
     setText("alert-reminder", "僅供公開資訊整理與教育性觀察，不構成投資建議。");
     document.getElementById("alert-quote-grid").innerHTML = '<p class="empty">目前沒有符合門檻的價格訊號</p>';
     return;
@@ -118,7 +119,7 @@ const renderEvents = (events) => {
   container.innerHTML = events.items.slice(1).map((event) => `<li>${escapeHtml(event.brief_title || `${event.short_label}｜${event.title}`)}<small>${escapeHtml(event.source || "公開來源")}</small></li>`).join("") || '<li class="empty">其餘符合門檻的訊號會顯示於此</li>';
 };
 
-const renderResearchList = (id, items, empty) => {
+const renderLegacyResearchList = (id, items, empty) => {
   const container = document.getElementById(id);
   if (!container) return;
   if (!items?.length) { container.innerHTML = `<li class="empty">${empty}</li>`; return; }
@@ -140,6 +141,36 @@ const renderResearchList = (id, items, empty) => {
     const valueMetrics = item.strategy === "value" ? `｜ROE ${item.roe === null || item.roe === undefined ? "—" : `${(Number(item.roe) * 100).toFixed(1)}%`}｜本益比 ${item.pe === null || item.pe === undefined ? "—" : Number(item.pe).toFixed(1)}` : "";
     const structure = structureText(item.structure);
     return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name || item.ticker)}${structure ? `｜${escapeHtml(structure)}` : ""}${valueMetrics}</small></span><span class="risk-value"><small>${escapeHtml(strategyScore(item))}</small></span></li>`;
+  }).join("");
+};
+
+const researchStructureLabel = (value) => String(value || "").replace(/[\[\]'\"]/g, "").split(",").map((item) => item.trim()).filter(Boolean).join("、");
+
+const researchStrategyLabel = (item) => {
+  if (item.strategy === "price_action") return researchStructureLabel(item.structure) || "裸 K 結構觀察";
+  if (item.strategy === "momentum") return "動能觀察";
+  if (item.strategy === "resonance") return item.status || "三維共振";
+  return "價值投資";
+};
+
+const researchScoreLabel = (item) => {
+  if (item.score === null || item.score === undefined) return "分數暫時無法取得";
+  if (item.strategy === "price_action") return `裸 K 相符度 ${Number(item.score).toFixed(1)} / 100`;
+  if (item.strategy === "resonance") return `共振分數 ${Math.max(0, Math.min(100, (56 - Number(item.score)) / 56 * 100)).toFixed(1)} / 100`;
+  if (item.strategy === "value") return `價值分數 ${Number(item.score).toFixed(0)} / 5`;
+  return `動能分數 ${Number(item.score).toFixed(1)} / 100`;
+};
+
+const renderResearchList = (id, items, empty) => {
+  const container = document.getElementById(id);
+  if (!container) return;
+  if (!items?.length) { container.innerHTML = `<li class="empty">${escapeHtml(empty)}</li>`; return; }
+  container.innerHTML = items.slice(0, 5).map((item) => {
+    const state = item.change_percent > 0 ? "market-up" : item.change_percent < 0 ? "market-down" : "flat";
+    const currency = item.market === "taiwan" ? "TWD" : "USD";
+    const price = item.close === null || item.close === undefined ? "資料暫時無法取得" : `${formatNumber(item.close)} ${currency}`;
+    const change = item.change_percent === null || item.change_percent === undefined ? "—" : signedPercent(item.change_percent);
+    return `<li class="research-item"><div class="research-item-top"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-price ${state}">${escapeHtml(price)}<small>${escapeHtml(change)}</small></span></div><div class="research-item-bottom"><span class="research-company">${escapeHtml(item.name || item.ticker)}<span class="strategy-chip">${escapeHtml(researchStrategyLabel(item))}</span></span><span class="research-score">${escapeHtml(researchScoreLabel(item))}</span></div></li>`;
   }).join("");
 };
 

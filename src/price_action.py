@@ -135,6 +135,8 @@ class PriceActionResearchScanner:
         if not matched or support is None:
             return None
         reference_close = float(current["Close"])
+        previous_close = float(indicators["Close"].iloc[-2])
+        change_percent = None if previous_close == 0 else round((reference_close / previous_close - 1) * 100, 2)
         reference_stop = support - self.atr_multiplier * float(current["ATR"])
         reference_risk = reference_close - reference_stop
         if reference_risk <= 0:
@@ -143,6 +145,7 @@ class PriceActionResearchScanner:
             "matched_funnels": matched,
             "funnel_labels": [FUNNEL_LABELS[key] for key in matched],
             "reference_close": round(reference_close, 2),
+            "change_percent": change_percent,
             "support_edge": round(support, 2),
             "atr": round(float(current["ATR"]), 2),
             "reference_stop": round(reference_stop, 2),

@@ -47,8 +47,19 @@ def test_mini_app_has_a_detailed_alert_card_and_compact_brief_title():
 
     assert 'id="alert-card"' in page
     assert 'id="alert-quote-grid"' in page
+    assert 'class="alert-brief-list"' in page
     assert "renderAlertCard" in app
     assert "event.brief_title" in app
+
+
+def test_mini_app_strategy_cards_render_price_change_and_strategy_emphasis():
+    root = Path(__file__).resolve().parents[1]
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+    styles = (root / "site" / "styles.css").read_text(encoding="utf-8")
+
+    assert "research-price" in app
+    assert "researchStrategyLabel" in app
+    assert ".strategy-chip" in styles
 
 
 def test_mini_app_integrates_the_alert_into_risk_and_splits_research_by_market():

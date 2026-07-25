@@ -26,3 +26,21 @@
 .risk-metric-card small { margin-top: 4px; color: #596057; font-size: .73rem; line-height: 1.35; }
 .risk-metric-card.risk-up strong, .risk-metric-card.risk-up small { color: var(--negative); }
 .risk-metric-card.risk-down strong, .risk-metric-card.risk-down small { color: var(--positive); }
+
+h1 { font-size: clamp(1.28rem, 6vw, 1.8rem); }
+.alert-brief-list { margin: 0; padding-left: 1.35rem; }
+.alert-brief-list li { padding: 8px 0; border-top: 1px solid var(--line); color: #4d4e48; font-size: .82rem; line-height: 1.55; }
+.alert-brief-list li:first-child { border-top: 0; }
+.research-list li.research-item { display: block; padding: 12px 0; }
+.research-item + .research-item { border-top: 1px solid var(--line); }
+.research-item-top, .research-item-bottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.research-item-top { margin-bottom: 6px; }
+.research-ticker { color: var(--accent); font-size: .95rem; font-weight: 900; letter-spacing: .02em; }
+.research-price { text-align: right; font-size: .8rem; font-weight: 800; }
+.research-price small { display: block; margin-top: 2px; font-size: .72rem; font-weight: 700; }
+.research-price.market-up, .research-price.market-up small { color: var(--negative); }
+.research-price.market-down, .research-price.market-down small { color: var(--positive); }
+.research-price.flat, .research-price.flat small { color: var(--muted); }
+.research-company { min-width: 0; color: #5d625d; font-size: .77rem; line-height: 1.45; }
+.strategy-chip { display: inline; margin-left: 4px; padding: 3px 6px; border-radius: 6px; background: var(--orange-soft); color: #8b5128; font-weight: 800; }
+.research-score { flex: 0 0 auto; color: var(--accent); font-size: .72rem; font-weight: 800; text-align: right; }
