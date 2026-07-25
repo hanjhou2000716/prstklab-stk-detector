@@ -32,7 +32,41 @@ const renderQuoteFreshness = (quotes) => {
 
 const renderFocus = (events) => {
   const event = events?.items?.[0];
-  setText("market-focus", event ? `${event.short_label}｜${event.title}` : "今日無重大市場事件，持續觀察。");
+  setText("market-focus", event ? (event.brief_title || `${event.short_label}｜${event.title}`) : "今日無重大市場事件，持續觀察。");
+};
+
+const formatAlertQuote = (item) => {
+  if (!item || item.price === null || item.price === undefined) return "";
+  const state = item.change_percent > 0 ? "up" : item.change_percent < 0 ? "down" : "flat";
+  return `<div class="alert-quote"><b>${escapeHtml(item.name || item.ticker)}</b><strong class="${state}">${formatNumber(item.price)}${item.currency ? ` ${escapeHtml(item.currency)}` : ""}</strong><small class="${state}">${item.change === null || item.change === undefined ? "" : `${item.change > 0 ? "+" : ""}${formatNumber(item.change)}　`}${signedPercent(item.change_percent)}</small></div>`;
+};
+
+const renderAlertCard = (events, generatedAt) => {
+  const event = events?.items?.[0];
+  const card = document.getElementById("alert-card");
+  if (!card) return;
+  const displayTime = generatedAt ? new Date(generatedAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "公開資料更新中";
+  setText("alert-time", `${displayTime} CST`);
+  if (!event) {
+    card.dataset.risk = "neutral";
+    setText("alert-banner", "今日無重大市場事件，持續觀察");
+    setText("alert-headline", "市場訊號尚未達提醒門檻");
+    setText("alert-summary", "持續整理公開市場報價與已核對事件。");
+    setText("alert-trigger", ""); setText("alert-context", "");
+    setText("alert-reminder", "僅供公開資訊整理與教育性觀察，不構成投資建議。");
+    document.getElementById("alert-quote-grid").innerHTML = '<p class="empty">目前沒有符合門檻的價格訊號</p>';
+    return;
+  }
+  const risk = event.risk_level || "持續觀察";
+  card.dataset.risk = risk.includes("高風險") ? "high" : risk.includes("警戒") ? "warning" : "neutral";
+  setText("alert-banner", event.kind === "market_signal" ? event.short_label : "已核對的重要市場事件");
+  setText("alert-headline", event.brief_title || `${event.short_label}｜${event.title}`);
+  setText("alert-summary", event.summary || event.title || "公開市場事件更新。");
+  setText("alert-trigger", event.trigger || "");
+  setText("alert-context", `市場關聯：${event.market_context || "持續觀察公開資料。"}`);
+  setText("alert-reminder", event.friendly_reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
+  const quoteItems = [event.instrument, ...(event.related || [])].filter(Boolean).slice(0, 2);
+  document.getElementById("alert-quote-grid").innerHTML = quoteItems.length ? quoteItems.map(formatAlertQuote).join("") : '<p class="empty">本事件暫無可顯示的公開報價</p>';
 };
 
 const renderRisk = (risk) => {
@@ -65,7 +99,7 @@ const renderEvents = (events) => {
   const container = document.getElementById("event-list");
   if (!container) return;
   if (!events?.items?.length) { container.innerHTML = '<li class="empty">目前沒有符合門檻的重大事件</li>'; return; }
-  container.innerHTML = events.items.map((event) => `<li>${escapeHtml(`${event.short_label}｜${event.title}`)}<small>${escapeHtml(event.source || "公開來源")}</small></li>`).join("");
+  container.innerHTML = events.items.slice(1).map((event) => `<li>${escapeHtml(event.brief_title || `${event.short_label}｜${event.title}`)}<small>${escapeHtml(event.source || "公開來源")}</small></li>`).join("") || '<li class="empty">其餘符合門檻的訊號會顯示於此</li>';
 };
 
 const renderResearchList = (id, items, empty) => {
@@ -101,6 +135,7 @@ const render = (snapshot) => {
   renderQuoteList("quote-list", snapshot.quotes || []);
   renderQuoteFreshness(snapshot.quotes || []);
   renderRisk(snapshot.risk);
+  renderAlertCard(snapshot.events, snapshot.generated_at);
   renderEvents(snapshot.events);
   renderResearch(snapshot);
   renderNewsList("taiwan-news", snapshot.news?.taiwan);

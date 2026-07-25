@@ -134,7 +134,7 @@ def build_market_snapshot() -> dict[str, Any]:
     risk = build_risk_snapshot()
     news = build_news_snapshot()
     official_events = fetch_official_events()
-    events = build_event_snapshot(news, quotes, official_events)
+    events = build_event_snapshot(news, quotes, official_events, indices=indices)
     try:
         program = fetch_yutinghao_latest_program()
     except Exception:

@@ -69,12 +69,29 @@ def _pick_quote(snapshot: dict, slot: str) -> dict | None:
     )
 
 
+def _pick_event(snapshot: dict, slot: str) -> dict | None:
+    """Keep Taiwan sessions Taiwan-first and US sessions US-first in the watch brief."""
+    events = (snapshot.get("events") or {}).get("items", [])
+    preferred = ("TAIEX", "TPEx") if slot in {
+        "pre_open", "intraday", "midday", "afternoon", "post_close"
+    } else ("SOX", "NASDAQ", "S&P 500")
+    for ticker in preferred:
+        selected = next(
+            (event for event in events if event.get("instrument", {}).get("ticker") == ticker),
+            None,
+        )
+        if selected:
+            return selected
+    return events[0] if events else None
+
+
 def build_brief(snapshot: dict, slot: str) -> str:
     """Create a neutral, watch-friendly brief that always stays under 30 characters."""
     label = SLOT_LABELS[slot]
     quote = _pick_quote(snapshot, slot)
-    event = (snapshot.get("events") or {}).get("items", [])
-    event_label = event[0]["short_label"] if event else None
+    event = _pick_event(snapshot, slot)
+    event_label = event.get("brief_title") if event else None
+    legacy_event_label = event.get("short_label") if event else None
     if not quote:
         return f"{label}｜市場資料暫時無法取得"
     pct = quote.get("change_percent")
@@ -82,7 +99,11 @@ def build_brief(snapshot: dict, slot: str) -> str:
         return f"{label}｜{quote['ticker']} 資料暫時無法取得"
     icon = "📈" if pct > 1 else "📉" if pct < -1 else "🟰"
     suffix = f"{quote['ticker']}{icon}{pct:+.1f}%"
-    if not event_label:
+    if event_label:
+        # The event card title is designed for a watch notification: clear
+        # situation, move type and risk state, while the Mini App holds detail.
+        return f"{label}｜{str(event_label)[:MAX_BRIEF_LENGTH - len(label) - 1]}"
+    if not legacy_event_label:
         return f"{label}｜{suffix}"
 
     # Keep the market and move first. If a news label is unusually long,
@@ -92,7 +113,7 @@ def build_brief(snapshot: dict, slot: str) -> str:
     available = MAX_BRIEF_LENGTH - len(prefix) - len(suffix) - 1  # final separator
     if available <= 0:
         return f"{prefix}{suffix}"
-    return f"{prefix}{str(event_label)[:available]}｜{suffix}"
+    return f"{prefix}{str(legacy_event_label)[:available]}｜{suffix}"
 
 
 def parse_args() -> argparse.Namespace:
