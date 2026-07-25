@@ -1,4 +1,9 @@
-from src.market_data import MARKET_INDICES, WATCHLIST, change_percent
+import pandas as pd
+
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from src.market_data import MARKET_INDICES, WATCHLIST, _daily_quote, _intraday_quote, change_percent, intraday_is_fresh
 
 
 def test_change_percent_calculates_and_rounds():
@@ -21,3 +26,28 @@ def test_market_indices_are_separate_from_research_watchlist():
         "TAIEX", "TPEx", "S&P 500", "NASDAQ", "DJIA", "SOX", "NIKKEI", "KOSPI", "BRENT", "BTC", "ETH",
     }
     assert not {item["symbol"] for item in MARKET_INDICES} & {item["symbol"] for item in WATCHLIST}
+
+
+def test_intraday_quote_is_labelled_and_compared_with_prior_completed_daily_close():
+    item = {"symbol": "^IXIC", "ticker": "NASDAQ", "name": "那斯達克", "market": "us", "currency": "點"}
+    daily = pd.Series([100.0, 105.0], index=pd.to_datetime(["2026-07-23", "2026-07-24"]))
+    intraday = pd.Series([106.5], index=pd.to_datetime(["2026-07-25 09:35:00+00:00"]))
+
+    quote = _intraday_quote(item, daily, intraday, "盤中 5 分鐘")
+
+    assert quote["price"] == 106.5
+    assert quote["change_percent"] == 6.5
+    assert quote["quote_basis"] == "盤中 5 分鐘"
+    assert quote["quote_time"] is not None
+
+
+def test_daily_quote_is_explicitly_labelled_as_a_daily_close():
+    item = {"symbol": "^IXIC", "ticker": "NASDAQ", "name": "那斯達克", "market": "us", "currency": "點"}
+    daily = pd.Series([100.0, 105.0], index=pd.to_datetime(["2026-07-23", "2026-07-24"]))
+    assert _daily_quote(item, daily)["quote_basis"] == "日線收盤"
+
+
+def test_intraday_freshness_rejects_an_old_bar_but_accepts_a_recent_one():
+    now = datetime(2026, 7, 24, 10, 0, tzinfo=ZoneInfo("America/New_York"))
+    assert intraday_is_fresh(pd.Timestamp("2026-07-24 09:35:00", tz="America/New_York"), "us", now)
+    assert not intraday_is_fresh(pd.Timestamp("2026-07-23 16:00:00", tz="America/New_York"), "us", now)

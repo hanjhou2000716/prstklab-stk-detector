@@ -6,6 +6,7 @@ const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => 
 const formatNumber = (value) => typeof value === "number" ? value.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "—";
 const signedPercent = (value) => value === null || value === undefined ? "—" : `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
 const marketName = (key) => key === "taiwan" ? "台股" : key === "us" ? "美股" : key;
+const quoteFreshness = (item) => item.quote_basis ? `${item.quote_basis}${item.quote_time ? ` · ${new Date(item.quote_time).toLocaleTimeString("zh-TW", { timeZone: "Asia/Taipei", hour: "2-digit", minute: "2-digit", hour12: false })}` : ` · ${item.quote_date || ""}`}` : (item.quote_date || "");
 
 const renderMarkets = (markets) => {
   const text = ["taiwan", "us"].map((key) => {
@@ -21,13 +22,14 @@ const renderQuoteList = (id, items) => {
   if (!items?.length) { container.innerHTML = '<li class="empty">公開報價暫時無法取得</li>'; return; }
   container.innerHTML = items.map((item) => {
     const state = item.change_percent > 1 ? "up" : item.change_percent < -1 ? "down" : "flat";
-    return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}</small></span><span class="quote-value"><b>${formatNumber(item.price)} ${escapeHtml(item.currency || "")}</b><small class="${state}">${signedPercent(item.change_percent)} · ${escapeHtml(item.quote_date || "")}</small></span></li>`;
+    return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}</small></span><span class="quote-value"><b>${formatNumber(item.price)} ${escapeHtml(item.currency || "")}</b><small class="${state}">${signedPercent(item.change_percent)} · ${escapeHtml(quoteFreshness(item))}</small></span></li>`;
   }).join("");
 };
 
 const renderQuoteFreshness = (quotes) => {
+  const bases = [...new Set((quotes || []).map((item) => item.quote_basis).filter(Boolean))];
   const dates = [...new Set((quotes || []).map((item) => item.quote_date).filter(Boolean))];
-  setText("quote-as-of", dates.length ? `代表標的報價基準日：${dates.join("、")}` : "代表標的報價暫時無法取得");
+  setText("quote-as-of", bases.length ? `代表標的報價：${bases.join("、")}（${dates.join("、")}）` : "代表標的報價暫時無法取得");
 };
 
 const renderFocus = (events) => {

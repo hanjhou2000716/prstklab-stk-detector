@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -90,8 +90,56 @@ def _close_series(history: Any) -> Any:
     return close.dropna()
 
 
-def get_quote(item: dict[str, str]) -> dict[str, Any]:
-    """Collect the latest two available closes for one public ticker."""
+def _daily_quote(item: dict[str, str], closes: Any) -> dict[str, Any]:
+    """Build a clearly labelled quote from the latest completed daily bars."""
+    if len(closes) < 2:
+        raise ValueError("可用收盤資料不足。")
+    latest, previous = float(closes.iloc[-1]), float(closes.iloc[-2])
+    return {
+        **item,
+        "price": round(latest, 2),
+        "change": round(latest - previous, 2),
+        "change_percent": change_percent(latest, previous),
+        "quote_date": closes.index[-1].date().isoformat(),
+        "quote_time": None,
+        "quote_basis": "日線收盤",
+        "currency": item.get("currency") or ("TWD" if item["market"] == "taiwan" else "USD"),
+    }
+
+
+def _intraday_quote(item: dict[str, str], daily_closes: Any, intraday_closes: Any, basis: str) -> dict[str, Any]:
+    """Build a five-minute quote versus the preceding completed daily close."""
+    if len(daily_closes) < 2 or intraday_closes.empty:
+        raise ValueError("可用盤中資料不足。")
+    latest = float(intraday_closes.iloc[-1])
+    previous_close = float(daily_closes.iloc[-2])
+    timestamp = intraday_closes.index[-1]
+    return {
+        **item,
+        "price": round(latest, 2),
+        "change": round(latest - previous_close, 2),
+        "change_percent": change_percent(latest, previous_close),
+        "quote_date": timestamp.date().isoformat(),
+        "quote_time": timestamp.isoformat(),
+        "quote_basis": basis,
+        "currency": item.get("currency") or ("TWD" if item["market"] == "taiwan" else "USD"),
+    }
+
+
+def intraday_is_fresh(timestamp: Any, market: str, now: datetime | None = None) -> bool:
+    """Accept only a recent five-minute bar; stale bars must stay labelled daily."""
+    timezone = MARKETS[market]["timezone"]
+    observed = timestamp
+    if getattr(observed, "tzinfo", None) is None:
+        observed = observed.tz_localize(timezone)
+    else:
+        observed = observed.tz_convert(timezone)
+    reference = now or datetime.now(ZoneInfo(timezone))
+    return reference - observed.to_pydatetime() <= timedelta(minutes=30)
+
+
+def get_quote(item: dict[str, str], session: str | None = None) -> dict[str, Any]:
+    """Collect a five-minute live bar when eligible, otherwise a daily close."""
     import yfinance as yf
 
     history = yf.download(
@@ -99,18 +147,24 @@ def get_quote(item: dict[str, str]) -> dict[str, Any]:
         progress=False, threads=False,
     )
     closes = _close_series(history)
-    if len(closes) < 2:
-        raise ValueError("可用收盤資料不足。")
-    latest, previous = float(closes.iloc[-1]), float(closes.iloc[-2])
-    delta = round(latest - previous, 2)
-    return {
-        **item,
-        "price": round(latest, 2),
-        "change": delta,
-        "change_percent": change_percent(latest, previous),
-        "quote_date": closes.index[-1].date().isoformat(),
-        "currency": item.get("currency") or ("TWD" if item["market"] == "taiwan" else "USD"),
-    }
+    eligible = (item["market"] == "taiwan" and session == "交易中") or (
+        item["market"] == "us" and session in {"交易中", "開盤前"}
+    )
+    if not eligible:
+        return _daily_quote(item, closes)
+    try:
+        intraday = yf.download(
+            item["symbol"], period="1d", interval="5m", auto_adjust=False,
+            prepost=item["market"] == "us", progress=False, threads=False,
+        )
+        intraday_closes = _close_series(intraday)
+        if not intraday_is_fresh(intraday_closes.index[-1], item["market"]):
+            raise ValueError("盤中資料並非最新列")
+        basis = "盤中 5 分鐘" if session == "交易中" else "盤前 5 分鐘"
+        return _intraday_quote(item, closes, intraday_closes, basis)
+    except Exception:
+        # Never fabricate a live price. The UI explicitly labels the daily fallback.
+        return _daily_quote(item, closes)
 
 
 def build_market_snapshot() -> dict[str, Any]:
@@ -123,17 +177,18 @@ def build_market_snapshot() -> dict[str, Any]:
     from src.research_cards import load_research_cards
     from src.risk_news import build_news_snapshot, build_risk_snapshot
 
+    markets = {key: get_market_status(key) for key in MARKETS}
     errors: list[dict[str, str]] = []
     quotes: list[dict[str, Any]] = []
     for item in WATCHLIST:
         try:
-            quotes.append(get_quote(item))
+            quotes.append(get_quote(item, markets.get(item["market"], {}).get("session")))
         except Exception as exc:  # Individual source failures are disclosed in the UI.
             errors.append({"ticker": item["ticker"], "message": str(exc)})
     indices: list[dict[str, Any]] = []
     for item in MARKET_INDICES:
         try:
-            indices.append(get_quote(item))
+            indices.append(get_quote(item, markets.get(item["market"], {}).get("session")))
         except Exception as exc:
             errors.append({"ticker": item["ticker"], "message": str(exc), "scope": "index"})
     quote_data_status = "即時" if not errors else "部分缺漏"
@@ -168,7 +223,7 @@ def build_market_snapshot() -> dict[str, Any]:
     return {
         "generated_at": datetime.now(ZoneInfo("Asia/Taipei")).isoformat(),
         "data_status": quote_data_status,
-        "markets": {key: get_market_status(key) for key in MARKETS},
+        "markets": markets,
         "indices": indices,
         "quotes": quotes,
         "risk": risk,

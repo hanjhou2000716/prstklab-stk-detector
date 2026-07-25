@@ -84,3 +84,11 @@ def test_mini_app_orders_sections_and_uses_strategy_match_scores():
     assert "strategyScore" in app
     assert "共振相符度" in app
     assert "items.slice(0, 5)" in app
+
+
+def test_mini_app_labels_intraday_and_daily_quote_freshness():
+    root = Path(__file__).resolve().parents[1]
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert "quote_basis" in app
+    assert "quoteFreshness" in app

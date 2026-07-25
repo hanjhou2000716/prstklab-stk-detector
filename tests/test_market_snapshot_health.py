@@ -2,7 +2,7 @@ from src.market_data import build_market_snapshot
 
 
 def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatch):
-    monkeypatch.setattr("src.market_data.get_quote", lambda item: {**item, "price": 1})
+    monkeypatch.setattr("src.market_data.get_quote", lambda item, session=None: {**item, "price": 1})
     monkeypatch.setattr("src.market_data.get_market_status", lambda market: {"label": market})
     monkeypatch.setattr("src.risk_news.build_risk_snapshot", lambda: {
         "taiwan": {"label": "台股", "errors": ["台指波動率資料暫時無法取得"]},
