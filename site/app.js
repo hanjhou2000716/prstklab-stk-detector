@@ -78,12 +78,14 @@ const renderResearchList = (id, items, empty) => {
 const renderResearch = (snapshot) => {
   const report = snapshot.research_report || {};
   const candidates = report.candidates || [];
-  const coverage = (report.sources || []).map((source) => `${source.market === "taiwan" ? "台股" : "美股"} ${source.strategy === "momentum" ? "動能" : "裸K"} ${source.candidates ?? 0} 筆`).join("｜");
+  const strategyLabel = (strategy) => strategy === "momentum" ? "動能" : strategy === "price_action" ? "裸K" : "三維共振";
+  const coverage = (report.sources || []).map((source) => `${source.market === "taiwan" ? "台股" : "美股"} ${strategyLabel(source.strategy)} ${source.candidates ?? 0} 筆`).join("｜");
   const generatedAt = report.generated_at ? ` 掃描時間：${new Date(report.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}` : "";
   setText("research-tag", report.status || "掃描資料");
   setText("research-notice", `${report.notice || "全市場公開資料研究。"}${coverage ? ` ${coverage}` : ""}${generatedAt}`);
   renderResearchList("research-list", candidates.filter((item) => item.strategy === "price_action"), "本輪全市場掃描沒有符合裸 K 結構的候選標的");
   renderResearchList("momentum-list", candidates.filter((item) => item.strategy === "momentum"), "本輪全市場掃描沒有符合動能條件的候選標的");
+  renderResearchList("resonance-list", candidates.filter((item) => item.strategy === "resonance"), "本輪全市場掃描沒有符合三維共振條件的候選標的");
 };
 
 const render = (snapshot) => {
