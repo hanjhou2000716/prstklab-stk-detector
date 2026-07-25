@@ -111,6 +111,7 @@ def get_quote(item: dict[str, str]) -> dict[str, Any]:
 def build_market_snapshot() -> dict[str, Any]:
     """Build a browser-friendly snapshot; one ticker failure never stops others."""
     from src.event_alerts import build_event_snapshot
+    from src.official_events import fetch_official_events
     from src.momentum_research import build_momentum_snapshot
     from src.macro_summary import build_macro_summary
     from src.market_history import load_watchlist_history
@@ -136,7 +137,8 @@ def build_market_snapshot() -> dict[str, Any]:
     quote_data_status = "即時" if not errors else "部分缺漏"
     risk = build_risk_snapshot()
     news = build_news_snapshot()
-    events = build_event_snapshot(news, quotes)
+    official_events = fetch_official_events()
+    events = build_event_snapshot(news, quotes, official_events)
     try:
         program = fetch_yutinghao_latest_program()
     except Exception:
@@ -163,6 +165,10 @@ def build_market_snapshot() -> dict[str, Any]:
     resonance = build_resonance_snapshot(WATCHLIST, histories=histories)
     value = build_value_snapshot(WATCHLIST)
     errors.extend({"ticker": "新聞", "message": message} for message in news["errors"])
+    errors.extend(
+        {"ticker": "官方事件", "message": message, "scope": "official_event"}
+        for message in official_events["errors"]
+    )
     for market in ("taiwan", "us"):
         # A risk-provider outage does not mean that the whole market or its
         # representative quotes are unavailable. Keep the affected source in
@@ -189,6 +195,7 @@ def build_market_snapshot() -> dict[str, Any]:
         "risk": risk,
         "news": news,
         "events": events,
+        "official_events": official_events,
         "macro": macro,
         "research": public_research,
         "momentum": momentum,

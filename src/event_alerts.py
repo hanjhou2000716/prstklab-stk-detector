@@ -35,10 +35,16 @@ def detect_major_event(story: dict[str, str]) -> dict[str, str] | None:
     return None
 
 
-def build_event_snapshot(news: dict[str, Any], quotes: list[dict[str, Any]]) -> dict[str, Any]:
+def build_event_snapshot(
+    news: dict[str, Any], quotes: list[dict[str, Any]], official: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Identify up to three qualifying events and a visible no-event conclusion."""
     events: list[dict[str, str]] = []
     seen_urls: set[str] = set()
+    for event in (official or {}).get("items", []):
+        if event.get("url") and event["url"] not in seen_urls:
+            events.append(event)
+            seen_urls.add(event["url"])
     for market in ("taiwan", "us"):
         for story in news.get(market, []):
             event = detect_major_event(story)
