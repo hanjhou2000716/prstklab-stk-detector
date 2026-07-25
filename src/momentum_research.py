@@ -26,8 +26,9 @@ def features(df: pd.DataFrame) -> dict[str, float] | None:
     if any(pd.isna(value) or value == 0 for value in (ma5, ma20, ma60, upper)):
         return None
     current = float(close.iloc[-1])
+    previous = float(close.iloc[-2])
     return {
-        "close": current, "above_ma5": current >= ma5,
+        "close": current, "change_percent": None if previous == 0 else round((current / previous - 1) * 100, 2), "above_ma5": current >= ma5,
         "hist_vol": float(close.pct_change().rolling(20).std().iloc[-1] * np.sqrt(252) * 100),
         "bb_width": float((4 * std20 / ma20) * 100), "p_ma60": float((current / ma60 - 1) * 100),
         "trend": float((ma5 / ma60 - 1) * 100), "p_ma20": float((current / ma20 - 1) * 100),
@@ -54,5 +55,5 @@ def build_momentum_snapshot(
     score = sum(frame[name].rank(pct=True) * weight for name, weight in WEIGHTS.items()) / sum(WEIGHTS.values()) * 100
     frame["score"] = score.round(1)
     frame = frame[frame["above_ma5"]].sort_values("score", ascending=False).head(10)
-    candidates = frame[["ticker", "name", "close", "score", "roc10"]].round({"close": 2, "roc10": 2}).to_dict("records")
+    candidates = frame[["ticker", "name", "close", "change_percent", "score", "roc10"]].round({"close": 2, "change_percent": 2, "roc10": 2}).to_dict("records")
     return {"status": "動能研究排序", "notice": "價格與波動特徵的相對排名；僅供研究，不構成買賣建議。", "candidates": candidates, "errors": errors}

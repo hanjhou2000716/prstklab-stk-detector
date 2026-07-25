@@ -11,6 +11,13 @@ def test_normalize_preserves_missing_strategy_fields_as_none():
     assert "structural_stop" not in candidate
 
 
+def test_normalize_keeps_public_quote_fields_for_research_cards():
+    frame = pd.DataFrame([{"ticker": "NVDA", "name": "NVIDIA", "close": 180.25, "change_percent": -1.5, "score": 88.5}])
+    candidate = normalize_frame(frame, "us", "momentum")[0]
+    assert candidate["close"] == 180.25
+    assert candidate["change_percent"] == -1.5
+
+
 def test_report_combines_available_sources_and_discloses_missing_ones(tmp_path):
     available = tmp_path / "taiwan.csv"
     pd.DataFrame([{"ticker": "2330", "name": "台積電", "turnover": 9_000_000, "reference_close": 100, "reference_stop": 90}]).to_csv(available, index=False)
