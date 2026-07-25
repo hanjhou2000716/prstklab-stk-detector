@@ -72,17 +72,18 @@ const renderResearchList = (id, items, empty) => {
   const container = document.getElementById(id);
   if (!container) return;
   if (!items?.length) { container.innerHTML = `<li class="empty">${empty}</li>`; return; }
-  container.innerHTML = items.map((item) => `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name || item.ticker)}${item.funnel_labels ? `｜${escapeHtml(item.funnel_labels.join("、"))}` : item.status ? `｜${escapeHtml(item.status)}` : ""}</small></span></li>`).join("");
+  container.innerHTML = items.map((item) => `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name || item.ticker)}｜${item.market === "taiwan" ? "台股" : "美股"}${item.structure ? `｜${escapeHtml(item.structure)}` : ""}</small></span><span class="risk-value"><small>掃描排序 ${item.rank ?? "—"}</small></span></li>`).join("");
 };
 
 const renderResearch = (snapshot) => {
-  const research = snapshot.research || {};
-  setText("research-tag", research.status || "公開資料");
-  setText("research-notice", research.notice || "各策略依自身條件呈現候選資料，不跨策略比較分數。");
-  renderResearchList("research-list", research.candidates, "目前沒有符合裸 K 結構的觀察標的");
-  renderResearchList("momentum-list", snapshot.momentum?.candidates, "目前沒有符合動能條件的觀察標的");
-  renderResearchList("resonance-list", snapshot.resonance?.candidates, "目前沒有符合三維共振條件的觀察標的");
-  renderResearchList("value-list", snapshot.value?.candidates, "品質與價值資料暫時無法取得");
+  const report = snapshot.research_report || {};
+  const candidates = report.candidates || [];
+  const coverage = (report.sources || []).map((source) => `${source.market === "taiwan" ? "台股" : "美股"} ${source.strategy === "momentum" ? "動能" : "裸K"} ${source.candidates ?? 0} 筆`).join("｜");
+  const generatedAt = report.generated_at ? ` 掃描時間：${new Date(report.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}` : "";
+  setText("research-tag", report.status || "掃描資料");
+  setText("research-notice", `${report.notice || "全市場公開資料研究。"}${coverage ? ` ${coverage}` : ""}${generatedAt}`);
+  renderResearchList("research-list", candidates.filter((item) => item.strategy === "price_action"), "本輪全市場掃描沒有符合裸 K 結構的候選標的");
+  renderResearchList("momentum-list", candidates.filter((item) => item.strategy === "momentum"), "本輪全市場掃描沒有符合動能條件的候選標的");
 };
 
 const render = (snapshot) => {

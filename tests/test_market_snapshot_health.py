@@ -12,17 +12,11 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
     monkeypatch.setattr("src.official_events.fetch_official_events", lambda: {"items": [], "errors": []})
     monkeypatch.setattr("src.event_alerts.build_event_snapshot", lambda news, quotes, official=None: {})
     monkeypatch.setattr("src.macro_summary.build_macro_summary", lambda events, risk, program=None: {})
-    monkeypatch.setattr("src.market_history.load_watchlist_history", lambda watchlist: ({}, []))
-    monkeypatch.setattr("src.research_scan.build_price_action_snapshot", lambda watchlist, histories: {
-        "candidates": [{
-            "ticker": "2330", "name": "台積電", "market": "taiwan", "funnel_labels": ["訂單塊回踩"],
-            "reference_close": 100, "reference_stop": 90, "reference_risk": 10, "atr": 2,
+    monkeypatch.setattr("src.research_cards.load_research_cards", lambda: {
+        "status": "研究報告", "sources": [], "candidates": [{
+            "ticker": "2330", "name": "台積電", "market": "taiwan", "strategy": "price_action", "rank": 1,
         }],
-        "errors": [],
     })
-    monkeypatch.setattr("src.momentum_research.build_momentum_snapshot", lambda watchlist, histories: {"errors": []})
-    monkeypatch.setattr("src.resonance_scan.build_resonance_snapshot", lambda watchlist, histories: {"errors": []})
-    monkeypatch.setattr("src.value_quality.build_value_snapshot", lambda watchlist: {"errors": []})
 
     snapshot = build_market_snapshot()
 
@@ -33,6 +27,6 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
         "scope": "risk",
     }]
     assert "allocation" not in snapshot
-    candidate = snapshot["research"]["candidates"][0]
+    candidate = snapshot["research_report"]["candidates"][0]
     assert candidate["ticker"] == "2330"
-    assert {"reference_close", "reference_stop", "reference_risk"}.isdisjoint(candidate)
+    assert "reference_close" not in candidate

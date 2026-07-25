@@ -5,11 +5,11 @@ from pathlib import Path
 from src.batch_download import batches
 from src.public_download import download_daily_batch
 from src.taiwan_momentum_scan import rank_records
-from src.us_universe import fetch_us_large_cap_universe
+from src.us_universe import fetch_us_research_universe
 
 def main() -> None:
-    parser = argparse.ArgumentParser(); parser.add_argument("--limit", type=int, default=100); parser.add_argument("--batch-size", type=int, default=50)
-    args = parser.parse_args(); universe = fetch_us_large_cap_universe()[:args.limit] if args.limit > 0 else fetch_us_large_cap_universe()
+    parser = argparse.ArgumentParser(); parser.add_argument("--limit", type=int, default=0); parser.add_argument("--batch-size", type=int, default=50)
+    args = parser.parse_args(); universe = fetch_us_research_universe()[:args.limit] if args.limit > 0 else fetch_us_research_universe()
     records, failed = [], []
     for group in batches(universe, args.batch_size):
         try:
