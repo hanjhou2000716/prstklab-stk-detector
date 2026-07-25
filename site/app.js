@@ -115,8 +115,9 @@ const renderEvents = (events) => {
   setText("event-tag", events?.status || "觀察中");
   const container = document.getElementById("event-list");
   if (!container) return;
-  if (!events?.items?.length) { container.innerHTML = '<li class="empty">目前沒有符合門檻的重大事件</li>'; return; }
-  container.innerHTML = events.items.slice(1).map((event) => `<li>${escapeHtml(event.brief_title || `${event.short_label}｜${event.title}`)}<small>${escapeHtml(event.source || "公開來源")}</small></li>`).join("") || '<li class="empty">其餘符合門檻的訊號會顯示於此</li>';
+  const secondary = events?.items?.slice(1) || [];
+  if (!secondary.length) { container.innerHTML = '<li class="empty">目前沒有其他同步市場訊號</li>'; return; }
+  container.innerHTML = `<li class="signal-list-title">同步市場訊號</li>${secondary.map((event) => `<li class="signal-card"><b>${escapeHtml(event.brief_title || `${event.short_label}｜${event.title}`)}</b><small>${escapeHtml(event.source || "公開市場報價")}</small></li>`).join("")}`;
 };
 
 const renderLegacyResearchList = (id, items, empty) => {
@@ -150,7 +151,7 @@ const researchStrategyLabel = (item) => {
   if (item.strategy === "price_action") return researchStructureLabel(item.structure) || "裸 K 結構觀察";
   if (item.strategy === "momentum") return "動能觀察";
   if (item.strategy === "resonance") return item.status || "三維共振";
-  return "價值投資";
+  return item.pe === null || item.pe === undefined ? "本益比暫時無法取得" : `本益比 ${Number(item.pe).toFixed(1)}`;
 };
 
 const researchScoreLabel = (item) => {
