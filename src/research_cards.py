@@ -8,7 +8,7 @@ from typing import Any
 
 
 REPORT_PATH = Path("site/data/research-report.json")
-ALLOWED_STRATEGIES = {"momentum", "price_action"}
+ALLOWED_STRATEGIES = {"momentum", "price_action", "resonance"}
 ALLOWED_MARKETS = {"taiwan", "us"}
 
 

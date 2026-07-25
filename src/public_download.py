@@ -8,7 +8,7 @@ DOWNLOAD_TIMEOUT_SECONDS = 8
 
 
 def download_daily_batch(
-    symbols: list[str], *, downloader: Callable[..., Any] | None = None, timeout: int = DOWNLOAD_TIMEOUT_SECONDS,
+    symbols: list[str], *, downloader: Callable[..., Any] | None = None, timeout: int = DOWNLOAD_TIMEOUT_SECONDS, period: str = "6mo",
 ) -> Any:
     """Download a public batch once, retrying a transient failure exactly once."""
     if not symbols:
@@ -21,7 +21,7 @@ def download_daily_batch(
     last_error: Exception | None = None
     for _ in range(2):
         try:
-            data = downloader(symbols, period="6mo", interval="1d", group_by="ticker", auto_adjust=False, progress=False, threads=True, timeout=timeout)
+            data = downloader(symbols, period=period, interval="1d", group_by="ticker", auto_adjust=False, progress=False, threads=True, timeout=timeout)
             if data is None or getattr(data, "empty", True):
                 raise ValueError("公開資料回傳空白")
             return data
