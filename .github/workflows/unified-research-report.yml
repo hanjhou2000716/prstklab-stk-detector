@@ -5,15 +5,19 @@ on:
       taiwan_limit:
         description: Taiwan public symbols per research scan
         required: true
-        default: '100'
+        default: '0'
       us_limit:
         description: US large-cap symbols per research scan
         required: true
-        default: '100'
+        default: '0'
       batch_size:
         description: Symbols per public-data request
         required: true
         default: '50'
+  schedule:
+    # Weekdays 14:20 Taiwan time. The report is independent from the briefing
+    # jobs and remains available when a source scan has no candidates.
+    - cron: '20 6 * * 1-5'
 permissions:
   contents: write
   pages: write
@@ -27,7 +31,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
         with:

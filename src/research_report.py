@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections import Counter
+import json
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +42,13 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
     for source in sources:
         path = Path(source["path"])
         base = {"market": source["market"], "strategy": source["strategy"], "path": str(path)}
+        summary_path = source.get("summary_path")
+        if summary_path:
+            try:
+                summary = json.loads(Path(summary_path).read_text(encoding="utf-8"))
+                base.update({key: summary.get(key) for key in ("requested", "data_complete", "failed")})
+            except (OSError, json.JSONDecodeError):
+                pass
         try:
             frame = pd.read_csv(path)
         except (FileNotFoundError, pd.errors.EmptyDataError, UnicodeDecodeError):

@@ -112,13 +112,9 @@ def build_market_snapshot() -> dict[str, Any]:
     """Build a browser-friendly snapshot; one ticker failure never stops others."""
     from src.event_alerts import build_event_snapshot
     from src.official_events import fetch_official_events
-    from src.momentum_research import build_momentum_snapshot
     from src.macro_summary import build_macro_summary
-    from src.market_history import load_watchlist_history
     from src.macro_program_feed import fetch_yutinghao_latest_program
-    from src.research_scan import build_price_action_snapshot
-    from src.resonance_scan import build_resonance_snapshot
-    from src.value_quality import build_value_snapshot
+    from src.research_cards import load_research_cards
     from src.risk_news import build_news_snapshot, build_risk_snapshot
 
     errors: list[dict[str, str]] = []
@@ -145,25 +141,7 @@ def build_market_snapshot() -> dict[str, Any]:
         program = None
         errors.append({"ticker": "總經節目", "message": "最新公開節目暫時無法取得", "scope": "macro"})
     macro = build_macro_summary(events, risk, program)
-    histories, history_errors = load_watchlist_history(WATCHLIST)
-    research = build_price_action_snapshot(WATCHLIST, histories=histories)
-    # The public Mini App may show research methods and non-actionable market
-    # context, but must never publish a reference entry, stop boundary, or
-    # portfolio allocation that could be read as an execution instruction.
-    public_research = {
-        **research,
-        "candidates": [
-            {
-                key: candidate[key]
-                for key in ("ticker", "name", "market", "matched_funnels", "funnel_labels", "atr", "volume", "turnover")
-                if key in candidate
-            }
-            for candidate in research["candidates"]
-        ],
-    }
-    momentum = build_momentum_snapshot(WATCHLIST, histories=histories)
-    resonance = build_resonance_snapshot(WATCHLIST, histories=histories)
-    value = build_value_snapshot(WATCHLIST)
+    research_report = load_research_cards()
     errors.extend({"ticker": "新聞", "message": message} for message in news["errors"])
     errors.extend(
         {"ticker": "官方事件", "message": message, "scope": "official_event"}
@@ -181,11 +159,6 @@ def build_market_snapshot() -> dict[str, Any]:
             }
             for message in risk[market]["errors"]
         )
-    errors.extend({"ticker": "結構研究", "message": message} for message in research["errors"])
-    errors.extend({"ticker": "動能研究", "message": message} for message in momentum["errors"])
-    errors.extend({"ticker": "共振研究", "message": message} for message in resonance["errors"])
-    errors.extend({"ticker": "價值研究", "message": message} for message in value["errors"])
-    errors.extend({"ticker": "歷史資料", "message": message} for message in history_errors)
     return {
         "generated_at": datetime.now(ZoneInfo("Asia/Taipei")).isoformat(),
         "data_status": quote_data_status,
@@ -197,9 +170,6 @@ def build_market_snapshot() -> dict[str, Any]:
         "events": events,
         "official_events": official_events,
         "macro": macro,
-        "research": public_research,
-        "momentum": momentum,
-        "resonance": resonance,
-        "value": value,
+        "research_report": research_report,
         "errors": errors,
     }

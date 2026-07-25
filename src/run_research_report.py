@@ -13,10 +13,10 @@ from src.research_health import assess_research_health
 
 def default_sources(data_dir: Path) -> list[dict[str, str]]:
     return [
-        {"path": str(data_dir / "taiwan-momentum-scan-0.csv"), "market": "taiwan", "strategy": "momentum"},
-        {"path": str(data_dir / "us-momentum-scan.csv"), "market": "us", "strategy": "momentum"},
-        {"path": str(data_dir / "taiwan-price-action-scan-0.csv"), "market": "taiwan", "strategy": "price_action"},
-        {"path": str(data_dir / "us-price-action-scan.csv"), "market": "us", "strategy": "price_action"},
+        {"path": str(data_dir / "taiwan-momentum-scan-0.csv"), "summary_path": str(data_dir / "taiwan-momentum-summary-0.json"), "market": "taiwan", "strategy": "momentum"},
+        {"path": str(data_dir / "us-momentum-scan.csv"), "summary_path": str(data_dir / "us-momentum-summary.json"), "market": "us", "strategy": "momentum"},
+        {"path": str(data_dir / "taiwan-price-action-scan-0.csv"), "summary_path": str(data_dir / "taiwan-price-action-summary-0.json"), "market": "taiwan", "strategy": "price_action"},
+        {"path": str(data_dir / "us-price-action-scan.csv"), "summary_path": str(data_dir / "us-price-action-summary.json"), "market": "us", "strategy": "price_action"},
     ]
 
 
