@@ -24,9 +24,10 @@ def test_mini_app_uses_a_light_neutral_palette_and_balanced_logo_rules():
     assert ".brand-dinv" in styles
 
 
-def test_mini_app_renders_market_focus_and_macro_fgi_subscores():
+def test_mini_app_renders_compact_market_risk_cards_without_subscores():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
 
     assert "const renderFocus" in app
-    assert "sentiment.sub_scores" in app
+    assert "risk-metric-card" in app
+    assert "sentiment.sub_scores" not in app
     assert "renderFocus(snapshot.events)" in app

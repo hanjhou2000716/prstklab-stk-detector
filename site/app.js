@@ -6,7 +6,6 @@ const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => 
 const formatNumber = (value) => typeof value === "number" ? value.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "—";
 const signedPercent = (value) => value === null || value === undefined ? "—" : `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
 const marketName = (key) => key === "taiwan" ? "台股" : key === "us" ? "美股" : key;
-const quoteFreshness = (item) => item.quote_basis ? `${item.quote_basis}${item.quote_time ? ` · ${new Date(item.quote_time).toLocaleTimeString("zh-TW", { timeZone: "Asia/Taipei", hour: "2-digit", minute: "2-digit", hour12: false })}` : ` · ${item.quote_date || ""}`}` : (item.quote_date || "");
 
 const renderMarkets = (markets) => {
   const text = ["taiwan", "us"].map((key) => {
@@ -21,15 +20,9 @@ const renderQuoteList = (id, items) => {
   if (!container) return;
   if (!items?.length) { container.innerHTML = '<li class="empty">公開報價暫時無法取得</li>'; return; }
   container.innerHTML = items.map((item) => {
-    const state = item.change_percent > 1 ? "up" : item.change_percent < -1 ? "down" : "flat";
-    return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}</small></span><span class="quote-value"><b>${formatNumber(item.price)} ${escapeHtml(item.currency || "")}</b><small class="${state}">${signedPercent(item.change_percent)} · ${escapeHtml(quoteFreshness(item))}</small></span></li>`;
+    const state = item.change_percent > 0 ? "market-up" : item.change_percent < 0 ? "market-down" : "flat";
+    return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}</small></span><span class="quote-value ${state}"><b>${formatNumber(item.price)} ${escapeHtml(item.currency || "")}</b><small>${signedPercent(item.change_percent)}</small></span></li>`;
   }).join("");
-};
-
-const renderQuoteFreshness = (quotes) => {
-  const bases = [...new Set((quotes || []).map((item) => item.quote_basis).filter(Boolean))];
-  const dates = [...new Set((quotes || []).map((item) => item.quote_date).filter(Boolean))];
-  setText("quote-as-of", bases.length ? `代表標的報價：${bases.join("、")}（${dates.join("、")}）` : "代表標的報價暫時無法取得");
 };
 
 const renderFocus = (events) => {
@@ -71,7 +64,7 @@ const renderAlertCard = (events, generatedAt) => {
   document.getElementById("alert-quote-grid").innerHTML = quoteItems.length ? quoteItems.map(formatAlertQuote).join("") : '<p class="empty">本事件暫無可顯示的公開報價</p>';
 };
 
-const renderRisk = (risk) => {
+const renderLegacyRisk = (risk) => {
   const container = document.getElementById("risk-list");
   if (!container) return;
   const markets = [risk?.taiwan, risk?.us].filter(Boolean);
@@ -79,9 +72,30 @@ const renderRisk = (risk) => {
   container.innerHTML = markets.map((market) => {
     const sentiment = market.sentiment || {};
     const score = sentiment.score === null || sentiment.score === undefined ? "資料暫時無法取得" : `${sentiment.source_label || "情緒"} ${Number(sentiment.score).toFixed(1)}｜${sentiment.label}`;
-    const subScores = Object.entries(sentiment.sub_scores || {}).map(([label, value]) => `${label} ${Number(value).toFixed(0)}`).join(" · ");
+    const subScores = Object.entries(sentiment.components || {}).map(([label, value]) => `${label} ${Number(value).toFixed(0)}`).join(" · ");
     const vix = market.vix?.value === undefined || market.vix?.value === null ? "VIX 暫時無法取得" : `VIX ${market.vix.value}${market.vix.change_percent === null ? "" : ` (${signedPercent(market.vix.change_percent)})`}`;
     return `<li><span><b>${escapeHtml(market.label)}</b><small>${escapeHtml(score)}${sentiment.date ? ` · ${escapeHtml(sentiment.date)}` : ""}</small>${subScores ? `<small>${escapeHtml(subScores)}</small>` : ""}</span><span class="risk-value"><small>${escapeHtml(vix)}</small></span></li>`;
+  }).join("");
+};
+
+const renderRisk = (risk) => {
+  const container = document.getElementById("risk-list");
+  if (!container) return;
+  const markets = [["taiwan", risk?.taiwan], ["us", risk?.us]].filter(([, market]) => Boolean(market));
+  if (!markets.length) {
+    container.innerHTML = '<p class="empty">情緒資料暫時無法取得</p>';
+    return;
+  }
+  container.innerHTML = markets.map(([marketKey, market]) => {
+    const sentiment = market.sentiment || {};
+    const source = sentiment.source_label || (marketKey === "taiwan" ? "TAIEX Macro FGI" : "CNN Fear & Greed");
+    const score = sentiment.score === null || sentiment.score === undefined ? "—" : Number(sentiment.score).toFixed(1);
+    const sentimentLabel = sentiment.label || "資料暫時無法取得";
+    const vix = market.vix || {};
+    const vixValue = vix.value === undefined || vix.value === null ? "—" : Number(vix.value).toFixed(2);
+    const vixChange = vix.change_percent === null || vix.change_percent === undefined ? "資料暫時無法取得" : signedPercent(vix.change_percent);
+    const vixState = vix.change_percent > 0 ? "risk-up" : vix.change_percent < 0 ? "risk-down" : "flat";
+    return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}</small></article></div></section>`;
   }).join("");
 };
 
@@ -162,7 +176,6 @@ const render = (snapshot) => {
   renderMarkets(snapshot.markets || {});
   renderQuoteList("index-list", snapshot.indices || []);
   renderQuoteList("quote-list", snapshot.quotes || []);
-  renderQuoteFreshness(snapshot.quotes || []);
   renderRisk(snapshot.risk);
   renderAlertCard(snapshot.events, snapshot.generated_at);
   renderEvents(snapshot.events);

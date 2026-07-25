@@ -10,15 +10,15 @@ def test_mini_app_deploys_both_brand_assets():
         assert f"assets/{filename}" in page
 
 
-def test_mini_app_distinguishes_market_session_from_quote_freshness():
+def test_mini_app_keeps_market_session_and_last_updated_time_without_quote_metadata():
     root = Path(__file__).resolve().parents[1]
     page = (root / "site" / "index.html").read_text(encoding="utf-8")
     app = (root / "site" / "app.js").read_text(encoding="utf-8")
 
-    assert 'id="quote-as-of"' in page
+    assert 'id="quote-as-of"' not in page
     assert 'id="market-status"' in page
     assert "session-grid" not in page
-    assert "renderQuoteFreshness" in app
+    assert "renderQuoteFreshness" not in app
 
 
 def test_mini_app_has_visible_index_and_strategy_sections():
@@ -86,9 +86,10 @@ def test_mini_app_orders_sections_and_uses_strategy_match_scores():
     assert "items.slice(0, 5)" in app
 
 
-def test_mini_app_labels_intraday_and_daily_quote_freshness():
+def test_mini_app_hides_quote_metadata_from_the_dashboard():
     root = Path(__file__).resolve().parents[1]
     app = (root / "site" / "app.js").read_text(encoding="utf-8")
 
-    assert "quote_basis" in app
-    assert "quoteFreshness" in app
+    assert "quoteFreshness" not in app
+    assert "market-up" in app
+    assert "market-down" in app
