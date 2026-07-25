@@ -37,6 +37,8 @@ def test_mini_app_renders_event_text_without_injecting_untrusted_links():
 
     assert "renderEvents" in app
     assert "event.title" in app
+    assert "同步市場訊號" in app
+    assert "signal-card" in app
     assert "href=\"${event.url}" not in app
 
 
@@ -63,6 +65,7 @@ def test_mini_app_strategy_cards_render_price_change_and_strategy_emphasis():
     assert ".strategy-chip" in styles
     assert ".research-price.market-up" in styles
     assert "報價待完整掃描" in app
+    assert "本益比 ${Number(item.pe).toFixed(1)}" in app
 
 
 def test_mini_app_integrates_the_alert_into_risk_and_splits_research_by_market():
