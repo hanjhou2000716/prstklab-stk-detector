@@ -54,6 +54,20 @@ const renderQuotes = (quotes) => {
   }).join("");
 };
 
+const renderIndices = (indices) => {
+  const container = document.getElementById("index-list");
+  if (!container) return;
+  if (!indices.length) {
+    container.innerHTML = '<li class="empty">主要市場指數暫時無法取得</li>';
+    return;
+  }
+  container.innerHTML = indices.map((index) => {
+    const direction = index.change > 0 ? "up" : index.change < 0 ? "down" : "flat";
+    const sign = index.change > 0 ? "+" : "";
+    return `<li><span><b>${escapeHtml(index.ticker)}</b><small>${escapeHtml(index.name)}｜${escapeHtml(index.quote_date || "日期暫時無法取得")}</small></span><span class="quote-value"><b>${formatNumber(index.price)} ${escapeHtml(index.currency)}</b><small class="${direction}">${sign}${formatNumber(index.change)} (${sign}${index.change_percent}%)</small></span></li>`;
+  }).join("");
+};
+
 const renderQuoteFreshness = (quotes) => {
   const quoteDates = new Map();
   for (const quote of quotes) {
@@ -194,7 +208,11 @@ const renderUnifiedReport = (report) => {
   const health = report.health;
   setText("unified-tag", health?.status || report.status || "研究模式");
   const healthNotice = health?.reasons?.length ? `資料狀態：${health.reasons.join("；")}。` : "資料狀態健康。";
-  setText("unified-notice", `${report.notice || "跨市場研究摘要。"} ${healthNotice}`);
+  const sourceSummary = (report.sources || [])
+    .map((source) => `${marketLabel(source.market)} ${strategyLabel(source.strategy)} ${source.candidates} 筆`)
+    .join("｜");
+  const candidateSummary = report.summary?.total_candidates ? `本次共 ${report.summary.total_candidates} 筆量化觀察清單。` : "";
+  setText("unified-notice", `${candidateSummary}${sourceSummary ? ` ${sourceSummary}。` : ""} ${report.notice || "跨市場研究摘要。"} ${healthNotice}`);
   const container = document.getElementById("unified-list");
   if (!container) return;
   if (!report.candidates?.length) {
@@ -211,6 +229,7 @@ const render = (snapshot) => {
   setText("data-status", snapshot.data_status || "資料暫時無法取得");
   setText("updated-at", snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚未更新");
   renderMarkets(snapshot.markets || {});
+  renderIndices(snapshot.indices || []);
   renderQuotes(snapshot.quotes || []);
   renderQuoteFreshness(snapshot.quotes || []);
   renderRisk(snapshot.risk);

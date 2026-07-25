@@ -22,6 +22,17 @@ WATCHLIST = (
     {"symbol": "NVDA", "ticker": "NVDA", "name": "NVIDIA", "market": "us"},
 )
 
+# Market indices are intentionally kept separate from representative
+# securities. They describe the overall market and never enter research scans.
+MARKET_INDICES = (
+    {"symbol": "^TWII", "ticker": "TAIEX", "name": "臺灣加權指數", "market": "taiwan", "currency": "點"},
+    {"symbol": "^TWOII", "ticker": "TPEx", "name": "櫃買指數", "market": "taiwan", "currency": "點"},
+    {"symbol": "^GSPC", "ticker": "S&P 500", "name": "標普 500", "market": "us", "currency": "點"},
+    {"symbol": "^IXIC", "ticker": "NASDAQ", "name": "那斯達克綜合指數", "market": "us", "currency": "點"},
+    {"symbol": "^DJI", "ticker": "DJIA", "name": "道瓊工業指數", "market": "us", "currency": "點"},
+    {"symbol": "^SOX", "ticker": "SOX", "name": "費城半導體指數", "market": "us", "currency": "點"},
+)
+
 
 def change_percent(current: float, previous: float) -> float | None:
     """Return percent change, avoiding an invalid division by zero."""
@@ -93,7 +104,7 @@ def get_quote(item: dict[str, str]) -> dict[str, Any]:
         "change": delta,
         "change_percent": change_percent(latest, previous),
         "quote_date": closes.index[-1].date().isoformat(),
-        "currency": "TWD" if item["market"] == "taiwan" else "USD",
+        "currency": item.get("currency") or ("TWD" if item["market"] == "taiwan" else "USD"),
     }
 
 
@@ -116,6 +127,12 @@ def build_market_snapshot() -> dict[str, Any]:
             quotes.append(get_quote(item))
         except Exception as exc:  # Individual source failures are disclosed in the UI.
             errors.append({"ticker": item["ticker"], "message": str(exc)})
+    indices: list[dict[str, Any]] = []
+    for item in MARKET_INDICES:
+        try:
+            indices.append(get_quote(item))
+        except Exception as exc:
+            errors.append({"ticker": item["ticker"], "message": str(exc), "scope": "index"})
     quote_data_status = "即時" if not errors else "部分缺漏"
     risk = build_risk_snapshot()
     news = build_news_snapshot()
@@ -167,6 +184,7 @@ def build_market_snapshot() -> dict[str, Any]:
         "generated_at": datetime.now(ZoneInfo("Asia/Taipei")).isoformat(),
         "data_status": quote_data_status,
         "markets": {key: get_market_status(key) for key in MARKETS},
+        "indices": indices,
         "quotes": quotes,
         "risk": risk,
         "news": news,
