@@ -14,7 +14,7 @@ MARKETS = {
 
 WATCHLIST = (
     {"symbol": "006208.TW", "ticker": "006208", "name": "富邦台50", "market": "taiwan"},
-    {"symbol": "00685L.TW", "ticker": "00685L", "name": "國泰美國道瓊正2", "market": "taiwan"},
+    {"symbol": "00685L.TW", "ticker": "00685L", "name": "群益臺灣加權正二", "market": "taiwan"},
     {"symbol": "2330.TW", "ticker": "2330", "name": "台積電", "market": "taiwan"},
     {"symbol": "QQQM", "ticker": "QQQM", "name": "Invesco NASDAQ 100 ETF", "market": "us"},
     {"symbol": "QLD", "ticker": "QLD", "name": "ProShares Ultra QQQ", "market": "us"},

@@ -1,4 +1,4 @@
-from src.risk_news import _market_risk, _news_from_html, _parse_taifex_vix_file, sentiment_label
+from src.risk_news import _market_risk, _news_from_html, _parse_taifex_vix_file, build_risk_snapshot, sentiment_label
 
 
 def test_sentiment_labels_cover_fixed_thresholds():
@@ -59,3 +59,25 @@ def test_taifex_fallback_keeps_taiwan_vix_available(monkeypatch):
 
     assert result["vix"]["source_label"] == "臺灣期貨交易所"
     assert result["errors"] == []
+
+
+def test_taiwan_macro_fgi_is_used_as_taiwan_sentiment(monkeypatch):
+    macro = {
+        "score": 52.5,
+        "label": "中立",
+        "source_label": "TAIEX Macro FGI",
+        "date": "2026-07-24",
+        "index_level": 24000.0,
+        "sub_scores": {"動能": 50.0},
+    }
+    monkeypatch.setattr("src.risk_news.calculate_taiwan_macro_fgi", lambda: macro)
+    monkeypatch.setattr("src.risk_news.fetch_cnn_fear_greed", lambda: {
+        "score": 50.0, "label": "中立", "source_label": "CNN Fear & Greed"
+    })
+    monkeypatch.setattr("src.risk_news._market_risk", lambda label, *_args, **kwargs: {
+        "label": label, "sentiment": _args[1] if len(_args) > 1 else None, "vix": None, "errors": []
+    })
+
+    snapshot = build_risk_snapshot()
+
+    assert snapshot["taiwan"]["sentiment"] == macro

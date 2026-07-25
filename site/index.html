@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="PRStK 稜量投資系統 Telegram Mini App" />
-    <title>PRStK 稜量 Mini App</title>
+    <meta name="description" content="稜量速報系統 Telegram Mini App" />
+    <title>稜量速報系統</title>
     <link rel="stylesheet" href="styles.css" />
     <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
   </head>
@@ -16,86 +16,65 @@
           <span class="brand-divider" aria-hidden="true"></span>
           <img class="brand-dinv" src="assets/D.inv-removebg-preview.png" alt="D.inv" />
         </div>
-        <div class="live-status"><span></span><b id="data-status">資料更新中</b></div>
+        <div class="live-status"><span></span><b id="data-status">載入中</b></div>
       </header>
 
       <section class="hero-panel" aria-labelledby="app-title">
-        <p class="eyebrow">PRSTK INVESTMENT SYSTEM</p>
-        <h1 id="app-title">稜量市場快報</h1>
-        <p id="data-note" class="hero-copy">正在整理公開市場資訊與研究摘要。</p>
-        <div class="update-line"><span>最後更新</span><time id="updated-at">—</time></div>
-        <p id="quote-as-of" class="quote-as-of">報價基準日：資料更新中</p>
+        <p class="eyebrow">D.inv System</p>
+        <h1 id="app-title">稜量速報系統</h1>
+        <p id="market-focus" class="hero-copy">正在整理最新市場焦點。</p>
+        <div class="update-line"><span>最後更新</span><time id="updated-at">--</time></div>
+        <p id="quote-as-of" class="quote-as-of">報價基準日載入中</p>
       </section>
 
-      <nav class="quick-nav" aria-label="Mini App 章節">
+      <nav class="quick-nav" aria-label="Mini App 區段">
         <a href="#market">市場</a><a href="#risk">風險</a><a href="#research">研究</a><a href="#news">新聞</a>
       </nav>
 
       <section id="market" class="section-block" aria-labelledby="market-title">
-        <div class="section-heading"><div><p class="section-kicker">NOW</p><h2 id="market-title">市場脈動</h2></div><span class="source-chip">公開資料</span></div>
-        <div class="session-grid">
-          <article class="session-card"><span id="taiwan-session">台股｜等待判斷</span><strong id="taiwan-date">—</strong><small>交易日（非報價基準日）</small></article>
-          <article class="session-card"><span id="us-session">美股｜等待判斷</span><strong id="us-date">—</strong><small>交易日（非報價基準日）</small></article>
-        </div>
+        <div class="section-heading"><div><p class="section-kicker">NOW</p><h2 id="market-title">市場脈動</h2></div><span id="market-status" class="source-chip">交易日資訊載入中</span></div>
         <article class="panel index-panel">
-          <div class="panel-heading"><h3>全球與主要市場</h3><span>加權指數</span></div>
-          <ul id="index-list" class="watch-list"><li class="empty">資料更新中</li></ul>
+          <div class="panel-heading"><h3>全球與主要市場</h3><span>市場指數</span></div>
+          <ul id="index-list" class="watch-list"><li class="empty">載入中</li></ul>
         </article>
-        <article class="panel quote-panel">
+        <article class="panel">
           <div class="panel-heading"><h3>代表標的</h3><span>觀測池</span></div>
-          <ul id="quote-list" class="watch-list"><li class="empty">資料更新中</li></ul>
+          <ul id="quote-list" class="watch-list"><li class="empty">載入中</li></ul>
         </article>
       </section>
 
       <section id="risk" class="section-block" aria-labelledby="risk-title">
-        <div class="section-heading"><div><p class="section-kicker">SIGNAL</p><h2 id="risk-title">事件與風險</h2></div></div>
+        <div class="section-heading"><div><p class="section-kicker">RISK</p><h2 id="risk-title">風控資訊</h2></div><span id="event-tag" class="tag neutral">觀察中</span></div>
         <article class="panel emphasis-panel">
-          <div class="panel-heading"><h3>重大市場事件</h3><span id="event-tag" class="tag neutral">更新中</span></div>
-          <p id="event-message" class="panel-copy">正在比對重大事件門檻。</p>
-          <ul id="event-list" class="event-list"><li class="empty">資料更新中</li></ul>
+          <p id="event-message" class="panel-copy">正在檢查公開重大事件。</p>
+          <ul id="event-list" class="event-list"><li class="empty">載入中</li></ul>
         </article>
         <article class="panel">
-          <div class="panel-heading"><h3>風控資訊</h3><span id="risk-tag" class="tag neutral">更新中</span></div>
-          <p id="risk-notice" class="panel-copy">公開情緒與波動率觀察。</p>
-          <ul id="risk-list" class="risk-list"><li class="empty">資料更新中</li></ul>
-        </article>
-        <article class="panel compact-panel">
-          <div class="panel-heading"><h3>總經與公開節目</h3><span>公開資料</span></div>
-          <p id="macro-notice" class="panel-copy">本次市場脈絡整理。</p>
-          <ul id="macro-list" class="event-list"><li class="empty">資料更新中</li></ul>
+          <div class="panel-heading"><h3>市場情緒與波動</h3><span>公開資料</span></div>
+          <ul id="risk-list" class="risk-list"><li class="empty">載入中</li></ul>
         </article>
       </section>
 
       <section id="research" class="section-block" aria-labelledby="research-title">
-        <div class="section-heading"><div><p class="section-kicker">RESEARCH</p><h2 id="research-title">研究摘要</h2></div><span id="unified-tag" class="tag neutral">尚未執行</span></div>
-        <article class="panel research-hero">
-          <p id="unified-notice" class="panel-copy">台美公開研究摘要。</p>
-          <ul id="unified-list" class="research-list"><li class="empty">尚無全市場研究報表</li></ul>
-        </article>
-
-        <details class="detail-panel" open>
-          <summary>策略資料清單（可收合）</summary>
-          <div class="detail-content">
-            <article class="sub-panel"><div class="panel-heading"><h3>動能狙擊</h3><span id="momentum-tag" class="tag">研究模式</span></div><p id="momentum-notice" class="panel-copy">正在計算相對動能。</p><ul id="momentum-list" class="research-list"><li class="empty">資料更新中</li></ul></article>
-            <article class="sub-panel"><div class="panel-heading"><h3>三維共振</h3><span id="resonance-tag" class="tag">研究模式</span></div><p id="resonance-notice" class="panel-copy">正在計算價格、波動與量價共振。</p><ul id="resonance-list" class="research-list"><li class="empty">資料更新中</li></ul></article>
-            <article class="sub-panel"><div class="panel-heading"><h3>價值品質</h3><span id="value-tag" class="tag">研究模式</span></div><p id="value-notice" class="panel-copy">公開財務資料研究。</p><ul id="value-list" class="research-list"><li class="empty">資料更新中</li></ul></article>
-            <article class="sub-panel"><div class="panel-heading"><h3>裸 K 結構</h3><span id="research-tag" class="tag">研究模式</span></div><p id="research-notice" class="panel-copy">代表觀測池結構研究。</p><ul id="research-list" class="research-list"><li class="empty">資料更新中</li></ul></article>
-          </div>
-        </details>
-      </section>
-
-      <section id="news" class="section-block" aria-labelledby="news-title">
-        <div class="section-heading"><div><p class="section-kicker">HEADLINES</p><h2 id="news-title">持股關聯新聞</h2></div><span class="source-chip">鉅亨網</span></div>
-        <div class="news-grid">
-          <article class="panel compact-panel"><div class="panel-heading"><h3>台股</h3></div><ul id="taiwan-news" class="news-list"><li class="empty">資料更新中</li></ul></article>
-          <article class="panel compact-panel"><div class="panel-heading"><h3>美股</h3></div><ul id="us-news" class="news-list"><li class="empty">資料更新中</li></ul></article>
+        <div class="section-heading"><div><p class="section-kicker">RESEARCH</p><h2 id="research-title">策略資料清單</h2></div><span id="research-tag" class="source-chip">觀察中</span></div>
+        <p id="research-notice" class="section-note">各策略依自身條件呈現候選資料，不跨策略比較分數。</p>
+        <div class="detail-content">
+          <article class="sub-panel"><div class="panel-heading"><h3>裸 K 結構</h3></div><ul id="research-list" class="research-list"><li class="empty">載入中</li></ul></article>
+          <article class="sub-panel"><div class="panel-heading"><h3>動能觀察</h3></div><ul id="momentum-list" class="research-list"><li class="empty">載入中</li></ul></article>
+          <article class="sub-panel"><div class="panel-heading"><h3>三維共振</h3></div><ul id="resonance-list" class="research-list"><li class="empty">載入中</li></ul></article>
+          <article class="sub-panel"><div class="panel-heading"><h3>品質與價值</h3></div><ul id="value-list" class="research-list"><li class="empty">載入中</li></ul></article>
         </div>
       </section>
 
-      <footer>
-        <p>公開市場資訊與研究展示，不構成投資建議。</p>
-        <blockquote>每天都是好棒的一天！會有好事發生在你我身上！我會盡力幫助身邊的人，讓他們過得更好！</blockquote>
-      </footer>
+      <section id="news" class="section-block" aria-labelledby="news-title">
+        <div class="section-heading"><div><p class="section-kicker">NEWS</p><h2 id="news-title">市場新聞</h2></div><span class="source-chip">鉅亨網公開頁面</span></div>
+        <div class="news-grid">
+          <article class="panel compact-panel"><div class="panel-heading"><h3>台股焦點</h3></div><ul id="taiwan-news" class="news-list"><li class="empty">載入中</li></ul></article>
+          <article class="panel compact-panel"><div class="panel-heading"><h3>美股焦點</h3></div><ul id="us-news" class="news-list"><li class="empty">載入中</li></ul></article>
+        </div>
+      </section>
+
+      <footer><p>每天都是好棒的一天！會有好事發生在你我身上！我會盡力幫助身邊的人，讓他們過得更好！</p></footer>
     </main>
     <script src="app.js"></script>
   </body>

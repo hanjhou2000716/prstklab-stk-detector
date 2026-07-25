@@ -16,7 +16,8 @@ def test_mini_app_distinguishes_market_session_from_quote_freshness():
     app = (root / "site" / "app.js").read_text(encoding="utf-8")
 
     assert 'id="quote-as-of"' in page
-    assert "交易日（非報價基準日）" in page
+    assert 'id="market-status"' in page
+    assert "session-grid" not in page
     assert "renderQuoteFreshness" in app
 
 
@@ -26,15 +27,14 @@ def test_mini_app_has_visible_index_and_strategy_sections():
     app = (root / "site" / "app.js").read_text(encoding="utf-8")
 
     assert 'id="index-list"' in page
-    assert '<details class="detail-panel" open>' in page
-    assert "renderIndices" in app
+    assert 'id="research-list"' in page
+    assert "renderQuoteList" in app
 
 
-def test_mini_app_accepts_only_trusted_official_event_links():
+def test_mini_app_renders_event_text_without_injecting_untrusted_links():
     root = Path(__file__).resolve().parents[1]
     app = (root / "site" / "app.js").read_text(encoding="utf-8")
 
-    assert "isTrustedEventUrl" in app
-    assert ".federalreserve.gov" in app
-    assert ".bls.gov" in app
-    assert ".bea.gov" in app
+    assert "renderEvents" in app
+    assert "event.title" in app
+    assert "href=\"${event.url}" not in app
