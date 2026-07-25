@@ -8,7 +8,7 @@ from typing import Any
 
 
 REPORT_PATH = Path("site/data/research-report.json")
-ALLOWED_STRATEGIES = {"momentum", "price_action", "resonance"}
+ALLOWED_STRATEGIES = {"momentum", "price_action", "resonance", "value"}
 ALLOWED_MARKETS = {"taiwan", "us"}
 
 
@@ -30,7 +30,8 @@ def load_research_cards(path: Path = REPORT_PATH) -> dict[str, Any]:
         if not isinstance(item, dict) or item.get("strategy") not in ALLOWED_STRATEGIES or item.get("market") not in ALLOWED_MARKETS:
             continue
         candidates.append({key: item.get(key) for key in (
-            "market", "strategy", "rank", "ticker", "name", "score", "turnover", "structure"
+            "market", "strategy", "rank", "ticker", "name", "score", "turnover", "structure",
+            "roe", "pe", "payout_ratio", "metrics_available", "moat_review"
         )})
     sources = [
         {key: source.get(key) for key in ("market", "strategy", "status", "candidates", "requested", "data_complete", "failed")}

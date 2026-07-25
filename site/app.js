@@ -72,13 +72,16 @@ const renderResearchList = (id, items, empty) => {
   const container = document.getElementById(id);
   if (!container) return;
   if (!items?.length) { container.innerHTML = `<li class="empty">${empty}</li>`; return; }
-  container.innerHTML = items.map((item) => `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name || item.ticker)}｜${item.market === "taiwan" ? "台股" : "美股"}${item.structure ? `｜${escapeHtml(item.structure)}` : ""}</small></span><span class="risk-value"><small>掃描排序 ${item.rank ?? "—"}</small></span></li>`).join("");
+  container.innerHTML = items.map((item) => {
+    const valueMetrics = item.strategy === "value" ? `｜ROE ${item.roe === null || item.roe === undefined ? "—" : `${(Number(item.roe) * 100).toFixed(1)}%`}｜本益比 ${item.pe === null || item.pe === undefined ? "—" : Number(item.pe).toFixed(1)}` : "";
+    return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name || item.ticker)}｜${item.market === "taiwan" ? "台股" : "美股"}${item.structure ? `｜${escapeHtml(item.structure)}` : ""}${valueMetrics}</small></span><span class="risk-value"><small>${item.strategy === "value" ? `覆核分數 ${item.score ?? "—"}` : `掃描排序 ${item.rank ?? "—"}`}</small></span></li>`;
+  }).join("");
 };
 
 const renderResearch = (snapshot) => {
   const report = snapshot.research_report || {};
   const candidates = report.candidates || [];
-  const strategyLabel = (strategy) => strategy === "momentum" ? "動能" : strategy === "price_action" ? "裸K" : "三維共振";
+  const strategyLabel = (strategy) => strategy === "momentum" ? "動能" : strategy === "price_action" ? "裸K" : strategy === "resonance" ? "三維共振" : "品質價值";
   const coverage = (report.sources || []).map((source) => `${source.market === "taiwan" ? "台股" : "美股"} ${strategyLabel(source.strategy)} ${source.candidates ?? 0} 筆`).join("｜");
   const generatedAt = report.generated_at ? ` 掃描時間：${new Date(report.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}` : "";
   setText("research-tag", report.status || "掃描資料");
@@ -86,6 +89,7 @@ const renderResearch = (snapshot) => {
   renderResearchList("research-list", candidates.filter((item) => item.strategy === "price_action"), "本輪全市場掃描沒有符合裸 K 結構的候選標的");
   renderResearchList("momentum-list", candidates.filter((item) => item.strategy === "momentum"), "本輪全市場掃描沒有符合動能條件的候選標的");
   renderResearchList("resonance-list", candidates.filter((item) => item.strategy === "resonance"), "本輪全市場掃描沒有符合三維共振條件的候選標的");
+  renderResearchList("value-list", candidates.filter((item) => item.strategy === "value"), "本輪上游候選沒有完成品質／價值公開資料覆核");
 };
 
 const render = (snapshot) => {

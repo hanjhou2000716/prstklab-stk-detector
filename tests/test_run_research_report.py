@@ -9,6 +9,7 @@ def test_default_sources_cover_two_markets_and_two_strategies(tmp_path):
         ("taiwan", "momentum"), ("us", "momentum"),
         ("taiwan", "price_action"), ("us", "price_action"),
         ("taiwan", "resonance"), ("us", "resonance"),
+        ("taiwan", "value"), ("us", "value"),
     }
 
 
