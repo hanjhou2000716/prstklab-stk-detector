@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 from collections import Counter
+import ast
 import json
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+from src.price_action import FUNNEL_LABELS, structure_match_score
 
 
 NOTICE = "不同策略的研究排序不可直接視為同一種分數；本報表僅統一欄位與資料狀態。"
@@ -16,21 +19,38 @@ def _value(value: Any) -> Any:
     return None if pd.isna(value) else value.item() if hasattr(value, "item") else value
 
 
+def _structure_score(value: Any) -> int:
+    """Backfill a reproducible structure score for reports created before it existed."""
+    if isinstance(value, str):
+        try:
+            value = ast.literal_eval(value)
+        except (ValueError, SyntaxError):
+            return 0
+    if not isinstance(value, list):
+        return 0
+    by_label = {label: key for key, label in FUNNEL_LABELS.items()}
+    return structure_match_score([by_label[label] for label in value if label in by_label])
+
+
 def normalize_frame(frame: pd.DataFrame, market: str, strategy: str) -> list[dict[str, Any]]:
     """Map a known scan CSV to common fields without fabricating missing data."""
     if frame.empty or "ticker" not in frame.columns:
         return []
     candidates = []
     for rank, (_, row) in enumerate(frame.iterrows(), start=1):
+        structure = _value(row.get("funnel_labels"))
+        score = _value(row.get("score"))
+        if strategy == "price_action" and score is None:
+            score = _structure_score(structure)
         candidates.append({
             "market": market,
             "strategy": strategy,
             "rank": rank,
             "ticker": str(row["ticker"]),
             "name": _value(row.get("name")),
-            "score": _value(row.get("score")),
+            "score": score,
             "turnover": _value(row.get("turnover")),
-            "structure": _value(row.get("funnel_labels")),
+            "structure": structure,
             "roe": _value(row.get("roe")),
             "pe": _value(row.get("pe")),
             "payout_ratio": _value(row.get("payout_ratio")),

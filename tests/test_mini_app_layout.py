@@ -18,7 +18,8 @@ def test_mini_app_uses_a_light_neutral_palette_and_balanced_logo_rules():
     styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
 
     assert "color-scheme: light" in styles
-    assert "--canvas: #eeece6" in styles
+    assert "--canvas: #e8e8e4" in styles
+    assert "--orange: #c77b43" in styles
     assert ".brand-prstk" in styles
     assert ".brand-dinv" in styles
 

@@ -7,6 +7,7 @@ from typing import Any, Callable
 import pandas as pd
 
 from src.price_action import PriceActionResearchScanner
+from src.price_action import structure_match_score
 
 
 def download_daily_bars(symbol: str) -> pd.DataFrame:
@@ -37,6 +38,7 @@ def build_price_action_snapshot(
             daily = histories[item["symbol"]] if histories and item["symbol"] in histories else downloader(item["symbol"])
             result = scanner.scan_daily(daily)
             if result:
+                result.setdefault("score", structure_match_score(result.get("matched_funnels", [])))
                 candidates.append({
                     "ticker": item["ticker"],
                     "name": item["name"],
@@ -45,7 +47,7 @@ def build_price_action_snapshot(
                 })
         except Exception:
             errors.append(f"{item['ticker']} 結構資料暫時無法取得")
-    candidates.sort(key=lambda candidate: candidate["turnover"], reverse=True)
+    candidates.sort(key=lambda candidate: (candidate["score"], candidate["turnover"]), reverse=True)
     candidates = candidates[:5]
     status = "已有結構研究候選" if candidates else "本次無符合裸 K 結構的代表標的"
     return {

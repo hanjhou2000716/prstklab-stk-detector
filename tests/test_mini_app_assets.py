@@ -72,3 +72,15 @@ def test_mini_app_numbers_taiwan_and_us_news_independently():
     assert 'id="taiwan-news" class="news-list numbered-list"' in page
     assert 'id="us-news" class="news-list numbered-list"' in page
     assert "stories.slice(0, 3)" in app
+
+
+def test_mini_app_orders_sections_and_uses_strategy_match_scores():
+    root = Path(__file__).resolve().parents[1]
+    page = (root / "site" / "index.html").read_text(encoding="utf-8")
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert page.index('id="risk"') < page.index('id="market"') < page.index('id="research"') < page.index('id="news"')
+    assert "價值投資" in page
+    assert "strategyScore" in app
+    assert "共振相符度" in app
+    assert "items.slice(0, 5)" in app
