@@ -49,3 +49,26 @@ def test_mini_app_has_a_detailed_alert_card_and_compact_brief_title():
     assert 'id="alert-quote-grid"' in page
     assert "renderAlertCard" in app
     assert "event.brief_title" in app
+
+
+def test_mini_app_integrates_the_alert_into_risk_and_splits_research_by_market():
+    root = Path(__file__).resolve().parents[1]
+    page = (root / "site" / "index.html").read_text(encoding="utf-8")
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert 'href="#risk">風險' in page
+    assert 'href="#market">市場' in page
+    assert 'data-market="taiwan"' in page
+    assert 'data-market="us"' in page
+    assert "activeResearchMarket = \"taiwan\"" in app
+    assert "renderBriefing" not in app
+
+
+def test_mini_app_numbers_taiwan_and_us_news_independently():
+    root = Path(__file__).resolve().parents[1]
+    page = (root / "site" / "index.html").read_text(encoding="utf-8")
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert 'id="taiwan-news" class="news-list numbered-list"' in page
+    assert 'id="us-news" class="news-list numbered-list"' in page
+    assert "stories.slice(0, 3)" in app

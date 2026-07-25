@@ -87,15 +87,15 @@ const renderNewsList = (id, stories) => {
   const container = document.getElementById(id);
   if (!container) return;
   if (!stories?.length) { container.innerHTML = '<li class="empty">目前沒有可顯示的公開新聞</li>'; return; }
-  container.innerHTML = stories.map((story) => {
+  container.innerHTML = stories.slice(0, 3).map((story) => {
     const url = story.url?.startsWith("https://news.cnyes.com/news/id/") ? story.url : "#";
-    return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(story.title)}</a><small>${escapeHtml(story.source)}</small></li>`;
+    const title = String(story.title || "").replace(/^\s*\d+\.\s*/, "");
+    return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><small>${escapeHtml(story.source)}</small></li>`;
   }).join("");
 };
 
 const renderEvents = (events) => {
   setText("event-tag", events?.status || "觀察中");
-  setText("event-message", events?.message || "今日無重大市場事件，持續觀察。");
   const container = document.getElementById("event-list");
   if (!container) return;
   if (!events?.items?.length) { container.innerHTML = '<li class="empty">目前沒有符合門檻的重大事件</li>'; return; }
@@ -112,21 +112,33 @@ const renderResearchList = (id, items, empty) => {
   }).join("");
 };
 
+let activeResearchMarket = "taiwan";
+
 const renderResearch = (snapshot) => {
   const report = snapshot.research_report || {};
   const candidates = report.candidates || [];
-  const strategyLabel = (strategy) => strategy === "momentum" ? "動能" : strategy === "price_action" ? "裸K" : strategy === "resonance" ? "三維共振" : "品質價值";
-  const coverage = (report.sources || []).map((source) => `${source.market === "taiwan" ? "台股" : "美股"} ${strategyLabel(source.strategy)} ${source.candidates ?? 0} 筆`).join("｜");
   const generatedAt = report.generated_at ? ` 掃描時間：${new Date(report.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}` : "";
-  setText("research-tag", report.status || "掃描資料");
-  setText("research-notice", `${report.notice || "全市場公開資料研究。"}${coverage ? ` ${coverage}` : ""}${generatedAt}`);
-  renderResearchList("research-list", candidates.filter((item) => item.strategy === "price_action"), "本輪全市場掃描沒有符合裸 K 結構的候選標的");
-  renderResearchList("momentum-list", candidates.filter((item) => item.strategy === "momentum"), "本輪全市場掃描沒有符合動能條件的候選標的");
-  renderResearchList("resonance-list", candidates.filter((item) => item.strategy === "resonance"), "本輪全市場掃描沒有符合三維共振條件的候選標的");
-  renderResearchList("value-list", candidates.filter((item) => item.strategy === "value"), "本輪上游候選沒有完成品質／價值公開資料覆核");
+  setText("research-tag", activeResearchMarket === "taiwan" ? "台股" : "美股");
+  setText("research-notice", generatedAt.trim() || "掃描時間暫時無法取得");
+  const marketCandidates = candidates.filter((item) => item.market === activeResearchMarket);
+  renderResearchList("research-list", marketCandidates.filter((item) => item.strategy === "price_action"), "本輪掃描沒有符合裸 K 結構的候選標的");
+  renderResearchList("momentum-list", marketCandidates.filter((item) => item.strategy === "momentum"), "本輪掃描沒有符合動能條件的候選標的");
+  renderResearchList("resonance-list", marketCandidates.filter((item) => item.strategy === "resonance"), "本輪掃描沒有符合三維共振條件的候選標的");
+  renderResearchList("value-list", marketCandidates.filter((item) => item.strategy === "value"), "本輪候選沒有完成品質／價值公開資料覆核");
 };
 
+document.querySelectorAll(".research-tab").forEach((tab) => tab.addEventListener("click", () => {
+  activeResearchMarket = tab.dataset.market || "taiwan";
+  document.querySelectorAll(".research-tab").forEach((item) => {
+    const selected = item === tab;
+    item.classList.toggle("active", selected);
+    item.setAttribute("aria-selected", String(selected));
+  });
+  if (window.marketSnapshot) renderResearch(window.marketSnapshot);
+}));
+
 const render = (snapshot) => {
+  window.marketSnapshot = snapshot;
   setText("data-status", snapshot.data_status || "資料更新中");
   setText("updated-at", snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚未更新");
   renderFocus(snapshot.events);

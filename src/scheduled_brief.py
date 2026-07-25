@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from src.config import get_settings
+from src.briefing_cards import build_briefing_snapshot
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import write_snapshot
 from src.telegram_client import send_brief
@@ -141,6 +142,7 @@ def main() -> None:
     if not settings.telegram_ready:
         raise RuntimeError("缺少 Telegram 設定，未發送快報。")
     snapshot = build_market_snapshot()
+    snapshot["briefing"] = build_briefing_snapshot(snapshot, slot)
     write_snapshot(snapshot)
     brief = build_brief(snapshot, slot)
     result = send_brief(

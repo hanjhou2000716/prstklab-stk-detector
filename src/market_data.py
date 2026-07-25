@@ -31,6 +31,11 @@ MARKET_INDICES = (
     {"symbol": "^IXIC", "ticker": "NASDAQ", "name": "那斯達克綜合指數", "market": "us", "currency": "點"},
     {"symbol": "^DJI", "ticker": "DJIA", "name": "道瓊工業指數", "market": "us", "currency": "點"},
     {"symbol": "^SOX", "ticker": "SOX", "name": "費城半導體指數", "market": "us", "currency": "點"},
+    {"symbol": "^N225", "ticker": "NIKKEI", "name": "日經225", "market": "asia", "currency": "點"},
+    {"symbol": "^KS11", "ticker": "KOSPI", "name": "韓國綜合", "market": "asia", "currency": "點"},
+    {"symbol": "BZ=F", "ticker": "BRENT", "name": "Brent 原油", "market": "global", "currency": "USD"},
+    {"symbol": "BTC-USD", "ticker": "BTC", "name": "BTC", "market": "global", "currency": "USD"},
+    {"symbol": "ETH-USD", "ticker": "ETH", "name": "ETH", "market": "global", "currency": "USD"},
 )
 
 
@@ -111,6 +116,7 @@ def get_quote(item: dict[str, str]) -> dict[str, Any]:
 def build_market_snapshot() -> dict[str, Any]:
     """Build a browser-friendly snapshot; one ticker failure never stops others."""
     from src.event_alerts import build_event_snapshot
+    from src.briefing_cards import build_briefing_snapshot
     from src.official_events import fetch_official_events
     from src.macro_summary import build_macro_summary
     from src.macro_program_feed import fetch_yutinghao_latest_program
@@ -170,6 +176,7 @@ def build_market_snapshot() -> dict[str, Any]:
         "events": events,
         "official_events": official_events,
         "macro": macro,
+        "briefing": build_briefing_snapshot({"events": events, "indices": indices, "quotes": quotes}),
         "research_report": research_report,
         "errors": errors,
     }
