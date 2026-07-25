@@ -84,6 +84,16 @@ const escapeHtml = (value) => String(value).replace(/[&<>"]/g, (character) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;",
 })[character]);
 
+const isTrustedEventUrl = (value) => {
+  try {
+    const host = new URL(value).hostname;
+    return host === "news.cnyes.com" || host.endsWith(".federalreserve.gov")
+      || host.endsWith(".bls.gov") || host.endsWith(".bea.gov");
+  } catch {
+    return false;
+  }
+};
+
 const renderRisk = (risk) => {
   if (!risk) return;
   setText("risk-notice", risk.notice || "公開資料風險觀察。");
@@ -132,7 +142,7 @@ const renderEvents = (events) => {
   }
   container.innerHTML = events.items.map((event) => {
     const title = `${event.short_label}｜${event.title}`;
-    const url = event.url?.startsWith("https://news.cnyes.com/news/id/") ? event.url : null;
+    const url = isTrustedEventUrl(event.url) ? event.url : null;
     const content = url ? `<a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>` : escapeHtml(title);
     return `<li>${content}<small>${escapeHtml(event.source)}</small></li>`;
   }).join("");

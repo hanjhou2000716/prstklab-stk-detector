@@ -9,7 +9,8 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
         "us": {"label": "美股", "errors": []},
     })
     monkeypatch.setattr("src.risk_news.build_news_snapshot", lambda: {"errors": [], "taiwan": [], "us": []})
-    monkeypatch.setattr("src.event_alerts.build_event_snapshot", lambda news, quotes: {})
+    monkeypatch.setattr("src.official_events.fetch_official_events", lambda: {"items": [], "errors": []})
+    monkeypatch.setattr("src.event_alerts.build_event_snapshot", lambda news, quotes, official=None: {})
     monkeypatch.setattr("src.macro_summary.build_macro_summary", lambda events, risk, program=None: {})
     monkeypatch.setattr("src.market_history.load_watchlist_history", lambda watchlist: ({}, []))
     monkeypatch.setattr("src.research_scan.build_price_action_snapshot", lambda watchlist, histories: {

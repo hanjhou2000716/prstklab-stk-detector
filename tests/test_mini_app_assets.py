@@ -28,3 +28,13 @@ def test_mini_app_has_visible_index_and_strategy_sections():
     assert 'id="index-list"' in page
     assert '<details class="detail-panel" open>' in page
     assert "renderIndices" in app
+
+
+def test_mini_app_accepts_only_trusted_official_event_links():
+    root = Path(__file__).resolve().parents[1]
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert "isTrustedEventUrl" in app
+    assert ".federalreserve.gov" in app
+    assert ".bls.gov" in app
+    assert ".bea.gov" in app
