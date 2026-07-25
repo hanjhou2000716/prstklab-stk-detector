@@ -35,21 +35,6 @@ const renderFocus = (events) => {
   setText("market-focus", event ? (event.brief_title || `${event.short_label}｜${event.title}`) : "今日無重大市場事件，持續觀察。");
 };
 
-const renderBriefing = (briefing, generatedAt) => {
-  const data = briefing || {};
-  setText("briefing-slot", data.slot === "live" || !data.slot ? "即時資料" : "排程快報");
-  setText("briefing-card-title", data.title || "即時市場儀表板");
-  setText("briefing-time", generatedAt ? `${new Date(generatedAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })} CST` : "公開資料更新中");
-  setText("briefing-overview", data.overview || "正在整理公開市場資訊。");
-  setText("briefing-reminder", data.reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
-  const marketGrid = document.getElementById("briefing-market-grid");
-  const marketItems = data.markets || [];
-  marketGrid.innerHTML = marketItems.length ? marketItems.map((item) => formatAlertQuote(item)).join("") : '<p class="empty">全球主要市場資料暫時無法取得</p>';
-  const observationGrid = document.getElementById("briefing-observations");
-  const observations = data.observations || [];
-  observationGrid.innerHTML = observations.length ? observations.map((item) => `<article class="observation-card"><h3>${escapeHtml(item.title)}</h3><p><b>事件：</b>${escapeHtml(item.event)}</p><p><b>為何重要：</b>${escapeHtml(item.importance)}</p><p><b>市場關聯：</b>${escapeHtml(item.market_impact)}</p><p><b>後續觀察：</b>${escapeHtml(item.watch)}</p></article>`).join("") : '<p class="empty">尚無符合門檻的公開觀察項目</p>';
-};
-
 const formatAlertQuote = (item) => {
   if (!item || item.price === null || item.price === undefined) return "";
   const state = item.change_percent > 0 ? "up" : item.change_percent < 0 ? "down" : "flat";
@@ -102,15 +87,15 @@ const renderNewsList = (id, stories) => {
   const container = document.getElementById(id);
   if (!container) return;
   if (!stories?.length) { container.innerHTML = '<li class="empty">目前沒有可顯示的公開新聞</li>'; return; }
-  container.innerHTML = stories.map((story) => {
+  container.innerHTML = stories.slice(0, 3).map((story) => {
     const url = story.url?.startsWith("https://news.cnyes.com/news/id/") ? story.url : "#";
-    return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(story.title)}</a><small>${escapeHtml(story.source)}</small></li>`;
+    const title = String(story.title || "").replace(/^\s*\d+\.\s*/, "");
+    return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><small>${escapeHtml(story.source)}</small></li>`;
   }).join("");
 };
 
 const renderEvents = (events) => {
   setText("event-tag", events?.status || "觀察中");
-  setText("event-message", events?.message || "今日無重大市場事件，持續觀察。");
   const container = document.getElementById("event-list");
   if (!container) return;
   if (!events?.items?.length) { container.innerHTML = '<li class="empty">目前沒有符合門檻的重大事件</li>'; return; }
@@ -127,25 +112,36 @@ const renderResearchList = (id, items, empty) => {
   }).join("");
 };
 
+let activeResearchMarket = "taiwan";
+
 const renderResearch = (snapshot) => {
   const report = snapshot.research_report || {};
   const candidates = report.candidates || [];
-  const strategyLabel = (strategy) => strategy === "momentum" ? "動能" : strategy === "price_action" ? "裸K" : strategy === "resonance" ? "三維共振" : "品質價值";
-  const coverage = (report.sources || []).map((source) => `${source.market === "taiwan" ? "台股" : "美股"} ${strategyLabel(source.strategy)} ${source.candidates ?? 0} 筆`).join("｜");
   const generatedAt = report.generated_at ? ` 掃描時間：${new Date(report.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}` : "";
-  setText("research-tag", report.status || "掃描資料");
-  setText("research-notice", `${report.notice || "全市場公開資料研究。"}${coverage ? ` ${coverage}` : ""}${generatedAt}`);
-  renderResearchList("research-list", candidates.filter((item) => item.strategy === "price_action"), "本輪全市場掃描沒有符合裸 K 結構的候選標的");
-  renderResearchList("momentum-list", candidates.filter((item) => item.strategy === "momentum"), "本輪全市場掃描沒有符合動能條件的候選標的");
-  renderResearchList("resonance-list", candidates.filter((item) => item.strategy === "resonance"), "本輪全市場掃描沒有符合三維共振條件的候選標的");
-  renderResearchList("value-list", candidates.filter((item) => item.strategy === "value"), "本輪上游候選沒有完成品質／價值公開資料覆核");
+  setText("research-tag", activeResearchMarket === "taiwan" ? "台股" : "美股");
+  setText("research-notice", generatedAt.trim() || "掃描時間暫時無法取得");
+  const marketCandidates = candidates.filter((item) => item.market === activeResearchMarket);
+  renderResearchList("research-list", marketCandidates.filter((item) => item.strategy === "price_action"), "本輪掃描沒有符合裸 K 結構的候選標的");
+  renderResearchList("momentum-list", marketCandidates.filter((item) => item.strategy === "momentum"), "本輪掃描沒有符合動能條件的候選標的");
+  renderResearchList("resonance-list", marketCandidates.filter((item) => item.strategy === "resonance"), "本輪掃描沒有符合三維共振條件的候選標的");
+  renderResearchList("value-list", marketCandidates.filter((item) => item.strategy === "value"), "本輪候選沒有完成品質／價值公開資料覆核");
 };
 
+document.querySelectorAll(".research-tab").forEach((tab) => tab.addEventListener("click", () => {
+  activeResearchMarket = tab.dataset.market || "taiwan";
+  document.querySelectorAll(".research-tab").forEach((item) => {
+    const selected = item === tab;
+    item.classList.toggle("active", selected);
+    item.setAttribute("aria-selected", String(selected));
+  });
+  if (window.marketSnapshot) renderResearch(window.marketSnapshot);
+}));
+
 const render = (snapshot) => {
+  window.marketSnapshot = snapshot;
   setText("data-status", snapshot.data_status || "資料更新中");
   setText("updated-at", snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚未更新");
   renderFocus(snapshot.events);
-  renderBriefing(snapshot.briefing, snapshot.generated_at);
   renderMarkets(snapshot.markets || {});
   renderQuoteList("index-list", snapshot.indices || []);
   renderQuoteList("quote-list", snapshot.quotes || []);
