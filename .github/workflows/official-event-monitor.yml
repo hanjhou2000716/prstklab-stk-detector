@@ -1,0 +1,86 @@
+name: Official macro event monitor
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [official-event-check]
+  schedule:
+    - cron: "*/15 * * * 1-5"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  monitor-send-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Check current official releases
+        id: status
+        run: python -m src.official_event_monitor --write-status
+      - name: Restore event delivery lock
+        if: steps.status.outputs.should_send == 'true'
+        id: idempotency
+        uses: actions/cache/restore@v4
+        with:
+          path: .official-event-lock
+          key: official-event-${{ steps.status.outputs.key }}
+      - name: Send new official event
+        if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        run: python -m src.official_event_monitor --send --expected-key "${{ steps.status.outputs.key }}"
+      - name: Commit event snapshot
+        if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/market.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore: refresh official event snapshot"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then exit 0; fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            git fetch origin main
+            git rebase -X theirs origin/main
+          done
+      - name: Configure GitHub Pages
+        if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy Pages
+        if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Save event delivery lock
+        if: success() && steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        run: touch .official-event-lock
+      - name: Persist event delivery lock
+        if: success() && steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .official-event-lock
+          key: official-event-${{ steps.status.outputs.key }}
