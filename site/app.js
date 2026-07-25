@@ -168,7 +168,7 @@ const renderResearchList = (id, items, empty) => {
   container.innerHTML = items.slice(0, 5).map((item) => {
     const state = item.change_percent > 0 ? "market-up" : item.change_percent < 0 ? "market-down" : "flat";
     const currency = item.market === "taiwan" ? "TWD" : "USD";
-    const price = item.close === null || item.close === undefined ? "資料暫時無法取得" : `${formatNumber(item.close)} ${currency}`;
+    const price = item.close === null || item.close === undefined ? "報價待完整掃描" : `${formatNumber(item.close)} ${currency}`;
     const change = item.change_percent === null || item.change_percent === undefined ? "—" : signedPercent(item.change_percent);
     return `<li class="research-item"><div class="research-item-top"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-price ${state}">${escapeHtml(price)}<small>${escapeHtml(change)}</small></span></div><div class="research-item-bottom"><span class="research-company">${escapeHtml(item.name || item.ticker)}<span class="strategy-chip">${escapeHtml(researchStrategyLabel(item))}</span></span><span class="research-score">${escapeHtml(researchScoreLabel(item))}</span></div></li>`;
   }).join("");
