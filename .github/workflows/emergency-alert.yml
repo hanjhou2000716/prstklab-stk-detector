@@ -4,35 +4,127 @@ on:
   workflow_dispatch:
     inputs:
       category:
-        description: "重大事件類別"
+        description: Alert category
         required: true
         type: choice
         options: [fed, macro, policy, conflict, semiconductor, market]
       summary:
-        description: "中立摘要；加上系統前綴後必須不超過 30 字"
+        description: Watch-sized summary; the final Telegram message must stay within 30 characters
         required: true
         type: string
+  repository_dispatch:
+    types: [external-market-alert]
 
 permissions:
-  contents: read
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: emergency-alert-${{ github.event.client_payload.event_id || inputs.summary }}
+  cancel-in-progress: false
 
 jobs:
   send-emergency-alert:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+      CATEGORY: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.category || inputs.category }}
+      SUMMARY: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.summary || inputs.summary }}
+      EXTERNAL_SOURCE: ${{ github.event.client_payload.source || '' }}
+      EXTERNAL_EVENT_ID: ${{ github.event.client_payload.event_id || '' }}
+      EXTERNAL_OCCURRED_AT: ${{ github.event.client_payload.occurred_at || '' }}
+      EXTERNAL_SIGNATURE: ${{ github.event.client_payload.signature || '' }}
+      EXTERNAL_ALERT_SHARED_SECRET: ${{ secrets.EXTERNAL_ALERT_SHARED_SECRET }}
     steps:
-      - name: 取得程式碼
-        uses: actions/checkout@v4
-      - name: 設定 Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: 安裝相依套件
-        run: pip install -r requirements.txt
-      - name: 發送重大市場快訊
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
-          CATEGORY: ${{ inputs.category }}
-          SUMMARY: ${{ inputs.summary }}
+      - run: pip install -r requirements.txt
+      - name: Validate signed external alert
+        id: external
+        if: github.event_name == 'repository_dispatch'
+        run: >
+          python -m src.external_alert
+          --category "$CATEGORY"
+          --summary "$SUMMARY"
+          --source "$EXTERNAL_SOURCE"
+          --event-id "$EXTERNAL_EVENT_ID"
+          --occurred-at "$EXTERNAL_OCCURRED_AT"
+          --signature "$EXTERNAL_SIGNATURE"
+          --shared-secret "$EXTERNAL_ALERT_SHARED_SECRET"
+          >> "$GITHUB_OUTPUT"
+      - name: Restore external event lock
+        id: idempotency
+        if: github.event_name == 'repository_dispatch'
+        uses: actions/cache/restore@v4
+        with:
+          path: .external-alert-lock
+          key: external-alert-${{ steps.external.outputs.event_key }}
+      - name: Refresh public market snapshot
+        if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
+        run: python -m src.refresh_market_data
+      - name: Add verified external alert to Mini App data
+        if: github.event_name == 'repository_dispatch' && steps.idempotency.outputs.cache-hit != 'true'
+        run: >
+          python -m src.external_alert
+          --category "$CATEGORY"
+          --summary "$SUMMARY"
+          --source "$EXTERNAL_SOURCE"
+          --event-id "$EXTERNAL_EVENT_ID"
+          --occurred-at "$EXTERNAL_OCCURRED_AT"
+          --signature "$EXTERNAL_SIGNATURE"
+          --shared-secret "$EXTERNAL_ALERT_SHARED_SECRET"
+          --snapshot site/data/market.json
+      - name: Commit refreshed Mini App data
+        if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/market.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore: refresh emergency market alert"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            git fetch origin main
+            git rebase -X theirs origin/main
+          done
+      - name: Configure GitHub Pages
+        if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy Pages
+        if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Send Telegram emergency alert
+        if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
         run: python -m src.emergency_alert --category "$CATEGORY" --summary "$SUMMARY"
+      - name: Mark verified external event as sent
+        if: success() && github.event_name == 'repository_dispatch' && steps.idempotency.outputs.cache-hit != 'true'
+        run: touch .external-alert-lock
+      - name: Save external event lock
+        if: success() && github.event_name == 'repository_dispatch' && steps.idempotency.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .external-alert-lock
+          key: external-alert-${{ steps.external.outputs.event_key }}

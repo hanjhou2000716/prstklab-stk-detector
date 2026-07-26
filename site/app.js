@@ -25,7 +25,17 @@ const renderQuoteList = (id, items) => {
   }).join("");
 };
 
-const renderFocus = (events) => {
+const activeExternalAlert = (alert) => {
+  if (!alert?.summary || !alert?.expires_at) return null;
+  const expiresAt = new Date(alert.expires_at);
+  return Number.isNaN(expiresAt.getTime()) || expiresAt <= new Date() ? null : alert;
+};
+
+const renderFocus = (events, externalAlert) => {
+  if (externalAlert) {
+    setText("market-focus", `外部快訊｜${externalAlert.summary}`);
+    return;
+  }
   const event = events?.items?.[0];
   setText("market-focus", event ? (event.brief_title || `${event.short_label}｜${event.title}`) : "今日無重大市場事件，持續觀察。");
 };
@@ -36,8 +46,15 @@ const formatAlertQuote = (item) => {
   return `<div class="alert-quote"><b>${escapeHtml(item.name || item.ticker)}</b><strong class="${state}">${formatNumber(item.price)}${item.currency ? ` ${escapeHtml(item.currency)}` : ""}</strong><small class="${state}">${item.change === null || item.change === undefined ? "" : `${item.change > 0 ? "+" : ""}${formatNumber(item.change)}　`}${signedPercent(item.change_percent)}</small></div>`;
 };
 
-const renderAlertCard = (events, generatedAt) => {
-  const event = events?.items?.[0];
+const renderAlertCard = (events, generatedAt, externalAlert) => {
+  const event = externalAlert ? {
+    kind: "external_alert", risk_level: "警戒", short_label: "外部快訊",
+    brief_title: `金十｜${externalAlert.category}`, summary: externalAlert.summary,
+    trigger: `事件時間：${externalAlert.occurred_at}`,
+    market_context: `來源：${externalAlert.source}；已通過系統簽章驗證。`,
+    friendly_reminder: "僅供公開資訊整理與教育性觀察，不構成投資建議。",
+    related: [],
+  } : events?.items?.[0];
   const card = document.getElementById("alert-card");
   if (!card) return;
   const displayTime = generatedAt ? new Date(generatedAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "公開資料更新中";
@@ -55,7 +72,7 @@ const renderAlertCard = (events, generatedAt) => {
   }
   const risk = event.risk_level || "持續觀察";
   card.dataset.risk = risk.includes("高風險") ? "high" : risk.includes("警戒") ? "warning" : "neutral";
-  setText("alert-banner", event.kind === "market_signal" ? event.short_label : "已核對的重要市場事件");
+  setText("alert-banner", event.kind === "market_signal" ? event.short_label : event.kind === "external_alert" ? "已核對外部快訊" : "已核對的重要市場事件");
   setText("alert-headline", event.brief_title || `${event.short_label}｜${event.title}`);
   setText("alert-summary", event.summary || event.title || "公開市場事件更新。");
   setText("alert-trigger", event.trigger || "");
@@ -202,14 +219,15 @@ document.querySelectorAll(".research-tab").forEach((tab) => tab.addEventListener
 
 const render = (snapshot) => {
   window.marketSnapshot = snapshot;
+  const externalAlert = activeExternalAlert(snapshot.external_alert);
   setText("data-status", snapshot.data_status || "資料更新中");
   setText("updated-at", snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚未更新");
-  renderFocus(snapshot.events);
+  renderFocus(snapshot.events, externalAlert);
   renderMarkets(snapshot.markets || {});
   renderQuoteList("index-list", snapshot.indices || []);
   renderQuoteList("quote-list", snapshot.quotes || []);
   renderRisk(snapshot.risk);
-  renderAlertCard(snapshot.events, snapshot.generated_at);
+  renderAlertCard(snapshot.events, snapshot.generated_at, externalAlert);
   renderEvents(snapshot.events);
   renderResearch(snapshot);
   renderNewsList("taiwan-news", snapshot.news?.taiwan);
