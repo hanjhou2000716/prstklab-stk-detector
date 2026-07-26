@@ -19,7 +19,7 @@ def test_rejects_blank_brief():
 
 def test_mini_app_button_uses_telegram_web_app_field():
     assert mini_app_button("https://example.github.io/app/") == {
-        "text": "開啟稜量速報系統",
+        "text": "📡 開啟稜量速報系統",
         "web_app": {"url": "https://example.github.io/app/"},
     }
 

@@ -29,7 +29,7 @@ def mini_app_button(mini_app_url: str) -> dict[str, object]:
     if not mini_app_url.startswith("https://"):
         raise ValueError("Mini App 網址必須使用 HTTPS。")
     return {
-        "text": "開啟稜量速報系統",
+        "text": "📡 開啟稜量速報系統",
         "web_app": {"url": mini_app_url},
     }
 
