@@ -15,9 +15,9 @@ on:
         required: true
         default: '50'
   schedule:
-    # Weekdays 14:20 Taiwan time. The report is independent from the briefing
-    # jobs and remains available when a source scan has no candidates.
-    - cron: '20 6 * * 1-5'
+    # Weekdays 13:30 Taiwan time. This leaves a 40-minute window before the
+    # 14:10 post-close brief refreshes and deploys the newest research output.
+    - cron: '30 5 * * 1-5'
 permissions:
   contents: write
 concurrency:
