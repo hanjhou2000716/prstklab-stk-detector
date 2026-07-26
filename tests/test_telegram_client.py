@@ -1,6 +1,6 @@
 import pytest
 
-from src.telegram_client import mini_app_button, mini_app_menu_button, validate_brief
+from src.telegram_client import mini_app_button, mini_app_menu_button, send_briefs, validate_brief
 
 
 def test_accepts_30_character_brief():
@@ -35,3 +35,29 @@ def test_mini_app_menu_button_uses_persistent_web_app_shape():
         "text": "稜量系統",
         "web_app": {"url": "https://example.github.io/app/"},
     }
+
+
+def test_send_briefs_delivers_to_each_configured_recipient(monkeypatch):
+    calls = []
+
+    class Response:
+        ok = True
+
+        @staticmethod
+        def json():
+            return {"ok": True, "result": {"message_id": 1}}
+
+    def fake_post(url, json, timeout):
+        calls.append((url, json["chat_id"]))
+        return Response()
+
+    monkeypatch.setattr("src.telegram_client.requests.post", fake_post)
+    results = send_briefs(
+        token="token",
+        chat_ids=("100", "200"),
+        text="測試快報",
+        dashboard_url="https://example.github.io/app/",
+    )
+
+    assert len(results) == 2
+    assert [chat_id for _, chat_id in calls] == ["100", "200"]

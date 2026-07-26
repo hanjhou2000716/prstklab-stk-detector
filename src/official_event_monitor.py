@@ -11,7 +11,7 @@ from typing import Any
 from src.config import get_settings
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import write_snapshot
-from src.telegram_client import send_brief, validate_brief
+from src.telegram_client import send_briefs, validate_brief
 
 
 def select_official_event(snapshot: dict[str, Any]) -> dict[str, str] | None:
@@ -68,9 +68,9 @@ def send_current_event(expected_key: str | None = None) -> None:
     settings = get_settings()
     if not settings.telegram_ready:
         raise RuntimeError("缺少 Telegram 設定，無法送出官方事件快訊")
-    send_brief(
+    send_briefs(
         token=settings.telegram_bot_token or "",
-        chat_id=settings.telegram_chat_id or "",
+        chat_ids=settings.telegram_chat_ids,
         text=build_official_event_brief(event),
         dashboard_url=settings.dashboard_url,
     )

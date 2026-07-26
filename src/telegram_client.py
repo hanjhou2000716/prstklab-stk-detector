@@ -61,6 +61,12 @@ def configure_mini_app_menu(*, token: str, chat_id: str, mini_app_url: str) -> N
         raise TelegramError(payload.get("description", "Mini App 選單設定失敗。"))
 
 
+def configure_mini_app_menus(*, token: str, chat_ids: tuple[str, ...], mini_app_url: str) -> None:
+    """Configure the private-chat Mini App entry for every configured recipient."""
+    for chat_id in chat_ids:
+        configure_mini_app_menu(token=token, chat_id=chat_id, mini_app_url=mini_app_url)
+
+
 def send_brief(
     *, token: str, chat_id: str, text: str, dashboard_url: str
 ) -> TelegramResult:
@@ -89,3 +95,15 @@ def send_brief(
         raise TelegramError(payload.get("description", "Telegram 發送失敗。"))
 
     return TelegramResult(message_id=payload["result"]["message_id"])
+
+
+def send_briefs(
+    *, token: str, chat_ids: tuple[str, ...], text: str, dashboard_url: str
+) -> tuple[TelegramResult, ...]:
+    """Send one identical validated brief to each configured recipient."""
+    if not chat_ids:
+        raise ValueError("至少需要一個 Telegram 收件人。")
+    return tuple(
+        send_brief(token=token, chat_id=chat_id, text=text, dashboard_url=dashboard_url)
+        for chat_id in chat_ids
+    )
