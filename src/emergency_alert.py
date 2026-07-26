@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 
 from src.config import get_settings
-from src.telegram_client import send_brief, validate_brief
+from src.telegram_client import send_briefs, validate_brief
 
 
 CATEGORY_LABELS = {
@@ -43,13 +43,13 @@ def main() -> None:
     if not settings.telegram_ready:
         raise RuntimeError("缺少 Telegram 設定，無法發送快訊。")
     text = build_emergency_brief(args.category, args.summary)
-    result = send_brief(
+    results = send_briefs(
         token=settings.telegram_bot_token or "",
-        chat_id=settings.telegram_chat_id or "",
+        chat_ids=settings.telegram_chat_ids,
         text=text,
         dashboard_url=settings.dashboard_url,
     )
-    print(f"重大快訊已發送，訊息 ID：{result.message_id}")
+    print(f"重大快訊已發送給 {len(results)} 位收件人。")
 
 
 if __name__ == "__main__":

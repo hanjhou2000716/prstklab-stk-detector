@@ -10,7 +10,7 @@ from src.config import get_settings
 from src.briefing_cards import build_briefing_snapshot
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import write_snapshot
-from src.telegram_client import send_brief
+from src.telegram_client import send_briefs
 
 
 SLOT_LABELS = {
@@ -145,13 +145,13 @@ def main() -> None:
     snapshot["briefing"] = build_briefing_snapshot(snapshot, slot)
     write_snapshot(snapshot)
     brief = build_brief(snapshot, slot)
-    result = send_brief(
+    results = send_briefs(
         token=settings.telegram_bot_token or "",
-        chat_id=settings.telegram_chat_id or "",
+        chat_ids=settings.telegram_chat_ids,
         text=brief,
         dashboard_url=settings.dashboard_url,
     )
-    print(f"已發送 {slot} 快報，訊息 ID：{result.message_id}。")
+    print(f"已發送 {slot} 快報給 {len(results)} 位收件人。")
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ import argparse
 import sys
 
 from src.config import get_settings
-from src.telegram_client import TelegramError, send_brief, validate_brief
+from src.telegram_client import TelegramError, send_briefs, validate_brief
 
 
 DEFAULT_TEST_MESSAGE = "測試｜PRStK 通知系統已啟動🟰"
@@ -51,9 +51,9 @@ def main() -> int:
         return 2
 
     try:
-        result = send_brief(
+        results = send_briefs(
             token=settings.telegram_bot_token or "",
-            chat_id=settings.telegram_chat_id or "",
+            chat_ids=settings.telegram_chat_ids,
             text=args.message,
             dashboard_url=settings.dashboard_url,
         )
@@ -61,7 +61,7 @@ def main() -> int:
         print(f"Telegram 發送失敗：{exc}")
         return 1
 
-    print(f"Telegram 發送成功，訊息 ID：{result.message_id}")
+    print(f"Telegram 已發送給 {len(results)} 位收件人。")
     return 0
 
 
