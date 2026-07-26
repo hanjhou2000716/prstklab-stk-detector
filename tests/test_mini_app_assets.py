@@ -39,6 +39,15 @@ def test_mini_app_renders_event_text_without_injecting_untrusted_links():
     assert "event.title" in app
     assert "同步市場訊號" in app
     assert "signal-card" in app
+
+
+def test_mini_app_can_show_a_verified_external_alert_from_the_public_snapshot():
+    root = Path(__file__).resolve().parents[1]
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert "activeExternalAlert" in app
+    assert "external_alert" in app
+    assert "已核對外部快訊" in app
     assert "href=\"${event.url}" not in app
 
 

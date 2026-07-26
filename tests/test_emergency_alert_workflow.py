@@ -8,3 +8,6 @@ def test_emergency_workflow_has_fixed_major_event_categories_and_mini_app_delive
     assert "options: [fed, macro, policy, conflict, semiconductor, market]" in workflow
     assert "python -m src.emergency_alert" in workflow
     assert "DASHBOARD_URL" in workflow
+    assert "external-market-alert" in workflow
+    assert "EXTERNAL_ALERT_SHARED_SECRET" in workflow
+    assert "actions/cache/restore@v4" in workflow

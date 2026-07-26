@@ -30,4 +30,4 @@ def test_mini_app_renders_compact_market_risk_cards_without_subscores():
     assert "const renderFocus" in app
     assert "risk-metric-card" in app
     assert "sentiment.sub_scores" not in app
-    assert "renderFocus(snapshot.events)" in app
+    assert "renderFocus(snapshot.events, externalAlert)" in app
