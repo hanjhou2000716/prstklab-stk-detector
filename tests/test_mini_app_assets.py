@@ -58,10 +58,12 @@ def test_mini_app_has_a_detailed_alert_card_and_compact_brief_title():
 
     assert 'id="alert-card"' in page
     assert 'id="alert-quote-grid"' in page
+    assert 'id="alert-stock-observation"' in page
     assert 'class="alert-brief-list"' in page
     assert 'role="list"' in page
     assert "renderAlertCard" in app
     assert "event.brief_title" in app
+    assert "event.stock_observation" in app
 
 
 def test_mini_app_strategy_cards_render_price_change_and_strategy_emphasis():

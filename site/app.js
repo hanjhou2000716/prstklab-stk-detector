@@ -1,4 +1,4 @@
-const telegram = window.Telegram?.WebApp;
+﻿const telegram = window.Telegram?.WebApp;
 if (telegram) { telegram.ready(); telegram.expand(); }
 
 const setText = (id, value) => { const node = document.getElementById(id); if (node) node.textContent = value; };
@@ -51,7 +51,9 @@ const renderAlertCard = (events, generatedAt, externalAlert) => {
     kind: "external_alert", risk_level: "警戒", short_label: "外部快訊",
     brief_title: `金十｜${externalAlert.category}`, summary: externalAlert.summary,
     trigger: `事件時間：${externalAlert.occurred_at}`,
-    market_context: `來源：${externalAlert.source}；已通過系統簽章驗證。`,
+    why_important: "外部公開快訊已通過系統簽章驗證；影響範圍仍須由官方與市場資料確認。",
+    market_context: `可能連動的市場待後續公開報價確認。來源：${externalAlert.source}。`,
+    stock_observation: "觀察主要股市、能源、利率或半導體指數是否出現可核對的同步變化。",
     friendly_reminder: "僅供公開資訊整理與教育性觀察，不構成投資建議。",
     related: [],
   } : events?.items?.[0];
@@ -64,8 +66,9 @@ const renderAlertCard = (events, generatedAt, externalAlert) => {
     setText("alert-banner", "今日無重大市場事件，持續觀察");
     setText("alert-headline", "市場訊號尚未達提醒門檻");
     setText("alert-summary", "目前沒有需優先提示的重大市場事件。");
-    setText("alert-trigger", "日內價格訊號尚未觸及提醒門檻。");
-    setText("alert-context", "市場關聯：持續觀察公開資料與主要市場變化。");
+    setText("alert-trigger", "為何重要：日內價格訊號尚未觸及提醒門檻。");
+    setText("alert-context", "可能連動：持續觀察公開資料與主要市場變化。");
+    setText("alert-stock-observation", "股市觀察：等待可核對的市場變化，不預設市場間因果。 ");
     setText("alert-reminder", "僅供公開資訊整理與教育性觀察，不構成投資建議。");
     document.getElementById("alert-quote-grid").innerHTML = '<p class="empty">目前沒有符合門檻的價格訊號</p>';
     return;
@@ -74,9 +77,10 @@ const renderAlertCard = (events, generatedAt, externalAlert) => {
   card.dataset.risk = risk.includes("高風險") ? "high" : risk.includes("警戒") ? "warning" : "neutral";
   setText("alert-banner", event.kind === "market_signal" ? event.short_label : event.kind === "external_alert" ? "已核對外部快訊" : "已核對的重要市場事件");
   setText("alert-headline", event.brief_title || `${event.short_label}｜${event.title}`);
-  setText("alert-summary", event.summary || event.title || "公開市場事件更新。");
-  setText("alert-trigger", event.trigger || "");
-  setText("alert-context", `市場關聯：${event.market_context || "持續觀察公開資料。"}`);
+  setText("alert-summary", `事件：${event.summary || event.title || "公開市場事件更新。"}`);
+  setText("alert-trigger", `為何重要：${event.why_important || event.trigger || "已核對公開訊號，等待後續市場反應。"}`);
+  setText("alert-context", `可能連動：${event.market_context || "持續觀察公開資料。"}`);
+  setText("alert-stock-observation", `股市觀察：${event.stock_observation || "觀察主要市場是否出現可核對的同步變化。"}`);
   setText("alert-reminder", event.friendly_reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
   const quoteItems = [event.instrument, ...(event.related || [])].filter(Boolean).slice(0, 2);
   document.getElementById("alert-quote-grid").innerHTML = quoteItems.length ? quoteItems.map(formatAlertQuote).join("") : '<p class="empty">本事件暫無可顯示的公開報價</p>';

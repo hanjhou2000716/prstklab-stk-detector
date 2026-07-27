@@ -36,13 +36,102 @@ def detect_major_event(story: dict[str, str]) -> dict[str, str] | None:
 
 
 def _related_indices(indices: list[dict[str, Any]], excluded_ticker: str) -> list[dict[str, Any]]:
-    """Return a compact cross-market reference set for the alert card."""
+    """Return two relevant, independently quoted cross-market references."""
+    ticker = excluded_ticker.upper()
+    preferred = {
+        "TAIEX": ("SOX", "NASDAQ", "NIKKEI", "KOSPI"),
+        "NASDAQ": ("SOX", "S&P 500", "TAIEX"),
+        "SOX": ("NASDAQ", "TAIEX", "S&P 500"),
+        "NIKKEI": ("KOSPI", "NASDAQ", "SOX"),
+        "KOSPI": ("NIKKEI", "NASDAQ", "SOX"),
+        "BRENT": ("TAIEX", "NASDAQ", "SOX"),
+        "BTC": ("NASDAQ", "SOX", "TAIEX"),
+        "ETH": ("NASDAQ", "SOX", "TAIEX"),
+    }.get(ticker, ("NASDAQ", "SOX", "TAIEX", "S&P 500"))
     related: list[dict[str, Any]] = []
-    for ticker in ("NASDAQ", "SOX", "S&P 500"):
-        item = next((value for value in indices if value.get("ticker") == ticker), None)
+    for candidate in preferred:
+        item = next((value for value in indices if value.get("ticker") == candidate), None)
         if item and item.get("ticker") != excluded_ticker and item.get("price") is not None:
             related.append(item)
     return related[:2]
+
+
+def _signal_market_context(ticker: str) -> tuple[str, str]:
+    """Return neutral transmission and equity-observation language per market."""
+    contexts = {
+        "TAIEX": (
+            "可能連動費半、Nasdaq 與台指期；以後續同步報價確認，而非預設因果。",
+            "觀察台股權值與電子類股是否與台指期、費半維持同方向。",
+        ),
+        "NASDAQ": (
+            "可能連動費半、S&P 500 與下一交易日台股科技開盤；以同步報價確認。",
+            "觀察美國成長股、半導體權值及台股科技開盤是否出現同步或分歧。",
+        ),
+        "SOX": (
+            "可能連動 Nasdaq、台股半導體權值與亞洲科技指數；以同步報價確認。",
+            "觀察半導體上下游、台積電與台股電子權值是否跟隨或出現背離。",
+        ),
+        "NIKKEI": (
+            "可能連動韓股、Nasdaq 與亞洲科技權值；以各市場開收盤報價確認。",
+            "觀察日本與韓國科技權值是否與美國半導體指數同向。",
+        ),
+        "KOSPI": (
+            "可能連動日經、Nasdaq 與亞洲半導體供應鏈；以各市場報價確認。",
+            "觀察韓國科技權值、日經與台股電子類股是否出現同步波動。",
+        ),
+        "BRENT": (
+            "可能連動能源、航運、通膨預期與利率敏感類股；以油價與市場報價確認。",
+            "觀察能源成本、通膨預期及全球股市風險偏好是否同時變化。",
+        ),
+        "BTC": (
+            "可能反映高波動資產的風險偏好，並與 Nasdaq 等市場一併觀察；不預設因果。",
+            "觀察 BTC、ETH 與科技股是否同向波動，留意流動性與波動是否擴大。",
+        ),
+        "ETH": (
+            "可能反映高波動資產的風險偏好，並與 Nasdaq 等市場一併觀察；不預設因果。",
+            "觀察 BTC、ETH 與科技股是否同向波動，留意流動性與波動是否擴大。",
+        ),
+    }
+    return contexts.get(ticker, (
+        "可能與其他主要市場同時波動；須以各自的公開報價確認，不能直接推論因果。",
+        "觀察主要股市、利率與商品市場是否出現持續且同步的變化。",
+    ))
+
+
+def _event_market_context(label: str) -> tuple[str, str, str]:
+    """Translate a verified macro category into neutral market transmission context."""
+    contexts = {
+        "Fed／貨幣政策": (
+            "利率預期可能影響美元、美債殖利率與成長股評價，因此需核對後續價格反應。",
+            "可能連動 Nasdaq、費半、美元與美債；台股科技開盤反應應以實際報價確認。",
+            "觀察利率預期變化後，科技與半導體權值是否同步或出現分歧。",
+        ),
+        "重大經濟數據": (
+            "通膨與就業數據會影響市場對利率與景氣的預期，實際影響仍須由價格驗證。",
+            "可能連動美元、美債、Nasdaq、費半與亞洲科技市場。",
+            "觀察利率敏感的科技股與半導體指數是否持續反映相同方向。",
+        ),
+        "關稅／政策": (
+            "政策訊號可能改變供應鏈、成本與需求預期，需區分公告內容與實際執行範圍。",
+            "可能連動出口導向、半導體、Nasdaq、費半及台股科技權值。",
+            "觀察費半、Nasdaq 與台股電子權值是否出現同步反應或明顯分歧。",
+        ),
+        "地緣衝突": (
+            "地緣事件可能推升避險與能源風險溢酬，影響範圍及持續性應由後續公開資料確認。",
+            "可能連動油價、黃金、美元、航運與全球股市風險偏好。",
+            "觀察能源價格、科技指數與亞洲股市是否同時擴大波動。",
+        ),
+        "半導體財報": (
+            "財報與展望可能改變 AI／半導體需求預期，但單一公司消息不代表整體產業。",
+            "可能連動費半、Nasdaq、台積電與台股半導體權值。",
+            "觀察費半與台美半導體權值是否以成交與價格同步確認趨勢。",
+        ),
+    }
+    return contexts.get(label, (
+        "此公開事件可能影響市場預期；應以後續可核對的價格與官方資訊確認。",
+        "可能連動主要股市、利率或商品市場，實際傳導範圍仍待公開資料驗證。",
+        "觀察主要市場是否出現持續、同步且可核對的價格變化。",
+    ))
 
 
 def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[str, Any] | None:
@@ -59,18 +148,15 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         return None
 
     ticker = str(index.get("ticker", "市場"))
+    market_context, stock_observation = _signal_market_context(ticker)
     if ticker == "TAIEX":
         label = "台指價格訊號觸發"
-        context = "台股科技／半導體權值走勢；同步觀察費半與 Nasdaq。"
     elif ticker == "NASDAQ":
         label = "Nasdaq價格訊號觸發"
-        context = "美國成長股與半導體相關走勢；同步觀察費半與台股開盤反應。"
     elif ticker == "SOX":
         label = "費半價格訊號觸發"
-        context = "半導體族群波動擴大；同步觀察 Nasdaq 與台股權值股。"
     else:
         label = f"{ticker}價格訊號觸發"
-        context = "市場波動擴大，請搭配其他公開市場資料持續觀察。"
 
     if percent <= -2:
         pattern, risk = "急跌", "高風險"
@@ -97,7 +183,9 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "title": f"{index.get('name', ticker)}日內變動 {move}",
         "summary": f"{index.get('name', ticker)} {price:,.2f}" if isinstance(price, (int, float)) else f"{index.get('name', ticker)} 公開報價更新",
         "trigger": trigger,
-        "market_context": context,
+        "why_important": trigger,
+        "market_context": market_context,
+        "stock_observation": stock_observation,
         "friendly_reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
         "source": "公開市場報價",
         "url": "",
@@ -107,10 +195,11 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     }
 
 
-def _detail_event(event: dict[str, Any]) -> dict[str, Any]:
+def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[str, Any]:
     """Give official or news events the same card fields as price signals."""
     label = str(event.get("short_label") or "市場事件")
     title = str(event.get("title") or "公開事件更新")
+    why_important, market_context, stock_observation = _event_market_context(label)
     return {
         **event,
         "kind": event.get("kind") or "major_event",
@@ -119,9 +208,11 @@ def _detail_event(event: dict[str, Any]) -> dict[str, Any]:
         "brief_title": event.get("brief_title") or f"{label}｜重要事件｜觀察",
         "summary": event.get("summary") or title,
         "trigger": event.get("trigger") or "已核對公開來源；請查看完整內容與市場後續反應。",
-        "market_context": event.get("market_context") or "不預設事件與市場走勢具有因果關係，持續觀察公開資訊。",
+        "why_important": event.get("why_important") or why_important,
+        "market_context": event.get("market_context") or market_context,
+        "stock_observation": event.get("stock_observation") or stock_observation,
         "friendly_reminder": event.get("friendly_reminder") or "僅供公開資訊整理與教育性觀察，不構成投資建議。",
-        "related": event.get("related") or [],
+        "related": event.get("related") or _related_indices(indices, ""),
     }
 
 
@@ -138,7 +229,7 @@ def build_event_snapshot(
 
     def append(event: dict[str, Any], key: str) -> None:
         if key not in seen:
-            events.append(_detail_event(event))
+            events.append(_detail_event(event, indices))
             seen.add(key)
 
     for event in (official or {}).get("items", []):
