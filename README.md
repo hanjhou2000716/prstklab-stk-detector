@@ -31,6 +31,8 @@ PRStK 是一套部署在 GitHub 的公開市場資訊整理、量化研究與風
 
 因此，儀表板上的「最後更新」是**最近一次成功完成公開市場掃描並發布資料的時間**，不是交易所的逐筆即時報價時間。若有任何私人聊天室收件人尚未按 Start 或已封鎖 Bot，系統會略過該收件人並記錄原因，其他收件人、快照提交與 Pages 部署仍會繼續完成。可隨時在 GitHub Actions 手動執行 **Refresh market dashboard** 或 **Unified Taiwan-US research report** 取得一次新的快照；手動執行不代表資料來源一定提供即時行情。
 
+cron-job.org 的備援請求只會在對應時段附近被接受，例如台股盤前為 08:15–09:15 且 payload 的 `slot` 必須為 `pre_open`。這可避免設定錯誤的提早請求先取得防重複鎖，導致正式 08:45 快報被略過；手動 GitHub Actions 測試不受此限制。
+
 ## 排程與可靠性
 
 - 每個快報時段使用唯一鍵與 GitHub Actions Cache 去重，避免 GitHub 主排程與外部 Cron 重複推播。

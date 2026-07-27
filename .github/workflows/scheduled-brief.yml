@@ -51,6 +51,7 @@ jobs:
       DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
       SLOT: ${{ inputs.slot || github.event.client_payload.slot || 'auto' }}
       FORCE: ${{ inputs.force || github.event.client_payload.force || 'false' }}
+      STRICT_WINDOW: ${{ github.event_name == 'workflow_dispatch' && 'false' || 'true' }}
     steps:
       - name: 取得程式碼
         uses: actions/checkout@v4
@@ -64,7 +65,12 @@ jobs:
         run: pip install -r requirements.txt
       - name: 建立快報時段識別碼
         id: window
-        run: python -m src.scheduled_brief --slot "$SLOT" --print-window >> "$GITHUB_OUTPUT"
+        run: |
+          arguments=(--slot "$SLOT" --print-window)
+          if [ "$STRICT_WINDOW" = "true" ]; then
+            arguments+=(--strict-window)
+          fi
+          python -m src.scheduled_brief "${arguments[@]}" >> "$GITHUB_OUTPUT"
       - name: 讀取同時段推播紀錄
         if: steps.window.outputs.should_run == 'true' && env.FORCE != 'true'
         id: idempotency
@@ -74,7 +80,12 @@ jobs:
           key: scheduled-brief-${{ steps.window.outputs.key }}
       - name: 更新資料並發送快報
         if: steps.window.outputs.should_run == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true')
-        run: python -m src.scheduled_brief --slot "$SLOT"
+        run: |
+          arguments=(--slot "$SLOT")
+          if [ "$STRICT_WINDOW" = "true" ]; then
+            arguments+=(--strict-window)
+          fi
+          python -m src.scheduled_brief "${arguments[@]}"
       - name: 保存最新市場快照
         if: steps.window.outputs.should_run == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true')
         run: |

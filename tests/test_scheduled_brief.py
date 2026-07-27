@@ -23,6 +23,16 @@ def test_us_premarket_uses_2200_taiwan_during_new_york_standard_time():
     assert resolve_slot("auto", winter_2200) == "us_premarket"
 
 
+def test_external_dispatch_rejects_an_early_declared_pre_open_slot():
+    early = datetime(2026, 7, 27, 8, 5, tzinfo=ZoneInfo("Asia/Taipei"))
+    assert resolve_slot("pre_open", early, strict_window=True) is None
+
+
+def test_external_dispatch_accepts_the_declared_0845_pre_open_slot():
+    scheduled = datetime(2026, 7, 27, 8, 45, tzinfo=ZoneInfo("Asia/Taipei"))
+    assert resolve_slot("pre_open", scheduled, strict_window=True) == "pre_open"
+
+
 def test_brief_uses_slot_label_and_market_direction():
     snapshot = {"quotes": [{"ticker": "2330", "change_percent": 1.25}]}
     assert build_brief(snapshot, "intraday") == "盤中｜2330📈+1.2%"
