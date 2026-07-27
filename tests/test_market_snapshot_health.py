@@ -21,6 +21,8 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
     snapshot = build_market_snapshot()
 
     assert snapshot["data_status"] == "即時"
+    assert snapshot["scan"]["scope"] == "公開市場定時掃描"
+    assert snapshot["scan"]["completed_at"] == snapshot["generated_at"]
     assert snapshot["errors"] == [{
         "ticker": "台股風險指標",
         "message": "台指波動率資料暫時無法取得",

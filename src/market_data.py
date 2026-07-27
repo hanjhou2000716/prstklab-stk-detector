@@ -177,6 +177,7 @@ def build_market_snapshot() -> dict[str, Any]:
     from src.research_cards import load_research_cards
     from src.risk_news import build_news_snapshot, build_risk_snapshot
 
+    scan_started_at = datetime.now(ZoneInfo("Asia/Taipei"))
     markets = {key: get_market_status(key) for key in MARKETS}
     errors: list[dict[str, str]] = []
     quotes: list[dict[str, Any]] = []
@@ -220,8 +221,18 @@ def build_market_snapshot() -> dict[str, Any]:
             }
             for message in risk[market]["errors"]
         )
+    scan_completed_at = datetime.now(ZoneInfo("Asia/Taipei"))
+    live_quotes = sum(item.get("quote_time") is not None for item in [*quotes, *indices])
+    close_quotes = len(quotes) + len(indices) - live_quotes
     return {
-        "generated_at": datetime.now(ZoneInfo("Asia/Taipei")).isoformat(),
+        "generated_at": scan_completed_at.isoformat(),
+        "scan": {
+            "started_at": scan_started_at.isoformat(),
+            "completed_at": scan_completed_at.isoformat(),
+            "scope": "公開市場定時掃描",
+            "live_quote_count": live_quotes,
+            "close_quote_count": close_quotes,
+        },
         "data_status": quote_data_status,
         "markets": markets,
         "indices": indices,

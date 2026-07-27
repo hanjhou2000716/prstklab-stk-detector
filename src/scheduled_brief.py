@@ -151,7 +151,11 @@ def main() -> None:
         text=brief,
         dashboard_url=settings.dashboard_url,
     )
-    print(f"已發送 {slot} 快報給 {len(results)} 位收件人。")
+    delivered = sum(result.delivered for result in results)
+    unavailable = [result.chat_id for result in results if not result.delivered]
+    print(f"已發送 {slot} 快報給 {delivered}/{len(results)} 位收件人。")
+    if unavailable:
+        print("以下收件人尚未啟動或已封鎖 Bot，略過本次發送：" + ", ".join(unavailable))
 
 
 if __name__ == "__main__":
