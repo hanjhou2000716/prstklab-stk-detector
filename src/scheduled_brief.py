@@ -25,6 +25,20 @@ SLOT_LABELS = {
 }
 MAX_BRIEF_LENGTH = 30
 
+# External scheduler calls are accepted only around their declared Taiwan-time
+# slot. This prevents an accidental early backup request from consuming the
+# same-day idempotency lock that belongs to the real scheduled briefing.
+STRICT_SLOT_WINDOWS = {
+    "morning": (5 * 60 + 30, 6 * 60 + 30),
+    "pre_open": (8 * 60 + 15, 9 * 60 + 15),
+    "intraday": (9 * 60 + 30, 10 * 60 + 30),
+    "midday": (11 * 60 + 15, 12 * 60 + 15),
+    "afternoon": (12 * 60 + 45, 13 * 60 + 45),
+    "post_close": (13 * 60 + 55, 14 * 60 + 55),
+    "us_premarket_summer": (20 * 60 + 30, 21 * 60 + 30),
+    "us_premarket_winter": (21 * 60 + 30, 22 * 60 + 30),
+}
+
 
 def is_new_york_daylight_saving(now: datetime) -> bool:
     """Return whether New York observes daylight saving time at this instant."""
@@ -32,11 +46,29 @@ def is_new_york_daylight_saving(now: datetime) -> bool:
     return new_york_now.dst() not in (None, timedelta(0))
 
 
-def resolve_slot(value: str, now: datetime | None = None) -> str | None:
+def _strict_slot_at(now: datetime) -> str | None:
+    """Return the one external-scheduler slot permitted at this local time."""
+    minute = now.hour * 60 + now.minute
+    for slot, (start, end) in STRICT_SLOT_WINDOWS.items():
+        if start <= minute <= end:
+            if slot == "us_premarket_summer":
+                return "us_premarket" if is_new_york_daylight_saving(now) else None
+            if slot == "us_premarket_winter":
+                return "us_premarket" if not is_new_york_daylight_saving(now) else None
+            return slot
+    return None
+
+
+def resolve_slot(value: str, now: datetime | None = None, *, strict_window: bool = False) -> str | None:
     """Resolve an explicit slot or choose the nearest Taiwan-time briefing slot."""
+    local_now = now or datetime.now(ZoneInfo("Asia/Taipei"))
+    if strict_window:
+        matched = _strict_slot_at(local_now)
+        if matched is None or (value != "auto" and value != matched):
+            return None
+        return matched
     if value != "auto":
         return value
-    local_now = now or datetime.now(ZoneInfo("Asia/Taipei"))
     hour = local_now.hour
     if hour < 8:
         return "morning"
@@ -121,13 +153,14 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="產製並發送 PRStK 定時快報")
     parser.add_argument("--slot", choices=("auto", *SLOT_LABELS), default="auto")
     parser.add_argument("--print-window", action="store_true")
+    parser.add_argument("--strict-window", action="store_true")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     now = datetime.now(ZoneInfo("Asia/Taipei"))
-    slot = resolve_slot(args.slot, now)
+    slot = resolve_slot(args.slot, now, strict_window=args.strict_window)
     if args.print_window:
         print(f"should_run={'true' if slot else 'false'}")
         print(f"slot={slot or 'skip'}")
