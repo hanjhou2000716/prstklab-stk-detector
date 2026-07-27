@@ -35,6 +35,8 @@ PRStK 是一套部署在 GitHub 的公開市場資訊整理、量化研究與風
 
 cron-job.org 的備援請求只會在對應時段附近被接受，例如台股盤前為 08:15–09:15 且 payload 的 `slot` 必須為 `pre_open`。這可避免設定錯誤的提早請求先取得防重複鎖，導致正式 08:45 快報被略過；手動 GitHub Actions 測試不受此限制。
 
+全市場研究也可用 `repository_dispatch` 備援：工作日 13:30 發送 `unified-research-report`，再由 14:25 的 `scheduled-brief`（`slot: post_close`）刷新 Mini App 並推播盤後快報。兩者均應由 cron-job.org 以 GitHub Actions 的同一個 Dispatch Token 呼叫。
+
 ## 排程與可靠性
 
 - 每個快報時段使用唯一鍵與 GitHub Actions Cache 去重，避免 GitHub 主排程與外部 Cron 重複推播。

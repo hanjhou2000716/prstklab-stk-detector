@@ -14,6 +14,8 @@ on:
         description: Symbols per public-data request
         required: true
         default: '50'
+  repository_dispatch:
+    types: [unified-research-report]
   schedule:
     # Weekdays 13:30 Taiwan time. This leaves a 55-minute window before the
     # 14:25 post-close brief refreshes and deploys the newest research output.
@@ -28,9 +30,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 55
     env:
-      TAIWAN_LIMIT: ${{ inputs.taiwan_limit || '0' }}
-      US_LIMIT: ${{ inputs.us_limit || '0' }}
-      BATCH_SIZE: ${{ inputs.batch_size || '50' }}
+      TAIWAN_LIMIT: ${{ inputs.taiwan_limit || github.event.client_payload.taiwan_limit || '0' }}
+      US_LIMIT: ${{ inputs.us_limit || github.event.client_payload.us_limit || '0' }}
+      BATCH_SIZE: ${{ inputs.batch_size || github.event.client_payload.batch_size || '50' }}
     steps:
       - uses: actions/checkout@v4
         with:
