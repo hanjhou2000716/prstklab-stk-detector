@@ -38,6 +38,18 @@ def test_taiex_large_drop_creates_a_detailed_high_risk_alert_card():
     assert event["brief_title"] == "台指價格訊號觸發｜急跌｜高風險"
     assert "-2.0% 高風險門檻" in event["trigger"]
     assert event["related"][0]["ticker"] == "NASDAQ"
+    assert "費半" in event["market_context"]
+    assert "台股權值" in event["stock_observation"]
+
+
+def test_major_event_includes_neutral_transmission_and_stock_observation():
+    snapshot = build_event_snapshot(
+        {"taiwan": [], "us": [{"title": "美國宣布新一輪關稅措施", "url": "u"}]}, [],
+    )
+    event = snapshot["items"][0]
+    assert "供應鏈" in event["why_important"]
+    assert "費半" in event["market_context"]
+    assert "台股電子" in event["stock_observation"]
 
 
 def test_delayed_intraday_quote_cannot_trigger_an_urgent_price_signal():
