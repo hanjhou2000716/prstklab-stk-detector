@@ -10,6 +10,7 @@ def test_mini_app_uses_the_revised_briefing_structure():
     assert "D.inv System" in page
     assert "稜量速報系統" in page
     assert 'id="market-focus"' in page
+    assert 'id="briefing-report"' in page
     assert "session-grid" not in page
     assert "總經與公開節目" not in page
 
@@ -31,3 +32,4 @@ def test_mini_app_renders_compact_market_risk_cards_without_subscores():
     assert "risk-metric-card" in app
     assert "sentiment.sub_scores" not in app
     assert "renderFocus(snapshot.events, externalAlert)" in app
+    assert "renderBriefing(snapshot.briefing, snapshot.generated_at)" in app

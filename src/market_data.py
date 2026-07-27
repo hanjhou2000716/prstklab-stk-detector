@@ -38,6 +38,15 @@ MARKET_INDICES = (
     {"symbol": "ETH-USD", "ticker": "ETH", "name": "ETH", "market": "global", "currency": "USD"},
 )
 
+# These references power the briefing's dedicated rates/FX card.  They remain
+# separate from the main market-index list so the Mini App's market section
+# stays focused on stock, commodity and crypto benchmarks.
+MACRO_REFERENCES = (
+    {"symbol": "DX-Y.NYB", "ticker": "DXY", "name": "美元指數", "market": "global", "currency": "點"},
+    {"symbol": "^TNX", "ticker": "US10Y", "name": "美國10年債殖利率", "market": "global", "currency": "%"},
+    {"symbol": "TWD=X", "ticker": "USD/TWD", "name": "美元兌台幣", "market": "global", "currency": "TWD"},
+)
+
 
 def change_percent(current: float, previous: float) -> float | None:
     """Return percent change, avoiding an invalid division by zero."""
@@ -204,6 +213,12 @@ def build_market_snapshot() -> dict[str, Any]:
             indices.append(get_quote(item, markets.get(item["market"], {}).get("session")))
         except Exception as exc:
             errors.append({"ticker": item["ticker"], "message": str(exc), "scope": "index"})
+    macro_quotes: list[dict[str, Any]] = []
+    for item in MACRO_REFERENCES:
+        try:
+            macro_quotes.append(get_quote(item, None))
+        except Exception as exc:
+            errors.append({"ticker": item["ticker"], "message": str(exc), "scope": "macro_quote"})
     quote_data_status = "即時" if not errors else "部分缺漏"
     risk = build_risk_snapshot()
     news = build_news_snapshot()
@@ -254,7 +269,11 @@ def build_market_snapshot() -> dict[str, Any]:
         "events": events,
         "official_events": official_events,
         "macro": macro,
-        "briefing": build_briefing_snapshot({"events": events, "indices": indices, "quotes": quotes}),
+        "macro_quotes": macro_quotes,
+        "briefing": build_briefing_snapshot({
+            "events": events, "indices": indices, "quotes": quotes,
+            "macro_quotes": macro_quotes, "risk": risk,
+        }),
         "research_report": research_report,
         "errors": errors,
     }

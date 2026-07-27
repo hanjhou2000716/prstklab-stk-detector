@@ -141,6 +141,20 @@ const renderEvents = (events) => {
   container.innerHTML = `<li class="signal-list-title">同步市場訊號</li>${secondary.map((event) => `<li class="signal-card"><b>${escapeHtml(event.brief_title || `${event.short_label}｜${event.title}`)}</b><small>${escapeHtml(event.source || "公開市場報價")}</small></li>`).join("")}`;
 };
 
+const renderBriefing = (briefing, generatedAt) => {
+  const report = briefing || {};
+  const observations = report.observations || [];
+  const displayTime = generatedAt ? new Date(generatedAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "公開資料更新中";
+  setText("briefing-time", `${displayTime} CST`);
+  setText("briefing-title", report.title || "即時市場儀表板");
+  setText("briefing-overview", report.overview || "本次以公開市場報價、官方事件與風險資料整理市場脈絡。 ");
+  setText("briefing-reminder", report.reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
+  const container = document.getElementById("briefing-observations");
+  if (!container) return;
+  if (!observations.length) { container.innerHTML = '<p class="empty">本次定時報資料暫時無法取得</p>'; return; }
+  container.innerHTML = observations.map((item) => `<article class="briefing-observation"><h4>${escapeHtml(item.title || "公開市場觀察")}</h4><p><b>事件：</b>${escapeHtml(item.event || "公開資料更新中。")}</p><p><b>為何重要：</b>${escapeHtml(item.importance || "持續核對公開資料。")}</p><p><b>可能影響：</b>${escapeHtml(item.market_impact || "不預設市場間因果。")}</p><p><b>你要看：</b>${escapeHtml(item.watch || "觀察後續公開市場報價。")}</p></article>`).join("");
+};
+
 const renderLegacyResearchList = (id, items, empty) => {
   const container = document.getElementById(id);
   if (!container) return;
@@ -233,6 +247,7 @@ const render = (snapshot) => {
   renderRisk(snapshot.risk);
   renderAlertCard(snapshot.events, snapshot.generated_at, externalAlert);
   renderEvents(snapshot.events);
+  renderBriefing(snapshot.briefing, snapshot.generated_at);
   renderResearch(snapshot);
   renderNewsList("taiwan-news", snapshot.news?.taiwan);
   renderNewsList("us-news", snapshot.news?.us);

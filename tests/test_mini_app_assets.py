@@ -89,7 +89,8 @@ def test_mini_app_integrates_the_alert_into_risk_and_splits_research_by_market()
     assert 'data-market="taiwan"' in page
     assert 'data-market="us"' in page
     assert "activeResearchMarket = \"taiwan\"" in app
-    assert "renderBriefing" not in app
+    assert 'id="briefing-report"' in page
+    assert "renderBriefing(snapshot.briefing, snapshot.generated_at)" in app
 
 
 def test_mini_app_numbers_taiwan_and_us_news_independently():
