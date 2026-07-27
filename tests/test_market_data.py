@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from src.market_data import MARKET_INDICES, WATCHLIST, _daily_quote, _intraday_quote, change_percent, intraday_is_fresh
+from src.market_data import MACRO_REFERENCES, MARKET_INDICES, WATCHLIST, _daily_quote, _intraday_quote, change_percent, intraday_is_fresh
 
 
 def test_change_percent_calculates_and_rounds():
@@ -26,6 +26,11 @@ def test_market_indices_are_separate_from_research_watchlist():
         "TAIEX", "TPEx", "S&P 500", "NASDAQ", "DJIA", "SOX", "NIKKEI", "KOSPI", "BRENT", "BTC", "ETH",
     }
     assert not {item["symbol"] for item in MARKET_INDICES} & {item["symbol"] for item in WATCHLIST}
+
+
+def test_macro_references_are_kept_out_of_main_market_index_list():
+    assert {item["ticker"] for item in MACRO_REFERENCES} == {"DXY", "US10Y", "USD/TWD"}
+    assert not {item["ticker"] for item in MACRO_REFERENCES} & {item["ticker"] for item in MARKET_INDICES}
 
 
 def test_intraday_quote_uses_latest_daily_close_when_today_daily_bar_is_not_available():
