@@ -1,4 +1,4 @@
-name: Official macro event monitor
+name: Official macro and price monitor
 
 on:
   workflow_dispatch:
@@ -35,7 +35,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements.txt
-      - name: Check current official releases
+      - name: Check current official releases and threshold price signals
         id: status
         run: python -m src.official_event_monitor --write-status
       - name: Restore event delivery lock

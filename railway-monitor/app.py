@@ -28,12 +28,13 @@ import httpx
 
 JIN10_MCP_URL = "https://mcp.jin10.com/mcp"
 GITHUB_API_VERSION = "2022-11-28"
-ALLOWED_CATEGORIES = {"fed", "macro", "policy", "conflict", "semiconductor", "market"}
+ALLOWED_CATEGORIES = {"fed", "macro", "policy", "conflict", "energy", "semiconductor", "market"}
 CATEGORY_LABELS = {
     "fed": "Fed",
     "macro": "宏觀",
     "policy": "政策",
-    "conflict": "衝突",
+    "conflict": "地緣",
+    "energy": "能源",
     "semiconductor": "半導體",
     "market": "市場",
 }
@@ -44,11 +45,16 @@ CATEGORY_LABELS = {
 CATEGORY_KEYWORDS = {
     "fed": ("fomc", "federal reserve", "powell", "聯準會", "美联储", "鮑威爾", "鲍威尔"),
     "macro": ("cpi", "pce", "非農", "非农", "失業率", "失业率", "gdp", "通膨", "通胀"),
-    "policy": ("關稅", "关税", "制裁", "出口管制", "政策", "tariff", "sanction"),
-    "conflict": ("戰爭", "战争", "軍事", "军事", "導彈", "导弹", "停火", "中東", "中东", "invasion"),
+    "policy": ("關稅", "关税", "制裁", "出口管制", "政策", "tariff", "sanction", "duties", "duty", "trade war"),
+    "conflict": ("戰爭", "战争", "軍事", "军事", "導彈", "导弹", "停火", "中東", "中东", "invasion", "iran", "israel", "ukraine", "russia", "truce", "ceasefire", "airstrike"),
+    "energy": ("wti", "brent", "原油", "油價", "油价", "opec", "crude oil", "oil supply"),
     "semiconductor": ("nvidia", "輝達", "英伟达", "台積電", "台积电", "tsmc", "半導體", "半导体"),
     "market": ("熔斷", "熔断", "閃崩", "闪崩", "crash", "circuit breaker"),
 }
+ESCALATION_TERMS = (
+    "擴大", "升级", "升級", "加徵", "加征", "大幅", "急升", "急跌", "供應中斷", "供应中断",
+    "additional", "increase", "airstrike", "missile", "attack", "supply disruption", "supply cut",
+)
 
 
 @dataclass(frozen=True)
@@ -84,7 +90,16 @@ def configured(name: str) -> str:
 
 def classify_flash(flash: Flash) -> str | None:
     haystack = flash.text.casefold()
+    # Oil headlines are material only when supply, a large move, or a
+    # geopolitical catalyst is also present. This avoids routine daily oil
+    # commentary becoming a Telegram emergency alert.
+    if any(keyword.casefold() in haystack for keyword in CATEGORY_KEYWORDS["energy"]):
+        material_energy_terms = ("iran", "israel", "中東", "中东", "supply", "供應", "供给", "opec", "attack", "戰爭", "战争", "停火", "ceasefire", "truce", "%")
+        if any(term.casefold() in haystack for term in material_energy_terms):
+            return "energy"
     for category, keywords in CATEGORY_KEYWORDS.items():
+        if category == "energy":
+            continue
         if any(keyword.casefold() in haystack for keyword in keywords):
             return category
     return None
@@ -167,6 +182,9 @@ class SeenStore:
         self.connection.execute(
             "CREATE TABLE IF NOT EXISTS seen (event_id TEXT PRIMARY KEY, first_seen_at TEXT NOT NULL)"
         )
+        self.connection.execute(
+            "CREATE TABLE IF NOT EXISTS dispatched (category TEXT NOT NULL, summary TEXT NOT NULL, dispatched_at TEXT NOT NULL)"
+        )
         self.connection.commit()
 
     def add_if_new(self, event_id: str) -> bool:
@@ -176,6 +194,32 @@ class SeenStore:
         )
         self.connection.commit()
         return cursor.rowcount == 1
+
+    def may_dispatch(self, alert: Alert, cooldown_seconds: int) -> bool:
+        """Allow a category update after cooldown, or immediately on escalation."""
+        row = self.connection.execute(
+            "SELECT summary, dispatched_at FROM dispatched WHERE category = ? ORDER BY rowid DESC LIMIT 1",
+            (alert.category,),
+        ).fetchone()
+        if row is None:
+            return True
+        previous_summary, previous_time = row
+        try:
+            elapsed = (datetime.now(timezone.utc) - datetime.fromisoformat(previous_time)).total_seconds()
+        except ValueError:
+            return True
+        if elapsed >= cooldown_seconds:
+            return True
+        current = alert.summary.casefold()
+        previous = str(previous_summary).casefold()
+        return any(term.casefold() in current and term.casefold() not in previous for term in ESCALATION_TERMS)
+
+    def record_dispatch(self, alert: Alert) -> None:
+        self.connection.execute(
+            "INSERT INTO dispatched(category, summary, dispatched_at) VALUES (?, ?, ?)",
+            (alert.category, alert.summary, datetime.now(timezone.utc).isoformat()),
+        )
+        self.connection.commit()
 
 
 def sign(alert: Alert, shared_secret: str) -> str:
@@ -265,6 +309,7 @@ async def monitor_forever() -> None:
     shared_secret = configured("EXTERNAL_ALERT_SHARED_SECRET")
     interval = max(60, int(os.environ.get("JIN10_POLL_SECONDS", "120")))
     limit = min(100, max(1, int(os.environ.get("JIN10_FLASH_LIMIT", "30"))))
+    cooldown = max(1800, int(os.environ.get("JIN10_CATEGORY_COOLDOWN_SECONDS", "1800")))
     bootstrap = os.environ.get("JIN10_INITIAL_BACKFILL", "false").lower() == "true"
     store = SeenStore(Path(os.environ.get("MONITOR_STATE_PATH", "/data/jin10-monitor.sqlite3")))
     first_cycle = True
@@ -280,7 +325,11 @@ async def monitor_forever() -> None:
                 alert = alert_from_flash(flash)
                 if alert is None or (first_cycle and not bootstrap):
                     continue
+                if not store.may_dispatch(alert, cooldown):
+                    logging.info("Jin10 alert suppressed by category cooldown: %s", alert.category)
+                    continue
                 await dispatch_alert(alert, token=github_token, repository=repository, shared_secret=shared_secret)
+                store.record_dispatch(alert)
                 dispatched += 1
             logging.info("Jin10 poll completed: %s flash(es), %s alert(s) dispatched", len(flashes), dispatched)
             first_cycle = False

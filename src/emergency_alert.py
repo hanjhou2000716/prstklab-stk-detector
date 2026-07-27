@@ -13,6 +13,7 @@ CATEGORY_LABELS = {
     "macro": "總經",
     "policy": "政策",
     "conflict": "衝突",
+    "energy": "能源",
     "semiconductor": "半導體",
     "market": "極端波動",
 }

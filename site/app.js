@@ -46,16 +46,29 @@ const formatAlertQuote = (item) => {
   return `<div class="alert-quote"><b>${escapeHtml(item.name || item.ticker)}</b><strong class="${state}">${formatNumber(item.price)}${item.currency ? ` ${escapeHtml(item.currency)}` : ""}</strong><small class="${state}">${item.change === null || item.change === undefined ? "" : `${item.change > 0 ? "+" : ""}${formatNumber(item.change)}　`}${signedPercent(item.change_percent)}</small></div>`;
 };
 
-const renderAlertCard = (events, generatedAt, externalAlert) => {
+const externalAlertProfile = (category, indices) => {
+  const profiles = {
+    energy: { tickers: ["WTI", "GOLD"], why: "能源供應、地緣消息或油價大幅波動可能改變通膨與利率預期。", linked: "可能連動油價、黃金、美元、航運與全球股市風險偏好；以後續價格確認。", watch: "觀察油價、黃金、美元與主要科技指數是否出現可核對的同步變化。" },
+    conflict: { tickers: ["WTI", "GOLD"], why: "地緣事件可能推升避險與能源風險溢酬，影響範圍須待官方與市場資料確認。", linked: "可能連動油價、黃金、美元、航運與全球股市風險偏好。", watch: "觀察地緣消息、油價與主要市場是否持續擴大波動。" },
+    policy: { tickers: ["NASDAQ", "SOX"], why: "政策或關稅消息可能改變供應鏈、成本與需求預期，應區分公告與實際執行範圍。", linked: "可能連動費半、Nasdaq、出口導向與台股科技權值。", watch: "觀察費半、Nasdaq 與台股電子權值是否出現同步反應或分歧。" },
+    semiconductor: { tickers: ["SOX", "NASDAQ"], why: "半導體巨頭消息可能改變需求與資本支出預期，但不代表整個產業。", linked: "可能連動費半、Nasdaq、台積電與台股半導體權值。", watch: "觀察費半與台美半導體權值是否以後續價格同步確認。" },
+  };
+  const fallback = { tickers: ["NASDAQ", "SOX"], why: "外部公開快訊已通過系統簽章驗證，影響範圍仍須由官方與市場資料確認。", linked: "可能連動市場待後續公開報價確認。", watch: "觀察主要股市、能源、利率或半導體指數是否出現可核對的同步變化。" };
+  const profile = profiles[category] || fallback;
+  return { ...profile, related: profile.tickers.map((ticker) => indices.find((item) => item.ticker === ticker)).filter(Boolean) };
+};
+
+const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
+  const profile = externalAlert ? externalAlertProfile(externalAlert.category, indices) : null;
   const event = externalAlert ? {
     kind: "external_alert", risk_level: "警戒", short_label: "外部快訊",
     brief_title: `金十｜${externalAlert.category}`, summary: externalAlert.summary,
     trigger: `事件時間：${externalAlert.occurred_at}`,
-    why_important: "外部公開快訊已通過系統簽章驗證；影響範圍仍須由官方與市場資料確認。",
-    market_context: `可能連動的市場待後續公開報價確認。來源：${externalAlert.source}。`,
-    stock_observation: "觀察主要股市、能源、利率或半導體指數是否出現可核對的同步變化。",
+    why_important: profile.why,
+    market_context: `${profile.linked} 來源：${externalAlert.source}。`,
+    stock_observation: profile.watch,
     friendly_reminder: "僅供公開資訊整理與教育性觀察，不構成投資建議。",
-    related: [],
+    related: profile.related,
   } : events?.items?.[0];
   const card = document.getElementById("alert-card");
   if (!card) return;
@@ -253,7 +266,7 @@ const render = (snapshot) => {
   renderQuoteList("index-list", snapshot.indices || []);
   renderQuoteList("quote-list", snapshot.quotes || []);
   renderRisk(snapshot.risk);
-  renderAlertCard(snapshot.events, snapshot.generated_at, externalAlert);
+  renderAlertCard(snapshot.events, snapshot.generated_at, externalAlert, snapshot.indices || []);
   renderEvents(snapshot.events);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
   renderResearch(snapshot);

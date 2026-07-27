@@ -34,6 +34,8 @@ MARKET_INDICES = (
     {"symbol": "^N225", "ticker": "NIKKEI", "name": "日經225", "market": "asia", "currency": "點"},
     {"symbol": "^KS11", "ticker": "KOSPI", "name": "韓國綜合", "market": "asia", "currency": "點"},
     {"symbol": "BZ=F", "ticker": "BRENT", "name": "Brent 原油", "market": "global", "currency": "USD"},
+    {"symbol": "CL=F", "ticker": "WTI", "name": "WTI 原油", "market": "global", "currency": "USD"},
+    {"symbol": "GC=F", "ticker": "GOLD", "name": "黃金期貨", "market": "global", "currency": "USD"},
     {"symbol": "BTC-USD", "ticker": "BTC", "name": "BTC", "market": "global", "currency": "USD"},
     {"symbol": "ETH-USD", "ticker": "ETH", "name": "ETH", "market": "global", "currency": "USD"},
 )

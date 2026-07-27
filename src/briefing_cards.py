@@ -16,7 +16,7 @@ SLOT_TITLES = {
     "us_open": "美股開盤儀表板",
 }
 
-GLOBAL_TICKERS = ("TAIEX", "2330", "NIKKEI", "KOSPI", "NASDAQ", "SOX", "BRENT", "BTC", "ETH")
+GLOBAL_TICKERS = ("TAIEX", "2330", "NIKKEI", "KOSPI", "NASDAQ", "SOX", "BRENT", "WTI", "GOLD", "BTC", "ETH")
 
 
 def _move(item: dict[str, Any] | None) -> str:
