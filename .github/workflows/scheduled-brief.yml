@@ -118,15 +118,18 @@ jobs:
         with:
           path: .scheduled-brief-lock
           key: scheduled-brief-${{ steps.window.outputs.key }}
+      # The lock deduplicates the Telegram notification, not the dashboard
+      # deployment. A research report may have been committed after the first
+      # same-slot brief, so every accepted run must publish current main.
       - name: 設定 GitHub Pages
-        if: steps.window.outputs.should_run == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true')
+        if: steps.window.outputs.should_run == 'true'
         uses: actions/configure-pages@v5
       - name: 上傳儀表板
-        if: steps.window.outputs.should_run == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true')
+        if: steps.window.outputs.should_run == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
       - name: 部署
-        if: steps.window.outputs.should_run == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true')
+        if: steps.window.outputs.should_run == 'true'
         id: deployment
         uses: actions/deploy-pages@v4
