@@ -6,5 +6,5 @@ def test_readme_documents_the_official_event_backup_dispatch():
     readme = (root / "README.md").read_text(encoding="utf-8")
 
     assert "official-event-check" in readme
-    assert "Official macro event monitor" in readme
+    assert "Official macro and price monitor" in readme
     assert "cron-job.org" in readme

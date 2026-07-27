@@ -30,6 +30,7 @@ GitHub 端會再次驗證簽章、去重、更新 Mini App，再送出 Telegram 
 | `JIN10_POLL_SECONDS` | `120` | 輪詢秒數，最低 60 秒 |
 | `JIN10_FLASH_LIMIT` | `30` | 每次讀取筆數，範圍 1–100 |
 | `JIN10_INITIAL_BACKFILL` | `false` | 第一次啟動只建立去重基線、不補送舊快訊；只有在確定要補送目前列表時才改 `true` |
+| `JIN10_CATEGORY_COOLDOWN_SECONDS` | `1800` | 同一類別的後續快訊至少間隔 30 分鐘；出現明顯升級字詞時可提前轉發 |
 | `MONITOR_STATE_PATH` | `/data/jin10-monitor.sqlite3` | SQLite 狀態檔路徑 |
 
 ## 3. 加上持久化 Volume（建議）
@@ -49,4 +50,4 @@ GitHub 端會再次驗證簽章、去重、更新 Mini App，再送出 Telegram 
 
 - 不將 Token、共享密鑰、原始授權 Header 寫入程式碼、Git 或 Mini App。
 - 首次啟動預設不補發歷史快訊，避免大量舊訊息。
-- 只轉發 Fed、宏觀數據、政策／關稅、戰爭衝突、半導體巨頭、極端市場事件等保守關鍵字；所有內容維持公開市場教育與風險提醒，不構成投資建議。
+- 只轉發 Fed、宏觀數據、政策／關稅、戰爭衝突、半導體巨頭、極端市場事件，以及具地緣／供應／大幅變動背景的能源快訊。例行油價評論不轉發；所有內容維持公開市場教育與風險提醒，不構成投資建議。

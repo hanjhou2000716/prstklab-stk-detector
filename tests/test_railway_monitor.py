@@ -26,6 +26,29 @@ def test_unrelated_flash_is_not_forwarded():
     assert monitor.alert_from_flash(flash) is None
 
 
+def test_material_oil_and_geopolitical_flash_is_sent_as_energy_alert():
+    flash = monitor.Flash("oil-1", "Iran tensions lift WTI", "原油供應疑慮擴大，WTI 上漲 5%。", "2026-07-26T20:30:00+08:00")
+    alert = monitor.alert_from_flash(flash)
+    assert alert is not None
+    assert alert.category == "energy"
+
+
+def test_routine_oil_commentary_is_not_an_emergency_alert():
+    flash = monitor.Flash("oil-2", "WTI 原油日報", "市場等待例行庫存資料。", "2026-07-26T20:30:00+08:00")
+    assert monitor.alert_from_flash(flash) is None
+
+
+def test_category_cooldown_allows_only_escalation_before_window_expires(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    first = monitor.Alert("a1", "policy", "政策：關稅消息", "2026-07-26T20:30:00+08:00")
+    repeat = monitor.Alert("a2", "policy", "政策：關稅消息更新", "2026-07-26T20:31:00+08:00")
+    escalation = monitor.Alert("a3", "policy", "政策：加徵關稅範圍擴大", "2026-07-26T20:32:00+08:00")
+    assert store.may_dispatch(first, 1800)
+    store.record_dispatch(first)
+    assert not store.may_dispatch(repeat, 1800)
+    assert store.may_dispatch(escalation, 1800)
+
+
 def test_extract_flashes_reads_documented_jin10_item_shape():
     result = {"data": {"items": [{"id": "a1", "title": "", "content": "FOMC", "time": "2026-07-26T20:30:00+08:00"}]}}
     flashes = monitor.extract_flashes(result)

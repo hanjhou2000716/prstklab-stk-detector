@@ -44,7 +44,9 @@ def _related_indices(indices: list[dict[str, Any]], excluded_ticker: str) -> lis
         "SOX": ("NASDAQ", "TAIEX", "S&P 500"),
         "NIKKEI": ("KOSPI", "NASDAQ", "SOX"),
         "KOSPI": ("NIKKEI", "NASDAQ", "SOX"),
-        "BRENT": ("TAIEX", "NASDAQ", "SOX"),
+        "BRENT": ("GOLD", "WTI", "NASDAQ", "SOX"),
+        "WTI": ("GOLD", "BRENT", "NASDAQ", "SOX"),
+        "GOLD": ("WTI", "BRENT", "NASDAQ", "SOX"),
         "BTC": ("NASDAQ", "SOX", "TAIEX"),
         "ETH": ("NASDAQ", "SOX", "TAIEX"),
     }.get(ticker, ("NASDAQ", "SOX", "TAIEX", "S&P 500"))
@@ -82,6 +84,14 @@ def _signal_market_context(ticker: str) -> tuple[str, str]:
         "BRENT": (
             "可能連動能源、航運、通膨預期與利率敏感類股；以油價與市場報價確認。",
             "觀察能源成本、通膨預期及全球股市風險偏好是否同時變化。",
+        ),
+        "WTI": (
+            "可能連動能源、航運、通膨預期與利率敏感類股；以油價與市場報價確認。",
+            "觀察能源成本、通膨預期及全球股市風險偏好是否同時變化。",
+        ),
+        "GOLD": (
+            "可能連動避險需求、美元、利率預期與地緣風險；以後續公開報價確認。",
+            "觀察黃金、油價、美元與主要股市是否同時出現可核對的風險偏好變化。",
         ),
         "BTC": (
             "可能反映高波動資產的風險偏好，並與 Nasdaq 等市場一併觀察；不預設因果。",
@@ -144,7 +154,14 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     if percent is None:
         return None
     percent = float(percent)
-    if abs(percent) < 1:
+    minimum_move = {
+        "TAIEX": 1.5,
+        "SOX": 3.0,
+        "NASDAQ": 2.0,
+        "WTI": 5.0,
+        "BRENT": 5.0,
+    }.get(str(index.get("ticker", "")), 1.0)
+    if abs(percent) < minimum_move:
         return None
 
     ticker = str(index.get("ticker", "市場"))

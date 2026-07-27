@@ -47,6 +47,7 @@ def test_mini_app_can_show_a_verified_external_alert_from_the_public_snapshot():
 
     assert "activeExternalAlert" in app
     assert "external_alert" in app
+    assert "externalAlertProfile" in app
     assert "已核對外部快訊" in app
     assert "href=\"${event.url}" not in app
 
