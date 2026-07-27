@@ -47,6 +47,10 @@ def _related_indices(indices: list[dict[str, Any]], excluded_ticker: str) -> lis
 
 def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[str, Any] | None:
     """Create an educational alert card for a material index move, never advice."""
+    # A delayed intraday bar remains useful as an explicitly labelled quote,
+    # but must not create an urgent notification from an out-of-date move.
+    if index.get("quote_delayed"):
+        return None
     percent = index.get("change_percent")
     if percent is None:
         return None

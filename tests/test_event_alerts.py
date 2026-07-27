@@ -40,6 +40,16 @@ def test_taiex_large_drop_creates_a_detailed_high_risk_alert_card():
     assert event["related"][0]["ticker"] == "NASDAQ"
 
 
+def test_delayed_intraday_quote_cannot_trigger_an_urgent_price_signal():
+    snapshot = build_event_snapshot(
+        {"taiwan": [], "us": []}, [], indices=[
+            {"ticker": "TAIEX", "name": "臺灣加權指數", "market": "taiwan",
+             "price": 43234.0, "change_percent": -3.6, "quote_delayed": True},
+        ],
+    )
+    assert snapshot["is_major"] is False
+
+
 def test_brief_prefers_major_event_category_but_remains_watch_friendly():
     snapshot = {
         "quotes": [{"ticker": "2330", "change_percent": 1.25}],

@@ -107,13 +107,23 @@ def _daily_quote(item: dict[str, str], closes: Any) -> dict[str, Any]:
     }
 
 
-def _intraday_quote(item: dict[str, str], daily_closes: Any, intraday_closes: Any, basis: str) -> dict[str, Any]:
+def _intraday_quote(
+    item: dict[str, str], daily_closes: Any, intraday_closes: Any, basis: str, *, delayed: bool = False
+) -> dict[str, Any]:
     """Build a five-minute quote versus the preceding completed daily close."""
-    if len(daily_closes) < 2 or intraday_closes.empty:
+    if daily_closes.empty or intraday_closes.empty:
         raise ValueError("可用盤中資料不足。")
     latest = float(intraday_closes.iloc[-1])
-    previous_close = float(daily_closes.iloc[-2])
     timestamp = intraday_closes.index[-1]
+    # Yahoo may or may not include today's incomplete daily bar. When it
+    # does, the preceding completed close is penultimate; otherwise the last
+    # daily close is already the correct comparison base.
+    latest_daily_date = daily_closes.index[-1].date()
+    previous_close = float(
+        daily_closes.iloc[-2]
+        if latest_daily_date == timestamp.date() and len(daily_closes) >= 2
+        else daily_closes.iloc[-1]
+    )
     return {
         **item,
         "price": round(latest, 2),
@@ -122,12 +132,13 @@ def _intraday_quote(item: dict[str, str], daily_closes: Any, intraday_closes: An
         "quote_date": timestamp.date().isoformat(),
         "quote_time": timestamp.isoformat(),
         "quote_basis": basis,
+        "quote_delayed": delayed,
         "currency": item.get("currency") or ("TWD" if item["market"] == "taiwan" else "USD"),
     }
 
 
 def intraday_is_fresh(timestamp: Any, market: str, now: datetime | None = None) -> bool:
-    """Accept only a recent five-minute bar; stale bars must stay labelled daily."""
+    """Treat a five-minute bar older than ten minutes as delayed, not live."""
     timezone = MARKETS[market]["timezone"]
     observed = timestamp
     if getattr(observed, "tzinfo", None) is None:
@@ -135,7 +146,7 @@ def intraday_is_fresh(timestamp: Any, market: str, now: datetime | None = None) 
     else:
         observed = observed.tz_convert(timezone)
     reference = now or datetime.now(ZoneInfo(timezone))
-    return reference - observed.to_pydatetime() <= timedelta(minutes=30)
+    return reference - observed.to_pydatetime() <= timedelta(minutes=10)
 
 
 def get_quote(item: dict[str, str], session: str | None = None) -> dict[str, Any]:
@@ -158,10 +169,11 @@ def get_quote(item: dict[str, str], session: str | None = None) -> dict[str, Any
             prepost=item["market"] == "us", progress=False, threads=False,
         )
         intraday_closes = _close_series(intraday)
-        if not intraday_is_fresh(intraday_closes.index[-1], item["market"]):
-            raise ValueError("盤中資料並非最新列")
-        basis = "盤中 5 分鐘" if session == "交易中" else "盤前 5 分鐘"
-        return _intraday_quote(item, closes, intraday_closes, basis)
+        delayed = not intraday_is_fresh(intraday_closes.index[-1], item["market"])
+        basis = "盤中延遲報價" if delayed and session == "交易中" else (
+            "盤前延遲報價" if delayed else ("盤中 5 分鐘" if session == "交易中" else "盤前 5 分鐘")
+        )
+        return _intraday_quote(item, closes, intraday_closes, basis, delayed=delayed)
     except Exception:
         # Never fabricate a live price. The UI explicitly labels the daily fallback.
         return _daily_quote(item, closes)
