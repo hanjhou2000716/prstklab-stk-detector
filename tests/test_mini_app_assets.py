@@ -73,6 +73,8 @@ def test_mini_app_strategy_cards_render_price_change_and_strategy_emphasis():
 
     assert "research-price" in app
     assert "researchStrategyLabel" in app
+    assert "researchStrategyTags" in app
+    assert "research-strategies" in app
     assert ".strategy-chip" in styles
     assert ".research-price.market-up" in styles
     assert "報價待完整掃描" in app

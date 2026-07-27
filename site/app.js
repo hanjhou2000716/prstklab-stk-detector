@@ -146,7 +146,6 @@ const renderBriefing = (briefing, generatedAt) => {
   const observations = report.observations || [];
   const displayTime = generatedAt ? new Date(generatedAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "公開資料更新中";
   setText("briefing-time", `${displayTime} CST`);
-  setText("briefing-title", report.title || "即時市場儀表板");
   setText("briefing-overview", report.overview || "本次以公開市場報價、官方事件與風險資料整理市場脈絡。 ");
   setText("briefing-reminder", report.reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
   const container = document.getElementById("briefing-observations");
@@ -189,6 +188,14 @@ const researchStrategyLabel = (item) => {
   return item.pe === null || item.pe === undefined ? "本益比暫時無法取得" : `本益比 ${Number(item.pe).toFixed(1)}`;
 };
 
+const researchStrategyTags = (item) => {
+  if (item.strategy === "price_action") {
+    const labels = researchStructureLabel(item.structure).split("、").filter(Boolean);
+    return labels.length ? labels : ["裸 K 結構觀察"];
+  }
+  return [researchStrategyLabel(item)];
+};
+
 const researchScoreLabel = (item) => {
   if (item.score === null || item.score === undefined) return "分數暫時無法取得";
   if (item.strategy === "price_action") return `裸 K 相符度 ${Number(item.score).toFixed(1)} / 100`;
@@ -206,7 +213,8 @@ const renderResearchList = (id, items, empty) => {
     const currency = item.market === "taiwan" ? "TWD" : "USD";
     const price = item.close === null || item.close === undefined ? "報價待完整掃描" : `${formatNumber(item.close)} ${currency}`;
     const change = item.change_percent === null || item.change_percent === undefined ? "—" : signedPercent(item.change_percent);
-    return `<li class="research-item"><div class="research-item-top"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-price ${state}">${escapeHtml(price)}<small>${escapeHtml(change)}</small></span></div><div class="research-item-bottom"><span class="research-company">${escapeHtml(item.name || item.ticker)}<span class="strategy-chip">${escapeHtml(researchStrategyLabel(item))}</span></span><span class="research-score">${escapeHtml(researchScoreLabel(item))}</span></div></li>`;
+    const tags = researchStrategyTags(item).map((label) => `<span class="strategy-chip">${escapeHtml(label)}</span>`).join("");
+    return `<li class="research-item"><div class="research-item-top"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-price ${state}">${escapeHtml(price)}<small>${escapeHtml(change)}</small></span></div><div class="research-item-bottom"><div class="research-identity"><span class="research-company">${escapeHtml(item.name || item.ticker)}</span><span class="research-strategies">${tags}</span></div><span class="research-score">${escapeHtml(researchScoreLabel(item))}</span></div></li>`;
   }).join("");
 };
 
