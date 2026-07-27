@@ -24,6 +24,7 @@ SLOT_LABELS = {
     "us_open": "美股開盤",
 }
 MAX_BRIEF_LENGTH = 30
+TAIWAN_SESSION_SLOTS = frozenset({"pre_open", "intraday", "midday", "afternoon"})
 
 # External scheduler calls are accepted only around their declared Taiwan-time
 # slot. This prevents an accidental early backup request from consuming the
@@ -93,21 +94,27 @@ def resolve_slot(value: str, now: datetime | None = None, *, strict_window: bool
 
 
 def _pick_quote(snapshot: dict, slot: str) -> dict | None:
-    preferred_ticker = "2330" if slot in {
-        "pre_open", "intraday", "midday", "afternoon", "post_close"
-    } else "NVDA"
+    if slot in TAIWAN_SESSION_SLOTS:
+        # Taiwan intraday reports lead with the broad market, not an
+        # individual company.  Representative shares remain a fallback.
+        items = [*(snapshot.get("indices") or []), *(snapshot.get("quotes") or [])]
+        return next((item for item in items if item.get("ticker") == "TAIEX"), None) or next(
+            (item for item in items if item.get("ticker") == "2330"), None
+        ) or (items[0] if items else None)
+
     quotes = snapshot.get("quotes", [])
-    return next((quote for quote in quotes if quote["ticker"] == preferred_ticker), None) or (
+    return next((quote for quote in quotes if quote["ticker"] == "NVDA"), None) or (
         quotes[0] if quotes else None
     )
 
 
 def _pick_event(snapshot: dict, slot: str) -> dict | None:
-    """Keep Taiwan sessions Taiwan-first and US sessions US-first in the watch brief."""
+    """Prioritise the market currently relevant to the timed watch brief."""
     events = (snapshot.get("events") or {}).get("items", [])
-    preferred = ("TAIEX", "TPEx") if slot in {
-        "pre_open", "intraday", "midday", "afternoon", "post_close"
-    } else ("SOX", "NASDAQ", "S&P 500")
+    if slot in TAIWAN_SESSION_SLOTS:
+        preferred = ("TAIEX", "TPEx")
+    else:
+        preferred = ("SOX", "NASDAQ", "S&P 500")
     for ticker in preferred:
         selected = next(
             (event for event in events if event.get("instrument", {}).get("ticker") == ticker),
@@ -115,6 +122,12 @@ def _pick_event(snapshot: dict, slot: str) -> dict | None:
         )
         if selected:
             return selected
+
+    if slot in TAIWAN_SESSION_SLOTS:
+        # During Taiwan trading hours, an overseas price-only move (Brent,
+        # crypto, etc.) stays visible in the Mini App but must not replace the
+        # Taiwan-market headline. A verified policy/macro/company event may.
+        return next((event for event in events if event.get("kind") != "market_signal"), None)
     return events[0] if events else None
 
 
