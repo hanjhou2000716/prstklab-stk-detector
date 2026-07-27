@@ -38,6 +38,32 @@ def test_brief_uses_slot_label_and_market_direction():
     assert build_brief(snapshot, "intraday") == "盤中｜2330📈+1.2%"
 
 
+def test_taiwan_session_uses_taiex_and_does_not_promote_brent_price_signal():
+    snapshot = {
+        "indices": [{"ticker": "TAIEX", "change_percent": -0.8}],
+        "quotes": [{"ticker": "2330", "change_percent": -1.2}],
+        "events": {"items": [{
+            "kind": "market_signal",
+            "brief_title": "BRENT價格訊號觸發｜急跌｜高風險",
+            "instrument": {"ticker": "BRENT"},
+        }]},
+    }
+
+    assert build_brief(snapshot, "midday") == "午報｜TAIEX🟰-0.8%"
+
+
+def test_taiwan_session_keeps_verified_international_major_event_when_taiwan_has_no_signal():
+    snapshot = {
+        "indices": [{"ticker": "TAIEX", "change_percent": 0.2}],
+        "events": {"items": [{
+            "kind": "major_event",
+            "brief_title": "Fed／貨幣政策｜重要事件｜觀察",
+        }]},
+    }
+
+    assert build_brief(snapshot, "intraday") == "盤中｜Fed／貨幣政策｜重要事件｜觀察"
+
+
 def test_brief_handles_missing_data_neutrally():
     assert build_brief({"quotes": []}, "morning") == "晨報｜市場資料暫時無法取得"
 
