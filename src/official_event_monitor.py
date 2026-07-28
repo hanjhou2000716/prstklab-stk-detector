@@ -5,8 +5,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
+from datetime import datetime, time
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from src.config import get_settings
 from src.market_data import build_market_snapshot
@@ -14,7 +16,17 @@ from src.refresh_market_data import write_snapshot
 from src.telegram_client import send_briefs, validate_brief
 
 
-def select_official_event(snapshot: dict[str, Any]) -> dict[str, Any] | None:
+def _is_taiwan_market_window(now: datetime | None = None) -> bool:
+    """Return whether Taiwan-session price alerts should lead the queue."""
+    local_now = now or datetime.now(ZoneInfo("Asia/Taipei"))
+    if local_now.tzinfo is None:
+        local_now = local_now.replace(tzinfo=ZoneInfo("Asia/Taipei"))
+    else:
+        local_now = local_now.astimezone(ZoneInfo("Asia/Taipei"))
+    return local_now.weekday() < 5 and time(8, 45) <= local_now.time() <= time(13, 30)
+
+
+def select_official_event(snapshot: dict[str, Any], now: datetime | None = None) -> dict[str, Any] | None:
     """Select a verified official release, then a threshold price signal.
 
     The price signal fallback is constrained by ``event_alerts`` thresholds, so
@@ -23,10 +35,13 @@ def select_official_event(snapshot: dict[str, Any]) -> dict[str, Any] | None:
     items = snapshot.get("official_events", {}).get("items", [])
     if items:
         return items[0]
-    for event in snapshot.get("events", {}).get("items", []):
-        if event.get("kind") == "market_signal":
-            return event
-    return None
+    signals = [event for event in snapshot.get("events", {}).get("items", []) if event.get("kind") == "market_signal"]
+    if _is_taiwan_market_window(now):
+        # During the Taiwan session, a broad Taiwan price signal has priority.
+        # Commodity/crypto moves remain visible in the Mini App unless paired
+        # with a verified official event above.
+        return next((event for event in signals if (event.get("instrument") or {}).get("ticker") == "TAIEX"), None)
+    return signals[0] if signals else None
 
 
 def event_key(event: dict[str, Any] | None) -> str:
@@ -37,10 +52,16 @@ def event_key(event: dict[str, Any] | None) -> str:
         instrument = event.get("instrument") or {}
         # A worsening move or a fast rebound after a sell-off is a distinct
         # public observation. Repeated bars in the same state are not.
-        material = "|".join(str(value) for value in (
+        material_parts = [
             "price", instrument.get("ticker", "market"), instrument.get("quote_date", "unknown"),
             event.get("signal_state", event.get("risk_level", "觀察")),
-        ))
+        ]
+        if event.get("realert_interval_minutes") and instrument.get("quote_time"):
+            # Bucket a persistent Taiwan high-risk move by local quote hour:
+            # at most one reminder per hour, while a worsening stage keeps a
+            # different key and can be sent without waiting for the hour.
+            material_parts.append(str(instrument["quote_time"])[:13])
+        material = "|".join(str(value) for value in material_parts)
     else:
         material = "|".join(str(event.get(key, "")) for key in ("url", "title", "released_at"))
     return hashlib.sha256(material.encode("utf-8")).hexdigest()[:24]

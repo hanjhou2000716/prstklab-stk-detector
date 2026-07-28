@@ -43,6 +43,19 @@ def test_taiex_large_drop_creates_a_detailed_high_risk_alert_card():
     assert "台股權值" in event["stock_observation"]
 
 
+def test_taiex_persistent_high_risk_signal_has_hourly_realert_policy_and_escalation_stage():
+    snapshot = build_event_snapshot(
+        {"taiwan": [], "us": []}, [], indices=[{
+            "ticker": "TAIEX", "name": "臺灣加權指數", "market": "taiwan", "price": 41739.05,
+            "change": -1895, "change_percent": -4.34, "quote_time": "2026-07-28T13:10:00+08:00",
+            "quote_date": "2026-07-28", "currency": "點",
+        }],
+    )
+    event = snapshot["items"][0]
+    assert event["realert_interval_minutes"] == 60
+    assert ":極端:" in event["signal_state"]
+
+
 def test_major_event_includes_neutral_transmission_and_stock_observation():
     snapshot = build_event_snapshot(
         {"taiwan": [], "us": [{"title": "美國宣布新一輪關稅措施", "url": "u"}]}, [],
