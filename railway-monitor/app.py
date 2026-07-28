@@ -28,8 +28,10 @@ import httpx
 
 JIN10_MCP_URL = "https://mcp.jin10.com/mcp"
 GITHUB_API_VERSION = "2022-11-28"
-ALLOWED_CATEGORIES = {"fed", "macro", "policy", "conflict", "energy", "semiconductor", "market"}
+ALLOWED_CATEGORIES = {"fed", "macro", "policy", "conflict", "energy", "semiconductor", "market", "black_swan", "material_positive"}
 CATEGORY_LABELS = {
+    "black_swan": "黑天鵝",
+    "material_positive": "重大正向",
     "fed": "Fed",
     "macro": "宏觀",
     "policy": "政策",
@@ -54,6 +56,20 @@ CATEGORY_KEYWORDS = {
 ESCALATION_TERMS = (
     "擴大", "升级", "升級", "加徵", "加征", "大幅", "急升", "急跌", "供應中斷", "供应中断",
     "additional", "increase", "airstrike", "missile", "attack", "supply disruption", "supply cut",
+)
+
+
+# These require a confirmed, broadly material event. They deliberately are not
+# a catch-all for ordinary geopolitical headlines or routine market moves.
+BLACK_SWAN_TERMS = (
+    "major earthquake", "magnitude 7", "magnitude 8", "tsunami", "nuclear accident",
+    "重大地震", "強震", "規模7", "規模8", "海嘯", "核事故", "大規模停電",
+    "金融危機", "銀行擠兌", "交易所遭駭", "重大駭客", "circuit breaker",
+)
+MATERIAL_POSITIVE_TERMS = (
+    "ceasefire agreement", "ceasefire", "truce agreement", "peace deal",
+    "tariff exemption", "tariff removal", "rate cut", "停火協議", "停火", "休戰協議",
+    "和平協議", "關稅豁免", "取消關稅", "降息",
 )
 
 
@@ -90,6 +106,10 @@ def configured(name: str) -> str:
 
 def classify_flash(flash: Flash) -> str | None:
     haystack = flash.text.casefold()
+    if any(keyword.casefold() in haystack for keyword in BLACK_SWAN_TERMS):
+        return "black_swan"
+    if any(keyword.casefold() in haystack for keyword in MATERIAL_POSITIVE_TERMS):
+        return "material_positive"
     # Oil headlines are material only when supply, a large move, or a
     # geopolitical catalyst is also present. This avoids routine daily oil
     # commentary becoming a Telegram emergency alert.

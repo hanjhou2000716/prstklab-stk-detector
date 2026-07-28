@@ -13,6 +13,11 @@ def test_emergency_alert_normalizes_whitespace_and_rejects_long_message():
         build_emergency_brief("market", "測" * 30)
 
 
+def test_emergency_alert_supports_black_swan_and_material_positive_categories():
+    assert build_emergency_brief("black_swan", "日本強震")
+    assert build_emergency_brief("material_positive", "停火協議確認")
+
+
 def test_emergency_alert_restricts_categories_to_major_event_scope():
     with pytest.raises(ValueError, match="不支援"):
         build_emergency_brief("rumor", "未證實消息")

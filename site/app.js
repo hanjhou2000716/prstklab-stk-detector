@@ -48,6 +48,8 @@ const formatAlertQuote = (item) => {
 
 const externalAlertProfile = (category, indices) => {
   const profiles = {
+    black_swan: { tickers: ["WTI", "GOLD"], why: "已核對的極端災害、重大系統性事故或市場中斷，可能快速改變全球風險偏好。", linked: "可能連動油價、黃金、美元、日韓市場、Nasdaq 與加密資產；需由後續公開報價確認。", watch: "觀察官方災情更新、能源與避險資產，以及主要股市是否出現持續且同步的波動。" },
+    material_positive: { tickers: ["NASDAQ", "SOX"], why: "已核對的停火、政策緩和或其他重大正向事件，可能降低短期風險溢酬；實際影響仍取決於後續細節。", linked: "可能連動油價、黃金、美元、Nasdaq、費半與出口導向市場。", watch: "觀察事件是否有正式細節、油價與避險資產是否回落，以及科技與半導體指數是否同步確認。" },
     energy: { tickers: ["WTI", "GOLD"], why: "能源供應、地緣消息或油價大幅波動可能改變通膨與利率預期。", linked: "可能連動油價、黃金、美元、航運與全球股市風險偏好；以後續價格確認。", watch: "觀察油價、黃金、美元與主要科技指數是否出現可核對的同步變化。" },
     conflict: { tickers: ["WTI", "GOLD"], why: "地緣事件可能推升避險與能源風險溢酬，影響範圍須待官方與市場資料確認。", linked: "可能連動油價、黃金、美元、航運與全球股市風險偏好。", watch: "觀察地緣消息、油價與主要市場是否持續擴大波動。" },
     policy: { tickers: ["NASDAQ", "SOX"], why: "政策或關稅消息可能改變供應鏈、成本與需求預期，應區分公告與實際執行範圍。", linked: "可能連動費半、Nasdaq、出口導向與台股科技權值。", watch: "觀察費半、Nasdaq 與台股電子權值是否出現同步反應或分歧。" },
@@ -58,11 +60,16 @@ const externalAlertProfile = (category, indices) => {
   return { ...profile, related: profile.tickers.map((ticker) => indices.find((item) => item.ticker === ticker)).filter(Boolean) };
 };
 
+const externalAlertLabel = (category) => ({
+  black_swan: "黑天鵝事件",
+  material_positive: "重大正向事件",
+}[category] || "外部快訊");
+
 const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
   const profile = externalAlert ? externalAlertProfile(externalAlert.category, indices) : null;
   const event = externalAlert ? {
-    kind: "external_alert", risk_level: "警戒", short_label: "外部快訊",
-    brief_title: `金十｜${externalAlert.category}`, summary: externalAlert.summary,
+    kind: "external_alert", risk_level: externalAlert.category === "black_swan" ? "高風險" : "警戒", short_label: externalAlertLabel(externalAlert.category),
+    brief_title: `金十｜${externalAlertLabel(externalAlert.category)}`, summary: externalAlert.summary,
     trigger: `事件時間：${externalAlert.occurred_at}`,
     why_important: profile.why,
     market_context: `${profile.linked} 來源：${externalAlert.source}。`,
@@ -88,7 +95,8 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
   }
   const risk = event.risk_level || "持續觀察";
   card.dataset.risk = risk.includes("高風險") ? "high" : risk.includes("警戒") ? "warning" : "neutral";
-  setText("alert-banner", event.kind === "market_signal" ? event.short_label : event.kind === "external_alert" ? "已核對外部快訊" : "已核對的重要市場事件");
+  const externalBanner = externalAlert?.category === "black_swan" ? "極端黑天鵝／重大風險事件" : externalAlert?.category === "material_positive" ? "已核對重大正向事件" : "已核對外部快訊";
+  setText("alert-banner", event.kind === "market_signal" ? event.short_label : event.kind === "external_alert" ? externalBanner : "已核對的重要市場事件");
   setText("alert-headline", event.brief_title || `${event.short_label}｜${event.title}`);
   setText("alert-summary", `事件：${event.summary || event.title || "公開市場事件更新。"}`);
   setText("alert-trigger", `為何重要：${event.why_important || event.trigger || "已核對公開訊號，等待後續市場反應。"}`);

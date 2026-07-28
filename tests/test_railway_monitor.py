@@ -38,6 +38,20 @@ def test_routine_oil_commentary_is_not_an_emergency_alert():
     assert monitor.alert_from_flash(flash) is None
 
 
+def test_confirmed_extreme_disaster_is_classified_as_black_swan():
+    flash = monitor.Flash("quake-1", "Major earthquake hits Japan", "A major earthquake triggers tsunami warnings", "2026-07-28T17:00:00+08:00")
+    alert = monitor.alert_from_flash(flash)
+    assert alert is not None
+    assert alert.category == "black_swan"
+
+
+def test_confirmed_ceasefire_is_classified_as_material_positive_event():
+    flash = monitor.Flash("truce-1", "Ceasefire agreement announced", "Officials confirm a ceasefire agreement", "2026-07-28T17:00:00+08:00")
+    alert = monitor.alert_from_flash(flash)
+    assert alert is not None
+    assert alert.category == "material_positive"
+
+
 def test_category_cooldown_allows_only_escalation_before_window_expires(tmp_path):
     store = monitor.SeenStore(tmp_path / "state.sqlite3")
     first = monitor.Alert("a1", "policy", "政策：關稅消息", "2026-07-26T20:30:00+08:00")
