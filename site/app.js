@@ -209,12 +209,12 @@ const researchStrategyTags = (item) => {
   return [researchStrategyLabel(item)];
 };
 
-const researchScoreLabel = (item) => {
-  if (item.score === null || item.score === undefined) return "分數暫時無法取得";
-  if (item.strategy === "price_action") return `裸 K 相符度 ${Number(item.score).toFixed(1)} / 100`;
-  if (item.strategy === "resonance") return `共振分數 ${Math.max(0, Math.min(100, (56 - Number(item.score)) / 56 * 100)).toFixed(1)} / 100`;
-  if (item.strategy === "value") return `價值分數 ${Number(item.score).toFixed(0)} / 5`;
-  return `動能分數 ${Number(item.score).toFixed(1)} / 100`;
+const researchScoreParts = (item) => {
+  if (item.score === null || item.score === undefined) return { label: "策略分數", value: "暫時無法取得" };
+  if (item.strategy === "price_action") return { label: "裸 K 相符度", value: `${Number(item.score).toFixed(1)} / 100` };
+  if (item.strategy === "resonance") return { label: "共振分數", value: `${Math.max(0, Math.min(100, (56 - Number(item.score)) / 56 * 100)).toFixed(1)} / 100` };
+  if (item.strategy === "value") return { label: "價值分數", value: `${Number(item.score).toFixed(0)} / 5` };
+  return { label: "動能分數", value: `${Number(item.score).toFixed(1)} / 100` };
 };
 
 const renderResearchList = (id, items, empty) => {
@@ -227,7 +227,8 @@ const renderResearchList = (id, items, empty) => {
     const price = item.close === null || item.close === undefined ? "報價待完整掃描" : `${formatNumber(item.close)} ${currency}`;
     const change = item.change_percent === null || item.change_percent === undefined ? "—" : signedPercent(item.change_percent);
     const tags = researchStrategyTags(item).map((label) => `<span class="strategy-chip">${escapeHtml(label)}</span>`).join("");
-    return `<li class="research-item"><div class="research-item-top"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-price ${state}">${escapeHtml(price)}<small>${escapeHtml(change)}</small></span></div><div class="research-item-bottom"><div class="research-identity"><span class="research-company">${escapeHtml(item.name || item.ticker)}</span><span class="research-strategies">${tags}</span></div><span class="research-score">${escapeHtml(researchScoreLabel(item))}</span></div></li>`;
+    const score = researchScoreParts(item);
+    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}</strong></div></li>`;
   }).join("");
 };
 
