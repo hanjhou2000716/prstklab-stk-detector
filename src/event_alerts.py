@@ -108,6 +108,16 @@ def _signal_market_context(ticker: str) -> tuple[str, str]:
     ))
 
 
+def _signal_stage(percent: float, move_15m: float | None) -> str:
+    """Classify a move for de-duplication without changing the public risk label."""
+    magnitude = max(abs(percent), abs(move_15m or 0.0))
+    if magnitude >= 4.0:
+        return "極端"
+    if magnitude >= 3.0:
+        return "擴大"
+    return "初始"
+
+
 def _event_market_context(label: str) -> tuple[str, str, str]:
     """Translate a verified macro category into neutral market transmission context."""
     contexts = {
@@ -231,7 +241,11 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "instrument": index,
         "related": _related_indices(indices, ticker),
         "change": change,
-        "signal_state": f"{pattern}:{risk}:{'up' if move_15m is not None and move_15m > 0 else 'down' if move_15m is not None and move_15m < 0 else 'daily'}",
+        # Taiwan's broad-market alert is intentionally eligible for one
+        # hourly update while a high-risk move persists.  A worsening stage
+        # remains a separate signal and can be delivered immediately.
+        "realert_interval_minutes": 60 if ticker == "TAIEX" and risk in {"高風險", "高波動"} else None,
+        "signal_state": f"{pattern}:{risk}:{_signal_stage(percent, move_15m)}:{'up' if move_15m is not None and move_15m > 0 else 'down' if move_15m is not None and move_15m < 0 else 'daily'}",
     }
 
 

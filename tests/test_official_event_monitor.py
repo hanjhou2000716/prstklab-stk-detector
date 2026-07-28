@@ -1,3 +1,6 @@
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from src.official_event_monitor import build_official_event_brief, event_key, select_official_event
 
 
@@ -43,3 +46,31 @@ def test_price_signal_key_changes_for_escalation_or_a_direction_reversal():
     assert event_key(warning) == event_key(warning)
     assert event_key(warning) != event_key(high)
     assert event_key(warning) != event_key(rebound)
+
+
+def test_taiex_high_risk_signal_repeats_once_per_quote_hour_but_not_every_poll():
+    base = {
+        "kind": "market_signal",
+        "risk_level": "高風險",
+        "signal_state": "急跌:高風險:擴大:daily",
+        "realert_interval_minutes": 60,
+        "instrument": {"ticker": "TAIEX", "quote_date": "2026-07-28", "quote_time": "2026-07-28T10:05:00+08:00"},
+    }
+    same_hour = {**base, "instrument": {**base["instrument"], "quote_time": "2026-07-28T10:50:00+08:00"}}
+    next_hour = {**base, "instrument": {**base["instrument"], "quote_time": "2026-07-28T11:00:00+08:00"}}
+    assert event_key(base) == event_key(same_hour)
+    assert event_key(base) != event_key(next_hour)
+
+
+def test_taiwan_market_window_prefers_taiex_and_suppresses_unrelated_price_signals():
+    snapshot = {
+        "official_events": {"items": []},
+        "events": {"items": [
+            {"kind": "market_signal", "brief_title": "WTI價格訊號觸發", "instrument": {"ticker": "WTI"}},
+            {"kind": "market_signal", "brief_title": "台指價格訊號觸發", "instrument": {"ticker": "TAIEX"}},
+        ]},
+    }
+    now = datetime(2026, 7, 28, 10, 0, tzinfo=ZoneInfo("Asia/Taipei"))
+    assert select_official_event(snapshot, now)["instrument"]["ticker"] == "TAIEX"
+    only_wti = {**snapshot, "events": {"items": [snapshot["events"]["items"][0]]}}
+    assert select_official_event(only_wti, now) is None
