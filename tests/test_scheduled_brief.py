@@ -16,11 +16,18 @@ def test_us_premarket_uses_2100_taiwan_during_new_york_dst():
     assert resolve_slot("auto", summer_2200) is None
 
 
-def test_us_premarket_uses_2200_taiwan_during_new_york_standard_time():
+def test_us_premarket_stays_at_2100_taiwan_during_new_york_standard_time():
     winter_2100 = datetime(2026, 1, 22, 21, 0, tzinfo=ZoneInfo("Asia/Taipei"))
     winter_2200 = datetime(2026, 1, 22, 22, 0, tzinfo=ZoneInfo("Asia/Taipei"))
-    assert resolve_slot("auto", winter_2100) is None
-    assert resolve_slot("auto", winter_2200) == "us_premarket"
+    assert resolve_slot("auto", winter_2100) == "us_premarket"
+    assert resolve_slot("auto", winter_2200) is None
+
+
+def test_external_dispatch_accepts_2100_us_premarket_all_year():
+    summer = datetime(2026, 7, 27, 21, 0, tzinfo=ZoneInfo("Asia/Taipei"))
+    winter = datetime(2026, 1, 22, 21, 0, tzinfo=ZoneInfo("Asia/Taipei"))
+    assert resolve_slot("us_premarket", summer, strict_window=True) == "us_premarket"
+    assert resolve_slot("us_premarket", winter, strict_window=True) == "us_premarket"
 
 
 def test_external_dispatch_rejects_an_early_declared_pre_open_slot():

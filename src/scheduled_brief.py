@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timedelta
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from src.config import get_settings
@@ -36,15 +36,8 @@ STRICT_SLOT_WINDOWS = {
     "midday": (11 * 60 + 15, 12 * 60 + 15),
     "afternoon": (12 * 60 + 45, 13 * 60 + 45),
     "post_close": (13 * 60 + 55, 14 * 60 + 55),
-    "us_premarket_summer": (20 * 60 + 30, 21 * 60 + 30),
-    "us_premarket_winter": (21 * 60 + 30, 22 * 60 + 30),
+    "us_premarket": (20 * 60 + 30, 21 * 60 + 30),
 }
-
-
-def is_new_york_daylight_saving(now: datetime) -> bool:
-    """Return whether New York observes daylight saving time at this instant."""
-    new_york_now = now.astimezone(ZoneInfo("America/New_York"))
-    return new_york_now.dst() not in (None, timedelta(0))
 
 
 def _strict_slot_at(now: datetime) -> str | None:
@@ -52,10 +45,6 @@ def _strict_slot_at(now: datetime) -> str | None:
     minute = now.hour * 60 + now.minute
     for slot, (start, end) in STRICT_SLOT_WINDOWS.items():
         if start <= minute <= end:
-            if slot == "us_premarket_summer":
-                return "us_premarket" if is_new_york_daylight_saving(now) else None
-            if slot == "us_premarket_winter":
-                return "us_premarket" if not is_new_york_daylight_saving(now) else None
             return slot
     return None
 
@@ -85,12 +74,10 @@ def resolve_slot(value: str, now: datetime | None = None, *, strict_window: bool
         return "post_close"
     if hour < 21:
         return "us_premarket"
-    # Both 21:00 and 22:00 Taiwan time are 09:00 in New York.  The active
-    # one depends on daylight saving time; the other invocation is skipped.
-    daylight_saving = is_new_york_daylight_saving(local_now)
-    if hour == 21:
-        return "us_premarket" if daylight_saving else None
-    return "us_premarket" if not daylight_saving else None
+    # This system has one fixed Taiwan-time pre-market report throughout the
+    # year.  The content remains a public market briefing, not a claim that
+    # the US cash session is about to open at the same local clock time.
+    return "us_premarket" if hour == 21 else None
 
 
 def _pick_quote(snapshot: dict, slot: str) -> dict | None:
@@ -181,7 +168,7 @@ def main() -> None:
         return
 
     if slot is None:
-        print("此時段不符合目前美國夏令／冬令時間，略過快報。")
+        print("此時段不在已設定的台灣時間快報窗口，略過快報。")
         return
 
     settings = get_settings()
