@@ -56,6 +56,19 @@ def test_intraday_quote_uses_penultimate_close_when_daily_data_contains_today():
     assert quote["change_percent"] == 6.5
 
 
+def test_intraday_quote_includes_15_minute_move_for_continuous_five_minute_bars():
+    item = {"symbol": "^SOX", "ticker": "SOX", "name": "費城半導體", "market": "us", "currency": "點"}
+    daily = pd.Series([12000.0, 11800.0], index=pd.to_datetime(["2026-07-23", "2026-07-24"]))
+    intraday = pd.Series(
+        [11500.0, 11480.0, 11460.0, 11353.26],
+        index=pd.date_range("2026-07-27 22:15:00", periods=4, freq="5min", tz="America/New_York"),
+    )
+
+    quote = _intraday_quote(item, daily, intraday, "盤中 5 分鐘")
+
+    assert quote["change_15m_percent"] == -1.28
+
+
 def test_daily_quote_is_explicitly_labelled_as_a_daily_close():
     item = {"symbol": "^IXIC", "ticker": "NASDAQ", "name": "那斯達克", "market": "us", "currency": "點"}
     daily = pd.Series([100.0, 105.0], index=pd.to_datetime(["2026-07-23", "2026-07-24"]))

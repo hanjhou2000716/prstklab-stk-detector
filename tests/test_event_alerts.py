@@ -36,7 +36,8 @@ def test_taiex_large_drop_creates_a_detailed_high_risk_alert_card():
     )
     event = snapshot["items"][0]
     assert event["brief_title"] == "台指價格訊號觸發｜急跌｜高風險"
-    assert "-2.0% 高風險門檻" in event["trigger"]
+    assert "日內 -2.41%" in event["trigger"]
+    assert "點數 -1,082.00" in event["trigger"]
     assert event["related"][0]["ticker"] == "NASDAQ"
     assert "費半" in event["market_context"]
     assert "台股權值" in event["stock_observation"]
@@ -60,6 +61,28 @@ def test_delayed_intraday_quote_cannot_trigger_an_urgent_price_signal():
         ],
     )
     assert snapshot["is_major"] is False
+
+
+def test_sox_15_minute_acceleration_triggers_before_the_daily_threshold():
+    snapshot = build_event_snapshot({"taiwan": [], "us": []}, [], indices=[{
+        "ticker": "SOX", "name": "費城半導體指數", "price": 11489.11, "change": -330,
+        "change_percent": -2.79, "change_15m_percent": -1.04, "currency": "點",
+    }])
+
+    event = snapshot["items"][0]
+    assert event["brief_title"] == "費半價格訊號觸發｜急跌｜警戒"
+    assert "15分鐘 -1.04%" in event["trigger"]
+
+
+def test_sox_fast_rebound_after_a_drop_is_a_distinct_warning_signal():
+    snapshot = build_event_snapshot({"taiwan": [], "us": []}, [], indices=[{
+        "ticker": "SOX", "name": "費城半導體指數", "price": 11454.77, "change": -364,
+        "change_percent": -3.08, "change_15m_percent": 1.88, "currency": "點",
+    }])
+
+    event = snapshot["items"][0]
+    assert event["brief_title"] == "費半價格訊號觸發｜突然大漲｜警戒"
+    assert "反彈" in event["why_important"]
 
 
 def test_brief_prefers_major_event_category_but_remains_watch_friendly():

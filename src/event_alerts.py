@@ -154,17 +154,28 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     if percent is None:
         return None
     percent = float(percent)
-    minimum_move = {
+    ticker = str(index.get("ticker", "市場"))
+    minimum_daily_move = {
         "TAIEX": 1.5,
         "SOX": 3.0,
         "NASDAQ": 2.0,
         "WTI": 5.0,
         "BRENT": 5.0,
-    }.get(str(index.get("ticker", "")), 1.0)
-    if abs(percent) < minimum_move:
+    }.get(ticker, 1.0)
+    minimum_15m_move = {
+        "TAIEX": 1.0,
+        "SOX": 1.0,
+        "NASDAQ": 1.0,
+        "WTI": 2.0,
+        "BRENT": 2.0,
+    }.get(ticker, 1.0)
+    move_15m = index.get("change_15m_percent")
+    move_15m = float(move_15m) if move_15m is not None else None
+    has_daily_move = abs(percent) >= minimum_daily_move
+    has_15m_acceleration = move_15m is not None and abs(move_15m) >= minimum_15m_move
+    if not has_daily_move and not has_15m_acceleration:
         return None
 
-    ticker = str(index.get("ticker", "市場"))
     market_context, stock_observation = _signal_market_context(ticker)
     if ticker == "TAIEX":
         label = "台指價格訊號觸發"
@@ -175,7 +186,13 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     else:
         label = f"{ticker}價格訊號觸發"
 
-    if percent <= -2:
+    if move_15m is not None and move_15m >= minimum_15m_move and percent < 0:
+        pattern, risk = "突然大漲", "警戒"
+        stock_observation = "觀察反彈能否延續並與 Nasdaq、費半或台指同步；單一訊號僅供公開市場觀察。"
+    elif move_15m is not None and move_15m <= -minimum_15m_move:
+        pattern = "急跌"
+        risk = "高風險" if abs(percent) >= 3.5 or abs(move_15m) >= 1.5 else "警戒"
+    elif percent <= -2:
         pattern, risk = "急跌", "高風險"
     elif percent <= -1:
         pattern, risk = "急跌", "警戒"
@@ -187,10 +204,15 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     price = index.get("price")
     change = index.get("change")
     move = f"{percent:+.2f}%"
-    trigger = f"日內變動 {move}，"
-    trigger += "達 -2.0% 高風險門檻。" if percent <= -2 else (
-        "達 -1.0% 警戒門檻。" if percent <= -1 else "波動達 1.0% 以上。"
-    )
+    intraday_text = f"｜15分鐘 {move_15m:+.2f}%" if move_15m is not None else ""
+    change_text = f"{float(change):+,.2f}" if isinstance(change, (int, float)) else "資料暫缺"
+    trigger = f"日內 {move}{intraday_text}｜點數 {change_text}｜最新 {price:,.2f}" if isinstance(price, (int, float)) else f"日內 {move}{intraday_text}"
+    if pattern == "突然大漲":
+        why_important = f"{trigger}。跌深後快速反彈代表短線風險偏好回升，仍需以後續連續報價確認。"
+    elif has_15m_acceleration:
+        why_important = f"{trigger}。15 分鐘內波動擴大，需留意是否持續並擴散至相關市場。"
+    else:
+        why_important = f"{trigger}。日內變動達固定觀察門檻，需以後續公開報價確認。"
     return {
         "kind": "market_signal",
         "short_label": label,
@@ -200,7 +222,7 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "title": f"{index.get('name', ticker)}日內變動 {move}",
         "summary": f"{index.get('name', ticker)} {price:,.2f}" if isinstance(price, (int, float)) else f"{index.get('name', ticker)} 公開報價更新",
         "trigger": trigger,
-        "why_important": trigger,
+        "why_important": why_important,
         "market_context": market_context,
         "stock_observation": stock_observation,
         "friendly_reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
@@ -209,6 +231,7 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "instrument": index,
         "related": _related_indices(indices, ticker),
         "change": change,
+        "signal_state": f"{pattern}:{risk}:{'up' if move_15m is not None and move_15m > 0 else 'down' if move_15m is not None and move_15m < 0 else 'daily'}",
     }
 
 

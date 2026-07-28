@@ -36,8 +36,10 @@ def test_monitor_selects_threshold_price_signal_when_no_official_release_exists(
     assert build_official_event_brief(event) == "快訊｜台指價格訊號觸發｜急跌｜高風險"
 
 
-def test_price_signal_key_only_changes_when_risk_level_escalates():
-    warning = {"kind": "market_signal", "instrument": {"ticker": "SOX", "quote_date": "2026-07-27"}, "risk_level": "警戒"}
-    high = {**warning, "risk_level": "高風險"}
+def test_price_signal_key_changes_for_escalation_or_a_direction_reversal():
+    warning = {"kind": "market_signal", "instrument": {"ticker": "SOX", "quote_date": "2026-07-27"}, "risk_level": "警戒", "signal_state": "急跌:警戒:down"}
+    high = {**warning, "risk_level": "高風險", "signal_state": "急跌:高風險:down"}
+    rebound = {**warning, "signal_state": "突然大漲:警戒:up"}
     assert event_key(warning) == event_key(warning)
     assert event_key(warning) != event_key(high)
+    assert event_key(warning) != event_key(rebound)

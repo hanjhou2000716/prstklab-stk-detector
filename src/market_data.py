@@ -135,11 +135,20 @@ def _intraday_quote(
         if latest_daily_date == timestamp.date() and len(daily_closes) >= 2
         else daily_closes.iloc[-1]
     )
+    # Keep a real 15-minute move only when four consecutive five-minute bars
+    # are available. Sparse session-boundary data must not be interpreted.
+    change_15m_percent = None
+    if len(intraday_closes) >= 4:
+        earlier = intraday_closes.index[-4]
+        elapsed_seconds = (timestamp - earlier).total_seconds()
+        if 10 * 60 <= elapsed_seconds <= 25 * 60:
+            change_15m_percent = change_percent(latest, float(intraday_closes.iloc[-4]))
     return {
         **item,
         "price": round(latest, 2),
         "change": round(latest - previous_close, 2),
         "change_percent": change_percent(latest, previous_close),
+        "change_15m_percent": change_15m_percent,
         "quote_date": timestamp.date().isoformat(),
         "quote_time": timestamp.isoformat(),
         "quote_basis": basis,

@@ -35,12 +35,11 @@ def event_key(event: dict[str, Any] | None) -> str:
         return "none"
     if event.get("kind") == "market_signal":
         instrument = event.get("instrument") or {}
-        # One notification per market date and risk level. A move from warning
-        # to high risk is a meaningful escalation; repeated unchanged bars are
-        # not.
+        # A worsening move or a fast rebound after a sell-off is a distinct
+        # public observation. Repeated bars in the same state are not.
         material = "|".join(str(value) for value in (
             "price", instrument.get("ticker", "market"), instrument.get("quote_date", "unknown"),
-            event.get("risk_level", "觀察"),
+            event.get("signal_state", event.get("risk_level", "觀察")),
         ))
     else:
         material = "|".join(str(event.get(key, "")) for key in ("url", "title", "released_at"))
