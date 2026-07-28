@@ -9,6 +9,8 @@ from src.telegram_client import send_briefs, validate_brief
 
 
 CATEGORY_LABELS = {
+    "black_swan": "黑天鵝",
+    "material_positive": "重大正向",
     "fed": "Fed",
     "macro": "總經",
     "policy": "政策",
