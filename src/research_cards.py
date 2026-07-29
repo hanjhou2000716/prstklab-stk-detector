@@ -30,7 +30,7 @@ def load_research_cards(path: Path = REPORT_PATH) -> dict[str, Any]:
         if not isinstance(item, dict) or item.get("strategy") not in ALLOWED_STRATEGIES or item.get("market") not in ALLOWED_MARKETS:
             continue
         candidates.append({key: item.get(key) for key in (
-            "market", "strategy", "rank", "ticker", "name", "score", "close", "previous_close", "change_percent", "turnover", "as_of", "signal_labels", "volume_ratio", "range_contraction", "breakout_20", "vcp_breakout", "new_high_days", "structure", "status",
+            "market", "strategy", "rank", "ticker", "name", "score", "close", "previous_close", "change_percent", "turnover", "as_of", "signal_labels", "volume_ratio", "range_contraction", "breakout_20", "vcp_breakout", "new_high_days", "fgi_score", "fgi_status", "conditions_matched", "condition_count", "structure", "status",
             "roe", "pe", "payout_ratio", "metrics_available", "moat_review"
         )})
     sources = [
