@@ -190,3 +190,4 @@ python -m pytest -q
 - [金十 Token 與外部快訊安全設定](docs/JIN10_RAILWAY_SETUP.md)
 - [Beta 操作說明](docs/BETA_OPERATION_GUIDE.md)
 - [Beta 驗收清單](docs/BETA_ACCEPTANCE.md)
+- [四策略固定樣本期 Walk-forward 回測](docs/WALK_FORWARD_BACKTEST.md)
