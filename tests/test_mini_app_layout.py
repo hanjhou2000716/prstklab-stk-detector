@@ -45,3 +45,11 @@ def test_mini_app_uses_strategy_drawers_and_places_source_health_after_sentiment
     assert ".research-drawer[open] summary" in styles
     assert "#risk > .panel:not(.source-health-panel) { order: 3; }" in styles
     assert ".source-health-panel { order: 4; }" in styles
+
+
+def test_mini_app_hides_empty_event_trace_and_has_a_legacy_health_fallback():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert "container.hidden = container.childElementCount === 0" in app
+    assert "此市場快照建立於健康狀態欄位上線前" in app
+    assert "renderSourceHealth(snapshot.source_health, snapshot)" in app

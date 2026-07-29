@@ -85,6 +85,7 @@ const renderAlertTrace = (event) => {
   const container = document.getElementById("alert-trace");
   if (!container) return;
   container.replaceChildren();
+  container.hidden = true;
   const trace = event?.source_trace;
   if (!trace) return;
   const facts = [];
@@ -114,6 +115,7 @@ const renderAlertTrace = (event) => {
     link.textContent = "開啟原始來源 ↗";
     container.append(link);
   }
+  container.hidden = container.childElementCount === 0;
 };
 
 const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
@@ -223,16 +225,17 @@ const renderEvents = (events) => {
   container.innerHTML = `<li class="signal-list-title">同步市場訊號</li>${secondary.map((event) => `<li class="signal-card"><b>${escapeHtml(event.brief_title || `${event.short_label}｜${event.title}`)}</b><small>${escapeHtml(event.source || "公開市場報價")}</small></li>`).join("")}`;
 };
 
-const renderSourceHealth = (health) => {
+const renderSourceHealth = (health, snapshot = {}) => {
   const summary = document.getElementById("source-health-summary");
   const event = document.getElementById("source-health-event");
   const list = document.getElementById("source-health-list");
   if (!summary || !event || !list) return;
   if (!health?.sources || !health?.event_scan) {
-    summary.textContent = "健康狀態暫時無法取得";
-    event.textContent = "事件來源狀態未完成載入，無法判定本輪是否沒有重大事件。";
+    const observedAt = traceTime(snapshot.generated_at);
+    summary.textContent = "等待下一輪健康檢查";
+    event.textContent = "此市場快照建立於健康狀態欄位上線前；下一次資料刷新將顯示各來源狀態。";
     event.dataset.status = "partial";
-    list.innerHTML = '<li class="empty">來源健康資料暫時無法取得</li>';
+    list.innerHTML = `<li><span><b>目前市場快照</b><small>${escapeHtml(observedAt || "時間暫時無法取得")}</small></span><em class="source-status partial">待刷新</em></li>`;
     return;
   }
   summary.textContent = health.summary || "來源狀態已更新";
@@ -366,7 +369,7 @@ const render = (snapshot) => {
   renderRisk(snapshot.risk);
   renderAlertCard(snapshot.events, snapshot.generated_at, externalAlert, snapshot.indices || []);
   renderEvents(snapshot.events);
-  renderSourceHealth(snapshot.source_health);
+  renderSourceHealth(snapshot.source_health, snapshot);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
   renderResearch(snapshot);
   renderNewsList("taiwan-news", snapshot.news?.taiwan);
