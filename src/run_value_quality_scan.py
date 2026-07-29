@@ -10,6 +10,7 @@ import pandas as pd
 
 from src.batch_download import batches
 from src.public_download import download_daily_batch
+from src.pristine_value import heat_metrics, review_pristine_pool
 from src.research_contract import latest_quote_context
 from src.value_fundamentals import sec_fundamentals, twse_financial_snapshot
 from src.value_review import review_public_pool
@@ -47,6 +48,7 @@ def load_upstream_candidates(market: str, data_dir: Path, universe_file: str | N
 
 
 def public_quotes(candidates: list[dict[str, str]], batch_size: int = 50) -> tuple[dict[str, dict[str, float | str]], list[str]]:
+    """Return latest quote plus three-month heat observations for each symbol."""
     quotes: dict[str, dict[str, float | str]] = {}
     errors: list[str] = []
     for group in batches(candidates, batch_size):
@@ -57,7 +59,7 @@ def public_quotes(candidates: list[dict[str, str]], batch_size: int = 50) -> tup
                     bars = downloaded[item["symbol"]].dropna() if len(group) > 1 else downloaded.dropna()
                     context = latest_quote_context(bars)
                     if context:
-                        quotes[item["symbol"]] = context
+                        quotes[item["symbol"]] = {**context, **heat_metrics(bars)}
                     else:
                         errors.append(f"{item['ticker']} 報價資料不足")
                 except (KeyError, TypeError, ValueError):
@@ -87,7 +89,8 @@ def main() -> None:
     else:
         fundamentals, fundamental_errors = sec_fundamentals([item["ticker"] for item in candidates])
     quotes, quote_errors = public_quotes(candidates, args.batch_size)
-    rows = review_public_pool(candidates, fundamentals, quotes, args.market)
+    base_rows = review_public_pool(candidates, fundamentals, quotes, args.market, limit=None)
+    rows = review_pristine_pool(base_rows, args.market)
 
     pd.DataFrame(rows).to_csv(data_dir / f"{args.market}-value-scan.csv", index=False, encoding="utf-8-sig")
     summary = {

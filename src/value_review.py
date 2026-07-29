@@ -101,8 +101,9 @@ def review_public_pool(
     fundamentals: dict[str, dict[str, Any]],
     quotes: dict[str, dict[str, Any]],
     market: str,
+    limit: int | None = 5,
 ) -> list[dict[str, Any]]:
-    """Build five public value observations from an independent constituent pool."""
+    """Build public value observations from an independent constituent pool."""
     rows: list[dict[str, Any]] = []
     for candidate in candidates:
         ticker = candidate["ticker"]
@@ -123,4 +124,4 @@ def review_public_pool(
             **quote,
         })
     rows.sort(key=lambda row: (row["score"], row["metrics_available"], row.get("net_income") or 0), reverse=True)
-    return rows[:5]
+    return rows[:limit] if limit is not None else rows

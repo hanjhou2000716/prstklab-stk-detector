@@ -277,7 +277,7 @@ const renderLegacyResearchList = (id, items, empty) => {
     }
     if (item.score === null || item.score === undefined) return "策略相符度 暫時無法取得";
     if (item.strategy === "resonance") return `共振相符度 ${Number(item.score).toFixed(1)} / 100`;
-    if (item.strategy === "value") return `價值相符度 ${Number(item.score).toFixed(0)} / 5`;
+    if (item.strategy === "value") return `璞玉價值分數 ${Number(item.score).toFixed(0)} / 100`;
     return `動能相符度 ${Number(item.score).toFixed(1)} / 100`;
   };
   container.innerHTML = items.slice(0, 5).map((item) => {
@@ -293,7 +293,7 @@ const researchStrategyLabel = (item) => {
   if (item.strategy === "price_action") return researchStructureLabel(item.structure) || "裸 K 結構觀察";
   if (item.strategy === "momentum") return "動能觀察";
   if (item.strategy === "resonance") return item.status || "三維共振";
-  return item.pe === null || item.pe === undefined ? "本益比暫時無法取得" : `本益比 ${Number(item.pe).toFixed(1)}`;
+  return item.pe === null || item.pe === undefined ? "璞玉價值｜本益比暫時無法取得" : `璞玉價值｜本益比 ${Number(item.pe).toFixed(1)}`;
 };
 
 const researchStrategyTags = (item) => {
@@ -305,6 +305,10 @@ const researchStrategyTags = (item) => {
     const labels = researchStructureLabel(item.conditions_matched).split("、").filter(Boolean);
     return labels.length ? labels : [researchStrategyLabel(item)];
   }
+  if (item.strategy === "value") {
+    const labels = researchStructureLabel(item.value_checks).split("、").filter(Boolean);
+    return labels.length ? labels : [researchStrategyLabel(item)];
+  }
   return [researchStrategyLabel(item)];
 };
 
@@ -312,7 +316,7 @@ const researchScoreParts = (item) => {
   if (item.score === null || item.score === undefined) return { label: "策略分數", value: "暫時無法取得" };
   if (item.strategy === "price_action") return { label: "裸 K 相符度", value: `${Number(item.score).toFixed(1)} / 100` };
   if (item.strategy === "resonance") return { label: item.status || "共振分數", value: `${Number(item.score).toFixed(1)} / 100` };
-  if (item.strategy === "value") return { label: "價值分數", value: `${Number(item.score).toFixed(0)} / 5` };
+  if (item.strategy === "value") return { label: "璞玉價值分數", value: `${Number(item.score).toFixed(0)} / 100` };
   return { label: "動能分數", value: `${Number(item.score).toFixed(1)} / 100` };
 };
 
@@ -344,7 +348,7 @@ const renderResearch = (snapshot) => {
   renderResearchList("research-list", marketCandidates.filter((item) => item.strategy === "price_action"), unavailable || "本輪掃描沒有符合裸 K 結構的候選標的");
   renderResearchList("momentum-list", marketCandidates.filter((item) => item.strategy === "momentum"), unavailable || "本輪掃描沒有符合動能條件的候選標的");
   renderResearchList("resonance-list", marketCandidates.filter((item) => item.strategy === "resonance"), unavailable || "本輪掃描沒有符合三維共振條件的候選標的");
-  renderResearchList("value-list", marketCandidates.filter((item) => item.strategy === "value"), unavailable || "本輪候選沒有完成品質／價值公開資料覆核");
+  renderResearchList("value-list", marketCandidates.filter((item) => item.strategy === "value"), unavailable || "本輪沒有同時通過璞玉品質與三月去熱門化公開資料覆核的標的");
 };
 
 document.querySelectorAll(".research-tab").forEach((tab) => tab.addEventListener("click", () => {
