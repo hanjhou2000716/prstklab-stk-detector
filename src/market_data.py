@@ -199,6 +199,41 @@ def get_quote(item: dict[str, str], session: str | None = None) -> dict[str, Any
         return _daily_quote(item, closes)
 
 
+def apply_taiwan_intraday_crosscheck(
+    indices: list[dict[str, Any]], session: str, *,
+    twse_fetcher: Any | None = None, taifex_fetcher: Any | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+    """Replace an in-session TAIEX quote only after official source checks.
+
+    TWSE public MIS supplies the cash-index observation.  TAIFEX's TXF public
+    observation is deliberately a direction check, not a point-price proxy.
+    A failed official call leaves the existing quote visible but marks it as
+    non-actionable for an urgent TAIEX price alert.
+    """
+    if session != "交易中":
+        return indices, []
+    from src.taiwan_market_crosscheck import crosscheck_taiex_quote, fetch_taifex_txf, fetch_twse_taiex
+
+    twse_fetcher = twse_fetcher or fetch_twse_taiex
+    taifex_fetcher = taifex_fetcher or fetch_taifex_txf
+    errors: list[dict[str, str]] = []
+    try:
+        twse = twse_fetcher()
+    except Exception as exc:
+        twse = None
+        errors.append({"ticker": "TAIEX", "message": f"TWSE 盤中交叉核對失敗：{type(exc).__name__}", "scope": "taiwan_crosscheck"})
+    try:
+        taifex = taifex_fetcher()
+    except Exception as exc:
+        taifex = None
+        errors.append({"ticker": "TXF", "message": f"TAIFEX 盤中交叉核對失敗：{type(exc).__name__}", "scope": "taiwan_crosscheck"})
+
+    checked: list[dict[str, Any]] = []
+    for item in indices:
+        checked.append(crosscheck_taiex_quote(item, twse=twse, taifex=taifex) if item.get("ticker") == "TAIEX" else item)
+    return checked, errors
+
+
 def build_market_snapshot() -> dict[str, Any]:
     """Build a browser-friendly snapshot; one ticker failure never stops others."""
     from src.event_alerts import build_event_snapshot
@@ -224,6 +259,10 @@ def build_market_snapshot() -> dict[str, Any]:
             indices.append(get_quote(item, markets.get(item["market"], {}).get("session")))
         except Exception as exc:
             errors.append({"ticker": item["ticker"], "message": str(exc), "scope": "index"})
+    indices, crosscheck_errors = apply_taiwan_intraday_crosscheck(
+        indices, markets.get("taiwan", {}).get("session", "")
+    )
+    errors.extend(crosscheck_errors)
     macro_quotes: list[dict[str, Any]] = []
     for item in MACRO_REFERENCES:
         try:

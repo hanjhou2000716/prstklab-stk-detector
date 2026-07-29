@@ -76,6 +76,17 @@ def test_delayed_intraday_quote_cannot_trigger_an_urgent_price_signal():
     assert snapshot["is_major"] is False
 
 
+def test_uncrosschecked_taiex_intraday_quote_cannot_trigger_an_urgent_price_signal():
+    snapshot = build_event_snapshot(
+        {"taiwan": [], "us": []}, [], indices=[
+            {"ticker": "TAIEX", "name": "臺灣加權指數", "market": "taiwan", "price": 43234.0,
+             "change_percent": -3.6, "quote_time": "2026-07-29T10:00:00+08:00",
+             "crosscheck_status": "官方來源部分缺漏"},
+        ],
+    )
+    assert snapshot["is_major"] is False
+
+
 def test_gold_daily_move_requires_the_policy_five_percent_threshold():
     snapshot = build_event_snapshot({"taiwan": [], "us": []}, [], indices=[{
         "ticker": "GOLD", "name": "\u9ec3\u91d1", "price": 4000, "change_percent": 4.9,

@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from src.market_data import MACRO_REFERENCES, MARKET_INDICES, WATCHLIST, _daily_quote, _intraday_quote, change_percent, intraday_is_fresh
+from src.market_data import MACRO_REFERENCES, MARKET_INDICES, WATCHLIST, _daily_quote, _intraday_quote, apply_taiwan_intraday_crosscheck, change_percent, intraday_is_fresh
 
 
 def test_change_percent_calculates_and_rounds():
@@ -80,3 +80,31 @@ def test_intraday_freshness_rejects_an_old_bar_but_accepts_a_recent_one():
     assert intraday_is_fresh(pd.Timestamp("2026-07-24 09:55:00", tz="America/New_York"), "us", now)
     assert not intraday_is_fresh(pd.Timestamp("2026-07-24 09:35:00", tz="America/New_York"), "us", now)
     assert not intraday_is_fresh(pd.Timestamp("2026-07-23 16:00:00", tz="America/New_York"), "us", now)
+
+
+def test_taiwan_intraday_crosscheck_replaces_taiex_only_with_official_observation():
+    indices, errors = apply_taiwan_intraday_crosscheck(
+        [
+            {"ticker": "TAIEX", "price": 41590, "change_percent": -1.0, "quote_basis": "盤中 5 分鐘"},
+            {"ticker": "NASDAQ", "price": 25000},
+        ],
+        "交易中",
+        twse_fetcher=lambda: {"price": 41600, "change": -400, "change_percent": -0.95, "quote_date": "2026-07-29", "quote_time": "2026-07-29T10:00:00+08:00"},
+        taifex_fetcher=lambda: {"price": 41550, "change": -350, "change_percent": -0.84, "quote_date": "2026-07-29", "quote_time": "2026-07-29T10:00:00+08:00"},
+    )
+    assert errors == []
+    assert indices[0]["price"] == 41600
+    assert indices[0]["crosscheck_status"] == "已交叉核對"
+    assert indices[1]["price"] == 25000
+
+
+def test_taiwan_intraday_crosscheck_marks_partial_official_source_as_non_actionable():
+    indices, errors = apply_taiwan_intraday_crosscheck(
+        [{"ticker": "TAIEX", "price": 41590, "change_percent": -1.0}],
+        "交易中",
+        twse_fetcher=lambda: {"price": 41600, "change": -400, "change_percent": -0.95, "quote_date": "2026-07-29", "quote_time": "2026-07-29T10:00:00+08:00"},
+        taifex_fetcher=lambda: None,
+    )
+    assert errors == []
+    assert indices[0]["crosscheck_status"] == "官方來源部分缺漏"
+    assert indices[0]["quote_delayed"] is True

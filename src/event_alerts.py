@@ -162,6 +162,17 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     # but must not create an urgent notification from an out-of-date move.
     if index.get("quote_delayed"):
         return None
+    # Taiwan intraday alerts have a higher evidence bar than a daily card:
+    # TWSE's cash-index observation and TAIFEX TXF must be available and have
+    # the same direction.  The Mini App may still display a partial quote, but
+    # it must not become an urgent Telegram alert.
+    if (
+        index.get("ticker") == "TAIEX"
+        and index.get("quote_time")
+        and index.get("crosscheck_status")
+        and index.get("crosscheck_status") != "已交叉核對"
+    ):
+        return None
     percent = index.get("change_percent")
     if percent is None:
         return None
