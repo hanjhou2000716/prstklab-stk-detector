@@ -5,6 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 
+TW_NET_INCOME_MINIMUM = 5_000_000_000
+US_NET_INCOME_MINIMUM = 500_000_000
+
+
 def metrics_from_info(info: dict[str, Any]) -> dict[str, float | None]:
     def number(key: str) -> float | None:
         value = info.get(key)
@@ -62,3 +66,61 @@ def review_candidates(candidates: list[dict[str, str]], info_getter: Any) -> tup
         })
     reviewed.sort(key=lambda item: (item["score"], item["metrics_available"]), reverse=True)
     return reviewed[:5], errors
+
+
+def score_public_fundamentals(metrics: dict[str, Any], market: str) -> tuple[float, list[str]]:
+    """Score disclosed fundamentals without turning a score into an order signal."""
+    minimum_income = TW_NET_INCOME_MINIMUM if market == "taiwan" else US_NET_INCOME_MINIMUM
+    score, checks = 0.0, []
+    net_income = metrics.get("net_income")
+    if isinstance(net_income, (int, float)) and net_income >= minimum_income:
+        score += 30
+        checks.append("規模獲利")
+    roe = metrics.get("roe")
+    if metrics.get("roe_stable") is True:
+        score += 30
+        checks.append("三年 ROE 穩定")
+    elif isinstance(roe, (int, float)) and roe >= 0.17:
+        # A latest-period figure is useful, but must not be labelled three-year stable.
+        score += 15
+        checks.append("最新 ROE 達標")
+    payout = metrics.get("payout_ratio")
+    if isinstance(payout, (int, float)) and payout >= 0.20:
+        score += 20
+        checks.append("現金回饋")
+    if metrics.get("pe") not in (None, 0):
+        score += 10
+        checks.append("本益比可核對")
+    if metrics.get("financial_source"):
+        score += 10
+    return round(min(score, 100), 1), checks
+
+
+def review_public_pool(
+    candidates: list[dict[str, str]],
+    fundamentals: dict[str, dict[str, Any]],
+    quotes: dict[str, dict[str, Any]],
+    market: str,
+) -> list[dict[str, Any]]:
+    """Build five public value observations from an independent constituent pool."""
+    rows: list[dict[str, Any]] = []
+    for candidate in candidates:
+        ticker = candidate["ticker"]
+        metrics = fundamentals.get(ticker)
+        if not metrics:
+            continue
+        score, checks = score_public_fundamentals(metrics, market)
+        quote = quotes.get(candidate["symbol"], {})
+        rows.append({
+            "ticker": ticker,
+            "name": candidate["name"],
+            "pool": candidate["pool"],
+            "score": score,
+            "value_checks": checks,
+            "metrics_available": sum(metrics.get(key) is not None for key in ("net_income", "roe", "payout_ratio", "pe")),
+            "moat_review": "公開財務條件覆核；護城河仍需人工閱讀年報與產業資料。",
+            **metrics,
+            **quote,
+        })
+    rows.sort(key=lambda row: (row["score"], row["metrics_available"], row.get("net_income") or 0), reverse=True)
+    return rows[:5]

@@ -1,0 +1,49 @@
+import pandas as pd
+
+from src.value_fundamentals import sec_value_metrics
+from src.value_review import review_public_pool, score_public_fundamentals
+from src.value_universe import parse_vanguard_holdings, parse_yuanta_holdings
+
+
+def test_yuanta_parser_keeps_only_taiwan_common_stock_rows():
+    rows = parse_yuanta_holdings([
+        pd.DataFrame([["2330", "台積電"], ["TXF", "台指期貨"], ["0050", "基金"]])
+    ], "0050")
+    assert rows == [{"ticker": "2330", "symbol": "2330.TW", "name": "台積電", "pool": "0050", "source": "Yuanta 0050 PCF"}]
+
+
+def test_vanguard_parser_reads_ticker_and_holding_columns():
+    rows = parse_vanguard_holdings([pd.DataFrame({"Ticker": ["NVDA", "CASH"], "Holdings": ["NVIDIA Corp.", "Cash"]})])
+    assert rows == [{"ticker": "NVDA", "symbol": "NVDA", "name": "NVIDIA Corp.", "pool": "VOO", "source": "Vanguard VOO holdings"}]
+
+
+def test_value_score_does_not_label_one_roe_observation_as_three_year_stability():
+    score, checks = score_public_fundamentals({"net_income": 6_000_000_000, "roe": .2, "roe_stable": None, "payout_ratio": .3, "pe": 15, "financial_source": "TWSE"}, "taiwan")
+    assert score == 85
+    assert "最新 ROE 達標" in checks
+    assert "三年 ROE 穩定" not in checks
+
+
+def test_sec_value_metrics_requires_three_annual_roe_observations_for_stable_label():
+    def fact(values):
+        return {"units": {"USD": values}}
+    annual = lambda year, value: {"fy": year, "end": f"{year}-12-31", "filed": f"{year + 1}-02-01", "fp": "FY", "form": "10-K", "val": value}
+    facts = {"facts": {"us-gaap": {
+        "NetIncomeLoss": fact([annual(2025, 30), annual(2024, 28), annual(2023, 25)]),
+        "StockholdersEquity": fact([annual(2025, 150), annual(2024, 140), annual(2023, 130), annual(2022, 120)]),
+        "PaymentsOfDividendsCommonStock": fact([annual(2025, 8)]),
+    }}}
+    metrics = sec_value_metrics(facts)
+    assert metrics["years_available"] == 3
+    assert metrics["roe_stable"] is True
+
+
+def test_independent_pool_does_not_require_an_upstream_technical_candidate():
+    rows = review_public_pool(
+        [{"ticker": "2330", "name": "台積電", "symbol": "2330.TW", "pool": "0050"}],
+        {"2330": {"net_income": 6_000_000_000, "roe": .2, "payout_ratio": .3, "pe": 18, "financial_source": "TWSE"}},
+        {"2330.TW": {"close": 1000, "change_percent": 1.2, "as_of": "2026-07-29"}},
+        "taiwan",
+    )
+    assert rows[0]["ticker"] == "2330"
+    assert rows[0]["pool"] == "0050"
