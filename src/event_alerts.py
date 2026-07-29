@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from typing import Any
+from urllib.parse import urlparse
 
 from src.finance_intel_policy import threshold_rule
 
@@ -253,6 +254,15 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "friendly_reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
         "source": "公開市場報價",
         "url": "",
+        "source_trace": {
+            "verification": "公開市場報價",
+            "source_label": "公開市場報價",
+            "source_url": "",
+            "source_domain": "",
+            "event_time": str(index.get("quote_time") or index.get("quote_date") or ""),
+            "checked_at": "",
+            "verified_domains": [],
+        },
         "instrument": index,
         "related": _related_indices(indices, ticker),
         "change": change,
@@ -269,6 +279,20 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     label = str(event.get("short_label") or "市場事件")
     title = str(event.get("title") or "公開事件更新")
     why_important, market_context, stock_observation = _event_market_context(label)
+    url = str(event.get("url") or "").strip()
+    parsed = urlparse(url)
+    domain = (parsed.hostname or "").lower().removeprefix("www.")
+    released_at = str(event.get("released_at") or event.get("published_at") or "").strip()
+    source = str(event.get("source") or "公開來源").strip()
+    trace = {
+        "verification": "一手官方來源" if event.get("relevance") == "official" or event.get("source_tier") == "official" else "公開來源待後續核對",
+        "source_label": source,
+        "source_url": url if parsed.scheme == "https" else "",
+        "source_domain": domain,
+        "event_time": released_at,
+        "checked_at": str(event.get("checked_at") or ""),
+        "verified_domains": [domain] if domain else [],
+    }
     return {
         **event,
         "kind": event.get("kind") or "major_event",
@@ -282,6 +306,7 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "stock_observation": event.get("stock_observation") or stock_observation,
         "friendly_reminder": event.get("friendly_reminder") or "僅供公開資訊整理與教育性觀察，不構成投資建議。",
         "related": event.get("related") or _related_indices(indices, ""),
+        "source_trace": trace,
     }
 
 

@@ -111,10 +111,19 @@ class Alert:
     summary: str
     occurred_at: str
     source: str = "jin10"
+    evidence: tuple[DiscoveryArticle, ...] = ()
+
+    @property
+    def evidence_payload(self) -> list[dict[str, str]]:
+        return [
+            {"domain": item.domain, "url": item.url, "seen_at": item.seen_at}
+            for item in sorted(self.evidence, key=lambda item: (item.domain, item.url, item.seen_at))
+        ]
 
     @property
     def canonical(self) -> str:
-        return "\n".join((self.source, self.event_id, self.category, self.summary, self.occurred_at))
+        trace = json.dumps(self.evidence_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        return "\n".join((self.source, self.event_id, self.category, self.summary, self.occurred_at, trace))
 
 
 @dataclass(frozen=True)
@@ -308,6 +317,7 @@ async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_se
             "category": alert.category,
             "summary": alert.summary,
             "occurred_at": alert.occurred_at,
+            "evidence": alert.evidence_payload,
             "signature": sign(alert, shared_secret),
         },
     }
@@ -422,7 +432,12 @@ def cross_checked_gdelt_alerts(articles: Iterable[DiscoveryArticle]) -> list[Ale
         domains = {article.domain for article in cluster}
         if len(domains) < 2:
             continue
-        representative = min(cluster, key=lambda article: article.seen_at)
+        representatives = {
+            domain: min((article for article in cluster if article.domain == domain), key=lambda article: article.seen_at)
+            for domain in domains
+        }
+        evidence = tuple(representatives[domain] for domain in sorted(representatives))
+        representative = min(evidence, key=lambda article: article.seen_at)
         stable_id = hashlib.sha256("|".join(sorted(article.url for article in cluster)).encode("utf-8")).hexdigest()[:20]
         alerts.append(Alert(
             event_id=f"gdelt-{category}-{stable_id}",
@@ -430,6 +445,7 @@ def cross_checked_gdelt_alerts(articles: Iterable[DiscoveryArticle]) -> list[Ale
             summary=f"{CATEGORY_LABELS[category]}：{anchor}多源核對",
             occurred_at=representative.seen_at,
             source="gdelt",
+            evidence=evidence,
         ))
     return alerts
 

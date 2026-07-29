@@ -40,6 +40,7 @@ jobs:
       EXTERNAL_SOURCE: ${{ github.event.client_payload.source || '' }}
       EXTERNAL_EVENT_ID: ${{ github.event.client_payload.event_id || '' }}
       EXTERNAL_OCCURRED_AT: ${{ github.event.client_payload.occurred_at || '' }}
+      EXTERNAL_EVIDENCE: ${{ toJson(github.event.client_payload.evidence || fromJson('[]')) }}
       EXTERNAL_SIGNATURE: ${{ github.event.client_payload.signature || '' }}
       EXTERNAL_ALERT_SHARED_SECRET: ${{ secrets.EXTERNAL_ALERT_SHARED_SECRET }}
     steps:
@@ -60,6 +61,7 @@ jobs:
           --source "$EXTERNAL_SOURCE"
           --event-id "$EXTERNAL_EVENT_ID"
           --occurred-at "$EXTERNAL_OCCURRED_AT"
+          --evidence "$EXTERNAL_EVIDENCE"
           --signature "$EXTERNAL_SIGNATURE"
           --shared-secret "$EXTERNAL_ALERT_SHARED_SECRET"
           >> "$GITHUB_OUTPUT"
@@ -82,6 +84,7 @@ jobs:
           --source "$EXTERNAL_SOURCE"
           --event-id "$EXTERNAL_EVENT_ID"
           --occurred-at "$EXTERNAL_OCCURRED_AT"
+          --evidence "$EXTERNAL_EVIDENCE"
           --signature "$EXTERNAL_SIGNATURE"
           --shared-secret "$EXTERNAL_ALERT_SHARED_SECRET"
           --snapshot site/data/market.json

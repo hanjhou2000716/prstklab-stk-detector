@@ -13,4 +13,6 @@ def test_official_events_are_prioritized_and_keep_their_source_link():
     )
 
     assert snapshot["is_major"] is True
+    assert snapshot["items"][0]["source_trace"]["source_url"] == "https://www.federalreserve.gov/x"
+    assert snapshot["items"][0]["source_trace"]["source_domain"] == "federalreserve.gov"
     assert snapshot["items"][0]["source"] == "Federal Reserve｜官方發布"

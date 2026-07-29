@@ -63,6 +63,8 @@ def test_mini_app_has_a_detailed_alert_card_and_compact_brief_title():
     assert 'class="alert-brief-list"' in page
     assert 'role="list"' in page
     assert "renderAlertCard" in app
+    assert "renderAlertTrace" in app
+    assert "safeHttpsUrl" in app
     assert "event.brief_title" in app
     assert "event.stock_observation" in app
 
