@@ -17,6 +17,12 @@ def universe_for(market: str, cache_path: str | None) -> list[dict[str, str]]:
     return load_or_fetch_taiwan_universe(cache_path) if market == "taiwan" else fetch_us_research_universe()
 
 
+def latest_batch_bars(data, symbol: str):
+    """Extract a completed single-symbol frame from the public batch response."""
+    columns = getattr(data, "columns", None)
+    return data[symbol].dropna() if getattr(columns, "nlevels", 1) > 1 else data.dropna()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Public full-universe resonance research")
     parser.add_argument("--market", choices=("taiwan", "us"), required=True)
@@ -43,7 +49,13 @@ def main() -> None:
             failed.extend(item["ticker"] for item in group)
 
     threshold = 5_000_000 if args.market == "taiwan" else 10_000_000
-    result = rank_records(records, min_turnover=threshold)
+    benchmark_symbol = "^TWII" if args.market == "taiwan" else "^GSPC"
+    benchmark_bars = None
+    try:
+        benchmark_bars = latest_batch_bars(download_daily_batch([benchmark_symbol], period="1y"), benchmark_symbol)
+    except Exception:
+        pass
+    result = rank_records(records, min_turnover=threshold, benchmark_bars=benchmark_bars)
     directory = Path("data"); directory.mkdir(exist_ok=True)
     suffix = f"-{args.offset}" if args.market == "taiwan" else ""
     scan_path = directory / f"{args.market}-resonance-scan{suffix}.csv"
@@ -52,6 +64,8 @@ def main() -> None:
     summary_path.write_text(json.dumps({
         "requested": len(universe), "data_complete": len(records), "candidates": len(result),
         "failed": len(failed), "batch_size": args.batch_size, "offset": args.offset,
+        "benchmark": benchmark_symbol, "benchmark_available": benchmark_bars is not None,
+        "minimum_conditions": 3, "priority": "四項共振優先；無四項時顯示三項備選",
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 
 

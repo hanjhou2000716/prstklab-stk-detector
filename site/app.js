@@ -189,7 +189,7 @@ const renderLegacyResearchList = (id, items, empty) => {
       return score === null ? "裸 K相符度 暫時無法取得" : `裸 K相符度 ${Number(score).toFixed(1)} / 100`;
     }
     if (item.score === null || item.score === undefined) return "策略相符度 暫時無法取得";
-    if (item.strategy === "resonance") return `共振相符度 ${Math.max(0, Math.min(100, (56 - Number(item.score)) / 56 * 100)).toFixed(1)} / 100`;
+    if (item.strategy === "resonance") return `共振相符度 ${Number(item.score).toFixed(1)} / 100`;
     if (item.strategy === "value") return `價值相符度 ${Number(item.score).toFixed(0)} / 5`;
     return `動能相符度 ${Number(item.score).toFixed(1)} / 100`;
   };
@@ -214,13 +214,17 @@ const researchStrategyTags = (item) => {
     const labels = researchStructureLabel(item.structure).split("、").filter(Boolean);
     return labels.length ? labels : ["裸 K 結構觀察"];
   }
+  if (item.strategy === "resonance") {
+    const labels = researchStructureLabel(item.conditions_matched).split("、").filter(Boolean);
+    return labels.length ? labels : [researchStrategyLabel(item)];
+  }
   return [researchStrategyLabel(item)];
 };
 
 const researchScoreParts = (item) => {
   if (item.score === null || item.score === undefined) return { label: "策略分數", value: "暫時無法取得" };
   if (item.strategy === "price_action") return { label: "裸 K 相符度", value: `${Number(item.score).toFixed(1)} / 100` };
-  if (item.strategy === "resonance") return { label: "共振分數", value: `${Math.max(0, Math.min(100, (56 - Number(item.score)) / 56 * 100)).toFixed(1)} / 100` };
+  if (item.strategy === "resonance") return { label: item.status || "共振分數", value: `${Number(item.score).toFixed(1)} / 100` };
   if (item.strategy === "value") return { label: "價值分數", value: `${Number(item.score).toFixed(0)} / 5` };
   return { label: "動能分數", value: `${Number(item.score).toFixed(1)} / 100` };
 };

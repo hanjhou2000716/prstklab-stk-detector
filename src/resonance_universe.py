@@ -4,27 +4,34 @@ from __future__ import annotations
 
 import pandas as pd
 
+from src.research_contract import latest_quote_context
 from src.resonance_research import label, score_bars
+from src.resonance_smart_money import smart_money_conditions, smart_money_summary
 
 
-def rank_records(records: list[dict], *, min_turnover: float, limit: int = 10) -> pd.DataFrame:
-    """Keep liquid, non-overheated observations and rank lower scores first."""
+def rank_records(
+    records: list[dict], *, min_turnover: float, benchmark_bars: pd.DataFrame | None, limit: int = 5,
+) -> pd.DataFrame:
+    """Keep FGI<56 observations with four Smart Money checks, then three-check fallbacks."""
     rows = []
     for record in records:
         bars = record.get("bars")
         if not isinstance(bars, pd.DataFrame) or bars.empty:
             continue
         score = score_bars(bars)
-        close = float(bars["Close"].iloc[-1])
-        previous = float(bars["Close"].iloc[-2]) if len(bars) > 1 else 0
-        turnover = float(close * bars["Volume"].iloc[-1])
-        if score is None or score >= 56 or turnover < min_turnover:
+        quote = latest_quote_context(bars)
+        if score is None or quote is None or score >= 56 or quote["turnover"] < min_turnover:
+            continue
+        summary = smart_money_summary(smart_money_conditions(bars, benchmark_bars))
+        if summary["count"] < 3:
             continue
         rows.append({
             "ticker": record["ticker"], "name": record.get("name", record["ticker"]),
-            "close": round(close, 2), "change_percent": None if previous == 0 else round((close / previous - 1) * 100, 2),
-            "score": score, "status": label(score), "turnover": round(turnover, 2),
+            **quote,
+            "score": summary["score"], "fgi_score": score, "status": summary["tier"],
+            "conditions_matched": summary["matched_labels"], "condition_count": summary["count"],
+            "fgi_status": label(score),
         })
     if not rows:
         return pd.DataFrame()
-    return pd.DataFrame(rows).sort_values(["score", "turnover"], ascending=[True, False]).head(limit).reset_index(drop=True)
+    return pd.DataFrame(rows).sort_values(["condition_count", "score", "turnover"], ascending=[False, False, False]).head(limit).reset_index(drop=True)

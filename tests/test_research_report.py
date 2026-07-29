@@ -45,4 +45,4 @@ def test_price_action_report_backfills_structure_match_score_from_existing_label
         "funnel_labels": "['雙底右腳確認', '訂單塊回踩']",
     }])
     candidate = normalize_frame(frame, "taiwan", "price_action")[0]
-    assert candidate["score"] == 70
+    assert candidate["score"] == 85

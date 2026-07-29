@@ -31,7 +31,7 @@ def test_fake_breakdown_that_recovers_matches_funnel_three():
     assert result is not None
     assert "Funnel_3" in result["matched_funnels"]
     assert result["reference_stop"] < result["support_edge"]
-    assert result["score"] >= 70
+    assert result["score"] >= 85
 
 
 def test_screen_returns_candidates_ranked_by_structure_score_then_turnover(monkeypatch):
@@ -49,5 +49,21 @@ def test_screen_returns_candidates_ranked_by_structure_score_then_turnover(monke
 
 def test_structure_match_score_rewards_confirming_funnels_without_becoming_a_forecast():
     assert structure_match_score([]) == 0
-    assert structure_match_score(["Funnel_3"]) == 70
-    assert structure_match_score(["Funnel_2", "Funnel_4"]) == 70
+    assert structure_match_score(["Funnel_3"]) == 85
+    assert structure_match_score(["Funnel_2", "Funnel_4"]) == 85
+
+
+def test_strict_order_block_requires_high_volume_origin_and_impulse_before_first_revisit():
+    scanner = PriceActionResearchScanner(atr_window=14, swing_window=2)
+    rows = [{"Open": 100, "High": 101, "Low": 99, "Close": 100, "Volume": 100} for _ in range(35)]
+    rows[20] = {"Open": 102, "High": 103, "Low": 99, "Close": 100, "Volume": 200}
+    rows[21] = {"Open": 100, "High": 108, "Low": 100, "Close": 107, "Volume": 200}
+    for index in range(22, 34):
+        rows[index] = {"Open": 110, "High": 111, "Low": 109, "Close": 110, "Volume": 100}
+    rows[34] = {"Open": 105, "High": 110, "Low": 102, "Close": 104, "Volume": 100}
+
+    result = scanner.scan_daily(bars(rows))
+
+    assert result is not None
+    assert "Funnel_4" in result["matched_funnels"]
+    assert result["score"] >= 80
