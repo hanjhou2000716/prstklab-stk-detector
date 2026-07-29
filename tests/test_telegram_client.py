@@ -1,6 +1,7 @@
+import requests
 import pytest
 
-from src.telegram_client import mini_app_button, mini_app_menu_button, send_briefs, validate_brief
+from src.telegram_client import mini_app_button, mini_app_menu_button, send_brief, send_briefs, validate_brief
 
 
 def test_accepts_30_character_brief():
@@ -88,3 +89,63 @@ def test_send_briefs_keeps_other_recipients_running_when_one_has_not_started_bot
 
     assert [result.delivered for result in results] == [True, False, True]
     assert results[1].error == "Bad Request: chat not found"
+
+
+def test_send_brief_retries_temporary_connection_reset(monkeypatch):
+    calls = 0
+
+    class Response:
+        ok = True
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"ok": True, "result": {"message_id": 7}}
+
+    def fake_post(url, json, timeout):
+        nonlocal calls
+        calls += 1
+        if calls < 3:
+            raise requests.ConnectionError("connection reset")
+        return Response()
+
+    monkeypatch.setattr("src.telegram_client.requests.post", fake_post)
+    monkeypatch.setattr("src.telegram_client.sleep", lambda _: None)
+
+    result = send_brief(
+        token="token",
+        chat_id="100",
+        text="測試快報",
+        dashboard_url="https://example.github.io/app/",
+    )
+
+    assert result.message_id == 7
+    assert calls == 3
+
+
+def test_send_briefs_records_temporary_failure_without_stopping_other_recipients(monkeypatch):
+    class Response:
+        ok = True
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"ok": True, "result": {"message_id": 1}}
+
+    def fake_post(url, json, timeout):
+        if json["chat_id"] == "offline":
+            raise requests.ConnectionError("connection reset")
+        return Response()
+
+    monkeypatch.setattr("src.telegram_client.requests.post", fake_post)
+    monkeypatch.setattr("src.telegram_client.sleep", lambda _: None)
+
+    results = send_briefs(
+        token="token",
+        chat_ids=("online", "offline", "also-online"),
+        text="測試快報",
+        dashboard_url="https://example.github.io/app/",
+    )
+
+    assert [result.delivered for result in results] == [True, False, True]
+    assert "temporary delivery failure" in (results[1].error or "")
