@@ -243,6 +243,7 @@ def build_market_snapshot() -> dict[str, Any]:
     from src.macro_program_feed import fetch_yutinghao_latest_program
     from src.research_cards import load_research_cards
     from src.risk_news import build_news_snapshot, build_risk_snapshot
+    from src.source_health import build_source_health
 
     scan_started_at = datetime.now(ZoneInfo("Asia/Taipei"))
     markets = {key: get_market_status(key) for key in MARKETS}
@@ -299,6 +300,12 @@ def build_market_snapshot() -> dict[str, Any]:
             for message in risk[market]["errors"]
         )
     scan_completed_at = datetime.now(ZoneInfo("Asia/Taipei"))
+    source_health = build_source_health(
+        errors=errors,
+        events=events,
+        research_report=research_report,
+        checked_at=scan_completed_at,
+    )
     live_quotes = sum(item.get("quote_time") is not None for item in [*quotes, *indices])
     close_quotes = len(quotes) + len(indices) - live_quotes
     return {
@@ -325,5 +332,6 @@ def build_market_snapshot() -> dict[str, Any]:
             "macro_quotes": macro_quotes, "risk": risk,
         }),
         "research_report": research_report,
+        "source_health": source_health,
         "errors": errors,
     }

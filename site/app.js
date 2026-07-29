@@ -216,6 +216,29 @@ const renderEvents = (events) => {
   container.innerHTML = `<li class="signal-list-title">同步市場訊號</li>${secondary.map((event) => `<li class="signal-card"><b>${escapeHtml(event.brief_title || `${event.short_label}｜${event.title}`)}</b><small>${escapeHtml(event.source || "公開市場報價")}</small></li>`).join("")}`;
 };
 
+const renderSourceHealth = (health) => {
+  const summary = document.getElementById("source-health-summary");
+  const event = document.getElementById("source-health-event");
+  const list = document.getElementById("source-health-list");
+  if (!summary || !event || !list) return;
+  if (!health?.sources || !health?.event_scan) {
+    summary.textContent = "健康狀態暫時無法取得";
+    event.textContent = "事件來源狀態未完成載入，無法判定本輪是否沒有重大事件。";
+    event.dataset.status = "partial";
+    list.innerHTML = '<li class="empty">來源健康資料暫時無法取得</li>';
+    return;
+  }
+  summary.textContent = health.summary || "來源狀態已更新";
+  const scan = health.event_scan;
+  event.textContent = `${scan.label || "事件掃描"}｜${scan.detail || ""}`;
+  event.dataset.status = scan.status || "partial";
+  list.innerHTML = health.sources.map((source) => {
+    const status = source.status === "healthy" ? "正常" : "部分缺漏";
+    const issue = Array.isArray(source.issues) && source.issues.length ? source.issues.join("；") : "本輪可用";
+    return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(issue)}</small></span><em class="source-status ${escapeHtml(source.status || "partial")}">${status}</em></li>`;
+  }).join("");
+};
+
 const renderBriefing = (briefing, generatedAt) => {
   const report = briefing || {};
   const observations = report.observations || [];
@@ -335,6 +358,7 @@ const render = (snapshot) => {
   renderRisk(snapshot.risk);
   renderAlertCard(snapshot.events, snapshot.generated_at, externalAlert, snapshot.indices || []);
   renderEvents(snapshot.events);
+  renderSourceHealth(snapshot.source_health);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
   renderResearch(snapshot);
   renderNewsList("taiwan-news", snapshot.news?.taiwan);
