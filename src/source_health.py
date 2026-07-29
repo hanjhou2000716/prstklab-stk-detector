@@ -56,6 +56,8 @@ def build_source_health(
         for item in research_report.get("sources", [])
         if item.get("status") == "資料暫時無法取得"
     ]
+    if (research_report.get("health") or {}).get("is_expired"):
+        research_issues.append("研究資料已逾時，候選清單已隱藏")
     sources.append(_source_item("research", "量化研究", research_issues, checked))
 
     event_dependencies = {"market_quotes", "official_events", "market_news"}

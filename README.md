@@ -191,3 +191,4 @@ python -m pytest -q
 - [Beta 操作說明](docs/BETA_OPERATION_GUIDE.md)
 - [Beta 驗收清單](docs/BETA_ACCEPTANCE.md)
 - [四策略固定樣本期 Walk-forward 回測](docs/WALK_FORWARD_BACKTEST.md)
+- [歷史回測資料匯入與稽核](docs/BACKTEST_ARCHIVE_SETUP.md)

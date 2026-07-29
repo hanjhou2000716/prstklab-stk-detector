@@ -75,6 +75,12 @@ def test_daily_quote_is_explicitly_labelled_as_a_daily_close():
     assert _daily_quote(item, daily)["quote_basis"] == "日線收盤"
 
 
+def test_quotes_include_a_public_source_label():
+    item = {"symbol": "^IXIC", "ticker": "NASDAQ", "name": "Nasdaq", "market": "us", "currency": "USD"}
+    daily = pd.Series([100.0, 105.0], index=pd.to_datetime(["2026-07-23", "2026-07-24"]))
+    assert _daily_quote(item, daily)["quote_source"] == "Yahoo Finance public daily quote"
+
+
 def test_intraday_freshness_rejects_an_old_bar_but_accepts_a_recent_one():
     now = datetime(2026, 7, 24, 10, 0, tzinfo=ZoneInfo("America/New_York"))
     assert intraday_is_fresh(pd.Timestamp("2026-07-24 09:55:00", tz="America/New_York"), "us", now)

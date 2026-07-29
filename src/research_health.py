@@ -6,11 +6,14 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 
+DEFAULT_MAX_AGE_MINUTES = 30 * 60
+
+
 def assess_research_health(
     report: dict[str, Any],
     *,
     now: datetime | None = None,
-    max_age_minutes: int = 180,
+    max_age_minutes: int = DEFAULT_MAX_AGE_MINUTES,
 ) -> dict[str, Any]:
     """Return a transparent health summary; never infer missing source data."""
     now = now or datetime.now(ZoneInfo("Asia/Taipei"))
@@ -41,4 +44,6 @@ def assess_research_health(
         "unavailable_sources": len(unavailable),
         "age_minutes": age_minutes,
         "checked_at": now.isoformat(),
+        "max_age_minutes": max_age_minutes,
+        "is_expired": age_minutes is None or age_minutes > max_age_minutes,
     }

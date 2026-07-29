@@ -114,6 +114,7 @@ def _daily_quote(item: dict[str, str], closes: Any) -> dict[str, Any]:
         "quote_date": closes.index[-1].date().isoformat(),
         "quote_time": None,
         "quote_basis": "日線收盤",
+        "quote_source": "Yahoo Finance public daily quote",
         "currency": item.get("currency") or ("TWD" if item["market"] == "taiwan" else "USD"),
     }
 
@@ -153,6 +154,7 @@ def _intraday_quote(
         "quote_time": timestamp.isoformat(),
         "quote_basis": basis,
         "quote_delayed": delayed,
+        "quote_source": "Yahoo Finance public 5-minute quote",
         "currency": item.get("currency") or ("TWD" if item["market"] == "taiwan" else "USD"),
     }
 
