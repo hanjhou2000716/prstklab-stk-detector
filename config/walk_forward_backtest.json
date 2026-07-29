@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "study_name": "PRStK four-strategy fixed-sample walk-forward",
+  "fixed_windows": {
+    "training": ["2021-01-01", "2022-12-31"],
+    "validation": ["2023-01-01", "2023-12-31"],
+    "test": ["2024-01-01", "2025-12-31"]
+  },
+  "rebalance": "monthly",
+  "top_n": 5,
+  "holding_days": 20,
+  "minimum_history_days": 150,
+  "costs": {
+    "taiwan": {"commission_rate": 0.001425, "slippage_rate": 0.005},
+    "us": {"commission_rate": 0.00005, "slippage_rate": 0.005}
+  },
+  "survivorship_policy": {
+    "require_point_in_time_universe": true,
+    "require_point_in_time_fundamentals_for_value": true,
+    "reject_current_constituents": true,
+    "require_delisted_symbols_when_known": true
+  }
+}

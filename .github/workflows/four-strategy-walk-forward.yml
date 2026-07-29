@@ -1,0 +1,39 @@
+name: Four-strategy walk-forward research
+
+on:
+  workflow_dispatch:
+    inputs:
+      market:
+        description: Archived market dataset to validate
+        required: true
+        type: choice
+        default: taiwan
+        options: [taiwan, us]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r requirements.txt
+      - name: Verify archived point-in-time study inputs
+        run: |
+          test -d data/backtest/${{ inputs.market }}/bars
+          test -f data/backtest/${{ inputs.market }}/universe_snapshots.json
+          test -f data/backtest/${{ inputs.market }}/fundamental_snapshots.json
+      - name: Run research-only walk-forward validation
+        run: >-
+          python -m src.run_four_strategy_walk_forward
+          --market '${{ inputs.market }}'
+          --bars-dir data/backtest/${{ inputs.market }}/bars
+          --benchmark-csv data/backtest/${{ inputs.market }}/benchmark.csv
+          --universe-snapshots data/backtest/${{ inputs.market }}/universe_snapshots.json
+          --fundamental-snapshots data/backtest/${{ inputs.market }}/fundamental_snapshots.json
+          --output data/four-strategy-walk-forward-${{ inputs.market }}.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: four-strategy-walk-forward-${{ inputs.market }}
+          path: data/four-strategy-walk-forward-${{ inputs.market }}.json
