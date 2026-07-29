@@ -63,10 +63,11 @@ jobs:
           path: .official-event-lock
           key: official-event-${{ steps.status.outputs.key }}
       - name: Send new official event
+        id: send
         if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
         run: python -m src.official_event_monitor --send --expected-key "${{ steps.status.outputs.key }}"
       - name: Commit event snapshot
-        if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        if: steps.send.outputs.sent == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -82,22 +83,22 @@ jobs:
             git rebase -X theirs origin/main
           done
       - name: Configure GitHub Pages
-        if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        if: steps.send.outputs.sent == 'true'
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
-        if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        if: steps.send.outputs.sent == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
       - name: Deploy Pages
-        if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        if: steps.send.outputs.sent == 'true'
         id: deployment
         uses: actions/deploy-pages@v4
       - name: Save event delivery lock
-        if: success() && steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        if: success() && steps.send.outputs.sent == 'true'
         run: touch .official-event-lock
       - name: Persist event delivery lock
-        if: success() && steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        if: success() && steps.send.outputs.sent == 'true'
         uses: actions/cache/save@v4
         with:
           path: .official-event-lock
