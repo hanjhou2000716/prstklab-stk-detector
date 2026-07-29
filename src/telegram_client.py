@@ -3,12 +3,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from time import sleep
 
 import requests
 
 
 class TelegramError(RuntimeError):
     """Raised when Telegram rejects a notification."""
+
+
+class TelegramTransientError(TelegramError):
+    """Raised after retrying a temporary Telegram transport/API failure."""
+
+
+SEND_ATTEMPTS = 3
+RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 
 
 @dataclass(frozen=True)
@@ -107,20 +116,35 @@ def send_brief(
 ) -> TelegramResult:
     """Send a brief with one dashboard button through Telegram Bot API."""
     validate_brief(text)
-    response = requests.post(
-        f"https://api.telegram.org/bot{token}/sendMessage",
-        json={
-            "chat_id": chat_id,
-            "text": text,
-            "disable_web_page_preview": True,
-            "reply_markup": {
-                "inline_keyboard": [
-                    [mini_app_button(dashboard_url)]
-                ]
-            },
-        },
-        timeout=20,
-    )
+    payload_to_send = {
+        "chat_id": chat_id,
+        "text": text,
+        "disable_web_page_preview": True,
+        "reply_markup": {"inline_keyboard": [[mini_app_button(dashboard_url)]]},
+    }
+    endpoint = f"https://api.telegram.org/bot{token}/sendMessage"
+    response = None
+    last_error: Exception | None = None
+
+    for attempt in range(SEND_ATTEMPTS):
+        try:
+            response = requests.post(endpoint, json=payload_to_send, timeout=20)
+        except requests.RequestException as exc:
+            last_error = exc
+        else:
+            if getattr(response, "status_code", 200) not in RETRYABLE_STATUS_CODES:
+                break
+            last_error = TelegramTransientError(f"HTTP {response.status_code}")
+
+        if attempt < SEND_ATTEMPTS - 1:
+            # Short exponential backoff covers GitHub Runner / Telegram edge
+            # resets without delaying a watch-sized alert for long.
+            sleep(2**attempt)
+
+    if response is None or getattr(response, "status_code", 200) in RETRYABLE_STATUS_CODES:
+        detail = str(last_error or "temporary Telegram delivery failure")
+        raise TelegramTransientError(f"Telegram temporary delivery failure: {detail}")
+
     try:
         payload = response.json()
     except ValueError as exc:
@@ -138,9 +162,9 @@ def send_briefs(
     """Send one identical brief to every reachable configured recipient.
 
     A recipient who has not started the Bot produces a local Telegram error.
-    Record that result without interrupting the public-market refresh, Pages
-    deployment, or delivery to the remaining recipients. Configuration and
-    network failures still raise normally.
+    Temporary Telegram transport failures are retried, then recorded without
+    interrupting the public-market refresh, Pages deployment, or delivery to
+    the remaining recipients. Configuration failures still raise normally.
     """
     if not chat_ids:
         raise ValueError("至少需要一個 Telegram 收件人。")
@@ -149,7 +173,7 @@ def send_briefs(
         try:
             result = send_brief(token=token, chat_id=chat_id, text=text, dashboard_url=dashboard_url)
         except TelegramError as exc:
-            if not _recipient_unavailable(exc):
+            if not (_recipient_unavailable(exc) or isinstance(exc, TelegramTransientError)):
                 raise
             deliveries.append(TelegramDelivery(chat_id=chat_id, error=str(exc)))
         else:
