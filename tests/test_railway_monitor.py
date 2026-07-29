@@ -38,11 +38,10 @@ def test_routine_oil_commentary_is_not_an_emergency_alert():
     assert monitor.alert_from_flash(flash) is None
 
 
-def test_confirmed_extreme_disaster_is_classified_as_black_swan():
+def test_black_swan_flash_requires_official_monitor_confirmation():
     flash = monitor.Flash("quake-1", "Major earthquake hits Japan", "A major earthquake triggers tsunami warnings", "2026-07-28T17:00:00+08:00")
-    alert = monitor.alert_from_flash(flash)
-    assert alert is not None
-    assert alert.category == "black_swan"
+    assert monitor.classify_flash(flash) == "black_swan"
+    assert monitor.alert_from_flash(flash) is None
 
 
 def test_confirmed_ceasefire_is_classified_as_material_positive_event():
@@ -92,6 +91,22 @@ def test_gdelt_requires_two_trusted_publishers_with_the_same_concrete_anchor():
 def test_gdelt_single_trusted_story_never_becomes_an_alert():
     article = monitor.DiscoveryArticle("Iran conflict raises oil risk", "https://www.reuters.com/a", "reuters.com", "2026-07-29T01:00:00+00:00")
     assert monitor.cross_checked_gdelt_alerts([article]) == []
+
+
+def test_gdelt_requires_shared_entity_and_action_not_only_a_topic_anchor():
+    articles = [
+        monitor.DiscoveryArticle("Iran conflict raises oil risk", "https://www.reuters.com/a", "reuters.com", "2026-07-29T01:00:00+00:00"),
+        monitor.DiscoveryArticle("Iran war raises oil risk", "https://apnews.com/b", "apnews.com", "2026-07-29T01:01:00+00:00"),
+    ]
+    assert monitor._matching_discovery_evidence(articles, "conflict", "iran") == ()
+
+
+def test_gdelt_black_swan_headlines_wait_for_a_first_party_confirmation():
+    articles = [
+        monitor.DiscoveryArticle("Major earthquake hits Japan", "https://www.reuters.com/a", "reuters.com", "2026-07-29T01:00:00+00:00"),
+        monitor.DiscoveryArticle("Japan earthquake triggers tsunami warning", "https://apnews.com/b", "apnews.com", "2026-07-29T01:01:00+00:00"),
+    ]
+    assert monitor.cross_checked_gdelt_alerts(articles) == []
 
 
 def test_discovery_cache_keeps_a_recent_success_for_rate_limit_fallback(tmp_path):
