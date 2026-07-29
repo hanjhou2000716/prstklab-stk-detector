@@ -22,11 +22,14 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Iterable
+from urllib.parse import urlparse
 
 import httpx
 
 
 JIN10_MCP_URL = "https://mcp.jin10.com/mcp"
+GDELT_DOC_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
+GDELT_QUERY = '(war OR invasion OR ceasefire OR sanctions OR Hormuz OR tariff OR "export controls" OR semiconductor OR earthquake OR tsunami OR cyberattack OR ransomware OR pandemic OR Bitcoin OR Ethereum)'
 GITHUB_API_VERSION = "2022-11-28"
 ALLOWED_CATEGORIES = {"fed", "macro", "policy", "conflict", "energy", "semiconductor", "market", "black_swan", "material_positive"}
 CATEGORY_LABELS = {
@@ -57,6 +60,22 @@ ESCALATION_TERMS = (
     "擴大", "升级", "升級", "加徵", "加征", "大幅", "急升", "急跌", "供應中斷", "供应中断",
     "additional", "increase", "airstrike", "missile", "attack", "supply disruption", "supply cut",
 )
+
+# A discovery item is never sufficient on its own. GDELT candidates must have
+# two independent domains from this conservative set and share a concrete
+# event anchor before they can reach the signed GitHub dispatch bridge.
+TRUSTED_NEWS_DOMAINS = {
+    "reuters.com", "apnews.com", "bloomberg.com", "ft.com", "wsj.com",
+    "nytimes.com", "bbc.com", "cnbc.com", "nikkei.com",
+}
+DISCOVERY_ANCHORS = {
+    "conflict": ("iran", "israel", "ukraine", "russia", "hormuz", "taiwan"),
+    "policy": ("tariff", "sanction", "export control", "duties"),
+    "energy": ("wti", "brent", "oil", "opec", "crude"),
+    "semiconductor": ("nvidia", "tsmc", "asml", "semiconductor"),
+    "black_swan": ("earthquake", "tsunami", "ransomware", "cyberattack", "pandemic"),
+    "material_positive": ("ceasefire", "truce", "peace deal", "tariff exemption", "rate cut"),
+}
 
 
 # These require a confirmed, broadly material event. They deliberately are not
@@ -91,10 +110,19 @@ class Alert:
     category: str
     summary: str
     occurred_at: str
+    source: str = "jin10"
 
     @property
     def canonical(self) -> str:
-        return "\n".join(("jin10", self.event_id, self.category, self.summary, self.occurred_at))
+        return "\n".join((self.source, self.event_id, self.category, self.summary, self.occurred_at))
+
+
+@dataclass(frozen=True)
+class DiscoveryArticle:
+    title: str
+    url: str
+    domain: str
+    seen_at: str
 
 
 def configured(name: str) -> str:
@@ -205,6 +233,9 @@ class SeenStore:
         self.connection.execute(
             "CREATE TABLE IF NOT EXISTS dispatched (category TEXT NOT NULL, summary TEXT NOT NULL, dispatched_at TEXT NOT NULL)"
         )
+        self.connection.execute(
+            "CREATE TABLE IF NOT EXISTS cache (cache_key TEXT PRIMARY KEY, payload TEXT NOT NULL, refreshed_at TEXT NOT NULL)"
+        )
         self.connection.commit()
 
     def add_if_new(self, event_id: str) -> bool:
@@ -241,6 +272,27 @@ class SeenStore:
         )
         self.connection.commit()
 
+    def read_cache(self, cache_key: str, max_age_seconds: int) -> list[dict[str, str]] | None:
+        row = self.connection.execute(
+            "SELECT payload, refreshed_at FROM cache WHERE cache_key = ?", (cache_key,)
+        ).fetchone()
+        if row is None:
+            return None
+        payload, refreshed_at = row
+        try:
+            age = (datetime.now(timezone.utc) - datetime.fromisoformat(refreshed_at)).total_seconds()
+            cached = json.loads(payload)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return None
+        return cached if age <= max_age_seconds and isinstance(cached, list) else None
+
+    def write_cache(self, cache_key: str, payload: list[dict[str, str]]) -> None:
+        self.connection.execute(
+            "INSERT OR REPLACE INTO cache(cache_key, payload, refreshed_at) VALUES (?, ?, ?)",
+            (cache_key, json.dumps(payload), datetime.now(timezone.utc).isoformat()),
+        )
+        self.connection.commit()
+
 
 def sign(alert: Alert, shared_secret: str) -> str:
     digest = hmac.new(shared_secret.encode("utf-8"), alert.canonical.encode("utf-8"), hashlib.sha256).hexdigest()
@@ -251,7 +303,7 @@ async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_se
     payload = {
         "event_type": "external-market-alert",
         "client_payload": {
-            "source": "jin10",
+            "source": alert.source,
             "event_id": alert.event_id,
             "category": alert.category,
             "summary": alert.summary,
@@ -299,6 +351,89 @@ async def fetch_jin10_flashes(token: str, requested_limit: int) -> list[Flash]:
     return extract_flashes(result_payload(result))
 
 
+def _gdelt_seen_at(value: str) -> datetime | None:
+    try:
+        return datetime.strptime(value, "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        return None
+
+
+def _trusted_domain(url: str, supplied_domain: str) -> str:
+    host = (supplied_domain or urlparse(url).hostname or "").lower().removeprefix("www.")
+    return next((domain for domain in TRUSTED_NEWS_DOMAINS if host == domain or host.endswith(f".{domain}")), "")
+
+
+def _discovery_category_and_anchor(title: str) -> tuple[str, str] | None:
+    normalized = title.casefold()
+    category = classify_flash(Flash("discovery", title, "", ""))
+    if category is None:
+        return None
+    anchor = next((term for term in DISCOVERY_ANCHORS.get(category, ()) if term in normalized), "")
+    return (category, anchor) if anchor else None
+
+
+def _decode_discovery_articles(rows: list[dict[str, str]]) -> list[DiscoveryArticle]:
+    return [DiscoveryArticle(**row) for row in rows]
+
+
+async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[DiscoveryArticle]:
+    """Fetch discovery headlines with a 15-minute cache and 120-minute fallback."""
+    if store:
+        cached = store.read_cache("gdelt-success", 15 * 60)
+        if cached is not None:
+            return _decode_discovery_articles(cached)
+    params = {"query": GDELT_QUERY, "mode": "artlist", "format": "json", "sort": "datedesc", "maxrecords": 75}
+    try:
+        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+            response = await client.get(GDELT_DOC_URL, params=params)
+        response.raise_for_status()
+    except httpx.HTTPStatusError as error:
+        if error.response.status_code == 429 and store:
+            stale = store.read_cache("gdelt-success", 120 * 60)
+            if stale is not None:
+                logging.warning("GDELT rate-limited; using the most recent cached success")
+                return _decode_discovery_articles(stale)
+        raise
+    cutoff = datetime.now(timezone.utc).timestamp() - 45 * 60
+    articles: list[DiscoveryArticle] = []
+    for row in response.json().get("articles", []):
+        title = str(row.get("title") or "").strip()
+        url = str(row.get("url") or "").strip()
+        seen_at = str(row.get("seendate") or "").strip()
+        observed = _gdelt_seen_at(seen_at)
+        domain = _trusted_domain(url, str(row.get("domain") or ""))
+        if not title or not url or not observed or observed.timestamp() < cutoff or not domain:
+            continue
+        articles.append(DiscoveryArticle(title=title, url=url, domain=domain, seen_at=observed.isoformat()))
+    if store:
+        store.write_cache("gdelt-success", [article.__dict__ for article in articles])
+    return articles
+
+
+def cross_checked_gdelt_alerts(articles: Iterable[DiscoveryArticle]) -> list[Alert]:
+    """Require two trusted publishers and a shared, concrete event anchor."""
+    clusters: dict[tuple[str, str], list[DiscoveryArticle]] = {}
+    for article in articles:
+        classified = _discovery_category_and_anchor(article.title)
+        if classified:
+            clusters.setdefault(classified, []).append(article)
+    alerts: list[Alert] = []
+    for (category, anchor), cluster in clusters.items():
+        domains = {article.domain for article in cluster}
+        if len(domains) < 2:
+            continue
+        representative = min(cluster, key=lambda article: article.seen_at)
+        stable_id = hashlib.sha256("|".join(sorted(article.url for article in cluster)).encode("utf-8")).hexdigest()[:20]
+        alerts.append(Alert(
+            event_id=f"gdelt-{category}-{stable_id}",
+            category=category,
+            summary=f"{CATEGORY_LABELS[category]}：{anchor}多源核對",
+            occurred_at=representative.seen_at,
+            source="gdelt",
+        ))
+    return alerts
+
+
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         if self.path not in {"/", "/health"}:
@@ -331,8 +466,11 @@ async def monitor_forever() -> None:
     limit = min(100, max(1, int(os.environ.get("JIN10_FLASH_LIMIT", "30"))))
     cooldown = max(1800, int(os.environ.get("JIN10_CATEGORY_COOLDOWN_SECONDS", "1800")))
     bootstrap = os.environ.get("JIN10_INITIAL_BACKFILL", "false").lower() == "true"
+    gdelt_interval = max(900, int(os.environ.get("GDELT_POLL_SECONDS", "900")))
     store = SeenStore(Path(os.environ.get("MONITOR_STATE_PATH", "/data/jin10-monitor.sqlite3")))
     first_cycle = True
+    gdelt_baseline = True
+    last_gdelt_poll = 0.0
 
     while True:
         try:
@@ -355,6 +493,24 @@ async def monitor_forever() -> None:
             first_cycle = False
         except Exception:
             logging.exception("Jin10 poll failed; will retry")
+        if time.monotonic() - last_gdelt_poll >= gdelt_interval:
+            last_gdelt_poll = time.monotonic()
+            try:
+                articles = await fetch_gdelt_articles(store)
+                alerts = cross_checked_gdelt_alerts(articles)
+                dispatched = 0
+                for alert in alerts:
+                    if not store.add_if_new(alert.event_id) or (gdelt_baseline and not bootstrap):
+                        continue
+                    if not store.may_dispatch(alert, gdelt_interval if gdelt_interval >= 1800 else 7200):
+                        continue
+                    await dispatch_alert(alert, token=github_token, repository=repository, shared_secret=shared_secret)
+                    store.record_dispatch(alert)
+                    dispatched += 1
+                logging.info("GDELT cross-check completed: %s article(s), %s alert(s) dispatched", len(articles), dispatched)
+                gdelt_baseline = False
+            except Exception:
+                logging.exception("GDELT discovery failed; will wait for the next interval")
         await asyncio.sleep(interval)
 
 

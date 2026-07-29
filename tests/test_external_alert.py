@@ -34,6 +34,14 @@ def test_external_alert_rejects_unknown_source_and_invalid_event_id():
         normalize_alert(category="macro", summary="CPI 高於預期", source="jin10", event_id="invalid event id", occurred_at="2026-07-26T08:30:00+08:00")
 
 
+def test_external_alert_accepts_cross_checked_gdelt_source():
+    alert = normalize_alert(
+        category="conflict", summary="衝突：Iran多源核對", source="gdelt",
+        event_id="gdelt-conflict-1", occurred_at="2026-07-29T01:00:00+00:00",
+    )
+    assert alert.source == "gdelt"
+
+
 def test_external_alert_stamps_only_public_verified_fields(tmp_path):
     snapshot_path = tmp_path / "market.json"
     snapshot_path.write_text(json.dumps({"quotes": []}), encoding="utf-8")

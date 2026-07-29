@@ -14,7 +14,7 @@ from pathlib import Path
 from src.emergency_alert import CATEGORY_LABELS, build_emergency_brief
 
 
-ALLOWED_SOURCES = {"jin10"}
+ALLOWED_SOURCES = {"jin10", "gdelt"}
 EVENT_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
 

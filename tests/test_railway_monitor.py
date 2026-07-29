@@ -76,6 +76,30 @@ def test_signature_covers_exact_github_payload_fields():
     assert len(signature) == len("sha256=") + 64
 
 
+def test_gdelt_requires_two_trusted_publishers_with_the_same_concrete_anchor():
+    articles = [
+        monitor.DiscoveryArticle("Iran conflict raises oil risk", "https://www.reuters.com/a", "reuters.com", "2026-07-29T01:00:00+00:00"),
+        monitor.DiscoveryArticle("Iran conflict puts markets on alert", "https://apnews.com/b", "apnews.com", "2026-07-29T01:01:00+00:00"),
+        monitor.DiscoveryArticle("Routine market update", "https://bbc.com/c", "bbc.com", "2026-07-29T01:02:00+00:00"),
+    ]
+    alerts = monitor.cross_checked_gdelt_alerts(articles)
+    assert len(alerts) == 1
+    assert alerts[0].category == "conflict"
+    assert alerts[0].source == "gdelt"
+
+
+def test_gdelt_single_trusted_story_never_becomes_an_alert():
+    article = monitor.DiscoveryArticle("Iran conflict raises oil risk", "https://www.reuters.com/a", "reuters.com", "2026-07-29T01:00:00+00:00")
+    assert monitor.cross_checked_gdelt_alerts([article]) == []
+
+
+def test_discovery_cache_keeps_a_recent_success_for_rate_limit_fallback(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    payload = [{"title": "Iran conflict", "url": "https://www.reuters.com/a", "domain": "reuters.com", "seen_at": "2026-07-29T01:00:00+00:00"}]
+    store.write_cache("gdelt-success", payload)
+    assert store.read_cache("gdelt-success", 15 * 60) == payload
+
+
 def test_list_flash_argument_uses_limit_only_when_schema_supports_it():
     assert monitor.default_flash_arguments({"properties": {"limit": {}}}, 30) == {"limit": 30}
     assert monitor.default_flash_arguments({"properties": {}}, 30) == {}
