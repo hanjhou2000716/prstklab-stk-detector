@@ -7,7 +7,7 @@ import pandas as pd
 from src.batch_download import batches
 from src.public_download import download_daily_batch
 from src.taiwan_universe import load_or_fetch_taiwan_universe
-from src.taiwan_momentum_scan import rank_records
+from src.taiwan_momentum_scan import TAIWAN_MIN_TURNOVER, rank_records
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -44,6 +44,7 @@ def main() -> None:
     summary_path.write_text(json.dumps({
         "requested": len(universe), "data_complete": len(records), "candidates": len(result),
         "failed": len(failed), "batch_size": args.batch_size, "offset": args.offset,
+        "min_turnover": TAIWAN_MIN_TURNOVER, "candidate_limit": 5,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"掃描 {len(universe)} 檔，資料完整 {len(records)} 檔，研究候選 {len(result)} 檔，失敗 {len(failed)} 檔：{destination}、{summary_path}")
 

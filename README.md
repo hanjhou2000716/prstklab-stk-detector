@@ -23,9 +23,9 @@ PRStK 是一套部署在 GitHub 的公開市場資訊整理、量化研究與風
 |---|---|---|
 | 盤前晨報 | 工作日 06:00 | 隔夜市場與代表標的報價 |
 | 台股盤中 | 工作日 08:45、10:00、11:45、13:15 | 台股及全球市場報價、盤勢摘要 |
-| 台股盤後 | 工作日 14:25 | 台股收盤後資料與盤後摘要 |
+| 台股盤後 | 工作日 14:45 | 台股收盤後資料與盤後摘要 |
 | 美股盤前 | 工作日 21:00（台灣時間，全年固定） | 台股回顧與美股盤前公開市場資料 |
-| 全市場量化研究 | 工作日 13:30 | 台美股動能、裸 K、三維共振、價值覆核，及研究清單的價格欄位；預留至 14:25 盤後快報的處理時間 |
+| 全市場量化研究 | 工作日 13:30 | 台美股動能、裸 K、三維共振、價值覆核，及研究清單的價格欄位；預留至 14:45 盤後快報的處理時間 |
 | 官方／價格訊號監測 | 工作日每 15 分鐘 | 官方重大事件，或達門檻的台指、費半、Nasdaq、WTI／Brent 價格訊號才更新並發送一次 |
 | 金十授權快訊 | Railway 每 120 秒 | 僅檢查金十官方 MCP `list_flash`，符合重大事件規則才觸發 GitHub 快訊 |
 
@@ -35,7 +35,7 @@ PRStK 是一套部署在 GitHub 的公開市場資訊整理、量化研究與風
 
 cron-job.org 的備援請求只會在對應時段附近被接受，例如台股盤前為 08:15–09:15 且 payload 的 `slot` 必須為 `pre_open`。這可避免設定錯誤的提早請求先取得防重複鎖，導致正式 08:45 快報被略過；手動 GitHub Actions 測試不受此限制。
 
-全市場研究也可用 `repository_dispatch` 備援：工作日 13:30 發送 `unified-research-report`，再由 14:25 的 `scheduled-brief`（`slot: post_close`）刷新 Mini App 並推播盤後快報。兩者均應由 cron-job.org 以 GitHub Actions 的同一個 Dispatch Token 呼叫。
+全市場研究也可用 `repository_dispatch` 備援：工作日 13:30 發送 `unified-research-report`，再由 14:45 的 `scheduled-brief`（`slot: post_close`）刷新 Mini App 並推播盤後快報。兩者均應由 cron-job.org 以 GitHub Actions 的同一個 Dispatch Token 呼叫。
 
 ## 排程與可靠性
 

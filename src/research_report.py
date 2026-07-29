@@ -52,6 +52,14 @@ def normalize_frame(frame: pd.DataFrame, market: str, strategy: str) -> list[dic
             "close": _value(row.get("close")) if _value(row.get("close")) is not None else _value(row.get("reference_close")),
             "change_percent": _value(row.get("change_percent")),
             "turnover": _value(row.get("turnover")),
+            "previous_close": _value(row.get("previous_close")),
+            "as_of": _value(row.get("as_of")),
+            "signal_labels": _value(row.get("signal_labels")),
+            "volume_ratio": _value(row.get("volume_ratio")),
+            "range_contraction": _value(row.get("range_contraction")),
+            "breakout_20": _value(row.get("breakout_20")),
+            "vcp_breakout": _value(row.get("vcp_breakout")),
+            "new_high_days": _value(row.get("new_high_days")),
             "structure": structure,
             "status": _value(row.get("status")),
             "roe": _value(row.get("roe")),
@@ -87,6 +95,7 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
         candidates.extend(rows)
     counts = Counter(f"{item['market']}:{item['strategy']}" for item in candidates)
     return {
+        "schema_version": "2.0",
         "status": "跨市場研究摘要" if candidates else "目前沒有可整合的研究候選",
         "notice": NOTICE,
         "sources": sources_status,

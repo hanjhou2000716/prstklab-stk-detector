@@ -1,6 +1,6 @@
 import pandas as pd
 
-from src.momentum_research import build_momentum_snapshot, features
+from src.momentum_research import WEIGHTS, build_momentum_snapshot, features
 
 
 def frame(multiplier=1):
@@ -13,6 +13,18 @@ def test_features_requires_sixty_one_bars():
     assert features(frame()) is not None
 
 
+def test_momentum_weights_match_the_specification():
+    assert WEIGHTS == {
+        "hist_vol": 29.08,
+        "bb_width": 19.33,
+        "p_ma60": 10.39,
+        "trend": 7.67,
+        "p_ma20": 7.26,
+        "p_bb_upper": 5.09,
+        "roc10": 4.25,
+    }
+
+
 def test_momentum_snapshot_ranks_available_watchlist():
     items = (
         {"symbol": "A", "ticker": "A", "name": "A", "market": "us"},
@@ -21,3 +33,11 @@ def test_momentum_snapshot_ranks_available_watchlist():
     snapshot = build_momentum_snapshot(items, downloader=lambda symbol: frame(2 if symbol == "B" else 1))
     assert snapshot["status"] == "動能研究排序"
     assert snapshot["candidates"][0]["ticker"] == "B"
+
+
+def test_features_expose_reproducible_quote_context_and_vcp_flags():
+    result = features(frame(2))
+    assert result is not None
+    assert result["turnover"] > 0
+    assert result["as_of"]
+    assert "signal_labels" in result
