@@ -1,0 +1,31 @@
+{
+  "version": "2026-07-29",
+  "mode": "public-read-only",
+  "polling": {
+    "intervalMinutes": 5,
+    "firstRunBaselineOnly": true,
+    "officialEventMaxAgeMinutes": 90,
+    "discoveryEventMaxAgeMinutes": 45,
+    "topicCooldownMinutes": 120,
+    "singleSourceFailureIsolation": true,
+    "retryOn429": false
+  },
+  "thresholds": {
+    "goldDailyAbsoluteMovePercent": 5,
+    "oilDailyAbsoluteMovePercent": 5,
+    "usgsMagnitude": 6.5,
+    "gdacsAlertLevel": "Red",
+    "marginHighPercentile": 75,
+    "marginLowPercentile": 25,
+    "cryptoMacd": {"fast": 12, "slow": 26, "signal": 9, "timeframes": ["1w", "1M"]}
+  },
+  "security": {
+    "noPrivateAccounts": true,
+    "noTrading": true,
+    "noCredentialRequests": true,
+    "noHiddenOrReverseEngineeredApis": true,
+    "noRateLimitBypass": true,
+    "shareApiKeys": false
+  },
+  "requiredDisclaimer": "\u50c5\u4f9b\u516c\u958b\u8cc7\u8a0a\u6574\u7406\u8207\u6559\u80b2\u6027\u89c0\u5bdf\uff0c\u4e0d\u69cb\u6210\u6295\u8cc7\u5efa\u8b70\u3002"
+}

@@ -17,11 +17,12 @@ from zoneinfo import ZoneInfo
 import requests
 from bs4 import BeautifulSoup
 
+from src.finance_intel_policy import polling_rule, threshold_rule
 from src.value_fundamentals import SEC_USER_AGENT, sec_ticker_ciks
 
 
 HEADERS = {"User-Agent": SEC_USER_AGENT}
-RECENCY_HOURS = 72
+RECENCY_MINUTES = int(polling_rule("officialEventMaxAgeMinutes"))
 TAIPEI = ZoneInfo("Asia/Taipei")
 
 # First-party publishers only. Terms deliberately exclude routine notices so
@@ -34,9 +35,19 @@ SOURCES = (
         "terms": ("fomc", "federal funds", "interest rate", "economic projections", "monetary policy"),
     },
     {
-        "key": "bls", "kind": "rss", "url": "https://www.bls.gov/feed/bls_latest.rss",
-        "source": "BLS\uff5c\u5b98\u65b9 RSS", "label": "\u91cd\u5927\u7e3d\u7d93",
-        "terms": ("consumer price index", "employment situation", "nonfarm", "producer price index", "import and export price"),
+        "key": "bls-employment", "kind": "rss", "url": "https://www.bls.gov/feed/empsit.rss",
+        "source": "BLS Employment Situation\uff5c\u5b98\u65b9 RSS", "label": "\u7f8e\u570b\u5c31\u696d",
+        "terms": ("employment situation", "payroll", "unemployment"),
+    },
+    {
+        "key": "bls-cpi", "kind": "rss", "url": "https://www.bls.gov/feed/cpi.rss",
+        "source": "BLS CPI\uff5c\u5b98\u65b9 RSS", "label": "\u7f8e\u570b\u901a\u81a8",
+        "terms": ("consumer price", "cpi"),
+    },
+    {
+        "key": "bls-ppi", "kind": "rss", "url": "https://www.bls.gov/feed/ppi.rss",
+        "source": "BLS PPI\uff5c\u5b98\u65b9 RSS", "label": "\u7f8e\u570b\u901a\u81a8",
+        "terms": ("producer price", "ppi"),
     },
     {
         "key": "eia", "kind": "rss", "url": "https://www.eia.gov/rss/press_rss.xml",
@@ -44,9 +55,9 @@ SOURCES = (
         "terms": ("crude oil", "petroleum", "natural gas", "weekly petroleum", "energy outlook"),
     },
     {
-        "key": "bea", "kind": "html", "url": "https://www.bea.gov/news/current-releases",
+        "key": "bea", "kind": "rss", "url": "https://apps.bea.gov/rss/rss.xml",
         "source": "BEA\uff5c\u5b98\u65b9\u767c\u5e03", "label": "\u91cd\u5927\u7e3d\u7d93",
-        "terms": ("personal income and outlays", "gross domestic product"),
+        "terms": ("personal income and outlays", "gross domestic product", "pce", "international trade"),
     },
     {
         "key": "taifex", "kind": "html", "url": "https://www.taifex.com.tw/cht/11/pressRelease",
@@ -73,6 +84,21 @@ SOURCES = (
         "source": "\u7d93\u6fdf\u90e8\u7d71\u8a08\u8655\u767c\u5e03", "label": "\u53f0\u7063\u79d1\u6280\u666f\u6c23",
         "terms": ("\u5916\u92b7\u8a02\u55ae", "\u5de5\u696d\u751f\u7522", "\u88fd\u9020\u696d\u751f\u7522", "\u51fa\u53e3"),
     },
+    {
+        "key": "ecb", "kind": "rss", "url": "https://www.ecb.europa.eu/rss/press.html",
+        "source": "ECB\uff5c\u5b98\u65b9 RSS", "label": "\u6b50\u6d32\u5229\u7387\uff0f\u6d41\u52d5\u6027",
+        "terms": ("monetary policy", "interest rate", "liquidity", "financial stability"),
+    },
+    {
+        "key": "cisa", "kind": "rss", "url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
+        "source": "CISA\uff5c\u5b98\u65b9 RSS", "label": "\u8cc7\u5b89\uff0f\u4f9b\u61c9\u93c8",
+        "terms": ("known exploited", "ransomware", "supply chain", "critical infrastructure"),
+    },
+    {
+        "key": "who", "kind": "rss", "url": "https://www.who.int/rss-feeds/news-english.xml",
+        "source": "WHO\uff5c\u5b98\u65b9 RSS", "label": "\u516c\u5171\u885b\u751f\u98a8\u96aa",
+        "terms": ("public health emergency", "outbreak", "pandemic", "novel virus"),
+    },
 )
 
 TWSE_NEWS_URL = "https://openapi.twse.com.tw/v1/news/newsList"
@@ -91,6 +117,7 @@ MOPS_TERMS = (
 TWSE_SYSTEMIC_CODES = {"2330", "2317", "2454", "2308", "2303", "2881", "2882", "2884", "2886", "2891"}
 SEC_WATCHLIST = ("NVDA", "TSM", "ASML", "AMD", "AVGO")
 USGS_SIGNIFICANT_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_hour.geojson"
+GDACS_RSS_URL = "https://www.gdacs.org/xml/rss.xml"
 
 
 def _request(url: str) -> requests.Response:
@@ -100,6 +127,11 @@ def _request(url: str) -> requests.Response:
             response = requests.get(url, headers=HEADERS, timeout=20)
             response.raise_for_status()
             return response
+        except requests.HTTPError as error:
+            # The policy explicitly forbids retrying rate-limited sources.
+            if error.response is not None and error.response.status_code == 429:
+                raise
+            last_error = error
         except requests.RequestException as error:
             last_error = error
     raise RuntimeError(f"public source unavailable: {url}") from last_error
@@ -112,6 +144,10 @@ def _post_json(url: str, payload: dict[str, str]) -> dict[str, Any]:
             response = requests.post(url, json=payload, headers=HEADERS, timeout=20)
             response.raise_for_status()
             return response.json()
+        except requests.HTTPError as error:
+            if error.response is not None and error.response.status_code == 429:
+                raise
+            last_error = error
         except requests.RequestException as error:
             last_error = error
     raise RuntimeError(f"public source unavailable: {url}") from last_error
@@ -196,7 +232,10 @@ def _is_recent_release(released_at: str | None) -> bool:
         return False
     if published.tzinfo is None:
         published = published.replace(tzinfo=timezone.utc)
-    return datetime.now(timezone.utc) - published <= timedelta(hours=RECENCY_HOURS)
+    age = datetime.now(timezone.utc) - published
+    # A publisher can be a few minutes ahead, but a future-dated listing must
+    # never become an alert candidate.
+    return timedelta(minutes=-5) <= age <= timedelta(minutes=RECENCY_MINUTES)
 
 
 def _source_items(source: dict[str, Any]) -> list[dict[str, str]]:
@@ -206,7 +245,8 @@ def _source_items(source: dict[str, Any]) -> list[dict[str, str]]:
         if any(term in title.lower() for term in source["terms"]) and _is_recent_release(released_at):
             return [{
                 "title": title, "url": url, "source": source["source"], "short_label": source["label"],
-                "relevance": "official", "released_at": released_at, "source_key": source["key"],
+                "relevance": "official", "source_tier": "official", "released_at": released_at,
+                "source_key": source["key"], "topic_key": source["key"],
             }]
     return []
 
@@ -325,6 +365,30 @@ def _sec_items() -> list[dict[str, str]]:
     return items
 
 
+def _gdacs_items() -> list[dict[str, str]]:
+    """Keep only GDACS Red alerts, never ordinary global disaster headlines."""
+    response = _request(GDACS_RSS_URL)
+    soup = BeautifulSoup(response.text, "xml")
+    items: list[dict[str, str]] = []
+    for entry in soup.find_all("item"):
+        title_node = entry.find("title")
+        link_node = entry.find("link")
+        title = title_node.get_text(" ", strip=True) if title_node else ""
+        raw = entry.get_text(" ", strip=True).lower()
+        published = entry.find("pubDate") or entry.find("published") or entry.find("updated")
+        released_at = _iso(published.get_text(strip=True) if published else None)
+        if "red" not in raw or not _is_recent_release(released_at):
+            continue
+        items.append({
+            "title": title, "url": link_node.get_text(strip=True) if link_node else GDACS_RSS_URL,
+            "source": "GDACS\uff5c\u516c\u958b\u707d\u5bb3\u8b66\u793a", "short_label": "\u9ed1\u5929\u9d5d\uff0f\u91cd\u5927\u707d\u5bb3",
+            "relevance": "official", "source_tier": "official", "released_at": released_at or "",
+            "source_key": "gdacs", "topic_key": "gdacs", "importance": "high-risk",
+        })
+        break
+    return items
+
+
 def _usgs_items() -> list[dict[str, str]]:
     data = _request(USGS_SIGNIFICANT_URL).json()
     items: list[dict[str, str]] = []
@@ -335,12 +399,19 @@ def _usgs_items() -> list[dict[str, str]]:
         released_at = datetime.fromtimestamp(float(occurred) / 1000, tz=timezone.utc).isoformat() if occurred else None
         place = str(properties.get("place") or "")
         relevant_region = any(word in place.lower() for word in ("japan", "taiwan", "philippines", "korea"))
-        if not isinstance(magnitude, (int, float)) or not _is_recent_release(released_at) or (magnitude < 7 and not (relevant_region and magnitude >= 6)):
+        tsunami = bool(properties.get("tsunami"))
+        minimum = float(threshold_rule("usgsMagnitude"))
+        if (
+            not isinstance(magnitude, (int, float))
+            or not _is_recent_release(released_at)
+            or (magnitude < minimum and not tsunami and not (relevant_region and magnitude >= 6))
+        ):
             continue
         items.append({
             "title": f"USGS M{magnitude:.1f} \u5730\u9707\uff1a{place}", "url": str(properties.get("url") or ""),
             "source": "USGS\uff5c\u5b98\u65b9\u5373\u6642\u5730\u9707\u8cc7\u6599", "short_label": "\u9ed1\u5929\u9d5d\uff0f\u5730\u7de3",
-            "relevance": "official", "released_at": released_at, "source_key": "usgs",
+            "relevance": "official", "source_tier": "official", "released_at": released_at,
+            "source_key": "usgs", "topic_key": "usgs", "importance": "high-risk",
         })
     return items
 
@@ -358,6 +429,7 @@ def fetch_official_events() -> dict[str, Any]:
         ("MOPS", _mops_items),
         ("TWSE", _twse_items),
         ("TWSE_MARKET", _twse_market_alert_items),
+        ("GDACS", _gdacs_items),
         ("SEC", _sec_items),
         ("USGS", _usgs_items),
     ):

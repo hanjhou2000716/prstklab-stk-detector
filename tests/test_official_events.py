@@ -8,6 +8,7 @@ from src.official_events import (
     _twse_items,
     _twse_market_alert_items,
     _usgs_items,
+    _is_recent_release,
     fetch_official_events,
 )
 
@@ -55,6 +56,10 @@ def test_rss_parser_keeps_official_timestamp_and_link():
 def test_html_date_parser_accepts_roc_and_gregorian_release_dates():
     assert _date_from_text("\u767c\u5e03\u65e5\u671f\uff1a115\u5e747\u670829\u65e5") == "2026-07-28T16:00:00+00:00"
     assert _date_from_text("2026/07/29 16:00") == "2026-07-28T16:00:00+00:00"
+
+
+def test_future_dated_release_is_not_considered_fresh():
+    assert _is_recent_release("2099-01-01T00:00:00+00:00") is False
 
 
 def test_mops_daily_api_keeps_material_ordinary_share_announcement(monkeypatch):

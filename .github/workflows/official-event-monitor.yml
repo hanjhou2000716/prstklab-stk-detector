@@ -5,7 +5,7 @@ on:
   repository_dispatch:
     types: [official-event-check]
   schedule:
-    - cron: "*/15 * * * 1-5"
+    - cron: "*/5 * * * 1-5"
 
 permissions:
   contents: write
@@ -35,9 +35,26 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements.txt
+      - name: Restore official-source baseline
+        id: baseline
+        uses: actions/cache/restore@v4
+        with:
+          path: .official-event-baseline
+          key: official-event-baseline-v1
       - name: Check current official releases and threshold price signals
         id: status
+        env:
+          OFFICIAL_EVENT_BASELINE_READY: ${{ steps.baseline.outputs.cache-hit == 'true' }}
         run: python -m src.official_event_monitor --write-status
+      - name: Save official-source baseline
+        if: success() && steps.baseline.outputs.cache-hit != 'true'
+        run: touch .official-event-baseline
+      - name: Persist official-source baseline
+        if: success() && steps.baseline.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .official-event-baseline
+          key: official-event-baseline-v1
       - name: Restore event delivery lock
         if: steps.status.outputs.should_send == 'true'
         id: idempotency

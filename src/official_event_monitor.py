@@ -5,12 +5,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
-from datetime import datetime, time
+from datetime import datetime, time, timezone
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
 from src.config import get_settings
+from src.finance_intel_policy import polling_rule
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import write_snapshot
 from src.telegram_client import send_briefs, validate_brief
@@ -26,14 +27,16 @@ def _is_taiwan_market_window(now: datetime | None = None) -> bool:
     return local_now.weekday() < 5 and time(8, 45) <= local_now.time() <= time(13, 30)
 
 
-def select_official_event(snapshot: dict[str, Any], now: datetime | None = None) -> dict[str, Any] | None:
+def select_official_event(
+    snapshot: dict[str, Any], now: datetime | None = None, *, baseline_official: bool = False
+) -> dict[str, Any] | None:
     """Select a verified official release, then a threshold price signal.
 
     The price signal fallback is constrained by ``event_alerts`` thresholds, so
     routine price refreshes never become Telegram notifications.
     """
     items = snapshot.get("official_events", {}).get("items", [])
-    if items:
+    if items and not baseline_official:
         return items[0]
     signals = [event for event in snapshot.get("events", {}).get("items", []) if event.get("kind") == "market_signal"]
     if _is_taiwan_market_window(now):
@@ -63,7 +66,22 @@ def event_key(event: dict[str, Any] | None) -> str:
             material_parts.append(str(instrument["quote_time"])[:13])
         material = "|".join(str(value) for value in material_parts)
     else:
-        material = "|".join(str(event.get(key, "")) for key in ("url", "title", "released_at"))
+        # A same-topic official release is only eligible once per configured
+        # cooling window. Explicit escalation can bypass this by retaining the
+        # source headline in the key.
+        topic = str(event.get("topic_key") or event.get("source_key") or event.get("short_label") or "official")
+        released_at = str(event.get("released_at") or "")
+        try:
+            published = datetime.fromisoformat(released_at.replace("Z", "+00:00"))
+            if published.tzinfo is None:
+                published = published.replace(tzinfo=timezone.utc)
+            bucket = int(published.timestamp() // (int(polling_rule("topicCooldownMinutes")) * 60))
+        except ValueError:
+            bucket = released_at
+        material_parts = ["official", topic, bucket]
+        if event.get("escalation"):
+            material_parts.append(str(event.get("title", "")))
+        material = "|".join(str(value) for value in material_parts)
     return hashlib.sha256(material.encode("utf-8")).hexdigest()[:24]
 
 
@@ -86,7 +104,10 @@ def prepare_snapshot() -> tuple[dict[str, Any], dict[str, Any] | None]:
     """Refresh the public snapshot before the Mini App button is sent."""
     snapshot = build_market_snapshot()
     write_snapshot(snapshot)
-    return snapshot, select_official_event(snapshot)
+    # The first deployment observes current official headlines but avoids
+    # immediately replaying them as alerts. Price signals remain eligible.
+    baseline_official = os.getenv("OFFICIAL_EVENT_BASELINE_READY") == "false"
+    return snapshot, select_official_event(snapshot, baseline_official=baseline_official)
 
 
 def write_status_output(event: dict[str, Any] | None) -> None:
