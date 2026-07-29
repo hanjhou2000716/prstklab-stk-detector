@@ -33,3 +33,15 @@ def test_mini_app_renders_compact_market_risk_cards_without_subscores():
     assert "sentiment.sub_scores" not in app
     assert "renderFocus(snapshot.events, externalAlert)" in app
     assert "renderBriefing(snapshot.briefing, snapshot.generated_at)" in app
+
+
+def test_mini_app_uses_strategy_drawers_and_places_source_health_after_sentiment():
+    page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
+
+    assert 'class="research-drawer"' in page
+    assert "<details" in page
+    assert "動能狙擊" in page
+    assert ".research-drawer[open] summary" in styles
+    assert "#risk > .panel:not(.source-health-panel) { order: 3; }" in styles
+    assert ".source-health-panel { order: 4; }" in styles
