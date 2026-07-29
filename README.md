@@ -157,7 +157,7 @@ TAIEX Macro FGI 是台股市場風險偏好的公開日資料模型，不是個�
 
 ### cron-job.org 備援
 
-cron-job.org 可透過 GitHub Repository Dispatch 備援定時快報、量化研究與官方／價格檢查。外部請求只觸發工作流程；是否送出仍取決於 GitHub 的時段／事件去重鎖。完整 Header、payload 與 slot 設定請見 [金十 Token 與外部快訊安全設定](docs/JIN10_RAILWAY_SETUP.md)。
+cron-job.org 可透過 GitHub Repository Dispatch 備援定時快報、量化研究與 **Official macro and price monitor** 官方／價格檢查。其事件類型為 `official-event-check`；外部請求只觸發工作流程，是否送出仍取決於 GitHub 的時段／事件去重鎖。完整 Header、payload 與 slot 設定請見 [金十 Token 與外部快訊安全設定](docs/JIN10_RAILWAY_SETUP.md)。
 
 ## 自我審查：已知限制與下一步建議
 
