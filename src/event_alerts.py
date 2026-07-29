@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from src.finance_intel_policy import threshold_rule
+
 
 EVENT_RULES = (
     ("Fed／貨幣政策", ("fomc", "fed", "聯準會", "升息", "降息")),
@@ -169,8 +171,9 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "TAIEX": 1.5,
         "SOX": 3.0,
         "NASDAQ": 2.0,
-        "WTI": 5.0,
-        "BRENT": 5.0,
+        "WTI": float(threshold_rule("oilDailyAbsoluteMovePercent")),
+        "BRENT": float(threshold_rule("oilDailyAbsoluteMovePercent")),
+        "GOLD": float(threshold_rule("goldDailyAbsoluteMovePercent")),
     }.get(ticker, 1.0)
     minimum_15m_move = {
         "TAIEX": 1.0,
@@ -178,6 +181,7 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "NASDAQ": 1.0,
         "WTI": 2.0,
         "BRENT": 2.0,
+        "GOLD": 2.0,
     }.get(ticker, 1.0)
     move_15m = index.get("change_15m_percent")
     move_15m = float(move_15m) if move_15m is not None else None

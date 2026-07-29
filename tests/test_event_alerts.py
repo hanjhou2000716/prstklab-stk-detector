@@ -76,6 +76,13 @@ def test_delayed_intraday_quote_cannot_trigger_an_urgent_price_signal():
     assert snapshot["is_major"] is False
 
 
+def test_gold_daily_move_requires_the_policy_five_percent_threshold():
+    snapshot = build_event_snapshot({"taiwan": [], "us": []}, [], indices=[{
+        "ticker": "GOLD", "name": "\u9ec3\u91d1", "price": 4000, "change_percent": 4.9,
+    }])
+    assert snapshot["is_major"] is False
+
+
 def test_sox_15_minute_acceleration_triggers_before_the_daily_threshold():
     snapshot = build_event_snapshot({"taiwan": [], "us": []}, [], indices=[{
         "ticker": "SOX", "name": "費城半導體指數", "price": 11489.11, "change": -330,
