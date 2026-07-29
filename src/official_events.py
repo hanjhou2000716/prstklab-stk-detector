@@ -1,6 +1,6 @@
 """Read-only, first-party sources used as candidates for material-event alerts.
 
-No source headline is treated as investment advice.  Each record keeps its
+No source headline is treated as investment advice. Each record keeps its
 publisher URL and timestamp, then enters the normal event/card/de-duplication
 pipeline with current market observations.
 """
@@ -9,8 +9,10 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
+import re
 from typing import Any
 from urllib.parse import urljoin
+from zoneinfo import ZoneInfo
 
 import requests
 from bs4 import BeautifulSoup
@@ -20,32 +22,73 @@ from src.value_fundamentals import SEC_USER_AGENT, sec_ticker_ciks
 
 HEADERS = {"User-Agent": SEC_USER_AGENT}
 RECENCY_HOURS = 72
+TAIPEI = ZoneInfo("Asia/Taipei")
+
+# First-party publishers only. Terms deliberately exclude routine notices so
+# the normal official-event monitor does not turn administrative updates into
+# Telegram alerts.
 SOURCES = (
     {
         "key": "fed", "kind": "rss", "url": "https://www.federalreserve.gov/feeds/press_all.xml",
-        "source": "Federal Reserve｜官方 RSS", "label": "Fed／貨幣政策",
+        "source": "Federal Reserve\uff5c\u5b98\u65b9 RSS", "label": "Fed\uff0f\u8ca8\u5e63\u653f\u7b56",
         "terms": ("fomc", "federal funds", "interest rate", "economic projections", "monetary policy"),
     },
     {
         "key": "bls", "kind": "rss", "url": "https://www.bls.gov/feed/bls_latest.rss",
-        "source": "BLS｜官方 RSS", "label": "重大總經",
+        "source": "BLS\uff5c\u5b98\u65b9 RSS", "label": "\u91cd\u5927\u7e3d\u7d93",
         "terms": ("consumer price index", "employment situation", "nonfarm", "producer price index", "import and export price"),
     },
     {
         "key": "eia", "kind": "rss", "url": "https://www.eia.gov/rss/press_rss.xml",
-        "source": "EIA｜官方 RSS", "label": "能源／通膨",
+        "source": "EIA\uff5c\u5b98\u65b9 RSS", "label": "\u80fd\u6e90\uff0f\u901a\u81a8",
         "terms": ("crude oil", "petroleum", "natural gas", "weekly petroleum", "energy outlook"),
     },
     {
         "key": "bea", "kind": "html", "url": "https://www.bea.gov/news/current-releases",
-        "source": "BEA｜官方發布", "label": "重大總經",
+        "source": "BEA\uff5c\u5b98\u65b9\u767c\u5e03", "label": "\u91cd\u5927\u7e3d\u7d93",
         "terms": ("personal income and outlays", "gross domestic product"),
     },
+    {
+        "key": "taifex", "kind": "html", "url": "https://www.taifex.com.tw/cht/11/pressRelease",
+        "source": "\u81fa\u7063\u671f\u8ca8\u4ea4\u6613\u6240\u516c\u544a", "label": "\u53f0\u6307\u671f\uff0f\u69d3\u687f\u98a8\u96aa",
+        "terms": ("\u4fdd\u8b49\u91d1", "\u81fa\u80a1\u671f\u8ca8", "\u53f0\u80a1\u671f\u8ca8", "\u76e4\u4e2d\u66ab\u505c", "\u7dca\u6025", "\u4ea4\u6613\u63aa\u65bd"),
+    },
+    {
+        "key": "cbc", "kind": "html", "url": "https://www.cbc.gov.tw/tw/lp-302-1-391-20.html",
+        "source": "\u4e2d\u592e\u9280\u884c\u65b0\u805e\u7a3f", "label": "\u53f0\u7063\u5229\u7387\uff0f\u532f\u7387",
+        "terms": ("\u7406\u76e3\u4e8b", "\u8ca8\u5e63\u653f\u7b56", "\u653f\u7b56\u5229\u7387", "\u5916\u532f", "\u532f\u7387", "\u91d1\u878d\u7a69\u5b9a"),
+    },
+    {
+        "key": "fsc", "kind": "html", "url": "https://www.fsc.gov.tw/ch/home.jsp?id=640&parentpath=0,7,478,638",
+        "source": "\u91d1\u7ba1\u6703\u65b0\u805e\u7a3f", "label": "\u53f0\u7063\u8cc7\u672c\u5e02\u5834\u653f\u7b56",
+        "terms": ("\u8cc7\u672c\u5e02\u5834", "\u8b49\u5238\u5e02\u5834", "\u91d1\u878d\u7a69\u5b9a", "\u5e02\u5834\u98a8\u96aa", "\u6709\u50f9\u8b49\u5238"),
+    },
+    {
+        "key": "dgbas", "kind": "html", "url": "https://www.stat.gov.tw/",
+        "source": "\u4e3b\u8a08\u7e3d\u8655\u7d71\u8a08\u767c\u5e03", "label": "\u53f0\u7063\u7e3d\u7d93\u6578\u64da",
+        "terms": ("\u6d88\u8cbb\u8005\u7269\u50f9", "\u751f\u7522\u8005\u7269\u50f9", "\u570b\u5167\u751f\u7522\u6bdb\u984d", "\u7d93\u6fdf\u6210\u9577", "\u5931\u696d\u7387"),
+    },
+    {
+        "key": "moea", "kind": "html", "url": "https://mnscdn.moea.gov.tw/Mns/dos/bulletin/BulletinQuery.aspx?menu_id=13034",
+        "source": "\u7d93\u6fdf\u90e8\u7d71\u8a08\u8655\u767c\u5e03", "label": "\u53f0\u7063\u79d1\u6280\u666f\u6c23",
+        "terms": ("\u5916\u92b7\u8a02\u55ae", "\u5de5\u696d\u751f\u7522", "\u88fd\u9020\u696d\u751f\u7522", "\u51fa\u53e3"),
+    },
 )
+
 TWSE_NEWS_URL = "https://openapi.twse.com.tw/v1/news/newsList"
-# Avoid generic words such as "市場" or "指數": they appear in routine listing
-# notices and would turn administrative exchange news into a false alert.
-TWSE_TERMS = ("重大訊息", "停止買賣", "暫停交易", "台積電", "半導體", "價格穩定措施", "熔斷")
+TWSE_NOTICE_URL = "https://openapi.twse.com.tw/v1/announcement/notice"
+TWSE_PUNISH_URL = "https://openapi.twse.com.tw/v1/announcement/punish"
+MOPS_DAILY_URL = "https://mops.twse.com.tw/mops/api/t05st02"
+MOPS_DAILY_PAGE = "https://mops.twse.com.tw/mops/#/web/t05st02"
+TWSE_TERMS = ("\u505c\u6b62\u8cb7\u8ce3", "\u6062\u5fa9\u8cb7\u8ce3", "\u66ab\u505c\u4ea4\u6613", "\u50f9\u683c\u7a69\u5b9a\u63aa\u65bd", "\u7194\u65b7")
+MOPS_TERMS = (
+    "\u505c\u6b62\u8cb7\u8ce3", "\u6062\u5fa9\u8cb7\u8ce3", "\u66ab\u505c\u4ea4\u6613", "\u5408\u4f75", "\u6536\u8cfc", "\u516c\u958b\u6536\u8cfc",
+    "\u91cd\u5927\u707d\u5bb3", "\u706b\u707d", "\u7206\u70b8", "\u7f77\u5de5", "\u7834\u7522", "\u91cd\u6574", "\u4e0b\u5e02",
+    "\u8655\u5206\u8cc7\u7522", "\u53d6\u5f97\u8cc7\u7522", "\u6e1b\u8cc7", "\u73fe\u91d1\u589e\u8cc7",
+)
+# Attention/disposition data is high-volume. Only systemic listed names can
+# become a Telegram candidate; all other entries remain available at TWSE.
+TWSE_SYSTEMIC_CODES = {"2330", "2317", "2454", "2308", "2303", "2881", "2882", "2884", "2886", "2891"}
 SEC_WATCHLIST = ("NVDA", "TSM", "ASML", "AMD", "AVGO")
 USGS_SIGNIFICANT_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_hour.geojson"
 
@@ -57,6 +100,18 @@ def _request(url: str) -> requests.Response:
             response = requests.get(url, headers=HEADERS, timeout=20)
             response.raise_for_status()
             return response
+        except requests.RequestException as error:
+            last_error = error
+    raise RuntimeError(f"public source unavailable: {url}") from last_error
+
+
+def _post_json(url: str, payload: dict[str, str]) -> dict[str, Any]:
+    last_error: Exception | None = None
+    for _ in range(2):
+        try:
+            response = requests.post(url, json=payload, headers=HEADERS, timeout=20)
+            response.raise_for_status()
+            return response.json()
         except requests.RequestException as error:
             last_error = error
     raise RuntimeError(f"public source unavailable: {url}") from last_error
@@ -77,6 +132,23 @@ def _iso(value: str | None) -> str | None:
     return timestamp.astimezone(timezone.utc).isoformat()
 
 
+def _date_from_text(value: str) -> str | None:
+    """Extract a declared Gregorian or ROC release date from page text."""
+    iso_match = re.search(r"(20\d{2})[/-](\d{1,2})[/-](\d{1,2})", value)
+    if iso_match:
+        year, month, day = (int(part) for part in iso_match.groups())
+    else:
+        roc_match = re.search(r"(1[01]\d)[\u5e74/-](\d{1,2})[\u6708/-](\d{1,2})", value)
+        if not roc_match:
+            return None
+        year, month, day = (int(part) for part in roc_match.groups())
+        year += 1911
+    try:
+        return datetime(year, month, day, tzinfo=TAIPEI).astimezone(timezone.utc).isoformat()
+    except ValueError:
+        return None
+
+
 def _headline_links(html: str, base_url: str) -> list[tuple[str, str, str | None]]:
     """Return de-duplicated visible links without copying article bodies."""
     soup = BeautifulSoup(html, "html.parser")
@@ -88,8 +160,11 @@ def _headline_links(html: str, base_url: str) -> list[tuple[str, str, str | None
         if not title or not href.startswith("https://") or href in seen:
             continue
         seen.add(href)
-        timestamp = link.find_parent().find("time") if link.find_parent() else None
+        parent = link.find_parent()
+        timestamp = parent.find("time") if parent else None
         released_at = timestamp.get("datetime") if timestamp else None
+        if not released_at and parent:
+            released_at = _date_from_text(" ".join(parent.stripped_strings))
         results.append((title, href, _iso(released_at)))
     return results
 
@@ -101,9 +176,7 @@ def _rss_links(xml: str, base_url: str) -> list[tuple[str, str, str | None]]:
     for item in soup.find_all("item") + soup.find_all("entry"):
         title = item.find("title")
         link = item.find("link")
-        href = ""
-        if link:
-            href = link.get("href") or link.get_text(strip=True)
+        href = (link.get("href") or link.get_text(strip=True)) if link else ""
         title_text = title.get_text(" ", strip=True) if title else ""
         timestamp = item.find("pubDate") or item.find("published") or item.find("updated")
         absolute_url = urljoin(base_url, href)
@@ -145,6 +218,44 @@ def _roc_date(value: str | None) -> str | None:
     return f"{int(raw[:3]) + 1911:04d}-{raw[3:5]}-{raw[5:]}T00:00:00+00:00"
 
 
+def _mops_released_at(roc_date: str, clock: str) -> str | None:
+    match = re.fullmatch(r"(\d{3})[/-]?(\d{2})[/-]?(\d{2})", roc_date)
+    if not match:
+        return None
+    try:
+        published = datetime(
+            int(match.group(1)) + 1911, int(match.group(2)), int(match.group(3)),
+            int(clock[:2]), int(clock[3:5]), int(clock[6:8]), tzinfo=TAIPEI,
+        )
+    except (ValueError, IndexError):
+        return None
+    return published.astimezone(timezone.utc).isoformat()
+
+
+def _mops_items() -> list[dict[str, str]]:
+    """Read current-day MOPS material announcements through its public API."""
+    local_now = datetime.now(TAIPEI)
+    data = _post_json(MOPS_DAILY_URL, {
+        "year": str(local_now.year - 1911), "month": str(local_now.month), "day": str(local_now.day),
+    })
+    items: list[dict[str, str]] = []
+    for row in data.get("result", {}).get("data", []):
+        if len(row) < 5:
+            continue
+        date, clock, code, name, title = (str(value).strip() for value in row[:5])
+        if len(code) != 4 or not code.isdigit() or not any(term in title for term in MOPS_TERMS):
+            continue
+        released_at = _mops_released_at(date, clock)
+        if not _is_recent_release(released_at):
+            continue
+        items.append({
+            "title": f"{code} {name}\uff1a{title}", "url": MOPS_DAILY_PAGE,
+            "source": "MOPS \u7576\u65e5\u91cd\u5927\u8a0a\u606f", "short_label": "\u53f0\u80a1\u516c\u53f8\u91cd\u5927\u8a0a\u606f",
+            "relevance": "official", "released_at": released_at or "", "source_key": "mops",
+        })
+    return items[:2]
+
+
 def _twse_items() -> list[dict[str, str]]:
     data = _request(TWSE_NEWS_URL).json()
     for row in data:
@@ -152,10 +263,34 @@ def _twse_items() -> list[dict[str, str]]:
         released_at = _roc_date(row.get("Date"))
         if title and any(term in title for term in TWSE_TERMS) and _is_recent_release(released_at):
             return [{
-                "title": title, "url": str(row.get("Url") or ""), "source": "TWSE OpenAPI｜官方發布",
-                "short_label": "台股官方訊息", "relevance": "official", "released_at": released_at, "source_key": "twse",
+                "title": title, "url": str(row.get("Url") or ""),
+                "source": "TWSE OpenAPI\uff5c\u5b98\u65b9\u767c\u5e03", "short_label": "\u53f0\u80a1\u5b98\u65b9\u8a0a\u606f",
+                "relevance": "official", "released_at": released_at, "source_key": "twse",
             }]
     return []
+
+
+def _twse_market_alert_items() -> list[dict[str, str]]:
+    """Keep only recent attention/disposition events for systemic names."""
+    items: list[dict[str, str]] = []
+    for url, category in ((TWSE_NOTICE_URL, "\u6ce8\u610f\u4ea4\u6613"), (TWSE_PUNISH_URL, "\u8655\u7f6e\u80a1\u7968")):
+        for row in _request(url).json():
+            code = str(row.get("Code") or "").strip()
+            released_at = _roc_date(row.get("Date"))
+            if (
+                len(code) != 4 or not code.isdigit() or code not in TWSE_SYSTEMIC_CODES
+                or not _is_recent_release(released_at)
+            ):
+                continue
+            name = str(row.get("Name") or "").strip()
+            detail = str(row.get("ReasonsOfDisposition") or row.get("TradingInfoForAttention") or "").strip()
+            items.append({
+                "title": f"{category}\uff1a{code} {name} {detail}".strip(), "url": url,
+                "source": "TWSE OpenAPI \u5e02\u5834\u7570\u5e38\u8cc7\u8a0a", "short_label": f"\u53f0\u80a1{category}",
+                "relevance": "official", "released_at": released_at or "", "source_key": "twse_market_alert",
+            })
+            break
+    return items
 
 
 def _sec_items() -> list[dict[str, str]]:
@@ -180,10 +315,11 @@ def _sec_items() -> list[dict[str, str]]:
                 continue
             accession = str(recent.get("accessionNumber", [""])[index]).replace("-", "")
             document = str(recent.get("primaryDocument", [""])[index])
-            url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession}/{document}"
             items.append({
-                "title": f"{ticker} SEC {form} 財務申報", "url": url, "source": "SEC EDGAR｜官方申報",
-                "short_label": "半導體財報", "relevance": "official", "released_at": released_at, "source_key": "sec",
+                "title": f"{ticker} SEC {form} \u8ca1\u52d9\u7533\u5831",
+                "url": f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession}/{document}",
+                "source": "SEC EDGAR\uff5c\u5b98\u65b9\u7533\u5831", "short_label": "\u534a\u5c0e\u9ad4\u8ca1\u5831",
+                "relevance": "official", "released_at": released_at, "source_key": "sec",
             })
             break
     return items
@@ -198,14 +334,13 @@ def _usgs_items() -> list[dict[str, str]]:
         occurred = properties.get("time")
         released_at = datetime.fromtimestamp(float(occurred) / 1000, tz=timezone.utc).isoformat() if occurred else None
         place = str(properties.get("place") or "")
-        # M7 globally, or M6 in the Taiwan/Japan supply-chain region.
         relevant_region = any(word in place.lower() for word in ("japan", "taiwan", "philippines", "korea"))
         if not isinstance(magnitude, (int, float)) or not _is_recent_release(released_at) or (magnitude < 7 and not (relevant_region and magnitude >= 6)):
             continue
         items.append({
-            "title": f"USGS M{magnitude:.1f} 地震：{place}", "url": str(properties.get("url") or ""),
-            "source": "USGS｜官方即時地震資料", "short_label": "黑天鵝／地緣", "relevance": "official",
-            "released_at": released_at, "source_key": "usgs",
+            "title": f"USGS M{magnitude:.1f} \u5730\u9707\uff1a{place}", "url": str(properties.get("url") or ""),
+            "source": "USGS\uff5c\u5b98\u65b9\u5373\u6642\u5730\u9707\u8cc7\u6599", "short_label": "\u9ed1\u5929\u9d5d\uff0f\u5730\u7de3",
+            "relevance": "official", "released_at": released_at, "source_key": "usgs",
         })
     return items
 
@@ -218,11 +353,17 @@ def fetch_official_events() -> dict[str, Any]:
         try:
             items.extend(_source_items(source))
         except Exception:
-            errors.append(f"{source['key'].upper()} 官方來源暫時無法取得")
-    for key, fetcher in (("TWSE", _twse_items), ("SEC", _sec_items), ("USGS", _usgs_items)):
+            errors.append(f"{source['key'].upper()} \u5b98\u65b9\u4f86\u6e90\u66ab\u6642\u7121\u6cd5\u53d6\u5f97")
+    for key, fetcher in (
+        ("MOPS", _mops_items),
+        ("TWSE", _twse_items),
+        ("TWSE_MARKET", _twse_market_alert_items),
+        ("SEC", _sec_items),
+        ("USGS", _usgs_items),
+    ):
         try:
             items.extend(fetcher())
         except Exception:
-            errors.append(f"{key} 官方來源暫時無法取得")
+            errors.append(f"{key} \u5b98\u65b9\u4f86\u6e90\u66ab\u6642\u7121\u6cd5\u53d6\u5f97")
     items.sort(key=lambda item: item.get("released_at") or "", reverse=True)
     return {"items": items[:6], "errors": errors}

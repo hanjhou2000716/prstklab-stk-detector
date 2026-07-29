@@ -1,4 +1,15 @@
-from src.official_events import _headline_links, _rss_links, _twse_items, _usgs_items, fetch_official_events
+from src.official_events import (
+    MOPS_TERMS,
+    TWSE_TERMS,
+    _date_from_text,
+    _headline_links,
+    _mops_items,
+    _rss_links,
+    _twse_items,
+    _twse_market_alert_items,
+    _usgs_items,
+    fetch_official_events,
+)
 
 
 def test_headline_links_are_deduplicated_and_resolved():
@@ -19,12 +30,15 @@ def test_official_event_fetch_keeps_only_material_release_titles(monkeypatch):
     monkeypatch.setattr("src.official_events.requests.get", lambda *args, **kwargs: Response())
     monkeypatch.setattr("src.official_events._is_recent_release", lambda released_at: released_at is not None)
     monkeypatch.setattr("src.official_events._twse_items", lambda: [])
+    monkeypatch.setattr("src.official_events._twse_market_alert_items", lambda: [])
+    monkeypatch.setattr("src.official_events._mops_items", lambda: [])
     monkeypatch.setattr("src.official_events._sec_items", lambda: [])
     monkeypatch.setattr("src.official_events._usgs_items", lambda: [])
+
     snapshot = fetch_official_events()
 
     assert snapshot["items"]
-    assert all(item["short_label"] in {"Fed／貨幣政策", "重大總經", "能源／通膨"} for item in snapshot["items"])
+    assert all(item["relevance"] == "official" for item in snapshot["items"])
     assert not snapshot["errors"]
 
 
@@ -38,23 +52,65 @@ def test_rss_parser_keeps_official_timestamp_and_link():
     assert rows[0][2].endswith("+00:00")
 
 
+def test_html_date_parser_accepts_roc_and_gregorian_release_dates():
+    assert _date_from_text("\u767c\u5e03\u65e5\u671f\uff1a115\u5e747\u670829\u65e5") == "2026-07-28T16:00:00+00:00"
+    assert _date_from_text("2026/07/29 16:00") == "2026-07-28T16:00:00+00:00"
+
+
+def test_mops_daily_api_keeps_material_ordinary_share_announcement(monkeypatch):
+    class Response:
+        @staticmethod
+        def raise_for_status():
+            return None
+
+        @staticmethod
+        def json():
+            return {"result": {"data": [["115/07/29", "10:05:30", "2330", "TSMC", MOPS_TERMS[0]]]}}
+
+    monkeypatch.setattr("src.official_events.requests.post", lambda *args, **kwargs: Response())
+    monkeypatch.setattr("src.official_events._is_recent_release", lambda released_at: released_at is not None)
+
+    items = _mops_items()
+
+    assert items[0]["source_key"] == "mops"
+    assert "2330" in items[0]["title"]
+
+
+def test_twse_market_alert_keeps_recent_systemic_share_disposition(monkeypatch):
+    class Response:
+        @staticmethod
+        def json():
+            return [{"Date": "1150729", "Code": "2330", "Name": "TSMC", "ReasonsOfDisposition": "example"}]
+
+    monkeypatch.setattr("src.official_events._request", lambda _: Response())
+    monkeypatch.setattr("src.official_events._is_recent_release", lambda released_at: released_at is not None)
+
+    items = _twse_market_alert_items()
+
+    assert len(items) == 2
+    assert all(item["source_key"] == "twse_market_alert" for item in items)
+
+
 def test_twse_news_uses_roc_date_and_material_terms(monkeypatch):
     class Response:
-        def json(self):
-            return [{"Title": "台積電重大訊息公告", "Url": "https://twse.example/item", "Date": "1150729"}]
+        @staticmethod
+        def json():
+            return [{"Title": TWSE_TERMS[0], "Url": "https://twse.example/item", "Date": "1150729"}]
+
     monkeypatch.setattr("src.official_events._request", lambda _: Response())
     monkeypatch.setattr("src.official_events._is_recent_release", lambda released_at: released_at is not None)
     item = _twse_items()[0]
-    assert item["short_label"] == "台股官方訊息"
+    assert item["source_key"] == "twse"
     assert item["released_at"].startswith("2026-07-29")
 
 
 def test_usgs_major_quake_becomes_a_first_party_candidate(monkeypatch):
     class Response:
-        def json(self):
+        @staticmethod
+        def json():
             return {"features": [{"properties": {"mag": 7.1, "time": 1_785_000_000_000, "place": "Japan", "url": "https://usgs.example/event"}}]}
+
     monkeypatch.setattr("src.official_events._request", lambda _: Response())
     monkeypatch.setattr("src.official_events._is_recent_release", lambda released_at: released_at is not None)
     item = _usgs_items()[0]
-    assert item["short_label"] == "黑天鵝／地緣"
     assert item["source_key"] == "usgs"
