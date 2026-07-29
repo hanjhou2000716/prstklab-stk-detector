@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
+
+from src.research_health import assess_research_health
 
 
 REPORT_PATH = Path("site/data/research-report.json")
@@ -12,7 +16,7 @@ ALLOWED_STRATEGIES = {"momentum", "price_action", "resonance", "value"}
 ALLOWED_MARKETS = {"taiwan", "us"}
 
 
-def load_research_cards(path: Path = REPORT_PATH) -> dict[str, Any]:
+def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None) -> dict[str, Any]:
     """Return only non-actionable fields from the newest research artifact."""
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
@@ -25,9 +29,13 @@ def load_research_cards(path: Path = REPORT_PATH) -> dict[str, Any]:
             "candidates": [],
         }
 
+    health = assess_research_health(raw, now=now or datetime.now(ZoneInfo("Asia/Taipei")))
+    expired = bool(health["is_expired"])
     candidates = []
     for item in raw.get("candidates", []):
         if not isinstance(item, dict) or item.get("strategy") not in ALLOWED_STRATEGIES or item.get("market") not in ALLOWED_MARKETS:
+            continue
+        if expired:
             continue
         candidates.append({key: item.get(key) for key in (
             "market", "strategy", "rank", "ticker", "name", "score", "close", "previous_close", "change_percent", "turnover", "as_of", "signal_labels", "volume_ratio", "range_contraction", "breakout_20", "vcp_breakout", "new_high_days", "fgi_score", "fgi_status", "conditions_matched", "condition_count", "structure", "status",
@@ -44,4 +52,7 @@ def load_research_cards(path: Path = REPORT_PATH) -> dict[str, Any]:
         "generated_at": raw.get("generated_at"),
         "sources": sources,
         "candidates": candidates,
+        "health": health,
+        "availability": "expired" if expired else "available",
+        "notice": "研究資料已逾時，候選清單已隱藏；等待下一次全市場掃描完成。" if expired else raw.get("notice"),
     }

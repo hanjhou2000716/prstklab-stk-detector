@@ -61,6 +61,31 @@ def _related_indices(indices: list[dict[str, Any]], excluded_ticker: str) -> lis
     return related[:2]
 
 
+def _impact_confirmation(index: dict[str, Any], related: list[dict[str, Any]]) -> dict[str, Any]:
+    """Require a separate market observation before calling an alert high risk.
+
+    A Taiwan intraday cash/futures cross-check is itself independent market
+    confirmation.  For all other instruments, at least one related market
+    must show a material public move.  This deliberately leaves a headline as
+    an observation when the expected market transmission has not appeared.
+    """
+    if index.get("ticker") == "TAIEX" and index.get("crosscheck_status") in {None, "已核對同向"}:
+        return {"confirmed": True, "method": "TWSE／TAIFEX 同向核對", "markets": ["TAIEX"]}
+    confirmed = [
+        item for item in related
+        if not item.get("quote_delayed")
+        and item.get("change_percent") is not None
+        and abs(float(item["change_percent"])) >= 1.0
+    ]
+    if confirmed:
+        return {
+            "confirmed": True,
+            "method": "相關市場同步波動",
+            "markets": [str(item.get("ticker")) for item in confirmed],
+        }
+    return {"confirmed": False, "method": "尚無相關市場同步確認", "markets": []}
+
+
 def _signal_market_context(ticker: str) -> tuple[str, str]:
     """Return neutral transmission and equity-observation language per market."""
     contexts = {
@@ -227,6 +252,15 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     else:
         pattern, risk = "上漲", "波動擴大"
 
+    related = _related_indices(indices, ticker)
+    impact_confirmation = _impact_confirmation(index, related)
+    if risk == "高風險" and not impact_confirmation["confirmed"]:
+        risk = "警戒"
+        stock_observation = (
+            f"{stock_observation} 目前尚未看到相關市場同步確認，"
+            "故維持警戒而非升級為高風險快報。"
+        )
+
     price = index.get("price")
     change = index.get("change")
     move = f"{percent:+.2f}%"
@@ -264,7 +298,8 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
             "verified_domains": [],
         },
         "instrument": index,
-        "related": _related_indices(indices, ticker),
+        "related": related,
+        "impact_confirmation": impact_confirmation,
         "change": change,
         # Taiwan's broad-market alert is intentionally eligible for one
         # hourly update while a high-risk move persists.  A worsening stage
@@ -293,19 +328,28 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "checked_at": str(event.get("checked_at") or ""),
         "verified_domains": [domain] if domain else [],
     }
+    related = event.get("related") or _related_indices(indices, "")
+    impact_confirmation = _impact_confirmation({"ticker": event.get("ticker", "")}, related)
+    risk_level = event.get("risk_level") or "持續觀察"
+    brief_title = event.get("brief_title") or f"{label}｜重要事件｜觀察"
+    if risk_level == "高風險" and not impact_confirmation["confirmed"]:
+        risk_level = "警戒"
+        brief_title = f"{label}｜重要事件｜警戒"
+        stock_observation = f"{stock_observation} 尚未核對到相關市場同步波動，維持警戒觀察。"
     return {
         **event,
         "kind": event.get("kind") or "major_event",
         "pattern": event.get("pattern") or "重要事件",
-        "risk_level": event.get("risk_level") or "持續觀察",
-        "brief_title": event.get("brief_title") or f"{label}｜重要事件｜觀察",
+        "risk_level": risk_level,
+        "brief_title": brief_title,
         "summary": event.get("summary") or title,
         "trigger": event.get("trigger") or "已核對公開來源；請查看完整內容與市場後續反應。",
         "why_important": event.get("why_important") or why_important,
         "market_context": event.get("market_context") or market_context,
         "stock_observation": event.get("stock_observation") or stock_observation,
         "friendly_reminder": event.get("friendly_reminder") or "僅供公開資訊整理與教育性觀察，不構成投資建議。",
-        "related": event.get("related") or _related_indices(indices, ""),
+        "related": related,
+        "impact_confirmation": impact_confirmation,
         "source_trace": trace,
     }
 

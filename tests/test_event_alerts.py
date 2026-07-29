@@ -56,6 +56,16 @@ def test_taiex_persistent_high_risk_signal_has_hourly_realert_policy_and_escalat
     assert ":極端:" in event["signal_state"]
 
 
+def test_high_risk_price_alert_is_downgraded_without_related_market_confirmation():
+    snapshot = build_event_snapshot({"taiwan": [], "us": []}, [], indices=[
+        {"ticker": "SOX", "name": "SOX", "price": 100, "change_percent": -4.0},
+        {"ticker": "NASDAQ", "name": "Nasdaq", "price": 100, "change_percent": -0.2},
+    ])
+    event = snapshot["items"][0]
+    assert event["risk_level"] == "警戒"
+    assert event["impact_confirmation"]["confirmed"] is False
+
+
 def test_major_event_includes_neutral_transmission_and_stock_observation():
     snapshot = build_event_snapshot(
         {"taiwan": [], "us": [{"title": "美國宣布新一輪關稅措施", "url": "u"}]}, [],

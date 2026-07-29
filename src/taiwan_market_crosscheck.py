@@ -160,6 +160,7 @@ def crosscheck_taiex_quote(
         "change_percent": twse["change_percent"],
         "quote_date": twse["quote_date"],
         "quote_time": twse["quote_time"],
+        "quote_source": "TWSE MIS cash index + TAIFEX public direction cross-check",
         "quote_basis": "TWSE 公開市況；TAIFEX 台指期方向核對",
         "quote_delayed": not confirmed,
         "crosscheck_status": status,

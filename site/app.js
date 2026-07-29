@@ -21,7 +21,10 @@ const renderQuoteList = (id, items) => {
   if (!items?.length) { container.innerHTML = '<li class="empty">公開報價暫時無法取得</li>'; return; }
   container.innerHTML = items.map((item) => {
     const state = item.change_percent > 0 ? "market-up" : item.change_percent < 0 ? "market-down" : "flat";
-    return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}</small></span><span class="quote-value ${state}"><b>${formatNumber(item.price)} ${escapeHtml(item.currency || "")}</b><small>${signedPercent(item.change_percent)}</small></span></li>`;
+    const observedAt = traceTime(item.quote_time || item.quote_date);
+    const source = item.quote_source || "公開報價來源";
+    const meta = [source, observedAt].filter(Boolean).join(" · ");
+    return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}</small></span><span class="quote-value ${state}"><b>${formatNumber(item.price)} ${escapeHtml(item.currency || "")}</b><small>${signedPercent(item.change_percent)}</small><em class="quote-meta">${escapeHtml(meta)}</em></span></li>`;
   }).join("");
 };
 
@@ -86,6 +89,10 @@ const renderAlertTrace = (event) => {
   if (!trace) return;
   const facts = [];
   if (trace.verification) facts.push(`核對：${trace.verification}`);
+  if (event?.impact_confirmation?.method) {
+    const markets = (event.impact_confirmation.markets || []).join("、");
+    facts.push(`市場影響核對：${event.impact_confirmation.method}${markets ? `（${markets}）` : ""}`);
+  }
   if (trace.source_label) facts.push(`來源：${trace.source_label}`);
   const domains = Array.isArray(trace.verified_domains) ? trace.verified_domains.filter(Boolean) : [];
   if (domains.length) facts.push(`核對網域：${domains.join("、")}`);
@@ -328,12 +335,13 @@ const renderResearch = (snapshot) => {
   const candidates = report.candidates || [];
   const generatedAt = report.generated_at ? ` 掃描時間：${new Date(report.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}` : "";
   setText("research-tag", activeResearchMarket === "taiwan" ? "台股" : "美股");
-  setText("research-notice", generatedAt.trim() || "掃描時間暫時無法取得");
+  const unavailable = report.availability === "expired" ? "研究資料逾時，等待下一次全市場掃描" : null;
+  setText("research-notice", unavailable || generatedAt.trim() || "掃描時間暫時無法取得");
   const marketCandidates = candidates.filter((item) => item.market === activeResearchMarket);
-  renderResearchList("research-list", marketCandidates.filter((item) => item.strategy === "price_action"), "本輪掃描沒有符合裸 K 結構的候選標的");
-  renderResearchList("momentum-list", marketCandidates.filter((item) => item.strategy === "momentum"), "本輪掃描沒有符合動能條件的候選標的");
-  renderResearchList("resonance-list", marketCandidates.filter((item) => item.strategy === "resonance"), "本輪掃描沒有符合三維共振條件的候選標的");
-  renderResearchList("value-list", marketCandidates.filter((item) => item.strategy === "value"), "本輪候選沒有完成品質／價值公開資料覆核");
+  renderResearchList("research-list", marketCandidates.filter((item) => item.strategy === "price_action"), unavailable || "本輪掃描沒有符合裸 K 結構的候選標的");
+  renderResearchList("momentum-list", marketCandidates.filter((item) => item.strategy === "momentum"), unavailable || "本輪掃描沒有符合動能條件的候選標的");
+  renderResearchList("resonance-list", marketCandidates.filter((item) => item.strategy === "resonance"), unavailable || "本輪掃描沒有符合三維共振條件的候選標的");
+  renderResearchList("value-list", marketCandidates.filter((item) => item.strategy === "value"), unavailable || "本輪候選沒有完成品質／價值公開資料覆核");
 };
 
 document.querySelectorAll(".research-tab").forEach((tab) => tab.addEventListener("click", () => {
