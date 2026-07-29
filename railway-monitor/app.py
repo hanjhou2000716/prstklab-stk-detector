@@ -77,6 +77,24 @@ DISCOVERY_ANCHORS = {
     "material_positive": ("ceasefire", "truce", "peace deal", "tariff exemption", "rate cut"),
 }
 
+# GDELT is only a discovery feed.  Two headlines must describe the same
+# actor/place and the same action, rather than merely repeat a broad topic.
+# The small vocabulary is deliberately conservative: a missed headline is
+# preferable to publishing a misleading same-topic alert.
+DISCOVERY_ENTITIES = (
+    "iran", "israel", "ukraine", "russia", "taiwan", "japan", "china", "hormuz",
+    "trump", "powell", "netanyahu", "putin", "zelenskyy", "nvidia", "tsmc", "asml",
+)
+DISCOVERY_ENTITY_ANCHORS = {"nvidia", "tsmc", "asml"}
+DISCOVERY_ACTIONS = {
+    "conflict": ("conflict", "war", "attack", "airstrike", "invasion", "missile", "ceasefire", "truce"),
+    "policy": ("tariff", "sanction", "export control", "duties", "ban", "restriction"),
+    "energy": ("oil", "supply", "production", "opec", "output", "disruption"),
+    "semiconductor": ("earnings", "guidance", "export control", "restriction", "capex", "forecast"),
+    "material_positive": ("ceasefire", "truce", "peace deal", "tariff exemption", "rate cut"),
+    "black_swan": ("earthquake", "tsunami", "ransomware", "cyberattack", "pandemic"),
+}
+
 
 # These require a confirmed, broadly material event. They deliberately are not
 # a catch-all for ordinary geopolitical headlines or routine market moves.
@@ -178,6 +196,11 @@ def compact_summary(flash: Flash, category: str) -> str:
 def alert_from_flash(flash: Flash) -> Alert | None:
     category = classify_flash(flash)
     if category is None or category not in ALLOWED_CATEGORIES:
+        return None
+    # A commercial flash can be an early warning, but it is not the official
+    # confirmation required for a black-swan push.  USGS/GDACS/TWSE and other
+    # first-party monitors remain the only delivery route for that category.
+    if category == "black_swan":
         return None
     return Alert(
         event_id=f"jin10-{flash.event_id}",
@@ -382,6 +405,35 @@ def _discovery_category_and_anchor(title: str) -> tuple[str, str] | None:
     return (category, anchor) if anchor else None
 
 
+def _discovery_facts(title: str, category: str, anchor: str) -> tuple[set[str], set[str]]:
+    """Extract the concrete actor/place and action facts used for agreement."""
+    normalized = title.casefold()
+    entities = {term for term in DISCOVERY_ENTITIES if term in normalized}
+    if anchor in DISCOVERY_ENTITY_ANCHORS:
+        entities.add(anchor)
+    actions = {term for term in DISCOVERY_ACTIONS.get(category, ()) if term in normalized}
+    return entities, actions
+
+
+def _matching_discovery_evidence(
+    cluster: list[DiscoveryArticle], category: str, anchor: str
+) -> tuple[DiscoveryArticle, ...]:
+    """Return only multi-domain articles agreeing on entity/place and action."""
+    supported: dict[str, DiscoveryArticle] = {}
+    facts = [(article, *_discovery_facts(article.title, category, anchor)) for article in cluster]
+    for index, (left, left_entities, left_actions) in enumerate(facts):
+        for right, right_entities, right_actions in facts[index + 1:]:
+            if left.domain == right.domain:
+                continue
+            if not (left_entities & right_entities) or not (left_actions & right_actions):
+                continue
+            for article in (left, right):
+                current = supported.get(article.domain)
+                if current is None or article.seen_at < current.seen_at:
+                    supported[article.domain] = article
+    return tuple(supported[domain] for domain in sorted(supported))
+
+
 def _decode_discovery_articles(rows: list[dict[str, str]]) -> list[DiscoveryArticle]:
     return [DiscoveryArticle(**row) for row in rows]
 
@@ -421,7 +473,7 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
 
 
 def cross_checked_gdelt_alerts(articles: Iterable[DiscoveryArticle]) -> list[Alert]:
-    """Require two trusted publishers and a shared, concrete event anchor."""
+    """Require two publishers plus the same entity/place and action facts."""
     clusters: dict[tuple[str, str], list[DiscoveryArticle]] = {}
     for article in articles:
         classified = _discovery_category_and_anchor(article.title)
@@ -429,14 +481,16 @@ def cross_checked_gdelt_alerts(articles: Iterable[DiscoveryArticle]) -> list[Ale
             clusters.setdefault(classified, []).append(article)
     alerts: list[Alert] = []
     for (category, anchor), cluster in clusters.items():
+        # News aggregation may flag a disaster first, but black-swan delivery
+        # is reserved for a verified first-party official monitor.
+        if category == "black_swan":
+            continue
         domains = {article.domain for article in cluster}
         if len(domains) < 2:
             continue
-        representatives = {
-            domain: min((article for article in cluster if article.domain == domain), key=lambda article: article.seen_at)
-            for domain in domains
-        }
-        evidence = tuple(representatives[domain] for domain in sorted(representatives))
+        evidence = _matching_discovery_evidence(cluster, category, anchor)
+        if len({article.domain for article in evidence}) < 2:
+            continue
         representative = min(evidence, key=lambda article: article.seen_at)
         stable_id = hashlib.sha256("|".join(sorted(article.url for article in cluster)).encode("utf-8")).hexdigest()[:20]
         alerts.append(Alert(
