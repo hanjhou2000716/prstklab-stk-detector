@@ -71,6 +71,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add site/data/research-report.json site/data/market.json
+          git add -f data/taiwan-mops-pristine-history.json
           if git diff --cached --quiet; then
             exit 0
           fi
@@ -94,4 +95,5 @@ jobs:
           path: |
             data/*scan*.csv
             data/*summary*.json
+            data/taiwan-mops-pristine-history.json
             site/data/research-report.json

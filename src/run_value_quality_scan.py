@@ -9,6 +9,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.batch_download import batches
+from src.mops_history import mops_pristine_history
 from src.public_download import download_daily_batch
 from src.pristine_value import heat_metrics, review_pristine_pool
 from src.research_contract import latest_quote_context
@@ -74,6 +75,8 @@ def main() -> None:
     parser.add_argument("--market", choices=("taiwan", "us"), required=True)
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--batch-size", type=int, default=50)
+    parser.add_argument("--mops-max-refresh", type=int, default=0,
+                        help="Taiwan MOPS records to refresh; 0 verifies the complete pool")
     args = parser.parse_args()
     data_dir = Path(args.data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -86,6 +89,14 @@ def main() -> None:
     )
     if args.market == "taiwan":
         fundamentals, fundamental_errors = twse_financial_snapshot([item["ticker"] for item in candidates])
+        history, history_errors = mops_pristine_history(
+            [item["ticker"] for item in candidates],
+            data_dir / "taiwan-mops-pristine-history.json",
+            max_refresh=args.mops_max_refresh,
+        )
+        for ticker, values in history.items():
+            fundamentals[ticker] = {**fundamentals.get(ticker, {}), **values}
+        fundamental_errors.extend(history_errors)
     else:
         fundamentals, fundamental_errors = sec_fundamentals([item["ticker"] for item in candidates])
     quotes, quote_errors = public_quotes(candidates, args.batch_size)
@@ -99,7 +110,7 @@ def main() -> None:
         "candidates": len(rows),
         "failed": len(universe_errors) + len(fundamental_errors) + len(quote_errors),
         "universe_source": "Yuanta 0050+0051 PCF" if args.market == "taiwan" else "Vanguard VOO holdings",
-        "financial_source": "TWSE OpenAPI" if args.market == "taiwan" else "SEC EDGAR CompanyFacts",
+        "financial_source": "TWSE OpenAPI + MOPS historical filings" if args.market == "taiwan" else "SEC EDGAR CompanyFacts",
         "errors": universe_errors + fundamental_errors + quote_errors,
         "notice": "價值投資池獨立於技術策略；僅提供公開財務觀察，不構成投資建議。",
     }
