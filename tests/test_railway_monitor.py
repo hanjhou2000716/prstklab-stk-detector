@@ -86,6 +86,7 @@ def test_gdelt_requires_two_trusted_publishers_with_the_same_concrete_anchor():
     assert len(alerts) == 1
     assert alerts[0].category == "conflict"
     assert alerts[0].source == "gdelt"
+    assert {item["domain"] for item in alerts[0].evidence_payload} == {"reuters.com", "apnews.com"}
 
 
 def test_gdelt_single_trusted_story_never_becomes_an_alert():

@@ -65,6 +65,50 @@ const externalAlertLabel = (category) => ({
   material_positive: "重大正向事件",
 }[category] || "外部快訊");
 
+const safeHttpsUrl = (value) => {
+  try {
+    const url = new URL(String(value || ""));
+    return url.protocol === "https:" ? url.href : "";
+  } catch (_) { return ""; }
+};
+
+const traceTime = (value) => {
+  if (!value) return "";
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? String(value) : parsed.toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false });
+};
+
+const renderAlertTrace = (event) => {
+  const container = document.getElementById("alert-trace");
+  if (!container) return;
+  container.replaceChildren();
+  const trace = event?.source_trace;
+  if (!trace) return;
+  const facts = [];
+  if (trace.verification) facts.push(`核對：${trace.verification}`);
+  if (trace.source_label) facts.push(`來源：${trace.source_label}`);
+  const domains = Array.isArray(trace.verified_domains) ? trace.verified_domains.filter(Boolean) : [];
+  if (domains.length) facts.push(`核對網域：${domains.join("、")}`);
+  const eventTime = traceTime(trace.event_time);
+  if (eventTime) facts.push(`事件時間：${eventTime} CST`);
+  const checkedAt = traceTime(trace.checked_at);
+  if (checkedAt) facts.push(`核對時間：${checkedAt} CST`);
+  facts.forEach((fact) => {
+    const item = document.createElement("span");
+    item.textContent = fact;
+    container.append(item);
+  });
+  const sourceUrl = safeHttpsUrl(trace.source_url);
+  if (sourceUrl) {
+    const link = document.createElement("a");
+    link.href = sourceUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "開啟原始來源 ↗";
+    container.append(link);
+  }
+};
+
 const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
   const profile = externalAlert ? externalAlertProfile(externalAlert.category, indices) : null;
   const event = externalAlert ? {
@@ -76,6 +120,14 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
     stock_observation: profile.watch,
     friendly_reminder: "僅供公開資訊整理與教育性觀察，不構成投資建議。",
     related: profile.related,
+    source_trace: {
+      verification: externalAlert.source === "gdelt" ? "兩個獨立新聞網域交叉核對" : "已簽章驗證的外部公開快訊",
+      source_label: externalAlert.source === "jin10" ? "金十授權快訊" : "GDELT 交叉核對",
+      source_url: externalAlert.source_url || "",
+      event_time: externalAlert.occurred_at || "",
+      checked_at: externalAlert.received_at || "",
+      verified_domains: externalAlert.verified_domains || [],
+    },
   } : events?.items?.[0];
   const card = document.getElementById("alert-card");
   if (!card) return;
@@ -91,6 +143,7 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
     setText("alert-stock-observation", "股市觀察：等待可核對的市場變化，不預設市場間因果。 ");
     setText("alert-reminder", "僅供公開資訊整理與教育性觀察，不構成投資建議。");
     document.getElementById("alert-quote-grid").innerHTML = '<p class="empty">目前沒有符合門檻的價格訊號</p>';
+    renderAlertTrace(null);
     return;
   }
   const risk = event.risk_level || "持續觀察";
@@ -105,6 +158,7 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
   setText("alert-reminder", event.friendly_reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
   const quoteItems = [event.instrument, ...(event.related || [])].filter(Boolean).slice(0, 2);
   document.getElementById("alert-quote-grid").innerHTML = quoteItems.length ? quoteItems.map(formatAlertQuote).join("") : '<p class="empty">本事件暫無可顯示的公開報價</p>';
+  renderAlertTrace(event);
 };
 
 const renderLegacyRisk = (risk) => {

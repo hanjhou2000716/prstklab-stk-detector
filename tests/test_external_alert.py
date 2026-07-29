@@ -38,8 +38,13 @@ def test_external_alert_accepts_cross_checked_gdelt_source():
     alert = normalize_alert(
         category="conflict", summary="衝突：Iran多源核對", source="gdelt",
         event_id="gdelt-conflict-1", occurred_at="2026-07-29T01:00:00+00:00",
+        evidence=[
+            {"domain": "apnews.com", "url": "https://apnews.com/example", "seen_at": "2026-07-29T01:00:00+00:00"},
+            {"domain": "reuters.com", "url": "https://www.reuters.com/example", "seen_at": "2026-07-29T01:01:00+00:00"},
+        ],
     )
     assert alert.source == "gdelt"
+    assert [item["domain"] for item in alert.evidence_payload] == ["apnews.com", "reuters.com"]
 
 
 def test_external_alert_stamps_only_public_verified_fields(tmp_path):
@@ -52,4 +57,5 @@ def test_external_alert_stamps_only_public_verified_fields(tmp_path):
     result = json.loads(snapshot_path.read_text(encoding="utf-8"))
     assert result["external_alert"]["source"] == "jin10"
     assert result["external_alert"]["event_id"] == "jin10-cpi-001"
+    assert result["external_alert"]["source_url"] == "https://www.jin10.com/"
     assert "signature" not in result["external_alert"]
