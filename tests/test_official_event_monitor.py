@@ -12,12 +12,32 @@ def test_monitor_prioritizes_current_official_event_source():
     assert select_official_event(snapshot)["title"] == "FOMC statement"
 
 
+def test_first_run_baseline_suppresses_official_headline_but_keeps_price_signal():
+    snapshot = {
+        "official_events": {"items": [{"title": "FOMC statement", "url": "https://www.federalreserve.gov/x"}]},
+        "events": {"items": [{"kind": "market_signal", "brief_title": "price alert", "instrument": {"ticker": "NASDAQ"}}]},
+    }
+    event = select_official_event(snapshot, baseline_official=True)
+    assert event["kind"] == "market_signal"
+
+
 def test_monitor_event_key_is_stable_and_changes_for_a_new_release():
     first = {"title": "CPI", "url": "https://www.bls.gov/a", "released_at": "2026-07-25T08:30:00-04:00"}
     second = {**first, "released_at": "2026-08-25T08:30:00-04:00"}
     assert event_key(first) == event_key(first)
     assert event_key(first) != event_key(second)
     assert event_key(None) == "none"
+
+
+def test_official_event_key_applies_two_hour_topic_cooldown_but_allows_escalation():
+    first = {
+        "title": "first source title", "source_key": "bls-cpi", "topic_key": "bls-cpi",
+        "released_at": "2026-07-25T08:30:00+00:00",
+    }
+    revised = {**first, "title": "revised source title", "released_at": "2026-07-25T09:10:00+00:00"}
+    escalated = {**revised, "escalation": True}
+    assert event_key(first) == event_key(revised)
+    assert event_key(first) != event_key(escalated)
 
 
 def test_monitor_brief_is_neutral_and_watch_sized():
