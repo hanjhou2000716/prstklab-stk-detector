@@ -171,6 +171,26 @@ def intraday_is_fresh(timestamp: Any, market: str, now: datetime | None = None) 
     return reference - observed.to_pydatetime() <= timedelta(minutes=10)
 
 
+def quote_freshness(quote: dict[str, Any], *, now: datetime | None = None) -> str:
+    """Classify a quote by its published observation date, not scan time."""
+    reference = now or datetime.now(ZoneInfo("Asia/Taipei"))
+    try:
+        observed = datetime.fromisoformat(str(quote.get("quote_time") or quote.get("quote_date"))).date()
+    except ValueError:
+        return "unknown"
+    age_days = max(0, (reference.date() - observed).days)
+    if age_days > 3:
+        return "stale"
+    if quote.get("quote_time") and not quote.get("quote_delayed"):
+        return "live"
+    return "recent_close"
+
+
+def annotate_quote_freshness(quotes: list[dict[str, Any]], *, now: datetime | None = None) -> list[dict[str, Any]]:
+    """Expose stale data to the UI and health source instead of silently showing it."""
+    return [{**quote, "freshness": quote_freshness(quote, now=now)} for quote in quotes]
+
+
 def get_quote(item: dict[str, str], session: str | None = None) -> dict[str, Any]:
     """Collect a five-minute live bar when eligible, otherwise a daily close."""
     import yfinance as yf
@@ -204,6 +224,7 @@ def get_quote(item: dict[str, str], session: str | None = None) -> dict[str, Any
 def apply_taiwan_intraday_crosscheck(
     indices: list[dict[str, Any]], session: str, *,
     twse_fetcher: Any | None = None, taifex_fetcher: Any | None = None,
+    tpex_fetcher: Any | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
     """Replace an in-session TAIEX quote only after official source checks.
 
@@ -212,13 +233,21 @@ def apply_taiwan_intraday_crosscheck(
     A failed official call leaves the existing quote visible but marks it as
     non-actionable for an urgent TAIEX price alert.
     """
+    from src.tpex_index import fetch_tpex_index
+    tpex_fetcher = tpex_fetcher or fetch_tpex_index
+    errors: list[dict[str, str]] = []
+    tpex = None
+    if any(item.get("ticker") == "TPEx" for item in indices):
+        try:
+            tpex = tpex_fetcher()
+        except Exception as exc:
+            errors.append({"ticker": "TPEx", "message": f"TPEx 官方指數暫時無法取得：{type(exc).__name__}", "scope": "index"})
     if session != "交易中":
-        return indices, []
+        return [({**item, **tpex} if item.get("ticker") == "TPEx" and tpex else item) for item in indices], errors
     from src.taiwan_market_crosscheck import crosscheck_taiex_quote, fetch_taifex_txf, fetch_twse_taiex
 
     twse_fetcher = twse_fetcher or fetch_twse_taiex
     taifex_fetcher = taifex_fetcher or fetch_taifex_txf
-    errors: list[dict[str, str]] = []
     try:
         twse = twse_fetcher()
     except Exception as exc:
@@ -232,7 +261,12 @@ def apply_taiwan_intraday_crosscheck(
 
     checked: list[dict[str, Any]] = []
     for item in indices:
-        checked.append(crosscheck_taiex_quote(item, twse=twse, taifex=taifex) if item.get("ticker") == "TAIEX" else item)
+        if item.get("ticker") == "TAIEX":
+            checked.append(crosscheck_taiex_quote(item, twse=twse, taifex=taifex))
+        elif item.get("ticker") == "TPEx" and tpex:
+            checked.append({**item, **tpex})
+        else:
+            checked.append(item)
     return checked, errors
 
 
@@ -266,6 +300,15 @@ def build_market_snapshot() -> dict[str, Any]:
         indices, markets.get("taiwan", {}).get("session", "")
     )
     errors.extend(crosscheck_errors)
+    quotes = annotate_quote_freshness(quotes)
+    indices = annotate_quote_freshness(indices)
+    for item in [*quotes, *indices]:
+        if item.get("freshness") == "stale":
+            errors.append({
+                "ticker": item.get("ticker", "公開報價"),
+                "message": f"{item.get('ticker', '公開報價')} 報價已逾三日，已標示為過期資料",
+                "scope": "index" if item in indices else "",
+            })
     macro_quotes: list[dict[str, Any]] = []
     for item in MACRO_REFERENCES:
         try:

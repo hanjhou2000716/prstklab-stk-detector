@@ -36,3 +36,14 @@ def test_news_error_is_classified_as_news_not_market_quote():
     quotes = next(item for item in health["sources"] if item["key"] == "market_quotes")
     assert news["status"] == "partial"
     assert quotes["status"] == "healthy"
+
+
+def test_pristine_history_warming_is_not_reported_as_a_missing_source():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": [{"market": "taiwan", "strategy": "value", "status": "建檔中", "history_cached": 20, "history_expected": 100}]}, checked_at=NOW,
+    )
+    research = next(item for item in health["sources"] if item["key"] == "research")
+    assert research["status"] == "warming"
+    assert "20／100" in research["issues"][0]
+    assert health["status"] == "warming"
+    assert health["summary"] == "璞玉價值歷史資料建檔中"

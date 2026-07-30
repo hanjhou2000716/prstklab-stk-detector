@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from src.market_data import MACRO_REFERENCES, MARKET_INDICES, WATCHLIST, _daily_quote, _intraday_quote, apply_taiwan_intraday_crosscheck, change_percent, intraday_is_fresh
+from src.market_data import MACRO_REFERENCES, MARKET_INDICES, WATCHLIST, _daily_quote, _intraday_quote, annotate_quote_freshness, apply_taiwan_intraday_crosscheck, change_percent, intraday_is_fresh
 
 
 def test_change_percent_calculates_and_rounds():
@@ -114,3 +114,22 @@ def test_taiwan_intraday_crosscheck_marks_partial_official_source_as_non_actiona
     assert errors == []
     assert indices[0]["crosscheck_status"] == "官方來源部分缺漏"
     assert indices[0]["quote_delayed"] is True
+
+
+def test_tpex_official_close_replaces_stale_yahoo_quote_even_outside_session():
+    indices, errors = apply_taiwan_intraday_crosscheck(
+        [{"ticker": "TPEx", "price": 378.44, "quote_date": "2026-07-17"}],
+        "盤後收盤",
+        tpex_fetcher=lambda: {"ticker": "TPEx", "price": 334.24, "quote_date": "2026-07-29", "quote_source": "TPEx OpenAPI official close"},
+    )
+    assert errors == []
+    assert indices[0]["price"] == 334.24
+    assert indices[0]["quote_date"] == "2026-07-29"
+
+
+def test_stale_daily_quote_is_explicitly_marked_for_the_ui():
+    quotes = annotate_quote_freshness(
+        [{"ticker": "TPEx", "quote_date": "2026-07-17"}],
+        now=datetime(2026, 7, 30, tzinfo=ZoneInfo("Asia/Taipei")),
+    )
+    assert quotes[0]["freshness"] == "stale"

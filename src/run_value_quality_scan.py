@@ -109,11 +109,21 @@ def main() -> None:
         "data_complete": len(fundamentals),
         "candidates": len(rows),
         "failed": len(universe_errors) + len(fundamental_errors) + len(quote_errors),
+        "scan_state": "complete",
         "universe_source": "Yuanta 0050+0051 PCF" if args.market == "taiwan" else "Vanguard VOO holdings",
         "financial_source": "TWSE OpenAPI + MOPS historical filings" if args.market == "taiwan" else "SEC EDGAR CompanyFacts",
         "errors": universe_errors + fundamental_errors + quote_errors,
-        "notice": "價值投資池獨立於技術策略；僅提供公開財務觀察，不構成投資建議。",
+        "notice": "璞玉價值池獨立於技術策略；僅提供公開財務觀察，不構成投資建議。",
     }
+    if args.market == "taiwan":
+        summary["history_cached"] = len(history)
+        summary["history_expected"] = len(candidates)
+        if len(history) < len(candidates):
+            summary["scan_state"] = "building"
+            summary["notice"] = (
+                f"璞玉價值歷史資料建檔中：已核對 {len(history)}／{len(candidates)} 檔；"
+                "未完成檔案不納入候選，並非投資結論。"
+            )
     (data_dir / f"{args.market}-value-summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
 
 

@@ -15,15 +15,23 @@ const renderMarkets = (markets) => {
   setText("market-status", text || "交易日資訊暫時無法取得");
 };
 
+const compactQuoteMeta = (item) => {
+  const raw = String(item.quote_source || "公開來源");
+  const provider = raw.includes("TPEx") ? "TPEx" : raw.includes("TWSE") ? "TWSE" : raw.includes("TAIFEX") ? "TAIFEX" : raw.includes("Yahoo") ? "Yahoo" : "公開";
+  const observed = String(item.quote_time || item.quote_date || "");
+  const match = observed.match(/(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2}))?/);
+  const time = match ? `${Number(match[1]) % 100}/${Number(match[2])}/${Number(match[3])}${match[4] ? ` ${match[4]}:${match[5]}` : " 收盤"}` : "時間暫時無法取得";
+  const freshness = item.freshness === "stale" ? "｜逾時" : item.freshness === "live" ? "｜盤中" : "";
+  return `${provider} | ${time}${freshness}`;
+};
+
 const renderQuoteList = (id, items) => {
   const container = document.getElementById(id);
   if (!container) return;
   if (!items?.length) { container.innerHTML = '<li class="empty">公開報價暫時無法取得</li>'; return; }
   container.innerHTML = items.map((item) => {
     const state = item.change_percent > 0 ? "market-up" : item.change_percent < 0 ? "market-down" : "flat";
-    const observedAt = traceTime(item.quote_time || item.quote_date);
-    const source = item.quote_source || "公開報價來源";
-    const meta = [source, observedAt].filter(Boolean).join(" · ");
+    const meta = compactQuoteMeta(item);
     return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}</small></span><span class="quote-value ${state}"><b>${formatNumber(item.price)} ${escapeHtml(item.currency || "")}</b><small>${signedPercent(item.change_percent)}</small><em class="quote-meta">${escapeHtml(meta)}</em></span></li>`;
   }).join("");
 };
@@ -226,6 +234,7 @@ const renderEvents = (events) => {
 };
 
 const renderSourceHealth = (health, snapshot = {}) => {
+  const card = document.getElementById("source-health");
   const summary = document.getElementById("source-health-summary");
   const event = document.getElementById("source-health-event");
   const list = document.getElementById("source-health-list");
@@ -236,6 +245,7 @@ const renderSourceHealth = (health, snapshot = {}) => {
     event.textContent = "此市場快照建立於健康狀態欄位上線前；下一次資料刷新將顯示各來源狀態。";
     event.dataset.status = "partial";
     list.innerHTML = `<li><span><b>目前市場快照</b><small>${escapeHtml(observedAt || "時間暫時無法取得")}</small></span><em class="source-status partial">待刷新</em></li>`;
+    if (card) card.open = true;
     return;
   }
   summary.textContent = health.summary || "來源狀態已更新";
@@ -243,10 +253,11 @@ const renderSourceHealth = (health, snapshot = {}) => {
   event.textContent = `${scan.label || "事件掃描"}｜${scan.detail || ""}`;
   event.dataset.status = scan.status || "partial";
   list.innerHTML = health.sources.map((source) => {
-    const status = source.status === "healthy" ? "正常" : "部分缺漏";
+    const status = source.status === "healthy" ? "正常" : source.status === "warming" ? "建檔中" : "部分缺漏";
     const issue = Array.isArray(source.issues) && source.issues.length ? source.issues.join("；") : "本輪可用";
     return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(issue)}</small></span><em class="source-status ${escapeHtml(source.status || "partial")}">${status}</em></li>`;
   }).join("");
+  if (card) card.open = health.status !== "healthy";
 };
 
 const renderBriefing = (briefing, generatedAt) => {

@@ -47,6 +47,25 @@ def test_mini_app_uses_strategy_drawers_and_places_source_health_after_sentiment
     assert ".source-health-panel { order: 4; }" in styles
 
 
+def test_source_health_is_a_collapsible_card_with_a_warming_state():
+    page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
+
+    assert '<details id="source-health"' in page
+    assert 'source.status === "warming" ? "建檔中"' in app
+    assert ".source-status.warming" in styles
+
+
+def test_quote_provenance_uses_the_compact_provider_and_time_format():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert "const compactQuoteMeta" in app
+    assert 'raw.includes("Yahoo") ? "Yahoo"' in app
+    assert "return `${provider} | ${time}${freshness}`" in app
+    assert "Yahoo Finance public daily quote" not in app
+
+
 def test_mini_app_hides_empty_event_trace_and_has_a_legacy_health_fallback():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
 

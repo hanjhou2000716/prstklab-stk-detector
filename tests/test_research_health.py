@@ -18,3 +18,11 @@ def test_health_discloses_unavailable_and_stale_sources():
     assert health["unavailable_sources"] == 1
     assert len(health["reasons"]) == 2
     assert health["is_expired"] is True
+
+
+def test_warming_pristine_history_is_not_misreported_as_a_scan_failure():
+    report = {"generated_at": "2026-07-24T09:00:00+08:00", "sources": [{"market": "taiwan", "strategy": "value", "status": "建檔中", "scan_state": "building"}]}
+    health = assess_research_health(report, now=datetime(2026, 7, 24, 9, 30, tzinfo=ZoneInfo("Asia/Taipei")))
+    assert health["status"] == "建檔中"
+    assert health["unavailable_sources"] == 0
+    assert health["warming_sources"] == 1

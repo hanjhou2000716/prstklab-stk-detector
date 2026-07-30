@@ -25,6 +25,26 @@ def _source_item(key: str, label: str, issues: list[str], checked_at: str) -> di
     }
 
 
+def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
+    """Present research warming, empty results and failures as different states."""
+    sources = [item for item in report.get("sources", []) if isinstance(item, dict)]
+    failed = [item for item in sources if str(item.get("status")) == "資料暫時無法取得"]
+    warming = [item for item in sources if str(item.get("status")) == "建檔中"]
+    if failed:
+        issues = [f"{item.get('market', '')} {item.get('strategy', '')} 掃描失敗".strip() for item in failed]
+        return {"key": "research", "label": "量化研究", "status": "partial", "checked_at": checked_at, "issues": issues[:2]}
+    if warming:
+        details = []
+        for item in warming:
+            cached, expected = item.get("history_cached"), item.get("history_expected")
+            progress = f"：已核對 {cached}／{expected} 檔" if cached is not None and expected is not None else ""
+            details.append(f"{item.get('market', '')} 璞玉價值建檔中{progress}".strip())
+        return {"key": "research", "label": "量化研究", "status": "warming", "checked_at": checked_at, "issues": details[:2]}
+    if (report.get("health") or {}).get("is_expired"):
+        return {"key": "research", "label": "量化研究", "status": "partial", "checked_at": checked_at, "issues": ["研究資料已逾時，候選清單已隱藏"]}
+    return {"key": "research", "label": "量化研究", "status": "healthy", "checked_at": checked_at, "issues": []}
+
+
 def build_source_health(
     *,
     errors: list[dict[str, str]],
@@ -51,14 +71,7 @@ def build_source_health(
         _source_item(key, label, grouped[key], checked)
         for key, label, _ in SOURCE_DEFINITIONS
     ]
-    research_issues = [
-        f"{item.get('market', '')} {item.get('strategy', '')} 資料暫時無法取得".strip()
-        for item in research_report.get("sources", [])
-        if item.get("status") == "資料暫時無法取得"
-    ]
-    if (research_report.get("health") or {}).get("is_expired"):
-        research_issues.append("研究資料已逾時，候選清單已隱藏")
-    sources.append(_source_item("research", "量化研究", research_issues, checked))
+    sources.append(_research_item(research_report, checked))
 
     event_dependencies = {"market_quotes", "official_events", "market_news"}
     dependency_failed = any(
@@ -83,11 +96,18 @@ def build_source_health(
             "label": "本輪無重大事件",
             "detail": "事件來源已完成掃描，未發現符合提醒門檻的重大事件。",
         }
-    partial = sum(source["status"] != "healthy" for source in sources)
+    partial = sum(source["status"] == "partial" for source in sources)
+    warming = sum(source["status"] == "warming" for source in sources)
+    status = "partial" if partial else "warming" if warming else "healthy"
+    summary = (
+        f"{partial} 個來源有資料缺口" if partial else
+        "璞玉價值歷史資料建檔中" if warming else
+        "所有來源本輪可用"
+    )
     return {
         "checked_at": checked,
-        "status": "healthy" if partial == 0 else "partial",
-        "summary": "所有來源本輪可用" if partial == 0 else f"{partial} 個來源有資料缺口",
+        "status": status,
+        "summary": summary,
         "event_scan": event_scan,
         "sources": sources,
     }
