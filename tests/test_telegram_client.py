@@ -1,7 +1,7 @@
 import requests
 import pytest
 
-from src.telegram_client import mini_app_button, mini_app_menu_button, send_brief, send_briefs, validate_brief
+from src.telegram_client import mini_app_button, mini_app_menu_button, send_brief, send_briefs, validate_brief, versioned_mini_app_url
 
 
 def test_accepts_30_character_brief():
@@ -28,6 +28,12 @@ def test_mini_app_button_uses_telegram_web_app_field():
 def test_mini_app_button_rejects_non_https_url():
     with pytest.raises(ValueError, match="HTTPS"):
         mini_app_button("http://example.test/app")
+
+
+def test_versioned_mini_app_url_busts_webview_cache(monkeypatch):
+    monkeypatch.setattr("src.telegram_client.time", lambda: 1.234)
+    assert versioned_mini_app_url("https://example.github.io/app/") == "https://example.github.io/app/?v=1234"
+    assert versioned_mini_app_url("https://example.github.io/app/?menu=1") == "https://example.github.io/app/?menu=1&v=1234"
 
 
 def test_mini_app_menu_button_uses_persistent_web_app_shape():
