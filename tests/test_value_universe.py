@@ -2,7 +2,7 @@ import pandas as pd
 
 from src.value_fundamentals import sec_value_metrics
 from src.value_review import review_public_pool, score_public_fundamentals
-from src.value_universe import parse_vanguard_holdings, parse_yuanta_holdings
+from src.value_universe import _yuanta_pcf_rows, parse_sp500_constituents, parse_vanguard_holdings, parse_yuanta_holdings
 
 
 def test_yuanta_parser_keeps_only_taiwan_common_stock_rows():
@@ -15,6 +15,36 @@ def test_yuanta_parser_keeps_only_taiwan_common_stock_rows():
 def test_vanguard_parser_reads_ticker_and_holding_columns():
     rows = parse_vanguard_holdings([pd.DataFrame({"Ticker": ["NVDA", "CASH"], "Holdings": ["NVIDIA Corp.", "Cash"]})])
     assert rows == [{"ticker": "NVDA", "symbol": "NVDA", "name": "NVIDIA Corp.", "pool": "VOO", "source": "Vanguard VOO holdings"}]
+
+
+def test_sp500_proxy_parser_normalizes_class_share_symbols():
+    rows = parse_sp500_constituents([
+        pd.DataFrame({"Symbol": ["NVDA", "BRK.B"], "Security": ["NVIDIA", "Berkshire Hathaway"]})
+    ])
+
+    assert [row["ticker"] for row in rows] == ["NVDA", "BRK-B"]
+    assert all(row["pool"] == "VOO-proxy" for row in rows)
+
+
+def test_yuanta_pcf_reader_uses_issuer_api_payload():
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"InKind": {"FundComposition": [
+                {"stkcd": "2330", "name": "TSMC"},
+                {"stkcd": "TXF", "name": "Future"},
+            ]}}
+
+    class Client:
+        def get(self, *args, **kwargs):
+            return Response()
+
+    assert _yuanta_pcf_rows(Client(), "0050") == [{
+        "ticker": "2330", "symbol": "2330.TW", "name": "TSMC",
+        "pool": "0050", "source": "Yuanta 0050 PCF API",
+    }]
 
 
 def test_value_score_does_not_label_one_roe_observation_as_three_year_stability():

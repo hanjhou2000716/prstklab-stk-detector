@@ -323,8 +323,9 @@ def build_market_snapshot() -> dict[str, Any]:
     try:
         program = fetch_yutinghao_latest_program()
     except Exception:
+        # The programme feed is optional. Its absence must not mark core
+        # market data as unhealthy when YouTube changes a channel feed.
         program = None
-        errors.append({"ticker": "總經節目", "message": "最新公開節目暫時無法取得", "scope": "macro"})
     macro = build_macro_summary(events, risk, program)
     research_report = load_research_cards()
     errors.extend({"ticker": "新聞", "message": message} for message in news["errors"])
