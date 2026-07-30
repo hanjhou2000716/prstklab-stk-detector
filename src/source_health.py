@@ -11,7 +11,6 @@ SOURCE_DEFINITIONS = (
     ("official_events", "官方重大事件", {"official_event"}),
     ("market_news", "市場新聞", {"news"}),
     ("risk", "情緒／波動", {"risk"}),
-    ("macro_program", "公開節目", {"macro"}),
 )
 
 

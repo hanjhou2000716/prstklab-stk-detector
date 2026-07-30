@@ -253,10 +253,11 @@ const renderSourceHealth = (health, snapshot = {}) => {
     event.textContent = "此市場快照建立於健康狀態欄位上線前；下一次資料刷新將顯示各來源狀態。";
     event.dataset.status = "partial";
     list.innerHTML = `<li><span><b>目前市場快照</b><small>${escapeHtml(observedAt || "時間暫時無法取得")}</small></span><em class="source-status partial">待刷新</em></li>`;
-    if (card) card.open = true;
+    if (card) card.open = false;
     return;
   }
-  summary.textContent = health.summary || "來源狀態已更新";
+  const missing = health.sources.filter((source) => source.status === "partial").length;
+  summary.textContent = `${missing} 個來源有資料缺口`;
   const scan = health.event_scan;
   event.textContent = `${scan.label || "事件掃描"}｜${scan.detail || ""}`;
   event.dataset.status = scan.status || "partial";
@@ -265,7 +266,7 @@ const renderSourceHealth = (health, snapshot = {}) => {
     const issue = Array.isArray(source.issues) && source.issues.length ? source.issues.join("；") : "本輪可用";
     return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(issue)}</small></span><em class="source-status ${escapeHtml(source.status || "partial")}">${status}</em></li>`;
   }).join("");
-  if (card) card.open = health.status !== "healthy";
+  if (card) card.open = false;
 };
 
 const renderBriefing = (briefing, generatedAt) => {
