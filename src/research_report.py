@@ -71,6 +71,11 @@ def normalize_frame(frame: pd.DataFrame, market: str, strategy: str) -> list[dic
             "payout_ratio": _value(row.get("payout_ratio")),
             "metrics_available": _value(row.get("metrics_available")),
             "moat_review": _value(row.get("moat_review")),
+            "value_checks": _value(row.get("value_checks")),
+            "strategy_label": _value(row.get("strategy_label")),
+            "quality_verified": _value(row.get("quality_verified")),
+            "heat_verified": _value(row.get("heat_verified")),
+            "verification_gaps": _value(row.get("verification_gaps")),
         })
     return candidates
 
@@ -86,16 +91,21 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
         if summary_path:
             try:
                 summary = json.loads(Path(summary_path).read_text(encoding="utf-8"))
-                base.update({key: summary.get(key) for key in ("requested", "data_complete", "failed")})
+                base.update({key: summary.get(key) for key in (
+                    "requested", "data_complete", "failed", "scan_state",
+                    "history_cached", "history_expected", "notice",
+                )})
             except (OSError, json.JSONDecodeError):
                 pass
         try:
             frame = pd.read_csv(path)
         except (FileNotFoundError, pd.errors.EmptyDataError, UnicodeDecodeError):
-            sources_status.append({**base, "status": "資料暫時無法取得", "candidates": 0})
+            status = "建檔中" if base.get("scan_state") == "building" else "資料暫時無法取得"
+            sources_status.append({**base, "status": status, "candidates": 0})
             continue
         rows = normalize_frame(frame, source["market"], source["strategy"])
-        sources_status.append({**base, "status": "可用" if rows else "本次無研究候選", "candidates": len(rows)})
+        status = "建檔中" if base.get("scan_state") == "building" else ("可用" if rows else "本次無研究候選")
+        sources_status.append({**base, "status": status, "candidates": len(rows)})
         candidates.extend(rows)
     counts = Counter(f"{item['market']}:{item['strategy']}" for item in candidates)
     return {

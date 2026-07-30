@@ -1,6 +1,7 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from src import official_event_monitor as monitor
 from src.official_event_monitor import build_official_event_brief, event_key, select_official_event
 
 
@@ -27,6 +28,19 @@ def test_monitor_event_key_is_stable_and_changes_for_a_new_release():
     assert event_key(first) == event_key(first)
     assert event_key(first) != event_key(second)
     assert event_key(None) == "none"
+
+
+def test_changed_event_before_delivery_is_safe_noop(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setattr(monitor, "prepare_snapshot", lambda: ({}, {"title": "new event"}))
+    monkeypatch.setattr(monitor, "event_key", lambda event: "new-key" if event else "none")
+
+    assert monitor.send_current_event("old-key") is False
+
+    result = output.read_text(encoding="utf-8")
+    assert "sent=false" in result
+    assert "reason=event_changed_before_delivery" in result
 
 
 def test_official_event_key_applies_two_hour_topic_cooldown_but_allows_escalation():

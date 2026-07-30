@@ -124,12 +124,27 @@ def write_status_output(event: dict[str, Any] | None) -> None:
         print("\n".join(lines))
 
 
-def send_current_event(expected_key: str | None = None) -> None:
-    """Send one verified event, refusing a changed event between workflow steps."""
+def write_send_output(sent: bool, reason: str) -> None:
+    """Expose delivery result to GitHub Actions without failing a safe skip."""
+    lines = [f"sent={'true' if sent else 'false'}", f"reason={reason}"]
+    destination = os.getenv("GITHUB_OUTPUT")
+    if destination:
+        with Path(destination).open("a", encoding="utf-8") as handle:
+            handle.write("\n".join(lines) + "\n")
+    else:
+        print("\n".join(lines))
+
+
+def send_current_event(expected_key: str | None = None) -> bool:
+    """Send one verified event, safely skipping it if it changes between steps."""
     _, event = prepare_snapshot()
     current_key = event_key(event)
     if not event or (expected_key and current_key != expected_key):
-        raise RuntimeError("官方事件在送出前已不再是同一筆最新資料，已停止推播")
+        # A newer event can arrive between the pre-send check and delivery.
+        # Keep the workflow green while avoiding stale delivery or a stale lock.
+        write_send_output(False, "event_changed_before_delivery")
+        print("Official event changed before delivery; skipped safely.")
+        return False
     settings = get_settings()
     if not settings.telegram_ready:
         raise RuntimeError("缺少 Telegram 設定，無法送出官方事件快訊")
@@ -139,6 +154,8 @@ def send_current_event(expected_key: str | None = None) -> None:
         text=build_official_event_brief(event),
         dashboard_url=settings.dashboard_url,
     )
+    write_send_output(True, "sent")
+    return True
 
 
 def parse_args() -> argparse.Namespace:

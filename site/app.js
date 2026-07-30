@@ -15,15 +15,23 @@ const renderMarkets = (markets) => {
   setText("market-status", text || "交易日資訊暫時無法取得");
 };
 
+const compactQuoteMeta = (item) => {
+  const raw = String(item.quote_source || "公開來源");
+  const provider = raw.includes("TPEx") ? "TPEx" : raw.includes("TWSE") ? "TWSE" : raw.includes("TAIFEX") ? "TAIFEX" : raw.includes("Yahoo") ? "Yahoo" : "公開";
+  const observed = String(item.quote_time || item.quote_date || "");
+  const match = observed.match(/(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2}))?/);
+  const time = match ? `${Number(match[1]) % 100}/${Number(match[2])}/${Number(match[3])}${match[4] ? ` ${match[4]}:${match[5]}` : " 收盤"}` : "時間暫時無法取得";
+  const freshness = item.freshness === "stale" ? "｜逾時" : item.freshness === "live" ? "｜盤中" : "";
+  return `${provider} | ${time}${freshness}`;
+};
+
 const renderQuoteList = (id, items) => {
   const container = document.getElementById(id);
   if (!container) return;
   if (!items?.length) { container.innerHTML = '<li class="empty">公開報價暫時無法取得</li>'; return; }
   container.innerHTML = items.map((item) => {
     const state = item.change_percent > 0 ? "market-up" : item.change_percent < 0 ? "market-down" : "flat";
-    const observedAt = traceTime(item.quote_time || item.quote_date);
-    const source = item.quote_source || "公開報價來源";
-    const meta = [source, observedAt].filter(Boolean).join(" · ");
+    const meta = compactQuoteMeta(item);
     return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}</small></span><span class="quote-value ${state}"><b>${formatNumber(item.price)} ${escapeHtml(item.currency || "")}</b><small>${signedPercent(item.change_percent)}</small><em class="quote-meta">${escapeHtml(meta)}</em></span></li>`;
   }).join("");
 };
@@ -85,6 +93,7 @@ const renderAlertTrace = (event) => {
   const container = document.getElementById("alert-trace");
   if (!container) return;
   container.replaceChildren();
+  container.hidden = true;
   const trace = event?.source_trace;
   if (!trace) return;
   const facts = [];
@@ -114,6 +123,7 @@ const renderAlertTrace = (event) => {
     link.textContent = "開啟原始來源 ↗";
     container.append(link);
   }
+  container.hidden = container.childElementCount === 0;
 };
 
 const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
@@ -223,16 +233,19 @@ const renderEvents = (events) => {
   container.innerHTML = `<li class="signal-list-title">同步市場訊號</li>${secondary.map((event) => `<li class="signal-card"><b>${escapeHtml(event.brief_title || `${event.short_label}｜${event.title}`)}</b><small>${escapeHtml(event.source || "公開市場報價")}</small></li>`).join("")}`;
 };
 
-const renderSourceHealth = (health) => {
+const renderSourceHealth = (health, snapshot = {}) => {
+  const card = document.getElementById("source-health");
   const summary = document.getElementById("source-health-summary");
   const event = document.getElementById("source-health-event");
   const list = document.getElementById("source-health-list");
   if (!summary || !event || !list) return;
   if (!health?.sources || !health?.event_scan) {
-    summary.textContent = "健康狀態暫時無法取得";
-    event.textContent = "事件來源狀態未完成載入，無法判定本輪是否沒有重大事件。";
+    const observedAt = traceTime(snapshot.generated_at);
+    summary.textContent = "等待下一輪健康檢查";
+    event.textContent = "此市場快照建立於健康狀態欄位上線前；下一次資料刷新將顯示各來源狀態。";
     event.dataset.status = "partial";
-    list.innerHTML = '<li class="empty">來源健康資料暫時無法取得</li>';
+    list.innerHTML = `<li><span><b>目前市場快照</b><small>${escapeHtml(observedAt || "時間暫時無法取得")}</small></span><em class="source-status partial">待刷新</em></li>`;
+    if (card) card.open = true;
     return;
   }
   summary.textContent = health.summary || "來源狀態已更新";
@@ -240,10 +253,11 @@ const renderSourceHealth = (health) => {
   event.textContent = `${scan.label || "事件掃描"}｜${scan.detail || ""}`;
   event.dataset.status = scan.status || "partial";
   list.innerHTML = health.sources.map((source) => {
-    const status = source.status === "healthy" ? "正常" : "部分缺漏";
+    const status = source.status === "healthy" ? "正常" : source.status === "warming" ? "建檔中" : "部分缺漏";
     const issue = Array.isArray(source.issues) && source.issues.length ? source.issues.join("；") : "本輪可用";
     return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(issue)}</small></span><em class="source-status ${escapeHtml(source.status || "partial")}">${status}</em></li>`;
   }).join("");
+  if (card) card.open = health.status !== "healthy";
 };
 
 const renderBriefing = (briefing, generatedAt) => {
@@ -274,7 +288,7 @@ const renderLegacyResearchList = (id, items, empty) => {
     }
     if (item.score === null || item.score === undefined) return "策略相符度 暫時無法取得";
     if (item.strategy === "resonance") return `共振相符度 ${Number(item.score).toFixed(1)} / 100`;
-    if (item.strategy === "value") return `價值相符度 ${Number(item.score).toFixed(0)} / 5`;
+    if (item.strategy === "value") return `璞玉價值分數 ${Number(item.score).toFixed(0)} / 100`;
     return `動能相符度 ${Number(item.score).toFixed(1)} / 100`;
   };
   container.innerHTML = items.slice(0, 5).map((item) => {
@@ -290,7 +304,7 @@ const researchStrategyLabel = (item) => {
   if (item.strategy === "price_action") return researchStructureLabel(item.structure) || "裸 K 結構觀察";
   if (item.strategy === "momentum") return "動能觀察";
   if (item.strategy === "resonance") return item.status || "三維共振";
-  return item.pe === null || item.pe === undefined ? "本益比暫時無法取得" : `本益比 ${Number(item.pe).toFixed(1)}`;
+  return item.pe === null || item.pe === undefined ? "璞玉價值｜本益比暫時無法取得" : `璞玉價值｜本益比 ${Number(item.pe).toFixed(1)}`;
 };
 
 const researchStrategyTags = (item) => {
@@ -302,6 +316,10 @@ const researchStrategyTags = (item) => {
     const labels = researchStructureLabel(item.conditions_matched).split("、").filter(Boolean);
     return labels.length ? labels : [researchStrategyLabel(item)];
   }
+  if (item.strategy === "value") {
+    const labels = researchStructureLabel(item.value_checks).split("、").filter(Boolean);
+    return labels.length ? labels : [researchStrategyLabel(item)];
+  }
   return [researchStrategyLabel(item)];
 };
 
@@ -309,7 +327,7 @@ const researchScoreParts = (item) => {
   if (item.score === null || item.score === undefined) return { label: "策略分數", value: "暫時無法取得" };
   if (item.strategy === "price_action") return { label: "裸 K 相符度", value: `${Number(item.score).toFixed(1)} / 100` };
   if (item.strategy === "resonance") return { label: item.status || "共振分數", value: `${Number(item.score).toFixed(1)} / 100` };
-  if (item.strategy === "value") return { label: "價值分數", value: `${Number(item.score).toFixed(0)} / 5` };
+  if (item.strategy === "value") return { label: "璞玉價值分數", value: `${Number(item.score).toFixed(0)} / 100` };
   return { label: "動能分數", value: `${Number(item.score).toFixed(1)} / 100` };
 };
 
@@ -341,7 +359,7 @@ const renderResearch = (snapshot) => {
   renderResearchList("research-list", marketCandidates.filter((item) => item.strategy === "price_action"), unavailable || "本輪掃描沒有符合裸 K 結構的候選標的");
   renderResearchList("momentum-list", marketCandidates.filter((item) => item.strategy === "momentum"), unavailable || "本輪掃描沒有符合動能條件的候選標的");
   renderResearchList("resonance-list", marketCandidates.filter((item) => item.strategy === "resonance"), unavailable || "本輪掃描沒有符合三維共振條件的候選標的");
-  renderResearchList("value-list", marketCandidates.filter((item) => item.strategy === "value"), unavailable || "本輪候選沒有完成品質／價值公開資料覆核");
+  renderResearchList("value-list", marketCandidates.filter((item) => item.strategy === "value"), unavailable || "本輪沒有同時通過璞玉品質與三月去熱門化公開資料覆核的標的");
 };
 
 document.querySelectorAll(".research-tab").forEach((tab) => tab.addEventListener("click", () => {
@@ -366,14 +384,23 @@ const render = (snapshot) => {
   renderRisk(snapshot.risk);
   renderAlertCard(snapshot.events, snapshot.generated_at, externalAlert, snapshot.indices || []);
   renderEvents(snapshot.events);
-  renderSourceHealth(snapshot.source_health);
+  renderSourceHealth(snapshot.source_health, snapshot);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
   renderResearch(snapshot);
   renderNewsList("taiwan-news", snapshot.news?.taiwan);
   renderNewsList("us-news", snapshot.news?.us);
 };
 
-fetch("data/market.json", { cache: "no-store" })
+// GitHub Pages and Telegram's in-app WebView can both retain a static JSON
+// response longer than the dashboard itself.  A per-open query value makes
+// every Mini App launch request the current public snapshot, rather than a
+// previously cached market.json response.
+const snapshotUrl = `data/market.json?v=${Date.now()}`;
+
+fetch(snapshotUrl, {
+  cache: "no-store",
+  headers: { "Cache-Control": "no-cache" },
+})
   .then((response) => response.ok ? response.json() : Promise.reject(new Error("market snapshot unavailable")))
   .then(render)
   .catch(() => { setText("data-status", "資料暫時無法取得"); setText("market-focus", "市場資料暫時無法取得，請稍後再試。"); });

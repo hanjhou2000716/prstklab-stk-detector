@@ -42,7 +42,10 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
             "roe", "pe", "payout_ratio", "metrics_available", "moat_review"
         )})
     sources = [
-        {key: source.get(key) for key in ("market", "strategy", "status", "candidates", "requested", "data_complete", "failed")}
+        {key: source.get(key) for key in (
+            "market", "strategy", "status", "candidates", "requested", "data_complete", "failed",
+            "scan_state", "history_cached", "history_expected", "notice",
+        )}
         for source in raw.get("sources", [])
         if isinstance(source, dict) and source.get("strategy") in ALLOWED_STRATEGIES
     ]

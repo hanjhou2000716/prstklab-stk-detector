@@ -115,7 +115,7 @@ def test_mini_app_orders_sections_and_uses_strategy_match_scores():
     app = (root / "site" / "app.js").read_text(encoding="utf-8")
 
     assert page.index('id="risk"') < page.index('id="market"') < page.index('id="research"') < page.index('id="news"')
-    assert "價值投資" in page
+    assert "璞玉價值" in page
     assert "strategyScore" in app
     assert "共振相符度" in app
     assert "items.slice(0, 5)" in app

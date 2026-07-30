@@ -95,6 +95,12 @@ def twse_financial_snapshot(
             "net_income": net["value"] if net else None,
             "roe": roe,
             "pe": pe.get(ticker),
+            # TWSE OpenAPI exposes the latest filing reliably.  The historical
+            # EPS/dividend checks require dated MOPS filings and therefore stay
+            # explicitly unavailable until that source is present.
+            "three_year_eps_positive": None,
+            "four_quarter_eps_positive": None,
+            "three_year_dividend_paid": None,
             "reporting_period": period,
             "roe_basis": "TWSE latest filing annualised estimate" if roe is not None else None,
             "financial_source": "TWSE OpenAPI",
@@ -114,13 +120,29 @@ def _annual_facts(facts: dict[str, Any], name: str, unit: str = "USD") -> list[d
     return sorted(unique.values(), key=lambda row: str(row.get("end", "")), reverse=True)
 
 
+def _periodic_facts(facts: dict[str, Any], names: tuple[str, ...], forms: set[str]) -> list[dict[str, Any]]:
+    """Read unique reported periods regardless of SEC unit naming."""
+    rows: list[dict[str, Any]] = []
+    for name in names:
+        for unit_rows in facts.get("facts", {}).get("us-gaap", {}).get(name, {}).get("units", {}).values():
+            rows.extend(row for row in unit_rows if row.get("form") in forms and row.get("val") is not None)
+    unique: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        end = str(row.get("end") or "")
+        previous = unique.get(end)
+        if end and (previous is None or str(row.get("filed", "")) > str(previous.get("filed", ""))):
+            unique[end] = row
+    return sorted(unique.values(), key=lambda row: str(row.get("end", "")), reverse=True)
+
+
 def sec_value_metrics(facts: dict[str, Any]) -> dict[str, Any]:
     """Read up to three annual SEC facts and disclose insufficiency explicitly."""
     net = _annual_facts(facts, "NetIncomeLoss")
     equity = _annual_facts(facts, "StockholdersEquity") or _annual_facts(facts, "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest")
     dividends = _annual_facts(facts, "PaymentsOfDividendsCommonStock")
     if not net:
-        return {"net_income": None, "roe": None, "payout_ratio": None, "years_available": 0, "roe_stable": None}
+        return {"net_income": None, "roe": None, "payout_ratio": None, "years_available": 0, "roe_stable": None,
+                "three_year_eps_positive": None, "four_quarter_eps_positive": None, "three_year_dividend_paid": None}
     net_by_year = {str(row.get("fy") or row.get("end")): number(row.get("val")) for row in net}
     equity_by_year = {str(row.get("fy") or row.get("end")): number(row.get("val")) for row in equity}
     years = [year for year, value in net_by_year.items() if value is not None]
@@ -141,12 +163,20 @@ def sec_value_metrics(facts: dict[str, Any]) -> dict[str, Any]:
         average = (current + previous) / 2 if current and previous else current
         if average:
             roe_history.append(net_by_year[year] / average)
+    annual_eps = _periodic_facts(facts, ("EarningsPerShareDiluted", "EarningsPerShareBasic"), {"10-K", "20-F", "40-F"})
+    quarterly_eps = _periodic_facts(facts, ("EarningsPerShareDiluted", "EarningsPerShareBasic"), {"10-Q", "10-K", "20-F", "40-F"})
+    annual_eps_values = [number(row.get("val")) for row in annual_eps[:3]]
+    quarter_eps_values = [number(row.get("val")) for row in quarterly_eps[:4]]
+    dividend_values = [dividend_by_year.get(year) for year in years[:3]]
     return {
         "net_income": current_net,
         "roe": roe,
         "payout_ratio": payout,
         "years_available": len(years[:3]),
         "roe_stable": len(roe_history) >= 3 and all(value >= 0.17 for value in roe_history),
+        "three_year_eps_positive": len(annual_eps_values) >= 3 and all(value is not None and value > 0 for value in annual_eps_values),
+        "four_quarter_eps_positive": len(quarter_eps_values) >= 4 and all(value is not None and value > 0 for value in quarter_eps_values),
+        "three_year_dividend_paid": len(dividend_values) >= 3 and all(value is not None and value > 0 for value in dividend_values),
         "financial_year": latest_year,
         "financial_source": "SEC EDGAR CompanyFacts",
     }

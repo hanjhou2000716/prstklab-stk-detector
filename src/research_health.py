@@ -9,6 +9,18 @@ from zoneinfo import ZoneInfo
 DEFAULT_MAX_AGE_MINUTES = 30 * 60
 
 
+def _source_state(source: dict[str, Any]) -> str:
+    """Normalize legacy and current scan states without hiding a failure."""
+    state = str(source.get("scan_state") or source.get("status") or "")
+    if state in {"building", "建檔中"}:
+        return "warming"
+    if state in {"failed", "掃描失敗", "資料暫時無法取得"}:
+        return "failed"
+    if state in {"empty", "本次無研究候選"}:
+        return "empty"
+    return "ready"
+
+
 def assess_research_health(
     report: dict[str, Any],
     *,
@@ -18,9 +30,12 @@ def assess_research_health(
     """Return a transparent health summary; never infer missing source data."""
     now = now or datetime.now(ZoneInfo("Asia/Taipei"))
     reasons: list[str] = []
-    unavailable = [item for item in report.get("sources", []) if item.get("status") == "資料暫時無法取得"]
-    if unavailable:
-        reasons.append("無法取得：" + "、".join(f"{item.get('market')} {item.get('strategy')}" for item in unavailable))
+    sources = [item for item in report.get("sources", []) if isinstance(item, dict)]
+    failed = [item for item in sources if _source_state(item) == "failed"]
+    warming = [item for item in sources if _source_state(item) == "warming"]
+    empty = [item for item in sources if _source_state(item) == "empty"]
+    if failed:
+        reasons.append("掃描失敗：" + "、".join(f"{item.get('market')} {item.get('strategy')}" for item in failed))
     generated = report.get("generated_at")
     age_minutes = None
     if generated:
@@ -36,12 +51,17 @@ def assess_research_health(
     else:
         reasons.append("研究報表沒有產生時間")
 
-    if not report.get("sources"):
+    if not sources:
         reasons.append("沒有來源狀態")
+    status = "健康" if not reasons else "需留意"
+    if status == "健康" and warming:
+        status = "建檔中"
     return {
-        "status": "健康" if not reasons else "需留意",
+        "status": status,
         "reasons": reasons,
-        "unavailable_sources": len(unavailable),
+        "unavailable_sources": len(failed),
+        "warming_sources": len(warming),
+        "empty_sources": len(empty),
         "age_minutes": age_minutes,
         "checked_at": now.isoformat(),
         "max_age_minutes": max_age_minutes,

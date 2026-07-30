@@ -50,11 +50,13 @@
           <ul id="event-list" class="event-list signal-list"><li class="empty">載入中</li></ul>
           <aside id="alert-reminder" class="alert-reminder">僅供公開資訊整理與教育性觀察，不構成投資建議。</aside>
         </article>
-        <article id="source-health" class="panel compact-panel source-health-panel" aria-labelledby="source-health-title">
-          <div class="panel-heading"><h3 id="source-health-title" class="market-report-title">來源健康狀態</h3><span id="source-health-summary">資料載入中</span></div>
-          <p id="source-health-event" class="source-health-event">正在確認事件來源狀態。</p>
-          <ul id="source-health-list" class="source-health-list"><li class="empty">資料載入中</li></ul>
-        </article>
+        <details id="source-health" class="panel compact-panel source-health-panel" aria-labelledby="source-health-title" open>
+          <summary class="panel-heading"><h3 id="source-health-title" class="market-report-title">來源健康狀態</h3><span id="source-health-summary">資料載入中</span></summary>
+          <div class="source-health-content">
+            <p id="source-health-event" class="source-health-event">正在確認事件來源狀態。</p>
+            <ul id="source-health-list" class="source-health-list"><li class="empty">資料載入中</li></ul>
+          </div>
+        </details>
         <article id="briefing-report" class="briefing-report">
           <header class="briefing-report-header"><h3 class="market-report-title">市場定時報告</h3><time id="briefing-time">資料載入中</time></header>
           <p id="briefing-overview" class="briefing-overview">正在整理本次公開市場脈絡。</p>
@@ -87,7 +89,7 @@
           <details class="research-drawer" open><summary>裸 K 結構<span>展開／收合</span></summary><ul id="research-list" class="research-list"><li class="empty">載入中</li></ul></details>
           <details class="research-drawer"><summary>動能狙擊<span>展開／收合</span></summary><ul id="momentum-list" class="research-list"><li class="empty">載入中</li></ul></details>
           <details class="research-drawer"><summary>三維共振<span>展開／收合</span></summary><ul id="resonance-list" class="research-list"><li class="empty">載入中</li></ul></details>
-          <details class="research-drawer"><summary>價值投資<span>展開／收合</span></summary><ul id="value-list" class="research-list"><li class="empty">載入中</li></ul></details>
+          <details class="research-drawer"><summary>璞玉價值<span>展開／收合</span></summary><ul id="value-list" class="research-list"><li class="empty">載入中</li></ul></details>
         </div>
       </section>
 
