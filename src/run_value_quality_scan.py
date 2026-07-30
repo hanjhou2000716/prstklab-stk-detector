@@ -75,8 +75,8 @@ def main() -> None:
     parser.add_argument("--market", choices=("taiwan", "us"), required=True)
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--batch-size", type=int, default=50)
-    parser.add_argument("--mops-max-refresh", type=int, default=0,
-                        help="Taiwan MOPS records to refresh; 0 verifies the complete pool")
+    parser.add_argument("--mops-max-refresh", type=int, default=4,
+                        help="Taiwan MOPS records per run; 0 verifies the complete pool")
     args = parser.parse_args()
     data_dir = Path(args.data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -113,6 +113,7 @@ def main() -> None:
         "universe_source": "Yuanta 0050+0051 PCF" if args.market == "taiwan" else "Vanguard VOO holdings",
         "financial_source": "TWSE OpenAPI + MOPS historical filings" if args.market == "taiwan" else "SEC EDGAR CompanyFacts",
         "errors": universe_errors + fundamental_errors + quote_errors,
+        "mops_refresh_limit": args.mops_max_refresh if args.market == "taiwan" else None,
         "notice": "璞玉價值池獨立於技術策略；僅提供公開財務觀察，不構成投資建議。",
     }
     if args.market == "taiwan":

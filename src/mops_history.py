@@ -248,24 +248,25 @@ def mops_pristine_history(
 ) -> tuple[dict[str, dict[str, Any]], list[str]]:
     """Return cached/verified MOPS eligibility observations for a ticker set.
 
-    ``max_refresh=0`` means complete the requested universe.  Non-zero values
-    support a bounded recovery run if MOPS is temporarily rate-limited.
+    ``max_refresh=0`` means complete the requested universe. A non-zero value
+    caps *attempts* (not only successful downloads), so a slow or failing MOPS
+    report cannot consume the scheduled full-market time budget.
     """
     cache = _load_cache(cache_path)
     records: dict[str, dict[str, Any]] = cache["records"]
     now = datetime.now(timezone.utc)
     errors: list[str] = []
-    refreshed = 0
+    attempted = 0
     client = client or MopsPublicClient()
     for ticker in dict.fromkeys(str(value).strip() for value in tickers if str(value).strip()):
         existing = records.get(ticker)
         if isinstance(existing, dict) and _fresh(existing, now):
             continue
-        if max_refresh and refreshed >= max_refresh:
+        if max_refresh and attempted >= max_refresh:
             continue
+        attempted += 1
         try:
             records[ticker] = fetch_pristine_history(ticker, client=client)
-            refreshed += 1
         except (OSError, ValueError, requests.RequestException, RuntimeError) as error:
             errors.append(f"{ticker} MOPS history: {type(error).__name__}")
     cache_path.parent.mkdir(parents=True, exist_ok=True)

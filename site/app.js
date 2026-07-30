@@ -365,10 +365,15 @@ const renderResearch = (snapshot) => {
   const unavailable = report.availability === "expired" ? "研究資料逾時，等待下一次全市場掃描" : null;
   setText("research-notice", unavailable || generatedAt.trim() || "掃描時間暫時無法取得");
   const marketCandidates = candidates.filter((item) => item.market === activeResearchMarket);
+  const valueSource = (report.sources || []).find((item) => item.market === activeResearchMarket && item.strategy === "value");
+  const valuePending = valueSource?.scan_state === "building";
+  const valueMessage = valuePending
+    ? `歷史核對中：已完成 ${valueSource.history_cached ?? 0}/${valueSource.history_expected ?? "—"} 檔；未完成八項公開資料覆核前不列入正式璞玉價值候選。`
+    : "本輪沒有同時通過璞玉品質與三月去熱門化公開資料覆核的標的";
   renderResearchList("research-list", marketCandidates.filter((item) => item.strategy === "price_action"), unavailable || "本輪掃描沒有符合裸 K 結構的候選標的");
   renderResearchList("momentum-list", marketCandidates.filter((item) => item.strategy === "momentum"), unavailable || "本輪掃描沒有符合動能條件的候選標的");
   renderResearchList("resonance-list", marketCandidates.filter((item) => item.strategy === "resonance"), unavailable || "本輪掃描沒有符合三維共振條件的候選標的");
-  renderResearchList("value-list", marketCandidates.filter((item) => item.strategy === "value"), unavailable || "本輪沒有同時通過璞玉品質與三月去熱門化公開資料覆核的標的");
+  renderResearchList("value-list", marketCandidates.filter((item) => item.strategy === "value"), unavailable || valueMessage);
 };
 
 document.querySelectorAll(".research-tab").forEach((tab) => tab.addEventListener("click", () => {

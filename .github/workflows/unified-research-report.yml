@@ -14,6 +14,10 @@ on:
         description: Symbols per public-data request
         required: true
         default: '50'
+      mops_max_refresh:
+        description: Taiwan MOPS historical records to refresh per run
+        required: true
+        default: '4'
   repository_dispatch:
     types: [unified-research-report]
   schedule:
@@ -33,6 +37,7 @@ jobs:
       TAIWAN_LIMIT: ${{ inputs.taiwan_limit || github.event.client_payload.taiwan_limit || '0' }}
       US_LIMIT: ${{ inputs.us_limit || github.event.client_payload.us_limit || '0' }}
       BATCH_SIZE: ${{ inputs.batch_size || github.event.client_payload.batch_size || '50' }}
+      MOPS_MAX_REFRESH: ${{ inputs.mops_max_refresh || github.event.client_payload.mops_max_refresh || '4' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -60,7 +65,7 @@ jobs:
         run: python -m src.run_resonance_scan --market us --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股品質價值覆核
         continue-on-error: true
-        run: python -m src.run_value_quality_scan --market taiwan --batch-size "$BATCH_SIZE"
+        run: python -m src.run_value_quality_scan --market taiwan --batch-size "$BATCH_SIZE" --mops-max-refresh "$MOPS_MAX_REFRESH"
       - name: 美股品質價值覆核
         continue-on-error: true
         run: python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE"
