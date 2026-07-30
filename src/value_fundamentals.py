@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import time
 from typing import Any, Iterable
 
 import requests
@@ -21,6 +22,23 @@ TWSE_PE_ENDPOINT = "exchangeReport/BWIBBU_ALL"
 SEC_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 SEC_FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
 SEC_USER_AGENT = "PRStK Lab public research contact@prstklab.example"
+SEC_RETRY_ATTEMPTS = 3
+
+
+def _sec_get(client: requests.Session, url: str, *, timeout: int) -> requests.Response:
+    """Read an SEC public endpoint with a stable identity and brief retries."""
+    last_error: requests.RequestException | None = None
+    for attempt in range(SEC_RETRY_ATTEMPTS):
+        try:
+            response = client.get(url, timeout=timeout)
+            response.raise_for_status()
+            return response
+        except requests.RequestException as error:
+            last_error = error
+            if attempt + 1 < SEC_RETRY_ATTEMPTS:
+                time.sleep(0.6 * (attempt + 1))
+    assert last_error is not None
+    raise last_error
 
 
 def number(value: Any) -> float | None:
@@ -47,7 +65,7 @@ def twse_financial_snapshot(
     """
     wanted = set(tickers)
     client = session or requests.Session()
-    client.headers.setdefault("User-Agent", SEC_USER_AGENT)
+    client.headers["User-Agent"] = SEC_USER_AGENT
     income: dict[str, dict[str, Any]] = {}
     equity: dict[str, dict[str, Any]] = {}
     pe: dict[str, float | None] = {}
@@ -184,29 +202,43 @@ def sec_value_metrics(facts: dict[str, Any]) -> dict[str, Any]:
 
 def sec_ticker_ciks(session: requests.Session | None = None) -> dict[str, int]:
     client = session or requests.Session()
-    client.headers.setdefault("User-Agent", SEC_USER_AGENT)
-    response = client.get(SEC_TICKERS_URL, timeout=45)
-    response.raise_for_status()
+    client.headers["User-Agent"] = SEC_USER_AGENT
+    response = _sec_get(client, SEC_TICKERS_URL, timeout=45)
     return {str(item["ticker"]).upper(): int(item["cik_str"]) for item in response.json().values()}
 
 
-def sec_fundamentals(tickers: Iterable[str], session: requests.Session | None = None) -> tuple[dict[str, dict[str, Any]], list[str]]:
+def sec_fundamentals(
+    tickers: Iterable[str], session: requests.Session | None = None, *, cik_overrides: dict[str, str | int] | None = None,
+) -> tuple[dict[str, dict[str, Any]], list[str]]:
     client = session or requests.Session()
-    client.headers.setdefault("User-Agent", SEC_USER_AGENT)
-    try:
-        ciks = sec_ticker_ciks(client)
-    except (OSError, ValueError, requests.RequestException) as error:
-        return {}, [f"SEC ticker mapping：{type(error).__name__}"]
+    client.headers["User-Agent"] = SEC_USER_AGENT
+    ticker_list = list(tickers)
+    overrides = {str(key).upper(): int(value) for key, value in (cik_overrides or {}).items() if str(value).isdigit()}
+    if all(ticker.upper() in overrides for ticker in ticker_list):
+        # The S&P 500 public roster supplies CIKs for the VOO proxy.  Avoid a
+        # redundant SEC mapping request, which some hosted runners reject.
+        ciks, mapping_error = {}, None
+    else:
+        try:
+            ciks = sec_ticker_ciks(client)
+        except (OSError, ValueError, requests.RequestException) as error:
+            ciks = {}
+            mapping_error = f"SEC ticker mapping：{type(error).__name__}"
+        else:
+            mapping_error = None
     output, errors = {}, []
-    for ticker in tickers:
-        cik = ciks.get(ticker.upper())
+    for ticker in ticker_list:
+        cik = overrides.get(ticker.upper()) or ciks.get(ticker.upper())
         if cik is None:
             errors.append(f"{ticker} 無 SEC CIK")
             continue
         try:
-            response = client.get(SEC_FACTS_URL.format(cik=cik), timeout=30)
-            response.raise_for_status()
+            response = _sec_get(client, SEC_FACTS_URL.format(cik=cik), timeout=30)
             output[ticker] = sec_value_metrics(response.json())
+            # SEC asks automated clients to remain under ten requests/second.
+            time.sleep(0.11)
         except (OSError, ValueError, requests.RequestException) as error:
             errors.append(f"{ticker} SEC facts：{type(error).__name__}")
+    if mapping_error and len(overrides) < len({ticker.upper() for ticker in ticker_list}):
+        errors.insert(0, mapping_error)
     return output, errors

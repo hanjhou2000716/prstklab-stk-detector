@@ -19,11 +19,12 @@ def test_vanguard_parser_reads_ticker_and_holding_columns():
 
 def test_sp500_proxy_parser_normalizes_class_share_symbols():
     rows = parse_sp500_constituents([
-        pd.DataFrame({"Symbol": ["NVDA", "BRK.B"], "Security": ["NVIDIA", "Berkshire Hathaway"]})
+        pd.DataFrame({"Symbol": ["NVDA", "BRK.B"], "Security": ["NVIDIA", "Berkshire Hathaway"], "CIK": [1045810, 1067983]})
     ])
 
     assert [row["ticker"] for row in rows] == ["NVDA", "BRK-B"]
     assert all(row["pool"] == "VOO-proxy" for row in rows)
+    assert rows[0]["cik"] == "1045810"
 
 
 def test_yuanta_pcf_reader_uses_issuer_api_payload():

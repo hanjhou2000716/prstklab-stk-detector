@@ -98,7 +98,10 @@ def main() -> None:
             fundamentals[ticker] = {**fundamentals.get(ticker, {}), **values}
         fundamental_errors.extend(history_errors)
     else:
-        fundamentals, fundamental_errors = sec_fundamentals([item["ticker"] for item in candidates])
+        fundamentals, fundamental_errors = sec_fundamentals(
+            [item["ticker"] for item in candidates],
+            cik_overrides={item["ticker"]: item["cik"] for item in candidates if item.get("cik")},
+        )
     quotes, quote_errors = public_quotes(candidates, args.batch_size)
     base_rows = review_public_pool(candidates, fundamentals, quotes, args.market, limit=None)
     rows = review_pristine_pool(base_rows, args.market)
@@ -106,7 +109,9 @@ def main() -> None:
     pd.DataFrame(rows).to_csv(data_dir / f"{args.market}-value-scan.csv", index=False, encoding="utf-8-sig")
     summary = {
         "requested": len(candidates),
-        "data_complete": len(fundamentals),
+        # A current TWSE snapshot is not a completed Taiwan Pristine Value
+        # verification until the three-year MOPS history has been cached.
+        "data_complete": len(history) if args.market == "taiwan" else len(fundamentals),
         "candidates": len(rows),
         "failed": len(universe_errors) + len(fundamental_errors) + len(quote_errors),
         "scan_state": "complete",

@@ -54,3 +54,17 @@ def test_mops_history_caps_attempts_when_reports_fail(tmp_path: Path):
 
     assert records == {}
     assert len(errors) == 2
+
+
+def test_mops_history_skips_recent_failures_and_advances_to_new_tickers(tmp_path: Path):
+    class FailingClient:
+        def report(self, *args, **kwargs):
+            raise RuntimeError("temporary MOPS failure")
+
+    path = tmp_path / "mops.json"
+    mops_pristine_history(["1101", "1102", "1103"], path, max_refresh=2, client=FailingClient())
+    _, errors = mops_pristine_history(["1101", "1102", "1103"], path, max_refresh=2, client=FailingClient())
+
+    # 1101/1102 remain in a cooldown; the second run tries 1103 instead of
+    # burning its batch on the same temporary outage.
+    assert len(errors) == 1
