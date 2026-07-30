@@ -237,11 +237,13 @@ def apply_taiwan_intraday_crosscheck(
     tpex_fetcher = tpex_fetcher or fetch_tpex_index
     errors: list[dict[str, str]] = []
     tpex = None
-    if any(item.get("ticker") == "TPEx" for item in indices):
-        try:
-            tpex = tpex_fetcher()
-        except Exception as exc:
-            errors.append({"ticker": "TPEx", "message": f"TPEx 官方指數暫時無法取得：{type(exc).__name__}", "scope": "index"})
+    # Attempt the official close even when Yahoo failed before creating TPEx.
+    try:
+        tpex = tpex_fetcher()
+    except Exception as exc:
+        errors.append({"ticker": "TPEx", "message": f"TPEx 官方指數暫時無法取得：{type(exc).__name__}", "scope": "index"})
+    if tpex and not any(item.get("ticker") == "TPEx" for item in indices):
+        indices = [*indices, tpex]
     if session != "交易中":
         return [({**item, **tpex} if item.get("ticker") == "TPEx" and tpex else item) for item in indices], errors
     from src.taiwan_market_crosscheck import crosscheck_taiex_quote, fetch_taifex_txf, fetch_twse_taiex

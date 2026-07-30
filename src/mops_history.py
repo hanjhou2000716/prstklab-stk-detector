@@ -22,8 +22,10 @@ import requests
 MOPS_API = "https://mops.twse.com.tw/mops/api/redirectToOld"
 MOPS_OLD = "https://mopsov.twse.com.tw/mops/web"
 USER_AGENT = "Mozilla/5.0 (compatible; PRStK-Lab-public-research/1.0)"
-CACHE_SCHEMA = 1
+CACHE_SCHEMA = 2
 CACHE_MAX_AGE_DAYS = 14
+# Temporarily failing MOPS pages must not pin every later scheduled batch.
+FAILURE_RETRY_HOURS = 6
 
 
 def _number(value: str | None) -> float | None:
@@ -227,11 +229,15 @@ def fetch_pristine_history(
 def _load_cache(path: Path) -> dict[str, Any]:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-        if data.get("schema") == CACHE_SCHEMA and isinstance(data.get("records"), dict):
-            return data
+        if data.get("schema") in {1, CACHE_SCHEMA} and isinstance(data.get("records"), dict):
+            return {
+                "schema": CACHE_SCHEMA,
+                "records": data["records"],
+                "failures": data.get("failures", {}) if isinstance(data.get("failures", {}), dict) else {},
+            }
     except (OSError, json.JSONDecodeError, AttributeError):
         pass
-    return {"schema": CACHE_SCHEMA, "records": {}}
+    return {"schema": CACHE_SCHEMA, "records": {}, "failures": {}}
 
 
 def _fresh(record: dict[str, Any], now: datetime) -> bool:
@@ -240,6 +246,15 @@ def _fresh(record: dict[str, Any], now: datetime) -> bool:
         return checked >= now - timedelta(days=CACHE_MAX_AGE_DAYS)
     except (KeyError, TypeError, ValueError):
         return False
+
+
+def _retry_due(failure: dict[str, Any], now: datetime) -> bool:
+    """Avoid retrying a transient MOPS outage before unseen companies."""
+    try:
+        attempted_at = datetime.fromisoformat(str(failure["attempted_at"]).replace("Z", "+00:00"))
+        return attempted_at <= now - timedelta(hours=FAILURE_RETRY_HOURS)
+    except (KeyError, TypeError, ValueError):
+        return True
 
 
 def mops_pristine_history(
@@ -254,21 +269,36 @@ def mops_pristine_history(
     """
     cache = _load_cache(cache_path)
     records: dict[str, dict[str, Any]] = cache["records"]
+    failures: dict[str, dict[str, Any]] = cache["failures"]
     now = datetime.now(timezone.utc)
     errors: list[str] = []
     attempted = 0
     client = client or MopsPublicClient()
-    for ticker in dict.fromkeys(str(value).strip() for value in tickers if str(value).strip()):
-        existing = records.get(ticker)
-        if isinstance(existing, dict) and _fresh(existing, now):
+    ordered_tickers = list(dict.fromkeys(str(value).strip() for value in tickers if str(value).strip()))
+    pending = [
+        ticker for ticker in ordered_tickers
+        if not (isinstance(records.get(ticker), dict) and _fresh(records[ticker], now))
+    ]
+    # New tickers first; cooled-down failures second; recent failures are
+    # skipped until their retry window.  This guarantees each run advances.
+    pending.sort(key=lambda ticker: (0 if ticker not in failures else (1 if _retry_due(failures[ticker], now) else 2), ticker))
+    for ticker in pending:
+        previous_failure = failures.get(ticker)
+        if isinstance(previous_failure, dict) and not _retry_due(previous_failure, now):
             continue
         if max_refresh and attempted >= max_refresh:
-            continue
+            break
         attempted += 1
         try:
             records[ticker] = fetch_pristine_history(ticker, client=client)
+            failures.pop(ticker, None)
         except (OSError, ValueError, requests.RequestException, RuntimeError) as error:
             errors.append(f"{ticker} MOPS history: {type(error).__name__}")
+            failures[ticker] = {
+                "attempted_at": now.isoformat(),
+                "error": type(error).__name__,
+                "attempts": int(previous_failure.get("attempts", 0)) + 1 if isinstance(previous_failure, dict) else 1,
+            }
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     cache_path.write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
     return {ticker: records[ticker] for ticker in tickers if ticker in records}, errors

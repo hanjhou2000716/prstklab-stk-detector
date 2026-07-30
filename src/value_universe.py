@@ -91,18 +91,24 @@ def parse_sp500_constituents(tables: list[pd.DataFrame]) -> list[dict[str, str]]
     for table in tables:
         columns = {str(column).strip().lower(): column for column in table.columns}
         ticker_col, name_col = columns.get("symbol"), columns.get("security")
+        cik_col = columns.get("cik")
         if ticker_col is None or name_col is None:
             continue
         for _, row in table.fillna("").iterrows():
             ticker = _text(row[ticker_col]).upper().replace(".", "-")
             if not re.fullmatch(r"[A-Z-]{1,8}", ticker):
                 continue
-            rows[ticker] = {
+            row_data = {
                 "ticker": ticker, "symbol": ticker,
                 "name": _text(row[name_col]) or ticker,
                 "pool": "VOO-proxy",
                 "source": "Public S&P 500 roster (VOO proxy)",
             }
+            if cik_col is not None:
+                cik = _text(row[cik_col]).replace(".0", "")
+                if cik.isdigit():
+                    row_data["cik"] = cik
+            rows[ticker] = row_data
     return list(rows.values())
 
 

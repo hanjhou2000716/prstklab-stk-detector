@@ -127,6 +127,18 @@ def test_tpex_official_close_replaces_stale_yahoo_quote_even_outside_session():
     assert indices[0]["quote_date"] == "2026-07-29"
 
 
+def test_tpex_official_close_restores_a_missing_yahoo_index_row():
+    indices, errors = apply_taiwan_intraday_crosscheck(
+        [{"ticker": "TAIEX", "price": 41590}],
+        "收盤後",
+        tpex_fetcher=lambda: {"ticker": "TPEx", "price": 334.24, "quote_date": "2026-07-29", "quote_source": "TPEx OpenAPI official close"},
+    )
+
+    assert errors == []
+    assert indices[-1]["ticker"] == "TPEx"
+    assert indices[-1]["price"] == 334.24
+
+
 def test_stale_daily_quote_is_explicitly_marked_for_the_ui():
     quotes = annotate_quote_freshness(
         [{"ticker": "TPEx", "quote_date": "2026-07-17"}],
