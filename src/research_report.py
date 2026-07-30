@@ -100,7 +100,18 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
         try:
             frame = pd.read_csv(path)
         except (FileNotFoundError, pd.errors.EmptyDataError, UnicodeDecodeError):
-            status = "建檔中" if base.get("scan_state") == "building" else "資料暫時無法取得"
+            # A completed zero-row scan writes an empty CSV.  Its healthy
+            # summary must not be mistaken for a failed research source.
+            completed_empty = (
+                base.get("scan_state") == "complete"
+                and base.get("failed") == 0
+                and base.get("data_complete") == base.get("requested")
+            )
+            status = (
+                "建檔中" if base.get("scan_state") == "building"
+                else "本次無研究候選" if completed_empty
+                else "資料暫時無法取得"
+            )
             sources_status.append({**base, "status": status, "candidates": 0})
             continue
         rows = normalize_frame(frame, source["market"], source["strategy"])

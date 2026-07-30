@@ -302,6 +302,14 @@ def build_market_snapshot() -> dict[str, Any]:
         indices, markets.get("taiwan", {}).get("session", "")
     )
     errors.extend(crosscheck_errors)
+    # A Yahoo failure is informational only when TPEx has been restored by
+    # the official TPEx close.  Do not retain it as a health warning.
+    if any(
+        item.get("ticker") == "TPEx"
+        and str(item.get("quote_source", "")).startswith("TPEx OpenAPI")
+        for item in indices
+    ):
+        errors = [error for error in errors if error.get("ticker") != "TPEx"]
     quotes = annotate_quote_freshness(quotes)
     indices = annotate_quote_freshness(indices)
     for item in [*quotes, *indices]:
