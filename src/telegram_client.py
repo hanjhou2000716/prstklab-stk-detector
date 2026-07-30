@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from time import sleep
+from time import sleep, time
 
 import requests
 
@@ -54,6 +54,14 @@ def mini_app_button(mini_app_url: str) -> dict[str, object]:
         "text": "📡 開啟稜量速報系統",
         "web_app": {"url": mini_app_url},
     }
+
+
+def versioned_mini_app_url(mini_app_url: str) -> str:
+    """Give each sent Telegram button a unique URL to bypass WebView cache."""
+    if not mini_app_url.startswith("https://"):
+        raise ValueError("Mini App 網址必須使用 HTTPS。")
+    separator = "&" if "?" in mini_app_url else "?"
+    return f"{mini_app_url}{separator}v={int(time() * 1000)}"
 
 
 def mini_app_menu_button(mini_app_url: str) -> dict[str, object]:
@@ -120,7 +128,7 @@ def send_brief(
         "chat_id": chat_id,
         "text": text,
         "disable_web_page_preview": True,
-        "reply_markup": {"inline_keyboard": [[mini_app_button(dashboard_url)]]},
+        "reply_markup": {"inline_keyboard": [[mini_app_button(versioned_mini_app_url(dashboard_url))]]},
     }
     endpoint = f"https://api.telegram.org/bot{token}/sendMessage"
     response = None

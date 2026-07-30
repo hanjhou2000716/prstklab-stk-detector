@@ -62,7 +62,8 @@ def test_quote_provenance_uses_the_compact_provider_and_time_format():
 
     assert "const compactQuoteMeta" in app
     assert 'raw.includes("Yahoo") ? "Yahoo"' in app
-    assert "return `${provider} | ${time}${freshness}`" in app
+    assert "const label = !clock" in app
+    assert "return `${label} | ${time}${freshness}`" in app
     assert "Yahoo Finance public daily quote" not in app
 
 

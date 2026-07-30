@@ -20,9 +20,17 @@ const compactQuoteMeta = (item) => {
   const provider = raw.includes("TPEx") ? "TPEx" : raw.includes("TWSE") ? "TWSE" : raw.includes("TAIFEX") ? "TAIFEX" : raw.includes("Yahoo") ? "Yahoo" : "公開";
   const observed = String(item.quote_time || item.quote_date || "");
   const match = observed.match(/(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2}))?/);
-  const time = match ? `${Number(match[1]) % 100}/${Number(match[2])}/${Number(match[3])}${match[4] ? ` ${match[4]}:${match[5]}` : " 收盤"}` : "時間暫時無法取得";
+  if (!match) return "來源時間暫時無法取得";
+  const date = `${Number(match[1]) % 100}/${Number(match[2])}/${Number(match[3])}`;
+  const clock = match[4] ? ` ${match[4]}:${match[5]}` : "";
+  // A daily bar without an intraday timestamp is a previous close, not a
+  // live Yahoo observation. Keep that distinction visible and compact.
+  const label = !clock && (item.freshness === "recent_close" || raw.includes("daily quote"))
+    ? "最近收盤"
+    : provider;
+  const time = `${date}${clock}`;
   const freshness = item.freshness === "stale" ? "｜逾時" : item.freshness === "live" ? "｜盤中" : "";
-  return `${provider} | ${time}${freshness}`;
+  return `${label} | ${time}${freshness}`;
 };
 
 const renderQuoteList = (id, items) => {
