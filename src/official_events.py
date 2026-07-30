@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
+from functools import lru_cache
 import re
 from typing import Any
 from urllib.parse import urljoin
@@ -19,6 +20,7 @@ from bs4 import BeautifulSoup
 
 from src.finance_intel_policy import polling_rule, threshold_rule
 from src.value_fundamentals import SEC_USER_AGENT, sec_ticker_ciks
+from src.value_universe import fetch_taiwan_0050_universe
 
 
 HEADERS = {"User-Agent": SEC_USER_AGENT}
@@ -112,6 +114,29 @@ MOPS_TERMS = (
     "\u91cd\u5927\u707d\u5bb3", "\u706b\u707d", "\u7206\u70b8", "\u7f77\u5de5", "\u7834\u7522", "\u91cd\u6574", "\u4e0b\u5e02",
     "\u8655\u5206\u8cc7\u7522", "\u53d6\u5f97\u8cc7\u7522", "\u6e1b\u8cc7", "\u73fe\u91d1\u589e\u8cc7",
 )
+@lru_cache(maxsize=1)
+def _taiwan_0050_codes() -> frozenset[str]:
+    """Fail closed: no company Telegram alert without a current 0050 list."""
+    rows, errors = fetch_taiwan_0050_universe()
+    if errors:
+        return frozenset()
+    return frozenset(str(row.get("ticker") or "") for row in rows if str(row.get("ticker") or ""))
+
+
+def _mops_brief_summary(code: str, name: str, title: str) -> str:
+    """Use a classified complete fact instead of truncating a raw MOPS title."""
+    categories = (
+        ("合併／收購", ("合併", "收購", "公開收購")),
+        ("重大災害", ("重大災害", "火災", "爆炸", "罷工")),
+        ("財務重整", ("破產", "重整", "下市")),
+        ("資本調整", ("減資", "現金增資")),
+        ("重大資產", ("處分資產", "取得資產")),
+        ("交易措施", ("停止買賣", "恢復買賣", "暫停交易")),
+    )
+    category = next((label for label, terms in categories if any(term in title for term in terms)), "重大訊息")
+    return f"0050｜{code} {name}｜{category}"
+
+
 # Attention/disposition data is high-volume. Only systemic listed names can
 # become a Telegram candidate; all other entries remain available at TWSE.
 TWSE_SYSTEMIC_CODES = {"2330", "2317", "2454", "2308", "2303", "2881", "2882", "2884", "2886", "2891"}
@@ -278,12 +303,15 @@ def _mops_items() -> list[dict[str, str]]:
     data = _post_json(MOPS_DAILY_URL, {
         "year": str(local_now.year - 1911), "month": str(local_now.month), "day": str(local_now.day),
     })
+    allowed_codes = _taiwan_0050_codes()
+    if not allowed_codes:
+        return []
     items: list[dict[str, str]] = []
     for row in data.get("result", {}).get("data", []):
         if len(row) < 5:
             continue
         date, clock, code, name, title = (str(value).strip() for value in row[:5])
-        if len(code) != 4 or not code.isdigit() or not any(term in title for term in MOPS_TERMS):
+        if len(code) != 4 or not code.isdigit() or code not in allowed_codes or not any(term in title for term in MOPS_TERMS):
             continue
         released_at = _mops_released_at(date, clock)
         if not _is_recent_release(released_at):
@@ -291,6 +319,7 @@ def _mops_items() -> list[dict[str, str]]:
         items.append({
             "title": f"{code} {name}\uff1a{title}", "url": MOPS_DAILY_PAGE,
             "source": "MOPS \u7576\u65e5\u91cd\u5927\u8a0a\u606f", "short_label": "\u53f0\u80a1\u516c\u53f8\u91cd\u5927\u8a0a\u606f",
+            "brief_summary": _mops_brief_summary(code, name, title),
             "relevance": "official", "released_at": released_at or "", "source_key": "mops",
         })
     return items[:2]
@@ -377,10 +406,13 @@ def _gdacs_items() -> list[dict[str, str]]:
         raw = entry.get_text(" ", strip=True).lower()
         published = entry.find("pubDate") or entry.find("published") or entry.find("updated")
         released_at = _iso(published.get_text(strip=True) if published else None)
-        if "red" not in raw or not _is_recent_release(released_at):
+        material_hazards = ("earthquake", "tsunami", "cyclone", "flood", "volcano")
+        hazard = next((value for value in material_hazards if value in raw), None)
+        if "red" not in raw or hazard is None or not _is_recent_release(released_at):
             continue
         items.append({
-            "title": title, "url": link_node.get_text(strip=True) if link_node else GDACS_RSS_URL,
+            "title": f"GDACS Red {hazard} alert", "url": link_node.get_text(strip=True) if link_node else GDACS_RSS_URL,
+            "brief_summary": f"GDACS 紅色{hazard}災害警示",
             "source": "GDACS\uff5c\u516c\u958b\u707d\u5bb3\u8b66\u793a", "short_label": "\u9ed1\u5929\u9d5d\uff0f\u91cd\u5927\u707d\u5bb3",
             "relevance": "official", "source_tier": "official", "released_at": released_at or "",
             "source_key": "gdacs", "topic_key": "gdacs", "importance": "high-risk",
@@ -411,6 +443,7 @@ def _usgs_items() -> list[dict[str, str]]:
             "title": f"USGS M{magnitude:.1f} \u5730\u9707\uff1a{place}", "url": str(properties.get("url") or ""),
             "source": "USGS\uff5c\u5b98\u65b9\u5373\u6642\u5730\u9707\u8cc7\u6599", "short_label": "\u9ed1\u5929\u9d5d\uff0f\u5730\u7de3",
             "relevance": "official", "source_tier": "official", "released_at": released_at,
+            "brief_summary": f"USGS M{magnitude:.1f} 地震：{place}",
             "source_key": "usgs", "topic_key": "usgs", "importance": "high-risk",
         })
     return items

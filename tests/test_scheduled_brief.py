@@ -4,6 +4,18 @@ from zoneinfo import ZoneInfo
 from src.scheduled_brief import build_brief, resolve_slot
 
 
+def test_taiwan_price_brief_includes_the_current_percent_move():
+    snapshot = {
+        "indices": [{"ticker": "TAIEX", "change_percent": -2.1}],
+        "events": {"items": [{
+            "kind": "market_signal",
+            "pattern": "急跌",
+            "instrument": {"ticker": "TAIEX", "change_percent": -2.1},
+        }]},
+    }
+    assert build_brief(snapshot, "intraday") == "盤中｜台指 -2.1%｜急跌"
+
+
 def test_resolves_morning_slot_in_taiwan_time():
     now = datetime(2026, 7, 23, 6, 0, tzinfo=ZoneInfo("Asia/Taipei"))
     assert resolve_slot("auto", now) == "morning"

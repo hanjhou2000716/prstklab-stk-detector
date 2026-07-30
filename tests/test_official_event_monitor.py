@@ -5,6 +5,23 @@ from src import official_event_monitor as monitor
 from src.official_event_monitor import build_official_event_brief, event_key, select_official_event
 
 
+def test_black_swan_needs_related_market_confirmation_before_delivery():
+    candidate = {
+        "importance": "high-risk",
+        "url": "https://earthquake.usgs.gov/example",
+        "title": "USGS event",
+    }
+    snapshot = {
+        "official_events": {"items": [candidate]},
+        "events": {"items": [{**candidate, "impact_confirmation": {"confirmed": False}}]},
+    }
+    assert select_official_event(snapshot, now=datetime(2026, 7, 27, 20, 0, tzinfo=ZoneInfo("Asia/Taipei"))) is None
+
+    snapshot["events"]["items"][0]["impact_confirmation"] = {"confirmed": True}
+    selected = select_official_event(snapshot, now=datetime(2026, 7, 27, 20, 0, tzinfo=ZoneInfo("Asia/Taipei")))
+    assert selected["url"] == candidate["url"]
+
+
 def test_monitor_prioritizes_current_official_event_source():
     snapshot = {
         "events": {"items": [{"title": "third party headline"}]},

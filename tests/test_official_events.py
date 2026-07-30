@@ -74,11 +74,29 @@ def test_mops_daily_api_keeps_material_ordinary_share_announcement(monkeypatch):
 
     monkeypatch.setattr("src.official_events.requests.post", lambda *args, **kwargs: Response())
     monkeypatch.setattr("src.official_events._is_recent_release", lambda released_at: released_at is not None)
+    monkeypatch.setattr("src.official_events._taiwan_0050_codes", lambda: frozenset({"2330"}))
 
     items = _mops_items()
 
     assert items[0]["source_key"] == "mops"
     assert "2330" in items[0]["title"]
+    assert items[0]["brief_summary"].startswith("0050｜2330")
+
+
+def test_mops_non_0050_material_announcement_is_not_a_telegram_candidate(monkeypatch):
+    class Response:
+        @staticmethod
+        def raise_for_status():
+            return None
+
+        @staticmethod
+        def json():
+            return {"result": {"data": [["115/07/29", "10:05:30", "8409", "Example", MOPS_TERMS[-1]]]}}
+
+    monkeypatch.setattr("src.official_events.requests.post", lambda *args, **kwargs: Response())
+    monkeypatch.setattr("src.official_events._is_recent_release", lambda released_at: released_at is not None)
+    monkeypatch.setattr("src.official_events._taiwan_0050_codes", lambda: frozenset({"2330"}))
+    assert _mops_items() == []
 
 
 def test_twse_market_alert_keeps_recent_systemic_share_disposition(monkeypatch):

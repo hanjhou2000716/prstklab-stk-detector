@@ -52,7 +52,7 @@ def test_taiex_persistent_high_risk_signal_has_hourly_realert_policy_and_escalat
         }],
     )
     event = snapshot["items"][0]
-    assert event["realert_interval_minutes"] == 60
+    assert event["realert_interval_minutes"] is None
     assert ":極端:" in event["signal_state"]
 
 

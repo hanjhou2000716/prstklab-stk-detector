@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from datetime import datetime, time
 from typing import Any
 from urllib.parse import urlparse
 
@@ -204,6 +205,15 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         return None
     percent = float(percent)
     ticker = str(index.get("ticker", "市場"))
+    quote_time = str(index.get("quote_time") or "")
+    taiwan_intraday = False
+    if ticker == "TAIEX" and quote_time:
+        try:
+            observed = datetime.fromisoformat(quote_time.replace("Z", "+00:00"))
+            taiwan_intraday = observed.weekday() < 5 and time(8, 45) <= observed.timetz().replace(tzinfo=None) <= time(13, 30)
+        except ValueError:
+            taiwan_intraday = False
+
     minimum_daily_move = {
         "TAIEX": 1.5,
         "SOX": 3.0,
@@ -212,6 +222,11 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "BRENT": float(threshold_rule("oilDailyAbsoluteMovePercent")),
         "GOLD": float(threshold_rule("goldDailyAbsoluteMovePercent")),
     }.get(ticker, 1.0)
+    # During the Taiwan cash session, each new half-percent band is a useful
+    # public market observation.  Offshore instruments retain their stricter
+    # thresholds to avoid an alert stream dominated by routine volatility.
+    if taiwan_intraday:
+        minimum_daily_move = 0.5
     minimum_15m_move = {
         "TAIEX": 1.0,
         "SOX": 1.0,
@@ -301,11 +316,12 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "related": related,
         "impact_confirmation": impact_confirmation,
         "change": change,
-        # Taiwan's broad-market alert is intentionally eligible for one
-        # hourly update while a high-risk move persists.  A worsening stage
-        # remains a separate signal and can be delivered immediately.
-        "realert_interval_minutes": 60 if ticker == "TAIEX" and risk in {"高風險", "高波動"} else None,
-        "signal_state": f"{pattern}:{risk}:{_signal_stage(percent, move_15m)}:{'up' if move_15m is not None and move_15m > 0 else 'down' if move_15m is not None and move_15m < 0 else 'daily'}",
+        # A Taiwan alert is keyed to its signed 0.5% band.  The monitor can
+        # therefore notify only on a newly crossed band, not every five-minute
+        # poll or a later scheduled briefing with the same percentage.
+        "realert_interval_minutes": None,
+        "signal_band": round(percent * 2) / 2 if taiwan_intraday else None,
+        "signal_state": f"{pattern}:{risk}:{_signal_stage(percent, move_15m)}:{'up' if move_15m is not None and move_15m > 0 else 'down' if move_15m is not None and move_15m < 0 else 'daily'}:{round(percent * 2) / 2:+.1f}" if taiwan_intraday else f"{pattern}:{risk}:{_signal_stage(percent, move_15m)}:{'up' if move_15m is not None and move_15m > 0 else 'down' if move_15m is not None and move_15m < 0 else 'daily'}",
     }
 
 
@@ -336,14 +352,21 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         risk_level = "警戒"
         brief_title = f"{label}｜重要事件｜警戒"
         stock_observation = f"{stock_observation} 尚未核對到相關市場同步波動，維持警戒觀察。"
+    is_black_swan = event.get("importance") == "high-risk"
+    if is_black_swan:
+        related_names = "、".join(str(item.get("ticker") or "市場") for item in related[:3]) or "相關市場"
+        confirmation = "已出現相關公開價格確認" if impact_confirmation["confirmed"] else "尚未出現足夠的相關公開價格確認"
+        why_important = "重大災害可能改變區域供應、航運、能源或避險需求；實際影響須由官方資訊與公開市場資料共同確認。"
+        market_context = f"市場傳導：{confirmation}；本輪連動觀察為 {related_names}。"
+        stock_observation = "後續觀察：官方災情與基建／航運資訊、能源與避險資產，以及主要股市是否持續同步波動。"
     return {
         **event,
         "kind": event.get("kind") or "major_event",
         "pattern": event.get("pattern") or "重要事件",
         "risk_level": risk_level,
         "brief_title": brief_title,
-        "summary": event.get("summary") or title,
-        "trigger": event.get("trigger") or "已核對公開來源；請查看完整內容與市場後續反應。",
+        "summary": event.get("summary") or event.get("brief_summary") or title,
+        "trigger": event.get("trigger") or (f"事件：{event.get('brief_summary') or title}。核對來源：{source}。" if is_black_swan else "已核對公開來源；請查看完整內容與市場後續反應。"),
         "why_important": event.get("why_important") or why_important,
         "market_context": event.get("market_context") or market_context,
         "stock_observation": event.get("stock_observation") or stock_observation,
