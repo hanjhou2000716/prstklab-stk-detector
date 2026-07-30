@@ -41,3 +41,16 @@ def test_mops_history_uses_cache_after_first_public_fetch(tmp_path: Path):
     again, errors = mops_pristine_history(["2330"], path, client=_FakeClient())
     assert not errors
     assert again["2330"]["three_year_dividend_paid"] is True
+
+
+def test_mops_history_caps_attempts_when_reports_fail(tmp_path: Path):
+    class FailingClient:
+        def report(self, *args, **kwargs):
+            raise RuntimeError("temporary MOPS failure")
+
+    records, errors = mops_pristine_history(
+        ["1101", "1102", "1103"], tmp_path / "mops.json", max_refresh=2, client=FailingClient()
+    )
+
+    assert records == {}
+    assert len(errors) == 2

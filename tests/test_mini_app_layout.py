@@ -77,3 +77,11 @@ def test_mini_app_hides_empty_event_trace_and_has_a_legacy_health_fallback():
     assert "container.hidden = container.childElementCount === 0" in app
     assert "此市場快照建立於健康狀態欄位上線前" in app
     assert "renderSourceHealth(snapshot.source_health, snapshot)" in app
+
+
+def test_value_drawer_explains_that_mops_history_is_still_being_verified():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert 'const valuePending = valueSource?.scan_state === "building";' in app
+    assert "歷史核對中：已完成" in app
+    assert "不列入正式璞玉價值候選" in app
