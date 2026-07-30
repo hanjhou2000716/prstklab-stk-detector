@@ -391,7 +391,16 @@ const render = (snapshot) => {
   renderNewsList("us-news", snapshot.news?.us);
 };
 
-fetch("data/market.json", { cache: "no-store" })
+// GitHub Pages and Telegram's in-app WebView can both retain a static JSON
+// response longer than the dashboard itself.  A per-open query value makes
+// every Mini App launch request the current public snapshot, rather than a
+// previously cached market.json response.
+const snapshotUrl = `data/market.json?v=${Date.now()}`;
+
+fetch(snapshotUrl, {
+  cache: "no-store",
+  headers: { "Cache-Control": "no-cache" },
+})
   .then((response) => response.ok ? response.json() : Promise.reject(new Error("market snapshot unavailable")))
   .then(render)
   .catch(() => { setText("data-status", "資料暫時無法取得"); setText("market-focus", "市場資料暫時無法取得，請稍後再試。"); });
