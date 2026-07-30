@@ -78,6 +78,7 @@ jobs:
           path: .scheduled-brief-lock
           key: scheduled-brief-${{ steps.window.outputs.key }}
       - name: 更新資料並發送快報
+        id: send_brief
         if: steps.window.outputs.should_run == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true')
         run: |
           arguments=(--slot "$SLOT")
@@ -85,6 +86,15 @@ jobs:
             arguments+=(--strict-window)
           fi
           python -m src.scheduled_brief "${arguments[@]}"
+      - name: 建立價格／事件共用去重紀錄
+        if: success() && steps.send_brief.outputs.event_key != ''
+        run: touch .official-event-lock
+      - name: 保存價格／事件共用去重紀錄
+        if: success() && steps.send_brief.outputs.event_key != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .official-event-lock
+          key: official-event-${{ steps.send_brief.outputs.event_key }}
       - name: 保存最新市場快照
         if: steps.window.outputs.should_run == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true')
         run: |

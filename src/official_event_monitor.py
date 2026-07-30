@@ -36,14 +36,41 @@ def select_official_event(
     routine price refreshes never become Telegram notifications.
     """
     items = snapshot.get("official_events", {}).get("items", [])
+    detailed_events = snapshot.get("events", {}).get("items", [])
     if items and not baseline_official:
-        return items[0]
+        for item in items:
+            if item.get("importance") != "high-risk":
+                return item
+            # A black-swan candidate must be confirmed by a related public
+            # market move before it becomes a Telegram alert. It remains in
+            # the dashboard as an observation when confirmation is absent.
+            detailed = next(
+                (
+                    event for event in detailed_events
+                    if event.get("url") == item.get("url")
+                    and (event.get("impact_confirmation") or {}).get("confirmed")
+                ),
+                None,
+            )
+            if detailed:
+                return detailed
     signals = [event for event in snapshot.get("events", {}).get("items", []) if event.get("kind") == "market_signal"]
     if _is_taiwan_market_window(now):
         # During the Taiwan session, a broad Taiwan price signal has priority.
         # Commodity/crypto moves remain visible in the Mini App unless paired
         # with a verified official event above.
-        return next((event for event in signals if (event.get("instrument") or {}).get("ticker") == "TAIEX"), None)
+        taiwan_signal = next((event for event in signals if (event.get("instrument") or {}).get("ticker") == "TAIEX"), None)
+        if taiwan_signal:
+            return taiwan_signal
+        # Keep the Taiwan session focused, but do not suppress a genuinely
+        # broad overseas equity signal merely because Taiwan is quiet.
+        return next(
+            (
+                event for event in signals
+                if (event.get("instrument") or {}).get("ticker") in {"NASDAQ", "SOX", "S&P500", "DJIA", "NIKKEI", "KOSPI"}
+            ),
+            None,
+        )
     return signals[0] if signals else None
 
 
@@ -89,11 +116,23 @@ def build_official_event_brief(event: dict[str, Any]) -> str:
     """Make a neutral watch-sized alert for an official event or price move."""
     if event.get("kind") == "market_signal":
         text = f"快訊｜{event.get('brief_title') or event.get('short_label', '價格訊號')}"
+        instrument = event.get("instrument") or {}
+        ticker = str(instrument.get("ticker") or "市場")
+        label = "台指" if ticker == "TAIEX" else ticker
+        percent = instrument.get("change_percent")
+        if percent is None:
+            text = f"快訊｜{event.get('brief_title') or event.get('short_label', '價格訊號')}"[:30]
+            validate_brief(text)
+            return text
+        move = f"{float(percent):+.1f}%" if percent is not None else "波動"
+        pattern = str(event.get("pattern") or "價格訊號")
+        risk = str(event.get("risk_level") or "觀察")
+        text = f"快訊｜{label} {move}｜{pattern}｜{risk}"
         text = text[:30]
         validate_brief(text)
         return text
     label = " ".join(event.get("short_label", "官方事件").split())
-    title = " ".join(event.get("title", "").split())
+    title = " ".join(event.get("brief_summary") or event.get("title", "").split())
     text = f"快訊｜{label}｜{title}"
     text = text[:30]
     validate_brief(text)

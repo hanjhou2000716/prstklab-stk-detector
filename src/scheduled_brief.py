@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -132,6 +133,11 @@ def build_brief(snapshot: dict, slot: str) -> str:
         return f"{label}｜{quote['ticker']} 資料暫時無法取得"
     icon = "📈" if pct > 1 else "📉" if pct < -1 else "🟰"
     suffix = f"{quote['ticker']}{icon}{pct:+.1f}%"
+    if event and event.get("kind") == "market_signal" and pct is not None:
+        instrument = event.get("instrument") or quote
+        market = "台指" if instrument.get("ticker") == "TAIEX" else str(instrument.get("ticker") or quote["ticker"])
+        pattern = str(event.get("pattern") or "價格波動")
+        return f"{label}｜{market} {float(pct):+.1f}%｜{pattern}"[:MAX_BRIEF_LENGTH]
     if event_label:
         # The event card title is designed for a watch notification: clear
         # situation, move type and risk state, while the Mini App holds detail.
@@ -147,6 +153,18 @@ def build_brief(snapshot: dict, slot: str) -> str:
     if available <= 0:
         return f"{prefix}{suffix}"
     return f"{prefix}{str(legacy_event_label)[:available]}｜{suffix}"
+
+
+def write_event_lock_key(event: dict | None) -> None:
+    """Let a timed briefing suppress the same monitor alert immediately after."""
+    if not event:
+        return
+    from src.official_event_monitor import event_key
+
+    destination = os.getenv("GITHUB_OUTPUT")
+    if destination:
+        with open(destination, "a", encoding="utf-8") as handle:
+            handle.write(f"event_key={event_key(event)}\n")
 
 
 def parse_args() -> argparse.Namespace:
@@ -177,6 +195,7 @@ def main() -> None:
     snapshot = build_market_snapshot()
     snapshot["briefing"] = build_briefing_snapshot(snapshot, slot)
     write_snapshot(snapshot)
+    write_event_lock_key(_pick_event(snapshot, slot))
     brief = build_brief(snapshot, slot)
     results = send_briefs(
         token=settings.telegram_bot_token or "",

@@ -108,6 +108,20 @@ def fetch_taiwan_value_universe(session: requests.Session | None = None) -> tupl
     return list(candidates.values()), errors
 
 
+def fetch_taiwan_0050_universe(session: requests.Session | None = None) -> tuple[list[dict[str, str]], list[str]]:
+    """Return the current issuer-published 0050 ordinary-share constituents."""
+    client = session or requests.Session()
+    client.headers.setdefault("User-Agent", USER_AGENT)
+    try:
+        rows = parse_yuanta_holdings(
+            _read_tables(client.get(YUANTA_PCF_URL.format(fund="0050"), timeout=30)),
+            "0050",
+        )
+    except (OSError, ValueError, requests.RequestException) as error:
+        return [], [f"0050 constituent source unavailable: {type(error).__name__}"]
+    return rows, ([] if rows else ["0050 constituent source returned no ordinary shares"])
+
+
 def fetch_us_value_universe(session: requests.Session | None = None) -> tuple[list[dict[str, str]], list[str]]:
     client = session or requests.Session()
     client.headers.setdefault("User-Agent", USER_AGENT)
