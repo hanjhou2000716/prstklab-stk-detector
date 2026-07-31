@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-07-31T11:46:26.815423+08:00",
+  "generated_at": "2026-07-31T12:18:10.147385+08:00",
   "scan": {
-    "started_at": "2026-07-31T11:45:39.202472+08:00",
-    "completed_at": "2026-07-31T11:46:26.815423+08:00",
+    "started_at": "2026-07-31T12:16:55.412561+08:00",
+    "completed_at": "2026-07-31T12:18:10.147385+08:00",
     "scope": "公開市場定時掃描",
-    "live_quote_count": 4,
-    "close_quote_count": 16
+    "live_quote_count": 12,
+    "close_quote_count": 8
   },
-  "data_status": "即時",
+  "data_status": "部分缺漏",
   "markets": {
     "taiwan": {
       "label": "台股",
@@ -23,11 +23,11 @@
       "label": "美股",
       "timezone": "America/New_York",
       "calendar": "NYSE",
-      "date": "2026-07-30",
+      "date": "2026-07-31",
       "is_trading_day": true,
-      "session": "收盤後",
-      "market_open": "2026-07-30T09:30:00-04:00",
-      "market_close": "2026-07-30T16:00:00-04:00"
+      "session": "開盤前",
+      "market_open": "2026-07-31T09:30:00-04:00",
+      "market_close": "2026-07-31T16:00:00-04:00"
     }
   },
   "indices": [
@@ -37,40 +37,30 @@
       "name": "臺灣加權指數",
       "market": "taiwan",
       "currency": "點",
-      "price": 42858.7,
-      "change": 2925.4,
-      "change_percent": 7.33,
-      "change_15m_percent": 0.19,
+      "price": 42838.84,
+      "change": 2905.54,
+      "change_percent": 7.28,
+      "change_15m_percent": 0.05,
       "quote_date": "2026-07-31",
-      "quote_time": "2026-07-31T11:45:35+08:00",
-      "quote_basis": "TWSE 公開市況；TAIFEX 台指期方向核對",
-      "quote_delayed": false,
-      "quote_source": "TWSE MIS cash index + TAIFEX public direction cross-check",
-      "crosscheck_status": "已交叉核對",
+      "quote_time": "2026-07-31T11:55:00+08:00",
+      "quote_basis": "盤中延遲報價",
+      "quote_delayed": true,
+      "quote_source": "Yahoo Finance public 5-minute quote",
+      "crosscheck_status": "官方來源部分缺漏",
       "crosscheck_sources": {
-        "twse": {
-          "ticker": "TAIEX",
-          "price": 42858.7,
-          "previous_close": 39933.3,
-          "change": 2925.4,
-          "change_percent": 7.33,
-          "quote_date": "2026-07-31",
-          "quote_time": "2026-07-31T11:45:35+08:00",
-          "source": "TWSE MIS 公開市況"
-        },
+        "twse": null,
         "taifex": {
           "ticker": "TXF",
-          "price": 42860.56,
+          "price": 42825.07,
           "previous_close": 39933.3,
-          "change": 2927.26,
-          "change_percent": 7.33,
+          "change": 2891.77,
+          "change_percent": 7.24,
           "quote_date": "2026-07-31",
-          "quote_time": "2026-07-31T11:45:45+08:00",
+          "quote_time": "2026-07-31T12:17:00+08:00",
           "source": "TAIFEX 公開市況"
         }
       },
-      "aggregated_price_gap_percent": 0.05,
-      "freshness": "live"
+      "freshness": "recent_close"
     },
     {
       "symbol": "^GSPC",
@@ -81,10 +71,12 @@
       "price": 7437.63,
       "change": 121.48,
       "change_percent": 1.66,
+      "change_15m_percent": null,
       "quote_date": "2026-07-30",
-      "quote_time": null,
-      "quote_basis": "日線收盤",
-      "quote_source": "Yahoo Finance public daily quote",
+      "quote_time": "2026-07-30T16:40:00-04:00",
+      "quote_basis": "盤前延遲報價",
+      "quote_delayed": true,
+      "quote_source": "Yahoo Finance public 5-minute quote",
       "freshness": "recent_close"
     },
     {
@@ -96,10 +88,12 @@
       "price": 25122.18,
       "change": 679.24,
       "change_percent": 2.78,
+      "change_15m_percent": 0.0,
       "quote_date": "2026-07-30",
-      "quote_time": null,
-      "quote_basis": "日線收盤",
-      "quote_source": "Yahoo Finance public daily quote",
+      "quote_time": "2026-07-30T17:15:00-04:00",
+      "quote_basis": "盤前延遲報價",
+      "quote_delayed": true,
+      "quote_source": "Yahoo Finance public 5-minute quote",
       "freshness": "recent_close"
     },
     {
@@ -111,10 +105,12 @@
       "price": 52208.06,
       "change": 613.92,
       "change_percent": 1.19,
+      "change_15m_percent": null,
       "quote_date": "2026-07-30",
-      "quote_time": null,
-      "quote_basis": "日線收盤",
-      "quote_source": "Yahoo Finance public daily quote",
+      "quote_time": "2026-07-30T16:55:00-04:00",
+      "quote_basis": "盤前延遲報價",
+      "quote_delayed": true,
+      "quote_source": "Yahoo Finance public 5-minute quote",
       "freshness": "recent_close"
     },
     {
@@ -126,10 +122,12 @@
       "price": 11302.99,
       "change": 855.5,
       "change_percent": 8.19,
+      "change_15m_percent": 0.0,
       "quote_date": "2026-07-30",
-      "quote_time": null,
-      "quote_basis": "日線收盤",
-      "quote_source": "Yahoo Finance public daily quote",
+      "quote_time": "2026-07-30T17:15:00-04:00",
+      "quote_basis": "盤前延遲報價",
+      "quote_delayed": true,
+      "quote_source": "Yahoo Finance public 5-minute quote",
       "freshness": "recent_close"
     },
     {
@@ -138,9 +136,9 @@
       "name": "日經225",
       "market": "asia",
       "currency": "點",
-      "price": 64495.12,
-      "change": 2627.69,
-      "change_percent": 4.25,
+      "price": 64126.67,
+      "change": 2259.24,
+      "change_percent": 3.65,
       "quote_date": "2026-07-31",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -153,9 +151,9 @@
       "name": "韓國綜合",
       "market": "asia",
       "currency": "點",
-      "price": 6414.33,
-      "change": 820.77,
-      "change_percent": 14.67,
+      "price": 6394.25,
+      "change": 800.69,
+      "change_percent": 14.31,
       "quote_date": "2026-07-31",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -168,9 +166,9 @@
       "name": "Brent 原油",
       "market": "global",
       "currency": "USD",
-      "price": 88.05,
-      "change": -2.69,
-      "change_percent": -2.96,
+      "price": 89.03,
+      "change": -1.71,
+      "change_percent": -1.88,
       "quote_date": "2026-07-30",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -183,10 +181,10 @@
       "name": "WTI 原油",
       "market": "global",
       "currency": "USD",
-      "price": 82.17,
-      "change": -2.29,
-      "change_percent": -2.71,
-      "quote_date": "2026-07-30",
+      "price": 82.32,
+      "change": -1.27,
+      "change_percent": -1.52,
+      "quote_date": "2026-07-31",
       "quote_time": null,
       "quote_basis": "日線收盤",
       "quote_source": "Yahoo Finance public daily quote",
@@ -198,10 +196,10 @@
       "name": "黃金期貨",
       "market": "global",
       "currency": "USD",
-      "price": 4133.6,
-      "change": 98.9,
-      "change_percent": 2.45,
-      "quote_date": "2026-07-30",
+      "price": 4132.5,
+      "change": 32.4,
+      "change_percent": 0.79,
+      "quote_date": "2026-07-31",
       "quote_time": null,
       "quote_basis": "日線收盤",
       "quote_source": "Yahoo Finance public daily quote",
@@ -213,9 +211,9 @@
       "name": "BTC",
       "market": "global",
       "currency": "USD",
-      "price": 64315.92,
-      "change": 407.75,
-      "change_percent": 0.64,
+      "price": 64306.69,
+      "change": 398.52,
+      "change_percent": 0.62,
       "quote_date": "2026-07-31",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -228,9 +226,9 @@
       "name": "ETH",
       "market": "global",
       "currency": "USD",
-      "price": 1906.28,
-      "change": -2.24,
-      "change_percent": -0.12,
+      "price": 1903.96,
+      "change": -4.56,
+      "change_percent": -0.24,
       "quote_date": "2026-07-31",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -257,12 +255,12 @@
       "ticker": "006208",
       "name": "富邦台50",
       "market": "taiwan",
-      "price": 233.2,
-      "change": 19.15,
-      "change_percent": 8.95,
-      "change_15m_percent": 0.17,
+      "price": 233.4,
+      "change": 19.35,
+      "change_percent": 9.04,
+      "change_15m_percent": -0.04,
       "quote_date": "2026-07-31",
-      "quote_time": "2026-07-31T11:20:00+08:00",
+      "quote_time": "2026-07-31T11:50:00+08:00",
       "quote_basis": "盤中延遲報價",
       "quote_delayed": true,
       "quote_source": "Yahoo Finance public 5-minute quote",
@@ -274,12 +272,12 @@
       "ticker": "00685L",
       "name": "群益臺灣加權正二",
       "market": "taiwan",
-      "price": 10.75,
-      "change": 1.53,
-      "change_percent": 16.59,
-      "change_15m_percent": 0.94,
+      "price": 10.71,
+      "change": 1.49,
+      "change_percent": 16.16,
+      "change_15m_percent": -0.09,
       "quote_date": "2026-07-31",
-      "quote_time": "2026-07-31T11:25:00+08:00",
+      "quote_time": "2026-07-31T11:55:00+08:00",
       "quote_basis": "盤中延遲報價",
       "quote_delayed": true,
       "quote_source": "Yahoo Finance public 5-minute quote",
@@ -296,7 +294,7 @@
       "change_percent": 8.62,
       "change_15m_percent": 0.0,
       "quote_date": "2026-07-31",
-      "quote_time": "2026-07-31T11:25:00+08:00",
+      "quote_time": "2026-07-31T11:55:00+08:00",
       "quote_basis": "盤中延遲報價",
       "quote_delayed": true,
       "quote_source": "Yahoo Finance public 5-minute quote",
@@ -308,13 +306,15 @@
       "ticker": "QQQM",
       "name": "Invesco NASDAQ 100 ETF",
       "market": "us",
-      "price": 281.35,
-      "change": 8.84,
-      "change_percent": 3.24,
+      "price": 283.5,
+      "change": 10.99,
+      "change_percent": 4.03,
+      "change_15m_percent": 0.11,
       "quote_date": "2026-07-30",
-      "quote_time": null,
-      "quote_basis": "日線收盤",
-      "quote_source": "Yahoo Finance public daily quote",
+      "quote_time": "2026-07-30T19:55:00-04:00",
+      "quote_basis": "盤前延遲報價",
+      "quote_delayed": true,
+      "quote_source": "Yahoo Finance public 5-minute quote",
       "currency": "USD",
       "freshness": "recent_close"
     },
@@ -323,13 +323,15 @@
       "ticker": "QLD",
       "name": "ProShares Ultra QQQ",
       "market": "us",
-      "price": 82.68,
-      "change": 5.1,
-      "change_percent": 6.57,
+      "price": 83.81,
+      "change": 6.23,
+      "change_percent": 8.03,
+      "change_15m_percent": 0.14,
       "quote_date": "2026-07-30",
-      "quote_time": null,
-      "quote_basis": "日線收盤",
-      "quote_source": "Yahoo Finance public daily quote",
+      "quote_time": "2026-07-30T19:55:00-04:00",
+      "quote_basis": "盤前延遲報價",
+      "quote_delayed": true,
+      "quote_source": "Yahoo Finance public 5-minute quote",
       "currency": "USD",
       "freshness": "recent_close"
     },
@@ -338,13 +340,15 @@
       "ticker": "TSM",
       "name": "台積電 ADR",
       "market": "us",
-      "price": 403.31,
-      "change": 28.64,
-      "change_percent": 7.64,
+      "price": 412.77,
+      "change": 38.1,
+      "change_percent": 10.17,
+      "change_15m_percent": 0.22,
       "quote_date": "2026-07-30",
-      "quote_time": null,
-      "quote_basis": "日線收盤",
-      "quote_source": "Yahoo Finance public daily quote",
+      "quote_time": "2026-07-30T19:55:00-04:00",
+      "quote_basis": "盤前延遲報價",
+      "quote_delayed": true,
+      "quote_source": "Yahoo Finance public 5-minute quote",
       "currency": "USD",
       "freshness": "recent_close"
     },
@@ -353,13 +357,15 @@
       "ticker": "NVDA",
       "name": "NVIDIA",
       "market": "us",
-      "price": 195.04,
-      "change": 5.03,
-      "change_percent": 2.65,
+      "price": 196.84,
+      "change": 6.83,
+      "change_percent": 3.59,
+      "change_15m_percent": 0.18,
       "quote_date": "2026-07-30",
-      "quote_time": null,
-      "quote_basis": "日線收盤",
-      "quote_source": "Yahoo Finance public daily quote",
+      "quote_time": "2026-07-30T19:55:00-04:00",
+      "quote_basis": "盤前延遲報價",
+      "quote_delayed": true,
+      "quote_source": "Yahoo Finance public 5-minute quote",
       "currency": "USD",
       "freshness": "recent_close"
     }
@@ -373,7 +379,7 @@
         "label": "極度恐慌",
         "source_label": "TAIEX Macro FGI",
         "date": "2026-07-31",
-        "index_level": 42881.63,
+        "index_level": 42837.48,
         "sub_scores": {
           "動能": 5.0,
           "波動": 0.0,
@@ -395,11 +401,11 @@
     "us": {
       "label": "美股",
       "sentiment": {
-        "score": 38.9,
+        "score": 39.2,
         "label": "中立／偏恐慌",
         "source_label": "CNN Fear & Greed",
         "source_url": "https://www.cnn.com/markets/fear-and-greed",
-        "updated_at": "2026-07-30T23:59:59+00:00"
+        "updated_at": "2026-07-31T00:00:00+00:00"
       },
       "vix": {
         "value": 17.09,
@@ -414,28 +420,28 @@
   "news": {
     "taiwan": [
       {
-        "title": "1. 別急著抄底！台股崩盤還沒結束？出現「這5大訊號」才是暴賺買點！",
-        "url": "https://news.cnyes.com/news/id/6549145",
-        "source": "鉅亨網｜持股關聯",
-        "relevance": "holding"
+        "title": "1. 漲價頂不住了！輝達Vera Rubin NVL72 CPU記憶體直接砍半",
+        "url": "https://news.cnyes.com/news/id/6545020",
+        "source": "鉅亨網｜市場焦點",
+        "relevance": "market"
       },
       {
-        "title": "4. 台股早盤痛失4萬點大關 莊翠雲曝國安基金進場關鍵條件",
-        "url": "https://news.cnyes.com/news/id/6549960",
-        "source": "鉅亨網｜持股關聯",
-        "relevance": "holding"
+        "title": "2. Zen 6 Venice單核快20%！AMD高管：本以為只贏輝達Vera CPU一點 沒想到優勢這麼大",
+        "url": "https://news.cnyes.com/news/id/6546062",
+        "source": "鉅亨網｜市場焦點",
+        "relevance": "market"
       },
       {
-        "title": "2. 準確預言金融海嘯「華爾街先知」示警：美經濟Q4迎「清算時刻」Fed本周將按兵不動",
-        "url": "https://news.cnyes.com/news/id/6549218",
+        "title": "3. 攜程遭中國重罰52億人民幣！濫用市場地位、限制飯店競爭遭開反壟斷罰單",
+        "url": "https://news.cnyes.com/news/id/6545990",
         "source": "鉅亨網｜市場焦點",
         "relevance": "market"
       }
     ],
     "us": [
       {
-        "title": "1. 〈美股盤後〉微軟創全球最大單日市值增量紀錄 那指終止連六黑 費半暴漲超8%",
-        "url": "https://news.cnyes.com/news/id/6553437",
+        "title": "1. 〈美股早盤〉微軟財報送定心丸！主要指數開高 台積電ADR漲逾5%",
+        "url": "https://news.cnyes.com/news/id/6552928",
         "source": "鉅亨網｜持股關聯",
         "relevance": "holding"
       },
@@ -446,8 +452,8 @@
         "relevance": "holding"
       },
       {
-        "title": "2. 美光飆漲18% 三星一句話點燃記憶體全面反攻",
-        "url": "https://news.cnyes.com/news/id/6553467",
+        "title": "2. Fed等到好消息！美國6月PCE意外轉跌 核心通膨仍有3.3%",
+        "url": "https://news.cnyes.com/news/id/6553068",
         "source": "鉅亨網｜市場焦點",
         "relevance": "market"
       }
@@ -461,16 +467,16 @@
     "items": [
       {
         "kind": "market_signal",
-        "short_label": "台指價格訊號觸發",
+        "short_label": "KOSPI價格訊號觸發",
         "pattern": "急升",
         "risk_level": "高波動",
-        "brief_title": "台指價格訊號觸發｜急升｜高波動",
-        "title": "臺灣加權指數日內變動 +7.33%",
-        "summary": "臺灣加權指數 42,858.70",
-        "trigger": "日內 +7.33%｜15分鐘 +0.19%｜點數 +2,925.40｜最新 42,858.70",
-        "why_important": "日內 +7.33%｜15分鐘 +0.19%｜點數 +2,925.40｜最新 42,858.70。日內變動達固定觀察門檻，需以後續公開報價確認。",
-        "market_context": "可能連動費半、Nasdaq 與台指期；以後續同步報價確認，而非預設因果。",
-        "stock_observation": "觀察台股權值與電子類股是否與台指期、費半維持同方向。",
+        "brief_title": "KOSPI價格訊號觸發｜急升｜高波動",
+        "title": "韓國綜合日內變動 +14.31%",
+        "summary": "韓國綜合 6,394.25",
+        "trigger": "日內 +14.31%｜點數 +800.69｜最新 6,394.25",
+        "why_important": "日內 +14.31%｜點數 +800.69｜最新 6,394.25。日內變動達固定觀察門檻，需以後續公開報價確認。",
+        "market_context": "可能連動日經、Nasdaq 與亞洲半導體供應鏈；以各市場報價確認。",
+        "stock_observation": "觀察韓國科技權值、日經與台股電子類股是否出現同步波動。",
         "friendly_reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
         "source": "公開市場報價",
         "url": "",
@@ -484,125 +490,15 @@
           "verified_domains": []
         },
         "instrument": {
-          "symbol": "^TWII",
-          "ticker": "TAIEX",
-          "name": "臺灣加權指數",
-          "market": "taiwan",
+          "symbol": "^KS11",
+          "ticker": "KOSPI",
+          "name": "韓國綜合",
+          "market": "asia",
           "currency": "點",
-          "price": 42858.7,
-          "change": 2925.4,
-          "change_percent": 7.33,
-          "change_15m_percent": 0.19,
+          "price": 6394.25,
+          "change": 800.69,
+          "change_percent": 14.31,
           "quote_date": "2026-07-31",
-          "quote_time": "2026-07-31T11:45:35+08:00",
-          "quote_basis": "TWSE 公開市況；TAIFEX 台指期方向核對",
-          "quote_delayed": false,
-          "quote_source": "TWSE MIS cash index + TAIFEX public direction cross-check",
-          "crosscheck_status": "已交叉核對",
-          "crosscheck_sources": {
-            "twse": {
-              "ticker": "TAIEX",
-              "price": 42858.7,
-              "previous_close": 39933.3,
-              "change": 2925.4,
-              "change_percent": 7.33,
-              "quote_date": "2026-07-31",
-              "quote_time": "2026-07-31T11:45:35+08:00",
-              "source": "TWSE MIS 公開市況"
-            },
-            "taifex": {
-              "ticker": "TXF",
-              "price": 42860.56,
-              "previous_close": 39933.3,
-              "change": 2927.26,
-              "change_percent": 7.33,
-              "quote_date": "2026-07-31",
-              "quote_time": "2026-07-31T11:45:45+08:00",
-              "source": "TAIFEX 公開市況"
-            }
-          },
-          "aggregated_price_gap_percent": 0.05,
-          "freshness": "live"
-        },
-        "related": [
-          {
-            "symbol": "^SOX",
-            "ticker": "SOX",
-            "name": "費城半導體指數",
-            "market": "us",
-            "currency": "點",
-            "price": 11302.99,
-            "change": 855.5,
-            "change_percent": 8.19,
-            "quote_date": "2026-07-30",
-            "quote_time": null,
-            "quote_basis": "日線收盤",
-            "quote_source": "Yahoo Finance public daily quote",
-            "freshness": "recent_close"
-          },
-          {
-            "symbol": "^IXIC",
-            "ticker": "NASDAQ",
-            "name": "那斯達克綜合指數",
-            "market": "us",
-            "currency": "點",
-            "price": 25122.18,
-            "change": 679.24,
-            "change_percent": 2.78,
-            "quote_date": "2026-07-30",
-            "quote_time": null,
-            "quote_basis": "日線收盤",
-            "quote_source": "Yahoo Finance public daily quote",
-            "freshness": "recent_close"
-          }
-        ],
-        "impact_confirmation": {
-          "confirmed": true,
-          "method": "相關市場同步波動",
-          "markets": [
-            "SOX",
-            "NASDAQ"
-          ]
-        },
-        "change": 2925.4,
-        "realert_interval_minutes": null,
-        "signal_band": 7.5,
-        "signal_state": "急升:高波動:極端:up:+7.5"
-      },
-      {
-        "kind": "market_signal",
-        "short_label": "費半價格訊號觸發",
-        "pattern": "急升",
-        "risk_level": "高波動",
-        "brief_title": "費半價格訊號觸發｜急升｜高波動",
-        "title": "費城半導體指數日內變動 +8.19%",
-        "summary": "費城半導體指數 11,302.99",
-        "trigger": "日內 +8.19%｜點數 +855.50｜最新 11,302.99",
-        "why_important": "日內 +8.19%｜點數 +855.50｜最新 11,302.99。日內變動達固定觀察門檻，需以後續公開報價確認。",
-        "market_context": "可能連動 Nasdaq、台股半導體權值與亞洲科技指數；以同步報價確認。",
-        "stock_observation": "觀察半導體上下游、台積電與台股電子權值是否跟隨或出現背離。",
-        "friendly_reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
-        "source": "公開市場報價",
-        "url": "",
-        "source_trace": {
-          "verification": "公開來源待後續核對",
-          "source_label": "公開市場報價",
-          "source_url": "",
-          "source_domain": "",
-          "event_time": "",
-          "checked_at": "",
-          "verified_domains": []
-        },
-        "instrument": {
-          "symbol": "^SOX",
-          "ticker": "SOX",
-          "name": "費城半導體指數",
-          "market": "us",
-          "currency": "點",
-          "price": 11302.99,
-          "change": 855.5,
-          "change_percent": 8.19,
-          "quote_date": "2026-07-30",
           "quote_time": null,
           "quote_basis": "日線收盤",
           "quote_source": "Yahoo Finance public daily quote",
@@ -610,6 +506,21 @@
         },
         "related": [
           {
+            "symbol": "^N225",
+            "ticker": "NIKKEI",
+            "name": "日經225",
+            "market": "asia",
+            "currency": "點",
+            "price": 64126.67,
+            "change": 2259.24,
+            "change_percent": 3.65,
+            "quote_date": "2026-07-31",
+            "quote_time": null,
+            "quote_basis": "日線收盤",
+            "quote_source": "Yahoo Finance public daily quote",
+            "freshness": "recent_close"
+          },
+          {
             "symbol": "^IXIC",
             "ticker": "NASDAQ",
             "name": "那斯達克綜合指數",
@@ -618,79 +529,39 @@
             "price": 25122.18,
             "change": 679.24,
             "change_percent": 2.78,
+            "change_15m_percent": 0.0,
             "quote_date": "2026-07-30",
-            "quote_time": null,
-            "quote_basis": "日線收盤",
-            "quote_source": "Yahoo Finance public daily quote",
+            "quote_time": "2026-07-30T17:15:00-04:00",
+            "quote_basis": "盤前延遲報價",
+            "quote_delayed": true,
+            "quote_source": "Yahoo Finance public 5-minute quote",
             "freshness": "recent_close"
-          },
-          {
-            "symbol": "^TWII",
-            "ticker": "TAIEX",
-            "name": "臺灣加權指數",
-            "market": "taiwan",
-            "currency": "點",
-            "price": 42858.7,
-            "change": 2925.4,
-            "change_percent": 7.33,
-            "change_15m_percent": 0.19,
-            "quote_date": "2026-07-31",
-            "quote_time": "2026-07-31T11:45:35+08:00",
-            "quote_basis": "TWSE 公開市況；TAIFEX 台指期方向核對",
-            "quote_delayed": false,
-            "quote_source": "TWSE MIS cash index + TAIFEX public direction cross-check",
-            "crosscheck_status": "已交叉核對",
-            "crosscheck_sources": {
-              "twse": {
-                "ticker": "TAIEX",
-                "price": 42858.7,
-                "previous_close": 39933.3,
-                "change": 2925.4,
-                "change_percent": 7.33,
-                "quote_date": "2026-07-31",
-                "quote_time": "2026-07-31T11:45:35+08:00",
-                "source": "TWSE MIS 公開市況"
-              },
-              "taifex": {
-                "ticker": "TXF",
-                "price": 42860.56,
-                "previous_close": 39933.3,
-                "change": 2927.26,
-                "change_percent": 7.33,
-                "quote_date": "2026-07-31",
-                "quote_time": "2026-07-31T11:45:45+08:00",
-                "source": "TAIFEX 公開市況"
-              }
-            },
-            "aggregated_price_gap_percent": 0.05,
-            "freshness": "live"
           }
         ],
         "impact_confirmation": {
           "confirmed": true,
           "method": "相關市場同步波動",
           "markets": [
-            "NASDAQ",
-            "TAIEX"
+            "NIKKEI"
           ]
         },
-        "change": 855.5,
+        "change": 800.69,
         "realert_interval_minutes": null,
         "signal_band": null,
         "signal_state": "急升:高波動:極端:daily"
       },
       {
         "kind": "market_signal",
-        "short_label": "Nasdaq價格訊號觸發",
+        "short_label": "NIKKEI價格訊號觸發",
         "pattern": "急升",
         "risk_level": "高波動",
-        "brief_title": "Nasdaq價格訊號觸發｜急升｜高波動",
-        "title": "那斯達克綜合指數日內變動 +2.78%",
-        "summary": "那斯達克綜合指數 25,122.18",
-        "trigger": "日內 +2.78%｜點數 +679.24｜最新 25,122.18",
-        "why_important": "日內 +2.78%｜點數 +679.24｜最新 25,122.18。日內變動達固定觀察門檻，需以後續公開報價確認。",
-        "market_context": "可能連動費半、S&P 500 與下一交易日台股科技開盤；以同步報價確認。",
-        "stock_observation": "觀察美國成長股、半導體權值及台股科技開盤是否出現同步或分歧。",
+        "brief_title": "NIKKEI價格訊號觸發｜急升｜高波動",
+        "title": "日經225日內變動 +3.65%",
+        "summary": "日經225 64,126.67",
+        "trigger": "日內 +3.65%｜點數 +2,259.24｜最新 64,126.67",
+        "why_important": "日內 +3.65%｜點數 +2,259.24｜最新 64,126.67。日內變動達固定觀察門檻，需以後續公開報價確認。",
+        "market_context": "可能連動韓股、Nasdaq 與亞洲科技權值；以各市場開收盤報價確認。",
+        "stock_observation": "觀察日本與韓國科技權值是否與美國半導體指數同向。",
         "friendly_reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
         "source": "公開市場報價",
         "url": "",
@@ -704,21 +575,121 @@
           "verified_domains": []
         },
         "instrument": {
-          "symbol": "^IXIC",
-          "ticker": "NASDAQ",
-          "name": "那斯達克綜合指數",
-          "market": "us",
+          "symbol": "^N225",
+          "ticker": "NIKKEI",
+          "name": "日經225",
+          "market": "asia",
           "currency": "點",
-          "price": 25122.18,
-          "change": 679.24,
-          "change_percent": 2.78,
-          "quote_date": "2026-07-30",
+          "price": 64126.67,
+          "change": 2259.24,
+          "change_percent": 3.65,
+          "quote_date": "2026-07-31",
           "quote_time": null,
           "quote_basis": "日線收盤",
           "quote_source": "Yahoo Finance public daily quote",
           "freshness": "recent_close"
         },
         "related": [
+          {
+            "symbol": "^KS11",
+            "ticker": "KOSPI",
+            "name": "韓國綜合",
+            "market": "asia",
+            "currency": "點",
+            "price": 6394.25,
+            "change": 800.69,
+            "change_percent": 14.31,
+            "quote_date": "2026-07-31",
+            "quote_time": null,
+            "quote_basis": "日線收盤",
+            "quote_source": "Yahoo Finance public daily quote",
+            "freshness": "recent_close"
+          },
+          {
+            "symbol": "^IXIC",
+            "ticker": "NASDAQ",
+            "name": "那斯達克綜合指數",
+            "market": "us",
+            "currency": "點",
+            "price": 25122.18,
+            "change": 679.24,
+            "change_percent": 2.78,
+            "change_15m_percent": 0.0,
+            "quote_date": "2026-07-30",
+            "quote_time": "2026-07-30T17:15:00-04:00",
+            "quote_basis": "盤前延遲報價",
+            "quote_delayed": true,
+            "quote_source": "Yahoo Finance public 5-minute quote",
+            "freshness": "recent_close"
+          }
+        ],
+        "impact_confirmation": {
+          "confirmed": true,
+          "method": "相關市場同步波動",
+          "markets": [
+            "KOSPI"
+          ]
+        },
+        "change": 2259.24,
+        "realert_interval_minutes": null,
+        "signal_band": null,
+        "signal_state": "急升:高波動:擴大:daily"
+      },
+      {
+        "kind": "market_signal",
+        "short_label": "TPEx價格訊號觸發",
+        "pattern": "急跌",
+        "risk_level": "警戒",
+        "brief_title": "TPEx價格訊號觸發｜急跌｜警戒",
+        "title": "TPEx日內變動 -2.40%",
+        "summary": "TPEx 326.23",
+        "trigger": "日內 -2.40%｜點數 -8.01｜最新 326.23",
+        "why_important": "日內 -2.40%｜點數 -8.01｜最新 326.23。日內變動達固定觀察門檻，需以後續公開報價確認。",
+        "market_context": "可能與其他主要市場同時波動；須以各自的公開報價確認，不能直接推論因果。",
+        "stock_observation": "觀察主要股市、利率與商品市場是否出現持續且同步的變化。 目前尚未看到相關市場同步確認，故維持警戒而非升級為高風險快報。",
+        "friendly_reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
+        "source": "公開市場報價",
+        "url": "",
+        "source_trace": {
+          "verification": "公開來源待後續核對",
+          "source_label": "公開市場報價",
+          "source_url": "",
+          "source_domain": "",
+          "event_time": "",
+          "checked_at": "",
+          "verified_domains": []
+        },
+        "instrument": {
+          "ticker": "TPEx",
+          "price": 326.23,
+          "previous_close": 334.24,
+          "change": -8.01,
+          "change_percent": -2.4,
+          "quote_date": "2026-07-30",
+          "quote_time": null,
+          "quote_source": "TPEx OpenAPI official close",
+          "quote_basis": "TPEx 官方最近收盤",
+          "quote_delayed": false,
+          "freshness": "recent_close"
+        },
+        "related": [
+          {
+            "symbol": "^IXIC",
+            "ticker": "NASDAQ",
+            "name": "那斯達克綜合指數",
+            "market": "us",
+            "currency": "點",
+            "price": 25122.18,
+            "change": 679.24,
+            "change_percent": 2.78,
+            "change_15m_percent": 0.0,
+            "quote_date": "2026-07-30",
+            "quote_time": "2026-07-30T17:15:00-04:00",
+            "quote_basis": "盤前延遲報價",
+            "quote_delayed": true,
+            "quote_source": "Yahoo Finance public 5-minute quote",
+            "freshness": "recent_close"
+          },
           {
             "symbol": "^SOX",
             "ticker": "SOX",
@@ -728,57 +699,46 @@
             "price": 11302.99,
             "change": 855.5,
             "change_percent": 8.19,
+            "change_15m_percent": 0.0,
             "quote_date": "2026-07-30",
-            "quote_time": null,
-            "quote_basis": "日線收盤",
-            "quote_source": "Yahoo Finance public daily quote",
-            "freshness": "recent_close"
-          },
-          {
-            "symbol": "^GSPC",
-            "ticker": "S&P 500",
-            "name": "標普 500",
-            "market": "us",
-            "currency": "點",
-            "price": 7437.63,
-            "change": 121.48,
-            "change_percent": 1.66,
-            "quote_date": "2026-07-30",
-            "quote_time": null,
-            "quote_basis": "日線收盤",
-            "quote_source": "Yahoo Finance public daily quote",
+            "quote_time": "2026-07-30T17:15:00-04:00",
+            "quote_basis": "盤前延遲報價",
+            "quote_delayed": true,
+            "quote_source": "Yahoo Finance public 5-minute quote",
             "freshness": "recent_close"
           }
         ],
         "impact_confirmation": {
-          "confirmed": true,
-          "method": "相關市場同步波動",
-          "markets": [
-            "SOX",
-            "S&P 500"
-          ]
+          "confirmed": false,
+          "method": "尚無相關市場同步確認",
+          "markets": []
         },
-        "change": 679.24,
+        "change": -8.01,
         "realert_interval_minutes": null,
         "signal_band": null,
-        "signal_state": "急升:高波動:初始:daily"
+        "signal_state": "急跌:警戒:初始:daily"
       }
     ]
   },
   "official_events": {
     "items": [],
-    "errors": []
+    "errors": [
+      "MOPS 官方來源暫時無法取得",
+      "TWSE 官方來源暫時無法取得",
+      "TWSE_MARKET 官方來源暫時無法取得",
+      "GDACS 官方來源暫時無法取得"
+    ]
   },
   "macro": {
     "notice": "僅整理本次公開資料的已知事實與風險觀察；節目僅提供公開標題與原始連結，不替代完整內容。",
     "items": [
       {
         "label": "事件",
-        "text": "台指價格訊號觸發：臺灣加權指數日內變動 +7.33%"
+        "text": "KOSPI價格訊號觸發：韓國綜合日內變動 +14.31%"
       },
       {
         "label": "事件",
-        "text": "費半價格訊號觸發：費城半導體指數日內變動 +8.19%"
+        "text": "NIKKEI價格訊號觸發：日經225日內變動 +3.65%"
       },
       {
         "label": "風險",
@@ -801,10 +761,10 @@
       "name": "美元指數",
       "market": "global",
       "currency": "點",
-      "price": 100.21,
-      "change": -0.59,
-      "change_percent": -0.59,
-      "quote_date": "2026-07-30",
+      "price": 100.18,
+      "change": 0.17,
+      "change_percent": 0.17,
+      "quote_date": "2026-07-31",
       "quote_time": null,
       "quote_basis": "日線收盤",
       "quote_source": "Yahoo Finance public daily quote"
@@ -839,9 +799,9 @@
     }
   ],
   "briefing": {
-    "slot": "midday",
-    "title": "台股午報儀表板",
-    "overview": "台指價格訊號觸發｜急升｜高波動｜臺灣加權指數 42,858.70 可能連動費半、Nasdaq 與台指期；以後續同步報價確認，而非預設因果。",
+    "slot": "live",
+    "title": "即時市場儀表板",
+    "overview": "KOSPI價格訊號觸發｜急升｜高波動｜韓國綜合 6,394.25 可能連動日經、Nasdaq 與亞洲半導體供應鏈；以各市場報價確認。",
     "markets": [
       {
         "symbol": "^TWII",
@@ -849,40 +809,30 @@
         "name": "臺灣加權指數",
         "market": "taiwan",
         "currency": "點",
-        "price": 42858.7,
-        "change": 2925.4,
-        "change_percent": 7.33,
-        "change_15m_percent": 0.19,
+        "price": 42838.84,
+        "change": 2905.54,
+        "change_percent": 7.28,
+        "change_15m_percent": 0.05,
         "quote_date": "2026-07-31",
-        "quote_time": "2026-07-31T11:45:35+08:00",
-        "quote_basis": "TWSE 公開市況；TAIFEX 台指期方向核對",
-        "quote_delayed": false,
-        "quote_source": "TWSE MIS cash index + TAIFEX public direction cross-check",
-        "crosscheck_status": "已交叉核對",
+        "quote_time": "2026-07-31T11:55:00+08:00",
+        "quote_basis": "盤中延遲報價",
+        "quote_delayed": true,
+        "quote_source": "Yahoo Finance public 5-minute quote",
+        "crosscheck_status": "官方來源部分缺漏",
         "crosscheck_sources": {
-          "twse": {
-            "ticker": "TAIEX",
-            "price": 42858.7,
-            "previous_close": 39933.3,
-            "change": 2925.4,
-            "change_percent": 7.33,
-            "quote_date": "2026-07-31",
-            "quote_time": "2026-07-31T11:45:35+08:00",
-            "source": "TWSE MIS 公開市況"
-          },
+          "twse": null,
           "taifex": {
             "ticker": "TXF",
-            "price": 42860.56,
+            "price": 42825.07,
             "previous_close": 39933.3,
-            "change": 2927.26,
-            "change_percent": 7.33,
+            "change": 2891.77,
+            "change_percent": 7.24,
             "quote_date": "2026-07-31",
-            "quote_time": "2026-07-31T11:45:45+08:00",
+            "quote_time": "2026-07-31T12:17:00+08:00",
             "source": "TAIFEX 公開市況"
           }
         },
-        "aggregated_price_gap_percent": 0.05,
-        "freshness": "live"
+        "freshness": "recent_close"
       },
       {
         "symbol": "2330.TW",
@@ -894,7 +844,7 @@
         "change_percent": 8.62,
         "change_15m_percent": 0.0,
         "quote_date": "2026-07-31",
-        "quote_time": "2026-07-31T11:25:00+08:00",
+        "quote_time": "2026-07-31T11:55:00+08:00",
         "quote_basis": "盤中延遲報價",
         "quote_delayed": true,
         "quote_source": "Yahoo Finance public 5-minute quote",
@@ -907,9 +857,9 @@
         "name": "日經225",
         "market": "asia",
         "currency": "點",
-        "price": 64495.12,
-        "change": 2627.69,
-        "change_percent": 4.25,
+        "price": 64126.67,
+        "change": 2259.24,
+        "change_percent": 3.65,
         "quote_date": "2026-07-31",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -922,9 +872,9 @@
         "name": "韓國綜合",
         "market": "asia",
         "currency": "點",
-        "price": 6414.33,
-        "change": 820.77,
-        "change_percent": 14.67,
+        "price": 6394.25,
+        "change": 800.69,
+        "change_percent": 14.31,
         "quote_date": "2026-07-31",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -940,10 +890,12 @@
         "price": 25122.18,
         "change": 679.24,
         "change_percent": 2.78,
+        "change_15m_percent": 0.0,
         "quote_date": "2026-07-30",
-        "quote_time": null,
-        "quote_basis": "日線收盤",
-        "quote_source": "Yahoo Finance public daily quote",
+        "quote_time": "2026-07-30T17:15:00-04:00",
+        "quote_basis": "盤前延遲報價",
+        "quote_delayed": true,
+        "quote_source": "Yahoo Finance public 5-minute quote",
         "freshness": "recent_close"
       },
       {
@@ -955,10 +907,12 @@
         "price": 11302.99,
         "change": 855.5,
         "change_percent": 8.19,
+        "change_15m_percent": 0.0,
         "quote_date": "2026-07-30",
-        "quote_time": null,
-        "quote_basis": "日線收盤",
-        "quote_source": "Yahoo Finance public daily quote",
+        "quote_time": "2026-07-30T17:15:00-04:00",
+        "quote_basis": "盤前延遲報價",
+        "quote_delayed": true,
+        "quote_source": "Yahoo Finance public 5-minute quote",
         "freshness": "recent_close"
       },
       {
@@ -967,9 +921,9 @@
         "name": "Brent 原油",
         "market": "global",
         "currency": "USD",
-        "price": 88.05,
-        "change": -2.69,
-        "change_percent": -2.96,
+        "price": 89.03,
+        "change": -1.71,
+        "change_percent": -1.88,
         "quote_date": "2026-07-30",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -982,10 +936,10 @@
         "name": "WTI 原油",
         "market": "global",
         "currency": "USD",
-        "price": 82.17,
-        "change": -2.29,
-        "change_percent": -2.71,
-        "quote_date": "2026-07-30",
+        "price": 82.32,
+        "change": -1.27,
+        "change_percent": -1.52,
+        "quote_date": "2026-07-31",
         "quote_time": null,
         "quote_basis": "日線收盤",
         "quote_source": "Yahoo Finance public daily quote",
@@ -997,10 +951,10 @@
         "name": "黃金期貨",
         "market": "global",
         "currency": "USD",
-        "price": 4133.6,
-        "change": 98.9,
-        "change_percent": 2.45,
-        "quote_date": "2026-07-30",
+        "price": 4132.5,
+        "change": 32.4,
+        "change_percent": 0.79,
+        "quote_date": "2026-07-31",
         "quote_time": null,
         "quote_basis": "日線收盤",
         "quote_source": "Yahoo Finance public daily quote",
@@ -1012,9 +966,9 @@
         "name": "BTC",
         "market": "global",
         "currency": "USD",
-        "price": 64315.92,
-        "change": 407.75,
-        "change_percent": 0.64,
+        "price": 64306.69,
+        "change": 398.52,
+        "change_percent": 0.62,
         "quote_date": "2026-07-31",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -1027,9 +981,9 @@
         "name": "ETH",
         "market": "global",
         "currency": "USD",
-        "price": 1906.28,
-        "change": -2.24,
-        "change_percent": -0.12,
+        "price": 1903.96,
+        "change": -4.56,
+        "change_percent": -0.24,
         "quote_date": "2026-07-31",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -1040,7 +994,7 @@
     "observations": [
       {
         "title": "台股總經",
-        "event": "台指 +7.33%；櫃買 -2.40%。台股風險：極度恐慌 5.4；VIX 44.33（+5.12%）。",
+        "event": "台指 +7.28%；櫃買 -2.40%。台股風險：極度恐慌 5.4；VIX 44.33（+5.12%）。",
         "importance": "加權與櫃買可用來分辨權值與中小型股的當日表現是否出現差異。",
         "market_impact": "台股盤勢仍須搭配權值、半導體與海外市場報價確認，不以單日變動推論原因。",
         "watch": "觀察台指、櫃買與台指期是否延續同向，以及成交量是否同步變化。"
@@ -1054,24 +1008,24 @@
       },
       {
         "title": "科技產業",
-        "event": "Nasdaq +2.78%；費半 +8.19%；日經225 +4.25%；韓國綜合 +14.67%。",
+        "event": "Nasdaq +2.78%；費半 +8.19%；日經225 +3.65%；韓國綜合 +14.31%。",
         "importance": "美日韓科技指數提供 AI、半導體與出口型市場的跨區域公開觀察。",
         "market_impact": "跨市場可能不同步；只觀察是否出現可核對的同向擴散或明顯分歧。",
         "watch": "觀察美國科技收盤、日韓開收盤與台股電子權值的方向是否一致。"
       },
       {
         "title": "利率匯率",
-        "event": "美元指數 -0.59%；美國10年債殖利率 +0.89%；美元兌台幣 +0.13%。",
+        "event": "美元指數 +0.17%；美國10年債殖利率 +0.89%；美元兌台幣 +0.13%。",
         "importance": "美元、長債殖利率與匯率可反映資金與折現率的公開環境，並非單獨決定股市方向。",
         "market_impact": "利率與匯率變化可能影響成長股評價、外資流向與台股風險偏好，須搭配實際市場資料。",
         "watch": "觀察美元、殖利率與美元兌台幣是否持續同向，以及科技指數是否同步反應。"
       },
       {
         "title": "風險提醒",
-        "event": "本次焦點：台指價格訊號觸發｜急升｜高波動。臺灣加權指數 42,858.70 美股風險：中立／偏恐慌 38.9；VIX 17.09（-17.28%）。",
-        "importance": "日內 +7.33%｜15分鐘 +0.19%｜點數 +2,925.40｜最新 42,858.70。日內變動達固定觀察門檻，需以後續公開報價確認。",
-        "market_impact": "可能連動費半、Nasdaq 與台指期；以後續同步報價確認，而非預設因果。",
-        "watch": "觀察台股權值與電子類股是否與台指期、費半維持同方向。"
+        "event": "本次焦點：KOSPI價格訊號觸發｜急升｜高波動。韓國綜合 6,394.25 美股風險：中立／偏恐慌 39.2；VIX 17.09（-17.28%）。",
+        "importance": "日內 +14.31%｜點數 +800.69｜最新 6,394.25。日內變動達固定觀察門檻，需以後續公開報價確認。",
+        "market_impact": "可能連動日經、Nasdaq 與亞洲半導體供應鏈；以各市場報價確認。",
+        "watch": "觀察韓國科技權值、日經與台股電子類股是否出現同步波動。"
       }
     ],
     "reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。"
@@ -2094,17 +2048,17 @@
       "unavailable_sources": 0,
       "warming_sources": 1,
       "empty_sources": 0,
-      "age_minutes": 1070.3,
-      "checked_at": "2026-07-31T11:46:26.815263+08:00",
+      "age_minutes": 1102.0,
+      "checked_at": "2026-07-31T12:18:10.147232+08:00",
       "max_age_minutes": 1800,
       "is_expired": false
     },
     "availability": "available"
   },
   "source_health": {
-    "checked_at": "2026-07-31T11:46:26.815423+08:00",
+    "checked_at": "2026-07-31T12:18:10.147385+08:00",
     "status": "partial",
-    "summary": "1 個來源有資料缺口",
+    "summary": "3 個來源有資料缺口",
     "event_scan": {
       "status": "event_detected",
       "label": "已核對重大事件",
@@ -2114,41 +2068,72 @@
       {
         "key": "market_quotes",
         "label": "市場報價",
-        "status": "healthy",
-        "checked_at": "2026-07-31T11:46:26.815423+08:00",
-        "issues": []
+        "status": "partial",
+        "checked_at": "2026-07-31T12:18:10.147385+08:00",
+        "issues": [
+          "TWSE 盤中交叉核對失敗：HTTPError"
+        ]
       },
       {
         "key": "official_events",
         "label": "官方重大事件",
-        "status": "healthy",
-        "checked_at": "2026-07-31T11:46:26.815423+08:00",
-        "issues": []
+        "status": "partial",
+        "checked_at": "2026-07-31T12:18:10.147385+08:00",
+        "issues": [
+          "MOPS 官方來源暫時無法取得",
+          "TWSE 官方來源暫時無法取得"
+        ]
       },
       {
         "key": "market_news",
         "label": "市場新聞",
         "status": "healthy",
-        "checked_at": "2026-07-31T11:46:26.815423+08:00",
+        "checked_at": "2026-07-31T12:18:10.147385+08:00",
         "issues": []
       },
       {
         "key": "risk",
         "label": "情緒／波動",
         "status": "healthy",
-        "checked_at": "2026-07-31T11:46:26.815423+08:00",
+        "checked_at": "2026-07-31T12:18:10.147385+08:00",
         "issues": []
       },
       {
         "key": "research",
         "label": "量化研究",
         "status": "partial",
-        "checked_at": "2026-07-31T11:46:26.815423+08:00",
+        "checked_at": "2026-07-31T12:18:10.147385+08:00",
         "issues": [
           "us value 掃描失敗"
         ]
       }
     ]
   },
-  "errors": []
+  "errors": [
+    {
+      "ticker": "TAIEX",
+      "message": "TWSE 盤中交叉核對失敗：HTTPError",
+      "scope": "taiwan_crosscheck"
+    },
+    {
+      "ticker": "官方事件",
+      "message": "MOPS 官方來源暫時無法取得",
+      "scope": "official_event"
+    },
+    {
+      "ticker": "官方事件",
+      "message": "TWSE 官方來源暫時無法取得",
+      "scope": "official_event"
+    },
+    {
+      "ticker": "官方事件",
+      "message": "TWSE_MARKET 官方來源暫時無法取得",
+      "scope": "official_event"
+    },
+    {
+      "ticker": "官方事件",
+      "message": "GDACS 官方來源暫時無法取得",
+      "scope": "official_event"
+    }
+  ]
 }
