@@ -1,4 +1,4 @@
-from src.risk_news import _market_risk, _news_from_html, _parse_taifex_vix_file, build_risk_snapshot, sentiment_label
+from src.risk_news import _market_risk, _news_from_html, _parse_taifex_vix_file, build_risk_snapshot, sentiment_label, vix_stage
 
 
 def test_sentiment_labels_cover_fixed_thresholds():
@@ -44,11 +44,21 @@ def test_news_extraction_falls_back_to_disclosed_market_focus():
 def test_taifex_vix_parser_uses_the_final_intraday_observation():
     content = b"header\r\n20260723\t9000000\t\t\t35.77\r\n20260723\t13450000\t\t\t36.21\r\n"
 
-    assert _parse_taifex_vix_file(content) == {
-        "value": 36.21,
-        "date": "2026-07-23",
-        "source_label": "臺灣期貨交易所",
-    }
+    parsed = _parse_taifex_vix_file(content)
+
+    assert parsed["value"] == 36.21
+    assert parsed["date"] == "2026-07-23"
+    assert parsed["source_label"] == "臺灣期貨交易所"
+    assert parsed["percentile"] is None
+    assert parsed["stage"] == "極度恐慌"
+
+
+def test_vix_stage_uses_the_confirmed_10_30_70_90_percentile_bands():
+    assert vix_stage(18, 10) == "極度樂觀"
+    assert vix_stage(18, 30) == "樂觀"
+    assert vix_stage(18, 70) == "中立"
+    assert vix_stage(18, 90) == "恐慌"
+    assert vix_stage(18, 90.1) == "極度恐慌"
 
 
 def test_taifex_fallback_keeps_taiwan_vix_available(monkeypatch):

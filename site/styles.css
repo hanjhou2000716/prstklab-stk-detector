@@ -39,7 +39,10 @@ h1 { font-size: clamp(1.28rem, 6vw, 1.8rem); }
 .alert-brief-list { margin: 0; padding: 0; }
 .alert-brief-list p { display: flex; gap: 7px; margin: 0; padding: 8px 0; border-top: 1px solid var(--line); color: #4d4e48; font-size: .82rem; line-height: 1.55; }
 .alert-brief-list p:first-child { border-top: 0; }
-.alert-brief-list b { flex: 0 0 auto; color: var(--orange); }
+.alert-brief-list b, .alert-brief-list strong { flex: 0 0 auto; color: var(--orange); }
+.alert-brief-list strong::after { content: "："; }
+.market-signal-title.market-up, .signal-card b.market-up { color: var(--negative); }
+.market-signal-title.market-down, .signal-card b.market-down { color: var(--positive); }
 .research-list li.research-item { display: block; padding: 16px 0; }
 .research-list li.research-subheading { display: block; padding: 10px 0 4px; border-top: 0; color: var(--orange); font-size: .78rem; font-weight: 900; }
 .research-item + .research-item { border-top: 1px solid var(--line); }
@@ -96,8 +99,8 @@ h1 { font-size: clamp(1.1rem, 5.2vw, 1.55rem); }
 .news-tab.active { border-color: var(--orange); background: var(--orange-soft); color: #8b5128; }
 .news-panel[hidden] { display: none; }
 .alert-reminder { color: #111 !important; }
-.alert-quote .tw.up { color: var(--negative); }
-.alert-quote .tw.down { color: var(--positive); }
+.alert-quote .market-up { color: var(--negative); }
+.alert-quote .market-down { color: var(--positive); }
 
 /* Keep the provenance of every public quote visible without competing with price. */
 .quote-meta { display: block; max-width: 170px; margin-top: 4px; color: var(--muted); font-size: .61rem; font-style: normal; font-weight: 600; line-height: 1.35; white-space: normal; }

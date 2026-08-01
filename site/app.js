@@ -65,9 +65,15 @@ const renderFocus = (events, externalAlert) => {
 
 const formatAlertQuote = (item) => {
   if (!item || item.price === null || item.price === undefined) return "";
-  const state = item.change_percent > 0 ? "up" : item.change_percent < 0 ? "down" : "flat";
-  const convention = item.market === "taiwan" ? " tw" : "";
-  return `<div class="alert-quote"><b>${escapeHtml(item.name || item.ticker)}</b><strong class="${state}${convention}">${formatNumber(item.price)}${item.currency ? ` ${escapeHtml(item.currency)}` : ""}</strong><small class="${state}${convention}">${item.change === null || item.change === undefined ? "" : `${item.change > 0 ? "+" : ""}${formatNumber(item.change)}　`}${signedPercent(item.change_percent)}</small></div>`;
+  const state = item.change_percent > 0 ? "market-up" : item.change_percent < 0 ? "market-down" : "flat";
+  return `<div class="alert-quote"><b>${escapeHtml(item.name || item.ticker)}</b><strong class="${state}">${formatNumber(item.price)}${item.currency ? ` ${escapeHtml(item.currency)}` : ""}</strong><small class="${state}">${item.change === null || item.change === undefined ? "" : `${item.change > 0 ? "+" : ""}${formatNumber(item.change)}　`}${signedPercent(item.change_percent)}</small></div>`;
+};
+
+const movementClass = (value) => {
+  const text = String(value || "");
+  if (/(急升|上漲|漲勢|大漲|走高|反彈)/.test(text)) return "market-up";
+  if (/(急跌|下跌|跌勢|大跌|走低|回落)/.test(text)) return "market-down";
+  return "flat";
 };
 
 const externalAlertProfile = (category, indices) => {
@@ -168,9 +174,9 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
     setText("alert-banner", "今日無重大市場事件，持續觀察");
     setText("alert-headline", "市場訊號尚未達提醒門檻");
     setText("alert-summary", "目前沒有需優先提示的重大市場事件。");
-    setText("alert-trigger", "為何重要：日內價格訊號尚未觸及提醒門檻。");
-    setText("alert-context", "可能連動：持續觀察公開資料與主要市場變化。");
-    setText("alert-stock-observation", "股市觀察：等待可核對的市場變化，不預設市場間因果。 ");
+    setText("alert-trigger", "日內價格訊號尚未觸及提醒門檻。");
+    setText("alert-context", "持續核對公開資料與主要市場變化。");
+    setText("alert-stock-observation", "等待可核對的市場變化，不預設市場間因果。");
     setText("alert-reminder", "僅供公開資訊整理與教育性觀察，不構成投資建議。");
     document.getElementById("alert-quote-grid").innerHTML = '<p class="empty">目前沒有符合門檻的價格訊號</p>';
     renderAlertTrace(null);
@@ -179,12 +185,21 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
   const risk = event.risk_level || "持續觀察";
   card.dataset.risk = risk.includes("高風險") ? "high" : risk.includes("警戒") ? "warning" : "neutral";
   const externalBanner = externalAlert?.category === "black_swan" ? "極端黑天鵝／重大風險事件" : externalAlert?.category === "material_positive" ? "已核對重大正向事件" : "已核對外部快訊";
-  setText("alert-banner", event.kind === "market_signal" ? event.short_label : event.kind === "external_alert" ? externalBanner : "已核對的重要市場事件");
-  setText("alert-headline", event.brief_title || `${event.short_label}｜${event.title}`);
-  setText("alert-summary", `事件：${event.summary || event.title || "公開市場事件更新。"}`);
-  setText("alert-trigger", `為何重要：${event.why_important || event.trigger || "已核對公開訊號，等待後續市場反應。"}`);
-  setText("alert-context", `可能連動：${event.market_context || "持續觀察公開資料。"}`);
-  setText("alert-stock-observation", `股市觀察：${event.stock_observation || "觀察主要市場是否出現可核對的同步變化。"}`);
+  const banner = document.getElementById("alert-banner");
+  // A market signal already states its instrument in the detail headline.
+  // Hiding this label avoids rendering "台指價格訊號觸發" twice.
+  if (banner) {
+    banner.hidden = event.kind === "market_signal";
+    banner.textContent = event.kind === "external_alert" ? externalBanner : "已核對的重要市場事件";
+  }
+  const headline = event.brief_title || `${event.short_label}｜${event.title}`;
+  setText("alert-headline", headline);
+  const headlineNode = document.getElementById("alert-headline");
+  if (headlineNode) headlineNode.className = `market-signal-title ${movementClass(headline)}`;
+  setText("alert-summary", event.summary || event.title || "公開市場事件更新。");
+  setText("alert-trigger", event.why_important || event.trigger || "已核對公開訊號，等待後續市場反應。");
+  setText("alert-context", event.market_context || "持續觀察公開資料。");
+  setText("alert-stock-observation", event.stock_observation || "觀察主要市場是否出現可核對的同步變化。");
   setText("alert-reminder", event.friendly_reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
   const quoteItems = [event.instrument, ...(event.related || [])].filter(Boolean).slice(0, 2);
   document.getElementById("alert-quote-grid").innerHTML = quoteItems.length ? quoteItems.map(formatAlertQuote).join("") : '<p class="empty">本事件暫無可顯示的公開報價</p>';
@@ -244,7 +259,10 @@ const renderEvents = (events) => {
   if (!container) return;
   const secondary = events?.items?.slice(1) || [];
   if (!secondary.length) { container.innerHTML = '<li class="empty">目前沒有其他同步市場訊號</li>'; return; }
-  container.innerHTML = `<li class="signal-list-title">同步市場訊號</li>${secondary.map((event) => `<li class="signal-card"><b>${escapeHtml(event.brief_title || `${event.short_label}｜${event.title}`)}</b><small>${escapeHtml(event.source || "公開市場報價")}</small></li>`).join("")}`;
+  container.innerHTML = `<li class="signal-list-title">同步市場訊號</li>${secondary.map((event) => {
+    const title = event.brief_title || `${event.short_label}｜${event.title}`;
+    return `<li class="signal-card"><b class="${movementClass(title)}">${escapeHtml(title)}</b><small>${escapeHtml(event.source || "公開市場報價")}</small></li>`;
+  }).join("")}`;
 };
 
 const renderSourceHealth = (health, snapshot = {}) => {
@@ -285,7 +303,7 @@ const renderBriefing = (briefing, generatedAt) => {
   const container = document.getElementById("briefing-observations");
   if (!container) return;
   if (!observations.length) { container.innerHTML = '<p class="empty">本次定時報資料暫時無法取得</p>'; return; }
-  container.innerHTML = observations.map((item) => `<article class="briefing-observation"><h4>${escapeHtml(item.title || "公開市場觀察")}</h4><p><b>事件：</b>${escapeHtml(item.event || "公開資料更新中。")}</p><p><b>為何重要：</b>${escapeHtml(item.importance || "持續核對公開資料。")}</p><p><b>可能影響：</b>${escapeHtml(item.market_impact || "不預設市場間因果。")}</p><p><b>你要看：</b>${escapeHtml(item.watch || "觀察後續公開市場報價。")}</p></article>`).join("");
+  container.innerHTML = observations.map((item) => `<article class="briefing-observation"><h4>${escapeHtml(item.title || "公開市場觀察")}</h4><p><b>事件：</b>${escapeHtml(item.event || "公開資料更新中。")}</p><p><b>為何重要：</b>${escapeHtml(item.importance || "持續核對公開資料。")}</p><p><b>可能連動：</b>${escapeHtml(item.market_impact || "尚無足夠公開資料判定連動。")}</p><p><b>股市觀察：</b>${escapeHtml(item.watch || "觀察後續公開市場報價。")}</p></article>`).join("");
 };
 
 const renderLegacyResearchList = (id, items, empty) => {
