@@ -98,7 +98,8 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                 base.update({key: summary.get(key) for key in (
                     "requested", "data_complete", "failed", "scan_state", "status", "error_details",
                     "history_cached", "history_expected", "history_progress_pct",
-                    "history_pending", "history_failure_count", "blocking_reason", "notice",
+                    "history_pending", "history_failure_count", "partial_candidates_allowed",
+                    "evaluable_records", "blocking_reason", "notice",
                 )})
             except (OSError, json.JSONDecodeError):
                 pass
@@ -120,9 +121,14 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
             )
             sources_status.append({**base, "status": status, "candidates": 0})
             continue
-        blocked = base.get("scan_state") in {"failed", "building"} or base.get("status") in {
-            "掃描失敗", "資料暫時無法取得", "建檔中"
-        }
+        blocked = (
+            base.get("scan_state") == "failed"
+            or (base.get("scan_state") == "building" and not base.get("partial_candidates_allowed"))
+            or (
+                base.get("status") in {"掃描失敗", "資料暫時無法取得", "建檔中"}
+                and not base.get("partial_candidates_allowed")
+            )
+        )
         # Never copy a previous CSV into the new report while a scan is still
         # running or failed.  The source status is the authoritative freshness
         # boundary; an old candidate is less useful than an explicit gap.

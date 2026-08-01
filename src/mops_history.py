@@ -27,7 +27,10 @@ CACHE_MAX_AGE_DAYS = 14
 # Temporarily failing MOPS pages must not pin every later scheduled batch.
 FAILURE_RETRY_HOURS = 6
 REQUEST_RETRIES = 2
-REQUEST_BACKOFF_SECONDS = 0.75
+# MOPS intermittently throttles bursty CI traffic.  Keep retries bounded, but
+# pace the historical report requests so one batch does not look like a scrape.
+REQUEST_BACKOFF_SECONDS = 1.25
+REPORT_INTERVAL_SECONDS = 0.35
 
 
 def _number(value: str | None) -> float | None:
@@ -264,7 +267,7 @@ def fetch_pristine_history(
                 annual[year - 1] = prior
         if len(quarterly) >= 4 and len(annual) >= 3:
             break
-        time.sleep(0.08)
+        time.sleep(REPORT_INTERVAL_SECONDS)
 
     dividends = parse_dividend_history(client.report("t05st09_1", ticker))
     annual_years = sorted(annual, reverse=True)[:3]

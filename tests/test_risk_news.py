@@ -143,6 +143,31 @@ def test_duplicate_market_payload_uses_separate_fallback_feeds(monkeypatch):
     assert all(item.get("fallback_used") for item in snapshot["source_health"])
 
 
+def test_news_cache_prevents_empty_us_panel_after_transient_outage(monkeypatch, tmp_path):
+    cache_path = tmp_path / "news-cache.json"
+    monkeypatch.setenv("NEWS_CACHE_PATH", str(cache_path))
+    fresh = {
+        "taiwan": [{"title": "Taiwan", "url": "https://example.test/tw"}],
+        "us": [{"title": "US", "url": "https://example.test/us"}],
+    }
+    monkeypatch.setattr("src.risk_news.fetch_market_news", lambda market: fresh[market])
+    monkeypatch.setattr("src.risk_news.fetch_market_news_fallback", lambda market: [])
+    first = build_news_snapshot()
+    assert first["us"][0]["title"] == "US"
+    assert cache_path.exists()
+
+    def unavailable(_market):
+        raise RuntimeError("temporary outage")
+
+    monkeypatch.setattr("src.risk_news.fetch_market_news", unavailable)
+    second = build_news_snapshot()
+
+    assert second["us"][0]["title"] == "US"
+    assert second["us"][0]["stale_used"] is True
+    us_health = next(item for item in second["source_health"] if item["key"] == "news_us")
+    assert us_health["status"] == "stale"
+
+
 def test_taiwan_macro_fgi_is_used_as_taiwan_sentiment(monkeypatch):
     macro = {
         "score": 52.5,

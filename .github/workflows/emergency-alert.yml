@@ -42,6 +42,7 @@ jobs:
       EXTERNAL_EVIDENCE: ${{ toJson(github.event.client_payload.evidence || fromJson('[]')) }}
       EXTERNAL_SIGNATURE: ${{ github.event.client_payload.signature || '' }}
       EXTERNAL_ALERT_SHARED_SECRET: ${{ secrets.EXTERNAL_ALERT_SHARED_SECRET }}
+      NEWS_CACHE_PATH: site/data/news-cache.json
     steps:
       - uses: actions/checkout@v4
         with:
@@ -92,7 +93,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/market.json
+          git add site/data/market.json site/data/news-cache.json
           if git diff --cached --quiet; then
             exit 0
           fi
