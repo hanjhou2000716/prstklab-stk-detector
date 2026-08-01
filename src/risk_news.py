@@ -35,6 +35,15 @@ NEWS_TERMS = {
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; PRStKInvestmentSystem/1.0)"}
 NEWS_CACHE_MAX_AGE_MINUTES = int(os.getenv("NEWS_CACHE_MAX_AGE_MINUTES", "360"))
 
+# A provider can return a valid HTTP response containing the wrong regional
+# feed.  These explicit Taiwan terms are used to keep the US news tab clean;
+# broad topics such as gold or semiconductors are deliberately not blocked.
+TAIWAN_NEWS_TERMS = (
+    "\u53f0\u80a1", "\u53f0\u7a4d\u96fb", "\u6ac3\u8cb7", "\u52a0\u6b0a\u6307\u6578",
+    "\u570b\u6cf0", "\u529b\u7a4d\u96fb", "\u53f0\u6307", "\u53f0\u7063\u80a1\u5e02",
+    "0050", "006208", "00878", "2330.tw", "twse", "taiex", "tpex", "twii",
+)
+
 
 def _news_cache_path() -> Path | None:
     """Return the optional durable cache path configured by a workflow."""
@@ -347,12 +356,20 @@ def _market_news_rss_url(market: str) -> str:
     different vocabulary for each tab so a provider returning a shared HTML
     shell cannot make Taiwan and US panels display the same stories.
     """
-    params = {
-        "q": NEWS_RSS_QUERIES[market],
-        "hl": "zh-TW",
-        "gl": "TW",
-        "ceid": "TW:zh-Hant",
-    }
+    if market == "us":
+        params = {
+            "q": "Nasdaq OR S&P 500 OR Federal Reserve OR Nvidia OR US stocks",
+            "hl": "en-US",
+            "gl": "US",
+            "ceid": "US:en",
+        }
+    else:
+        params = {
+            "q": NEWS_RSS_QUERIES[market],
+            "hl": "zh-TW",
+            "gl": "TW",
+            "ceid": "TW:zh-Hant",
+        }
     return "https://news.google.com/rss/search?" + urlencode(params)
 
 
@@ -385,6 +402,27 @@ def fetch_market_news_fallback(market: str) -> list[dict[str, str]]:
     return _news_from_rss(response.text, market)
 
 
+def _filter_market_news(stories: list[dict[str, str]], market: str) -> list[dict[str, str]]:
+    """Reject cross-market headlines before they reach the cache or UI.
+
+    URL collision detection cannot catch two different URLs copied from the
+    same regional feed.  For the US tab, explicit Taiwan terms are therefore
+    filtered from the title/description before a story is accepted.
+    """
+    valid: list[dict[str, str]] = []
+    for story in stories:
+        title = str(story.get("title", "")).strip()
+        url = str(story.get("url", "")).strip()
+        if not title or not url:
+            continue
+        if market == "us":
+            haystack = f"{title} {story.get('description', '')}".lower()
+            if any(term.lower() in haystack for term in TAIWAN_NEWS_TERMS):
+                continue
+        valid.append(dict(story))
+    return valid[:5]
+
+
 def _news_identity(stories: list[dict[str, str]]) -> frozenset[str]:
     """Return order-independent article identities for collision detection."""
     return frozenset(story.get("url") or story.get("title", "") for story in stories)
@@ -404,7 +442,7 @@ def _build_news_snapshot_primary() -> dict[str, Any]:
     result: dict[str, Any] = {"taiwan": [], "us": [], "errors": [], "diagnostics": [], "source_health": []}
     for market in ("taiwan", "us"):
         try:
-            result[market] = fetch_market_news(market)
+            result[market] = _filter_market_news(fetch_market_news(market), market)
             result["source_health"].append({
                 "key": f"news_{market}", "label": f"{market} market news",
                 "source_tier": "discovery", "source_url": ANUE_CATEGORY_URLS[market],
@@ -428,7 +466,7 @@ def _build_news_snapshot_primary() -> dict[str, Any]:
         result["diagnostics"].append("台股與美股新聞來源回傳相同內容，已啟用市場分流備援")
         for market in ("taiwan", "us"):
             try:
-                fallback = fetch_market_news_fallback(market)
+                fallback = _filter_market_news(fetch_market_news_fallback(market), market)
                 if fallback:
                     result[market] = fallback
                     health = next(item for item in result["source_health"] if item["key"] == f"news_{market}")
@@ -464,7 +502,24 @@ def build_news_snapshot() -> dict[str, Any]:
             health = {"key": f"news_{market}", "status": "failed", "item_count": 0}
             result.setdefault("source_health", []).append(health)
         if result.get(market):
-            stories = result[market]
+            stories = _filter_market_news(result[market], market)
+            # A polluted primary feed may leave only one or two valid US
+            # headlines after semantic filtering.  Treat that as incomplete,
+            # not healthy: try the market-specific RSS feed before caching the
+            # partial payload.  If the fallback is unavailable, retain the
+            # valid subset rather than inventing or borrowing another market.
+            if len(stories) < 5:
+                try:
+                    fallback = _filter_market_news(fetch_market_news_fallback(market), market)
+                except Exception:
+                    fallback = []
+                other = result.get("us" if market == "taiwan" else "taiwan", [])
+                if fallback and not _news_lists_collide(fallback, other):
+                    stories = fallback
+                    health.update({"status": "healthy", "item_count": len(stories),
+                                   "source_url": _market_news_rss_url(market),
+                                   "fallback_used": True, "data_gap": None})
+            result[market] = stories
             if not any(item.get("stale_used") for item in stories):
                 markets[market] = {"fetched_at": checked_at, "stories": stories}
             continue
@@ -472,7 +527,7 @@ def build_news_snapshot() -> dict[str, Any]:
         # A final category-specific attempt is useful when the primary provider
         # returned a shared shell or failed transiently.
         try:
-            fallback = fetch_market_news_fallback(market)
+            fallback = _filter_market_news(fetch_market_news_fallback(market), market)
         except Exception:
             fallback = []
         other = result.get("us" if market == "taiwan" else "taiwan", [])
@@ -484,7 +539,7 @@ def build_news_snapshot() -> dict[str, Any]:
             markets[market] = {"fetched_at": checked_at, "stories": fallback}
             continue
 
-        cached = _recent_cached_stories(cache, market)
+        cached = _filter_market_news(_recent_cached_stories(cache, market), market)
         if cached and not _news_lists_collide(cached, other):
             result[market] = cached
             health.update({"status": "stale", "item_count": len(cached),

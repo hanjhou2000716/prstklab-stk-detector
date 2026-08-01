@@ -1,4 +1,6 @@
 from src.risk_news import (
+    _filter_market_news,
+    _market_news_rss_url,
     _market_risk,
     _news_from_html,
     _news_from_rss,
@@ -188,3 +190,19 @@ def test_taiwan_macro_fgi_is_used_as_taiwan_sentiment(monkeypatch):
     snapshot = build_risk_snapshot()
 
     assert snapshot["taiwan"]["sentiment"] == macro
+
+
+def test_us_news_filter_rejects_taiwan_headlines_but_keeps_us_headlines():
+    stories = [
+        {"title": "\u53f0\u80a1 \u53f0\u7a4d\u96fb\u76e4\u52e2", "url": "https://news.cnyes.com/news/id/tw"},
+        {"title": "Nasdaq futures and Federal Reserve outlook", "url": "https://news.google.com/rss/articles/us"},
+    ]
+    filtered = _filter_market_news(stories, "us")
+    assert [item["title"] for item in filtered] == ["Nasdaq futures and Federal Reserve outlook"]
+
+
+def test_us_rss_fallback_uses_us_locale():
+    url = _market_news_rss_url("us")
+    assert "hl=en-US" in url
+    assert "gl=US" in url
+    assert "ceid=US%3Aen" in url

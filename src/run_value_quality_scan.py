@@ -48,7 +48,37 @@ def load_upstream_candidates(market: str, data_dir: Path, universe_file: str | N
     return list(candidates.values())
 
 
-def public_quotes(candidates: list[dict[str, str]], batch_size: int = 50) -> tuple[dict[str, dict[str, float | str]], list[str]]:
+def public_share_counts(candidates: list[dict[str, str]]) -> dict[str, float]:
+    """Read a bounded public share-count proxy for turnover-rate screening.
+
+    Yahoo's public ``floatShares`` field is preferred; ``shares`` is the
+    disclosed outstanding-share fallback.  The result is used only to derive
+    a transparent turnover proxy when TWSE free-float data is unavailable.
+    """
+    try:
+        import yfinance as yf
+    except ImportError:
+        return {}
+    output: dict[str, float] = {}
+    for item in candidates:
+        symbol = item["symbol"]
+        try:
+            ticker = yf.Ticker(symbol)
+            info = ticker.info
+            shares = info.get("floatShares") or info.get("sharesOutstanding")
+            if shares is None:
+                shares = dict(ticker.fast_info).get("shares")
+            if isinstance(shares, (int, float)) and float(shares) > 0:
+                output[symbol] = float(shares)
+        except Exception:
+            continue
+    return output
+
+
+def public_quotes(
+    candidates: list[dict[str, str]], batch_size: int = 50,
+    share_counts: dict[str, float] | None = None,
+) -> tuple[dict[str, dict[str, float | str]], list[str]]:
     """Return latest quote plus three-month heat observations for each symbol."""
     quotes: dict[str, dict[str, float | str]] = {}
     errors: list[str] = []
@@ -60,7 +90,11 @@ def public_quotes(candidates: list[dict[str, str]], batch_size: int = 50) -> tup
                     bars = downloaded[item["symbol"]].dropna() if len(group) > 1 else downloaded.dropna()
                     context = latest_quote_context(bars)
                     if context:
-                        quotes[item["symbol"]] = {**context, **heat_metrics(bars)}
+                        shares = (share_counts or {}).get(item["symbol"])
+                        quotes[item["symbol"]] = {
+                            **context, **heat_metrics(bars, shares_outstanding=shares),
+                            "turnover_rate_basis": "Yahoo floatShares/shares proxy" if shares else None,
+                        }
                     else:
                         errors.append(f"{item['ticker']} 報價資料不足")
                 except (KeyError, TypeError, ValueError):
@@ -102,8 +136,14 @@ def main() -> None:
             [item["ticker"] for item in candidates],
             cik_overrides={item["ticker"]: item["cik"] for item in candidates if item.get("cik")},
         )
-    quotes, quote_errors = public_quotes(candidates, args.batch_size)
-    base_rows = review_public_pool(candidates, fundamentals, quotes, args.market, limit=None)
+    share_counts = public_share_counts(
+        [item for item in candidates if args.market != "taiwan" or item["ticker"] in history]
+    ) if args.market == "taiwan" else None
+    quotes, quote_errors = public_quotes(candidates, args.batch_size, share_counts)
+    base_rows = review_public_pool(
+        candidates, fundamentals, quotes, args.market, limit=None,
+        allow_missing_supplemental=args.market == "taiwan",
+    )
     # Taiwan history is built incrementally.  A global ``150/150`` gate made a
     # handful of transient MOPS failures hide every already-verified company.
     # Evaluate only tickers whose own history record is complete; incomplete

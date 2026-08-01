@@ -102,14 +102,19 @@ def review_public_pool(
     quotes: dict[str, dict[str, Any]],
     market: str,
     limit: int | None = 5,
+    allow_missing_supplemental: bool = False,
 ) -> list[dict[str, Any]]:
     """Build public value observations from an independent constituent pool."""
     rows: list[dict[str, Any]] = []
     for candidate in candidates:
         ticker = candidate["ticker"]
         metrics = fundamentals.get(ticker)
-        if not metrics:
+        # ROE, net income and P/E are supplemental context for the Taiwan
+        # Pristine Value pool.  A TWSE endpoint outage must not prevent a
+        # ticker with complete MOPS six-condition data from being evaluated.
+        if not metrics and not allow_missing_supplemental:
             continue
+        metrics = metrics or {}
         score, checks = score_public_fundamentals(metrics, market)
         quote = quotes.get(candidate["symbol"], {})
         rows.append({
