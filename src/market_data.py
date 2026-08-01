@@ -6,6 +6,8 @@ from datetime import date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from src.intel_contract import normalize_quote_record
+
 
 MARKETS = {
     "taiwan": {"calendar": "XTAI", "label": "台股", "timezone": "Asia/Taipei"},
@@ -106,7 +108,7 @@ def _daily_quote(item: dict[str, str], closes: Any) -> dict[str, Any]:
     if len(closes) < 2:
         raise ValueError("可用收盤資料不足。")
     latest, previous = float(closes.iloc[-1]), float(closes.iloc[-2])
-    return {
+    return normalize_quote_record({
         **item,
         "price": round(latest, 2),
         "change": round(latest - previous, 2),
@@ -116,7 +118,7 @@ def _daily_quote(item: dict[str, str], closes: Any) -> dict[str, Any]:
         "quote_basis": "日線收盤",
         "quote_source": "Yahoo Finance public daily quote",
         "currency": item.get("currency") or ("TWD" if item["market"] == "taiwan" else "USD"),
-    }
+    })
 
 
 def _intraday_quote(
@@ -144,7 +146,7 @@ def _intraday_quote(
         elapsed_seconds = (timestamp - earlier).total_seconds()
         if 10 * 60 <= elapsed_seconds <= 25 * 60:
             change_15m_percent = change_percent(latest, float(intraday_closes.iloc[-4]))
-    return {
+    return normalize_quote_record({
         **item,
         "price": round(latest, 2),
         "change": round(latest - previous_close, 2),
@@ -156,7 +158,7 @@ def _intraday_quote(
         "quote_delayed": delayed,
         "quote_source": "Yahoo Finance public 5-minute quote",
         "currency": item.get("currency") or ("TWD" if item["market"] == "taiwan" else "USD"),
-    }
+    })
 
 
 def intraday_is_fresh(timestamp: Any, market: str, now: datetime | None = None) -> bool:
@@ -416,6 +418,8 @@ def build_market_snapshot() -> dict[str, Any]:
         errors = [error for error in errors if error.get("ticker") != "TPEx"]
     quotes = annotate_quote_freshness(quotes)
     indices = annotate_quote_freshness(indices)
+    quotes = [normalize_quote_record(item) for item in quotes]
+    indices = [normalize_quote_record(item) for item in indices]
     for item in [*quotes, *indices]:
         if item.get("freshness") in {"stale", "unavailable"}:
             errors.append({
@@ -433,6 +437,7 @@ def build_market_snapshot() -> dict[str, Any]:
             macro_quotes.append(get_quote(item, None))
         except Exception as exc:
             errors.append({"ticker": item["ticker"], "message": str(exc), "scope": "macro_quote"})
+    macro_quotes = [normalize_quote_record(item) for item in macro_quotes]
     quote_data_status = "即時" if not errors else "部分缺漏"
     risk = build_risk_snapshot()
     news = build_news_snapshot()
@@ -469,6 +474,8 @@ def build_market_snapshot() -> dict[str, Any]:
         events=events,
         research_report=research_report,
         checked_at=scan_completed_at,
+        official_sources=official_events.get("source_health", []),
+        news_sources=news.get("source_health", []),
     )
     live_quotes = sum(item.get("quote_time") is not None for item in [*quotes, *indices])
     close_quotes = len(quotes) + len(indices) - live_quotes

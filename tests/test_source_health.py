@@ -47,3 +47,15 @@ def test_pristine_history_warming_is_not_reported_as_a_missing_source():
     assert "20／100" in research["issues"][0]
     assert health["status"] == "warming"
     assert health["summary"] == "璞玉價值歷史資料建檔中"
+def test_per_source_health_is_exposed_as_a_gap_without_hiding_other_sources():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": []}, checked_at=NOW,
+        official_sources=[
+            {"key": "fed", "status": "healthy", "item_count": 0},
+            {"key": "bls", "status": "failed", "data_gap": "Timeout"},
+        ],
+    )
+    official = next(item for item in health["sources"] if item["key"] == "official_events")
+    assert official["status"] == "partial"
+    assert len(official["data_gaps"]) == 1
+    assert health["missing_source_count"] >= 1

@@ -19,6 +19,15 @@
     "marginLowPercentile": 25,
     "cryptoMacd": {"fast": 12, "slow": 26, "signal": 9, "timeframes": ["1w", "1M"]}
   },
+  "contracts": {
+    "eventRequiredFields": ["source_tier", "fetched_at", "published_at", "event_type", "importance", "source_url", "source_domain", "cross_checked", "data_gap"],
+    "quoteRequiredFields": ["source_tier", "fetched_at", "published_at", "source_domain", "stale_used"],
+    "maxEventTopics": 4
+  },
+  "storage": {
+    "eventLedger": "railway-persistent",
+    "actionsCacheRole": "short-term-backup"
+  },
   "security": {
     "noPrivateAccounts": true,
     "noTrading": true,
