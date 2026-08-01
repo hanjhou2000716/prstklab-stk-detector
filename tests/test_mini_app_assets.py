@@ -106,7 +106,7 @@ def test_mini_app_numbers_taiwan_and_us_news_independently():
 
     assert 'id="taiwan-news" class="news-list numbered-list"' in page
     assert 'id="us-news" class="news-list numbered-list"' in page
-    assert "stories.slice(0, 3)" in app
+    assert "stories.slice(0, 5)" in app
 
 
 def test_mini_app_orders_sections_and_uses_strategy_match_scores():

@@ -51,6 +51,32 @@ def _card(title: str, event: str, importance: str, market_impact: str, watch: st
     }
 
 
+def _direction(item: dict[str, Any] | None) -> str:
+    """Return a neutral direction description only when a fresh change exists."""
+    change = (item or {}).get("change_percent")
+    if change is None:
+        return "資料未完整"
+    if float(change) > 0:
+        return "上漲"
+    if float(change) < 0:
+        return "下跌"
+    return "持平"
+
+
+def _pair_relation(
+    left: dict[str, Any] | None, right: dict[str, Any] | None, *, left_name: str, right_name: str,
+) -> str:
+    """Describe confirmation or divergence without claiming causality."""
+    left_direction, right_direction = _direction(left), _direction(right)
+    if "資料未完整" in {left_direction, right_direction}:
+        return f"{left_name}或{right_name}資料未完整，暫不判定是否同步。"
+    if left_direction == right_direction:
+        return f"{left_name}與{right_name}同為{left_direction}，可作為同向價格確認。"
+    if "持平" in {left_direction, right_direction}:
+        return f"{left_name}與{right_name}未呈現一致方向，暫不視為同步訊號。"
+    return f"{left_name}{left_direction}、{right_name}{right_direction}，呈現分歧，暫不推論跨市場因果。"
+
+
 def _market_observations(
     items: dict[str, dict[str, Any]], risk: dict[str, Any] | None, events: list[dict[str, Any]],
 ) -> list[dict[str, str]]:
@@ -73,30 +99,30 @@ def _market_observations(
         _card(
             "台股總經",
             f"台指 {_move(taiwan)}；櫃買 {_move(tpex)}。台股風險：{_risk_line(risk, 'taiwan')}",
-            "加權與櫃買可用來分辨權值與中小型股的當日表現是否出現差異。",
-            "台股盤勢仍須搭配權值、半導體與海外市場報價確認，不以單日變動推論原因。",
-            "觀察台指、櫃買與台指期是否延續同向，以及成交量是否同步變化。",
+            "加權指數代表大型權值股，櫃買指數較反映中小型股；兩者同步或分歧可用來判讀盤面廣度。",
+            _pair_relation(taiwan, tpex, left_name="加權指數", right_name="櫃買指數"),
+            "觀察台指期是否與現貨收斂、成交量是否放大，以及權值股是否主導盤勢。",
         ),
         _card(
             "台積電／半導體",
             f"台積電 {_move(tsmc)}；費半 {_move(sox)}；Nasdaq {_move(nasdaq)}。",
-            "台積電與費半是台美半導體權值的公開參考，能協助辨識單一市場或跨市場的差異。",
-            "半導體行情可能連動台股電子權值與美國科技指數，實際傳導需由後續報價驗證。",
-            "觀察費半、台積電與 Nasdaq 是否同步，及公開財報／展望是否帶來持續影響。",
+            "台積電、費半與 Nasdaq 可交叉辨識台美半導體與成長股是否同向，而非只看單一公司或指數。",
+            _pair_relation(sox, tsmc, left_name="費半", right_name="台積電"),
+            "觀察費半是否延續至美股收盤，以及台積電、AI 供應鏈與公開財報展望是否出現一致方向。",
         ),
         _card(
             "科技產業",
             f"Nasdaq {_move(nasdaq)}；費半 {_move(sox)}；日經225 {_move(nikkei)}；韓國綜合 {_move(kospi)}。",
-            "美日韓科技指數提供 AI、半導體與出口型市場的跨區域公開觀察。",
-            "跨市場可能不同步；只觀察是否出現可核對的同向擴散或明顯分歧。",
-            "觀察美國科技收盤、日韓開收盤與台股電子權值的方向是否一致。",
+            "美日韓科技市場的同向變化，較能反映區域風險偏好；若分歧，需保留各市場本地因素的解釋空間。",
+            _pair_relation(nasdaq, kospi, left_name="Nasdaq", right_name="韓國綜合"),
+            "觀察日韓下一交易時段是否延續，以及台股電子權值是否跟隨或出現明顯分歧。",
         ),
         _card(
             "利率匯率",
             f"美元指數 {_move(dxy)}；美國10年債殖利率 {_move(us10y)}；美元兌台幣 {_move(usd_twd)}。",
-            "美元、長債殖利率與匯率可反映資金與折現率的公開環境，並非單獨決定股市方向。",
-            "利率與匯率變化可能影響成長股評價、外資流向與台股風險偏好，須搭配實際市場資料。",
-            "觀察美元、殖利率與美元兌台幣是否持續同向，以及科技指數是否同步反應。",
+            "美元與長債殖利率影響成長股折現率；美元兌台幣則是觀察台股外資風險偏好的公開輔助指標。",
+            _pair_relation(dxy, us10y, left_name="美元指數", right_name="美國10年債殖利率"),
+            "觀察美元、殖利率與台幣是否連續兩個交易時段同向，並核對科技指數是否同步受壓或走穩。",
         ),
         _card(
             "風險提醒",
