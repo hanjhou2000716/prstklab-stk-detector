@@ -62,7 +62,9 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
             continue
         candidates.append({key: item.get(key) for key in (
             "market", "strategy", "rank", "ticker", "name", "score", "close", "previous_close", "change_percent", "turnover", "as_of", "signal_labels", "volume_ratio", "range_contraction", "breakout_20", "vcp_breakout", "new_high_days", "fgi_score", "fgi_status", "conditions_matched", "condition_count", "structure", "status",
-            "roe", "pe", "payout_ratio", "metrics_available", "moat_review"
+            "roe", "pe", "payout_ratio", "metrics_available", "moat_review", "list_type",
+            "pristine_conditions_matched", "pristine_conditions_total", "quality_verified",
+            "heat_verified", "verification_gaps"
         )})
     sources = [
         {key: source.get(key) for key in (

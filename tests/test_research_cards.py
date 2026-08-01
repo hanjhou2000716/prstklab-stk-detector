@@ -62,3 +62,4 @@ def test_loader_keeps_verified_rows_when_incremental_scan_allows_partial_candida
     result = load_research_cards(report, now=datetime(2026, 7, 25, 11, 0, tzinfo=ZoneInfo("Asia/Taipei")))
 
     assert [item["ticker"] for item in result["candidates"]] == ["3023"]
+    assert result["candidates"][0]["list_type"] == "formal"
