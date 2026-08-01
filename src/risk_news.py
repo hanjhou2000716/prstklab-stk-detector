@@ -290,10 +290,23 @@ def fetch_market_news(market: str) -> list[dict[str, str]]:
 
 def build_news_snapshot() -> dict[str, Any]:
     """Collect news independently so one market's outage does not hide the other."""
-    result: dict[str, Any] = {"taiwan": [], "us": [], "errors": []}
+    checked_at = datetime.now().astimezone().isoformat()
+    result: dict[str, Any] = {"taiwan": [], "us": [], "errors": [], "source_health": []}
     for market in ("taiwan", "us"):
         try:
             result[market] = fetch_market_news(market)
+            result["source_health"].append({
+                "key": f"news_{market}", "label": f"{market} market news",
+                "source_tier": "discovery", "source_url": ANUE_CATEGORY_URLS[market],
+                "status": "healthy", "checked_at": checked_at,
+                "item_count": len(result[market]), "data_gap": None,
+            })
         except Exception:
             result["errors"].append(f"{market}新聞資料暫時無法取得")
+            result["source_health"].append({
+                "key": f"news_{market}", "label": f"{market} market news",
+                "source_tier": "discovery", "source_url": ANUE_CATEGORY_URLS[market],
+                "status": "failed", "checked_at": checked_at,
+                "item_count": 0, "data_gap": "request_failed",
+            })
     return result

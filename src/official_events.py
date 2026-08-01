@@ -19,6 +19,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from src.finance_intel_policy import polling_rule, threshold_rule
+from src.intel_contract import normalize_event_record
 from src.value_fundamentals import SEC_USER_AGENT, sec_ticker_ciks
 from src.value_universe import fetch_taiwan_0050_universe
 
@@ -450,14 +451,34 @@ def _usgs_items() -> list[dict[str, str]]:
 
 
 def fetch_official_events() -> dict[str, Any]:
-    """Fetch bounded first-party candidates; failures never fabricate a release."""
+    """Fetch bounded first-party candidates with per-source health metadata."""
     items: list[dict[str, str]] = []
     errors: list[str] = []
-    for source in SOURCES:
+    checked_at = datetime.now(timezone.utc).isoformat()
+    source_health: list[dict[str, Any]] = []
+
+    def collect(key: str, label: str, url: str, fetcher: Any) -> None:
         try:
-            items.extend(_source_items(source))
-        except Exception:
-            errors.append(f"{source['key'].upper()} \u5b98\u65b9\u4f86\u6e90\u66ab\u6642\u7121\u6cd5\u53d6\u5f97")
+            fetched = [normalize_event_record(item, fetched_at=checked_at) for item in fetcher()]
+            items.extend(fetched)
+            source_health.append({
+                "key": key, "label": label, "source_tier": "official",
+                "source_url": url, "status": "healthy", "checked_at": checked_at,
+                "item_count": len(fetched), "latest_published_at": max(
+                    (str(item.get("published_at") or "") for item in fetched), default=None
+                ), "data_gap": None,
+            })
+        except Exception as exc:
+            errors.append(f"{key.upper()} official source temporarily unavailable")
+            source_health.append({
+                "key": key, "label": label, "source_tier": "official",
+                "source_url": url, "status": "failed", "checked_at": checked_at,
+                "item_count": 0, "latest_published_at": None,
+                "data_gap": type(exc).__name__,
+            })
+
+    for source in SOURCES:
+        collect(source["key"], source["source"], source["url"], lambda source=source: _source_items(source))
     for key, fetcher in (
         ("MOPS", _mops_items),
         ("TWSE", _twse_items),
@@ -466,9 +487,9 @@ def fetch_official_events() -> dict[str, Any]:
         ("SEC", _sec_items),
         ("USGS", _usgs_items),
     ):
-        try:
-            items.extend(fetcher())
-        except Exception:
-            errors.append(f"{key} \u5b98\u65b9\u4f86\u6e90\u66ab\u6642\u7121\u6cd5\u53d6\u5f97")
+        collect(key.lower(), key, "", fetcher)
     items.sort(key=lambda item: item.get("released_at") or "", reverse=True)
-    return {"items": items[:6], "errors": errors}
+    return {
+        "items": items[:6], "errors": errors, "checked_at": checked_at,
+        "source_health": source_health,
+    }

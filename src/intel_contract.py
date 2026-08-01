@@ -1,0 +1,120 @@
+"""Shared, source-backed contracts for events and public market quotes.
+
+The dashboard and Telegram layers consume data from several providers.  These
+small normalisers keep provenance, freshness and classification fields
+consistent without changing provider-specific payloads.
+"""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from typing import Any
+from urllib.parse import urlparse
+
+
+SOURCE_TIERS = {"official", "public-market", "discovery"}
+EVENT_TYPES = {
+    "macro", "central-bank", "policy", "conflict", "energy", "semiconductor",
+    "cyber", "health", "disaster", "crypto", "market",
+}
+IMPORTANCE_LEVELS = {"normal", "warning", "high-risk"}
+
+
+def _now() -> str:
+    return datetime.now(UTC).isoformat()
+
+
+def source_domain(url: Any) -> str:
+    """Return a stable lower-case hostname, excluding the common www prefix."""
+    raw = str(url or "").strip()
+    if not raw:
+        return ""
+    parsed = urlparse(raw if "://" in raw else f"https://{raw}")
+    return (parsed.hostname or "").lower().removeprefix("www.")
+
+
+def _source_tier(record: dict[str, Any]) -> str:
+    value = str(record.get("source_tier") or "").strip().lower()
+    if value in SOURCE_TIERS:
+        return value
+    if record.get("relevance") == "official" or record.get("kind") == "official_event":
+        return "official"
+    if record.get("kind") == "market_signal" or record.get("quote_source"):
+        return "public-market"
+    return "discovery"
+
+
+def _event_type(record: dict[str, Any]) -> str:
+    value = str(record.get("event_type") or "").strip().lower()
+    if value in EVENT_TYPES:
+        return value
+    kind = str(record.get("kind") or "").lower()
+    label = f"{record.get('short_label', '')} {record.get('title', '')}".lower()
+    if kind == "market_signal":
+        return "market"
+    if any(term in label for term in ("fed", "fomc", "利率", "央行")):
+        return "central-bank"
+    if any(term in label for term in ("半導體", "nvidia", "台積電", "tsm")):
+        return "semiconductor"
+    if any(term in label for term in ("戰爭", "停火", "攻擊", "制裁")):
+        return "conflict"
+    if any(term in label for term in ("地震", "海嘯", "災害")):
+        return "disaster"
+    if any(term in label for term in ("btc", "eth", "加密")):
+        return "crypto"
+    return "macro"
+
+
+def normalize_event_record(
+    record: dict[str, Any], *, fetched_at: str | None = None
+) -> dict[str, Any]:
+    """Add the common event contract while preserving provider fields."""
+    item = dict(record)
+    url = str(item.get("source_url") or item.get("url") or "").strip()
+    trace = item.get("source_trace") if isinstance(item.get("source_trace"), dict) else {}
+    if not url:
+        url = str(trace.get("source_url") or "").strip()
+    published = item.get("published_at") or item.get("released_at") or item.get("event_time")
+    impact = item.get("impact_confirmation") if isinstance(item.get("impact_confirmation"), dict) else {}
+    importance = str(item.get("importance") or "").strip().lower()
+    if importance not in IMPORTANCE_LEVELS:
+        risk = str(item.get("risk_level") or "").lower()
+        importance = "high-risk" if "高風險" in risk else "warning" if "警戒" in risk else "normal"
+    transmission = item.get("market_transmission")
+    if not isinstance(transmission, list):
+        transmission = [str(value.get("ticker")) for value in item.get("related", [])
+                        if isinstance(value, dict) and value.get("ticker")]
+    item.update({
+        "source_tier": _source_tier(item),
+        "fetched_at": item.get("fetched_at") or fetched_at or _now(),
+        "published_at": published,
+        "traditional_chinese_summary": item.get("traditional_chinese_summary")
+        or item.get("brief_summary") or item.get("summary") or item.get("title", ""),
+        "event_type": _event_type(item),
+        "importance": importance,
+        "market_transmission": transmission,
+        "source_url": url,
+        "source_domain": source_domain(url),
+        "cross_checked": bool(item.get("cross_checked") or impact.get("confirmed")),
+        "data_gap": item.get("data_gap"),
+        "stale_used": bool(item.get("stale_used") or item.get("quote_delayed")),
+    })
+    return item
+
+
+def normalize_quote_record(record: dict[str, Any], *, fetched_at: str | None = None) -> dict[str, Any]:
+    """Add provenance and freshness fields to a quote without altering values."""
+    item = dict(record)
+    source = str(item.get("quote_source") or item.get("source") or "")
+    official = any(token in source.lower() for token in ("twse", "taifex", "tpex", "official", "mis"))
+    url = str(item.get("source_url") or item.get("url") or "")
+    item.update({
+        "source_tier": item.get("source_tier") or ("official" if official else "public-market"),
+        "fetched_at": item.get("fetched_at") or fetched_at or _now(),
+        "published_at": item.get("published_at") or item.get("quote_time") or item.get("quote_date"),
+        "source_url": url,
+        "source_domain": source_domain(url),
+        "stale_used": bool(item.get("stale_used") or item.get("quote_delayed") or item.get("quote_basis") == "最近收盤"),
+    })
+    return item
+

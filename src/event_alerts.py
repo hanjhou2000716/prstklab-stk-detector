@@ -8,6 +8,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from src.finance_intel_policy import threshold_rule
+from src.intel_contract import normalize_event_record
 
 
 EVENT_RULES = (
@@ -351,6 +352,7 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
 
 def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[str, Any]:
     """Give official or news events the same card fields as price signals."""
+    event = normalize_event_record(event)
     label = str(event.get("short_label") or "市場事件")
     title = str(event.get("title") or "公開事件更新")
     why_important, market_context, stock_observation = _event_market_context(label)
@@ -385,7 +387,7 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         why_important = "重大災害可能改變區域供應、航運、能源或避險需求；實際影響須由官方資訊與公開市場資料共同確認。"
         market_context = f"市場傳導：{confirmation}；本輪連動觀察為 {related_names}。"
         stock_observation = "後續觀察：官方災情與基建／航運資訊、能源與避險資產，以及主要股市是否持續同步波動。"
-    return {
+    return normalize_event_record({
         **event,
         "kind": event.get("kind") or "major_event",
         "pattern": event.get("pattern") or "重要事件",
@@ -400,7 +402,7 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "related": related,
         "impact_confirmation": impact_confirmation,
         "source_trace": trace,
-    }
+    })
 
 
 def build_event_snapshot(

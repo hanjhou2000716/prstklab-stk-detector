@@ -63,6 +63,8 @@ def build_source_health(
     events: dict[str, Any],
     research_report: dict[str, Any],
     checked_at: datetime,
+    official_sources: list[dict[str, Any]] | None = None,
+    news_sources: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Expose failures distinctly from a clean scan with no market event."""
     checked = checked_at.isoformat()
@@ -83,6 +85,19 @@ def build_source_health(
         _source_item(key, label, grouped[key], checked)
         for key, label, _ in SOURCE_DEFINITIONS
     ]
+    if official_sources:
+        official = next(item for item in sources if item["key"] == "official_events")
+        official["source_details"] = official_sources
+        official["data_gaps"] = [
+            item for item in official_sources if item.get("status") != "healthy"
+        ]
+        if official["data_gaps"] and official["status"] == "healthy":
+            official["status"] = "partial"
+            official["issues"] = ["部分官方來源暫時無法取得"]
+    if news_sources:
+        news = next(item for item in sources if item["key"] == "market_news")
+        news["source_details"] = news_sources
+        news["data_gaps"] = [item for item in news_sources if item.get("status") != "healthy"]
     sources.append(_research_item(research_report, checked))
 
     event_dependencies = {"market_quotes", "official_events", "market_news"}
@@ -116,10 +131,16 @@ def build_source_health(
         "璞玉價值歷史資料建檔中" if warming else
         "所有來源本輪可用"
     )
+    data_gaps = [
+        {"source": source["label"], "key": source["key"], "issues": source.get("issues", [])}
+        for source in sources if source.get("status") != "healthy"
+    ]
     return {
         "checked_at": checked,
         "status": status,
         "summary": summary,
         "event_scan": event_scan,
         "sources": sources,
+        "data_gaps": data_gaps,
+        "missing_source_count": len(data_gaps),
     }

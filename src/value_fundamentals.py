@@ -21,7 +21,7 @@ TWSE_BALANCE_ENDPOINTS = (
 TWSE_PE_ENDPOINT = "exchangeReport/BWIBBU_ALL"
 SEC_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 SEC_FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
-SEC_USER_AGENT = "PRStK Lab public research contact@prstklab.example"
+SEC_USER_AGENT = "PRStK Lab public research https://github.com/hanjhou2000716/prstklab-stk-detector"
 SEC_RETRY_ATTEMPTS = 3
 
 
