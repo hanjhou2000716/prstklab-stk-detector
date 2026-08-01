@@ -61,6 +61,19 @@ def test_source_health_is_a_collapsible_card_with_a_warming_state():
     assert app.count("if (card) card.open = false;") == 2
 
 
+def test_dashboard_sections_share_card_chrome_and_news_uses_full_width_switching():
+    page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
+
+    assert 'id="alert-card" class="alert-card collapsible-card"' in page
+    assert 'id="briefing-report" class="briefing-report collapsible-card"' in page
+    assert 'class="panel index-panel collapsible-card"' in page
+    assert 'class="panel compact-panel news-panel collapsible-card"' in page
+    assert ".section-block > details.collapsible-card > summary" in styles
+    assert ".news-grid {\n  display: block;\n}" in styles
+    assert ".news-panel[hidden]" in styles
+
+
 def test_quote_provenance_uses_the_compact_provider_and_time_format():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
 

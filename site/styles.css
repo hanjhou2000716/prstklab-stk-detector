@@ -13,6 +13,112 @@
 .alert-card { border: 1px solid var(--line); border-radius: 18px; background: var(--card); }.alert-card-header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 16px 18px 0; color: var(--ink); }.alert-card-header p { margin: 0; color: var(--accent); font-size: .78rem; font-weight: 800; letter-spacing: .08em; }.alert-card-header time { color: var(--muted); font-size: .7rem; }.alert-banner { margin: 12px 18px 10px; padding: 10px 0; border-bottom: 1px solid var(--line); color: #51534b; font-size: .86rem; font-weight: 800; }.alert-card[data-risk="high"] .alert-banner { color: var(--negative); }.alert-card[data-risk="warning"] .alert-banner { color: #996a30; }.alert-card[data-risk="neutral"] .alert-banner { color: var(--accent); }.alert-quote-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 0 18px; }.alert-quote { min-width: 0; padding: 11px; border-radius: 11px; background: var(--card-strong); }.alert-quote b, .alert-quote strong, .alert-quote small { display: block; }.alert-quote b { color: #596057; font-size: .76rem; }.alert-quote strong { margin-top: 5px; color: var(--ink); font-size: 1.05rem; }.alert-quote small { margin-top: 3px; font-size: .72rem; }.alert-quote .up { color: var(--positive); }.alert-quote .down { color: var(--negative); }.alert-quote .flat { color: var(--muted); }.alert-detail { padding: 14px 18px 2px; }.alert-detail h3 { margin: 0 0 8px; color: var(--ink); font-size: .97rem; line-height: 1.45; }.alert-detail p { margin: 4px 0; color: #56574f; font-size: .82rem; line-height: 1.55; }.signal-list { margin: 5px 18px 0; }.signal-list li { padding: 9px 0; }.alert-reminder { margin: 10px 18px 18px; padding: 11px; border-radius: 10px; background: var(--accent-soft); color: #356149; font-size: .79rem; line-height: 1.55; }.numbered-list { padding-left: 1.35rem; list-style: decimal; }.numbered-list li { padding-left: 3px; }
 @media (min-width: 681px) { .app-shell { padding-top: 30px; }.hero-panel { padding: 30px; }.detail-content { grid-template-columns: repeat(2, 1fr); } }@media (max-width: 390px) { .app-shell { width: min(100% - 22px, 720px); }.brand-prstk { width: 88px; }.brand-dinv { width: 66px; }.live-status { font-size: .66rem; }.panel { padding: 16px; } }
 
+/* Unified collapsible cards. Keep every dashboard section on the same visual grid. */
+.section-block > details.collapsible-card,
+.section-block > details.source-health-panel {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: 0 2px 0 rgba(29, 48, 68, .02);
+}
+.section-block > details.collapsible-card > summary,
+.section-block > details.source-health-panel > summary {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  margin: 0;
+  padding: 14px 18px;
+  border-bottom: 1px solid transparent;
+  color: var(--ink);
+  transition: background-color .18s ease, border-color .18s ease;
+}
+.section-block > details.collapsible-card[open] > summary,
+.section-block > details.source-health-panel[open] > summary {
+  border-bottom-color: var(--line);
+}
+.section-block > details.collapsible-card > summary:hover,
+.section-block > details.source-health-panel > summary:hover {
+  background: rgba(220, 233, 239, .34);
+}
+.section-block > details.collapsible-card > summary h3,
+.section-block > details.source-health-panel > summary h3 {
+  margin: 0;
+  color: var(--accent);
+  font-size: .98rem;
+  line-height: 1.35;
+}
+.section-block > details.collapsible-card > summary time,
+.section-block > details.source-health-panel > summary > span {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: .72rem;
+  white-space: nowrap;
+}
+.section-block > details.collapsible-card > summary::after,
+.section-block > details.source-health-panel > summary::after {
+  content: "⌄";
+  flex: 0 0 auto;
+  margin-left: 12px;
+  color: var(--orange);
+  font-weight: 900;
+  transition: transform .18s ease;
+}
+.section-block > details.collapsible-card:not([open]) > summary::after,
+.section-block > details.source-health-panel:not([open]) > summary::after {
+  transform: rotate(180deg);
+}
+/* Panel cards already have inner padding; pull the shared summary to the edge. */
+.section-block > details.panel.collapsible-card > summary,
+.section-block > details.source-health-panel > summary {
+  margin: -16px -18px 0;
+}
+.section-block > details.panel.collapsible-card > summary {
+  margin: -18px -18px 0;
+}
+.section-block > details.panel.collapsible-card[open] > summary {
+  margin-bottom: 11px;
+}
+.section-block > details.source-health-panel[open] > summary {
+  margin-bottom: 0;
+}
+.section-block > details.alert-card > summary,
+.section-block > details.briefing-report > summary {
+  margin: 0;
+}
+.section-block > details.alert-card[open] > summary,
+.section-block > details.briefing-report[open] > summary {
+  margin-bottom: 0;
+}
+
+/* News is one full-width card; the tabs decide which market is visible. */
+.news-grid {
+  display: block;
+}
+.news-panel {
+  width: 100%;
+  margin-top: 10px;
+}
+.news-panel[hidden] {
+  display: none !important;
+}
+.news-panel .news-list {
+  width: 100%;
+}
+.news-panel .news-list li {
+  min-height: 54px;
+  padding: 13px 0;
+}
+.news-panel .news-list a {
+  display: block;
+  color: var(--accent);
+  font-size: .88rem;
+  line-height: 1.55;
+}
+.news-panel .news-list small {
+  margin-top: 5px;
+}
+
 /* Taiwan market convention: gains red, losses green. */
 .quote-value.market-up b, .quote-value.market-up small { color: var(--negative); }
 .quote-value.market-down b, .quote-value.market-down small { color: var(--positive); }
