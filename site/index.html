@@ -33,8 +33,8 @@
 
       <section id="risk" class="section-block" aria-labelledby="risk-title">
         <div class="section-heading"><div><p class="section-kicker">RISK</p><h2 id="risk-title">風控資訊</h2></div><span id="event-tag" class="tag neutral">觀察中</span></div>
-        <article id="alert-card" class="alert-card" data-risk="neutral">
-          <header class="alert-card-header"><h3 class="market-report-title">市場風險快訊</h3><time id="alert-time">資料載入中</time></header>
+        <details id="alert-card" class="alert-card collapsible-card" data-risk="neutral" open>
+          <summary class="alert-card-header"><h3 class="market-report-title">市場風險快訊</h3><time id="alert-time">資料載入中</time></summary>
           <div id="alert-banner" class="alert-banner">正在檢查公開市場訊號</div>
           <div id="alert-quote-grid" class="alert-quote-grid"><p class="empty">載入中</p></div>
           <div class="alert-detail">
@@ -49,7 +49,7 @@
           <div id="alert-trace" class="alert-trace" aria-label="事件來源核對資訊"></div>
           <ul id="event-list" class="event-list signal-list"><li class="empty">載入中</li></ul>
           <aside id="alert-reminder" class="alert-reminder">僅供公開資訊整理與教育性觀察，不構成投資建議。</aside>
-        </article>
+        </details>
         <details id="source-health" class="panel compact-panel source-health-panel" aria-labelledby="source-health-title">
           <summary class="panel-heading"><h3 id="source-health-title" class="market-report-title">來源健康狀態</h3><span id="source-health-summary">資料載入中</span></summary>
           <div class="source-health-content">
@@ -57,28 +57,28 @@
             <ul id="source-health-list" class="source-health-list"><li class="empty">資料載入中</li></ul>
           </div>
         </details>
-        <article id="briefing-report" class="briefing-report">
-          <header class="briefing-report-header"><h3 class="market-report-title">市場定時報告</h3><time id="briefing-time">資料載入中</time></header>
+        <details id="briefing-report" class="briefing-report collapsible-card" open>
+          <summary class="briefing-report-header"><h3 class="market-report-title">市場定時報告</h3><time id="briefing-time">資料載入中</time></summary>
           <p id="briefing-overview" class="briefing-overview">正在整理本次公開市場脈絡。</p>
           <div id="briefing-observations" class="briefing-observations"><p class="empty">載入中</p></div>
           <aside id="briefing-reminder" class="alert-reminder">僅供公開資訊整理與教育性觀察，不構成投資建議。</aside>
-        </article>
-        <article class="panel">
-          <div class="panel-heading"><h3 class="market-report-title">市場情緒與波動</h3><span>公開資料</span></div>
+        </details>
+        <details class="panel collapsible-card" open>
+          <summary class="panel-heading"><h3 class="market-report-title">市場情緒與波動</h3><span>公開資料</span></summary>
           <div id="risk-list" class="risk-grid"><p class="empty">載入中</p></div>
-        </article>
+        </details>
       </section>
 
       <section id="market" class="section-block" aria-labelledby="market-title">
         <div class="section-heading"><div><p class="section-kicker">MARKET</p><h2 id="market-title">市場脈動</h2></div><span id="market-status" class="source-chip">交易日資訊載入中</span></div>
-        <article class="panel index-panel">
-          <div class="panel-heading"><h3>全球與主要市場</h3><span>市場指數</span></div>
+        <details class="panel index-panel collapsible-card" open>
+          <summary class="panel-heading"><h3>全球與主要市場</h3><span>市場指數</span></summary>
           <ul id="index-list" class="watch-list"><li class="empty">載入中</li></ul>
-        </article>
-        <article class="panel">
-          <div class="panel-heading"><h3>代表標的</h3><span>觀測池</span></div>
+        </details>
+        <details class="panel collapsible-card" open>
+          <summary class="panel-heading"><h3>代表標的</h3><span>觀測池</span></summary>
           <ul id="quote-list" class="watch-list"><li class="empty">載入中</li></ul>
-        </article>
+        </details>
       </section>
 
       <section id="research" class="section-block" aria-labelledby="research-title">
@@ -95,9 +95,10 @@
 
       <section id="news" class="section-block" aria-labelledby="news-title">
         <div class="section-heading"><div><p class="section-kicker">NEWS</p><h2 id="news-title">市場新聞</h2></div><span class="source-chip">鉅亨網公開頁面</span></div>
+        <div class="news-tabs" role="tablist" aria-label="市場新聞市場切換"><button type="button" class="news-tab active" data-market="taiwan" role="tab" aria-selected="true">台股</button><button type="button" class="news-tab" data-market="us" role="tab" aria-selected="false">美股</button></div>
         <div class="news-grid">
-          <article class="panel compact-panel"><div class="panel-heading"><h3>台股焦點</h3></div><ol id="taiwan-news" class="news-list numbered-list"><li class="empty">載入中</li></ol></article>
-          <article class="panel compact-panel"><div class="panel-heading"><h3>美股焦點</h3></div><ol id="us-news" class="news-list numbered-list"><li class="empty">載入中</li></ol></article>
+          <details class="panel compact-panel news-panel collapsible-card" data-news-market="taiwan" open><summary class="panel-heading"><h3>台股焦點</h3><span>5 篇</span></summary><ol id="taiwan-news" class="news-list numbered-list"><li class="empty">載入中</li></ol></details>
+          <details class="panel compact-panel news-panel collapsible-card" data-news-market="us" open hidden><summary class="panel-heading"><h3>美股焦點</h3><span>5 篇</span></summary><ol id="us-news" class="news-list numbered-list"><li class="empty">載入中</li></ol></details>
         </div>
       </section>
 
