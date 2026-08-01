@@ -108,6 +108,10 @@ def normalize_quote_record(record: dict[str, Any], *, fetched_at: str | None = N
     source = str(item.get("quote_source") or item.get("source") or "")
     official = any(token in source.lower() for token in ("twse", "taifex", "tpex", "official", "mis"))
     url = str(item.get("source_url") or item.get("url") or "")
+    # Keep one compact provenance contract for every card, regardless of
+    # whether the secondary source was available this round.
+    from src.market_crosscheck import quote_provenance
+    provenance = quote_provenance(item)
     item.update({
         "source_tier": item.get("source_tier") or ("official" if official else "public-market"),
         "fetched_at": item.get("fetched_at") or fetched_at or _now(),
@@ -115,6 +119,12 @@ def normalize_quote_record(record: dict[str, Any], *, fetched_at: str | None = N
         "source_url": url,
         "source_domain": source_domain(url),
         "stale_used": bool(item.get("stale_used") or item.get("quote_delayed") or item.get("quote_basis") == "最近收盤"),
+        "source_label": item.get("source_label") or provenance["source_label"],
+        "quote_basis_label": item.get("quote_basis_label") or provenance["quote_basis"],
+        "cross_checked": bool(item.get("cross_checked") or provenance["cross_checked"]),
+        "crosscheck_status": item.get("crosscheck_status") or provenance["crosscheck_status"],
+        "crosscheck_sources": item.get("crosscheck_sources") or provenance["crosscheck_sources"],
+        "expected_sources": item.get("expected_sources") or provenance["expected_sources"],
     })
     return item
 

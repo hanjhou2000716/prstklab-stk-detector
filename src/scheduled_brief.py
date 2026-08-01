@@ -160,6 +160,11 @@ def write_event_lock_key(event: dict | None) -> None:
     if not event:
         return
     from src.official_event_monitor import event_key
+    from src.event_ledger import EventLedger
+
+    ledger = EventLedger()
+    ledger.observe(event)
+    ledger.save()
 
     destination = os.getenv("GITHUB_OUTPUT")
     if destination:
@@ -203,6 +208,11 @@ def main() -> None:
         text=brief,
         dashboard_url=settings.dashboard_url,
     )
+    if event := _pick_event(snapshot, slot):
+        from src.event_ledger import EventLedger
+        ledger = EventLedger()
+        ledger.mark_reminded(event)
+        ledger.save()
     delivered = sum(result.delivered for result in results)
     unavailable = [result.chat_id for result in results if not result.delivered]
     print(f"已發送 {slot} 快報給 {delivered}/{len(results)} 位收件人。")

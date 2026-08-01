@@ -313,6 +313,19 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         why_important = f"{trigger}。15 分鐘內波動擴大，需留意是否持續並擴散至相關市場。"
     else:
         why_important = f"{trigger}。日內變動達固定觀察門檻，需以後續公開報價確認。"
+    source_url = str(index.get("source_url") or index.get("url") or "").strip()
+    source_domain = str(index.get("source_domain") or "").strip()
+    if not source_domain and source_url:
+        source_domain = (urlparse(source_url).hostname or "").lower().removeprefix("www.")
+    checked_at = str(index.get("fetched_at") or index.get("checked_at") or index.get("quote_time") or "").strip()
+    verified_domains = [source_domain] if source_domain else []
+    for value in (index.get("crosscheck_sources") or []):
+        if isinstance(value, dict):
+            domain = str(value.get("domain") or "").strip().lower().removeprefix("www.")
+        else:
+            domain = str(value).strip().lower().removeprefix("www.")
+        if domain and domain not in verified_domains:
+            verified_domains.append(domain)
     return {
         "kind": "market_signal",
         "short_label": label,
@@ -325,17 +338,23 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "why_important": why_important,
         "market_context": market_context,
         "stock_observation": stock_observation,
+        "event": trigger,
+        "importance_detail": why_important,
+        "market_impact": market_context,
+        "watch": stock_observation,
+        "market_direction": "上漲" if percent > 0 else "下跌" if percent < 0 else "持平",
+        "market_move": move,
         "friendly_reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
         "source": "公開市場報價",
-        "url": "",
+        "url": source_url,
         "source_trace": {
-            "verification": "公開市場報價",
-            "source_label": "公開市場報價",
-            "source_url": "",
-            "source_domain": "",
+            "verification": str(index.get("crosscheck_status") or "公開市場報價"),
+            "source_label": str(index.get("source_label") or index.get("quote_source") or "公開市場報價"),
+            "source_url": source_url,
+            "source_domain": source_domain,
             "event_time": str(index.get("quote_time") or index.get("quote_date") or ""),
-            "checked_at": "",
-            "verified_domains": [],
+            "checked_at": checked_at,
+            "verified_domains": verified_domains,
         },
         "instrument": index,
         "related": related,
@@ -356,19 +375,24 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     label = str(event.get("short_label") or "市場事件")
     title = str(event.get("title") or "公開事件更新")
     why_important, market_context, stock_observation = _event_market_context(label)
-    url = str(event.get("url") or "").strip()
+    prior_trace = event.get("source_trace") if isinstance(event.get("source_trace"), dict) else {}
+    url = str(event.get("source_url") or event.get("url") or prior_trace.get("source_url") or "").strip()
     parsed = urlparse(url)
     domain = (parsed.hostname or "").lower().removeprefix("www.")
     released_at = str(event.get("released_at") or event.get("published_at") or "").strip()
     source = str(event.get("source") or "公開來源").strip()
     trace = {
         "verification": "一手官方來源" if event.get("relevance") == "official" or event.get("source_tier") == "official" else "公開來源待後續核對",
-        "source_label": source,
+        "source_label": str(prior_trace.get("source_label") or source),
         "source_url": url if parsed.scheme == "https" else "",
         "source_domain": domain,
-        "event_time": released_at,
-        "checked_at": str(event.get("checked_at") or ""),
-        "verified_domains": [domain] if domain else [],
+        "event_time": released_at or str(prior_trace.get("event_time") or ""),
+        "checked_at": str(event.get("checked_at") or prior_trace.get("checked_at") or event.get("fetched_at") or ""),
+        "verified_domains": list(dict.fromkeys(([domain] if domain else []) + [
+            str(item.get("domain") or "").lower().removeprefix("www.")
+            for item in (event.get("verified_sources") or [])
+            if isinstance(item, dict) and item.get("domain")
+        ])),
     }
     related = event.get("related") or _related_indices(indices, "")
     impact_confirmation = _impact_confirmation(
@@ -387,6 +411,10 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         why_important = "重大災害可能改變區域供應、航運、能源或避險需求；實際影響須由官方資訊與公開市場資料共同確認。"
         market_context = f"市場傳導：{confirmation}；本輪連動觀察為 {related_names}。"
         stock_observation = "後續觀察：官方災情與基建／航運資訊、能源與避險資產，以及主要股市是否持續同步波動。"
+    related_moves = [item.get("change_percent") for item in related if isinstance(item, dict) and item.get("change_percent") is not None]
+    representative_move = max(related_moves, key=lambda value: abs(float(value))) if related_moves else None
+    market_direction = "上漲" if representative_move is not None and float(representative_move) > 0 else "下跌" if representative_move is not None and float(representative_move) < 0 else "市場待核對"
+    market_move = f"{float(representative_move):+.1f}%" if representative_move is not None else "變動待核對"
     return normalize_event_record({
         **event,
         "kind": event.get("kind") or "major_event",
@@ -399,6 +427,12 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "market_context": event.get("market_context") or market_context,
         "stock_observation": event.get("stock_observation") or stock_observation,
         "friendly_reminder": event.get("friendly_reminder") or "僅供公開資訊整理與教育性觀察，不構成投資建議。",
+        "event": event.get("event") or event.get("trigger") or event.get("summary") or title,
+        "importance_detail": event.get("importance_detail") or event.get("why_important") or why_important,
+        "market_impact": event.get("market_impact") or event.get("market_context") or market_context,
+        "watch": event.get("watch") or event.get("stock_observation") or stock_observation,
+        "market_direction": market_direction,
+        "market_move": market_move,
         "related": related,
         "impact_confirmation": impact_confirmation,
         "source_trace": trace,
@@ -459,7 +493,7 @@ def build_event_snapshot(
             if fallback:
                 append(fallback, f"signal:{quote.get('ticker')}")
 
-    events = events[:3]
+    events = events[:4]
     if events:
         return {
             "is_major": True,

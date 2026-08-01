@@ -76,6 +76,22 @@ def test_major_event_includes_neutral_transmission_and_stock_observation():
     assert "台股電子" in event["stock_observation"]
 
 
+def test_market_signal_keeps_quote_provenance_for_mini_app_trace():
+    snapshot = build_event_snapshot(
+        {"taiwan": [], "us": []}, [], indices=[{
+            "ticker": "NASDAQ", "name": "Nasdaq", "price": 100.0,
+            "change": -3.0, "change_percent": -2.5,
+            "quote_time": "2026-08-01T13:00:00+00:00",
+            "quote_source": "Yahoo public quote", "source_url": "https://finance.yahoo.com/quote/%5EIXIC",
+            "source_domain": "finance.yahoo.com", "fetched_at": "2026-08-01T13:01:00+00:00",
+        }],
+    )
+    event = snapshot["items"][0]
+    assert event["source_trace"]["source_url"].startswith("https://finance.yahoo.com/")
+    assert event["source_trace"]["source_domain"] == "finance.yahoo.com"
+    assert event["source_trace"]["checked_at"].startswith("2026-08-01T13:01")
+
+
 def test_delayed_intraday_quote_cannot_trigger_an_urgent_price_signal():
     snapshot = build_event_snapshot(
         {"taiwan": [], "us": []}, [], indices=[

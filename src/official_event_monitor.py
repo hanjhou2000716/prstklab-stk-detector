@@ -11,6 +11,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from src.config import get_settings
+from src.event_ledger import EventLedger, canonical_event_key
 from src.finance_intel_policy import polling_rule
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import write_snapshot
@@ -40,7 +41,11 @@ def select_official_event(
     if items and not baseline_official:
         for item in items:
             if item.get("importance") != "high-risk":
-                return item
+                detailed = next(
+                    (event for event in detailed_events if event.get("url") == item.get("url") or event.get("source_url") == item.get("url")),
+                    None,
+                )
+                return detailed or item
             # A black-swan candidate must be confirmed by a related public
             # market move before it becomes a Telegram alert. It remains in
             # the dashboard as an observation when confirmation is absent.
@@ -75,45 +80,32 @@ def select_official_event(
 
 
 def event_key(event: dict[str, Any] | None) -> str:
-    """Create a stable idempotency key from source facts, not a rendered message."""
+    """Create the durable canonical key used by cache and event ledger."""
+    return canonical_event_key(event)
+
+
+def _observe_event(event: dict[str, Any] | None, *, reminded: bool = False) -> dict[str, Any]:
+    """Persist discovery/reminder facts alongside the public market snapshot."""
     if not event:
-        return "none"
-    if event.get("kind") == "market_signal":
-        instrument = event.get("instrument") or {}
-        # A worsening move or a fast rebound after a sell-off is a distinct
-        # public observation. Repeated bars in the same state are not.
-        material_parts = [
-            "price", instrument.get("ticker", "market"), instrument.get("quote_date", "unknown"),
-            event.get("signal_state", event.get("risk_level", "觀察")),
-        ]
-        if event.get("realert_interval_minutes") and instrument.get("quote_time"):
-            # Bucket a persistent Taiwan high-risk move by local quote hour:
-            # at most one reminder per hour, while a worsening stage keeps a
-            # different key and can be sent without waiting for the hour.
-            material_parts.append(str(instrument["quote_time"])[:13])
-        material = "|".join(str(value) for value in material_parts)
+        return {"changed": False}
+    ledger = EventLedger()
+    if reminded:
+        key = ledger.mark_reminded(event)
+        record = dict(ledger.records.get(key) or {})
+        record["changed"] = True
     else:
-        # A same-topic official release is only eligible once per configured
-        # cooling window. Explicit escalation can bypass this by retaining the
-        # source headline in the key.
-        topic = str(event.get("topic_key") or event.get("source_key") or event.get("short_label") or "official")
-        released_at = str(event.get("released_at") or "")
-        try:
-            published = datetime.fromisoformat(released_at.replace("Z", "+00:00"))
-            if published.tzinfo is None:
-                published = published.replace(tzinfo=timezone.utc)
-            bucket = int(published.timestamp() // (int(polling_rule("topicCooldownMinutes")) * 60))
-        except ValueError:
-            bucket = released_at
-        material_parts = ["official", topic, bucket]
-        if event.get("escalation"):
-            material_parts.append(str(event.get("title", "")))
-        material = "|".join(str(value) for value in material_parts)
-    return hashlib.sha256(material.encode("utf-8")).hexdigest()[:24]
+        record = ledger.observe(event)
+    ledger.save()
+    return record
 
 
 def build_official_event_brief(event: dict[str, Any]) -> str:
     """Make a neutral watch-sized alert for an official event or price move."""
+    if event.get("market_direction") or event.get("market_move"):
+        from src.event_output import short_event_message
+        text = short_event_message(event)
+        validate_brief(text)
+        return text
     if event.get("kind") == "market_signal":
         text = f"快訊｜{event.get('brief_title') or event.get('short_label', '價格訊號')}"
         instrument = event.get("instrument") or {}
@@ -155,12 +147,13 @@ def write_status_output(event: dict[str, Any] | None) -> None:
         f"should_send={'true' if event else 'false'}",
         f"key={event_key(event)}",
     ]
+    ledger_record = _observe_event(event)
     destination = os.getenv("GITHUB_OUTPUT")
     if destination:
         with Path(destination).open("a", encoding="utf-8") as handle:
-            handle.write("\n".join(lines) + "\n")
+            handle.write("\n".join(lines + [f"ledger_changed={'true' if ledger_record.get('changed') else 'false'}"]) + "\n")
     else:
-        print("\n".join(lines))
+        print("\n".join(lines + [f"ledger_changed={'true' if ledger_record.get('changed') else 'false'}"]))
 
 
 def write_send_output(sent: bool, reason: str) -> None:
@@ -193,6 +186,7 @@ def send_current_event(expected_key: str | None = None) -> bool:
         text=build_official_event_brief(event),
         dashboard_url=settings.dashboard_url,
     )
+    _observe_event(event, reminded=True)
     write_send_output(True, "sent")
     return True
 
