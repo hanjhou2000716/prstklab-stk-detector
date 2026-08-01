@@ -1,7 +1,9 @@
 from src.risk_news import (
     _market_risk,
     _news_from_html,
+    _news_from_rss,
     _parse_taifex_vix_file,
+    build_news_snapshot,
     build_risk_snapshot,
     fetch_taifex_vix_quote,
     sentiment_label,
@@ -112,6 +114,33 @@ def test_taifex_quote_fallback_uses_official_mis_endpoint(monkeypatch):
     assert result["change_percent"] == -7.99
     assert result["date"] == "2026-07-31"
     assert result["source_label"] == "TAIFEX"
+
+
+def test_market_news_rss_parser_keeps_market_specific_links():
+    xml = """
+    <rss><channel>
+      <item><title>US Nasdaq outlook</title><link>https://news.google.com/rss/articles/us1</link></item>
+      <item><title>Taiwan semiconductor outlook</title><link>https://news.google.com/rss/articles/tw1</link></item>
+    </channel></rss>
+    """
+    stories = _news_from_rss(xml, "us")
+    assert stories[0]["url"].endswith("/us1")
+    assert stories[0]["source"] == "Google News｜美股線索"
+
+
+def test_duplicate_market_payload_uses_separate_fallback_feeds(monkeypatch):
+    duplicate = [{"title": "same", "url": "https://news.cnyes.com/news/id/1"}]
+    monkeypatch.setattr("src.risk_news.fetch_market_news", lambda market: duplicate.copy())
+    monkeypatch.setattr(
+        "src.risk_news.fetch_market_news_fallback",
+        lambda market: [{"title": market, "url": f"https://news.google.com/rss/articles/{market}"}],
+    )
+
+    snapshot = build_news_snapshot()
+
+    assert snapshot["taiwan"][0]["title"] == "taiwan"
+    assert snapshot["us"][0]["title"] == "us"
+    assert all(item.get("fallback_used") for item in snapshot["source_health"])
 
 
 def test_taiwan_macro_fgi_is_used_as_taiwan_sentiment(monkeypatch):
