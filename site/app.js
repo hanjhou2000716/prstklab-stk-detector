@@ -254,7 +254,17 @@ const renderNewsList = (id, stories) => {
   if (!container) return;
   if (!stories?.length) { container.innerHTML = '<li class="empty">目前沒有可顯示的公開新聞</li>'; return; }
   container.innerHTML = stories.slice(0, 5).map((story) => {
-    const url = story.url?.startsWith("https://news.cnyes.com/news/id/") ? story.url : "#";
+    // Primary stories come from Anue; the market-specific RSS fallback uses
+    // Google News links.  Keep both public, read-only domains clickable while
+    // rejecting arbitrary URLs from the generated snapshot.
+    let url = "#";
+    try {
+      const parsed = new URL(story.url || "", window.location.href);
+      const allowed = ["news.cnyes.com", "news.google.com"];
+      if (parsed.protocol === "https:" && allowed.includes(parsed.hostname)) url = parsed.href;
+    } catch (_) {
+      url = "#";
+    }
     const title = String(story.title || "").replace(/^\s*\d+\.\s*/, "");
     return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><small>${escapeHtml(story.source)}</small></li>`;
   }).join("");

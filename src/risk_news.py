@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from typing import Any
+from urllib.parse import urlencode
+from xml.etree import ElementTree
 
 import requests
 
@@ -18,6 +20,10 @@ TAIFEX_VIX_QUOTE_URL = "https://mis.taifex.com.tw/futures/api/getQuoteListVIX"
 ANUE_CATEGORY_URLS = {
     "taiwan": "https://news.cnyes.com/news/cat/tw_stock_news",
     "us": "https://news.cnyes.com/news/cat/us_stock",
+}
+NEWS_RSS_QUERIES = {
+    "taiwan": "台股 OR 台積電 OR 半導體",
+    "us": "美股 OR Nasdaq OR Nvidia OR Federal Reserve",
 }
 NEWS_TERMS = {
     "taiwan": ("006208", "00685L", "2330", "台積電", "台股", "半導體"),
@@ -282,16 +288,74 @@ def _news_from_html(html: str, market: str, limit: int = 5) -> list[dict[str, st
 
 
 def fetch_market_news(market: str) -> list[dict[str, str]]:
-    """Fetch up to three relevant public Anue headlines for one market."""
+    """Fetch up to five relevant public Anue headlines for one market."""
     response = requests.get(ANUE_CATEGORY_URLS[market], headers=HEADERS, timeout=15)
     response.raise_for_status()
     return _news_from_html(response.text, market)
 
 
+def _market_news_rss_url(market: str) -> str:
+    """Build a market-specific Google News RSS discovery URL.
+
+    This is a discovery fallback only.  It is deliberately queried with a
+    different vocabulary for each tab so a provider returning a shared HTML
+    shell cannot make Taiwan and US panels display the same stories.
+    """
+    params = {
+        "q": NEWS_RSS_QUERIES[market],
+        "hl": "zh-TW",
+        "gl": "TW",
+        "ceid": "TW:zh-Hant",
+    }
+    return "https://news.google.com/rss/search?" + urlencode(params)
+
+
+def _news_from_rss(xml: str, market: str, limit: int = 5) -> list[dict[str, str]]:
+    """Extract a bounded list of market-specific Google News RSS stories."""
+    root = ElementTree.fromstring(xml)
+    stories: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for item in root.findall(".//item"):
+        title = (item.findtext("title") or "").strip()
+        url = (item.findtext("link") or "").strip()
+        if not title or not url or url in seen:
+            continue
+        seen.add(url)
+        stories.append({
+            "title": title,
+            "url": url,
+            "source": "Google News｜台股線索" if market == "taiwan" else "Google News｜美股線索",
+            "relevance": "market",
+        })
+        if len(stories) >= limit:
+            break
+    return stories
+
+
+def fetch_market_news_fallback(market: str) -> list[dict[str, str]]:
+    """Fetch a category-specific discovery fallback when the primary feeds collide."""
+    response = requests.get(_market_news_rss_url(market), headers=HEADERS, timeout=15)
+    response.raise_for_status()
+    return _news_from_rss(response.text, market)
+
+
+def _news_identity(stories: list[dict[str, str]]) -> frozenset[str]:
+    """Return order-independent article identities for collision detection."""
+    return frozenset(story.get("url") or story.get("title", "") for story in stories)
+
+
+def _news_lists_collide(left: list[dict[str, str]], right: list[dict[str, str]]) -> bool:
+    """Detect identical or near-identical payloads despite provider reordering."""
+    first, second = _news_identity(left), _news_identity(right)
+    if not first or not second:
+        return False
+    return len(first & second) / min(len(first), len(second)) >= 0.8
+
+
 def build_news_snapshot() -> dict[str, Any]:
     """Collect news independently so one market's outage does not hide the other."""
     checked_at = datetime.now().astimezone().isoformat()
-    result: dict[str, Any] = {"taiwan": [], "us": [], "errors": [], "source_health": []}
+    result: dict[str, Any] = {"taiwan": [], "us": [], "errors": [], "diagnostics": [], "source_health": []}
     for market in ("taiwan", "us"):
         try:
             result[market] = fetch_market_news(market)
@@ -309,4 +373,33 @@ def build_news_snapshot() -> dict[str, Any]:
                 "status": "failed", "checked_at": checked_at,
                 "item_count": 0, "data_gap": "request_failed",
             })
+
+    # A transient CDN/cache response must never be presented as two different
+    # markets.  If both lists are identical (or nearly identical), refresh both from
+    # market-specific RSS queries; if that still fails, disclose the affected
+    # feed instead of showing misleading duplicate headlines.
+    if result["taiwan"] and result["us"] and _news_lists_collide(result["taiwan"], result["us"]):
+        result["diagnostics"].append("台股與美股新聞來源回傳相同內容，已啟用市場分流備援")
+        for market in ("taiwan", "us"):
+            try:
+                fallback = fetch_market_news_fallback(market)
+                if fallback:
+                    result[market] = fallback
+                    health = next(item for item in result["source_health"] if item["key"] == f"news_{market}")
+                    health.update({
+                        "source_url": _market_news_rss_url(market),
+                        "source_tier": "discovery",
+                        "fallback_used": True,
+                        "item_count": len(fallback),
+                        "data_gap": None,
+                    })
+            except Exception:
+                # Keep the original list until the final collision check so a
+                # single fallback outage does not erase otherwise useful data.
+                continue
+        if result["taiwan"] and result["us"] and _news_lists_collide(result["taiwan"], result["us"]):
+            result["us"] = []
+            result["errors"].append("美股新聞資料暫時無法與台股來源區分")
+            health = next(item for item in result["source_health"] if item["key"] == "news_us")
+            health.update({"status": "failed", "item_count": 0, "data_gap": "duplicate_market_payload"})
     return result
