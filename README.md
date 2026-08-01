@@ -1,5 +1,7 @@
 # PRStK Investment System
 
+> 文件版本：2026-08-01｜本文件以 `main` 分支目前實際程式碼與 GitHub Actions 設定為準。
+
 PRStK 是部署於 GitHub 的公開市場資訊整理、風險監測與量化研究系統。它以繁體中文產生 Apple Watch 友善的 Telegram 快報，並以 GitHub Pages 提供 Telegram Mini App 儀表板。
 
 > 僅整理公開或已授權資料、模型研究及教育性風險觀察，不構成投資建議。本系統不讀取券商、銀行、錢包或其他私人帳戶，不要求密碼、OTP 或憑證，亦不會自動交易。
@@ -13,6 +15,27 @@ PRStK 是部署於 GitHub 的公開市場資訊整理、風險監測與量化研
 - **研究選股**：台美股的動能狙擊、三維共振、裸 K 結構與獨立璞玉價值池；結果僅是可重現的研究排序。
 - **台股 Macro FGI**：以公開日資料計算台股市場情緒的五因子百分位模型。
 - **可靠性機制**：GitHub Actions 主排程、cron-job.org Repository Dispatch 備援、推播去重、來源失敗隔離、Telegram 逐一送達重試。
+
+## 本次盤點與最近修正
+
+以下是目前已落地、使用者最容易感受到的修正；它們也是閱讀本文件時應優先理解的行為：
+
+- **台股／美股新聞分流**：台股與美股各自抓取，Mini App 以按鈕切換；每側最多 5 篇，編號由 1 重新開始。
+- **新聞同題防呆**：若鉅亨兩個分類回傳相同或高度重疊的文章，系統會辨識為供應商快取／分類污染，改以台股與美股各自的 Google News RSS 探索查詢補抓；補抓結果會標示 discovery 來源。若補抓仍無法分流，美股清單會留空並顯示資料缺口，**不會把台股新聞偽裝成美股**。
+- **新聞連結安全**：Mini App 只允許 `https://news.cnyes.com` 與 `https://news.google.com`，其他網址只顯示為不可開啟，避免把不明連結直接交給 Telegram WebView。
+- **璞玉價值狀態透明化**：台股 MOPS 歷史資料採分批快取；「歷史核對中」不會產生正式候選或觀察名單，候選清單不沿用上一輪舊資料。
+- **報價與來源可追溯**：市場卡保留來源、報價／抓取時間、盤中或最近收盤、交叉核對狀態；逾時資料仍可顯示，但必須標示「最近收盤」，不可被價格警報使用。
+- **頁尾與 Mini App 入口**：頁尾為 `@2026 PRStK Lab & D.INV | All right reserved.`；Telegram 快報按鈕為「📡 開啟稜量速報系統」，固定選單為「稜量系統」。
+
+## 一頁式使用流程
+
+1. **先看 Telegram 短訊息**：只把「事件類型｜市場方向｜變動幅度｜風險等級」送到手錶／手機，最多 30 字。
+2. **點擊 `📡 開啟稜量速報系統`**：在 Telegram 內開啟 GitHub Pages Mini App，閱讀四段事件脈絡、來源 URL、交叉核對時間、研究候選與資料健康度。
+3. **先看來源健康狀態**：區分「本輪無重大事件」與「部分來源失敗」；看到資料缺口時，不把空白或舊候選解讀成市場沒有訊號。
+4. **再看市場脈動**：先看台指／台積電與全球指數，再看 TPEx、日韓、Nasdaq、費半、BTC／ETH 等卡片的來源與新鮮度。
+5. **最後看研究**：在台股／美股切換後展開四個策略抽屜。不同策略分數不可互比，也不是買賣建議。
+
+Mini App 是靜態快照，不會因為「重新整理」就直接連到交易所。要取得新資料，必須等待或手動執行對應的 GitHub Actions；完成 Pages 部署後，Telegram 按鈕的版本參數會協助避開 WebView 快取。
 
 ## 系統架構
 
@@ -62,6 +85,8 @@ flowchart LR
 
 GDELT 首次成功讀取只建立基線，不補發舊聞；成功快取 15 分鐘，暫時失敗或限流時最多使用 120 分鐘內的最近成功快取並標示時間，不採繞過限流。探索候選必須由至少兩個可信網域共享同一人物／地點／動作交集；黑天鵝仍須一手官方來源確認。官方來源或探索來源失敗不會使其他來源改用舊資料推播。
 
+市場新聞是另一條「閱讀用」來源鏈：鉅亨台股／美股分類為主要來源；若兩側文章集合重疊達 80% 以上，會各自改查 Google News RSS（台股查台股／台積電／半導體，美股查美股／Nasdaq／Nvidia／Fed）。RSS 只作發現線索，不等同官方核實；重大事件仍要回到官方來源或第二可信網域。
+
 ### 重大性與價格門檻
 
 | 類別 | 事件或變動門檻 | Mini App 核對重點 |
@@ -74,7 +99,7 @@ GDELT 首次成功讀取只建立基線，不補發舊聞；成功快取 15 分�
 
 工作日 08:45–13:30 的價格速報優先台指／台股盤勢。單一商品或加密資產的日內變動通常只更新 Mini App；只有已核對的重大政策、總經、戰爭或重要公司事件才會取代台股優先訊號進入短訊息。
 
-同一事件以事件 ID 去重；同類消息預設 30 分鐘冷卻。台指高風險／高波動狀態最多每 60 分鐘補送一次，且必須有新鮮報價、風險階段跨越或明顯反轉。所有詳細內容採「已知事實／可能影響／後續觀察」結構，明示教育性用途，沒有買賣、目標價、進出場或部位指令。
+同一事件以 canonical key、來源 URL 正規化及人物／地點／動作指紋去重；同一主題預設 120 分鐘冷卻。台指高風險／高波動狀態最多每 60 分鐘補送一次，且必須有新鮮報價、風險階段跨越或明顯反轉。所有詳細內容採「事件／為何重要／可能連動／股市觀察」四段結構，明示教育性用途，沒有買賣、目標價、進出場或部位指令。
 
 ## 量化研究策略
 
@@ -159,6 +184,60 @@ TAIEX Macro FGI 是台股市場風險偏好的公開日資料模型，不是個�
 
 cron-job.org 可透過 GitHub Repository Dispatch 備援定時快報、量化研究與 **Official macro and price monitor** 官方／價格檢查。其事件類型為 `official-event-check`；外部請求只觸發工作流程，是否送出仍取決於 GitHub 的時段／事件去重鎖。完整 Header、payload 與 slot 設定請見 [金十 Token 與外部快訊安全設定](docs/JIN10_RAILWAY_SETUP.md)。
 
+## 設定總表（哪些值放在哪裡）
+
+任何 Token、API key、Chat ID 都不要寫入 `README`、前端、commit、Issue 或 Telegram。公開文件只描述**變數名稱**：
+
+| 變數 | 放置位置 | 用途 | 必要性 |
+|---|---|---|---|
+| `TELEGRAM_BOT_TOKEN` | GitHub Actions Secret／本機 `.env` | Telegram Bot API | 發送 Telegram 時必要 |
+| `TELEGRAM_CHAT_IDS` | GitHub Actions Secret／本機 `.env` | 逗號或換行分隔的多人收件人 | 發送 Telegram 時必要 |
+| `DASHBOARD_URL` | GitHub Actions Variable／本機 `.env` | Mini App HTTPS 網址 | 發送帶按鈕的快報時必要 |
+| `FRED_API_KEY` | GitHub Actions Secret；需要時共享給 Railway Service | FRED 公開總經資料 | Phase 2；缺少時標示缺口 |
+| `EIA_API_KEY` | GitHub Actions Secret；需要時共享給 Railway Service | EIA 石油資料 | Phase 2；缺少時標示缺口 |
+| `JIN10_MCP_TOKEN` | Railway Service Variable | 金十官方 MCP `list_flash` | Railway 監測器才需要 |
+| `GITHUB_DISPATCH_TOKEN` | Railway Service Variable | 觸發 Repository Dispatch 的 fine-grained PAT | Railway 監測器才需要 |
+| `EXTERNAL_ALERT_SHARED_SECRET` | GitHub Secret＋Railway Service Variable | 驗證外部 HMAC | Railway 監測器才需要 |
+| `GITHUB_REPOSITORY` | Railway Service Variable | `owner/repository` | Railway 監測器才需要 |
+
+多人推播只維護 `TELEGRAM_CHAT_IDS`；程式刻意不讀取舊的單數 `TELEGRAM_CHAT_ID`，避免新增／移除成員時被舊設定覆蓋。每位收件人必須先對 Bot 按 **Start**；未啟動、封鎖 Bot 或單一 Chat ID 失敗時，其他收件人仍會繼續收到。
+
+## GitHub Actions 操作手冊
+
+| Action | 何時使用 | 會不會送 Telegram |
+|---|---|---|
+| **Refresh market dashboard** | 只想重新抓行情、修正 Mini App 快照 | 否 |
+| **Scheduled market brief** | 測試晨報／盤前／盤中／午報／午盤／盤後／美股盤前 | 是；測試時才使用 `force` |
+| **Official macro and price monitor** | 立即檢查官方事件與價格門檻 | 只有新事件或新價格級距且通過去重才會送 |
+| **Unified Taiwan-US research report** | 全市場量化掃描；正式排程為工作日 13:30 | 否，會更新研究與行情快照 |
+| **Configure Telegram Mini App** | 首次設定或變更 Bot 選單 | 否 |
+| **Four-strategy walk-forward backtest** | 使用 point-in-time 資料驗證策略 | 否，僅產生回測報告 |
+
+建議驗證順序：先跑 `Refresh market dashboard`，確認 `site/data/market.json` 有新的 `updated_at`；再跑研究工作流程，確認研究報表狀態；最後才用 `Scheduled market brief` 的 `force=true` 測試 Telegram。不要用重複的 slot 反覆 force，否則會刻意繞過同時段防重複鎖。
+
+## 快速驗收指令
+
+```powershell
+git clone https://github.com/hanjhou2000716/prstklab-stk-detector.git
+cd prstklab-stk-detector
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+Copy-Item .env.example .env       # 僅本機測試，勿提交
+python -m pytest -q
+```
+
+常用唯讀指令：
+
+```powershell
+python -m src.refresh_market_data
+python -m src.run_research_report
+python -m src.official_event_monitor --write-status
+python -m src.scheduled_brief --slot pre_open --print-window
+```
+
+本機快報要真的送出，`.env` 需有 `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_IDS`、`DASHBOARD_URL`；研究與行情指令不需要交易帳戶。若只想檢查輸出，先不設定 Token，系統應明確回報「未設定 Telegram」，而不是假裝已送達。
+
 ## 第 4～6 階段：事件帳本、行情核對與通知輸出（2026-08）
 
 ### 第 4 階段：事件去重與永久帳本
@@ -192,13 +271,64 @@ Binance／CoinGecko、油價／黃金 Yahoo／EIA 或公開市場來源、VIX Ya
 1. **行情來源一致性（中）**：台股已具備 TWSE／TAIFEX／TPEx 交叉核對欄位；美股、商品與加密資產仍可能受公開來源延遲影響。卡片會保留來源時間並標示未核對，後續可再補第二公開來源。
 2. **事件可追溯性（已完成第一版）**：事件帳本、來源 URL／網域、核對時間與市場同步核對已寫入快照及 Mini App；仍可增加歷史查詢頁與排除原因統計。
 3. **跨來源同題誤配（已完成第一版）**：GDELT 仍只作線索，須有可信網域與人物／地點／動作交集；黑天鵝仍要求一手官方確認。後續可增加更多語意相似度測試。
-4. **來源健康可視化（高）**：目前失敗會記錄或在資料區塊標示，但沒有單一健康頁顯示各來源的最後成功時間、失敗原因、候選數與延遲。建議增加狀態卡與告警，讓「沒有訊號」與「沒有成功掃描」清楚區分。
+4. **來源健康可視化（中）**：Mini App 已有可收合來源健康卡，會區分「本輪無重大事件」與「部分來源失敗」；目前仍可再增加各來源最後成功時間、失敗原因、候選數與延遲的歷史查詢頁與告警摘要。
 5. **排程延遲與寫入競爭（中高）**：GitHub cron 不保證準時，且定時快報、研究、事件監測都可能回存同一份快照。現有併發鎖與三次 rebase 重試能降低衝突，但建議改採版本化快照／單一資料發佈工作流程，並記錄每次刷新 ID。
 6. **研究可驗證性（中高）**：策略分數已可重現，但尚未形成完整的跨市場、含存活者偏差、停牌、除權息、手續費與滑價的 walk-forward 成效報告。建議先建立不改策略參數的固定樣本期與月度檢定，再決定是否調整門檻。
 7. **成分股與財務資料的新鮮度（中）**：0050／0051／VOO 成分與財報發布存在更新週期、欄位缺漏或網站結構變化。建議保存每次母體快照、申報期、資料覆蓋率與缺失名單，避免把資料不足誤解為不符合價值條件。
 8. **首輪基線與狀態持久化（已完成第一版）**：官方與探索來源仍會建立首輪基線避免舊聞洗版；事件帳本現在可提交到 GitHub 快照，Railway 可用持久化 Volume 保存，Actions Cache 僅作短期備援。
 9. **Telegram 送達稽核（中）**：目前能隔離單一收件人失敗，但尚無可讀的日／週送達率、重試次數與未啟動名單摘要。建議增加不含個人內容的送達健康報告。
 10. **Mini App 更新模式（中）**：Pages 是靜態部署，開啟頁面不會即時拉行情。若未來需要「開啟即刷新」，需另建不含私密憑證的後端快照 API、CORS／快取策略與資料延遲保護，而不是讓前端直連交易來源。
+
+## 常見狀況排查
+
+### Mini App 看起來沒有更新
+
+1. 到 Actions 先看最新的 **Refresh market dashboard** 或 **Scheduled market brief** 是否為綠色。
+2. 打開 workflow log，確認 `refresh_market_data` 完成且 `site/data/market.json` 有新的 `updated_at`。
+3. 確認 Pages 部署成功；Telegram 的按鈕會附版本參數，直接複製舊網址可能仍受瀏覽器快取影響。
+4. 若來源本身休市或超過新鮮度門檻，卡片會保留數值但標示「最近收盤」，不是抓取失敗。
+
+### 研究清單為空或顯示「歷史核對中」
+
+- 「本次無研究候選」代表掃描成功但沒有達到該策略門檻；這與「掃描失敗」不同。
+- 台股璞玉價值必須先完成 MOPS 分批歷史建檔。只要尚未完成六項條件所需的歷史資料，正式候選與觀察名單都會隱藏，避免拿不完整資料誤判。
+- 研究資料超過 30 小時（`research_report` 的 freshness gate）會視為逾時，Mini App 不沿用上一輪候選。
+- 檢查 Actions 的 `台股品質價值覆核`、`美股品質價值覆核` 以及 Artifact 中的 `*-value-summary.json`；先修資料來源，再調整批次或重跑，不要把門檻改寬來掩蓋缺口。
+
+### 台股／美股新聞重複
+
+這是供應商分類快取污染的可預期故障模式。PRStK 會先以文章 URL 集合比對；重疊達 80% 時分別查 Google News RSS。若 RSS 仍失敗，保留可辨識的資料缺口並清空重複的一側。請看 `market.json` 的 `news.diagnostics`、`news.source_health`，不要手動複製台股文章到美股頁籤。
+
+### 收到 GitHub 綠勾但沒有 Telegram
+
+檢查三件事：`TELEGRAM_BOT_TOKEN` 是否仍有效、`TELEGRAM_CHAT_IDS` 是否包含收件人且以逗號／換行正確分隔、每位收件人是否曾按 Bot 的 **Start**。另外，官方事件與價格訊號即使 workflow 成功，也可能因「沒有新事件、未跨過級距、來源未交叉核對或仍在冷卻」而安全跳過推播；完整原因會寫在 workflow log 與 Mini App 事件卡。
+
+### Railway 監測器看不到新事件
+
+確認 Service 已部署且 `/health` 可開啟；`jin10`／`gdelt` 需各自顯示最近成功時間與 item count。`JIN10_MCP_TOKEN` 權限、`GITHUB_DISPATCH_TOKEN` 的 repository scope、HMAC 共用密鑰三者任一錯誤，都會只記錄來源失敗，不會繞過 GitHub 驗證。建議在 Railway 掛載 `/data` Volume，讓 SQLite 事件帳本與 GDELT 快取跨重啟保留。
+
+## 程式與資料檔案地圖
+
+| 路徑 | 責任 |
+|---|---|
+| `src/market_data.py` | 公開行情、台股／加密／海外交叉核對、freshness 與最近收盤標記 |
+| `src/risk_news.py` | FGI、VIX、台美新聞、Cnyes／Google RSS 分流與來源健康 |
+| `src/event_alerts.py`、`src/official_event_monitor.py` | 價格級距、重大事件四段內容、官方確認與市場同步升級 |
+| `src/event_ledger.py` | canonical key、URL／人物／地點／動作指紋、30 天帳本 |
+| `src/scheduled_brief.py` | 時段解析、台股優先、30 字短訊息與同時段防重複 |
+| `src/momentum_*`、`src/taiwan_momentum_scan.py` | 動能狙擊與台股成交額門檻 |
+| `src/resonance_*` | 三維共振與 Smart Money 四項條件排序 |
+| `src/price_action.py` | 四種裸 K 結構與嚴格訂單塊 |
+| `src/pristine_value.py`、`src/mops_history.py`、`src/value_universe.py` | 璞玉價值六項規則、0050＋0051／VOO 母體、MOPS 分批快取 |
+| `src/source_health.py`、`src/research_report.py` | 研究逾時、資料缺口、掃描失敗與「本次無候選」分流 |
+| `site/index.html`、`site/app.js`、`site/styles.css` | Telegram Mini App UI、卡片、來源追溯與市場切換 |
+| `railway-monitor/app.py` | 金十 MCP／GDELT 輪詢、事件去重、HMAC Repository Dispatch、`/health` |
+| `site/data/market.json` | Mini App 最新公開快照；非交易資料庫 |
+| `site/data/event-ledger.json` | GitHub 端可審計事件帳本；Railway Volume 可作主要持久化 |
+
+## 最終安全邊界
+
+本專案只讀取公開或已授權的市場資料，提供風險教育、事件整理與可重現研究排序；不登入券商／銀行／基金／錢包，不要求密碼、OTP、API key，不執行下單、申購、贖回、扣款、轉帳或自動交易。任何快訊、分數、候選名單、FGI、VIX 分級與回測結果，都不能單獨視為投資建議或未來績效保證。
 
 ## 本機測試與操作文件
 
@@ -239,6 +369,7 @@ python -m pytest -q
 ### 市場資料
 
 TPEx 固定顯示中文註釋「臺灣上櫃指數」。台股盤中資料優先使用 TWSE／TAIFEX／TPEx 官方交叉核對；海外與其他資產顯示來源及報價時間，逾時資料保留卡片並標註「最近收盤」。
+
 ## Phase 1 data contract and provenance audit (2026-08)
 
 All event records now carry a shared provenance contract: `source_tier` (`official`, `public-market`, or `discovery`), fetch and publication timestamps, event type, importance, source URL/domain, cross-check status, and an explicit `data_gap` field. Quote records likewise carry source tier, fetch/quote time, source domain, and `stale_used`; a delayed or recent-close quote remains visible but is never presented as live.
