@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.mops_history import mops_pristine_history, parse_dividend_history, parse_eps_report, parse_net_income_report
+from src.mops_history import MopsPublicClient, mops_pristine_history, parse_dividend_history, parse_eps_report, parse_net_income_report
 
 
 def test_parse_eps_report_reads_current_and_comparative_values():
@@ -68,3 +68,10 @@ def test_mops_history_skips_recent_failures_and_advances_to_new_tickers(tmp_path
     # 1101/1102 remain in a cooldown; the second run tries 1103 instead of
     # burning its batch on the same temporary outage.
     assert len(errors) == 1
+
+
+def test_mops_client_uses_legacy_public_endpoint_after_redirect_failure():
+    client = MopsPublicClient()
+    client._report_once = lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("redirect blocked"))
+    client._legacy_report_once = lambda *args, **kwargs: "<table><tr><td>ok</td></tr></table>"
+    assert client.report("t164sb04", "2330", year=114, season=1) == "<table><tr><td>ok</td></tr></table>"

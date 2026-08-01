@@ -138,6 +138,14 @@ class MopsPublicClient:
                 return self._report_once(api_name, company_id, parameters)
             except (OSError, ValueError, requests.RequestException, RuntimeError) as error:
                 last_error = error
+                # The redirect endpoint is intermittently rate-limited or
+                # returns an HTML security page from hosted CI.  The same
+                # public report remains available through the legacy MOPS
+                # endpoint, so try it before spending the next retry window.
+                try:
+                    return self._legacy_report_once(api_name, company_id, parameters)
+                except (OSError, ValueError, requests.RequestException, RuntimeError) as fallback_error:
+                    last_error = fallback_error
                 if attempt + 1 < REQUEST_RETRIES:
                     time.sleep(REQUEST_BACKOFF_SECONDS * (attempt + 1))
         assert last_error is not None
@@ -181,6 +189,43 @@ class MopsPublicClient:
         text = report.content.decode("utf-8", errors="replace")
         if "FOR SECURITY REASONS" in text:
             raise RuntimeError(f"MOPS security block for {api_name}")
+        return text
+
+    def _legacy_report_once(
+        self,
+        api_name: str,
+        company_id: str,
+        parameters: dict[str, str | int],
+    ) -> str:
+        """Fetch a public MOPS report without the redirect/session hop."""
+        form: dict[str, str] = {
+            "encodeURIComponent": "1", "step": "1", "firstin": "true", "off": "1",
+            "keyword4": "", "code1": "", "TYPEK2": "", "checkbtn": "",
+            "queryName": "co_id", "inpuType": "co_id", "TYPEK": "all", "isnew": "false",
+            "co_id": company_id,
+        }
+        if api_name in {"t164sb04", "t164sb03"}:
+            form.update({"year": str(parameters["year"]), "season": f"{int(parameters['season']):02d}"})
+        elif api_name == "t05st09_1":
+            form["year"] = ""
+        else:
+            raise ValueError(f"Unsupported MOPS report: {api_name}")
+        response = self.session.post(
+            f"{MOPS_OLD}/ajax_{api_name}",
+            data=form,
+            headers={
+                "Referer": "https://mops.twse.com.tw/",
+                "X-Requested-With": "XMLHttpRequest",
+                "Origin": "https://mopsov.twse.com.tw",
+            },
+            timeout=45,
+        )
+        response.raise_for_status()
+        text = response.content.decode("utf-8", errors="replace")
+        if "FOR SECURITY REASONS" in text:
+            raise RuntimeError(f"MOPS security block for {api_name}")
+        if not text.strip():
+            raise RuntimeError(f"MOPS {api_name} legacy endpoint returned empty response")
         return text
 
 
