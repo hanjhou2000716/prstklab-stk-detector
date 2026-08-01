@@ -287,9 +287,15 @@ def apply_taiwan_intraday_crosscheck(
     non-actionable for an urgent TAIEX price alert.
     """
     from src.tpex_index import fetch_tpex_index
+    if not session:
+        # Callers that do not provide a market session are asking for a
+        # structural merge, not a live official-source health verdict.
+        return indices, []
     tpex_fetcher = tpex_fetcher or fetch_tpex_index
+    tpex_metadata = next((item for item in MARKET_INDICES if item.get("ticker") == "TPEx"), {})
     errors: list[dict[str, str]] = []
     tpex = None
+    had_tpex_row = any(item.get("ticker") == "TPEx" for item in indices)
     # Attempt the official close even when Yahoo failed before creating TPEx.
     try:
         tpex = tpex_fetcher()
@@ -299,7 +305,11 @@ def apply_taiwan_intraday_crosscheck(
         # Keep the TPEx row visible when both public endpoints fail.  It is
         # deliberately non-actionable and is surfaced as a source gap rather
         # than silently disappearing from the market list.
-        if not errors or not any(error.get("ticker") == "TPEx" for error in errors):
+        # During a TAIEX intraday cross-check, TPEx is an auxiliary index. Do
+        # not turn its optional absence into a global quote failure unless the
+        # caller explicitly requested a TPEx row or this is an off-session
+        # dashboard refresh where the row itself is actionable.
+        if (had_tpex_row or session != "交易中") and not errors:
             errors.append({"ticker": "TPEx", "message": "TPEx official endpoint returned no data", "scope": "index"})
         if not any(item.get("ticker") == "TPEx" for item in indices):
             tpex = {
@@ -320,9 +330,11 @@ def apply_taiwan_intraday_crosscheck(
             }
             indices = [*indices, tpex]
     elif not any(item.get("ticker") == "TPEx" for item in indices):
-        indices = [*indices, tpex]
+        # Official endpoints may return only price fields. Always retain the
+        # canonical label so the Mini App never renders a bare TPEx row.
+        indices = [*indices, {**tpex_metadata, **tpex}]
     if session != "交易中":
-        return [({**item, **tpex} if item.get("ticker") == "TPEx" and tpex else item) for item in indices], errors
+        return [({**tpex_metadata, **item, **tpex} if item.get("ticker") == "TPEx" and tpex else item) for item in indices], errors
     from src.taiwan_market_crosscheck import crosscheck_taiex_quote, fetch_taifex_txf, fetch_twse_taiex
 
     twse_fetcher = twse_fetcher or fetch_twse_taiex
@@ -343,7 +355,7 @@ def apply_taiwan_intraday_crosscheck(
         if item.get("ticker") == "TAIEX":
             checked.append(crosscheck_taiex_quote(item, twse=twse, taifex=taifex))
         elif item.get("ticker") == "TPEx" and tpex:
-            checked.append({**item, **tpex})
+            checked.append({**tpex_metadata, **item, **tpex})
         else:
             checked.append(item)
     return checked, errors

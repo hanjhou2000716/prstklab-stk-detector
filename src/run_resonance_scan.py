@@ -66,6 +66,9 @@ def main() -> None:
         "failed": len(failed), "batch_size": args.batch_size, "offset": args.offset,
         "benchmark": benchmark_symbol, "benchmark_available": benchmark_bars is not None,
         "minimum_conditions": 3, "priority": "四項共振優先；無四項時顯示三項備選",
+        "scan_state": "complete",
+        "status": "可用" if not failed else "部分缺漏",
+        "error_details": failed[:20],
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 
 

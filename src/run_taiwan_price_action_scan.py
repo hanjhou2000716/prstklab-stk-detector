@@ -46,6 +46,9 @@ def main() -> None:
         "requested": len(universe), "data_complete": len(records), "candidates": len(result),
         "failed": len(failed), "batch_size": args.batch_size, "offset": args.offset,
         "notice": "僅供公開市場結構研究，不構成買賣建議。",
+        "scan_state": "complete",
+        "status": "可用" if not failed else "部分缺漏",
+        "error_details": failed[:20],
     }, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"掃描 {len(universe)} 檔，資料完整 {len(records)} 檔，結構研究候選 {len(result)} 檔，失敗 {len(failed)} 檔：{csv_path}、{summary_path}")
 

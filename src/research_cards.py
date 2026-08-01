@@ -31,11 +31,22 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
 
     health = assess_research_health(raw, now=now or datetime.now(ZoneInfo("Asia/Taipei")))
     expired = bool(health["is_expired"])
+    blocked_sources = {
+        (str(item.get("market")), str(item.get("strategy")))
+        for item in raw.get("sources", [])
+        if isinstance(item, dict)
+        and (
+            item.get("scan_state") in {"failed", "building"}
+            or item.get("status") in {"掃描失敗", "資料暫時無法取得", "建檔中"}
+        )
+    }
     candidates = []
     for item in raw.get("candidates", []):
         if not isinstance(item, dict) or item.get("strategy") not in ALLOWED_STRATEGIES or item.get("market") not in ALLOWED_MARKETS:
             continue
         if expired:
+            continue
+        if (str(item.get("market")), str(item.get("strategy"))) in blocked_sources:
             continue
         candidates.append({key: item.get(key) for key in (
             "market", "strategy", "rank", "ticker", "name", "score", "close", "previous_close", "change_percent", "turnover", "as_of", "signal_labels", "volume_ratio", "range_contraction", "breakout_20", "vcp_breakout", "new_high_days", "fgi_score", "fgi_status", "conditions_matched", "condition_count", "structure", "status",
@@ -44,7 +55,7 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
     sources = [
         {key: source.get(key) for key in (
             "market", "strategy", "status", "candidates", "requested", "data_complete", "failed",
-            "scan_state", "history_cached", "history_expected", "notice",
+            "scan_state", "history_cached", "history_expected", "notice", "error_details",
         )}
         for source in raw.get("sources", [])
         if isinstance(source, dict) and source.get("strategy") in ALLOWED_STRATEGIES

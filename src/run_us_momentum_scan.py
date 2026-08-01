@@ -20,5 +20,5 @@ def main() -> None:
         except Exception: failed.extend(item["ticker"] for item in group)
     result = rank_records(records, min_turnover=10_000_000); Path("data").mkdir(exist_ok=True)
     result.drop(columns=["bars"], errors="ignore").to_csv("data/us-momentum-scan.csv", index=False, encoding="utf-8-sig")
-    Path("data/us-momentum-summary.json").write_text(json.dumps({"requested":len(universe),"data_complete":len(records),"candidates":len(result),"failed":len(failed)}, ensure_ascii=False), encoding="utf-8")
+    Path("data/us-momentum-summary.json").write_text(json.dumps({"requested":len(universe),"data_complete":len(records),"candidates":len(result),"failed":len(failed),"scan_state":"complete","status":"可用" if not failed else "部分缺漏","error_details":failed[:20]}, ensure_ascii=False), encoding="utf-8")
 if __name__ == "__main__": main()
