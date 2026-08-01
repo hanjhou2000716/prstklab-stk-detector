@@ -65,6 +65,7 @@ def build_source_health(
     checked_at: datetime,
     official_sources: list[dict[str, Any]] | None = None,
     news_sources: list[dict[str, Any]] | None = None,
+    additional_sources: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Expose failures distinctly from a clean scan with no market event."""
     checked = checked_at.isoformat()
@@ -98,6 +99,8 @@ def build_source_health(
         news = next(item for item in sources if item["key"] == "market_news")
         news["source_details"] = news_sources
         news["data_gaps"] = [item for item in news_sources if item.get("status") != "healthy"]
+    if additional_sources:
+        sources.extend(additional_sources)
     sources.append(_research_item(research_report, checked))
 
     event_dependencies = {"market_quotes", "official_events", "market_news"}
@@ -123,7 +126,7 @@ def build_source_health(
             "label": "本輪無重大事件",
             "detail": "事件來源已完成掃描，未發現符合提醒門檻的重大事件。",
         }
-    partial = sum(source["status"] == "partial" for source in sources)
+    partial = sum(source["status"] in {"partial", "failed", "missing_api_key", "data_gap"} for source in sources)
     warming = sum(source["status"] == "warming" for source in sources)
     status = "partial" if partial else "warming" if warming else "healthy"
     summary = (

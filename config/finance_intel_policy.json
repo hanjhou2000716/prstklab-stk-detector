@@ -28,6 +28,13 @@
     "eventLedger": "railway-persistent",
     "actionsCacheRole": "short-term-backup"
   },
+  "phaseTwoSources": {
+    "kofia": "https://freesis.kofia.or.kr/stat/FreeSIS.do?parentDivId=MSIS10000000000000&serviceId=STATSCU0100000070",
+    "fred": "https://api.stlouisfed.org/fred/series/observations",
+    "eia": "https://api.eia.gov/v2/petroleum/pri/spt/data/",
+    "crypto": "https://api.binance.com/api/v3/klines",
+    "requiredEnvironmentVariables": ["FRED_API_KEY", "EIA_API_KEY"]
+  },
   "security": {
     "noPrivateAccounts": true,
     "noTrading": true,

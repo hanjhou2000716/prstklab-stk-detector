@@ -385,6 +385,7 @@ def build_market_snapshot() -> dict[str, Any]:
     from src.research_cards import load_research_cards
     from src.risk_news import build_news_snapshot, build_risk_snapshot
     from src.source_health import build_source_health
+    from src.phase_two_sources import build_phase_two_snapshot
 
     scan_started_at = datetime.now(ZoneInfo("Asia/Taipei"))
     markets = {key: get_market_status(key) for key in MARKETS}
@@ -442,6 +443,7 @@ def build_market_snapshot() -> dict[str, Any]:
     risk = build_risk_snapshot()
     news = build_news_snapshot()
     official_events = fetch_official_events()
+    phase_two = build_phase_two_snapshot()
     events = build_event_snapshot(news, quotes, official_events, indices=indices)
     try:
         program = fetch_yutinghao_latest_program()
@@ -476,6 +478,7 @@ def build_market_snapshot() -> dict[str, Any]:
         checked_at=scan_completed_at,
         official_sources=official_events.get("source_health", []),
         news_sources=news.get("source_health", []),
+        additional_sources=phase_two.get("sources", []),
     )
     live_quotes = sum(item.get("quote_time") is not None for item in [*quotes, *indices])
     close_quotes = len(quotes) + len(indices) - live_quotes
@@ -496,6 +499,7 @@ def build_market_snapshot() -> dict[str, Any]:
         "news": news,
         "events": events,
         "official_events": official_events,
+        "phase_two": phase_two,
         "macro": macro,
         "macro_quotes": macro_quotes,
         "briefing": build_briefing_snapshot({
