@@ -95,6 +95,28 @@ DISCOVERY_ACTIONS = {
     "black_swan": ("earthquake", "tsunami", "ransomware", "cyberattack", "pandemic"),
 }
 
+# Public, non-secret runtime diagnostics for Railway's /health endpoint.  This
+# deliberately contains timestamps, counts and error classes only; credentials
+# and response bodies never enter the health payload.
+HEALTH_LOCK = threading.Lock()
+HEALTH_STATE: dict[str, Any] = {
+    "status": "ok",
+    "service": "prstk-jin10-monitor",
+    "started_at": datetime.now(timezone.utc).isoformat(),
+    "jin10": {"status": "not_checked", "last_success_at": None, "last_failure_at": None, "item_count": 0, "error": None},
+    "gdelt": {"enabled": True, "status": "not_checked", "last_success_at": None, "last_failure_at": None, "article_count": 0, "alert_count": 0, "error": None},
+}
+
+
+def update_health(component: str, **values: Any) -> None:
+    with HEALTH_LOCK:
+        HEALTH_STATE.setdefault(component, {}).update(values)
+
+
+def health_snapshot() -> dict[str, Any]:
+    with HEALTH_LOCK:
+        return json.loads(json.dumps(HEALTH_STATE))
+
 
 # These require a confirmed, broadly material event. They deliberately are not
 # a catch-all for ordinary geopolitical headlines or routine market moves.
@@ -512,7 +534,7 @@ class HealthHandler(BaseHTTPRequestHandler):
         if self.path not in {"/", "/health"}:
             self.send_error(404)
             return
-        body = b'{"status":"ok","service":"prstk-jin10-monitor"}\n'
+        body = (json.dumps(health_snapshot(), ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -541,6 +563,8 @@ async def monitor_forever() -> None:
     bootstrap = os.environ.get("JIN10_INITIAL_BACKFILL", "false").lower() == "true"
     gdelt_interval = max(900, int(os.environ.get("GDELT_POLL_SECONDS", "900")))
     gdelt_enabled = os.environ.get("GDELT_DISCOVERY_ENABLED", "true").lower() == "true"
+    update_health("gdelt", enabled=gdelt_enabled, poll_seconds=gdelt_interval,
+                  status="disabled" if not gdelt_enabled else "not_checked")
     store = SeenStore(Path(os.environ.get("MONITOR_STATE_PATH", "/data/jin10-monitor.sqlite3")))
     first_cycle = True
     gdelt_baseline = True
@@ -564,8 +588,12 @@ async def monitor_forever() -> None:
                 store.record_dispatch(alert)
                 dispatched += 1
             logging.info("Jin10 poll completed: %s flash(es), %s alert(s) dispatched", len(flashes), dispatched)
+            update_health("jin10", status="healthy", last_success_at=datetime.now(timezone.utc).isoformat(),
+                          item_count=len(flashes), error=None)
             first_cycle = False
-        except Exception:
+        except Exception as error:
+            update_health("jin10", status="failed", last_failure_at=datetime.now(timezone.utc).isoformat(),
+                          error=type(error).__name__)
             logging.exception("Jin10 poll failed; will retry")
         if gdelt_enabled and time.monotonic() - last_gdelt_poll >= gdelt_interval:
             last_gdelt_poll = time.monotonic()
@@ -582,8 +610,12 @@ async def monitor_forever() -> None:
                     store.record_dispatch(alert)
                     dispatched += 1
                 logging.info("GDELT cross-check completed: %s article(s), %s alert(s) dispatched", len(articles), dispatched)
+                update_health("gdelt", status="healthy", last_success_at=datetime.now(timezone.utc).isoformat(),
+                              article_count=len(articles), alert_count=dispatched, error=None)
                 gdelt_baseline = False
-            except Exception:
+            except Exception as error:
+                update_health("gdelt", status="failed", last_failure_at=datetime.now(timezone.utc).isoformat(),
+                              error=type(error).__name__)
                 logging.exception("GDELT discovery failed; will wait for the next interval")
         await asyncio.sleep(interval)
 

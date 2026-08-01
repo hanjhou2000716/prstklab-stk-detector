@@ -43,7 +43,7 @@ GitHub 端會再次驗證簽章、去重、更新 Mini App，再送出 Telegram 
 
 1. 在 **Deployments** 開啟最新部署的 logs，應看到 `Health endpoint listening`，接著是 `Jin10 poll completed`。
 2. 若 Token 或 MCP 權限有問題，logs 會顯示重試訊息，但不會洩漏 Token。
-3. Railway 建立公開 Domain 後，可開啟 `/health`，應得到 `{"status":"ok","service":"prstk-jin10-monitor"}`。
+3. Railway 建立公開 Domain 後，可開啟 `/health`。端點維持 `status: "ok"` 供平台存活檢查，並附上不含機密的 `jin10`／`gdelt` 狀態、最近成功時間、資料筆數與錯誤類型，方便判斷「服務存活」與「來源暫時失敗」的差異。
 4. 真正觸發時，GitHub Actions 會出現 **Emergency market alert**；Mini App 會顯示已核對外部快訊，而 Telegram 僅顯示 30 字內摘要。
 
 ## 安全邊界

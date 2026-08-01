@@ -119,3 +119,14 @@ def test_discovery_cache_keeps_a_recent_success_for_rate_limit_fallback(tmp_path
 def test_list_flash_argument_uses_limit_only_when_schema_supports_it():
     assert monitor.default_flash_arguments({"properties": {"limit": {}}}, 30) == {"limit": 30}
     assert monitor.default_flash_arguments({"properties": {}}, 30) == {}
+
+
+def test_health_snapshot_exposes_source_diagnostics_without_secrets():
+    monitor.update_health("gdelt", enabled=True, status="failed", error="HTTPStatusError")
+    snapshot = monitor.health_snapshot()
+    assert snapshot["status"] == "ok"
+    assert snapshot["service"] == "prstk-jin10-monitor"
+    assert snapshot["gdelt"]["status"] == "failed"
+    assert snapshot["gdelt"]["error"] == "HTTPStatusError"
+    assert "JIN10_MCP_TOKEN" not in str(snapshot)
+    assert "GITHUB_DISPATCH_TOKEN" not in str(snapshot)
