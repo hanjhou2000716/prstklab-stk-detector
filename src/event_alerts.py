@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime, time
+from datetime import UTC, datetime, time
 from typing import Any
 from urllib.parse import urlparse
 
@@ -87,6 +87,13 @@ def _impact_confirmation(
             try:
                 left = datetime.fromisoformat(source_time.replace("Z", "+00:00"))
                 right = datetime.fromisoformat(item_time.replace("Z", "+00:00"))
+                # Public feeds mix ISO timestamps with and without offsets.
+                # Compare them on one UTC timeline instead of raising when a
+                # naive value meets an aware value.
+                if left.tzinfo is None:
+                    left = left.replace(tzinfo=UTC)
+                if right.tzinfo is None:
+                    right = right.replace(tzinfo=UTC)
                 if abs((right - left).total_seconds()) > 30 * 60:
                     continue
             except ValueError:
