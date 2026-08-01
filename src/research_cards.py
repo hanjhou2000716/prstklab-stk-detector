@@ -36,8 +36,20 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
         for item in raw.get("sources", [])
         if isinstance(item, dict)
         and (
-            item.get("scan_state") in {"failed", "building"}
-            or item.get("status") in {"掃描失敗", "資料暫時無法取得", "建檔中"}
+            (
+                item.get("scan_state") in {"failed", "building"}
+                and not (
+                    item.get("scan_state") == "building"
+                    and item.get("partial_candidates_allowed") is True
+                )
+            )
+            or (
+                item.get("status") in {"掃描失敗", "資料暫時無法取得", "建檔中"}
+                and not (
+                    item.get("status") == "建檔中"
+                    and item.get("partial_candidates_allowed") is True
+                )
+            )
         )
     }
     candidates = []
@@ -50,13 +62,16 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
             continue
         candidates.append({key: item.get(key) for key in (
             "market", "strategy", "rank", "ticker", "name", "score", "close", "previous_close", "change_percent", "turnover", "as_of", "signal_labels", "volume_ratio", "range_contraction", "breakout_20", "vcp_breakout", "new_high_days", "fgi_score", "fgi_status", "conditions_matched", "condition_count", "structure", "status",
-            "roe", "pe", "payout_ratio", "metrics_available", "moat_review"
+            "roe", "pe", "payout_ratio", "metrics_available", "moat_review", "list_type",
+            "pristine_conditions_matched", "pristine_conditions_total", "quality_verified",
+            "heat_verified", "verification_gaps"
         )})
     sources = [
         {key: source.get(key) for key in (
             "market", "strategy", "status", "candidates", "requested", "data_complete", "failed",
             "scan_state", "history_cached", "history_expected", "history_progress_pct",
             "history_pending", "history_failure_count", "blocking_reason", "notice", "error_details",
+            "partial_candidates_allowed",
         )}
         for source in raw.get("sources", [])
         if isinstance(source, dict) and source.get("strategy") in ALLOWED_STRATEGIES

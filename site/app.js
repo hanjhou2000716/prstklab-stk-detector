@@ -429,7 +429,9 @@ const renderResearch = (snapshot) => {
   const sourceFor = (strategy) => (report.sources || []).find((item) => item.market === activeResearchMarket && item.strategy === strategy) || {};
   const sourceBlocked = (strategy) => {
     const source = sourceFor(strategy);
-    return unavailable || source.status === "掃描失敗" || source.status === "資料暫時無法取得" || source.status === "建檔中" || source.scan_state === "failed" || source.scan_state === "building";
+    const partialCandidatesAllowed = source.partial_candidates_allowed === true;
+    const buildingWithoutPartialRows = source.status === "建檔中" || source.scan_state === "building";
+    return unavailable || source.status === "掃描失敗" || source.status === "資料暫時無法取得" || source.scan_state === "failed" || (buildingWithoutPartialRows && !partialCandidatesAllowed);
   };
   const marketCandidates = candidates.filter((item) => item.market === activeResearchMarket);
   const sourceMessage = (strategy, fallback) => {
