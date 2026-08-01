@@ -78,3 +78,14 @@ def test_independent_pool_does_not_require_an_upstream_technical_candidate():
     )
     assert rows[0]["ticker"] == "2330"
     assert rows[0]["pool"] == "0050"
+
+
+def test_taiwan_pristine_can_keep_complete_public_history_without_twse_supplemental():
+    rows = review_public_pool(
+        [{"ticker": "2330", "name": "TSMC", "symbol": "2330.TW", "pool": "0050"}],
+        {},
+        {"2330.TW": {"close": 1000, "change_percent": 1.2, "as_of": "2026-07-29"}},
+        "taiwan",
+        allow_missing_supplemental=True,
+    )
+    assert rows[0]["ticker"] == "2330"
