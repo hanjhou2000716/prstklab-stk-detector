@@ -40,12 +40,38 @@ def sentiment_label(score: float | None) -> str:
     return "極度貪婪"
 
 
+def vix_stage(value: float | None, percentile: float | None = None) -> str:
+    """Classify volatility separately from the fear/greed sentiment score."""
+    if value is None and percentile is None:
+        return "波動階段暫時無法取得"
+    if percentile is None:
+        number = float(value)
+        if number < 12:
+            return "極度樂觀"
+        if number < 16:
+            return "樂觀"
+        if number < 22:
+            return "中立"
+        if number < 30:
+            return "恐慌"
+        return "極度恐慌"
+    if percentile <= 10:
+        return "極度樂觀"
+    if percentile <= 30:
+        return "樂觀"
+    if percentile <= 70:
+        return "中立"
+    if percentile <= 90:
+        return "恐慌"
+    return "極度恐慌"
+
+
 def _latest_close(symbol: str) -> dict[str, Any]:
     """Fetch the latest public close for a volatility index."""
     import yfinance as yf
 
     history = yf.download(
-        symbol, period="10d", interval="1d", auto_adjust=False,
+        symbol, period="1y", interval="1d", auto_adjust=False,
         progress=False, threads=False,
     )
     close = history["Close"]
@@ -57,9 +83,13 @@ def _latest_close(symbol: str) -> dict[str, Any]:
     current = float(close.iloc[-1])
     previous = float(close.iloc[-2]) if len(close) >= 2 else None
     change_percent = None if previous in (None, 0) else round((current / previous - 1) * 100, 2)
+    window = close.tail(252)
+    percentile = round(float((window <= current).sum() / len(window) * 100), 1) if len(window) else None
     return {
         "value": round(current, 2),
         "change_percent": change_percent,
+        "percentile": percentile,
+        "stage": vix_stage(current, percentile),
         "date": close.index[-1].date().isoformat(),
         "source_label": "Yahoo Finance",
     }
@@ -80,6 +110,8 @@ def _parse_taifex_vix_file(content: bytes) -> dict[str, Any]:
             "value": round(value, 2),
             "date": datetime.strptime(fields[0], "%Y%m%d").date().isoformat(),
             "source_label": "臺灣期貨交易所",
+            "percentile": None,
+            "stage": vix_stage(value),
         }
     raise ValueError("臺指波動率檔案沒有可用數值。")
 
@@ -185,7 +217,7 @@ def build_risk_snapshot() -> dict[str, Any]:
     }
 
 
-def _news_from_html(html: str, market: str, limit: int = 3) -> list[dict[str, str]]:
+def _news_from_html(html: str, market: str, limit: int = 5) -> list[dict[str, str]]:
     """Extract holding-related headlines, falling back to disclosed market focus."""
     from bs4 import BeautifulSoup
 

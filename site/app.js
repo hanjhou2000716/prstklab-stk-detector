@@ -37,7 +37,11 @@ const renderQuoteList = (id, items) => {
   const container = document.getElementById(id);
   if (!container) return;
   if (!items?.length) { container.innerHTML = '<li class="empty">公開報價暫時無法取得</li>'; return; }
-  container.innerHTML = items.map((item) => {
+  const ordered = [...items].sort((a, b) => {
+    const rank = (item) => item.ticker === "TAIEX" ? 0 : item.ticker === "TPEx" ? 1 : 2;
+    return rank(a) - rank(b);
+  });
+  container.innerHTML = ordered.map((item) => {
     const state = item.change_percent > 0 ? "market-up" : item.change_percent < 0 ? "market-down" : "flat";
     const meta = compactQuoteMeta(item);
     return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}</small></span><span class="quote-value ${state}"><b>${formatNumber(item.price)} ${escapeHtml(item.currency || "")}</b><small>${signedPercent(item.change_percent)}</small><em class="quote-meta">${escapeHtml(meta)}</em></span></li>`;
@@ -62,7 +66,8 @@ const renderFocus = (events, externalAlert) => {
 const formatAlertQuote = (item) => {
   if (!item || item.price === null || item.price === undefined) return "";
   const state = item.change_percent > 0 ? "up" : item.change_percent < 0 ? "down" : "flat";
-  return `<div class="alert-quote"><b>${escapeHtml(item.name || item.ticker)}</b><strong class="${state}">${formatNumber(item.price)}${item.currency ? ` ${escapeHtml(item.currency)}` : ""}</strong><small class="${state}">${item.change === null || item.change === undefined ? "" : `${item.change > 0 ? "+" : ""}${formatNumber(item.change)}　`}${signedPercent(item.change_percent)}</small></div>`;
+  const convention = item.market === "taiwan" ? " tw" : "";
+  return `<div class="alert-quote"><b>${escapeHtml(item.name || item.ticker)}</b><strong class="${state}${convention}">${formatNumber(item.price)}${item.currency ? ` ${escapeHtml(item.currency)}` : ""}</strong><small class="${state}${convention}">${item.change === null || item.change === undefined ? "" : `${item.change > 0 ? "+" : ""}${formatNumber(item.change)}　`}${signedPercent(item.change_percent)}</small></div>`;
 };
 
 const externalAlertProfile = (category, indices) => {
@@ -216,8 +221,9 @@ const renderRisk = (risk) => {
     const vix = market.vix || {};
     const vixValue = vix.value === undefined || vix.value === null ? "—" : Number(vix.value).toFixed(2);
     const vixChange = vix.change_percent === null || vix.change_percent === undefined ? "資料暫時無法取得" : signedPercent(vix.change_percent);
+    const vixStage = vix.stage || "波動階段暫時無法取得";
     const vixState = vix.change_percent > 0 ? "risk-up" : vix.change_percent < 0 ? "risk-down" : "flat";
-    return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}</small></article></div></section>`;
+    return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}｜${escapeHtml(vixStage)}</small></article></div></section>`;
   }).join("");
 };
 
@@ -225,7 +231,7 @@ const renderNewsList = (id, stories) => {
   const container = document.getElementById(id);
   if (!container) return;
   if (!stories?.length) { container.innerHTML = '<li class="empty">目前沒有可顯示的公開新聞</li>'; return; }
-  container.innerHTML = stories.slice(0, 3).map((story) => {
+  container.innerHTML = stories.slice(0, 5).map((story) => {
     const url = story.url?.startsWith("https://news.cnyes.com/news/id/") ? story.url : "#";
     const title = String(story.title || "").replace(/^\s*\d+\.\s*/, "");
     return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><small>${escapeHtml(story.source)}</small></li>`;
@@ -405,6 +411,19 @@ document.querySelectorAll(".research-tab").forEach((tab) => tab.addEventListener
     item.setAttribute("aria-selected", String(selected));
   });
   if (window.marketSnapshot) renderResearch(window.marketSnapshot);
+}));
+
+let activeNewsMarket = "taiwan";
+document.querySelectorAll(".news-tab").forEach((tab) => tab.addEventListener("click", () => {
+  activeNewsMarket = tab.dataset.market || "taiwan";
+  document.querySelectorAll(".news-tab").forEach((item) => {
+    const selected = item === tab;
+    item.classList.toggle("active", selected);
+    item.setAttribute("aria-selected", String(selected));
+  });
+  document.querySelectorAll(".news-panel").forEach((panel) => {
+    panel.hidden = panel.dataset.newsMarket !== activeNewsMarket;
+  });
 }));
 
 const render = (snapshot) => {
