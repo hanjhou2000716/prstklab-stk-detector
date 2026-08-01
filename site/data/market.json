@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-01T12:32:57.028923+08:00",
+  "generated_at": "2026-08-01T13:46:55.884852+08:00",
   "scan": {
-    "started_at": "2026-08-01T12:32:28.903558+08:00",
-    "completed_at": "2026-08-01T12:32:57.028923+08:00",
+    "started_at": "2026-08-01T13:46:19.703853+08:00",
+    "completed_at": "2026-08-01T13:46:55.884852+08:00",
     "scope": "公開市場定時掃描",
     "live_quote_count": 0,
     "close_quote_count": 20
@@ -180,12 +180,12 @@
     {
       "symbol": "BTC-USD",
       "ticker": "BTC",
-      "name": "BTC",
+      "name": "比特幣",
       "market": "global",
       "currency": "USD",
-      "price": 62984.32,
-      "change": -1740.99,
-      "change_percent": -2.69,
+      "price": 62955.17,
+      "change": -1770.14,
+      "change_percent": -2.73,
       "quote_date": "2026-08-01",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -195,12 +195,12 @@
     {
       "symbol": "ETH-USD",
       "ticker": "ETH",
-      "name": "ETH",
+      "name": "以太坊",
       "market": "global",
       "currency": "USD",
-      "price": 1868.29,
-      "change": -49.08,
-      "change_percent": -2.56,
+      "price": 1864.14,
+      "change": -53.23,
+      "change_percent": -2.78,
       "quote_date": "2026-08-01",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -227,10 +227,10 @@
       "ticker": "006208",
       "name": "富邦台50",
       "market": "taiwan",
-      "price": 214.4,
-      "change": 0.35,
-      "change_percent": 0.16,
-      "quote_date": "2026-07-30",
+      "price": 235.35,
+      "change": 20.95,
+      "change_percent": 9.77,
+      "quote_date": "2026-07-31",
       "quote_time": null,
       "quote_basis": "日線收盤",
       "quote_source": "Yahoo Finance public daily quote",
@@ -242,10 +242,10 @@
       "ticker": "00685L",
       "name": "群益臺灣加權正二",
       "market": "taiwan",
-      "price": 9.16,
-      "change": -0.06,
-      "change_percent": -0.65,
-      "quote_date": "2026-07-30",
+      "price": 10.83,
+      "change": 1.67,
+      "change_percent": 18.23,
+      "quote_date": "2026-07-31",
       "quote_time": null,
       "quote_basis": "日線收盤",
       "quote_source": "Yahoo Finance public daily quote",
@@ -347,10 +347,16 @@
         },
         "method": "加權、櫃買、成交量、歷史波動率、美元兌台幣匯率的 120 日百分位模型"
       },
-      "vix": null,
-      "errors": [
-        "波動率資料暫時無法取得"
-      ],
+      "vix": {
+        "value": 40.77,
+        "date": "2026-07-31",
+        "change_percent": -7.99,
+        "percentile": null,
+        "stage": "極度恐慌",
+        "source_label": "TAIFEX",
+        "source_url": "https://mis.taifex.com.tw/futures/VolatilityQuotes/"
+      },
+      "errors": [],
       "summary": "情緒：極度恐慌"
     },
     "us": {
@@ -365,6 +371,8 @@
       "vix": {
         "value": 15.99,
         "change_percent": -6.44,
+        "percentile": 23.8,
+        "stage": "樂觀",
         "date": "2026-07-31",
         "source_label": "Yahoo Finance"
       },
@@ -375,20 +383,32 @@
   "news": {
     "taiwan": [
       {
-        "title": "1. 〈美股盤後〉亞馬遜飆超15% 蘋果挫逾7% 那指收高但創2006年來最慘7月表現",
-        "url": "https://news.cnyes.com/news/id/6554929",
+        "title": "1. 〈美股早盤〉微軟財報送定心丸！主要指數開高 台積電ADR漲逾5%",
+        "url": "https://news.cnyes.com/news/id/6552928",
+        "source": "鉅亨網｜持股關聯",
+        "relevance": "holding"
+      },
+      {
+        "title": "2. Fed等到好消息！美國6月PCE意外轉跌 核心通膨仍有3.3%",
+        "url": "https://news.cnyes.com/news/id/6553068",
         "source": "鉅亨網｜市場焦點",
         "relevance": "market"
       },
       {
-        "title": "2. 川普：美國將「猛烈打擊」伊朗 矢言贏得戰爭",
-        "url": "https://news.cnyes.com/news/id/6555521",
+        "title": "3. AI燒錢誰先回本？微軟狂飆15%、Meta慘跌9% 華爾街給出不同答案",
+        "url": "https://news.cnyes.com/news/id/6553106",
         "source": "鉅亨網｜市場焦點",
         "relevance": "market"
       },
       {
-        "title": "3. SpaceX首份財報倒數 大摩維持300美元目標價：最危險時刻來臨 AI價值仍遭低估",
-        "url": "https://news.cnyes.com/news/id/6555444",
+        "title": "4. 華爾街多頭沒力了！高盛：美股短期缺乏上漲燃料 680億美元賣壓恐來襲",
+        "url": "https://news.cnyes.com/news/id/6553066",
+        "source": "鉅亨網｜市場焦點",
+        "relevance": "market"
+      },
+      {
+        "title": "5. 〈友達法說〉彭双浪：Q3消費性電子需求持續偏弱 車用、垂直場域持穩",
+        "url": "https://news.cnyes.com/news/id/6553056",
         "source": "鉅亨網｜市場焦點",
         "relevance": "market"
       }
@@ -411,6 +431,18 @@
         "url": "https://news.cnyes.com/news/id/6555444",
         "source": "鉅亨網｜市場焦點",
         "relevance": "market"
+      },
+      {
+        "title": "4. 「AI股神」暴虧67%後首發聲 宣布再也不用槓桿炒股",
+        "url": "https://news.cnyes.com/news/id/6555618",
+        "source": "鉅亨網｜市場焦點",
+        "relevance": "market"
+      },
+      {
+        "title": "5. 蘋果稱記憶體價格暴漲如「百年洪災」暗示DRAM市場需要更多供應商",
+        "url": "https://news.cnyes.com/news/id/6555553",
+        "source": "鉅亨網｜市場焦點",
+        "relevance": "market"
       }
     ],
     "errors": []
@@ -420,6 +452,77 @@
     "status": "市場訊號已更新",
     "message": "已核對的重要市場事件與價格訊號；請查看完整脈絡。",
     "items": [
+      {
+        "title": "GDACS Red earthquake alert",
+        "url": "https://www.gdacs.org/report.aspx?eventtype=EQ&eventid=1555461",
+        "brief_summary": "GDACS 紅色earthquake災害警示",
+        "source": "GDACS｜公開災害警示",
+        "short_label": "黑天鵝／重大災害",
+        "relevance": "official",
+        "source_tier": "official",
+        "released_at": "2026-08-01T05:09:33+00:00",
+        "source_key": "gdacs",
+        "topic_key": "gdacs",
+        "importance": "high-risk",
+        "kind": "major_event",
+        "pattern": "重要事件",
+        "risk_level": "持續觀察",
+        "brief_title": "黑天鵝／重大災害｜重要事件｜觀察",
+        "summary": "GDACS 紅色earthquake災害警示",
+        "trigger": "事件：GDACS 紅色earthquake災害警示。核對來源：GDACS｜公開災害警示。",
+        "why_important": "重大災害可能改變區域供應、航運、能源或避險需求；實際影響須由官方資訊與公開市場資料共同確認。",
+        "market_context": "市場傳導：尚未出現足夠的相關公開價格確認；本輪連動觀察為 NASDAQ、SOX。",
+        "stock_observation": "後續觀察：官方災情與基建／航運資訊、能源與避險資產，以及主要股市是否持續同步波動。",
+        "friendly_reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
+        "related": [
+          {
+            "symbol": "^IXIC",
+            "ticker": "NASDAQ",
+            "name": "那斯達克綜合指數",
+            "market": "us",
+            "currency": "點",
+            "price": 25373.85,
+            "change": 251.67,
+            "change_percent": 1.0,
+            "quote_date": "2026-07-31",
+            "quote_time": null,
+            "quote_basis": "日線收盤",
+            "quote_source": "Yahoo Finance public daily quote",
+            "freshness": "recent_close"
+          },
+          {
+            "symbol": "^SOX",
+            "ticker": "SOX",
+            "name": "費城半導體指數",
+            "market": "us",
+            "currency": "點",
+            "price": 11311.08,
+            "change": 8.09,
+            "change_percent": 0.07,
+            "quote_date": "2026-07-31",
+            "quote_time": null,
+            "quote_basis": "日線收盤",
+            "quote_source": "Yahoo Finance public daily quote",
+            "freshness": "recent_close"
+          }
+        ],
+        "impact_confirmation": {
+          "confirmed": false,
+          "method": "尚無相關市場同步確認",
+          "markets": []
+        },
+        "source_trace": {
+          "verification": "一手官方來源",
+          "source_label": "GDACS｜公開災害警示",
+          "source_url": "https://www.gdacs.org/report.aspx?eventtype=EQ&eventid=1555461",
+          "source_domain": "gdacs.org",
+          "event_time": "2026-08-01T05:09:33+00:00",
+          "checked_at": "",
+          "verified_domains": [
+            "gdacs.org"
+          ]
+        }
+      },
       {
         "kind": "market_signal",
         "short_label": "台指價格訊號觸發",
@@ -586,92 +689,25 @@
         "realert_interval_minutes": null,
         "signal_band": null,
         "signal_state": "急升:高波動:極端:daily"
-      },
-      {
-        "kind": "market_signal",
-        "short_label": "TPEx價格訊號觸發",
-        "pattern": "急升",
-        "risk_level": "高波動",
-        "brief_title": "TPEx價格訊號觸發｜急升｜高波動",
-        "title": "TPEx日內變動 +6.63%",
-        "summary": "TPEx 347.85",
-        "trigger": "日內 +6.63%｜點數 +21.62｜最新 347.85",
-        "why_important": "日內 +6.63%｜點數 +21.62｜最新 347.85。日內變動達固定觀察門檻，需以後續公開報價確認。",
-        "market_context": "可能與其他主要市場同時波動；須以各自的公開報價確認，不能直接推論因果。",
-        "stock_observation": "觀察主要股市、利率與商品市場是否出現持續且同步的變化。",
-        "friendly_reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
-        "source": "公開市場報價",
-        "url": "",
-        "source_trace": {
-          "verification": "公開來源待後續核對",
-          "source_label": "公開市場報價",
-          "source_url": "",
-          "source_domain": "",
-          "event_time": "",
-          "checked_at": "",
-          "verified_domains": []
-        },
-        "instrument": {
-          "ticker": "TPEx",
-          "price": 347.85,
-          "previous_close": 326.23,
-          "change": 21.62,
-          "change_percent": 6.63,
-          "quote_date": "2026-07-31",
-          "quote_time": null,
-          "quote_source": "TPEx OpenAPI official close",
-          "quote_basis": "TPEx 官方最近收盤",
-          "quote_delayed": false,
-          "freshness": "recent_close"
-        },
-        "related": [
-          {
-            "symbol": "^IXIC",
-            "ticker": "NASDAQ",
-            "name": "那斯達克綜合指數",
-            "market": "us",
-            "currency": "點",
-            "price": 25373.85,
-            "change": 251.67,
-            "change_percent": 1.0,
-            "quote_date": "2026-07-31",
-            "quote_time": null,
-            "quote_basis": "日線收盤",
-            "quote_source": "Yahoo Finance public daily quote",
-            "freshness": "recent_close"
-          },
-          {
-            "symbol": "^SOX",
-            "ticker": "SOX",
-            "name": "費城半導體指數",
-            "market": "us",
-            "currency": "點",
-            "price": 11311.08,
-            "change": 8.09,
-            "change_percent": 0.07,
-            "quote_date": "2026-07-31",
-            "quote_time": null,
-            "quote_basis": "日線收盤",
-            "quote_source": "Yahoo Finance public daily quote",
-            "freshness": "recent_close"
-          }
-        ],
-        "impact_confirmation": {
-          "confirmed": true,
-          "method": "相關市場同步波動",
-          "markets": [
-            "NASDAQ"
-          ]
-        },
-        "change": 21.62,
-        "realert_interval_minutes": null,
-        "signal_band": null,
-        "signal_state": "急升:高波動:極端:daily"
       }
     ]
   },
   "official_events": {
-    "items": [],
+    "items": [
+      {
+        "title": "GDACS Red earthquake alert",
+        "url": "https://www.gdacs.org/report.aspx?eventtype=EQ&eventid=1555461",
+        "brief_summary": "GDACS 紅色earthquake災害警示",
+        "source": "GDACS｜公開災害警示",
+        "short_label": "黑天鵝／重大災害",
+        "relevance": "official",
+        "source_tier": "official",
+        "released_at": "2026-08-01T05:09:33+00:00",
+        "source_key": "gdacs",
+        "topic_key": "gdacs",
+        "importance": "high-risk"
+      }
+    ],
     "errors": []
   },
   "macro": {
@@ -679,11 +715,11 @@
     "items": [
       {
         "label": "事件",
-        "text": "台指價格訊號觸發：臺灣加權指數日內變動 +7.98%"
+        "text": "黑天鵝／重大災害：GDACS Red earthquake alert"
       },
       {
         "label": "事件",
-        "text": "KOSPI價格訊號觸發：韓國綜合日內變動 +17.91%"
+        "text": "台指價格訊號觸發：臺灣加權指數日內變動 +7.98%"
       },
       {
         "label": "風險",
@@ -695,10 +731,7 @@
       },
       {
         "label": "節目更新",
-        "text": "2026/7/31(五)美股大彈絕地反攻 槓桿去化完成?現在該減碼 還是做多?【早晨財經速解讀】",
-        "url": "https://www.youtube.com/watch?v=7RUZWygQDvE",
-        "source": "游庭皓的財經皓角｜YouTube",
-        "published_at": "2026-07-31T01:07:09+00:00"
+        "text": "最新公開節目暫時無法取得。"
       }
     ]
   },
@@ -747,9 +780,9 @@
     }
   ],
   "briefing": {
-    "slot": "intraday",
-    "title": "台股盤中儀表板",
-    "overview": "台指價格訊號觸發｜急升｜高波動｜臺灣加權指數 43,119.75 可能連動費半、Nasdaq 與台指期；以後續同步報價確認，而非預設因果。",
+    "slot": "live",
+    "title": "即時市場儀表板",
+    "overview": "黑天鵝／重大災害｜重要事件｜觀察｜GDACS 紅色earthquake災害警示 市場傳導：尚未出現足夠的相關公開價格確認；本輪連動觀察為 NASDAQ、SOX。",
     "markets": [
       {
         "symbol": "^TWII",
@@ -889,12 +922,12 @@
       {
         "symbol": "BTC-USD",
         "ticker": "BTC",
-        "name": "BTC",
+        "name": "比特幣",
         "market": "global",
         "currency": "USD",
-        "price": 62984.32,
-        "change": -1740.99,
-        "change_percent": -2.69,
+        "price": 62955.17,
+        "change": -1770.14,
+        "change_percent": -2.73,
         "quote_date": "2026-08-01",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -904,12 +937,12 @@
       {
         "symbol": "ETH-USD",
         "ticker": "ETH",
-        "name": "ETH",
+        "name": "以太坊",
         "market": "global",
         "currency": "USD",
-        "price": 1868.29,
-        "change": -49.08,
-        "change_percent": -2.56,
+        "price": 1864.14,
+        "change": -53.23,
+        "change_percent": -2.78,
         "quote_date": "2026-08-01",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -920,38 +953,38 @@
     "observations": [
       {
         "title": "台股總經",
-        "event": "台指 +7.98%；櫃買 +6.63%。台股風險：極度恐慌 10.5；VIX 資料暫時無法取得。",
-        "importance": "加權與櫃買可用來分辨權值與中小型股的當日表現是否出現差異。",
-        "market_impact": "台股盤勢仍須搭配權值、半導體與海外市場報價確認，不以單日變動推論原因。",
-        "watch": "觀察台指、櫃買與台指期是否延續同向，以及成交量是否同步變化。"
+        "event": "台指 +7.98%；櫃買 +6.63%。台股風險：極度恐慌 10.5；VIX 40.77（-7.99%）。",
+        "importance": "加權指數代表大型權值股，櫃買指數較反映中小型股；兩者同步或分歧可用來判讀盤面廣度。",
+        "market_impact": "加權指數與櫃買指數同為上漲，可作為同向價格確認。",
+        "watch": "觀察台指期是否與現貨收斂、成交量是否放大，以及權值股是否主導盤勢。"
       },
       {
         "title": "台積電／半導體",
         "event": "台積電 +9.98%；費半 +0.07%；Nasdaq +1.00%。",
-        "importance": "台積電與費半是台美半導體權值的公開參考，能協助辨識單一市場或跨市場的差異。",
-        "market_impact": "半導體行情可能連動台股電子權值與美國科技指數，實際傳導需由後續報價驗證。",
-        "watch": "觀察費半、台積電與 Nasdaq 是否同步，及公開財報／展望是否帶來持續影響。"
+        "importance": "台積電、費半與 Nasdaq 可交叉辨識台美半導體與成長股是否同向，而非只看單一公司或指數。",
+        "market_impact": "費半與台積電同為上漲，可作為同向價格確認。",
+        "watch": "觀察費半是否延續至美股收盤，以及台積電、AI 供應鏈與公開財報展望是否出現一致方向。"
       },
       {
         "title": "科技產業",
         "event": "Nasdaq +1.00%；費半 +0.07%；日經225 +4.03%；韓國綜合 +17.91%。",
-        "importance": "美日韓科技指數提供 AI、半導體與出口型市場的跨區域公開觀察。",
-        "market_impact": "跨市場可能不同步；只觀察是否出現可核對的同向擴散或明顯分歧。",
-        "watch": "觀察美國科技收盤、日韓開收盤與台股電子權值的方向是否一致。"
+        "importance": "美日韓科技市場的同向變化，較能反映區域風險偏好；若分歧，需保留各市場本地因素的解釋空間。",
+        "market_impact": "Nasdaq與韓國綜合同為上漲，可作為同向價格確認。",
+        "watch": "觀察日韓下一交易時段是否延續，以及台股電子權值是否跟隨或出現明顯分歧。"
       },
       {
         "title": "利率匯率",
         "event": "美元指數 -0.21%；美國10年債殖利率 +1.76%；美元兌台幣 -0.31%。",
-        "importance": "美元、長債殖利率與匯率可反映資金與折現率的公開環境，並非單獨決定股市方向。",
-        "market_impact": "利率與匯率變化可能影響成長股評價、外資流向與台股風險偏好，須搭配實際市場資料。",
-        "watch": "觀察美元、殖利率與美元兌台幣是否持續同向，以及科技指數是否同步反應。"
+        "importance": "美元與長債殖利率影響成長股折現率；美元兌台幣則是觀察台股外資風險偏好的公開輔助指標。",
+        "market_impact": "美元指數下跌、美國10年債殖利率上漲，呈現分歧，暫不推論跨市場因果。",
+        "watch": "觀察美元、殖利率與台幣是否連續兩個交易時段同向，並核對科技指數是否同步受壓或走穩。"
       },
       {
         "title": "風險提醒",
-        "event": "本次焦點：台指價格訊號觸發｜急升｜高波動。臺灣加權指數 43,119.75 美股風險：中立／偏恐慌 42.5；VIX 15.99（-6.44%）。",
-        "importance": "日內 +7.98%｜點數 +3,186.45｜最新 43,119.75。日內變動達固定觀察門檻，需以後續公開報價確認。",
-        "market_impact": "可能連動費半、Nasdaq 與台指期；以後續同步報價確認，而非預設因果。",
-        "watch": "觀察台股權值與電子類股是否與台指期、費半維持同方向。"
+        "event": "本次焦點：黑天鵝／重大災害｜重要事件｜觀察。GDACS 紅色earthquake災害警示 美股風險：中立／偏恐慌 42.5；VIX 15.99（-6.44%）。",
+        "importance": "重大災害可能改變區域供應、航運、能源或避險需求；實際影響須由官方資訊與公開市場資料共同確認。",
+        "market_impact": "市場傳導：尚未出現足夠的相關公開價格確認；本輪連動觀察為 NASDAQ、SOX。",
+        "watch": "後續觀察：官方災情與基建／航運資訊、能源與避險資產，以及主要股市是否持續同步波動。"
       }
     ],
     "reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。"
@@ -1526,17 +1559,17 @@
       "unavailable_sources": 3,
       "warming_sources": 1,
       "empty_sources": 0,
-      "age_minutes": 1209.3,
-      "checked_at": "2026-08-01T12:32:57.028800+08:00",
+      "age_minutes": 1283.3,
+      "checked_at": "2026-08-01T13:46:55.884722+08:00",
       "max_age_minutes": 1800,
       "is_expired": false
     },
     "availability": "available"
   },
   "source_health": {
-    "checked_at": "2026-08-01T12:32:57.028923+08:00",
+    "checked_at": "2026-08-01T13:46:55.884852+08:00",
     "status": "partial",
-    "summary": "2 個來源有資料缺口",
+    "summary": "1 個來源有資料缺口",
     "event_scan": {
       "status": "event_detected",
       "label": "已核對重大事件",
@@ -1547,37 +1580,35 @@
         "key": "market_quotes",
         "label": "市場報價",
         "status": "healthy",
-        "checked_at": "2026-08-01T12:32:57.028923+08:00",
+        "checked_at": "2026-08-01T13:46:55.884852+08:00",
         "issues": []
       },
       {
         "key": "official_events",
         "label": "官方重大事件",
         "status": "healthy",
-        "checked_at": "2026-08-01T12:32:57.028923+08:00",
+        "checked_at": "2026-08-01T13:46:55.884852+08:00",
         "issues": []
       },
       {
         "key": "market_news",
         "label": "市場新聞",
         "status": "healthy",
-        "checked_at": "2026-08-01T12:32:57.028923+08:00",
+        "checked_at": "2026-08-01T13:46:55.884852+08:00",
         "issues": []
       },
       {
         "key": "risk",
         "label": "情緒／波動",
-        "status": "partial",
-        "checked_at": "2026-08-01T12:32:57.028923+08:00",
-        "issues": [
-          "波動率資料暫時無法取得"
-        ]
+        "status": "healthy",
+        "checked_at": "2026-08-01T13:46:55.884852+08:00",
+        "issues": []
       },
       {
         "key": "research",
         "label": "量化研究",
         "status": "partial",
-        "checked_at": "2026-08-01T12:32:57.028923+08:00",
+        "checked_at": "2026-08-01T13:46:55.884852+08:00",
         "issues": [
           "taiwan momentum 掃描失敗",
           "taiwan price_action 掃描失敗"
@@ -1585,11 +1616,5 @@
       }
     ]
   },
-  "errors": [
-    {
-      "ticker": "台股風險指標",
-      "message": "波動率資料暫時無法取得",
-      "scope": "risk"
-    }
-  ]
+  "errors": []
 }
