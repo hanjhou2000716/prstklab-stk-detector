@@ -377,6 +377,55 @@ def apply_taiwan_intraday_crosscheck(
     return checked, errors
 
 
+def apply_crypto_spot_crosscheck(
+    indices: list[dict[str, Any]], spot_snapshot: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Use Binance spot as the primary BTC/ETH quote and CoinGecko as proof.
+
+    The two providers are intentionally optional. If either is unavailable the
+    existing card remains visible and is marked unverified rather than being
+    replaced by a fabricated or stale value.
+    """
+    from src.market_crosscheck import compare_quotes
+
+    snapshot = spot_snapshot or {}
+    primary_quotes = snapshot.get("primary") or {}
+    secondary_quotes = snapshot.get("secondary") or {}
+    checked: list[dict[str, Any]] = []
+    for item in indices:
+        ticker = str(item.get("ticker") or "")
+        if ticker not in {"BTC", "ETH"}:
+            checked.append(item)
+            continue
+        primary = primary_quotes.get(ticker)
+        secondary = secondary_quotes.get(ticker)
+        if primary:
+            result = compare_quotes(primary, secondary, max_age_minutes=60, max_gap_percent=2.0)
+            merged = {**item, **primary}
+            merged["name"] = item.get("name") or primary.get("ticker")
+            merged["market"] = item.get("market") or "global"
+            merged["currency"] = item.get("currency") or "USD"
+            merged["quote_date"] = str(primary.get("quote_time") or "")[:10] or item.get("quote_date")
+            merged["cross_checked"] = bool(result.get("cross_checked"))
+            merged["crosscheck_status"] = "已交叉核對" if result.get("cross_checked") else str(result.get("status") or "未交叉核對")
+            merged["crosscheck_sources"] = [
+                {"label": "Binance", "url": primary.get("source_url", ""), "quote_time": primary.get("quote_time", "")},
+                {"label": "CoinGecko", "url": (secondary or {}).get("source_url", ""), "quote_time": (secondary or {}).get("quote_time", "")},
+            ]
+            checked.append(merged)
+        else:
+            checked.append({
+                **item,
+                "cross_checked": False,
+                "crosscheck_status": "primary_unavailable",
+                "crosscheck_sources": [
+                    {"label": "Binance", "url": ""},
+                    {"label": "CoinGecko", "url": (secondary or {}).get("source_url", "")},
+                ],
+            })
+    return checked
+
+
 def build_market_snapshot() -> dict[str, Any]:
     """Build a browser-friendly snapshot; one ticker failure never stops others."""
     from src.event_alerts import build_event_snapshot
@@ -446,6 +495,10 @@ def build_market_snapshot() -> dict[str, Any]:
     news = build_news_snapshot()
     official_events = fetch_official_events()
     phase_two = build_phase_two_snapshot()
+    # Phase 5: crypto spot prices are independently checked after the regular
+    # Yahoo/index pass. Re-annotate freshness because Binance is intraday.
+    indices = apply_crypto_spot_crosscheck(indices, phase_two.get("crypto_spot"))
+    indices = [normalize_quote_record(item) for item in annotate_quote_freshness(indices)]
     events = build_event_snapshot(news, quotes, official_events, indices=indices)
     try:
         program = fetch_yutinghao_latest_program()
