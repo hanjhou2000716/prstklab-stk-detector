@@ -440,23 +440,26 @@ def _decode_discovery_articles(rows: list[dict[str, str]]) -> list[DiscoveryArti
 
 async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[DiscoveryArticle]:
     """Fetch discovery headlines with a 15-minute cache and 120-minute fallback."""
+    fresh_cache_seconds = max(60, int(os.environ.get("GDELT_CACHE_MINUTES", "15")) * 60)
+    stale_cache_seconds = max(fresh_cache_seconds, int(os.environ.get("GDELT_STALE_CACHE_MINUTES", "120")) * 60)
+    fresh_age_seconds = max(60, int(os.environ.get("GDELT_MAX_FRESH_AGE_MINUTES", "45")) * 60)
     if store:
-        cached = store.read_cache("gdelt-success", 15 * 60)
+        cached = store.read_cache("gdelt-success", fresh_cache_seconds)
         if cached is not None:
             return _decode_discovery_articles(cached)
-    params = {"query": GDELT_QUERY, "mode": "artlist", "format": "json", "sort": "datedesc", "maxrecords": 75}
+    params = {"query": os.environ.get("GDELT_QUERY", GDELT_QUERY), "mode": "artlist", "format": "json", "sort": "datedesc", "maxrecords": 75}
     try:
         async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
             response = await client.get(GDELT_DOC_URL, params=params)
         response.raise_for_status()
-    except httpx.HTTPStatusError as error:
-        if error.response.status_code == 429 and store:
-            stale = store.read_cache("gdelt-success", 120 * 60)
+    except Exception:
+        if store:
+            stale = store.read_cache("gdelt-success", stale_cache_seconds)
             if stale is not None:
-                logging.warning("GDELT rate-limited; using the most recent cached success")
+                logging.warning("GDELT temporarily unavailable; using the most recent cached success")
                 return _decode_discovery_articles(stale)
         raise
-    cutoff = datetime.now(timezone.utc).timestamp() - 45 * 60
+    cutoff = datetime.now(timezone.utc).timestamp() - fresh_age_seconds
     articles: list[DiscoveryArticle] = []
     for row in response.json().get("articles", []):
         title = str(row.get("title") or "").strip()
@@ -537,6 +540,7 @@ async def monitor_forever() -> None:
     cooldown = max(1800, int(os.environ.get("JIN10_CATEGORY_COOLDOWN_SECONDS", "1800")))
     bootstrap = os.environ.get("JIN10_INITIAL_BACKFILL", "false").lower() == "true"
     gdelt_interval = max(900, int(os.environ.get("GDELT_POLL_SECONDS", "900")))
+    gdelt_enabled = os.environ.get("GDELT_DISCOVERY_ENABLED", "true").lower() == "true"
     store = SeenStore(Path(os.environ.get("MONITOR_STATE_PATH", "/data/jin10-monitor.sqlite3")))
     first_cycle = True
     gdelt_baseline = True
@@ -563,7 +567,7 @@ async def monitor_forever() -> None:
             first_cycle = False
         except Exception:
             logging.exception("Jin10 poll failed; will retry")
-        if time.monotonic() - last_gdelt_poll >= gdelt_interval:
+        if gdelt_enabled and time.monotonic() - last_gdelt_poll >= gdelt_interval:
             last_gdelt_poll = time.monotonic()
             try:
                 articles = await fetch_gdelt_articles(store)

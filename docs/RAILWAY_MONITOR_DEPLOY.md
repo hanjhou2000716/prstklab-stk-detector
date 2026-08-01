@@ -51,3 +51,19 @@ GitHub 端會再次驗證簽章、去重、更新 Mini App，再送出 Telegram 
 - 不將 Token、共享密鑰、原始授權 Header 寫入程式碼、Git 或 Mini App。
 - 首次啟動預設不補發歷史快訊，避免大量舊訊息。
 - 只轉發 Fed、宏觀數據、政策／關稅、戰爭衝突、半導體巨頭、極端市場事件，以及具地緣／供應／大幅變動背景的能源快訊。例行油價評論不轉發；所有內容維持公開市場教育與風險提醒，不構成投資建議。
+## Phase 3 GDELT discovery settings
+
+The Railway monitor polls the public GDELT DOC endpoint every 15 minutes by default. A successful response is cached for 15 minutes. During a temporary failure or rate limit, the latest successful cache may be used for up to 120 minutes and is labelled with its original fetch time. Only discovery articles from the last 45 minutes are considered.
+
+Optional Railway variables:
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `GDELT_DISCOVERY_ENABLED` | `true` | Set `false` to pause GDELT discovery while official monitors continue. |
+| `GDELT_POLL_SECONDS` | `900` | Poll interval; values below 900 seconds are clamped to 900 to respect the public endpoint. |
+| `GDELT_CACHE_MINUTES` | `15` | Successful response cache window. |
+| `GDELT_STALE_CACHE_MINUTES` | `120` | Maximum age of a success cache used after a transient failure. |
+| `GDELT_MAX_FRESH_AGE_MINUTES` | `45` | Maximum publication age for a discovery candidate. |
+| `GDELT_QUERY` | built-in query | Optional URL-encoded query override for discovery keywords. |
+
+GDELT remains a discovery layer. A candidate needs at least two trusted publisher domains sharing the same concrete entity/place/action intersection. Black-swan or major-disaster candidates are never dispatched by GDELT alone; they wait for a matching first-party official confirmation. The first successful poll establishes a baseline and does not replay historical headlines. SQLite persistence continues to provide event deduplication and cooldowns.
