@@ -139,6 +139,24 @@ def test_tpex_official_close_restores_a_missing_yahoo_index_row():
     assert indices[-1]["price"] == 334.24
 
 
+def test_tpex_unavailable_keeps_a_visible_non_actionable_row():
+    indices, errors = apply_taiwan_intraday_crosscheck(
+        [{"ticker": "TAIEX", "price": 41590}],
+        "收盤後",
+        tpex_fetcher=lambda: None,
+    )
+
+    tpex = next(item for item in indices if item["ticker"] == "TPEx")
+    assert tpex["price"] is None
+    assert tpex["data_status"] == "unavailable"
+    assert any(error["ticker"] == "TPEx" for error in errors)
+
+
+def test_unavailable_quote_is_not_classified_as_recent_close():
+    quotes = annotate_quote_freshness([{"ticker": "TPEx", "price": None}])
+    assert quotes[0]["freshness"] == "unavailable"
+
+
 def test_stale_daily_quote_is_explicitly_marked_for_the_ui():
     quotes = annotate_quote_freshness(
         [{"ticker": "TPEx", "quote_date": "2026-07-17"}],

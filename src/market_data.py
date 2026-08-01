@@ -173,6 +173,11 @@ def intraday_is_fresh(timestamp: Any, market: str, now: datetime | None = None) 
 
 def quote_freshness(quote: dict[str, Any], *, now: datetime | None = None) -> str:
     """Classify a quote by its published observation date, not scan time."""
+    # Keep an unavailable official quote distinct from an old close or an
+    # unparseable timestamp.  The UI and source-health card can then disclose
+    # the gap instead of treating an empty row as a current quote.
+    if quote.get("price") is None and not (quote.get("quote_time") or quote.get("quote_date")):
+        return "unavailable"
     reference = now or datetime.now(ZoneInfo("Asia/Taipei"))
     try:
         observed = datetime.fromisoformat(str(quote.get("quote_time") or quote.get("quote_date"))).date()
@@ -242,7 +247,31 @@ def apply_taiwan_intraday_crosscheck(
         tpex = tpex_fetcher()
     except Exception as exc:
         errors.append({"ticker": "TPEx", "message": f"TPEx 官方指數暫時無法取得：{type(exc).__name__}", "scope": "index"})
-    if tpex and not any(item.get("ticker") == "TPEx" for item in indices):
+    if not tpex:
+        # Keep the TPEx row visible when both public endpoints fail.  It is
+        # deliberately non-actionable and is surfaced as a source gap rather
+        # than silently disappearing from the market list.
+        if not errors or not any(error.get("ticker") == "TPEx" for error in errors):
+            errors.append({"ticker": "TPEx", "message": "TPEx official endpoint returned no data", "scope": "index"})
+        if not any(item.get("ticker") == "TPEx" for item in indices):
+            tpex = {
+                "ticker": "TPEx",
+                "name": "櫃買指數",
+                "market": "taiwan",
+                "currency": "點",
+                "price": None,
+                "previous_close": None,
+                "change": None,
+                "change_percent": None,
+                "quote_date": None,
+                "quote_time": None,
+                "quote_source": "TPEx OpenAPI official close",
+                "quote_basis": "TPEx 官方資料暫時無法取得",
+                "quote_delayed": True,
+                "data_status": "unavailable",
+            }
+            indices = [*indices, tpex]
+    elif not any(item.get("ticker") == "TPEx" for item in indices):
         indices = [*indices, tpex]
     if session != "交易中":
         return [({**item, **tpex} if item.get("ticker") == "TPEx" and tpex else item) for item in indices], errors
@@ -313,10 +342,14 @@ def build_market_snapshot() -> dict[str, Any]:
     quotes = annotate_quote_freshness(quotes)
     indices = annotate_quote_freshness(indices)
     for item in [*quotes, *indices]:
-        if item.get("freshness") == "stale":
+        if item.get("freshness") in {"stale", "unavailable"}:
             errors.append({
                 "ticker": item.get("ticker", "公開報價"),
-                "message": f"{item.get('ticker', '公開報價')} 報價已逾三日，已標示為過期資料",
+                "message": (
+                    f"{item.get('ticker', '公開報價')} 官方／公開報價暫時無法取得"
+                    if item.get("freshness") == "unavailable"
+                    else f"{item.get('ticker', '公開報價')} 報價已逾三日，已標示為過期資料"
+                ),
                 "scope": "index" if item in indices else "",
             })
     macro_quotes: list[dict[str, Any]] = []
