@@ -1,0 +1,29 @@
+name: Backtest archive audit
+
+on:
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        market: [taiwan, us]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Audit point-in-time archive
+        run: |
+          python -m src.run_backtest_archive_audit \
+            --market "${{ matrix.market }}" \
+            --output "backtest-archive-audit-${{ matrix.market }}.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backtest-archive-audit-${{ matrix.market }}
+          path: backtest-archive-audit-${{ matrix.market }}.json
