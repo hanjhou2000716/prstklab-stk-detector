@@ -30,7 +30,10 @@ const compactQuoteMeta = (item) => {
     : provider;
   const time = `${date}${clock}`;
   const freshness = item.freshness === "stale" ? "｜逾時" : item.freshness === "live" ? "｜盤中" : "";
-  return `${label} | ${time}${freshness}`;
+  const checked = item.cross_checked ? "｜已核對" : "｜未核對";
+  const base = `${label} | ${time}${freshness}`;
+  // Legacy compact form: return `${label} | ${time}${freshness}`
+  return `${base}${checked}`;
 };
 
 const renderQuoteList = (id, items) => {
@@ -154,6 +157,10 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
     why_important: profile.why,
     market_context: `${profile.linked} 來源：${externalAlert.source}。`,
     stock_observation: profile.watch,
+    event: externalAlert.summary,
+    importance_detail: profile.why,
+    market_impact: profile.linked,
+    watch: profile.watch,
     friendly_reminder: "僅供公開資訊整理與教育性觀察，不構成投資建議。",
     related: profile.related,
     source_trace: {
@@ -196,10 +203,10 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
   setText("alert-headline", headline);
   const headlineNode = document.getElementById("alert-headline");
   if (headlineNode) headlineNode.className = `market-signal-title ${movementClass(headline)}`;
-  setText("alert-summary", event.summary || event.title || "公開市場事件更新。");
-  setText("alert-trigger", event.why_important || event.trigger || "已核對公開訊號，等待後續市場反應。");
-  setText("alert-context", event.market_context || "持續觀察公開資料。");
-  setText("alert-stock-observation", event.stock_observation || "觀察主要市場是否出現可核對的同步變化。");
+  setText("alert-summary", event.event || event.summary || event.title || "公開市場事件更新。");
+  setText("alert-trigger", event.importance_detail || event.why_important || event.trigger || "已核對公開訊號，等待後續市場反應。");
+  setText("alert-context", event.market_impact || event.market_context || "持續觀察公開資料。");
+  setText("alert-stock-observation", event.watch || event.stock_observation || "觀察主要市場是否出現可核對的同步變化。");
   setText("alert-reminder", event.friendly_reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
   const quoteItems = [event.instrument, ...(event.related || [])].filter(Boolean).slice(0, 2);
   document.getElementById("alert-quote-grid").innerHTML = quoteItems.length ? quoteItems.map(formatAlertQuote).join("") : '<p class="empty">本事件暫無可顯示的公開報價</p>';

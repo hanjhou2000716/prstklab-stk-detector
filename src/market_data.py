@@ -117,6 +117,7 @@ def _daily_quote(item: dict[str, str], closes: Any) -> dict[str, Any]:
         "quote_time": None,
         "quote_basis": "日線收盤",
         "quote_source": "Yahoo Finance public daily quote",
+        "source_url": f"https://finance.yahoo.com/quote/{item['symbol']}",
         "currency": item.get("currency") or ("TWD" if item["market"] == "taiwan" else "USD"),
     })
 
@@ -157,6 +158,7 @@ def _intraday_quote(
         "quote_basis": basis,
         "quote_delayed": delayed,
         "quote_source": "Yahoo Finance public 5-minute quote",
+        "source_url": f"https://finance.yahoo.com/quote/{item['symbol']}",
         "currency": item.get("currency") or ("TWD" if item["market"] == "taiwan" else "USD"),
     })
 

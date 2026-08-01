@@ -10,7 +10,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunsplit
 
 from src.emergency_alert import CATEGORY_LABELS, build_emergency_brief
 
@@ -43,6 +43,23 @@ class ExternalAlert:
     @property
     def cache_key(self) -> str:
         return hashlib.sha256(self.event_id.encode("utf-8")).hexdigest()
+
+    @property
+    def canonical_key(self) -> str:
+        urls = "|".join(sorted(_normalize_url(item[1]) for item in self.evidence))
+        material = "|".join((self.category, self.summary.casefold(), self.occurred_at[:13], urls))
+        return hashlib.sha256(material.encode("utf-8")).hexdigest()[:32]
+
+
+def _normalize_url(value: str) -> str:
+    parsed = urlparse(str(value or "").strip())
+    host = (parsed.hostname or "").lower().removeprefix("www.")
+    if not host:
+        return ""
+    path = (parsed.path or "/").rstrip("/") or "/"
+    query = [(key, value) for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+             if not key.lower().startswith("utm_") and key.lower() not in {"fbclid", "gclid", "ref"}]
+    return urlunsplit((parsed.scheme.lower(), host, path, urlencode(sorted(query)), ""))
 
 
 def _normalize_evidence(value: str | list[dict[str, str]] | None) -> tuple[tuple[str, str, str], ...]:
@@ -119,11 +136,15 @@ def stamp_snapshot(alert: ExternalAlert, snapshot_path: Path) -> None:
         "summary": alert.summary,
         "source": alert.source,
         "event_id": alert.event_id,
+        "canonical_key": alert.canonical_key,
         "occurred_at": alert.occurred_at,
         "source_url": alert.evidence_payload[0]["url"] if alert.evidence_payload else ("https://www.jin10.com/" if alert.source == "jin10" else ""),
         "verified_domains": [item["domain"] for item in alert.evidence_payload],
         "evidence": alert.evidence_payload,
         "received_at": received_at.isoformat(),
+        "first_discovered_at": received_at.isoformat(),
+        "last_reminded_at": received_at.isoformat(),
+        "escalated": alert.category in {"black_swan", "market"},
         "expires_at": (received_at + timedelta(hours=6)).isoformat(),
     }
     snapshot_path.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")

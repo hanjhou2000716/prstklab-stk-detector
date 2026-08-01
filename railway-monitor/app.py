@@ -22,7 +22,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Iterable
-from urllib.parse import urlparse
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunsplit
 
 import httpx
 
@@ -166,6 +166,47 @@ class Alert:
         return "\n".join((self.source, self.event_id, self.category, self.summary, self.occurred_at, trace))
 
 
+def normalize_source_url(value: str) -> str:
+    """Keep a stable URL identity while dropping analytics parameters."""
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    parsed = urlparse(raw if "://" in raw else f"https://{raw}")
+    host = (parsed.hostname or "").lower().removeprefix("www.")
+    if not host:
+        return ""
+    path = (parsed.path or "/").rstrip("/") or "/"
+    query = [(key, value) for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+             if not key.lower().startswith("utm_") and key.lower() not in {"fbclid", "gclid", "ref"}]
+    return urlunsplit((parsed.scheme.lower() or "https", host, path, urlencode(sorted(query)), ""))
+
+
+def alert_fact_fingerprints(text: str) -> dict[str, str]:
+    """Hash only public event anchors so syndicated headlines converge safely."""
+    value = str(text or "").casefold()
+    vocab = {
+        "person": ("trump", "powell", "netanyahu", "putin", "zelensky", "台積電", "nvidia"),
+        "location": ("iran", "israel", "ukraine", "russia", "hormuz", "taiwan", "japan", "china", "日本", "台灣"),
+        "action": ("attack", "airstrike", "war", "ceasefire", "truce", "tariff", "sanction", "earthquake", "tsunami", "ransomware", "停火", "關稅", "供應中斷"),
+    }
+    result: dict[str, str] = {}
+    for kind, terms in vocab.items():
+        hits = sorted({term for term in terms if term.casefold() in value})
+        result[kind] = hashlib.sha256("|".join(hits).encode("utf-8")).hexdigest()[:16] if hits else ""
+    return result
+
+
+def alert_canonical_key(alert: Alert) -> str:
+    """Canonical key independent of a provider's transient event id."""
+    urls = [normalize_source_url(item.url) for item in alert.evidence if item.url]
+    facts = alert_fact_fingerprints(alert.summary)
+    identity = "|".join((alert.category, facts["person"], facts["location"], facts["action"], alert.occurred_at[:13]))
+    # If a provider gives no concrete anchors, retain its normalized URL or
+    # summary as a conservative fallback instead of merging unrelated items.
+    material = identity if any(facts.values()) else "|".join((identity, alert.summary.casefold(), *sorted(urls)))
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()[:32]
+
+
 @dataclass(frozen=True)
 class DiscoveryArticle:
     title: str
@@ -290,6 +331,22 @@ class SeenStore:
         self.connection.execute(
             "CREATE TABLE IF NOT EXISTS cache (cache_key TEXT PRIMARY KEY, payload TEXT NOT NULL, refreshed_at TEXT NOT NULL)"
         )
+        self.connection.execute(
+            """CREATE TABLE IF NOT EXISTS event_ledger (
+                canonical_key TEXT PRIMARY KEY,
+                event_type TEXT NOT NULL,
+                source_url TEXT,
+                person_fingerprint TEXT,
+                location_fingerprint TEXT,
+                action_fingerprint TEXT,
+                first_discovered_at TEXT NOT NULL,
+                last_reminded_at TEXT,
+                escalated INTEGER NOT NULL DEFAULT 0,
+                verified_sources_json TEXT NOT NULL DEFAULT '[]',
+                last_title TEXT,
+                updated_at TEXT NOT NULL
+            )"""
+        )
         self.connection.commit()
 
     def add_if_new(self, event_id: str) -> bool:
@@ -323,6 +380,59 @@ class SeenStore:
         self.connection.execute(
             "INSERT INTO dispatched(category, summary, dispatched_at) VALUES (?, ?, ?)",
             (alert.category, alert.summary, datetime.now(timezone.utc).isoformat()),
+        )
+        self.connection.commit()
+
+    def observe_alert(self, alert: Alert) -> dict[str, Any]:
+        """Observe an alert in the durable ledger and return its identity."""
+        key = alert_canonical_key(alert)
+        now = datetime.now(timezone.utc).isoformat()
+        urls = sorted({normalize_source_url(item.url) for item in alert.evidence if normalize_source_url(item.url)})
+        fingerprints = alert_fact_fingerprints(alert.summary)
+        row = self.connection.execute(
+            "SELECT first_discovered_at, last_reminded_at, escalated, verified_sources_json FROM event_ledger WHERE canonical_key = ?",
+            (key,),
+        ).fetchone()
+        if row is None:
+            self.connection.execute(
+                "INSERT INTO event_ledger(canonical_key,event_type,source_url,person_fingerprint,location_fingerprint,action_fingerprint,first_discovered_at,last_reminded_at,escalated,verified_sources_json,last_title,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+                (key, alert.category, urls[0] if urls else "", fingerprints["person"], fingerprints["location"], fingerprints["action"], now, None, 0, json.dumps(urls), alert.summary, now),
+            )
+            self.connection.commit()
+            return {"canonical_key": key, "is_new": True, "last_reminded_at": None, "escalated": False}
+        previous_sources = json.loads(row[3] or "[]") if row[3] else []
+        merged_sources = sorted(set(previous_sources) | set(urls))
+        self.connection.execute(
+            "UPDATE event_ledger SET verified_sources_json = ?, updated_at = ? WHERE canonical_key = ?",
+            (json.dumps(merged_sources), now, key),
+        )
+        self.connection.commit()
+        return {"canonical_key": key, "is_new": False, "last_reminded_at": row[1], "escalated": bool(row[2])}
+
+    def mark_alert_reminded(self, alert: Alert, *, escalated: bool = False) -> None:
+        key = alert_canonical_key(alert)
+        self.connection.execute(
+            "UPDATE event_ledger SET last_reminded_at = ?, escalated = CASE WHEN ? THEN 1 ELSE escalated END, updated_at = ? WHERE canonical_key = ?",
+            (datetime.now(timezone.utc).isoformat(), int(escalated), datetime.now(timezone.utc).isoformat(), key),
+        )
+        self.connection.commit()
+
+    def ledger_may_dispatch(self, record: dict[str, Any], cooldown_seconds: int) -> bool:
+        if record.get("is_new") or record.get("escalated"):
+            return True
+        raw = record.get("last_reminded_at")
+        if not raw:
+            return True
+        try:
+            return (datetime.now(timezone.utc) - datetime.fromisoformat(str(raw))).total_seconds() >= cooldown_seconds
+        except ValueError:
+            return True
+
+    def prune_event_ledger(self, retention_days: int = 30) -> None:
+        cutoff = datetime.now(timezone.utc).timestamp() - max(30, retention_days) * 86400
+        self.connection.execute(
+            "DELETE FROM event_ledger WHERE strftime('%s', COALESCE(last_reminded_at, first_discovered_at)) < ?",
+            (str(int(cutoff)),),
         )
         self.connection.commit()
 
@@ -363,6 +473,10 @@ async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_se
             "summary": alert.summary,
             "occurred_at": alert.occurred_at,
             "evidence": alert.evidence_payload,
+            "canonical_key": alert_canonical_key(alert),
+            "source_url": normalize_source_url(alert.evidence_payload[0]["url"] if alert.evidence_payload else ""),
+            "verified_sources": [normalize_source_url(item["url"]) for item in alert.evidence_payload],
+            "event_ledger_retention_days": 30,
             "signature": sign(alert, shared_secret),
         },
     }
@@ -581,11 +695,16 @@ async def monitor_forever() -> None:
                 alert = alert_from_flash(flash)
                 if alert is None or (first_cycle and not bootstrap):
                     continue
+                ledger_record = store.observe_alert(alert)
+                if not store.ledger_may_dispatch(ledger_record, cooldown):
+                    logging.info("Jin10 alert suppressed by durable event ledger: %s", ledger_record["canonical_key"])
+                    continue
                 if not store.may_dispatch(alert, cooldown):
                     logging.info("Jin10 alert suppressed by category cooldown: %s", alert.category)
                     continue
                 await dispatch_alert(alert, token=github_token, repository=repository, shared_secret=shared_secret)
                 store.record_dispatch(alert)
+                store.mark_alert_reminded(alert, escalated="高風險" in alert.summary)
                 dispatched += 1
             logging.info("Jin10 poll completed: %s flash(es), %s alert(s) dispatched", len(flashes), dispatched)
             update_health("jin10", status="healthy", last_success_at=datetime.now(timezone.utc).isoformat(),
@@ -604,10 +723,15 @@ async def monitor_forever() -> None:
                 for alert in alerts:
                     if not store.add_if_new(alert.event_id) or (gdelt_baseline and not bootstrap):
                         continue
+                    ledger_record = store.observe_alert(alert)
+                    if not store.ledger_may_dispatch(ledger_record, gdelt_interval if gdelt_interval >= 1800 else 7200):
+                        logging.info("GDELT alert suppressed by durable event ledger: %s", ledger_record["canonical_key"])
+                        continue
                     if not store.may_dispatch(alert, gdelt_interval if gdelt_interval >= 1800 else 7200):
                         continue
                     await dispatch_alert(alert, token=github_token, repository=repository, shared_secret=shared_secret)
                     store.record_dispatch(alert)
+                    store.mark_alert_reminded(alert, escalated="高風險" in alert.summary)
                     dispatched += 1
                 logging.info("GDELT cross-check completed: %s article(s), %s alert(s) dispatched", len(articles), dispatched)
                 update_health("gdelt", status="healthy", last_success_at=datetime.now(timezone.utc).isoformat(),
