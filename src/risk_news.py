@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import json
+import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 from xml.etree import ElementTree
@@ -30,6 +33,49 @@ NEWS_TERMS = {
     "us": ("QQQM", "QLD", "TSM", "NVDA", "NVIDIA", "輝達", "美股", "那斯達克"),
 }
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; PRStKInvestmentSystem/1.0)"}
+NEWS_CACHE_MAX_AGE_MINUTES = int(os.getenv("NEWS_CACHE_MAX_AGE_MINUTES", "360"))
+
+
+def _news_cache_path() -> Path | None:
+    """Return the optional durable cache path configured by a workflow."""
+    value = os.getenv("NEWS_CACHE_PATH", "").strip()
+    return Path(value) if value else None
+
+
+def _load_news_cache() -> dict[str, Any]:
+    path = _news_cache_path()
+    if path is None or not path.exists():
+        return {"schema": 1, "markets": {}}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else {"schema": 1, "markets": {}}
+    except (OSError, json.JSONDecodeError):
+        return {"schema": 1, "markets": {}}
+
+
+def _save_news_cache(cache: dict[str, Any]) -> None:
+    path = _news_cache_path()
+    if path is None:
+        return
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
+    except OSError:
+        # News delivery must never fail merely because the optional cache is read-only.
+        return
+
+
+def _recent_cached_stories(cache: dict[str, Any], market: str) -> list[dict[str, str]]:
+    entry = (cache.get("markets") or {}).get(market)
+    if not isinstance(entry, dict) or not isinstance(entry.get("stories"), list):
+        return []
+    try:
+        fetched_at = datetime.fromisoformat(str(entry.get("fetched_at", "")))
+        if datetime.now().astimezone() - fetched_at.astimezone() > timedelta(minutes=NEWS_CACHE_MAX_AGE_MINUTES):
+            return []
+    except (TypeError, ValueError):
+        return []
+    return [dict(item, stale_used=True) for item in entry["stories"] if isinstance(item, dict)]
 
 
 def sentiment_label(score: float | None) -> str:
@@ -352,7 +398,7 @@ def _news_lists_collide(left: list[dict[str, str]], right: list[dict[str, str]])
     return len(first & second) / min(len(first), len(second)) >= 0.8
 
 
-def build_news_snapshot() -> dict[str, Any]:
+def _build_news_snapshot_primary() -> dict[str, Any]:
     """Collect news independently so one market's outage does not hide the other."""
     checked_at = datetime.now().astimezone().isoformat()
     result: dict[str, Any] = {"taiwan": [], "us": [], "errors": [], "diagnostics": [], "source_health": []}
@@ -402,4 +448,51 @@ def build_news_snapshot() -> dict[str, Any]:
             result["errors"].append("美股新聞資料暫時無法與台股來源區分")
             health = next(item for item in result["source_health"] if item["key"] == "news_us")
             health.update({"status": "failed", "item_count": 0, "data_gap": "duplicate_market_payload"})
+    return result
+
+
+def build_news_snapshot() -> dict[str, Any]:
+    """Add durable, bounded fallback without ever reusing another market's news."""
+    checked_at = datetime.now().astimezone().isoformat()
+    result = _build_news_snapshot_primary()
+    cache = _load_news_cache()
+    markets = cache.setdefault("markets", {})
+    for market in ("taiwan", "us"):
+        health = next((item for item in result.get("source_health", [])
+                       if item.get("key") == f"news_{market}"), None)
+        if health is None:
+            health = {"key": f"news_{market}", "status": "failed", "item_count": 0}
+            result.setdefault("source_health", []).append(health)
+        if result.get(market):
+            stories = result[market]
+            if not any(item.get("stale_used") for item in stories):
+                markets[market] = {"fetched_at": checked_at, "stories": stories}
+            continue
+
+        # A final category-specific attempt is useful when the primary provider
+        # returned a shared shell or failed transiently.
+        try:
+            fallback = fetch_market_news_fallback(market)
+        except Exception:
+            fallback = []
+        other = result.get("us" if market == "taiwan" else "taiwan", [])
+        if fallback and not _news_lists_collide(fallback, other):
+            result[market] = fallback
+            health.update({"status": "healthy", "item_count": len(fallback),
+                           "source_url": _market_news_rss_url(market),
+                           "fallback_used": True, "data_gap": None})
+            markets[market] = {"fetched_at": checked_at, "stories": fallback}
+            continue
+
+        cached = _recent_cached_stories(cache, market)
+        if cached and not _news_lists_collide(cached, other):
+            result[market] = cached
+            health.update({"status": "stale", "item_count": len(cached),
+                           "stale_used": True, "data_gap": "using_recent_news_cache"})
+            result.setdefault("diagnostics", []).append(f"{market} news cache used")
+        else:
+            health.update({"status": "failed", "item_count": 0,
+                           "data_gap": health.get("data_gap") or "request_failed"})
+            result.setdefault("errors", []).append(f"{market} news unavailable")
+    _save_news_cache(cache)
     return result

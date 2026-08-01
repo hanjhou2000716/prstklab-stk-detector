@@ -104,11 +104,18 @@ def main() -> None:
         )
     quotes, quote_errors = public_quotes(candidates, args.batch_size)
     base_rows = review_public_pool(candidates, fundamentals, quotes, args.market, limit=None)
-    # A partially cached MOPS history is useful for progress reporting only;
-    # it must never leak provisional rows into either candidate list.
+    # Taiwan history is built incrementally.  A global ``150/150`` gate made a
+    # handful of transient MOPS failures hide every already-verified company.
+    # Evaluate only tickers whose own history record is complete; incomplete
+    # tickers remain blocked and are disclosed in the progress fields below.
     history_complete = args.market != "taiwan" or len(history) >= len(candidates)
-    formal_rows = review_pristine_pool(base_rows, args.market) if history_complete else []
-    observation_rows = review_pristine_observation_pool(base_rows, args.market) if history_complete else []
+    if args.market == "taiwan":
+        verified_tickers = set(history)
+        evaluable_rows = [row for row in base_rows if str(row.get("ticker", "")) in verified_tickers]
+    else:
+        evaluable_rows = base_rows
+    formal_rows = review_pristine_pool(evaluable_rows, args.market)
+    observation_rows = review_pristine_observation_pool(evaluable_rows, args.market)
     rows = formal_rows + observation_rows
 
     pd.DataFrame(rows).to_csv(data_dir / f"{args.market}-value-scan.csv", index=False, encoding="utf-8-sig")
@@ -133,6 +140,8 @@ def main() -> None:
             "quotes": quote_errors,
         },
         "mops_refresh_limit": args.mops_max_refresh if args.market == "taiwan" else None,
+        "partial_candidates_allowed": args.market == "taiwan" and not history_complete,
+        "evaluable_records": len(evaluable_rows) if args.market == "taiwan" else len(base_rows),
         "notice": "璞玉價值池獨立於技術策略；正式候選需達 5/6，觀察名單需達 3/6 或 4/6；僅提供公開財務觀察，不構成投資建議。",
     }
     if args.market == "taiwan":
@@ -151,7 +160,7 @@ def main() -> None:
                 "未完成六項公開資料覆核前不列入候選，並非投資結論。"
             )
             summary["blocking_reason"] = (
-                "MOPS 歷史資料尚未完成；正式候選與觀察名單均暫停輸出。"
+                "部分 MOPS 歷史資料尚未完成；未完成個股不列入，已完成個股仍可依六項規則評估。"
             )
     elif failed_total:
         # A completed US run with missing SEC/VOO/quote inputs is unavailable,
