@@ -17,7 +17,7 @@ on:
       mops_max_refresh:
         description: Taiwan MOPS historical records to refresh per run
         required: true
-        default: '4'
+        default: '8'
   repository_dispatch:
     types: [unified-research-report]
   schedule:
@@ -37,7 +37,7 @@ jobs:
       TAIWAN_LIMIT: ${{ inputs.taiwan_limit || github.event.client_payload.taiwan_limit || '0' }}
       US_LIMIT: ${{ inputs.us_limit || github.event.client_payload.us_limit || '0' }}
       BATCH_SIZE: ${{ inputs.batch_size || github.event.client_payload.batch_size || '50' }}
-      MOPS_MAX_REFRESH: ${{ inputs.mops_max_refresh || github.event.client_payload.mops_max_refresh || '4' }}
+      MOPS_MAX_REFRESH: ${{ inputs.mops_max_refresh || github.event.client_payload.mops_max_refresh || '8' }}
     steps:
       - uses: actions/checkout@v4
         with:

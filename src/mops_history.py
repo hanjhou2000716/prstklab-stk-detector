@@ -26,6 +26,8 @@ CACHE_SCHEMA = 2
 CACHE_MAX_AGE_DAYS = 14
 # Temporarily failing MOPS pages must not pin every later scheduled batch.
 FAILURE_RETRY_HOURS = 6
+REQUEST_RETRIES = 2
+REQUEST_BACKOFF_SECONDS = 0.75
 
 
 def _number(value: str | None) -> float | None:
@@ -130,13 +132,29 @@ class MopsPublicClient:
         self.session.headers.setdefault("Accept-Language", "zh-TW,zh;q=0.9,en;q=0.7")
 
     def report(self, api_name: str, company_id: str, **parameters: str | int) -> str:
+        last_error: Exception | None = None
+        for attempt in range(REQUEST_RETRIES):
+            try:
+                return self._report_once(api_name, company_id, parameters)
+            except (OSError, ValueError, requests.RequestException, RuntimeError) as error:
+                last_error = error
+                if attempt + 1 < REQUEST_RETRIES:
+                    time.sleep(REQUEST_BACKOFF_SECONDS * (attempt + 1))
+        assert last_error is not None
+        raise last_error
+
+    def _report_once(self, api_name: str, company_id: str, parameters: dict[str, str | int]) -> str:
         response = self.session.post(
             MOPS_API,
             json={"apiName": api_name, "parameters": {"companyId": company_id, **parameters}},
             timeout=30,
         )
         response.raise_for_status()
-        url = response.json().get("result", {}).get("url")
+        try:
+            body = response.json()
+        except ValueError as error:
+            raise RuntimeError(f"MOPS {api_name} returned non-JSON response") from error
+        url = body.get("result", {}).get("url") if isinstance(body, dict) else None
         if not url:
             raise RuntimeError(f"MOPS {api_name} did not return a report URL")
         # MOPS sets a short-lived session cookie on the report landing page.
@@ -148,9 +166,7 @@ class MopsPublicClient:
             "queryName": "co_id", "inpuType": "co_id", "TYPEK": "all", "isnew": "false",
             "co_id": company_id,
         }
-        if api_name == "t164sb04":
-            form.update({"year": str(parameters["year"]), "season": f"{int(parameters['season']):02d}"})
-        elif api_name == "t164sb03":
+        if api_name in {"t164sb04", "t164sb03"}:
             form.update({"year": str(parameters["year"]), "season": f"{int(parameters['season']):02d}"})
         elif api_name == "t05st09_1":
             form["year"] = ""

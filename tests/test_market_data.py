@@ -27,7 +27,7 @@ def test_market_indices_are_separate_from_research_watchlist():
     }
     assert not {item["symbol"] for item in MARKET_INDICES} & {item["symbol"] for item in WATCHLIST}
     labels = {item["ticker"]: item["name"] for item in MARKET_INDICES}
-    assert labels["TPEx"] == "臺灣上櫃指數"
+    assert labels["TPEx"] == "臺灣櫃買指數"
     assert labels["BTC"] == "比特幣"
     assert labels["ETH"] == "以太坊"
 
@@ -154,6 +154,22 @@ def test_tpex_unavailable_keeps_a_visible_non_actionable_row():
     assert tpex["price"] is None
     assert tpex["data_status"] == "unavailable"
     assert any(error["ticker"] == "TPEx" for error in errors)
+
+
+def test_tpex_official_failure_uses_recent_close_fallback_when_available():
+    indices, errors = apply_taiwan_intraday_crosscheck(
+        [{"ticker": "TAIEX", "price": 41590}],
+        "收盤後",
+        tpex_fetcher=lambda: None,
+        tpex_fallback_fetcher=lambda: {
+            "ticker": "TPEx", "name": "臺灣櫃買指數", "price": 334.24,
+            "quote_date": "2026-07-29", "quote_source": "Yahoo Finance public daily quote",
+            "quote_basis": "最近收盤", "quote_delayed": True,
+        },
+    )
+    tpex = next(item for item in indices if item["ticker"] == "TPEx")
+    assert tpex["price"] == 334.24
+    assert tpex["quote_basis"] == "最近收盤"
 
 
 def test_unavailable_quote_is_not_classified_as_recent_close():

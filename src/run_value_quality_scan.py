@@ -75,7 +75,7 @@ def main() -> None:
     parser.add_argument("--market", choices=("taiwan", "us"), required=True)
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--batch-size", type=int, default=50)
-    parser.add_argument("--mops-max-refresh", type=int, default=4,
+    parser.add_argument("--mops-max-refresh", type=int, default=8,
                         help="Taiwan MOPS records per run; 0 verifies the complete pool")
     args = parser.parse_args()
     data_dir = Path(args.data_dir)
@@ -112,6 +112,7 @@ def main() -> None:
     rows = formal_rows + observation_rows
 
     pd.DataFrame(rows).to_csv(data_dir / f"{args.market}-value-scan.csv", index=False, encoding="utf-8-sig")
+    failed_total = len(universe_errors) + len(fundamental_errors) + len(quote_errors)
     summary = {
         "requested": len(candidates),
         # A current TWSE snapshot is not a completed Taiwan Pristine Value
@@ -120,11 +121,17 @@ def main() -> None:
         "candidates": len(rows),
         "formal_candidates": len(formal_rows),
         "observation_candidates": len(observation_rows),
-        "failed": len(universe_errors) + len(fundamental_errors) + len(quote_errors),
+        "failed": failed_total,
         "scan_state": "complete",
+        "status": "可用" if failed_total == 0 else "部分缺漏",
         "universe_source": "Yuanta 0050+0051 PCF" if args.market == "taiwan" else "Vanguard VOO holdings",
         "financial_source": "TWSE OpenAPI + MOPS historical filings" if args.market == "taiwan" else "SEC EDGAR CompanyFacts",
         "errors": universe_errors + fundamental_errors + quote_errors,
+        "error_details": {
+            "universe": universe_errors,
+            "fundamentals": fundamental_errors,
+            "quotes": quote_errors,
+        },
         "mops_refresh_limit": args.mops_max_refresh if args.market == "taiwan" else None,
         "notice": "璞玉價值池獨立於技術策略；正式候選需達 5/6，觀察名單需達 3/6 或 4/6；僅提供公開財務觀察，不構成投資建議。",
     }
@@ -133,10 +140,16 @@ def main() -> None:
         summary["history_expected"] = len(candidates)
         if len(history) < len(candidates):
             summary["scan_state"] = "building"
+            summary["status"] = "建檔中"
             summary["notice"] = (
                 f"璞玉價值歷史資料建檔中：已核對 {len(history)}／{len(candidates)} 檔；"
                 "未完成六項公開資料覆核前不列入候選，並非投資結論。"
             )
+    elif failed_total:
+        # A completed US run with missing SEC/VOO/quote inputs is unavailable,
+        # not an empty candidate result.  This prevents the UI from implying
+        # that the strict pool was evaluated successfully.
+        summary["status"] = "資料暫時無法取得"
     (data_dir / f"{args.market}-value-summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
 
 

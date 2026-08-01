@@ -26,7 +26,7 @@ WATCHLIST = (
 # securities. They describe the overall market and never enter research scans.
 MARKET_INDICES = (
     {"symbol": "^TWII", "ticker": "TAIEX", "name": "臺灣加權指數", "market": "taiwan", "currency": "點"},
-    {"symbol": "^TWOII", "ticker": "TPEx", "name": "臺灣上櫃指數", "market": "taiwan", "currency": "點"},
+    {"symbol": "^TWOII", "ticker": "TPEx", "name": "臺灣櫃買指數", "market": "taiwan", "currency": "點"},
     {"symbol": "^GSPC", "ticker": "S&P 500", "name": "標普 500", "market": "us", "currency": "點"},
     {"symbol": "^IXIC", "ticker": "NASDAQ", "name": "那斯達克綜合指數", "market": "us", "currency": "點"},
     {"symbol": "^DJI", "ticker": "DJIA", "name": "道瓊工業指數", "market": "us", "currency": "點"},
@@ -277,7 +277,7 @@ def get_quote(item: dict[str, str], session: str | None = None) -> dict[str, Any
 def apply_taiwan_intraday_crosscheck(
     indices: list[dict[str, Any]], session: str, *,
     twse_fetcher: Any | None = None, taifex_fetcher: Any | None = None,
-    tpex_fetcher: Any | None = None,
+    tpex_fetcher: Any | None = None, tpex_fallback_fetcher: Any | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
     """Replace an in-session TAIEX quote only after official source checks.
 
@@ -295,12 +295,24 @@ def apply_taiwan_intraday_crosscheck(
     tpex_metadata = next((item for item in MARKET_INDICES if item.get("ticker") == "TPEx"), {})
     errors: list[dict[str, str]] = []
     tpex = None
+    tpex_fallback_used = False
     had_tpex_row = any(item.get("ticker") == "TPEx" for item in indices)
     # Attempt the official close even when Yahoo failed before creating TPEx.
     try:
         tpex = tpex_fetcher()
     except Exception as exc:
         errors.append({"ticker": "TPEx", "message": f"TPEx 官方指數暫時無法取得：{type(exc).__name__}", "scope": "index"})
+    if not tpex and tpex_fallback_fetcher is not None:
+        try:
+            tpex = tpex_fallback_fetcher()
+            tpex_fallback_used = bool(tpex)
+        except Exception as exc:
+            errors.append({"ticker": "TPEx", "message": f"TPEx 最近收盤備援失敗：{type(exc).__name__}", "scope": "index"})
+    if tpex_fallback_used:
+        # A verified official MIS close (or a labelled public close as the
+        # final fallback) keeps the card actionable; do not count the primary
+        # endpoint outage as a market-data gap when a value was recovered.
+        errors = [error for error in errors if error.get("ticker") != "TPEx"]
     if not tpex:
         # Keep the TPEx row visible when both public endpoints fail.  It is
         # deliberately non-actionable and is surfaced as a source gap rather
@@ -314,7 +326,7 @@ def apply_taiwan_intraday_crosscheck(
         if not any(item.get("ticker") == "TPEx" for item in indices):
             tpex = {
                 "ticker": "TPEx",
-                "name": "櫃買指數",
+                "name": "臺灣櫃買指數",
                 "market": "taiwan",
                 "currency": "點",
                 "price": None,
@@ -387,8 +399,11 @@ def build_market_snapshot() -> dict[str, Any]:
             indices.append(get_quote(item, markets.get(item["market"], {}).get("session")))
         except Exception as exc:
             errors.append({"ticker": item["ticker"], "message": str(exc), "scope": "index"})
+    from src.tpex_index import fetch_tpex_recent_close_fallback
     indices, crosscheck_errors = apply_taiwan_intraday_crosscheck(
-        indices, markets.get("taiwan", {}).get("session", "")
+        indices,
+        markets.get("taiwan", {}).get("session", ""),
+        tpex_fallback_fetcher=fetch_tpex_recent_close_fallback,
     )
     errors.extend(crosscheck_errors)
     # A Yahoo failure is informational only when TPEx has been restored by
