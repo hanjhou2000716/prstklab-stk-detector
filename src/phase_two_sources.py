@@ -175,14 +175,18 @@ def fetch_crypto_macd(*, timeout: int = 20) -> dict[str, Any]:
 
 def build_phase_two_snapshot() -> dict[str, Any]:
     """Collect Phase 2 sources independently and expose one health list."""
+    from src.crypto_spot_sources import fetch_crypto_spot_snapshot
+
     kofia = fetch_kofia_credit_margin()
     crypto = fetch_crypto_macd()
+    crypto_spot = fetch_crypto_spot_snapshot()
     fred = fetch_fred_snapshot()
     eia = fetch_eia_snapshot()
     return {
         "kofia": kofia,
         "crypto_macd": crypto,
+        "crypto_spot": crypto_spot,
         "fred": fred,
         "eia": eia,
-        "sources": [item["health"] for item in (kofia, crypto, fred, eia) if item.get("health")],
+        "sources": [item["health"] for item in (kofia, crypto, crypto_spot, fred, eia) if item.get("health")],
     }

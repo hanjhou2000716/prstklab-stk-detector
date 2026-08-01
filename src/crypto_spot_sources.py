@@ -1,0 +1,113 @@
+"""Public BTC/ETH spot quotes used by the phase-five cross-check gate."""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from typing import Any, Callable
+
+import requests
+
+
+BINANCE_TICKER_URL = "https://api.binance.com/api/v3/ticker/24hr"
+COINGECKO_SIMPLE_URL = "https://api.coingecko.com/api/v3/simple/price"
+ASSETS = {
+    "BTC": {"binance": "BTCUSDT", "coingecko": "bitcoin"},
+    "ETH": {"binance": "ETHUSDT", "coingecko": "ethereum"},
+}
+
+
+def _now() -> str:
+    return datetime.now(UTC).isoformat()
+
+
+def _health(status: str, checked_at: str, errors: list[str], item_count: int) -> dict[str, Any]:
+    return {
+        "key": "crypto_spot",
+        "source_key": "crypto_spot",
+        "label": "BTC／ETH Binance／CoinGecko 現貨核對",
+        "source_tier": "public-market",
+        "source_url": COINGECKO_SIMPLE_URL,
+        "status": status,
+        "checked_at": checked_at,
+        "item_count": item_count,
+        "data_gap": errors or None,
+    }
+
+
+def _request_json(
+    requester: Callable[..., Any], url: str, *, params: dict[str, Any], timeout: int
+) -> Any:
+    response = requester(url, params=params, timeout=timeout, headers={"Accept": "application/json"})
+    response.raise_for_status()
+    return response.json()
+
+
+def fetch_crypto_spot_snapshot(*, timeout: int = 15, requester: Callable[..., Any] | None = None) -> dict[str, Any]:
+    """Fetch Binance as primary and CoinGecko as independent secondary data.
+
+    Each provider is isolated. A missing provider produces an explicit health
+    gap and never causes the whole market snapshot to fail.
+    """
+    requester = requester or requests.get
+    checked_at = _now()
+    primary: dict[str, dict[str, Any]] = {}
+    secondary: dict[str, dict[str, Any]] = {}
+    errors: list[str] = []
+
+    for ticker, config in ASSETS.items():
+        try:
+            row = _request_json(requester, BINANCE_TICKER_URL, params={"symbol": config["binance"]}, timeout=timeout)
+            price = float(row["lastPrice"])
+            primary[ticker] = {
+                "ticker": ticker,
+                "price": price,
+                "change_percent": float(row.get("priceChangePercent", 0.0)),
+                "quote_time": datetime.fromtimestamp(int(row.get("closeTime", 0)) / 1000, UTC).isoformat()
+                if row.get("closeTime") else checked_at,
+                "quote_basis": "盤中",
+                "quote_source": "Binance public spot quote",
+                "source_url": f"{BINANCE_TICKER_URL}?symbol={config['binance']}",
+                "source_domain": "api.binance.com",
+            }
+        except Exception as exc:
+            errors.append(f"binance:{ticker}:{type(exc).__name__}")
+
+    try:
+        payload = _request_json(
+            requester,
+            COINGECKO_SIMPLE_URL,
+            params={
+                "ids": ",".join(config["coingecko"] for config in ASSETS.values()),
+                "vs_currencies": "usd",
+                "include_24hr_change": "true",
+                "include_last_updated_at": "true",
+            },
+            timeout=timeout,
+        )
+        for ticker, config in ASSETS.items():
+            row = payload.get(config["coingecko"]) or {}
+            updated = row.get("last_updated_at")
+            if row.get("usd") is None:
+                raise ValueError(f"missing:{ticker}")
+            secondary[ticker] = {
+                "ticker": ticker,
+                "price": float(row["usd"]),
+                "change_percent": float(row.get("usd_24h_change") or 0.0),
+                "quote_time": datetime.fromtimestamp(int(updated), UTC).isoformat() if updated else checked_at,
+                "quote_basis": "盤中",
+                "quote_source": "CoinGecko public spot quote",
+                "source_url": f"{COINGECKO_SIMPLE_URL}?ids={config['coingecko']}",
+                "source_domain": "api.coingecko.com",
+            }
+    except Exception as exc:
+        errors.append(f"coingecko:{type(exc).__name__}")
+
+    status = "healthy" if primary and secondary and not errors else "partial" if primary or secondary else "failed"
+    return {
+        "status": status,
+        "primary": primary,
+        "secondary": secondary,
+        "errors": errors,
+        "fetched_at": checked_at,
+        "health": _health(status, checked_at, errors, len(primary) + len(secondary)),
+    }
