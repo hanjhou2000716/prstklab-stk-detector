@@ -35,10 +35,9 @@ def get_settings() -> Settings:
     load_dotenv()
     return Settings(
         telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN"),
-        telegram_chat_ids=parse_chat_ids(
-            os.getenv("TELEGRAM_CHAT_IDS"),
-            os.getenv("TELEGRAM_CHAT_ID"),
-        ),
+        # Broadcast recipients are managed exclusively through the plural
+        # secret.  A stale singular secret must not silently re-enter the list.
+        telegram_chat_ids=parse_chat_ids(os.getenv("TELEGRAM_CHAT_IDS")),
         dashboard_url=os.getenv(
             "DASHBOARD_URL",
             "https://example.github.io/prstklab-stk-detector/",

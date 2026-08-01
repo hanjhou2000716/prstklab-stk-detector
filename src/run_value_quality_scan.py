@@ -11,7 +11,7 @@ import pandas as pd
 from src.batch_download import batches
 from src.mops_history import mops_pristine_history
 from src.public_download import download_daily_batch
-from src.pristine_value import heat_metrics, review_pristine_pool
+from src.pristine_value import heat_metrics, review_pristine_observation_pool, review_pristine_pool
 from src.research_contract import latest_quote_context
 from src.value_fundamentals import sec_fundamentals, twse_financial_snapshot
 from src.value_review import review_public_pool
@@ -104,7 +104,12 @@ def main() -> None:
         )
     quotes, quote_errors = public_quotes(candidates, args.batch_size)
     base_rows = review_public_pool(candidates, fundamentals, quotes, args.market, limit=None)
-    rows = review_pristine_pool(base_rows, args.market)
+    # A partially cached MOPS history is useful for progress reporting only;
+    # it must never leak provisional rows into either candidate list.
+    history_complete = args.market != "taiwan" or len(history) >= len(candidates)
+    formal_rows = review_pristine_pool(base_rows, args.market) if history_complete else []
+    observation_rows = review_pristine_observation_pool(base_rows, args.market) if history_complete else []
+    rows = formal_rows + observation_rows
 
     pd.DataFrame(rows).to_csv(data_dir / f"{args.market}-value-scan.csv", index=False, encoding="utf-8-sig")
     summary = {
@@ -113,6 +118,8 @@ def main() -> None:
         # verification until the three-year MOPS history has been cached.
         "data_complete": len(history) if args.market == "taiwan" else len(fundamentals),
         "candidates": len(rows),
+        "formal_candidates": len(formal_rows),
+        "observation_candidates": len(observation_rows),
         "failed": len(universe_errors) + len(fundamental_errors) + len(quote_errors),
         "scan_state": "complete",
         "universe_source": "Yuanta 0050+0051 PCF" if args.market == "taiwan" else "Vanguard VOO holdings",

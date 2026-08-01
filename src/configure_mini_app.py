@@ -11,7 +11,7 @@ from src.telegram_client import TelegramError, configure_mini_app_menus
 def main() -> int:
     settings = get_settings()
     if not settings.telegram_ready:
-        print("缺少 TELEGRAM_BOT_TOKEN 或 TELEGRAM_CHAT_ID，未設定選單。")
+        print("缺少 TELEGRAM_BOT_TOKEN 或 TELEGRAM_CHAT_IDS，未設定選單。")
         return 2
     try:
         configure_mini_app_menus(

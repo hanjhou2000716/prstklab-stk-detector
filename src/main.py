@@ -47,7 +47,7 @@ def main() -> int:
         return 0
 
     if not settings.telegram_ready:
-        print("缺少 TELEGRAM_BOT_TOKEN 或 TELEGRAM_CHAT_ID，未發送。")
+        print("缺少 TELEGRAM_BOT_TOKEN 或 TELEGRAM_CHAT_IDS，未發送。")
         return 2
 
     try:
