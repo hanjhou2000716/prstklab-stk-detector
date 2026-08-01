@@ -36,3 +36,29 @@ def test_loader_hides_candidates_when_the_full_market_scan_is_expired(tmp_path):
     result = load_research_cards(report, now=datetime(2026, 7, 27, 10, 1, tzinfo=ZoneInfo("Asia/Taipei")))
     assert result["availability"] == "expired"
     assert result["candidates"] == []
+
+
+def test_loader_keeps_verified_rows_when_incremental_scan_allows_partial_candidates(tmp_path):
+    report = tmp_path / "report.json"
+    report.write_text(json.dumps({
+        "generated_at": "2026-07-25T10:00:00+08:00",
+        "sources": [{
+            "market": "taiwan",
+            "strategy": "value",
+            "status": "建檔中",
+            "scan_state": "building",
+            "failed": 8,
+            "partial_candidates_allowed": True,
+        }],
+        "candidates": [{
+            "market": "taiwan",
+            "strategy": "value",
+            "ticker": "3023",
+            "list_type": "formal",
+            "condition_count": "6/6",
+        }],
+    }, ensure_ascii=False), encoding="utf-8")
+
+    result = load_research_cards(report, now=datetime(2026, 7, 25, 11, 0, tzinfo=ZoneInfo("Asia/Taipei")))
+
+    assert [item["ticker"] for item in result["candidates"]] == ["3023"]
