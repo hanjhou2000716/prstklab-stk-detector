@@ -1,4 +1,4 @@
-from src.tpex_index import parse_tpex_index, parse_twse_mis_tpex
+from src.tpex_index import fetch_tpex_yahoo_chart_fallback, parse_tpex_index, parse_twse_mis_tpex
 
 
 def test_tpex_index_uses_the_latest_two_official_closes():
@@ -42,3 +42,40 @@ def test_twse_mis_tpex_fallback_parses_official_otc_row():
     assert quote["price"] == 348.59
     assert quote["quote_source"] == "TWSE MIS official OTC index"
     assert quote["quote_basis"] == "最近收盤"
+
+
+def test_twse_mis_tpex_accepts_channel_suffix_and_date_time_fallback():
+    quote = parse_twse_mis_tpex({"msgArray": [{
+        "ch": "o00.tw", "z": "347.85", "y": "326.23",
+        "d": "20260731", "t": "13:33:00",
+    }]})
+    assert quote is not None
+    assert quote["price"] == 347.85
+    assert quote["quote_date"] == "2026-07-31"
+
+
+class _FakeYahooResponse:
+    def raise_for_status(self):
+        return None
+
+    def json(self):
+        return {
+            "chart": {"result": [{
+                "timestamp": [1785286800, 1785373200],
+                "indicators": {"quote": [{"close": [326.23, 347.85]}]},
+            }]}
+        }
+
+
+class _FakeYahooSession:
+    def get(self, *args, **kwargs):
+        return _FakeYahooResponse()
+
+
+def test_yahoo_chart_fallback_provides_a_labeled_recent_close():
+    quote = fetch_tpex_yahoo_chart_fallback(session=_FakeYahooSession())
+    assert quote is not None
+    assert quote["ticker"] == "TPEx"
+    assert quote["price"] == 347.85
+    assert quote["quote_source"] == "Yahoo Finance public chart fallback"
+    assert quote["data_status"] == "recent_close"

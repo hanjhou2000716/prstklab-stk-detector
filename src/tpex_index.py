@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Iterable
 from zoneinfo import ZoneInfo
 
@@ -10,6 +10,7 @@ import requests
 
 
 TPEX_INDEX_URL = "https://www.tpex.org.tw/openapi/v1/tpex_index"
+YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
 HEADERS = {"User-Agent": "PRStK-Lab-public-research/1.0"}
 TWSE_MIS_URL = "https://mis.twse.com.tw/stock/api/getStockInfo.jsp"
 TAIPEI = ZoneInfo("Asia/Taipei")
@@ -84,6 +85,7 @@ def parse_tpex_index(payload: Any) -> dict[str, Any] | None:
         "quote_date": quote_date,
         "quote_time": None,
         "quote_source": "TPEx OpenAPI official close",
+        "source_url": TPEX_INDEX_URL,
         "quote_basis": "TPEx 官方最近收盤",
         "quote_delayed": False,
     }
@@ -101,14 +103,31 @@ def parse_twse_mis_tpex(payload: Any) -> dict[str, Any] | None:
     rows = payload.get("msgArray") if isinstance(payload, dict) else None
     if not isinstance(rows, list):
         return None
-    row = next((item for item in rows if isinstance(item, dict) and str(item.get("c")) == "o00"), None)
+    row = next(
+        (
+            item
+            for item in rows
+            if isinstance(item, dict)
+            and (
+                str(item.get("c", "")) == "o00"
+                or str(item.get("ch", "")).split(".", 1)[0] == "o00"
+            )
+        ),
+        None,
+    )
     if row is None:
         return None
     close, previous = _number(row.get("z")), _number(row.get("y"))
     try:
         observed = datetime.fromtimestamp(int(str(row.get("tlong"))) / 1000, tz=TAIPEI)
     except (TypeError, ValueError, OSError):
-        return None
+        # MIS occasionally omits tlong while retaining the official date/time.
+        try:
+            observed = datetime.strptime(
+                f"{row.get('d')} {row.get('t')}", "%Y%m%d %H:%M:%S"
+            ).replace(tzinfo=TAIPEI)
+        except (TypeError, ValueError):
+            return None
     if close is None:
         return None
     return {
@@ -124,6 +143,7 @@ def parse_twse_mis_tpex(payload: Any) -> dict[str, Any] | None:
         "quote_date": observed.date().isoformat(),
         "quote_time": observed.isoformat(),
         "quote_source": "TWSE MIS official OTC index",
+        "source_url": TWSE_MIS_URL,
         "quote_basis": "最近收盤",
         "quote_delayed": True,
         "data_status": "recent_close",
@@ -143,12 +163,95 @@ def fetch_twse_mis_tpex(session: requests.Session | None = None) -> dict[str, An
     return parse_twse_mis_tpex(response.json())
 
 
-def fetch_tpex_yahoo_fallback() -> dict[str, Any] | None:
-    """Return a clearly labelled recent close when TPEx OpenAPI is unavailable.
+def _recent_close_record(
+    latest: float,
+    previous: float | None,
+    quote_date: str,
+    *,
+    source: str,
+    basis: str = "最近收盤",
+    source_url: str | None = None,
+) -> dict[str, Any]:
+    record: dict[str, Any] = {
+        "symbol": "^TWOII",
+        "ticker": "TPEx",
+        "name": "臺灣櫃買指數",
+        "market": "taiwan",
+        "currency": "點",
+        "price": round(latest, 2),
+        "previous_close": round(previous, 2) if previous is not None else None,
+        "change": round(latest - previous, 2) if previous not in (None, 0) else None,
+        "change_percent": round((latest / previous - 1) * 100, 2) if previous not in (None, 0) else None,
+        "quote_date": quote_date,
+        "quote_time": None,
+        "quote_source": source,
+        "quote_basis": basis,
+        "quote_delayed": True,
+        "data_status": "recent_close",
+        "fallback_reason": "TPEx 官方資料暫時無法取得",
+    }
+    if source_url:
+        record["source_url"] = source_url
+    return record
 
-    This is intentionally a fallback only: the official TPEx endpoint remains
-    the primary source and its failure is retained in source-health metadata.
+
+def fetch_tpex_yahoo_chart_fallback(
+    session: requests.Session | None = None,
+) -> dict[str, Any] | None:
+    """Read a TPEx daily close directly from Yahoo's public chart API.
+
+    This is deliberately separate from the yfinance adapter.  If a package,
+    cookie, or Yahoo query changed, the dashboard still has an independent
+    public fallback before it marks TPEx unavailable.
     """
+    client = session or requests.Session()
+    now = int(datetime.now(timezone.utc).timestamp())
+    response = client.get(
+        YAHOO_CHART_URL.format(symbol="%5ETWOII"),
+        params={
+            "period1": now - 86400 * 30,
+            "period2": now,
+            "interval": "1d",
+            "events": "history",
+        },
+        headers=HEADERS,
+        timeout=15,
+    )
+    response.raise_for_status()
+    result = (response.json().get("chart", {}).get("result") or [None])[0]
+    if not isinstance(result, dict):
+        return None
+    timestamps = result.get("timestamp") or []
+    quote = ((result.get("indicators") or {}).get("quote") or [{}])[0]
+    closes = quote.get("close") or []
+    observations = [
+        (int(timestamp), float(close))
+        for timestamp, close in zip(timestamps, closes)
+        if timestamp is not None and close is not None
+    ]
+    if not observations:
+        return None
+    observations.sort(key=lambda item: item[0])
+    latest_timestamp, latest = observations[-1]
+    previous = observations[-2][1] if len(observations) >= 2 else None
+    quote_date = datetime.fromtimestamp(latest_timestamp, tz=TAIPEI).date().isoformat()
+    return _recent_close_record(
+        latest,
+        previous,
+        quote_date,
+        source="Yahoo Finance public chart fallback",
+        source_url=YAHOO_CHART_URL.format(symbol="%5ETWOII"),
+    )
+
+
+def fetch_tpex_yahoo_fallback() -> dict[str, Any] | None:
+    """Use direct Yahoo Chart first, then yfinance as a final adapter fallback."""
+    try:
+        chart = fetch_tpex_yahoo_chart_fallback()
+        if chart:
+            return chart
+    except Exception:
+        pass
     import yfinance as yf
 
     history = yf.download(
@@ -163,28 +266,17 @@ def fetch_tpex_yahoo_fallback() -> dict[str, Any] | None:
         return None
     latest = float(close.iloc[-1])
     previous = float(close.iloc[-2]) if len(close) >= 2 else None
-    return {
-        "symbol": "^TWOII",
-        "ticker": "TPEx",
-        "name": "臺灣櫃買指數",
-        "market": "taiwan",
-        "currency": "點",
-        "price": round(latest, 2),
-        "previous_close": round(previous, 2) if previous is not None else None,
-        "change": round(latest - previous, 2) if previous not in (None, 0) else None,
-        "change_percent": round((latest / previous - 1) * 100, 2) if previous not in (None, 0) else None,
-        "quote_date": close.index[-1].date().isoformat(),
-        "quote_time": None,
-        "quote_source": "Yahoo Finance public daily quote",
-        "quote_basis": "最近收盤",
-        "quote_delayed": True,
-        "data_status": "recent_close",
-        "fallback_reason": "TPEx 官方資料暫時無法取得",
-    }
+    return _recent_close_record(
+        latest,
+        previous,
+        close.index[-1].date().isoformat(),
+        source="Yahoo Finance public daily quote",
+        source_url="https://finance.yahoo.com/quote/%5ETWOII",
+    )
 
 
 def fetch_tpex_recent_close_fallback() -> dict[str, Any] | None:
-    """Prefer the official TWSE MIS OTC row, then use Yahoo as last resort."""
+    """Use official TWSE MIS, then Yahoo Chart, then yfinance as last resort."""
     try:
         official = fetch_twse_mis_tpex()
         if official:
