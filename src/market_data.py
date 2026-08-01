@@ -499,10 +499,12 @@ def build_market_snapshot() -> dict[str, Any]:
     )
     errors.extend(crosscheck_errors)
     # A Yahoo failure is informational only when TPEx has been restored by
-    # the official TPEx close.  Do not retain it as a health warning.
+    # any validated fallback (TWSE MIS official close or a labelled public
+    # recent close).  Do not retain the original provider error as a health
+    # warning when the card is actually usable.
     if any(
         item.get("ticker") == "TPEx"
-        and str(item.get("quote_source", "")).startswith("TPEx OpenAPI")
+        and item.get("price") is not None
         for item in indices
     ):
         errors = [error for error in errors if error.get("ticker") != "TPEx"]
