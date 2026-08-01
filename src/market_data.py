@@ -426,6 +426,44 @@ def apply_crypto_spot_crosscheck(
     return checked
 
 
+def apply_public_market_secondary_crosscheck(
+    indices: list[dict[str, Any]], secondary_snapshot: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Attach Stooq proof to Yahoo-based index and commodity cards.
+
+    The primary Yahoo observation remains the displayed price.  Stooq is only
+    a second observation used for the verification flag and provenance fields.
+    """
+    from src.market_crosscheck import compare_quotes
+
+    secondary_quotes = (secondary_snapshot or {}).get("quotes") or {}
+    checked: list[dict[str, Any]] = []
+    for item in indices:
+        ticker = str(item.get("ticker") or "")
+        secondary = secondary_quotes.get(ticker)
+        if not secondary:
+            checked.append(item)
+            continue
+        result = compare_quotes(item, secondary, max_age_minutes=24 * 60, max_gap_percent=3.0)
+        merged = dict(item)
+        merged["cross_checked"] = bool(result.get("cross_checked"))
+        merged["crosscheck_status"] = "已交叉核對" if result.get("cross_checked") else str(result.get("status") or "未交叉核對")
+        merged["crosscheck_sources"] = [
+            {
+                "label": "Yahoo",
+                "url": item.get("source_url", ""),
+                "quote_time": item.get("quote_time") or item.get("quote_date", ""),
+            },
+            {
+                "label": "Stooq",
+                "url": secondary.get("source_url", ""),
+                "quote_time": secondary.get("quote_time") or secondary.get("quote_date", ""),
+            },
+        ]
+        checked.append(merged)
+    return checked
+
+
 def build_market_snapshot() -> dict[str, Any]:
     """Build a browser-friendly snapshot; one ticker failure never stops others."""
     from src.event_alerts import build_event_snapshot
@@ -498,6 +536,9 @@ def build_market_snapshot() -> dict[str, Any]:
     # Phase 5: crypto spot prices are independently checked after the regular
     # Yahoo/index pass. Re-annotate freshness because Binance is intraday.
     indices = apply_crypto_spot_crosscheck(indices, phase_two.get("crypto_spot"))
+    indices = apply_public_market_secondary_crosscheck(
+        indices, phase_two.get("public_market_secondary")
+    )
     indices = [normalize_quote_record(item) for item in annotate_quote_freshness(indices)]
     events = build_event_snapshot(news, quotes, official_events, indices=indices)
     try:
