@@ -35,6 +35,15 @@
     "crypto": "https://api.binance.com/api/v3/klines",
     "requiredEnvironmentVariables": ["FRED_API_KEY", "EIA_API_KEY"]
   },
+  "gdeltDiscovery": {
+    "enabled": true,
+    "pollSeconds": 900,
+    "cacheMinutes": 15,
+    "maxFreshAgeMinutes": 45,
+    "maxStaleSuccessMinutes": 120,
+    "minimumTrustedDomains": 2,
+    "blackSwanRequiresOfficial": true
+  },
   "security": {
     "noPrivateAccounts": true,
     "noTrading": true,
