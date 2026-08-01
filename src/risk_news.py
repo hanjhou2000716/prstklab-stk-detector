@@ -14,6 +14,7 @@ from src.taiwan_macro_fgi import calculate_taiwan_macro_fgi
 CNN_FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
 TAIFEX_VIX_INDEX_URL = "https://www.taifex.com.tw/cht/7/vixMinNew"
 TAIFEX_VIX_DATA_URL = "https://www.taifex.com.tw/cht/7/getVixData?filesname={date}"
+TAIFEX_VIX_QUOTE_URL = "https://mis.taifex.com.tw/futures/api/getQuoteListVIX"
 ANUE_CATEGORY_URLS = {
     "taiwan": "https://news.cnyes.com/news/cat/tw_stock_news",
     "us": "https://news.cnyes.com/news/cat/us_stock",
@@ -140,6 +141,42 @@ def fetch_taifex_vix() -> dict[str, Any]:
     return latest
 
 
+def fetch_taifex_vix_quote() -> dict[str, Any]:
+    """Fetch current Taiwan VIX from TAIFEX's official MIS quote endpoint.
+
+    TAIFEX's former download page no longer exposes stable file links. This
+    endpoint is the public data source used by its volatility quote page and
+    provides the latest index, reference price, and quote date.
+    """
+    response = requests.post(
+        TAIFEX_VIX_QUOTE_URL,
+        json={"SortColumn": "", "AscDesc": "A"},
+        headers=HEADERS,
+        timeout=15,
+    )
+    response.raise_for_status()
+    quotes = response.json().get("RtData", {}).get("QuoteList", [])
+    if not quotes:
+        raise ValueError("TAIFEX did not return a Taiwan VIX quote.")
+
+    quote = next((item for item in quotes if item.get("SymbolID") == "TAIWANVIX"), quotes[0])
+    value = float(quote["CLastPrice"])
+    reference = float(quote["CRefPrice"])
+    quote_date = datetime.strptime(str(quote["CDate"]), "%Y%m%d").date().isoformat()
+    change_percent = None if reference == 0 else round((value / reference - 1) * 100, 2)
+    return {
+        "value": round(value, 2),
+        "date": quote_date,
+        "change_percent": change_percent,
+        # The official live endpoint does not publish enough history to compute
+        # a percentile. Keep this explicit rather than manufacturing one.
+        "percentile": None,
+        "stage": vix_stage(value),
+        "source_label": "TAIFEX",
+        "source_url": "https://mis.taifex.com.tw/futures/VolatilityQuotes/",
+    }
+
+
 def fetch_cnn_fear_greed() -> dict[str, Any]:
     """Fetch CNN's public Fear & Greed reading; never return a cached value."""
     response = requests.get(CNN_FEAR_GREED_URL, headers=HEADERS, timeout=15)
@@ -205,7 +242,7 @@ def build_risk_snapshot() -> dict[str, Any]:
             "index_level": None,
             "sub_scores": {},
         }
-    taiwan = _market_risk("台股", "^VIXTWN", taiwan_sentiment, fallback=fetch_taifex_vix)
+    taiwan = _market_risk("台股", "^VIXTWN", taiwan_sentiment, fallback=fetch_taifex_vix_quote)
     if us_sentiment["score"] is None:
         us["errors"].append("美股情緒資料暫時無法取得")
     if taiwan_sentiment["score"] is None:
