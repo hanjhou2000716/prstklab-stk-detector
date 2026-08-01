@@ -433,7 +433,7 @@ const renderResearch = (snapshot) => {
   const valueSource = sourceFor("value");
   const valuePending = valueSource?.scan_state === "building";
   const valueMessage = valuePending
-    ? `歷史核對中：已完成 ${valueSource.history_cached ?? 0}/${valueSource.history_expected ?? "—"} 檔；未完成六項公開資料覆核前不列入正式璞玉價值候選。`
+    ? `歷史核對中：已完成 ${valueSource.history_cached ?? 0}/${valueSource.history_expected ?? "—"} 檔（${valueSource.history_progress_pct ?? 0}%）；未完成六項公開資料覆核前不列入正式璞玉價值候選或觀察名單。`
     : "本輪沒有同時通過璞玉品質與三月去熱門化公開資料覆核的標的";
   renderResearchList("research-list", sourceBlocked("price_action") ? [] : marketCandidates.filter((item) => item.strategy === "price_action"), sourceMessage("price_action", "本輪掃描沒有符合裸 K 結構的候選標的"));
   renderResearchList("momentum-list", sourceBlocked("momentum") ? [] : marketCandidates.filter((item) => item.strategy === "momentum"), sourceMessage("momentum", "本輪掃描沒有符合動能條件的候選標的"));
