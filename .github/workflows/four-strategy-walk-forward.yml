@@ -19,11 +19,22 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
       - run: pip install -r requirements.txt
-      - name: Verify archived point-in-time study inputs
+      - name: Audit archived point-in-time study inputs
+        id: archive-audit
         run: |
-          test -d data/backtest/${{ inputs.market }}/bars
-          test -f data/backtest/${{ inputs.market }}/universe_snapshots.json
-          test -f data/backtest/${{ inputs.market }}/fundamental_snapshots.json
+          set +e
+          python -m src.run_backtest_archive_audit \
+            --market '${{ inputs.market }}' \
+            --output data/backtest-archive-audit-${{ inputs.market }}.json
+          code=$?
+          echo "audit_exit=$code" >> "$GITHUB_STEP_SUMMARY"
+          exit $code
+      - name: Upload archive audit (including incomplete reports)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest-archive-audit-${{ inputs.market }}
+          path: data/backtest-archive-audit-${{ inputs.market }}.json
       - name: Run research-only walk-forward validation
         run: >-
           python -m src.run_four_strategy_walk_forward
