@@ -27,10 +27,23 @@ def _source_item(key: str, label: str, issues: list[str], checked_at: str) -> di
 def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
     """Present research warming, empty results and failures as different states."""
     sources = [item for item in report.get("sources", []) if isinstance(item, dict)]
-    failed = [item for item in sources if str(item.get("status")) == "資料暫時無法取得"]
+    failed = [item for item in sources if str(item.get("status")) in {"資料暫時無法取得", "掃描失敗"}]
+    partial = []
+    for item in sources:
+        if item in failed:
+            continue
+        try:
+            failed_count = int(item.get("failed") or 0)
+        except (TypeError, ValueError):
+            failed_count = 0
+        if failed_count > 0:
+            partial.append(item)
     warming = [item for item in sources if str(item.get("status")) == "建檔中"]
     if failed:
         issues = [f"{item.get('market', '')} {item.get('strategy', '')} 掃描失敗".strip() for item in failed]
+        return {"key": "research", "label": "量化研究", "status": "partial", "checked_at": checked_at, "issues": issues[:2]}
+    if partial:
+        issues = [f"{item.get('market', '')} {item.get('strategy', '')} 部分資料缺漏".strip() for item in partial]
         return {"key": "research", "label": "量化研究", "status": "partial", "checked_at": checked_at, "issues": issues[:2]}
     if warming:
         details = []

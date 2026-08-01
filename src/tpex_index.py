@@ -38,7 +38,11 @@ def parse_tpex_index(payload: Any) -> dict[str, Any] | None:
     if close is None or prior_close is None or quote_date is None or prior_close == 0:
         return None
     return {
+        "symbol": "^TWOII",
         "ticker": "TPEx",
+        "name": "臺灣上櫃指數",
+        "market": "taiwan",
+        "currency": "點",
         "price": round(close, 2),
         "previous_close": round(prior_close, 2),
         "change": round(close - prior_close, 2),

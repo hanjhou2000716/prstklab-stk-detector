@@ -126,7 +126,7 @@ def main() -> None:
         "financial_source": "TWSE OpenAPI + MOPS historical filings" if args.market == "taiwan" else "SEC EDGAR CompanyFacts",
         "errors": universe_errors + fundamental_errors + quote_errors,
         "mops_refresh_limit": args.mops_max_refresh if args.market == "taiwan" else None,
-        "notice": "璞玉價值池獨立於技術策略；僅提供公開財務觀察，不構成投資建議。",
+        "notice": "璞玉價值池獨立於技術策略；正式候選需達 5/6，觀察名單需達 3/6 或 4/6；僅提供公開財務觀察，不構成投資建議。",
     }
     if args.market == "taiwan":
         summary["history_cached"] = len(history)
@@ -135,7 +135,7 @@ def main() -> None:
             summary["scan_state"] = "building"
             summary["notice"] = (
                 f"璞玉價值歷史資料建檔中：已核對 {len(history)}／{len(candidates)} 檔；"
-                "未完成檔案不納入候選，並非投資結論。"
+                "未完成六項公開資料覆核前不列入候選，並非投資結論。"
             )
     (data_dir / f"{args.market}-value-summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
 

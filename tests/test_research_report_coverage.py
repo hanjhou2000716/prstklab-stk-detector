@@ -15,6 +15,24 @@ def test_report_exposes_public_scan_coverage_when_summary_exists(tmp_path):
     assert report["sources"][0]["data_complete"] == 510
 
 
+
+def test_failed_scan_does_not_reuse_candidates_from_previous_csv(tmp_path):
+    scan = tmp_path / "scan.csv"
+    scan.write_text("ticker,name\n2330,Example\n", encoding="utf-8")
+    summary = tmp_path / "summary.json"
+    summary.write_text(
+        '{"requested": 100, "data_complete": 0, "failed": 100, "scan_state": "failed", "status": "掃描失敗"}',
+        encoding="utf-8",
+    )
+
+    report = build_research_report([{
+        "path": str(scan), "summary_path": str(summary), "market": "taiwan", "strategy": "momentum"
+    }])
+
+    assert report["candidates"] == []
+    assert report["sources"][0]["status"] == "掃描失敗"
+
+
 def test_completed_empty_scan_is_not_reported_as_a_source_failure(tmp_path):
     scan = tmp_path / "scan.csv"
     scan.write_text("", encoding="utf-8")

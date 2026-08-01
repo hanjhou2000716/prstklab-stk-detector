@@ -96,7 +96,7 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
             try:
                 summary = json.loads(Path(summary_path).read_text(encoding="utf-8"))
                 base.update({key: summary.get(key) for key in (
-                    "requested", "data_complete", "failed", "scan_state",
+                    "requested", "data_complete", "failed", "scan_state", "status", "error_details",
                     "history_cached", "history_expected", "notice",
                 )})
             except (OSError, json.JSONDecodeError):
@@ -112,14 +112,26 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                 and base.get("data_complete") == base.get("requested")
             )
             status = (
-                "建檔中" if base.get("scan_state") == "building"
+                "掃描失敗" if base.get("scan_state") == "failed"
+                else "建檔中" if base.get("scan_state") == "building"
                 else "本次無研究候選" if completed_empty
                 else "資料暫時無法取得"
             )
             sources_status.append({**base, "status": status, "candidates": 0})
             continue
-        rows = normalize_frame(frame, source["market"], source["strategy"])
-        status = "建檔中" if base.get("scan_state") == "building" else ("可用" if rows else "本次無研究候選")
+        blocked = base.get("scan_state") in {"failed", "building"} or base.get("status") in {
+            "掃描失敗", "資料暫時無法取得", "建檔中"
+        }
+        # Never copy a previous CSV into the new report while a scan is still
+        # running or failed.  The source status is the authoritative freshness
+        # boundary; an old candidate is less useful than an explicit gap.
+        rows = [] if blocked else normalize_frame(frame, source["market"], source["strategy"])
+        status = (
+            "掃描失敗" if base.get("scan_state") == "failed" or base.get("status") == "掃描失敗"
+            else "建檔中" if base.get("scan_state") == "building" or base.get("status") == "建檔中"
+            else "資料暫時無法取得" if base.get("status") == "資料暫時無法取得"
+            else "可用" if rows else "本次無研究候選"
+        )
         sources_status.append({**base, "status": status, "candidates": len(rows)})
         candidates.extend(rows)
     counts = Counter(f"{item['market']}:{item['strategy']}" for item in candidates)

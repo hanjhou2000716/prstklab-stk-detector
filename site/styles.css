@@ -109,6 +109,53 @@
   min-height: 54px;
   padding: 13px 0;
 }
+
+/* Shared summary contract: title, note/time and toggle always occupy the
+   same three columns on every collapsible card. */
+.section-block > details.collapsible-card > summary,
+.section-block > details.source-health-panel > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 12px;
+  text-align: left;
+}
+.section-block > details.collapsible-card > summary h3,
+.section-block > details.source-health-panel > summary h3 {
+  min-width: 0;
+  line-height: 1.35;
+}
+.section-block > details.collapsible-card > summary time,
+.section-block > details.collapsible-card > summary > span,
+.section-block > details.source-health-panel > summary > span {
+  margin: 0;
+  color: var(--orange);
+  font-size: .74rem;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.section-block > details.collapsible-card > summary time {
+  color: var(--muted);
+  font-weight: 500;
+}
+.section-block > details.collapsible-card > summary::after,
+.section-block > details.source-health-panel > summary::after {
+  grid-column: 3;
+  grid-row: 1;
+  margin-left: 0;
+}
+@media (max-width: 430px) {
+  .section-block > details.collapsible-card > summary,
+  .section-block > details.source-health-panel > summary {
+    column-gap: 8px;
+  }
+  .section-block > details.collapsible-card > summary time,
+  .section-block > details.collapsible-card > summary > span,
+  .section-block > details.source-health-panel > summary > span {
+    font-size: .68rem;
+  }
+}
 .news-panel .news-list a {
   display: block;
   color: var(--accent);

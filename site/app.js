@@ -397,7 +397,7 @@ const renderValueResearch = (id, items, empty) => {
     const score = researchScoreParts(item);
     return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}${item.condition_count ? ` · ${escapeHtml(item.condition_count)}` : ""}</strong></div></li>`;
   }).join("");
-  container.innerHTML = `${formal.length ? `<li class="research-subheading">正式候選（最多 5 檔）</li>${renderGroup("正式候選", formal)}` : ""}${observation.length ? `<li class="research-subheading">觀察名單（至少 6/8，最多 5 檔）</li>${renderGroup("觀察名單", observation)}` : ""}`;
+  container.innerHTML = `${formal.length ? `<li class="research-subheading">正式候選（至少 5/6，最多 5 檔）</li>${renderGroup("正式候選", formal)}` : ""}${observation.length ? `<li class="research-subheading">觀察名單（3/6 或 4/6，最多 5 檔）</li>${renderGroup("觀察名單", observation)}` : ""}`;
 };
 
 let activeResearchMarket = "taiwan";
@@ -409,16 +409,29 @@ const renderResearch = (snapshot) => {
   setText("research-tag", activeResearchMarket === "taiwan" ? "台股" : "美股");
   const unavailable = report.availability === "expired" ? "研究資料逾時，等待下一次全市場掃描" : null;
   setText("research-notice", unavailable || generatedAt.trim() || "掃描時間暫時無法取得");
+  const sourceFor = (strategy) => (report.sources || []).find((item) => item.market === activeResearchMarket && item.strategy === strategy) || {};
+  const sourceBlocked = (strategy) => {
+    const source = sourceFor(strategy);
+    return unavailable || source.status === "掃描失敗" || source.status === "資料暫時無法取得" || source.status === "建檔中" || source.scan_state === "failed" || source.scan_state === "building";
+  };
   const marketCandidates = candidates.filter((item) => item.market === activeResearchMarket);
-  const valueSource = (report.sources || []).find((item) => item.market === activeResearchMarket && item.strategy === "value");
+  const sourceMessage = (strategy, fallback) => {
+    const source = sourceFor(strategy);
+    if (unavailable) return unavailable;
+    if (source.status === "掃描失敗" || source.scan_state === "failed") return "本輪掃描失敗，等待重試；不沿用舊候選。";
+    if (source.status === "資料暫時無法取得") return "本輪資料暫時無法取得；不沿用舊候選。";
+    if (source.failed > 0) return `本輪有 ${source.failed} 檔資料缺漏，候選僅供檢視。`;
+    return fallback;
+  };
+  const valueSource = sourceFor("value");
   const valuePending = valueSource?.scan_state === "building";
   const valueMessage = valuePending
-    ? `歷史核對中：已完成 ${valueSource.history_cached ?? 0}/${valueSource.history_expected ?? "—"} 檔；未完成八項公開資料覆核前不列入正式璞玉價值候選。`
+    ? `歷史核對中：已完成 ${valueSource.history_cached ?? 0}/${valueSource.history_expected ?? "—"} 檔；未完成六項公開資料覆核前不列入正式璞玉價值候選。`
     : "本輪沒有同時通過璞玉品質與三月去熱門化公開資料覆核的標的";
-  renderResearchList("research-list", marketCandidates.filter((item) => item.strategy === "price_action"), unavailable || "本輪掃描沒有符合裸 K 結構的候選標的");
-  renderResearchList("momentum-list", marketCandidates.filter((item) => item.strategy === "momentum"), unavailable || "本輪掃描沒有符合動能條件的候選標的");
-  renderResearchList("resonance-list", marketCandidates.filter((item) => item.strategy === "resonance"), unavailable || "本輪掃描沒有符合三維共振條件的候選標的");
-  renderValueResearch("value-list", marketCandidates.filter((item) => item.strategy === "value"), unavailable || valueMessage);
+  renderResearchList("research-list", sourceBlocked("price_action") ? [] : marketCandidates.filter((item) => item.strategy === "price_action"), sourceMessage("price_action", "本輪掃描沒有符合裸 K 結構的候選標的"));
+  renderResearchList("momentum-list", sourceBlocked("momentum") ? [] : marketCandidates.filter((item) => item.strategy === "momentum"), sourceMessage("momentum", "本輪掃描沒有符合動能條件的候選標的"));
+  renderResearchList("resonance-list", sourceBlocked("resonance") ? [] : marketCandidates.filter((item) => item.strategy === "resonance"), sourceMessage("resonance", "本輪掃描沒有符合三維共振條件的候選標的"));
+  renderValueResearch("value-list", sourceBlocked("value") ? [] : marketCandidates.filter((item) => item.strategy === "value"), sourceMessage("value", valueMessage));
 };
 
 document.querySelectorAll(".research-tab").forEach((tab) => tab.addEventListener("click", () => {

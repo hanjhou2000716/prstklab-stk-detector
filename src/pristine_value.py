@@ -1,9 +1,10 @@
 """Public-data Pristine Value screening.
 
-The formal list follows eight independently verifiable Taiwan-Pristine-style
-conditions: three quality conditions and five non-hotness conditions.  A
-separate observation list contains complete records matching 6/8 or 7/8;
-missing history is never converted into a pass.
+The Taiwan PRStK adaptation uses six independently verifiable conditions: two
+quality conditions and four non-hotness conditions.  A separate observation
+list contains complete records matching 3/6 or 4/6; missing history is never
+converted into a pass.  Formal candidates require 5/6.  The thresholds are
+deliberately explicit so the Mini App can explain why a row is only observed.
 """
 
 from __future__ import annotations
@@ -16,11 +17,10 @@ import pandas as pd
 
 TW_NET_INCOME_MINIMUM = 5_000_000_000
 US_NET_INCOME_MINIMUM = 500_000_000
-HEAT_METRICS = ("average_turnover", "average_volume", "turnover_rate", "return_3m", "volatility")
+HEAT_METRICS = ("average_turnover", "average_volume", "turnover_rate", "return_3m")
 PRISTINE_QUALITY_FIELDS = (
     "three_year_eps_positive",
     "four_quarter_eps_positive",
-    "three_year_dividend_paid",
 )
 
 
@@ -46,6 +46,8 @@ def heat_metrics(bars: pd.DataFrame, shares_outstanding: float | None = None) ->
         "average_volume": average_volume,
         "turnover_rate": turnover_rate,
         "return_3m": round(float(frame["Close"].iloc[-1] / frame["Close"].iloc[0] - 1), 6),
+        # Retained as supplemental context only; it is no longer one of the
+        # six formal Pristine Value conditions.
         "volatility": round(float(returns.std(ddof=0) * sqrt(252)), 6) if len(returns) >= 2 else None,
     }
 
@@ -99,7 +101,7 @@ def quality_checks(metrics: dict[str, Any], market: str) -> tuple[bool, list[str
 
 
 def pristine_score(row: dict[str, Any], market: str) -> tuple[float, list[str], list[str]]:
-    """Supplemental 0-100 ranking; it does not override the 8-condition gate."""
+    """Supplemental 0-100 ranking; it does not override the six-condition gate."""
     quality_ok, checks, missing = quality_checks(row, market)
     score = 50.0 if quality_ok else max(0.0, 10.0 * len(checks))
     pe = _number(row.get("pe"))
@@ -121,7 +123,7 @@ def pristine_score(row: dict[str, Any], market: str) -> tuple[float, list[str], 
 
 
 def pristine_conditions(row: dict[str, Any]) -> tuple[int, int, list[str], list[str]]:
-    """Return matched/total and explain the eight independent conditions."""
+    """Return matched/total and explain the six independent conditions."""
     checks: list[str] = []
     missing: list[str] = []
     matched = 0
@@ -151,9 +153,9 @@ def _ranked_pristine_rows(rows: list[dict[str, Any]], market: str) -> list[dict[
             **row,
             "score": score,
             "value_checks": list(dict.fromkeys(condition_checks + score_checks)),
-            # Only the eight formal conditions gate candidate status.  PE,
+            # Only the six formal conditions gate candidate status.  PE,
             # ROE and net-income are supplemental ranking context and may be
-            # unavailable without invalidating a fully verified 8/8 record.
+            # unavailable without invalidating a fully verified six-condition record.
             "verification_gaps": list(dict.fromkeys(condition_missing)),
             "supplemental_gaps": list(dict.fromkeys(score_missing)),
             "pristine_conditions_matched": matched,
@@ -164,16 +166,16 @@ def _ranked_pristine_rows(rows: list[dict[str, Any]], market: str) -> list[dict[
 
 
 def review_pristine_pool(rows: list[dict[str, Any]], market: str, limit: int = 5) -> list[dict[str, Any]]:
-    """Return formal candidates only when all eight conditions are verified."""
+    """Return formal candidates only when at least five of six pass."""
     scored = []
     for item in _ranked_pristine_rows(rows, market):
-        if item["pristine_conditions_matched"] != item["pristine_conditions_total"] or item["verification_gaps"]:
+        if item["pristine_conditions_matched"] < 5 or item["verification_gaps"]:
             continue
         scored.append({
             **item,
             "list_type": "formal",
-            "quality_verified": True,
-            "heat_verified": True,
+            "quality_verified": item["pristine_conditions_matched"] >= len(PRISTINE_QUALITY_FIELDS),
+            "heat_verified": item["pristine_conditions_matched"] >= 4,
             "strategy_label": "璞玉價值",
         })
     scored.sort(key=lambda item: (item["pristine_conditions_matched"], item["score"]), reverse=True)
@@ -181,11 +183,11 @@ def review_pristine_pool(rows: list[dict[str, Any]], market: str, limit: int = 5
 
 
 def review_pristine_observation_pool(rows: list[dict[str, Any]], market: str, limit: int = 5) -> list[dict[str, Any]]:
-    """Return complete observations matching at least six but fewer than eight."""
+    """Return complete observations matching three or four of six."""
     scored = []
     for item in _ranked_pristine_rows(rows, market):
         matched = item["pristine_conditions_matched"]
-        if item["verification_gaps"] or matched < 6 or matched >= item["pristine_conditions_total"]:
+        if item["verification_gaps"] or matched < 3 or matched >= 5:
             continue
         scored.append({
             **item,

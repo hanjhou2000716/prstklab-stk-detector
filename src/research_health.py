@@ -16,6 +16,11 @@ def _source_state(source: dict[str, Any]) -> str:
         return "warming"
     if state in {"failed", "掃描失敗", "資料暫時無法取得"}:
         return "failed"
+    try:
+        if int(source.get("failed") or 0) > 0:
+            return "partial"
+    except (TypeError, ValueError):
+        pass
     if state in {"empty", "本次無研究候選"}:
         return "empty"
     return "ready"
@@ -32,10 +37,13 @@ def assess_research_health(
     reasons: list[str] = []
     sources = [item for item in report.get("sources", []) if isinstance(item, dict)]
     failed = [item for item in sources if _source_state(item) == "failed"]
+    partial = [item for item in sources if _source_state(item) == "partial"]
     warming = [item for item in sources if _source_state(item) == "warming"]
     empty = [item for item in sources if _source_state(item) == "empty"]
     if failed:
         reasons.append("掃描失敗：" + "、".join(f"{item.get('market')} {item.get('strategy')}" for item in failed))
+    if partial:
+        reasons.append("部分資料缺漏：" + "、".join(f"{item.get('market')} {item.get('strategy')}" for item in partial))
     generated = report.get("generated_at")
     age_minutes = None
     if generated:
@@ -60,6 +68,7 @@ def assess_research_health(
         "status": status,
         "reasons": reasons,
         "unavailable_sources": len(failed),
+        "partial_sources": len(partial),
         "warming_sources": len(warming),
         "empty_sources": len(empty),
         "age_minutes": age_minutes,
