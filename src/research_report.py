@@ -97,7 +97,8 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                 summary = json.loads(Path(summary_path).read_text(encoding="utf-8"))
                 base.update({key: summary.get(key) for key in (
                     "requested", "data_complete", "failed", "scan_state", "status", "error_details",
-                    "history_cached", "history_expected", "notice",
+                    "history_cached", "history_expected", "history_progress_pct",
+                    "history_pending", "history_failure_count", "blocking_reason", "notice",
                 )})
             except (OSError, json.JSONDecodeError):
                 pass

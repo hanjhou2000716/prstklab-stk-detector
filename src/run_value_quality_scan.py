@@ -138,12 +138,20 @@ def main() -> None:
     if args.market == "taiwan":
         summary["history_cached"] = len(history)
         summary["history_expected"] = len(candidates)
+        summary["history_progress_pct"] = round(
+            (len(history) / len(candidates) * 100) if candidates else 0.0, 1
+        )
+        summary["history_pending"] = max(len(candidates) - len(history), 0)
+        summary["history_failure_count"] = len(history_errors)
         if len(history) < len(candidates):
             summary["scan_state"] = "building"
             summary["status"] = "建檔中"
             summary["notice"] = (
                 f"璞玉價值歷史資料建檔中：已核對 {len(history)}／{len(candidates)} 檔；"
                 "未完成六項公開資料覆核前不列入候選，並非投資結論。"
+            )
+            summary["blocking_reason"] = (
+                "MOPS 歷史資料尚未完成；正式候選與觀察名單均暫停輸出。"
             )
     elif failed_total:
         # A completed US run with missing SEC/VOO/quote inputs is unavailable,
