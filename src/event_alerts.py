@@ -62,7 +62,9 @@ def _related_indices(indices: list[dict[str, Any]], excluded_ticker: str) -> lis
     return related[:2]
 
 
-def _impact_confirmation(index: dict[str, Any], related: list[dict[str, Any]]) -> dict[str, Any]:
+def _impact_confirmation(
+    index: dict[str, Any], related: list[dict[str, Any]], event_time: str | None = None
+) -> dict[str, Any]:
     """Require a separate market observation before calling an alert high risk.
 
     A Taiwan intraday cash/futures cross-check is itself independent market
@@ -72,12 +74,27 @@ def _impact_confirmation(index: dict[str, Any], related: list[dict[str, Any]]) -
     """
     if index.get("ticker") == "TAIEX" and index.get("crosscheck_status") in {None, "已核對同向"}:
         return {"confirmed": True, "method": "TWSE／TAIFEX 同向核對", "markets": ["TAIEX"]}
-    confirmed = [
-        item for item in related
-        if not item.get("quote_delayed")
-        and item.get("change_percent") is not None
-        and abs(float(item["change_percent"])) >= 1.0
-    ]
+    confirmed = []
+    source_time = str(event_time or index.get("quote_time") or "").strip()
+    for item in related:
+        if item.get("quote_delayed") or item.get("change_percent") is None:
+            continue
+        # An event must transmit to a related market within 30 minutes when
+        # both timestamps are available; this prevents an old daily quote from
+        # falsely confirming a breaking headline.
+        item_time = str(item.get("quote_time") or item.get("quote_date") or "").strip()
+        if source_time and item_time:
+            try:
+                left = datetime.fromisoformat(source_time.replace("Z", "+00:00"))
+                right = datetime.fromisoformat(item_time.replace("Z", "+00:00"))
+                if abs((right - left).total_seconds()) > 30 * 60:
+                    continue
+            except ValueError:
+                pass
+        ticker = str(item.get("ticker") or "").upper()
+        threshold = 1.5 if ticker in {"WTI", "BRENT", "GOLD", "DXY", "US10Y", "VIX"} else 1.0
+        if abs(float(item["change_percent"])) >= threshold:
+            confirmed.append(item)
     if confirmed:
         return {
             "confirmed": True,
@@ -268,7 +285,7 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         pattern, risk = "上漲", "波動擴大"
 
     related = _related_indices(indices, ticker)
-    impact_confirmation = _impact_confirmation(index, related)
+    impact_confirmation = _impact_confirmation(index, related, str(index.get("quote_time") or ""))
     if risk == "高風險" and not impact_confirmation["confirmed"]:
         risk = "警戒"
         stock_observation = (
@@ -345,7 +362,9 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "verified_domains": [domain] if domain else [],
     }
     related = event.get("related") or _related_indices(indices, "")
-    impact_confirmation = _impact_confirmation({"ticker": event.get("ticker", "")}, related)
+    impact_confirmation = _impact_confirmation(
+        {"ticker": event.get("ticker", "")}, related, released_at
+    )
     risk_level = event.get("risk_level") or "持續觀察"
     brief_title = event.get("brief_title") or f"{label}｜重要事件｜觀察"
     if risk_level == "高風險" and not impact_confirmation["confirmed"]:

@@ -355,6 +355,27 @@ const renderResearchList = (id, items, empty) => {
   }).join("");
 };
 
+const renderValueResearch = (id, items, empty) => {
+  const container = document.getElementById(id);
+  if (!container) return;
+  const formal = (items || []).filter((item) => item.list_type === "formal");
+  const observation = (items || []).filter((item) => item.list_type === "observation");
+  if (!formal.length && !observation.length) {
+    container.innerHTML = `<li class="empty">${escapeHtml(empty)}</li>`;
+    return;
+  }
+  const renderGroup = (title, group) => group.slice(0, 5).map((item) => {
+    const state = item.change_percent > 0 ? "market-up" : item.change_percent < 0 ? "market-down" : "flat";
+    const currency = item.market === "taiwan" ? "TWD" : "USD";
+    const price = item.close === null || item.close === undefined ? "報價待完整掃描" : `${formatNumber(item.close)} ${currency}`;
+    const change = item.change_percent === null || item.change_percent === undefined ? "—" : signedPercent(item.change_percent);
+    const tags = researchStrategyTags(item).map((label) => `<span class="strategy-chip">${escapeHtml(label)}</span>`).join("");
+    const score = researchScoreParts(item);
+    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}${item.condition_count ? ` · ${escapeHtml(item.condition_count)}` : ""}</strong></div></li>`;
+  }).join("");
+  container.innerHTML = `${formal.length ? `<li class="research-subheading">正式候選（最多 5 檔）</li>${renderGroup("正式候選", formal)}` : ""}${observation.length ? `<li class="research-subheading">觀察名單（至少 6/8，最多 5 檔）</li>${renderGroup("觀察名單", observation)}` : ""}`;
+};
+
 let activeResearchMarket = "taiwan";
 
 const renderResearch = (snapshot) => {
@@ -373,7 +394,7 @@ const renderResearch = (snapshot) => {
   renderResearchList("research-list", marketCandidates.filter((item) => item.strategy === "price_action"), unavailable || "本輪掃描沒有符合裸 K 結構的候選標的");
   renderResearchList("momentum-list", marketCandidates.filter((item) => item.strategy === "momentum"), unavailable || "本輪掃描沒有符合動能條件的候選標的");
   renderResearchList("resonance-list", marketCandidates.filter((item) => item.strategy === "resonance"), unavailable || "本輪掃描沒有符合三維共振條件的候選標的");
-  renderResearchList("value-list", marketCandidates.filter((item) => item.strategy === "value"), unavailable || valueMessage);
+  renderValueResearch("value-list", marketCandidates.filter((item) => item.strategy === "value"), unavailable || valueMessage);
 };
 
 document.querySelectorAll(".research-tab").forEach((tab) => tab.addEventListener("click", () => {

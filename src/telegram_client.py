@@ -75,11 +75,14 @@ def mini_app_menu_button(mini_app_url: str) -> dict[str, object]:
     }
 
 
-def configure_mini_app_menu(*, token: str, chat_id: str, mini_app_url: str) -> None:
-    """Set this private chat's persistent Telegram Mini App menu button."""
+def configure_mini_app_menu(*, token: str, chat_id: str | None = None, mini_app_url: str) -> None:
+    """Set the global or one private chat's persistent Mini App menu button."""
+    body: dict[str, object] = {"menu_button": mini_app_menu_button(mini_app_url)}
+    if chat_id:
+        body["chat_id"] = chat_id
     response = requests.post(
         f"https://api.telegram.org/bot{token}/setChatMenuButton",
-        json={"chat_id": chat_id, "menu_button": mini_app_menu_button(mini_app_url)},
+        json=body,
         timeout=20,
     )
     try:
@@ -106,6 +109,10 @@ def configure_mini_app_menus(*, token: str, chat_ids: tuple[str, ...], mini_app_
     Telegram requires a person to press Start before a Bot can configure that
     private chat. One unavailable recipient must not block every other user.
     """
+    # Set Telegram's default menu first, so new users see the icon after they
+    # press Start. Per-chat calls below preserve compatibility with existing
+    # users who previously received an override.
+    configure_mini_app_menu(token=token, mini_app_url=mini_app_url)
     deliveries: list[TelegramDelivery] = []
     for chat_id in chat_ids:
         try:
