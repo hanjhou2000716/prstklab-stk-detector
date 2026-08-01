@@ -1,4 +1,12 @@
-from src.risk_news import _market_risk, _news_from_html, _parse_taifex_vix_file, build_risk_snapshot, sentiment_label, vix_stage
+from src.risk_news import (
+    _market_risk,
+    _news_from_html,
+    _parse_taifex_vix_file,
+    build_risk_snapshot,
+    fetch_taifex_vix_quote,
+    sentiment_label,
+    vix_stage,
+)
 
 
 def test_sentiment_labels_cover_fixed_thresholds():
@@ -69,6 +77,41 @@ def test_taifex_fallback_keeps_taiwan_vix_available(monkeypatch):
 
     assert result["vix"]["source_label"] == "臺灣期貨交易所"
     assert result["errors"] == []
+
+
+def test_taifex_quote_fallback_uses_official_mis_endpoint(monkeypatch):
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "RtData": {
+                    "QuoteList": [{
+                        "SymbolID": "TAIWANVIX",
+                        "CLastPrice": "40.77",
+                        "CRefPrice": "44.31",
+                        "CDate": "20260731",
+                    }]
+                }
+            }
+
+    captured = {}
+
+    def fake_post(url, **kwargs):
+        captured["url"] = url
+        captured.update(kwargs)
+        return Response()
+
+    monkeypatch.setattr("src.risk_news.requests.post", fake_post)
+
+    result = fetch_taifex_vix_quote()
+
+    assert captured["url"] == "https://mis.taifex.com.tw/futures/api/getQuoteListVIX"
+    assert result["value"] == 40.77
+    assert result["change_percent"] == -7.99
+    assert result["date"] == "2026-07-31"
+    assert result["source_label"] == "TAIFEX"
 
 
 def test_taiwan_macro_fgi_is_used_as_taiwan_sentiment(monkeypatch):

@@ -26,7 +26,7 @@ WATCHLIST = (
 # securities. They describe the overall market and never enter research scans.
 MARKET_INDICES = (
     {"symbol": "^TWII", "ticker": "TAIEX", "name": "臺灣加權指數", "market": "taiwan", "currency": "點"},
-    {"symbol": "^TWOII", "ticker": "TPEx", "name": "櫃買指數", "market": "taiwan", "currency": "點"},
+    {"symbol": "^TWOII", "ticker": "TPEx", "name": "臺灣上櫃指數", "market": "taiwan", "currency": "點"},
     {"symbol": "^GSPC", "ticker": "S&P 500", "name": "標普 500", "market": "us", "currency": "點"},
     {"symbol": "^IXIC", "ticker": "NASDAQ", "name": "那斯達克綜合指數", "market": "us", "currency": "點"},
     {"symbol": "^DJI", "ticker": "DJIA", "name": "道瓊工業指數", "market": "us", "currency": "點"},
@@ -36,8 +36,8 @@ MARKET_INDICES = (
     {"symbol": "BZ=F", "ticker": "BRENT", "name": "Brent 原油", "market": "global", "currency": "USD"},
     {"symbol": "CL=F", "ticker": "WTI", "name": "WTI 原油", "market": "global", "currency": "USD"},
     {"symbol": "GC=F", "ticker": "GOLD", "name": "黃金期貨", "market": "global", "currency": "USD"},
-    {"symbol": "BTC-USD", "ticker": "BTC", "name": "BTC", "market": "global", "currency": "USD"},
-    {"symbol": "ETH-USD", "ticker": "ETH", "name": "ETH", "market": "global", "currency": "USD"},
+    {"symbol": "BTC-USD", "ticker": "BTC", "name": "比特幣", "market": "global", "currency": "USD"},
+    {"symbol": "ETH-USD", "ticker": "ETH", "name": "以太坊", "market": "global", "currency": "USD"},
 )
 
 # These references power the briefing's dedicated rates/FX card.  They remain
@@ -171,23 +171,71 @@ def intraday_is_fresh(timestamp: Any, market: str, now: datetime | None = None) 
     return reference - observed.to_pydatetime() <= timedelta(minutes=10)
 
 
+def _latest_completed_session_date(quote: dict[str, Any], reference: datetime) -> date:
+    """Return the most recent completed trading date for a public quote.
+
+    A daily bar during a live session is normally yesterday's close, so it is
+    still useful but must never be labelled as a delayed live quote.  Once the
+    next market close has passed, the same bar becomes stale.  Crypto is the
+    exception because it trades every calendar day.
+    """
+    ticker = str(quote.get("ticker") or "")
+    market = str(quote.get("market") or "global")
+    if ticker in {"BTC", "ETH"}:
+        return reference.astimezone(ZoneInfo("Asia/Taipei")).date()
+
+    market_config = MARKETS.get(market)
+    if market_config:
+        import pandas_market_calendars as mcal
+
+        timezone = ZoneInfo(market_config["timezone"])
+        local_now = reference.astimezone(timezone)
+        calendar = mcal.get_calendar(market_config["calendar"])
+        schedule = calendar.schedule(
+            start_date=local_now.date() - timedelta(days=10),
+            end_date=local_now.date(),
+        )
+        if not schedule.empty:
+            latest = schedule.index[-1].date()
+            market_close = schedule.iloc[-1]["market_close"].to_pydatetime().astimezone(timezone)
+            if latest == local_now.date() and local_now < market_close and len(schedule) >= 2:
+                return schedule.index[-2].date()
+            return latest
+
+    # Japan, Korea, futures and cash references use the most recent weekday
+    # when an official exchange calendar is not available in this project.
+    local_day = reference.astimezone(ZoneInfo("Asia/Taipei")).date()
+    while local_day.weekday() >= 5:
+        local_day -= timedelta(days=1)
+    return local_day
+
+
 def quote_freshness(quote: dict[str, Any], *, now: datetime | None = None) -> str:
-    """Classify a quote by its published observation date, not scan time."""
+    """Classify a quote by its latest expected market observation date."""
     # Keep an unavailable official quote distinct from an old close or an
     # unparseable timestamp.  The UI and source-health card can then disclose
     # the gap instead of treating an empty row as a current quote.
     if quote.get("price") is None and not (quote.get("quote_time") or quote.get("quote_date")):
         return "unavailable"
     reference = now or datetime.now(ZoneInfo("Asia/Taipei"))
+    if reference.tzinfo is None:
+        reference = reference.replace(tzinfo=ZoneInfo("Asia/Taipei"))
     try:
         observed = datetime.fromisoformat(str(quote.get("quote_time") or quote.get("quote_date"))).date()
     except ValueError:
         return "unknown"
-    age_days = max(0, (reference.date() - observed).days)
-    if age_days > 3:
+    expected = _latest_completed_session_date(quote, reference)
+    if observed < expected:
         return "stale"
     if quote.get("quote_time") and not quote.get("quote_delayed"):
-        return "live"
+        try:
+            timestamp = datetime.fromisoformat(str(quote["quote_time"]))
+            if timestamp.tzinfo is None:
+                timestamp = timestamp.replace(tzinfo=reference.tzinfo)
+            if reference.astimezone(ZoneInfo("UTC")) - timestamp.astimezone(ZoneInfo("UTC")) <= timedelta(minutes=15):
+                return "live"
+        except ValueError:
+            return "unknown"
     return "recent_close"
 
 

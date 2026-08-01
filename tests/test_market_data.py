@@ -26,6 +26,10 @@ def test_market_indices_are_separate_from_research_watchlist():
         "TAIEX", "TPEx", "S&P 500", "NASDAQ", "DJIA", "SOX", "NIKKEI", "KOSPI", "BRENT", "WTI", "GOLD", "BTC", "ETH",
     }
     assert not {item["symbol"] for item in MARKET_INDICES} & {item["symbol"] for item in WATCHLIST}
+    labels = {item["ticker"]: item["name"] for item in MARKET_INDICES}
+    assert labels["TPEx"] == "臺灣上櫃指數"
+    assert labels["BTC"] == "比特幣"
+    assert labels["ETH"] == "以太坊"
 
 
 def test_macro_references_are_kept_out_of_main_market_index_list():
@@ -163,3 +167,25 @@ def test_stale_daily_quote_is_explicitly_marked_for_the_ui():
         now=datetime(2026, 7, 30, tzinfo=ZoneInfo("Asia/Taipei")),
     )
     assert quotes[0]["freshness"] == "stale"
+
+
+def test_daily_close_becomes_stale_after_the_next_completed_taiwan_session():
+    quote = {"ticker": "2330", "market": "taiwan", "price": 1000, "quote_date": "2026-07-30"}
+
+    # Friday is a completed Taiwan session; on Saturday the Thursday close is
+    # no longer the latest completed public close and must be disclosed.
+    annotated = annotate_quote_freshness(
+        [quote], now=datetime(2026, 8, 1, 10, 0, tzinfo=ZoneInfo("Asia/Taipei"))
+    )
+
+    assert annotated[0]["freshness"] == "stale"
+
+
+def test_daily_close_remains_recent_while_the_following_session_is_open():
+    quote = {"ticker": "2330", "market": "taiwan", "price": 1000, "quote_date": "2026-07-30"}
+
+    annotated = annotate_quote_freshness(
+        [quote], now=datetime(2026, 7, 31, 10, 0, tzinfo=ZoneInfo("Asia/Taipei"))
+    )
+
+    assert annotated[0]["freshness"] == "recent_close"
