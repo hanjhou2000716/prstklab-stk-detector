@@ -8,6 +8,7 @@ GitHub independently verifies the HMAC signature and de-duplicates the event.
 from __future__ import annotations
 
 import asyncio
+import difflib
 import hashlib
 import hmac
 import json
@@ -30,8 +31,10 @@ import httpx
 
 JIN10_MCP_URL = "https://mcp.jin10.com/mcp"
 GDELT_DOC_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
-GDELT_QUERY = '(war OR invasion OR ceasefire OR sanctions OR Hormuz OR tariff OR "export controls" OR semiconductor OR earthquake OR tsunami OR cyberattack OR ransomware OR pandemic OR Bitcoin OR Ethereum OR Trump OR "cancel attack" OR "call off attack" OR Iran OR "White House")'
+DEFAULT_GDELT_QUERY = '(war OR invasion OR ceasefire OR sanctions OR Hormuz OR tariff OR "export controls" OR semiconductor OR earthquake OR tsunami OR cyberattack OR ransomware OR pandemic OR Bitcoin OR Ethereum OR Trump OR "cancel attack" OR "call off attack" OR Iran OR "White House")'
+GDELT_QUERY = DEFAULT_GDELT_QUERY
 GITHUB_API_VERSION = "2022-11-28"
+EVENT_COOLDOWN_SECONDS = 30 * 60
 ALLOWED_CATEGORIES = {"fed", "macro", "policy", "conflict", "energy", "semiconductor", "market", "black_swan", "material_positive"}
 CATEGORY_LABELS = {
     "black_swan": "黑天鵝",
@@ -45,22 +48,37 @@ CATEGORY_LABELS = {
     "market": "市場",
 }
 
-# These are deliberately conservative.  A flash must contain one of these
-# expressions before it can create a public alert; everything else is merely
-# marked as seen and never forwarded.
-CATEGORY_KEYWORDS = {
-    "fed": ("fomc", "federal reserve", "powell", "聯準會", "美联储", "鮑威爾", "鲍威尔"),
-    "macro": ("cpi", "pce", "非農", "非农", "失業率", "失业率", "gdp", "通膨", "通胀"),
-    "policy": ("關稅", "关税", "制裁", "出口管制", "政策", "tariff", "sanction", "duties", "duty", "trade war"),
-    "conflict": ("戰爭", "战争", "軍事", "军事", "導彈", "导弹", "停火", "中東", "中东", "伊朗", "以色列", "特朗普", "川普", "攻擊", "攻击", "襲擊", "袭击", "空襲", "空袭", "進攻", "进攻", "軍事行動", "军事行动", "invasion", "iran", "israel", "ukraine", "russia", "trump", "truce", "ceasefire", "airstrike", "attack"),
-    "energy": ("wti", "brent", "原油", "油價", "油价", "opec", "crude oil", "oil supply"),
-    "semiconductor": ("nvidia", "輝達", "英伟达", "台積電", "台积电", "tsmc", "半導體", "半导体"),
-    "market": ("熔斷", "熔断", "閃崩", "闪崩", "crash", "circuit breaker"),
-}
-ESCALATION_TERMS = (
-    "擴大", "升级", "升級", "加徵", "加征", "大幅", "急升", "急跌", "供應中斷", "供应中断",
-    "additional", "increase", "airstrike", "missile", "attack", "supply disruption", "supply cut",
-)
+def _load_keyword_database() -> dict[str, Any]:
+    path = Path(__file__).resolve().parents[1] / "config" / "event_keywords.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise ValueError("keyword database must be an object")
+        return payload
+    except (OSError, json.JSONDecodeError, TypeError, ValueError) as error:
+        # A deployment mistake must not silently disable the monitor.  The
+        # minimal fallback keeps the high-signal safety terms available while
+        # the health log exposes the configuration problem.
+        logging.error("event keyword database unavailable: %s", type(error).__name__)
+        return {
+            "categories": {"fed": ["fomc", "聯準會"], "macro": ["cpi", "非農"], "policy": ["tariff", "關稅"],
+                           "conflict": ["war", "戰爭", "trump", "川普"], "energy": ["wti", "原油"],
+                           "semiconductor": ["nvidia", "台積電"], "market": ["crash", "熔斷"]},
+            "black_swan": ["war", "戰爭", "earthquake", "地震", "tsunami", "海嘯"],
+            "material_positive": ["ceasefire", "停火", "rate cut", "降息"],
+            "energy_context": ["supply", "供應", "opec", "attack", "攻擊", "%"],
+            "escalation": ["escalation", "升級", "attack", "攻擊"],
+            "gdelt": {"query": "(war OR ceasefire OR tariff OR earthquake OR semiconductor OR 戰爭 OR 停火 OR 關稅 OR 地震 OR 半導體)", "entities": [], "actions": {}}
+        }
+
+
+KEYWORD_DATABASE = _load_keyword_database()
+CATEGORY_KEYWORDS = {key: tuple(values) for key, values in KEYWORD_DATABASE.get("categories", {}).items()}
+BLACK_SWAN_TERMS = tuple(KEYWORD_DATABASE.get("black_swan", ()))
+MATERIAL_POSITIVE_TERMS = tuple(KEYWORD_DATABASE.get("material_positive", ()))
+ENERGY_CONTEXT_TERMS = tuple(KEYWORD_DATABASE.get("energy_context", ()))
+ESCALATION_TERMS = tuple(KEYWORD_DATABASE.get("escalation", ()))
+GDELT_QUERY = str((KEYWORD_DATABASE.get("gdelt") or {}).get("query") or DEFAULT_GDELT_QUERY)
 
 # A discovery item is never sufficient on its own. GDELT candidates must have
 # two independent domains from this conservative set and share a concrete
@@ -70,30 +88,26 @@ TRUSTED_NEWS_DOMAINS = {
     "nytimes.com", "bbc.com", "cnbc.com", "nikkei.com",
 }
 DISCOVERY_ANCHORS = {
-    "conflict": ("iran", "israel", "ukraine", "russia", "hormuz", "taiwan"),
-    "policy": ("tariff", "sanction", "export control", "duties"),
-    "energy": ("wti", "brent", "oil", "opec", "crude"),
-    "semiconductor": ("nvidia", "tsmc", "asml", "semiconductor"),
-    "black_swan": ("earthquake", "tsunami", "ransomware", "cyberattack", "pandemic"),
-    "material_positive": ("iran", "israel", "ukraine", "russia", "trump", "ceasefire", "truce", "peace deal", "tariff exemption", "rate cut", "cancel attack", "call off attack"),
+    "conflict": ("iran", "israel", "ukraine", "russia", "hormuz", "taiwan", "伊朗", "以色列", "烏克蘭", "乌克兰", "俄羅斯", "俄罗斯", "台灣", "台湾"),
+    "policy": ("tariff", "sanction", "export control", "duties", "關稅", "关税", "制裁", "出口管制"),
+    "energy": ("wti", "brent", "oil", "opec", "crude", "原油", "石油", "能源"),
+    "semiconductor": ("nvidia", "tsmc", "asml", "semiconductor", "輝達", "英伟达", "台積電", "台积电", "半導體", "半导体"),
+    "black_swan": ("earthquake", "tsunami", "ransomware", "cyberattack", "pandemic", "war", "invasion", "airstrike", "missile", "重大地震", "地震", "海嘯", "海啸", "戰爭", "战争", "入侵", "空襲", "空袭"),
+    "material_positive": ("iran", "israel", "ukraine", "russia", "trump", "ceasefire", "truce", "peace deal", "tariff exemption", "rate cut", "cancel attack", "call off attack", "伊朗", "以色列", "川普", "特朗普", "停火", "和平協議", "和平协议", "降息"),
 }
 
 # GDELT is only a discovery feed.  Two headlines must describe the same
 # actor/place and the same action, rather than merely repeat a broad topic.
 # The small vocabulary is deliberately conservative: a missed headline is
 # preferable to publishing a misleading same-topic alert.
-DISCOVERY_ENTITIES = (
+_GDELT_KEYWORDS = KEYWORD_DATABASE.get("gdelt") or {}
+DISCOVERY_ENTITIES = tuple(_GDELT_KEYWORDS.get("entities") or (
     "iran", "israel", "ukraine", "russia", "taiwan", "japan", "china", "hormuz",
     "trump", "powell", "netanyahu", "putin", "zelenskyy", "nvidia", "tsmc", "asml",
-)
+))
 DISCOVERY_ENTITY_ANCHORS = {"nvidia", "tsmc", "asml"}
 DISCOVERY_ACTIONS = {
-    "conflict": ("conflict", "war", "attack", "airstrike", "invasion", "missile", "ceasefire", "truce", "military action"),
-    "policy": ("tariff", "sanction", "export control", "duties", "ban", "restriction"),
-    "energy": ("oil", "supply", "production", "opec", "output", "disruption"),
-    "semiconductor": ("earnings", "guidance", "export control", "restriction", "capex", "forecast"),
-    "material_positive": ("ceasefire", "truce", "peace deal", "tariff exemption", "rate cut", "attack", "cancel attack", "cancel attacks", "cancels attack", "canceled attack", "cancelled attack", "call off attack", "halt attack"),
-    "black_swan": ("earthquake", "tsunami", "ransomware", "cyberattack", "pandemic"),
+    key: tuple(values) for key, values in (_GDELT_KEYWORDS.get("actions") or {}).items()
 }
 
 # Public, non-secret runtime diagnostics for Railway's /health endpoint.  This
@@ -134,24 +148,6 @@ def update_health(component: str, **values: Any) -> None:
 def health_snapshot() -> dict[str, Any]:
     with HEALTH_LOCK:
         return json.loads(json.dumps(HEALTH_STATE))
-
-
-# These require a confirmed, broadly material event. They deliberately are not
-# a catch-all for ordinary geopolitical headlines or routine market moves.
-BLACK_SWAN_TERMS = (
-    "major earthquake", "magnitude 7", "magnitude 8", "tsunami", "nuclear accident",
-    "重大地震", "強震", "規模7", "規模8", "海嘯", "核事故", "大規模停電",
-    "金融危機", "銀行擠兌", "交易所遭駭", "重大駭客", "circuit breaker",
-)
-MATERIAL_POSITIVE_TERMS = (
-    "ceasefire agreement", "ceasefire", "truce agreement", "peace deal",
-    "tariff exemption", "tariff removal", "rate cut", "cancel attack", "cancel attacks",
-    "cancels attack", "canceled attack", "cancelled attack", "call off attack", "call off attacks",
-    "calls off attack", "called off attack", "halt attack", "halt attacks", "agreed to cancel",
-    "停火協議", "停火", "休戰協議", "和平協議", "關稅豁免", "取消關稅", "降息",
-    "取消攻擊", "取消對伊朗的攻擊", "取消對伊朗攻擊", "撤回攻擊", "停止攻擊", "暫停攻擊",
-    "撤回軍事行動", "停止軍事行動", "戰事降溫", "战事降温",
-)
 
 
 @dataclass(frozen=True)
@@ -266,24 +262,56 @@ def _keyword_in_text(keyword: str, normalized: str, compact: str) -> bool:
     candidate = normalized_event_text(keyword)
     if not candidate:
         return False
-    return candidate in normalized or candidate.replace(" ", "") in compact
+    candidate_compact = candidate.replace(" ", "")
+    if candidate in normalized or candidate_compact in compact:
+        return True
+
+    # Fuzzy matching is deliberately bounded to a single token/phrase.  A
+    # similarity check against the whole headline would turn unrelated words
+    # into false alerts.  It catches harmless feed typos such as ``trunmp``
+    # while exact multilingual aliases remain the primary path.
+    if len(candidate_compact) < 3:
+        return False
+    if all(ord(char) < 128 for char in candidate_compact):
+        words = re.findall(r"[a-z0-9]+(?:['-][a-z0-9]+)*", normalized)
+        candidate_words = candidate.split()
+        width = len(candidate_words)
+        windows = (words if width == 1 else (" ".join(words[index:index + width]) for index in range(max(0, len(words) - width + 1))))
+        return any(difflib.SequenceMatcher(None, candidate, window).ratio() >= 0.90 for window in windows)
+    # Chinese typo tolerance uses short character windows and a stricter
+    # threshold; this avoids treating similar two-character finance terms as
+    # interchangeable.
+    window_size = len(candidate_compact)
+    return any(
+        difflib.SequenceMatcher(None, candidate_compact, compact[index:index + window_size]).ratio() >= 0.93
+        for index in range(max(0, len(compact) - window_size + 1))
+    )
+
+
+def _keyword_hit(terms: Iterable[str], text: str) -> str:
+    """Return the first matching alias, including bounded fuzzy matches."""
+    normalized = normalized_event_text(text)
+    compact = normalized.replace(" ", "")
+    return next((keyword for keyword in terms if _keyword_in_text(keyword, normalized, compact)), "")
 
 
 def classify_flash_with_reason(flash: Flash) -> tuple[str | None, str]:
     """Classify a flash and return an auditable reason for the decision."""
     haystack = normalized_event_text(flash.text)
     compact = haystack.replace(" ", "")
-    if any(_keyword_in_text(keyword, haystack, compact) for keyword in BLACK_SWAN_TERMS):
-        return "black_swan", "black_swan_keyword"
+    # De-escalation has priority over the generic ``attack`` alias.  A
+    # confirmed cancellation/ceasefire is material-positive, not a black-swan
+    # escalation merely because the original conflict is mentioned.
     if any(_keyword_in_text(keyword, haystack, compact) for keyword in MATERIAL_POSITIVE_TERMS):
         return "material_positive", "material_positive_keyword"
+    if any(_keyword_in_text(keyword, haystack, compact) for keyword in BLACK_SWAN_TERMS):
+        return "black_swan", "black_swan_keyword"
     # Oil headlines are material only when supply, a large move, or a
     # geopolitical catalyst is also present. This avoids routine daily oil
     # commentary becoming a Telegram emergency alert.
     energy_without_context = any(_keyword_in_text(keyword, haystack, compact) for keyword in CATEGORY_KEYWORDS["energy"])
     if energy_without_context:
-        material_energy_terms = ("iran", "israel", "中東", "中东", "supply", "供應", "供给", "opec", "attack", "戰爭", "战争", "停火", "ceasefire", "truce", "%")
-        if any(_keyword_in_text(term, haystack, compact) for term in material_energy_terms):
+        if any(_keyword_in_text(term, haystack, compact) for term in ENERGY_CONTEXT_TERMS):
             return "energy", "energy_material_keyword"
     for category, keywords in CATEGORY_KEYWORDS.items():
         if category == "energy":
@@ -890,21 +918,21 @@ def _trusted_domain(url: str, supplied_domain: str) -> str:
 
 
 def _discovery_category_and_anchor(title: str) -> tuple[str, str] | None:
-    normalized = title.casefold()
+    normalized = normalized_event_text(title)
     category = classify_flash(Flash("discovery", title, "", ""))
     if category is None:
         return None
-    anchor = next((term for term in DISCOVERY_ANCHORS.get(category, ()) if term in normalized), "")
+    anchor = _keyword_hit(DISCOVERY_ANCHORS.get(category, ()), normalized)
     return (category, anchor) if anchor else None
 
 
 def _discovery_facts(title: str, category: str, anchor: str) -> tuple[set[str], set[str]]:
     """Extract the concrete actor/place and action facts used for agreement."""
-    normalized = title.casefold()
-    entities = {term for term in DISCOVERY_ENTITIES if term in normalized}
+    normalized = normalized_event_text(title)
+    entities = {term for term in DISCOVERY_ENTITIES if _keyword_in_text(term, normalized, normalized.replace(" ", ""))}
     if anchor in DISCOVERY_ENTITY_ANCHORS:
         entities.add(anchor)
-    actions = {term for term in DISCOVERY_ACTIONS.get(category, ()) if term in normalized}
+    actions = {term for term in DISCOVERY_ACTIONS.get(category, ()) if _keyword_in_text(term, normalized, normalized.replace(" ", ""))}
     return entities, actions
 
 
@@ -1062,7 +1090,10 @@ async def monitor_forever() -> None:
     shared_secret = configured("EXTERNAL_ALERT_SHARED_SECRET")
     interval = max(60, int(os.environ.get("JIN10_POLL_SECONDS", "120")))
     limit = min(100, max(1, int(os.environ.get("JIN10_FLASH_LIMIT", "30"))))
-    cooldown = max(1800, int(os.environ.get("JIN10_CATEGORY_COOLDOWN_SECONDS", "1800")))
+    # One event cooldown is shared by Jin10, GDELT and the durable ledger.
+    # The legacy category-specific variable is intentionally ignored so an
+    # old Railway setting cannot silently restore a two-hour cooldown.
+    cooldown = EVENT_COOLDOWN_SECONDS
     bootstrap = os.environ.get("JIN10_INITIAL_BACKFILL", "false").lower() == "true"
     gdelt_interval = max(900, int(os.environ.get("GDELT_POLL_SECONDS", "900")))
     gdelt_enabled = os.environ.get("GDELT_DISCOVERY_ENABLED", "true").lower() == "true"
@@ -1158,10 +1189,10 @@ async def monitor_forever() -> None:
                         store.set_classification(alert.event_id, "baseline")
                         continue
                     ledger_record = store.observe_alert(alert)
-                    if not store.ledger_may_dispatch(ledger_record, gdelt_interval if gdelt_interval >= 1800 else 7200):
+                    if not store.ledger_may_dispatch(ledger_record, EVENT_COOLDOWN_SECONDS):
                         logging.info("GDELT alert suppressed by durable event ledger: %s", ledger_record["canonical_key"])
                         continue
-                    if not store.may_dispatch(alert, gdelt_interval if gdelt_interval >= 1800 else 7200):
+                    if not store.may_dispatch(alert, EVENT_COOLDOWN_SECONDS):
                         continue
                     trace_id = store.record_outbox(alert, {
                         "source": alert.source, "event_id": alert.event_id,

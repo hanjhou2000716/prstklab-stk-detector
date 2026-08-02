@@ -86,6 +86,19 @@ def test_keyword_matching_normalizes_full_width_text_and_case():
     assert reason == "fed_keyword"
 
 
+def test_keyword_database_matches_simplified_chinese_and_english_typo():
+    simplified = monitor.Flash("cn-trump", "美国总统特朗普宣布新的关税政策", "", "2026-08-02T10:06:55+08:00")
+    assert monitor.classify_flash(simplified) == "policy"
+    typo = monitor.Flash("typo-fomc", "FOMC statement from the Federal Reserv", "", "2026-08-02T10:06:55+08:00")
+    assert monitor.classify_flash(typo) == "fed"
+
+
+def test_geopolitical_war_is_black_swan_candidate_but_not_directly_sent():
+    flash = monitor.Flash("war-1", "War escalates after missile attack", "Markets monitor supply disruption", "2026-08-02T10:06:55+08:00")
+    assert monitor.classify_flash(flash) == "black_swan"
+    assert monitor.alert_from_flash(flash) is None
+
+
 def test_unclassified_reason_distinguishes_energy_context_from_no_keyword():
     routine_oil = monitor.Flash("oil-audit", "WTI 原油日報", "市場等待例行庫存資料。", "2026-08-02T10:00:00+00:00")
     unrelated = monitor.Flash("unrelated-audit", "一般市場消息", "公司發布新品。", "2026-08-02T10:00:00+00:00")
@@ -167,6 +180,16 @@ def test_gdelt_requires_shared_entity_and_action_not_only_a_topic_anchor():
         monitor.DiscoveryArticle("Iran war raises oil risk", "https://apnews.com/b", "apnews.com", "2026-07-29T01:01:00+00:00"),
     ]
     assert monitor._matching_discovery_evidence(articles, "conflict", "iran") == ()
+
+
+def test_gdelt_supports_chinese_entity_and_action_aliases():
+    articles = [
+        monitor.DiscoveryArticle("特朗普宣布對伊朗停火", "https://www.reuters.com/a", "reuters.com", "2026-07-29T01:00:00+00:00"),
+        monitor.DiscoveryArticle("川普與伊朗達成停火協議", "https://apnews.com/b", "apnews.com", "2026-07-29T01:01:00+00:00"),
+    ]
+    alerts = monitor.cross_checked_gdelt_alerts(articles)
+    assert len(alerts) == 1
+    assert alerts[0].category == "material_positive"
 
 
 def test_gdelt_black_swan_headlines_wait_for_a_first_party_confirmation():

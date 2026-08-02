@@ -26,3 +26,13 @@ def test_ledger_retains_reminder_fields_and_prunes_after_thirty_days(tmp_path):
     assert reloaded.records[canonical_event_key(event)]["last_reminded_at"].startswith("2026-08-01")
     assert reloaded.prune(now + timedelta(days=31)) == 1
 
+
+def test_default_event_cooldown_is_thirty_minutes(tmp_path):
+    path = tmp_path / "ledger.json"
+    ledger = EventLedger(path)
+    event = {"source_key": "fed", "title": "FOMC statement", "url": "https://fed.example/x", "released_at": "2026-08-01T10:00:00+00:00"}
+    first = datetime(2026, 8, 1, 10, 0, tzinfo=UTC)
+    ledger.mark_reminded(event, now=first)
+    assert ledger.should_remind(event, now=first + timedelta(minutes=29)) is False
+    assert ledger.should_remind(event, now=first + timedelta(minutes=30)) is True
+

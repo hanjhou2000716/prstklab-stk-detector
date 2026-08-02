@@ -68,7 +68,7 @@ flowchart LR
 | 盤後速報 | 工作日 14:45 | 刷新研究結果後的台股盤後摘要與 Mini App |
 | 美股盤前 | 工作日 21:00，全年固定 | 台股回顧、美股盤前與國際風險快照 |
 | 官方／價格訊號 | 工作日每 5 分鐘 | 官方事件候選與固定價格門檻；只有符合規則才推播 |
-| 金十 MCP | Railway 預設每 120 秒 | 已授權 `list_flash` 快訊去重與簽章觸發 |
+| 金十 MCP | Railway 預設每 120 秒 | 已授權 `list_flash` 快訊去重與簽章觸發；同一事件統一 30 分鐘冷卻 |
 | GDELT 交叉核對 | Railway 預設每 15 分鐘 | 只作候選線索；需兩個可信媒體網域與同一事件錨點才可觸發 |
 
 市場休市或公開來源未提供新盤中列時，系統保留最近可核對收盤並標示資料日期／狀態；延遲報價不應觸發價格速報。Mini App 是靜態 Pages：它在「資料刷新或事件推播成功後」更新，不會因使用者單純開啟頁面而自行向交易所重新取價。
@@ -99,7 +99,7 @@ GDELT 首次成功讀取只建立基線，不補發舊聞；成功快取 15 分�
 
 工作日 08:45–13:30 的價格速報優先台指／台股盤勢。單一商品或加密資產的日內變動通常只更新 Mini App；只有已核對的重大政策、總經、戰爭或重要公司事件才會取代台股優先訊號進入短訊息。
 
-同一事件以 canonical key、來源 URL 正規化及人物／地點／動作指紋去重；同一主題預設 120 分鐘冷卻。台指高風險／高波動狀態最多每 60 分鐘補送一次，且必須有新鮮報價、風險階段跨越或明顯反轉。所有詳細內容採「事件／為何重要／可能連動／股市觀察」四段結構，明示教育性用途，沒有買賣、目標價、進出場或部位指令。
+同一事件以 canonical key、來源 URL 正規化及人物／地點／動作指紋去重；Jin10、GDELT、官方事件與事件帳本統一採 30 分鐘冷卻，只有風險升級或新事實可提前提醒。台指高風險／高波動狀態仍必須有新鮮報價、風險階段跨越或明顯反轉。所有詳細內容採「事件／為何重要／可能連動／股市觀察」四段結構，明示教育性用途，沒有買賣、目標價、進出場或部位指令。
 
 ## 量化研究策略
 
@@ -390,7 +390,11 @@ The monitor now connects independently to KOFIA Korea-wide credit financing, Bin
 
 The Railway monitor polls the public GDELT DOC endpoint every 15 minutes by default. A successful response is cached for 15 minutes; during a temporary failure or rate limit, the most recent successful cache may be used for up to 120 minutes and is labelled with its original fetch time. Only discovery articles published within the last 45 minutes can enter the current candidate set. Set `GDELT_DISCOVERY_ENABLED=false` to pause this layer without disabling official monitors.
 
-GDELT is never treated as final proof. A candidate must have at least two trusted publisher domains and a shared concrete entity/place/action intersection. Black-swan or major-disaster candidates are not dispatched from GDELT alone; they require a matching first-party official source (for example USGS, GDACS, Fed, BLS, EIA, SEC or TWSE). The first successful poll creates a baseline and does not replay historical headlines; the existing SQLite ledger applies event deduplication and cooldowns.
+GDELT is never treated as final proof. A candidate must have at least two trusted publisher domains and a shared concrete entity/place/action intersection. Black-swan, war and major-disaster candidates are not dispatched from GDELT alone; they require a matching first-party official source and related-market synchronization. The first successful poll creates a baseline and does not replay historical headlines; the existing SQLite ledger applies event deduplication and the shared 30-minute cooldown.
+
+### 多語關鍵字與模糊比對
+
+事件別名庫位於 [`config/event_keywords.json`](config/event_keywords.json)，每個分類同時收錄繁體中文、簡體中文與英文別名，例如「川普／特朗普／Trump」、「伊朗／Iran」、「半導體／芯片／semiconductor」。標題會先做 Unicode NFKC、大小寫、空白與全半形正規化，再進行精確比對；英文單字與中文短詞才會進入受限的高相似度模糊比對，避免整句相似造成誤報。關鍵字命中只是候選條件，黑天鵝仍須官方來源與市場同步確認。
 The Railway `/health` endpoint exposes non-secret runtime diagnostics for the Jin10 and GDELT loops (enabled state, source status, last success/failure time, item counts and error class). It also exposes `delivery` with the latest outbox status, latest Telegram receipt status, aggregate counts, Trace ID and last error. `delivered`, `partial`, `failed`, `pending` and `not_checked` are intentionally separate states, so a healthy monitor cannot be mistaken for a successfully delivered Telegram message. The platform health status remains `ok` for process liveness; inspect the per-source and delivery status to distinguish an unavailable provider, a stopped service, or a recipient failure.
 FRED/EIA keys are required by the GitHub Actions Phase 2 collectors. If they are also placed in Railway Shared Variables, they must be explicitly shared with the target service; the current Jin10/GDELT bridge does not consume them. See [FRED/EIA deployment placement](docs/FRED_EIA_API_SETUP.md).
 
