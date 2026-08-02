@@ -11,3 +11,4 @@ def test_emergency_workflow_has_fixed_major_event_categories_and_mini_app_delive
     assert "external-market-alert" in workflow
     assert "EXTERNAL_ALERT_SHARED_SECRET" in workflow
     assert "actions/cache/restore@v4" in workflow
+    assert "src.delivery_callback" in workflow

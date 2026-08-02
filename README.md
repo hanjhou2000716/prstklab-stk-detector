@@ -199,8 +199,12 @@ cron-job.org 可透過 GitHub Repository Dispatch 備援定時快報、量化研
 | `GITHUB_DISPATCH_TOKEN` | Railway Service Variable | 觸發 Repository Dispatch 的 fine-grained PAT | Railway 監測器才需要 |
 | `EXTERNAL_ALERT_SHARED_SECRET` | GitHub Secret＋Railway Service Variable | 驗證外部 HMAC | Railway 監測器才需要 |
 | `GITHUB_REPOSITORY` | Railway Service Variable | `owner/repository` | Railway 監測器才需要 |
+| `RAILWAY_STATUS_URL` | GitHub Actions Variable | Railway 公開服務根網址 | 選用；回寫 Telegram 派送回執 |
+| `RAILWAY_STATUS_SHARED_SECRET` | GitHub Actions Secret＋Railway `DELIVERY_STATUS_SHARED_SECRET` | 驗證派送回執 HMAC | 建議啟用 |
 
 多人推播只維護 `TELEGRAM_CHAT_IDS`；程式刻意不讀取舊的單數 `TELEGRAM_CHAT_ID`，避免新增／移除成員時被舊設定覆蓋。每位收件人必須先對 Bot 按 **Start**；未啟動、封鎖 Bot 或單一 Chat ID 失敗時，其他收件人仍會繼續收到。
+
+每次派送都有 Trace ID。Actions 會輸出 `delivery_status`、成功／失敗數與失敗收件人雜湊；暫時性錯誤只重試失敗收件人，HTTP 429 遵守 Telegram `Retry-After`。Railway Volume 的 SQLite `delivery_outbox` 保存來源事件到 GitHub 的派送狀態；設定上述回執變數後，Actions 會以 HMAC 回寫 `/delivery-status`，保存逐收件人失敗雜湊。回執不包含 Bot Token 或原始 Chat ID。所有收件人都失敗時，工作步驟會明確失敗且不建立事件成功鎖。
 
 ## GitHub Actions 操作手冊
 
