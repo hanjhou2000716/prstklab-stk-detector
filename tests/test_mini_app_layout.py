@@ -74,6 +74,24 @@ def test_dashboard_sections_share_card_chrome_and_news_uses_full_width_switching
     assert ".news-panel[hidden]" in styles
 
 
+def test_empty_briefing_market_containers_do_not_leave_visual_placeholder_blocks():
+    styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
+
+    assert ".briefing-market-topics:empty" in styles
+    assert ".briefing-dynamic-markets:empty" in styles
+
+
+def test_briefing_report_uses_the_dedicated_observation_list_without_duplicate_market_cards():
+    page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert 'id="briefing-observations"' in page
+    assert 'id="briefing-market-topics"' not in page
+    assert 'id="briefing-dynamic-markets"' not in page
+    assert 'getElementById("briefing-market-topics")' not in app
+    assert 'getElementById("briefing-dynamic-markets")' not in app
+
+
 def test_quote_provenance_uses_the_compact_provider_and_time_format():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
 
