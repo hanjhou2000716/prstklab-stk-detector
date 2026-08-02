@@ -391,6 +391,7 @@ The monitor now connects independently to KOFIA Korea-wide credit financing, Bin
 The Railway monitor polls the public GDELT DOC endpoint every 15 minutes by default. A successful response is cached for 15 minutes; during a temporary failure or rate limit, the most recent successful cache may be used for up to 120 minutes and is labelled with its original fetch time. Only discovery articles published within the last 45 minutes can enter the current candidate set. Set `GDELT_DISCOVERY_ENABLED=false` to pause this layer without disabling official monitors.
 
 GDELT is never treated as final proof. A candidate must have at least two trusted publisher domains and a shared concrete entity/place/action intersection. Black-swan, war and major-disaster candidates are not dispatched from GDELT alone; they require a matching first-party official source and related-market synchronization. The first successful poll creates a baseline and does not replay historical headlines; the existing SQLite ledger applies event deduplication and the shared 30-minute cooldown.
+GDELT 交叉核對會同時使用可取得的標題與摘要／描述欄位；伊朗／川普談判事件補充 `talks`、`negotiations`、`deadline`、`談判`、`未談妥`、`談判破裂` 等動作別名，避免標題只有「美國與伊朗局勢」而把實際事件內容遺漏。
 
 ### 多語關鍵字與模糊比對
 
