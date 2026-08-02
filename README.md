@@ -441,3 +441,8 @@ The report exposes recipient counts and hashed failure counts only; it never
 prints a bot token or raw Chat ID. A successful Telegram send still needs the
 Railway `/health` `delivery.last_receipt_status` to become `delivered` before
 the complete chain is considered verified.
+
+GitHub Actions workflow `quality.yml` runs the full test suite, Python compile
+check, and this dry-run on every push/PR to `main`. It injects only dummy CI
+recipients and an example HTTPS URL; the workflow deliberately has no Telegram
+token and never uses `--send`.
