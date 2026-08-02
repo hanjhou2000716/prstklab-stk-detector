@@ -6,7 +6,7 @@ import argparse
 import os
 
 from src.config import get_settings
-from src.telegram_client import send_briefs, validate_brief
+from src.telegram_client import send_briefs, summarize_deliveries, validate_brief
 
 
 STRICT_HIGH_RISK_CATEGORIES = {"black_swan", "conflict"}
@@ -68,7 +68,24 @@ def main() -> None:
         text=text,
         dashboard_url=settings.dashboard_url,
     )
-    print(f"重大快訊已發送給 {len(results)} 位收件人。")
+    summary = summarize_deliveries(results)
+    trace_id = os.environ.get("TRACE_ID", f"manual-{args.category}")
+    lines = [
+        f"trace_id={trace_id}",
+        f"delivered_count={summary.delivered_count}",
+        f"failed_count={summary.failed_count}",
+        f"delivery_status={'delivered' if summary.failed_count == 0 else 'partial' if summary.delivered_count else 'failed'}",
+        f"failed_recipient_hashes={','.join(summary.failed_recipient_hashes)}",
+    ]
+    destination = os.environ.get("GITHUB_OUTPUT")
+    if destination:
+        with open(destination, "a", encoding="utf-8") as handle:
+            handle.write("\n".join(lines) + "\n")
+    else:
+        print("\n".join(lines))
+    if not summary.any_delivered:
+        raise RuntimeError("Telegram delivery failed for every configured recipient")
+    print(f"Telegram delivery: {summary.delivered_count} delivered, {summary.failed_count} failed")
 
 
 if __name__ == "__main__":

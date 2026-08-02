@@ -170,6 +170,11 @@ class Alert:
         return "\n".join((self.source, self.event_id, self.category, self.summary, self.occurred_at, trace))
 
 
+def alert_trace_id(alert: Alert) -> str:
+    """Stable correlation ID shared by Railway, GitHub Actions and logs."""
+    return f"prstk-{alert.source}-{alert_canonical_key(alert)[:20]}"
+
+
 def normalize_source_url(value: str) -> str:
     """Keep a stable URL identity while dropping analytics parameters."""
     raw = str(value or "").strip()
@@ -362,6 +367,82 @@ class SeenStore:
                 updated_at TEXT NOT NULL
             )"""
         )
+        # Formal Railway outbox: dispatch attempts survive GitHub Actions
+        # cache eviction and can be retried/inspected without replaying every
+        # source event.
+        self.connection.execute(
+            """CREATE TABLE IF NOT EXISTS delivery_outbox (
+                trace_id TEXT PRIMARY KEY,
+                canonical_key TEXT NOT NULL,
+                source TEXT NOT NULL,
+                event_id TEXT NOT NULL,
+                payload_json TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                attempts INTEGER NOT NULL DEFAULT 0,
+                last_error TEXT,
+                next_retry_at TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )"""
+        )
+        self.connection.execute(
+            """CREATE TABLE IF NOT EXISTS incoming_events (
+                event_id TEXT PRIMARY KEY,
+                source TEXT NOT NULL,
+                title TEXT,
+                content TEXT,
+                occurred_at TEXT,
+                classification TEXT NOT NULL DEFAULT 'unclassified',
+                first_seen_at TEXT NOT NULL,
+                last_seen_at TEXT NOT NULL,
+                last_error TEXT
+            )"""
+        )
+        self.connection.commit()
+
+    def record_incoming_flash(self, flash: Flash) -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        self.connection.execute(
+            """INSERT INTO incoming_events(event_id,source,title,content,occurred_at,first_seen_at,last_seen_at)
+               VALUES(?,?,?,?,?,?,?)
+               ON CONFLICT(event_id) DO UPDATE SET title=excluded.title, content=excluded.content,
+                 occurred_at=excluded.occurred_at, last_seen_at=excluded.last_seen_at""",
+            (flash.event_id, "jin10", flash.title, flash.content, flash.occurred_at, now, now),
+        )
+        self.connection.commit()
+
+    def record_outbox(self, alert: Alert, payload: dict[str, Any]) -> str:
+        trace_id = alert_trace_id(alert)
+        now = datetime.now(timezone.utc).isoformat()
+        self.connection.execute(
+            """INSERT INTO delivery_outbox(trace_id,canonical_key,source,event_id,payload_json,status,created_at,updated_at)
+               VALUES(?,?,?,?,?,'pending',?,?)
+               ON CONFLICT(trace_id) DO UPDATE SET payload_json=excluded.payload_json, updated_at=excluded.updated_at""",
+            (trace_id, alert_canonical_key(alert), alert.source, alert.event_id, json.dumps(payload, ensure_ascii=False), now, now),
+        )
+        self.connection.commit()
+        return trace_id
+
+    def mark_outbox(self, trace_id: str, status: str, error: str | None = None) -> None:
+        if status not in {"pending", "sent", "failed"}:
+            raise ValueError(f"unsupported outbox status: {status}")
+        self.connection.execute(
+            "UPDATE delivery_outbox SET status=?, attempts=attempts+1, last_error=?, updated_at=? WHERE trace_id=?",
+            (status, error, datetime.now(timezone.utc).isoformat(), trace_id),
+        )
+        self.connection.commit()
+
+    def release_classification(self, event_id: str, error: str) -> None:
+        """Return a failed dispatch to the retryable state."""
+        now = datetime.now(timezone.utc).isoformat()
+        self.connection.execute(
+            "UPDATE seen SET classification='unclassified', classified_at=NULL WHERE event_id=?",
+            (event_id,),
+        )
+        self.connection.execute(
+            "UPDATE incoming_events SET classification='unclassified', last_error=?, last_seen_at=? WHERE event_id=?",
+            (error[:500], now, event_id),
+        )
         self.connection.commit()
 
     def add_if_new(self, event_id: str) -> bool:
@@ -405,6 +486,10 @@ class SeenStore:
             "UPDATE seen SET classification = ?, classified_at = ? WHERE event_id = ? AND classification = 'unclassified'",
             (classification, now, event_id),
         )
+        self.connection.execute(
+            "UPDATE incoming_events SET classification = ?, last_seen_at = ? WHERE event_id = ?",
+            (classification, now, event_id),
+        )
         self.connection.commit()
         return True
 
@@ -420,6 +505,10 @@ class SeenStore:
             raise ValueError(f"unsupported event classification: {classification}")
         self.connection.execute(
             "UPDATE seen SET classification = ?, classified_at = ? WHERE event_id = ?",
+            (classification, datetime.now(timezone.utc).isoformat(), event_id),
+        )
+        self.connection.execute(
+            "UPDATE incoming_events SET classification = ?, last_seen_at = ? WHERE event_id = ?",
             (classification, datetime.now(timezone.utc).isoformat(), event_id),
         )
         self.connection.commit()
@@ -531,6 +620,7 @@ def sign(alert: Alert, shared_secret: str) -> str:
 
 
 async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_secret: str) -> None:
+    trace_id = alert_trace_id(alert)
     payload = {
         "event_type": "external-market-alert",
         "client_payload": {
@@ -544,6 +634,7 @@ async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_se
             "source_url": normalize_source_url(alert.evidence_payload[0]["url"] if alert.evidence_payload else ""),
             "verified_sources": [normalize_source_url(item["url"]) for item in alert.evidence_payload],
             "event_ledger_retention_days": 30,
+            "trace_id": trace_id,
             "signature": sign(alert, shared_secret),
         },
     }
@@ -552,9 +643,30 @@ async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_se
         "Authorization": f"Bearer {token}",
         "X-GitHub-Api-Version": GITHUB_API_VERSION,
     }
+    endpoint = f"https://api.github.com/repos/{repository}/dispatches"
     async with httpx.AsyncClient(timeout=20) as client:
-        response = await client.post(f"https://api.github.com/repos/{repository}/dispatches", headers=headers, json=payload)
-    response.raise_for_status()
+        for attempt in range(3):
+            try:
+                response = await client.post(endpoint, headers=headers, json=payload)
+            except httpx.HTTPError as exc:
+                if attempt == 2:
+                    logging.error("dispatch failed trace_id=%s error=%s", trace_id, type(exc).__name__)
+                    raise
+                await asyncio.sleep(2**attempt)
+                continue
+            if response.status_code == 429 or response.status_code >= 500:
+                if attempt == 2:
+                    response.raise_for_status()
+                retry_after = 0
+                try:
+                    retry_after = int(response.json().get("parameters", {}).get("retry_after", 0))
+                except (TypeError, ValueError, AttributeError):
+                    pass
+                await asyncio.sleep(min(60, max(1, retry_after)) if retry_after else 2**attempt)
+                continue
+            response.raise_for_status()
+            logging.info("dispatch accepted trace_id=%s status=%s", trace_id, response.status_code)
+            return
 
 
 def default_flash_arguments(schema: dict[str, Any], requested_limit: int) -> dict[str, Any]:
@@ -757,6 +869,7 @@ async def monitor_forever() -> None:
             flashes.sort(key=lambda item: item.occurred_at)
             dispatched = 0
             for flash in flashes:
+                store.record_incoming_flash(flash)
                 previous_classification = store.classification_for(flash.event_id)
                 alert = alert_from_flash(flash)
                 classification = "in_scope" if alert is not None else "unclassified"
@@ -778,7 +891,19 @@ async def monitor_forever() -> None:
                 if not store.may_dispatch(alert, cooldown):
                     logging.info("Jin10 alert suppressed by category cooldown: %s", alert.category)
                     continue
-                await dispatch_alert(alert, token=github_token, repository=repository, shared_secret=shared_secret)
+                trace_id = store.record_outbox(alert, {
+                    "source": alert.source, "event_id": alert.event_id,
+                    "category": alert.category, "summary": alert.summary,
+                    "occurred_at": alert.occurred_at,
+                })
+                try:
+                    await dispatch_alert(alert, token=github_token, repository=repository, shared_secret=shared_secret)
+                except Exception as error:
+                    store.mark_outbox(trace_id, "failed", type(error).__name__)
+                    store.release_classification(flash.event_id, type(error).__name__)
+                    logging.exception("Jin10 dispatch failed trace_id=%s; event remains retryable", trace_id)
+                    continue
+                store.mark_outbox(trace_id, "sent")
                 store.record_dispatch(alert)
                 store.set_classification(flash.event_id, "in_scope")
                 store.mark_alert_reminded(alert, escalated="高風險" in alert.summary)
@@ -810,7 +935,19 @@ async def monitor_forever() -> None:
                         continue
                     if not store.may_dispatch(alert, gdelt_interval if gdelt_interval >= 1800 else 7200):
                         continue
-                    await dispatch_alert(alert, token=github_token, repository=repository, shared_secret=shared_secret)
+                    trace_id = store.record_outbox(alert, {
+                        "source": alert.source, "event_id": alert.event_id,
+                        "category": alert.category, "summary": alert.summary,
+                        "occurred_at": alert.occurred_at,
+                    })
+                    try:
+                        await dispatch_alert(alert, token=github_token, repository=repository, shared_secret=shared_secret)
+                    except Exception as error:
+                        store.mark_outbox(trace_id, "failed", type(error).__name__)
+                        store.release_classification(alert.event_id, type(error).__name__)
+                        logging.exception("GDELT dispatch failed trace_id=%s; event remains retryable", trace_id)
+                        continue
+                    store.mark_outbox(trace_id, "sent")
                     store.record_dispatch(alert)
                     store.set_classification(alert.event_id, "in_scope")
                     store.mark_alert_reminded(alert, escalated="高風險" in alert.summary)
