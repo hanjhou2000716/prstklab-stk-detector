@@ -3,9 +3,22 @@
 from __future__ import annotations
 
 import argparse
+import os
 
 from src.config import get_settings
 from src.telegram_client import send_briefs, validate_brief
+
+
+STRICT_HIGH_RISK_CATEGORIES = {"black_swan", "conflict"}
+
+
+def high_risk_confirmation_ready(category: str) -> bool:
+    if category not in STRICT_HIGH_RISK_CATEGORIES:
+        return True
+    return (
+        os.environ.get("EXTERNAL_OFFICIAL_CONFIRMED", "").lower() == "true"
+        and os.environ.get("EXTERNAL_MARKET_SYNC_CONFIRMED", "").lower() == "true"
+    )
 
 
 CATEGORY_LABELS = {
@@ -45,6 +58,9 @@ def main() -> None:
     settings = get_settings()
     if not settings.telegram_ready:
         raise RuntimeError("缺少 Telegram 設定，無法發送快訊。")
+    if args.category in STRICT_HIGH_RISK_CATEGORIES and not high_risk_confirmation_ready(args.category):
+        print("重大災害尚未同時完成官方來源與相關市場同步確認，僅保留 Mini App 觀察，不發送高風險 Telegram 快訊。")
+        return
     text = build_emergency_brief(args.category, args.summary)
     results = send_briefs(
         token=settings.telegram_bot_token or "",

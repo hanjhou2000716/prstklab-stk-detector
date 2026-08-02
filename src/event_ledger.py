@@ -27,6 +27,12 @@ FACT_FIELDS = {
     "action": ("action", "actions", "event_action", "verbs"),
 }
 
+RISK_RANK = {"觀察": 0, "持續觀察": 0, "市場待核對": 0, "警戒": 1, "高波動": 1, "高風險": 2}
+
+
+def _risk_rank(value: Any) -> int:
+    return RISK_RANK.get(str(value or "").strip(), 0)
+
 
 def normalize_source_url(value: Any) -> str:
     """Normalise a public URL without discarding the article identity."""
@@ -115,9 +121,10 @@ def canonical_event_key(event: dict[str, Any] | None) -> str:
         # A source URL is a fallback identity only.  Topic + facts + release
         # bucket lets syndicated reports converge across different URLs.
         identity = "|".join((topic, facts["person"], facts["location"], facts["action"], _published_bucket(event.get("released_at") or event.get("published_at"), 120)))
+        # Escalation is a state transition of the same event, not a new
+        # identity.  Keeping it out of the key lets the ledger record an
+        # upgrade without replaying the original event after a cache reset.
         material = identity if any(facts.values()) else f"{identity}|{source_url}"
-        if event.get("escalation"):
-            material += "|escalated"
     return hashlib.sha256(material.encode("utf-8")).hexdigest()[:32]
 
 
@@ -166,6 +173,7 @@ class EventLedger:
         record = self.records.get(key)
         changed = False
         if record is None:
+            risk_level = str(event.get("risk_level") or "觀察")
             record = {
                 "canonical_key": key,
                 "event_type": event.get("event_type") or event.get("kind") or "market",
@@ -177,6 +185,8 @@ class EventLedger:
                 "first_discovered_at": now_iso,
                 "last_reminded_at": None,
                 "escalated": bool(event.get("escalation") or event.get("risk_level") == "高風險"),
+                "risk_level": risk_level,
+                "risk_rank": _risk_rank(risk_level),
                 "verified_sources": [source_url] if source_url else [],
                 "last_title": str(event.get("title") or event.get("summary") or ""),
                 "updated_at": now_iso,
@@ -186,6 +196,15 @@ class EventLedger:
             changed = True
         else:
             is_new = False
+            previous_escalated = bool(record.get("escalated"))
+            previous_rank = int(record.get("risk_rank", _risk_rank(record.get("risk_level"))))
+            incoming_level = str(event.get("risk_level") or record.get("risk_level") or "觀察")
+            incoming_rank = _risk_rank(incoming_level)
+            risk_upgraded = incoming_rank > previous_rank
+            if incoming_rank != previous_rank or incoming_level != record.get("risk_level"):
+                record["risk_level"] = incoming_level
+                record["risk_rank"] = incoming_rank
+                changed = True
             for field in ("person", "location", "action"):
                 if facts[field]:
                     field_name = f"{field}_fingerprint"
@@ -199,7 +218,7 @@ class EventLedger:
                 record["source_url"] = source_url
                 record["source_domain"] = source_domain
                 changed = True
-            escalated = bool(record.get("escalated") or event.get("escalation") or event.get("risk_level") == "高風險")
+            escalated = bool(record.get("escalated") or event.get("escalation") or incoming_rank >= 2)
             if escalated != bool(record.get("escalated")):
                 record["escalated"] = escalated
                 changed = True
@@ -212,11 +231,21 @@ class EventLedger:
         if changed:
             record["updated_at"] = now_iso
         removed = self.prune(current)
-        return {**record, "is_new": is_new, "changed": bool(changed or removed)}
+        # Keep upgrade detection in the return value only; it is a delivery
+        # decision, not durable event content.
+        if record.get("risk_rank", 0) >= 0 and is_new:
+            risk_upgraded = False
+        else:
+            risk_upgraded = locals().get("risk_upgraded", False)
+        escalation_upgraded = bool(
+            not is_new and event.get("escalation") and not locals().get("previous_escalated", False)
+        )
+        return {**record, "is_new": is_new, "risk_upgraded": risk_upgraded,
+                "escalation_upgraded": escalation_upgraded, "changed": bool(changed or removed)}
 
     def should_remind(self, event: dict[str, Any], *, cooldown_seconds: int = 7200, now: datetime | None = None) -> bool:
         record = self.observe(event, now=now)
-        if record["is_new"] or event.get("escalation") or event.get("risk_level") == "高風險":
+        if record["is_new"] or record.get("risk_upgraded") or record.get("escalation_upgraded"):
             return True
         raw = record.get("last_reminded_at")
         if not raw:

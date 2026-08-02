@@ -7,6 +7,7 @@ import hashlib
 import hmac
 import json
 import re
+import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -17,6 +18,17 @@ from src.emergency_alert import CATEGORY_LABELS, build_emergency_brief
 
 ALLOWED_SOURCES = {"jin10", "gdelt"}
 EVENT_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
+STRICT_HIGH_RISK_CATEGORIES = {"black_swan", "conflict"}
+
+
+def high_risk_confirmation_ready(category: str) -> bool:
+    """Require explicit official and market-sync confirmations for disasters."""
+    if category not in STRICT_HIGH_RISK_CATEGORIES:
+        return True
+    return (
+        str(os.environ.get("EXTERNAL_OFFICIAL_CONFIRMED", "")).lower() == "true"
+        and str(os.environ.get("EXTERNAL_MARKET_SYNC_CONFIRMED", "")).lower() == "true"
+    )
 
 
 @dataclass(frozen=True)
@@ -144,7 +156,8 @@ def stamp_snapshot(alert: ExternalAlert, snapshot_path: Path) -> None:
         "received_at": received_at.isoformat(),
         "first_discovered_at": received_at.isoformat(),
         "last_reminded_at": received_at.isoformat(),
-        "escalated": alert.category in {"black_swan", "market"},
+        "escalated": alert.category in {"black_swan", "market"} and high_risk_confirmation_ready(alert.category),
+        "high_risk_eligible": high_risk_confirmation_ready(alert.category),
         "expires_at": (received_at + timedelta(hours=6)).isoformat(),
     }
     snapshot_path.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")

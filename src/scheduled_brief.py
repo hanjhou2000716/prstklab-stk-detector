@@ -120,39 +120,45 @@ def _pick_event(snapshot: dict, slot: str) -> dict | None:
 
 
 def build_brief(snapshot: dict, slot: str) -> str:
-    """Create a neutral, watch-friendly brief that always stays under 30 characters."""
+    """Create a 30-character watch brief; detail remains in the Mini App."""
+    from src.event_output import short_event_message
+
     label = SLOT_LABELS[slot]
     quote = _pick_quote(snapshot, slot)
     event = _pick_event(snapshot, slot)
-    event_label = event.get("brief_title") if event else None
-    legacy_event_label = event.get("short_label") if event else None
     if not quote:
         return f"{label}｜市場資料暫時無法取得"
     pct = quote.get("change_percent")
     if pct is None:
         return f"{label}｜{quote['ticker']} 資料暫時無法取得"
+    if event and (event.get("market_direction") or event.get("market_move")):
+        prepared = dict(event)
+        instrument = prepared.get("instrument") or quote
+        ticker = str(instrument.get("ticker") or quote.get("ticker") or "市場")
+        if ticker == "TAIEX":
+            ticker = "台指"
+        prepared.setdefault("short_label", prepared.get("pattern") or ticker)
+        prepared.setdefault("market_direction", "上漲" if float(pct) > 0 else "下跌" if float(pct) < 0 else "持平")
+        prepared.setdefault("market_move", f"{float(pct):+.1f}%")
+        prepared.setdefault("risk_level", "高波動" if abs(float(pct)) >= 2 else "觀察")
+        return short_event_message(prepared, prefix=label)[:MAX_BRIEF_LENGTH]
+    # Compatibility fallback for sparse test/legacy snapshots. Production
+    # events produced by event_alerts carry the canonical fields above.
     icon = "📈" if pct > 1 else "📉" if pct < -1 else "🟰"
     suffix = f"{quote['ticker']}{icon}{pct:+.1f}%"
-    if event and event.get("kind") == "market_signal" and pct is not None:
-        instrument = event.get("instrument") or quote
-        market = "台指" if instrument.get("ticker") == "TAIEX" else str(instrument.get("ticker") or quote["ticker"])
-        pattern = str(event.get("pattern") or "價格波動")
-        return f"{label}｜{market} {float(pct):+.1f}%｜{pattern}"[:MAX_BRIEF_LENGTH]
-    if event_label:
-        # The event card title is designed for a watch notification: clear
-        # situation, move type and risk state, while the Mini App holds detail.
-        return f"{label}｜{str(event_label)[:MAX_BRIEF_LENGTH - len(label) - 1]}"
-    if not legacy_event_label:
-        return f"{label}｜{suffix}"
-
-    # Keep the market and move first. If a news label is unusually long,
-    # truncate only that optional context instead of letting Telegram reject
-    # the entire watch-sized brief.
-    prefix = f"{label}｜"
-    available = MAX_BRIEF_LENGTH - len(prefix) - len(suffix) - 1  # final separator
-    if available <= 0:
-        return f"{prefix}{suffix}"
-    return f"{prefix}{str(legacy_event_label)[:available]}｜{suffix}"
+    if event:
+        if event.get("kind") == "market_signal" and event.get("pattern"):
+            instrument = event.get("instrument") or quote
+            market = "台指" if instrument.get("ticker") == "TAIEX" else str(instrument.get("ticker") or quote["ticker"])
+            return f"{label}｜{market} {float(pct):+.1f}%｜{event.get('pattern')}"[:MAX_BRIEF_LENGTH]
+        if event.get("brief_title"):
+            return f"{label}｜{event['brief_title']}"[:MAX_BRIEF_LENGTH]
+        event_label = event.get("short_label")
+        if event_label:
+            prefix = f"{label}｜"
+            available = MAX_BRIEF_LENGTH - len(prefix) - len(suffix) - 1
+            return f"{prefix}{str(event_label)[:max(0, available)]}｜{suffix}"[:MAX_BRIEF_LENGTH]
+    return f"{label}｜{suffix}"
 
 
 def write_event_lock_key(event: dict | None) -> None:

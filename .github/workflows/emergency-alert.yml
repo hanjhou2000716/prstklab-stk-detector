@@ -41,6 +41,8 @@ jobs:
       EXTERNAL_OCCURRED_AT: ${{ github.event.client_payload.occurred_at || '' }}
       EXTERNAL_EVIDENCE: ${{ toJson(github.event.client_payload.evidence || fromJson('[]')) }}
       EXTERNAL_SIGNATURE: ${{ github.event.client_payload.signature || '' }}
+      EXTERNAL_OFFICIAL_CONFIRMED: ${{ github.event.client_payload.official_confirmed || '' }}
+      EXTERNAL_MARKET_SYNC_CONFIRMED: ${{ github.event.client_payload.market_sync_confirmed || '' }}
       EXTERNAL_ALERT_SHARED_SECRET: ${{ secrets.EXTERNAL_ALERT_SHARED_SECRET }}
       NEWS_CACHE_PATH: site/data/news-cache.json
     steps:
