@@ -74,6 +74,28 @@ def test_chinese_geopolitical_escalation_is_conflict_candidate():
     assert monitor.classify_flash(flash) == "conflict"
 
 
+def test_iran_gulf_context_requires_anchor_and_geopolitical_action():
+    flash = monitor.Flash(
+        "iran-gulf-context",
+        "海灣股市上漲",
+        "伊朗相關地緣情勢仍在發展，需觀察原油供給與航運中斷。",
+        "2026-08-02T10:06:55+08:00",
+    )
+    classification, reason = monitor.classify_flash_with_reason(flash)
+    assert classification == "conflict"
+    assert reason == "iran_gulf_context_market_keyword"
+
+
+def test_bare_gulf_market_move_does_not_trigger_geopolitical_alert():
+    flash = monitor.Flash(
+        "gulf-market-only",
+        "海灣股市上漲",
+        "投資人關注企業財報與市場成交量。",
+        "2026-08-02T10:06:55+08:00",
+    )
+    assert monitor.alert_from_flash(flash) is None
+
+
 def test_keyword_matching_normalizes_full_width_text_and_case():
     flash = monitor.Flash(
         "full-width-fomc",
@@ -212,6 +234,16 @@ def test_gdelt_requires_shared_entity_and_action_not_only_a_topic_anchor():
         monitor.DiscoveryArticle("Iran war raises oil risk", "https://apnews.com/b", "apnews.com", "2026-07-29T01:01:00+00:00"),
     ]
     assert monitor._matching_discovery_evidence(articles, "conflict", "iran") == ()
+
+
+def test_gdelt_can_discover_iran_gulf_geopolitical_market_context():
+    articles = [
+        monitor.DiscoveryArticle("Gulf stocks rise as Iran tensions keep oil supply risk elevated", "https://www.reuters.com/a", "reuters.com", "2026-07-29T01:00:00+00:00"),
+        monitor.DiscoveryArticle("Persian Gulf markets react to Iran geopolitical tensions and shipping risk", "https://apnews.com/b", "apnews.com", "2026-07-29T01:01:00+00:00"),
+    ]
+    alerts = monitor.cross_checked_gdelt_alerts(articles)
+    assert len(alerts) == 1
+    assert alerts[0].category == "conflict"
 
 
 def test_gdelt_supports_chinese_entity_and_action_aliases():
