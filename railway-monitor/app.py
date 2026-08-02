@@ -74,6 +74,13 @@ def _load_keyword_database() -> dict[str, Any]:
                 "policy_actions": ["tariff", "tariffs", "關稅", "关税", "sanction", "制裁", "export control", "出口管制"],
                 "deescalation_actions": ["backs down", "walks back", "tariff pause", "tariff delay", "暫緩關稅", "暂缓关税", "反悔", "退縮", "退缩"],
             },
+            "iran_gulf_context": {
+                "anchors": ["iran", "iranian", "gulf", "hormuz", "伊朗", "海灣", "海湾", "荷姆茲海峽", "霍尔木兹海峡"],
+                "actions": ["geopolitical", "tension", "conflict", "escalation", "attack", "ceasefire", "supply disruption", "shipping", "地緣", "地缘", "緊張", "紧张", "衝突", "冲突", "供應中斷", "供应中断", "航運", "航运"],
+                "high_signal_actions": ["geopolitical", "conflict", "escalation", "attack", "supply disruption", "shipping", "地緣", "地缘", "衝突", "冲突", "升級", "升级", "供應中斷", "供应中断", "航運", "航运"],
+                "regional_anchors": ["persian gulf", "gulf", "hormuz", "波斯灣", "波斯湾", "海灣", "海湾", "荷姆茲海峽", "霍尔木兹海峡"],
+                "market_context": ["oil", "wti", "brent", "shipping", "usd", "treasury", "原油", "油價", "航運", "美元", "美債", "股市", "市场"],
+            },
             "gdelt": {"query": "(war OR ceasefire OR tariff OR earthquake OR semiconductor OR 戰爭 OR 停火 OR 關稅 OR 地震 OR 半導體)", "entities": [], "actions": {}}
         }
 
@@ -89,6 +96,12 @@ TRUMP_ENTITY_TERMS = tuple(TRUMP_RULES.get("entities", ()))
 TRUMP_POLICY_ACTION_TERMS = tuple(TRUMP_RULES.get("policy_actions", ()))
 TRUMP_TACO_TERMS = tuple(TRUMP_RULES.get("taco", ()))
 TRUMP_DEESCALATION_TERMS = tuple(TRUMP_RULES.get("deescalation_actions", ()))
+IRAN_GULF_RULES = KEYWORD_DATABASE.get("iran_gulf_context") or {}
+IRAN_GULF_ANCHOR_TERMS = tuple(IRAN_GULF_RULES.get("anchors", ()))
+IRAN_GULF_ACTION_TERMS = tuple(IRAN_GULF_RULES.get("actions", ()))
+IRAN_GULF_HIGH_SIGNAL_ACTION_TERMS = tuple(IRAN_GULF_RULES.get("high_signal_actions", ()))
+IRAN_GULF_REGIONAL_ANCHOR_TERMS = tuple(IRAN_GULF_RULES.get("regional_anchors", ()))
+IRAN_GULF_MARKET_TERMS = tuple(IRAN_GULF_RULES.get("market_context", ()))
 GDELT_QUERY = str((KEYWORD_DATABASE.get("gdelt") or {}).get("query") or DEFAULT_GDELT_QUERY)
 
 # A discovery item is never sufficient on its own. GDELT candidates must have
@@ -99,7 +112,7 @@ TRUSTED_NEWS_DOMAINS = {
     "nytimes.com", "bbc.com", "cnbc.com", "nikkei.com",
 }
 DISCOVERY_ANCHORS = {
-    "conflict": ("iran", "israel", "ukraine", "russia", "hormuz", "taiwan", "伊朗", "以色列", "烏克蘭", "乌克兰", "俄羅斯", "俄罗斯", "台灣", "台湾"),
+    "conflict": ("iran", "israel", "ukraine", "russia", "hormuz", "persian gulf", "gulf", "taiwan", "伊朗", "以色列", "波斯灣", "波斯湾", "海灣", "海湾", "荷姆茲海峽", "霍尔木兹海峡", "烏克蘭", "乌克兰", "俄羅斯", "俄罗斯", "台灣", "台湾"),
     "policy": ("tariff", "sanction", "export control", "duties", "taco", "trump always chickens out", "backs down", "walks back", "tariff pause", "tariff delay", "關稅", "关税", "制裁", "出口管制", "暫緩關稅", "暂缓关税", "延後關稅", "延后关税"),
     "energy": ("wti", "brent", "oil", "opec", "crude", "原油", "石油", "能源"),
     "semiconductor": ("nvidia", "tsmc", "asml", "semiconductor", "輝達", "英伟达", "台積電", "台积电", "半導體", "半导体"),
@@ -332,6 +345,20 @@ def classify_flash_with_reason(flash: Flash) -> tuple[str | None, str]:
         return "material_positive", "material_positive_keyword"
     if any(_keyword_in_text(keyword, haystack, compact) for keyword in BLACK_SWAN_TERMS):
         return "black_swan", "black_swan_keyword"
+    # Gulf/Iran headlines often lead with a regional-market move and put the
+    # geopolitical reason in the body. Require an anchor plus an action, and
+    # require either a concrete regional anchor (Gulf/Hormuz) or a high-signal
+    # geopolitical/supply/shipping action. A bare "Gulf stocks rise" remains
+    # outside the alert scope. Market context is retained for audit and can
+    # strengthen the downstream official-price synchronization gate.
+    iran_gulf_anchor = _keyword_hit(IRAN_GULF_ANCHOR_TERMS, haystack)
+    iran_gulf_action = _keyword_hit(IRAN_GULF_ACTION_TERMS, haystack)
+    iran_gulf_high_signal = _keyword_hit(IRAN_GULF_HIGH_SIGNAL_ACTION_TERMS, haystack)
+    iran_gulf_region = _keyword_hit(IRAN_GULF_REGIONAL_ANCHOR_TERMS, haystack)
+    iran_gulf_market = _keyword_hit(IRAN_GULF_MARKET_TERMS, haystack)
+    if iran_gulf_anchor and iran_gulf_action and (iran_gulf_region or iran_gulf_high_signal):
+        reason = "iran_gulf_context_market_keyword" if iran_gulf_market else "iran_gulf_context_keyword"
+        return "conflict", reason
     # Oil headlines are material only when supply, a large move, or a
     # geopolitical catalyst is also present. This avoids routine daily oil
     # commentary becoming a Telegram emergency alert.
