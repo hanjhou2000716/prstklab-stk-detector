@@ -178,3 +178,30 @@ def test_health_snapshot_exposes_source_diagnostics_without_secrets():
     assert snapshot["gdelt"]["error"] == "HTTPStatusError"
     assert "JIN10_MCP_TOKEN" not in str(snapshot)
     assert "GITHUB_DISPATCH_TOKEN" not in str(snapshot)
+
+
+def test_seen_store_persists_incoming_event_and_retryable_outbox(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    flash = monitor.Flash("f-1", "FOMC", "rate decision", "2026-08-02T10:00:00+00:00")
+    store.record_incoming_flash(flash)
+    assert store.claim_classification(flash.event_id, "in_scope")
+    alert = monitor.Alert("jin10-f-1", "fed", "快訊｜Fed｜利率決策", flash.occurred_at)
+    trace_id = store.record_outbox(alert, {"trace_id": "pending"})
+    store.mark_outbox(trace_id, "failed", "TimeoutException")
+    store.release_classification(flash.event_id, "TimeoutException")
+
+    row = store.connection.execute(
+        "SELECT status, attempts, last_error FROM delivery_outbox WHERE trace_id = ?", (trace_id,)
+    ).fetchone()
+    incoming = store.connection.execute(
+        "SELECT classification, last_error FROM incoming_events WHERE event_id = ?", (flash.event_id,)
+    ).fetchone()
+    assert row == ("failed", 1, "TimeoutException")
+    assert incoming == ("unclassified", "TimeoutException")
+    assert store.classification_for(flash.event_id) == "unclassified"
+
+
+def test_alert_trace_id_is_stable_and_non_secret():
+    alert = monitor.Alert("jin10-1", "macro", "CPI release", "2026-08-02T10:00:00+00:00")
+    assert monitor.alert_trace_id(alert) == monitor.alert_trace_id(alert)
+    assert "jin10" in monitor.alert_trace_id(alert)

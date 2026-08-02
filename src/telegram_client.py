@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 from time import sleep, time
 
 import requests
@@ -18,6 +19,7 @@ class TelegramTransientError(TelegramError):
 
 SEND_ATTEMPTS = 3
 RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
+FAILED_RECIPIENT_RETRIES = 1
 
 
 @dataclass(frozen=True)
@@ -36,6 +38,30 @@ class TelegramDelivery:
     @property
     def delivered(self) -> bool:
         return self.result is not None
+
+
+@dataclass(frozen=True)
+class DeliverySummary:
+    """Aggregate outcome without exposing recipient identifiers in logs."""
+
+    delivered_count: int
+    failed_count: int
+    failed_recipient_hashes: tuple[str, ...]
+
+    @property
+    def any_delivered(self) -> bool:
+        return self.delivered_count > 0
+
+
+def summarize_deliveries(deliveries: tuple[TelegramDelivery, ...] | list[TelegramDelivery]) -> DeliverySummary:
+    failed = [item for item in deliveries if not item.delivered]
+    return DeliverySummary(
+        delivered_count=len(deliveries) - len(failed),
+        failed_count=len(failed),
+        failed_recipient_hashes=tuple(
+            hashlib.sha256(item.chat_id.encode("utf-8")).hexdigest()[:12] for item in failed
+        ),
+    )
 
 
 def validate_brief(text: str) -> None:
@@ -142,6 +168,7 @@ def send_brief(
     last_error: Exception | None = None
 
     for attempt in range(SEND_ATTEMPTS):
+        retry_after = None
         try:
             response = requests.post(endpoint, json=payload_to_send, timeout=20)
         except requests.RequestException as exc:
@@ -149,12 +176,20 @@ def send_brief(
         else:
             if getattr(response, "status_code", 200) not in RETRYABLE_STATUS_CODES:
                 break
+            retry_after = None
+            if getattr(response, "status_code", 200) == 429:
+                try:
+                    retry_after = int((response.json() or {}).get("parameters", {}).get("retry_after", 0))
+                except (TypeError, ValueError, AttributeError):
+                    retry_after = None
             last_error = TelegramTransientError(f"HTTP {response.status_code}")
 
         if attempt < SEND_ATTEMPTS - 1:
             # Short exponential backoff covers GitHub Runner / Telegram edge
             # resets without delaying a watch-sized alert for long.
-            sleep(2**attempt)
+            # Telegram's Retry-After is authoritative for rate limits.  Bound
+            # it so one stale response cannot hold a GitHub runner forever.
+            sleep(min(60, max(1, retry_after)) if retry_after else 2**attempt)
 
     if response is None or getattr(response, "status_code", 200) in RETRYABLE_STATUS_CODES:
         detail = str(last_error or "temporary Telegram delivery failure")
@@ -193,4 +228,15 @@ def send_briefs(
             deliveries.append(TelegramDelivery(chat_id=chat_id, error=str(exc)))
         else:
             deliveries.append(TelegramDelivery(chat_id=chat_id, result=result))
+    # A transient outage affecting only some recipients must not cause a
+    # second send to everyone. Retry only the failed recipients once.
+    for index, delivery in enumerate(tuple(deliveries)):
+        if delivery.delivered or "temporary delivery failure" not in (delivery.error or ""):
+            continue
+        try:
+            result = send_brief(token=token, chat_id=delivery.chat_id, text=text, dashboard_url=dashboard_url)
+        except TelegramError as exc:
+            deliveries[index] = TelegramDelivery(chat_id=delivery.chat_id, error=str(exc))
+        else:
+            deliveries[index] = TelegramDelivery(chat_id=delivery.chat_id, result=result)
     return tuple(deliveries)

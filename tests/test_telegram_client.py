@@ -1,7 +1,7 @@
 import requests
 import pytest
 
-from src.telegram_client import mini_app_button, mini_app_menu_button, send_brief, send_briefs, validate_brief, versioned_mini_app_url
+from src.telegram_client import mini_app_button, mini_app_menu_button, send_brief, send_briefs, summarize_deliveries, validate_brief, versioned_mini_app_url
 
 
 def test_accepts_30_character_brief():
@@ -155,3 +155,57 @@ def test_send_briefs_records_temporary_failure_without_stopping_other_recipients
 
     assert [result.delivered for result in results] == [True, False, True]
     assert "temporary delivery failure" in (results[1].error or "")
+
+
+def test_send_briefs_retries_only_failed_recipient(monkeypatch):
+    calls = []
+
+    class Response:
+        ok = True
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"ok": True, "result": {"message_id": 8}}
+
+    def fake_post(url, json, timeout):
+        calls.append(json["chat_id"])
+        if json["chat_id"] == "offline" and calls.count("offline") <= 3:
+            raise requests.ConnectionError("connection reset")
+        return Response()
+
+    monkeypatch.setattr("src.telegram_client.requests.post", fake_post)
+    monkeypatch.setattr("src.telegram_client.sleep", lambda _: None)
+    results = send_briefs(token="token", chat_ids=("online", "offline"), text="測試訊息", dashboard_url="https://example.test/app")
+
+    assert [item.delivered for item in results] == [True, True]
+    assert calls.count("online") == 1
+    assert calls.count("offline") == 4
+    summary = summarize_deliveries(results)
+    assert (summary.delivered_count, summary.failed_count) == (2, 0)
+
+
+def test_send_brief_honors_telegram_retry_after(monkeypatch):
+    sleeps = []
+    calls = 0
+
+    class Response:
+        def __init__(self, status_code):
+            self.status_code = status_code
+            self.ok = status_code == 200
+
+        def json(self):
+            if self.status_code == 429:
+                return {"ok": False, "parameters": {"retry_after": 7}}
+            return {"ok": True, "result": {"message_id": 9}}
+
+    def fake_post(url, json, timeout):
+        nonlocal calls
+        calls += 1
+        return Response(429 if calls == 1 else 200)
+
+    monkeypatch.setattr("src.telegram_client.requests.post", fake_post)
+    monkeypatch.setattr("src.telegram_client.sleep", sleeps.append)
+    result = send_brief(token="token", chat_id="100", text="測試訊息", dashboard_url="https://example.test/app")
+    assert result.message_id == 9
+    assert sleeps == [7]

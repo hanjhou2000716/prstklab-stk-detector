@@ -15,7 +15,7 @@ from src.event_ledger import EventLedger, canonical_event_key
 from src.finance_intel_policy import polling_rule
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import write_snapshot
-from src.telegram_client import send_briefs, validate_brief
+from src.telegram_client import send_briefs, summarize_deliveries, validate_brief
 
 
 def _is_taiwan_market_window(now: datetime | None = None) -> bool:
@@ -174,6 +174,23 @@ def write_send_output(sent: bool, reason: str) -> None:
         print("\n".join(lines))
 
 
+def _write_delivery_output(*, trace_id: str, deliveries: tuple[Any, ...]) -> None:
+    summary = summarize_deliveries(deliveries)
+    lines = [
+        f"trace_id={trace_id}",
+        f"delivered_count={summary.delivered_count}",
+        f"failed_count={summary.failed_count}",
+        f"delivery_status={'delivered' if summary.failed_count == 0 else 'partial' if summary.delivered_count else 'failed'}",
+        f"failed_recipient_hashes={','.join(summary.failed_recipient_hashes)}",
+    ]
+    destination = os.getenv("GITHUB_OUTPUT")
+    if destination:
+        with Path(destination).open("a", encoding="utf-8") as handle:
+            handle.write("\n".join(lines) + "\n")
+    else:
+        print("\n".join(lines))
+
+
 def send_current_event(expected_key: str | None = None) -> bool:
     """Send one verified event, safely skipping it if it changes between steps."""
     _, event = prepare_snapshot()
@@ -187,14 +204,20 @@ def send_current_event(expected_key: str | None = None) -> bool:
     settings = get_settings()
     if not settings.telegram_ready:
         raise RuntimeError("缺少 Telegram 設定，無法送出官方事件快訊")
-    send_briefs(
+    trace_id = f"official-{current_key[:20]}"
+    deliveries = send_briefs(
         token=settings.telegram_bot_token or "",
         chat_ids=settings.telegram_chat_ids,
         text=build_official_event_brief(event),
         dashboard_url=settings.dashboard_url,
     )
+    _write_delivery_output(trace_id=trace_id, deliveries=deliveries)
+    delivery_summary = summarize_deliveries(deliveries)
+    if not delivery_summary.any_delivered:
+        write_send_output(False, "all_recipients_failed")
+        raise RuntimeError("Telegram delivery failed for every configured recipient")
     _observe_event(event, reminded=True)
-    write_send_output(True, "sent")
+    write_send_output(True, "sent_partial" if delivery_summary.failed_count else "sent")
     return True
 
 
