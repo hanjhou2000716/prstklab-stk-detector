@@ -73,6 +73,25 @@ def test_chinese_geopolitical_escalation_is_conflict_candidate():
     assert monitor.classify_flash(flash) == "conflict"
 
 
+def test_keyword_matching_normalizes_full_width_text_and_case():
+    flash = monitor.Flash(
+        "full-width-fomc",
+        "ＦＯＭＣ／聯準會聲明",
+        "Powell indicated a policy decision.",
+        "2026-08-02T10:06:55+08:00",
+    )
+    classification, reason = monitor.classify_flash_with_reason(flash)
+    assert classification == "fed"
+    assert reason == "fed_keyword"
+
+
+def test_unclassified_reason_distinguishes_energy_context_from_no_keyword():
+    routine_oil = monitor.Flash("oil-audit", "WTI 原油日報", "市場等待例行庫存資料。", "2026-08-02T10:00:00+00:00")
+    unrelated = monitor.Flash("unrelated-audit", "一般市場消息", "公司發布新品。", "2026-08-02T10:00:00+00:00")
+    assert monitor.classify_flash_with_reason(routine_oil) == (None, "energy_requires_material_context")
+    assert monitor.classify_flash_with_reason(unrelated) == (None, "keyword_no_match")
+
+
 def test_category_cooldown_allows_only_escalation_before_window_expires(tmp_path):
     store = monitor.SeenStore(tmp_path / "state.sqlite3")
     first = monitor.Alert("a1", "policy", "政策：關稅消息", "2026-07-26T20:30:00+08:00")
@@ -199,6 +218,17 @@ def test_seen_store_persists_incoming_event_and_retryable_outbox(tmp_path):
     assert row == ("failed", 1, "TimeoutException")
     assert incoming == ("unclassified", "TimeoutException")
     assert store.classification_for(flash.event_id) == "unclassified"
+
+
+def test_seen_store_persists_classification_reason_and_health_counts(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    flash = monitor.Flash("audit-1", "一般市場消息", "公司發布新品。", "2026-08-02T10:00:00+00:00")
+    store.record_incoming_flash(flash, "keyword_no_match")
+    assert store.classification_diagnostics() == {
+        "classification_counts": {"unclassified": 1},
+        "reason_counts": {"keyword_no_match": 1},
+        "unclassified_count": 1,
+    }
 
 
 def test_alert_trace_id_is_stable_and_non_secret():
