@@ -28,6 +28,7 @@ FACT_FIELDS = {
 }
 
 RISK_RANK = {"觀察": 0, "持續觀察": 0, "市場待核對": 0, "警戒": 1, "高波動": 1, "高風險": 2}
+DEFAULT_COOLDOWN_SECONDS = 30 * 60
 
 
 def _risk_rank(value: Any) -> int:
@@ -243,7 +244,7 @@ class EventLedger:
         return {**record, "is_new": is_new, "risk_upgraded": risk_upgraded,
                 "escalation_upgraded": escalation_upgraded, "changed": bool(changed or removed)}
 
-    def should_remind(self, event: dict[str, Any], *, cooldown_seconds: int = 7200, now: datetime | None = None) -> bool:
+    def should_remind(self, event: dict[str, Any], *, cooldown_seconds: int = DEFAULT_COOLDOWN_SECONDS, now: datetime | None = None) -> bool:
         record = self.observe(event, now=now)
         if record["is_new"] or record.get("risk_upgraded") or record.get("escalation_upgraded"):
             return True

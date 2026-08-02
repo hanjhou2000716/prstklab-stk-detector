@@ -1,12 +1,12 @@
 {
-  "version": "2026-07-29",
+  "version": "2026-08-02",
   "mode": "public-read-only",
   "polling": {
     "intervalMinutes": 5,
     "firstRunBaselineOnly": true,
     "officialEventMaxAgeMinutes": 90,
     "discoveryEventMaxAgeMinutes": 45,
-    "topicCooldownMinutes": 120,
+    "topicCooldownMinutes": 30,
     "singleSourceFailureIsolation": true,
     "retryOn429": false
   },
@@ -27,6 +27,13 @@
   "storage": {
     "eventLedger": "railway-persistent",
     "actionsCacheRole": "short-term-backup"
+  },
+  "eventKeywords": {
+    "path": "config/event_keywords.json",
+    "matching": "NFKC + casefold + whitespace normalization + bounded fuzzy alias matching",
+    "fuzzyThreshold": 0.9,
+    "cooldownSeconds": 1800,
+    "warIsBlackSwanCandidate": true
   },
   "phaseTwoSources": {
     "kofia": "https://freesis.kofia.or.kr/stat/FreeSIS.do?parentDivId=MSIS10000000000000&serviceId=STATSCU0100000070",

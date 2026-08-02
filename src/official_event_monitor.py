@@ -102,6 +102,10 @@ def _observe_event(event: dict[str, Any] | None, *, reminded: bool = False) -> d
         record["changed"] = True
     else:
         record = ledger.observe(event)
+        # The durable ledger is the source of truth after cache eviction or a
+        # concurrent workflow run. All event producers use the same 30-minute
+        # cooldown; the GitHub cache is only a fast idempotency optimization.
+        record["should_remind"] = ledger.should_remind(event)
     ledger.save()
     return record
 
@@ -150,11 +154,12 @@ def prepare_snapshot() -> tuple[dict[str, Any], dict[str, Any] | None]:
 
 def write_status_output(event: dict[str, Any] | None) -> None:
     """Write GitHub Actions outputs without mixing provider diagnostics into them."""
+    ledger_record = _observe_event(event)
+    should_send = bool(event and ledger_record.get("should_remind", True))
     lines = [
-        f"should_send={'true' if event else 'false'}",
+        f"should_send={'true' if should_send else 'false'}",
         f"key={event_key(event)}",
     ]
-    ledger_record = _observe_event(event)
     destination = os.getenv("GITHUB_OUTPUT")
     if destination:
         with Path(destination).open("a", encoding="utf-8") as handle:
@@ -200,6 +205,11 @@ def send_current_event(expected_key: str | None = None) -> bool:
         # Keep the workflow green while avoiding stale delivery or a stale lock.
         write_send_output(False, "event_changed_before_delivery")
         print("Official event changed before delivery; skipped safely.")
+        return False
+    cooldown_record = _observe_event(event)
+    if not cooldown_record.get("should_remind", True):
+        write_send_output(False, "event_cooldown")
+        print("Official event is inside the shared 30-minute cooldown; skipped safely.")
         return False
     settings = get_settings()
     if not settings.telegram_ready:

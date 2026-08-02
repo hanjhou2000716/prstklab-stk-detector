@@ -30,7 +30,7 @@ GitHub 端會再次驗證簽章、去重、更新 Mini App，再送出 Telegram 
 | `JIN10_POLL_SECONDS` | `120` | 輪詢秒數，最低 60 秒 |
 | `JIN10_FLASH_LIMIT` | `30` | 每次讀取筆數，範圍 1–100 |
 | `JIN10_INITIAL_BACKFILL` | `false` | 第一次啟動只建立去重基線、不補送舊快訊；只有在確定要補送目前列表時才改 `true` |
-| `JIN10_CATEGORY_COOLDOWN_SECONDS` | `1800` | 同一類別的後續快訊至少間隔 30 分鐘；出現明顯升級字詞時可提前轉發 |
+| `JIN10_CATEGORY_COOLDOWN_SECONDS` | `1800` | 舊版相容設定；目前所有事件管線固定統一 30 分鐘，該變數不再覆蓋中央規則 |
 | `MONITOR_STATE_PATH` | `/data/jin10-monitor.sqlite3` | SQLite 狀態檔路徑 |
 
 ## 3. 加上持久化 Volume（建議）
@@ -67,3 +67,5 @@ Optional Railway variables:
 | `GDELT_QUERY` | built-in query | Optional URL-encoded query override for discovery keywords. |
 
 GDELT remains a discovery layer. A candidate needs at least two trusted publisher domains sharing the same concrete entity/place/action intersection. Black-swan or major-disaster candidates are never dispatched by GDELT alone; they wait for a matching first-party official confirmation. The first successful poll establishes a baseline and does not replay historical headlines. SQLite persistence continues to provide event deduplication and cooldowns.
+
+Current delivery policy: all event paths share a 30-minute durable cooldown. War and armed-conflict aliases are treated as black-swan candidates, but GDELT alone cannot deliver them; an official source and related-market synchronization are still required. The multilingual alias database is maintained in `config/event_keywords.json`.
