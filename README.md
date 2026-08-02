@@ -446,3 +446,10 @@ GitHub Actions workflow `quality.yml` runs the full test suite, Python compile
 check, and this dry-run on every push/PR to `main`. It injects only dummy CI
 recipients and an example HTTPS URL; the workflow deliberately has no Telegram
 token and never uses `--send`.
+
+The dry-run also rejects a legacy singular `TELEGRAM_CHAT_ID`; maintain the
+recipient list only in `TELEGRAM_CHAT_IDS` (comma or newline separated). If
+Railway delivery receipts are enabled, `RAILWAY_STATUS_URL` and
+`RAILWAY_STATUS_SHARED_SECRET` must be configured together and the URL must be
+HTTPS. This prevents a stale single-recipient setting or an insecure callback
+from being mistaken for a healthy delivery chain.
