@@ -17,6 +17,7 @@ import re
 import sqlite3
 import threading
 import time
+import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -105,6 +106,13 @@ HEALTH_STATE: dict[str, Any] = {
     "started_at": datetime.now(timezone.utc).isoformat(),
     "jin10": {"status": "not_checked", "last_success_at": None, "last_failure_at": None, "item_count": 0, "error": None},
     "gdelt": {"enabled": True, "status": "not_checked", "last_success_at": None, "last_failure_at": None, "article_count": 0, "alert_count": 0, "error": None},
+    "classification": {
+        "status": "not_checked",
+        "updated_at": None,
+        "classification_counts": {},
+        "unclassified_count": 0,
+        "reason_counts": {},
+    },
 }
 DELIVERY_STORE: SeenStore | None = None
 
@@ -232,25 +240,52 @@ def configured(name: str) -> str:
     return value
 
 
-def classify_flash(flash: Flash) -> str | None:
-    haystack = flash.text.casefold()
-    if any(keyword.casefold() in haystack for keyword in BLACK_SWAN_TERMS):
-        return "black_swan"
-    if any(keyword.casefold() in haystack for keyword in MATERIAL_POSITIVE_TERMS):
-        return "material_positive"
+def normalized_event_text(value: str) -> str:
+    """Normalize multilingual headlines before keyword matching.
+
+    NFKC folds full-width Latin/numeric characters into their ASCII forms,
+    while casefold handles English casing.  Whitespace is normalized so that
+    feeds using non-breaking or ideographic spaces do not silently miss a
+    rule.  Punctuation is intentionally retained because phrases such as
+    ``CPI/PCE`` remain useful evidence in the audit trail.
+    """
+    text = unicodedata.normalize("NFKC", str(value or "")).casefold()
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _keyword_in_text(keyword: str, normalized: str, compact: str) -> bool:
+    candidate = normalized_event_text(keyword)
+    if not candidate:
+        return False
+    return candidate in normalized or candidate.replace(" ", "") in compact
+
+
+def classify_flash_with_reason(flash: Flash) -> tuple[str | None, str]:
+    """Classify a flash and return an auditable reason for the decision."""
+    haystack = normalized_event_text(flash.text)
+    compact = haystack.replace(" ", "")
+    if any(_keyword_in_text(keyword, haystack, compact) for keyword in BLACK_SWAN_TERMS):
+        return "black_swan", "black_swan_keyword"
+    if any(_keyword_in_text(keyword, haystack, compact) for keyword in MATERIAL_POSITIVE_TERMS):
+        return "material_positive", "material_positive_keyword"
     # Oil headlines are material only when supply, a large move, or a
     # geopolitical catalyst is also present. This avoids routine daily oil
     # commentary becoming a Telegram emergency alert.
-    if any(keyword.casefold() in haystack for keyword in CATEGORY_KEYWORDS["energy"]):
+    energy_without_context = any(_keyword_in_text(keyword, haystack, compact) for keyword in CATEGORY_KEYWORDS["energy"])
+    if energy_without_context:
         material_energy_terms = ("iran", "israel", "中東", "中东", "supply", "供應", "供给", "opec", "attack", "戰爭", "战争", "停火", "ceasefire", "truce", "%")
-        if any(term.casefold() in haystack for term in material_energy_terms):
-            return "energy"
+        if any(_keyword_in_text(term, haystack, compact) for term in material_energy_terms):
+            return "energy", "energy_material_keyword"
     for category, keywords in CATEGORY_KEYWORDS.items():
         if category == "energy":
             continue
-        if any(keyword.casefold() in haystack for keyword in keywords):
-            return category
-    return None
+        if any(_keyword_in_text(keyword, haystack, compact) for keyword in keywords):
+            return category, f"{category}_keyword"
+    return None, "energy_requires_material_context" if energy_without_context else "keyword_no_match"
+
+
+def classify_flash(flash: Flash) -> str | None:
+    return classify_flash_with_reason(flash)[0]
 
 
 def compact_summary(flash: Flash, category: str) -> str:
@@ -267,7 +302,7 @@ def compact_summary(flash: Flash, category: str) -> str:
 
 
 def alert_from_flash(flash: Flash) -> Alert | None:
-    category = classify_flash(flash)
+    category = classify_flash_with_reason(flash)[0]
     if category is None or category not in ALLOWED_CATEGORIES:
         return None
     # A commercial flash can be an early warning, but it is not the official
@@ -394,11 +429,19 @@ class SeenStore:
                 content TEXT,
                 occurred_at TEXT,
                 classification TEXT NOT NULL DEFAULT 'unclassified',
+                classification_reason TEXT,
                 first_seen_at TEXT NOT NULL,
                 last_seen_at TEXT NOT NULL,
                 last_error TEXT
             )"""
         )
+        incoming_columns = {
+            row[1] for row in self.connection.execute("PRAGMA table_info(incoming_events)").fetchall()
+        }
+        if "classification_reason" not in incoming_columns:
+            self.connection.execute(
+                "ALTER TABLE incoming_events ADD COLUMN classification_reason TEXT"
+            )
         self.connection.execute(
             """CREATE TABLE IF NOT EXISTS delivery_receipts (
                 trace_id TEXT NOT NULL,
@@ -411,16 +454,49 @@ class SeenStore:
         )
         self.connection.commit()
 
-    def record_incoming_flash(self, flash: Flash) -> None:
+    def record_incoming_flash(self, flash: Flash, classification_reason: str | None = None) -> None:
         now = datetime.now(timezone.utc).isoformat()
         self.connection.execute(
-            """INSERT INTO incoming_events(event_id,source,title,content,occurred_at,first_seen_at,last_seen_at)
-               VALUES(?,?,?,?,?,?,?)
+            """INSERT INTO incoming_events(event_id,source,title,content,occurred_at,classification_reason,first_seen_at,last_seen_at)
+               VALUES(?,?,?,?,?,?,?,?)
                ON CONFLICT(event_id) DO UPDATE SET title=excluded.title, content=excluded.content,
-                 occurred_at=excluded.occurred_at, last_seen_at=excluded.last_seen_at""",
-            (flash.event_id, "jin10", flash.title, flash.content, flash.occurred_at, now, now),
+                 occurred_at=excluded.occurred_at,
+                 classification_reason=CASE WHEN incoming_events.classification='unclassified'
+                   THEN COALESCE(excluded.classification_reason, incoming_events.classification_reason)
+                   ELSE incoming_events.classification_reason END,
+                 last_seen_at=excluded.last_seen_at""",
+            (flash.event_id, "jin10", flash.title, flash.content, flash.occurred_at, classification_reason, now, now),
         )
         self.connection.commit()
+
+    def set_classification_reason(self, event_id: str, reason: str, error: str | None = None) -> None:
+        """Persist the rule path even when an event is not dispatchable."""
+        now = datetime.now(timezone.utc).isoformat()
+        self.connection.execute(
+            "UPDATE incoming_events SET classification_reason=?, last_error=?, last_seen_at=? WHERE event_id=?",
+            (str(reason)[:200], error[:500] if error else None, now, event_id),
+        )
+        self.connection.commit()
+
+    def classification_reason_counts(self) -> dict[str, int]:
+        rows = self.connection.execute(
+            """SELECT COALESCE(classification_reason, 'unknown'), COUNT(*)
+               FROM incoming_events WHERE classification='unclassified'
+               GROUP BY COALESCE(classification_reason, 'unknown')"""
+        ).fetchall()
+        return {str(reason): int(count) for reason, count in rows}
+
+    def classification_diagnostics(self) -> dict[str, Any]:
+        rows = self.connection.execute(
+            """SELECT COALESCE(classification, 'unknown'), COUNT(*)
+               FROM incoming_events GROUP BY COALESCE(classification, 'unknown')"""
+        ).fetchall()
+        reason_counts = self.classification_reason_counts()
+        return {
+            "classification_counts": {str(label): int(count) for label, count in rows},
+            "reason_counts": reason_counts,
+            "unclassified_count": sum(reason_counts.values()),
+        }
 
     def record_outbox(self, alert: Alert, payload: dict[str, Any]) -> str:
         trace_id = alert_trace_id(alert)
@@ -487,8 +563,8 @@ class SeenStore:
             (event_id,),
         )
         self.connection.execute(
-            "UPDATE incoming_events SET classification='unclassified', last_error=?, last_seen_at=? WHERE event_id=?",
-            (error[:500], now, event_id),
+            "UPDATE incoming_events SET classification='unclassified', classification_reason=?, last_error=?, last_seen_at=? WHERE event_id=?",
+            (f"dispatch_failed:{error[:120]}" if error else "dispatch_failed", error[:500], now, event_id),
         )
         self.connection.commit()
 
@@ -950,11 +1026,20 @@ async def monitor_forever() -> None:
             flashes.sort(key=lambda item: item.occurred_at)
             dispatched = 0
             for flash in flashes:
-                store.record_incoming_flash(flash)
+                classification, classification_reason = classify_flash_with_reason(flash)
+                store.record_incoming_flash(flash, classification_reason)
                 previous_classification = store.classification_for(flash.event_id)
                 alert = alert_from_flash(flash)
-                classification = "in_scope" if alert is not None else "unclassified"
-                if not store.claim_classification(flash.event_id, classification):
+                if alert is None and classification == "black_swan":
+                    classification_reason = "black_swan_requires_official_confirmation"
+                classification_status = "in_scope" if alert is not None else "unclassified"
+                logging.info(
+                    "Jin10 flash classified event_id=%s classification=%s reason=%s",
+                    flash.event_id, classification_status, classification_reason,
+                )
+                if previous_classification in {None, "unclassified"}:
+                    store.set_classification_reason(flash.event_id, classification_reason)
+                if not store.claim_classification(flash.event_id, classification_status):
                     continue
                 if alert is None:
                     # Keep unrecognised IDs retryable after a rule/source update.
@@ -964,13 +1049,16 @@ async def monitor_forever() -> None:
                 # precisely the missed event that a rule update should recover.
                 if first_cycle and not bootstrap and previous_classification is None:
                     store.set_classification(flash.event_id, "baseline")
+                    store.set_classification_reason(flash.event_id, "baseline_initial_cycle")
                     continue
                 ledger_record = store.observe_alert(alert)
                 if not store.ledger_may_dispatch(ledger_record, cooldown):
                     logging.info("Jin10 alert suppressed by durable event ledger: %s", ledger_record["canonical_key"])
+                    store.set_classification_reason(flash.event_id, "durable_ledger_cooldown")
                     continue
                 if not store.may_dispatch(alert, cooldown):
                     logging.info("Jin10 alert suppressed by category cooldown: %s", alert.category)
+                    store.set_classification_reason(flash.event_id, "category_cooldown")
                     continue
                 trace_id = store.record_outbox(alert, {
                     "source": alert.source, "event_id": alert.event_id,
@@ -987,11 +1075,14 @@ async def monitor_forever() -> None:
                 store.mark_outbox(trace_id, "sent")
                 store.record_dispatch(alert)
                 store.set_classification(flash.event_id, "in_scope")
+                store.set_classification_reason(flash.event_id, "dispatched_to_github")
                 store.mark_alert_reminded(alert, escalated="高風險" in alert.summary)
                 dispatched += 1
+            diagnostics = store.classification_diagnostics()
             logging.info("Jin10 poll completed: %s flash(es), %s alert(s) dispatched", len(flashes), dispatched)
             update_health("jin10", status="healthy", last_success_at=datetime.now(timezone.utc).isoformat(),
                           item_count=len(flashes), error=None)
+            update_health("classification", status="healthy", updated_at=datetime.now(timezone.utc).isoformat(), **diagnostics)
             first_cycle = False
         except Exception as error:
             update_health("jin10", status="failed", last_failure_at=datetime.now(timezone.utc).isoformat(),

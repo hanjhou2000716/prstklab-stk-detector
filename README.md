@@ -393,3 +393,23 @@ The Railway monitor polls the public GDELT DOC endpoint every 15 minutes by defa
 GDELT is never treated as final proof. A candidate must have at least two trusted publisher domains and a shared concrete entity/place/action intersection. Black-swan or major-disaster candidates are not dispatched from GDELT alone; they require a matching first-party official source (for example USGS, GDACS, Fed, BLS, EIA, SEC or TWSE). The first successful poll creates a baseline and does not replay historical headlines; the existing SQLite ledger applies event deduplication and cooldowns.
 The Railway `/health` endpoint exposes non-secret runtime diagnostics for the Jin10 and GDELT loops (enabled state, source status, last success/failure time, item counts and error class). The platform health status remains `ok` for process liveness; inspect the per-source status to distinguish an unavailable provider from a stopped service.
 FRED/EIA keys are required by the GitHub Actions Phase 2 collectors. If they are also placed in Railway Shared Variables, they must be explicitly shared with the target service; the current Jin10/GDELT bridge does not consume them. See [FRED/EIA deployment placement](docs/FRED_EIA_API_SETUP.md).
+
+### Classification audit and silent-drop diagnostics
+
+Every Jin10 flash is persisted in the Railway `incoming_events` table before any
+delivery decision. The row records the final classification and a
+`classification_reason`, such as `fed_keyword`, `energy_requires_material_context`,
+`black_swan_requires_official_confirmation`, `category_cooldown`, or
+`keyword_no_match`. This makes a deliberate filter distinguishable from a
+transport failure; a failed GitHub dispatch is recorded as `dispatch_failed:<error>`
+and remains retryable.
+
+Keyword matching normalizes Unicode with NFKC, case-folds English text, and
+collapses full-width/ideographic whitespace before checking the bilingual
+Chinese/English vocabulary. The matching rule is still conservative: an
+unrelated headline is not promoted merely because it contains a generic word.
+The Railway `/health` response now includes `classification` with aggregate
+classification counts, `unclassified_count`, and reason counts. Inspect those
+fields to tell whether an item was unmatched, waiting for official confirmation,
+held by a cooldown/baseline, or failed during dispatch; no raw event body or
+credential is exposed.
