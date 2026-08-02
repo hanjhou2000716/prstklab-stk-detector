@@ -404,6 +404,11 @@ delivery decision. The row records the final classification and a
 transport failure; a failed GitHub dispatch is recorded as `dispatch_failed:<error>`
 and remains retryable.
 
+The Railway HTTP callback is handled on a separate server thread. Its receipt
+write uses a short-lived SQLite connection with WAL and a bounded busy timeout,
+so a callback arriving during the monitor's normal write transaction is not
+silently lost as a thread-affinity or database-lock error.
+
 Keyword matching normalizes Unicode with NFKC, case-folds English text, and
 collapses full-width/ideographic whitespace before checking the bilingual
 Chinese/English vocabulary. The matching rule is still conservative: an

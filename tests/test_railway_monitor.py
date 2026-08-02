@@ -1,6 +1,7 @@
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 import sys
+import threading
 
 
 MODULE_PATH = Path(__file__).parents[1] / "railway-monitor" / "app.py"
@@ -257,3 +258,25 @@ def test_seen_store_persists_authenticated_delivery_receipt(tmp_path):
     ).fetchone()
     assert row == ("partial", "recipient delivery incomplete")
     assert receipt == ("failed",)
+
+
+def test_delivery_receipt_can_be_saved_from_health_server_thread(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    alert = monitor.Alert("jin10-thread-receipt", "macro", "CPI release", "2026-08-02T10:00:00+00:00")
+    trace_id = store.record_outbox(alert, {"summary": alert.summary})
+    result: list[bool] = []
+
+    def callback_thread() -> None:
+        result.append(store.record_delivery_status({
+            "trace_id": trace_id,
+            "delivery_status": "delivered",
+            "delivered_count": 1,
+            "failed_count": 0,
+            "failed_recipient_hashes": [],
+        }))
+
+    thread = threading.Thread(target=callback_thread)
+    thread.start()
+    thread.join(timeout=5)
+    assert not thread.is_alive()
+    assert result == [True]

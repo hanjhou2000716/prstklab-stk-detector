@@ -366,7 +366,16 @@ def result_payload(result: Any) -> Any:
 class SeenStore:
     def __init__(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        self.connection = sqlite3.connect(path)
+        self.path = path
+        self.owner_thread_id = threading.get_ident()
+        # The monitor loop and the HTTP delivery callback are different
+        # threads.  Keep the long-lived loop connection for normal work, but
+        # allow the callback to use a short-lived connection of its own.
+        # WAL/busy_timeout prevent a callback arriving during a monitor commit
+        # from becoming an unexplained 500 response.
+        self.connection = sqlite3.connect(path, timeout=5)
+        self.connection.execute("PRAGMA busy_timeout=5000")
+        self.connection.execute("PRAGMA journal_mode=WAL")
         self.connection.execute(
             "CREATE TABLE IF NOT EXISTS seen (event_id TEXT PRIMARY KEY, first_seen_at TEXT NOT NULL)"
         )
@@ -528,32 +537,39 @@ class SeenStore:
         failed_hashes = payload.get("failed_recipient_hashes") or []
         if not isinstance(failed_hashes, list) or any(not isinstance(item, str) for item in failed_hashes):
             raise ValueError("invalid failed recipient hashes")
-        now = datetime.now(timezone.utc).isoformat()
-        exists = self.connection.execute(
-            "SELECT 1 FROM delivery_outbox WHERE trace_id = ?", (trace_id,)
-        ).fetchone()
-        if exists is None:
-            logging.warning("delivery receipt for unknown trace_id=%s", trace_id)
-            return False
-        self.connection.execute(
-            "UPDATE delivery_outbox SET status=?, last_error=?, updated_at=? WHERE trace_id=?",
-            (status, None if status == "delivered" else "recipient delivery incomplete", now, trace_id),
-        )
-        for recipient_hash in failed_hashes:
-            self.connection.execute(
-                "INSERT OR REPLACE INTO delivery_receipts(trace_id,recipient_hash,status,error,updated_at) VALUES(?,?,?,?,?)",
-                (trace_id, recipient_hash[:128], "failed", "recipient delivery failed", now),
+        callback_connection = threading.get_ident() != self.owner_thread_id
+        db = sqlite3.connect(self.path, timeout=5) if callback_connection else self.connection
+        try:
+            db.execute("PRAGMA busy_timeout=5000")
+            now = datetime.now(timezone.utc).isoformat()
+            exists = db.execute(
+                "SELECT 1 FROM delivery_outbox WHERE trace_id = ?", (trace_id,)
+            ).fetchone()
+            if exists is None:
+                logging.warning("delivery receipt for unknown trace_id=%s", trace_id)
+                return False
+            db.execute(
+                "UPDATE delivery_outbox SET status=?, last_error=?, updated_at=? WHERE trace_id=?",
+                (status, None if status == "delivered" else "recipient delivery incomplete", now, trace_id),
             )
-        self.connection.execute(
-            "INSERT OR REPLACE INTO delivery_receipts(trace_id,recipient_hash,status,error,updated_at) VALUES(?,?,?,?,?)",
-            (trace_id, "__aggregate__", status, json.dumps({
-                "delivered_count": payload.get("delivered_count", 0),
-                "failed_count": payload.get("failed_count", 0),
-                "reported_at": payload.get("reported_at"),
-            }, ensure_ascii=False), now),
-        )
-        self.connection.commit()
-        return True
+            for recipient_hash in failed_hashes:
+                db.execute(
+                    "INSERT OR REPLACE INTO delivery_receipts(trace_id,recipient_hash,status,error,updated_at) VALUES(?,?,?,?,?)",
+                    (trace_id, recipient_hash[:128], "failed", "recipient delivery failed", now),
+                )
+            db.execute(
+                "INSERT OR REPLACE INTO delivery_receipts(trace_id,recipient_hash,status,error,updated_at) VALUES(?,?,?,?,?)",
+                (trace_id, "__aggregate__", status, json.dumps({
+                    "delivered_count": payload.get("delivered_count", 0),
+                    "failed_count": payload.get("failed_count", 0),
+                    "reported_at": payload.get("reported_at"),
+                }, ensure_ascii=False), now),
+            )
+            db.commit()
+            return True
+        finally:
+            if callback_connection:
+                db.close()
 
     def release_classification(self, event_id: str, error: str) -> None:
         """Return a failed dispatch to the retryable state."""
