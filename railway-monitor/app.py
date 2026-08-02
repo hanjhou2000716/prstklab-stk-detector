@@ -68,6 +68,12 @@ def _load_keyword_database() -> dict[str, Any]:
             "material_positive": ["ceasefire", "停火", "rate cut", "降息"],
             "energy_context": ["supply", "供應", "opec", "attack", "攻擊", "%"],
             "escalation": ["escalation", "升級", "attack", "攻擊"],
+            "trump": {
+                "entities": ["donald trump", "president trump", "trump", "川普", "特朗普", "白宮", "白宫"],
+                "taco": ["taco", "taco trade", "trump always chickens out", "川普taco", "特朗普taco"],
+                "policy_actions": ["tariff", "tariffs", "關稅", "关税", "sanction", "制裁", "export control", "出口管制"],
+                "deescalation_actions": ["backs down", "walks back", "tariff pause", "tariff delay", "暫緩關稅", "暂缓关税", "反悔", "退縮", "退缩"],
+            },
             "gdelt": {"query": "(war OR ceasefire OR tariff OR earthquake OR semiconductor OR 戰爭 OR 停火 OR 關稅 OR 地震 OR 半導體)", "entities": [], "actions": {}}
         }
 
@@ -78,6 +84,11 @@ BLACK_SWAN_TERMS = tuple(KEYWORD_DATABASE.get("black_swan", ()))
 MATERIAL_POSITIVE_TERMS = tuple(KEYWORD_DATABASE.get("material_positive", ()))
 ENERGY_CONTEXT_TERMS = tuple(KEYWORD_DATABASE.get("energy_context", ()))
 ESCALATION_TERMS = tuple(KEYWORD_DATABASE.get("escalation", ()))
+TRUMP_RULES = KEYWORD_DATABASE.get("trump") or {}
+TRUMP_ENTITY_TERMS = tuple(TRUMP_RULES.get("entities", ()))
+TRUMP_POLICY_ACTION_TERMS = tuple(TRUMP_RULES.get("policy_actions", ()))
+TRUMP_TACO_TERMS = tuple(TRUMP_RULES.get("taco", ()))
+TRUMP_DEESCALATION_TERMS = tuple(TRUMP_RULES.get("deescalation_actions", ()))
 GDELT_QUERY = str((KEYWORD_DATABASE.get("gdelt") or {}).get("query") or DEFAULT_GDELT_QUERY)
 
 # A discovery item is never sufficient on its own. GDELT candidates must have
@@ -89,7 +100,7 @@ TRUSTED_NEWS_DOMAINS = {
 }
 DISCOVERY_ANCHORS = {
     "conflict": ("iran", "israel", "ukraine", "russia", "hormuz", "taiwan", "伊朗", "以色列", "烏克蘭", "乌克兰", "俄羅斯", "俄罗斯", "台灣", "台湾"),
-    "policy": ("tariff", "sanction", "export control", "duties", "關稅", "关税", "制裁", "出口管制"),
+    "policy": ("tariff", "sanction", "export control", "duties", "taco", "trump always chickens out", "backs down", "walks back", "tariff pause", "tariff delay", "關稅", "关税", "制裁", "出口管制", "暫緩關稅", "暂缓关税", "延後關稅", "延后关税"),
     "energy": ("wti", "brent", "oil", "opec", "crude", "原油", "石油", "能源"),
     "semiconductor": ("nvidia", "tsmc", "asml", "semiconductor", "輝達", "英伟达", "台積電", "台积电", "半導體", "半导体"),
     "black_swan": ("earthquake", "tsunami", "ransomware", "cyberattack", "pandemic", "war", "invasion", "airstrike", "missile", "重大地震", "地震", "海嘯", "海啸", "戰爭", "战争", "入侵", "空襲", "空袭"),
@@ -299,6 +310,21 @@ def classify_flash_with_reason(flash: Flash) -> tuple[str | None, str]:
     """Classify a flash and return an auditable reason for the decision."""
     haystack = normalized_event_text(flash.text)
     compact = haystack.replace(" ", "")
+    # Trump-related tariff headlines need a dedicated rule path.  A bare
+    # mention of Trump is intentionally not enough; require a policy action
+    # or the TACO phrase so speeches and routine political coverage do not
+    # become market alerts.  Explicit de-escalation is material-positive,
+    # while the broader TACO/policy reversal remains a policy alert.
+    has_trump = any(_keyword_in_text(term, haystack, compact) for term in TRUMP_ENTITY_TERMS)
+    has_taco = any(_keyword_in_text(term, haystack, compact) for term in TRUMP_TACO_TERMS)
+    has_trump_action = any(_keyword_in_text(term, haystack, compact) for term in TRUMP_POLICY_ACTION_TERMS)
+    has_trump_deescalation = any(_keyword_in_text(term, haystack, compact) for term in TRUMP_DEESCALATION_TERMS)
+    if has_taco:
+        return "policy", "trump_taco_keyword"
+    if has_trump and has_trump_deescalation:
+        return "material_positive", "trump_deescalation_keyword"
+    if has_trump and has_trump_action:
+        return "policy", "trump_policy_keyword"
     # De-escalation has priority over the generic ``attack`` alias.  A
     # confirmed cancellation/ceasefire is material-positive, not a black-swan
     # escalation merely because the original conflict is mentioned.
