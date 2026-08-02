@@ -7,13 +7,20 @@ owner: 0050 + 0051 in Taiwan, and VOO in the United States.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from io import StringIO
 import re
 from typing import Any
 
 import pandas as pd
 import requests
+
+from src.us_universe import (
+    NASDAQ100_REFERER,
+    NASDAQ100_URL,
+    SEMICONDUCTOR_CORE,
+    parse_nasdaq100_constituents,
+)
 
 
 YUANTA_PCF_URL = "https://www.yuantaetfs.com/tradeInfo/pcf/{fund}"
@@ -192,31 +199,51 @@ def _fetch_us_value_universe_from_vanguard_page(session: requests.Session | None
 
 
 def fetch_us_value_universe(session: requests.Session | None = None) -> tuple[list[dict[str, str]], list[str]]:
-    """Return VOO holdings, with a disclosed S&P 500 roster fallback.
+    """Return the strict US value pool: Nasdaq-100 plus semiconductor core.
 
-    Vanguard's public investor page currently renders holdings client-side.
-    The fallback preserves the intended VOO/S&P 500 large-cap universe without
-    treating an empty rendered document as a scan failure.
+    The previous VOO/S&P 500 fallback requested roughly 500 SEC CompanyFacts
+    documents in one run.  That made a transient SEC block look like an empty
+    value scan and regularly exceeded the hosted job's time budget.  The
+    product scope is now the smaller, explicit Nasdaq-100 + semiconductor/AI
+    core pool; SEC remains the only formal financial-data source.
     """
-    rows, errors = _fetch_us_value_universe_from_vanguard_page(session)
-    if rows:
-        return rows, []
     client = session or requests.Session()
     client.headers.setdefault("User-Agent", USER_AGENT)
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; PRStKInvestmentSystem/1.0)", "Referer": NASDAQ100_REFERER}
+    errors: list[str] = []
+    nasdaq_rows: list[dict[str, str]] = []
     try:
-        # Wikipedia rejects the project-identification agent used by issuer
-        # sources. Its public roster remains explicitly labelled as a VOO proxy.
-        response = client.get(
-            SP500_CONSTITUENTS_URL,
-            headers={"User-Agent": "Mozilla/5.0"},
-            timeout=30,
-        )
-        proxy_rows = parse_sp500_constituents(_read_tables(response))
+        for offset in range(7):
+            trade_date = (datetime.now(UTC).date() - timedelta(days=offset)).isoformat()
+            response = client.post(
+                NASDAQ100_URL,
+                data={"id": "NDX", "tradeDate": trade_date, "timeOfDay": "SOD"},
+                headers=headers,
+                timeout=30,
+            )
+            response.raise_for_status()
+            try:
+                nasdaq_rows = parse_nasdaq100_constituents(response.json())
+                break
+            except ValueError:
+                continue
     except (OSError, ValueError, requests.RequestException) as error:
-        return [], [f"VOO issuer and S&P 500 proxy unavailable: {type(error).__name__}"]
-    if proxy_rows:
-        return proxy_rows, []
-    return [], errors or ["VOO issuer and S&P 500 proxy returned no ordinary shares"]
+        errors.append(f"Nasdaq-100 constituents unavailable: {type(error).__name__}")
+    if not nasdaq_rows:
+        return [], errors or ["Nasdaq-100 constituents returned no rows"]
+
+    combined = [
+        {**row, "pool": "NASDAQ-100", "source": "Nasdaq public weighting data"}
+        for row in nasdaq_rows
+    ]
+    combined.extend(
+        {"ticker": ticker, "symbol": ticker, "name": name, "pool": "semiconductor-core", "source": "PRStK public semiconductor core"}
+        for ticker, name in SEMICONDUCTOR_CORE
+    )
+    unique: dict[str, dict[str, str]] = {}
+    for row in combined:
+        unique.setdefault(row["ticker"], row)
+    return list(unique.values()), errors
 
 
 def universe_snapshot(market: str, rows: list[dict[str, str]], errors: list[str]) -> dict[str, Any]:

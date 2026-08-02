@@ -41,6 +41,7 @@ jobs:
       BATCH_SIZE: ${{ inputs.batch_size || github.event.client_payload.batch_size || '50' }}
       MOPS_MAX_REFRESH: ${{ inputs.mops_max_refresh || github.event.client_payload.mops_max_refresh || '24' }}
       NEWS_CACHE_PATH: site/data/news-cache.json
+      SEC_FACTS_CACHE_PATH: data/sec-companyfacts-cache.json
     steps:
       - uses: actions/checkout@v4
         with:
@@ -79,7 +80,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add site/data/research-report.json site/data/market.json site/data/news-cache.json
-          git add -f data/taiwan-mops-pristine-history.json
+          git add -f data/taiwan-mops-pristine-history.json data/sec-companyfacts-cache.json
           if git diff --cached --quiet; then
             exit 0
           fi
@@ -104,4 +105,5 @@ jobs:
             data/*scan*.csv
             data/*summary*.json
             data/taiwan-mops-pristine-history.json
+            data/sec-companyfacts-cache.json
             site/data/research-report.json

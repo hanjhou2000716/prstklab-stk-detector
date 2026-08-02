@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from datetime import UTC, datetime, timedelta
+import json
+from pathlib import Path
 import time
 from typing import Any, Iterable
 
@@ -21,8 +24,13 @@ TWSE_BALANCE_ENDPOINTS = (
 TWSE_PE_ENDPOINT = "exchangeReport/BWIBBU_ALL"
 SEC_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 SEC_FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
-SEC_USER_AGENT = "PRStK Lab public research https://github.com/hanjhou2000716/prstklab-stk-detector"
+SEC_PROJECT_URL = "https://github.com/hanjhou2000716/prstklab-stk-detector"
+# SEC requires a named client plus contact information in User-Agent.  The
+# project URL is sent separately because URL-only User-Agents are rejected.
+SEC_USER_AGENT = "PRStK Lab public research hanjhou2000716@gmail.com"
+SEC_PROJECT_HEADER = {"X-Project-URL": SEC_PROJECT_URL}
 SEC_RETRY_ATTEMPTS = 3
+SEC_CACHE_MAX_AGE_DAYS = 90
 
 
 def _sec_get(client: requests.Session, url: str, *, timeout: int) -> requests.Response:
@@ -35,7 +43,10 @@ def _sec_get(client: requests.Session, url: str, *, timeout: int) -> requests.Re
             return response
         except requests.RequestException as error:
             last_error = error
-            if attempt + 1 < SEC_RETRY_ATTEMPTS:
+            response = getattr(error, "response", None)
+            status = getattr(response, "status_code", None)
+            retryable = status is None or status in {429, 500, 502, 503, 504}
+            if retryable and attempt + 1 < SEC_RETRY_ATTEMPTS:
                 time.sleep(0.6 * (attempt + 1))
     assert last_error is not None
     raise last_error
@@ -173,7 +184,9 @@ def sec_value_metrics(facts: dict[str, Any]) -> dict[str, Any]:
     dividend_by_year = {str(row.get("fy") or row.get("end")): number(row.get("val")) for row in dividends}
     payout = None
     if current_net and dividend_by_year.get(latest_year) is not None:
-        payout = round(dividend_by_year[latest_year] / current_net, 6)
+        # SEC cash-flow facts are reported as outflows (negative values).
+        # Dividend-paid is a presence test, so use the absolute amount.
+        payout = round(abs(dividend_by_year[latest_year]) / abs(current_net), 6)
     roe_history = []
     for index, year in enumerate(years[:3]):
         current = equity_by_year.get(year)
@@ -194,7 +207,7 @@ def sec_value_metrics(facts: dict[str, Any]) -> dict[str, Any]:
         "roe_stable": len(roe_history) >= 3 and all(value >= 0.17 for value in roe_history),
         "three_year_eps_positive": len(annual_eps_values) >= 3 and all(value is not None and value > 0 for value in annual_eps_values),
         "four_quarter_eps_positive": len(quarter_eps_values) >= 4 and all(value is not None and value > 0 for value in quarter_eps_values),
-        "three_year_dividend_paid": len(dividend_values) >= 3 and all(value is not None and value > 0 for value in dividend_values),
+        "three_year_dividend_paid": len(dividend_values) >= 3 and all(value is not None and abs(value) > 0 for value in dividend_values),
         "financial_year": latest_year,
         "financial_source": "SEC EDGAR CompanyFacts",
     }
@@ -203,16 +216,27 @@ def sec_value_metrics(facts: dict[str, Any]) -> dict[str, Any]:
 def sec_ticker_ciks(session: requests.Session | None = None) -> dict[str, int]:
     client = session or requests.Session()
     client.headers["User-Agent"] = SEC_USER_AGENT
+    client.headers.update(SEC_PROJECT_HEADER)
     response = _sec_get(client, SEC_TICKERS_URL, timeout=45)
     return {str(item["ticker"]).upper(): int(item["cik_str"]) for item in response.json().values()}
 
 
 def sec_fundamentals(
     tickers: Iterable[str], session: requests.Session | None = None, *, cik_overrides: dict[str, str | int] | None = None,
+    cache_path: str | Path | None = None, max_cache_age_days: int = SEC_CACHE_MAX_AGE_DAYS,
 ) -> tuple[dict[str, dict[str, Any]], list[str]]:
     client = session or requests.Session()
     client.headers["User-Agent"] = SEC_USER_AGENT
+    client.headers.update(SEC_PROJECT_HEADER)
     ticker_list = list(tickers)
+    cache_file = Path(cache_path) if cache_path else None
+    cache: dict[str, dict[str, Any]] = {}
+    if cache_file and cache_file.exists():
+        try:
+            payload = json.loads(cache_file.read_text(encoding="utf-8"))
+            cache = payload if isinstance(payload, dict) else {}
+        except (OSError, ValueError):
+            cache = {}
     overrides = {str(key).upper(): int(value) for key, value in (cik_overrides or {}).items() if str(value).isdigit()}
     if all(ticker.upper() in overrides for ticker in ticker_list):
         # The S&P 500 public roster supplies CIKs for the VOO proxy.  Avoid a
@@ -227,6 +251,7 @@ def sec_fundamentals(
         else:
             mapping_error = None
     output, errors = {}, []
+    cache_changed = False
     for ticker in ticker_list:
         cik = overrides.get(ticker.upper()) or ciks.get(ticker.upper())
         if cik is None:
@@ -234,11 +259,37 @@ def sec_fundamentals(
             continue
         try:
             response = _sec_get(client, SEC_FACTS_URL.format(cik=cik), timeout=30)
-            output[ticker] = sec_value_metrics(response.json())
+            metrics = sec_value_metrics(response.json())
+            fetched_at = datetime.now(UTC).isoformat()
+            metrics["sec_data_fetched_at"] = fetched_at
+            metrics["sec_cache_used"] = False
+            output[ticker] = metrics
+            if cache_file:
+                cache[ticker.upper()] = {"cik": cik, "fetched_at": fetched_at, "metrics": metrics}
+                cache_changed = True
             # SEC asks automated clients to remain under ten requests/second.
             time.sleep(0.11)
         except (OSError, ValueError, requests.RequestException) as error:
-            errors.append(f"{ticker} SEC facts：{type(error).__name__}")
+            cached = cache.get(ticker.upper())
+            cached_at = cached.get("fetched_at") if isinstance(cached, dict) else None
+            try:
+                cache_time = datetime.fromisoformat(str(cached_at).replace("Z", "+00:00")) if cached_at else None
+            except ValueError:
+                cache_time = None
+            if cache_time and cache_time >= datetime.now(UTC) - timedelta(days=max_cache_age_days):
+                metrics = dict(cached.get("metrics") or {})
+                metrics["financial_source"] = "SEC EDGAR CompanyFacts (cached)"
+                metrics["sec_cache_used"] = True
+                metrics["sec_data_fetched_at"] = cached_at
+                output[ticker] = metrics
+            else:
+                errors.append(f"{ticker} SEC facts：{type(error).__name__}")
     if mapping_error and len(overrides) < len({ticker.upper() for ticker in ticker_list}):
         errors.insert(0, mapping_error)
+    if cache_file and cache_changed:
+        try:
+            cache_file.parent.mkdir(parents=True, exist_ok=True)
+            cache_file.write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
+        except OSError:
+            pass
     return output, errors
