@@ -92,6 +92,13 @@ def test_mini_app_hides_empty_event_trace_and_has_a_legacy_health_fallback():
     assert "renderSourceHealth(snapshot.source_health, snapshot)" in app
 
 
+def test_value_drawer_hides_observations_when_five_formal_candidates_exist():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert "const visibleFormal = formal.slice(0, 5);" in app
+    assert "const visibleObservation = visibleFormal.length >= 5 ? []" in app
+
+
 def test_value_drawer_explains_that_mops_history_is_still_being_verified():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
 

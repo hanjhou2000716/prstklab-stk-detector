@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -135,10 +136,14 @@ def main() -> None:
         fundamentals, fundamental_errors = sec_fundamentals(
             [item["ticker"] for item in candidates],
             cik_overrides={item["ticker"]: item["cik"] for item in candidates if item.get("cik")},
+            cache_path=os.getenv("SEC_FACTS_CACHE_PATH", str(data_dir / "sec-companyfacts-cache.json")),
         )
+    # Turnover-rate is one of the six Pristine conditions for both markets.
+    # Use the public float/outstanding-share proxy for US rows too; leaving it
+    # null silently made every US row incomplete and guaranteed zero candidates.
     share_counts = public_share_counts(
         [item for item in candidates if args.market != "taiwan" or item["ticker"] in history]
-    ) if args.market == "taiwan" else None
+    )
     quotes, quote_errors = public_quotes(candidates, args.batch_size, share_counts)
     base_rows = review_public_pool(
         candidates, fundamentals, quotes, args.market, limit=None,
@@ -156,7 +161,11 @@ def main() -> None:
         evaluable_rows = base_rows
     formal_rows = review_pristine_pool(evaluable_rows, args.market)
     observation_rows = review_pristine_observation_pool(evaluable_rows, args.market)
-    rows = formal_rows + observation_rows
+    # The user-facing shortlist is capped at five. Observation rows only fill
+    # unused slots; once five formal candidates exist, do not publish a second
+    # list that competes with the official shortlist.
+    visible_observation_rows = [] if len(formal_rows) >= 5 else observation_rows[: max(0, 5 - len(formal_rows))]
+    rows = formal_rows + visible_observation_rows
 
     pd.DataFrame(rows).to_csv(data_dir / f"{args.market}-value-scan.csv", index=False, encoding="utf-8-sig")
     failed_total = len(universe_errors) + len(fundamental_errors) + len(quote_errors)
@@ -167,12 +176,14 @@ def main() -> None:
         "data_complete": len(history) if args.market == "taiwan" else len(fundamentals),
         "candidates": len(rows),
         "formal_candidates": len(formal_rows),
-        "observation_candidates": len(observation_rows),
+        "observation_candidates": len(visible_observation_rows),
         "failed": failed_total,
         "scan_state": "complete",
         "status": "可用" if failed_total == 0 else "部分缺漏",
-        "universe_source": "Yuanta 0050+0051 PCF" if args.market == "taiwan" else "Vanguard VOO holdings",
+        "universe_source": "Yuanta 0050+0051 PCF" if args.market == "taiwan" else "Nasdaq-100 + semiconductor/AI core",
         "financial_source": "TWSE OpenAPI + MOPS historical filings" if args.market == "taiwan" else "SEC EDGAR CompanyFacts",
+        "sec_cache_hits": sum(1 for item in fundamentals.values() if item.get("sec_cache_used")) if args.market == "us" else 0,
+        "sec_data_as_of": max((str(item.get("sec_data_fetched_at", "")) for item in fundamentals.values()), default=None) if args.market == "us" else None,
         "errors": universe_errors + fundamental_errors + quote_errors,
         "error_details": {
             "universe": universe_errors,

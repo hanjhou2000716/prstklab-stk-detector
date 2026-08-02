@@ -405,7 +405,12 @@ const renderValueResearch = (id, items, empty) => {
     container.innerHTML = `<li class="empty">${escapeHtml(empty)}</li>`;
     return;
   }
-  const renderGroup = (title, group) => group.slice(0, 5).map((item) => {
+  // The product output is a five-stock shortlist.  Observation rows are only
+  // a fallback while fewer than five formal candidates are available; once
+  // the formal list is full, do not make users read a second redundant list.
+  const visibleFormal = formal.slice(0, 5);
+  const visibleObservation = visibleFormal.length >= 5 ? [] : observation.slice(0, 5 - visibleFormal.length);
+  const renderGroup = (title, group) => group.map((item) => {
     const state = item.change_percent > 0 ? "market-up" : item.change_percent < 0 ? "market-down" : "flat";
     const currency = item.market === "taiwan" ? "TWD" : "USD";
     const price = item.close === null || item.close === undefined ? "報價待完整掃描" : `${formatNumber(item.close)} ${currency}`;
@@ -414,7 +419,7 @@ const renderValueResearch = (id, items, empty) => {
     const score = researchScoreParts(item);
     return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}${item.condition_count ? ` · ${escapeHtml(item.condition_count)}` : ""}</strong></div></li>`;
   }).join("");
-  container.innerHTML = `${formal.length ? `<li class="research-subheading">正式候選（至少 5/6，最多 5 檔）</li>${renderGroup("正式候選", formal)}` : ""}${observation.length ? `<li class="research-subheading">觀察名單（3/6 或 4/6，最多 5 檔）</li>${renderGroup("觀察名單", observation)}` : ""}`;
+  container.innerHTML = `${visibleFormal.length ? `<li class="research-subheading">正式候選（至少 5/6，最多 5 檔）</li>${renderGroup("正式候選", visibleFormal)}` : ""}${visibleObservation.length ? `<li class="research-subheading">觀察名單（3/6 或 4/6，補足至 5 檔）</li>${renderGroup("觀察名單", visibleObservation)}` : ""}`;
 };
 
 let activeResearchMarket = "taiwan";

@@ -1,8 +1,9 @@
 import pandas as pd
+import requests
 
-from src.value_fundamentals import sec_value_metrics
+from src.value_fundamentals import sec_fundamentals, sec_value_metrics
 from src.value_review import review_public_pool, score_public_fundamentals
-from src.value_universe import _yuanta_pcf_rows, parse_sp500_constituents, parse_vanguard_holdings, parse_yuanta_holdings
+from src.value_universe import _yuanta_pcf_rows, fetch_us_value_universe, parse_sp500_constituents, parse_vanguard_holdings, parse_yuanta_holdings
 
 
 def test_yuanta_parser_keeps_only_taiwan_common_stock_rows():
@@ -48,6 +49,26 @@ def test_yuanta_pcf_reader_uses_issuer_api_payload():
     }]
 
 
+def test_us_value_universe_is_bounded_to_nasdaq100_and_semiconductor_core():
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"aaData": [{"Symbol": "AAPL", "Name": "Apple"}, {"Symbol": "NVDA", "Name": "NVIDIA"}]}
+
+    class Client:
+        headers = {}
+
+        def post(self, *args, **kwargs):
+            return Response()
+
+    rows, errors = fetch_us_value_universe(Client())
+    assert errors == []
+    assert {row["ticker"] for row in rows} >= {"AAPL", "NVDA", "AMD", "ASML"}
+    assert len(rows) < 150
+
+
 def test_value_score_does_not_label_one_roe_observation_as_three_year_stability():
     score, checks = score_public_fundamentals({"net_income": 6_000_000_000, "roe": .2, "roe_stable": None, "payout_ratio": .3, "pe": 15, "financial_source": "TWSE"}, "taiwan")
     assert score == 85
@@ -67,6 +88,29 @@ def test_sec_value_metrics_requires_three_annual_roe_observations_for_stable_lab
     metrics = sec_value_metrics(facts)
     assert metrics["years_available"] == 3
     assert metrics["roe_stable"] is True
+
+
+def test_sec_fundamentals_uses_recent_cache_when_sec_is_temporarily_unavailable(tmp_path, monkeypatch):
+    class Response:
+        def json(self):
+            return {"facts": {"us-gaap": {}}}
+
+    class Client:
+        headers = {}
+
+    monkeypatch.setattr("src.value_fundamentals._sec_get", lambda *args, **kwargs: Response())
+    cache = tmp_path / "sec-cache.json"
+    first, first_errors = sec_fundamentals(["AAPL"], Client(), cik_overrides={"AAPL": "320193"}, cache_path=cache)
+    assert first_errors == []
+    assert first["AAPL"]["sec_cache_used"] is False
+
+    def unavailable(*args, **kwargs):
+        raise requests.HTTPError("temporary SEC outage")
+
+    monkeypatch.setattr("src.value_fundamentals._sec_get", unavailable)
+    second, second_errors = sec_fundamentals(["AAPL"], Client(), cik_overrides={"AAPL": "320193"}, cache_path=cache)
+    assert second_errors == []
+    assert second["AAPL"]["sec_cache_used"] is True
 
 
 def test_independent_pool_does_not_require_an_upstream_technical_candidate():
