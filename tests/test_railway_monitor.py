@@ -205,3 +205,25 @@ def test_alert_trace_id_is_stable_and_non_secret():
     alert = monitor.Alert("jin10-1", "macro", "CPI release", "2026-08-02T10:00:00+00:00")
     assert monitor.alert_trace_id(alert) == monitor.alert_trace_id(alert)
     assert "jin10" in monitor.alert_trace_id(alert)
+
+
+def test_seen_store_persists_authenticated_delivery_receipt(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    alert = monitor.Alert("jin10-receipt", "macro", "CPI release", "2026-08-02T10:00:00+00:00")
+    trace_id = store.record_outbox(alert, {"summary": alert.summary})
+    assert store.record_delivery_status({
+        "trace_id": trace_id,
+        "delivery_status": "partial",
+        "delivered_count": 3,
+        "failed_count": 1,
+        "failed_recipient_hashes": ["deadbeef"],
+        "reported_at": "2026-08-02T10:01:00+00:00",
+    })
+    row = store.connection.execute(
+        "SELECT status, last_error FROM delivery_outbox WHERE trace_id = ?", (trace_id,)
+    ).fetchone()
+    receipt = store.connection.execute(
+        "SELECT status FROM delivery_receipts WHERE trace_id = ? AND recipient_hash = 'deadbeef'", (trace_id,)
+    ).fetchone()
+    assert row == ("partial", "recipient delivery incomplete")
+    assert receipt == ("failed",)

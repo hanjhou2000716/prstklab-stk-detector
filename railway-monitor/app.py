@@ -106,6 +106,7 @@ HEALTH_STATE: dict[str, Any] = {
     "jin10": {"status": "not_checked", "last_success_at": None, "last_failure_at": None, "item_count": 0, "error": None},
     "gdelt": {"enabled": True, "status": "not_checked", "last_success_at": None, "last_failure_at": None, "article_count": 0, "alert_count": 0, "error": None},
 }
+DELIVERY_STORE: SeenStore | None = None
 
 
 def update_health(component: str, **values: Any) -> None:
@@ -398,6 +399,16 @@ class SeenStore:
                 last_error TEXT
             )"""
         )
+        self.connection.execute(
+            """CREATE TABLE IF NOT EXISTS delivery_receipts (
+                trace_id TEXT NOT NULL,
+                recipient_hash TEXT NOT NULL,
+                status TEXT NOT NULL,
+                error TEXT,
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY(trace_id, recipient_hash)
+            )"""
+        )
         self.connection.commit()
 
     def record_incoming_flash(self, flash: Flash) -> None:
@@ -424,13 +435,49 @@ class SeenStore:
         return trace_id
 
     def mark_outbox(self, trace_id: str, status: str, error: str | None = None) -> None:
-        if status not in {"pending", "sent", "failed"}:
+        if status not in {"pending", "sent", "partial", "failed"}:
             raise ValueError(f"unsupported outbox status: {status}")
         self.connection.execute(
             "UPDATE delivery_outbox SET status=?, attempts=attempts+1, last_error=?, updated_at=? WHERE trace_id=?",
             (status, error, datetime.now(timezone.utc).isoformat(), trace_id),
         )
         self.connection.commit()
+
+    def record_delivery_status(self, payload: dict[str, Any]) -> bool:
+        """Persist an authenticated GitHub per-run delivery receipt."""
+        trace_id = str(payload.get("trace_id") or "").strip()
+        status = str(payload.get("delivery_status") or "unknown").strip()
+        if not trace_id or status not in {"delivered", "partial", "failed"}:
+            raise ValueError("invalid delivery receipt")
+        failed_hashes = payload.get("failed_recipient_hashes") or []
+        if not isinstance(failed_hashes, list) or any(not isinstance(item, str) for item in failed_hashes):
+            raise ValueError("invalid failed recipient hashes")
+        now = datetime.now(timezone.utc).isoformat()
+        exists = self.connection.execute(
+            "SELECT 1 FROM delivery_outbox WHERE trace_id = ?", (trace_id,)
+        ).fetchone()
+        if exists is None:
+            logging.warning("delivery receipt for unknown trace_id=%s", trace_id)
+            return False
+        self.connection.execute(
+            "UPDATE delivery_outbox SET status=?, last_error=?, updated_at=? WHERE trace_id=?",
+            (status, None if status == "delivered" else "recipient delivery incomplete", now, trace_id),
+        )
+        for recipient_hash in failed_hashes:
+            self.connection.execute(
+                "INSERT OR REPLACE INTO delivery_receipts(trace_id,recipient_hash,status,error,updated_at) VALUES(?,?,?,?,?)",
+                (trace_id, recipient_hash[:128], "failed", "recipient delivery failed", now),
+            )
+        self.connection.execute(
+            "INSERT OR REPLACE INTO delivery_receipts(trace_id,recipient_hash,status,error,updated_at) VALUES(?,?,?,?,?)",
+            (trace_id, "__aggregate__", status, json.dumps({
+                "delivered_count": payload.get("delivered_count", 0),
+                "failed_count": payload.get("failed_count", 0),
+                "reported_at": payload.get("reported_at"),
+            }, ensure_ascii=False), now),
+        )
+        self.connection.commit()
+        return True
 
     def release_classification(self, event_id: str, error: str) -> None:
         """Return a failed dispatch to the retryable state."""
@@ -834,6 +881,38 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def do_POST(self) -> None:  # noqa: N802
+        if self.path != "/delivery-status":
+            self.send_error(404)
+            return
+        secret = os.environ.get("DELIVERY_STATUS_SHARED_SECRET", "")
+        if not secret:
+            self.send_error(503, "delivery callback is not configured")
+            return
+        try:
+            length = min(int(self.headers.get("Content-Length", "0")), 128 * 1024)
+            body = self.rfile.read(length)
+            supplied = self.headers.get("X-PRSTK-Signature", "")
+            expected = "sha256=" + hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
+            if not hmac.compare_digest(supplied, expected):
+                self.send_error(401)
+                return
+            payload = json.loads(body.decode("utf-8"))
+            if DELIVERY_STORE is None or not DELIVERY_STORE.record_delivery_status(payload):
+                self.send_error(404, "unknown trace_id")
+                return
+            response = b'{"ok":true}\n'
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(response)))
+            self.end_headers()
+            self.wfile.write(response)
+        except (ValueError, TypeError, json.JSONDecodeError):
+            self.send_error(400, "invalid delivery receipt")
+        except Exception:
+            logging.exception("delivery status callback failed")
+            self.send_error(500)
+
     def log_message(self, _format: str, *_args: Any) -> None:
         return
 
@@ -859,6 +938,8 @@ async def monitor_forever() -> None:
     update_health("gdelt", enabled=gdelt_enabled, poll_seconds=gdelt_interval,
                   status="disabled" if not gdelt_enabled else "not_checked")
     store = SeenStore(Path(os.environ.get("MONITOR_STATE_PATH", "/data/jin10-monitor.sqlite3")))
+    global DELIVERY_STORE
+    DELIVERY_STORE = store
     first_cycle = True
     gdelt_baseline = True
     last_gdelt_poll = 0.0
