@@ -113,6 +113,15 @@ HEALTH_STATE: dict[str, Any] = {
         "unclassified_count": 0,
         "reason_counts": {},
     },
+    "delivery": {
+        "status": "not_checked",
+        "last_trace_id": None,
+        "last_outbox_status": None,
+        "last_receipt_status": None,
+        "counts": {},
+        "last_updated_at": None,
+        "last_error": None,
+    },
 }
 DELIVERY_STORE: SeenStore | None = None
 
@@ -517,6 +526,7 @@ class SeenStore:
             (trace_id, alert_canonical_key(alert), alert.source, alert.event_id, json.dumps(payload, ensure_ascii=False), now, now),
         )
         self.connection.commit()
+        update_health("delivery", **self.delivery_diagnostics())
         return trace_id
 
     def mark_outbox(self, trace_id: str, status: str, error: str | None = None) -> None:
@@ -527,6 +537,34 @@ class SeenStore:
             (status, error, datetime.now(timezone.utc).isoformat(), trace_id),
         )
         self.connection.commit()
+        update_health("delivery", **self.delivery_diagnostics())
+
+    def delivery_diagnostics(self, db: sqlite3.Connection | None = None) -> dict[str, Any]:
+        """Return non-secret delivery state for Railway's health endpoint."""
+        database = db or self.connection
+        rows = database.execute(
+            "SELECT status, COUNT(*) FROM delivery_outbox GROUP BY status"
+        ).fetchall()
+        counts = {str(status): int(count) for status, count in rows}
+        latest = database.execute(
+            """SELECT trace_id, status, last_error, updated_at
+               FROM delivery_outbox ORDER BY updated_at DESC LIMIT 1"""
+        ).fetchone()
+        receipt = database.execute(
+            """SELECT status, updated_at FROM delivery_receipts
+               WHERE recipient_hash='__aggregate__' ORDER BY updated_at DESC LIMIT 1"""
+        ).fetchone()
+        outbox_status = str(latest[1]) if latest else None
+        receipt_status = str(receipt[0]) if receipt else None
+        return {
+            "status": receipt_status or outbox_status or "not_checked",
+            "last_trace_id": str(latest[0]) if latest else None,
+            "last_outbox_status": outbox_status,
+            "last_receipt_status": receipt_status,
+            "counts": counts,
+            "last_updated_at": (receipt[1] if receipt else latest[3]) if (receipt or latest) else None,
+            "last_error": str(latest[2]) if latest and latest[2] else None,
+        }
 
     def record_delivery_status(self, payload: dict[str, Any]) -> bool:
         """Persist an authenticated GitHub per-run delivery receipt."""
@@ -566,6 +604,7 @@ class SeenStore:
                 }, ensure_ascii=False), now),
             )
             db.commit()
+            update_health("delivery", **self.delivery_diagnostics(db))
             return True
         finally:
             if callback_connection:
@@ -1032,6 +1071,7 @@ async def monitor_forever() -> None:
     store = SeenStore(Path(os.environ.get("MONITOR_STATE_PATH", "/data/jin10-monitor.sqlite3")))
     global DELIVERY_STORE
     DELIVERY_STORE = store
+    update_health("delivery", **store.delivery_diagnostics())
     first_cycle = True
     gdelt_baseline = True
     last_gdelt_poll = 0.0

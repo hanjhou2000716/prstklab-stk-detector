@@ -258,6 +258,10 @@ def test_seen_store_persists_authenticated_delivery_receipt(tmp_path):
     ).fetchone()
     assert row == ("partial", "recipient delivery incomplete")
     assert receipt == ("failed",)
+    snapshot = monitor.health_snapshot()
+    assert snapshot["delivery"]["status"] == "partial"
+    assert snapshot["delivery"]["last_receipt_status"] == "partial"
+    assert snapshot["delivery"]["counts"]["partial"] == 1
 
 
 def test_delivery_receipt_can_be_saved_from_health_server_thread(tmp_path):
