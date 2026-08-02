@@ -1,0 +1,35 @@
+name: Quality and delivery dry-run
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-dry-run:
+    runs-on: ubuntu-latest
+    env:
+      # Deliberate non-secret values used only by the local validation.
+      TELEGRAM_CHAT_IDS: ci-recipient-a,ci-recipient-b
+      DASHBOARD_URL: https://example.test/prstklab-stk-detector/
+      TELEGRAM_BOT_TOKEN: ""
+      RAILWAY_STATUS_URL: ""
+      RAILWAY_STATUS_SHARED_SECRET: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run unit tests
+        run: pytest -q
+      - name: Compile Python modules
+        run: python -m compileall -q src railway-monitor
+      - name: Validate Telegram delivery configuration without network access
+        run: python -m src.delivery_smoke_test
