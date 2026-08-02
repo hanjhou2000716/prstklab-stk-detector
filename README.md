@@ -475,3 +475,23 @@ action. A run with mixed results remains `partial`; its delivery receipt and
 hashed failed-recipient list are written to Railway for diagnosis. This retry
 policy improves transient delivery reliability but does not bypass Telegram
 rate limits or turn a partial result into a successful event lock.
+
+### Release artifact audit
+
+The `quality.yml` workflow also runs `python -m src.runtime_audit`. This is a
+network-free final gate that checks the published `site/index.html`,
+`site/data/market.json`, and `site/data/research-report.json` for valid JSON,
+required card fields, research source state, and a non-empty Mini App entry.
+It intentionally reports provider gaps, warming research, or an expired
+report as warnings rather than hiding them or treating them as a successful
+freshness check. Run it locally before a manual Pages verification:
+
+```powershell
+python -m src.runtime_audit
+```
+
+After a real refresh, verify the printed structure first, then open the Pages
+URL and check the visible `updated_at`/source times. A green artifact audit
+does not prove that Telegram reached every recipient; use the Railway
+`/health` delivery receipt and the Telegram message itself for that final
+check.

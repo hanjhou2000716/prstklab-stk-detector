@@ -31,5 +31,7 @@ jobs:
         run: pytest -q
       - name: Compile Python modules
         run: python -m compileall -q src railway-monitor
+      - name: Validate checked-in Mini App artifacts
+        run: python -m src.runtime_audit
       - name: Validate Telegram delivery configuration without network access
         run: python -m src.delivery_smoke_test
