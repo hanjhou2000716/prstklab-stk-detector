@@ -93,6 +93,14 @@ SOURCES = (
         "terms": ("monetary policy", "interest rate", "liquidity", "financial stability"),
     },
     {
+        "key": "white-house", "kind": "html", "url": "https://www.whitehouse.gov/news/",
+        "source": "White House\uff5c\u5b98\u65b9\u65b0\u805e", "label": "\u7f8e\u570b\u7e3d\u7d71\uff0f\u5730\u7de3\u653f\u7b56",
+        # Keep this focused on foreign-policy and security developments.  The
+        # page also contains routine administrative releases that should not
+        # enter the emergency-event candidate stream.
+        "terms": ("iran", "attack", "strike", "military", "ceasefire", "truce", "sanction", "war", "troops", "hormuz"),
+    },
+    {
         "key": "cisa", "kind": "rss", "url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
         "source": "CISA\uff5c\u5b98\u65b9 RSS", "label": "\u8cc7\u5b89\uff0f\u4f9b\u61c9\u93c8",
         "terms": ("known exploited", "ransomware", "supply chain", "critical infrastructure"),
