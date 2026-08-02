@@ -10,6 +10,7 @@ from src.official_events import (
     _usgs_items,
     _is_recent_release,
     fetch_official_events,
+    SOURCES,
 )
 
 
@@ -60,6 +61,12 @@ def test_html_date_parser_accepts_roc_and_gregorian_release_dates():
 
 def test_future_dated_release_is_not_considered_fresh():
     assert _is_recent_release("2099-01-01T00:00:00+00:00") is False
+
+
+def test_white_house_is_registered_as_a_first_party_security_source():
+    source = next(item for item in SOURCES if item["key"] == "white-house")
+    assert source["url"] == "https://www.whitehouse.gov/news/"
+    assert "iran" in source["terms"]
 
 
 def test_mops_daily_api_keeps_material_ordinary_share_announcement(monkeypatch):

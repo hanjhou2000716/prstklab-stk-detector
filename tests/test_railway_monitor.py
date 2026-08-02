@@ -51,6 +51,28 @@ def test_confirmed_ceasefire_is_classified_as_material_positive_event():
     assert alert.category == "material_positive"
 
 
+def test_chinese_deescalation_headline_is_material_positive():
+    flash = monitor.Flash(
+        "trump-iran-1",
+        "美國總統特朗普：我已同意取消對伊朗的攻擊。",
+        "",
+        "2026-08-02T10:06:55+08:00",
+    )
+    alert = monitor.alert_from_flash(flash)
+    assert alert is not None
+    assert alert.category == "material_positive"
+
+
+def test_chinese_geopolitical_escalation_is_conflict_candidate():
+    flash = monitor.Flash(
+        "iran-attack-1",
+        "美國對伊朗發動攻擊，市場關注原油與航運風險",
+        "",
+        "2026-08-02T10:06:55+08:00",
+    )
+    assert monitor.classify_flash(flash) == "conflict"
+
+
 def test_category_cooldown_allows_only_escalation_before_window_expires(tmp_path):
     store = monitor.SeenStore(tmp_path / "state.sqlite3")
     first = monitor.Alert("a1", "policy", "政策：關稅消息", "2026-07-26T20:30:00+08:00")
@@ -66,6 +88,22 @@ def test_extract_flashes_reads_documented_jin10_item_shape():
     result = {"data": {"items": [{"id": "a1", "title": "", "content": "FOMC", "time": "2026-07-26T20:30:00+08:00"}]}}
     flashes = monitor.extract_flashes(result)
     assert [(flash.event_id, flash.content) for flash in flashes] == [("a1", "FOMC")]
+
+
+def test_legacy_unclassified_event_can_be_reclassified_after_keyword_update(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    assert store.add_if_new("legacy-1")
+    assert store.classification_for("legacy-1") == "unclassified"
+    assert store.claim_classification("legacy-1", "in_scope")
+    assert store.classification_for("legacy-1") == "in_scope"
+    assert not store.claim_classification("legacy-1", "in_scope")
+
+
+def test_new_event_is_not_claimed_twice_during_baseline(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    assert store.claim_classification("new-1", "in_scope")
+    store.set_classification("new-1", "baseline")
+    assert not store.claim_classification("new-1", "in_scope")
 
 
 def test_signature_covers_exact_github_payload_fields():
@@ -86,6 +124,16 @@ def test_gdelt_requires_two_trusted_publishers_with_the_same_concrete_anchor():
     assert alerts[0].category == "conflict"
     assert alerts[0].source == "gdelt"
     assert {item["domain"] for item in alerts[0].evidence_payload} == {"reuters.com", "apnews.com"}
+
+
+def test_gdelt_can_discover_a_trump_iran_deescalation_event():
+    articles = [
+        monitor.DiscoveryArticle("Trump agrees to cancel attack on Iran", "https://www.reuters.com/a", "reuters.com", "2026-07-29T01:00:00+00:00"),
+        monitor.DiscoveryArticle("Trump cancels attack on Iran after talks", "https://apnews.com/b", "apnews.com", "2026-07-29T01:01:00+00:00"),
+    ]
+    alerts = monitor.cross_checked_gdelt_alerts(articles)
+    assert len(alerts) == 1
+    assert alerts[0].category == "material_positive"
 
 
 def test_gdelt_single_trusted_story_never_becomes_an_alert():

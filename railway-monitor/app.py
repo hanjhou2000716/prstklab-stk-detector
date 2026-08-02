@@ -29,7 +29,7 @@ import httpx
 
 JIN10_MCP_URL = "https://mcp.jin10.com/mcp"
 GDELT_DOC_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
-GDELT_QUERY = '(war OR invasion OR ceasefire OR sanctions OR Hormuz OR tariff OR "export controls" OR semiconductor OR earthquake OR tsunami OR cyberattack OR ransomware OR pandemic OR Bitcoin OR Ethereum)'
+GDELT_QUERY = '(war OR invasion OR ceasefire OR sanctions OR Hormuz OR tariff OR "export controls" OR semiconductor OR earthquake OR tsunami OR cyberattack OR ransomware OR pandemic OR Bitcoin OR Ethereum OR Trump OR "cancel attack" OR "call off attack" OR Iran OR "White House")'
 GITHUB_API_VERSION = "2022-11-28"
 ALLOWED_CATEGORIES = {"fed", "macro", "policy", "conflict", "energy", "semiconductor", "market", "black_swan", "material_positive"}
 CATEGORY_LABELS = {
@@ -51,7 +51,7 @@ CATEGORY_KEYWORDS = {
     "fed": ("fomc", "federal reserve", "powell", "聯準會", "美联储", "鮑威爾", "鲍威尔"),
     "macro": ("cpi", "pce", "非農", "非农", "失業率", "失业率", "gdp", "通膨", "通胀"),
     "policy": ("關稅", "关税", "制裁", "出口管制", "政策", "tariff", "sanction", "duties", "duty", "trade war"),
-    "conflict": ("戰爭", "战争", "軍事", "军事", "導彈", "导弹", "停火", "中東", "中东", "invasion", "iran", "israel", "ukraine", "russia", "truce", "ceasefire", "airstrike"),
+    "conflict": ("戰爭", "战争", "軍事", "军事", "導彈", "导弹", "停火", "中東", "中东", "伊朗", "以色列", "特朗普", "川普", "攻擊", "攻击", "襲擊", "袭击", "空襲", "空袭", "進攻", "进攻", "軍事行動", "军事行动", "invasion", "iran", "israel", "ukraine", "russia", "trump", "truce", "ceasefire", "airstrike", "attack"),
     "energy": ("wti", "brent", "原油", "油價", "油价", "opec", "crude oil", "oil supply"),
     "semiconductor": ("nvidia", "輝達", "英伟达", "台積電", "台积电", "tsmc", "半導體", "半导体"),
     "market": ("熔斷", "熔断", "閃崩", "闪崩", "crash", "circuit breaker"),
@@ -74,7 +74,7 @@ DISCOVERY_ANCHORS = {
     "energy": ("wti", "brent", "oil", "opec", "crude"),
     "semiconductor": ("nvidia", "tsmc", "asml", "semiconductor"),
     "black_swan": ("earthquake", "tsunami", "ransomware", "cyberattack", "pandemic"),
-    "material_positive": ("ceasefire", "truce", "peace deal", "tariff exemption", "rate cut"),
+    "material_positive": ("iran", "israel", "ukraine", "russia", "trump", "ceasefire", "truce", "peace deal", "tariff exemption", "rate cut", "cancel attack", "call off attack"),
 }
 
 # GDELT is only a discovery feed.  Two headlines must describe the same
@@ -87,11 +87,11 @@ DISCOVERY_ENTITIES = (
 )
 DISCOVERY_ENTITY_ANCHORS = {"nvidia", "tsmc", "asml"}
 DISCOVERY_ACTIONS = {
-    "conflict": ("conflict", "war", "attack", "airstrike", "invasion", "missile", "ceasefire", "truce"),
+    "conflict": ("conflict", "war", "attack", "airstrike", "invasion", "missile", "ceasefire", "truce", "military action"),
     "policy": ("tariff", "sanction", "export control", "duties", "ban", "restriction"),
     "energy": ("oil", "supply", "production", "opec", "output", "disruption"),
     "semiconductor": ("earnings", "guidance", "export control", "restriction", "capex", "forecast"),
-    "material_positive": ("ceasefire", "truce", "peace deal", "tariff exemption", "rate cut"),
+    "material_positive": ("ceasefire", "truce", "peace deal", "tariff exemption", "rate cut", "attack", "cancel attack", "cancel attacks", "cancels attack", "canceled attack", "cancelled attack", "call off attack", "halt attack"),
     "black_swan": ("earthquake", "tsunami", "ransomware", "cyberattack", "pandemic"),
 }
 
@@ -127,8 +127,12 @@ BLACK_SWAN_TERMS = (
 )
 MATERIAL_POSITIVE_TERMS = (
     "ceasefire agreement", "ceasefire", "truce agreement", "peace deal",
-    "tariff exemption", "tariff removal", "rate cut", "停火協議", "停火", "休戰協議",
-    "和平協議", "關稅豁免", "取消關稅", "降息",
+    "tariff exemption", "tariff removal", "rate cut", "cancel attack", "cancel attacks",
+    "cancels attack", "canceled attack", "cancelled attack", "call off attack", "call off attacks",
+    "calls off attack", "called off attack", "halt attack", "halt attacks", "agreed to cancel",
+    "停火協議", "停火", "休戰協議", "和平協議", "關稅豁免", "取消關稅", "降息",
+    "取消攻擊", "取消對伊朗的攻擊", "取消對伊朗攻擊", "撤回攻擊", "停止攻擊", "暫停攻擊",
+    "撤回軍事行動", "停止軍事行動", "戰事降溫", "战事降温",
 )
 
 
@@ -325,6 +329,17 @@ class SeenStore:
         self.connection.execute(
             "CREATE TABLE IF NOT EXISTS seen (event_id TEXT PRIMARY KEY, first_seen_at TEXT NOT NULL)"
         )
+        # Older Railway volumes have a two-column ``seen`` table.  Keep those
+        # rows, but make them eligible for one post-deploy classification pass
+        # so a headline that was previously outside the keyword scope can be
+        # re-evaluated after a rule update.
+        columns = {row[1] for row in self.connection.execute("PRAGMA table_info(seen)").fetchall()}
+        if "classification" not in columns:
+            self.connection.execute(
+                "ALTER TABLE seen ADD COLUMN classification TEXT NOT NULL DEFAULT 'unclassified'"
+            )
+        if "classified_at" not in columns:
+            self.connection.execute("ALTER TABLE seen ADD COLUMN classified_at TEXT")
         self.connection.execute(
             "CREATE TABLE IF NOT EXISTS dispatched (category TEXT NOT NULL, summary TEXT NOT NULL, dispatched_at TEXT NOT NULL)"
         )
@@ -350,12 +365,64 @@ class SeenStore:
         self.connection.commit()
 
     def add_if_new(self, event_id: str) -> bool:
+        """Backward-compatible insert helper for callers outside the poll loop."""
         cursor = self.connection.execute(
-            "INSERT OR IGNORE INTO seen(event_id, first_seen_at) VALUES (?, ?)",
+            "INSERT OR IGNORE INTO seen(event_id, first_seen_at, classification) VALUES (?, ?, 'unclassified')",
             (event_id, datetime.now(timezone.utc).isoformat()),
         )
         self.connection.commit()
         return cursor.rowcount == 1
+
+    def claim_classification(self, event_id: str, classification: str) -> bool:
+        """Claim an event once, while allowing legacy unknown rows to retry.
+
+        The old monitor inserted every ID before classification.  That made a
+        transiently unrecognised headline permanent and explains why adding a
+        better keyword later did not recover the missed Trump/Iran event.  A
+        row in ``unclassified`` is deliberately re-claimable; once it becomes
+        in-scope, out-of-scope, or baseline it is stable and will not loop.
+        """
+        allowed = {"unclassified", "in_scope", "out_of_scope", "baseline"}
+        if classification not in allowed:
+            raise ValueError(f"unsupported event classification: {classification}")
+        now = datetime.now(timezone.utc).isoformat()
+        row = self.connection.execute(
+            "SELECT classification FROM seen WHERE event_id = ?", (event_id,)
+        ).fetchone()
+        if row is None:
+            self.connection.execute(
+                "INSERT INTO seen(event_id, first_seen_at, classification, classified_at) VALUES (?, ?, ?, ?)",
+                (event_id, now, classification, now if classification != "unclassified" else None),
+            )
+            self.connection.commit()
+            return classification != "unclassified"
+        previous = str(row[0] or "unclassified")
+        if previous != "unclassified":
+            return False
+        if classification == "unclassified":
+            return False
+        self.connection.execute(
+            "UPDATE seen SET classification = ?, classified_at = ? WHERE event_id = ? AND classification = 'unclassified'",
+            (classification, now, event_id),
+        )
+        self.connection.commit()
+        return True
+
+    def classification_for(self, event_id: str) -> str | None:
+        row = self.connection.execute(
+            "SELECT classification FROM seen WHERE event_id = ?", (event_id,)
+        ).fetchone()
+        return str(row[0]) if row and row[0] else None
+
+    def set_classification(self, event_id: str, classification: str) -> None:
+        """Finalize a claimed event (used for first-cycle baseline rows)."""
+        if classification not in {"in_scope", "out_of_scope", "baseline"}:
+            raise ValueError(f"unsupported event classification: {classification}")
+        self.connection.execute(
+            "UPDATE seen SET classification = ?, classified_at = ? WHERE event_id = ?",
+            (classification, datetime.now(timezone.utc).isoformat(), event_id),
+        )
+        self.connection.commit()
 
     def may_dispatch(self, alert: Alert, cooldown_seconds: int) -> bool:
         """Allow a category update after cooldown, or immediately on escalation."""
@@ -690,10 +757,19 @@ async def monitor_forever() -> None:
             flashes.sort(key=lambda item: item.occurred_at)
             dispatched = 0
             for flash in flashes:
-                if not store.add_if_new(flash.event_id):
-                    continue
+                previous_classification = store.classification_for(flash.event_id)
                 alert = alert_from_flash(flash)
-                if alert is None or (first_cycle and not bootstrap):
+                classification = "in_scope" if alert is not None else "unclassified"
+                if not store.claim_classification(flash.event_id, classification):
+                    continue
+                if alert is None:
+                    # Keep unrecognised IDs retryable after a rule/source update.
+                    continue
+                # Brand-new rows are baselined on the first cycle.  A legacy
+                # ``unclassified`` row is intentionally not baselined: it is
+                # precisely the missed event that a rule update should recover.
+                if first_cycle and not bootstrap and previous_classification is None:
+                    store.set_classification(flash.event_id, "baseline")
                     continue
                 ledger_record = store.observe_alert(alert)
                 if not store.ledger_may_dispatch(ledger_record, cooldown):
@@ -704,6 +780,7 @@ async def monitor_forever() -> None:
                     continue
                 await dispatch_alert(alert, token=github_token, repository=repository, shared_secret=shared_secret)
                 store.record_dispatch(alert)
+                store.set_classification(flash.event_id, "in_scope")
                 store.mark_alert_reminded(alert, escalated="高風險" in alert.summary)
                 dispatched += 1
             logging.info("Jin10 poll completed: %s flash(es), %s alert(s) dispatched", len(flashes), dispatched)
@@ -721,7 +798,11 @@ async def monitor_forever() -> None:
                 alerts = cross_checked_gdelt_alerts(articles)
                 dispatched = 0
                 for alert in alerts:
-                    if not store.add_if_new(alert.event_id) or (gdelt_baseline and not bootstrap):
+                    previous_classification = store.classification_for(alert.event_id)
+                    if not store.claim_classification(alert.event_id, "in_scope"):
+                        continue
+                    if gdelt_baseline and not bootstrap and previous_classification is None:
+                        store.set_classification(alert.event_id, "baseline")
                         continue
                     ledger_record = store.observe_alert(alert)
                     if not store.ledger_may_dispatch(ledger_record, gdelt_interval if gdelt_interval >= 1800 else 7200):
@@ -731,6 +812,7 @@ async def monitor_forever() -> None:
                         continue
                     await dispatch_alert(alert, token=github_token, repository=repository, shared_secret=shared_secret)
                     store.record_dispatch(alert)
+                    store.set_classification(alert.event_id, "in_scope")
                     store.mark_alert_reminded(alert, escalated="高風險" in alert.summary)
                     dispatched += 1
                 logging.info("GDELT cross-check completed: %s article(s), %s alert(s) dispatched", len(articles), dispatched)
