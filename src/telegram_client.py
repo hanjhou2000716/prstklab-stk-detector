@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import os
 from time import sleep, time
 
 import requests
@@ -20,6 +21,25 @@ class TelegramTransientError(TelegramError):
 SEND_ATTEMPTS = 3
 RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 FAILED_RECIPIENT_RETRIES = 1
+MAX_FAILED_RECIPIENT_RETRIES = 3
+
+
+def _failed_recipient_retry_count() -> int:
+    """Return a bounded retry count for recipients that had transient errors.
+
+    ``send_brief`` already performs its own transport/API retry cycle.  This
+    second, recipient-scoped cycle is deliberately small: it prevents one
+    Telegram edge reset from permanently losing a recipient while avoiding a
+    long-running workflow or duplicate sends to recipients that already
+    succeeded.  An invalid environment value falls back to the safe default.
+    """
+    raw = os.environ.get("TELEGRAM_FAILED_RECIPIENT_RETRIES", "").strip()
+    if not raw:
+        return FAILED_RECIPIENT_RETRIES
+    try:
+        return max(0, min(MAX_FAILED_RECIPIENT_RETRIES, int(raw)))
+    except ValueError:
+        return FAILED_RECIPIENT_RETRIES
 
 
 @dataclass(frozen=True)
@@ -229,14 +249,31 @@ def send_briefs(
         else:
             deliveries.append(TelegramDelivery(chat_id=chat_id, result=result))
     # A transient outage affecting only some recipients must not cause a
-    # second send to everyone. Retry only the failed recipients once.
-    for index, delivery in enumerate(tuple(deliveries)):
-        if delivery.delivered or "temporary delivery failure" not in (delivery.error or ""):
-            continue
-        try:
-            result = send_brief(token=token, chat_id=delivery.chat_id, text=text, dashboard_url=dashboard_url)
-        except TelegramError as exc:
-            deliveries[index] = TelegramDelivery(chat_id=delivery.chat_id, error=str(exc))
-        else:
-            deliveries[index] = TelegramDelivery(chat_id=delivery.chat_id, result=result)
+    # second send to everyone. Retry only the failed recipients, with a
+    # bounded number of rounds configurable for a deployment environment.
+    pending = {
+        index
+        for index, delivery in enumerate(deliveries)
+        if not delivery.delivered and "temporary delivery failure" in (delivery.error or "")
+    }
+    for _ in range(_failed_recipient_retry_count()):
+        if not pending:
+            break
+        next_pending: set[int] = set()
+        for index in pending:
+            delivery = deliveries[index]
+            try:
+                result = send_brief(
+                    token=token,
+                    chat_id=delivery.chat_id,
+                    text=text,
+                    dashboard_url=dashboard_url,
+                )
+            except TelegramError as exc:
+                deliveries[index] = TelegramDelivery(chat_id=delivery.chat_id, error=str(exc))
+                if isinstance(exc, TelegramTransientError):
+                    next_pending.add(index)
+            else:
+                deliveries[index] = TelegramDelivery(chat_id=delivery.chat_id, result=result)
+        pending = next_pending
     return tuple(deliveries)
