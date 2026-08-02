@@ -68,7 +68,9 @@ def test_official_event_key_applies_two_hour_topic_cooldown_but_allows_escalatio
     revised = {**first, "title": "revised source title", "released_at": "2026-07-25T09:10:00+00:00"}
     escalated = {**revised, "escalation": True}
     assert event_key(first) == event_key(revised)
-    assert event_key(first) != event_key(escalated)
+    # Escalation is a state transition of the same canonical event, not a
+    # second event identity; the ledger handles the upgrade notification.
+    assert event_key(first) == event_key(escalated)
 
 
 def test_monitor_brief_is_neutral_and_watch_sized():

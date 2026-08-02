@@ -16,6 +16,9 @@ SLOT_TITLES = {
     "us_open": "美股開盤儀表板",
 }
 
+# Legacy flat list retained for consumers that only need the principal
+# benchmarks.  The Mini App uses ``market_topics`` below for the new grouped
+# layout and can add event-related instruments separately.
 GLOBAL_TICKERS = ("TAIEX", "2330", "NIKKEI", "KOSPI", "NASDAQ", "SOX", "BRENT", "WTI", "GOLD", "BTC", "ETH")
 
 
@@ -80,7 +83,7 @@ def _pair_relation(
 def _market_observations(
     items: dict[str, dict[str, Any]], risk: dict[str, Any] | None, events: list[dict[str, Any]],
 ) -> list[dict[str, str]]:
-    """Build the five fixed, detailed public-observation cards for every slot."""
+    """Build the six fixed, detailed public-observation cards for every slot."""
     taiwan = items.get("TAIEX")
     tpex = items.get("TPEx")
     tsmc = items.get("2330")
@@ -91,6 +94,10 @@ def _market_observations(
     dxy = items.get("DXY")
     us10y = items.get("US10Y")
     usd_twd = items.get("USD/TWD")
+    wti = items.get("WTI") or items.get("BRENT")
+    gold = items.get("GOLD")
+    btc = items.get("BTC")
+    eth = items.get("ETH")
     primary_event = events[0] if events else {}
     event_title = primary_event.get("brief_title") or "今日無重大市場事件，持續觀察"
     event_text = primary_event.get("summary") or "本次未出現符合重大門檻的公開事件。"
@@ -118,11 +125,18 @@ def _market_observations(
             "觀察日韓下一交易時段是否延續，以及台股電子權值是否跟隨或出現明顯分歧。",
         ),
         _card(
-            "利率匯率",
-            f"美元指數 {_move(dxy)}；美國10年債殖利率 {_move(us10y)}；美元兌台幣 {_move(usd_twd)}。",
-            "美元與長債殖利率影響成長股折現率；美元兌台幣則是觀察台股外資風險偏好的公開輔助指標。",
-            _pair_relation(dxy, us10y, left_name="美元指數", right_name="美國10年債殖利率"),
-            "觀察美元、殖利率與台幣是否連續兩個交易時段同向，並核對科技指數是否同步受壓或走穩。",
+            "利率／匯率／黃金能源",
+            f"美元指數 {_move(dxy)}；美國10年債殖利率 {_move(us10y)}；美元兌台幣 {_move(usd_twd)}；黃金 {_move(gold)}；油價 {_move(wti)}。",
+            "利率、美元、黃金與能源共同反映通膨及避險需求，不能只用單一價格推論市場方向。",
+            _pair_relation(dxy, gold, left_name="美元指數", right_name="黃金"),
+            "觀察美元、殖利率、黃金與油價是否連續同向，並核對科技指數與台股權值的同步或分歧。",
+        ),
+        _card(
+            "加密市場",
+            f"BTC {_move(btc)}；ETH {_move(eth)}。",
+            "BTC／ETH 是高波動風險偏好的補充觀察，需搭配 Nasdaq、美元與流動性資料，不單獨代表股市方向。",
+            _pair_relation(btc, eth, left_name="BTC", right_name="ETH"),
+            "觀察 BTC／ETH 是否同步、波動是否放大，以及科技股與公開加密市場資料是否同向。",
         ),
         _card(
             "風險提醒",
@@ -134,6 +148,42 @@ def _market_observations(
     ]
 
 
+def _placeholder(ticker: str, name: str, currency: str = "") -> dict[str, Any]:
+    """Keep a fixed topic card visible when a public quote is unavailable."""
+    return {"ticker": ticker, "name": name, "currency": currency, "price": None, "change_percent": None,
+            "quote_basis": "公開資料暫時無法取得", "data_status": "unavailable"}
+
+
+def _topic_quote(items: dict[str, dict[str, Any]], ticker: str, name: str, currency: str = "點") -> dict[str, Any]:
+    return items.get(ticker) or _placeholder(ticker, name, currency)
+
+
+def _market_topics(items: dict[str, dict[str, Any]], events: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Build four fixed two-instrument themes plus event-driven extras."""
+    taiwan = _topic_quote(items, "TAIEX", "台股加權", "點")
+    txf = _topic_quote(items, "TXF", "台指期", "點")
+    ai_second = items.get("NVDA") or _topic_quote(items, "SOX", "半導體（費半）", "點")
+    topics = [
+        {"title": "臺灣總經", "items": [taiwan, txf]},
+        {"title": "AI科技業", "items": [_topic_quote(items, "2330", "台積電", "TWD"), ai_second]},
+        {"title": "亞洲相關", "items": [_topic_quote(items, "NIKKEI", "日經225", "點"), _topic_quote(items, "KOSPI", "韓國綜合", "點")]},
+        {"title": "美股相關", "items": [_topic_quote(items, "NASDAQ", "Nasdaq", "點"), _topic_quote(items, "SOX", "費半", "點")]},
+    ]
+    fixed = {str(item.get("ticker")) for topic in topics for item in topic["items"]}
+    event_text = " ".join(str(event.get(key) or "") for event in events for key in ("event_type", "short_label", "brief_title", "title" )).lower()
+    dynamic_tickers = ("BTC", "ETH") if any(term in event_text for term in ("crypto", "加密", "btc", "eth")) else ()
+    if any(term in event_text for term in ("oil", "energy", "能源", "原油", "gold", "黃金", "地緣")):
+        dynamic_tickers += ("WTI", "BRENT", "GOLD")
+    if any(term in event_text for term in ("fed", "利率", "通膨", "貨幣", "policy", "重大經濟")):
+        dynamic_tickers += ("DXY", "US10Y", "USD/TWD")
+    dynamic = []
+    for ticker in dict.fromkeys(dynamic_tickers):
+        if ticker in fixed or ticker not in items:
+            continue
+        dynamic.append(items[ticker] | {"topic": "事件相關"})
+    return topics, dynamic
+
+
 def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -> dict[str, Any]:
     """Create one detailed card payload for the Mini App, without advice."""
     events = (snapshot.get("events") or {}).get("items", [])
@@ -141,9 +191,14 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
     quotes = snapshot.get("quotes") or []
     macro_quotes = snapshot.get("macro_quotes") or []
     risk = snapshot.get("risk") or {}
-    all_items = {item.get("ticker"): item for item in [*indices, *quotes, *macro_quotes]}
+    all_items = {item.get("ticker"): item for item in [*indices, *quotes, *macro_quotes] if item.get("ticker")}
+    taiex = all_items.get("TAIEX") or {}
+    taifex = (taiex.get("crosscheck_sources") or {}).get("taifex") if isinstance(taiex.get("crosscheck_sources"), dict) else None
+    if isinstance(taifex, dict) and taifex.get("price") is not None:
+        all_items["TXF"] = {**taifex, "ticker": "TXF", "name": "台指期", "market": "taiwan", "currency": "點"}
     cards = [all_items[ticker] for ticker in GLOBAL_TICKERS if all_items.get(ticker)]
     observations = _market_observations(all_items, risk, events)
+    market_topics, dynamic_markets = _market_topics(all_items, events)
     lead = events[0] if events else observations[0]
     return {
         "slot": slot or "live",
@@ -154,6 +209,8 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
             f"{lead.get('market_context') or lead['market_impact']}"
         ),
         "markets": cards,
+        "market_topics": market_topics,
+        "dynamic_markets": dynamic_markets,
         "observations": observations,
         "reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
     }

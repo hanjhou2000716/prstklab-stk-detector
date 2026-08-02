@@ -371,6 +371,12 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
 
 def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[str, Any]:
     """Give official or news events the same card fields as price signals."""
+    # Preserve the provider's original labels before normalization.  The
+    # normalizer intentionally maps provider-specific event types to broad
+    # categories (for example ``macro``), so checking only the normalized
+    # record would lose explicit disaster/black-swan wording and weaken the
+    # strict high-risk gate.
+    raw_event = dict(event)
     event = normalize_event_record(event)
     label = str(event.get("short_label") or "市場事件")
     title = str(event.get("title") or "公開事件更新")
@@ -400,11 +406,27 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     )
     risk_level = event.get("risk_level") or "持續觀察"
     brief_title = event.get("brief_title") or f"{label}｜重要事件｜觀察"
+    event_text = " ".join(
+        str(record.get(key) or "")
+        for record in (raw_event, event)
+        for key in ("event_type", "category", "short_label", "brief_title", "title", "brief_summary")
+    ).lower()
+    is_black_swan = event.get("kind") != "market_signal" and any(
+        term in event_text for term in ("黑天鵝", "重大災害", "black swan", "disaster", "earthquake", "tsunami", "戰爭", "戰事", "war", "invasion", "conflict", "攻擊", "供應中斷")
+    )
+    official_verified = event.get("relevance") == "official" or event.get("source_tier") == "official"
+    strict_confirmation = official_verified and impact_confirmation["confirmed"]
     if risk_level == "高風險" and not impact_confirmation["confirmed"]:
         risk_level = "警戒"
         brief_title = f"{label}｜重要事件｜警戒"
         stock_observation = f"{stock_observation} 尚未核對到相關市場同步波動，維持警戒觀察。"
-    is_black_swan = event.get("importance") == "high-risk"
+    # Black-swan and major-disaster notices are never allowed to become a
+    # high-risk push from a headline alone: a first-party confirmation and at
+    # least one related market move are both required.
+    if is_black_swan and not strict_confirmation:
+        risk_level = "警戒" if risk_level in {"高風險", "高波動"} else risk_level
+        brief_title = f"{label}｜重要事件｜警戒"
+        stock_observation = f"{stock_observation} 僅在官方來源與相關市場同步確認後升級高風險。"
     if is_black_swan:
         related_names = "、".join(str(item.get("ticker") or "市場") for item in related[:3]) or "相關市場"
         confirmation = "已出現相關公開價格確認" if impact_confirmation["confirmed"] else "尚未出現足夠的相關公開價格確認"
@@ -436,6 +458,8 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "related": related,
         "impact_confirmation": impact_confirmation,
         "source_trace": trace,
+        "official_confirmed": official_verified,
+        "high_risk_eligible": bool(strict_confirmation) if is_black_swan else True,
     })
 
 

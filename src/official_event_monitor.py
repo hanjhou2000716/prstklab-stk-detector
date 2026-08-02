@@ -40,11 +40,17 @@ def select_official_event(
     detailed_events = snapshot.get("events", {}).get("items", [])
     if items and not baseline_official:
         for item in items:
+            detailed = next(
+                (
+                    event for event in detailed_events
+                    if event.get("url") == item.get("url")
+                    or event.get("source_url") == item.get("url")
+                ),
+                None,
+            )
             if item.get("importance") != "high-risk":
-                detailed = next(
-                    (event for event in detailed_events if event.get("url") == item.get("url") or event.get("source_url") == item.get("url")),
-                    None,
-                )
+                if detailed and detailed.get("high_risk_eligible") is False:
+                    continue
                 return detailed or item
             # A black-swan candidate must be confirmed by a related public
             # market move before it becomes a Telegram alert. It remains in
@@ -52,7 +58,8 @@ def select_official_event(
             detailed = next(
                 (
                     event for event in detailed_events
-                    if event.get("url") == item.get("url")
+                    if (event.get("url") == item.get("url") or event.get("source_url") == item.get("url"))
+                    and event.get("high_risk_eligible", True)
                     and (event.get("impact_confirmation") or {}).get("confirmed")
                 ),
                 None,

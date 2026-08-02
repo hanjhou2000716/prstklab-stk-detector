@@ -317,6 +317,22 @@ const renderBriefing = (briefing, generatedAt) => {
   setText("briefing-time", `${displayTime} CST`);
   setText("briefing-overview", report.overview || "本次以公開市場報價、官方事件與風險資料整理市場脈絡。 ");
   setText("briefing-reminder", report.reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
+  const topicContainer = document.getElementById("briefing-market-topics");
+  const dynamicContainer = document.getElementById("briefing-dynamic-markets");
+  const quoteCard = (item) => {
+    const value = item.price === null || item.price === undefined ? "—" : `${formatNumber(item.price)}${item.currency ? ` ${escapeHtml(item.currency)}` : ""}`;
+    const state = item.change_percent > 0 ? "market-up" : item.change_percent < 0 ? "market-down" : "flat";
+    const basis = item.freshness === "stale" || item.data_status === "unavailable" ? "最近收盤／資料暫缺" : compactQuoteMeta(item).replace("｜已核對", "");
+    return `<article class="briefing-topic-quote"><span>${escapeHtml(item.name || item.ticker || "公開市場")}</span><strong class="${state}">${escapeHtml(value)}</strong><small class="${state}">${escapeHtml(signedPercent(item.change_percent))}</small><em>${escapeHtml(basis)}</em></article>`;
+  };
+  if (topicContainer) {
+    const topics = report.market_topics || [];
+    topicContainer.innerHTML = topics.length ? topics.map((topic) => `<section class="briefing-topic"><h4>${escapeHtml(topic.title || "市場主題")}</h4><div class="briefing-topic-grid">${(topic.items || []).map(quoteCard).join("")}</div></section>`).join("") : "";
+  }
+  if (dynamicContainer) {
+    const dynamic = report.dynamic_markets || [];
+    dynamicContainer.innerHTML = dynamic.length ? `<h4>事件相關行情</h4><div class="briefing-topic-grid">${dynamic.map(quoteCard).join("")}</div>` : "";
+  }
   const container = document.getElementById("briefing-observations");
   if (!container) return;
   if (!observations.length) { container.innerHTML = '<p class="empty">本次定時報資料暫時無法取得</p>'; return; }
