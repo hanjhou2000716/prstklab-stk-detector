@@ -93,6 +93,38 @@ def test_keyword_database_matches_simplified_chinese_and_english_typo():
     assert monitor.classify_flash(typo) == "fed"
 
 
+def test_trump_taco_phrase_is_a_policy_alert():
+    flash = monitor.Flash(
+        "taco-1",
+        "TACO trade: Trump backs down on tariff threats",
+        "Markets assess another tariff pause.",
+        "2026-08-02T10:06:55+08:00",
+    )
+    alert = monitor.alert_from_flash(flash)
+    assert alert is not None
+    assert alert.category == "policy"
+
+
+def test_trump_tariff_deescalation_is_material_positive():
+    flash = monitor.Flash(
+        "trump-tariff-pause",
+        "美國總統特朗普宣布暫緩關稅",
+        "White House says the tariff deadline is extended.",
+        "2026-08-02T10:06:55+08:00",
+    )
+    assert monitor.classify_flash(flash) == "material_positive"
+
+
+def test_bare_trump_mention_does_not_trigger_an_alert():
+    flash = monitor.Flash(
+        "trump-speech",
+        "Trump speaks at a campaign rally",
+        "The speech contains no policy or market action.",
+        "2026-08-02T10:06:55+08:00",
+    )
+    assert monitor.alert_from_flash(flash) is None
+
+
 def test_geopolitical_war_is_black_swan_candidate_but_not_directly_sent():
     flash = monitor.Flash("war-1", "War escalates after missile attack", "Markets monitor supply disruption", "2026-08-02T10:06:55+08:00")
     assert monitor.classify_flash(flash) == "black_swan"
@@ -190,6 +222,16 @@ def test_gdelt_supports_chinese_entity_and_action_aliases():
     alerts = monitor.cross_checked_gdelt_alerts(articles)
     assert len(alerts) == 1
     assert alerts[0].category == "material_positive"
+
+
+def test_gdelt_can_discover_a_trump_taco_policy_reversal():
+    articles = [
+        monitor.DiscoveryArticle("TACO trade: Trump backs down on tariffs", "https://www.reuters.com/a", "reuters.com", "2026-07-29T01:00:00+00:00"),
+        monitor.DiscoveryArticle("TACO tariff reversal: Trump changes tariff threat after talks", "https://apnews.com/b", "apnews.com", "2026-07-29T01:01:00+00:00"),
+    ]
+    alerts = monitor.cross_checked_gdelt_alerts(articles)
+    assert len(alerts) == 1
+    assert alerts[0].category == "policy"
 
 
 def test_gdelt_black_swan_headlines_wait_for_a_first_party_confirmation():

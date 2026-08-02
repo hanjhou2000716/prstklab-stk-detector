@@ -33,7 +33,13 @@
     "matching": "NFKC + casefold + whitespace normalization + bounded fuzzy alias matching",
     "fuzzyThreshold": 0.9,
     "cooldownSeconds": 1800,
-    "warIsBlackSwanCandidate": true
+    "warIsBlackSwanCandidate": true,
+    "trumpTacoDetection": {
+      "enabled": true,
+      "requiresEntityAndAction": true,
+      "tacoAliases": ["TACO", "Trump Always Chickens Out", "關稅暫緩", "关税暂缓"],
+      "bareTrumpMentionDispatch": false
+    }
   },
   "phaseTwoSources": {
     "kofia": "https://freesis.kofia.or.kr/stat/FreeSIS.do?parentDivId=MSIS10000000000000&serviceId=STATSCU0100000070",
