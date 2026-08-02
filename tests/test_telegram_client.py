@@ -185,6 +185,64 @@ def test_send_briefs_retries_only_failed_recipient(monkeypatch):
     assert (summary.delivered_count, summary.failed_count) == (2, 0)
 
 
+def test_send_briefs_supports_multiple_bounded_recipient_retry_rounds(monkeypatch):
+    calls = 0
+
+    class Response:
+        ok = True
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"ok": True, "result": {"message_id": 10}}
+
+    def fake_post(url, json, timeout):
+        nonlocal calls
+        calls += 1
+        # The initial send_brief cycle uses three attempts.  The first
+        # recipient-scoped retry also fails; the second one succeeds.
+        if calls <= 4:
+            raise requests.ConnectionError("connection reset")
+        return Response()
+
+    monkeypatch.setenv("TELEGRAM_FAILED_RECIPIENT_RETRIES", "2")
+    monkeypatch.setattr("src.telegram_client.requests.post", fake_post)
+    monkeypatch.setattr("src.telegram_client.sleep", lambda _: None)
+
+    results = send_briefs(
+        token="token",
+        chat_ids=("offline-then-online",),
+        text="測試訊息",
+        dashboard_url="https://example.test/app",
+    )
+
+    assert results[0].delivered
+    assert calls == 5
+
+
+def test_send_briefs_can_disable_recipient_scoped_retry(monkeypatch):
+    calls = 0
+
+    def fake_post(url, json, timeout):
+        nonlocal calls
+        calls += 1
+        raise requests.ConnectionError("connection reset")
+
+    monkeypatch.setenv("TELEGRAM_FAILED_RECIPIENT_RETRIES", "0")
+    monkeypatch.setattr("src.telegram_client.requests.post", fake_post)
+    monkeypatch.setattr("src.telegram_client.sleep", lambda _: None)
+
+    results = send_briefs(
+        token="token",
+        chat_ids=("offline",),
+        text="測試訊息",
+        dashboard_url="https://example.test/app",
+    )
+
+    assert not results[0].delivered
+    assert calls == 3
+
+
 def test_send_brief_honors_telegram_retry_after(monkeypatch):
     sleeps = []
     calls = 0

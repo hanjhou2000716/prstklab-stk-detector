@@ -453,3 +453,25 @@ Railway delivery receipts are enabled, `RAILWAY_STATUS_URL` and
 `RAILWAY_STATUS_SHARED_SECRET` must be configured together and the URL must be
 HTTPS. This prevents a stale single-recipient setting or an insecure callback
 from being mistaken for a healthy delivery chain.
+
+### Recipient-scoped retry policy
+
+Telegram delivery has two bounded retry layers. Each individual API request
+uses the built-in transport retry cycle (three attempts, including Telegram's
+`Retry-After` value for HTTP 429). After the first pass, only recipients that
+still have a temporary transport/API failure are retried; recipients that
+already succeeded are never sent the same brief again in that run. The second
+layer defaults to one retry round and can be tuned without changing code:
+
+```text
+TELEGRAM_FAILED_RECIPIENT_RETRIES=0..3
+```
+
+`0` disables the second layer, while values above `3` are capped at `3` to
+keep a scheduled workflow bounded. Invalid values fall back to the safe
+default of `1`. Recipient-unavailable errors (for example, a user who has not
+started the Bot or has blocked it) are not retried because they require user
+action. A run with mixed results remains `partial`; its delivery receipt and
+hashed failed-recipient list are written to Railway for diagnosis. This retry
+policy improves transient delivery reliability but does not bypass Telegram
+rate limits or turn a partial result into a successful event lock.
