@@ -76,8 +76,8 @@ def _load_keyword_database() -> dict[str, Any]:
             },
             "iran_gulf_context": {
                 "anchors": ["iran", "iranian", "gulf", "hormuz", "伊朗", "海灣", "海湾", "荷姆茲海峽", "霍尔木兹海峡"],
-                "actions": ["geopolitical", "tension", "conflict", "escalation", "attack", "ceasefire", "supply disruption", "shipping", "地緣", "地缘", "緊張", "紧张", "衝突", "冲突", "供應中斷", "供应中断", "航運", "航运"],
-                "high_signal_actions": ["geopolitical", "conflict", "escalation", "attack", "supply disruption", "shipping", "地緣", "地缘", "衝突", "冲突", "升級", "升级", "供應中斷", "供应中断", "航運", "航运"],
+                "actions": ["geopolitical", "tension", "conflict", "escalation", "attack", "ceasefire", "supply disruption", "shipping", "negotiation", "negotiations", "deadline", "agreement", "failed talks", "talks collapse", "地緣", "地缘", "緊張", "紧张", "衝突", "冲突", "供應中斷", "供应中断", "航運", "航运", "談判", "谈判", "協議", "协议", "未談妥", "未谈妥", "談判破裂", "谈判破裂", "最後期限", "最后期限"],
+                "high_signal_actions": ["geopolitical", "conflict", "escalation", "attack", "supply disruption", "shipping", "negotiation", "negotiations", "deadline", "failed talks", "talks collapse", "地緣", "地缘", "衝突", "冲突", "升級", "升级", "供應中斷", "供应中断", "航運", "航运", "談判破裂", "谈判破裂", "未談妥", "未谈妥", "最後期限", "最后期限"],
                 "regional_anchors": ["persian gulf", "gulf", "hormuz", "波斯灣", "波斯湾", "海灣", "海湾", "荷姆茲海峽", "霍尔木兹海峡"],
                 "market_context": ["oil", "wti", "brent", "shipping", "usd", "treasury", "原油", "油價", "航運", "美元", "美債", "股市", "市场"],
             },
@@ -260,6 +260,7 @@ class DiscoveryArticle:
     url: str
     domain: str
     seen_at: str
+    snippet: str = ""
 
 
 def configured(name: str) -> str:
@@ -970,18 +971,20 @@ def _trusted_domain(url: str, supplied_domain: str) -> str:
     return next((domain for domain in TRUSTED_NEWS_DOMAINS if host == domain or host.endswith(f".{domain}")), "")
 
 
-def _discovery_category_and_anchor(title: str) -> tuple[str, str] | None:
-    normalized = normalized_event_text(title)
-    category = classify_flash(Flash("discovery", title, "", ""))
+def _discovery_category_and_anchor(title: str, snippet: str = "") -> tuple[str, str] | None:
+    text = " ".join(part for part in (title, snippet) if part).strip()
+    normalized = normalized_event_text(text)
+    category = classify_flash(Flash("discovery", title, snippet, ""))
     if category is None:
         return None
     anchor = _keyword_hit(DISCOVERY_ANCHORS.get(category, ()), normalized)
     return (category, anchor) if anchor else None
 
 
-def _discovery_facts(title: str, category: str, anchor: str) -> tuple[set[str], set[str]]:
+def _discovery_facts(title: str, category: str, anchor: str, snippet: str = "") -> tuple[set[str], set[str]]:
     """Extract the concrete actor/place and action facts used for agreement."""
-    normalized = normalized_event_text(title)
+    text = " ".join(part for part in (title, snippet) if part).strip()
+    normalized = normalized_event_text(text)
     entities = {term for term in DISCOVERY_ENTITIES if _keyword_in_text(term, normalized, normalized.replace(" ", ""))}
     if anchor in DISCOVERY_ENTITY_ANCHORS:
         entities.add(anchor)
@@ -994,7 +997,7 @@ def _matching_discovery_evidence(
 ) -> tuple[DiscoveryArticle, ...]:
     """Return only multi-domain articles agreeing on entity/place and action."""
     supported: dict[str, DiscoveryArticle] = {}
-    facts = [(article, *_discovery_facts(article.title, category, anchor)) for article in cluster]
+    facts = [(article, *_discovery_facts(article.title, category, anchor, article.snippet)) for article in cluster]
     for index, (left, left_entities, left_actions) in enumerate(facts):
         for right, right_entities, right_actions in facts[index + 1:]:
             if left.domain == right.domain:
@@ -1037,13 +1040,18 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
     articles: list[DiscoveryArticle] = []
     for row in response.json().get("articles", []):
         title = str(row.get("title") or "").strip()
+        # GDELT DOC commonly provides only a title, but some response modes and
+        # cached adapters include a short description/snippet.  Preserve it so
+        # the action/entity cross-check can see facts that are absent from a
+        # generic title such as "US-Iran situation".
+        snippet = str(row.get("snippet") or row.get("description") or row.get("summary") or "").strip()
         url = str(row.get("url") or "").strip()
         seen_at = str(row.get("seendate") or "").strip()
         observed = _gdelt_seen_at(seen_at)
         domain = _trusted_domain(url, str(row.get("domain") or ""))
         if not title or not url or not observed or observed.timestamp() < cutoff or not domain:
             continue
-        articles.append(DiscoveryArticle(title=title, url=url, domain=domain, seen_at=observed.isoformat()))
+        articles.append(DiscoveryArticle(title=title, url=url, domain=domain, seen_at=observed.isoformat(), snippet=snippet))
     if store:
         store.write_cache("gdelt-success", [article.__dict__ for article in articles])
     return articles
@@ -1053,7 +1061,7 @@ def cross_checked_gdelt_alerts(articles: Iterable[DiscoveryArticle]) -> list[Ale
     """Require two publishers plus the same entity/place and action facts."""
     clusters: dict[tuple[str, str], list[DiscoveryArticle]] = {}
     for article in articles:
-        classified = _discovery_category_and_anchor(article.title)
+        classified = _discovery_category_and_anchor(article.title, article.snippet)
         if classified:
             clusters.setdefault(classified, []).append(article)
     alerts: list[Alert] = []

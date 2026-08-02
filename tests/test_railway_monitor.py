@@ -96,6 +96,18 @@ def test_bare_gulf_market_move_does_not_trigger_geopolitical_alert():
     assert monitor.alert_from_flash(flash) is None
 
 
+def test_trump_iran_negotiation_deadline_is_a_conflict_candidate():
+    flash = monitor.Flash(
+        "trump-iran-talks",
+        "全局｜美國與伊朗局勢｜重要事件",
+        "川普稱伊朗談判於週一舉行，但未談妥，這是談判的最後期限。",
+        "2026-08-03T10:06:55+08:00",
+    )
+    classification, reason = monitor.classify_flash_with_reason(flash)
+    assert classification == "conflict"
+    assert reason == "iran_gulf_context_keyword"
+
+
 def test_keyword_matching_normalizes_full_width_text_and_case():
     flash = monitor.Flash(
         "full-width-fomc",
@@ -240,6 +252,28 @@ def test_gdelt_can_discover_iran_gulf_geopolitical_market_context():
     articles = [
         monitor.DiscoveryArticle("Gulf stocks rise as Iran tensions keep oil supply risk elevated", "https://www.reuters.com/a", "reuters.com", "2026-07-29T01:00:00+00:00"),
         monitor.DiscoveryArticle("Persian Gulf markets react to Iran geopolitical tensions and shipping risk", "https://apnews.com/b", "apnews.com", "2026-07-29T01:01:00+00:00"),
+    ]
+    alerts = monitor.cross_checked_gdelt_alerts(articles)
+    assert len(alerts) == 1
+    assert alerts[0].category == "conflict"
+
+
+def test_gdelt_uses_article_snippet_for_iran_negotiation_context():
+    articles = [
+        monitor.DiscoveryArticle(
+            "全局｜美國與伊朗局勢｜重要事件",
+            "https://www.reuters.com/a",
+            "reuters.com",
+            "2026-07-29T01:00:00+00:00",
+            "Trump says Iran talks failed to reach a deal and sets a deadline.",
+        ),
+        monitor.DiscoveryArticle(
+            "全局｜美國與伊朗局勢｜重要事件",
+            "https://apnews.com/b",
+            "apnews.com",
+            "2026-07-29T01:01:00+00:00",
+            "Trump says Iran talks failed to reach a deal and the deadline remains.",
+        ),
     ]
     alerts = monitor.cross_checked_gdelt_alerts(articles)
     assert len(alerts) == 1
