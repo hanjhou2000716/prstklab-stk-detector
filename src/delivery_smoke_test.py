@@ -22,6 +22,9 @@ SMOKE_TEXT = "測試｜派送鏈路驗證"
 def validate_delivery_configuration() -> dict[str, Any]:
     settings = get_settings()
     errors: list[str] = []
+    legacy_chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+    if legacy_chat_id:
+        errors.append("TELEGRAM_CHAT_ID is deprecated; configure TELEGRAM_CHAT_IDS only")
     if not settings.telegram_chat_ids:
         errors.append("TELEGRAM_CHAT_IDS is empty")
     if not settings.dashboard_url.startswith("https://"):
@@ -36,10 +39,13 @@ def validate_delivery_configuration() -> dict[str, Any]:
     callback_secret = bool(os.environ.get("RAILWAY_STATUS_SHARED_SECRET", "").strip())
     if bool(callback_url) != callback_secret:
         errors.append("RAILWAY_STATUS_URL and RAILWAY_STATUS_SHARED_SECRET must be configured together")
+    if callback_url and not callback_url.startswith("https://"):
+        errors.append("RAILWAY_STATUS_URL must use HTTPS")
 
     return {
         "ok": not errors,
         "recipient_count": len(settings.telegram_chat_ids),
+        "legacy_singular_configured": bool(legacy_chat_id),
         "dashboard_https": settings.dashboard_url.startswith("https://"),
         "callback_configured": bool(callback_url and callback_secret),
         "smoke_text_length": len(SMOKE_TEXT),
