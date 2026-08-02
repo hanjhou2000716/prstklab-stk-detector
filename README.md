@@ -418,3 +418,26 @@ classification counts, `unclassified_count`, and reason counts. Inspect those
 fields to tell whether an item was unmatched, waiting for official confirmation,
 held by a cooldown/baseline, or failed during dispatch; no raw event body or
 credential is exposed.
+
+### Delivery smoke test
+
+Before asking Telegram to send a real test, run the safe local validation:
+
+```powershell
+python -m src.delivery_smoke_test
+```
+
+The default mode makes no network request. It verifies the plural
+`TELEGRAM_CHAT_IDS` list, HTTPS `DASHBOARD_URL`, the 30-character brief rule,
+and that `RAILWAY_STATUS_URL` and `RAILWAY_STATUS_SHARED_SECRET` are supplied
+together. Only when an operator explicitly chooses to send one test message
+should they run:
+
+```powershell
+python -m src.delivery_smoke_test --send
+```
+
+The report exposes recipient counts and hashed failure counts only; it never
+prints a bot token or raw Chat ID. A successful Telegram send still needs the
+Railway `/health` `delivery.last_receipt_status` to become `delivered` before
+the complete chain is considered verified.
