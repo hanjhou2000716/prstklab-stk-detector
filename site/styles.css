@@ -258,3 +258,69 @@ h1 { font-size: clamp(1.1rem, 5.2vw, 1.55rem); }
 /* Keep the provenance of every public quote visible without competing with price. */
 .quote-meta { display: block; max-width: 170px; margin-top: 4px; color: var(--muted); font-size: .61rem; font-style: normal; font-weight: 600; line-height: 1.35; white-space: normal; }
 .briefing-market-topics:empty, .briefing-dynamic-markets:empty { display: none; }
+
+/* Give each market theme its own visual level: one large topic card with
+   two readable quote cards inside.  This prevents the four themes from
+   collapsing into a dense 2x2 block on narrow Mini App screens. */
+.briefing-market-topics {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  padding: 0 18px 12px;
+}
+.briefing-topic {
+  padding: 15px;
+  border: 1px solid #dfe3df;
+  border-top: 3px solid var(--orange);
+  border-radius: 15px;
+  background: #f8f9f6;
+  box-shadow: 0 2px 0 rgba(29, 48, 68, .03);
+}
+.briefing-topic h4 {
+  margin: 0 0 12px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--line);
+  color: var(--accent);
+  font-size: .98rem;
+  font-weight: 900;
+  line-height: 1.35;
+}
+.briefing-topic-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.briefing-topic-quote {
+  min-width: 0;
+  min-height: 118px;
+  padding: 12px;
+  border: 1px solid #e3e8eb;
+  border-radius: 12px;
+  background: #edf2f5;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.briefing-topic-quote:hover,
+.briefing-topic-quote:focus-within {
+  border-color: #b8cbd4;
+  box-shadow: 0 4px 12px rgba(29, 48, 68, .08);
+  transform: translateY(-1px);
+}
+.briefing-topic-quote span { font-size: .76rem; font-weight: 700; }
+.briefing-topic-quote strong { margin-top: 7px; font-size: 1.02rem; line-height: 1.2; }
+.briefing-topic-quote small { margin-top: 4px; font-size: .72rem; }
+.briefing-topic-quote em { margin-top: 7px; font-size: .62rem; }
+.briefing-dynamic-markets {
+  display: block;
+  margin: 0 18px 12px;
+  padding: 15px;
+  border: 1px solid #dfe3df;
+  border-top: 3px solid var(--orange);
+  border-radius: 15px;
+  background: #f8f9f6;
+}
+.briefing-dynamic-markets h4 { margin-bottom: 12px; }
+@media (max-width: 390px) {
+  .briefing-topic { padding: 13px; }
+  .briefing-topic-grid { gap: 8px; }
+  .briefing-topic-quote { min-height: 112px; padding: 10px; }
+}

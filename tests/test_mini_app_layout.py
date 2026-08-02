@@ -81,6 +81,16 @@ def test_empty_briefing_market_containers_do_not_leave_visual_placeholder_blocks
     assert ".briefing-dynamic-markets:empty" in styles
 
 
+def test_briefing_topics_use_one_large_card_per_theme_with_inner_quote_grid():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
+
+    assert 'class="briefing-topic" aria-label="' in app
+    assert ".briefing-market-topics {" in styles
+    assert "grid-template-columns: minmax(0, 1fr);" in styles
+    assert ".briefing-topic-quote:hover" in styles
+
+
 def test_quote_provenance_uses_the_compact_provider_and_time_format():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
 

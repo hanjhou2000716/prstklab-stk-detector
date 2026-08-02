@@ -327,7 +327,10 @@ const renderBriefing = (briefing, generatedAt) => {
   };
   if (topicContainer) {
     const topics = report.market_topics || [];
-    topicContainer.innerHTML = topics.length ? topics.map((topic) => `<section class="briefing-topic"><h4>${escapeHtml(topic.title || "市場主題")}</h4><div class="briefing-topic-grid">${(topic.items || []).map(quoteCard).join("")}</div></section>`).join("") : "";
+    topicContainer.innerHTML = topics.length ? topics.map((topic) => {
+      const title = topic.title || "市場主題";
+      return `<section class="briefing-topic" aria-label="${escapeHtml(title)}"><h4>${escapeHtml(title)}</h4><div class="briefing-topic-grid">${(topic.items || []).map(quoteCard).join("")}</div></section>`;
+    }).join("") : "";
   }
   if (dynamicContainer) {
     const dynamic = report.dynamic_markets || [];
