@@ -31,11 +31,15 @@ permissions:
   pages: write
   id-token: write
 
-# Serialize all runs. The immutable cache below records a completed date/slot,
-# so an external Cron retry cannot send a second message after the primary run.
+# All workflows that refresh committed dashboard data share one writer lock.
+# This prevents concurrent runs from racing on pushes to main.
 concurrency:
-  group: pages
+  group: main-data-writer
   cancel-in-progress: false
+
+# Serialize all runs and all other workflows that write committed dashboard
+# data. The immutable cache below still records a completed date/slot, so an
+# external Cron retry cannot send a second message after the primary run.
 
 jobs:
   refresh-notify-deploy:
@@ -116,7 +120,7 @@ jobs:
             fi
 
             git fetch origin main
-            git rebase -X theirs origin/main
+            git rebase --autostash -X theirs origin/main
           done
       - name: 建立同時段推播紀錄
         if: success() && steps.window.outputs.should_run == 'true' && env.FORCE != 'true' && steps.idempotency.outputs.cache-hit != 'true'

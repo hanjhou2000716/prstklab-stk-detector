@@ -10,7 +10,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: main-data-writer
   cancel-in-progress: false
 
 jobs:
@@ -54,7 +54,7 @@ jobs:
             fi
 
             git fetch origin main
-            git rebase -X theirs origin/main
+            git rebase --autostash -X theirs origin/main
           done
       - name: 設定 GitHub Pages
         uses: actions/configure-pages@v5

@@ -119,7 +119,7 @@ DISCOVERY_ANCHORS = {
     "energy": ("wti", "brent", "oil", "opec", "crude", "原油", "石油", "能源"),
     "semiconductor": ("nvidia", "tsmc", "asml", "semiconductor", "輝達", "英伟达", "台積電", "台积电", "半導體", "半导体"),
     "black_swan": ("earthquake", "tsunami", "ransomware", "cyberattack", "pandemic", "war", "invasion", "airstrike", "missile", "重大地震", "地震", "海嘯", "海啸", "戰爭", "战争", "入侵", "空襲", "空袭"),
-    "material_positive": ("iran", "israel", "ukraine", "russia", "trump", "ceasefire", "truce", "peace deal", "tariff exemption", "rate cut", "cancel attack", "call off attack", "伊朗", "以色列", "川普", "特朗普", "停火", "和平協議", "和平协议", "降息"),
+    "material_positive": ("iran", "israel", "ukraine", "russia", "trump", "ceasefire", "truce", "peace deal", "tariff exemption", "rate cut", "cancel attack", "call off attack", "trade war easing", "trade war de-escalation", "trade war deescalation", "de-escalation", "deescalation", "peace optimism", "peace hopes", "global relief rally", "geopolitical tensions ease", "伊朗", "以色列", "川普", "特朗普", "停火", "和平協議", "和平协议", "降息", "貿易戰緩和", "贸易战缓和", "貿易戰降溫", "贸易战降温", "緊張局勢緩和", "紧张局势缓和", "和平希望", "全球風險偏好改善", "全球风险偏好改善", "地緣緊張緩和", "地缘紧张缓和"),
 }
 
 # GDELT is only a discovery feed.  Two headlines must describe the same
@@ -141,10 +141,12 @@ DISCOVERY_ALIAS_GROUPS = {
     "boj": ("boj", "bank of japan", "日本央行", "日本銀行", "日本银行"),
     "yen": ("yen", "japanese yen", "日圓", "日元"),
     "japan": ("japan", "日本"),
+    "positive_deescalation": ("trade war easing", "trade war de-escalation", "trade war deescalation", "de-escalation", "deescalation", "peace optimism", "peace hopes", "global relief rally", "geopolitical tensions ease", "貿易戰緩和", "贸易战缓和", "貿易戰降溫", "贸易战降温", "緊張局勢緩和", "紧张局势缓和", "和平樂觀", "和平乐观", "和平希望", "全球風險偏好改善", "全球风险偏好改善", "地緣緊張緩和", "地缘紧张缓和"),
 }
 DISCOVERY_ACTION_ALIAS_GROUPS = {
     "fed_support": ("federal reserve support", "fed support", "urges the fed", "敦促聯準會", "敦促联准会"),
     "currency_intervention": ("currency intervention", "fx intervention", "joint yen intervention", "coordinated currency intervention", "匯率干預", "汇率干预", "外匯干預", "外汇干预", "聯合干預", "联合干预"),
+    "positive_deescalation": ("trade war easing", "trade war de-escalation", "trade war deescalation", "de-escalation", "deescalation", "peace optimism", "peace hopes", "global relief rally", "geopolitical tensions ease", "貿易戰緩和", "贸易战缓和", "貿易戰降溫", "贸易战降温", "緊張局勢緩和", "紧张局势缓和", "和平樂觀", "和平乐观", "和平希望", "全球風險偏好改善", "全球风险偏好改善", "地緣緊張緩和", "地缘紧张缓和"),
 }
 DISCOVERY_ACTIONS = {
     key: tuple(values) for key, values in (_GDELT_KEYWORDS.get("actions") or {}).items()
