@@ -61,6 +61,13 @@ def test_source_health_is_a_collapsible_card_with_a_warming_state():
     assert app.count("if (card) card.open = false;") == 2
 
 
+def test_pending_source_health_shows_domain_and_check_time():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert 'source.status === "pending" && (source.checked_at || source.source_url)' in app
+    assert "來源 ${domain}｜核對 ${checkedAt}" in app
+
+
 def test_dashboard_sections_share_card_chrome_and_news_uses_full_width_switching():
     page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
     styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
