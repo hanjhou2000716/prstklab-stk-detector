@@ -378,6 +378,74 @@ def test_gdelt_black_swan_headlines_wait_for_a_first_party_confirmation():
     assert monitor.cross_checked_gdelt_alerts(articles) == []
 
 
+def test_gdelt_black_swan_with_market_sync_becomes_warning_alert():
+    articles = [
+        monitor.DiscoveryArticle("Major earthquake hits Japan", "https://www.reuters.com/a", "reuters.com", "2026-07-29T01:00:00+00:00"),
+        monitor.DiscoveryArticle("Japan earthquake triggers tsunami warning", "https://apnews.com/b", "apnews.com", "2026-07-29T01:01:00+00:00"),
+    ]
+    market_sync = {"indices": [{
+        "ticker": "NIKKEI", "change_percent": -2.1,
+        "quote_time": "2026-07-29T01:15:00+00:00",
+    }]}
+    alerts = monitor.cross_checked_gdelt_alerts(articles, market_sync)
+    assert len(alerts) == 1
+    assert alerts[0].category == "black_swan"
+    assert alerts[0].risk_level == "警戒"
+    assert alerts[0].official_confirmed is False
+    assert alerts[0].market_sync_confirmed is True
+    assert alerts[0].market_sync == ("NIKKEI",)
+
+
+def test_gdelt_black_swan_pending_reason_exposes_missing_market_sync():
+    articles = [
+        monitor.DiscoveryArticle("Major earthquake hits Japan", "https://www.reuters.com/a", "reuters.com", "2026-07-29T01:00:00+00:00"),
+        monitor.DiscoveryArticle("Japan earthquake triggers tsunami warning", "https://apnews.com/b", "apnews.com", "2026-07-29T01:01:00+00:00"),
+    ]
+    pending = monitor.pending_gdelt_candidates(articles, {"indices": []})
+    assert pending[0]["reason"] == "waiting_market_sync_for_warning"
+
+
+def test_gdelt_trump_iran_deescalation_is_not_dropped_as_missing_anchor():
+    articles = [
+        monitor.DiscoveryArticle(
+            "Trump says he agreed to cancel planned attack on Iran",
+            "https://www.cnbc.com/example-deescalation",
+            "cnbc.com",
+            "2026-08-02T02:00:00+00:00",
+            "The US president said the planned strike was called off.",
+        ),
+        monitor.DiscoveryArticle(
+            "Trump cancels planned strike on Iran after talks",
+            "https://www.reuters.com/example-deescalation",
+            "reuters.com",
+            "2026-08-02T02:01:00+00:00",
+            "The decision was described as a de-escalation.",
+        ),
+    ]
+    alerts = monitor.cross_checked_gdelt_alerts(articles, {})
+    assert alerts
+    assert alerts[0].category == "material_positive"
+
+
+def test_gdelt_chinese_trump_iran_deescalation_is_detected():
+    articles = [
+        monitor.DiscoveryArticle(
+            "\u7f8e\u570b\u7e3d\u7d71\u7279\u6717\u666e\uff1a\u6211\u5df2\u540c\u610f\u53d6\u6d88\u5c0d\u4f0a\u6717\u7684\u653b\u64ca",
+            "https://www.cnbc.com/example-deescalation-zh",
+            "cnbc.com",
+            "2026-08-02T02:00:00+00:00",
+        ),
+        monitor.DiscoveryArticle(
+            "\u7279\u6717\u666e\u53d6\u6d88\u5c0d\u4f0a\u6717\u7684\u8972\u64ca\u8a08\u756b",
+            "https://www.reuters.com/example-deescalation-zh",
+            "reuters.com",
+            "2026-08-02T02:01:00+00:00",
+        ),
+    ]
+    alerts = monitor.cross_checked_gdelt_alerts(articles, {})
+    assert alerts and alerts[0].category == "material_positive"
+
+
 def test_discovery_cache_keeps_a_recent_success_for_rate_limit_fallback(tmp_path):
     store = monitor.SeenStore(tmp_path / "state.sqlite3")
     payload = [{"title": "Iran conflict", "url": "https://www.reuters.com/a", "domain": "reuters.com", "seen_at": "2026-07-29T01:00:00+00:00"}]

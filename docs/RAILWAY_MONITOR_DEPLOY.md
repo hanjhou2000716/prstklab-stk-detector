@@ -66,6 +66,6 @@ Optional Railway variables:
 | `GDELT_MAX_FRESH_AGE_MINUTES` | `45` | Maximum publication age for a discovery candidate. |
 | `GDELT_QUERY` | built-in query | Optional URL-encoded query override for discovery keywords. |
 
-GDELT remains a discovery layer. A candidate needs at least two trusted publisher domains sharing the same concrete entity/place/action intersection. Black-swan or major-disaster candidates are never dispatched by GDELT alone; they wait for a matching first-party official confirmation. The first successful poll establishes a baseline and does not replay historical headlines. SQLite persistence continues to provide event deduplication and cooldowns.
+GDELT remains a discovery layer. A candidate needs at least two trusted publisher domains sharing the same concrete entity/place/action intersection. A black-swan or major-disaster candidate with market synchronization may produce a **警戒** alert; only a matching first-party official confirmation plus market synchronization may produce a **高風險** alert. The first successful poll establishes a baseline and does not replay historical headlines. SQLite persistence continues to provide event deduplication and cooldowns.
 
 Current delivery policy: all event paths share a 30-minute durable cooldown. War and armed-conflict aliases are treated as black-swan candidates, but GDELT alone cannot deliver them; an official source and related-market synchronization are still required. The multilingual alias database is maintained in `config/event_keywords.json`.
