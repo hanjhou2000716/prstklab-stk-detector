@@ -162,6 +162,20 @@ DISCOVERY_ACTION_ALIAS_GROUPS = {
         "negotiations", "會談", "談判", "協商", "對話", "和談",
         "会谈", "谈判", "协商", "对话", "和谈",
     ),
+    # Pressure/coercion language is a common Reuters Chinese and GDELT
+    # paraphrase of the same Iran/US geopolitical action.
+    "coercive_pressure": (
+        "pressure", "pressures", "pressured", "ramp up pressure",
+        "ramping up pressure", "increase pressure", "increased pressure",
+        "mount pressure", "force concessions", "forcing concessions",
+        "seek concessions", "demand concessions", "coercion", "coerce",
+        "coercive pressure", "maximum pressure", "施壓", "施压",
+        "加大施壓", "加大施压", "擴大施壓", "扩大施压", "施壓加劇",
+        "施压加剧", "加大壓力", "加大压力", "擴大壓力", "扩大压力",
+        "迫使讓步", "迫使让步", "逼迫讓步", "逼迫让步", "迫使美國讓步",
+        "迫使美国让步", "要求讓步", "要求让步", "脅迫", "胁迫",
+        "強硬施壓", "强硬施压",
+    ),
     "fed_support": ("federal reserve support", "fed support", "urges the fed", "敦促聯準會", "敦促联准会"),
     "currency_intervention": ("currency intervention", "fx intervention", "joint yen intervention", "coordinated currency intervention", "匯率干預", "汇率干预", "外匯干預", "外汇干预", "聯合干預", "联合干预"),
     "black_swan_conflict": ("war", "invasion", "airstrike", "missile", "missile attack", "attack", "strike", "escalation", "military escalation", "armed conflict", "戰爭", "战争", "入侵", "空襲", "空袭", "攻擊", "攻击", "襲擊", "袭击", "軍事升級", "军事升级", "戰事升級", "战事升级"),
@@ -1093,6 +1107,11 @@ def _gdelt_seen_at(value: str) -> datetime | None:
 
 def _trusted_domain(url: str, supplied_domain: str) -> str:
     host = (supplied_domain or urlparse(url).hostname or "").lower().removeprefix("www.")
+    # Reuters publishes localized editions (for example reuters.cn).  Treat
+    # them as the same publisher so two Reuters editions cannot masquerade as
+    # independent corroboration, while still accepting the Chinese feed.
+    if host == "reuters.cn" or host.endswith(".reuters.cn"):
+        return "reuters.com"
     return next((domain for domain in TRUSTED_NEWS_DOMAINS if host == domain or host.endswith(f".{domain}")), "")
 
 
