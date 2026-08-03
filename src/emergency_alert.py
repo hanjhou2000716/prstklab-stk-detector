@@ -12,9 +12,14 @@ from src.telegram_client import send_briefs, summarize_deliveries, validate_brie
 STRICT_HIGH_RISK_CATEGORIES = {"black_swan", "conflict"}
 
 
-def high_risk_confirmation_ready(category: str) -> bool:
+def high_risk_confirmation_ready(category: str, risk_level: str | None = None) -> bool:
     if category not in STRICT_HIGH_RISK_CATEGORIES:
         return True
+    # Multi-source discovery may be sent as a warning after market impact is
+    # confirmed.  Only an explicitly high-risk alert is held behind the
+    # first-party + market-sync gate.
+    if str(risk_level or os.environ.get("EXTERNAL_RISK_LEVEL", "")).strip() in {"警戒", "warning"}:
+        return os.environ.get("EXTERNAL_MARKET_SYNC_CONFIRMED", "").lower() == "true"
     return (
         os.environ.get("EXTERNAL_OFFICIAL_CONFIRMED", "").lower() == "true"
         and os.environ.get("EXTERNAL_MARKET_SYNC_CONFIRMED", "").lower() == "true"
@@ -58,7 +63,8 @@ def main() -> None:
     settings = get_settings()
     if not settings.telegram_ready:
         raise RuntimeError("缺少 Telegram 設定，無法發送快訊。")
-    if args.category in STRICT_HIGH_RISK_CATEGORIES and not high_risk_confirmation_ready(args.category):
+    risk_level = os.environ.get("EXTERNAL_RISK_LEVEL", "高風險")
+    if args.category in STRICT_HIGH_RISK_CATEGORIES and not high_risk_confirmation_ready(args.category, risk_level):
         print("重大災害尚未同時完成官方來源與相關市場同步確認，僅保留 Mini App 觀察，不發送高風險 Telegram 快訊。")
         return
     text = build_emergency_brief(args.category, args.summary)

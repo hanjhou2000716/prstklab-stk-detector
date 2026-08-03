@@ -114,6 +114,11 @@ TRUSTED_NEWS_DOMAINS = {
 DISCOVERY_ANCHORS = {
     "conflict": ("iran", "israel", "ukraine", "russia", "hormuz", "persian gulf", "gulf", "taiwan", "伊朗", "以色列", "波斯灣", "波斯湾", "海灣", "海湾", "荷姆茲海峽", "霍尔木兹海峡", "烏克蘭", "乌克兰", "俄羅斯", "俄罗斯", "台灣", "台湾"),
     "policy": ("tariff", "sanction", "export control", "duties", "taco", "trump always chickens out", "backs down", "walks back", "tariff pause", "tariff delay", "關稅", "关税", "制裁", "出口管制", "暫緩關稅", "暂缓关税", "延後關稅", "延后关税"),
+    # De-escalation headlines (for example, a president cancelling a planned
+    # strike) are material-positive events, not ordinary conflict coverage.
+    # Keep actor/place anchors so GDELT can cross-check them across two trusted
+    # domains instead of silently dropping the cluster.
+    "material_positive": ("iran", "israel", "ukraine", "russia", "trump", "ceasefire", "truce", "peace deal", "伊朗", "以色列", "烏克蘭", "乌克兰", "俄羅斯", "俄罗斯", "川普", "特朗普", "停火", "和平協議", "和平协议"),
     "fed": ("federal reserve", "fed", "powell", "bessent", "scott bessent", "boj", "bank of japan", "聯準會", "联准会", "美聯儲", "美联储", "貝森特", "贝森特", "日本央行", "日本銀行", "日本银行"),
     "macro": ("yen", "japanese yen", "currency intervention", "fx intervention", "intervention", "japan", "日圓", "日元", "匯率干預", "汇率干预", "外匯干預", "外汇干预", "聯合干預", "联合干预"),
     "energy": ("wti", "brent", "oil", "opec", "crude", "原油", "石油", "能源"),
@@ -141,12 +146,12 @@ DISCOVERY_ALIAS_GROUPS = {
     "boj": ("boj", "bank of japan", "日本央行", "日本銀行", "日本银行"),
     "yen": ("yen", "japanese yen", "日圓", "日元"),
     "japan": ("japan", "日本"),
-    "positive_deescalation": ("trade war easing", "trade war de-escalation", "trade war deescalation", "de-escalation", "deescalation", "peace optimism", "peace hopes", "global relief rally", "geopolitical tensions ease", "貿易戰緩和", "贸易战缓和", "貿易戰降溫", "贸易战降温", "緊張局勢緩和", "紧张局势缓和", "和平樂觀", "和平乐观", "和平希望", "全球風險偏好改善", "全球风险偏好改善", "地緣緊張緩和", "地缘紧张缓和"),
+    "positive_deescalation": ("trade war easing", "trade war de-escalation", "trade war deescalation", "de-escalation", "deescalation", "peace optimism", "peace hopes", "global relief rally", "geopolitical tensions ease", "cancel planned attack", "cancel planned attacks", "canceled planned attack", "canceled planned attacks", "cancelled planned attack", "cancelled planned attacks", "cancel iran strike", "cancel iran strikes", "canceled strikes on iran", "cancelled strikes on iran", "call off planned attacks", "call off planned strike", "call off planned strikes", "calls off planned strikes", "called off planned strikes", "halt military strikes on iran", "取消對伊朗的攻擊", "取消对伊朗的攻击", "取消對伊朗的襲擊", "取消对伊朗的袭击", "取消對伊朗的攻擊計畫", "取消对伊朗的攻击计划", "取消對伊朗的襲擊計畫", "取消对伊朗的袭击计划", "貿易戰緩和", "贸易战缓和", "貿易戰降溫", "贸易战降温", "緊張局勢緩和", "紧张局势缓和", "和平樂觀", "和平乐观", "和平希望", "全球風險偏好改善", "全球风险偏好改善", "地緣緊張緩和", "地缘紧张缓和", "撤回對伊朗的襲擊計畫", "撤回对伊朗的袭击计划"),
 }
 DISCOVERY_ACTION_ALIAS_GROUPS = {
     "fed_support": ("federal reserve support", "fed support", "urges the fed", "敦促聯準會", "敦促联准会"),
     "currency_intervention": ("currency intervention", "fx intervention", "joint yen intervention", "coordinated currency intervention", "匯率干預", "汇率干预", "外匯干預", "外汇干预", "聯合干預", "联合干预"),
-    "positive_deescalation": ("trade war easing", "trade war de-escalation", "trade war deescalation", "de-escalation", "deescalation", "peace optimism", "peace hopes", "global relief rally", "geopolitical tensions ease", "貿易戰緩和", "贸易战缓和", "貿易戰降溫", "贸易战降温", "緊張局勢緩和", "紧张局势缓和", "和平樂觀", "和平乐观", "和平希望", "全球風險偏好改善", "全球风险偏好改善", "地緣緊張緩和", "地缘紧张缓和"),
+    "positive_deescalation": ("trade war easing", "trade war de-escalation", "trade war deescalation", "de-escalation", "deescalation", "peace optimism", "peace hopes", "global relief rally", "geopolitical tensions ease", "cancel planned attack", "cancel planned attacks", "canceled planned attack", "canceled planned attacks", "cancelled planned attack", "cancelled planned attacks", "cancel iran strike", "cancel iran strikes", "canceled strikes on iran", "cancelled strikes on iran", "call off planned attacks", "call off planned strike", "call off planned strikes", "calls off planned strikes", "called off planned strikes", "halt military strikes on iran", "取消對伊朗的攻擊", "取消对伊朗的攻击", "取消對伊朗的襲擊", "取消对伊朗的袭击", "取消對伊朗的攻擊計畫", "取消对伊朗的攻击计划", "取消對伊朗的襲擊計畫", "取消对伊朗的袭击计划", "貿易戰緩和", "贸易战缓和", "貿易戰降溫", "贸易战降温", "緊張局勢緩和", "紧张局势缓和", "和平樂觀", "和平乐观", "和平希望", "全球風險偏好改善", "全球风险偏好改善", "地緣緊張緩和", "地缘紧张缓和", "撤回對伊朗的襲擊計畫", "撤回对伊朗的袭击计划"),
 }
 DISCOVERY_ACTIONS = {
     key: tuple(values) for key, values in (_GDELT_KEYWORDS.get("actions") or {}).items()
@@ -212,6 +217,14 @@ class Alert:
     occurred_at: str
     source: str = "jin10"
     evidence: tuple[DiscoveryArticle, ...] = ()
+    # Discovery alerts are deliberately warning-level until a first-party
+    # source confirms the facts.  The two booleans are carried through the
+    # signed repository-dispatch payload so the GitHub workflow cannot
+    # accidentally promote an unverified headline to high risk.
+    risk_level: str = "警戒"
+    official_confirmed: bool = False
+    market_sync_confirmed: bool = False
+    market_sync: tuple[str, ...] = ()
 
     @property
     def evidence_payload(self) -> list[dict[str, str]]:
@@ -223,7 +236,13 @@ class Alert:
     @property
     def canonical(self) -> str:
         trace = json.dumps(self.evidence_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-        return "\n".join((self.source, self.event_id, self.category, self.summary, self.occurred_at, trace))
+        confirmation = json.dumps({
+            "risk_level": self.risk_level,
+            "official_confirmed": self.official_confirmed,
+            "market_sync_confirmed": self.market_sync_confirmed,
+            "market_sync": list(self.market_sync),
+        }, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        return "\n".join((self.source, self.event_id, self.category, self.summary, self.occurred_at, trace, confirmation))
 
 
 def alert_trace_id(alert: Alert) -> str:
@@ -265,7 +284,7 @@ def alert_canonical_key(alert: Alert) -> str:
     """Canonical key independent of a provider's transient event id."""
     urls = [normalize_source_url(item.url) for item in alert.evidence if item.url]
     facts = alert_fact_fingerprints(alert.summary)
-    identity = "|".join((alert.category, facts["person"], facts["location"], facts["action"], alert.occurred_at[:13]))
+    identity = "|".join((alert.category, alert.risk_level, facts["person"], facts["location"], facts["action"], alert.occurred_at[:13]))
     # If a provider gives no concrete anchors, retain its normalized URL or
     # summary as a conservative fallback instead of merging unrelated items.
     material = identity if any(facts.values()) else "|".join((identity, alert.summary.casefold(), *sorted(urls)))
@@ -906,6 +925,10 @@ async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_se
             "event_id": alert.event_id,
             "category": alert.category,
             "summary": alert.summary,
+            "risk_level": alert.risk_level,
+            "official_confirmed": alert.official_confirmed,
+            "market_sync_confirmed": alert.market_sync_confirmed,
+            "market_sync": list(alert.market_sync),
             "occurred_at": alert.occurred_at,
             "evidence": alert.evidence_payload,
             "canonical_key": alert_canonical_key(alert),
@@ -1106,6 +1129,80 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
     return articles
 
 
+async def fetch_market_sync_snapshot() -> dict[str, Any]:
+    """Read the latest public market snapshot used to confirm event impact.
+
+    The monitor is intentionally read-only.  Railway can point
+    ``MARKET_SNAPSHOT_URL`` at the deployed Mini App JSON; otherwise the
+    configured dashboard URL is used.  A missing or stale snapshot is a
+    deliberate *no-confirmation* result, never a reason to guess.
+    """
+    base = os.environ.get("MARKET_SNAPSHOT_URL", "").strip()
+    if not base:
+        base = os.environ.get("DASHBOARD_URL", "").strip().rstrip("/")
+        if base:
+            base = f"{base}/data/market.json"
+    if not base:
+        return {}
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            response = await client.get(base)
+        response.raise_for_status()
+        payload = response.json()
+        return payload if isinstance(payload, dict) else {}
+    except (httpx.HTTPError, ValueError, TypeError) as error:
+        logging.warning("market sync snapshot unavailable error=%s", type(error).__name__)
+        return {}
+
+
+def _market_sync_details(
+    event_time: str, snapshot: dict[str, Any] | None,
+) -> tuple[str, ...]:
+    """Return independently quoted markets moving with a breaking event.
+
+    Price confirmation is conservative: delayed rows are ignored, quotes must
+    be close to the discovery timestamp when both timestamps exist, and the
+    move must be material (1% for broad equity indices, 2% for commodities or
+    crypto).  This is a confirmation signal, not a prediction.
+    """
+    if not snapshot:
+        return ()
+    records = list(snapshot.get("indices") or []) + list(snapshot.get("quotes") or [])
+    confirmed: list[str] = []
+    source_at: datetime | None = None
+    try:
+        source_at = datetime.fromisoformat(str(event_time).replace("Z", "+00:00"))
+        if source_at.tzinfo is None:
+            source_at = source_at.replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        source_at = None
+    for item in records:
+        if not isinstance(item, dict) or item.get("quote_delayed"):
+            continue
+        ticker = str(item.get("ticker") or "").upper()
+        if ticker not in {"TAIEX", "NASDAQ", "SOX", "S&P 500", "DJIA", "NIKKEI", "KOSPI", "WTI", "BRENT", "GOLD", "BTC", "ETH"}:
+            continue
+        try:
+            move = abs(float(item.get("change_percent")))
+        except (TypeError, ValueError):
+            continue
+        threshold = 2.0 if ticker in {"WTI", "BRENT", "GOLD", "BTC", "ETH"} else 1.0
+        if move < threshold:
+            continue
+        quote_at = item.get("quote_time") or item.get("fetched_at")
+        if source_at and quote_at:
+            try:
+                observed = datetime.fromisoformat(str(quote_at).replace("Z", "+00:00"))
+                if observed.tzinfo is None:
+                    observed = observed.replace(tzinfo=timezone.utc)
+                if abs((observed - source_at).total_seconds()) > 60 * 60:
+                    continue
+            except (TypeError, ValueError):
+                continue
+        confirmed.append(ticker)
+    return tuple(dict.fromkeys(confirmed))
+
+
 def _gdelt_candidate_clusters(articles: Iterable[DiscoveryArticle]) -> dict[tuple[str, str], list[DiscoveryArticle]]:
     clusters: dict[tuple[str, str], list[DiscoveryArticle]] = {}
     for article in articles:
@@ -1115,7 +1212,9 @@ def _gdelt_candidate_clusters(articles: Iterable[DiscoveryArticle]) -> dict[tupl
     return clusters
 
 
-def pending_gdelt_candidates(articles: Iterable[DiscoveryArticle]) -> list[dict[str, Any]]:
+def pending_gdelt_candidates(
+    articles: Iterable[DiscoveryArticle], market_sync: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
     """Expose candidates that are waiting for evidence instead of dropping them silently.
 
     The returned records intentionally contain only category, anchor, counts and a
@@ -1127,27 +1226,32 @@ def pending_gdelt_candidates(articles: Iterable[DiscoveryArticle]) -> list[dict[
     pending: list[dict[str, Any]] = []
     for (category, anchor), cluster in clusters.items():
         domains = {article.domain for article in cluster}
-        if category == "black_swan":
-            pending.append({"category": category, "anchor": anchor, "article_count": len(cluster), "domain_count": len(domains), "reason": "waiting_official_confirmation"})
-            continue
         if len(domains) < 2:
             pending.append({"category": category, "anchor": anchor, "article_count": len(cluster), "domain_count": len(domains), "reason": "waiting_second_trusted_source"})
             continue
         evidence = _matching_discovery_evidence(cluster, category, anchor)
         if len({article.domain for article in evidence}) < 2:
             pending.append({"category": category, "anchor": anchor, "article_count": len(cluster), "domain_count": len(domains), "reason": "waiting_shared_entity_action"})
+            continue
+        if category == "black_swan":
+            representative = min(evidence, key=lambda article: article.seen_at)
+            if not _market_sync_details(representative.seen_at, market_sync):
+                pending.append({"category": category, "anchor": anchor, "article_count": len(cluster), "domain_count": len(domains), "reason": "waiting_market_sync_for_warning"})
     return pending
 
 
-def cross_checked_gdelt_alerts(articles: Iterable[DiscoveryArticle]) -> list[Alert]:
-    """Require two publishers plus the same entity/place and action facts."""
+def cross_checked_gdelt_alerts(
+    articles: Iterable[DiscoveryArticle], market_sync: dict[str, Any] | None = None,
+) -> list[Alert]:
+    """Require two publishers, shared facts and market impact confirmation.
+
+    GDELT remains a discovery layer, so a matching black-swan cluster can only
+    produce a warning-level alert.  The official monitor is the sole path to
+    a high-risk black-swan notification.
+    """
     clusters = _gdelt_candidate_clusters(articles)
     alerts: list[Alert] = []
     for (category, anchor), cluster in clusters.items():
-        # News aggregation may flag a disaster first, but black-swan delivery
-        # is reserved for a verified first-party official monitor.
-        if category == "black_swan":
-            continue
         domains = {article.domain for article in cluster}
         if len(domains) < 2:
             continue
@@ -1155,6 +1259,9 @@ def cross_checked_gdelt_alerts(articles: Iterable[DiscoveryArticle]) -> list[Ale
         if len({article.domain for article in evidence}) < 2:
             continue
         representative = min(evidence, key=lambda article: article.seen_at)
+        sync_details = _market_sync_details(representative.seen_at, market_sync)
+        if category == "black_swan" and not sync_details:
+            continue
         stable_id = hashlib.sha256("|".join(sorted(article.url for article in cluster)).encode("utf-8")).hexdigest()[:20]
         alerts.append(Alert(
             event_id=f"gdelt-{category}-{stable_id}",
@@ -1163,6 +1270,10 @@ def cross_checked_gdelt_alerts(articles: Iterable[DiscoveryArticle]) -> list[Ale
             occurred_at=representative.seen_at,
             source="gdelt",
             evidence=evidence,
+            risk_level="警戒" if category == "black_swan" else "警戒",
+            official_confirmed=False,
+            market_sync_confirmed=bool(sync_details),
+            market_sync=sync_details,
         ))
     return alerts
 
@@ -1318,8 +1429,12 @@ async def monitor_forever() -> None:
             last_gdelt_poll = time.monotonic()
             try:
                 articles = await fetch_gdelt_articles(store)
-                pending = pending_gdelt_candidates(articles)
-                alerts = cross_checked_gdelt_alerts(articles)
+                # A discovery headline is not enough for a black-swan push.
+                # Refresh the public quote snapshot and require a material,
+                # time-aligned move before producing a warning-level alert.
+                market_sync = await fetch_market_sync_snapshot()
+                pending = pending_gdelt_candidates(articles, market_sync)
+                alerts = cross_checked_gdelt_alerts(articles, market_sync)
                 dispatched = 0
                 for alert in alerts:
                     previous_classification = store.classification_for(alert.event_id)
@@ -1361,6 +1476,7 @@ async def monitor_forever() -> None:
                 )
                 update_health("gdelt", status="healthy", last_success_at=datetime.now(timezone.utc).isoformat(),
                               article_count=len(articles), alert_count=dispatched,
+                              market_sync_status="confirmed" if any(alert.market_sync_confirmed for alert in alerts) else "not_confirmed",
                               pending_count=len(pending), pending_reasons=pending_reasons, error=None)
                 gdelt_baseline = False
             except Exception as error:

@@ -21,14 +21,29 @@ EVENT_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 STRICT_HIGH_RISK_CATEGORIES = {"black_swan", "conflict"}
 
 
-def high_risk_confirmation_ready(category: str) -> bool:
+def high_risk_confirmation_ready(
+    category: str,
+    risk_level: str | None = None,
+    *,
+    official_confirmed: bool | None = None,
+    market_sync_confirmed: bool | None = None,
+) -> bool:
     """Require explicit official and market-sync confirmations for disasters."""
     if category not in STRICT_HIGH_RISK_CATEGORIES:
         return True
-    return (
-        str(os.environ.get("EXTERNAL_OFFICIAL_CONFIRMED", "")).lower() == "true"
-        and str(os.environ.get("EXTERNAL_MARKET_SYNC_CONFIRMED", "")).lower() == "true"
+    market_ok = (
+        os.environ.get("EXTERNAL_MARKET_SYNC_CONFIRMED", "").lower() == "true"
+        if market_sync_confirmed is None
+        else bool(market_sync_confirmed)
     )
+    if str(risk_level or os.environ.get("EXTERNAL_RISK_LEVEL", "")).strip() in {"警戒", "warning"}:
+        return market_ok
+    official_ok = (
+        os.environ.get("EXTERNAL_OFFICIAL_CONFIRMED", "").lower() == "true"
+        if official_confirmed is None
+        else bool(official_confirmed)
+    )
+    return official_ok and market_ok
 
 
 @dataclass(frozen=True)
@@ -39,6 +54,10 @@ class ExternalAlert:
     event_id: str
     occurred_at: str
     evidence: tuple[tuple[str, str, str], ...] = ()
+    risk_level: str = "警戒"
+    official_confirmed: bool = False
+    market_sync_confirmed: bool = False
+    market_sync: tuple[str, ...] = ()
 
     @property
     def evidence_payload(self) -> list[dict[str, str]]:
@@ -50,7 +69,13 @@ class ExternalAlert:
     @property
     def canonical(self) -> str:
         trace = json.dumps(self.evidence_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-        return "\n".join((self.source, self.event_id, self.category, self.summary, self.occurred_at, trace))
+        confirmation = json.dumps({
+            "risk_level": self.risk_level,
+            "official_confirmed": self.official_confirmed,
+            "market_sync_confirmed": self.market_sync_confirmed,
+            "market_sync": list(self.market_sync),
+        }, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        return "\n".join((self.source, self.event_id, self.category, self.summary, self.occurred_at, trace, confirmation))
 
     @property
     def cache_key(self) -> str:
@@ -104,7 +129,7 @@ def _normalize_evidence(value: str | list[dict[str, str]] | None) -> tuple[tuple
     return tuple(sorted(set(normalized), key=lambda item: (item[0], item[1], item[2])))
 
 
-def normalize_alert(*, category: str, summary: str, source: str, event_id: str, occurred_at: str, evidence: str | list[dict[str, str]] | None = None) -> ExternalAlert:
+def normalize_alert(*, category: str, summary: str, source: str, event_id: str, occurred_at: str, evidence: str | list[dict[str, str]] | None = None, risk_level: str = "警戒", official_confirmed: bool = False, market_sync_confirmed: bool = False, market_sync: list[str] | tuple[str, ...] | None = None) -> ExternalAlert:
     normalized_summary = " ".join(summary.split())
     normalized_source = source.strip().lower()
     normalized_event_id = event_id.strip()
@@ -125,7 +150,16 @@ def normalize_alert(*, category: str, summary: str, source: str, event_id: str, 
     if normalized_source == "gdelt" and len({domain for domain, _, _ in normalized_evidence}) < 2:
         raise ValueError("GDELT 快訊必須附兩個獨立網域的交叉佐證")
     build_emergency_brief(category, normalized_summary)
-    return ExternalAlert(category, normalized_summary, normalized_source, normalized_event_id, normalized_time, normalized_evidence)
+    normalized_risk = str(risk_level or "警戒").strip()
+    if normalized_risk not in {"警戒", "高風險", "warning", "high"}:
+        raise ValueError("risk_level must be warning or high risk")
+    normalized_sync = tuple(dict.fromkeys(str(item).strip().upper() for item in (market_sync or ()) if str(item).strip()))
+    is_high_risk = normalized_risk in {"高風險", "high"}
+    if category in STRICT_HIGH_RISK_CATEGORIES and is_high_risk and not (official_confirmed and market_sync_confirmed):
+        raise ValueError("black-swan high risk requires official and market-sync confirmation")
+    if category in STRICT_HIGH_RISK_CATEGORIES and not is_high_risk and not market_sync_confirmed:
+        raise ValueError("strict event warning requires market-sync confirmation")
+    return ExternalAlert(category, normalized_summary, normalized_source, normalized_event_id, normalized_time, normalized_evidence, normalized_risk, bool(official_confirmed), bool(market_sync_confirmed), normalized_sync)
 
 
 def verify_signature(alert: ExternalAlert, signature: str, shared_secret: str) -> None:
@@ -156,8 +190,22 @@ def stamp_snapshot(alert: ExternalAlert, snapshot_path: Path) -> None:
         "received_at": received_at.isoformat(),
         "first_discovered_at": received_at.isoformat(),
         "last_reminded_at": received_at.isoformat(),
-        "escalated": alert.category in {"black_swan", "market"} and high_risk_confirmation_ready(alert.category),
-        "high_risk_eligible": high_risk_confirmation_ready(alert.category),
+        "risk_level": alert.risk_level,
+        "official_confirmed": alert.official_confirmed,
+        "market_sync_confirmed": alert.market_sync_confirmed,
+        "market_sync": list(alert.market_sync),
+        "escalated": alert.risk_level in {"高風險", "high"} and high_risk_confirmation_ready(
+            alert.category,
+            alert.risk_level,
+            official_confirmed=alert.official_confirmed,
+            market_sync_confirmed=alert.market_sync_confirmed,
+        ),
+        "high_risk_eligible": high_risk_confirmation_ready(
+            alert.category,
+            alert.risk_level,
+            official_confirmed=alert.official_confirmed,
+            market_sync_confirmed=alert.market_sync_confirmed,
+        ),
         "expires_at": (received_at + timedelta(hours=6)).isoformat(),
     }
     snapshot_path.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -171,6 +219,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--event-id", required=True)
     parser.add_argument("--occurred-at", required=True)
     parser.add_argument("--evidence", default="[]", help="signed JSON source evidence")
+    parser.add_argument("--risk-level", default=os.environ.get("EXTERNAL_RISK_LEVEL") or "警戒")
+    parser.add_argument("--official-confirmed", action="store_true", default=os.environ.get("EXTERNAL_OFFICIAL_CONFIRMED", "").lower() == "true")
+    parser.add_argument("--market-sync-confirmed", action="store_true", default=os.environ.get("EXTERNAL_MARKET_SYNC_CONFIRMED", "").lower() == "true")
+    parser.add_argument("--market-sync", default=os.environ.get("EXTERNAL_MARKET_SYNC", "[]"))
     parser.add_argument("--signature", required=True)
     parser.add_argument("--shared-secret", required=True)
     parser.add_argument("--snapshot", default=None)
@@ -186,6 +238,10 @@ def main() -> None:
         event_id=args.event_id,
         occurred_at=args.occurred_at,
         evidence=args.evidence,
+        risk_level=args.risk_level,
+        official_confirmed=args.official_confirmed,
+        market_sync_confirmed=args.market_sync_confirmed,
+        market_sync=json.loads(args.market_sync or "[]"),
     )
     verify_signature(alert, args.signature, args.shared_secret)
     if args.snapshot:

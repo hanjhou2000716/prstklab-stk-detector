@@ -42,9 +42,60 @@ def test_external_alert_accepts_cross_checked_gdelt_source():
             {"domain": "apnews.com", "url": "https://apnews.com/example", "seen_at": "2026-07-29T01:00:00+00:00"},
             {"domain": "reuters.com", "url": "https://www.reuters.com/example", "seen_at": "2026-07-29T01:01:00+00:00"},
         ],
+        market_sync_confirmed=True,
+        market_sync=["NASDAQ"],
     )
     assert alert.source == "gdelt"
     assert [item["domain"] for item in alert.evidence_payload] == ["apnews.com", "reuters.com"]
+
+
+def test_black_swan_external_alert_requires_market_sync_for_warning():
+    with pytest.raises(ValueError, match="market-sync"):
+        normalize_alert(
+            category="black_swan",
+            summary="重大地震影響供應鏈",
+            source="gdelt",
+            event_id="gdelt-black-swan-1",
+            occurred_at="2026-07-29T01:00:00+00:00",
+            market_sync_confirmed=False,
+            evidence=[
+                {"domain": "apnews.com", "url": "https://apnews.com/example", "seen_at": "2026-07-29T01:00:00+00:00"},
+                {"domain": "reuters.com", "url": "https://www.reuters.com/example", "seen_at": "2026-07-29T01:01:00+00:00"},
+            ],
+        )
+
+
+def test_black_swan_external_alert_high_risk_requires_both_confirmations():
+    with pytest.raises(ValueError, match="official and market-sync"):
+        normalize_alert(
+            category="black_swan",
+            summary="官方確認的重大災害",
+            source="jin10",
+            event_id="jin10-black-swan-1",
+            occurred_at="2026-07-29T01:00:00+00:00",
+            risk_level="高風險",
+            official_confirmed=True,
+            market_sync_confirmed=False,
+            market_sync=["TAIEX"],
+        )
+
+
+def test_black_swan_external_alert_accepts_warning_after_market_sync():
+    alert = normalize_alert(
+        category="black_swan",
+        summary="多源核對且市場同步",
+        source="gdelt",
+        event_id="gdelt-black-swan-2",
+        occurred_at="2026-07-29T01:00:00+00:00",
+        market_sync_confirmed=True,
+        market_sync=["NIKKEI"],
+        evidence=[
+            {"domain": "apnews.com", "url": "https://apnews.com/example-2", "seen_at": "2026-07-29T01:00:00+00:00"},
+            {"domain": "reuters.com", "url": "https://www.reuters.com/example-2", "seen_at": "2026-07-29T01:01:00+00:00"},
+        ],
+    )
+    assert alert.risk_level == "警戒"
+    assert alert.market_sync == ("NIKKEI",)
 
 
 def test_external_alert_stamps_only_public_verified_fields(tmp_path):
