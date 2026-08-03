@@ -30,7 +30,7 @@ def test_midday_briefing_includes_japan_korea_and_public_observation_cards():
 
 
 def test_midday_briefing_explains_cross_market_move_and_technical_location():
-    context = {"window_days": 20, "long_window_days": 60, "low": 100, "high": 120, "long_low": 90, "long_high": 130, "position_pct": 90, "zone": "接近20日壓力區", "status": "ok"}
+    context = {"window_days": 20, "long_window_days": 60, "low": 100, "high": 120, "long_low": 90, "long_high": 130, "position_pct": 90, "zone": "接近20日壓力區", "as_of": "2026-08-03", "status": "ok"}
     snapshot = {
         "indices": [
             {"ticker": "TAIEX", "price": 118, "change_percent": 1.2, "technical_context": context},
@@ -54,3 +54,4 @@ def test_midday_briefing_explains_cross_market_move_and_technical_location():
     assert "同步上行" in semiconductor["market_impact"]
     assert "20日區間" in semiconductor["watch"]
     assert "60日" in semiconductor["watch"]
+    assert "資料截至 2026-08-03" in semiconductor["watch"]
