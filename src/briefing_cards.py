@@ -66,11 +66,13 @@ def _technical_line(item: dict[str, Any] | None, name: str) -> str:
     long_high = context.get("long_high")
     position = float(context.get("position_pct"))
     zone = context.get("zone") or "位於20日區間中段"
+    as_of = str(context.get("as_of") or "").strip()
     long_range = ""
     if long_low is not None and long_high is not None:
         long_days = int(context.get("long_window_days") or 60)
         long_range = f"；近{long_days}日 {float(long_low):,.2f}–{float(long_high):,.2f}"
-    return f"{name}近{days}日區間 {low:,.2f}–{high:,.2f}{long_range}，目前{zone}（區間位置 {position:.0f}%）。"
+    as_of_text = f"，資料截至 {as_of}" if as_of else ""
+    return f"{name}近{days}日區間 {low:,.2f}–{high:,.2f}{long_range}，目前{zone}（區間位置 {position:.0f}%）{as_of_text}。"
 
 
 def _risk_line(risk: dict[str, Any] | None, market: str) -> str:
