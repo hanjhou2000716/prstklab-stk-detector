@@ -91,6 +91,11 @@ def _monitor_health_item(monitor_health: dict[str, Any], checked_at: str) -> dic
     if not isinstance(reasons, dict):
         reasons = {}
     issues = [f"{reason}: {count} pending event(s)" for reason, count in reasons.items() if count]
+    if pending_count and not issues:
+        if str(monitor_health.get("market_sync_status") or "not_confirmed") != "confirmed":
+            issues.append("等待市場同步：相關價格或波動尚未確認")
+        else:
+            issues.append("等待第二來源：尚未有第二個可信新聞網域核對")
     return {
         "key": "gdelt_crosscheck",
         "label": "GDELT event cross-check",

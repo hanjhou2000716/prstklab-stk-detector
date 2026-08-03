@@ -43,3 +43,18 @@ def test_failed_monitor_is_visible_as_a_partial_source():
     assert gdelt["status"] == "partial"
     assert "Timeout" in gdelt["issues"][0]
     assert health["missing_source_count"] == 1
+
+
+def test_pending_monitor_without_reason_gets_market_sync_fallback():
+    snapshot = {"source_health": {"sources": []}}
+    updated = apply_monitor_health(snapshot, {
+        "component": "gdelt",
+        "status": "healthy",
+        "checked_at": "2026-08-03T02:00:00+00:00",
+        "pending_count": 1,
+        "pending_reasons": {},
+        "market_sync_status": "not_confirmed",
+    })
+    gdelt = next(item for item in updated["source_health"]["sources"] if item["key"] == "gdelt_crosscheck")
+    assert gdelt["status"] == "pending"
+    assert "等待市場同步" in gdelt["issues"][0]

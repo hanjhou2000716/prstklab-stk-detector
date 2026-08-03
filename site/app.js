@@ -315,7 +315,12 @@ const renderSourceHealth = (health, snapshot = {}) => {
         };
         return `${labels[reason] || `待核對：${reason}`}（${Number(count)} 個候選）`;
       }).join("；") : "";
-    const issue = pendingReasons || (Array.isArray(source.issues) && source.issues.length ? source.issues.join("；") : "本輪可用");
+    const fallbackPendingReason = source.status === "pending" && !pendingReasons
+      ? (source.market_sync_status === "confirmed"
+        ? `等待第二來源：尚未有第二個可信新聞網域核對（${Number(source.pending_count || 0)} 個候選）`
+        : `等待市場同步：相關價格或波動尚未確認（${Number(source.pending_count || 0)} 個候選）`)
+      : "";
+    const issue = pendingReasons || fallbackPendingReason || (Array.isArray(source.issues) && source.issues.length ? source.issues.join("；") : "本輪可用");
     const candidateNote = source.key === "research" && source.candidate_state
       ? source.candidate_state === "no_candidates"
         ? "本輪無符合門檻候選"
