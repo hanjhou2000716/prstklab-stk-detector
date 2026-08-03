@@ -79,6 +79,19 @@ def test_daily_quote_is_explicitly_labelled_as_a_daily_close():
     assert _daily_quote(item, daily)["quote_basis"] == "日線收盤"
 
 
+def test_daily_quote_includes_twenty_day_range_context_for_briefings():
+    item = {"symbol": "^IXIC", "ticker": "NASDAQ", "name": "那斯達克", "market": "us", "currency": "點"}
+    daily = pd.Series(range(100, 125), index=pd.date_range("2026-06-01", periods=25, freq="D"), dtype=float)
+    quote = _daily_quote(item, daily)
+
+    context = quote["technical_context"]
+    assert context["window_days"] == 20
+    assert context["low"] == 105.0
+    assert context["high"] == 124.0
+    assert context["zone"] == "接近20日壓力區"
+    assert context["status"] == "ok"
+
+
 def test_quotes_include_a_public_source_label():
     item = {"symbol": "^IXIC", "ticker": "NASDAQ", "name": "Nasdaq", "market": "us", "currency": "USD"}
     daily = pd.Series([100.0, 105.0], index=pd.to_datetime(["2026-07-23", "2026-07-24"]))

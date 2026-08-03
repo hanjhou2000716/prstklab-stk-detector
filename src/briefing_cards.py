@@ -29,6 +29,44 @@ def _move(item: dict[str, Any] | None) -> str:
     return f"{float(item['change_percent']):+.2f}%"
 
 
+def _price_move(item: dict[str, Any] | None, name: str) -> str:
+    """Format the observed price and daily move for an evidence line."""
+    if not item or item.get("price") is None:
+        return f"{name}資料暫時無法取得"
+    currency = str(item.get("currency") or "").strip()
+    suffix = f" {currency}" if currency and currency not in {"點", "TWD", "USD"} else (f" {currency}" if currency else "")
+    return f"{name} {float(item['price']):,.2f}{suffix}（{_move(item)}）"
+
+
+def _source_note(*items: dict[str, Any] | None) -> str:
+    """Return a compact provenance line for a report card."""
+    notes: list[str] = []
+    for item in items:
+        if not item:
+            continue
+        label = str(item.get("source_label") or item.get("quote_source") or item.get("source_domain") or "").strip()
+        observed = str(item.get("quote_time") or item.get("quote_date") or "").strip()
+        if label or observed:
+            if "T" in observed:
+                observed = observed.replace("T", " ")[:16]
+            notes.append(" | ".join(part for part in (label, observed) if part))
+    unique = list(dict.fromkeys(notes))
+    return "資料來源：" + "；".join(unique[:2]) if unique else ""
+
+
+def _technical_line(item: dict[str, Any] | None, name: str) -> str:
+    """Describe recent range location; never turn it into trade advice."""
+    context = (item or {}).get("technical_context") or {}
+    if context.get("status") != "ok":
+        return f"{name}近20日區間資料不足，暫不判定支撐／壓力位置。"
+    days = int(context.get("window_days") or 20)
+    low = float(context.get("low"))
+    high = float(context.get("high"))
+    position = float(context.get("position_pct"))
+    zone = context.get("zone") or "位於20日區間中段"
+    return f"{name}近{days}日區間 {low:,.2f}–{high:,.2f}，目前{zone}（區間位置 {position:.0f}%）。"
+
+
 def _risk_line(risk: dict[str, Any] | None, market: str) -> str:
     """Format a public sentiment/VIX state without implying an action."""
     item = (risk or {}).get(market, {})
@@ -44,14 +82,17 @@ def _risk_line(risk: dict[str, Any] | None, market: str) -> str:
     return f"{sentiment_text}；{vix_text}。"
 
 
-def _card(title: str, event: str, importance: str, market_impact: str, watch: str) -> dict[str, str]:
-    return {
+def _card(title: str, event: str, importance: str, market_impact: str, watch: str, *, source_note: str = "") -> dict[str, str]:
+    card = {
         "title": title,
         "event": event,
         "importance": importance,
         "market_impact": market_impact,
         "watch": watch,
     }
+    if source_note:
+        card["source_note"] = source_note
+    return card
 
 
 def _direction(item: dict[str, Any] | None) -> str:
@@ -101,42 +142,48 @@ def _market_observations(
     primary_event = events[0] if events else {}
     event_title = primary_event.get("brief_title") or "今日無重大市場事件，持續觀察"
     event_text = primary_event.get("summary") or "本次未出現符合重大門檻的公開事件。"
+    event_market_context = str(primary_event.get("market_context") or "").strip()
 
     return [
         _card(
             "台股總經",
-            f"台指 {_move(taiwan)}；櫃買 {_move(tpex)}。台股風險：{_risk_line(risk, 'taiwan')}",
-            "加權指數代表大型權值股，櫃買指數較反映中小型股；兩者同步或分歧可用來判讀盤面廣度。",
+            f"{_price_move(taiwan, '台指')}；{_price_move(tpex, '櫃買指數')}。台股風險：{_risk_line(risk, 'taiwan')}",
+            "加權指數代表大型權值股，櫃買指數較反映中小型股；同步代表盤面廣度較一致，分歧則要保留產業結構差異。",
             _pair_relation(taiwan, tpex, left_name="加權指數", right_name="櫃買指數"),
-            "觀察台指期是否與現貨收斂、成交量是否放大，以及權值股是否主導盤勢。",
+            f"技術觀察：{_technical_line(taiwan, '加權指數')} {_technical_line(tpex, '櫃買指數')} 後續核對台指期是否與現貨收斂、成交量是否放大。",
+            source_note=_source_note(taiwan, tpex),
         ),
         _card(
             "台積電／半導體",
-            f"台積電 {_move(tsmc)}；費半 {_move(sox)}；Nasdaq {_move(nasdaq)}。",
-            "台積電、費半與 Nasdaq 可交叉辨識台美半導體與成長股是否同向，而非只看單一公司或指數。",
-            _pair_relation(sox, tsmc, left_name="費半", right_name="台積電"),
-            "觀察費半是否延續至美股收盤，以及台積電、AI 供應鏈與公開財報展望是否出現一致方向。",
+            f"{_price_move(tsmc, '台積電')}；{_price_move(sox, '費半')}；{_price_move(nasdaq, 'Nasdaq')}。",
+            "台積電、費半與 Nasdaq 同向時，較支持半導體／成長股風險偏好的共同變化；若只有單一市場變動，不足以推論產業趨勢。",
+            f"{_pair_relation(sox, tsmc, left_name='費半', right_name='台積電')} {event_market_context}".strip(),
+            f"技術觀察：{_technical_line(tsmc, '台積電')} {_technical_line(sox, '費半')} 後續核對台積電、AI 供應鏈財報展望與費半是否延續。",
+            source_note=_source_note(tsmc, sox, nasdaq),
         ),
         _card(
             "科技產業",
-            f"Nasdaq {_move(nasdaq)}；費半 {_move(sox)}；日經225 {_move(nikkei)}；韓國綜合 {_move(kospi)}。",
-            "美日韓科技市場的同向變化，較能反映區域風險偏好；若分歧，需保留各市場本地因素的解釋空間。",
+            f"{_price_move(nasdaq, 'Nasdaq')}；{_price_move(sox, '費半')}；{_price_move(nikkei, '日經225')}；{_price_move(kospi, '韓國綜合')}。",
+            "美日韓科技市場同向時，較能反映區域風險偏好；若分歧，可能由匯率、產業權重或本地政策造成，不直接視為全球趨勢。",
             _pair_relation(nasdaq, kospi, left_name="Nasdaq", right_name="韓國綜合"),
-            "觀察日韓下一交易時段是否延續，以及台股電子權值是否跟隨或出現明顯分歧。",
+            f"技術觀察：{_technical_line(nasdaq, 'Nasdaq')} { _technical_line(kospi, '韓國綜合')} 後續觀察日韓下一交易時段與台股電子權值是否延續或分歧。",
+            source_note=_source_note(nasdaq, nikkei, kospi),
         ),
         _card(
             "利率／匯率／黃金能源",
-            f"美元指數 {_move(dxy)}；美國10年債殖利率 {_move(us10y)}；美元兌台幣 {_move(usd_twd)}；黃金 {_move(gold)}；油價 {_move(wti)}。",
-            "利率、美元、黃金與能源共同反映通膨及避險需求，不能只用單一價格推論市場方向。",
+            f"{_price_move(dxy, '美元指數')}；{_price_move(us10y, '美國10年債殖利率')}；{_price_move(usd_twd, '美元兌台幣')}；{_price_move(gold, '黃金')}；{_price_move(wti, '油價')}。",
+            "利率、美元、黃金與能源共同反映通膨及避險需求；只有同時觀察方向與資料時間，才能分辨利率重估或單一商品波動。",
             _pair_relation(dxy, gold, left_name="美元指數", right_name="黃金"),
-            "觀察美元、殖利率、黃金與油價是否連續同向，並核對科技指數與台股權值的同步或分歧。",
+            "技術觀察：核對美元與黃金是否同向、油價是否突破近20日區間，並觀察科技指數與台股權值是否同步或分歧。",
+            source_note=_source_note(dxy, us10y, usd_twd, gold, wti),
         ),
         _card(
             "加密市場",
-            f"BTC {_move(btc)}；ETH {_move(eth)}。",
-            "BTC／ETH 是高波動風險偏好的補充觀察，需搭配 Nasdaq、美元與流動性資料，不單獨代表股市方向。",
+            f"{_price_move(btc, 'BTC')}；{_price_move(eth, 'ETH')}。",
+            "BTC／ETH 是高波動風險偏好的補充觀察；需搭配 Nasdaq、美元與流動性資料，不把單一幣價變動當成股市方向。",
             _pair_relation(btc, eth, left_name="BTC", right_name="ETH"),
-            "觀察 BTC／ETH 是否同步、波動是否放大，以及科技股與公開加密市場資料是否同向。",
+            f"技術觀察：{_technical_line(btc, 'BTC')} {_technical_line(eth, 'ETH')} 後續核對兩者是否同步、波動是否放大，以及科技股是否同向。",
+            source_note=_source_note(btc, eth),
         ),
         _card(
             "風險提醒",
@@ -144,6 +191,7 @@ def _market_observations(
             primary_event.get("why_important") or primary_event.get("trigger") or "目前以最新公開報價、官方資料與重大事件門檻持續核對。",
             primary_event.get("market_context") or "沒有重大事件時，不將短期價格變動視為明確因果。",
             primary_event.get("stock_observation") or "觀察主要市場、能源與利率是否出現同步且持續的價格變化。",
+            source_note=_source_note(primary_event),
         ),
     ]
 

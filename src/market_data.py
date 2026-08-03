@@ -103,6 +103,43 @@ def _close_series(history: Any) -> Any:
     return close.dropna()
 
 
+def _technical_context(closes: Any, *, window: int = 20) -> dict[str, Any]:
+    """Summarise a quote's recent price location without issuing a signal.
+
+    The noon report needs the same kind of context a human reader gets from a
+    chart: a recent range, the current location in that range, and whether the
+    quote is near the range boundary.  This is deliberately descriptive (not a
+    buy/sell rule) and is kept on the quote record so every report can cite the
+    same calculation.
+    """
+    try:
+        series = closes.dropna().tail(window)
+        if len(series) < 5:
+            return {"window_days": int(len(series)), "status": "insufficient"}
+        low = float(series.min())
+        high = float(series.max())
+        latest = float(series.iloc[-1])
+        span = high - low
+        position = 50.0 if span <= 0 else (latest - low) / span * 100
+        if position <= 25:
+            zone = "接近20日支撐區"
+        elif position >= 75:
+            zone = "接近20日壓力區"
+        else:
+            zone = "位於20日區間中段"
+        return {
+            "window_days": int(len(series)),
+            "low": round(low, 2),
+            "high": round(high, 2),
+            "position_pct": round(position, 1),
+            "zone": zone,
+            "as_of": str(series.index[-1].date()),
+            "status": "ok",
+        }
+    except Exception:
+        return {"window_days": 0, "status": "unavailable"}
+
+
 def _daily_quote(item: dict[str, str], closes: Any) -> dict[str, Any]:
     """Build a clearly labelled quote from the latest completed daily bars."""
     if len(closes) < 2:
@@ -119,6 +156,7 @@ def _daily_quote(item: dict[str, str], closes: Any) -> dict[str, Any]:
         "quote_source": "Yahoo Finance public daily quote",
         "source_url": f"https://finance.yahoo.com/quote/{item['symbol']}",
         "currency": item.get("currency") or ("TWD" if item["market"] == "taiwan" else "USD"),
+        "technical_context": _technical_context(closes),
     })
 
 
@@ -160,6 +198,7 @@ def _intraday_quote(
         "quote_source": "Yahoo Finance public 5-minute quote",
         "source_url": f"https://finance.yahoo.com/quote/{item['symbol']}",
         "currency": item.get("currency") or ("TWD" if item["market"] == "taiwan" else "USD"),
+        "technical_context": _technical_context(daily_closes),
     })
 
 
@@ -253,7 +292,10 @@ def get_quote(item: dict[str, str], session: str | None = None) -> dict[str, Any
     import yfinance as yf
 
     history = yf.download(
-        item["symbol"], period="10d", interval="1d", auto_adjust=False,
+        # Keep enough completed sessions for the report's 20-day support /
+        # resistance context.  The payload remains small compared with the
+        # research scans and avoids making a second provider request.
+        item["symbol"], period="3mo", interval="1d", auto_adjust=False,
         progress=False, threads=False,
     )
     closes = _close_series(history)
