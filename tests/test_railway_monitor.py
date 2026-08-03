@@ -1,5 +1,7 @@
 from importlib.util import module_from_spec, spec_from_file_location
+import os
 from pathlib import Path
+import subprocess
 import sys
 import threading
 
@@ -10,6 +12,27 @@ assert SPEC and SPEC.loader
 monitor = module_from_spec(SPEC)
 sys.modules[SPEC.name] = monitor
 SPEC.loader.exec_module(monitor)
+
+
+def test_monitor_imports_from_railway_root_without_repository_src_package():
+    """Railway's configured root directory must not crash on ``import app``."""
+    environment = os.environ.copy()
+    environment.pop("PYTHONPATH", None)
+    command = [
+        sys.executable,
+        "-c",
+        "import app; assert app._USING_STANDALONE_CLASSIFIER; "
+        "assert app.classify_event_fields({'title': 'WTI oil production update'})['category'] == 'energy'",
+    ]
+    result = subprocess.run(
+        command,
+        cwd=MODULE_PATH.parent,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_macro_flash_is_classified_and_compacted_for_watch_delivery():

@@ -28,7 +28,90 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunsplit
 
 import httpx
 
-from src.event_classifier import classify_event_fields, has_active_black_swan_context
+# Railway is currently configured with ``/railway-monitor`` as its root
+# directory.  In that layout the repository-level ``src`` package is not
+# copied into the image, so importing the shared classifier would crash the
+# process before the health server starts.  Prefer the shared implementation
+# when the service is deployed from the repository root, but keep a small,
+# auditable compatibility implementation for the standalone service image.
+_RUNTIME_ACTIVE_BLACK_SWAN_CONTEXT_TERMS = (
+    "war begins", "war began", "war breaks out", "war erupted",
+    "military escalation", "armed conflict", "airstrike", "missile attack",
+    "invasion", "attack", "strike", "escalation", "major disaster",
+)
+_USING_STANDALONE_CLASSIFIER = False
+
+try:
+    from src.event_classifier import classify_event_fields, has_active_black_swan_context
+except ModuleNotFoundError as error:
+    if error.name not in {"src", "src.event_classifier"}:
+        raise
+    _USING_STANDALONE_CLASSIFIER = True
+
+    def _runtime_haystack(record: Any) -> str:
+        values: list[str] = []
+
+        def visit(value: Any) -> None:
+            if isinstance(value, dict):
+                for child in value.values():
+                    visit(child)
+            elif isinstance(value, (list, tuple, set)):
+                for child in value:
+                    visit(child)
+            elif isinstance(value, (str, int, float)):
+                values.append(str(value))
+
+        visit(record)
+        return normalized_event_text(" ".join(values))
+
+    def _runtime_hit(terms: Iterable[str], haystack: str) -> str:
+        # ``_keyword_hit`` is defined below the compatibility block and is
+        # therefore resolved when the monitor actually classifies an item.
+        return str(_keyword_hit(tuple(terms), haystack) or "")
+
+    def has_active_black_swan_context(haystack: str) -> bool:
+        normalized = normalized_event_text(haystack)
+        for term in _RUNTIME_ACTIVE_BLACK_SWAN_CONTEXT_TERMS:
+            candidate = normalized_event_text(term)
+            start = 0
+            while candidate:
+                index = normalized.find(candidate, start)
+                if index < 0:
+                    break
+                prefix = normalized[max(0, index - 36):index]
+                if not re.search(r"\b(?:since|after|before|not|no|without|historical|former)\b", prefix):
+                    return True
+                start = index + len(candidate)
+        return False
+
+    def classify_event_fields(record: dict[str, Any] | str) -> dict[str, Any]:
+        haystack = _runtime_haystack(record)
+        positive = _runtime_hit(MATERIAL_POSITIVE_TERMS, haystack)
+        if positive:
+            return {"category": "material_positive", "reason": "material_positive_keyword", "matched_terms": [positive], "text": haystack}
+        energy = _runtime_hit(CATEGORY_KEYWORDS.get("energy", ()), haystack)
+        context = _runtime_hit(ENERGY_CONTEXT_TERMS, haystack)
+        production = _runtime_hit(ENERGY_PRODUCTION_TERMS, haystack)
+        if energy and context and production and not has_active_black_swan_context(haystack):
+            return {"category": "energy", "reason": "energy_material_keyword", "matched_terms": [energy, context], "text": haystack}
+        black = _runtime_hit(BLACK_SWAN_TERMS, haystack)
+        if black:
+            return {"category": "black_swan", "reason": "black_swan_keyword", "matched_terms": [black], "text": haystack}
+        trump = KEYWORD_DATABASE.get("trump") or {}
+        entity = _runtime_hit(tuple(trump.get("entities", ())), haystack)
+        action = _runtime_hit(tuple(trump.get("policy_actions", ())), haystack)
+        taco = _runtime_hit(tuple(trump.get("taco", ())), haystack)
+        if taco:
+            return {"category": "policy", "reason": "trump_taco_keyword", "matched_terms": [taco], "text": haystack}
+        if entity and action:
+            return {"category": "policy", "reason": "trump_policy_keyword", "matched_terms": [action], "text": haystack}
+        for category in ("conflict", "policy", "fed", "macro", "semiconductor", "market", "energy"):
+            hit = _runtime_hit(CATEGORY_KEYWORDS.get(category, ()), haystack)
+            if hit:
+                if category == "energy" and not context:
+                    return {"category": None, "reason": "energy_requires_material_context", "matched_terms": [hit], "text": haystack}
+                return {"category": category, "reason": f"{category}_keyword", "matched_terms": [hit], "text": haystack}
+        return {"category": None, "reason": "keyword_no_match", "matched_terms": [], "text": haystack}
 
 
 JIN10_MCP_URL = "https://mcp.jin10.com/mcp"
@@ -51,18 +134,28 @@ CATEGORY_LABELS = {
 }
 
 def _load_keyword_database() -> dict[str, Any]:
-    path = Path(__file__).resolve().parents[1] / "config" / "event_keywords.json"
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(payload, dict):
-            raise ValueError("keyword database must be an object")
-        return payload
-    except (OSError, json.JSONDecodeError, TypeError, ValueError) as error:
-        # A deployment mistake must not silently disable the monitor.  The
-        # minimal fallback keeps the high-signal safety terms available while
-        # the health log exposes the configuration problem.
-        logging.error("event keyword database unavailable: %s", type(error).__name__)
-        return {
+    # The normal repository deployment reads the canonical database.  When
+    # Railway's Root Directory is ``/railway-monitor``, the service image only
+    # contains this folder, so also look for the bundled copy beside app.py.
+    candidate_paths = (
+        Path(__file__).resolve().parents[1] / "config" / "event_keywords.json",
+        Path(__file__).resolve().with_name("event_keywords.json"),
+    )
+    last_error: Exception | None = None
+    for path in candidate_paths:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(payload, dict):
+                raise ValueError("keyword database must be an object")
+            logging.info("Loaded event keyword database from %s", path)
+            return payload
+        except (OSError, json.JSONDecodeError, TypeError, ValueError) as error:
+            last_error = error
+    # A deployment mistake must not silently disable the monitor.  The
+    # minimal fallback keeps the high-signal safety terms available while
+    # the health log exposes the configuration problem.
+    logging.error("event keyword database unavailable: %s", type(last_error).__name__ if last_error else "unknown")
+    return {
             "categories": {"fed": ["fomc", "聯準會"], "macro": ["cpi", "非農"], "policy": ["tariff", "關稅"],
                            "conflict": ["war", "戰爭", "trump", "川普"], "energy": ["wti", "原油"],
                            "semiconductor": ["nvidia", "台積電"], "market": ["crash", "熔斷"]},
@@ -1645,8 +1738,48 @@ async def monitor_forever() -> None:
         await asyncio.sleep(interval)
 
 
+def validate_runtime_layout() -> None:
+    """Fail loudly in logs, but keep the health endpoint available.
+
+    Railway deployments using ``/railway-monitor`` cannot import the
+    repository-level ``src`` package.  The standalone classifier and bundled
+    keyword database are intentional fallbacks; this check makes the active
+    mode visible in Deploy Logs so a restart is not mistaken for a healthy
+    polling loop.
+    """
+    try:
+        probe = classify_event_fields({"title": "WTI oil production update"})
+        probe_category = probe.get("category") if isinstance(probe, dict) else None
+        if not probe_category:
+            raise RuntimeError("classifier_probe_no_category")
+        mode = "standalone-bundled" if _USING_STANDALONE_CLASSIFIER else "repository-shared"
+        update_health(
+            "runtime",
+            status="healthy",
+            classifier_mode=mode,
+            keyword_categories=len(CATEGORY_KEYWORDS),
+            updated_at=datetime.now(timezone.utc).isoformat(),
+            error=None,
+        )
+        logging.info(
+            "Runtime self-check passed classifier_mode=%s keyword_categories=%s",
+            mode,
+            len(CATEGORY_KEYWORDS),
+        )
+    except Exception as error:
+        update_health(
+            "runtime",
+            status="failed",
+            classifier_mode="unavailable",
+            updated_at=datetime.now(timezone.utc).isoformat(),
+            error=type(error).__name__,
+        )
+        logging.exception("Runtime self-check failed; monitor will continue for health diagnostics")
+
+
 def main() -> None:
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(message)s")
+    validate_runtime_layout()
     start_health_server()
     asyncio.run(monitor_forever())
 
