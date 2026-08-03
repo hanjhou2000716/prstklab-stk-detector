@@ -16,6 +16,7 @@ import requests
 
 
 STOOQ_URL = "https://stooq.com/q/l/"
+NASDAQ_QUOTE_URL = "https://api.nasdaq.com/api/quote/{symbol}/info"
 SYMBOLS = {
     "S&P 500": "^spx",
     "NASDAQ": "^ndq",
@@ -26,6 +27,10 @@ SYMBOLS = {
     "WTI": "cl.f",
     "BRENT": "brn.f",
     "GOLD": "gc.f",
+}
+NASDAQ_SYMBOLS = {
+    "NASDAQ": "comp",
+    "SOX": "sox",
 }
 
 
@@ -56,6 +61,28 @@ def _parse_row(text: str, ticker: str) -> dict[str, Any]:
     }
 
 
+def _parse_nasdaq_quote(payload: dict[str, Any], ticker: str) -> dict[str, Any]:
+    data = payload.get("data") if isinstance(payload, dict) else None
+    primary = data.get("primaryData") if isinstance(data, dict) else None
+    if not isinstance(primary, dict):
+        raise ValueError("missing nasdaq primaryData")
+    raw_price = str(primary.get("lastSalePrice") or "").replace(",", "").strip()
+    raw_change = str(primary.get("percentageChange") or "").replace("%", "").strip()
+    if not raw_price or raw_price.upper() in {"N/A", "N/D"}:
+        raise ValueError("missing nasdaq price")
+    return {
+        "ticker": ticker,
+        "price": float(raw_price),
+        "change_percent": float(raw_change) if raw_change else None,
+        "quote_date": str(data.get("timeAsOf") or "") or None,
+        "quote_time": None,
+        "quote_basis": "最近公開收盤",
+        "quote_source": "Nasdaq public index quote",
+        "source_url": NASDAQ_QUOTE_URL.format(symbol=NASDAQ_SYMBOLS[ticker]) + "?assetclass=index",
+        "source_domain": "api.nasdaq.com",
+    }
+
+
 def fetch_public_market_secondary(
     *, timeout: int = 15, requester: Callable[..., Any] | None = None,
 ) -> dict[str, Any]:
@@ -75,6 +102,24 @@ def fetch_public_market_secondary(
             response.raise_for_status()
             quotes[ticker] = _parse_row(response.text, ticker)
         except Exception as exc:
+            # Stooq intermittently blocks public requests.  Nasdaq publishes
+            # the composite and semiconductor indexes via a separate public
+            # endpoint, so use it as a per-symbol fallback when available.
+            fallback_symbol = NASDAQ_SYMBOLS.get(ticker)
+            if fallback_symbol:
+                try:
+                    fallback = requester(
+                        NASDAQ_QUOTE_URL.format(symbol=fallback_symbol),
+                        params={"assetclass": "index"},
+                        timeout=timeout,
+                        headers={"Accept": "application/json", "User-Agent": "PRStK-Lab/1.0"},
+                    )
+                    fallback.raise_for_status()
+                    quotes[ticker] = _parse_nasdaq_quote(fallback.json(), ticker)
+                    continue
+                except Exception as fallback_exc:
+                    errors.append(f"{ticker}:{type(fallback_exc).__name__}")
+                    continue
             errors.append(f"{ticker}:{type(exc).__name__}")
     status = "healthy" if quotes and not errors else "partial" if quotes else "failed"
     return {
