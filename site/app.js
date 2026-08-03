@@ -321,12 +321,19 @@ const renderSourceHealth = (health, snapshot = {}) => {
         : `等待市場同步：相關價格或波動尚未確認（${Number(source.pending_count || 0)} 個候選）`)
       : "";
     const issue = pendingReasons || fallbackPendingReason || (Array.isArray(source.issues) && source.issues.length ? source.issues.join("；") : "本輪可用");
+    let provenance = "";
+    if (source.status === "pending" && (source.checked_at || source.source_url)) {
+      let domain = "公開來源";
+      try { domain = new URL(String(source.source_url || "")).hostname || domain; } catch (_) { /* keep generic label */ }
+      const checkedAt = traceTime(source.checked_at) || "時間暫時無法取得";
+      provenance = `來源 ${domain}｜核對 ${checkedAt}`;
+    }
     const candidateNote = source.key === "research" && source.candidate_state
       ? source.candidate_state === "no_candidates"
         ? "本輪無符合門檻候選"
         : `候選 ${source.candidate_count ?? 0} 檔｜正式 ${source.formal_candidates ?? 0} 檔｜觀察 ${source.observation_candidates ?? 0} 檔`
       : "";
-    const detail = candidateNote ? `${issue}｜${candidateNote}` : issue;
+    const detail = [issue, candidateNote, provenance].filter(Boolean).join("｜");
     return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${escapeHtml(source.status || "partial")}">${status}</em></li>`;
   }).join("");
   if (card) card.open = false;
