@@ -139,6 +139,18 @@ def test_keyword_database_matches_simplified_chinese_and_english_typo():
     assert monitor.classify_flash(typo) == "fed"
 
 
+def test_fuzzy_matching_does_not_confuse_warning_or_escalation_with_other_terms():
+    # ``war`` is a substring of ``warning`` and ``deescalation`` is close to
+    # ``escalation``.  Neither should silently change the event category.
+    escalation = monitor.Flash("escalation", "Iran military invasion risk escalation", "", "2026-08-02T10:06:55+08:00")
+    normalized = monitor.normalized_event_text("routine warning")
+    assert not monitor._keyword_in_text("war", normalized, normalized.replace(" ", ""))
+    normalized = monitor.normalized_event_text("military escalation")
+    assert not monitor._keyword_in_text("deescalation", normalized, normalized.replace(" ", ""))
+    assert monitor.classify_flash(escalation) == "black_swan"
+    assert monitor.classify_flash_with_reason(escalation)[1] == "black_swan_keyword"
+
+
 def test_trump_taco_phrase_is_a_policy_alert():
     flash = monitor.Flash(
         "taco-1",
@@ -394,6 +406,38 @@ def test_gdelt_black_swan_with_market_sync_becomes_warning_alert():
     assert alerts[0].official_confirmed is False
     assert alerts[0].market_sync_confirmed is True
     assert alerts[0].market_sync == ("NIKKEI",)
+
+
+def test_gdelt_black_swan_escalation_variants_merge_with_market_sync():
+    # One publisher may say "invasion" while another says "escalation".
+    # They still describe one Iran conflict event and must share a cluster.
+    articles = [
+        monitor.DiscoveryArticle(
+            "Iran military invasion risk rises",
+            "https://www.reuters.com/iran-invasion",
+            "reuters.com",
+            "2026-08-03T00:50:00+00:00",
+            "Military invasion risk threatens shipping routes.",
+        ),
+        monitor.DiscoveryArticle(
+            "Iran conflict escalation threatens supply routes",
+            "https://apnews.com/iran-escalation",
+            "apnews.com",
+            "2026-08-03T00:52:00+00:00",
+            "The attack risk is rising across the region.",
+        ),
+    ]
+    market_sync = {"quotes": [{
+        "ticker": "WTI",
+        "change_percent": -5.66,
+        "quote_time": "2026-08-03T00:53:00+00:00",
+        "quote_delayed": False,
+    }]}
+    alerts = monitor.cross_checked_gdelt_alerts(articles, market_sync)
+    assert len(alerts) == 1
+    assert alerts[0].category == "black_swan"
+    assert alerts[0].risk_level == "警戒"
+    assert alerts[0].market_sync == ("WTI",)
 
 
 def test_gdelt_black_swan_pending_reason_exposes_missing_market_sync():
