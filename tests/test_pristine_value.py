@@ -1,6 +1,6 @@
 import pandas as pd
 
-from src.pristine_value import heat_metrics, review_pristine_observation_pool, review_pristine_pool
+from src.pristine_value import heat_metrics, pristine_selection_diagnostics, review_pristine_observation_pool, review_pristine_pool
 
 
 def _row(ticker: str, *, income=6_000_000_000, heat=1, return_3m=0.05):
@@ -67,3 +67,17 @@ def test_heat_metrics_returns_three_month_public_observations():
     result = heat_metrics(bars, shares_outstanding=100_000)
     assert result["average_turnover"] is not None
     assert result["turnover_rate"] == 0.01
+
+
+def test_pristine_selection_diagnostics_distinguishes_gaps_from_thresholds():
+    complete = _row("0001")
+    incomplete = _row("0002")
+    incomplete["four_quarter_eps_positive"] = None
+    diagnostic = pristine_selection_diagnostics([complete, incomplete], "taiwan")
+    assert diagnostic["records"] == 2
+    assert diagnostic["complete_records"] == 1
+    assert diagnostic["incomplete_records"] == 1
+    assert diagnostic["formal_eligible_records"] == 1
+    assert diagnostic["matched_distribution"]["6/6"] == 1
+    assert diagnostic["matched_distribution"]["5/6"] == 1
+    assert diagnostic["verification_gap_counts"]["four_quarter_eps_positive"] == 1
