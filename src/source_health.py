@@ -54,7 +54,27 @@ def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
         return {"key": "research", "label": "量化研究", "status": "warming", "checked_at": checked_at, "issues": details[:2]}
     if (report.get("health") or {}).get("is_expired"):
         return {"key": "research", "label": "量化研究", "status": "partial", "checked_at": checked_at, "issues": ["研究資料已逾時，候選清單已隱藏"]}
-    return {"key": "research", "label": "量化研究", "status": "healthy", "checked_at": checked_at, "issues": []}
+    diagnostics = [
+        item.get("selection_diagnostics")
+        for item in sources
+        if isinstance(item.get("selection_diagnostics"), dict)
+    ]
+    formal = sum(int(item.get("formal_candidates") or 0) for item in sources)
+    observation = sum(int(item.get("observation_candidates") or 0) for item in sources)
+    candidate_count = sum(int(item.get("candidates") or 0) for item in sources)
+    candidate_state = "available" if candidate_count else "no_candidates"
+    return {
+        "key": "research",
+        "label": "量化研究",
+        "status": "healthy",
+        "checked_at": checked_at,
+        "issues": [],
+        "candidate_state": candidate_state,
+        "candidate_count": candidate_count,
+        "formal_candidates": formal,
+        "observation_candidates": observation,
+        "selection_diagnostics": diagnostics,
+    }
 
 
 def build_source_health(
