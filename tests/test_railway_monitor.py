@@ -39,6 +39,18 @@ def test_routine_oil_commentary_is_not_an_emergency_alert():
     assert monitor.alert_from_flash(flash) is None
 
 
+def test_historical_war_reference_with_kuwait_oil_production_is_energy():
+    flash = monitor.Flash(
+        "kuwait-oil-production",
+        "Kuwait July oil production reaches its highest level since the Middle East war began",
+        "The output increase is an energy-market development, not a new attack.",
+        "2026-08-03T10:00:00+08:00",
+    )
+    classification, reason = monitor.classify_flash_with_reason(flash)
+    assert classification == "energy"
+    assert reason == "energy_material_keyword"
+
+
 def test_black_swan_flash_requires_official_monitor_confirmation():
     flash = monitor.Flash("quake-1", "Major earthquake hits Japan", "A major earthquake triggers tsunami warnings", "2026-07-28T17:00:00+08:00")
     assert monitor.classify_flash(flash) == "black_swan"
@@ -246,6 +258,29 @@ def test_signature_covers_exact_github_payload_fields():
     signature = monitor.sign(alert, "shared")
     assert signature.startswith("sha256=")
     assert len(signature) == len("sha256=") + 64
+
+
+def test_gdelt_discovers_kuwait_oil_production_as_energy_candidate():
+    articles = [
+        monitor.DiscoveryArticle(
+            "Kuwait July oil production reaches highest level since Middle East war began",
+            "https://www.reuters.com/a",
+            "reuters.com",
+            "2026-08-03T01:00:00+00:00",
+        ),
+        monitor.DiscoveryArticle(
+            "Kuwaiti crude output hits a post-war high",
+            "https://apnews.com/b",
+            "apnews.com",
+            "2026-08-03T01:01:00+00:00",
+        ),
+    ]
+    category, anchor = monitor._discovery_category_and_anchor(articles[0].title, articles[0].snippet)
+    assert category == "energy"
+    assert anchor in {"kuwait", "kuwaiti", "oil", "oil production", "production", "crude oil"}
+    entities, actions = monitor._discovery_facts(articles[0].title, category, anchor, articles[0].snippet)
+    assert "gulf_region" in entities
+    assert "energy_supply" in actions
 
 
 def test_gdelt_requires_two_trusted_publishers_with_the_same_concrete_anchor():

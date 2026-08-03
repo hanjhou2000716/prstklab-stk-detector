@@ -33,6 +33,22 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
 }
 BLACK_SWAN_TERMS = tuple(str(value) for value in KEYWORD_DATABASE.get("black_swan", ()) if str(value).strip())
 MATERIAL_POSITIVE_TERMS = tuple(str(value) for value in KEYWORD_DATABASE.get("material_positive", ()) if str(value).strip())
+ENERGY_PRODUCTION_TERMS = (
+    "oil production", "crude production", "oil output", "production increase",
+    "output increase", "output cut", "production cut", "石油產量", "石油产量", "原油產量", "原油产量",
+    "產油量", "产油量", "增產", "增产", "減產", "减产", "提高產量", "提高产量",
+)
+
+# A story can mention a historical war without reporting a new attack. Keep
+# those retrospective references in the energy/news path; only an active
+# escalation should enter the strict black-swan gate.
+ACTIVE_BLACK_SWAN_CONTEXT_TERMS = (
+    "war begins", "war began", "war breaks out", "war erupted", "war escalates",
+    "military escalation", "armed conflict", "airstrike", "missile attack",
+    "invasion", "attack", "strike", "escalation", "major disaster",
+    "戰爭爆發", "戰事升級", "重大攻擊", "軍事升級", "战争爆发", "战事升级",
+    "重大攻击", "军事升级", "空襲", "空袭", "入侵", "攻擊", "攻击",
+)
 
 
 def normalize_text(value: Any) -> str:
@@ -75,6 +91,28 @@ def _first_hit(terms: Iterable[str], haystack: str) -> str:
     return next((str(term) for term in terms if _contains(str(term), haystack)), "")
 
 
+def has_active_black_swan_context(haystack: str) -> bool:
+    """Return whether a story describes an active escalation, not history."""
+    normalized = normalize_text(haystack)
+    for term in ACTIVE_BLACK_SWAN_CONTEXT_TERMS:
+        candidate = normalize_text(term)
+        if not candidate:
+            continue
+        start = 0
+        while True:
+            index = normalized.find(candidate, start)
+            if index < 0:
+                break
+            # Historical or explicitly negated mentions ("since the war
+            # began", "not a new attack") describe context, not a new
+            # black-swan escalation. Keep the active-event gate conservative.
+            prefix = normalized[max(0, index - 36):index]
+            if not re.search(r"\b(?:since|after|before|not|no|without|historical|former)\b|(?:自從|自…以來|自…以後|歷史|历史|不是|並非|并非|未有)", prefix):
+                return True
+            start = index + max(1, len(candidate))
+    return False
+
+
 def classify_event_fields(record: dict[str, Any] | str) -> dict[str, Any]:
     """Classify a news story or live flash with matched aliases and reason."""
     haystack = build_haystack(record)
@@ -82,6 +120,13 @@ def classify_event_fields(record: dict[str, Any] | str) -> dict[str, Any]:
     positive = _first_hit(MATERIAL_POSITIVE_TERMS, haystack)
     if positive:
         return {"category": "material_positive", "reason": "material_positive_keyword", "matched_terms": [positive], "text": haystack}
+    # A current oil-production/supply story that merely says "since the war
+    # began" is an energy candidate, not a fresh black-swan escalation.
+    energy = _first_hit(CATEGORY_KEYWORDS.get("energy", ()), haystack)
+    energy_context = _first_hit(tuple(KEYWORD_DATABASE.get("energy_context", ())), haystack)
+    energy_production = _first_hit(ENERGY_PRODUCTION_TERMS, haystack)
+    if energy and energy_context and energy_production and not has_active_black_swan_context(haystack):
+        return {"category": "energy", "reason": "energy_material_keyword", "matched_terms": [energy, energy_context], "text": haystack}
     black = _first_hit(BLACK_SWAN_TERMS, haystack)
     if black:
         return {"category": "black_swan", "reason": "black_swan_keyword", "matched_terms": [black], "text": haystack}
@@ -103,7 +148,7 @@ def classify_event_fields(record: dict[str, Any] | str) -> dict[str, Any]:
         hit = _first_hit(CATEGORY_KEYWORDS.get(category, ()), haystack)
         if hit:
             if category == "energy":
-                context = _first_hit(tuple(KEYWORD_DATABASE.get("energy_context", ())), haystack)
+                context = energy_context
                 if not context:
                     return {"category": None, "reason": "energy_requires_material_context", "matched_terms": [hit], "text": haystack}
             return {"category": category, "reason": f"{category}_keyword", "matched_terms": [hit], "text": haystack}

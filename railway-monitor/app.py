@@ -28,7 +28,7 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunsplit
 
 import httpx
 
-from src.event_classifier import classify_event_fields
+from src.event_classifier import classify_event_fields, has_active_black_swan_context
 
 
 JIN10_MCP_URL = "https://mcp.jin10.com/mcp"
@@ -92,6 +92,11 @@ CATEGORY_KEYWORDS = {key: tuple(values) for key, values in KEYWORD_DATABASE.get(
 BLACK_SWAN_TERMS = tuple(KEYWORD_DATABASE.get("black_swan", ()))
 MATERIAL_POSITIVE_TERMS = tuple(KEYWORD_DATABASE.get("material_positive", ()))
 ENERGY_CONTEXT_TERMS = tuple(KEYWORD_DATABASE.get("energy_context", ()))
+ENERGY_PRODUCTION_TERMS = (
+    "oil production", "crude production", "oil output", "production increase",
+    "output increase", "output cut", "production cut", "石油產量", "石油产量", "原油產量", "原油产量",
+    "產油量", "产油量", "增產", "增产", "減產", "减产", "提高產量", "提高产量",
+)
 ESCALATION_TERMS = tuple(KEYWORD_DATABASE.get("escalation", ()))
 TRUMP_RULES = KEYWORD_DATABASE.get("trump") or {}
 TRUMP_ENTITY_TERMS = tuple(TRUMP_RULES.get("entities", ()))
@@ -105,6 +110,14 @@ IRAN_GULF_HIGH_SIGNAL_ACTION_TERMS = tuple(IRAN_GULF_RULES.get("high_signal_acti
 IRAN_GULF_REGIONAL_ANCHOR_TERMS = tuple(IRAN_GULF_RULES.get("regional_anchors", ()))
 IRAN_GULF_MARKET_TERMS = tuple(IRAN_GULF_RULES.get("market_context", ()))
 GDELT_QUERY = str((KEYWORD_DATABASE.get("gdelt") or {}).get("query") or DEFAULT_GDELT_QUERY)
+# GDELT is a discovery feed rather than an authority. Keep the configured
+# query, but explicitly include Gulf oil-production wording so a headline
+# such as "Kuwait output reaches a high since the war began" is discoverable.
+GDELT_QUERY = (
+    f"({GDELT_QUERY} OR Kuwait OR Kuwaiti OR \"oil production\" OR "
+    f"\"crude production\" OR \"oil output\" OR OPEC OR "
+    "科威特 OR 科威特國 OR 科威特国 OR 石油產量 OR 石油产量 OR 原油產量 OR 原油产量)"
+)
 
 # A discovery item is never sufficient on its own. GDELT candidates must have
 # two independent domains from this conservative set and share a concrete
@@ -114,6 +127,7 @@ TRUSTED_NEWS_DOMAINS = {
     "nytimes.com", "bbc.com", "cnbc.com", "nikkei.com",
 }
 DISCOVERY_ANCHORS = {
+    "energy": ("wti", "brent", "crude oil", "oil", "oil supply", "oil production", "crude production", "oil output", "opec", "production", "output", "kuwait", "kuwaiti", "gulf", "middle east", "原油", "石油", "石油產量", "石油产量", "原油產量", "原油产量", "產量", "产量", "科威特", "科威特國", "科威特国", "海灣", "海湾"),
     "conflict": ("iran", "israel", "ukraine", "russia", "hormuz", "persian gulf", "gulf", "taiwan", "伊朗", "以色列", "波斯灣", "波斯湾", "海灣", "海湾", "荷姆茲海峽", "霍尔木兹海峡", "烏克蘭", "乌克兰", "俄羅斯", "俄罗斯", "台灣", "台湾"),
     "policy": ("tariff", "sanction", "export control", "duties", "taco", "trump always chickens out", "backs down", "walks back", "tariff pause", "tariff delay", "關稅", "关税", "制裁", "出口管制", "暫緩關稅", "暂缓关税", "延後關稅", "延后关税"),
     # De-escalation headlines (for example, a president cancelling a planned
@@ -143,6 +157,9 @@ DISCOVERY_ENTITY_ANCHORS = {
     "bank of japan", "yen", "japan", "聯準會", "联准会", "貝森特", "贝森特", "日圓", "日元",
 }
 DISCOVERY_ALIAS_GROUPS = {
+    # Gulf states are one event-region for cross-source matching; the action
+    # intersection still prevents unrelated Gulf headlines from merging.
+    "gulf_region": ("persian gulf", "gulf states", "gulf", "hormuz", "kuwait", "kuwaiti", "bahrain", "qatar", "saudi arabia", "uae", "united arab emirates", "oman", "波斯灣", "波斯湾", "海灣", "海湾", "海灣國家", "海湾国家", "科威特", "科威特國", "科威特国", "巴林", "卡達", "卡达", "沙烏地阿拉伯", "沙特阿拉伯", "阿聯酋", "阿联酋", "阿曼", "荷姆茲海峽", "霍尔木兹海峡"),
     "fed": ("federal reserve", "fed", "聯準會", "联准会", "美聯儲", "美联储"),
     "bessent": ("bessent", "scott bessent", "貝森特", "贝森特"),
     "boj": ("boj", "bank of japan", "日本央行", "日本銀行", "日本银行"),
@@ -184,6 +201,18 @@ DISCOVERY_ACTION_ALIAS_GROUPS = {
 DISCOVERY_ACTIONS = {
     key: tuple(values) for key, values in (_GDELT_KEYWORDS.get("actions") or {}).items()
 }
+ENERGY_DISCOVERY_ACTIONS = (
+    "oil supply", "oil production", "crude production", "oil output",
+    "production", "output", "production increase", "production cut",
+    "opec", "supply disruption", "石油供應", "石油供应", "石油產量", "石油产量",
+    "原油產量", "原油产量", "產油量", "产油量", "增產", "增产", "減產", "减产",
+    "提高產量", "提高产量",
+)
+DISCOVERY_ACTION_ALIAS_GROUPS["energy_supply"] = ENERGY_DISCOVERY_ACTIONS
+# Keep the runtime vocabulary resilient when an older keyword database is
+# deployed. This is additive and does not weaken the two-source gate.
+DISCOVERY_ENTITIES = tuple(dict.fromkeys((*DISCOVERY_ENTITIES, "kuwait", "kuwaiti", "bahrain", "qatar", "saudi arabia", "uae", "oman", "科威特", "科威特國", "科威特国")))
+DISCOVERY_ACTIONS["energy"] = tuple(dict.fromkeys((*DISCOVERY_ACTIONS.get("energy", ()), *ENERGY_DISCOVERY_ACTIONS)))
 
 # Public, non-secret runtime diagnostics for Railway's /health endpoint.  This
 # deliberately contains timestamps, counts and error classes only; credentials
@@ -421,6 +450,15 @@ def classify_flash_with_reason(flash: Flash) -> tuple[str | None, str]:
     # escalation merely because the original conflict is mentioned.
     if any(_keyword_in_text(keyword, haystack, compact) for keyword in MATERIAL_POSITIVE_TERMS):
         return "material_positive", "material_positive_keyword"
+    # A current oil-production/supply story that only refers to a historical
+    # war must stay in the energy/news path. Without this branch, a generic
+    # ``war`` alias wins first and the strict black-swan gate silently holds
+    # the event even when the report is a real oil-market development.
+    energy_keyword = _keyword_hit(CATEGORY_KEYWORDS.get("energy", ()), haystack)
+    energy_context = _keyword_hit(ENERGY_CONTEXT_TERMS, haystack)
+    energy_production = _keyword_hit(ENERGY_PRODUCTION_TERMS, haystack)
+    if energy_keyword and energy_context and energy_production and not has_active_black_swan_context(haystack):
+        return "energy", "energy_material_keyword"
     if any(_keyword_in_text(keyword, haystack, compact) for keyword in BLACK_SWAN_TERMS):
         return "black_swan", "black_swan_keyword"
     # Gulf/Iran headlines often lead with a regional-market move and put the
