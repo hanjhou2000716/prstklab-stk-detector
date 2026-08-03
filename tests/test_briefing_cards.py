@@ -27,3 +27,29 @@ def test_midday_briefing_includes_japan_korea_and_public_observation_cards():
     ]
     assert "台指" in briefing["observations"][0]["event"]
     assert "美國10年債殖利率" in briefing["observations"][3]["event"]
+
+
+def test_midday_briefing_explains_cross_market_move_and_technical_location():
+    context = {"window_days": 20, "low": 100, "high": 120, "position_pct": 90, "zone": "接近20日壓力區", "status": "ok"}
+    snapshot = {
+        "indices": [
+            {"ticker": "TAIEX", "price": 118, "change_percent": 1.2, "technical_context": context},
+            {"ticker": "TPEx", "price": 115, "change_percent": 0.8, "technical_context": context},
+            {"ticker": "NASDAQ", "price": 100, "change_percent": 1.0, "technical_context": context},
+            {"ticker": "SOX", "price": 200, "change_percent": 1.5, "technical_context": context},
+        ],
+        "quotes": [{"ticker": "2330", "price": 1100, "change_percent": 2.0, "technical_context": context}],
+        "events": {"items": [{
+            "brief_title": "半導體需求更新",
+            "summary": "公開財報顯示資本支出展望上修。",
+            "why_important": "可能改變 AI 供應鏈需求預期，但仍需後續公司指引確認。",
+            "market_context": "費半、Nasdaq 與台積電同步上行，形成跨市場確認。",
+            "stock_observation": "觀察下一交易時段是否維持同向，以及成交量是否放大。",
+        }]},
+    }
+
+    briefing = build_briefing_snapshot(snapshot, "midday")
+    semiconductor = briefing["observations"][1]
+    assert "台積電 1,100.00" in semiconductor["event"]
+    assert "同步上行" in semiconductor["market_impact"]
+    assert "20日區間" in semiconductor["watch"]
