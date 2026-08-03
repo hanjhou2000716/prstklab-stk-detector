@@ -208,12 +208,36 @@ class PriceActionResearchScanner:
         }
 
     def screen(self, market_data: dict[str, pd.DataFrame], limit: int = 5) -> pd.DataFrame:
-        """Return qualifying candidates by confirmed structure score then liquidity."""
+        """Return qualifying candidates by liquidity-first research priority.
+
+        The ranking is deliberately not a return forecast: cash turnover is
+        the first tie-breaker, followed by volume, number of confirmed
+        structures, and finally the transparent structure score.
+        """
         candidates: list[dict[str, Any]] = []
         for ticker, daily in market_data.items():
             result = self.scan_daily(daily)
             if result:
-                candidates.append({"ticker": ticker, **result})
+                candidates.append({
+                    "ticker": ticker,
+                    **result,
+                    "structure_count": len(result.get("matched_funnels") or []),
+                })
         if not candidates:
             return pd.DataFrame()
-        return pd.DataFrame(candidates).sort_values(["score", "turnover"], ascending=[False, False]).head(limit).reset_index(drop=True)
+        frame = pd.DataFrame(candidates)
+        # Keep the ranking contract robust for research adapters that omit a
+        # secondary field; a missing liquidity value ranks below observed data.
+        for field in ("turnover", "volume", "structure_count", "score"):
+            if field not in frame:
+                frame[field] = 0.0
+        return (
+            frame
+            .sort_values(
+                ["turnover", "volume", "structure_count", "score"],
+                ascending=[False, False, False, False],
+                kind="stable",
+            )
+            .head(limit)
+            .reset_index(drop=True)
+        )

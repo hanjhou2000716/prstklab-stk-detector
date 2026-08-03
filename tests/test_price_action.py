@@ -34,7 +34,7 @@ def test_fake_breakdown_that_recovers_matches_funnel_three():
     assert result["score"] >= 85
 
 
-def test_screen_returns_candidates_ranked_by_structure_score_then_turnover(monkeypatch):
+def test_screen_returns_candidates_ranked_by_turnover_then_volume(monkeypatch):
     scanner = PriceActionResearchScanner()
     result_by_volume = {
         100: {"turnover": 1000, "reference_close": 10, "score": 80},
@@ -44,7 +44,21 @@ def test_screen_returns_candidates_ranked_by_structure_score_then_turnover(monke
     low = bars([{"Open": 1, "High": 1, "Low": 1, "Close": 1, "Volume": 100}])
     high = bars([{"Open": 1, "High": 1, "Low": 1, "Close": 1, "Volume": 200}])
     screened = scanner.screen({"LOW": low, "HIGH": high})
-    assert list(screened["ticker"]) == ["LOW", "HIGH"]
+    assert list(screened["ticker"]) == ["HIGH", "LOW"]
+    assert list(screened["structure_count"]) == [0, 0]
+
+
+def test_screen_uses_confirmed_structure_count_after_turnover(monkeypatch):
+    scanner = PriceActionResearchScanner()
+    result_by_volume = {
+        100: {"turnover": 3000, "volume": 100, "matched_funnels": ["Funnel_1"], "reference_close": 10, "score": 70},
+        200: {"turnover": 3000, "volume": 100, "matched_funnels": ["Funnel_1", "Funnel_3"], "reference_close": 15, "score": 90},
+    }
+    monkeypatch.setattr(scanner, "scan_daily", lambda frame: result_by_volume[int(frame.iloc[0]["Volume"])])
+    low = bars([{"Open": 1, "High": 1, "Low": 1, "Close": 1, "Volume": 100}])
+    high = bars([{"Open": 1, "High": 1, "Low": 1, "Close": 1, "Volume": 200}])
+    screened = scanner.screen({"ONE": low, "TWO": high})
+    assert list(screened["ticker"]) == ["TWO", "ONE"]
 
 
 def test_structure_match_score_rewards_confirming_funnels_without_becoming_a_forecast():
