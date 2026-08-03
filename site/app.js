@@ -305,7 +305,13 @@ const renderSourceHealth = (health, snapshot = {}) => {
   list.innerHTML = health.sources.map((source) => {
     const status = source.status === "healthy" ? "正常" : source.status === "warming" ? "建檔中" : "部分缺漏";
     const issue = Array.isArray(source.issues) && source.issues.length ? source.issues.join("；") : "本輪可用";
-    return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(issue)}</small></span><em class="source-status ${escapeHtml(source.status || "partial")}">${status}</em></li>`;
+    const candidateNote = source.key === "research" && source.candidate_state
+      ? source.candidate_state === "no_candidates"
+        ? "本輪無符合門檻候選"
+        : `候選 ${source.candidate_count ?? 0} 檔｜正式 ${source.formal_candidates ?? 0} 檔｜觀察 ${source.observation_candidates ?? 0} 檔`
+      : "";
+    const detail = candidateNote ? `${issue}｜${candidateNote}` : issue;
+    return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${escapeHtml(source.status || "partial")}">${status}</em></li>`;
   }).join("");
   if (card) card.open = false;
 };

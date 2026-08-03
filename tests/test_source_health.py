@@ -47,6 +47,21 @@ def test_pristine_history_warming_is_not_reported_as_a_missing_source():
     assert "20／100" in research["issues"][0]
     assert health["status"] == "warming"
     assert health["summary"] == "璞玉價值歷史資料建檔中"
+def test_completed_empty_research_is_healthy_but_explicitly_reports_no_candidates():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": [{
+            "market": "us", "strategy": "value", "status": "可用",
+            "scan_state": "complete", "candidates": 0,
+            "formal_candidates": 0, "observation_candidates": 0,
+            "selection_diagnostics": {"records": 12, "complete_records": 12},
+        }]}, checked_at=NOW,
+    )
+    research = next(item for item in health["sources"] if item["key"] == "research")
+    assert research["status"] == "healthy"
+    assert research["candidate_state"] == "no_candidates"
+    assert research["candidate_count"] == 0
+
+
 def test_per_source_health_is_exposed_as_a_gap_without_hiding_other_sources():
     health = build_source_health(
         errors=[], events={"is_major": False}, research_report={"sources": []}, checked_at=NOW,
