@@ -324,6 +324,29 @@ def test_gdelt_uses_article_snippet_for_iran_negotiation_context():
     assert alerts[0].category == "conflict"
 
 
+def test_gdelt_negotiation_aliases_share_one_canonical_action():
+    """talks/dialogue/negotiations must satisfy the same action gate."""
+    articles = [
+        monitor.DiscoveryArticle(
+            "Iran and the US hold talks",
+            "https://www.reuters.com/iran-talks",
+            "reuters.com",
+            "2026-08-03T01:00:00+00:00",
+            "Diplomatic dialogue continues over the nuclear issue.",
+        ),
+        monitor.DiscoveryArticle(
+            "Iran US negotiations continue",
+            "https://apnews.com/iran-negotiations",
+            "apnews.com",
+            "2026-08-03T01:01:00+00:00",
+            "The two sides remain in dialogue and talks are ongoing.",
+        ),
+    ]
+    alerts = monitor.cross_checked_gdelt_alerts(articles)
+    assert len(alerts) == 1
+    assert alerts[0].category == "conflict"
+
+
 def test_gdelt_detects_bessent_yen_intervention_and_fed_support():
     articles = [
         monitor.DiscoveryArticle(

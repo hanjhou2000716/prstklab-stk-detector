@@ -74,3 +74,21 @@ def test_per_source_health_is_exposed_as_a_gap_without_hiding_other_sources():
     assert official["status"] == "partial"
     assert len(official["data_gaps"]) == 1
     assert health["missing_source_count"] >= 1
+
+
+def test_monitor_health_pending_reason_survives_normal_market_refresh():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": []}, checked_at=NOW,
+        monitor_health={
+            "component": "gdelt",
+            "checked_at": NOW.isoformat(),
+            "status": "pending",
+            "pending_count": 2,
+            "pending_reasons": {"waiting_second_trusted_source": 2},
+            "market_sync_status": "not_confirmed",
+        },
+    )
+    gdelt = next(item for item in health["sources"] if item["key"] == "gdelt_crosscheck")
+    assert gdelt["status"] == "pending"
+    assert gdelt["pending_count"] == 2
+    assert health["missing_source_count"] == 0

@@ -298,13 +298,24 @@ const renderSourceHealth = (health, snapshot = {}) => {
     return;
   }
   const missing = health.sources.filter((source) => source.status === "partial").length;
+  const pending = Number(health.pending_event_count || health.monitor_health?.pending_count || 0);
   summary.textContent = `${missing} 個來源有資料缺口`;
+  if (pending) summary.textContent += `｜${pending} 個事件待核對`;
   const scan = health.event_scan;
   event.textContent = `${scan.label || "事件掃描"}｜${scan.detail || ""}`;
   event.dataset.status = scan.status || "partial";
   list.innerHTML = health.sources.map((source) => {
-    const status = source.status === "healthy" ? "正常" : source.status === "warming" ? "建檔中" : "部分缺漏";
-    const issue = Array.isArray(source.issues) && source.issues.length ? source.issues.join("；") : "本輪可用";
+    const status = source.status === "healthy" ? "正常" : source.status === "warming" ? "建檔中" : source.status === "pending" ? "待核對" : "部分缺漏";
+    const pendingReasons = source.status === "pending" && source.pending_reasons && typeof source.pending_reasons === "object"
+      ? Object.entries(source.pending_reasons).filter(([, count]) => Number(count) > 0).map(([reason, count]) => {
+        const labels = {
+          waiting_second_trusted_source: "等待第二來源：尚未有第二個可信新聞網域核對",
+          waiting_shared_entity_action: "等待共同實體／動作：來源尚未指向同一事件",
+          waiting_market_sync_for_warning: "等待市場同步：相關價格或波動尚未確認",
+        };
+        return `${labels[reason] || `待核對：${reason}`}（${Number(count)} 個候選）`;
+      }).join("；") : "";
+    const issue = pendingReasons || (Array.isArray(source.issues) && source.issues.length ? source.issues.join("；") : "本輪可用");
     const candidateNote = source.key === "research" && source.candidate_state
       ? source.candidate_state === "no_candidates"
         ? "本輪無符合門檻候選"
