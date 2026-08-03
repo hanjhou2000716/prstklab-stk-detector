@@ -24,6 +24,39 @@ def _source_item(key: str, label: str, issues: list[str], checked_at: str) -> di
     }
 
 
+def _attach_detail_summary(target: dict[str, Any], details: list[dict[str, Any]]) -> None:
+    """Add non-sensitive freshness counters without replacing per-source evidence.
+
+    Providers may return different optional fields.  We aggregate only values that
+    are explicitly present; a failed request therefore never gets a fabricated
+    success timestamp or latency.
+    """
+    records = [item for item in details if isinstance(item, dict)]
+    if not records:
+        return
+    checked = [str(item.get("checked_at") or "") for item in records if item.get("checked_at")]
+    successful = [
+        str(item.get("last_success_at") or item.get("checked_at") or "")
+        for item in records
+        if str(item.get("status") or "").lower() in {"healthy", "ok", "success"}
+        and (item.get("last_success_at") or item.get("checked_at"))
+    ]
+    counts = [item.get("item_count") for item in records if isinstance(item.get("item_count"), (int, float))]
+    latencies = [item.get("latency_ms") for item in records if isinstance(item.get("latency_ms"), (int, float))]
+    urls = sorted({str(item.get("source_url") or "") for item in records if item.get("source_url")})
+    if checked:
+        target["checked_at"] = max(checked)
+    if successful:
+        target["last_success_at"] = max(successful)
+    if counts:
+        target["item_count"] = int(sum(counts))
+    if latencies:
+        target["latency_ms"] = round(max(float(value) for value in latencies), 1)
+    if urls:
+        target["source_urls"] = urls
+        target.setdefault("source_url", urls[0])
+
+
 def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
     """Present research warming, empty results and failures as different states."""
     sources = [item for item in report.get("sources", []) if isinstance(item, dict)]
@@ -142,6 +175,7 @@ def build_source_health(
     if official_sources:
         official = next(item for item in sources if item["key"] == "official_events")
         official["source_details"] = official_sources
+        _attach_detail_summary(official, official_sources)
         official["data_gaps"] = [
             item for item in official_sources if item.get("status") != "healthy"
         ]
@@ -151,9 +185,18 @@ def build_source_health(
     if news_sources:
         news = next(item for item in sources if item["key"] == "market_news")
         news["source_details"] = news_sources
+        _attach_detail_summary(news, news_sources)
         news["data_gaps"] = [item for item in news_sources if item.get("status") != "healthy"]
     if additional_sources:
-        sources.extend(additional_sources)
+        for item in additional_sources:
+            if not isinstance(item, dict):
+                continue
+            normalized = dict(item)
+            # The current refresh succeeded for healthy providers, so this is a
+            # legitimate success timestamp; failed/partial providers stay unset.
+            if normalized.get("status") == "healthy" and not normalized.get("last_success_at"):
+                normalized["last_success_at"] = normalized.get("checked_at")
+            sources.append(normalized)
     if monitor_health:
         monitor_item = _monitor_health_item(monitor_health, checked)
         if monitor_item:

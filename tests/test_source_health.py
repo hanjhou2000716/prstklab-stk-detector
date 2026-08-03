@@ -76,6 +76,30 @@ def test_per_source_health_is_exposed_as_a_gap_without_hiding_other_sources():
     assert health["missing_source_count"] >= 1
 
 
+def test_detail_sources_expose_freshness_summary_without_fabricating_failed_success():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": []}, checked_at=NOW,
+        official_sources=[
+            {
+                "key": "fed", "status": "healthy", "checked_at": "2026-07-29T02:00:00+00:00",
+                "source_url": "https://example.test/fed", "item_count": 2,
+                "latency_ms": 120,
+            },
+            {
+                "key": "bls", "status": "failed", "checked_at": "2026-07-29T02:01:00+00:00",
+                "source_url": "https://example.test/bls", "item_count": 0,
+                "data_gap": "Timeout",
+            },
+        ],
+    )
+    official = next(item for item in health["sources"] if item["key"] == "official_events")
+    assert official["item_count"] == 2
+    assert official["last_success_at"] == "2026-07-29T02:00:00+00:00"
+    assert official["latency_ms"] == 120
+    assert len(official["source_urls"]) == 2
+    assert "bls" not in official.get("last_success_at", "")
+
+
 def test_monitor_health_pending_reason_survives_normal_market_refresh():
     health = build_source_health(
         errors=[], events={"is_major": False}, research_report={"sources": []}, checked_at=NOW,
