@@ -88,6 +88,9 @@ def test_daily_quote_includes_twenty_day_range_context_for_briefings():
     assert context["window_days"] == 20
     assert context["low"] == 105.0
     assert context["high"] == 124.0
+    assert context["long_window_days"] == 25
+    assert context["long_low"] == 100.0
+    assert context["long_high"] == 124.0
     assert context["zone"] == "接近20日壓力區"
     assert context["status"] == "ok"
 

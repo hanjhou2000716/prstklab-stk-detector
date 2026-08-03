@@ -103,7 +103,7 @@ def _close_series(history: Any) -> Any:
     return close.dropna()
 
 
-def _technical_context(closes: Any, *, window: int = 20) -> dict[str, Any]:
+def _technical_context(closes: Any, *, window: int = 20, long_window: int = 60) -> dict[str, Any]:
     """Summarise a quote's recent price location without issuing a signal.
 
     The noon report needs the same kind of context a human reader gets from a
@@ -113,12 +113,16 @@ def _technical_context(closes: Any, *, window: int = 20) -> dict[str, Any]:
     same calculation.
     """
     try:
-        series = closes.dropna().tail(window)
-        if len(series) < 5:
-            return {"window_days": int(len(series)), "status": "insufficient"}
-        low = float(series.min())
-        high = float(series.max())
-        latest = float(series.iloc[-1])
+        series = closes.dropna()
+        recent = series.tail(window)
+        long = series.tail(long_window)
+        if len(recent) < 5:
+            return {"window_days": int(len(recent)), "long_window_days": int(len(long)), "status": "insufficient"}
+        low = float(recent.min())
+        high = float(recent.max())
+        long_low = float(long.min())
+        long_high = float(long.max())
+        latest = float(recent.iloc[-1])
         span = high - low
         position = 50.0 if span <= 0 else (latest - low) / span * 100
         if position <= 25:
@@ -128,9 +132,12 @@ def _technical_context(closes: Any, *, window: int = 20) -> dict[str, Any]:
         else:
             zone = "位於20日區間中段"
         return {
-            "window_days": int(len(series)),
+            "window_days": int(len(recent)),
+            "long_window_days": int(len(long)),
             "low": round(low, 2),
             "high": round(high, 2),
+            "long_low": round(long_low, 2),
+            "long_high": round(long_high, 2),
             "position_pct": round(position, 1),
             "zone": zone,
             "as_of": str(series.index[-1].date()),
