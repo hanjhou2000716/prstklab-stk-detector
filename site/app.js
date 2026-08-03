@@ -344,14 +344,18 @@ const renderSourceHealth = (health, snapshot = {}) => {
     return;
   }
   const missing = health.sources.filter((source) => source.status === "partial").length;
+  const displayedMissing = Number.isFinite(Number(health.missing_source_count))
+    ? Number(health.missing_source_count)
+    : missing;
   const pending = Number(health.pending_event_count || health.monitor_health?.pending_count || 0);
   summary.textContent = `${missing} 個來源有資料缺口`;
+  if (displayedMissing !== missing) summary.textContent = `${displayedMissing} 個來源有資料缺口`;
   if (pending) summary.textContent += `｜${pending} 個事件待核對`;
   const scan = health.event_scan;
   event.textContent = `${scan.label || "事件掃描"}｜${scan.detail || ""}`;
   event.dataset.status = scan.status || "partial";
   list.innerHTML = health.sources.map((source) => {
-    const status = source.status === "healthy" ? "正常" : source.status === "warming" ? "建檔中" : source.status === "pending" ? "待核對" : "部分缺漏";
+    const status = source.status === "healthy" ? "正常" : source.status === "warming" ? "建檔中" : source.status === "pending" ? "待核對" : source.status === "stale" ? "使用快取" : "部分缺漏";
     const pendingReasons = source.status === "pending" && source.pending_reasons && typeof source.pending_reasons === "object"
       ? Object.entries(source.pending_reasons).filter(([, count]) => Number(count) > 0).map(([reason, count]) => {
         const labels = {
@@ -379,7 +383,13 @@ const renderSourceHealth = (health, snapshot = {}) => {
         ? "本輪無符合門檻候選"
         : `候選 ${source.candidate_count ?? 0} 檔｜正式 ${source.formal_candidates ?? 0} 檔｜觀察 ${source.observation_candidates ?? 0} 檔`
       : "";
-    const detail = [issue, candidateNote, provenance].filter(Boolean).join("｜");
+    const sourceCount = Array.isArray(source.source_urls) ? source.source_urls.length : 0;
+    const freshness = [];
+    if (sourceCount) freshness.push(`端點 ${sourceCount} 個`);
+    if (Number.isFinite(Number(source.item_count))) freshness.push(`資料 ${Number(source.item_count)} 筆`);
+    if (source.last_success_at) freshness.push(`最近成功 ${traceTime(source.last_success_at)}`);
+    if (Number.isFinite(Number(source.latency_ms))) freshness.push(`延遲 ${Math.round(Number(source.latency_ms))} ms`);
+    const detail = [issue, candidateNote, provenance, freshness.join("｜")].filter(Boolean).join("｜");
     return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${escapeHtml(source.status || "partial")}">${status}</em></li>`;
   }).join("");
   if (card) card.open = false;
