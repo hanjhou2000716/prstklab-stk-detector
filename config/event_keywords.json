@@ -4,17 +4,22 @@
   "categories": {
     "fed": [
       "fomc", "federal reserve", "fed", "powell", "jerome powell",
-      "聯準會", "联准会", "美聯儲", "美联储", "鮑威爾", "鲍威尔", "聯邦準備理事會", "联邦储备"
+      "聯準會", "联准会", "美聯儲", "美联储", "鮑威爾", "鲍威尔", "聯邦準備理事會", "联邦储备",
+      "federal reserve support", "fed support", "urges the fed", "bessent", "scott bessent", "boj", "bank of japan",
+      "日本央行", "日本銀行", "日本银行", "貝森特", "贝森特"
     ],
     "macro": [
       "cpi", "pce", "ppi", "gdp", "payroll", "nonfarm payrolls", "unemployment rate",
       "employment situation", "consumer price", "producer price", "非農", "非农", "失業率", "失业率",
       "就業報告", "就业报告", "消費者物價", "消费者物价", "生產者物價", "生产者物价", "國內生產毛額", "国内生产总值",
-      "通膨", "通胀", "零售銷售", "零售销售"
+      "通膨", "通胀", "零售銷售", "零售销售",
+      "yen", "japanese yen", "currency intervention", "fx intervention", "intervention",
+      "日圓", "日元", "匯率干預", "汇率干预", "外匯干預", "外汇干预", "聯合干預", "联合干预"
     ],
     "policy": [
       "關稅", "关税", "tariff", "tariffs", "sanction", "sanctions", "制裁", "出口管制", "出口管制",
-      "export control", "export controls", "trade war", "trade policy", "duties", "duty", "禁令", "禁运", "政策", "補貼", "补贴"
+      "export control", "export controls", "trade war", "trade policy", "duties", "duty", "禁令", "禁运", "政策", "補貼", "补贴",
+      "currency intervention", "fx intervention", "intervention", "匯率干預", "汇率干预", "外匯干預", "外汇干预", "聯合干預", "联合干预"
     ],
     "conflict": [
       "戰爭", "战争", "war", "軍事", "军事", "military", "導彈", "导弹", "missile", "停火", "停火",
@@ -99,11 +104,13 @@
     ]
   },
   "gdelt": {
-    "query": "(war OR invasion OR ceasefire OR sanctions OR Hormuz OR \"Persian Gulf\" OR Gulf OR tariff OR \"export controls\" OR semiconductor OR earthquake OR tsunami OR cyberattack OR ransomware OR pandemic OR Bitcoin OR Ethereum OR Trump OR \"TACO\" OR \"Trump Always Chickens Out\" OR \"backs down\" OR \"walks back\" OR \"tariff pause\" OR Iran OR \"White House\" OR 戰爭 OR 战争 OR 入侵 OR 停火 OR 關稅 OR 关税 OR 制裁 OR 地震 OR 海嘯 OR 海啸 OR 半導體 OR 半导体 OR 伊朗 OR 以色列 OR 川普 OR 特朗普 OR 海灣 OR 海湾 OR 波斯灣 OR 波斯湾 OR 航運 OR 航运 OR 暫緩關稅 OR 暂缓关税 OR 延後關稅 OR 延后关税)",
-    "entities": ["iran", "israel", "ukraine", "russia", "taiwan", "japan", "china", "hormuz", "donald trump", "president trump", "trump", "trump administration", "white house", "特朗普", "川普", "powell", "netanyahu", "putin", "zelenskyy", "nvidia", "tsmc", "asml", "伊朗", "以色列", "台灣", "台湾", "日本", "中國", "中国"],
+    "query": "(war OR invasion OR ceasefire OR sanctions OR Hormuz OR \"Persian Gulf\" OR Gulf OR tariff OR \"export controls\" OR semiconductor OR earthquake OR tsunami OR cyberattack OR ransomware OR pandemic OR Bitcoin OR Ethereum OR Trump OR \"TACO\" OR \"Trump Always Chickens Out\" OR \"backs down\" OR \"walks back\" OR \"tariff pause\" OR Iran OR \"White House\" OR Bessent OR \"Bank of Japan\" OR BOJ OR yen OR \"currency intervention\" OR \"FX intervention\" OR talks OR negotiation OR deadline OR 戰爭 OR 战争 OR 入侵 OR 停火 OR 關稅 OR 关税 OR 制裁 OR 地震 OR 海嘯 OR 海啸 OR 半導體 OR 半导体 OR 伊朗 OR 以色列 OR 川普 OR 特朗普 OR 海灣 OR 海湾 OR 波斯灣 OR 波斯湾 OR 航運 OR 航运 OR 暫緩關稅 OR 暂缓关税 OR 延後關稅 OR 延后关税 OR 貝森特 OR 贝森特 OR 日圓 OR 日元 OR 匯率干預 OR 汇率干预 OR 日本央行 OR 日本银行)",
+    "entities": ["iran", "israel", "ukraine", "russia", "taiwan", "japan", "china", "hormuz", "donald trump", "president trump", "trump", "trump administration", "white house", "bessent", "scott bessent", "federal reserve", "fed", "boj", "bank of japan", "yen", "特朗普", "川普", "貝森特", "贝森特", "powell", "netanyahu", "putin", "zelenskyy", "nvidia", "tsmc", "asml", "伊朗", "以色列", "台灣", "台湾", "日本", "中國", "中国", "日圓", "日元"],
     "actions": {
       "conflict": ["conflict", "war", "attack", "airstrike", "invasion", "missile", "ceasefire", "truce", "military action", "geopolitical", "tensions", "tension", "supply disruption", "supply cut", "shipping", "talks", "talk", "negotiation", "negotiations", "deadline", "agreement", "failed talks", "talks collapse", "戰爭", "战争", "攻擊", "攻击", "空襲", "空袭", "入侵", "停火", "地緣", "地缘", "緊張", "紧张", "供應中斷", "供应中断", "航運", "航运", "談判", "谈判", "協議", "协议", "未談妥", "未谈妥", "談判破裂", "谈判破裂", "最後期限", "最后期限", "軍事行動", "军事行动"],
       "policy": ["tariff", "sanction", "export control", "duties", "ban", "restriction", "taco", "trump always chickens out", "backs down", "backed down", "walks back", "walked back", "tariff pause", "tariff delay", "關稅", "关税", "制裁", "出口管制", "禁令", "暫緩關稅", "暂缓关税", "延後關稅", "延后关税"],
+      "fed": ["rate decision", "monetary policy", "federal reserve support", "fed support", "urges the fed", "央行", "貨幣政策", "货币政策", "聯準會", "联准会", "敦促聯準會", "敦促联准会"],
+      "macro": ["yen", "japanese yen", "currency intervention", "fx intervention", "intervention", "日圓", "日元", "匯率干預", "汇率干预", "外匯干預", "外汇干预", "聯合干預", "联合干预"],
       "energy": ["oil", "supply", "production", "opec", "output", "disruption", "原油", "石油", "供應", "供应", "中斷", "中断"],
       "semiconductor": ["earnings", "guidance", "export control", "restriction", "capex", "forecast", "半導體", "半导体", "晶片", "芯片"],
       "material_positive": ["ceasefire", "truce", "peace deal", "tariff exemption", "rate cut", "cancel attack", "backs down", "backed down", "walks back", "walked back", "tariff pause", "tariff delay", "停火", "和平協議", "和平协议", "關稅豁免", "关税豁免", "降息", "取消攻擊", "取消攻击", "暫緩關稅", "暂缓关税", "延後關稅", "延后关税"],

@@ -392,6 +392,7 @@ The Railway monitor polls the public GDELT DOC endpoint every 15 minutes by defa
 
 GDELT is never treated as final proof. A candidate must have at least two trusted publisher domains and a shared concrete entity/place/action intersection. Black-swan, war and major-disaster candidates are not dispatched from GDELT alone; they require a matching first-party official source and related-market synchronization. The first successful poll creates a baseline and does not replay historical headlines; the existing SQLite ledger applies event deduplication and the shared 30-minute cooldown.
 GDELT 交叉核對會同時使用可取得的標題與摘要／描述欄位；伊朗／川普談判事件補充 `talks`、`negotiations`、`deadline`、`談判`、`未談妥`、`談判破裂` 等動作別名，避免標題只有「美國與伊朗局勢」而把實際事件內容遺漏。
+涉及貝森特／Bessent、日圓／yen、日本央行／BOJ、匯率干預與聯準會支持的宏觀事件也納入 GDELT 查詢與事件錨點。只有單一可信來源或尚未形成共同人物／地點／動作證據的候選，會在 Railway `/health` 的 `gdelt.pending_count` 與 `pending_reasons` 標示為待核對，不會靜默丟棄，也不會繞過多來源與市場同步門檻直接推播。
 
 ### 多語關鍵字與模糊比對
 

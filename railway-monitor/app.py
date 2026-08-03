@@ -114,6 +114,8 @@ TRUSTED_NEWS_DOMAINS = {
 DISCOVERY_ANCHORS = {
     "conflict": ("iran", "israel", "ukraine", "russia", "hormuz", "persian gulf", "gulf", "taiwan", "伊朗", "以色列", "波斯灣", "波斯湾", "海灣", "海湾", "荷姆茲海峽", "霍尔木兹海峡", "烏克蘭", "乌克兰", "俄羅斯", "俄罗斯", "台灣", "台湾"),
     "policy": ("tariff", "sanction", "export control", "duties", "taco", "trump always chickens out", "backs down", "walks back", "tariff pause", "tariff delay", "關稅", "关税", "制裁", "出口管制", "暫緩關稅", "暂缓关税", "延後關稅", "延后关税"),
+    "fed": ("federal reserve", "fed", "powell", "bessent", "scott bessent", "boj", "bank of japan", "聯準會", "联准会", "美聯儲", "美联储", "貝森特", "贝森特", "日本央行", "日本銀行", "日本银行"),
+    "macro": ("yen", "japanese yen", "currency intervention", "fx intervention", "intervention", "japan", "日圓", "日元", "匯率干預", "汇率干预", "外匯干預", "外汇干预", "聯合干預", "联合干预"),
     "energy": ("wti", "brent", "oil", "opec", "crude", "原油", "石油", "能源"),
     "semiconductor": ("nvidia", "tsmc", "asml", "semiconductor", "輝達", "英伟达", "台積電", "台积电", "半導體", "半导体"),
     "black_swan": ("earthquake", "tsunami", "ransomware", "cyberattack", "pandemic", "war", "invasion", "airstrike", "missile", "重大地震", "地震", "海嘯", "海啸", "戰爭", "战争", "入侵", "空襲", "空袭"),
@@ -129,7 +131,21 @@ DISCOVERY_ENTITIES = tuple(_GDELT_KEYWORDS.get("entities") or (
     "iran", "israel", "ukraine", "russia", "taiwan", "japan", "china", "hormuz",
     "trump", "powell", "netanyahu", "putin", "zelenskyy", "nvidia", "tsmc", "asml",
 ))
-DISCOVERY_ENTITY_ANCHORS = {"nvidia", "tsmc", "asml"}
+DISCOVERY_ENTITY_ANCHORS = {
+    "nvidia", "tsmc", "asml", "bessent", "scott bessent", "federal reserve", "fed", "boj",
+    "bank of japan", "yen", "japan", "聯準會", "联准会", "貝森特", "贝森特", "日圓", "日元",
+}
+DISCOVERY_ALIAS_GROUPS = {
+    "fed": ("federal reserve", "fed", "聯準會", "联准会", "美聯儲", "美联储"),
+    "bessent": ("bessent", "scott bessent", "貝森特", "贝森特"),
+    "boj": ("boj", "bank of japan", "日本央行", "日本銀行", "日本银行"),
+    "yen": ("yen", "japanese yen", "日圓", "日元"),
+    "japan": ("japan", "日本"),
+}
+DISCOVERY_ACTION_ALIAS_GROUPS = {
+    "fed_support": ("federal reserve support", "fed support", "urges the fed", "敦促聯準會", "敦促联准会"),
+    "currency_intervention": ("currency intervention", "fx intervention", "joint yen intervention", "coordinated currency intervention", "匯率干預", "汇率干预", "外匯干預", "外汇干预", "聯合干預", "联合干预"),
+}
 DISCOVERY_ACTIONS = {
     key: tuple(values) for key, values in (_GDELT_KEYWORDS.get("actions") or {}).items()
 }
@@ -143,7 +159,7 @@ HEALTH_STATE: dict[str, Any] = {
     "service": "prstk-jin10-monitor",
     "started_at": datetime.now(timezone.utc).isoformat(),
     "jin10": {"status": "not_checked", "last_success_at": None, "last_failure_at": None, "item_count": 0, "error": None},
-    "gdelt": {"enabled": True, "status": "not_checked", "last_success_at": None, "last_failure_at": None, "article_count": 0, "alert_count": 0, "error": None},
+    "gdelt": {"enabled": True, "status": "not_checked", "last_success_at": None, "last_failure_at": None, "article_count": 0, "alert_count": 0, "pending_count": 0, "pending_reasons": {}, "error": None},
     "classification": {
         "status": "not_checked",
         "updated_at": None,
@@ -978,17 +994,48 @@ def _discovery_category_and_anchor(title: str, snippet: str = "") -> tuple[str, 
     if category is None:
         return None
     anchor = _keyword_hit(DISCOVERY_ANCHORS.get(category, ()), normalized)
+    anchor = _canonical_discovery_alias(anchor)
     return (category, anchor) if anchor else None
+
+
+def _canonical_discovery_alias(value: str) -> str:
+    normalized = normalized_event_text(value)
+    for canonical, aliases in DISCOVERY_ALIAS_GROUPS.items():
+        if normalized in {normalized_event_text(alias) for alias in aliases}:
+            return canonical
+    return value
+
+
+def _canonical_discovery_action(value: str) -> str:
+    normalized = normalized_event_text(value)
+    for canonical, aliases in DISCOVERY_ACTION_ALIAS_GROUPS.items():
+        if normalized in {normalized_event_text(alias) for alias in aliases}:
+            return canonical
+    return value
 
 
 def _discovery_facts(title: str, category: str, anchor: str, snippet: str = "") -> tuple[set[str], set[str]]:
     """Extract the concrete actor/place and action facts used for agreement."""
     text = " ".join(part for part in (title, snippet) if part).strip()
     normalized = normalized_event_text(text)
-    entities = {term for term in DISCOVERY_ENTITIES if _keyword_in_text(term, normalized, normalized.replace(" ", ""))}
+    compact = normalized.replace(" ", "")
+    entities = {
+        canonical
+        for canonical, aliases in DISCOVERY_ALIAS_GROUPS.items()
+        if any(_keyword_in_text(alias, normalized, compact) for alias in aliases)
+    }
+    entities.update(
+        _canonical_discovery_alias(term)
+        for term in DISCOVERY_ENTITIES
+        if _keyword_in_text(term, normalized, compact)
+    )
     if anchor in DISCOVERY_ENTITY_ANCHORS:
-        entities.add(anchor)
-    actions = {term for term in DISCOVERY_ACTIONS.get(category, ()) if _keyword_in_text(term, normalized, normalized.replace(" ", ""))}
+        entities.add(_canonical_discovery_alias(anchor))
+    actions = {
+        _canonical_discovery_action(term)
+        for term in DISCOVERY_ACTIONS.get(category, ())
+        if _keyword_in_text(term, normalized, compact)
+    }
     return entities, actions
 
 
@@ -1057,13 +1104,42 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
     return articles
 
 
-def cross_checked_gdelt_alerts(articles: Iterable[DiscoveryArticle]) -> list[Alert]:
-    """Require two publishers plus the same entity/place and action facts."""
+def _gdelt_candidate_clusters(articles: Iterable[DiscoveryArticle]) -> dict[tuple[str, str], list[DiscoveryArticle]]:
     clusters: dict[tuple[str, str], list[DiscoveryArticle]] = {}
     for article in articles:
         classified = _discovery_category_and_anchor(article.title, article.snippet)
         if classified:
             clusters.setdefault(classified, []).append(article)
+    return clusters
+
+
+def pending_gdelt_candidates(articles: Iterable[DiscoveryArticle]) -> list[dict[str, Any]]:
+    """Expose candidates that are waiting for evidence instead of dropping them silently.
+
+    The returned records intentionally contain only category, anchor, counts and a
+    reason.  Article bodies and URLs remain in the audit ledger, not the public
+    health payload.  A candidate is still not dispatchable until the normal
+    multi-domain and action-intersection gate succeeds.
+    """
+    clusters = _gdelt_candidate_clusters(articles)
+    pending: list[dict[str, Any]] = []
+    for (category, anchor), cluster in clusters.items():
+        domains = {article.domain for article in cluster}
+        if category == "black_swan":
+            pending.append({"category": category, "anchor": anchor, "article_count": len(cluster), "domain_count": len(domains), "reason": "waiting_official_confirmation"})
+            continue
+        if len(domains) < 2:
+            pending.append({"category": category, "anchor": anchor, "article_count": len(cluster), "domain_count": len(domains), "reason": "waiting_second_trusted_source"})
+            continue
+        evidence = _matching_discovery_evidence(cluster, category, anchor)
+        if len({article.domain for article in evidence}) < 2:
+            pending.append({"category": category, "anchor": anchor, "article_count": len(cluster), "domain_count": len(domains), "reason": "waiting_shared_entity_action"})
+    return pending
+
+
+def cross_checked_gdelt_alerts(articles: Iterable[DiscoveryArticle]) -> list[Alert]:
+    """Require two publishers plus the same entity/place and action facts."""
+    clusters = _gdelt_candidate_clusters(articles)
     alerts: list[Alert] = []
     for (category, anchor), cluster in clusters.items():
         # News aggregation may flag a disaster first, but black-swan delivery
@@ -1240,6 +1316,7 @@ async def monitor_forever() -> None:
             last_gdelt_poll = time.monotonic()
             try:
                 articles = await fetch_gdelt_articles(store)
+                pending = pending_gdelt_candidates(articles)
                 alerts = cross_checked_gdelt_alerts(articles)
                 dispatched = 0
                 for alert in alerts:
@@ -1272,9 +1349,17 @@ async def monitor_forever() -> None:
                     store.set_classification(alert.event_id, "in_scope")
                     store.mark_alert_reminded(alert, escalated="高風險" in alert.summary)
                     dispatched += 1
-                logging.info("GDELT cross-check completed: %s article(s), %s alert(s) dispatched", len(articles), dispatched)
+                pending_reasons: dict[str, int] = {}
+                for candidate in pending:
+                    reason = str(candidate.get("reason") or "unknown")
+                    pending_reasons[reason] = pending_reasons.get(reason, 0) + 1
+                logging.info(
+                    "GDELT cross-check completed: %s article(s), %s alert(s) dispatched, %s candidate(s) pending",
+                    len(articles), dispatched, len(pending),
+                )
                 update_health("gdelt", status="healthy", last_success_at=datetime.now(timezone.utc).isoformat(),
-                              article_count=len(articles), alert_count=dispatched, error=None)
+                              article_count=len(articles), alert_count=dispatched,
+                              pending_count=len(pending), pending_reasons=pending_reasons, error=None)
                 gdelt_baseline = False
             except Exception as error:
                 update_health("gdelt", status="failed", last_failure_at=datetime.now(timezone.utc).isoformat(),

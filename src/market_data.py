@@ -305,13 +305,17 @@ def apply_taiwan_intraday_crosscheck(
     try:
         tpex = tpex_fetcher()
     except Exception as exc:
-        errors.append({"ticker": "TPEx", "message": f"TPEx 官方指數暫時無法取得：{type(exc).__name__}", "scope": "index"})
+        # TPEx is auxiliary during a TAIEX intraday cross-check. A transient
+        # outage must not block the primary TWSE/TAIFEX check.
+        if had_tpex_row or session != "交易中":
+            errors.append({"ticker": "TPEx", "message": f"TPEx 官方指數暫時無法取得：{type(exc).__name__}", "scope": "index"})
     if not tpex and tpex_fallback_fetcher is not None:
         try:
             tpex = tpex_fallback_fetcher()
             tpex_fallback_used = bool(tpex)
         except Exception as exc:
-            errors.append({"ticker": "TPEx", "message": f"TPEx 最近收盤備援失敗：{type(exc).__name__}", "scope": "index"})
+            if had_tpex_row or session != "交易中":
+                errors.append({"ticker": "TPEx", "message": f"TPEx 最近收盤備援失敗：{type(exc).__name__}", "scope": "index"})
     if tpex_fallback_used:
         # A verified official MIS close (or a labelled public close as the
         # final fallback) keeps the card actionable; do not count the primary
