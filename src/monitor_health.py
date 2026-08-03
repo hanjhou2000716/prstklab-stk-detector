@@ -33,6 +33,12 @@ def _pending_issues(payload: dict[str, Any]) -> list[str]:
             continue
         label = REASON_LABELS.get(str(reason), f"待核對：{reason}")
         issues.append(f"{label}（{amount} 個候選）")
+    pending_count = _as_count(payload.get("pending_count"))
+    if pending_count and not issues:
+        if str(payload.get("market_sync_status") or "not_confirmed") != "confirmed":
+            issues.append(f"{REASON_LABELS['waiting_market_sync_for_warning']}（{pending_count} 個候選）")
+        else:
+            issues.append(f"{REASON_LABELS['waiting_second_trusted_source']}（{pending_count} 個候選）")
     return issues[:3]
 
 
