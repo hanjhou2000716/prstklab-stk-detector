@@ -64,6 +64,18 @@ def test_chinese_deescalation_headline_is_material_positive():
     assert alert.category == "material_positive"
 
 
+def test_trump_iran_planned_strike_cancellation_alias_is_material_positive():
+    flash = monitor.Flash(
+        "trump-iran-planned-strike",
+        "美國總統川普：我同意取消對伊朗的襲擊計畫。",
+        "CNBC reports the planned attacks were called off.",
+        "2026-08-03T10:06:55+08:00",
+    )
+    classification, reason = monitor.classify_flash_with_reason(flash)
+    assert classification == "material_positive"
+    assert reason == "material_positive_keyword"
+
+
 def test_chinese_geopolitical_escalation_is_conflict_candidate():
     flash = monitor.Flash(
         "iran-attack-1",
@@ -229,6 +241,26 @@ def test_gdelt_can_discover_a_trump_iran_deescalation_event():
     articles = [
         monitor.DiscoveryArticle("Trump agrees to cancel attack on Iran", "https://www.reuters.com/a", "reuters.com", "2026-07-29T01:00:00+00:00"),
         monitor.DiscoveryArticle("Trump cancels attack on Iran after talks", "https://apnews.com/b", "apnews.com", "2026-07-29T01:01:00+00:00"),
+    ]
+    alerts = monitor.cross_checked_gdelt_alerts(articles)
+    assert len(alerts) == 1
+    assert alerts[0].category == "material_positive"
+
+
+def test_gdelt_normalizes_alternate_planned_strike_cancellation_phrases():
+    articles = [
+        monitor.DiscoveryArticle(
+            "Trump agrees to cancel planned attacks on Iran",
+            "https://www.cnbc.com/a",
+            "cnbc.com",
+            "2026-08-03T02:00:00+00:00",
+        ),
+        monitor.DiscoveryArticle(
+            "Trump calls off planned strikes against Iran after talks",
+            "https://www.reuters.com/b",
+            "reuters.com",
+            "2026-08-03T02:01:00+00:00",
+        ),
     ]
     alerts = monitor.cross_checked_gdelt_alerts(articles)
     assert len(alerts) == 1
