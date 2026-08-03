@@ -412,6 +412,14 @@ delivery decision. The row records the final classification and a
 transport failure; a failed GitHub dispatch is recorded as `dispatch_failed:<error>`
 and remains retryable.
 
+The Railway monitor also persists the complete signed GitHub dispatch body in
+`delivery_outbox`. A failed or interrupted send is retried at the start of the
+next polling cycle (30 seconds, then exponential backoff capped at 15 minutes).
+Replays keep the original Trace ID and are therefore safe with the GitHub event
+ledger. `/health` exposes `delivery.retryable_count`; rows created before this
+retry format remain visible for audit but are not replayed because their
+original request body cannot be reconstructed safely.
+
 The Railway HTTP callback is handled on a separate server thread. Its receipt
 write uses a short-lived SQLite connection with WAL and a bounded busy timeout,
 so a callback arriving during the monitor's normal write transaction is not

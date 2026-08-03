@@ -20,7 +20,7 @@ import threading
 import time
 import unicodedata
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Iterable
@@ -828,12 +828,60 @@ class SeenStore:
     def mark_outbox(self, trace_id: str, status: str, error: str | None = None) -> None:
         if status not in {"pending", "sent", "partial", "failed"}:
             raise ValueError(f"unsupported outbox status: {status}")
+        now = datetime.now(timezone.utc)
+        retry_at: str | None = None
+        if status == "failed":
+            row = self.connection.execute(
+                "SELECT attempts FROM delivery_outbox WHERE trace_id = ?", (trace_id,)
+            ).fetchone()
+            attempts = int(row[0]) if row else 0
+            # Retry quickly after a transient failure, then back off to at
+            # most 15 minutes.  The stable trace ID makes an accepted-but-
+            # unacknowledged request safe to replay downstream.
+            delay_seconds = min(15 * 60, 30 * (2 ** min(attempts, 5)))
+            retry_at = (now + timedelta(seconds=delay_seconds)).isoformat()
         self.connection.execute(
-            "UPDATE delivery_outbox SET status=?, attempts=attempts+1, last_error=?, updated_at=? WHERE trace_id=?",
-            (status, error, datetime.now(timezone.utc).isoformat(), trace_id),
+            """UPDATE delivery_outbox
+               SET status=?, attempts=attempts+1, last_error=?, next_retry_at=?, updated_at=?
+               WHERE trace_id=?""",
+            (status, error, retry_at, now.isoformat(), trace_id),
         )
         self.connection.commit()
         update_health("delivery", **self.delivery_diagnostics())
+
+    def due_outbox(self, limit: int = 20) -> list[dict[str, Any]]:
+        """Return retryable dispatches whose backoff window has elapsed.
+
+        Rows written by older versions may not contain ``dispatch_payload``;
+        those remain visible in diagnostics but are intentionally skipped
+        because they cannot be reconstructed safely.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        rows = self.connection.execute(
+            """SELECT trace_id, payload_json, status, attempts, updated_at
+               FROM delivery_outbox
+               WHERE status IN ('pending', 'failed')
+                 AND (next_retry_at IS NULL OR next_retry_at <= ?)
+               ORDER BY updated_at ASC LIMIT ?""",
+            (now, max(1, min(100, int(limit)))),
+        ).fetchall()
+        due: list[dict[str, Any]] = []
+        for trace_id, payload_json, status, attempts, updated_at in rows:
+            try:
+                payload = json.loads(payload_json)
+            except (TypeError, json.JSONDecodeError):
+                continue
+            dispatch_payload = payload.get("dispatch_payload") if isinstance(payload, dict) else None
+            if not isinstance(dispatch_payload, dict):
+                continue
+            due.append({
+                "trace_id": str(trace_id),
+                "dispatch_payload": dispatch_payload,
+                "status": str(status),
+                "attempts": int(attempts),
+                "updated_at": str(updated_at),
+            })
+        return due
 
     def delivery_diagnostics(self, db: sqlite3.Connection | None = None) -> dict[str, Any]:
         """Return non-secret delivery state for Railway's health endpoint."""
@@ -842,6 +890,23 @@ class SeenStore:
             "SELECT status, COUNT(*) FROM delivery_outbox GROUP BY status"
         ).fetchall()
         counts = {str(status): int(count) for status, count in rows}
+        now = datetime.now(timezone.utc).isoformat()
+        retryable_count = 0
+        due_retry_count = 0
+        retry_rows = database.execute(
+            """SELECT payload_json, next_retry_at FROM delivery_outbox
+               WHERE status IN ('pending', 'failed')"""
+        ).fetchall()
+        for payload_json, next_retry_at in retry_rows:
+            try:
+                stored_payload = json.loads(payload_json)
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if not isinstance(stored_payload, dict) or not isinstance(stored_payload.get("dispatch_payload"), dict):
+                continue
+            retryable_count += 1
+            if not next_retry_at or str(next_retry_at) <= now:
+                due_retry_count += 1
         latest = database.execute(
             """SELECT trace_id, status, last_error, updated_at
                FROM delivery_outbox ORDER BY updated_at DESC LIMIT 1"""
@@ -858,6 +923,8 @@ class SeenStore:
             "last_outbox_status": outbox_status,
             "last_receipt_status": receipt_status,
             "counts": counts,
+            "retryable_count": retryable_count,
+            "due_retry_count": due_retry_count,
             "last_updated_at": (receipt[1] if receipt else latest[3]) if (receipt or latest) else None,
             "last_error": str(latest[2]) if latest and latest[2] else None,
         }
@@ -1093,9 +1160,10 @@ def sign(alert: Alert, shared_secret: str) -> str:
     return f"sha256={digest}"
 
 
-async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_secret: str) -> None:
-    trace_id = alert_trace_id(alert)
-    payload = {
+def build_dispatch_payload(alert: Alert, trace_id: str | None = None) -> dict[str, Any]:
+    """Build the exact repository-dispatch body persisted in the outbox."""
+    stable_trace_id = trace_id or alert_trace_id(alert)
+    return {
         "event_type": "external-market-alert",
         "client_payload": {
             "source": alert.source,
@@ -1112,10 +1180,21 @@ async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_se
             "source_url": normalize_source_url(alert.evidence_payload[0]["url"] if alert.evidence_payload else ""),
             "verified_sources": [normalize_source_url(item["url"]) for item in alert.evidence_payload],
             "event_ledger_retention_days": 30,
-            "trace_id": trace_id,
-            "signature": sign(alert, shared_secret),
+            "trace_id": stable_trace_id,
         },
     }
+
+
+def sign_dispatch_payload(payload: dict[str, Any], alert: Alert, shared_secret: str) -> dict[str, Any]:
+    """Attach the HMAC after restoring a serialized outbox payload."""
+    client_payload = payload.setdefault("client_payload", {})
+    client_payload["signature"] = sign(alert, shared_secret)
+    return payload
+
+
+async def dispatch_repository_payload(
+    payload: dict[str, Any], *, token: str, repository: str, trace_id: str,
+) -> None:
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {token}",
@@ -1145,6 +1224,39 @@ async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_se
             response.raise_for_status()
             logging.info("dispatch accepted trace_id=%s status=%s", trace_id, response.status_code)
             return
+
+
+async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_secret: str) -> None:
+    trace_id = alert_trace_id(alert)
+    payload = sign_dispatch_payload(build_dispatch_payload(alert, trace_id), alert, shared_secret)
+    await dispatch_repository_payload(payload, token=token, repository=repository, trace_id=trace_id)
+
+
+async def retry_due_outbox(
+    store: SeenStore, *, token: str, repository: str, shared_secret: str,
+) -> int:
+    """Replay durable dispatches that survived a transient source/network failure."""
+    batch_size = max(1, min(100, int(os.environ.get("OUTBOX_RETRY_BATCH", "20"))))
+    retried = 0
+    for item in store.due_outbox(batch_size):
+        trace_id = item["trace_id"]
+        try:
+            await dispatch_repository_payload(
+                item["dispatch_payload"],
+                token=token,
+                repository=repository,
+                trace_id=trace_id,
+            )
+        except Exception as error:
+            store.mark_outbox(trace_id, "failed", type(error).__name__)
+            logging.exception("outbox retry failed trace_id=%s; backoff scheduled", trace_id)
+            continue
+        store.mark_outbox(trace_id, "sent")
+        retried += 1
+        logging.info("outbox retry delivered trace_id=%s", trace_id)
+    if retried:
+        update_health("delivery", **store.delivery_diagnostics())
+    return retried
 
 
 async def dispatch_monitor_health(*, token: str, repository: str, gdelt: dict[str, Any]) -> None:
@@ -1593,6 +1705,18 @@ async def monitor_forever() -> None:
 
     while True:
         try:
+            retried = await retry_due_outbox(
+                store,
+                token=github_token,
+                repository=repository,
+                shared_secret=shared_secret,
+            )
+            if retried:
+                logging.info("Durable outbox retry completed: %s dispatch(es) delivered", retried)
+        except Exception:
+            # A retry pass must never prevent fresh Jin10/GDELT polling.
+            logging.exception("Durable outbox retry pass failed; continuing source polling")
+        try:
             flashes = await fetch_jin10_flashes(jin10_token, limit)
             flashes.sort(key=lambda item: item.occurred_at)
             dispatched = 0
@@ -1631,10 +1755,15 @@ async def monitor_forever() -> None:
                     logging.info("Jin10 alert suppressed by category cooldown: %s", alert.category)
                     store.set_classification_reason(flash.event_id, "category_cooldown")
                     continue
+                trace_id = alert_trace_id(alert)
+                dispatch_payload = sign_dispatch_payload(
+                    build_dispatch_payload(alert, trace_id), alert, shared_secret
+                )
                 trace_id = store.record_outbox(alert, {
                     "source": alert.source, "event_id": alert.event_id,
                     "category": alert.category, "summary": alert.summary,
                     "occurred_at": alert.occurred_at,
+                    "dispatch_payload": dispatch_payload,
                 })
                 try:
                     await dispatch_alert(alert, token=github_token, repository=repository, shared_secret=shared_secret)
@@ -1683,10 +1812,15 @@ async def monitor_forever() -> None:
                         continue
                     if not store.may_dispatch(alert, EVENT_COOLDOWN_SECONDS):
                         continue
+                    trace_id = alert_trace_id(alert)
+                    dispatch_payload = sign_dispatch_payload(
+                        build_dispatch_payload(alert, trace_id), alert, shared_secret
+                    )
                     trace_id = store.record_outbox(alert, {
                         "source": alert.source, "event_id": alert.event_id,
                         "category": alert.category, "summary": alert.summary,
                         "occurred_at": alert.occurred_at,
+                        "dispatch_payload": dispatch_payload,
                     })
                     try:
                         await dispatch_alert(alert, token=github_token, repository=repository, shared_secret=shared_secret)
