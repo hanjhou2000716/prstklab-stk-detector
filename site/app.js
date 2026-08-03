@@ -117,26 +117,37 @@ const renderAlertTrace = (event) => {
   container.replaceChildren();
   container.hidden = true;
   const trace = event?.source_trace;
-  if (!trace) return;
   const facts = [];
-  if (trace.verification) facts.push(`核對：${trace.verification}`);
+  if (trace?.verification) facts.push(`核對：${trace.verification}`);
   if (event?.impact_confirmation?.method) {
     const markets = (event.impact_confirmation.markets || []).join("、");
     facts.push(`市場影響核對：${event.impact_confirmation.method}${markets ? `（${markets}）` : ""}`);
   }
-  if (trace.source_label) facts.push(`來源：${trace.source_label}`);
-  const domains = Array.isArray(trace.verified_domains) ? trace.verified_domains.filter(Boolean) : [];
+  if (trace?.source_label) facts.push(`來源：${trace.source_label}`);
+  const domains = Array.isArray(trace?.verified_domains) ? trace.verified_domains.filter(Boolean) : [];
   if (domains.length) facts.push(`核對網域：${domains.join("、")}`);
-  const eventTime = traceTime(trace.event_time);
+  const eventTime = traceTime(trace?.event_time);
   if (eventTime) facts.push(`事件時間：${eventTime} CST`);
-  const checkedAt = traceTime(trace.checked_at);
+  const checkedAt = traceTime(trace?.checked_at);
   if (checkedAt) facts.push(`核對時間：${checkedAt} CST`);
+  const pendingReasons = Array.isArray(event?.notification_reasons)
+    ? event.notification_reasons.filter(Boolean)
+    : (event?.notification_reason ? [event.notification_reason] : []);
+  if (event?.notification_status === "pending" && pendingReasons.length) {
+    facts.push(`未推播原因：${pendingReasons.join("、")}`);
+  }
+  const verificationPlan = Array.isArray(event?.verification_plan) && event.verification_plan.length
+    ? event.verification_plan
+    : (Array.isArray(trace?.verification_plan) ? trace.verification_plan : []);
+  if (verificationPlan.length) {
+    facts.push(`核對計畫：${verificationPlan.join("＋")}`);
+  }
   facts.forEach((fact) => {
     const item = document.createElement("span");
     item.textContent = fact;
     container.append(item);
   });
-  const sourceUrl = safeHttpsUrl(trace.source_url);
+  const sourceUrl = safeHttpsUrl(trace?.source_url);
   if (sourceUrl) {
     const link = document.createElement("a");
     link.href = sourceUrl;
@@ -174,6 +185,15 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
   } : events?.items?.[0];
   const card = document.getElementById("alert-card");
   if (!card) return;
+  const pendingNode = document.getElementById("alert-pending");
+  if (pendingNode) {
+    const pendingItems = externalAlert ? [] : (events?.items || []).filter((item) => item?.notification_status === "pending");
+    const reasons = [...new Set(pendingItems.flatMap((item) => Array.isArray(item.notification_reasons)
+      ? item.notification_reasons
+      : (item.notification_reason ? [item.notification_reason] : [])))];
+    pendingNode.hidden = reasons.length === 0;
+    pendingNode.textContent = reasons.length ? `未推播原因：${reasons.join("、")}（完整核對狀態請查看事件來源）` : "";
+  }
   const displayTime = generatedAt ? new Date(generatedAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "公開資料更新中";
   setText("alert-time", `${displayTime} CST`);
   if (!event) {
