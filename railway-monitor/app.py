@@ -123,7 +123,7 @@ DISCOVERY_ANCHORS = {
     "macro": ("yen", "japanese yen", "currency intervention", "fx intervention", "intervention", "japan", "日圓", "日元", "匯率干預", "汇率干预", "外匯干預", "外汇干预", "聯合干預", "联合干预"),
     "energy": ("wti", "brent", "oil", "opec", "crude", "原油", "石油", "能源"),
     "semiconductor": ("nvidia", "tsmc", "asml", "semiconductor", "輝達", "英伟达", "台積電", "台积电", "半導體", "半导体"),
-    "black_swan": ("earthquake", "tsunami", "ransomware", "cyberattack", "pandemic", "war", "invasion", "airstrike", "missile", "重大地震", "地震", "海嘯", "海啸", "戰爭", "战争", "入侵", "空襲", "空袭"),
+    "black_swan": ("earthquake", "tsunami", "ransomware", "cyberattack", "pandemic", "war", "invasion", "airstrike", "missile", "escalation", "military escalation", "重大地震", "地震", "海嘯", "海啸", "戰爭", "战争", "入侵", "空襲", "空袭", "重大攻擊", "重大攻击", "軍事升級", "军事升级", "戰事升級", "战事升级"),
     "material_positive": ("iran", "israel", "ukraine", "russia", "trump", "ceasefire", "truce", "peace deal", "tariff exemption", "rate cut", "cancel attack", "call off attack", "trade war easing", "trade war de-escalation", "trade war deescalation", "de-escalation", "deescalation", "peace optimism", "peace hopes", "global relief rally", "geopolitical tensions ease", "伊朗", "以色列", "川普", "特朗普", "停火", "和平協議", "和平协议", "降息", "貿易戰緩和", "贸易战缓和", "貿易戰降溫", "贸易战降温", "緊張局勢緩和", "紧张局势缓和", "和平希望", "全球風險偏好改善", "全球风险偏好改善", "地緣緊張緩和", "地缘紧张缓和"),
 }
 
@@ -146,11 +146,13 @@ DISCOVERY_ALIAS_GROUPS = {
     "boj": ("boj", "bank of japan", "日本央行", "日本銀行", "日本银行"),
     "yen": ("yen", "japanese yen", "日圓", "日元"),
     "japan": ("japan", "日本"),
+    "black_swan_conflict": ("war", "invasion", "airstrike", "missile", "attack", "strike", "escalation", "military escalation", "armed conflict", "戰爭", "战争", "入侵", "空襲", "空袭", "攻擊", "攻击", "襲擊", "袭击", "軍事升級", "军事升级", "戰事升級", "战事升级"),
     "positive_deescalation": ("trade war easing", "trade war de-escalation", "trade war deescalation", "de-escalation", "deescalation", "peace optimism", "peace hopes", "global relief rally", "geopolitical tensions ease", "cancel planned attack", "cancel planned attacks", "canceled planned attack", "canceled planned attacks", "cancelled planned attack", "cancelled planned attacks", "cancel iran strike", "cancel iran strikes", "canceled strikes on iran", "cancelled strikes on iran", "call off planned attacks", "call off planned strike", "call off planned strikes", "calls off planned strikes", "called off planned strikes", "halt military strikes on iran", "取消對伊朗的攻擊", "取消对伊朗的攻击", "取消對伊朗的襲擊", "取消对伊朗的袭击", "取消對伊朗的攻擊計畫", "取消对伊朗的攻击计划", "取消對伊朗的襲擊計畫", "取消对伊朗的袭击计划", "貿易戰緩和", "贸易战缓和", "貿易戰降溫", "贸易战降温", "緊張局勢緩和", "紧张局势缓和", "和平樂觀", "和平乐观", "和平希望", "全球風險偏好改善", "全球风险偏好改善", "地緣緊張緩和", "地缘紧张缓和", "撤回對伊朗的襲擊計畫", "撤回对伊朗的袭击计划"),
 }
 DISCOVERY_ACTION_ALIAS_GROUPS = {
     "fed_support": ("federal reserve support", "fed support", "urges the fed", "敦促聯準會", "敦促联准会"),
     "currency_intervention": ("currency intervention", "fx intervention", "joint yen intervention", "coordinated currency intervention", "匯率干預", "汇率干预", "外匯干預", "外汇干预", "聯合干預", "联合干预"),
+    "black_swan_conflict": ("war", "invasion", "airstrike", "missile", "missile attack", "attack", "strike", "escalation", "military escalation", "armed conflict", "戰爭", "战争", "入侵", "空襲", "空袭", "攻擊", "攻击", "襲擊", "袭击", "軍事升級", "军事升级", "戰事升級", "战事升级"),
     "positive_deescalation": ("trade war easing", "trade war de-escalation", "trade war deescalation", "de-escalation", "deescalation", "peace optimism", "peace hopes", "global relief rally", "geopolitical tensions ease", "cancel planned attack", "cancel planned attacks", "canceled planned attack", "canceled planned attacks", "cancelled planned attack", "cancelled planned attacks", "cancel iran strike", "cancel iran strikes", "canceled strikes on iran", "cancelled strikes on iran", "call off planned attacks", "call off planned strike", "call off planned strikes", "calls off planned strikes", "called off planned strikes", "halt military strikes on iran", "取消對伊朗的攻擊", "取消对伊朗的攻击", "取消對伊朗的襲擊", "取消对伊朗的袭击", "取消對伊朗的攻擊計畫", "取消对伊朗的攻击计划", "取消對伊朗的襲擊計畫", "取消对伊朗的袭击计划", "貿易戰緩和", "贸易战缓和", "貿易戰降溫", "贸易战降温", "緊張局勢緩和", "紧张局势缓和", "和平樂觀", "和平乐观", "和平希望", "全球風險偏好改善", "全球风险偏好改善", "地緣緊張緩和", "地缘紧张缓和", "撤回對伊朗的襲擊計畫", "撤回对伊朗的袭击计划"),
 }
 DISCOVERY_ACTIONS = {
@@ -325,7 +327,14 @@ def _keyword_in_text(keyword: str, normalized: str, compact: str) -> bool:
     if not candidate:
         return False
     candidate_compact = candidate.replace(" ", "")
-    if candidate in normalized or candidate_compact in compact:
+    # ASCII aliases must match token boundaries.  A raw substring check would
+    # classify ``warning`` as ``war`` and ``escalation`` as ``deescalation``.
+    # Both false positives split GDELT clusters or promote routine headlines.
+    if all(ord(char) < 128 for char in candidate_compact):
+        boundary = rf"(?<![a-z0-9]){re.escape(candidate)}(?![a-z0-9])"
+        if re.search(boundary, normalized):
+            return True
+    elif candidate in normalized or candidate_compact in compact:
         return True
 
     # Fuzzy matching is deliberately bounded to a single token/phrase.  A
@@ -339,13 +348,18 @@ def _keyword_in_text(keyword: str, normalized: str, compact: str) -> bool:
         candidate_words = candidate.split()
         width = len(candidate_words)
         windows = (words if width == 1 else (" ".join(words[index:index + width]) for index in range(max(0, len(words) - width + 1))))
-        return any(difflib.SequenceMatcher(None, candidate, window).ratio() >= 0.90 for window in windows)
+        return any(
+            abs(len(candidate_compact) - len(window.replace(" ", ""))) <= 1
+            and difflib.SequenceMatcher(None, candidate, window).ratio() >= 0.90
+            for window in windows
+        )
     # Chinese typo tolerance uses short character windows and a stricter
     # threshold; this avoids treating similar two-character finance terms as
     # interchangeable.
     window_size = len(candidate_compact)
     return any(
-        difflib.SequenceMatcher(None, candidate_compact, compact[index:index + window_size]).ratio() >= 0.93
+        abs(len(candidate_compact) - len(compact[index:index + window_size])) <= 1
+        and difflib.SequenceMatcher(None, candidate_compact, compact[index:index + window_size]).ratio() >= 0.93
         for index in range(max(0, len(compact) - window_size + 1))
     )
 
