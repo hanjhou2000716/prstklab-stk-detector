@@ -8,6 +8,17 @@ class FakeResponse:
     def raise_for_status(self):
         return None
 
+    def json(self):
+        return {
+            "data": {
+                "timeAsOf": "Aug 3, 2026",
+                "primaryData": {
+                    "lastSalePrice": "25,913.90",
+                    "percentageChange": "+2.13%",
+                },
+            }
+        }
+
 
 def test_public_secondary_parses_stooq_close_and_keeps_per_symbol_errors():
     def requester(url, *, params, timeout, headers):
@@ -22,6 +33,23 @@ def test_public_secondary_parses_stooq_close_and_keeps_per_symbol_errors():
     assert result["quotes"]["S&P 500"]["price"] == 100.5
     assert any(error.startswith("NASDAQ:") for error in result["errors"])
     assert result["health"]["item_count"] == 8
+
+
+def test_public_secondary_uses_nasdaq_fallback_for_composite_indexes():
+    def requester(url, *, params, timeout, headers):
+        if "stooq.com" in url:
+            if params["s"] == "^ndq":
+                raise TimeoutError("stooq blocked")
+            return FakeResponse()
+        assert "api.nasdaq.com/api/quote/comp/info" in url
+        return FakeResponse()
+
+    result = fetch_public_market_secondary(requester=requester)
+
+    assert result["status"] == "healthy"
+    assert result["quotes"]["NASDAQ"]["price"] == 25913.90
+    assert result["quotes"]["NASDAQ"]["source_domain"] == "api.nasdaq.com"
+    assert not any(error.startswith("NASDAQ:") for error in result["errors"])
 
 
 def test_public_secondary_crosscheck_does_not_replace_primary_price():
@@ -51,3 +79,12 @@ def test_public_secondary_crosscheck_does_not_replace_primary_price():
     assert cards[0]["cross_checked"] is True
     assert cards[0]["crosscheck_status"] == "已交叉核對"
     assert [source["label"] for source in cards[0]["crosscheck_sources"]] == ["Yahoo", "Stooq"]
+
+
+def test_public_secondary_crosscheck_labels_nasdaq_fallback():
+    cards = apply_public_market_secondary_crosscheck(
+        [{"ticker": "NASDAQ", "price": 100.0, "quote_date": "2026-08-01"}],
+        {"quotes": {"NASDAQ": {"ticker": "NASDAQ", "price": 100.2, "quote_date": "2026-08-01", "source_domain": "api.nasdaq.com", "source_url": "https://api.nasdaq.com/api/quote/comp/info?assetclass=index"}}},
+    )
+
+    assert cards[0]["crosscheck_sources"][1]["label"] == "Nasdaq"

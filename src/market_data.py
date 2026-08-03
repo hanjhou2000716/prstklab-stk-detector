@@ -510,7 +510,7 @@ def apply_public_market_secondary_crosscheck(
                 "quote_time": item.get("quote_time") or item.get("quote_date", ""),
             },
             {
-                "label": "Stooq",
+                "label": "Nasdaq" if secondary.get("source_domain") == "api.nasdaq.com" else "Stooq",
                 "url": secondary.get("source_url", ""),
                 "quote_time": secondary.get("quote_time") or secondary.get("quote_date", ""),
             },
