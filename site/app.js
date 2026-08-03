@@ -126,6 +126,18 @@ const renderAlertTrace = (event) => {
   if (trace?.source_label) facts.push(`來源：${trace.source_label}`);
   const domains = Array.isArray(trace?.verified_domains) ? trace.verified_domains.filter(Boolean) : [];
   if (domains.length) facts.push(`核對網域：${domains.join("、")}`);
+  const crosscheckStatus = String(event?.crosscheck_status || trace?.crosscheck_status || "").trim();
+  const crosscheckDomains = Array.isArray(event?.crosscheck_domains)
+    ? event.crosscheck_domains.filter(Boolean)
+    : (Array.isArray(trace?.crosscheck_domains) ? trace.crosscheck_domains.filter(Boolean) : []);
+  if (crosscheckStatus && crosscheckStatus !== "unverified") {
+    const label = crosscheckStatus === "official_confirmed"
+      ? "官方＋第二來源已核對"
+      : crosscheckStatus === "corroborated"
+        ? "第二來源已核對"
+        : "等待第二來源";
+    facts.push(`事件交叉核對：${label}${crosscheckDomains.length ? `（${crosscheckDomains.join("、")}）` : ""}`);
+  }
   const eventTime = traceTime(trace?.event_time);
   if (eventTime) facts.push(`事件時間：${eventTime} CST`);
   const checkedAt = traceTime(trace?.checked_at);

@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 from src.finance_intel_policy import threshold_rule
 from src.event_classifier import classify_event_fields, notification_gate
+from src.event_crosscheck import cross_check_event_records
 from src.intel_contract import normalize_event_record
 
 
@@ -596,6 +597,11 @@ def build_event_snapshot(
             if fallback:
                 append(fallback, f"signal:{quote.get('ticker')}")
 
+    # Official releases, news reports and live discoveries can describe the
+    # same event with different wording.  Merge only when independent source
+    # domains share a concrete entity/place and action; otherwise keep the
+    # record visible with an explicit unverified/pending state.
+    events = cross_check_event_records(events)
     events = events[:4]
     if events:
         return {
