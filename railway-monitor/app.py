@@ -28,6 +28,8 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunsplit
 
 import httpx
 
+from src.event_classifier import classify_event_fields
+
 
 JIN10_MCP_URL = "https://mcp.jin10.com/mcp"
 GDELT_DOC_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
@@ -433,6 +435,12 @@ def classify_flash_with_reason(flash: Flash) -> tuple[str | None, str]:
             continue
         if any(_keyword_in_text(keyword, haystack, compact) for keyword in keywords):
             return category, f"{category}_keyword"
+    # Use the same all-fields classifier as the scheduled news report as a
+    # final fallback.  This keeps future aliases and description/summary
+    # fields aligned without changing the conservative legacy paths above.
+    shared = classify_event_fields({"title": flash.title, "content": flash.content, "summary": flash.text})
+    if shared.get("category") in ALLOWED_CATEGORIES:
+        return str(shared["category"]), str(shared.get("reason") or "shared_classifier_keyword")
     return None, "energy_requires_material_context" if energy_without_context else "keyword_no_match"
 
 

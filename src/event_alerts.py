@@ -8,6 +8,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from src.finance_intel_policy import threshold_rule
+from src.event_classifier import classify_event_fields, notification_gate
 from src.intel_contract import normalize_event_record
 
 
@@ -27,8 +28,40 @@ def _clean_title(title: str) -> str:
 
 
 def detect_major_event(story: dict[str, str]) -> dict[str, str] | None:
-    """Return a material-event record when a headline meets a fixed threshold."""
+    """Return a material-event record using every story field, not only title."""
     title = _clean_title(story.get("title", ""))
+    enriched = {**story, "title": title}
+    classification = classify_event_fields(enriched)
+    category = classification.get("category")
+    all_text = " ".join(str(value or "") for value in enriched.values()).lower()
+    # A company/sector mention alone is not a material event.  Keep the
+    # existing earnings gate so routine semiconductor headlines stay out of
+    # the risk card while body text can still trigger a real earnings story.
+    if category == "semiconductor" and not any(term.lower() in all_text for term in EARNINGS_TERMS):
+        category = None
+    labels = {
+        "fed": "Fed／貨幣政策",
+        "macro": "重大經濟數據",
+        "policy": "關稅／政策",
+        "conflict": "地緣衝突",
+        "black_swan": "黑天鵝／重大災害",
+        "energy": "能源／原油",
+        "semiconductor": "半導體／科技",
+        "market": "市場波動",
+        "material_positive": "重大正向事件",
+    }
+    if category == "semiconductor" and any(term.lower() in all_text for term in EARNINGS_TERMS):
+        labels["semiconductor"] = "半導體財報"
+    if category in labels:
+        return {
+            **enriched,
+            "short_label": labels[category],
+            "classification": category,
+            "classification_reason": classification.get("reason"),
+            "matched_terms": classification.get("matched_terms", []),
+        }
+    # Keep the historical rules as a compatibility fallback for deployments
+    # with a temporarily incomplete alias database.
     normalized = title.lower()
     for short_label, terms in EVENT_RULES:
         if any(term in normalized for term in terms):
@@ -100,7 +133,12 @@ def _impact_confirmation(
             except ValueError:
                 pass
         ticker = str(item.get("ticker") or "").upper()
-        threshold = 1.5 if ticker in {"WTI", "BRENT", "GOLD", "DXY", "US10Y", "VIX"} else 1.0
+        # Oil is a market-sync witness only after a move greater than 5%.
+        # Require timestamps for oil so a stale daily close cannot confirm a
+        # breaking geopolitical headline.
+        threshold = 5.0 if ticker in {"WTI", "BRENT"} else 1.5 if ticker in {"GOLD", "DXY", "US10Y", "VIX"} else 1.0
+        if ticker in {"WTI", "BRENT"} and (not source_time or not item_time):
+            continue
         if abs(float(item["change_percent"])) >= threshold:
             confirmed.append(item)
     if confirmed:
@@ -108,8 +146,16 @@ def _impact_confirmation(
             "confirmed": True,
             "method": "相關市場同步波動",
             "markets": [str(item.get("ticker")) for item in confirmed],
+            "evidence": [
+                {
+                    "ticker": str(item.get("ticker") or ""),
+                    "change_percent": item.get("change_percent"),
+                    "quote_time": item.get("quote_time") or item.get("quote_date"),
+                }
+                for item in confirmed
+            ],
         }
-    return {"confirmed": False, "method": "尚無相關市場同步確認", "markets": []}
+    return {"confirmed": False, "method": "尚無相關市場同步確認", "markets": [], "evidence": []}
 
 
 def _signal_market_context(ticker: str) -> tuple[str, str]:
@@ -400,10 +446,25 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
             if isinstance(item, dict) and item.get("domain")
         ])),
     }
+    preclassification = classify_event_fields({**raw_event, **event})
+    pre_category = str(event.get("classification") or preclassification.get("category") or "")
     related = event.get("related") or _related_indices(indices, "")
+    # Energy/geopolitical stories must include the commodity witness in the
+    # same event record; otherwise a >5% WTI move could never be evaluated.
+    pre_text = str(preclassification.get("text") or "")
+    if pre_category in {"conflict", "black_swan", "energy"} and any(
+        token in pre_text for token in ("wti", "brent", "crude oil", "原油", "油價", "石油", "航運", "shipping")
+    ):
+        for ticker in ("WTI", "BRENT", "GOLD"):
+            item = next((value for value in indices if value.get("ticker") == ticker), None)
+            if item and item not in related:
+                related.append(item)
     impact_confirmation = _impact_confirmation(
         {"ticker": event.get("ticker", "")}, related, released_at
     )
+    classification = classify_event_fields({**raw_event, **event, "related_quotes": related})
+    category = str(event.get("classification") or classification.get("category") or "") or None
+    classification_reason = str(event.get("classification_reason") or classification.get("reason") or "")
     risk_level = event.get("risk_level") or "持續觀察"
     brief_title = event.get("brief_title") or f"{label}｜重要事件｜觀察"
     event_text = " ".join(
@@ -411,11 +472,22 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         for record in (raw_event, event)
         for key in ("event_type", "category", "short_label", "brief_title", "title", "brief_summary")
     ).lower()
-    is_black_swan = event.get("kind") != "market_signal" and any(
+    is_black_swan = event.get("kind") != "market_signal" and (
+        category in {"black_swan", "conflict"}
+        or any(
         term in event_text for term in ("黑天鵝", "重大災害", "black swan", "disaster", "earthquake", "tsunami", "戰爭", "戰事", "war", "invasion", "conflict", "攻擊", "供應中斷")
+        )
     )
     official_verified = event.get("relevance") == "official" or event.get("source_tier") == "official"
     strict_confirmation = official_verified and impact_confirmation["confirmed"]
+    notification = notification_gate(
+        category,
+        official_confirmed=official_verified,
+        market_sync_confirmed=bool(impact_confirmation.get("confirmed")),
+    )
+    verification_plan = ["ECB 官方 RSS", "Reuters／GDELT"] if category in {"conflict", "energy", "policy", "macro", "black_swan"} else []
+    if verification_plan:
+        trace["verification_plan"] = verification_plan
     if risk_level == "高風險" and not impact_confirmation["confirmed"]:
         risk_level = "警戒"
         brief_title = f"{label}｜重要事件｜警戒"
@@ -460,6 +532,13 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "source_trace": trace,
         "official_confirmed": official_verified,
         "high_risk_eligible": bool(strict_confirmation) if is_black_swan else True,
+        "classification": category,
+        "classification_reason": classification_reason,
+        "matched_terms": classification.get("matched_terms", []),
+        "notification_status": notification["status"],
+        "notification_reasons": notification["reasons"],
+        "notification_reason": "、".join(notification["reasons"]),
+        "verification_plan": verification_plan,
     })
 
 

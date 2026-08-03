@@ -1,4 +1,4 @@
-from src.event_alerts import build_event_snapshot, detect_major_event
+from src.event_alerts import _impact_confirmation, build_event_snapshot, detect_major_event
 from src.scheduled_brief import build_brief
 
 
@@ -74,6 +74,49 @@ def test_major_event_includes_neutral_transmission_and_stock_observation():
     assert "供應鏈" in event["why_important"]
     assert "費半" in event["market_context"]
     assert "台股電子" in event["stock_observation"]
+
+
+def test_news_body_and_impact_are_classified_as_one_event():
+    event = detect_major_event({
+        "title": "全球｜美國與伊朗局勢｜重要事件",
+        "summary": "伊朗與美國談判後，原油供應與航運風險受到關注。",
+        "market_impact": "WTI 原油單日 -5.63%。",
+        "url": "https://www.reuters.com/world/",
+    })
+    assert event is not None
+    assert event["classification"] in {"conflict", "black_swan"}
+    assert event["matched_terms"]
+
+
+def test_news_event_exposes_pending_reasons_when_oil_time_is_unknown():
+    snapshot = build_event_snapshot(
+        {"taiwan": [], "us": [{
+            "title": "全球｜美國與伊朗局勢｜重要事件",
+            "summary": "伊朗與美國談判後，原油供應與航運風險受到關注。",
+            "market_impact": "WTI 原油單日 -5.63%。",
+            "source": "Reuters",
+            "url": "https://www.reuters.com/world/",
+        }]},
+        [],
+        indices=[{"ticker": "WTI", "price": 80, "change_percent": -5.63, "quote_time": "2026-08-03T04:21:00+08:00"}],
+    )
+    event = next(item for item in snapshot["items"] if item.get("kind") == "major_event")
+    assert event["notification_status"] == "pending"
+    assert "等待官方核對" in event["notification_reasons"]
+    assert "等待市場同步" in event["notification_reasons"]
+
+
+def test_oil_sync_requires_five_percent_move_and_event_time():
+    related = [{
+        "ticker": "WTI", "price": 80, "change_percent": -5.63,
+        "quote_time": "2026-08-03T04:21:00+08:00",
+    }]
+    same_time = _impact_confirmation({}, related, "2026-08-03T04:10:00+08:00")
+    assert same_time["confirmed"] is True
+    stale_time = _impact_confirmation({}, related, "2026-08-03T08:00:00+08:00")
+    assert stale_time["confirmed"] is False
+    below_threshold = _impact_confirmation({}, [{**related[0], "change_percent": -4.99}], "2026-08-03T04:10:00+08:00")
+    assert below_threshold["confirmed"] is False
 
 
 def test_market_signal_keeps_quote_provenance_for_mini_app_trace():
