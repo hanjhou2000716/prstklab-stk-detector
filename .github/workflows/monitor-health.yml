@@ -1,0 +1,61 @@
+name: Railway monitor health
+
+on:
+  repository_dispatch:
+    types: [monitor-health]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: main-data-writer
+  cancel-in-progress: false
+
+jobs:
+  publish-monitor-health:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    env:
+      MONITOR_HEALTH_PAYLOAD: ${{ toJson(github.event.client_payload) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Merge Railway diagnostics
+        run: python -m src.monitor_health --payload "$MONITOR_HEALTH_PAYLOAD" --snapshot site/data/market.json --state site/data/monitor-health.json
+      - name: Commit monitor diagnostics
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/market.json site/data/monitor-health.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore: publish monitor health diagnostics"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            git fetch origin main
+            git rebase --autostash -X theirs origin/main
+          done
+      - name: Configure GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

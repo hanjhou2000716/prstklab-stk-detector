@@ -150,6 +150,16 @@ DISCOVERY_ALIAS_GROUPS = {
     "positive_deescalation": ("trade war easing", "trade war de-escalation", "trade war deescalation", "de-escalation", "deescalation", "peace optimism", "peace hopes", "global relief rally", "geopolitical tensions ease", "cancel planned attack", "cancel planned attacks", "canceled planned attack", "canceled planned attacks", "cancelled planned attack", "cancelled planned attacks", "cancel iran strike", "cancel iran strikes", "canceled strikes on iran", "cancelled strikes on iran", "call off planned attacks", "call off planned strike", "call off planned strikes", "calls off planned strikes", "called off planned strikes", "halt military strikes on iran", "取消對伊朗的攻擊", "取消对伊朗的攻击", "取消對伊朗的襲擊", "取消对伊朗的袭击", "取消對伊朗的攻擊計畫", "取消对伊朗的攻击计划", "取消對伊朗的襲擊計畫", "取消对伊朗的袭击计划", "貿易戰緩和", "贸易战缓和", "貿易戰降溫", "贸易战降温", "緊張局勢緩和", "紧张局势缓和", "和平樂觀", "和平乐观", "和平希望", "全球風險偏好改善", "全球风险偏好改善", "地緣緊張緩和", "地缘紧张缓和", "撤回對伊朗的襲擊計畫", "撤回对伊朗的袭击计划"),
 }
 DISCOVERY_ACTION_ALIAS_GROUPS = {
+    # Negotiation verbs are one semantic action across English, Traditional
+    # Chinese and Simplified Chinese. GDELT often paraphrases one event as
+    # talks, dialogue or negotiations; canonicalising them keeps the second
+    # source/entity/action gate from silently rejecting a valid match.
+    "negotiation": (
+        "talk", "talks", "talking", "in talks", "peace talks", "ceasefire talks",
+        "diplomatic talks", "dialogue", "dialog", "negotiating", "negotiation",
+        "negotiations", "會談", "談判", "協商", "對話", "和談",
+        "会谈", "谈判", "协商", "对话", "和谈",
+    ),
     "fed_support": ("federal reserve support", "fed support", "urges the fed", "敦促聯準會", "敦促联准会"),
     "currency_intervention": ("currency intervention", "fx intervention", "joint yen intervention", "coordinated currency intervention", "匯率干預", "汇率干预", "外匯干預", "外汇干预", "聯合干預", "联合干预"),
     "black_swan_conflict": ("war", "invasion", "airstrike", "missile", "missile attack", "attack", "strike", "escalation", "military escalation", "armed conflict", "戰爭", "战争", "入侵", "空襲", "空袭", "攻擊", "攻击", "襲擊", "袭击", "軍事升級", "军事升级", "戰事升級", "战事升级"),
@@ -984,6 +994,58 @@ async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_se
             return
 
 
+async def dispatch_monitor_health(*, token: str, repository: str, gdelt: dict[str, Any]) -> None:
+    """Publish non-secret GDELT pending diagnostics for the Mini App.
+
+    This is deliberately a separate repository-dispatch event: pending
+    candidates are not alerts and must never enter the Telegram path. Only
+    bounded counts/reason codes are sent; article bodies, URLs and secrets
+    stay inside Railway's local audit store.
+    """
+    if not token or not repository:
+        logging.warning("monitor health dispatch skipped: GitHub credentials are not configured")
+        return
+    payload = {
+        "event_type": "monitor-health",
+        "client_payload": {
+            "component": "gdelt",
+            "status": str(gdelt.get("status") or "unknown"),
+            "checked_at": gdelt.get("last_success_at") or gdelt.get("last_failure_at"),
+            "pending_count": int(gdelt.get("pending_count") or 0),
+            "pending_reasons": {
+                str(key): int(value or 0)
+                for key, value in (gdelt.get("pending_reasons") or {}).items()
+            },
+            "market_sync_status": str(gdelt.get("market_sync_status") or "not_confirmed"),
+            "error": str(gdelt.get("error") or "") or None,
+        },
+    }
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {token}",
+        "X-GitHub-Api-Version": GITHUB_API_VERSION,
+    }
+    endpoint = f"https://api.github.com/repos/{repository}/dispatches"
+    async with httpx.AsyncClient(timeout=20) as client:
+        for attempt in range(3):
+            try:
+                response = await client.post(endpoint, headers=headers, json=payload)
+            except httpx.HTTPError as exc:
+                if attempt == 2:
+                    logging.error("monitor health dispatch failed error=%s", type(exc).__name__)
+                    raise
+                await asyncio.sleep(2**attempt)
+                continue
+            if response.status_code == 429 or response.status_code >= 500:
+                if attempt == 2:
+                    response.raise_for_status()
+                await asyncio.sleep(2**attempt)
+                continue
+            response.raise_for_status()
+            logging.info("monitor health dispatch accepted status=%s", response.status_code)
+            return
+
+
 def default_flash_arguments(schema: dict[str, Any], requested_limit: int) -> dict[str, Any]:
     properties = schema.get("properties", {}) if isinstance(schema, dict) else {}
     return {"limit": requested_limit} if "limit" in properties else {}
@@ -1492,11 +1554,29 @@ async def monitor_forever() -> None:
                               article_count=len(articles), alert_count=dispatched,
                               market_sync_status="confirmed" if any(alert.market_sync_confirmed for alert in alerts) else "not_confirmed",
                               pending_count=len(pending), pending_reasons=pending_reasons, error=None)
+                try:
+                    await dispatch_monitor_health(
+                        token=github_token,
+                        repository=repository,
+                        gdelt=health_snapshot().get("gdelt", {}),
+                    )
+                except Exception:
+                    # Health publication is observability only; it must never
+                    # stop the next Jin10/GDELT polling cycle.
+                    logging.exception("GDELT health publication failed; continuing monitor loop")
                 gdelt_baseline = False
             except Exception as error:
                 update_health("gdelt", status="failed", last_failure_at=datetime.now(timezone.utc).isoformat(),
                               error=type(error).__name__)
                 logging.exception("GDELT discovery failed; will wait for the next interval")
+                try:
+                    await dispatch_monitor_health(
+                        token=github_token,
+                        repository=repository,
+                        gdelt=health_snapshot().get("gdelt", {}),
+                    )
+                except Exception:
+                    logging.exception("GDELT failure health publication failed")
         await asyncio.sleep(interval)
 
 

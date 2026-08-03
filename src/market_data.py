@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
+import json
+from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -604,6 +606,16 @@ def build_market_snapshot() -> dict[str, Any]:
         program = None
     macro = build_macro_summary(events, risk, program)
     research_report = load_research_cards()
+    monitor_health: dict[str, Any] = {}
+    monitor_health_path = Path("site/data/monitor-health.json")
+    try:
+        if monitor_health_path.exists():
+            loaded_monitor_health = json.loads(monitor_health_path.read_text(encoding="utf-8"))
+            if isinstance(loaded_monitor_health, dict):
+                monitor_health = loaded_monitor_health
+    except (OSError, ValueError, TypeError):
+        # Optional diagnostics must never block the core market snapshot.
+        monitor_health = {}
     errors.extend({"ticker": "新聞", "message": message} for message in news["errors"])
     errors.extend(
         {"ticker": "官方事件", "message": message, "scope": "official_event"}
@@ -630,6 +642,7 @@ def build_market_snapshot() -> dict[str, Any]:
         official_sources=official_events.get("source_health", []),
         news_sources=news.get("source_health", []),
         additional_sources=phase_two.get("sources", []),
+        monitor_health=monitor_health,
     )
     live_quotes = sum(item.get("quote_time") is not None for item in [*quotes, *indices])
     close_quotes = len(quotes) + len(indices) - live_quotes

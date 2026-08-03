@@ -77,6 +77,33 @@ def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
     }
 
 
+def _monitor_health_item(monitor_health: dict[str, Any], checked_at: str) -> dict[str, Any] | None:
+    """Re-attach Railway monitor state after a normal market refresh."""
+    if str(monitor_health.get("component") or "").lower() != "gdelt":
+        return None
+    try:
+        pending_count = max(0, int(monitor_health.get("pending_count") or 0))
+    except (TypeError, ValueError):
+        pending_count = 0
+    status = str(monitor_health.get("status") or "unknown")
+    source_status = "partial" if status == "failed" else "pending" if pending_count else "healthy"
+    reasons = monitor_health.get("pending_reasons")
+    if not isinstance(reasons, dict):
+        reasons = {}
+    issues = [f"{reason}: {count} pending event(s)" for reason, count in reasons.items() if count]
+    return {
+        "key": "gdelt_crosscheck",
+        "label": "GDELT event cross-check",
+        "status": source_status,
+        "checked_at": monitor_health.get("checked_at") or checked_at,
+        "source_url": "https://api.gdeltproject.org/api/v2/doc/doc",
+        "issues": issues[:3],
+        "pending_count": pending_count,
+        "pending_reasons": reasons,
+        "market_sync_status": monitor_health.get("market_sync_status") or "not_confirmed",
+    }
+
+
 def build_source_health(
     *,
     errors: list[dict[str, str]],
@@ -86,6 +113,7 @@ def build_source_health(
     official_sources: list[dict[str, Any]] | None = None,
     news_sources: list[dict[str, Any]] | None = None,
     additional_sources: list[dict[str, Any]] | None = None,
+    monitor_health: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Expose failures distinctly from a clean scan with no market event."""
     checked = checked_at.isoformat()
@@ -121,6 +149,10 @@ def build_source_health(
         news["data_gaps"] = [item for item in news_sources if item.get("status") != "healthy"]
     if additional_sources:
         sources.extend(additional_sources)
+    if monitor_health:
+        monitor_item = _monitor_health_item(monitor_health, checked)
+        if monitor_item:
+            sources.append(monitor_item)
     sources.append(_research_item(research_report, checked))
 
     event_dependencies = {"market_quotes", "official_events", "market_news"}
@@ -156,7 +188,7 @@ def build_source_health(
     )
     data_gaps = [
         {"source": source["label"], "key": source["key"], "issues": source.get("issues", [])}
-        for source in sources if source.get("status") != "healthy"
+        for source in sources if source.get("status") not in {"healthy", "pending", "warming"}
     ]
     return {
         "checked_at": checked,
