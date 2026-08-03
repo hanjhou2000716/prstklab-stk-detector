@@ -1781,7 +1781,25 @@ def main() -> None:
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(message)s")
     validate_runtime_layout()
     start_health_server()
-    asyncio.run(monitor_forever())
+    try:
+        asyncio.run(monitor_forever())
+    except RuntimeError as error:
+        # Keep Railway's liveness endpoint available when a secret or
+        # repository setting is missing.  Previously this exception escaped
+        # the process and produced an opaque restart loop.  Only expected
+        # configuration failures are held open; programming/runtime errors
+        # still fail fast so they remain visible to deployment checks.
+        if not str(error).startswith("Missing required Railway variable:"):
+            raise
+        update_health(
+            "runtime",
+            status="configuration_error",
+            updated_at=datetime.now(timezone.utc).isoformat(),
+            error="missing_required_variable",
+        )
+        logging.exception("Monitor is paused until Railway configuration is fixed")
+        while True:
+            time.sleep(60)
 
 
 if __name__ == "__main__":
