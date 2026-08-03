@@ -704,6 +704,20 @@ def test_outbox_retry_reuses_stable_payload_and_marks_sent(tmp_path, monkeypatch
     ).fetchone() == ("sent", None)
 
 
+def test_outbox_state_distinguishes_replayable_legacy_rows(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    legacy = monitor.Alert("legacy-outbox", "macro", "CPI release", "2026-08-02T10:00:00+00:00")
+    trace_id = store.record_outbox(legacy, {"summary": legacy.summary})
+    assert store.outbox_state(trace_id) == ("pending", False)
+    current = monitor.Alert("current-outbox", "macro", "PCE release", "2026-08-02T10:00:00+00:00")
+    current_trace = monitor.alert_trace_id(current)
+    payload = monitor.sign_dispatch_payload(
+        monitor.build_dispatch_payload(current, current_trace), current, "test-secret"
+    )
+    store.record_outbox(current, {"dispatch_payload": payload})
+    assert store.outbox_state(current_trace) == ("pending", True)
+
+
 def test_seen_store_persists_classification_reason_and_health_counts(tmp_path):
     store = monitor.SeenStore(tmp_path / "state.sqlite3")
     flash = monitor.Flash("audit-1", "一般市場消息", "公司發布新品。", "2026-08-02T10:00:00+00:00")

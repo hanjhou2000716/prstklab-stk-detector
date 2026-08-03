@@ -420,6 +420,12 @@ ledger. `/health` exposes `delivery.retryable_count`; rows created before this
 retry format remain visible for audit but are not replayed because their
 original request body cannot be reconstructed safely.
 
+Before a fresh source item is sent, the monitor checks the durable outbox by
+Trace ID. A `sent` or `partial` record is treated as already accepted by
+GitHub, while a replayable `pending`/`failed` record waits for the outbox
+worker. This prevents a source refresh and the retry worker from sending the
+same event through two paths.
+
 The Railway HTTP callback is handled on a separate server thread. Its receipt
 write uses a short-lived SQLite connection with WAL and a bounded busy timeout,
 so a callback arriving during the monitor's normal write transaction is not

@@ -883,6 +883,20 @@ class SeenStore:
             })
         return due
 
+    def outbox_state(self, trace_id: str) -> tuple[str, bool] | None:
+        """Return status and whether a durable replay body is available."""
+        row = self.connection.execute(
+            "SELECT status, payload_json FROM delivery_outbox WHERE trace_id = ?", (trace_id,)
+        ).fetchone()
+        if row is None:
+            return None
+        try:
+            payload = json.loads(row[1])
+        except (TypeError, json.JSONDecodeError):
+            payload = None
+        has_payload = isinstance(payload, dict) and isinstance(payload.get("dispatch_payload"), dict)
+        return str(row[0]), has_payload
+
     def delivery_diagnostics(self, db: sqlite3.Connection | None = None) -> dict[str, Any]:
         """Return non-secret delivery state for Railway's health endpoint."""
         database = db or self.connection
@@ -1755,6 +1769,23 @@ async def monitor_forever() -> None:
                     logging.info("Jin10 alert suppressed by category cooldown: %s", alert.category)
                     store.set_classification_reason(flash.event_id, "category_cooldown")
                     continue
+                existing_outbox = store.outbox_state(alert_trace_id(alert))
+                if existing_outbox and existing_outbox[0] in {"sent", "partial"}:
+                    # A durable retry (or an earlier successful attempt) has
+                    # already reached GitHub.  Do not send the same event via
+                    # the fresh-source path again.
+                    store.set_classification(flash.event_id, "in_scope")
+                    store.set_classification_reason(flash.event_id, "already_delivered_outbox")
+                    store.record_dispatch(alert)
+                    store.mark_alert_reminded(alert, escalated=("\u9ad8\u98a8\u96aa" in alert.summary))
+                    continue
+                if existing_outbox and existing_outbox[1] and existing_outbox[0] in {"pending", "failed"}:
+                    store.set_classification_reason(flash.event_id, "durable_outbox_pending_retry")
+                    logging.info(
+                        "Jin10 alert held by durable outbox trace_id=%s status=%s",
+                        alert_trace_id(alert), existing_outbox[0],
+                    )
+                    continue
                 trace_id = alert_trace_id(alert)
                 dispatch_payload = sign_dispatch_payload(
                     build_dispatch_payload(alert, trace_id), alert, shared_secret
@@ -1811,6 +1842,20 @@ async def monitor_forever() -> None:
                         logging.info("GDELT alert suppressed by durable event ledger: %s", ledger_record["canonical_key"])
                         continue
                     if not store.may_dispatch(alert, EVENT_COOLDOWN_SECONDS):
+                        continue
+                    existing_outbox = store.outbox_state(alert_trace_id(alert))
+                    if existing_outbox and existing_outbox[0] in {"sent", "partial"}:
+                        store.set_classification(alert.event_id, "in_scope")
+                        store.set_classification_reason(alert.event_id, "already_delivered_outbox")
+                        store.record_dispatch(alert)
+                        store.mark_alert_reminded(alert, escalated=("\u9ad8\u98a8\u96aa" in alert.summary))
+                        continue
+                    if existing_outbox and existing_outbox[1] and existing_outbox[0] in {"pending", "failed"}:
+                        store.set_classification_reason(alert.event_id, "durable_outbox_pending_retry")
+                        logging.info(
+                            "GDELT alert held by durable outbox trace_id=%s status=%s",
+                            alert_trace_id(alert), existing_outbox[0],
+                        )
                         continue
                     trace_id = alert_trace_id(alert)
                     dispatch_payload = sign_dispatch_payload(
