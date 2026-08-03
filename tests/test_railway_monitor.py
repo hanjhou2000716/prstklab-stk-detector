@@ -453,3 +453,33 @@ def test_delivery_receipt_can_be_saved_from_health_server_thread(tmp_path):
     thread.join(timeout=5)
     assert not thread.is_alive()
     assert result == [True]
+
+
+def test_trade_war_easing_market_commentary_is_material_positive():
+    flash = monitor.Flash(
+        "cncb-daily-open-relief",
+        "CNBC Daily Open: trade war easing lifts hopes for peace",
+        "Global relief rally as geopolitical tensions ease.",
+        "2026-08-03T09:19:00+08:00",
+    )
+    assert monitor.classify_flash(flash) == "material_positive"
+
+
+def test_gdelt_deescalation_aliases_share_one_positive_action():
+    articles = [
+        monitor.DiscoveryArticle(
+            "Trade war easing lifts hopes for peace",
+            "https://www.reuters.com/a",
+            "reuters.com",
+            "2026-08-03T01:00:00+00:00",
+        ),
+        monitor.DiscoveryArticle(
+            "Global relief rally as geopolitical tensions ease",
+            "https://www.cnbc.com/b",
+            "cnbc.com",
+            "2026-08-03T01:01:00+00:00",
+        ),
+    ]
+    alerts = monitor.cross_checked_gdelt_alerts(articles)
+    assert len(alerts) == 1
+    assert alerts[0].category == "material_positive"
