@@ -10,6 +10,7 @@ deliberately explicit so the Mini App can explain why a row is only observed.
 from __future__ import annotations
 
 from math import sqrt
+from collections import Counter
 from typing import Any
 
 import pandas as pd
@@ -163,6 +164,45 @@ def _ranked_pristine_rows(rows: list[dict[str, Any]], market: str) -> list[dict[
             "condition_count": f"{matched}/{total}",
         })
     return ranked
+
+
+def pristine_selection_diagnostics(rows: list[dict[str, Any]], market: str) -> dict[str, Any]:
+    """Explain why a verified pool did or did not produce a shortlist.
+
+    This is deliberately diagnostic only: it never changes the six-condition
+    gate.  A scan can therefore report the difference between incomplete
+    public history and complete rows that simply score below 5/6.
+    """
+    ranked = _ranked_pristine_rows(rows, market)
+    total = len(PRISTINE_QUALITY_FIELDS) + len(HEAT_METRICS)
+    distribution = Counter(f"{item['pristine_conditions_matched']}/{total}" for item in ranked)
+    gap_counts: Counter[str] = Counter()
+    complete = 0
+    formal_eligible = 0
+    observation_eligible = 0
+    for item in ranked:
+        gaps = item.get("verification_gaps") or []
+        if gaps:
+            gap_counts.update(str(gap) for gap in gaps)
+            continue
+        complete += 1
+        matched = int(item["pristine_conditions_matched"])
+        if matched >= 5:
+            formal_eligible += 1
+        elif matched in (3, 4):
+            observation_eligible += 1
+    return {
+        "market": market,
+        "records": len(ranked),
+        "complete_records": complete,
+        "incomplete_records": len(ranked) - complete,
+        "formal_eligible_records": formal_eligible,
+        "observation_eligible_records": observation_eligible,
+        "matched_distribution": {key: distribution.get(key, 0) for key in (f"{index}/{total}" for index in range(total + 1))},
+        "verification_gap_counts": dict(sorted(gap_counts.items())),
+        "formal_threshold": "5/6",
+        "observation_threshold": "3/6-4/6",
+    }
 
 
 def review_pristine_pool(rows: list[dict[str, Any]], market: str, limit: int = 5) -> list[dict[str, Any]]:

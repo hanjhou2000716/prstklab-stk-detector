@@ -12,7 +12,12 @@ import pandas as pd
 from src.batch_download import batches
 from src.mops_history import mops_pristine_history
 from src.public_download import download_daily_batch
-from src.pristine_value import heat_metrics, review_pristine_observation_pool, review_pristine_pool
+from src.pristine_value import (
+    heat_metrics,
+    pristine_selection_diagnostics,
+    review_pristine_observation_pool,
+    review_pristine_pool,
+)
 from src.research_contract import latest_quote_context
 from src.value_fundamentals import sec_fundamentals, twse_financial_snapshot
 from src.value_review import review_public_pool
@@ -161,6 +166,7 @@ def main() -> None:
         evaluable_rows = base_rows
     formal_rows = review_pristine_pool(evaluable_rows, args.market)
     observation_rows = review_pristine_observation_pool(evaluable_rows, args.market)
+    selection_diagnostics = pristine_selection_diagnostics(evaluable_rows, args.market)
     # The user-facing shortlist is capped at five. Observation rows only fill
     # unused slots; once five formal candidates exist, do not publish a second
     # list that competes with the official shortlist.
@@ -177,6 +183,7 @@ def main() -> None:
         "candidates": len(rows),
         "formal_candidates": len(formal_rows),
         "observation_candidates": len(visible_observation_rows),
+        "selection_diagnostics": selection_diagnostics,
         "failed": failed_total,
         "scan_state": "complete",
         "status": "可用" if failed_total == 0 else "部分缺漏",

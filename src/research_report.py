@@ -99,7 +99,7 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                     "requested", "data_complete", "failed", "scan_state", "status", "error_details",
                     "history_cached", "history_expected", "history_progress_pct",
                     "history_pending", "history_failure_count", "partial_candidates_allowed",
-                    "evaluable_records", "blocking_reason", "notice",
+                    "evaluable_records", "blocking_reason", "notice", "selection_diagnostics",
                 )})
             except (OSError, json.JSONDecodeError):
                 pass

@@ -72,6 +72,7 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
             "scan_state", "history_cached", "history_expected", "history_progress_pct",
             "history_pending", "history_failure_count", "blocking_reason", "notice", "error_details",
             "partial_candidates_allowed",
+            "selection_diagnostics",
         )}
         for source in raw.get("sources", [])
         if isinstance(source, dict) and source.get("strategy") in ALLOWED_STRATEGIES

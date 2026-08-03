@@ -449,9 +449,16 @@ const renderResearch = (snapshot) => {
   };
   const valueSource = sourceFor("value");
   const valuePending = valueSource?.scan_state === "building";
+  const valueDiagnostics = valueSource?.selection_diagnostics || {};
   const valueMessage = valuePending
     ? `歷史核對中：已完成 ${valueSource.history_cached ?? 0}/${valueSource.history_expected ?? "—"} 檔（${valueSource.history_progress_pct ?? 0}%）；未完成六項公開資料覆核前不列入正式璞玉價值候選或觀察名單。`
-    : "本輪沒有同時通過璞玉品質與三月去熱門化公開資料覆核的標的";
+    : valueDiagnostics.records === 0
+      ? "本輪沒有可評估的公開資料；請查看來源健康狀態。"
+      : valueDiagnostics.complete_records === 0
+        ? `本輪 ${valueDiagnostics.records} 檔仍有必要資料缺口，未列入正式候選。`
+        : valueDiagnostics.formal_eligible_records === 0 && valueDiagnostics.observation_eligible_records === 0
+          ? `本輪 ${valueDiagnostics.complete_records} 檔資料完整，但未達正式 5/6 或觀察 3/6–4/6 門檻。`
+          : "本輪沒有同時通過璞玉品質與三月去熱門化公開資料覆核的標的";
   renderResearchList("research-list", sourceBlocked("price_action") ? [] : marketCandidates.filter((item) => item.strategy === "price_action"), sourceMessage("price_action", "本輪掃描沒有符合裸 K 結構的候選標的"));
   renderResearchList("momentum-list", sourceBlocked("momentum") ? [] : marketCandidates.filter((item) => item.strategy === "momentum"), sourceMessage("momentum", "本輪掃描沒有符合動能條件的候選標的"));
   renderResearchList("resonance-list", sourceBlocked("resonance") ? [] : marketCandidates.filter((item) => item.strategy === "resonance"), sourceMessage("resonance", "本輪掃描沒有符合三維共振條件的候選標的"));
