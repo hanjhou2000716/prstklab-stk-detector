@@ -180,6 +180,18 @@ def test_keyword_matching_normalizes_full_width_text_and_case():
     assert reason == "fed_keyword"
 
 
+def test_railway_bundle_catches_trump_policy_aliases_from_companion_headlines():
+    flash = monitor.Flash(
+        "trump-chevron-oil",
+        "Chevron CEO urges Trump to lower Iranian oil prices",
+        "Reuters reports the request while shipping risks remain in focus.",
+        "2026-08-04T10:00:00+08:00",
+    )
+    classification, reason = monitor.classify_flash_with_reason(flash)
+    assert classification in {"policy", "conflict"}
+    assert reason in {"trump_policy_keyword", "iran_gulf_context_keyword", "iran_gulf_context_market_keyword", "conflict_keyword"}
+
+
 def test_keyword_database_matches_simplified_chinese_and_english_typo():
     simplified = monitor.Flash("cn-trump", "美国总统特朗普宣布新的关税政策", "", "2026-08-02T10:06:55+08:00")
     assert monitor.classify_flash(simplified) == "policy"

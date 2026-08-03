@@ -88,3 +88,25 @@ def test_same_domain_duplicate_is_not_claimed_as_independent_confirmation():
     result = cross_check_event_records(records)
     assert len(result) == 2
     assert all(item["crosscheck_status"] == "pending_second_source" for item in result)
+
+
+def test_policy_sources_share_action_anchor_for_trump_oil_story():
+    records = [
+        {
+            "kind": "major_event",
+            "source_tier": "discovery",
+            "classification": "policy",
+            "title": "Chevron CEO urges Trump to lower Iranian oil prices",
+            "source_url": "https://www.reuters.com/world/iran-oil",
+        },
+        {
+            "kind": "major_event",
+            "source_tier": "discovery",
+            "classification": "policy",
+            "title": "Trump urged to lower Iranian oil prices as shipping risk rises",
+            "source_url": "https://www.bloomberg.com/news/iran-oil",
+        },
+    ]
+    merged = cross_check_event_records(records)
+    assert len(merged) == 1
+    assert merged[0]["crosscheck_status"] == "corroborated"

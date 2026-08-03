@@ -31,6 +31,16 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
     for key, values in (KEYWORD_DATABASE.get("categories") or {}).items()
     if isinstance(values, list)
 }
+# Additive runtime aliases keep a trimmed or stale deployment keyword file
+# from silently missing common policy wording. Safety gates remain unchanged.
+_POLICY_RUNTIME_ALIASES = (
+    "steel", "steel imports", "steel import", "imports surge",
+    "industrial policy", "executive order", "urges", "urge", "urged",
+    "calls on", "call on", "asks", "asked", "presses", "pressured",
+    "oil prices", "lower oil prices", "reduce oil prices",
+    "要求", "呼籲", "敦促", "降低油價",
+)
+CATEGORY_KEYWORDS["policy"] = tuple(dict.fromkeys((*CATEGORY_KEYWORDS.get("policy", ()), *_POLICY_RUNTIME_ALIASES)))
 BLACK_SWAN_TERMS = tuple(str(value) for value in KEYWORD_DATABASE.get("black_swan", ()) if str(value).strip())
 MATERIAL_POSITIVE_TERMS = tuple(str(value) for value in KEYWORD_DATABASE.get("material_positive", ()) if str(value).strip())
 ENERGY_PRODUCTION_TERMS = (

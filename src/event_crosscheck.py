@@ -45,6 +45,13 @@ _ACTION_ALIASES += (
     "monetary policy", "interest rate", "rate decision", "rate cut", "rate hike",
     "liquidity", "financial stability", "貨幣政策", "利率決策", "降息", "升息",
 )
+# These action aliases are also loaded at runtime so bundled keyword files
+# remain compatible with newer policy/energy phrasing.
+_ACTION_ALIASES += (
+    "steel imports", "imports surge", "urges", "urge", "urged", "calls on",
+    "call on", "asks", "asked", "presses", "pressured", "oil prices",
+    "lower oil prices", "reduce oil prices", "要求", "呼籲", "敦促", "降低油價",
+)
 _PLACE_ALIASES = tuple(
     str(value)
     for value in (

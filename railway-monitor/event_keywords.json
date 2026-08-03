@@ -3,8 +3,8 @@
   "categories": {
     "fed": ["fomc", "federal reserve", "fed", "powell", "bessent", "boj", "bank of japan"],
     "macro": ["cpi", "pce", "ppi", "gdp", "payroll", "unemployment", "yen", "currency intervention", "fx intervention"],
-    "policy": ["tariff", "tariffs", "sanction", "sanctions", "export control", "export controls", "trade war", "duties"],
-    "conflict": ["war", "invasion", "military", "missile", "ceasefire", "truce", "middle east", "iran", "iranian", "israel", "attack", "airstrike", "talks", "dialogue", "negotiation", "negotiations", "deadline"],
+    "policy": ["tariff", "tariffs", "sanction", "sanctions", "export control", "export controls", "trade war", "duties", "steel", "steel imports", "steel import", "imports surge", "industrial policy", "executive order", "urges", "urge", "urged", "calls on", "call on", "asks", "asked", "presses", "pressured", "oil prices", "lower oil prices", "reduce oil prices", "要求", "呼籲", "敦促", "降低油價"],
+    "conflict": ["war", "invasion", "military", "missile", "ceasefire", "truce", "middle east", "iran", "iranian", "israel", "attack", "airstrike", "talks", "dialogue", "negotiation", "negotiations", "deadline", "geopolitical", "shipping", "tanker", "blockade"],
     "energy": ["wti", "brent", "crude oil", "oil supply", "oil price", "oil production", "crude production", "oil output", "production increase", "production cut", "output increase", "output cut", "opec"],
     "semiconductor": ["nvidia", "nvda", "tsmc", "asml", "semiconductor", "semiconductors", "chip", "chips"],
     "market": ["flash crash", "market crash", "crash", "circuit breaker", "selloff"]
@@ -27,8 +27,13 @@
     "market_context": ["wti", "brent", "crude oil", "oil price", "oil supply", "shipping", "usd", "dollar", "treasury", "bond yield", "market"]
   },
   "gdelt": {
-    "query": "(war OR invasion OR ceasefire OR sanctions OR Hormuz OR \"Persian Gulf\" OR tariff OR \"export controls\" OR semiconductor OR earthquake OR tsunami OR cyberattack OR ransomware OR pandemic OR Bitcoin OR Ethereum OR Trump OR Iran OR \"White House\" OR talks OR negotiation OR dialogue OR \"oil production\")",
-    "entities": ["iran", "israel", "ukraine", "russia", "taiwan", "japan", "china", "hormuz", "trump", "white house", "bessent", "federal reserve", "fed", "boj", "yen", "nvidia", "tsmc", "asml"],
-    "actions": {}
+    "query": "(war OR invasion OR ceasefire OR sanctions OR Hormuz OR \"Persian Gulf\" OR tariff OR \"export controls\" OR semiconductor OR earthquake OR tsunami OR cyberattack OR ransomware OR pandemic OR Bitcoin OR Ethereum OR Trump OR Iran OR \"White House\" OR talks OR negotiation OR dialogue OR \"oil production\" OR steel OR \"steel imports\" OR Chevron OR \"Iranian oil\" OR \"oil prices\" OR urges OR \"calls on\" OR \"lower oil prices\")",
+    "entities": ["iran", "iranian", "israel", "ukraine", "russia", "taiwan", "japan", "china", "hormuz", "trump", "donald trump", "white house", "bessent", "federal reserve", "fed", "boj", "yen", "nvidia", "tsmc", "asml", "chevron", "steel", "oil", "crude oil"],
+    "actions": {
+      "policy": ["tariff", "tariffs", "reciprocal tariff", "trade war", "sanction", "sanctions", "export control", "duties", "steel imports", "imports surge", "urges", "urge", "urged", "calls on", "call on", "asks", "asked", "presses", "pressured", "oil prices", "lower oil prices", "reduce oil prices", "要求", "呼籲", "敦促", "降低油價"],
+      "conflict": ["war", "attack", "airstrike", "invasion", "missile", "ceasefire", "truce", "geopolitical", "talks", "dialogue", "negotiation", "negotiations", "deadline", "shipping", "tanker", "blockade", "pressure", "pressures", "urges", "calls on"],
+      "energy": ["oil", "crude oil", "oil price", "oil supply", "oil production", "production", "output", "supply disruption", "shipping", "tanker", "opec"],
+      "market": ["market", "stocks", "equities", "index", "nasdaq", "semiconductor"]
+    }
   }
 }
