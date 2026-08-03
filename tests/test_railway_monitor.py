@@ -1,4 +1,5 @@
 from importlib.util import module_from_spec, spec_from_file_location
+import asyncio
 import os
 from pathlib import Path
 import subprocess
@@ -646,6 +647,61 @@ def test_seen_store_persists_incoming_event_and_retryable_outbox(tmp_path):
     assert row == ("failed", 1, "TimeoutException")
     assert incoming == ("unclassified", "TimeoutException")
     assert store.classification_for(flash.event_id) == "unclassified"
+
+
+def test_outbox_persists_dispatch_body_and_exposes_due_retry(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    alert = monitor.Alert("jin10-outbox", "energy", "WTI supply update", "2026-08-02T10:00:00+00:00")
+    trace_id = monitor.alert_trace_id(alert)
+    dispatch_payload = monitor.sign_dispatch_payload(
+        monitor.build_dispatch_payload(alert, trace_id), alert, "test-secret"
+    )
+    store.record_outbox(alert, {"dispatch_payload": dispatch_payload})
+    store.mark_outbox(trace_id, "failed", "TimeoutException")
+
+    # The exponential backoff prevents a tight retry loop.
+    assert store.due_outbox() == []
+    store.connection.execute(
+        "UPDATE delivery_outbox SET next_retry_at=? WHERE trace_id=?",
+        ("2000-01-01T00:00:00+00:00", trace_id),
+    )
+    store.connection.commit()
+    due = store.due_outbox()
+    assert len(due) == 1
+    assert due[0]["trace_id"] == trace_id
+    assert due[0]["dispatch_payload"]["client_payload"]["signature"].startswith("sha256=")
+
+
+def test_outbox_retry_reuses_stable_payload_and_marks_sent(tmp_path, monkeypatch):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    alert = monitor.Alert("jin10-retry", "macro", "CPI release", "2026-08-02T10:00:00+00:00")
+    trace_id = monitor.alert_trace_id(alert)
+    payload = monitor.sign_dispatch_payload(
+        monitor.build_dispatch_payload(alert, trace_id), alert, "test-secret"
+    )
+    store.record_outbox(alert, {"dispatch_payload": payload})
+    store.mark_outbox(trace_id, "failed", "TimeoutException")
+    store.connection.execute(
+        "UPDATE delivery_outbox SET next_retry_at=? WHERE trace_id=?",
+        ("2000-01-01T00:00:00+00:00", trace_id),
+    )
+    store.connection.commit()
+    calls: list[tuple[str, dict]] = []
+
+    async def fake_dispatch(body, *, token, repository, trace_id):
+        calls.append((trace_id, body))
+
+    monkeypatch.setattr(monitor, "dispatch_repository_payload", fake_dispatch)
+    delivered = asyncio.run(
+        monitor.retry_due_outbox(
+            store, token="token", repository="owner/repo", shared_secret="test-secret"
+        )
+    )
+    assert delivered == 1
+    assert calls == [(trace_id, payload)]
+    assert store.connection.execute(
+        "SELECT status, next_retry_at FROM delivery_outbox WHERE trace_id=?", (trace_id,)
+    ).fetchone() == ("sent", None)
 
 
 def test_seen_store_persists_classification_reason_and_health_counts(tmp_path):
