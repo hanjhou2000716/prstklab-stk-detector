@@ -426,6 +426,12 @@ GitHub, while a replayable `pending`/`failed` record waits for the outbox
 worker. This prevents a source refresh and the retry worker from sending the
 same event through two paths.
 
+The `/health` response also includes `monitor.last_cycle_started_at` and
+`monitor.last_cycle_completed_at`. These timestamps distinguish a live HTTP
+process from a polling loop that is stalled or repeatedly failing; inspect
+them together with the per-source `last_success_at` fields after a Railway
+restart.
+
 The Railway HTTP callback is handled on a separate server thread. Its receipt
 write uses a short-lived SQLite connection with WAL and a bounded busy timeout,
 so a callback arriving during the monitor's normal write transaction is not

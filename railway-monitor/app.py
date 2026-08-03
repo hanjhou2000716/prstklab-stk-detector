@@ -333,6 +333,12 @@ HEALTH_STATE: dict[str, Any] = {
         "last_updated_at": None,
         "last_error": None,
     },
+    "monitor": {
+        "status": "starting",
+        "poll_interval_seconds": None,
+        "last_cycle_started_at": None,
+        "last_cycle_completed_at": None,
+    },
 }
 DELIVERY_STORE: SeenStore | None = None
 
@@ -1716,8 +1722,22 @@ async def monitor_forever() -> None:
     first_cycle = True
     gdelt_baseline = True
     last_gdelt_poll = 0.0
+    update_health(
+        "monitor",
+        status="running",
+        poll_interval_seconds=interval,
+        last_cycle_started_at=None,
+        last_cycle_completed_at=None,
+    )
 
     while True:
+        cycle_started_at = datetime.now(timezone.utc).isoformat()
+        update_health(
+            "monitor",
+            status="running",
+            poll_interval_seconds=interval,
+            last_cycle_started_at=cycle_started_at,
+        )
         try:
             retried = await retry_due_outbox(
                 store,
@@ -1914,6 +1934,8 @@ async def monitor_forever() -> None:
                     )
                 except Exception:
                     logging.exception("GDELT failure health publication failed")
+        cycle_completed_at = datetime.now(timezone.utc).isoformat()
+        update_health("monitor", status="running", last_cycle_completed_at=cycle_completed_at)
         await asyncio.sleep(interval)
 
 
