@@ -203,8 +203,22 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
     const reasons = [...new Set(pendingItems.flatMap((item) => Array.isArray(item.notification_reasons)
       ? item.notification_reasons
       : (item.notification_reason ? [item.notification_reason] : [])))];
-    pendingNode.hidden = reasons.length === 0;
-    pendingNode.textContent = reasons.length ? `未推播原因：${reasons.join("、")}（完整核對狀態請查看事件來源）` : "";
+    const suppressed = externalAlert ? [] : (events?.suppressed_signals || []);
+    const suppressedText = suppressed.slice(0, 3).map((item) => {
+      const ticker = item.ticker || "市場";
+      if (item.reason === "quote_delayed") return `${ticker} 報價逾時`;
+      if (item.reason === "taiex_crosscheck_pending") return `${ticker} 等待 TWSE／TAIFEX 核對`;
+      if (item.reason === "missing_change_percent") return `${ticker} 缺少漲跌幅`;
+      if (item.reason === "below_threshold") {
+        const daily = Number.isFinite(item.change_percent) ? `${item.change_percent >= 0 ? "+" : ""}${item.change_percent.toFixed(2)}%` : "無日內幅度";
+        const threshold = Number.isFinite(item.daily_threshold) ? `${item.daily_threshold.toFixed(1)}%` : "門檻";
+        return `${ticker} ${daily} 未達海外門檻 ${threshold}`;
+      }
+      return `${ticker} 暫未達提醒條件`;
+    });
+    const detail = [...reasons.map((reason) => `核對：${reason}`), ...suppressedText];
+    pendingNode.hidden = detail.length === 0;
+    pendingNode.textContent = detail.length ? `未推播原因：${detail.join("；")}` : "";
   }
   const displayTime = generatedAt ? new Date(generatedAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "公開資料更新中";
   setText("alert-time", `${displayTime} CST`);

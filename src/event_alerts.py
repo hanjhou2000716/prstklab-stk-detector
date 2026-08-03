@@ -255,6 +255,79 @@ def _event_market_context(label: str) -> tuple[str, str, str]:
     ))
 
 
+def _price_signal_thresholds(index: dict[str, Any]) -> tuple[float, float, bool]:
+    """Return (daily %, 15-minute %, Taiwan-session flag) for an index.
+
+    Keeping the thresholds in one helper lets the dashboard explain a safe
+    skip using the exact same values that the alert gate applies.
+    """
+    ticker = str(index.get("ticker", "")).upper()
+    taiwan_intraday = False
+    quote_time = str(index.get("quote_time") or "")
+    if ticker == "TAIEX" and quote_time:
+        try:
+            observed = datetime.fromisoformat(quote_time.replace("Z", "+00:00"))
+            taiwan_intraday = observed.weekday() < 5 and time(8, 45) <= observed.timetz().replace(tzinfo=None) <= time(13, 30)
+        except ValueError:
+            pass
+    daily = {
+        "TAIEX": 1.5,
+        "SOX": 3.0,
+        "NASDAQ": 2.0,
+        "WTI": float(threshold_rule("oilDailyAbsoluteMovePercent")),
+        "BRENT": float(threshold_rule("oilDailyAbsoluteMovePercent")),
+        "GOLD": float(threshold_rule("goldDailyAbsoluteMovePercent")),
+    }.get(ticker, 1.0)
+    if taiwan_intraday:
+        daily = 0.5
+    intraday = {
+        "TAIEX": 1.0,
+        "SOX": 1.0,
+        "NASDAQ": 1.0,
+        "WTI": 2.0,
+        "BRENT": 2.0,
+        "GOLD": 2.0,
+    }.get(ticker, 1.0)
+    return float(daily), float(intraday), taiwan_intraday
+
+
+def _price_signal_suppression(index: dict[str, Any]) -> dict[str, Any] | None:
+    """Describe why an observed price move did not become a Telegram signal."""
+    ticker = str(index.get("ticker") or "").upper()
+    if index.get("quote_delayed"):
+        return {"ticker": ticker, "reason": "quote_delayed"}
+    percent = index.get("change_percent")
+    if percent is None:
+        return {"ticker": ticker, "reason": "missing_change_percent"}
+    if (
+        ticker == "TAIEX"
+        and index.get("quote_time")
+        and index.get("crosscheck_status")
+        and index.get("crosscheck_status") != "撌脖漱?撠?"
+    ):
+        return {"ticker": ticker, "reason": "taiex_crosscheck_pending"}
+    daily, intraday, taiwan_session = _price_signal_thresholds(index)
+    move_15m = index.get("change_15m_percent")
+    # Do not fill the UI with routine ±0.1% observations.  Suppression is
+    # useful for a meaningful near-miss, not for every ordinary quote refresh.
+    if abs(float(percent)) < 0.25 and (move_15m is None or abs(float(move_15m)) < 0.25):
+        return None
+    daily_hit = abs(float(percent)) >= daily
+    intraday_hit = move_15m is not None and abs(float(move_15m)) >= intraday
+    if daily_hit or intraday_hit:
+        return None
+    return {
+        "ticker": ticker,
+        "name": index.get("name") or ticker,
+        "reason": "below_threshold",
+        "change_percent": float(percent),
+        "change_15m_percent": float(move_15m) if move_15m is not None else None,
+        "daily_threshold": daily,
+        "intraday_threshold": intraday,
+        "taiwan_session": taiwan_session,
+    }
+
+
 def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[str, Any] | None:
     """Create an educational alert card for a material index move, never advice."""
     # A delayed intraday bar remains useful as an explicitly labelled quote,
@@ -286,27 +359,9 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         except ValueError:
             taiwan_intraday = False
 
-    minimum_daily_move = {
-        "TAIEX": 1.5,
-        "SOX": 3.0,
-        "NASDAQ": 2.0,
-        "WTI": float(threshold_rule("oilDailyAbsoluteMovePercent")),
-        "BRENT": float(threshold_rule("oilDailyAbsoluteMovePercent")),
-        "GOLD": float(threshold_rule("goldDailyAbsoluteMovePercent")),
-    }.get(ticker, 1.0)
     # During the Taiwan cash session, each new half-percent band is a useful
-    # public market observation.  Offshore instruments retain their stricter
-    # thresholds to avoid an alert stream dominated by routine volatility.
-    if taiwan_intraday:
-        minimum_daily_move = 0.5
-    minimum_15m_move = {
-        "TAIEX": 1.0,
-        "SOX": 1.0,
-        "NASDAQ": 1.0,
-        "WTI": 2.0,
-        "BRENT": 2.0,
-        "GOLD": 2.0,
-    }.get(ticker, 1.0)
+    # public market observation. Offshore instruments retain stricter values.
+    minimum_daily_move, minimum_15m_move, _ = _price_signal_thresholds(index)
     move_15m = index.get("change_15m_percent")
     move_15m = float(move_15m) if move_15m is not None else None
     has_daily_move = abs(percent) >= minimum_daily_move
@@ -575,6 +630,11 @@ def build_event_snapshot(
         item for item in indices
         if not item.get("quote_date") or item.get("quote_date") == latest_dates.get(item.get("market"))
     ]
+    suppressed_signals = [
+        reason
+        for item in fresh_indices
+        if (reason := _price_signal_suppression(item))
+    ]
     signals = [signal for item in fresh_indices if (signal := _price_signal(item, fresh_indices))]
     priority = {"TAIEX": 0, "SOX": 1, "NASDAQ": 2}
     signals.sort(key=lambda item: (
@@ -609,10 +669,12 @@ def build_event_snapshot(
             "status": "市場訊號已更新",
             "message": "已核對的重要市場事件與價格訊號；請查看完整脈絡。",
             "items": events,
+            "suppressed_signals": suppressed_signals,
         }
     return {
         "is_major": False,
         "status": "持續觀察",
         "message": "今日無重大市場事件，持續觀察。",
         "items": [],
+        "suppressed_signals": suppressed_signals,
     }

@@ -20,6 +20,24 @@ def test_snapshot_has_no_event_conclusion_when_no_threshold_is_met():
     assert snapshot["message"] == "今日無重大市場事件，持續觀察。"
 
 
+def test_snapshot_explains_overseas_price_signal_below_threshold():
+    snapshot = build_event_snapshot({"taiwan": [], "us": []}, [], indices=[{
+        "ticker": "NASDAQ", "name": "Nasdaq", "price": 25772.41,
+        "change_percent": 1.57, "change_15m_percent": 0.13,
+    }])
+    assert snapshot["is_major"] is False
+    assert snapshot["suppressed_signals"] == [{
+        "ticker": "NASDAQ",
+        "name": "Nasdaq",
+        "reason": "below_threshold",
+        "change_percent": 1.57,
+        "change_15m_percent": 0.13,
+        "daily_threshold": 2.0,
+        "intraday_threshold": 1.0,
+        "taiwan_session": False,
+    }]
+
+
 def test_large_representative_move_becomes_market_volatility_event():
     snapshot = build_event_snapshot({"taiwan": [], "us": []}, [{"ticker": "NVDA", "change_percent": -3.5}])
     assert snapshot["items"][0]["short_label"] == "NVDA價格訊號觸發"
