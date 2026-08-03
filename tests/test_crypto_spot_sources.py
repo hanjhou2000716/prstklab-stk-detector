@@ -66,6 +66,24 @@ def test_crypto_spot_failure_is_partial_and_does_not_hide_existing_cards():
     assert cards[0]["crosscheck_status"] == "primary_unavailable"
 
 
+def test_crypto_spot_retries_transient_provider_failure_once():
+    calls = {"binance": 0}
+
+    def requester(url, *, params, timeout, headers):
+        if "binance.com" in url:
+            calls["binance"] += 1
+            if calls["binance"] == 1:
+                raise TimeoutError("temporary provider timeout")
+            return FakeResponse({"lastPrice": "100", "priceChangePercent": "0.5", "closeTime": 0})
+        return FakeResponse({"bitcoin": {"usd": 100.0}, "ethereum": {"usd": 10.0}})
+
+    snapshot = fetch_crypto_spot_snapshot(requester=requester)
+
+    assert calls["binance"] == 3
+    assert snapshot["status"] == "healthy"
+    assert set(snapshot["primary"]) == {"BTC", "ETH"}
+
+
 def test_crypto_spot_crosscheck_marks_aligned_prices_confirmed():
     cards = apply_crypto_spot_crosscheck(
         [{"ticker": "BTC", "name": "Bitcoin", "price": 99.0}],

@@ -37,9 +37,22 @@ def _health(status: str, checked_at: str, errors: list[str], item_count: int) ->
 def _request_json(
     requester: Callable[..., Any], url: str, *, params: dict[str, Any], timeout: int
 ) -> Any:
-    response = requester(url, params=params, timeout=timeout, headers={"Accept": "application/json"})
-    response.raise_for_status()
-    return response.json()
+    last_error: Exception | None = None
+    for attempt in range(2):
+        try:
+            response = requester(
+                url,
+                params=params,
+                timeout=timeout,
+                headers={"Accept": "application/json", "User-Agent": "PRStK-Lab/1.0"},
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as exc:
+            last_error = exc
+            if attempt == 0:
+                continue
+    raise last_error or RuntimeError("public provider request failed")
 
 
 def fetch_crypto_spot_snapshot(*, timeout: int = 15, requester: Callable[..., Any] | None = None) -> dict[str, Any]:
