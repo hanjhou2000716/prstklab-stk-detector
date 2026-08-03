@@ -98,6 +98,18 @@ def test_iran_gulf_context_requires_anchor_and_geopolitical_action():
     assert reason == "iran_gulf_context_market_keyword"
 
 
+def test_iran_pressure_and_concession_aliases_are_conflict_candidates():
+    flash = monitor.Flash(
+        "iran-pressure",
+        "\u4f0a\u6717\u5982\u4f55\u64f4\u5927\u65bd\u58d3\u4ee5\u8feb\u4f7f\u7f8e\u570b\u8b93\u6b65",
+        "",
+        "2026-08-03T10:06:55+08:00",
+    )
+    classification, reason = monitor.classify_flash_with_reason(flash)
+    assert classification == "conflict"
+    assert reason == "iran_gulf_context_keyword"
+
+
 def test_bare_gulf_market_move_does_not_trigger_geopolitical_alert():
     flash = monitor.Flash(
         "gulf-market-only",
@@ -383,6 +395,27 @@ def test_gdelt_pending_candidate_exposes_missing_second_source():
     pending = monitor.pending_gdelt_candidates(articles)
     assert pending[0]["reason"] == "waiting_second_trusted_source"
     assert pending[0]["category"] == "fed"
+
+
+def test_gdelt_merges_pressure_aliases_and_normalizes_reuters_cn():
+    articles = [
+        monitor.DiscoveryArticle(
+            "Iran ramps up pressure to force US concessions",
+            "https://reuters.cn/world/iran-pressure",
+            "reuters.cn",
+            "2026-08-03T01:00:00+00:00",
+        ),
+        monitor.DiscoveryArticle(
+            "Iran increases pressure seeking concessions from Washington",
+            "https://apnews.com/iran-pressure",
+            "apnews.com",
+            "2026-08-03T01:01:00+00:00",
+        ),
+    ]
+    assert monitor._trusted_domain(articles[0].url, articles[0].domain) == "reuters.com"
+    alerts = monitor.cross_checked_gdelt_alerts(articles)
+    assert len(alerts) == 1
+    assert alerts[0].category == "conflict"
 
 
 def test_gdelt_supports_chinese_entity_and_action_aliases():
