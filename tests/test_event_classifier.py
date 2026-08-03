@@ -22,3 +22,17 @@ def test_non_strict_market_event_is_eligible():
     assert notification_gate("macro", official_confirmed=False, market_sync_confirmed=False) == {
         "status": "eligible", "reasons": []
     }
+
+
+def test_policy_aliases_cover_trump_steel_and_oil_wording():
+    steel = classify_event_fields({
+        "title": "Trump tariff policy drives a surge in steel imports",
+        "summary": "Markets assess the trade-policy impact.",
+    })
+    assert steel["category"] == "policy"
+
+    oil = classify_event_fields({
+        "title": "Chevron CEO urges Trump to lower Iranian oil prices",
+        "summary": "Iranian oil and shipping risks remain in focus.",
+    })
+    assert oil["category"] in {"policy", "conflict"}
