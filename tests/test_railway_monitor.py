@@ -280,6 +280,44 @@ def test_gdelt_uses_article_snippet_for_iran_negotiation_context():
     assert alerts[0].category == "conflict"
 
 
+def test_gdelt_detects_bessent_yen_intervention_and_fed_support():
+    articles = [
+        monitor.DiscoveryArticle(
+            "US Japan currency policy",
+            "https://www.reuters.com/a",
+            "reuters.com",
+            "2026-08-02T01:00:00+00:00",
+            "Bessent says Japan may repeat joint yen intervention and urges Federal Reserve support.",
+        ),
+        monitor.DiscoveryArticle(
+            "Japan intervention risk rises",
+            "https://www.cnbc.com/b",
+            "cnbc.com",
+            "2026-08-02T01:01:00+00:00",
+            "Scott Bessent backs coordinated currency intervention and stronger Fed support.",
+        ),
+    ]
+    alerts = monitor.cross_checked_gdelt_alerts(articles)
+    assert len(alerts) == 1
+    assert alerts[0].category == "fed"
+
+
+def test_gdelt_pending_candidate_exposes_missing_second_source():
+    articles = [
+        monitor.DiscoveryArticle(
+            "US Japan currency policy",
+            "https://www.reuters.com/a",
+            "reuters.com",
+            "2026-08-02T01:00:00+00:00",
+            "Bessent says Japan may repeat joint yen intervention and urges Federal Reserve support.",
+        ),
+    ]
+    assert monitor.cross_checked_gdelt_alerts(articles) == []
+    pending = monitor.pending_gdelt_candidates(articles)
+    assert pending[0]["reason"] == "waiting_second_trusted_source"
+    assert pending[0]["category"] == "fed"
+
+
 def test_gdelt_supports_chinese_entity_and_action_aliases():
     articles = [
         monitor.DiscoveryArticle("特朗普宣布對伊朗停火", "https://www.reuters.com/a", "reuters.com", "2026-07-29T01:00:00+00:00"),
