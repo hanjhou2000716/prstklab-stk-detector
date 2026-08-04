@@ -25,6 +25,34 @@ def test_write_snapshot_publishes_metadata_atomically(tmp_path):
     assert not list(tmp_path.glob(".*.tmp"))
 
 
+def test_write_snapshot_binds_quotes_and_events_to_snapshot(tmp_path):
+    destination = tmp_path / "market.json"
+    snapshot = _snapshot("2026-08-04T10:00:00+08:00", "2026-08-04T10:01:00+08:00")
+    snapshot["quotes"] = [{
+        "ticker": "^TWII",
+        "name": "TAIEX",
+        "price": 43119.75,
+        "change_percent": 0.5,
+        "quote_time": "2026-08-04T10:00:00+08:00",
+        "source_url": "https://mis.twse.com.tw/stock/api/getStockInfo.jsp",
+    }]
+    snapshot["events"] = {"items": [{
+        "kind": "market_signal",
+        "title": "TAIEX price signal",
+        "instrument": snapshot["quotes"][0],
+        "source_trace": {"source_domain": "mis.twse.com.tw"},
+    }]}
+
+    assert write_snapshot(snapshot, destination) is True
+    payload = json.loads(destination.read_text(encoding="utf-8"))
+    quote = payload["quotes"][0]
+    event = payload["events"]["items"][0]
+    assert event["snapshot_id"] == payload["snapshot_id"]
+    assert event["observation_id"] == quote["observation_id"]
+    assert event["source_trace"]["snapshot_id"] == payload["snapshot_id"]
+    assert event["source_trace"]["observation_id"] == quote["observation_id"]
+
+
 def test_older_slow_run_cannot_overwrite_newer_snapshot(tmp_path):
     destination = tmp_path / "market.json"
     write_snapshot(
