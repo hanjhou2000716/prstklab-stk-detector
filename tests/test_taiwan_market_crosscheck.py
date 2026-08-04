@@ -26,10 +26,13 @@ def test_parses_taifex_current_txf_observation():
 def test_crosscheck_uses_twse_cash_index_when_txf_direction_agrees():
     quote = crosscheck_taiex_quote(
         {"ticker": "TAIEX", "price": 41590, "change_percent": -1.0, "quote_basis": "盤中 5 分鐘"},
-        twse={"price": 41600, "change": -400, "change_percent": -0.95, "quote_date": "2026-07-29", "quote_time": "2026-07-29T10:00:00+08:00"},
+        twse={"price": 41600, "previous_close": 42000, "change": -400, "change_percent": -0.95, "quote_date": "2026-07-29", "quote_time": "2026-07-29T10:00:00+08:00"},
         taifex={"price": 41550, "change": -350, "change_percent": -0.84, "quote_date": "2026-07-29", "quote_time": "2026-07-29T10:00:00+08:00"},
     )
     assert quote["price"] == 41600
+    assert quote["previous_close"] == 42000
+    assert quote["change"] == -400
+    assert quote["change_percent"] == -0.95
     assert quote["crosscheck_status"] == "已交叉核對"
     assert quote["quote_delayed"] is False
     assert quote["quote_basis"] == "TWSE 公開市況；TAIFEX 台指期方向核對"
