@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 BLOCKING_REASONS = {
     "data_quality", "stale_quote", "missing_crosscheck", "no_backtest_release", "candidate_data_gap", "unknown_risk_profile",
 }
