@@ -42,10 +42,13 @@ jobs:
       MOPS_MAX_REFRESH: ${{ inputs.mops_max_refresh || github.event.client_payload.mops_max_refresh || '24' }}
       NEWS_CACHE_PATH: site/data/news-cache.json
       SEC_FACTS_CACHE_PATH: data/sec-companyfacts-cache.json
+      DATA_RELEASE_BRANCH: data-release
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Restore last immutable data release
+        run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
       - run: pip install -r requirements.txt
@@ -79,27 +82,7 @@ jobs:
         run: python -m src.release_manifest || test $? -eq 1
       - name: 保存最新公開研究摘要
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/research-report.json site/data/market.json site/data/news-cache.json site/data/release-manifest.json
-          git add -f data/taiwan-mops-pristine-history.json data/sec-companyfacts-cache.json
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "chore: refresh public research report"
-          for attempt in 1 2 3; do
-            if git push origin HEAD:main; then
-              exit 0
-            fi
-
-            if [ "$attempt" -eq 3 ]; then
-              echo "無法在三次嘗試內回存研究摘要。"
-              exit 1
-            fi
-
-            git fetch origin main
-            git rebase -X theirs origin/main
-          done
+          python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json --message "chore: refresh public research report"
       - uses: actions/upload-artifact@v4
         with:
           name: unified-research-report
