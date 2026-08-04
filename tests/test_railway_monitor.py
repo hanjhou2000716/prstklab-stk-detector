@@ -771,6 +771,9 @@ def test_seen_store_persists_authenticated_delivery_receipt(tmp_path):
     snapshot = monitor.health_snapshot()
     assert snapshot["delivery"]["status"] == "partial"
     assert snapshot["delivery"]["last_receipt_status"] == "partial"
+    assert snapshot["delivery"]["last_receipt_trace_id"] == trace_id
+    assert snapshot["delivery"]["receipt_matches_last_outbox"] is True
+    assert snapshot["delivery"]["stale_receipt_status"] is None
     assert snapshot["delivery"]["counts"]["partial"] == 1
     assert snapshot["delivery"]["last_delivered_count"] == 3
     assert snapshot["delivery"]["last_failed_count"] == 1
@@ -804,6 +807,29 @@ def test_seen_store_rejects_invalid_delivery_counters(tmp_path):
             "delivered_count": True,
             "failed_count": 0,
         })
+
+
+def test_delivery_diagnostics_does_not_apply_older_receipt_to_newer_outbox(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    first = monitor.Alert("older-delivery", "macro", "CPI release", "2026-08-02T10:00:00+00:00")
+    first_trace = store.record_outbox(first, {"summary": first.summary})
+    assert store.record_delivery_status({
+        "trace_id": first_trace,
+        "delivery_status": "partial",
+        "delivered_count": 1,
+        "failed_count": 1,
+        "failed_recipient_hashes": ["old-failure"],
+    })
+    second = monitor.Alert("newer-delivery", "energy", "Oil update", "2026-08-02T10:02:00+00:00")
+    second_trace = store.record_outbox(second, {"summary": second.summary})
+    store.mark_outbox(second_trace, "sent")
+
+    diagnostics = store.delivery_diagnostics()
+    assert diagnostics["status"] == "sent"
+    assert diagnostics["last_receipt_status"] is None
+    assert diagnostics["last_receipt_trace_id"] is None
+    assert diagnostics["receipt_matches_last_outbox"] is False
+    assert diagnostics["stale_receipt_status"] == "partial"
 
 
 def test_delivery_receipt_can_be_saved_from_health_server_thread(tmp_path):
