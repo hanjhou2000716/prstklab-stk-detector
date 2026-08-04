@@ -36,3 +36,43 @@ def test_default_event_cooldown_is_thirty_minutes(tmp_path):
     assert ledger.should_remind(event, now=first + timedelta(minutes=29)) is False
     assert ledger.should_remind(event, now=first + timedelta(minutes=30)) is True
 
+
+def test_save_merges_two_instances_loaded_before_either_save(tmp_path):
+    path = tmp_path / "ledger.json"
+    first = EventLedger(path)
+    second = EventLedger(path)
+    event_one = {
+        "source_key": "fed",
+        "title": "FOMC statement",
+        "url": "https://fed.example/fomc",
+        "released_at": "2026-08-01T10:00:00+00:00",
+    }
+    event_two = {
+        "source_key": "energy",
+        "title": "Oil supply disruption",
+        "url": "https://energy.example/oil",
+        "released_at": "2026-08-01T10:05:00+00:00",
+    }
+    first.observe(event_one, now=datetime(2026, 8, 1, 10, 0, tzinfo=UTC))
+    second.observe(event_two, now=datetime(2026, 8, 1, 10, 5, tzinfo=UTC))
+    first.save()
+    second.save()
+    reloaded = EventLedger(path)
+    assert set(reloaded.records) == {canonical_event_key(event_one), canonical_event_key(event_two)}
+
+
+def test_save_recovers_stale_lock(tmp_path):
+    path = tmp_path / "ledger.json"
+    ledger = EventLedger(path, lock_timeout_seconds=0.2, lock_stale_after_seconds=1)
+    lock = path.with_suffix(path.suffix + ".lock")
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    lock.write_text("stale", encoding="utf-8")
+    import os
+    import time
+    old = time.time() - 10
+    os.utime(lock, (old, old))
+    ledger.observe({"source_key": "fed", "title": "FOMC"})
+    ledger.save()
+    assert path.exists()
+    assert not lock.exists()
+
