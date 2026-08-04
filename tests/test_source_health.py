@@ -38,6 +38,19 @@ def test_news_error_is_classified_as_news_not_market_quote():
     assert quotes["status"] == "healthy"
 
 
+def test_news_no_event_is_not_counted_as_a_missing_source():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": []}, checked_at=NOW,
+        news_sources=[
+            {"key": "news_taiwan", "status": "no_event", "item_count": 0},
+            {"key": "news_us", "status": "healthy", "item_count": 3},
+        ],
+    )
+    news = next(item for item in health["sources"] if item["key"] == "market_news")
+    assert news["data_gaps"] == []
+    assert health["status"] == "healthy"
+
+
 def test_pristine_history_warming_is_not_reported_as_a_missing_source():
     health = build_source_health(
         errors=[], events={"is_major": False}, research_report={"sources": [{"market": "taiwan", "strategy": "value", "status": "建檔中", "history_cached": 20, "history_expected": 100}]}, checked_at=NOW,

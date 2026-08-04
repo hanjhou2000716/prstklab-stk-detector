@@ -177,7 +177,7 @@ def build_source_health(
         official["source_details"] = official_sources
         _attach_detail_summary(official, official_sources)
         official["data_gaps"] = [
-            item for item in official_sources if item.get("status") != "healthy"
+            item for item in official_sources if item.get("status") not in {"healthy", "no_event"}
         ]
         if official["data_gaps"] and official["status"] == "healthy":
             official["status"] = "partial"
@@ -186,7 +186,7 @@ def build_source_health(
         news = next(item for item in sources if item["key"] == "market_news")
         news["source_details"] = news_sources
         _attach_detail_summary(news, news_sources)
-        news["data_gaps"] = [item for item in news_sources if item.get("status") != "healthy"]
+        news["data_gaps"] = [item for item in news_sources if item.get("status") not in {"healthy", "no_event"}]
     if additional_sources:
         for item in additional_sources:
             if not isinstance(item, dict):
@@ -205,7 +205,7 @@ def build_source_health(
 
     event_dependencies = {"market_quotes", "official_events", "market_news"}
     dependency_failed = any(
-        source["key"] in event_dependencies and source["status"] != "healthy"
+        source["key"] in event_dependencies and source["status"] not in {"healthy", "no_event"}
         for source in sources
     )
     if events.get("is_major"):
@@ -236,7 +236,7 @@ def build_source_health(
     )
     data_gaps = [
         {"source": source["label"], "key": source["key"], "issues": source.get("issues", [])}
-        for source in sources if source.get("status") not in {"healthy", "pending", "warming"}
+        for source in sources if source.get("status") not in {"healthy", "no_event", "pending", "warming"}
     ]
     return {
         "checked_at": checked,

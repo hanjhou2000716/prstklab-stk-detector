@@ -229,3 +229,20 @@ def test_us_rss_fallback_uses_us_locale():
     assert "hl=en-US" in url
     assert "gl=US" in url
     assert "ceid=US%3Aen" in url
+
+
+def test_market_rss_queries_are_not_encoding_corrupted():
+    taiwan_url = _market_news_rss_url("taiwan")
+    us_url = _market_news_rss_url("us")
+    assert "%E5%8F%B0%E8%82%A1" in taiwan_url
+    assert "Federal+Reserve" in us_url
+
+
+def test_empty_news_scan_is_distinguished_from_provider_failure(monkeypatch, tmp_path):
+    monkeypatch.setenv("NEWS_CACHE_PATH", str(tmp_path / "news-cache.json"))
+    monkeypatch.setattr("src.risk_news.fetch_market_news", lambda market: [])
+    monkeypatch.setattr("src.risk_news.fetch_market_news_fallback", lambda market: [])
+    snapshot = build_news_snapshot()
+    assert snapshot["taiwan"] == []
+    assert snapshot["us"] == []
+    assert all(item["status"] == "no_event" for item in snapshot["source_health"])
