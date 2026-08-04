@@ -1,4 +1,5 @@
 from src.risk_news import (
+    classify_news_market,
     _filter_market_news,
     _market_news_rss_url,
     _market_risk,
@@ -199,6 +200,28 @@ def test_us_news_filter_rejects_taiwan_headlines_but_keeps_us_headlines():
     ]
     filtered = _filter_market_news(stories, "us")
     assert [item["title"] for item in filtered] == ["Nasdaq futures and Federal Reserve outlook"]
+
+
+def test_market_classifier_routes_fed_and_lai_to_their_own_tabs():
+    fed = {"title": "Federal Reserve keeps rates unchanged", "url": "https://example.test/fed"}
+    lai = {"title": "Taiwan President Lai Ching-te addresses parliament", "url": "https://example.test/lai"}
+
+    assert classify_news_market(fed)["market_scope"] == "us"
+    assert classify_news_market(lai)["market_scope"] == "taiwan"
+    assert _filter_market_news([fed, lai], "taiwan")[0]["title"].startswith("Taiwan")
+    assert _filter_market_news([fed, lai], "us")[0]["title"].startswith("Federal")
+
+
+def test_global_or_cross_market_story_is_explicitly_auditable():
+    story = {
+        "title": "Iran oil shock hits Taiwan semiconductor shares and Nasdaq",
+        "url": "https://example.test/iran",
+    }
+    classification = classify_news_market(story)
+    assert classification["market_scope"] == "cross_market"
+    assert "iran" in classification["global_matches"]
+    assert "nasdaq" in classification["us_matches"]
+    assert "taiwan" in classification["taiwan_matches"]
 
 
 def test_us_rss_fallback_uses_us_locale():
