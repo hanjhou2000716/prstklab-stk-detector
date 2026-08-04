@@ -107,6 +107,39 @@ def write_snapshot(snapshot: dict, destination: Path | str | None = None) -> boo
     return True
 
 
+def merge_published_metadata(
+    metadata: dict[str, object], destination: Path | str | None = None,
+    *, expected_snapshot_id: str,
+) -> bool:
+    """Atomically merge post-publish correlation metadata.
+
+    Some fields (for example a Telegram trace ID) are only known after
+    ``write_snapshot`` has assigned the immutable snapshot/observation IDs.
+    This guarded merge refuses to touch a newer writer's snapshot.
+    """
+    destination = Path(destination or "site/data/market.json")
+    try:
+        current = json.loads(destination.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return False
+    if not isinstance(current, dict) or str(current.get("snapshot_id") or "") != str(expected_snapshot_id):
+        return False
+    briefing = dict(current.get("briefing") or {})
+    briefing.update({key: value for key, value in metadata.items() if value is not None})
+    current["briefing"] = briefing
+    temporary = destination.with_name(f".{destination.name}.meta.tmp")
+    try:
+        temporary.write_text(json.dumps(current, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        os.replace(temporary, destination)
+    except OSError:
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            pass
+        return False
+    return True
+
+
 def main() -> None:
     snapshot = build_market_snapshot()
     write_snapshot(snapshot)

@@ -1,6 +1,6 @@
 import json
 
-from src.refresh_market_data import write_snapshot
+from src.refresh_market_data import merge_published_metadata, write_snapshot
 
 
 def _snapshot(started_at: str, generated_at: str) -> dict:
@@ -65,3 +65,22 @@ def test_older_slow_run_cannot_overwrite_newer_snapshot(tmp_path):
         destination,
     ) is False
     assert destination.read_text(encoding="utf-8") == before
+
+
+def test_merge_published_metadata_is_guarded_by_snapshot_id(tmp_path):
+    destination = tmp_path / "market.json"
+    snapshot = _snapshot("2026-08-04T10:00:00+08:00", "2026-08-04T10:01:00+08:00")
+    assert write_snapshot(snapshot, destination) is True
+    snapshot_id = snapshot["snapshot_id"]
+    assert merge_published_metadata(
+        {"trace_id": "brief-test", "observation_id": "obs-test"},
+        destination,
+        expected_snapshot_id=snapshot_id,
+    ) is True
+    payload = json.loads(destination.read_text(encoding="utf-8"))
+    assert payload["briefing"]["trace_id"] == "brief-test"
+    assert payload["briefing"]["observation_id"] == "obs-test"
+    assert merge_published_metadata(
+        {"trace_id": "stale"}, destination, expected_snapshot_id="wrong-id"
+    ) is False
+    assert json.loads(destination.read_text(encoding="utf-8"))["briefing"]["trace_id"] == "brief-test"
