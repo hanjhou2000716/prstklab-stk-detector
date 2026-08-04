@@ -944,6 +944,57 @@ class SeenStore:
         has_payload = isinstance(payload, dict) and isinstance(payload.get("dispatch_payload"), dict)
         return str(row[0]), has_payload
 
+    def delivery_history(self, db: sqlite3.Connection | None = None, limit: int = 10) -> list[dict[str, Any]]:
+        """Return a bounded, non-secret recent delivery history for health checks."""
+        database = db or self.connection
+        rows = database.execute(
+            """SELECT trace_id, status, attempts, last_error, updated_at
+               FROM delivery_outbox ORDER BY updated_at DESC LIMIT ?""",
+            (max(1, min(20, int(limit))),),
+        ).fetchall()
+        history: list[dict[str, Any]] = []
+        for trace_id, outbox_status, attempts, last_error, updated_at in rows:
+            receipt = database.execute(
+                """SELECT status, delivered_count, failed_count, reported_at, error, updated_at
+                   FROM delivery_receipts
+                   WHERE trace_id=? AND recipient_hash='__aggregate__'
+                   ORDER BY updated_at DESC LIMIT 1""",
+                (trace_id,),
+            ).fetchone()
+            delivered_count = int(receipt[1]) if receipt and receipt[1] is not None else None
+            failed_count = int(receipt[2]) if receipt and receipt[2] is not None else None
+            reported_at = str(receipt[3]) if receipt and receipt[3] else None
+            receipt_updated_at = str(receipt[5]) if receipt else None
+            if receipt and (delivered_count is None or failed_count is None):
+                try:
+                    legacy_counts = json.loads(receipt[4] or "{}")
+                except (TypeError, json.JSONDecodeError):
+                    legacy_counts = {}
+                if isinstance(legacy_counts, dict):
+                    delivered_count = delivered_count if delivered_count is not None else _non_negative_int(legacy_counts.get("delivered_count"))
+                    failed_count = failed_count if failed_count is not None else _non_negative_int(legacy_counts.get("failed_count"))
+                    reported_at = reported_at or (str(legacy_counts.get("reported_at")) if legacy_counts.get("reported_at") else None)
+            failed_hash_count = int(database.execute(
+                """SELECT COUNT(*) FROM delivery_receipts
+                   WHERE trace_id=? AND recipient_hash <> '__aggregate__' AND status='failed'""",
+                (trace_id,),
+            ).fetchone()[0])
+            history.append({
+                "trace_id": str(trace_id),
+                "outbox_status": str(outbox_status),
+                "attempts": int(attempts),
+                "last_error": str(last_error) if last_error else None,
+                "updated_at": str(updated_at),
+                "receipt_status": str(receipt[0]) if receipt else None,
+                "delivered_count": delivered_count,
+                "failed_count": failed_count,
+                "recipient_count": (delivered_count + failed_count) if delivered_count is not None and failed_count is not None else None,
+                "reported_at": reported_at,
+                "receipt_age_seconds": _age_seconds(receipt_updated_at),
+                "failed_recipient_hash_count": failed_hash_count,
+            })
+        return history
+
     def delivery_diagnostics(self, db: sqlite3.Connection | None = None) -> dict[str, Any]:
         """Return non-secret delivery state for Railway's health endpoint."""
         database = db or self.connection
@@ -977,6 +1028,7 @@ class SeenStore:
                FROM delivery_receipts
                WHERE recipient_hash='__aggregate__' ORDER BY updated_at DESC LIMIT 1"""
         ).fetchone()
+        recent = self.delivery_history(database, 10)
         outbox_status = str(latest[1]) if latest else None
         receipt_trace_id = str(receipt[0]) if receipt else None
         receipt_status = str(receipt[1]) if receipt else None
@@ -1015,6 +1067,7 @@ class SeenStore:
                    WHERE trace_id=? AND recipient_hash <> '__aggregate__' AND status='failed'""",
                 (receipt_trace_id,),
             ).fetchone()[0]) if receipt_trace_id else 0,
+            "recent": recent,
         }
 
     def record_delivery_status(self, payload: dict[str, Any]) -> bool:
