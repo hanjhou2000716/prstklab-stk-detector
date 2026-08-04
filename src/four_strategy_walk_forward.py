@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 from src.momentum_research import WEIGHTS, features
+from src.point_in_time import latest_fundamental_snapshot
 from src.price_action import PriceActionResearchScanner
 from src.research_backtest import MARKET_COSTS, calculate_hypothetical_return
 from src.resonance_research import score_bars
@@ -76,19 +77,11 @@ def _snapshot_for(snapshots: list[dict[str, Any]], as_of: pd.Timestamp, market: 
 
 
 def _fundamental_for(snapshots: list[dict[str, Any]], ticker: str, as_of: pd.Timestamp, market: str) -> dict[str, Any] | None:
-    eligible = []
-    for snapshot in snapshots:
-        if snapshot.get("market") != market or str(snapshot.get("ticker")) != ticker:
-            continue
-        try:
-            snapshot_date = pd.Timestamp(snapshot["as_of"]).normalize()
-        except (KeyError, TypeError, ValueError):
-            continue
-        if snapshot_date <= as_of and snapshot.get("point_in_time") is True:
-            eligible.append((snapshot_date, snapshot))
-    return max(eligible, key=lambda item: item[0])[1] if eligible else None
-
-
+    """Select only a point-in-time snapshot public by the signal close."""
+    decision = as_of.to_pydatetime().replace(tzinfo=None)
+    return latest_fundamental_snapshot(
+        snapshots, market=market, ticker=ticker, decision_time=decision,
+    )
 def survivorship_audit(
     snapshots: list[dict[str, Any]], *, market: str, require_point_in_time: bool = True,
 ) -> dict[str, Any]:

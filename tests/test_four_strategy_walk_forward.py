@@ -55,6 +55,13 @@ def test_value_walk_forward_uses_prior_fundamental_snapshot_and_next_open_costs(
     assert trades[0]["net_return_percent"] < trades[0]["gross_return_percent"]
 
 
+def test_future_published_fundamentals_are_rejected_as_data_gap():
+    future = [{"as_of": "2020-12-31", "published_at": "2022-01-01T00:00:00Z", "market": "us", "ticker": "AAA", "point_in_time": True, "net_income": 600_000_000, "roe": 0.20, "payout_ratio": 0.30, "pe": 20}]
+    report = run_walk_forward({"AAA": bars()}, universes(), market="us", config=config(), fundamental_snapshots=future, strategies=("value",))
+    assert report["strategies"]["value"]["windows"]["training"] == []
+    assert any("fundamentals unavailable" in gap["reason"] for gap in report["strategies"]["value"]["data_gaps"])
+
+
 def test_value_strategy_reports_gap_instead_of_using_today_fundamentals_for_history():
     report = run_walk_forward({"AAA": bars()}, universes(), market="us", config=config(), strategies=("value",))
     assert report["strategies"]["value"]["windows"]["training"] == []
