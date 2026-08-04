@@ -33,6 +33,23 @@ NEWS_TERMS = {
     "taiwan": ("006208", "00685L", "2330", "台積電", "台股", "半導體"),
     "us": ("QQQM", "QLD", "TSM", "NVDA", "NVIDIA", "輝達", "美股", "那斯達克"),
 }
+# Canonical market-specific queries.  These assignments intentionally follow
+# the legacy constants above so a historical encoding-corrupted checkout is
+# repaired at import time without changing the public module API.
+NEWS_RSS_QUERIES = {
+    "taiwan": "\u53f0\u80a1 OR \u53f0\u7a4d\u96fb OR \u53f0\u6307 OR \u4e0a\u5e02\u516c\u53f8",
+    "us": "Nasdaq OR \"S&P 500\" OR \"Federal Reserve\" OR Nvidia OR \"US stocks\"",
+}
+NEWS_TERMS = {
+    "taiwan": (
+        "006208", "00685L", "2330", "\u53f0\u80a1", "\u53f0\u7a4d\u96fb",
+        "\u53f0\u6307", "\u52a0\u6b0a\u6307\u6578", "\u4e0a\u5e02",
+    ),
+    "us": (
+        "QQQM", "QLD", "TSM", "NVDA", "NVIDIA", "Nasdaq", "S&P 500",
+        "Federal Reserve", "Fed", "FOMC", "US stocks",
+    ),
+}
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; PRStKInvestmentSystem/1.0)"}
 NEWS_CACHE_MAX_AGE_MINUTES = int(os.getenv("NEWS_CACHE_MAX_AGE_MINUTES", "360"))
 
@@ -527,7 +544,7 @@ def _build_news_snapshot_primary() -> dict[str, Any]:
             result["source_health"].append({
                 "key": f"news_{market}", "label": f"{market} market news",
                 "source_tier": "discovery", "source_url": ANUE_CATEGORY_URLS[market],
-                "status": "healthy", "checked_at": checked_at,
+                "status": "healthy" if result[market] else "no_event", "checked_at": checked_at,
                 "item_count": len(result[market]), "data_gap": None,
             })
         except Exception:
@@ -627,8 +644,13 @@ def build_news_snapshot() -> dict[str, Any]:
                            "stale_used": True, "data_gap": "using_recent_news_cache"})
             result.setdefault("diagnostics", []).append(f"{market} news cache used")
         else:
-            health.update({"status": "failed", "item_count": 0,
-                           "data_gap": health.get("data_gap") or "request_failed"})
-            result.setdefault("errors", []).append(f"{market} news unavailable")
+            if health.get("status") == "no_event":
+                health.update({"item_count": 0, "data_gap": None,
+                               "no_event": True})
+                result.setdefault("diagnostics", []).append(f"{market} news scan completed with no matching event")
+            else:
+                health.update({"status": "failed", "item_count": 0,
+                               "data_gap": health.get("data_gap") or "request_failed"})
+                result.setdefault("errors", []).append(f"{market} news unavailable")
     _save_news_cache(cache)
     return result

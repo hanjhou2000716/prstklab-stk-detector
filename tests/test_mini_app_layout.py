@@ -56,7 +56,7 @@ def test_source_health_is_a_collapsible_card_with_a_warming_state():
     assert 'source.status === "warming" ? "建檔中"' in app
     assert ".source-status.warming" in styles
     assert 'aria-labelledby="source-health-title" open' not in page
-    assert 'const missing = health.sources.filter((source) => source.status === "partial").length;' in app
+    assert 'const missing = health.sources.filter((source) => ["partial", "failed", "data_gap"].includes(source.status)).length;' in app
     assert 'summary.textContent = `${missing} 個來源有資料缺口`;' in app
     assert app.count("if (card) card.open = false;") == 2
 

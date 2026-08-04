@@ -343,7 +343,7 @@ const renderSourceHealth = (health, snapshot = {}) => {
     if (card) card.open = false;
     return;
   }
-  const missing = health.sources.filter((source) => source.status === "partial").length;
+  const missing = health.sources.filter((source) => ["partial", "failed", "data_gap"].includes(source.status)).length;
   const displayedMissing = Number.isFinite(Number(health.missing_source_count))
     ? Number(health.missing_source_count)
     : missing;
@@ -355,7 +355,7 @@ const renderSourceHealth = (health, snapshot = {}) => {
   event.textContent = `${scan.label || "事件掃描"}｜${scan.detail || ""}`;
   event.dataset.status = scan.status || "partial";
   list.innerHTML = health.sources.map((source) => {
-    const status = source.status === "healthy" ? "正常" : source.status === "warming" ? "建檔中" : source.status === "pending" ? "待核對" : source.status === "stale" ? "使用快取" : "部分缺漏";
+    const status = source.status === "healthy" ? "正常" : source.status === "no_event" ? "無事件" : source.status === "warming" ? "建檔中" : source.status === "pending" ? "待核對" : source.status === "stale" ? "使用快取" : "部分缺漏";
     const pendingReasons = source.status === "pending" && source.pending_reasons && typeof source.pending_reasons === "object"
       ? Object.entries(source.pending_reasons).filter(([, count]) => Number(count) > 0).map(([reason, count]) => {
         const labels = {
