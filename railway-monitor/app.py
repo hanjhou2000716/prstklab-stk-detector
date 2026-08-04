@@ -1032,11 +1032,18 @@ class SeenStore:
             """SELECT trace_id, status, last_error, updated_at
                FROM delivery_outbox ORDER BY updated_at DESC LIMIT 1"""
         ).fetchone()
-        receipt = database.execute(
+        latest_receipt = database.execute(
             """SELECT trace_id, status, delivered_count, failed_count, reported_at, error, updated_at
                FROM delivery_receipts
                WHERE recipient_hash='__aggregate__' ORDER BY updated_at DESC LIMIT 1"""
         ).fetchone()
+        receipt = database.execute(
+            """SELECT trace_id, status, delivered_count, failed_count, reported_at, error, updated_at
+               FROM delivery_receipts
+               WHERE recipient_hash='__aggregate__' AND trace_id=?
+               ORDER BY updated_at DESC LIMIT 1""",
+            (latest[0],),
+        ).fetchone() if latest else latest_receipt
         recent = self.delivery_history(database, 10)
         outbox_status = str(latest[1]) if latest else None
         receipt_trace_id = str(receipt[0]) if receipt else None
@@ -1061,6 +1068,9 @@ class SeenStore:
             "last_trace_id": str(latest[0]) if latest else None,
             "last_outbox_status": outbox_status,
             "last_receipt_status": receipt_status,
+            "last_receipt_trace_id": receipt_trace_id,
+            "receipt_matches_last_outbox": (receipt_trace_id == str(latest[0])) if latest and receipt_trace_id else (False if latest else None),
+            "stale_receipt_status": str(latest_receipt[1]) if latest_receipt and receipt_trace_id != str(latest_receipt[0]) else None,
             "counts": counts,
             "retryable_count": retryable_count,
             "due_retry_count": due_retry_count,
