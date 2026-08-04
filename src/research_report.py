@@ -98,6 +98,7 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                 base.update({key: summary.get(key) for key in (
                     "requested", "data_complete", "failed", "scan_state", "status", "error_details",
                     "candidates", "formal_candidates", "observation_candidates",
+                    "candidate_state", "complete_records", "data_gap_counts",
                     "history_cached", "history_expected", "history_progress_pct",
                     "history_pending", "history_failure_count", "partial_candidates_allowed",
                     "evaluable_records", "blocking_reason", "notice", "selection_diagnostics",

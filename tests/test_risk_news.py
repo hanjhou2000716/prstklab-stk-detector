@@ -61,6 +61,9 @@ def test_taifex_vix_parser_uses_the_final_intraday_observation():
 
     assert parsed["value"] == 36.21
     assert parsed["date"] == "2026-07-23"
+    assert parsed["percentile_status"] == "unavailable"
+    assert parsed["stage_basis"] == "absolute_level_fallback"
+    assert parsed["freshness_state"] == "daily_close"
     assert parsed["source_label"] == "臺灣期貨交易所"
     assert parsed["percentile"] is None
     assert parsed["stage"] == "極度恐慌"

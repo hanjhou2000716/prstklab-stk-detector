@@ -245,6 +245,12 @@ def _latest_close(symbol: str) -> dict[str, Any]:
         "stage": vix_stage(current, percentile),
         "date": close.index[-1].date().isoformat(),
         "source_label": "Yahoo Finance",
+        "fetched_at": datetime.now().astimezone().isoformat(),
+        "history_points": int(len(window)),
+        "percentile_as_of": close.index[-1].date().isoformat(),
+        "percentile_status": "available" if percentile is not None else "unavailable",
+        "stage_basis": "historical_percentile" if percentile is not None else "absolute_level_fallback",
+        "freshness_state": "daily_close",
     }
 
 
@@ -265,6 +271,12 @@ def _parse_taifex_vix_file(content: bytes) -> dict[str, Any]:
             "source_label": "臺灣期貨交易所",
             "percentile": None,
             "stage": vix_stage(value),
+            "fetched_at": datetime.now().astimezone().isoformat(),
+            "history_points": 0,
+            "percentile_as_of": None,
+            "percentile_status": "unavailable",
+            "stage_basis": "absolute_level_fallback",
+            "freshness_state": "daily_close",
         }
     raise ValueError("臺指波動率檔案沒有可用數值。")
 
@@ -326,6 +338,12 @@ def fetch_taifex_vix_quote() -> dict[str, Any]:
         "stage": vix_stage(value),
         "source_label": "TAIFEX",
         "source_url": "https://mis.taifex.com.tw/futures/VolatilityQuotes/",
+        "fetched_at": datetime.now().astimezone().isoformat(),
+        "history_points": 0,
+        "percentile_as_of": None,
+        "percentile_status": "unavailable",
+        "stage_basis": "absolute_level_fallback",
+        "freshness_state": "intraday",
     }
 
 

@@ -90,6 +90,16 @@ def test_sec_value_metrics_requires_three_annual_roe_observations_for_stable_lab
     assert metrics["roe_stable"] is True
 
 
+def test_sec_value_metrics_uses_dei_share_count_as_turnover_fallback():
+    annual = lambda year, value: {"fy": year, "end": f"{year}-12-31", "filed": f"{year + 1}-02-01", "fp": "FY", "form": "10-K", "val": value}
+    facts = {"facts": {
+        "us-gaap": {"NetIncomeLoss": {"units": {"USD": [annual(2025, 30), annual(2024, 28), annual(2023, 25)]}}},
+        "dei": {"EntityCommonStockSharesOutstanding": {"units": {"shares": [{"end": "2026-07-31", "filed": "2026-08-01", "val": 1_000_000}]}}},
+    }}
+    metrics = sec_value_metrics(facts)
+    assert metrics["shares_outstanding"] == 1_000_000
+
+
 def test_sec_fundamentals_uses_recent_cache_when_sec_is_temporarily_unavailable(tmp_path, monkeypatch):
     class Response:
         def json(self):
