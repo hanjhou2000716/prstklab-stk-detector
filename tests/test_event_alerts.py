@@ -163,6 +163,45 @@ def test_delayed_intraday_quote_cannot_trigger_an_urgent_price_signal():
     assert snapshot["is_major"] is False
 
 
+def test_stale_quote_cannot_trigger_an_urgent_price_signal():
+    snapshot = build_event_snapshot(
+        {"taiwan": [], "us": []}, [], indices=[
+            {"ticker": "TAIEX", "name": "台灣加權指數", "market": "taiwan",
+             "price": 43234.0, "change_percent": 8.0, "freshness": "stale"},
+        ],
+    )
+    assert snapshot["is_major"] is False
+    assert snapshot["suppressed_signals"] == [{
+        "ticker": "TAIEX", "reason": "quote_stale",
+    }]
+
+
+def test_unavailable_quote_cannot_trigger_an_urgent_price_signal():
+    snapshot = build_event_snapshot(
+        {"taiwan": [], "us": []}, [], indices=[
+            {"ticker": "TAIEX", "name": "台灣加權指數", "market": "taiwan",
+             "price": 43234.0, "change_percent": 8.0, "freshness": "unavailable"},
+        ],
+    )
+    assert snapshot["is_major"] is False
+    assert snapshot["suppressed_signals"] == [{
+        "ticker": "TAIEX", "reason": "quote_unavailable",
+    }]
+
+
+def test_rebound_is_not_labelled_as_an_upward_rally():
+    snapshot = build_event_snapshot(
+        {"taiwan": [], "us": []}, [], indices=[{
+            "ticker": "SOX", "name": "費城半導體指數", "price": 11454.77,
+            "change": -364, "change_percent": -3.08,
+            "change_15m_percent": 1.88, "currency": "點",
+        }],
+    )
+    event = snapshot["items"][0]
+    assert "快速反彈" in event["brief_title"]
+    assert "大漲" not in event["brief_title"]
+
+
 def test_uncrosschecked_taiex_intraday_quote_cannot_trigger_an_urgent_price_signal():
     snapshot = build_event_snapshot(
         {"taiwan": [], "us": []}, [], indices=[
@@ -199,7 +238,7 @@ def test_sox_fast_rebound_after_a_drop_is_a_distinct_warning_signal():
     }])
 
     event = snapshot["items"][0]
-    assert event["brief_title"] == "費半價格訊號觸發｜突然大漲｜警戒"
+    assert event["brief_title"] == "費半價格訊號觸發｜快速反彈｜警戒"
     assert "反彈" in event["why_important"]
 
 
