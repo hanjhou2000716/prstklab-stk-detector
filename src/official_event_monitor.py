@@ -145,7 +145,11 @@ def build_official_event_brief(event: dict[str, Any]) -> str:
 def prepare_snapshot() -> tuple[dict[str, Any], dict[str, Any] | None]:
     """Refresh the public snapshot before the Mini App button is sent."""
     snapshot = build_market_snapshot()
-    write_snapshot(snapshot)
+    if not write_snapshot(snapshot):
+        # Never evaluate or deliver an event from a run that lost the
+        # freshness race with a newer published snapshot.
+        print("Snapshot publish skipped; suppressing event delivery.")
+        return snapshot, None
     # The first deployment observes current official headlines but avoids
     # immediately replaying them as alerts. Price signals remain eligible.
     baseline_official = os.getenv("OFFICIAL_EVENT_BASELINE_READY") == "false"
@@ -179,7 +183,7 @@ def write_send_output(sent: bool, reason: str) -> None:
         print("\n".join(lines))
 
 
-def _write_delivery_output(*, trace_id: str, deliveries: tuple[Any, ...]) -> None:
+def _write_delivery_output(*, trace_id: str, deliveries: tuple[Any, ...], event: dict[str, Any] | None = None) -> None:
     summary = summarize_deliveries(deliveries)
     lines = [
         f"trace_id={trace_id}",
@@ -188,6 +192,11 @@ def _write_delivery_output(*, trace_id: str, deliveries: tuple[Any, ...]) -> Non
         f"delivery_status={'delivered' if summary.failed_count == 0 else 'partial' if summary.delivered_count else 'failed'}",
         f"failed_recipient_hashes={','.join(summary.failed_recipient_hashes)}",
     ]
+    if event:
+        lines.extend([
+            f"snapshot_id={event.get('snapshot_id') or ''}",
+            f"observation_id={event.get('observation_id') or (event.get('instrument') or {}).get('observation_id') or ''}",
+        ])
     destination = os.getenv("GITHUB_OUTPUT")
     if destination:
         with Path(destination).open("a", encoding="utf-8") as handle:
@@ -206,6 +215,24 @@ def send_current_event(expected_key: str | None = None) -> bool:
         write_send_output(False, "event_changed_before_delivery")
         print("Official event changed before delivery; skipped safely.")
         return False
+    # Price signals must be bound to the exact published observation. This is
+    # the final guard against a stale event surviving a refresh race.
+    if event.get("kind") == "market_signal":
+        instrument = event.get("instrument") or {}
+        snapshot_id = str(event.get("snapshot_id") or "")
+        observation_id = str(event.get("observation_id") or instrument.get("observation_id") or "")
+        trace = event.get("source_trace") or {}
+        provenance_matches = (
+            snapshot_id
+            and observation_id
+            and str(instrument.get("snapshot_id") or snapshot_id) == snapshot_id
+            and str(trace.get("snapshot_id") or snapshot_id) == snapshot_id
+            and str(trace.get("observation_id") or observation_id) == observation_id
+        )
+        if not provenance_matches:
+            write_send_output(False, "missing_quote_provenance")
+            print("Market signal has no snapshot/observation provenance; skipped safely.")
+            return False
     cooldown_record = _observe_event(event)
     if not cooldown_record.get("should_remind", True):
         write_send_output(False, "event_cooldown")
@@ -221,7 +248,7 @@ def send_current_event(expected_key: str | None = None) -> bool:
         text=build_official_event_brief(event),
         dashboard_url=settings.dashboard_url,
     )
-    _write_delivery_output(trace_id=trace_id, deliveries=deliveries)
+    _write_delivery_output(trace_id=trace_id, deliveries=deliveries, event=event)
     delivery_summary = summarize_deliveries(deliveries)
     if not delivery_summary.any_delivered:
         write_send_output(False, "all_recipients_failed")
