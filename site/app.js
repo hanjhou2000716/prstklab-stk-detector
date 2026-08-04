@@ -613,16 +613,57 @@ const render = (snapshot) => {
   renderNewsList("us-news", snapshot.news?.us);
 };
 
-// GitHub Pages and Telegram's in-app WebView can both retain a static JSON
-// response longer than the dashboard itself.  A per-open query value makes
-// every Mini App launch request the current public snapshot, rather than a
-// previously cached market.json response.
-const snapshotUrl = `data/market.json?v=${Date.now()}`;
-
-fetch(snapshotUrl, {
+// The manifest is the release boundary.  Fetching an artifact directly could
+// otherwise combine a new market file with an older research/event file when
+// GitHub Pages or Telegram's WebView serves different cache generations.
+const cacheBust = Date.now();
+const fetchJson = (url) => fetch(`${url}${url.includes("?") ? "&" : "?"}v=${cacheBust}`, {
   cache: "no-store",
   headers: { "Cache-Control": "no-cache" },
-})
-  .then((response) => response.ok ? response.json() : Promise.reject(new Error("market snapshot unavailable")))
+}).then((response) => response.ok ? response.json() : Promise.reject(new Error(`artifact unavailable: ${url}`)));
+
+const sha256Hex = async (text) => {
+  if (!window.crypto?.subtle) throw new Error("integrity verification unavailable");
+  const bytes = new TextEncoder().encode(text);
+  const digest = await window.crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+};
+
+const loadPublishedRelease = async () => {
+  const manifest = await fetchJson("data/release-manifest.json");
+  if (!manifest || manifest.status !== "ready" || !manifest.release_id) {
+    throw new Error("published release is incomplete");
+  }
+  const hashes = manifest.artifact_hashes || {};
+  const paths = manifest.artifact_paths || {};
+  const artifactTexts = {};
+  for (const [name, expectedHash] of Object.entries(hashes)) {
+    const relativePath = String(paths[name] || "");
+    if (!relativePath || relativePath.startsWith("/") || relativePath.includes("..")) {
+      throw new Error(`invalid artifact path: ${name}`);
+    }
+    const response = await fetch(`data/${relativePath.replace(/^data\//, "")}?v=${cacheBust}`, {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" },
+    });
+    if (!response.ok) throw new Error(`artifact unavailable: ${name}`);
+    const text = await response.text();
+    if (await sha256Hex(text) !== String(expectedHash)) throw new Error(`artifact hash mismatch: ${name}`);
+    artifactTexts[name] = text;
+  }
+  const marketText = artifactTexts["market.json"];
+  if (!marketText) throw new Error("market artifact missing from release");
+  const snapshot = JSON.parse(marketText);
+  if (String(snapshot.snapshot_id || "") !== String(manifest.market_snapshot_id || "")) {
+    throw new Error("market snapshot does not match release");
+  }
+  window.releaseManifest = manifest;
+  return snapshot;
+};
+
+loadPublishedRelease()
   .then(render)
-  .catch(() => { setText("data-status", "資料暫時無法取得"); setText("market-focus", "市場資料暫時無法取得，請稍後再試。"); });
+  .catch(() => {
+    setText("data-status", "發布資料不完整");
+    setText("market-focus", "發布資料不完整，等待下一個通過驗證的公開版本。");
+  });

@@ -95,9 +95,10 @@ jobs:
       - name: Commit refreshed Mini App data
         if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
         run: |
+          python -m src.release_manifest || test $? -eq 1
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/market.json site/data/news-cache.json
+          git add site/data/market.json site/data/news-cache.json site/data/release-manifest.json
           if git diff --cached --quiet; then
             exit 0
           fi

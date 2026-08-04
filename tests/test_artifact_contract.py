@@ -67,3 +67,10 @@ def test_research_rejects_candidate_count_semantic_mismatch():
 def test_manifest_requires_release_envelope():
     errors = validate_manifest({"release_id": "short"})
     assert errors
+
+
+def test_market_audit_normalizes_naive_and_aware_timestamps():
+    market = _market()
+    # A timezone-less timestamp is interpreted conservatively as UTC.
+    market["indices"][0]["published_at"] = "2026-08-04T01:58:00"
+    assert validate_market(market) == []
