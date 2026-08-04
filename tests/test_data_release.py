@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 
 from src.data_release import DataReleaseError, _safe_path, publish
