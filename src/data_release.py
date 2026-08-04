@@ -15,7 +15,6 @@ import subprocess
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-
 DEFAULT_BRANCH = "data-release"
 DEFAULT_INCLUDES = ("site/data",)
 
