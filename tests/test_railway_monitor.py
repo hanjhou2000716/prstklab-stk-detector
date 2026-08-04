@@ -20,6 +20,14 @@ def test_monitor_imports_from_railway_root_without_repository_src_package():
     """Railway's configured root directory must not crash on ``import app``."""
     environment = os.environ.copy()
     environment.pop("PYTHONPATH", None)
+    # pytest-cov exports COVERAGE_PROCESS_START so subprocesses can emit
+    # parallel data.  This smoke subprocess runs from ``railway-monitor/``
+    # (outside the project root), where coverage cannot resolve the same
+    # pyproject branch configuration; its empty statement-only file then
+    # causes coverage combine to fail.  Keep this import isolation test out
+    # of the parent coverage session.
+    environment.pop("COVERAGE_PROCESS_START", None)
+    environment.pop("COVERAGE_FILE", None)
     command = [
         sys.executable,
         "-c",
