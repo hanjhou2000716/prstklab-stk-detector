@@ -26,3 +26,42 @@ def test_quote_contract_marks_delayed_close():
     assert item["source_tier"] == "official"
     assert item["stale_used"] is True
     assert item["published_at"] == "2026-07-31"
+
+
+def test_quote_contract_reconciles_direction_from_price_and_previous_close():
+    item = normalize_quote_record({
+        "ticker": "TAIEX",
+        "price": 110,
+        "previous_close": 100,
+        "change": -10,
+        "change_percent": -10,
+    })
+    assert item["change"] == 10
+    assert item["change_percent"] == 10
+    assert item["market_direction"] == "上漲"
+    assert item["direction_sign"] == 1
+    assert item["change_consistency"] == "reconciled"
+
+
+def test_quote_contract_reconciles_point_change_sign_without_base_price():
+    item = normalize_quote_record({
+        "ticker": "NASDAQ",
+        "change": 5,
+        "change_percent": -2.5,
+    })
+    assert item["change"] == -5
+    assert item["market_direction"] == "下跌"
+    assert item["direction_sign"] == -1
+    assert item["change_consistency"] == "reconciled"
+
+
+def test_market_signal_contract_uses_instrument_direction():
+    item = normalize_event_record({
+        "kind": "market_signal",
+        "title": "TAIEX move",
+        "instrument": {"ticker": "TAIEX", "change_percent": -1.25},
+        "market_direction": "上漲",
+        "market_move": "+1.25%",
+    })
+    assert item["market_direction"] == "下跌"
+    assert item["market_move"] == "-1.25%"

@@ -241,7 +241,8 @@ def send_current_event(expected_key: str | None = None) -> bool:
     settings = get_settings()
     if not settings.telegram_ready:
         raise RuntimeError("缺少 Telegram 設定，無法送出官方事件快訊")
-    trace_id = f"official-{current_key[:20]}"
+    observation_id = str(event.get("observation_id") or (event.get("instrument") or {}).get("observation_id") or "")
+    trace_id = f"official-{observation_id or current_key[:20]}"
     deliveries = send_briefs(
         token=settings.telegram_bot_token or "",
         chat_ids=settings.telegram_chat_ids,

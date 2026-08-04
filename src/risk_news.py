@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import unicodedata
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -43,6 +44,79 @@ TAIWAN_NEWS_TERMS = (
     "\u570b\u6cf0", "\u529b\u7a4d\u96fb", "\u53f0\u6307", "\u53f0\u7063\u80a1\u5e02",
     "0050", "006208", "00878", "2330.tw", "twse", "taiex", "tpex", "twii",
 )
+
+# Market routing is intentionally evidence-based rather than driven only by
+# the provider's category.  A regional feed can return a shared shell or a
+# headline from the other market, so both title and summary are classified
+# before an item is cached or rendered.  Keep aliases in Unicode escapes: this
+# module has historically been edited under mixed code pages and the escapes
+# prevent a deployment from silently corrupting matching terms.
+_TAIWAN_MARKET_TERMS = (
+    "\u53f0\u80a1", "\u53f0\u7063\u80a1\u5e02", "\u53f0\u6e7e\u80a1\u5e02", "\u53f0\u7a4d\u96fb",
+    "\u53f0\u79ef\u7535", "\u53f0\u6307", "\u52a0\u6b0a\u6307\u6578", "\u52a0\u6743\u6307\u6570",
+    "\u6ac3\u8cb7", "\u67dc\u8cb7", "\u4e0a\u6ac3", "\u4e0a\u67dc", "twse", "tpex", "taiex", "twii",
+    "taiwan", "\u53f0\u7063", "\u53f0\u6e7e", "\u8cf4\u6e05\u5fb7", "\u8d56\u6e05\u5fb7", "lai ching-te",
+    "0050", "006208", "00878", "2330.tw", "\u806f\u767c\u79d1", "\u8054\u53d1\u79d1",
+)
+_US_MARKET_TERMS = (
+    "\u7f8e\u80a1", "\u7f8e\u570b", "\u7f8e\u56fd", "us stocks", "u.s. stocks", "nasdaq", "s&p 500",
+    "sp500", "s&p500", "dow jones", "\u8cbb\u534a", "\u8d39\u534a", "sox", "nyse", "sec",
+    "federal reserve", "fed", "fomc", "bls", "cpi", "pce", "\u806f\u6e96\u6703", "\u8054\u51c6\u4f1a",
+    "\u767d\u5bae", "white house", "\u5ddd\u666e", "\u5ddd\u666e", "trump", "donald trump",
+    "\u7279\u6717\u666e", "\u7279\u6717\u666e", "bessent", "nvidia", "nvda", "amd", "apple",
+    "microsoft", "amazon", "meta", "alphabet", "tsm", "nasdaq-100",
+)
+_GLOBAL_EVENT_TERMS = (
+    "\u4f0a\u6717", "iran", "\u4ee5\u8272\u5217", "israel", "\u6230\u722d", "\u6218\u4e89", "war", "\u505c\u706b",
+    "ceasefire", "\u5236\u88c1", "sanctions", "\u8377\u59c6\u8332", "hormuz", "\u822a\u904b", "shipping",
+    "\u539f\u6cb9", "\u77f3\u6cb9", "oil", "brent", "wti", "\u9ec3\u91d1", "\u9ec4\u91d1", "gold",
+    "earthquake", "\u5730\u9707", "tsunami", "\u9ed1\u5929\u9d5d", "\u91cd\u5927\u707d\u5bb3",
+)
+
+
+def _news_text(story: dict[str, str]) -> str:
+    """Build a normalized haystack for deterministic market classification."""
+    fields = (
+        story.get("title", ""), story.get("summary", ""),
+        story.get("description", ""), story.get("source", ""), story.get("url", ""),
+    )
+    text = " ".join(str(value) for value in fields if value)
+    return re.sub(r"\s+", " ", unicodedata.normalize("NFKC", text).casefold()).strip()
+
+
+def _term_matches(text: str, terms: tuple[str, ...]) -> list[str]:
+    return [term for term in terms if term.casefold() in text]
+
+
+def classify_news_market(story: dict[str, str]) -> dict[str, Any]:
+    """Return market scope and matched evidence for a news story.
+
+    ``global`` and ``cross_market`` stories may legitimately appear in both
+    regional tabs.  A story with only US evidence is never allowed into the
+    Taiwan tab (and vice versa); an unclassified story is retained only as a
+    disclosed fallback so an outage cannot be mistaken for a regional match.
+    """
+    text = _news_text(story)
+    taiwan = _term_matches(text, _TAIWAN_MARKET_TERMS)
+    us = _term_matches(text, _US_MARKET_TERMS)
+    global_terms = _term_matches(text, _GLOBAL_EVENT_TERMS)
+    if taiwan and us:
+        scope = "cross_market"
+    elif taiwan:
+        scope = "taiwan"
+    elif us:
+        scope = "us"
+    elif global_terms:
+        scope = "global"
+    else:
+        scope = "unclassified"
+    return {
+        "market_scope": scope,
+        "taiwan_matches": taiwan,
+        "us_matches": us,
+        "global_matches": global_terms,
+        "classification_status": "matched" if scope != "unclassified" else "unclassified",
+    }
 
 
 def _news_cache_path() -> Path | None:
@@ -406,8 +480,11 @@ def _filter_market_news(stories: list[dict[str, str]], market: str) -> list[dict
     """Reject cross-market headlines before they reach the cache or UI.
 
     URL collision detection cannot catch two different URLs copied from the
-    same regional feed.  For the US tab, explicit Taiwan terms are therefore
-    filtered from the title/description before a story is accepted.
+    same regional feed.  Classify the complete story before accepting it so a
+    Taiwan card cannot contain a Fed-only headline and a US card cannot contain
+    a Taiwan-politics-only headline.  Global/cross-market stories remain
+    eligible for both tabs, while the classification evidence is retained for
+    the Mini App audit trail.
     """
     valid: list[dict[str, str]] = []
     for story in stories:
@@ -415,11 +492,15 @@ def _filter_market_news(stories: list[dict[str, str]], market: str) -> list[dict
         url = str(story.get("url", "")).strip()
         if not title or not url:
             continue
-        if market == "us":
-            haystack = f"{title} {story.get('description', '')}".lower()
-            if any(term.lower() in haystack for term in TAIWAN_NEWS_TERMS):
-                continue
-        valid.append(dict(story))
+        enriched = dict(story)
+        classification = classify_news_market(enriched)
+        scope = classification["market_scope"]
+        # Unknown headlines are retained for availability, but never claim a
+        # regional match; they are explicitly labelled in the Mini App.
+        if scope in {"taiwan", "us"} and scope != market:
+            continue
+        enriched.update(classification)
+        valid.append(enriched)
     return valid[:5]
 
 

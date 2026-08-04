@@ -24,6 +24,66 @@ def _now() -> str:
     return datetime.now(UTC).isoformat()
 
 
+def _number(value: Any) -> float | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        return float(str(value).replace(",", "").replace("%", "").strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _normalize_quote_change(item: dict[str, Any]) -> None:
+    """Make direction, point change and percent change agree before display."""
+    price = _number(item.get("price"))
+    previous = _number(item.get("previous_close"))
+    raw_change = _number(item.get("change"))
+    raw_percent = _number(item.get("change_percent"))
+    calculated_change = None
+    calculated_percent = None
+    if price is not None and previous not in (None, 0):
+        calculated_change = round(price - previous, 2)
+        calculated_percent = round((price / previous - 1) * 100, 2)
+
+    if calculated_change is not None and calculated_percent is not None:
+        mismatch = (
+            raw_change is not None and abs(raw_change - calculated_change) > 0.01
+        ) or (
+            raw_percent is not None and abs(raw_percent - calculated_percent) > 0.05
+        )
+        if mismatch:
+            if raw_change is not None:
+                item["raw_change"] = raw_change
+            if raw_percent is not None:
+                item["raw_change_percent"] = raw_percent
+            item["change_consistency"] = "reconciled"
+        else:
+            item["change_consistency"] = "consistent"
+        item["change"] = calculated_change
+        item["change_percent"] = calculated_percent
+    elif raw_percent is not None:
+        if raw_change is not None and raw_percent != 0 and raw_change * raw_percent < 0:
+            item["raw_change"] = raw_change
+            item["change"] = round(abs(raw_change) * (1 if raw_percent > 0 else -1), 2)
+            item["change_consistency"] = "reconciled"
+        else:
+            item["change_consistency"] = "consistent"
+        item["change_percent"] = round(raw_percent, 2)
+    else:
+        item["change_consistency"] = "insufficient_data"
+
+    canonical_percent = _number(item.get("change_percent"))
+    if canonical_percent is None or canonical_percent == 0:
+        item["direction_sign"] = 0
+        item["market_direction"] = "持平"
+    elif canonical_percent > 0:
+        item["direction_sign"] = 1
+        item["market_direction"] = "上漲"
+    else:
+        item["direction_sign"] = -1
+        item["market_direction"] = "下跌"
+
+
 def source_domain(url: Any) -> str:
     """Return a stable lower-case hostname, excluding the common www prefix."""
     raw = str(url or "").strip()
@@ -70,6 +130,12 @@ def normalize_event_record(
 ) -> dict[str, Any]:
     """Add the common event contract while preserving provider fields."""
     item = dict(record)
+    instrument = item.get("instrument") if isinstance(item.get("instrument"), dict) else None
+    if instrument and str(item.get("kind") or "") == "market_signal":
+        instrument_percent = _number(instrument.get("change_percent"))
+        if instrument_percent is not None:
+            item["market_direction"] = "上漲" if instrument_percent > 0 else "下跌" if instrument_percent < 0 else "持平"
+            item["market_move"] = f"{instrument_percent:+.2f}%"
     url = str(item.get("source_url") or item.get("url") or "").strip()
     trace = item.get("source_trace") if isinstance(item.get("source_trace"), dict) else {}
     if not url:
@@ -103,8 +169,9 @@ def normalize_event_record(
 
 
 def normalize_quote_record(record: dict[str, Any], *, fetched_at: str | None = None) -> dict[str, Any]:
-    """Add provenance and freshness fields to a quote without altering values."""
+    """Add provenance and canonical direction fields to a quote."""
     item = dict(record)
+    _normalize_quote_change(item)
     source = str(item.get("quote_source") or item.get("source") or "")
     official = any(token in source.lower() for token in ("twse", "taifex", "tpex", "official", "mis"))
     url = str(item.get("source_url") or item.get("url") or "")

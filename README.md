@@ -532,3 +532,7 @@ URL and check the visible `updated_at`/source times. A green artifact audit
 does not prove that Telegram reached every recipient; use the Railway
 `/health` delivery receipt and the Telegram message itself for that final
 check.
+
+For the P2 market-specific news routing rules, aliases, audit fields, and the
+remaining P3–P5 reliability backlog, see
+[`docs/P2_MARKET_NEWS_ROUTING.md`](docs/P2_MARKET_NEWS_ROUTING.md).

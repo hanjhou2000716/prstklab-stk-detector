@@ -157,6 +157,7 @@ def _daily_quote(item: dict[str, str], closes: Any) -> dict[str, Any]:
     return normalize_quote_record({
         **item,
         "price": round(latest, 2),
+        "previous_close": round(previous, 2),
         "change": round(latest - previous, 2),
         "change_percent": change_percent(latest, previous),
         "quote_date": closes.index[-1].date().isoformat(),
@@ -197,6 +198,7 @@ def _intraday_quote(
     return normalize_quote_record({
         **item,
         "price": round(latest, 2),
+        "previous_close": round(previous_close, 2),
         "change": round(latest - previous_close, 2),
         "change_percent": change_percent(latest, previous_close),
         "change_15m_percent": change_15m_percent,
