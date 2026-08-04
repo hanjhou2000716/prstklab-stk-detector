@@ -19,6 +19,42 @@ def _value(value: Any) -> Any:
     return None if pd.isna(value) else value.item() if hasattr(value, "item") else value
 
 
+def _int_or_none(value: Any) -> int | None:
+    try:
+        if value is None or (isinstance(value, float) and pd.isna(value)):
+            return None
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _candidate_state(*, scan_state: str | None, visible: int, data_gap: int | None) -> str:
+    """Return a machine-readable state; localized status is display-only."""
+    if scan_state == "failed":
+        return "data_gap"
+    if scan_state == "building":
+        return "building" if data_gap else ("available" if visible else "building")
+    if visible:
+        return "available"
+    return "no_candidates" if scan_state == "complete" else "data_gap"
+
+
+def _normalize_scan_state(base: dict[str, Any], *, file_readable: bool) -> str:
+    state = str(base.get("scan_state") or "").strip().lower()
+    if state in {"complete", "building", "failed"}:
+        return state
+    if not file_readable:
+        return "failed"
+    requested = _int_or_none(base.get("requested"))
+    complete = _int_or_none(base.get("data_complete"))
+    failed = _int_or_none(base.get("failed")) or 0
+    if requested is not None and complete == requested and failed == 0:
+        return "complete"
+    if failed:
+        return "failed"
+    return "building"
+
+
 def _structure_score(value: Any) -> int:
     """Backfill a reproducible structure score for reports created before it existed."""
     if isinstance(value, str):
@@ -96,7 +132,7 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
             try:
                 summary = json.loads(Path(summary_path).read_text(encoding="utf-8"))
                 base.update({key: summary.get(key) for key in (
-                    "requested", "data_complete", "failed", "scan_state", "status", "error_details",
+                    "requested", "requested_records", "data_complete", "complete_records", "failed", "failed_records", "scan_state", "status", "error_details",
                     "candidates", "formal_candidates", "observation_candidates",
                     "candidate_state", "complete_records", "data_gap_counts",
                     "history_cached", "history_expected", "history_progress_pct",
@@ -121,8 +157,34 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                 else "本次無研究候選" if completed_empty
                 else "資料暫時無法取得"
             )
-            sources_status.append({**base, "status": status, "candidates": 0})
+            scan_state = _normalize_scan_state(base, file_readable=False)
+            failed_records = _int_or_none(base.get("failed"))
+            complete_records = _int_or_none(base.get("complete_records"))
+            if complete_records is None:
+                complete_records = _int_or_none(base.get("data_complete"))
+            sources_status.append({
+                **base,
+                "status": status,
+                "scan_state": scan_state,
+                "candidate_state": _candidate_state(scan_state=scan_state, visible=0, data_gap=failed_records),
+                "candidates": 0,
+                "visible_candidates": 0,
+                "complete_records": complete_records,
+                "failed_records": failed_records,
+                "data_gap_counts": failed_records or 0,
+                "blocking_reason": base.get("blocking_reason") or "research source unavailable",
+                "candidates_definition": "visible_candidates",
+            })
             continue
+        scan_state = _normalize_scan_state(base, file_readable=True)
+        failed_records = _int_or_none(base.get("failed")) or 0
+        complete_records = _int_or_none(base.get("complete_records"))
+        if complete_records is None:
+            complete_records = _int_or_none(base.get("data_complete"))
+        requested_records = _int_or_none(base.get("requested"))
+        data_gap_counts = _int_or_none(base.get("data_gap_counts"))
+        if data_gap_counts is None:
+            data_gap_counts = failed_records
         blocked = (
             base.get("scan_state") == "failed"
             or (base.get("scan_state") == "building" and not base.get("partial_candidates_allowed"))
@@ -135,13 +197,32 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
         # running or failed.  The source status is the authoritative freshness
         # boundary; an old candidate is less useful than an explicit gap.
         rows = [] if blocked else normalize_frame(frame, source["market"], source["strategy"])
+        formal_rows = sum(1 for row in rows if str(row.get("list_type") or "").lower() == "formal")
+        observation_rows = sum(1 for row in rows if str(row.get("list_type") or "").lower() == "observation")
+        visible = len(rows)
+        candidate_state = _candidate_state(scan_state=scan_state, visible=visible, data_gap=data_gap_counts)
         status = (
             "掃描失敗" if base.get("scan_state") == "failed" or base.get("status") == "掃描失敗"
             else "建檔中" if base.get("scan_state") == "building" or base.get("status") == "建檔中"
             else "資料暫時無法取得" if base.get("status") == "資料暫時無法取得"
             else "可用" if rows else "本次無研究候選"
         )
-        sources_status.append({**base, "status": status, "candidates": len(rows)})
+        sources_status.append({
+            **base,
+            "status": status,
+            "scan_state": scan_state,
+            "candidate_state": candidate_state,
+            "candidates": visible,
+            "visible_candidates": visible,
+            "candidates_definition": "visible_candidates",
+            "formal_candidates": _int_or_none(base.get("formal_candidates")) if base.get("formal_candidates") is not None else (formal_rows or None),
+            "observation_candidates": _int_or_none(base.get("observation_candidates")) if base.get("observation_candidates") is not None else (observation_rows or None),
+            "requested_records": requested_records,
+            "complete_records": complete_records,
+            "failed_records": failed_records,
+            "data_gap_counts": data_gap_counts,
+            "blocking_reason": base.get("blocking_reason") or ("scan incomplete" if blocked else None),
+        })
         candidates.extend(rows)
     counts = Counter(f"{item['market']}:{item['strategy']}" for item in candidates)
     return {

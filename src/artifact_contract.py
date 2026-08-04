@@ -7,7 +7,7 @@ candidate release before publishing it or sending a notification.
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -25,7 +25,12 @@ def _parse_time(value: Any) -> datetime | None:
     try:
         text = str(value).replace("Z", "+00:00")
         parsed = datetime.fromisoformat(text)
-        return parsed if parsed.tzinfo else parsed.replace(tzinfo=None)
+        # Compare timestamps on one timeline.  Public feeds frequently omit
+        # an offset while generated artifacts include one; mixing naive and
+        # aware values otherwise crashes the audit instead of failing closed.
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=UTC)
+        return parsed.astimezone(UTC)
     except (TypeError, ValueError):
         return None
 
@@ -98,6 +103,7 @@ def validate_research(document: dict[str, Any]) -> list[str]:
         scan_state = source.get("scan_state")
         candidate_state = source.get("candidate_state")
         candidates = source.get("candidates")
+        visible = source.get("visible_candidates")
         formal = source.get("formal_candidates")
         unavailable = source.get("data_unavailable") is True or source.get("data_gap") is True
         if scan_state == "complete" and unavailable:
@@ -106,6 +112,12 @@ def validate_research(document: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: unknown candidate_state={candidate_state!r}")
         if candidate_state == "no_candidates" and unavailable:
             errors.append(f"{path}: no_candidates and data_gap are mutually exclusive")
+        if isinstance(candidates, int) and isinstance(visible, int) and candidates != visible:
+            errors.append(f"{path}: candidates must equal visible_candidates")
+        if candidate_state == "no_candidates" and isinstance(visible, int) and visible != 0:
+            errors.append(f"{path}: no_candidates requires visible_candidates=0")
+        if candidate_state == "available" and isinstance(visible, int) and visible == 0:
+            errors.append(f"{path}: available requires visible_candidates>0")
         if isinstance(candidates, int) and isinstance(formal, int) and formal > candidates:
             errors.append(f"{path}: formal_candidates cannot exceed candidates")
     return errors

@@ -128,3 +128,14 @@ def test_mini_app_hides_quote_metadata_from_the_dashboard():
     assert "quoteFreshness" not in app
     assert "market-up" in app
     assert "market-down" in app
+
+
+def test_mini_app_loads_only_a_hash_verified_release():
+    root = Path(__file__).resolve().parents[1]
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert 'data/release-manifest.json' in app
+    assert 'manifest.status !== "ready"' in app
+    assert "artifact_hashes" in app
+    assert "crypto.subtle.digest" in app
+    assert "發布資料不完整" in app

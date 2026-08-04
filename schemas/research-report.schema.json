@@ -9,9 +9,28 @@
     "release_id": {"type": "string", "minLength": 8},
     "snapshot_id": {"type": "string", "minLength": 8},
     "policy_version": {"type": "string", "minLength": 1},
-    "sources": {"type": "array", "items": {"type": "object"}},
+    "sources": {"type": "array", "items": {"$ref": "#/$defs/source"}},
     "candidates": {"type": "array", "items": {"type": "object"}},
     "health": {"type": "object"}
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "properties": {
+        "scan_state": {"enum": ["complete", "building", "failed"]},
+        "candidate_state": {"enum": ["available", "no_candidates", "building", "data_gap", "failed"]},
+        "candidates": {"type": ["integer", "null"], "minimum": 0},
+        "visible_candidates": {"type": ["integer", "null"], "minimum": 0},
+        "formal_candidates": {"type": ["integer", "null"], "minimum": 0},
+        "observation_candidates": {"type": ["integer", "null"], "minimum": 0},
+        "requested_records": {"type": ["integer", "null"], "minimum": 0},
+        "complete_records": {"type": ["integer", "null"], "minimum": 0},
+        "failed_records": {"type": ["integer", "null"], "minimum": 0},
+        "data_gap_counts": {"type": ["integer", "null"], "minimum": 0},
+        "candidates_definition": {"const": "visible_candidates"}
+      },
+      "additionalProperties": true
+    }
   },
   "additionalProperties": true
 }

@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 from src.research_report import build_research_report
 from src.research_health import assess_research_health
+from src.release_manifest import content_snapshot_id
 
 
 def default_sources(data_dir: Path) -> list[dict[str, str]]:
@@ -37,6 +38,11 @@ def main() -> None:
     report = build_research_report(default_sources(Path(args.data_dir)))
     report["generated_at"] = datetime.now(ZoneInfo("Asia/Taipei")).isoformat()
     report["health"] = assess_research_health(report)
+    # Bind research candidates to this exact point-in-time artifact.  The
+    # release manifest later uses the ID to prevent mixing old research with
+    # a newer market snapshot.
+    report["snapshot_id"] = content_snapshot_id(report, "research")
+    report["snapshot_published_at"] = datetime.now(ZoneInfo("Asia/Taipei")).isoformat()
     write_report(report, Path(args.output))
     print(f"{report['status']}：{report['summary']['total_candidates']} 筆候選；輸出 {args.output}")
 
