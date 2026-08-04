@@ -28,13 +28,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
       - name: Merge Railway diagnostics
         run: python -m src.monitor_health --payload "$MONITOR_HEALTH_PAYLOAD" --snapshot site/data/market.json --state site/data/monitor-health.json
       - name: Commit monitor diagnostics
         run: |
+          python -m src.release_manifest || test $? -eq 1
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/market.json site/data/monitor-health.json
+          git add site/data/market.json site/data/monitor-health.json site/data/release-manifest.json
           if git diff --cached --quiet; then
             exit 0
           fi

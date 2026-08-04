@@ -7,7 +7,7 @@ candidate release before publishing it or sending a notification.
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -25,7 +25,12 @@ def _parse_time(value: Any) -> datetime | None:
     try:
         text = str(value).replace("Z", "+00:00")
         parsed = datetime.fromisoformat(text)
-        return parsed if parsed.tzinfo else parsed.replace(tzinfo=None)
+        # Compare timestamps on one timeline.  Public feeds frequently omit
+        # an offset while generated artifacts include one; mixing naive and
+        # aware values otherwise crashes the audit instead of failing closed.
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=UTC)
+        return parsed.astimezone(UTC)
     except (TypeError, ValueError):
         return None
 

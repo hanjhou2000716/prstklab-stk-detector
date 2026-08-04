@@ -75,11 +75,13 @@ jobs:
         run: python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE"
       - run: python -m src.run_research_report
       - run: python -m src.refresh_market_data
+      - name: Build release manifest
+        run: python -m src.release_manifest || test $? -eq 1
       - name: 保存最新公開研究摘要
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/research-report.json site/data/market.json site/data/news-cache.json
+          git add site/data/research-report.json site/data/market.json site/data/news-cache.json site/data/release-manifest.json
           git add -f data/taiwan-mops-pristine-history.json data/sec-companyfacts-cache.json
           if git diff --cached --quiet; then
             exit 0
