@@ -779,6 +779,9 @@ def test_seen_store_persists_authenticated_delivery_receipt(tmp_path):
     assert snapshot["delivery"]["last_receipt_age_seconds"] >= 0
     assert snapshot["delivery"]["last_failed_recipient_hash_count"] == 1
     assert snapshot["delivery"]["recent"][0]["trace_id"] == trace_id
+    assert snapshot["delivery"]["recent"][0]["source"] == "jin10"
+    assert snapshot["delivery"]["recent"][0]["event_id"] == "jin10-receipt"
+    assert snapshot["delivery"]["recent"][0]["category"] == "macro"
     assert snapshot["delivery"]["recent"][0]["receipt_status"] == "partial"
     assert snapshot["delivery"]["recent"][0]["recipient_count"] == 4
 

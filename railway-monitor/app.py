@@ -756,6 +756,7 @@ class SeenStore:
                 canonical_key TEXT NOT NULL,
                 source TEXT NOT NULL,
                 event_id TEXT NOT NULL,
+                category TEXT,
                 payload_json TEXT NOT NULL,
                 status TEXT NOT NULL DEFAULT 'pending',
                 attempts INTEGER NOT NULL DEFAULT 0,
@@ -765,6 +766,11 @@ class SeenStore:
                 updated_at TEXT NOT NULL
             )"""
         )
+        outbox_columns = {
+            row[1] for row in self.connection.execute("PRAGMA table_info(delivery_outbox)").fetchall()
+        }
+        if "category" not in outbox_columns:
+            self.connection.execute("ALTER TABLE delivery_outbox ADD COLUMN category TEXT")
         self.connection.execute(
             """CREATE TABLE IF NOT EXISTS incoming_events (
                 event_id TEXT PRIMARY KEY,
@@ -863,10 +869,10 @@ class SeenStore:
         trace_id = alert_trace_id(alert)
         now = datetime.now(timezone.utc).isoformat()
         self.connection.execute(
-            """INSERT INTO delivery_outbox(trace_id,canonical_key,source,event_id,payload_json,status,created_at,updated_at)
-               VALUES(?,?,?,?,?,'pending',?,?)
-               ON CONFLICT(trace_id) DO UPDATE SET payload_json=excluded.payload_json, updated_at=excluded.updated_at""",
-            (trace_id, alert_canonical_key(alert), alert.source, alert.event_id, json.dumps(payload, ensure_ascii=False), now, now),
+            """INSERT INTO delivery_outbox(trace_id,canonical_key,source,event_id,category,payload_json,status,created_at,updated_at)
+               VALUES(?,?,?,?,?,?,'pending',?,?)
+               ON CONFLICT(trace_id) DO UPDATE SET category=excluded.category, payload_json=excluded.payload_json, updated_at=excluded.updated_at""",
+            (trace_id, alert_canonical_key(alert), alert.source, alert.event_id, alert.category, json.dumps(payload, ensure_ascii=False), now, now),
         )
         self.connection.commit()
         update_health("delivery", **self.delivery_diagnostics())
@@ -948,12 +954,12 @@ class SeenStore:
         """Return a bounded, non-secret recent delivery history for health checks."""
         database = db or self.connection
         rows = database.execute(
-            """SELECT trace_id, status, attempts, last_error, updated_at
+            """SELECT trace_id, source, event_id, category, status, attempts, last_error, updated_at
                FROM delivery_outbox ORDER BY updated_at DESC LIMIT ?""",
             (max(1, min(20, int(limit))),),
         ).fetchall()
         history: list[dict[str, Any]] = []
-        for trace_id, outbox_status, attempts, last_error, updated_at in rows:
+        for trace_id, source, event_id, category, outbox_status, attempts, last_error, updated_at in rows:
             receipt = database.execute(
                 """SELECT status, delivered_count, failed_count, reported_at, error, updated_at
                    FROM delivery_receipts
@@ -981,6 +987,9 @@ class SeenStore:
             ).fetchone()[0])
             history.append({
                 "trace_id": str(trace_id),
+                "source": str(source),
+                "event_id": str(event_id),
+                "category": str(category) if category else None,
                 "outbox_status": str(outbox_status),
                 "attempts": int(attempts),
                 "last_error": str(last_error) if last_error else None,
