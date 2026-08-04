@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from src.config import get_settings
 from src.briefing_cards import build_briefing_snapshot
 from src.market_data import build_market_snapshot
-from src.refresh_market_data import write_snapshot
+from src.refresh_market_data import merge_published_metadata, write_snapshot
 from src.telegram_client import send_briefs
 
 
@@ -26,6 +26,35 @@ SLOT_LABELS = {
 }
 MAX_BRIEF_LENGTH = 30
 TAIWAN_SESSION_SLOTS = frozenset({"pre_open", "intraday", "midday", "afternoon"})
+
+
+def _write_output(values: dict[str, object]) -> None:
+    """Publish non-secret correlation values to GitHub Actions outputs.
+
+    The same values are also printed for local runs.  Telegram text remains
+    intentionally short; correlation belongs in Actions, Railway and the
+    Mini App snapshot rather than in the 30-character watch message.
+    """
+    lines = [f"{key}={str(value or '')}" for key, value in values.items()]
+    destination = os.getenv("GITHUB_OUTPUT")
+    if destination:
+        with open(destination, "a", encoding="utf-8") as handle:
+            handle.write("\n".join(lines) + "\n")
+    else:
+        print("\n".join(lines))
+
+
+def briefing_correlation(snapshot: dict, slot: str, event: dict | None = None) -> dict[str, str]:
+    """Return the IDs shared by a scheduled report and its Mini App card."""
+    snapshot_id = str(snapshot.get("snapshot_id") or "")
+    item = event or {}
+    observation_id = str(
+        item.get("observation_id")
+        or (item.get("instrument") or {}).get("observation_id")
+        or ""
+    )
+    trace_id = f"brief-{snapshot_id}-{slot}" if snapshot_id else f"brief-{slot}"
+    return {"trace_id": trace_id, "snapshot_id": snapshot_id, "observation_id": observation_id}
 
 # External scheduler calls are accepted only around their declared Taiwan-time
 # slot. This prevents an accidental early backup request from consuming the
@@ -205,8 +234,27 @@ def main() -> None:
         raise RuntimeError("缺少 Telegram 設定，未發送快報。")
     snapshot = build_market_snapshot()
     snapshot["briefing"] = build_briefing_snapshot(snapshot, slot)
-    write_snapshot(snapshot)
-    write_event_lock_key(_pick_event(snapshot, slot))
+    published = write_snapshot(snapshot)
+    if not published:
+        _write_output({"sent": "false", "reason": "snapshot_publish_skipped"})
+        return
+    event = _pick_event(snapshot, slot)
+    correlation = briefing_correlation(snapshot, slot, event)
+    snapshot_id = correlation["snapshot_id"]
+    observation_id = correlation["observation_id"]
+    trace_id = correlation["trace_id"]
+    # Keep the correlation contract in the published JSON so the Mini App can
+    # show exactly which observation produced the Telegram brief.
+    snapshot.setdefault("briefing", {})["trace_id"] = trace_id
+    snapshot["briefing"]["snapshot_id"] = snapshot_id
+    snapshot["briefing"]["observation_id"] = observation_id
+    if not merge_published_metadata(
+        {"trace_id": trace_id, "snapshot_id": snapshot_id, "observation_id": observation_id},
+        expected_snapshot_id=snapshot_id,
+    ):
+        _write_output({"sent": "false", "reason": "snapshot_metadata_merge_skipped", "trace_id": trace_id})
+        return
+    write_event_lock_key(event)
     brief = build_brief(snapshot, slot)
     results = send_briefs(
         token=settings.telegram_bot_token or "",
@@ -214,12 +262,26 @@ def main() -> None:
         text=brief,
         dashboard_url=settings.dashboard_url,
     )
-    if event := _pick_event(snapshot, slot):
+    summary = {
+        "delivered": sum(result.delivered for result in results),
+        "failed": sum(not result.delivered for result in results),
+    }
+    _write_output({
+        "sent": "true",
+        "reason": "sent_partial" if summary["failed"] else "sent",
+        "trace_id": trace_id,
+        "snapshot_id": snapshot_id,
+        "observation_id": observation_id,
+        "delivery_status": "delivered" if not summary["failed"] else "partial" if summary["delivered"] else "failed",
+        "delivered_count": summary["delivered"],
+        "failed_count": summary["failed"],
+    })
+    if event:
         from src.event_ledger import EventLedger
         ledger = EventLedger()
-        ledger.mark_reminded(event)
+        ledger.mark_reminded({**event, "trace_id": trace_id})
         ledger.save()
-    delivered = sum(result.delivered for result in results)
+    delivered = summary["delivered"]
     unavailable = [result.chat_id for result in results if not result.delivered]
     print(f"已發送 {slot} 快報給 {delivered}/{len(results)} 位收件人。")
     if unavailable:

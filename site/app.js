@@ -118,6 +118,10 @@ const renderAlertTrace = (event) => {
   container.hidden = true;
   const trace = event?.source_trace;
   const facts = [];
+  const observationId = event?.observation_id || event?.instrument?.observation_id;
+  if (observationId) facts.push(`觀測 ID：${observationId}`);
+  if (event?.snapshot_id) facts.push(`快照 ID：${event.snapshot_id}`);
+  if (event?.trace_id) facts.push(`Trace ID：${event.trace_id}`);
   if (trace?.verification) facts.push(`核對：${trace.verification}`);
   if (event?.impact_confirmation?.method) {
     const markets = (event.impact_confirmation.markets || []).join("、");
@@ -402,6 +406,21 @@ const renderBriefing = (briefing, generatedAt) => {
   setText("briefing-time", `${displayTime} CST`);
   setText("briefing-overview", report.overview || "本次以公開市場報價、官方事件與風險資料整理市場脈絡。 ");
   setText("briefing-reminder", report.reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
+  const correlation = document.getElementById("briefing-correlation");
+  if (correlation) {
+    correlation.replaceChildren();
+    const values = [
+      ["觀測 ID", report.observation_id],
+      ["報告 Trace ID", report.trace_id],
+      ["快照 ID", report.snapshot_id],
+    ].filter(([, value]) => value);
+    values.forEach(([label, value]) => {
+      const item = document.createElement("span");
+      item.textContent = `${label}：${value}`;
+      correlation.append(item);
+    });
+    correlation.hidden = correlation.childElementCount === 0;
+  }
   const container = document.getElementById("briefing-observations");
   if (!container) return;
   if (!observations.length) { container.innerHTML = '<p class="empty">本次定時報資料暫時無法取得</p>'; return; }

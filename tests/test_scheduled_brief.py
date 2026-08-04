@@ -1,7 +1,7 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from src.scheduled_brief import build_brief, resolve_slot
+from src.scheduled_brief import briefing_correlation, build_brief, resolve_slot
 
 
 def test_taiwan_price_brief_includes_the_current_percent_move():
@@ -97,3 +97,16 @@ def test_brief_preserves_market_move_when_event_label_is_too_long():
 
     assert len(brief) <= 30
     assert brief.endswith("NVDA📉-3.2%")
+
+
+def test_scheduled_brief_correlation_uses_published_observation_id():
+    correlation = briefing_correlation(
+        {"snapshot_id": "snap123456789012"},
+        "midday",
+        {"instrument": {"observation_id": "obs123"}},
+    )
+    assert correlation == {
+        "trace_id": "brief-snap123456789012-midday",
+        "snapshot_id": "snap123456789012",
+        "observation_id": "obs123",
+    }

@@ -51,6 +51,8 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
       DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+      RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
+      RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET }}
       SLOT: ${{ inputs.slot || github.event.client_payload.slot || 'auto' }}
       FORCE: ${{ inputs.force || github.event.client_payload.force || 'false' }}
       STRICT_WINDOW: ${{ github.event_name == 'workflow_dispatch' && 'false' || 'true' }}
@@ -90,6 +92,16 @@ jobs:
             arguments+=(--strict-window)
           fi
           python -m src.scheduled_brief "${arguments[@]}"
+      - name: Persist scheduled-brief delivery receipt to Railway
+        if: always() && steps.send_brief.outputs.sent == 'true'
+        continue-on-error: true
+        env:
+          TRACE_ID: ${{ steps.send_brief.outputs.trace_id }}
+          DELIVERY_STATUS: ${{ steps.send_brief.outputs.delivery_status }}
+          DELIVERED_COUNT: ${{ steps.send_brief.outputs.delivered_count }}
+          FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count }}
+          FAILED_RECIPIENT_HASHES: ""
+        run: python -m src.delivery_callback
       - name: 建立價格／事件共用去重紀錄
         if: success() && steps.send_brief.outputs.event_key != ''
         run: touch .official-event-lock
