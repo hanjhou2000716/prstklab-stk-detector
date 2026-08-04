@@ -135,7 +135,26 @@ def crosscheck_taiex_quote(
     can be inspected.  If either official observation is missing or their
     directions conflict, ``crosscheck_status`` blocks urgent price alerts.
     """
-    source_observations = {"twse": twse, "taifex": taifex}
+    source_observations = [
+        {
+            "label": "TWSE",
+            "url": TWSE_MIS_TAIEX_URL,
+            "quote_time": (twse or {}).get("quote_time") or "",
+            "quote_date": (twse or {}).get("quote_date"),
+            "price": (twse or {}).get("price"),
+            "change_percent": (twse or {}).get("change_percent"),
+            "available": bool(twse),
+        },
+        {
+            "label": "TAIFEX",
+            "url": TAIFEX_QUOTE_URL,
+            "quote_time": (taifex or {}).get("quote_time") or "",
+            "quote_date": (taifex or {}).get("quote_date"),
+            "price": (taifex or {}).get("price"),
+            "change_percent": (taifex or {}).get("change_percent"),
+            "available": bool(taifex),
+        },
+    ]
     if not twse or not taifex:
         return {
             **quote,

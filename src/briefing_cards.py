@@ -249,7 +249,11 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
     risk = snapshot.get("risk") or {}
     all_items = {item.get("ticker"): item for item in [*indices, *quotes, *macro_quotes] if item.get("ticker")}
     taiex = all_items.get("TAIEX") or {}
-    taifex = (taiex.get("crosscheck_sources") or {}).get("taifex") if isinstance(taiex.get("crosscheck_sources"), dict) else None
+    raw_crosscheck = taiex.get("crosscheck_sources") or []
+    if isinstance(raw_crosscheck, dict):
+        taifex = raw_crosscheck.get("taifex")
+    else:
+        taifex = next((item for item in raw_crosscheck if isinstance(item, dict) and str(item.get("label", "")).upper() == "TAIFEX"), None)
     if isinstance(taifex, dict) and taifex.get("price") is not None:
         all_items["TXF"] = {**taifex, "ticker": "TXF", "name": "台指期", "market": "taiwan", "currency": "點"}
     cards = [all_items[ticker] for ticker in GLOBAL_TICKERS if all_items.get(ticker)]
