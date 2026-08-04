@@ -164,14 +164,34 @@ def _periodic_facts(facts: dict[str, Any], names: tuple[str, ...], forms: set[st
     return sorted(unique.values(), key=lambda row: str(row.get("end", "")), reverse=True)
 
 
+def _latest_shares_outstanding(facts: dict[str, Any]) -> float | None:
+    """Return the latest SEC-reported share count when publicly disclosed.
+
+    Yahoo ``floatShares`` is a useful fallback, but it is frequently delayed or
+    rate-limited in hosted scans.  The SEC ``dei`` fact is a first-party,
+    point-in-time value and is sufficient for the turnover-rate proxy used by
+    the Pristine Value screen.  A missing fact remains ``None``; it is never
+    replaced with a guessed market-cap-derived count.
+    """
+    units = facts.get("facts", {}).get("dei", {}).get("EntityCommonStockSharesOutstanding", {}).get("units", {})
+    rows = [row for values in units.values() for row in values if row.get("val") is not None]
+    if not rows:
+        return None
+    rows.sort(key=lambda row: (str(row.get("end") or ""), str(row.get("filed") or "")), reverse=True)
+    value = number(rows[0].get("val"))
+    return value if value and value > 0 else None
+
+
 def sec_value_metrics(facts: dict[str, Any]) -> dict[str, Any]:
     """Read up to three annual SEC facts and disclose insufficiency explicitly."""
     net = _annual_facts(facts, "NetIncomeLoss")
     equity = _annual_facts(facts, "StockholdersEquity") or _annual_facts(facts, "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest")
     dividends = _annual_facts(facts, "PaymentsOfDividendsCommonStock")
+    shares_outstanding = _latest_shares_outstanding(facts)
     if not net:
         return {"net_income": None, "roe": None, "payout_ratio": None, "years_available": 0, "roe_stable": None,
-                "three_year_eps_positive": None, "four_quarter_eps_positive": None, "three_year_dividend_paid": None}
+                "three_year_eps_positive": None, "four_quarter_eps_positive": None, "three_year_dividend_paid": None,
+                "shares_outstanding": shares_outstanding}
     net_by_year = {str(row.get("fy") or row.get("end")): number(row.get("val")) for row in net}
     equity_by_year = {str(row.get("fy") or row.get("end")): number(row.get("val")) for row in equity}
     years = [year for year, value in net_by_year.items() if value is not None]
@@ -208,6 +228,7 @@ def sec_value_metrics(facts: dict[str, Any]) -> dict[str, Any]:
         "three_year_eps_positive": len(annual_eps_values) >= 3 and all(value is not None and value > 0 for value in annual_eps_values),
         "four_quarter_eps_positive": len(quarter_eps_values) >= 4 and all(value is not None and value > 0 for value in quarter_eps_values),
         "three_year_dividend_paid": len(dividend_values) >= 3 and all(value is not None and abs(value) > 0 for value in dividend_values),
+        "shares_outstanding": shares_outstanding,
         "financial_year": latest_year,
         "financial_source": "SEC EDGAR CompanyFacts",
     }

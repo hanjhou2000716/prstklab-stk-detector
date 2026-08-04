@@ -149,6 +149,14 @@ def main() -> None:
     share_counts = public_share_counts(
         [item for item in candidates if args.market != "taiwan" or item["ticker"] in history]
     )
+    if args.market == "us":
+        # SEC CompanyFacts is the first-party fallback for share counts.  Yahoo
+        # may omit floatShares during rate limiting; do not turn that omission
+        # into a blanket "all US rows incomplete" result.
+        for item in candidates:
+            sec_shares = fundamentals.get(item["ticker"], {}).get("shares_outstanding")
+            if sec_shares and item["symbol"] not in share_counts:
+                share_counts[item["symbol"]] = float(sec_shares)
     quotes, quote_errors = public_quotes(candidates, args.batch_size, share_counts)
     base_rows = review_public_pool(
         candidates, fundamentals, quotes, args.market, limit=None,
@@ -175,6 +183,18 @@ def main() -> None:
 
     pd.DataFrame(rows).to_csv(data_dir / f"{args.market}-value-scan.csv", index=False, encoding="utf-8-sig")
     failed_total = len(universe_errors) + len(fundamental_errors) + len(quote_errors)
+    complete_records = len(evaluable_rows)
+    if failed_total == 0 and (args.market != "taiwan" or history_complete):
+        scan_state = "complete"
+    elif complete_records > 0:
+        scan_state = "partial"
+    else:
+        scan_state = "failed"
+    candidate_state = (
+        "available" if rows else
+        "data_gap" if scan_state in {"partial", "failed"} else
+        "no_candidates"
+    )
     summary = {
         "requested": len(candidates),
         # A current TWSE snapshot is not a completed Taiwan Pristine Value
@@ -185,7 +205,15 @@ def main() -> None:
         "observation_candidates": len(visible_observation_rows),
         "selection_diagnostics": selection_diagnostics,
         "failed": failed_total,
-        "scan_state": "complete",
+        "scan_state": scan_state,
+        "candidate_state": candidate_state,
+        "complete_records": complete_records,
+        "data_gap_counts": {
+            "universe": len(universe_errors),
+            "fundamentals": len(fundamental_errors),
+            "quotes": len(quote_errors),
+            "history": len(history_errors) if args.market == "taiwan" else 0,
+        },
         "status": "可用" if failed_total == 0 else "部分缺漏",
         "universe_source": "Yuanta 0050+0051 PCF" if args.market == "taiwan" else "Nasdaq-100 + semiconductor/AI core",
         "financial_source": "TWSE OpenAPI + MOPS historical filings" if args.market == "taiwan" else "SEC EDGAR CompanyFacts",
@@ -212,6 +240,7 @@ def main() -> None:
         summary["history_failure_count"] = len(history_errors)
         if len(history) < len(candidates):
             summary["scan_state"] = "building"
+            summary["candidate_state"] = "data_gap"
             summary["status"] = "建檔中"
             summary["notice"] = (
                 f"璞玉價值歷史資料建檔中：已核對 {len(history)}／{len(candidates)} 檔；"
