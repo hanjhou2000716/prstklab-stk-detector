@@ -359,7 +359,7 @@ def _non_negative_int(value: Any) -> int | None:
     return number if number >= 0 else None
 
 
-def _age_seconds(value: str | None) -> int | None:
+def _age_seconds(value: str | None, *, now: datetime | None = None) -> int | None:
     """Return non-negative UTC age for an ISO timestamp, if parseable."""
     if not value:
         return None
@@ -367,14 +367,50 @@ def _age_seconds(value: str | None) -> int | None:
         timestamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
         if timestamp.tzinfo is None:
             timestamp = timestamp.replace(tzinfo=timezone.utc)
-        return max(0, int((datetime.now(timezone.utc) - timestamp).total_seconds()))
+        reference = now or datetime.now(timezone.utc)
+        if reference.tzinfo is None:
+            reference = reference.replace(tzinfo=timezone.utc)
+        return max(0, int((reference.astimezone(timezone.utc) - timestamp.astimezone(timezone.utc)).total_seconds()))
     except (TypeError, ValueError, OverflowError):
         return None
 
 
+def monitor_heartbeat(monitor: dict[str, Any], *, now: datetime | None = None) -> dict[str, Any]:
+    """Return a bounded heartbeat diagnostic for the long-running poll loop.
+
+    Railway can still reach ``/health`` when the asyncio worker is alive but
+    blocked in a provider request.  Comparing the last completed cycle with
+    a timeout derived from the configured poll interval makes that failure
+    visible without changing the platform-level liveness status.
+    """
+    reference = now or datetime.now(timezone.utc)
+    if reference.tzinfo is None:
+        reference = reference.replace(tzinfo=timezone.utc)
+    interval = _non_negative_int(monitor.get("poll_interval_seconds")) or 120
+    # Allow one missed cycle plus a small network/SQLite margin.  Keep a
+    # minimum so the startup window is not reported stale during deployment.
+    timeout = max(300, interval * 2 + 60)
+    completed_age = _age_seconds(monitor.get("last_cycle_completed_at"), now=reference)
+    started_age = _age_seconds(monitor.get("last_cycle_started_at"), now=reference)
+    if completed_age is None:
+        heartbeat_status = "starting" if started_age is None or started_age <= timeout else "stale"
+    else:
+        heartbeat_status = "healthy" if completed_age <= timeout else "stale"
+    return {
+        "heartbeat_status": heartbeat_status,
+        "heartbeat_timeout_seconds": timeout,
+        "last_cycle_age_seconds": completed_age,
+        "current_cycle_age_seconds": started_age,
+    }
+
+
 def health_snapshot() -> dict[str, Any]:
     with HEALTH_LOCK:
-        return json.loads(json.dumps(HEALTH_STATE))
+        snapshot = json.loads(json.dumps(HEALTH_STATE))
+    monitor = snapshot.get("monitor")
+    if isinstance(monitor, dict):
+        monitor.update(monitor_heartbeat(monitor))
+    return snapshot
 
 
 @dataclass(frozen=True)
