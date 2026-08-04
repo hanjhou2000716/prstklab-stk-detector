@@ -427,6 +427,14 @@ GitHub, while a replayable `pending`/`failed` record waits for the outbox
 worker. This prevents a source refresh and the retry worker from sending the
 same event through two paths.
 
+The monitor performs bounded SQLite retention maintenance at the start of each
+poll cycle. Terminal `sent` and `partial` outbox rows (and their per-recipient
+receipts) older than 30 days are removed in batches of at most 500 rows. Recent
+history remains available to `/health`; `pending` and `failed` rows are never
+removed by retention, so retryable delivery failures and their audit trail are
+preserved. The health payload reports `delivery.retention_days`,
+`delivery.last_pruned_at`, and `delivery.last_pruned_count`.
+
 The `/health` response also includes `monitor.last_cycle_started_at` and
 `monitor.last_cycle_completed_at`. These timestamps distinguish a live HTTP
 process from a polling loop that is stalled or repeatedly failing; inspect

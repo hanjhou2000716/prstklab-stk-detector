@@ -1089,6 +1089,39 @@ class SeenStore:
             "recent": recent,
         }
 
+    def prune_delivery_history(self, retention_days: int = 30, limit: int = 500) -> int:
+        """Remove bounded, terminal delivery history after the retention window.
+
+        Pending and failed rows are deliberately retained so a transient
+        delivery failure remains retryable and auditable.  Only terminal
+        ``sent``/``partial`` outbox rows are eligible, and their receipts are
+        deleted first because receipts have no foreign-key cascade on older
+        Railway volumes.  The limit keeps a single monitor cycle inexpensive.
+        """
+        days = max(30, int(retention_days))
+        batch_size = max(1, min(5000, int(limit)))
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        rows = self.connection.execute(
+            """SELECT trace_id FROM delivery_outbox
+               WHERE status IN ('sent', 'partial') AND updated_at < ?
+               ORDER BY updated_at ASC LIMIT ?""",
+            (cutoff, batch_size),
+        ).fetchall()
+        trace_ids = [str(row[0]) for row in rows]
+        if not trace_ids:
+            return 0
+        placeholders = ",".join("?" for _ in trace_ids)
+        self.connection.execute(
+            f"DELETE FROM delivery_receipts WHERE trace_id IN ({placeholders})",
+            trace_ids,
+        )
+        self.connection.execute(
+            f"DELETE FROM delivery_outbox WHERE trace_id IN ({placeholders})",
+            trace_ids,
+        )
+        self.connection.commit()
+        return len(trace_ids)
+
     def record_delivery_status(self, payload: dict[str, Any]) -> bool:
         """Persist an authenticated GitHub per-run delivery receipt."""
         trace_id = str(payload.get("trace_id") or "").strip()
@@ -1861,7 +1894,13 @@ async def monitor_forever() -> None:
     store = SeenStore(Path(os.environ.get("MONITOR_STATE_PATH", "/data/jin10-monitor.sqlite3")))
     global DELIVERY_STORE
     DELIVERY_STORE = store
-    update_health("delivery", **store.delivery_diagnostics())
+    update_health(
+        "delivery",
+        **store.delivery_diagnostics(),
+        retention_days=30,
+        last_pruned_at=None,
+        last_pruned_count=0,
+    )
     first_cycle = True
     gdelt_baseline = True
     last_gdelt_poll = 0.0
@@ -1881,6 +1920,27 @@ async def monitor_forever() -> None:
             poll_interval_seconds=interval,
             last_cycle_started_at=cycle_started_at,
         )
+        try:
+            pruned_delivery_count = store.prune_delivery_history()
+            # Keep the event ledger's existing 30-day retention policy active
+            # as well; both cleanups are bounded and independent of source
+            # polling so a stale feed cannot block maintenance.
+            store.prune_event_ledger()
+            maintenance_health = {
+                "retention_days": 30,
+                "last_pruned_count": pruned_delivery_count,
+            }
+            if pruned_delivery_count:
+                maintenance_health["last_pruned_at"] = datetime.now(timezone.utc).isoformat()
+            update_health("delivery", **store.delivery_diagnostics(), **maintenance_health)
+            if pruned_delivery_count:
+                logging.info(
+                    "Delivery history retention cleanup removed %s terminal row(s)",
+                    pruned_delivery_count,
+                )
+        except Exception:
+            # Maintenance must never stop a fresh source poll or a retry pass.
+            logging.exception("Delivery history retention cleanup failed; continuing monitor cycle")
         try:
             retried = await retry_due_outbox(
                 store,

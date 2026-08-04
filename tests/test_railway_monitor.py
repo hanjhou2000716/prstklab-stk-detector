@@ -832,6 +832,56 @@ def test_delivery_diagnostics_does_not_apply_older_receipt_to_newer_outbox(tmp_p
     assert diagnostics["stale_receipt_status"] == "partial"
 
 
+def test_delivery_retention_prunes_only_old_terminal_rows_and_receipts(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    sent = monitor.Alert("old-sent", "macro", "CPI release", "2026-07-01T10:00:00+00:00")
+    partial = monitor.Alert("old-partial", "energy", "Oil update", "2026-07-01T10:01:00+00:00")
+    pending = monitor.Alert("old-pending", "policy", "Tariff update", "2026-07-01T10:02:00+00:00")
+    sent_trace = store.record_outbox(sent, {"summary": sent.summary})
+    partial_trace = store.record_outbox(partial, {"summary": partial.summary})
+    pending_trace = store.record_outbox(pending, {"summary": pending.summary})
+    store.mark_outbox(sent_trace, "sent")
+    store.mark_outbox(partial_trace, "partial")
+    old = "2026-01-01T00:00:00+00:00"
+    store.connection.execute(
+        "UPDATE delivery_outbox SET updated_at=? WHERE trace_id IN (?,?,?)",
+        (old, sent_trace, partial_trace, pending_trace),
+    )
+    store.connection.execute(
+        "INSERT INTO delivery_receipts(trace_id,recipient_hash,status,error,updated_at) VALUES(?,?,?,?,?)",
+        (sent_trace, "recipient-a", "delivered", None, old),
+    )
+    store.connection.commit()
+
+    assert store.prune_delivery_history(retention_days=30, limit=10) == 2
+    remaining = {
+        row[0]: row[1]
+        for row in store.connection.execute(
+            "SELECT trace_id,status FROM delivery_outbox ORDER BY trace_id"
+        ).fetchall()
+    }
+    assert remaining == {pending_trace: "pending"}
+    assert store.connection.execute(
+        "SELECT COUNT(*) FROM delivery_receipts WHERE trace_id=?", (sent_trace,)
+    ).fetchone()[0] == 0
+
+
+def test_delivery_retention_cleanup_is_bounded(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    traces = []
+    for index in range(3):
+        alert = monitor.Alert(f"old-{index}", "macro", f"CPI release {index}", "2026-07-01T10:00:00+00:00")
+        trace_id = store.record_outbox(alert, {"summary": alert.summary})
+        store.mark_outbox(trace_id, "sent")
+        traces.append(trace_id)
+    old = "2026-01-01T00:00:00+00:00"
+    store.connection.execute("UPDATE delivery_outbox SET updated_at=?", (old,))
+    store.connection.commit()
+
+    assert store.prune_delivery_history(limit=2) == 2
+    assert store.connection.execute("SELECT COUNT(*) FROM delivery_outbox").fetchone()[0] == 1
+
+
 def test_delivery_receipt_can_be_saved_from_health_server_thread(tmp_path):
     store = monitor.SeenStore(tmp_path / "state.sqlite3")
     alert = monitor.Alert("jin10-thread-receipt", "macro", "CPI release", "2026-08-02T10:00:00+00:00")
