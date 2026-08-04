@@ -28,6 +28,18 @@ def test_monitor_imports_from_railway_root_without_repository_src_package():
     # of the parent coverage session.
     environment.pop("COVERAGE_PROCESS_START", None)
     environment.pop("COVERAGE_FILE", None)
+    # pytest-cov 6 injects the COV_CORE_* variables used by its subprocess
+    # tracer.  Remove the full set so the isolation subprocess cannot create
+    # a statement-only data file that later conflicts with the parent's
+    # branch-enabled report.
+    for coverage_key in (
+        "COV_CORE_SOURCE",
+        "COV_CORE_CONFIG",
+        "COV_CORE_DATAFILE",
+        "COV_CORE_BRANCH",
+        "COV_CORE_CONTEXT",
+    ):
+        environment.pop(coverage_key, None)
     command = [
         sys.executable,
         "-c",
