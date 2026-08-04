@@ -1,0 +1,42 @@
+{
+  "release_id": "release-c755594704134bff",
+  "created_at": "2026-08-04T10:04:10.660611+00:00",
+  "market_snapshot_id": "191d5996569aabd5",
+  "research_snapshot_id": "research-3343c4f7248f100d",
+  "event_snapshot_id": "event-b68c8744c6c865bd",
+  "policy_version": "2026.08",
+  "schema_versions": {
+    "market": "3.0",
+    "research": "2.0",
+    "events": "1"
+  },
+  "artifact_hashes": {
+    "market.json": "d97ed5e53b86b636197c48431ae2f26fa0df83dd839be73dea71755b15826f95",
+    "research-report.json": "c3a88ae97a3d7950f92ddcee747f6f6c44c35896b3ea291de7c06888401c5d80",
+    "event-ledger.json": "7b883db6d9bccfe5be637102c5c9242d69fba83efedc6c9190f3764673839b41"
+  },
+  "artifact_paths": {
+    "market.json": "data/market.json",
+    "research-report.json": "data/research-report.json",
+    "event-ledger.json": "data/event-ledger.json"
+  },
+  "status": "invalid",
+  "validation_errors": [
+    "indices[1]: Yahoo source_label conflicts with source_domain=tpex.org.tw",
+    "indices[1]: source_label is not represented in quote_source",
+    "indices[1]: technical context predates quote without technical_context_stale=true",
+    "quotes[3]: technical context predates quote without technical_context_stale=true",
+    "quotes[4]: technical context predates quote without technical_context_stale=true",
+    "quotes[5]: technical context predates quote without technical_context_stale=true",
+    "quotes[6]: technical context predates quote without technical_context_stale=true",
+    "release: research snapshot_id does not match manifest",
+    "schema: $.sources[0].candidate_state None is not one of ['available', 'no_candidates', 'building', 'data_gap', 'failed']",
+    "schema: $.sources[1].candidate_state None is not one of ['available', 'no_candidates', 'building', 'data_gap', 'failed']",
+    "schema: $.sources[2].candidate_state None is not one of ['available', 'no_candidates', 'building', 'data_gap', 'failed']",
+    "schema: $.sources[3].candidate_state None is not one of ['available', 'no_candidates', 'building', 'data_gap', 'failed']",
+    "schema: $.sources[4].candidate_state None is not one of ['available', 'no_candidates', 'building', 'data_gap', 'failed']",
+    "schema: $.sources[5].candidate_state None is not one of ['available', 'no_candidates', 'building', 'data_gap', 'failed']",
+    "schema: $.sources[6].data_gap_counts {'universe': 0, 'fundamentals': 0, 'quotes': 0, 'history': 0} is not of type 'integer', 'null'",
+    "schema: $.sources[7].data_gap_counts {'universe': 0, 'fundamentals': 0, 'quotes': 0, 'history': 0} is not of type 'integer', 'null'"
+  ]
+}
