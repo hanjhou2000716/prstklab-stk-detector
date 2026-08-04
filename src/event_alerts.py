@@ -296,6 +296,18 @@ def _price_signal_suppression(index: dict[str, Any]) -> dict[str, Any] | None:
     ticker = str(index.get("ticker") or "").upper()
     if index.get("quote_delayed"):
         return {"ticker": ticker, "reason": "quote_delayed"}
+    # A quote can be technically present while belonging to an earlier
+    # trading session.  It may remain visible in a market card, but it must
+    # never create a new price alert.  ``unknown`` is fail-closed as well:
+    # an unparseable timestamp is not evidence of a current move.
+    freshness = str(index.get("freshness") or "").strip().lower()
+    freshness_reason = {
+        "stale": "quote_stale",
+        "unavailable": "quote_unavailable",
+        "unknown": "quote_freshness_unknown",
+    }.get(freshness)
+    if freshness_reason:
+        return {"ticker": ticker, "reason": freshness_reason}
     percent = index.get("change_percent")
     if percent is None:
         return {"ticker": ticker, "reason": "missing_change_percent"}
@@ -333,6 +345,10 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     # A delayed intraday bar remains useful as an explicitly labelled quote,
     # but must not create an urgent notification from an out-of-date move.
     if index.get("quote_delayed"):
+        return None
+    # Keep stale/unavailable quotes visible for transparency, but fail closed
+    # before they can become an urgent Telegram notification.
+    if str(index.get("freshness") or "").strip().lower() in {"stale", "unavailable", "unknown"}:
         return None
     # Taiwan intraday alerts have a higher evidence bar than a daily card:
     # TWSE's cash-index observation and TAIFEX TXF must be available and have
@@ -380,7 +396,10 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         label = f"{ticker}價格訊號觸發"
 
     if move_15m is not None and move_15m >= minimum_15m_move and percent < 0:
-        pattern, risk = "突然大漲", "警戒"
+        # A positive 15-minute move while the daily move is negative is a
+        # rebound, not a rally.  Calling it "突然大漲" was the source of
+        # false up-direction notifications in the dashboard and Telegram.
+        pattern, risk = "快速反彈", "警戒"
         stock_observation = "觀察反彈能否延續並與 Nasdaq、費半或台指同步；單一訊號僅供公開市場觀察。"
     elif move_15m is not None and move_15m <= -minimum_15m_move:
         pattern = "急跌"
@@ -391,8 +410,12 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         pattern, risk = "急跌", "警戒"
     elif percent >= 2:
         pattern, risk = "急升", "高波動"
-    else:
+    elif percent > 0:
         pattern, risk = "上漲", "波動擴大"
+    elif percent < 0:
+        pattern, risk = "下跌", "波動擴大"
+    else:
+        pattern, risk = "持平", "波動穩定"
 
     related = _related_indices(indices, ticker)
     impact_confirmation = _impact_confirmation(index, related, str(index.get("quote_time") or ""))
@@ -409,7 +432,7 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     intraday_text = f"｜15分鐘 {move_15m:+.2f}%" if move_15m is not None else ""
     change_text = f"{float(change):+,.2f}" if isinstance(change, (int, float)) else "資料暫缺"
     trigger = f"日內 {move}{intraday_text}｜點數 {change_text}｜最新 {price:,.2f}" if isinstance(price, (int, float)) else f"日內 {move}{intraday_text}"
-    if pattern == "突然大漲":
+    if pattern == "快速反彈":
         why_important = f"{trigger}。跌深後快速反彈代表短線風險偏好回升，仍需以後續連續報價確認。"
     elif has_15m_acceleration:
         why_important = f"{trigger}。15 分鐘內波動擴大，需留意是否持續並擴散至相關市場。"
