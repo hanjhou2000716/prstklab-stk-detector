@@ -156,6 +156,10 @@ def crosscheck_taiex_quote(
     return {
         **quote,
         "price": twse["price"],
+        # The official cash-index observation owns the comparison baseline.
+        # Keeping the Yahoo baseline here can make the displayed price,
+        # point change, and percentage change disagree after the cross-check.
+        "previous_close": twse.get("previous_close", quote.get("previous_close")),
         "change": twse["change"],
         "change_percent": twse["change_percent"],
         "quote_date": twse["quote_date"],
