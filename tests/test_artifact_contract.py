@@ -54,6 +54,16 @@ def test_release_rejects_mismatched_snapshot_ids():
     assert any("research snapshot_id" in error for error in errors)
 
 
+def test_research_rejects_candidate_count_semantic_mismatch():
+    errors = validate_research(_research(sources=[{
+        "market": "us", "strategy": "value", "scan_state": "complete",
+        "candidate_state": "no_candidates", "candidates": 2,
+        "visible_candidates": 1, "formal_candidates": 0,
+    }]))
+    assert any("candidates must equal visible_candidates" in error for error in errors)
+    assert any("no_candidates requires" in error for error in errors)
+
+
 def test_manifest_requires_release_envelope():
     errors = validate_manifest({"release_id": "short"})
     assert errors

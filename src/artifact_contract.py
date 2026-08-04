@@ -98,6 +98,7 @@ def validate_research(document: dict[str, Any]) -> list[str]:
         scan_state = source.get("scan_state")
         candidate_state = source.get("candidate_state")
         candidates = source.get("candidates")
+        visible = source.get("visible_candidates")
         formal = source.get("formal_candidates")
         unavailable = source.get("data_unavailable") is True or source.get("data_gap") is True
         if scan_state == "complete" and unavailable:
@@ -106,6 +107,12 @@ def validate_research(document: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: unknown candidate_state={candidate_state!r}")
         if candidate_state == "no_candidates" and unavailable:
             errors.append(f"{path}: no_candidates and data_gap are mutually exclusive")
+        if isinstance(candidates, int) and isinstance(visible, int) and candidates != visible:
+            errors.append(f"{path}: candidates must equal visible_candidates")
+        if candidate_state == "no_candidates" and isinstance(visible, int) and visible != 0:
+            errors.append(f"{path}: no_candidates requires visible_candidates=0")
+        if candidate_state == "available" and isinstance(visible, int) and visible == 0:
+            errors.append(f"{path}: available requires visible_candidates>0")
         if isinstance(candidates, int) and isinstance(formal, int) and formal > candidates:
             errors.append(f"{path}: formal_candidates cannot exceed candidates")
     return errors
