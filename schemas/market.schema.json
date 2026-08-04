@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/market.schema.json",
+  "type": "object",
+  "required": ["generated_at", "snapshot_id", "indices", "quotes", "source_health"],
+  "properties": {
+    "generated_at": {"type": "string", "format": "date-time"},
+    "snapshot_id": {"type": "string", "minLength": 8},
+    "release_id": {"type": "string", "minLength": 8},
+    "policy_version": {"type": "string", "minLength": 1},
+    "indices": {"type": "array", "items": {"$ref": "#/$defs/quote"}},
+    "quotes": {"type": "array", "items": {"$ref": "#/$defs/quote"}},
+    "source_health": {"type": "object"}
+  },
+  "$defs": {
+    "quote": {
+      "type": "object",
+      "required": ["ticker", "price", "quote_date", "source_label", "freshness"],
+      "properties": {
+        "ticker": {"type": "string", "minLength": 1},
+        "price": {"type": ["number", "null"]},
+        "quote_date": {"type": ["string", "null"]},
+        "source_label": {"type": "string", "minLength": 1},
+        "source_url": {"type": "string"},
+        "fetched_at": {"type": ["string", "null"]},
+        "published_at": {"type": ["string", "null"]},
+        "freshness": {"type": "string"},
+        "stale_used": {"type": "boolean"},
+        "quote_delayed": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

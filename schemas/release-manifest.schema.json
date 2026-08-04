@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/release-manifest.schema.json",
+  "type": "object",
+  "required": [
+    "release_id", "created_at", "market_snapshot_id", "research_snapshot_id",
+    "event_snapshot_id", "policy_version", "schema_versions", "artifact_hashes", "status"
+  ],
+  "properties": {
+    "release_id": {"type": "string", "minLength": 8},
+    "created_at": {"type": "string", "format": "date-time"},
+    "market_snapshot_id": {"type": "string", "minLength": 8},
+    "research_snapshot_id": {"type": "string", "minLength": 8},
+    "event_snapshot_id": {"type": "string", "minLength": 8},
+    "policy_version": {"type": "string", "minLength": 1},
+    "schema_versions": {"type": "object"},
+    "artifact_hashes": {"type": "object", "minProperties": 1},
+    "status": {"enum": ["ready", "rolled_back", "invalid"]}
+  },
+  "additionalProperties": true
+}
