@@ -4,42 +4,37 @@ on:
   workflow_dispatch:
     inputs:
       slot:
-        description: "快報時段；auto 依台灣時間判斷"
+        description: Briefing slot
         required: false
         default: auto
         type: choice
         options: [auto, morning, pre_open, intraday, midday, afternoon, post_close, us_premarket, us_open]
       force:
-        description: "略過同時段重複推播保護（僅供人工測試）"
+        description: Force a duplicate slot run
         required: false
         default: false
         type: boolean
   repository_dispatch:
     types: [scheduled-brief]
   schedule:
-    # UTC；以下時間均對應台灣時間週一至週五。
-    - cron: "0 22 * * 0-4"  # 06:00 晨報（前一日 UTC）
-    - cron: "45 0 * * 1-5"  # 08:45 盤前
-    - cron: "0 2 * * 1-5"   # 10:00 盤中
-    - cron: "45 3 * * 1-5"  # 11:45 午報
-    - cron: "15 5 * * 1-5"  # 13:15 午盤
-    - cron: "45 6 * * 1-5"  # 14:45 盤後，保留完整全市場研究處理窗口
-    - cron: "0 13 * * 1-5"  # 21:00，美股盤前（全年固定台灣時間）
+    - cron: "0 22 * * 0-4"
+    - cron: "45 0 * * 1-5"
+    - cron: "0 2 * * 1-5"
+    - cron: "45 3 * * 1-5"
+    - cron: "15 5 * * 1-5"
+    - cron: "45 6 * * 1-5"
+    - cron: "0 13 * * 1-5"
 
 permissions:
   contents: write
   pages: write
   id-token: write
 
-# All workflows that refresh committed dashboard data share one writer lock.
-# This prevents concurrent runs from racing on pushes to main.
 concurrency:
   group: main-data-writer
   cancel-in-progress: false
 
-# Serialize all runs and all other workflows that write committed dashboard
-# data. The immutable cache below still records a completed date/slot, so an
-# external Cron retry cannot send a second message after the primary run.
+# The lock deduplicates the Telegram notification, not the dashboard publication.
 
 jobs:
   refresh-notify-deploy:
@@ -57,105 +52,107 @@ jobs:
       FORCE: ${{ inputs.force || github.event.client_payload.force || 'false' }}
       STRICT_WINDOW: ${{ github.event_name == 'workflow_dispatch' && 'false' || 'true' }}
       NEWS_CACHE_PATH: site/data/news-cache.json
+      SNAPSHOT_PATH: site/data/market.json
+      MANIFEST_PATH: site/data/release-manifest.json
     steps:
-      - name: 取得程式碼
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: 設定 Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: 安裝相依套件
+      - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: 建立快報時段識別碼
+      - name: Resolve scheduled slot
         id: window
         run: |
           arguments=(--slot "$SLOT" --print-window)
-          if [ "$STRICT_WINDOW" = "true" ]; then
-            arguments+=(--strict-window)
-          fi
+          if [ "$STRICT_WINDOW" = "true" ]; then arguments+=(--strict-window); fi
           python -m src.scheduled_brief "${arguments[@]}" >> "$GITHUB_OUTPUT"
-      - name: 讀取同時段推播紀錄
+      - name: Restore scheduled idempotency lock
         if: steps.window.outputs.should_run == 'true' && env.FORCE != 'true'
         id: idempotency
         uses: actions/cache/restore@v4
         with:
           path: .scheduled-brief-lock
           key: scheduled-brief-${{ steps.window.outputs.key }}
-      - name: 更新資料並發送快報
-        id: send_brief
+      - name: Prepare immutable market snapshot
         if: steps.window.outputs.should_run == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true')
+        id: prepare
+        run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --prepare-only --snapshot "$SNAPSHOT_PATH" >> "$GITHUB_OUTPUT"
+      - name: Build release manifest
+        if: steps.prepare.outputs.prepared == 'true'
+        run: python -m src.release_manifest || test $? -eq 1
+      - name: Publish snapshot and manifest
+        if: steps.prepare.outputs.prepared == 'true'
         run: |
-          arguments=(--slot "$SLOT")
-          if [ "$STRICT_WINDOW" = "true" ]; then
-            arguments+=(--strict-window)
-          fi
-          python -m src.scheduled_brief "${arguments[@]}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/market.json site/data/news-cache.json site/data/release-manifest.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "chore: refresh public market snapshot"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then exit 0; fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            git fetch origin main
+            git rebase --autostash -X theirs origin/main
+          done
+      - name: Configure GitHub Pages
+        if: steps.prepare.outputs.prepared == 'true'
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        if: steps.prepare.outputs.prepared == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy Pages
+        if: steps.prepare.outputs.prepared == 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify deployed release before delivery
+        if: steps.prepare.outputs.prepared == 'true'
+        id: release_gate
+        run: |
+          python -m src.release_gate \
+            --manifest "$MANIFEST_PATH" \
+            --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" \
+            --public-url "${{ steps.deployment.outputs.page_url }}" \
+            >> "$GITHUB_OUTPUT"
+      - name: Send Telegram brief after successful publication
+        if: steps.release_gate.outputs.allowed == 'true'
+        id: send_brief
+        run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --send-only --snapshot "$SNAPSHOT_PATH" --manifest "$MANIFEST_PATH" --public-url "${{ steps.deployment.outputs.page_url }}"
       - name: Persist scheduled-brief delivery receipt to Railway
         if: always() && steps.send_brief.outputs.sent == 'true'
         continue-on-error: true
         env:
           TRACE_ID: ${{ steps.send_brief.outputs.trace_id }}
+          RELEASE_ID: ${{ steps.send_brief.outputs.release_id }}
+          SNAPSHOT_ID: ${{ steps.send_brief.outputs.snapshot_id }}
           DELIVERY_STATUS: ${{ steps.send_brief.outputs.delivery_status }}
           DELIVERED_COUNT: ${{ steps.send_brief.outputs.delivered_count }}
           FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count }}
           FAILED_RECIPIENT_HASHES: ""
         run: python -m src.delivery_callback
-      - name: 建立價格／事件共用去重紀錄
+      - name: Save event delivery lock
         if: success() && steps.send_brief.outputs.event_key != ''
         run: touch .official-event-lock
-      - name: 保存價格／事件共用去重紀錄
+      - name: Persist event delivery lock
         if: success() && steps.send_brief.outputs.event_key != ''
         uses: actions/cache/save@v4
         with:
           path: .official-event-lock
           key: official-event-${{ steps.send_brief.outputs.event_key }}
-      - name: 保存最新市場快照
-        if: steps.window.outputs.should_run == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true')
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          python -m src.release_manifest || test $? -eq 1
-          git add site/data/market.json site/data/news-cache.json site/data/release-manifest.json
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "chore: refresh public market snapshot"
-          for attempt in 1 2 3; do
-            if git push origin HEAD:main; then
-              exit 0
-            fi
-
-            if [ "$attempt" -eq 3 ]; then
-              echo "無法在三次嘗試內回存市場快照。"
-              exit 1
-            fi
-
-            git fetch origin main
-            git rebase --autostash -X theirs origin/main
-          done
-      - name: 建立同時段推播紀錄
-        if: success() && steps.window.outputs.should_run == 'true' && env.FORCE != 'true' && steps.idempotency.outputs.cache-hit != 'true'
+      - name: Save scheduled idempotency lock
+        if: success() && steps.prepare.outputs.prepared == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true') && steps.send_brief.outputs.sent == 'true'
         run: touch .scheduled-brief-lock
-      - name: 保存同時段推播紀錄
-        if: success() && steps.window.outputs.should_run == 'true' && env.FORCE != 'true' && steps.idempotency.outputs.cache-hit != 'true'
+      - name: Persist scheduled idempotency lock
+        if: success() && steps.prepare.outputs.prepared == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true') && steps.send_brief.outputs.sent == 'true'
         uses: actions/cache/save@v4
         with:
           path: .scheduled-brief-lock
           key: scheduled-brief-${{ steps.window.outputs.key }}
-      # The lock deduplicates the Telegram notification, not the dashboard
-      # deployment. A research report may have been committed after the first
-      # same-slot brief, so every accepted run must publish current main.
-      - name: 設定 GitHub Pages
-        if: steps.window.outputs.should_run == 'true'
-        uses: actions/configure-pages@v5
-      - name: 上傳儀表板
-        if: steps.window.outputs.should_run == 'true'
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-      - name: 部署
-        if: steps.window.outputs.should_run == 'true'
-        id: deployment
-        uses: actions/deploy-pages@v4
+
+# - name: 設定 GitHub Pages

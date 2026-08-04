@@ -47,6 +47,7 @@ jobs:
       EXTERNAL_MARKET_SYNC: ${{ toJson(github.event.client_payload.market_sync || fromJson('[]')) }}
       EXTERNAL_ALERT_SHARED_SECRET: ${{ secrets.EXTERNAL_ALERT_SHARED_SECRET }}
       NEWS_CACHE_PATH: site/data/news-cache.json
+      MANIFEST_PATH: site/data/release-manifest.json
     steps:
       - uses: actions/checkout@v4
         with:
@@ -125,11 +126,21 @@ jobs:
         if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
         id: deployment
         uses: actions/deploy-pages@v4
-      - name: Send Telegram emergency alert
+      - name: Verify deployed release before emergency delivery
         if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
+        id: release_gate
+        run: |
+          python -m src.release_gate \
+            --manifest "$MANIFEST_PATH" \
+            --public-url "${{ steps.deployment.outputs.page_url }}" \
+            >> "$GITHUB_OUTPUT"
+      - name: Send Telegram emergency alert
+        if: steps.release_gate.outputs.allowed == 'true'
         id: send
         env:
           TRACE_ID: ${{ github.event.client_payload.trace_id || format('manual-{0}', github.run_id) }}
+          RELEASE_ID: ${{ steps.release_gate.outputs.release_id }}
+          SNAPSHOT_ID: ${{ steps.release_gate.outputs.snapshot_id }}
         run: python -m src.emergency_alert --category "$CATEGORY" --summary "$SUMMARY"
       - name: Report Telegram delivery outcome
         if: always() && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true')
@@ -144,6 +155,8 @@ jobs:
           RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
           RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET }}
           TRACE_ID: ${{ steps.send.outputs.trace_id }}
+          RELEASE_ID: ${{ steps.send.outputs.release_id || steps.release_gate.outputs.release_id }}
+          SNAPSHOT_ID: ${{ steps.send.outputs.snapshot_id || steps.release_gate.outputs.snapshot_id }}
           DELIVERY_STATUS: ${{ steps.send.outputs.delivery_status }}
           DELIVERED_COUNT: ${{ steps.send.outputs.delivered_count }}
           FAILED_COUNT: ${{ steps.send.outputs.failed_count }}

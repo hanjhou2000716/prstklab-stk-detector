@@ -26,14 +26,21 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
       DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+      RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
+      RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET }}
+      NEWS_CACHE_PATH: site/data/news-cache.json
+      MANIFEST_PATH: site/data/release-manifest.json
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt
       - name: Restore official-source baseline
         id: baseline
         uses: actions/cache/restore@v4
@@ -61,38 +68,14 @@ jobs:
         with:
           path: .official-event-lock
           key: official-event-${{ steps.status.outputs.key }}
-      - name: Send new official event
-        id: send
-        if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
-        run: python -m src.official_event_monitor --send --expected-key "${{ steps.status.outputs.key }}"
-      - name: Report Telegram delivery outcome
-        if: always() && steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
-        run: |
-          echo "trace_id=${{ steps.send.outputs.trace_id }}"
-          echo "delivery_status=${{ steps.send.outputs.delivery_status }}"
-          echo "delivered_count=${{ steps.send.outputs.delivered_count }} failed_count=${{ steps.send.outputs.failed_count }}"
-      - name: Persist Telegram delivery receipt to Railway
-        if: always() && steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
-        continue-on-error: true
-        env:
-          RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
-          RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET }}
-          TRACE_ID: ${{ steps.send.outputs.trace_id }}
-          DELIVERY_STATUS: ${{ steps.send.outputs.delivery_status }}
-          DELIVERED_COUNT: ${{ steps.send.outputs.delivered_count }}
-          FAILED_COUNT: ${{ steps.send.outputs.failed_count }}
-          FAILED_RECIPIENT_HASHES: ${{ steps.send.outputs.failed_recipient_hashes }}
-        run: python -m src.delivery_callback
-      - name: Commit event snapshot
-        if: steps.status.outputs.ledger_changed == 'true' || steps.send.outputs.sent == 'true'
+      - name: Build and publish event release
+        if: steps.status.outputs.ledger_changed == 'true' || (steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true')
         run: |
           python -m src.release_manifest || test $? -eq 1
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/market.json site/data/event-ledger.json site/data/release-manifest.json
-          if git diff --cached --quiet; then
-            exit 0
-          fi
+          git add site/data/market.json site/data/event-ledger.json site/data/release-manifest.json site/data/news-cache.json
+          if git diff --cached --quiet; then exit 0; fi
           git commit -m "chore: refresh official event snapshot"
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then exit 0; fi
@@ -101,17 +84,47 @@ jobs:
             git rebase --autostash -X theirs origin/main
           done
       - name: Configure GitHub Pages
-        if: steps.send.outputs.sent == 'true'
+        if: steps.status.outputs.ledger_changed == 'true' || (steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true')
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
-        if: steps.send.outputs.sent == 'true'
+        if: steps.status.outputs.ledger_changed == 'true' || (steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true')
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
       - name: Deploy Pages
-        if: steps.send.outputs.sent == 'true'
+        if: steps.status.outputs.ledger_changed == 'true' || (steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true')
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify deployed release before delivery
+        if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        id: release_gate
+        run: |
+          python -m src.release_gate \
+            --manifest "$MANIFEST_PATH" \
+            --expected-snapshot-id "${{ steps.status.outputs.snapshot_id }}" \
+            --public-url "${{ steps.deployment.outputs.page_url }}" \
+            >> "$GITHUB_OUTPUT"
+      - name: Send new official event
+        if: steps.release_gate.outputs.allowed == 'true'
+        id: send
+        env:
+          PUBLIC_RELEASE_URL: ${{ steps.deployment.outputs.page_url }}
+          RELEASE_ID: ${{ steps.release_gate.outputs.release_id }}
+        run: python -m src.official_event_monitor --send --prepared --expected-key "${{ steps.status.outputs.key }}"
+      - name: Persist Telegram delivery receipt to Railway
+        if: always() && steps.send.outputs.sent == 'true'
+        continue-on-error: true
+        env:
+          RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
+          RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET }}
+          TRACE_ID: ${{ steps.send.outputs.trace_id }}
+          RELEASE_ID: ${{ steps.send.outputs.release_id || steps.release_gate.outputs.release_id }}
+          SNAPSHOT_ID: ${{ steps.send.outputs.snapshot_id || steps.release_gate.outputs.snapshot_id }}
+          DELIVERY_STATUS: ${{ steps.send.outputs.delivery_status }}
+          DELIVERED_COUNT: ${{ steps.send.outputs.delivered_count }}
+          FAILED_COUNT: ${{ steps.send.outputs.failed_count }}
+          FAILED_RECIPIENT_HASHES: ${{ steps.send.outputs.failed_recipient_hashes }}
+        run: python -m src.delivery_callback
       - name: Save event delivery lock
         if: success() && steps.send.outputs.sent == 'true'
         run: touch .official-event-lock

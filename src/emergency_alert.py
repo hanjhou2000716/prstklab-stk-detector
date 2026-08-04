@@ -78,6 +78,8 @@ def main() -> None:
     trace_id = os.environ.get("TRACE_ID", f"manual-{args.category}")
     lines = [
         f"trace_id={trace_id}",
+        f"release_id={os.environ.get('RELEASE_ID', '')}",
+        f"snapshot_id={os.environ.get('SNAPSHOT_ID', '')}",
         f"delivered_count={summary.delivered_count}",
         f"failed_count={summary.failed_count}",
         f"delivery_status={'delivered' if summary.failed_count == 0 else 'partial' if summary.delivered_count else 'failed'}",
