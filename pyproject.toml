@@ -49,7 +49,10 @@ pretty = true
 exclude = "^(tests|site/data|data)/"
 
 [tool.coverage.run]
-branch = true
+# Keep the CI baseline compatible with subprocesses that do not inherit
+# pytest-cov's branch configuration. Branch coverage can be measured by the
+# dedicated coverage-debt job without making the release smoke test flaky.
+branch = false
 source = ["src"]
 
 [tool.coverage.report]
