@@ -491,19 +491,42 @@ def apply_public_market_secondary_crosscheck(
     The primary Yahoo observation remains the displayed price.  Stooq is only
     a second observation used for the verification flag and provenance fields.
     """
-    from src.market_crosscheck import compare_quotes
+    from src.market_crosscheck import MARKET_SOURCE_PAIRS, compare_quotes
 
     secondary_quotes = (secondary_snapshot or {}).get("quotes") or {}
     checked: list[dict[str, Any]] = []
     for item in indices:
         ticker = str(item.get("ticker") or "")
+        expected = MARKET_SOURCE_PAIRS.get(ticker)
         secondary = secondary_quotes.get(ticker)
         if not secondary:
-            checked.append(item)
+            # Dedicated official/crypto checks handle these instruments.
+            # All other expected pairs expose the missing second source
+            # explicitly instead of silently leaving a quote unverified.
+            if expected and ticker not in {"TAIEX", "TPEx", "BTC", "ETH"}:
+                merged = dict(item)
+                merged["cross_checked"] = False
+                merged["crosscheck_status"] = "secondary_unavailable"
+                merged["crosscheck_reason"] = "secondary_source_unavailable"
+                merged["expected_sources"] = list(expected)
+                merged["crosscheck_sources"] = [
+                    {
+                        "label": expected[0],
+                        "url": item.get("source_url", ""),
+                        "quote_time": item.get("quote_time") or item.get("quote_date", ""),
+                    },
+                    {"label": expected[1], "url": "", "quote_time": ""},
+                ]
+                checked.append(merged)
+            else:
+                checked.append(item)
             continue
         result = compare_quotes(item, secondary, max_age_minutes=24 * 60, max_gap_percent=3.0)
         merged = dict(item)
         merged["cross_checked"] = bool(result.get("cross_checked"))
+        merged["crosscheck_reason"] = "sources_aligned" if result.get("cross_checked") else "price_or_time_mismatch"
+        if expected:
+            merged["expected_sources"] = list(expected)
         merged["crosscheck_status"] = "已交叉核對" if result.get("cross_checked") else str(result.get("status") or "未交叉核對")
         merged["crosscheck_sources"] = [
             {

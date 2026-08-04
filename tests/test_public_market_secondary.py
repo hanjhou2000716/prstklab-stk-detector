@@ -88,3 +88,24 @@ def test_public_secondary_crosscheck_labels_nasdaq_fallback():
     )
 
     assert cards[0]["crosscheck_sources"][1]["label"] == "Nasdaq"
+
+
+def test_public_secondary_missing_quote_is_explicitly_disclosed():
+    cards = apply_public_market_secondary_crosscheck(
+        [{
+            "ticker": "NIKKEI",
+            "price": 40000.0,
+            "quote_date": "2026-08-04",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_url": "https://finance.yahoo.com/quote/%5EN225",
+        }],
+        {"quotes": {}},
+    )
+
+    assert cards[0]["cross_checked"] is False
+    assert cards[0]["crosscheck_status"] == "secondary_unavailable"
+    assert cards[0]["crosscheck_reason"] == "secondary_source_unavailable"
+    assert cards[0]["expected_sources"] == ["Yahoo", "public-market-secondary"]
+    assert [source["label"] for source in cards[0]["crosscheck_sources"]] == [
+        "Yahoo", "public-market-secondary"
+    ]
