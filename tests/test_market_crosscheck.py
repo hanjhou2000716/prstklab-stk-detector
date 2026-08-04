@@ -15,3 +15,26 @@ def test_quote_provenance_exposes_basis_and_crosscheck_state():
     assert result["quote_basis"] == "最近收盤"
     assert result["cross_checked"] is True
 
+
+def test_quote_provenance_normalizes_legacy_provider_map_to_array():
+    result = quote_provenance({
+        "ticker": "TAIEX",
+        "quote_source": "TWSE MIS cash index",
+        "quote_date": "2026-08-01",
+        "crosscheck_sources": {
+            "twse": {"quote_date": "2026-08-01", "price": 100},
+            "taifex": {"quote_date": "2026-08-01", "price": 101},
+        },
+    })
+    assert isinstance(result["crosscheck_sources"], list)
+    assert {item["label"] for item in result["crosscheck_sources"]} == {"TWSE", "TAIFEX"}
+
+
+def test_daily_close_dates_can_be_cross_checked():
+    result = compare_quotes(
+        {"price": 100, "quote_date": "2026-08-01"},
+        {"price": 100.2, "quote_date": "2026-08-01"},
+        max_age_minutes=24 * 60,
+    )
+    assert result["cross_checked"] is True
+

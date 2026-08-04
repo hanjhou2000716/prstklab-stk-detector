@@ -36,6 +36,8 @@ def test_crosscheck_uses_twse_cash_index_when_txf_direction_agrees():
     assert quote["crosscheck_status"] == "已交叉核對"
     assert quote["quote_delayed"] is False
     assert quote["quote_basis"] == "TWSE 公開市況；TAIFEX 台指期方向核對"
+    assert isinstance(quote["crosscheck_sources"], list)
+    assert {item["label"] for item in quote["crosscheck_sources"]} == {"TWSE", "TAIFEX"}
 
 
 def test_crosscheck_blocks_alert_when_cash_and_future_disagree():
