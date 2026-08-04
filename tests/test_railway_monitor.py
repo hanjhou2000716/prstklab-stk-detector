@@ -776,6 +776,8 @@ def test_seen_store_persists_authenticated_delivery_receipt(tmp_path):
     assert snapshot["delivery"]["last_failed_count"] == 1
     assert snapshot["delivery"]["last_recipient_count"] == 4
     assert snapshot["delivery"]["last_reported_at"] == "2026-08-02T10:01:00+00:00"
+    assert snapshot["delivery"]["last_receipt_age_seconds"] >= 0
+    assert snapshot["delivery"]["last_failed_recipient_hash_count"] == 1
 
 
 def test_seen_store_rejects_invalid_delivery_counters(tmp_path):

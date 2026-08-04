@@ -359,6 +359,19 @@ def _non_negative_int(value: Any) -> int | None:
     return number if number >= 0 else None
 
 
+def _age_seconds(value: str | None) -> int | None:
+    """Return non-negative UTC age for an ISO timestamp, if parseable."""
+    if not value:
+        return None
+    try:
+        timestamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
+        return max(0, int((datetime.now(timezone.utc) - timestamp).total_seconds()))
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
 def health_snapshot() -> dict[str, Any]:
     with HEALTH_LOCK:
         return json.loads(json.dumps(HEALTH_STATE))
@@ -960,20 +973,22 @@ class SeenStore:
                FROM delivery_outbox ORDER BY updated_at DESC LIMIT 1"""
         ).fetchone()
         receipt = database.execute(
-            """SELECT status, delivered_count, failed_count, reported_at, error, updated_at
+            """SELECT trace_id, status, delivered_count, failed_count, reported_at, error, updated_at
                FROM delivery_receipts
                WHERE recipient_hash='__aggregate__' ORDER BY updated_at DESC LIMIT 1"""
         ).fetchone()
         outbox_status = str(latest[1]) if latest else None
-        receipt_status = str(receipt[0]) if receipt else None
-        delivered_count = int(receipt[1]) if receipt and receipt[1] is not None else None
-        failed_count = int(receipt[2]) if receipt and receipt[2] is not None else None
-        reported_at = str(receipt[3]) if receipt and receipt[3] else None
+        receipt_trace_id = str(receipt[0]) if receipt else None
+        receipt_status = str(receipt[1]) if receipt else None
+        delivered_count = int(receipt[2]) if receipt and receipt[2] is not None else None
+        failed_count = int(receipt[3]) if receipt and receipt[3] is not None else None
+        reported_at = str(receipt[4]) if receipt and receipt[4] else None
+        receipt_updated_at = str(receipt[6]) if receipt else None
         # Older rows encoded these fields in ``error``.  Read them once for
         # compatibility; new rows use dedicated columns for reliable queries.
         if receipt and (delivered_count is None or failed_count is None):
             try:
-                legacy_counts = json.loads(receipt[4] or "{}")
+                legacy_counts = json.loads(receipt[5] or "{}")
             except (TypeError, json.JSONDecodeError):
                 legacy_counts = {}
             if isinstance(legacy_counts, dict):
@@ -988,12 +1003,18 @@ class SeenStore:
             "counts": counts,
             "retryable_count": retryable_count,
             "due_retry_count": due_retry_count,
-            "last_updated_at": (receipt[5] if receipt else latest[3]) if (receipt or latest) else None,
+            "last_updated_at": receipt_updated_at if receipt else (latest[3] if latest else None),
             "last_error": str(latest[2]) if latest and latest[2] else None,
             "last_delivered_count": delivered_count,
             "last_failed_count": failed_count,
             "last_recipient_count": (delivered_count + failed_count) if delivered_count is not None and failed_count is not None else None,
             "last_reported_at": reported_at,
+            "last_receipt_age_seconds": _age_seconds(receipt_updated_at),
+            "last_failed_recipient_hash_count": int(database.execute(
+                """SELECT COUNT(*) FROM delivery_receipts
+                   WHERE trace_id=? AND recipient_hash <> '__aggregate__' AND status='failed'""",
+                (receipt_trace_id,),
+            ).fetchone()[0]) if receipt_trace_id else 0,
         }
 
     def record_delivery_status(self, payload: dict[str, Any]) -> bool:
