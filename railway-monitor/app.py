@@ -348,6 +348,17 @@ def update_health(component: str, **values: Any) -> None:
         HEALTH_STATE.setdefault(component, {}).update(values)
 
 
+def _non_negative_int(value: Any) -> int | None:
+    """Parse a delivery counter without accepting booleans or negatives."""
+    if isinstance(value, bool):
+        return None
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number >= 0 else None
+
+
 def health_snapshot() -> dict[str, Any]:
     with HEALTH_LOCK:
         return json.loads(json.dumps(HEALTH_STATE))
@@ -768,10 +779,27 @@ class SeenStore:
                 recipient_hash TEXT NOT NULL,
                 status TEXT NOT NULL,
                 error TEXT,
+                delivered_count INTEGER,
+                failed_count INTEGER,
+                reported_at TEXT,
                 updated_at TEXT NOT NULL,
                 PRIMARY KEY(trace_id, recipient_hash)
             )"""
         )
+        receipt_columns = {
+            row[1] for row in self.connection.execute("PRAGMA table_info(delivery_receipts)").fetchall()
+        }
+        # Keep the migration additive: Railway volumes may contain receipts
+        # written by an older monitor process.
+        for column, definition in (
+            ("delivered_count", "INTEGER"),
+            ("failed_count", "INTEGER"),
+            ("reported_at", "TEXT"),
+        ):
+            if column not in receipt_columns:
+                self.connection.execute(
+                    f"ALTER TABLE delivery_receipts ADD COLUMN {column} {definition}"
+                )
         self.connection.commit()
 
     def record_incoming_flash(self, flash: Flash, classification_reason: str | None = None) -> None:
@@ -932,11 +960,26 @@ class SeenStore:
                FROM delivery_outbox ORDER BY updated_at DESC LIMIT 1"""
         ).fetchone()
         receipt = database.execute(
-            """SELECT status, updated_at FROM delivery_receipts
+            """SELECT status, delivered_count, failed_count, reported_at, error, updated_at
+               FROM delivery_receipts
                WHERE recipient_hash='__aggregate__' ORDER BY updated_at DESC LIMIT 1"""
         ).fetchone()
         outbox_status = str(latest[1]) if latest else None
         receipt_status = str(receipt[0]) if receipt else None
+        delivered_count = int(receipt[1]) if receipt and receipt[1] is not None else None
+        failed_count = int(receipt[2]) if receipt and receipt[2] is not None else None
+        reported_at = str(receipt[3]) if receipt and receipt[3] else None
+        # Older rows encoded these fields in ``error``.  Read them once for
+        # compatibility; new rows use dedicated columns for reliable queries.
+        if receipt and (delivered_count is None or failed_count is None):
+            try:
+                legacy_counts = json.loads(receipt[4] or "{}")
+            except (TypeError, json.JSONDecodeError):
+                legacy_counts = {}
+            if isinstance(legacy_counts, dict):
+                delivered_count = delivered_count if delivered_count is not None else _non_negative_int(legacy_counts.get("delivered_count"))
+                failed_count = failed_count if failed_count is not None else _non_negative_int(legacy_counts.get("failed_count"))
+                reported_at = reported_at or (str(legacy_counts.get("reported_at")) if legacy_counts.get("reported_at") else None)
         return {
             "status": receipt_status or outbox_status or "not_checked",
             "last_trace_id": str(latest[0]) if latest else None,
@@ -945,8 +988,12 @@ class SeenStore:
             "counts": counts,
             "retryable_count": retryable_count,
             "due_retry_count": due_retry_count,
-            "last_updated_at": (receipt[1] if receipt else latest[3]) if (receipt or latest) else None,
+            "last_updated_at": (receipt[5] if receipt else latest[3]) if (receipt or latest) else None,
             "last_error": str(latest[2]) if latest and latest[2] else None,
+            "last_delivered_count": delivered_count,
+            "last_failed_count": failed_count,
+            "last_recipient_count": (delivered_count + failed_count) if delivered_count is not None and failed_count is not None else None,
+            "last_reported_at": reported_at,
         }
 
     def record_delivery_status(self, payload: dict[str, Any]) -> bool:
@@ -958,6 +1005,11 @@ class SeenStore:
         failed_hashes = payload.get("failed_recipient_hashes") or []
         if not isinstance(failed_hashes, list) or any(not isinstance(item, str) for item in failed_hashes):
             raise ValueError("invalid failed recipient hashes")
+        delivered_count = _non_negative_int(payload.get("delivered_count", 0))
+        failed_count = _non_negative_int(payload.get("failed_count", 0))
+        if delivered_count is None or failed_count is None:
+            raise ValueError("invalid delivery counts")
+        reported_at = str(payload.get("reported_at") or "")[:80] or None
         callback_connection = threading.get_ident() != self.owner_thread_id
         db = sqlite3.connect(self.path, timeout=5) if callback_connection else self.connection
         try:
@@ -979,12 +1031,10 @@ class SeenStore:
                     (trace_id, recipient_hash[:128], "failed", "recipient delivery failed", now),
                 )
             db.execute(
-                "INSERT OR REPLACE INTO delivery_receipts(trace_id,recipient_hash,status,error,updated_at) VALUES(?,?,?,?,?)",
-                (trace_id, "__aggregate__", status, json.dumps({
-                    "delivered_count": payload.get("delivered_count", 0),
-                    "failed_count": payload.get("failed_count", 0),
-                    "reported_at": payload.get("reported_at"),
-                }, ensure_ascii=False), now),
+                """INSERT OR REPLACE INTO delivery_receipts(
+                    trace_id,recipient_hash,status,error,delivered_count,failed_count,reported_at,updated_at
+                ) VALUES(?,?,?,?,?,?,?,?)""",
+                (trace_id, "__aggregate__", status, None, delivered_count, failed_count, reported_at, now),
             )
             db.commit()
             update_health("delivery", **self.delivery_diagnostics(db))
