@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 from datetime import datetime, time, timezone
 from pathlib import Path
@@ -15,6 +16,7 @@ from src.event_ledger import EventLedger, canonical_event_key
 from src.finance_intel_policy import polling_rule
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import write_snapshot
+from src.release_gate import verify_release_for_delivery
 from src.telegram_client import send_briefs, summarize_deliveries, validate_brief
 
 
@@ -163,6 +165,7 @@ def write_status_output(event: dict[str, Any] | None) -> None:
     lines = [
         f"should_send={'true' if should_send else 'false'}",
         f"key={event_key(event)}",
+        f"snapshot_id={event.get('snapshot_id', '') if event else ''}",
     ]
     destination = os.getenv("GITHUB_OUTPUT")
     if destination:
@@ -187,6 +190,7 @@ def _write_delivery_output(*, trace_id: str, deliveries: tuple[Any, ...], event:
     summary = summarize_deliveries(deliveries)
     lines = [
         f"trace_id={trace_id}",
+        f"release_id={os.environ.get('RELEASE_ID', '')}",
         f"delivered_count={summary.delivered_count}",
         f"failed_count={summary.failed_count}",
         f"delivery_status={'delivered' if summary.failed_count == 0 else 'partial' if summary.delivered_count else 'failed'}",
@@ -205,9 +209,16 @@ def _write_delivery_output(*, trace_id: str, deliveries: tuple[Any, ...], event:
         print("\n".join(lines))
 
 
-def send_current_event(expected_key: str | None = None) -> bool:
+def send_current_event(expected_key: str | None = None, *, prepared: bool = False) -> bool:
     """Send one verified event, safely skipping it if it changes between steps."""
-    _, event = prepare_snapshot()
+    if prepared:
+        try:
+            snapshot = json.loads(Path("site/data/market.json").read_text(encoding="utf-8"))
+            event = select_official_event(snapshot)
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            snapshot, event = {}, None
+    else:
+        snapshot, event = prepare_snapshot()
     current_key = event_key(event)
     if not event or (expected_key and current_key != expected_key):
         # A newer event can arrive between the pre-send check and delivery.
@@ -233,6 +244,14 @@ def send_current_event(expected_key: str | None = None) -> bool:
             write_send_output(False, "missing_quote_provenance")
             print("Market signal has no snapshot/observation provenance; skipped safely.")
             return False
+    gate = verify_release_for_delivery(
+        expected_snapshot_id=str(snapshot.get("snapshot_id") or ""),
+        public_url=os.environ.get("PUBLIC_RELEASE_URL") or None,
+    )
+    if not gate.allowed:
+        write_send_output(False, "release_gate_blocked")
+        print("Release gate blocked official event delivery: " + "; ".join(gate.errors))
+        return False
     cooldown_record = _observe_event(event)
     if not cooldown_record.get("should_remind", True):
         write_send_output(False, "event_cooldown")
@@ -264,6 +283,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--write-status", action="store_true")
     parser.add_argument("--send", action="store_true")
     parser.add_argument("--expected-key")
+    parser.add_argument("--prepared", action="store_true")
     return parser.parse_args()
 
 
@@ -273,7 +293,7 @@ def main() -> None:
         _, event = prepare_snapshot()
         write_status_output(event)
     if args.send:
-        send_current_event(args.expected_key)
+        send_current_event(args.expected_key, prepared=args.prepared)
     if not args.write_status and not args.send:
         raise ValueError("請指定 --write-status 或 --send")
 
