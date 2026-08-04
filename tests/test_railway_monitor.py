@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 import sys
 import threading
+import pytest
 
 
 MODULE_PATH = Path(__file__).parents[1] / "railway-monitor" / "app.py"
@@ -771,6 +772,30 @@ def test_seen_store_persists_authenticated_delivery_receipt(tmp_path):
     assert snapshot["delivery"]["status"] == "partial"
     assert snapshot["delivery"]["last_receipt_status"] == "partial"
     assert snapshot["delivery"]["counts"]["partial"] == 1
+    assert snapshot["delivery"]["last_delivered_count"] == 3
+    assert snapshot["delivery"]["last_failed_count"] == 1
+    assert snapshot["delivery"]["last_recipient_count"] == 4
+    assert snapshot["delivery"]["last_reported_at"] == "2026-08-02T10:01:00+00:00"
+
+
+def test_seen_store_rejects_invalid_delivery_counters(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    alert = monitor.Alert("delivery-counts", "macro", "CPI release", "2026-08-02T10:00:00+00:00")
+    trace_id = store.record_outbox(alert, {"summary": alert.summary})
+    with pytest.raises(ValueError, match="invalid delivery counts"):
+        store.record_delivery_status({
+            "trace_id": trace_id,
+            "delivery_status": "delivered",
+            "delivered_count": -1,
+            "failed_count": 0,
+        })
+    with pytest.raises(ValueError, match="invalid delivery counts"):
+        store.record_delivery_status({
+            "trace_id": trace_id,
+            "delivery_status": "delivered",
+            "delivered_count": True,
+            "failed_count": 0,
+        })
 
 
 def test_delivery_receipt_can_be_saved_from_health_server_thread(tmp_path):
