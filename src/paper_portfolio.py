@@ -20,8 +20,8 @@ class PaperPosition:
     def result(self) -> dict[str, Any]:
         latest = self.prices[-1] if self.prices else self.visible_price
         return {"symbol": self.symbol, "advised_at": self.advised_at, "visible_price": self.visible_price,
-                "latest_price": latest, "max_favorable": max(self.prices, default=self.visible_price) / self.visible_price - 1,
-                "max_adverse": min(self.prices, default=self.visible_price) / self.visible_price - 1,
+                "latest_price": latest, "max_favorable": round(max(self.prices, default=self.visible_price) / self.visible_price - 1, 8),
+                "max_adverse": round(min(self.prices, default=self.visible_price) / self.visible_price - 1, 8),
                 "invalidation": self.invalidation, "research_only": True}
 
 
