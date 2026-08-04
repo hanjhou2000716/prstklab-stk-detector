@@ -641,6 +641,31 @@ def test_health_snapshot_exposes_source_diagnostics_without_secrets():
     assert "GITHUB_DISPATCH_TOKEN" not in str(snapshot)
 
 
+def test_monitor_heartbeat_marks_a_recent_completed_cycle_healthy():
+    now = monitor.datetime(2026, 8, 4, 4, 0, tzinfo=monitor.timezone.utc)
+    heartbeat = monitor.monitor_heartbeat({
+        "poll_interval_seconds": 120,
+        "last_cycle_started_at": "2026-08-04T03:58:00+00:00",
+        "last_cycle_completed_at": "2026-08-04T03:59:00+00:00",
+    }, now=now)
+
+    assert heartbeat["heartbeat_status"] == "healthy"
+    assert heartbeat["heartbeat_timeout_seconds"] == 300
+    assert heartbeat["last_cycle_age_seconds"] == 60
+
+
+def test_monitor_heartbeat_marks_a_blocked_cycle_stale():
+    now = monitor.datetime(2026, 8, 4, 4, 0, tzinfo=monitor.timezone.utc)
+    heartbeat = monitor.monitor_heartbeat({
+        "poll_interval_seconds": 120,
+        "last_cycle_started_at": "2026-08-04T03:50:00+00:00",
+        "last_cycle_completed_at": "2026-08-04T03:54:59+00:00",
+    }, now=now)
+
+    assert heartbeat["heartbeat_status"] == "stale"
+    assert heartbeat["last_cycle_age_seconds"] == 301
+
+
 def test_seen_store_persists_incoming_event_and_retryable_outbox(tmp_path):
     store = monitor.SeenStore(tmp_path / "state.sqlite3")
     flash = monitor.Flash("f-1", "FOMC", "rate decision", "2026-08-02T10:00:00+00:00")

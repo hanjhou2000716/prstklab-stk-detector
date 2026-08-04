@@ -439,7 +439,11 @@ The `/health` response also includes `monitor.last_cycle_started_at` and
 `monitor.last_cycle_completed_at`. These timestamps distinguish a live HTTP
 process from a polling loop that is stalled or repeatedly failing; inspect
 them together with the per-source `last_success_at` fields after a Railway
-restart.
+restart. `monitor.heartbeat_status` is derived from the configured poll
+interval: `healthy` means a cycle completed within the timeout, `stale` means
+the HTTP process is reachable but the worker is delayed, and `starting` means
+the first cycle has not completed yet. `last_cycle_age_seconds` and
+`heartbeat_timeout_seconds` provide the evidence used for that status.
 
 The Railway HTTP callback is handled on a separate server thread. Its receipt
 write uses a short-lived SQLite connection with WAL and a bounded busy timeout,
