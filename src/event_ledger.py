@@ -14,9 +14,11 @@ import hashlib
 import json
 import os
 import re
+import time
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterator
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 
@@ -130,11 +132,20 @@ def canonical_event_key(event: dict[str, Any] | None) -> str:
 
 
 class EventLedger:
-    """Small atomic JSON ledger with 30-day retention by default."""
+    """Atomic JSON ledger with retention and concurrent-writer protection."""
 
-    def __init__(self, path: Path | str | None = None, *, retention_days: int = 30) -> None:
+    def __init__(
+        self,
+        path: Path | str | None = None,
+        *,
+        retention_days: int = 30,
+        lock_timeout_seconds: float = 30.0,
+        lock_stale_after_seconds: float = 120.0,
+    ) -> None:
         self.path = Path(path or os.getenv("EVENT_LEDGER_PATH", "site/data/event-ledger.json"))
         self.retention_days = max(30, int(retention_days))
+        self.lock_timeout_seconds = max(0.1, float(lock_timeout_seconds))
+        self.lock_stale_after_seconds = max(1.0, float(lock_stale_after_seconds))
         self.records: dict[str, dict[str, Any]] = {}
         self.load()
 
@@ -267,9 +278,99 @@ class EventLedger:
         self.records[key]["escalated"] = bool(self.records[key].get("escalated") or event.get("escalation") or event.get("risk_level") == "高風險")
         return key
 
+    @staticmethod
+    def _timestamp(value: Any) -> datetime:
+        try:
+            timestamp = datetime.fromisoformat(str(value or "").replace("Z", "+00:00"))
+            return timestamp.replace(tzinfo=timestamp.tzinfo or UTC)
+        except (TypeError, ValueError):
+            return datetime.min.replace(tzinfo=UTC)
+
+    @classmethod
+    def _merge_record(cls, left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
+        """Merge two writer views without dropping newer evidence or reminders."""
+        left_time = cls._timestamp(left.get("updated_at") or left.get("last_reminded_at"))
+        right_time = cls._timestamp(right.get("updated_at") or right.get("last_reminded_at"))
+        newest, older = (right, left) if right_time >= left_time else (left, right)
+        merged = dict(older)
+        merged.update(newest)
+
+        first_values = [cls._timestamp(item.get("first_discovered_at")) for item in (left, right)]
+        first = min(first_values)
+        if first != datetime.min.replace(tzinfo=UTC):
+            merged["first_discovered_at"] = first.isoformat()
+        reminder_values = [cls._timestamp(item.get("last_reminded_at")) for item in (left, right)]
+        reminder = max(reminder_values)
+        if reminder != datetime.min.replace(tzinfo=UTC):
+            merged["last_reminded_at"] = reminder.isoformat()
+        merged["escalated"] = bool(left.get("escalated") or right.get("escalated"))
+        merged["risk_rank"] = max(int(left.get("risk_rank", 0) or 0), int(right.get("risk_rank", 0) or 0))
+        verified = list(dict.fromkeys([
+            *(left.get("verified_sources") or []),
+            *(right.get("verified_sources") or []),
+        ]))
+        if verified:
+            merged["verified_sources"] = verified
+        return merged
+
+    @staticmethod
+    def _read_records(path: Path) -> dict[str, dict[str, Any]]:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            rows = payload.get("events", payload) if isinstance(payload, dict) else {}
+            if isinstance(rows, dict):
+                return {str(key): dict(value) for key, value in rows.items() if isinstance(value, dict)}
+        except (OSError, json.JSONDecodeError, TypeError):
+            pass
+        return {}
+
+    @contextmanager
+    def _write_lock(self) -> Iterator[None]:
+        """Acquire a portable sidecar lock for the read/merge/replace cycle."""
+        lock_path = self.path.with_suffix(self.path.suffix + ".lock")
+        deadline = time.monotonic() + self.lock_timeout_seconds
+        while True:
+            try:
+                lock_path.parent.mkdir(parents=True, exist_ok=True)
+                descriptor = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+                    handle.write(f"pid={os.getpid()}\n")
+                break
+            except FileExistsError:
+                try:
+                    if time.time() - lock_path.stat().st_mtime > self.lock_stale_after_seconds:
+                        lock_path.unlink()
+                        continue
+                except OSError:
+                    pass
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(f"timed out waiting for event ledger lock: {lock_path}")
+                time.sleep(0.05)
+        try:
+            yield
+        finally:
+            try:
+                lock_path.unlink()
+            except FileNotFoundError:
+                pass
+
     def save(self) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        payload = {"schema_version": 1, "retention_days": self.retention_days, "events": self.records}
-        temporary = self.path.with_suffix(self.path.suffix + ".tmp")
-        temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-        temporary.replace(self.path)
+        with self._write_lock():
+            # Reload while holding the lock: another process may have saved
+            # after this instance was created.  Merge prevents lost events.
+            merged = self._read_records(self.path)
+            for key, record in self.records.items():
+                merged[key] = self._merge_record(merged[key], record) if key in merged else dict(record)
+            self.records = merged
+            self.prune()
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            payload = {"schema_version": 1, "retention_days": self.retention_days, "events": self.records}
+            temporary = self.path.with_name(f".{self.path.name}.{os.getpid()}.{time.time_ns()}.tmp")
+            try:
+                temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+                temporary.replace(self.path)
+            finally:
+                try:
+                    temporary.unlink()
+                except FileNotFoundError:
+                    pass
