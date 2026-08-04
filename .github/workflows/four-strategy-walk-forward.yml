@@ -19,12 +19,31 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
       - run: pip install -r requirements.txt
-      - name: Verify archived point-in-time study inputs
+      - name: Audit archived point-in-time study inputs
+        id: archive_audit
         run: |
-          test -d data/backtest/${{ inputs.market }}/bars
-          test -f data/backtest/${{ inputs.market }}/universe_snapshots.json
-          test -f data/backtest/${{ inputs.market }}/fundamental_snapshots.json
+          set +e
+          python -m src.run_backtest_archive_audit \
+            --market '${{ inputs.market }}' \
+            --output data/backtest-archive-audit-${{ inputs.market }}.json
+          status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Backtest archive is not ready; the audit artifact lists the blockers."
+          fi
+          exit 0
+      - name: Upload archive audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest-archive-audit-${{ inputs.market }}
+          path: data/backtest-archive-audit-${{ inputs.market }}.json
+      - name: Explain blocked backtest
+        if: steps.archive_audit.outputs.ready != 'true'
+        run: echo "Formal walk-forward metrics were not produced because the point-in-time archive is incomplete."
       - name: Run research-only walk-forward validation
+        if: steps.archive_audit.outputs.ready == 'true'
         run: >-
           python -m src.run_four_strategy_walk_forward
           --market '${{ inputs.market }}'
@@ -34,6 +53,7 @@ jobs:
           --fundamental-snapshots data/backtest/${{ inputs.market }}/fundamental_snapshots.json
           --output data/four-strategy-walk-forward-${{ inputs.market }}.json
       - uses: actions/upload-artifact@v4
+        if: steps.archive_audit.outputs.ready == 'true'
         with:
           name: four-strategy-walk-forward-${{ inputs.market }}
           path: data/four-strategy-walk-forward-${{ inputs.market }}.json
