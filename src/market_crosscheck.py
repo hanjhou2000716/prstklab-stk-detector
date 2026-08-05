@@ -1,15 +1,14 @@
 """Common cross-market quote verification helpers.
 
-Providers are intentionally injected into these helpers so the production
-fetchers can fail independently and tests can verify the decision without
-network access.  A missing secondary quote is never presented as confirmed.
+Providers are intentionally injected into these helpers so production
+fetchers can fail independently and tests can verify decisions without
+network access. A missing secondary quote is never presented as confirmed.
 """
 
 from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import Any
-
 
 MARKET_SOURCE_PAIRS = {
     "TAIEX": ("TWSE", "TAIFEX"),
@@ -28,6 +27,16 @@ MARKET_SOURCE_PAIRS = {
     "VIX": ("Yahoo", "official-history"),
 }
 
+CONFIRMED_STATUS_VALUES = frozenset({
+    "confirmed",
+    "verified",
+    "cross_checked",
+    "cross-checked",
+    "已交叉核對",
+    "已核對",
+    "交叉核對",
+})
+
 
 def _timestamp(value: Any) -> datetime | None:
     if not value:
@@ -37,16 +46,19 @@ def _timestamp(value: Any) -> datetime | None:
         parsed = datetime.fromisoformat(text)
     except ValueError:
         try:
-            # Daily official closes carry a date but no clock time.  Treat
-            # both same-day observations as aligned rather than silently
-            # reporting them as uncheckable.
             parsed = datetime.strptime(text, "%Y-%m-%d")
         except ValueError:
             return None
     return parsed.replace(tzinfo=parsed.tzinfo or UTC)
 
 
-def compare_quotes(primary: dict[str, Any] | None, secondary: dict[str, Any] | None, *, max_age_minutes: int = 30, max_gap_percent: float = 1.0) -> dict[str, Any]:
+def compare_quotes(
+    primary: dict[str, Any] | None,
+    secondary: dict[str, Any] | None,
+    *,
+    max_age_minutes: int = 30,
+    max_gap_percent: float = 1.0,
+) -> dict[str, Any]:
     """Compare two same-asset observations without comparing unlike contracts."""
     if not primary or not secondary:
         return {"cross_checked": False, "status": "secondary_unavailable", "sources": [primary, secondary]}
@@ -60,7 +72,11 @@ def compare_quotes(primary: dict[str, Any] | None, secondary: dict[str, Any] | N
         return {"cross_checked": False, "status": "invalid_price", "sources": [primary, secondary]}
     left_time = _timestamp(primary.get("quote_time") or primary.get("quote_date"))
     right_time = _timestamp(secondary.get("quote_time") or secondary.get("quote_date"))
-    age_ok = left_time is not None and right_time is not None and abs((left_time - right_time).total_seconds()) <= max_age_minutes * 60
+    age_ok = (
+        left_time is not None
+        and right_time is not None
+        and abs((left_time - right_time).total_seconds()) <= max_age_minutes * 60
+    )
     checked = gap <= max_gap_percent and age_ok
     return {
         "cross_checked": checked,
@@ -72,16 +88,28 @@ def compare_quotes(primary: dict[str, Any] | None, secondary: dict[str, Any] | N
 
 
 def quote_provenance(quote: dict[str, Any]) -> dict[str, Any]:
-    """Return the stable card fields required for every market quote."""
+    """Return stable card fields required for every market quote."""
     ticker = str(quote.get("ticker") or "")
-    source = str(quote.get("quote_source") or quote.get("source") or "公開來源")
-    source_label = "TWSE" if "twse" in source.lower() else "TPEx" if "tpex" in source.lower() else "TAIFEX" if "taifex" in source.lower() else "Yahoo" if "yahoo" in source.lower() else "Binance" if "binance" in source.lower() else "CoinGecko" if "coingecko" in source.lower() else source.split(" ")[0]
+    source = str(quote.get("quote_source") or quote.get("source") or "unknown")
+    source_lower = source.lower()
+    if "twse" in source_lower:
+        source_label = "TWSE"
+    elif "tpex" in source_lower:
+        source_label = "TPEx"
+    elif "taifex" in source_lower:
+        source_label = "TAIFEX"
+    elif "yahoo" in source_lower:
+        source_label = "Yahoo"
+    elif "binance" in source_lower:
+        source_label = "Binance"
+    elif "coingecko" in source_lower:
+        source_label = "CoinGecko"
+    else:
+        source_label = source.split(" ")[0]
     raw_sources = quote.get("crosscheck_sources")
     if isinstance(raw_sources, list):
         crosscheck_sources = raw_sources
     elif isinstance(raw_sources, dict):
-        # Older TAIEX artifacts used {provider: observation}.  Normalize that
-        # shape at the contract boundary so every new card exposes an array.
         crosscheck_sources = []
         for provider, observation in raw_sources.items():
             if isinstance(observation, dict):
@@ -95,13 +123,14 @@ def quote_provenance(quote: dict[str, Any]) -> dict[str, Any]:
                 })
     else:
         crosscheck_sources = []
+    status = str(quote.get("crosscheck_status") or "").strip().lower()
+    cross_checked = bool(quote.get("cross_checked")) or status in CONFIRMED_STATUS_VALUES
     return {
         "source_label": source_label,
         "quote_time": quote.get("quote_time") or quote.get("quote_date"),
         "quote_basis": "盤中" if quote.get("quote_time") and not quote.get("quote_delayed") else "最近收盤",
-        "cross_checked": bool(quote.get("cross_checked") or quote.get("crosscheck_status") == "已交叉核對"),
+        "cross_checked": cross_checked,
         "crosscheck_status": quote.get("crosscheck_status") or "未交叉核對",
         "crosscheck_sources": crosscheck_sources,
         "expected_sources": list(MARKET_SOURCE_PAIRS.get(ticker, (source_label, ""))),
     }
-

@@ -38,3 +38,24 @@ def test_daily_close_dates_can_be_cross_checked():
     )
     assert result["cross_checked"] is True
 
+
+def test_quote_provenance_accepts_canonical_confirmation_statuses():
+    for status in ("confirmed", "verified", "已交叉核對"):
+        result = quote_provenance({
+            "ticker": "NASDAQ",
+            "quote_source": "Yahoo public quote",
+            "quote_date": "2026-08-01",
+            "crosscheck_status": status,
+        })
+        assert result["cross_checked"] is True
+
+
+def test_quote_provenance_does_not_treat_pending_status_as_confirmed():
+    result = quote_provenance({
+        "ticker": "NASDAQ",
+        "quote_source": "Yahoo public quote",
+        "quote_date": "2026-08-01",
+        "crosscheck_status": "pending",
+    })
+    assert result["cross_checked"] is False
+
