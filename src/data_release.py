@@ -138,7 +138,9 @@ def publish(
             detail = commit_result.stderr.strip() or commit_result.stdout.strip() or "unknown git error"
             raise DataReleaseError(f"git commit-tree failed: {detail}")
         commit = commit_result.stdout.strip()
-        pushed = _run("push", "origin", f"{commit}:{branch}", check=False)
+        # Use a fully-qualified destination ref.  GitHub's remote rejects an
+        # abbreviated branch ref when the source is a raw commit object.
+        pushed = _run("push", "origin", f"{commit}:refs/heads/{branch}", check=False)
         if pushed.returncode:
             raise DataReleaseError(pushed.stderr.strip() or "data-release push failed")
         return {"published": True, "branch": branch, "commit": commit, "files": files, "tree": tree}
