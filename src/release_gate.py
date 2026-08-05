@@ -10,6 +10,7 @@ from typing import Any
 
 import requests
 
+from src.artifact_contract import validate_release
 from src.release_manifest import verify_release_files
 
 
@@ -20,6 +21,31 @@ class ReleaseGateResult:
     snapshot_id: str = ""
     errors: tuple[str, ...] = field(default_factory=tuple)
     manifest: dict[str, Any] = field(default_factory=dict)
+
+
+def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    """Load the three contract artifacts referenced by a manifest."""
+    paths = manifest.get("artifact_paths")
+    if not isinstance(paths, dict):
+        return {}, ["manifest artifact paths are missing"]
+    loaded: dict[str, dict[str, Any]] = {}
+    errors: list[str] = []
+    for name in ("market.json", "research-report.json", "event-ledger.json"):
+        raw_path = paths.get(name)
+        if not isinstance(raw_path, str):
+            errors.append(f"manifest path missing: {name}")
+            continue
+        path = site_root / raw_path
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            errors.append(f"artifact unreadable {name}: {type(exc).__name__}")
+            continue
+        if not isinstance(value, dict):
+            errors.append(f"artifact must be an object: {name}")
+            continue
+        loaded[name] = value
+    return loaded, errors
 
 
 def verify_release_for_delivery(
@@ -53,6 +79,17 @@ def verify_release_for_delivery(
     # Manifest artifact paths are relative to the Pages root (site/).
     site_root = path.parent.parent if path.parent.name == "data" else path.parent
     errors.extend(verify_release_files(manifest, root=site_root))
+    artifacts, artifact_errors = _load_release_artifacts(manifest, site_root=site_root)
+    errors.extend(artifact_errors)
+    if not artifact_errors and not errors:
+        errors.extend(
+            validate_release(
+                market=artifacts["market.json"],
+                research=artifacts["research-report.json"],
+                events=artifacts["event-ledger.json"],
+                manifest=manifest,
+            )
+        )
 
     if public_url:
         remote_url = public_url.rstrip("/") + "/data/release-manifest.json"

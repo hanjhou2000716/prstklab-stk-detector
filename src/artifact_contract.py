@@ -14,7 +14,6 @@ from urllib.parse import urlparse
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "schemas"
 
@@ -123,20 +122,69 @@ def validate_research(document: dict[str, Any]) -> list[str]:
     return errors
 
 
+def validate_events(document: dict[str, Any]) -> list[str]:
+    """Validate the durable event ledger before it joins a release.
+
+    The ledger is an input to notification decisions, so malformed timestamps,
+    source provenance, or non-canonical keys must fail closed rather than being
+    silently carried into the next snapshot.
+    """
+    errors = _schema_errors(document, "event-ledger.schema.json")
+    events = document.get("events", {})
+    if not isinstance(events, dict):
+        return errors
+    for key, event in events.items():
+        if not isinstance(event, dict):
+            continue
+        path = f"events[{key!r}]"
+        if str(event.get("canonical_key") or "") != str(key):
+            errors.append(f"{path}: canonical_key must match ledger key")
+        source_url = str(event.get("source_url") or "")
+        parsed_url = urlparse(source_url)
+        if parsed_url.scheme != "https" or not parsed_url.hostname:
+            errors.append(f"{path}: source_url must be an absolute HTTPS URL")
+        source_domain = str(event.get("source_domain") or "").lower().removeprefix("www.")
+        if parsed_url.hostname and source_domain and parsed_url.hostname.lower().removeprefix("www.") != source_domain:
+            errors.append(f"{path}: source_domain does not match source_url")
+        first_seen = _parse_time(event.get("first_discovered_at"))
+        updated = _parse_time(event.get("updated_at"))
+        if first_seen and updated and updated < first_seen:
+            errors.append(f"{path}: updated_at precedes first_discovered_at")
+        verified = event.get("verified_sources")
+        if isinstance(verified, list):
+            for index, url in enumerate(verified):
+                parsed = urlparse(str(url))
+                if parsed.scheme != "https" or not parsed.hostname:
+                    errors.append(f"{path}.verified_sources[{index}]: must be an absolute HTTPS URL")
+    return errors
+
+
 def validate_manifest(document: dict[str, Any]) -> list[str]:
     """Validate the release manifest envelope."""
     return _schema_errors(document, "release-manifest.schema.json")
 
 
-def validate_release(*, market: dict[str, Any], research: dict[str, Any], manifest: dict[str, Any]) -> list[str]:
+def validate_release(
+    *,
+    market: dict[str, Any],
+    research: dict[str, Any],
+    manifest: dict[str, Any],
+    events: dict[str, Any] | None = None,
+) -> list[str]:
     """Validate a release and ensure its artifacts refer to one snapshot."""
     errors = validate_manifest(manifest)
     errors.extend(validate_market(market))
     errors.extend(validate_research(research))
+    if events is not None:
+        errors.extend(validate_events(events))
     expected_market = str(manifest.get("market_snapshot_id") or "")
     expected_research = str(manifest.get("research_snapshot_id") or "")
     if expected_market and str(market.get("snapshot_id") or "") != expected_market:
         errors.append("release: market snapshot_id does not match manifest")
     if expected_research and str(research.get("snapshot_id") or "") != expected_research:
         errors.append("release: research snapshot_id does not match manifest")
+    expected_event = str(manifest.get("event_snapshot_id") or "")
+    event_snapshot = str((events or {}).get("snapshot_id") or "")
+    if expected_event and event_snapshot and event_snapshot != expected_event:
+        errors.append("release: event snapshot_id does not match manifest")
     return errors
