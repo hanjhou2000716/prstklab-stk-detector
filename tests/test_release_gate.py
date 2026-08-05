@@ -1,7 +1,7 @@
 import json
 
 from src.release_gate import verify_release_for_delivery
-from src.release_manifest import build_release_manifest, write_release_manifest
+from src.release_manifest import build_release_manifest, sha256_file, write_release_manifest
 
 
 def _ready_release(tmp_path):
@@ -42,3 +42,28 @@ def test_release_gate_blocks_tampered_artifact(tmp_path):
     result = verify_release_for_delivery(manifest_path=path, expected_snapshot_id="market-12345678")
     assert result.allowed is False
     assert any("hash mismatch" in error for error in result.errors)
+
+
+def test_release_gate_revalidates_artifact_semantics(tmp_path):
+    path, manifest = _ready_release(tmp_path)
+    event_path = tmp_path / "site" / "data" / "event-ledger.json"
+    event_path.write_text(json.dumps({
+        "schema_version": 1,
+        "retention_days": 30,
+        "events": {
+            "event-12345678": {
+                "canonical_key": "different-key",
+                "event_type": "macro",
+                "source_url": "https://example.com/event",
+                "source_domain": "example.com",
+                "first_discovered_at": "2026-08-04T10:00:00+00:00",
+                "updated_at": "2026-08-04T10:05:00+00:00",
+                "verified_sources": ["https://example.com/event"],
+            }
+        },
+    }), encoding="utf-8")
+    manifest["artifact_hashes"]["event-ledger.json"] = sha256_file(event_path)
+    write_release_manifest(manifest, path)
+    result = verify_release_for_delivery(manifest_path=path, expected_snapshot_id="market-12345678")
+    assert result.allowed is False
+    assert any("canonical_key" in error for error in result.errors)
