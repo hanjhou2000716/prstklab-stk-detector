@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -54,6 +56,8 @@ def verify_release_for_delivery(
     expected_snapshot_id: str | None = None,
     public_url: str | None = None,
     timeout: float = 15.0,
+    public_attempts: int = 6,
+    public_delay: float = 5.0,
 ) -> ReleaseGateResult:
     """Verify readiness, local hashes and optionally the deployed Pages copy."""
     path = Path(manifest_path)
@@ -93,22 +97,32 @@ def verify_release_for_delivery(
 
     if public_url:
         remote_url = public_url.rstrip("/") + "/data/release-manifest.json"
-        try:
-            response = requests.get(
-                remote_url,
-                timeout=timeout,
-                headers={"Accept": "application/json", "User-Agent": "PRStK-release-gate"},
-            )
-            response.raise_for_status()
-            remote = response.json()
-            if not isinstance(remote, dict):
-                errors.append("public manifest is not an object")
-            elif remote.get("status") != "ready":
-                errors.append("public manifest status is not ready")
-            elif str(remote.get("release_id") or "") != release_id:
-                errors.append("public manifest release_id does not match local release")
-        except (requests.RequestException, ValueError) as exc:
-            errors.append(f"public manifest unavailable: {type(exc).__name__}")
+        public_error = "public manifest unavailable: UnknownError"
+        attempts = max(1, int(public_attempts))
+        for attempt in range(attempts):
+            try:
+                response = requests.get(
+                    remote_url,
+                    timeout=timeout,
+                    headers={"Accept": "application/json", "User-Agent": "PRStK-release-gate"},
+                )
+                response.raise_for_status()
+                remote = response.json()
+                if not isinstance(remote, dict):
+                    public_error = "public manifest is not an object"
+                elif remote.get("status") != "ready":
+                    public_error = "public manifest status is not ready"
+                elif str(remote.get("release_id") or "") != release_id:
+                    public_error = "public manifest release_id does not match local release"
+                else:
+                    public_error = ""
+                    break
+            except (requests.RequestException, ValueError) as exc:
+                public_error = f"public manifest unavailable: {type(exc).__name__}"
+            if attempt < attempts - 1 and public_delay > 0:
+                time.sleep(public_delay)
+        if public_error:
+            errors.append(public_error)
 
     return ReleaseGateResult(
         not errors,
@@ -124,18 +138,29 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, default=Path("site/data/release-manifest.json"))
     parser.add_argument("--expected-snapshot-id", default=None)
     parser.add_argument("--public-url", default=None)
+    parser.add_argument("--public-attempts", type=int, default=6)
+    parser.add_argument("--public-delay", type=float, default=5.0)
     args = parser.parse_args()
     result = verify_release_for_delivery(
         manifest_path=args.manifest,
         expected_snapshot_id=args.expected_snapshot_id,
         public_url=args.public_url,
+        public_attempts=args.public_attempts,
+        public_delay=args.public_delay,
     )
-    print(json.dumps({
+    values = {
         "allowed": result.allowed,
         "release_id": result.release_id,
         "snapshot_id": result.snapshot_id,
-        "errors": list(result.errors),
-    }, ensure_ascii=False))
+        "errors": ";".join(result.errors),
+    }
+    lines = [f"{key}={str(value).lower() if isinstance(value, bool) else value}" for key, value in values.items()]
+    destination = os.getenv("GITHUB_OUTPUT")
+    if destination:
+        with Path(destination).open("a", encoding="utf-8") as handle:
+            handle.write("\n".join(lines) + "\n")
+    else:
+        print("\n".join(lines))
     return 0 if result.allowed else 1
 
 

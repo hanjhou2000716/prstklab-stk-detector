@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from src.release_gate import verify_release_for_delivery
 from src.release_manifest import build_release_manifest, sha256_file, write_release_manifest
@@ -67,3 +68,47 @@ def test_release_gate_revalidates_artifact_semantics(tmp_path):
     result = verify_release_for_delivery(manifest_path=path, expected_snapshot_id="market-12345678")
     assert result.allowed is False
     assert any("canonical_key" in error for error in result.errors)
+
+
+def test_release_gate_retries_pages_propagation_until_release_matches(tmp_path, monkeypatch):
+    path, manifest = _ready_release(tmp_path)
+
+    class Response:
+        def __init__(self, release_id):
+            self.release_id = release_id
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"status": "ready", "release_id": self.release_id}
+
+    responses = iter([Response("release-old"), Response(manifest["release_id"])])
+    monkeypatch.setattr("src.release_gate.requests.get", lambda *args, **kwargs: next(responses))
+    monkeypatch.setattr("src.release_gate.time.sleep", lambda *_args: None)
+
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_snapshot_id="market-12345678",
+        public_url="https://example.test/",
+        public_attempts=2,
+        public_delay=0,
+    )
+
+    assert result.allowed is True
+
+
+def test_release_gate_writes_actions_output_as_key_value_lines(tmp_path, monkeypatch):
+    path, _ = _ready_release(tmp_path)
+    output = tmp_path / "github-output"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    # Importing the module entry point directly keeps this test independent
+    # from a shell and verifies the format consumed by workflow expressions.
+    from src import release_gate
+
+    monkeypatch.setattr("sys.argv", ["release_gate", "--manifest", str(path)])
+    assert release_gate.main() == 0
+    text = Path(output).read_text(encoding="utf-8")
+    assert "allowed=true" in text
+    assert "release_id=" in text
+    assert text.count("{") == 0
