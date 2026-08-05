@@ -661,6 +661,63 @@ def test_health_snapshot_exposes_source_diagnostics_without_secrets():
     assert "GITHUB_DISPATCH_TOKEN" not in str(snapshot)
 
 
+def test_monitor_health_forbidden_is_degraded_but_nonfatal(monkeypatch):
+    class Response:
+        status_code = 403
+        headers = {}
+
+        def raise_for_status(self):
+            raise AssertionError("403 must be handled without raising")
+
+    class Client:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def post(self, *_args, **_kwargs):
+            return Response()
+
+    monkeypatch.setattr(monitor.httpx, "AsyncClient", lambda **_kwargs: Client())
+    asyncio.run(monitor.dispatch_monitor_health(token="token", repository="owner/repo", gdelt={"status": "failed"}))
+    assert monitor.health_snapshot()["gdelt"]["health_dispatch_status"] == "degraded"
+    assert monitor.health_snapshot()["gdelt"]["health_dispatch_error"] == "HTTP_403"
+
+
+def test_monitor_health_429_honors_retry_after_then_accepts(monkeypatch):
+    class Response:
+        def __init__(self, status_code, headers=None):
+            self.status_code = status_code
+            self.headers = headers or {}
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise AssertionError(f"unexpected status {self.status_code}")
+
+    class Client:
+        def __init__(self):
+            self.responses = [Response(429, {"Retry-After": "1"}), Response(204)]
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def post(self, *_args, **_kwargs):
+            return self.responses.pop(0)
+
+    sleeps = []
+    async def fake_sleep(seconds):
+        sleeps.append(seconds)
+    monkeypatch.setattr(monitor.httpx, "AsyncClient", lambda **_kwargs: Client())
+    monkeypatch.setattr(monitor.asyncio, "sleep", fake_sleep)
+    asyncio.run(monitor.dispatch_monitor_health(token="token", repository="owner/repo", gdelt={"status": "healthy"}))
+    assert sleeps == [1]
+    assert monitor.health_snapshot()["gdelt"]["health_dispatch_status"] == "healthy"
+
+
 def test_monitor_heartbeat_marks_a_recent_completed_cycle_healthy():
     now = monitor.datetime(2026, 8, 4, 4, 0, tzinfo=monitor.timezone.utc)
     heartbeat = monitor.monitor_heartbeat({

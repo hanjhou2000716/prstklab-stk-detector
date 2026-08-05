@@ -1529,16 +1529,35 @@ async def dispatch_monitor_health(*, token: str, repository: str, gdelt: dict[st
                 response = await client.post(endpoint, headers=headers, json=payload)
             except httpx.HTTPError as exc:
                 if attempt == 2:
-                    logging.error("monitor health dispatch failed error=%s", type(exc).__name__)
-                    raise
+                    update_health("gdelt", health_dispatch_status="degraded", health_dispatch_error=type(exc).__name__)
+                    logging.warning("monitor health dispatch unavailable error=%s", type(exc).__name__)
+                    return
                 await asyncio.sleep(2**attempt)
                 continue
+            if response.status_code in {401, 403}:
+                # This callback is observability only.  A repository token
+                # without dispatch permission must not crash or spin the
+                # source monitor; local Railway health remains authoritative.
+                update_health(
+                    "gdelt", health_dispatch_status="degraded",
+                    health_dispatch_error=f"HTTP_{response.status_code}",
+                )
+                logging.warning("monitor health dispatch rejected status=%s; local health retained", response.status_code)
+                return
             if response.status_code == 429 or response.status_code >= 500:
                 if attempt == 2:
-                    response.raise_for_status()
-                await asyncio.sleep(2**attempt)
+                    update_health("gdelt", health_dispatch_status="degraded", health_dispatch_error=f"HTTP_{response.status_code}")
+                    logging.warning("monitor health dispatch rate-limited/unavailable status=%s", response.status_code)
+                    return
+                retry_after = 0
+                try:
+                    retry_after = int(response.headers.get("Retry-After", "0"))
+                except (TypeError, ValueError):
+                    retry_after = 0
+                await asyncio.sleep(min(60, max(1, retry_after)) if retry_after else 2**attempt)
                 continue
             response.raise_for_status()
+            update_health("gdelt", health_dispatch_status="healthy", health_dispatch_error=None)
             logging.info("monitor health dispatch accepted status=%s", response.status_code)
             return
 
@@ -1665,8 +1684,13 @@ def _decode_discovery_articles(rows: list[dict[str, str]]) -> list[DiscoveryArti
     return [DiscoveryArticle(**row) for row in rows]
 
 
+_GDELT_BACKOFF_UNTIL = 0.0
+_GDELT_FAILURE_COUNT = 0
+
+
 async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[DiscoveryArticle]:
     """Fetch discovery headlines with a 15-minute cache and 120-minute fallback."""
+    global _GDELT_BACKOFF_UNTIL, _GDELT_FAILURE_COUNT
     fresh_cache_seconds = max(60, int(os.environ.get("GDELT_CACHE_MINUTES", "15")) * 60)
     stale_cache_seconds = max(fresh_cache_seconds, int(os.environ.get("GDELT_STALE_CACHE_MINUTES", "120")) * 60)
     fresh_age_seconds = max(60, int(os.environ.get("GDELT_MAX_FRESH_AGE_MINUTES", "45")) * 60)
@@ -1674,11 +1698,31 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
         cached = store.read_cache("gdelt-success", fresh_cache_seconds)
         if cached is not None:
             return _decode_discovery_articles(cached)
+    now = time.monotonic()
+    if now < _GDELT_BACKOFF_UNTIL:
+        if store:
+            stale = store.read_cache("gdelt-success", stale_cache_seconds)
+            if stale is not None:
+                logging.warning("GDELT backoff active; using cached success until next retry window")
+                return _decode_discovery_articles(stale)
+        raise RuntimeError("GDELT backoff active after rate limit")
     params = {"query": os.environ.get("GDELT_QUERY", GDELT_QUERY), "mode": "artlist", "format": "json", "sort": "datedesc", "maxrecords": 75}
     try:
         async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
             response = await client.get(GDELT_DOC_URL, params=params)
+        if response.status_code == 429:
+            retry_after = 0
+            try:
+                retry_after = int(response.headers.get("Retry-After", "0"))
+            except (TypeError, ValueError):
+                retry_after = 0
+            _GDELT_FAILURE_COUNT = min(_GDELT_FAILURE_COUNT + 1, 6)
+            delay = min(900, max(60, retry_after or 60 * (2 ** (_GDELT_FAILURE_COUNT - 1))))
+            _GDELT_BACKOFF_UNTIL = time.monotonic() + delay
+            response.raise_for_status()
         response.raise_for_status()
+        _GDELT_FAILURE_COUNT = 0
+        _GDELT_BACKOFF_UNTIL = 0.0
     except Exception:
         if store:
             stale = store.read_cache("gdelt-success", stale_cache_seconds)

@@ -40,3 +40,41 @@ def test_manifest_detects_hash_tampering(tmp_path):
     write_release_manifest(manifest, tmp_path / "site" / "data" / "release-manifest.json")
     (tmp_path / "site" / "data" / "market.json").write_text("{}", encoding="utf-8")
     assert any("hash mismatch" in item for item in verify_release_files(manifest, root=tmp_path / "site"))
+
+
+def test_manifest_normalizes_legacy_tpex_and_research_state(tmp_path):
+    site_data = tmp_path / "site" / "data"
+    site_data.mkdir(parents=True)
+    (site_data / "market.json").write_text(json.dumps({
+        "generated_at": "2026-08-04T10:00:00+08:00",
+        "snapshot_id": "market-legacy01",
+        "indices": [{
+            "ticker": "TPEx", "price": 200, "quote_date": "2026-08-04",
+            "source_label": "Yahoo", "quote_source": "Yahoo Finance",
+            "source_url": "https://www.tpex.org.tw/example",
+            "freshness": "recent", "technical_context": {"as_of": "2026-07-31"},
+        }],
+        "quotes": [], "source_health": {},
+    }), encoding="utf-8")
+    (site_data / "research-report.json").write_text(json.dumps({
+        "schema_version": "2.0", "generated_at": "2026-08-04T10:00:00+08:00",
+        "sources": [{
+            "market": "taiwan", "strategy": "value", "scan_state": "complete",
+            "candidates": 0, "data_gap_counts": {"universe": 0, "fundamentals": 0},
+        }], "candidates": [], "health": {},
+    }), encoding="utf-8")
+    (site_data / "event-ledger.json").write_text(json.dumps({
+        "schema_version": 1, "retention_days": 30, "events": {},
+    }), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+    assert manifest["status"] == "ready"
+    assert manifest["normalization_notes"]
+    market = json.loads((site_data / "market.json").read_text(encoding="utf-8"))
+    research = json.loads((site_data / "research-report.json").read_text(encoding="utf-8"))
+    assert market["indices"][0]["source_label"] == "TPEx"
+    assert market["indices"][0]["quote_source"] == "TPEx public quote"
+    assert market["indices"][0]["technical_context_stale"] is True
+    assert research["sources"][0]["candidate_state"] == "no_candidates"
+    assert isinstance(research["sources"][0]["data_gap_counts"], int)
+    assert research["snapshot_id"] == manifest["research_snapshot_id"]
