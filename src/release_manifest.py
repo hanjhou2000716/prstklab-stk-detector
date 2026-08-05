@@ -14,6 +14,7 @@ import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from src.artifact_contract import validate_release
 
@@ -57,6 +58,144 @@ def _read_object(path: Path) -> tuple[dict[str, Any] | None, str | None]:
     return value, None
 
 
+def _source_label_from_quote(quote: dict[str, Any]) -> str | None:
+    """Return a provider label only when the payload gives unambiguous evidence.
+
+    Older snapshots occasionally carried ``source_label=Yahoo`` next to a TPEx
+    URL.  This is a representational defect, not a reason to discard the
+    quote; canonicalising it here keeps the release contract fail-closed while
+    preserving the original source URL and timestamp.
+    """
+    quote_source = str(quote.get("quote_source") or "").lower()
+    source_domain = str(quote.get("source_domain") or "").lower().removeprefix("www.")
+    parsed_host = (urlparse(str(quote.get("source_url") or "")).hostname or "").lower().removeprefix("www.")
+    domains = {source_domain, parsed_host}
+    if "tpex.org.tw" in domains or "tpex" in quote_source:
+        return "TPEx"
+    if "twse.com.tw" in domains or "twse" in quote_source:
+        return "TWSE"
+    if "taifex.com.tw" in domains or "taifex" in quote_source:
+        return "TAIFEX"
+    if any(domain == "yahoo.com" or domain.endswith(".yahoo.com") for domain in domains if domain):
+        return "Yahoo"
+    if "yahoo" in quote_source:
+        return "Yahoo"
+    return None
+
+
+def _date_only(value: Any) -> str:
+    try:
+        return str(value or "").replace("Z", "+00:00")[:10]
+    except Exception:
+        return ""
+
+
+def _normalize_market(value: dict[str, Any]) -> list[str]:
+    notes: list[str] = []
+    for collection in ("indices", "quotes"):
+        rows = value.get(collection)
+        if not isinstance(rows, list):
+            continue
+        for index, quote in enumerate(rows):
+            if not isinstance(quote, dict):
+                continue
+            provider = _source_label_from_quote(quote)
+            if provider and str(quote.get("source_label") or "").strip().lower() != provider.lower():
+                quote["source_label"] = provider
+                notes.append(f"{collection}[{index}].source_label={provider}")
+            if provider and str(quote.get("quote_source") or "").strip().lower().find(provider.lower()) < 0:
+                quote["quote_source"] = f"{provider} public quote"
+                notes.append(f"{collection}[{index}].quote_source={provider}")
+            technical = quote.get("technical_context")
+            quote_date = _date_only(quote.get("quote_date") or quote.get("published_at") or quote.get("quote_time"))
+            technical_date = _date_only(technical.get("as_of")) if isinstance(technical, dict) else ""
+            if technical_date and quote_date and technical_date < quote_date and quote.get("technical_context_stale") is not True:
+                quote["technical_context_stale"] = True
+                notes.append(f"{collection}[{index}].technical_context_stale=true")
+    return notes
+
+
+def _gap_count(value: Any) -> int | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return max(0, value)
+    if isinstance(value, float) and value.is_integer():
+        return max(0, int(value))
+    if isinstance(value, dict):
+        numbers = [int(item) for item in value.values() if isinstance(item, (int, float)) and not isinstance(item, bool)]
+        return max(0, sum(numbers)) if numbers else None
+    return None
+
+
+def _normalize_research(value: dict[str, Any]) -> list[str]:
+    notes: list[str] = []
+    sources = value.get("sources")
+    if not isinstance(sources, list):
+        return notes
+    for index, source in enumerate(sources):
+        if not isinstance(source, dict):
+            continue
+        visible = source.get("visible_candidates", source.get("candidates"))
+        if "visible_candidates" not in source and "candidates" in source:
+            source["visible_candidates"] = visible
+            notes.append(f"sources[{index}].visible_candidates=legacy candidates")
+        if "candidates" not in source and "visible_candidates" in source:
+            source["candidates"] = visible
+            notes.append(f"sources[{index}].candidates=visible_candidates")
+        gaps = _gap_count(source.get("data_gap_counts"))
+        if gaps is not None and source.get("data_gap_counts") != gaps:
+            source["data_gap_counts"] = gaps
+            notes.append(f"sources[{index}].data_gap_counts=integer")
+        if source.get("candidate_state") is None:
+            scan_state = str(source.get("scan_state") or "")
+            unavailable = source.get("data_unavailable") is True or source.get("data_gap") is True
+            if scan_state == "building":
+                state = "building"
+            elif scan_state == "failed":
+                state = "failed"
+            elif unavailable or (gaps is not None and gaps > 0):
+                state = "data_gap"
+            elif isinstance(visible, int) and visible > 0:
+                state = "available"
+            else:
+                state = "no_candidates"
+            source["candidate_state"] = state
+            notes.append(f"sources[{index}].candidate_state={state}")
+    return notes
+
+
+def _normalize_artifacts(loaded: dict[str, dict[str, Any]]) -> list[str]:
+    """Repair legacy representational fields before hashing and auditing.
+
+    This does not invent quotes, candidates, timestamps, or event confirmations;
+    unresolved quality problems remain validation errors.
+    """
+    notes: list[str] = []
+    market = loaded.get("market.json")
+    if market:
+        notes.extend(f"market: {item}" for item in _normalize_market(market))
+    research = loaded.get("research-report.json")
+    if research:
+        notes.extend(f"research: {item}" for item in _normalize_research(research))
+        if not str(research.get("snapshot_id") or "").strip():
+            research["snapshot_id"] = content_snapshot_id(research, "research")
+            notes.append("research: snapshot_id=deterministic")
+    events = loaded.get("event-ledger.json")
+    if events and not str(events.get("snapshot_id") or "").strip():
+        events["snapshot_id"] = content_snapshot_id(events, "event")
+        notes.append("events: snapshot_id=deterministic")
+    return notes
+
+
+def _write_normalized_artifact(path: Path, value: dict[str, Any]) -> None:
+    temporary = path.with_name(f".{path.name}.normalize.tmp")
+    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    os.replace(temporary, path)
+
+
 def build_release_manifest(
     *,
     root: Path | str = Path("."),
@@ -83,10 +222,15 @@ def build_release_manifest(
             continue
         assert value is not None
         loaded[name] = value
+
+    normalization_notes = _normalize_artifacts(loaded)
+    for name, value in loaded.items():
+        path = resolved[name]
         try:
+            _write_normalized_artifact(path, value)
             hashes[name] = sha256_file(path)
         except OSError as exc:
-            errors.append(f"cannot hash artifact {path.as_posix()}: {type(exc).__name__}")
+            errors.append(f"cannot persist/hash artifact {path.as_posix()}: {type(exc).__name__}")
 
     market = loaded.get("market.json", {})
     research = loaded.get("research-report.json", {})
@@ -124,6 +268,7 @@ def build_release_manifest(
         # Paths are relative to the Pages root so the browser never needs to
         # know the repository checkout layout.
         "artifact_paths": public_paths,
+        "normalization_notes": normalization_notes,
         "status": "invalid",
     }
     if not market_id or not research_id or not event_id:

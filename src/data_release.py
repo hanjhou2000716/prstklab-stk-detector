@@ -32,6 +32,15 @@ def _run(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
         raise DataReleaseError(f"git unavailable: {type(exc).__name__}") from exc
 
 
+def _commit_identity() -> tuple[str, str]:
+    """Resolve a non-secret identity accepted by ``git commit-tree``."""
+    configured_name = _run("config", "--get", "user.name", check=False).stdout.strip()
+    configured_email = _run("config", "--get", "user.email", check=False).stdout.strip()
+    name = configured_name or os.environ.get("GIT_AUTHOR_NAME") or os.environ.get("GITHUB_ACTOR") or "github-actions[bot]"
+    email = configured_email or os.environ.get("GIT_AUTHOR_EMAIL") or "41898282+github-actions[bot]@users.noreply.github.com"
+    return name, email
+
+
 def _safe_path(raw: str) -> str:
     value = raw.strip().replace("\\", "/")
     path = PurePosixPath(value)
@@ -113,7 +122,22 @@ def publish(
         commit_args = ["commit-tree", tree]
         if parent:
             commit_args.extend(["-p", parent])
-        commit = subprocess.run(["git", *commit_args], input=message + "\n", check=True, capture_output=True, text=True).stdout.strip()
+        author_name, author_email = _commit_identity()
+        commit_env = env.copy()
+        commit_env.update({
+            "GIT_AUTHOR_NAME": author_name,
+            "GIT_AUTHOR_EMAIL": author_email,
+            "GIT_COMMITTER_NAME": author_name,
+            "GIT_COMMITTER_EMAIL": author_email,
+        })
+        commit_result = subprocess.run(
+            ["git", *commit_args], input=message + "\n", check=False,
+            capture_output=True, text=True, env=commit_env,
+        )
+        if commit_result.returncode:
+            detail = commit_result.stderr.strip() or commit_result.stdout.strip() or "unknown git error"
+            raise DataReleaseError(f"git commit-tree failed: {detail}")
+        commit = commit_result.stdout.strip()
         pushed = _run("push", "origin", f"{commit}:{branch}", check=False)
         if pushed.returncode:
             raise DataReleaseError(pushed.stderr.strip() or "data-release push failed")
