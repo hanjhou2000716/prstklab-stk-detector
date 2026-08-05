@@ -1,4 +1,4 @@
-from src.event_crosscheck import cross_check_event_records, event_evidence
+from src.event_crosscheck import cross_check_event_records, event_cluster_key, event_evidence
 
 
 def test_event_evidence_requires_entity_and_action_anchors():
@@ -110,3 +110,23 @@ def test_policy_sources_share_action_anchor_for_trump_oil_story():
     merged = cross_check_event_records(records)
     assert len(merged) == 1
     assert merged[0]["crosscheck_status"] == "corroborated"
+
+
+def test_same_event_from_different_urls_gets_same_cluster_key():
+    official = {
+        "classification": "conflict",
+        "source_tier": "official",
+        "title": "US announces new sanctions on Iran shipping",
+        "source_url": "https://www.state.gov/briefing?utm_source=x",
+        "published_at": "2026-08-05T10:00:00Z",
+    }
+    wire = {
+        "classification": "conflict",
+        "source_tier": "discovery",
+        "title": "Iran shipping faces new sanctions from the United States",
+        "source_url": "https://www.reuters.com/world/iran-story",
+        "published_at": "2026-08-05T10:30:00Z",
+    }
+    assert event_cluster_key(official) == event_cluster_key(wire)
+    rows = cross_check_event_records([official, wire])
+    assert rows[0]["event_cluster_key"] == rows[0]["source_trace"]["event_cluster_key"]
