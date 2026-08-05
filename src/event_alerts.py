@@ -21,6 +21,21 @@ EVENT_RULES = (
 SEMICONDUCTOR_TERMS = ("台積電", "2330", "tsm", "nvidia", "nvda", "輝達")
 EARNINGS_TERMS = ("財報", "法說", "展望", "財測", "營收")
 
+# Corporate disclosures have a narrower market scope than macro events. A
+# routine board-meeting date must never inherit the generic Nasdaq/SOX
+# fallback used for broad cross-market events.
+_CORPORATE_SOURCE_KEYS = {"mops", "twse", "twse_market", "sec"}
+_TAIWAN_CORPORATE_MARKETS = ("TAIEX", "TXF", "TPEx")
+_ROUTINE_CORPORATE_TERMS = (
+    "board meeting", "meeting date", "scheduled meeting", "annual general meeting",
+    "notice of meeting", "董事會召開日期", "董事會日期", "股東會日期", "股東常會", "公告召開",
+)
+_MATERIAL_CORPORATE_TERMS = (
+    "earnings", "financial results", "guidance", "dividend", "merger", "acquisition",
+    "capital increase", "regulatory", "investigation", "suspension", "shutdown",
+    "合併案", "收購", "財報公布", "財報結果", "財測", "配息", "增資", "減資", "停工", "法規", "調查",
+)
+
 
 def _clean_title(title: str) -> str:
     """Remove a source-page rank prefix while retaining the original headline."""
@@ -94,6 +109,32 @@ def _related_indices(indices: list[dict[str, Any]], excluded_ticker: str) -> lis
         if item and item.get("ticker") != excluded_ticker and item.get("price") is not None:
             related.append(item)
     return related[:2]
+
+
+def _corporate_event_scope(event: dict[str, Any], indices: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return only same-market references for a corporate disclosure."""
+    issuer = str(event.get("issuer_ticker") or event.get("ticker") or "").upper()
+    allowed = {ticker.upper() for ticker in _TAIWAN_CORPORATE_MARKETS}
+    if issuer:
+        allowed.add(issuer)
+    return [
+        item for item in indices
+        if str(item.get("ticker") or "").upper() in allowed
+        and item.get("price") is not None
+        and not item.get("quote_delayed")
+        and str(item.get("freshness") or "").lower() not in {"stale", "expired"}
+    ]
+
+
+def _is_routine_corporate_event(event: dict[str, Any]) -> bool:
+    """Identify calendar/meeting notices that should remain observe-only."""
+    text = " ".join(
+        str(event.get(key) or "")
+        for key in ("title", "brief_summary", "summary", "event_type", "category")
+    ).casefold()
+    has_routine = any(term.casefold() in text for term in _ROUTINE_CORPORATE_TERMS)
+    has_material = any(term.casefold() in text for term in _MATERIAL_CORPORATE_TERMS)
+    return has_routine and not has_material
 
 
 def _impact_confirmation(
@@ -534,7 +575,20 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     }
     preclassification = classify_event_fields({**raw_event, **event})
     pre_category = str(event.get("classification") or preclassification.get("category") or "")
-    related = event.get("related") or _related_indices(indices, "")
+    source_key = str(event.get("source_key") or raw_event.get("source_key") or "").lower()
+    is_corporate = bool(
+        event.get("corporate_event")
+        or raw_event.get("corporate_event")
+        or source_key in _CORPORATE_SOURCE_KEYS
+    )
+    # A corporate disclosure must not borrow unrelated overseas moves. Keep
+    # the generic cross-market fallback for macro/geopolitical events only.
+    related = (
+        _corporate_event_scope({**raw_event, **event}, indices)
+        if is_corporate
+        else event.get("related") or _related_indices(indices, "")
+    )
+    routine_corporate = is_corporate and _is_routine_corporate_event({**raw_event, **event})
     # Energy/geopolitical stories must include the commodity witness in the
     # same event record; otherwise a >5% WTI move could never be evaluated.
     pre_text = str(preclassification.get("text") or "")
@@ -571,6 +625,17 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         official_confirmed=official_verified,
         market_sync_confirmed=bool(impact_confirmation.get("confirmed")),
     )
+    if is_corporate:
+        if routine_corporate:
+            notification = {
+                "status": "observe_only",
+                "reasons": ["例行公司公告，未達重大事件門檻"],
+            }
+        elif not impact_confirmation.get("confirmed"):
+            notification = {
+                "status": "pending",
+                "reasons": ["等待台股／台指同市場同步"],
+            }
     verification_plan = ["ECB 官方 RSS", "Reuters／GDELT"] if category in {"conflict", "energy", "policy", "macro", "black_swan"} else []
     if verification_plan:
         trace["verification_plan"] = verification_plan
@@ -592,9 +657,20 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         market_context = f"市場傳導：{confirmation}；本輪連動觀察為 {related_names}。"
         stock_observation = "後續觀察：官方災情與基建／航運資訊、能源與避險資產，以及主要股市是否持續同步波動。"
     related_moves = [item.get("change_percent") for item in related if isinstance(item, dict) and item.get("change_percent") is not None]
-    representative_move = max(related_moves, key=lambda value: abs(float(value))) if related_moves else None
-    market_direction = "上漲" if representative_move is not None and float(representative_move) > 0 else "下跌" if representative_move is not None and float(representative_move) < 0 else "市場待核對"
-    market_move = f"{float(representative_move):+.1f}%" if representative_move is not None else "變動待核對"
+    # Never publish a direction/percentage for an event that has not passed
+    # the relevant-market synchronization gate. This prevents a SOX move from
+    # becoming a fake percentage for a Taiwan corporate notice.
+    representative_move = (
+        max(related_moves, key=lambda value: abs(float(value)))
+        if related_moves and impact_confirmation.get("confirmed")
+        else None
+    )
+    market_direction = (
+        "上漲" if representative_move is not None and float(representative_move) > 0
+        else "下跌" if representative_move is not None and float(representative_move) < 0
+        else None
+    )
+    market_move = f"{float(representative_move):+.1f}%" if representative_move is not None else None
     return normalize_event_record({
         **event,
         "kind": event.get("kind") or "major_event",
@@ -618,6 +694,11 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "source_trace": trace,
         "official_confirmed": official_verified,
         "high_risk_eligible": bool(strict_confirmation) if is_black_swan else True,
+        "corporate_event": is_corporate,
+        "corporate_routine": routine_corporate,
+        "corporate_alert_eligible": bool(
+            is_corporate and not routine_corporate and impact_confirmation.get("confirmed")
+        ) if is_corporate else None,
         "classification": category,
         "classification_reason": classification_reason,
         "matched_terms": classification.get("matched_terms", []),

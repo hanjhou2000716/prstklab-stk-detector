@@ -247,7 +247,15 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
   // Hiding this label avoids rendering "台指價格訊號觸發" twice.
   if (banner) {
     banner.hidden = event.kind === "market_signal";
-    banner.textContent = event.kind === "external_alert" ? externalBanner : "已核對的重要市場事件";
+    const corporatePending = event.corporate_event && event.notification_status === "pending";
+    const corporateRoutine = event.corporate_event && event.notification_status === "observe_only";
+    banner.textContent = event.kind === "external_alert"
+      ? externalBanner
+      : corporatePending
+        ? "官方來源已核對｜等待台股／台指同步"
+        : corporateRoutine
+          ? "例行公司公告｜觀察"
+          : "已核對的重要市場事件";
   }
   const headline = event.brief_title || `${event.short_label}｜${event.title}`;
   setText("alert-headline", headline);
