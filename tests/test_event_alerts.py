@@ -1,4 +1,5 @@
 from src.event_alerts import _impact_confirmation, build_event_snapshot, detect_major_event
+from src.official_event_monitor import select_official_event
 from src.scheduled_brief import build_brief
 
 
@@ -104,6 +105,64 @@ def test_news_body_and_impact_are_classified_as_one_event():
     assert event is not None
     assert event["classification"] in {"conflict", "black_swan"}
     assert event["matched_terms"]
+
+
+def test_taiwan_routine_corporate_notice_does_not_borrow_nasdaq_move():
+    """A MOPS board-date notice must stay observe-only in the Taiwan scope."""
+    snapshot = build_event_snapshot(
+        {"taiwan": [], "us": []},
+        [],
+        official={"items": [{
+            "title": "2603 長榮：公告本公司115年第二季合併財務報告董事會召開日期為115年8月13日",
+            "source_key": "mops",
+            "source_tier": "official",
+            "relevance": "official",
+            "url": "https://mops.twse.com.tw/mops/#/web/t05st02",
+            "source_url": "https://mops.twse.com.tw/mops/#/web/t05st02",
+            "released_at": "2026-08-05T09:45:51+08:00",
+            "published_at": "2026-08-05T09:45:51+08:00",
+            "issuer_ticker": "2603",
+        }]},
+        indices=[
+            {"ticker": "NASDAQ", "price": 26584.99, "change_percent": 2.59},
+            {"ticker": "SOX", "price": 12179.26, "change_percent": 6.55},
+        ],
+    )
+    event = snapshot["items"][0]
+    assert event["corporate_event"] is True
+    assert event["corporate_routine"] is True
+    assert event["related"] == []
+    assert event["market_move"] is None
+    assert event["market_direction"] is None
+    assert event["notification_status"] == "observe_only"
+    assert select_official_event(snapshot) is None
+
+
+def test_taiwan_corporate_event_uses_taiex_sync_only():
+    snapshot = build_event_snapshot(
+        {"taiwan": [], "us": []},
+        [],
+        official={"items": [{
+            "title": "2603 長榮：重大合併案公告",
+            "source_key": "mops",
+            "source_tier": "official",
+            "relevance": "official",
+            "url": "https://mops.twse.com.tw/mops/#/web/t05st02",
+            "source_url": "https://mops.twse.com.tw/mops/#/web/t05st02",
+            "released_at": "2026-08-05T09:45:51+08:00",
+            "published_at": "2026-08-05T09:45:51+08:00",
+            "issuer_ticker": "2603",
+        }]},
+        indices=[
+            {"ticker": "TAIEX", "price": 43100, "change_percent": 1.2,
+             "quote_time": "2026-08-05T09:50:00+08:00"},
+            {"ticker": "NASDAQ", "price": 26584.99, "change_percent": 6.55},
+        ],
+    )
+    event = snapshot["items"][0]
+    assert [item["ticker"] for item in event["related"]] == ["TAIEX"]
+    assert event["market_move"] == "+1.2%"
+    assert event["notification_status"] == "eligible"
 
 
 def test_news_event_exposes_pending_reasons_when_oil_time_is_unknown():

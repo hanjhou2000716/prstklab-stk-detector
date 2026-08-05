@@ -50,6 +50,14 @@ def select_official_event(
                 ),
                 None,
             )
+            # Corporate notices are only eligible after their own market
+            # scope has been synchronized. Routine calendar notices and
+            # pending events remain visible in Mini App but must not push.
+            if detailed and (
+                detailed.get("corporate_alert_eligible") is False
+                or detailed.get("notification_status") in {"observe_only", "pending"}
+            ):
+                continue
             if item.get("importance") != "high-risk":
                 if detailed and detailed.get("high_risk_eligible") is False:
                     continue
