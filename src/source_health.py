@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-
 SOURCE_DEFINITIONS = (
     ("market_quotes", "市場報價", {"", "index", "macro_quote", "taiwan_crosscheck"}),
     ("official_events", "官方重大事件", {"official_event"}),
@@ -152,6 +151,7 @@ def build_source_health(
     news_sources: list[dict[str, Any]] | None = None,
     additional_sources: list[dict[str, Any]] | None = None,
     monitor_health: dict[str, Any] | None = None,
+    quote_evidence: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Expose failures distinctly from a clean scan with no market event."""
     checked = checked_at.isoformat()
@@ -202,6 +202,15 @@ def build_source_health(
         if monitor_item:
             sources.append(monitor_item)
     sources.append(_research_item(research_report, checked))
+    if quote_evidence:
+        market = next(item for item in sources if item["key"] == "market_quotes")
+        market["evidence"] = {
+            key: value for key, value in quote_evidence.items() if isinstance(value, dict)
+        }
+        stale = sum(int((value or {}).get("stale_count") or 0) for value in quote_evidence.values() if isinstance(value, dict))
+        if stale and market["status"] == "healthy":
+            market["status"] = "partial"
+            market["issues"] = [f"{stale} 筆報價過期或不可用，僅供顯示"]
 
     event_dependencies = {"market_quotes", "official_events", "market_news"}
     dependency_failed = any(

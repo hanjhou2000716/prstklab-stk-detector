@@ -7,11 +7,10 @@ from datetime import UTC, datetime, time
 from typing import Any
 from urllib.parse import urlparse
 
-from src.finance_intel_policy import threshold_rule
 from src.event_classifier import classify_event_fields, notification_gate
 from src.event_crosscheck import cross_check_event_records
+from src.finance_intel_policy import threshold_rule
 from src.intel_contract import normalize_event_record
-
 
 EVENT_RULES = (
     ("Fed／貨幣政策", ("fomc", "fed", "聯準會", "升息", "降息")),
@@ -294,6 +293,9 @@ def _price_signal_thresholds(index: dict[str, Any]) -> tuple[float, float, bool]
 def _price_signal_suppression(index: dict[str, Any]) -> dict[str, Any] | None:
     """Describe why an observed price move did not become a Telegram signal."""
     ticker = str(index.get("ticker") or "").upper()
+    if "alert_eligible" in index and index.get("alert_eligible") is False:
+        reasons = index.get("quality_reasons") or ["quote_quality_gate"]
+        return {"ticker": ticker, "reason": str(reasons[0])}
     if index.get("quote_delayed"):
         return {"ticker": ticker, "reason": "quote_delayed"}
     # A quote can be technically present while belonging to an earlier
@@ -342,6 +344,11 @@ def _price_signal_suppression(index: dict[str, Any]) -> dict[str, Any] | None:
 
 def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[str, Any] | None:
     """Create an educational alert card for a material index move, never advice."""
+    # Evidence binding is optional for legacy callers/tests, but when present
+    # it is authoritative: a stale or unverified quote may remain visible and
+    # must never become a Telegram alert.
+    if "alert_eligible" in index and index.get("alert_eligible") is False:
+        return None
     # A delayed intraday bar remains useful as an explicitly labelled quote,
     # but must not create an urgent notification from an out-of-date move.
     if index.get("quote_delayed"):
