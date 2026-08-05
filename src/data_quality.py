@@ -86,6 +86,50 @@ def score_source(
     }
 
 
+def score_quote(
+    quote: dict[str, Any],
+    *,
+    now: datetime | None = None,
+    thresholds: QualityThresholds | None = None,
+) -> dict[str, Any]:
+    """Score a normalized market quote using its observed quote freshness.
+
+    ``fetched_at`` describes when our worker read the provider, while
+    ``freshness`` describes when the provider observed the market.  Using the
+    latter here prevents a stale daily bar fetched seconds ago from looking
+    live and becoming eligible for a Telegram alert.
+    """
+    config = thresholds or QualityThresholds()
+    status = "healthy" if quote.get("price") is not None else "unavailable"
+    base = score_source(
+        {
+            "provider": quote.get("quote_source") or quote.get("source") or "unknown",
+            "status": status,
+            "fetched_at": quote.get("fetched_at") or quote.get("quote_time") or quote.get("quote_date"),
+            "cross_checked": quote.get("cross_checked") is True,
+            "completeness": 100 if quote.get("price") is not None else 0,
+            "parsing_confidence": 100 if quote.get("change_consistency") != "insufficient_data" else 50,
+            "stale_used": quote.get("stale_used") is True,
+        },
+        now=now,
+        thresholds=config,
+    )
+    observed_freshness = str(quote.get("freshness") or base["freshness"]).strip().lower()
+    if observed_freshness in {"stale", "unavailable", "unknown"}:
+        base["freshness"] = observed_freshness
+        base["data_quality_score"] = 0.0
+        base["alert_eligible"] = False
+        if "quote_stale_or_missing" not in base["reasons"]:
+            base["reasons"].append("quote_stale_or_missing")
+    base["quote_delayed"] = bool(quote.get("quote_delayed"))
+    if base["quote_delayed"]:
+        base["alert_eligible"] = False
+        if "quote_delayed" not in base["reasons"]:
+            base["reasons"].append("quote_delayed")
+    base["crosscheck_status"] = quote.get("crosscheck_status") or "未交叉核對"
+    return base
+
+
 def _reasons(freshness: str, cross_source: float, completeness: float, availability: float) -> list[str]:
     reasons: list[str] = []
     if availability == 0:

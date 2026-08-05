@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
 import json
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
 from src.intel_contract import normalize_quote_record
-
 
 MARKETS = {
     "taiwan": {"calendar": "XTAI", "label": "台股", "timezone": "Asia/Taipei"},
@@ -546,15 +545,15 @@ def apply_public_market_secondary_crosscheck(
 
 def build_market_snapshot() -> dict[str, Any]:
     """Build a browser-friendly snapshot; one ticker failure never stops others."""
-    from src.event_alerts import build_event_snapshot
     from src.briefing_cards import build_briefing_snapshot
-    from src.official_events import fetch_official_events
-    from src.macro_summary import build_macro_summary
+    from src.event_alerts import build_event_snapshot
     from src.macro_program_feed import fetch_yutinghao_latest_program
+    from src.macro_summary import build_macro_summary
+    from src.official_events import fetch_official_events
+    from src.phase_two_sources import build_phase_two_snapshot
     from src.research_cards import load_research_cards
     from src.risk_news import build_news_snapshot, build_risk_snapshot
     from src.source_health import build_source_health
-    from src.phase_two_sources import build_phase_two_snapshot
 
     scan_started_at = datetime.now(ZoneInfo("Asia/Taipei"))
     markets = {key: get_market_status(key) for key in MARKETS}
@@ -590,8 +589,10 @@ def build_market_snapshot() -> dict[str, Any]:
         errors = [error for error in errors if error.get("ticker") != "TPEx"]
     quotes = annotate_quote_freshness(quotes)
     indices = annotate_quote_freshness(indices)
-    quotes = [normalize_quote_record(item) for item in quotes]
-    indices = [normalize_quote_record(item) for item in indices]
+    from src.production_evidence import bind_market_evidence, quality_summary
+
+    quotes = bind_market_evidence(quotes)
+    indices = bind_market_evidence(indices)
     for item in [*quotes, *indices]:
         if item.get("freshness") in {"stale", "unavailable"}:
             errors.append({
@@ -621,7 +622,7 @@ def build_market_snapshot() -> dict[str, Any]:
     indices = apply_public_market_secondary_crosscheck(
         indices, phase_two.get("public_market_secondary")
     )
-    indices = [normalize_quote_record(item) for item in annotate_quote_freshness(indices)]
+    indices = bind_market_evidence(annotate_quote_freshness(indices))
     events = build_event_snapshot(news, quotes, official_events, indices=indices)
     try:
         program = fetch_yutinghao_latest_program()
@@ -668,6 +669,10 @@ def build_market_snapshot() -> dict[str, Any]:
         news_sources=news.get("source_health", []),
         additional_sources=phase_two.get("sources", []),
         monitor_health=monitor_health,
+        quote_evidence={
+            "quotes": quality_summary(quotes),
+            "indices": quality_summary(indices),
+        },
     )
     live_quotes = sum(item.get("quote_time") is not None for item in [*quotes, *indices])
     close_quotes = len(quotes) + len(indices) - live_quotes
@@ -697,5 +702,9 @@ def build_market_snapshot() -> dict[str, Any]:
         }),
         "research_report": research_report,
         "source_health": source_health,
+        "evidence": {
+            "quotes": quality_summary(quotes),
+            "indices": quality_summary(indices),
+        },
         "errors": errors,
     }
