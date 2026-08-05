@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/event-ledger.schema.json",
+  "type": "object",
+  "required": ["schema_version", "retention_days", "events"],
+  "properties": {
+    "schema_version": {"type": ["integer", "string"], "minimum": 1},
+    "retention_days": {"type": "integer", "minimum": 1},
+    "snapshot_id": {"type": "string", "minLength": 8},
+    "release_id": {"type": "string", "minLength": 8},
+    "policy_version": {"type": "string", "minLength": 1},
+    "events": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/event"}
+    }
+  },
+  "$defs": {
+    "event": {
+      "type": "object",
+      "required": [
+        "canonical_key", "event_type", "source_url", "source_domain",
+        "first_discovered_at", "updated_at", "verified_sources"
+      ],
+      "properties": {
+        "canonical_key": {"type": "string", "minLength": 8},
+        "event_type": {"type": "string", "minLength": 1},
+        "source_url": {"type": "string", "format": "uri"},
+        "source_domain": {"type": "string", "minLength": 1},
+        "person_fingerprint": {"type": "string"},
+        "location_fingerprint": {"type": "string"},
+        "action_fingerprint": {"type": "string"},
+        "first_discovered_at": {"type": "string", "format": "date-time"},
+        "last_reminded_at": {"type": ["string", "null"], "format": "date-time"},
+        "updated_at": {"type": "string", "format": "date-time"},
+        "escalated": {"type": "boolean"},
+        "risk_level": {"type": "string"},
+        "risk_rank": {"type": "integer", "minimum": 0},
+        "verified_sources": {
+          "type": "array",
+          "items": {"type": "string", "format": "uri"}
+        },
+        "last_title": {"type": "string"},
+        "source_tier": {"type": "string"},
+        "snapshot_id": {"type": "string", "minLength": 8},
+        "observation_id": {"type": "string", "minLength": 8}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

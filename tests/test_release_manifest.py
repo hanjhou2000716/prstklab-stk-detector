@@ -15,7 +15,7 @@ def _artifacts(tmp_path):
         "schema_version": "2.0", "generated_at": "2026-08-04T10:00:00+08:00",
         "snapshot_id": "research-12345678", "sources": [], "candidates": [], "health": {},
     }), encoding="utf-8")
-    (site_data / "event-ledger.json").write_text(json.dumps({"schema_version": 1, "events": {}}), encoding="utf-8")
+    (site_data / "event-ledger.json").write_text(json.dumps({"schema_version": 1, "retention_days": 30, "events": {}}), encoding="utf-8")
 
 
 def test_manifest_is_ready_and_hashes_are_verifiable(tmp_path):

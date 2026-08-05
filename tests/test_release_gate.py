@@ -16,7 +16,7 @@ def _ready_release(tmp_path):
         "schema_version": "2.0", "generated_at": "2026-08-04T10:00:00+08:00",
         "snapshot_id": "research-12345678", "sources": [], "candidates": [], "health": {},
     }), encoding="utf-8")
-    (data / "event-ledger.json").write_text(json.dumps({"schema_version": 1, "events": {}}), encoding="utf-8")
+    (data / "event-ledger.json").write_text(json.dumps({"schema_version": 1, "retention_days": 30, "events": {}}), encoding="utf-8")
     manifest = build_release_manifest(root=tmp_path)
     write_release_manifest(manifest, data / "release-manifest.json")
     return data / "release-manifest.json", manifest

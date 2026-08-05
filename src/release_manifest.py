@@ -17,7 +17,6 @@ from typing import Any
 
 from src.artifact_contract import validate_release
 
-
 DEFAULT_ARTIFACTS = {
     "market.json": Path("site/data/market.json"),
     "research-report.json": Path("site/data/research-report.json"),
@@ -129,8 +128,15 @@ def build_release_manifest(
     }
     if not market_id or not research_id or not event_id:
         errors.append("all three snapshot IDs are required")
-    if market and research:
-        errors.extend(validate_release(market=market, research=research, manifest={**manifest, "status": "ready"}))
+    if market and research and "event-ledger.json" in loaded:
+        errors.extend(
+            validate_release(
+                market=market,
+                research=research,
+                events=events,
+                manifest={**manifest, "status": "ready"},
+            )
+        )
     manifest["validation_errors"] = sorted(set(errors))
     if not errors:
         manifest["status"] = "ready"

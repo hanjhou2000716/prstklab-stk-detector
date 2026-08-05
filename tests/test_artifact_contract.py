@@ -1,4 +1,10 @@
-from src.artifact_contract import validate_market, validate_manifest, validate_release, validate_research
+from src.artifact_contract import (
+    validate_events,
+    validate_manifest,
+    validate_market,
+    validate_release,
+    validate_research,
+)
 
 
 def _market(**overrides):
@@ -74,3 +80,36 @@ def test_market_audit_normalizes_naive_and_aware_timestamps():
     # A timezone-less timestamp is interpreted conservatively as UTC.
     market["indices"][0]["published_at"] = "2026-08-04T01:58:00"
     assert validate_market(market) == []
+
+
+def _events():
+    return {
+        "schema_version": 1,
+        "retention_days": 30,
+        "events": {
+            "event-12345678": {
+                "canonical_key": "event-12345678",
+                "event_type": "macro",
+                "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
+                "source_domain": "federalreserve.gov",
+                "first_discovered_at": "2026-08-04T10:00:00+00:00",
+                "updated_at": "2026-08-04T10:05:00+00:00",
+                "last_reminded_at": None,
+                "verified_sources": ["https://www.federalreserve.gov/feeds/press_all.xml"],
+            }
+        },
+    }
+
+
+def test_event_ledger_passes_contract():
+    assert validate_events(_events()) == []
+
+
+def test_event_ledger_rejects_provenance_and_time_conflicts():
+    events = _events()
+    item = events["events"]["event-12345678"]
+    item["source_domain"] = "example.com"
+    item["updated_at"] = "2026-08-04T09:00:00+00:00"
+    errors = validate_events(events)
+    assert any("source_domain" in error for error in errors)
+    assert any("updated_at precedes" in error for error in errors)
