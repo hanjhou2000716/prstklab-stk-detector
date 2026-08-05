@@ -9,8 +9,10 @@ as confirmation.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -94,6 +96,31 @@ def event_evidence(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def event_cluster_key(record: dict[str, Any]) -> str:
+    """Build a source-independent identifier for one event cluster.
+
+    URL and provider are deliberately excluded so syndicated reports can
+    converge. This is trace metadata only; it does not satisfy the official
+    source or market-synchronization notification gates.
+    """
+    evidence = event_evidence(record)
+    raw_time = str(record.get("event_time") or record.get("released_at") or record.get("published_at") or "")
+    try:
+        timestamp = datetime.fromisoformat(raw_time.replace("Z", "+00:00"))
+        timestamp = timestamp.replace(tzinfo=timestamp.tzinfo or UTC)
+        time_bucket = str(int(timestamp.timestamp()) // (2 * 60 * 60))
+    except (TypeError, ValueError):
+        time_bucket = "unknown"
+    material = "|".join((
+        evidence.get("category") or "unclassified",
+        ",".join(sorted(evidence.get("entities") or ())),
+        ",".join(sorted(evidence.get("places") or ())),
+        ",".join(sorted(evidence.get("actions") or ())),
+        time_bucket,
+    ))
+    return "evt-" + hashlib.sha256(material.encode("utf-8")).hexdigest()[:24]
+
+
 def _source_url(record: dict[str, Any]) -> str:
     trace = record.get("source_trace") if isinstance(record.get("source_trace"), dict) else {}
     return str(record.get("source_url") or record.get("url") or trace.get("source_url") or "").strip()
@@ -141,8 +168,10 @@ def _annotate(record: dict[str, Any], *, status: str, sources: Iterable[str]) ->
         "corroborated": "independent_source_same_entity_and_action",
         "pending_second_source": "waiting_second_source",
     }.get(status, status)
+    item["event_cluster_key"] = event_cluster_key(item)
     trace = dict(item.get("source_trace") or {}) if isinstance(item.get("source_trace"), dict) else {}
     trace["crosscheck_status"] = status
+    trace["event_cluster_key"] = item["event_cluster_key"]
     trace["crosscheck_domains"] = domains
     if urls:
         trace["crosscheck_sources"] = urls
