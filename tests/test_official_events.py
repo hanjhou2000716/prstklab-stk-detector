@@ -12,6 +12,7 @@ from src.official_events import (
     fetch_official_events,
     SOURCES,
 )
+from src.corporate_event_contract import normalize_corporate_event
 
 
 def test_headline_links_are_deduplicated_and_resolved():
@@ -144,3 +145,29 @@ def test_usgs_major_quake_becomes_a_first_party_candidate(monkeypatch):
     monkeypatch.setattr("src.official_events._is_recent_release", lambda released_at: released_at is not None)
     item = _usgs_items()[0]
     assert item["source_key"] == "usgs"
+
+
+def test_corporate_contract_marks_complete_mops_notice_eligible():
+    item = normalize_corporate_event({
+        "title": "2330 台積電：公告重大訊息",
+        "url": "https://mops.twse.com.tw/example",
+        "source_key": "mops",
+        "relevance": "official",
+        "released_at": "2026-08-05T01:00:00+00:00",
+    }, fetched_at="2026-08-05T01:01:00+00:00")
+    assert item["issuer_ticker"] == "2330"
+    assert item["corporate_scope"] == "core_observation"
+    assert item["corporate_candidate_eligible"] is True
+    assert item["corporate_data_gaps"] == []
+
+
+def test_corporate_contract_keeps_incomplete_sec_notice_visible_but_ineligible():
+    item = normalize_corporate_event({
+        "title": "SEC 8-K filing",
+        "source_key": "sec",
+        "relevance": "official",
+        "released_at": "2026-08-05T01:00:00+00:00",
+    }, fetched_at="2026-08-05T01:01:00+00:00")
+    assert item["corporate_event"] is True
+    assert item["corporate_candidate_eligible"] is False
+    assert "missing_issuer" in item["corporate_data_gaps"]
