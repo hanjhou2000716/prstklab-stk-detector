@@ -19,6 +19,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from src.finance_intel_policy import polling_rule, threshold_rule
+from src.corporate_event_contract import normalize_corporate_event
 from src.intel_contract import normalize_event_record
 from src.value_fundamentals import SEC_USER_AGENT, sec_ticker_ciks
 from src.value_universe import fetch_taiwan_0050_universe
@@ -467,7 +468,8 @@ def fetch_official_events() -> dict[str, Any]:
 
     def collect(key: str, label: str, url: str, fetcher: Any) -> None:
         try:
-            fetched = [normalize_event_record(item, fetched_at=checked_at) for item in fetcher()]
+            normalizer = normalize_corporate_event if key in {"mops", "twse", "twse_market", "sec"} else normalize_event_record
+            fetched = [normalizer(item, fetched_at=checked_at) for item in fetcher()]
             items.extend(fetched)
             source_health.append({
                 "key": key, "label": label, "source_tier": "official",
