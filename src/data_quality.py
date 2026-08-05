@@ -53,7 +53,12 @@ def score_source(
     """
     config = thresholds or QualityThresholds()
     freshness, age = freshness_state(record.get("fetched_at") or record.get("checked_at"), now=now, thresholds=config)
-    availability = 100.0 if str(record.get("status", "")).lower() in {"healthy", "ok", "success"} else 0.0
+    status = str(record.get("status", "")).lower()
+    try:
+        consecutive_failures = max(0, int(record.get("consecutive_failures") or 0))
+    except (TypeError, ValueError):
+        consecutive_failures = 0
+    availability = 100.0 if status in {"healthy", "ok", "success"} and consecutive_failures == 0 else 0.0
     completeness = max(0.0, min(100.0, float(record.get("completeness", 0) or 0)))
     cross_source = 100.0 if record.get("cross_checked") is True else 0.0
     parsing = max(0.0, min(100.0, float(record.get("parsing_confidence", 0) or 0)))
@@ -68,11 +73,19 @@ def score_source(
         + latency * 0.10,
         1,
     )
-    alert_eligible = score >= config.alert_min_score and freshness in {"fresh", "recent"} and cross_source >= 100
+    alert_eligible = (
+        score >= config.alert_min_score
+        and freshness in {"fresh", "recent"}
+        and cross_source >= 100
+        and consecutive_failures == 0
+    )
     return {
         "provider": record.get("provider") or record.get("source") or "unknown",
+        "status": status,
         "freshness": freshness,
         "age_minutes": round(age, 1) if age is not None else None,
+        "last_success_at": record.get("last_success_at"),
+        "consecutive_failures": consecutive_failures,
         "availability": availability,
         "completeness": completeness,
         "cross_source_agreement": cross_source,
@@ -82,7 +95,7 @@ def score_source(
         "display_eligible": score >= config.display_min_score,
         "alert_eligible": alert_eligible,
         "stale_used": bool(record.get("stale_used")),
-        "reasons": _reasons(freshness, cross_source, completeness, availability),
+        "reasons": _reasons(freshness, cross_source, completeness, availability, consecutive_failures),
     }
 
 
@@ -130,7 +143,13 @@ def score_quote(
     return base
 
 
-def _reasons(freshness: str, cross_source: float, completeness: float, availability: float) -> list[str]:
+def _reasons(
+    freshness: str,
+    cross_source: float,
+    completeness: float,
+    availability: float,
+    consecutive_failures: int = 0,
+) -> list[str]:
     reasons: list[str] = []
     if availability == 0:
         reasons.append("source_unavailable")
@@ -140,4 +159,6 @@ def _reasons(freshness: str, cross_source: float, completeness: float, availabil
         reasons.append("payload_incomplete")
     if cross_source < 100:
         reasons.append("crosscheck_missing")
+    if consecutive_failures:
+        reasons.append("consecutive_failures")
     return reasons
