@@ -99,7 +99,7 @@ jobs:
       - name: Commit refreshed Mini App data
         if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
         run: |
-          python -m src.release_manifest || test $? -eq 1
+          python -m src.release_manifest
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
             --message "chore: refresh emergency market alert"
       - name: Configure GitHub Pages
@@ -113,7 +113,7 @@ jobs:
       - name: Deploy Pages
         if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: ./.github/actions/deploy-pages-retry
       - name: Verify deployed release before emergency delivery
         if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
         id: release_gate

@@ -1,0 +1,50 @@
+name: Deploy GitHub Pages with retry
+description: Deploy a Pages artifact, retry transient queued/timeout failures, and fail closed when both attempts fail.
+inputs:
+  timeout:
+    description: Maximum time in milliseconds for each Pages deployment attempt.
+    required: false
+    default: "600000"
+outputs:
+  page_url:
+    description: URL returned by the successful Pages deployment.
+    value: ${{ steps.select-url.outputs.page_url }}
+runs:
+  using: composite
+  steps:
+    - name: Deploy Pages (first attempt)
+      id: first
+      continue-on-error: true
+      uses: actions/deploy-pages@v4
+      with:
+        timeout: ${{ inputs.timeout }}
+
+    - name: Deploy Pages (retry)
+      id: retry
+      if: steps.first.outcome == 'failure'
+      continue-on-error: true
+      uses: actions/deploy-pages@v4
+      with:
+        timeout: ${{ inputs.timeout }}
+
+    - name: Select successful deployment URL
+      id: select-url
+      shell: bash
+      env:
+        FIRST_URL: ${{ steps.first.outputs.page_url }}
+        RETRY_URL: ${{ steps.retry.outputs.page_url }}
+      run: |
+        set -euo pipefail
+        page_url="${RETRY_URL:-$FIRST_URL}"
+        if [ -z "$page_url" ]; then
+          echo "Neither Pages deployment attempt returned a public URL." >&2
+          exit 1
+        fi
+        printf 'page_url=%s\n' "$page_url" >> "$GITHUB_OUTPUT"
+
+    - name: Fail closed when Pages deployment is unavailable
+      if: steps.first.outcome == 'failure' && steps.retry.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "GitHub Pages deployment failed twice; no downstream delivery step may run." >&2
+        exit 1

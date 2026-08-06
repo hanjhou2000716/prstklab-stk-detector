@@ -37,7 +37,7 @@ jobs:
         run: python -m src.refresh_market_data
       - name: Build and publish immutable data release
         run: |
-          python -m src.release_manifest || test $? -eq 1
+          python -m src.release_manifest
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
             --message "chore: refresh public market snapshot"
       - name: Configure GitHub Pages
@@ -48,4 +48,4 @@ jobs:
           path: site
       - name: Deploy Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: ./.github/actions/deploy-pages-retry
