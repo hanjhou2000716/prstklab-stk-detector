@@ -1,7 +1,7 @@
 {
-  "release_id": "release-222cd232488a1c64",
-  "created_at": "2026-08-06T05:16:58.192374+00:00",
-  "market_snapshot_id": "f7236b8c2ccca573",
+  "release_id": "release-b8dd54119ed7637a",
+  "created_at": "2026-08-06T06:16:09.494991+00:00",
+  "market_snapshot_id": "4ea5ebe4cdc78493",
   "research_snapshot_id": "research-deaa708d3df48b2a",
   "event_snapshot_id": "event-dd958a69683ddb3f",
   "policy_version": "2026.08",
@@ -11,7 +11,7 @@
     "events": "1"
   },
   "artifact_hashes": {
-    "market.json": "b431596ef0d7eba38dd96f988c64ffea87a069cf3e1525f2b3eb52bdf774191b",
+    "market.json": "5f72b1bb4f482be8b90f1553a63f77aaf6f103878f1a48fdfc59752a71b75fca",
     "research-report.json": "e9c98268af7afaa993e54eabc994364783b65e69f3c91b9307da938b3e830353",
     "event-ledger.json": "ae6b4fc2dac624583342fe0754136bca061cb7e8825021bba38877c000daf4f2"
   },
@@ -21,9 +21,14 @@
     "event-ledger.json": "data/event-ledger.json"
   },
   "normalization_notes": [
-    "market: indices[0].quote_source=Yahoo",
-    "market: indices[1].source_label=TPEx",
-    "market: indices[1].technical_context_stale=true"
+    "market: indices[1].technical_context_stale=true",
+    "market: indices[2].technical_context_stale=true",
+    "market: indices[3].technical_context_stale=true",
+    "market: indices[4].technical_context_stale=true",
+    "market: quotes[3].technical_context_stale=true",
+    "market: quotes[4].technical_context_stale=true",
+    "market: quotes[5].technical_context_stale=true",
+    "market: quotes[6].technical_context_stale=true"
   ],
   "status": "ready",
   "validation_errors": []
