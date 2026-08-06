@@ -37,7 +37,7 @@ jobs:
         run: python -m src.monitor_health --payload "$MONITOR_HEALTH_PAYLOAD" --snapshot site/data/market.json --state site/data/monitor-health.json
       - name: Commit monitor diagnostics
         run: |
-          python -m src.release_manifest || test $? -eq 1
+          python -m src.release_manifest
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --message "chore: publish monitor health diagnostics"
       - name: Configure GitHub Pages
         id: pages
@@ -48,4 +48,4 @@ jobs:
           path: site
       - name: Deploy GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: ./.github/actions/deploy-pages-retry

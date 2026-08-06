@@ -87,7 +87,7 @@ jobs:
         run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --prepare-only --snapshot "$SNAPSHOT_PATH" >> "$GITHUB_OUTPUT"
       - name: Build release manifest
         if: steps.prepare.outputs.prepared == 'true'
-        run: python -m src.release_manifest || test $? -eq 1
+        run: python -m src.release_manifest
       - name: Publish snapshot and manifest
         if: steps.prepare.outputs.prepared == 'true'
         run: |
@@ -104,7 +104,7 @@ jobs:
       - name: Deploy Pages
         if: steps.prepare.outputs.prepared == 'true'
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: ./.github/actions/deploy-pages-retry
       - name: Verify deployed release before delivery
         if: steps.prepare.outputs.prepared == 'true'
         id: release_gate
