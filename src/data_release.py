@@ -76,6 +76,27 @@ def _fetch_branch(branch: str) -> bool:
     return result.returncode == 0
 
 
+def _remote_files(branch: str, files: list[str]) -> set[str]:
+    """Return the requested files that actually exist on the release branch.
+
+    A release branch is intentionally append-only: a newly introduced cache
+    may not exist on its first run.  Asking ``git checkout`` for that missing
+    path makes Git abort the entire restore with a pathspec error, before any
+    research scan can start.  Resolve the remote tree first so optional cache
+    files can be reported as a data gap while the rest of the release is
+    restored normally.
+    """
+    if not files:
+        return set()
+    result = _run(
+        "ls-tree", "-r", "--name-only", f"origin/{branch}", "--", *files,
+        check=False,
+    )
+    if result.returncode:
+        raise DataReleaseError(result.stderr.strip() or "cannot inspect data-release tree")
+    return {line.strip() for line in result.stdout.splitlines() if line.strip()}
+
+
 def restore(*, root: Path | str = Path("."), branch: str = DEFAULT_BRANCH, includes: list[str] | None = None) -> dict[str, Any]:
     """Restore the latest data-only branch into the current checkout."""
     root = Path(root)
@@ -85,10 +106,27 @@ def restore(*, root: Path | str = Path("."), branch: str = DEFAULT_BRANCH, inclu
     files = _expand_includes(root, includes or list(DEFAULT_INCLUDES))
     if not files:
         return {"restored": False, "branch": branch, "reason": "no_local_paths"}
-    result = _run("checkout", f"origin/{branch}", "--", *files, check=False)
+    remote_files = _remote_files(branch, files)
+    missing_remote = [path for path in files if path not in remote_files]
+    if not remote_files:
+        return {
+            "restored": False,
+            "branch": branch,
+            "reason": "no_remote_paths",
+            "missing_remote": missing_remote,
+        }
+    result = _run(
+        "checkout", f"origin/{branch}", "--",
+        *[path for path in files if path in remote_files], check=False,
+    )
     if result.returncode:
         raise DataReleaseError(result.stderr.strip() or "data-release restore failed")
-    return {"restored": True, "branch": branch, "files": files}
+    return {
+        "restored": True,
+        "branch": branch,
+        "files": [path for path in files if path in remote_files],
+        "missing_remote": missing_remote,
+    }
 
 
 def publish(
