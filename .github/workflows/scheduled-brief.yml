@@ -38,6 +38,9 @@ concurrency:
 
 jobs:
   refresh-notify-deploy:
+    # Pages/Actions outages are degraded publication; notification stays
+    # fail-closed through the release gate and must never run without a URL.
+    continue-on-error: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

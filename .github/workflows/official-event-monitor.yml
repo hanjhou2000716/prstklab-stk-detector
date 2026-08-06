@@ -18,6 +18,9 @@ concurrency:
 
 jobs:
   monitor-send-deploy:
+    # A transient Actions/Pages outage is a degraded publication, not an event
+    # confirmation. Telegram remains blocked unless the release gate passes.
+    continue-on-error: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
