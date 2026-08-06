@@ -121,6 +121,13 @@ def _normalize_market(value: dict[str, Any]) -> list[str]:
             if provider and str(quote.get("quote_source") or "").strip().lower().find(provider.lower()) < 0:
                 quote["quote_source"] = f"{provider} public quote"
                 notes.append(f"{collection}[{index}].quote_source={provider}")
+            # Legacy snapshots can retain a current timestamp from a source
+            # replaced by a stale fallback. Keep the card visible, but never
+            # publish the contradictory combination as live or alertable.
+            if quote.get("stale_used") is True and str(quote.get("freshness") or "").lower() == "live":
+                quote["freshness"] = "recent_close"
+                quote["alert_eligible"] = False
+                notes.append(f"{collection}[{index}].freshness=recent_close_for_stale_used")
             technical = quote.get("technical_context")
             quote_date = _date_only(quote.get("quote_date") or quote.get("published_at") or quote.get("quote_time"))
             technical_date = _date_only(technical.get("as_of")) if isinstance(technical, dict) else ""

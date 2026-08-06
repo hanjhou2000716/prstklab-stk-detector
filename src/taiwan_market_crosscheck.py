@@ -16,7 +16,6 @@ import requests
 
 from src.market_data import change_percent
 
-
 TAIPEI = ZoneInfo("Asia/Taipei")
 TWSE_MIS_TAIEX_URL = "https://mis.twse.com.tw/stock/api/getStockInfo.jsp"
 TAIFEX_QUOTE_URL = "https://mis.taifex.com.tw/futures/api/getQuoteList"
@@ -185,6 +184,10 @@ def crosscheck_taiex_quote(
         "quote_time": twse["quote_time"],
         "quote_source": "TWSE MIS cash index + TAIFEX public direction cross-check",
         "quote_basis": "TWSE 公開市況；TAIFEX 台指期方向核對",
+        # The official cash/futures pair replaces the Yahoo observation. Do
+        # not carry a stale marker from that replaced observation forward when
+        # both official sources agree.
+        "stale_used": not confirmed,
         "quote_delayed": not confirmed,
         "crosscheck_status": status,
         "crosscheck_sources": source_observations,

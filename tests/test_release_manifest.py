@@ -110,3 +110,32 @@ def test_manifest_url_is_authoritative_when_fallback_domain_is_stale(tmp_path):
     assert quote["source_domain"] == "finance.yahoo.com"
     assert quote["source_label"] == "Yahoo"
     assert quote["quote_source"] == "Yahoo public quote"
+
+
+def test_manifest_downgrades_stale_live_quote_and_blocks_alert(tmp_path):
+    site_data = tmp_path / "site" / "data"
+    site_data.mkdir(parents=True)
+    (site_data / "market.json").write_text(json.dumps({
+        "generated_at": "2026-08-04T10:00:00+08:00",
+        "snapshot_id": "market-stale01",
+        "indices": [{
+            "ticker": "TAIEX", "price": 200, "quote_date": "2026-08-04",
+            "source_label": "TWSE", "quote_source": "TWSE MIS",
+            "source_url": "https://mis.twse.com.tw/stock/api/getStockInfo.jsp",
+            "freshness": "live", "stale_used": True, "alert_eligible": True,
+        }],
+        "quotes": [], "source_health": {},
+    }), encoding="utf-8")
+    (site_data / "research-report.json").write_text(json.dumps({
+        "schema_version": "2.0", "generated_at": "2026-08-04T10:00:00+08:00",
+        "snapshot_id": "research-stale01", "sources": [], "candidates": [], "health": {},
+    }), encoding="utf-8")
+    (site_data / "event-ledger.json").write_text(json.dumps({
+        "schema_version": 1, "retention_days": 30, "events": {},
+    }), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+    assert manifest["status"] == "ready"
+    quote = json.loads((site_data / "market.json").read_text(encoding="utf-8"))["indices"][0]
+    assert quote["freshness"] == "recent_close"
+    assert quote["alert_eligible"] is False

@@ -294,7 +294,20 @@ def quote_freshness(quote: dict[str, Any], *, now: datetime | None = None) -> st
 
 def annotate_quote_freshness(quotes: list[dict[str, Any]], *, now: datetime | None = None) -> list[dict[str, Any]]:
     """Expose stale data to the UI and health source instead of silently showing it."""
-    return [{**quote, "freshness": quote_freshness(quote, now=now)} for quote in quotes]
+    annotated: list[dict[str, Any]] = []
+    for quote in quotes:
+        item = dict(quote)
+        freshness = quote_freshness(item, now=now)
+        # A fallback/cache marker is authoritative for alert safety. Some
+        # official cross-checks preserve a current timestamp from the source
+        # they replaced; that timestamp must not upgrade stale data to live.
+        if item.get("stale_used") is True and freshness == "live":
+            freshness = quote_freshness({**item, "quote_delayed": True}, now=now)
+        item["freshness"] = freshness
+        if item.get("stale_used") is True:
+            item["alert_eligible"] = False
+        annotated.append(item)
+    return annotated
 
 
 def get_quote(item: dict[str, str], session: str | None = None) -> dict[str, Any]:
