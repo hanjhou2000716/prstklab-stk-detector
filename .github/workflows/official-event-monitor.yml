@@ -90,7 +90,8 @@ jobs:
         id: deployment
         uses: ./.github/actions/deploy-pages-retry
       - name: Verify deployed release before delivery
-        if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'
+        if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true' && steps.deployment.outputs.available == 'true'
+        continue-on-error: true
         id: release_gate
         run: |
           python -m src.release_gate \
@@ -100,6 +101,9 @@ jobs:
             --public-attempts 12 \
             --public-delay 5 \
             >> "$GITHUB_OUTPUT"
+      - name: Record delivery gate when Pages is unavailable
+        if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true' && steps.deployment.outputs.available != 'true'
+        run: echo "Pages unavailable; Telegram delivery intentionally skipped (fail closed)."
       - name: Send new official event
         if: steps.release_gate.outputs.allowed == 'true'
         id: send

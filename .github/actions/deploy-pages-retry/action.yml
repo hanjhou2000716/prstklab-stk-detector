@@ -1,14 +1,24 @@
 name: Deploy GitHub Pages with retry
-description: Deploy a Pages artifact, retry transient queued/timeout failures, and fail closed when both attempts fail.
+description: Deploy a Pages artifact, retry transient queued/timeout failures, and report degraded availability without failing the workflow.
 inputs:
   timeout:
     description: Maximum time in milliseconds for each Pages deployment attempt.
     required: false
-    default: "600000"
+    default: "120000"
+  retry_delay_seconds:
+    description: Seconds to wait before retrying a transient Pages deployment failure.
+    required: false
+    default: "30"
 outputs:
   page_url:
     description: URL returned by the successful Pages deployment.
     value: ${{ steps.select-url.outputs.page_url }}
+  available:
+    description: Whether a Pages deployment completed successfully.
+    value: ${{ steps.select-url.outputs.available }}
+  reason:
+    description: Stable reason when Pages is temporarily unavailable.
+    value: ${{ steps.select-url.outputs.reason }}
 runs:
   using: composite
   steps:
@@ -23,6 +33,13 @@ runs:
       id: retry
       if: steps.first.outcome == 'failure'
       continue-on-error: true
+      shell: bash
+      run: sleep "${{ inputs.retry_delay_seconds }}"
+
+    - name: Deploy Pages (retry attempt)
+      id: retry_attempt
+      if: steps.first.outcome == 'failure'
+      continue-on-error: true
       uses: actions/deploy-pages@v4
       with:
         timeout: ${{ inputs.timeout }}
@@ -32,19 +49,26 @@ runs:
       shell: bash
       env:
         FIRST_URL: ${{ steps.first.outputs.page_url }}
-        RETRY_URL: ${{ steps.retry.outputs.page_url }}
+        RETRY_URL: ${{ steps.retry_attempt.outputs.page_url }}
+        FIRST_OUTCOME: ${{ steps.first.outcome }}
+        RETRY_OUTCOME: ${{ steps.retry_attempt.outcome }}
       run: |
         set -euo pipefail
         page_url="${RETRY_URL:-$FIRST_URL}"
         if [ -z "$page_url" ]; then
-          echo "Neither Pages deployment attempt returned a public URL." >&2
-          exit 1
+          reason="pages_deployment_unavailable"
+          echo "::warning::Neither Pages deployment attempt returned a public URL; downstream delivery is gated."
+        else
+          reason="available"
         fi
         printf 'page_url=%s\n' "$page_url" >> "$GITHUB_OUTPUT"
+        printf 'available=%s\n' "$([ -n "$page_url" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+        printf 'reason=%s\n' "$reason" >> "$GITHUB_OUTPUT"
+        echo "pages_deploy_first_outcome=${FIRST_OUTCOME}"
+        echo "pages_deploy_retry_outcome=${RETRY_OUTCOME:-skipped}"
+        echo "pages_deploy_available=$([ -n "$page_url" ] && echo true || echo false)"
 
-    - name: Fail closed when Pages deployment is unavailable
-      if: steps.first.outcome == 'failure' && steps.retry.outcome == 'failure'
+    - name: Record degraded Pages status
+      if: steps.select-url.outputs.available != 'true'
       shell: bash
-      run: |
-        echo "GitHub Pages deployment failed twice; no downstream delivery step may run." >&2
-        exit 1
+      run: echo "Pages deployment is temporarily unavailable; no notification step may run."
