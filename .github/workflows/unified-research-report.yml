@@ -52,6 +52,12 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
       - run: pip install -r requirements.txt
+      - name: Clear previous research scan artifacts
+        run: |
+          # Never let a failed/partial scan reuse a CSV or summary from an
+          # earlier release.  Missing outputs are rendered as an explicit
+          # data gap by run_research_report instead of stale candidates.
+          rm -f data/*-scan*.csv data/*-summary*.json
       - name: 台股動能研究掃描
         continue-on-error: true
         run: python -m src.run_taiwan_momentum_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
@@ -79,7 +85,7 @@ jobs:
       - run: python -m src.run_research_report
       - run: python -m src.refresh_market_data
       - name: Build release manifest
-        run: python -m src.release_manifest || test $? -eq 1
+        run: python -m src.release_manifest
       - name: 保存最新公開研究摘要
         run: |
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json --message "chore: refresh public research report"
