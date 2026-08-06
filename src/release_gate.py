@@ -9,11 +9,20 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import requests
 
 from src.artifact_contract import validate_release
 from src.release_manifest import verify_release_files
+
+
+def _cache_busted_url(url: str, *, release_id: str, attempt: int) -> str:
+    """Avoid a stale Pages/CDN response during propagation verification."""
+    parts = urlsplit(url)
+    query = dict(parse_qsl(parts.query, keep_blank_values=True))
+    query.update({"release_id": release_id, "attempt": str(attempt)})
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
 
 
 @dataclass(frozen=True)
@@ -56,7 +65,7 @@ def verify_release_for_delivery(
     expected_snapshot_id: str | None = None,
     public_url: str | None = None,
     timeout: float = 15.0,
-    public_attempts: int = 6,
+    public_attempts: int = 12,
     public_delay: float = 5.0,
 ) -> ReleaseGateResult:
     """Verify readiness, local hashes and optionally the deployed Pages copy."""
@@ -101,10 +110,20 @@ def verify_release_for_delivery(
         attempts = max(1, int(public_attempts))
         for attempt in range(attempts):
             try:
-                response = requests.get(
+                request_url = _cache_busted_url(
                     remote_url,
+                    release_id=release_id,
+                    attempt=attempt + 1,
+                )
+                response = requests.get(
+                    request_url,
                     timeout=timeout,
-                    headers={"Accept": "application/json", "User-Agent": "PRStK-release-gate"},
+                    headers={
+                        "Accept": "application/json",
+                        "Cache-Control": "no-cache, no-store",
+                        "Pragma": "no-cache",
+                        "User-Agent": "PRStK-release-gate",
+                    },
                 )
                 response.raise_for_status()
                 remote = response.json()
@@ -114,6 +133,8 @@ def verify_release_for_delivery(
                     public_error = "public manifest status is not ready"
                 elif str(remote.get("release_id") or "") != release_id:
                     public_error = "public manifest release_id does not match local release"
+                elif expected_snapshot_id and str(remote.get("market_snapshot_id") or "") != str(expected_snapshot_id):
+                    public_error = "public manifest market snapshot does not match prepared snapshot"
                 else:
                     public_error = ""
                     break
@@ -138,7 +159,7 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, default=Path("site/data/release-manifest.json"))
     parser.add_argument("--expected-snapshot-id", default=None)
     parser.add_argument("--public-url", default=None)
-    parser.add_argument("--public-attempts", type=int, default=6)
+    parser.add_argument("--public-attempts", type=int, default=12)
     parser.add_argument("--public-delay", type=float, default=5.0)
     args = parser.parse_args()
     result = verify_release_for_delivery(

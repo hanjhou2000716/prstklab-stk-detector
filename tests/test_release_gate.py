@@ -81,7 +81,11 @@ def test_release_gate_retries_pages_propagation_until_release_matches(tmp_path, 
             return None
 
         def json(self):
-            return {"status": "ready", "release_id": self.release_id}
+            return {
+                "status": "ready",
+                "release_id": self.release_id,
+                "market_snapshot_id": "market-12345678",
+            }
 
     responses = iter([Response("release-old"), Response(manifest["release_id"])])
     monkeypatch.setattr("src.release_gate.requests.get", lambda *args, **kwargs: next(responses))
@@ -96,6 +100,68 @@ def test_release_gate_retries_pages_propagation_until_release_matches(tmp_path, 
     )
 
     assert result.allowed is True
+
+
+def test_release_gate_blocks_public_snapshot_mismatch(tmp_path, monkeypatch):
+    path, manifest = _ready_release(tmp_path)
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "status": "ready",
+                "release_id": manifest["release_id"],
+                "market_snapshot_id": "market-old",
+            }
+
+    monkeypatch.setattr("src.release_gate.requests.get", lambda *args, **kwargs: Response())
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_snapshot_id="market-12345678",
+        public_url="https://example.test/",
+        public_attempts=1,
+        public_delay=0,
+    )
+
+    assert result.allowed is False
+    assert "public manifest market snapshot does not match prepared snapshot" in ";".join(result.errors)
+
+
+def test_release_gate_cache_busts_public_manifest_requests(tmp_path, monkeypatch):
+    path, manifest = _ready_release(tmp_path)
+    seen = {}
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "status": "ready",
+                "release_id": manifest["release_id"],
+                "market_snapshot_id": "market-12345678",
+            }
+
+    def get(url, **kwargs):
+        seen["url"] = url
+        seen["headers"] = kwargs["headers"]
+        return Response()
+
+    monkeypatch.setattr("src.release_gate.requests.get", get)
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_snapshot_id="market-12345678",
+        public_url="https://example.test/",
+        public_attempts=1,
+        public_delay=0,
+    )
+
+    assert result.allowed is True
+    assert "release_id=" in seen["url"]
+    assert "attempt=1" in seen["url"]
+    assert seen["headers"]["Cache-Control"] == "no-cache, no-store"
 
 
 def test_release_gate_writes_actions_output_as_key_value_lines(tmp_path, monkeypatch):
