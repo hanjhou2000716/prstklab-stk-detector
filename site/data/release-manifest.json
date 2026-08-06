@@ -1,9 +1,9 @@
 {
-  "release_id": "release-7a6b8fe912e70f0d",
-  "created_at": "2026-08-06T00:46:28.330248+00:00",
-  "market_snapshot_id": "0e84b914e6354be5",
+  "release_id": "release-e33ed5ff6440dd43",
+  "created_at": "2026-08-06T01:02:02.720597+00:00",
+  "market_snapshot_id": "c0bbefcd5490c71f",
   "research_snapshot_id": "research-deaa708d3df48b2a",
-  "event_snapshot_id": "event-4f2bf706ca45f364",
+  "event_snapshot_id": "event-4d22b07c1829d2bf",
   "policy_version": "2026.08",
   "schema_versions": {
     "market": "3.0",
@@ -11,9 +11,9 @@
     "events": "1"
   },
   "artifact_hashes": {
-    "market.json": "b4952cf79b48a217a70cc34206b4773b0949eb1989f1dd9c056488036ba88802",
+    "market.json": "69ec1dddd4f583a902c29946b703a64d1c055d467620717e937301e23bfeff30",
     "research-report.json": "e9c98268af7afaa993e54eabc994364783b65e69f3c91b9307da938b3e830353",
-    "event-ledger.json": "0a81e437a7850dbe11a7cbcc6ad4f9705f258d7502f0bcc823b63389a12ee035"
+    "event-ledger.json": "c85fd62f12dc0801bd84b632f3c1785f573f6fd93fe75327a7d26af714cd5b60"
   },
   "artifact_paths": {
     "market.json": "data/market.json",
@@ -21,9 +21,14 @@
     "event-ledger.json": "data/event-ledger.json"
   },
   "normalization_notes": [
+    "market: indices[0].source_label=TWSE",
+    "market: indices[0].technical_context_stale=true",
     "market: indices[1].source_label=TPEx",
-    "market: indices[1].technical_context_stale=true"
+    "market: indices[1].technical_context_stale=true",
+    "events: snapshot_id=deterministic"
   ],
-  "status": "ready",
-  "validation_errors": []
+  "status": "invalid",
+  "validation_errors": [
+    "indices[0]: official source_label conflicts with source_domain=finance.yahoo.com"
+  ]
 }

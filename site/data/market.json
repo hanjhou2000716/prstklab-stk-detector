@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-06T08:46:28.103458+08:00",
+  "generated_at": "2026-08-06T09:02:02.141001+08:00",
   "scan": {
-    "started_at": "2026-08-06T08:45:41.179092+08:00",
-    "completed_at": "2026-08-06T08:46:28.103458+08:00",
+    "started_at": "2026-08-06T09:01:03.470412+08:00",
+    "completed_at": "2026-08-06T09:02:02.141001+08:00",
     "scope": "公開市場定時掃描",
-    "live_quote_count": 0,
-    "close_quote_count": 20
+    "live_quote_count": 1,
+    "close_quote_count": 19
   },
   "data_status": "部分缺漏",
   "markets": {
@@ -15,7 +15,7 @@
       "calendar": "XTAI",
       "date": "2026-08-06",
       "is_trading_day": true,
-      "session": "開盤前",
+      "session": "交易中",
       "market_open": "2026-08-06T09:00:00+08:00",
       "market_close": "2026-08-06T13:30:00+08:00"
     },
@@ -37,14 +37,14 @@
       "name": "臺灣加權指數",
       "market": "taiwan",
       "currency": "點",
-      "price": 43360.66,
-      "previous_close": 43386.41,
-      "change": -25.75,
-      "change_percent": -0.06,
-      "quote_date": "2026-08-04",
-      "quote_time": null,
-      "quote_basis": "日線收盤",
-      "quote_source": "Yahoo Finance public daily quote",
+      "price": 44381.62,
+      "previous_close": 44611.6,
+      "change": -229.98,
+      "change_percent": -0.52,
+      "quote_date": "2026-08-06",
+      "quote_time": "2026-08-06T09:00:40+08:00",
+      "quote_basis": "TWSE 公開市況；TAIFEX 台指期方向核對",
+      "quote_source": "TWSE MIS cash index + TAIFEX public direction cross-check",
       "source_url": "https://finance.yahoo.com/quote/^TWII",
       "technical_context": {
         "window_days": 20,
@@ -62,30 +62,49 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:44.075450+00:00",
+      "fetched_at": "2026-08-06T01:01:08.472039+00:00",
       "published_at": "2026-08-04",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
-      "source_label": "Yahoo",
+      "source_label": "TWSE",
       "quote_basis_label": "最近收盤",
-      "cross_checked": false,
-      "crosscheck_status": "未交叉核對",
-      "crosscheck_sources": [],
+      "cross_checked": true,
+      "crosscheck_status": "已交叉核對",
+      "crosscheck_sources": [
+        {
+          "label": "TWSE",
+          "url": "https://mis.twse.com.tw/stock/api/getStockInfo.jsp",
+          "quote_time": "2026-08-06T09:00:40+08:00",
+          "quote_date": "2026-08-06",
+          "price": 44381.62,
+          "change_percent": -0.52,
+          "available": true
+        },
+        {
+          "label": "TAIFEX",
+          "url": "https://mis.taifex.com.tw/futures/api/getQuoteList",
+          "quote_time": "2026-08-06T09:01:00+08:00",
+          "quote_date": "2026-08-06",
+          "price": 44366.88,
+          "change_percent": -0.55,
+          "available": true
+        }
+      ],
       "expected_sources": [
         "TWSE",
         "TAIFEX"
       ],
-      "freshness": "stale",
-      "data_quality_score": 0.0,
-      "quality_freshness": "stale",
-      "quality_reasons": [
-        "crosscheck_missing",
-        "quote_stale_or_missing"
-      ],
-      "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:46:27.505427+00:00",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "d658e99646120616"
+      "quote_delayed": false,
+      "aggregated_price_gap_percent": 2.35,
+      "freshness": "live",
+      "data_quality_score": 100.0,
+      "quality_freshness": "fresh",
+      "quality_reasons": [],
+      "alert_eligible": true,
+      "quality_checked_at": "2026-08-06T01:02:01.416685+00:00",
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "5628fc18709e4f16",
+      "technical_context_stale": true
     },
     {
       "symbol": "^TWOII",
@@ -104,7 +123,7 @@
       "source_url": "https://www.tpex.org.tw/openapi/v1/tpex_index",
       "technical_context": {
         "window_days": 20,
-        "long_window_days": 52,
+        "long_window_days": 51,
         "low": 378.44,
         "high": 453.5,
         "long_low": 378.44,
@@ -118,7 +137,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:44.248913+00:00",
+      "fetched_at": "2026-08-06T01:01:08.754414+00:00",
       "published_at": "2026-07-17",
       "source_domain": "tpex.org.tw",
       "stale_used": false,
@@ -139,9 +158,9 @@
         "crosscheck_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:46:27.505488+00:00",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "bafe2d6ee10102e0",
+      "quality_checked_at": "2026-08-06T01:02:01.416746+00:00",
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "6070a61dcd61311a",
       "technical_context_stale": true
     },
     {
@@ -175,7 +194,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:44.423728+00:00",
+      "fetched_at": "2026-08-06T01:01:09.065854+00:00",
       "published_at": "2026-08-05",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -206,10 +225,10 @@
         "crosscheck_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:46:27.505540+00:00",
+      "quality_checked_at": "2026-08-06T01:02:01.416822+00:00",
       "crosscheck_reason": "secondary_source_unavailable",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "518368b54ca7696f"
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "782ad702ac61019f"
     },
     {
       "symbol": "^IXIC",
@@ -242,7 +261,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:44.660951+00:00",
+      "fetched_at": "2026-08-06T01:01:09.309476+00:00",
       "published_at": "2026-08-05",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -273,10 +292,10 @@
         "crosscheck_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:46:27.505587+00:00",
+      "quality_checked_at": "2026-08-06T01:02:01.416874+00:00",
       "crosscheck_reason": "price_or_time_mismatch",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "78f9a4d3c4c28942"
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "8001e23db8ac5eba"
     },
     {
       "symbol": "^DJI",
@@ -309,7 +328,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:44.840934+00:00",
+      "fetched_at": "2026-08-06T01:01:09.762625+00:00",
       "published_at": "2026-08-05",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -340,10 +359,10 @@
         "crosscheck_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:46:27.505633+00:00",
+      "quality_checked_at": "2026-08-06T01:02:01.416920+00:00",
       "crosscheck_reason": "secondary_source_unavailable",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "f1a7f4450daa58a4"
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "dda47bb32272d7c8"
     },
     {
       "symbol": "^SOX",
@@ -376,7 +395,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:45.009124+00:00",
+      "fetched_at": "2026-08-06T01:01:10.236965+00:00",
       "published_at": "2026-08-05",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -407,10 +426,10 @@
         "crosscheck_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:46:27.505678+00:00",
+      "quality_checked_at": "2026-08-06T01:02:01.416963+00:00",
       "crosscheck_reason": "price_or_time_mismatch",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "59b1c3849a172ff0"
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "9858a948339629aa"
     },
     {
       "symbol": "^N225",
@@ -418,10 +437,10 @@
       "name": "日經225",
       "market": "asia",
       "currency": "點",
-      "price": 65343.73,
+      "price": 65399.78,
       "previous_close": 63957.53,
-      "change": 1386.2,
-      "change_percent": 2.17,
+      "change": 1442.25,
+      "change_percent": 2.26,
       "quote_date": "2026-08-06",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -434,7 +453,7 @@
         "high": 68751.51,
         "long_low": 59804.41,
         "long_high": 72366.34,
-        "position_pct": 53.4,
+        "position_pct": 54.2,
         "zone": "位於20日區間中段",
         "as_of": "2026-08-06",
         "status": "ok"
@@ -443,7 +462,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:45.183937+00:00",
+      "fetched_at": "2026-08-06T01:01:10.419522+00:00",
       "published_at": "2026-08-06",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -474,10 +493,10 @@
         "crosscheck_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:46:27.505721+00:00",
+      "quality_checked_at": "2026-08-06T01:02:01.417006+00:00",
       "crosscheck_reason": "secondary_source_unavailable",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "7cb7e9d035279378"
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "88683a911710a53f"
     },
     {
       "symbol": "^KS11",
@@ -485,10 +504,10 @@
       "name": "韓國綜合",
       "market": "asia",
       "currency": "點",
-      "price": 6453.65,
+      "price": 6399.93,
       "previous_close": 6358.95,
-      "change": 94.7,
-      "change_percent": 1.49,
+      "change": 40.98,
+      "change_percent": 0.64,
       "quote_date": "2026-08-06",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -501,7 +520,7 @@
         "high": 7475.94,
         "long_low": 5593.56,
         "long_high": 9114.55,
-        "position_pct": 45.7,
+        "position_pct": 42.8,
         "zone": "位於20日區間中段",
         "as_of": "2026-08-06",
         "status": "ok"
@@ -510,7 +529,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:45.431586+00:00",
+      "fetched_at": "2026-08-06T01:01:10.654415+00:00",
       "published_at": "2026-08-06",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -541,10 +560,10 @@
         "crosscheck_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:46:27.505764+00:00",
+      "quality_checked_at": "2026-08-06T01:02:01.417048+00:00",
       "crosscheck_reason": "secondary_source_unavailable",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "64512182aa9ee4da"
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "cbdc03193adb7fef"
     },
     {
       "symbol": "BZ=F",
@@ -552,10 +571,10 @@
       "name": "Brent 原油",
       "market": "global",
       "currency": "USD",
-      "price": 79.29,
+      "price": 79.25,
       "previous_close": 79.36,
-      "change": -0.07,
-      "change_percent": -0.09,
+      "change": -0.11,
+      "change_percent": -0.14,
       "quote_date": "2026-08-05",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -568,7 +587,7 @@
         "high": 100.69,
         "long_low": 71.57,
         "long_high": 112.1,
-        "position_pct": 13.3,
+        "position_pct": 13.1,
         "zone": "接近20日支撐區",
         "as_of": "2026-08-05",
         "status": "ok"
@@ -577,7 +596,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:45.606165+00:00",
+      "fetched_at": "2026-08-06T01:01:10.829506+00:00",
       "published_at": "2026-08-05",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -609,10 +628,10 @@
         "quote_stale_or_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:46:27.505837+00:00",
+      "quality_checked_at": "2026-08-06T01:02:01.417090+00:00",
       "crosscheck_reason": "secondary_source_unavailable",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "fd670a26a22e5dd2"
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "21d255d0cb233641"
     },
     {
       "symbol": "CL=F",
@@ -620,10 +639,10 @@
       "name": "WTI 原油",
       "market": "global",
       "currency": "USD",
-      "price": 74.92,
+      "price": 74.9,
       "previous_close": 75.77,
-      "change": -0.85,
-      "change_percent": -1.12,
+      "change": -0.87,
+      "change_percent": -1.15,
       "quote_date": "2026-08-05",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -636,7 +655,7 @@
         "high": 92.19,
         "long_low": 68.55,
         "long_high": 108.66,
-        "position_pct": 16.9,
+        "position_pct": 16.8,
         "zone": "接近20日支撐區",
         "as_of": "2026-08-05",
         "status": "ok"
@@ -645,7 +664,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:45.790327+00:00",
+      "fetched_at": "2026-08-06T01:01:11.021776+00:00",
       "published_at": "2026-08-05",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -677,10 +696,10 @@
         "quote_stale_or_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:46:27.505881+00:00",
+      "quality_checked_at": "2026-08-06T01:02:01.417131+00:00",
       "crosscheck_reason": "secondary_source_unavailable",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "de003046f1c7e11a"
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "38d5096a17c466c3"
     },
     {
       "symbol": "GC=F",
@@ -688,10 +707,10 @@
       "name": "黃金期貨",
       "market": "global",
       "currency": "USD",
-      "price": 4348.1,
+      "price": 4354.3,
       "previous_close": 4095.4,
-      "change": 252.7,
-      "change_percent": 6.17,
+      "change": 258.9,
+      "change_percent": 6.32,
       "quote_date": "2026-08-05",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -701,7 +720,7 @@
         "window_days": 20,
         "long_window_days": 60,
         "low": 3985.6,
-        "high": 4348.1,
+        "high": 4354.3,
         "long_low": 3985.6,
         "long_high": 4718.7,
         "position_pct": 100.0,
@@ -713,7 +732,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:45.964320+00:00",
+      "fetched_at": "2026-08-06T01:01:12.247254+00:00",
       "published_at": "2026-08-05",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -745,10 +764,10 @@
         "quote_stale_or_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:46:27.505929+00:00",
+      "quality_checked_at": "2026-08-06T01:02:01.417172+00:00",
       "crosscheck_reason": "secondary_source_unavailable",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "4c0a964332d49674"
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "1e1e1442e6277367"
     },
     {
       "symbol": "BTC-USD",
@@ -756,9 +775,9 @@
       "name": "比特幣",
       "market": "global",
       "currency": "USD",
-      "price": 64565.7,
+      "price": 64568.9,
       "previous_close": 64055.95,
-      "change": 509.75,
+      "change": 512.95,
       "change_percent": 0.8,
       "quote_date": "2026-08-06",
       "quote_time": null,
@@ -772,7 +791,7 @@
         "high": 66505.12,
         "long_low": 58558.86,
         "long_high": 66505.12,
-        "position_pct": 48.2,
+        "position_pct": 48.3,
         "zone": "位於20日區間中段",
         "as_of": "2026-08-06",
         "status": "ok"
@@ -781,7 +800,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:46.135427+00:00",
+      "fetched_at": "2026-08-06T01:01:12.664207+00:00",
       "published_at": "2026-08-06",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -810,9 +829,9 @@
         "crosscheck_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:46:27.505973+00:00",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "56ef91bd22d47cae"
+      "quality_checked_at": "2026-08-06T01:02:01.417214+00:00",
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "c935fbba4261bec5"
     },
     {
       "symbol": "ETH-USD",
@@ -820,10 +839,10 @@
       "name": "以太坊",
       "market": "global",
       "currency": "USD",
-      "price": 1907.13,
+      "price": 1908.16,
       "previous_close": 1868.39,
-      "change": 38.74,
-      "change_percent": 2.07,
+      "change": 39.77,
+      "change_percent": 2.13,
       "quote_date": "2026-08-06",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -836,7 +855,7 @@
         "high": 1953.41,
         "long_low": 1564.82,
         "long_high": 1953.41,
-        "position_pct": 58.8,
+        "position_pct": 59.7,
         "zone": "位於20日區間中段",
         "as_of": "2026-08-06",
         "status": "ok"
@@ -845,7 +864,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:46.377912+00:00",
+      "fetched_at": "2026-08-06T01:01:13.238946+00:00",
       "published_at": "2026-08-06",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -874,9 +893,9 @@
         "crosscheck_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:46:27.506014+00:00",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "a9592793fbcd058f"
+      "quality_checked_at": "2026-08-06T01:02:01.417255+00:00",
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "97f04406be7cd53b"
     }
   ],
   "quotes": [
@@ -911,7 +930,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:42.486172+00:00",
+      "fetched_at": "2026-08-06T01:01:05.192129+00:00",
       "published_at": "2026-08-04",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -932,9 +951,9 @@
         "quote_stale_or_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:45:51.115599+00:00",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "ff5a5ba2ced4b689"
+      "quality_checked_at": "2026-08-06T01:01:19.598051+00:00",
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "dac7415e96895410"
     },
     {
       "symbol": "00685L.TW",
@@ -967,7 +986,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:42.661510+00:00",
+      "fetched_at": "2026-08-06T01:01:05.562031+00:00",
       "published_at": "2026-08-04",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -988,9 +1007,9 @@
         "quote_stale_or_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:45:51.115656+00:00",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "e86421c9c62d3897"
+      "quality_checked_at": "2026-08-06T01:01:19.598107+00:00",
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "fbcb9cd428061759"
     },
     {
       "symbol": "2330.TW",
@@ -1023,7 +1042,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:42.883545+00:00",
+      "fetched_at": "2026-08-06T01:01:06.937470+00:00",
       "published_at": "2026-08-05",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -1043,9 +1062,9 @@
         "crosscheck_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:45:51.115703+00:00",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "d5688a18375e461d"
+      "quality_checked_at": "2026-08-06T01:01:19.598154+00:00",
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "ab05513e24f7464c"
     },
     {
       "symbol": "QQQM",
@@ -1078,7 +1097,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:43.148444+00:00",
+      "fetched_at": "2026-08-06T01:01:07.135359+00:00",
       "published_at": "2026-08-05",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -1098,9 +1117,9 @@
         "crosscheck_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:45:51.115747+00:00",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "3ae3c665d56f13b1"
+      "quality_checked_at": "2026-08-06T01:01:19.598196+00:00",
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "f436ba8b084fb598"
     },
     {
       "symbol": "QLD",
@@ -1133,7 +1152,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:43.380850+00:00",
+      "fetched_at": "2026-08-06T01:01:07.349079+00:00",
       "published_at": "2026-08-05",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -1153,9 +1172,9 @@
         "crosscheck_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:45:51.115821+00:00",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "e713761fbffc4ded"
+      "quality_checked_at": "2026-08-06T01:01:19.598237+00:00",
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "61388d9d8cf5a89c"
     },
     {
       "symbol": "TSM",
@@ -1188,7 +1207,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:43.692744+00:00",
+      "fetched_at": "2026-08-06T01:01:07.995391+00:00",
       "published_at": "2026-08-05",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -1208,9 +1227,9 @@
         "crosscheck_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:45:51.115868+00:00",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "8809626734291196"
+      "quality_checked_at": "2026-08-06T01:01:19.598276+00:00",
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "69f5edff42f76a9b"
     },
     {
       "symbol": "NVDA",
@@ -1243,7 +1262,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:43.902107+00:00",
+      "fetched_at": "2026-08-06T01:01:08.194198+00:00",
       "published_at": "2026-08-05",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -1263,9 +1282,9 @@
         "crosscheck_missing"
       ],
       "alert_eligible": false,
-      "quality_checked_at": "2026-08-06T00:45:51.115909+00:00",
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "f23e2cc21f21c3ca"
+      "quality_checked_at": "2026-08-06T01:01:19.598316+00:00",
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "60547dbcccb36365"
     }
   ],
   "risk": {
@@ -1288,14 +1307,14 @@
         "method": "加權、櫃買、成交量、歷史波動率、美元兌台幣匯率的 120 日百分位模型"
       },
       "vix": {
-        "value": 0.0,
+        "value": 36.59,
         "date": "2026-08-06",
-        "change_percent": -100.0,
+        "change_percent": 3.48,
         "percentile": null,
-        "stage": "極度樂觀",
+        "stage": "極度恐慌",
         "source_label": "TAIFEX",
         "source_url": "https://mis.taifex.com.tw/futures/VolatilityQuotes/",
-        "fetched_at": "2026-08-06T00:45:53.683739+00:00",
+        "fetched_at": "2026-08-06T01:01:22.349471+00:00",
         "history_points": 0,
         "percentile_as_of": null,
         "percentile_status": "unavailable",
@@ -1321,7 +1340,7 @@
         "stage": "樂觀",
         "date": "2026-08-05",
         "source_label": "Yahoo Finance",
-        "fetched_at": "2026-08-06T00:45:51.977087+00:00",
+        "fetched_at": "2026-08-06T01:01:20.625204+00:00",
         "history_points": 252,
         "percentile_as_of": "2026-08-05",
         "percentile_status": "available",
@@ -1349,20 +1368,6 @@
         "classification_status": "matched"
       },
       {
-        "title": "台積電ADR跌0.8% 較台北交易溢價11.2% - UDN",
-        "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE05Wnc2bWtBc2RDeG9vMFRlNkpzR1pOc29sWVE1UHdQY1Fnc2JPQ3pvdllwczlmUURJbEdNVXZPMTNQTl9YTjFHZ0Ztc0NaSE9z?oc=5",
-        "source": "Google News｜台股線索",
-        "relevance": "market",
-        "market_scope": "taiwan",
-        "taiwan_matches": [
-          "台股",
-          "台積電"
-        ],
-        "us_matches": [],
-        "global_matches": [],
-        "classification_status": "matched"
-      },
-      {
         "title": "道瓊創高台積電ADR收黑投顧：台股估區間震盪| 證券 - 中央社 CNA",
         "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE5peDZlOGNaVlozVTRPS1Nrb1MzSE9tbVpYMTdaNWlTUng1ckFDSDJJazJPUV9vWmtxRzM3Y0hIS05UV1NmQU0wZmhickc5bi1vbUtRZUdRemk0VGxpRkE?oc=5",
         "source": "Google News｜台股線索",
@@ -1377,14 +1382,29 @@
         "classification_status": "matched"
       },
       {
-        "title": "挖出童骨後不平靜？台積電嘉義廠爆2死5重傷 廠方急請關公坐鎮...「布袋戲壓煞」原因曝光 - tw.news.yahoo.com",
-        "url": "https://news.google.com/rss/articles/CBMinwRBVV95cUxQdlRqd0xQQVFFR0VDdWl4cFh1SVZYV3FGYy1kUFVsT0FaUURhV3pONVVBWkl2aXBEWmVpQWlXd1d6aUNSdUpienRvMFdYNXFvdDFLQVpWdFhITTctQjhqZVEwSXIwcDdUdGd6bzFzdnZDVzZaY1h5VnRWcHpYTHlLM2JFZFI4MmN0YjlDdGxMeFRkNjNndWhCQWZJVHY1MnlFRllFVEdSSk1idXM4R1dVY2J6STd1bjlraE9aUzhRMzF2Rmo5NkFLQnU3N1JOQy05Z0JmNTIzdVhMeGU1bXhwSlcyZVQxZ2dKRG9XM1JtM2g3Z1NpRVlQVG11WC1fWWMzNjJ1N0NGNkIzTEhTMC05VThiWWhxSjhVbTN4RGpWTDdwTVRDa2k4VGU3MWJrTHFFWHU5M2I1WWt3MUs2elpKOWdPZ3plSEhBZmxmMEx6MnN0aFpveURxY2tZejZHNUZib1YzX2l3UGo3Z05DWDJoYkFqX0tpbmJPNWI2dFl2TTZ0dU5vTHZBanVQTnN0TzZGeHprVExiMFBlMzdpS2J3V09zS2JIUEZFQVl0NG4yUHFhdVJtVXZ0ZGxTQVhvMEJGdnUyLVQ4WGpReTZFMHB4MlE0UExSX3FYU3A2WUZUODI5V2tmTWVHLWs3VFptN2ZURURsWUdlSmZrSy1wQ2dIXzdxU0YtTV9UcWt2V3VVdVMtLWo3MXFwalNyMzNsbDA?oc=5",
+        "title": "台積電ADR跌0.8% 較台北交易溢價11.2% - udn.com",
+        "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE05Wnc2bWtBc2RDeG9vMFRlNkpzR1pOc29sWVE1UHdQY1Fnc2JPQ3pvdllwczlmUURJbEdNVXZPMTNQTl9YTjFHZ0Ztc0NaSE9z?oc=5",
         "source": "Google News｜台股線索",
         "relevance": "market",
         "market_scope": "taiwan",
         "taiwan_matches": [
           "台股",
           "台積電"
+        ],
+        "us_matches": [],
+        "global_matches": [],
+        "classification_status": "matched"
+      },
+      {
+        "title": "竟贏過台積電、0050！財經雪倫：00929今年漲逾60％ 換股策略宛如「變形蟲」 - Yahoo股市",
+        "url": "https://news.google.com/rss/articles/CBMi3wJBVV95cUxOcVVSbG9ZdURaT1hicUZhZWNqN29lSVZBUWpnTmFCR1lDdUJRaElwQWlUaXVxTDlFeGI1UkluSmE4Q3hDdGFnUFdLY2d2MmRVT295Z2pibjJUM2R4MDFGbTB1aHpPX09SRmRtNVRhUlJVanFkLURrS2VvSjB0NU1NTnVfY3Y0ODgxajEtOVhoVWRVdUNOTzVweU5LajNiVnhrWGZwNEFLbW5XQ09aZVloRVRRLVVERzA0UzEzYXdHY2xCblRGc1pxejJDLUZWWjdlal9xSVZpZzRSTmExcGl4dXduOWRTWDdwWDZRNWNsUE9UR21CYTJOU3hsSEVnOE9aZkNJQW1lUm5kaVJ4ZzE4MW5EWTU0S1FCY1Qwel95UkxxWlcxdHdGVkZzUE9FYjBUcnowenhwQVFiYUV6Xy1mVjI5bktIZ0ZPdGVrUl9oQ1NXVEthaDVOZi12WTVkYTg?oc=5",
+        "source": "Google News｜台股線索",
+        "relevance": "market",
+        "market_scope": "taiwan",
+        "taiwan_matches": [
+          "台股",
+          "台積電",
+          "0050"
         ],
         "us_matches": [],
         "global_matches": [],
@@ -1420,18 +1440,7 @@
         "classification_status": "matched"
       },
       {
-        "title": "2. 史上最強單月營收快衝上兆元了 鴻海7月營收9465億元月增15%改寫新高",
-        "url": "https://news.cnyes.com/news/id/6560356",
-        "source": "鉅亨網｜市場焦點",
-        "relevance": "market",
-        "market_scope": "unclassified",
-        "taiwan_matches": [],
-        "us_matches": [],
-        "global_matches": [],
-        "classification_status": "unclassified"
-      },
-      {
-        "title": "3. 【量大強漲股整理】【聯亞】⊕⊕、【大立光】+27%！輝達CPO宣告量產，主流飆股名單大公開?!",
+        "title": "2. 【量大強漲股整理】【聯亞】⊕⊕、【大立光】+27%！輝達CPO宣告量產，主流飆股名單大公開?!",
         "url": "https://news.cnyes.com/news/id/6560821",
         "source": "鉅亨網｜市場焦點",
         "relevance": "market",
@@ -1442,7 +1451,7 @@
         "classification_status": "unclassified"
       },
       {
-        "title": "4. 黃仁勳深夜推文秀Alpamayo 2 Super　宣示「AI下一波浪潮將由自動駕駛開啟」",
+        "title": "3. 黃仁勳深夜推文秀Alpamayo 2 Super　宣示「AI下一波浪潮將由自動駕駛開啟」",
         "url": "https://news.cnyes.com/news/id/6560338",
         "source": "鉅亨網｜市場焦點",
         "relevance": "market",
@@ -1453,7 +1462,7 @@
         "classification_status": "unclassified"
       },
       {
-        "title": "5. 〈美股早盤〉企業財報與中東樂觀情緒助攻 主要指數開高",
+        "title": "4. 〈美股早盤〉企業財報與中東樂觀情緒助攻 主要指數開高",
         "url": "https://news.cnyes.com/news/id/6561047",
         "source": "鉅亨網｜市場焦點",
         "relevance": "market",
@@ -1464,6 +1473,17 @@
         ],
         "global_matches": [],
         "classification_status": "matched"
+      },
+      {
+        "title": "5. 〈環宇法說〉光通訊市場持續供不應求 美禁中國光收發器有利後市營運",
+        "url": "https://news.cnyes.com/news/id/6561338",
+        "source": "鉅亨網｜市場焦點",
+        "relevance": "market",
+        "market_scope": "unclassified",
+        "taiwan_matches": [],
+        "us_matches": [],
+        "global_matches": [],
+        "classification_status": "unclassified"
       }
     ],
     "errors": [],
@@ -1475,7 +1495,7 @@
         "source_tier": "discovery",
         "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:53.684323+00:00",
+        "checked_at": "2026-08-06T01:01:22.350147+00:00",
         "item_count": 5,
         "data_gap": null,
         "fallback_used": true
@@ -1486,7 +1506,7 @@
         "source_tier": "discovery",
         "source_url": "https://news.cnyes.com/news/cat/us_stock",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:53.684323+00:00",
+        "checked_at": "2026-08-06T01:01:22.350147+00:00",
         "item_count": 5,
         "data_gap": null
       }
@@ -1497,6 +1517,300 @@
     "status": "市場訊號已更新",
     "message": "已核對的重要市場事件與價格訊號；請查看完整脈絡。",
     "items": [
+      {
+        "kind": "market_signal",
+        "short_label": "台指價格訊號觸發",
+        "pattern": "下跌",
+        "risk_level": "波動擴大",
+        "brief_title": "台指價格訊號觸發｜下跌｜波動擴大",
+        "title": "臺灣加權指數日內變動 -0.52%",
+        "summary": "臺灣加權指數 44,381.62",
+        "trigger": "日內 -0.52%｜點數 -229.98｜最新 44,381.62",
+        "why_important": "日內 -0.52%｜點數 -229.98｜最新 44,381.62。日內變動達固定觀察門檻，需以後續公開報價確認。",
+        "market_context": "可能連動費半、Nasdaq 與台指期；以後續同步報價確認，而非預設因果。",
+        "stock_observation": "觀察台股權值與電子類股是否與台指期、費半維持同方向。",
+        "event": "日內 -0.52%｜點數 -229.98｜最新 44,381.62",
+        "importance_detail": "日內 -0.52%｜點數 -229.98｜最新 44,381.62。日內變動達固定觀察門檻，需以後續公開報價確認。",
+        "market_impact": "可能連動費半、Nasdaq 與台指期；以後續同步報價確認，而非預設因果。",
+        "watch": "觀察台股權值與電子類股是否與台指期、費半維持同方向。",
+        "market_direction": "下跌",
+        "market_move": "-0.52%",
+        "friendly_reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
+        "source": "公開市場報價",
+        "url": "https://finance.yahoo.com/quote/^TWII",
+        "source_trace": {
+          "verification": "公開來源待後續核對",
+          "source_label": "Yahoo",
+          "source_url": "https://finance.yahoo.com/quote/^TWII",
+          "source_domain": "finance.yahoo.com",
+          "event_time": "2026-08-06T09:00:40+08:00",
+          "checked_at": "2026-08-06T01:01:08.472039+00:00",
+          "verified_domains": [
+            "finance.yahoo.com"
+          ],
+          "snapshot_id": "c0bbefcd5490c71f",
+          "observation_id": "5628fc18709e4f16"
+        },
+        "instrument": {
+          "symbol": "^TWII",
+          "ticker": "TAIEX",
+          "name": "臺灣加權指數",
+          "market": "taiwan",
+          "currency": "點",
+          "price": 44381.62,
+          "previous_close": 44611.6,
+          "change": -229.98,
+          "change_percent": -0.52,
+          "quote_date": "2026-08-06",
+          "quote_time": "2026-08-06T09:00:40+08:00",
+          "quote_basis": "TWSE 公開市況；TAIFEX 台指期方向核對",
+          "quote_source": "TWSE MIS cash index + TAIFEX public direction cross-check",
+          "source_url": "https://finance.yahoo.com/quote/^TWII",
+          "technical_context": {
+            "window_days": 20,
+            "long_window_days": 60,
+            "low": 39933.3,
+            "high": 45734.41,
+            "long_low": 39933.3,
+            "long_high": 47741.51,
+            "position_pct": 59.1,
+            "zone": "位於20日區間中段",
+            "as_of": "2026-08-04",
+            "status": "ok"
+          },
+          "change_consistency": "consistent",
+          "direction_sign": -1,
+          "market_direction": "下跌",
+          "source_tier": "public-market",
+          "fetched_at": "2026-08-06T01:01:08.472039+00:00",
+          "published_at": "2026-08-04",
+          "source_domain": "finance.yahoo.com",
+          "stale_used": false,
+          "source_label": "Yahoo",
+          "quote_basis_label": "最近收盤",
+          "cross_checked": true,
+          "crosscheck_status": "已交叉核對",
+          "crosscheck_sources": [
+            {
+              "label": "TWSE",
+              "url": "https://mis.twse.com.tw/stock/api/getStockInfo.jsp",
+              "quote_time": "2026-08-06T09:00:40+08:00",
+              "quote_date": "2026-08-06",
+              "price": 44381.62,
+              "change_percent": -0.52,
+              "available": true
+            },
+            {
+              "label": "TAIFEX",
+              "url": "https://mis.taifex.com.tw/futures/api/getQuoteList",
+              "quote_time": "2026-08-06T09:01:00+08:00",
+              "quote_date": "2026-08-06",
+              "price": 44366.88,
+              "change_percent": -0.55,
+              "available": true
+            }
+          ],
+          "expected_sources": [
+            "TWSE",
+            "TAIFEX"
+          ],
+          "quote_delayed": false,
+          "aggregated_price_gap_percent": 2.35,
+          "freshness": "live",
+          "data_quality_score": 100.0,
+          "quality_freshness": "fresh",
+          "quality_reasons": [],
+          "alert_eligible": true,
+          "quality_checked_at": "2026-08-06T01:02:01.416685+00:00",
+          "snapshot_id": "c0bbefcd5490c71f",
+          "observation_id": "5628fc18709e4f16"
+        },
+        "related": [
+          {
+            "symbol": "^SOX",
+            "ticker": "SOX",
+            "name": "費城半導體指數",
+            "market": "us",
+            "currency": "點",
+            "price": 12008.88,
+            "previous_close": 12179.26,
+            "change": -170.38,
+            "change_percent": -1.4,
+            "quote_date": "2026-08-05",
+            "quote_time": null,
+            "quote_basis": "日線收盤",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_url": "https://finance.yahoo.com/quote/^SOX",
+            "technical_context": {
+              "window_days": 20,
+              "long_window_days": 60,
+              "low": 10447.49,
+              "high": 12967.16,
+              "long_low": 10447.49,
+              "long_high": 14634.72,
+              "position_pct": 62.0,
+              "zone": "位於20日區間中段",
+              "as_of": "2026-08-05",
+              "status": "ok"
+            },
+            "change_consistency": "consistent",
+            "direction_sign": -1,
+            "market_direction": "下跌",
+            "source_tier": "public-market",
+            "fetched_at": "2026-08-06T01:01:10.236965+00:00",
+            "published_at": "2026-08-05",
+            "source_domain": "finance.yahoo.com",
+            "stale_used": false,
+            "source_label": "Yahoo",
+            "quote_basis_label": "最近收盤",
+            "cross_checked": false,
+            "crosscheck_status": "discrepancy",
+            "crosscheck_sources": [
+              {
+                "label": "Yahoo",
+                "url": "https://finance.yahoo.com/quote/^SOX",
+                "quote_time": "2026-08-05"
+              },
+              {
+                "label": "Nasdaq",
+                "url": "https://api.nasdaq.com/api/quote/sox/info?assetclass=index",
+                "quote_time": null
+              }
+            ],
+            "expected_sources": [
+              "Yahoo",
+              "public-market-secondary"
+            ],
+            "freshness": "recent_close",
+            "data_quality_score": 85.0,
+            "quality_freshness": "fresh",
+            "quality_reasons": [
+              "crosscheck_missing"
+            ],
+            "alert_eligible": false,
+            "quality_checked_at": "2026-08-06T01:02:01.416963+00:00",
+            "crosscheck_reason": "price_or_time_mismatch",
+            "snapshot_id": "c0bbefcd5490c71f",
+            "observation_id": "9858a948339629aa"
+          },
+          {
+            "symbol": "^IXIC",
+            "ticker": "NASDAQ",
+            "name": "那斯達克綜合指數",
+            "market": "us",
+            "currency": "點",
+            "price": 26363.44,
+            "previous_close": 26584.99,
+            "change": -221.55,
+            "change_percent": -0.83,
+            "quote_date": "2026-08-05",
+            "quote_time": null,
+            "quote_basis": "日線收盤",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_url": "https://finance.yahoo.com/quote/^IXIC",
+            "technical_context": {
+              "window_days": 20,
+              "long_window_days": 60,
+              "low": 24442.94,
+              "high": 26584.99,
+              "long_low": 24442.94,
+              "long_high": 27093.9,
+              "position_pct": 89.7,
+              "zone": "接近20日壓力區",
+              "as_of": "2026-08-05",
+              "status": "ok"
+            },
+            "change_consistency": "consistent",
+            "direction_sign": -1,
+            "market_direction": "下跌",
+            "source_tier": "public-market",
+            "fetched_at": "2026-08-06T01:01:09.309476+00:00",
+            "published_at": "2026-08-05",
+            "source_domain": "finance.yahoo.com",
+            "stale_used": false,
+            "source_label": "Yahoo",
+            "quote_basis_label": "最近收盤",
+            "cross_checked": false,
+            "crosscheck_status": "discrepancy",
+            "crosscheck_sources": [
+              {
+                "label": "Yahoo",
+                "url": "https://finance.yahoo.com/quote/^IXIC",
+                "quote_time": "2026-08-05"
+              },
+              {
+                "label": "Nasdaq",
+                "url": "https://api.nasdaq.com/api/quote/comp/info?assetclass=index",
+                "quote_time": null
+              }
+            ],
+            "expected_sources": [
+              "Yahoo",
+              "public-market-secondary"
+            ],
+            "freshness": "recent_close",
+            "data_quality_score": 85.0,
+            "quality_freshness": "fresh",
+            "quality_reasons": [
+              "crosscheck_missing"
+            ],
+            "alert_eligible": false,
+            "quality_checked_at": "2026-08-06T01:02:01.416874+00:00",
+            "crosscheck_reason": "price_or_time_mismatch",
+            "snapshot_id": "c0bbefcd5490c71f",
+            "observation_id": "8001e23db8ac5eba"
+          }
+        ],
+        "impact_confirmation": {
+          "confirmed": true,
+          "method": "相關市場同步波動",
+          "markets": [
+            "SOX"
+          ],
+          "evidence": [
+            {
+              "ticker": "SOX",
+              "change_percent": -1.4,
+              "quote_time": "2026-08-05"
+            }
+          ]
+        },
+        "change": -229.98,
+        "realert_interval_minutes": null,
+        "signal_band": -0.5,
+        "signal_state": "下跌:波動擴大:初始:daily:-0.5",
+        "source_tier": "public-market",
+        "fetched_at": "2026-08-06T01:02:01.417405+00:00",
+        "published_at": null,
+        "traditional_chinese_summary": "臺灣加權指數 44,381.62",
+        "event_type": "market",
+        "importance": "normal",
+        "market_transmission": [
+          "SOX",
+          "NASDAQ"
+        ],
+        "source_url": "https://finance.yahoo.com/quote/^TWII",
+        "source_domain": "finance.yahoo.com",
+        "cross_checked": true,
+        "data_gap": null,
+        "stale_used": false,
+        "official_confirmed": false,
+        "high_risk_eligible": true,
+        "corporate_event": false,
+        "corporate_routine": false,
+        "corporate_alert_eligible": null,
+        "classification": "semiconductor",
+        "classification_reason": "semiconductor_keyword",
+        "matched_terms": [
+          "半導體"
+        ],
+        "notification_status": "eligible",
+        "notification_reasons": [],
+        "notification_reason": "",
+        "verification_plan": [],
+        "snapshot_id": "c0bbefcd5490c71f",
+        "observation_id": "5628fc18709e4f16"
+      },
       {
         "title": "Fed還能只盯著通膨？美國7月小非農僅增4.4萬人 增幅創半年最低",
         "url": "https://news.cnyes.com/news/id/6561052",
@@ -1517,7 +1831,7 @@
           "政策"
         ],
         "source_tier": "discovery",
-        "fetched_at": "2026-08-06T00:46:27.535592+00:00",
+        "fetched_at": "2026-08-06T01:02:01.549386+00:00",
         "published_at": null,
         "traditional_chinese_summary": "Fed還能只盯著通膨？美國7月小非農僅增4.4萬人 增幅創半年最低",
         "event_type": "central-bank",
@@ -1576,7 +1890,7 @@
             "direction_sign": -1,
             "market_direction": "下跌",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-06T00:45:44.660951+00:00",
+            "fetched_at": "2026-08-06T01:01:09.309476+00:00",
             "published_at": "2026-08-05",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -1607,10 +1921,10 @@
               "crosscheck_missing"
             ],
             "alert_eligible": false,
-            "quality_checked_at": "2026-08-06T00:46:27.505587+00:00",
+            "quality_checked_at": "2026-08-06T01:02:01.416874+00:00",
             "crosscheck_reason": "price_or_time_mismatch",
-            "snapshot_id": "0e84b914e6354be5",
-            "observation_id": "78f9a4d3c4c28942"
+            "snapshot_id": "c0bbefcd5490c71f",
+            "observation_id": "8001e23db8ac5eba"
           },
           {
             "symbol": "^SOX",
@@ -1643,7 +1957,7 @@
             "direction_sign": -1,
             "market_direction": "下跌",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-06T00:45:45.009124+00:00",
+            "fetched_at": "2026-08-06T01:01:10.236965+00:00",
             "published_at": "2026-08-05",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -1674,10 +1988,10 @@
               "crosscheck_missing"
             ],
             "alert_eligible": false,
-            "quality_checked_at": "2026-08-06T00:46:27.505678+00:00",
+            "quality_checked_at": "2026-08-06T01:02:01.416963+00:00",
             "crosscheck_reason": "price_or_time_mismatch",
-            "snapshot_id": "0e84b914e6354be5",
-            "observation_id": "59b1c3849a172ff0"
+            "snapshot_id": "c0bbefcd5490c71f",
+            "observation_id": "9858a948339629aa"
           }
         ],
         "impact_confirmation": {
@@ -1700,7 +2014,7 @@
           "source_url": "https://news.cnyes.com/news/id/6561052",
           "source_domain": "news.cnyes.com",
           "event_time": "",
-          "checked_at": "2026-08-06T00:46:27.535592+00:00",
+          "checked_at": "2026-08-06T01:02:01.549386+00:00",
           "verified_domains": [
             "news.cnyes.com"
           ],
@@ -1712,8 +2026,8 @@
           "crosscheck_sources": [
             "https://news.cnyes.com/news/id/6561052"
           ],
-          "snapshot_id": "0e84b914e6354be5",
-          "observation_id": "b493901aa6c66985"
+          "snapshot_id": "c0bbefcd5490c71f",
+          "observation_id": "f0592cbff278176d"
         },
         "official_confirmed": false,
         "high_risk_eligible": true,
@@ -1733,8 +2047,8 @@
         ],
         "crosscheck_reason": "waiting_second_source",
         "event_cluster_key": "evt-737d42d18648aeffa1d620a6",
-        "snapshot_id": "0e84b914e6354be5",
-        "observation_id": "b493901aa6c66985"
+        "snapshot_id": "c0bbefcd5490c71f",
+        "observation_id": "f0592cbff278176d"
       },
       {
         "title": "〈美股早盤〉企業財報與中東樂觀情緒助攻 主要指數開高",
@@ -1755,7 +2069,7 @@
           "中東"
         ],
         "source_tier": "discovery",
-        "fetched_at": "2026-08-06T00:46:27.573706+00:00",
+        "fetched_at": "2026-08-06T01:02:01.580191+00:00",
         "published_at": null,
         "traditional_chinese_summary": "〈美股早盤〉企業財報與中東樂觀情緒助攻 主要指數開高",
         "event_type": "macro",
@@ -1814,7 +2128,7 @@
             "direction_sign": -1,
             "market_direction": "下跌",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-06T00:45:44.660951+00:00",
+            "fetched_at": "2026-08-06T01:01:09.309476+00:00",
             "published_at": "2026-08-05",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -1845,10 +2159,10 @@
               "crosscheck_missing"
             ],
             "alert_eligible": false,
-            "quality_checked_at": "2026-08-06T00:46:27.505587+00:00",
+            "quality_checked_at": "2026-08-06T01:02:01.416874+00:00",
             "crosscheck_reason": "price_or_time_mismatch",
-            "snapshot_id": "0e84b914e6354be5",
-            "observation_id": "78f9a4d3c4c28942"
+            "snapshot_id": "c0bbefcd5490c71f",
+            "observation_id": "8001e23db8ac5eba"
           },
           {
             "symbol": "^SOX",
@@ -1881,7 +2195,7 @@
             "direction_sign": -1,
             "market_direction": "下跌",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-06T00:45:45.009124+00:00",
+            "fetched_at": "2026-08-06T01:01:10.236965+00:00",
             "published_at": "2026-08-05",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -1912,10 +2226,10 @@
               "crosscheck_missing"
             ],
             "alert_eligible": false,
-            "quality_checked_at": "2026-08-06T00:46:27.505678+00:00",
+            "quality_checked_at": "2026-08-06T01:02:01.416963+00:00",
             "crosscheck_reason": "price_or_time_mismatch",
-            "snapshot_id": "0e84b914e6354be5",
-            "observation_id": "59b1c3849a172ff0"
+            "snapshot_id": "c0bbefcd5490c71f",
+            "observation_id": "9858a948339629aa"
           }
         ],
         "impact_confirmation": {
@@ -1938,7 +2252,7 @@
           "source_url": "https://news.cnyes.com/news/id/6561047",
           "source_domain": "news.cnyes.com",
           "event_time": "",
-          "checked_at": "2026-08-06T00:46:27.573706+00:00",
+          "checked_at": "2026-08-06T01:02:01.580191+00:00",
           "verified_domains": [
             "news.cnyes.com"
           ],
@@ -1954,8 +2268,8 @@
           "crosscheck_sources": [
             "https://news.cnyes.com/news/id/6561047"
           ],
-          "snapshot_id": "0e84b914e6354be5",
-          "observation_id": "cb5f6ad3090be4b6"
+          "snapshot_id": "c0bbefcd5490c71f",
+          "observation_id": "b0da5414e5884a0d"
         },
         "official_confirmed": false,
         "high_risk_eligible": false,
@@ -1980,14 +2294,14 @@
         ],
         "crosscheck_reason": "waiting_second_source",
         "event_cluster_key": "evt-89328e3b10badd4f8d078817",
-        "snapshot_id": "0e84b914e6354be5",
-        "observation_id": "cb5f6ad3090be4b6"
+        "snapshot_id": "c0bbefcd5490c71f",
+        "observation_id": "b0da5414e5884a0d"
       }
     ],
     "suppressed_signals": [
       {
-        "ticker": "TPEX",
-        "reason": "crosscheck_missing"
+        "ticker": "TAIEX",
+        "reason": "taiex_crosscheck_pending"
       },
       {
         "ticker": "S&P 500",
@@ -2026,7 +2340,7 @@
   "official_events": {
     "items": [],
     "errors": [],
-    "checked_at": "2026-08-06T00:45:55.119257+00:00",
+    "checked_at": "2026-08-06T01:01:24.073586+00:00",
     "source_health": [
       {
         "key": "fed",
@@ -2034,7 +2348,7 @@
         "source_tier": "official",
         "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2045,7 +2359,7 @@
         "source_tier": "official",
         "source_url": "https://www.bls.gov/feed/empsit.rss",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2056,7 +2370,7 @@
         "source_tier": "official",
         "source_url": "https://www.bls.gov/feed/cpi.rss",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2067,7 +2381,7 @@
         "source_tier": "official",
         "source_url": "https://www.bls.gov/feed/ppi.rss",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2078,7 +2392,7 @@
         "source_tier": "official",
         "source_url": "https://www.eia.gov/rss/press_rss.xml",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2089,7 +2403,7 @@
         "source_tier": "official",
         "source_url": "https://apps.bea.gov/rss/rss.xml",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2100,7 +2414,7 @@
         "source_tier": "official",
         "source_url": "https://www.taifex.com.tw/cht/11/pressRelease",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2111,7 +2425,7 @@
         "source_tier": "official",
         "source_url": "https://www.cbc.gov.tw/tw/lp-302-1-391-20.html",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2122,7 +2436,7 @@
         "source_tier": "official",
         "source_url": "https://www.fsc.gov.tw/ch/home.jsp?id=640&parentpath=0,7,478,638",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2133,7 +2447,7 @@
         "source_tier": "official",
         "source_url": "https://www.stat.gov.tw/",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2144,7 +2458,7 @@
         "source_tier": "official",
         "source_url": "https://mnscdn.moea.gov.tw/Mns/dos/bulletin/BulletinQuery.aspx?menu_id=13034",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2155,7 +2469,7 @@
         "source_tier": "official",
         "source_url": "https://www.ecb.europa.eu/rss/press.html",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2166,7 +2480,7 @@
         "source_tier": "official",
         "source_url": "https://www.whitehouse.gov/news/",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2177,7 +2491,7 @@
         "source_tier": "official",
         "source_url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2188,7 +2502,7 @@
         "source_tier": "official",
         "source_url": "https://www.who.int/rss-feeds/news-english.xml",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2199,7 +2513,7 @@
         "source_tier": "official",
         "source_url": "",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2210,7 +2524,7 @@
         "source_tier": "official",
         "source_url": "",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2221,7 +2535,7 @@
         "source_tier": "official",
         "source_url": "",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2232,7 +2546,7 @@
         "source_tier": "official",
         "source_url": "",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2243,7 +2557,7 @@
         "source_tier": "official",
         "source_url": "",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2254,7 +2568,7 @@
         "source_tier": "official",
         "source_url": "",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -2272,7 +2586,7 @@
         "source_url": "https://freesis.kofia.or.kr/stat/FreeSIS.do?parentDivId=MSIS10000000000000&serviceId=STATSCU0100000070",
         "status": "partial",
         "provider_status": "partial",
-        "checked_at": "2026-08-06T00:46:13.917551+00:00"
+        "checked_at": "2026-08-06T01:01:48.361484+00:00"
       }
     },
     "crypto_macd": {
@@ -2287,7 +2601,7 @@
         "ETHUSDT:1w:HTTPError",
         "ETHUSDT:1M:HTTPError"
       ],
-      "fetched_at": "2026-08-06T00:46:14.801082+00:00",
+      "fetched_at": "2026-08-06T01:01:49.542870+00:00",
       "health": {
         "key": "crypto_macd",
         "label": "BTC／ETH MACD",
@@ -2295,7 +2609,7 @@
         "source_url": "https://api.binance.com/api/v3/klines",
         "status": "partial",
         "provider_status": "partial",
-        "checked_at": "2026-08-06T00:46:14.801082+00:00",
+        "checked_at": "2026-08-06T01:01:49.542870+00:00",
         "item_count": 4,
         "data_gap": [
           "BTCUSDT:1w:HTTPError",
@@ -2311,9 +2625,9 @@
       "secondary": {
         "BTC": {
           "ticker": "BTC",
-          "price": 64597.0,
-          "change_percent": 0.8972054370575985,
-          "quote_time": "2026-08-06T00:44:20+00:00",
+          "price": 64592.0,
+          "change_percent": 1.0163786100324772,
+          "quote_time": "2026-08-06T01:00:10+00:00",
           "quote_basis": "盤中",
           "quote_source": "CoinGecko public spot quote",
           "source_url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin",
@@ -2321,9 +2635,9 @@
         },
         "ETH": {
           "ticker": "ETH",
-          "price": 1908.42,
-          "change_percent": 2.2613972737807972,
-          "quote_time": "2026-08-06T00:44:20+00:00",
+          "price": 1908.81,
+          "change_percent": 2.5158412427776757,
+          "quote_time": "2026-08-06T01:00:20+00:00",
           "quote_basis": "盤中",
           "quote_source": "CoinGecko public spot quote",
           "source_url": "https://api.coingecko.com/api/v3/simple/price?ids=ethereum",
@@ -2334,7 +2648,7 @@
         "binance:BTC:HTTPError",
         "binance:ETH:HTTPError"
       ],
-      "fetched_at": "2026-08-06T00:46:15.109574+00:00",
+      "fetched_at": "2026-08-06T01:01:49.882187+00:00",
       "health": {
         "key": "crypto_spot",
         "source_key": "crypto_spot",
@@ -2342,7 +2656,7 @@
         "source_tier": "public-market",
         "source_url": "https://api.coingecko.com/api/v3/simple/price",
         "status": "partial",
-        "checked_at": "2026-08-06T00:46:15.109574+00:00",
+        "checked_at": "2026-08-06T01:01:49.882187+00:00",
         "item_count": 2,
         "data_gap": [
           "binance:BTC:HTTPError",
@@ -2385,7 +2699,7 @@
         "BRENT:HTTPError",
         "GOLD:HTTPError"
       ],
-      "fetched_at": "2026-08-06T00:46:15.559387+00:00",
+      "fetched_at": "2026-08-06T01:01:50.223071+00:00",
       "health": {
         "key": "public_market_secondary",
         "label": "Stooq 海外／商品第二行情來源",
@@ -2393,7 +2707,7 @@
         "source_url": "https://stooq.com/q/l/",
         "status": "partial",
         "provider_status": "partial",
-        "checked_at": "2026-08-06T00:46:15.559387+00:00",
+        "checked_at": "2026-08-06T01:01:50.223071+00:00",
         "item_count": 2,
         "data_gap": [
           "S&P 500:HTTPError",
@@ -2416,7 +2730,7 @@
         "source_url": "https://api.stlouisfed.org/fred/series/observations",
         "status": "partial",
         "provider_status": "missing_api_key",
-        "checked_at": "2026-08-06T00:46:26.630399+00:00",
+        "checked_at": "2026-08-06T01:02:00.551565+00:00",
         "item_count": 0,
         "data_gap": "FRED_API_KEY 未設定"
       }
@@ -2431,7 +2745,7 @@
         "source_url": "https://api.eia.gov/v2/petroleum/pri/spt/data/",
         "status": "partial",
         "provider_status": "missing_api_key",
-        "checked_at": "2026-08-06T00:46:26.630422+00:00",
+        "checked_at": "2026-08-06T01:02:00.551593+00:00",
         "item_count": 0,
         "data_gap": "EIA_API_KEY 未設定"
       }
@@ -2444,7 +2758,7 @@
         "source_url": "https://freesis.kofia.or.kr/stat/FreeSIS.do?parentDivId=MSIS10000000000000&serviceId=STATSCU0100000070",
         "status": "partial",
         "provider_status": "partial",
-        "checked_at": "2026-08-06T00:46:13.917551+00:00"
+        "checked_at": "2026-08-06T01:01:48.361484+00:00"
       },
       {
         "key": "crypto_macd",
@@ -2453,7 +2767,7 @@
         "source_url": "https://api.binance.com/api/v3/klines",
         "status": "partial",
         "provider_status": "partial",
-        "checked_at": "2026-08-06T00:46:14.801082+00:00",
+        "checked_at": "2026-08-06T01:01:49.542870+00:00",
         "item_count": 4,
         "data_gap": [
           "BTCUSDT:1w:HTTPError",
@@ -2469,7 +2783,7 @@
         "source_tier": "public-market",
         "source_url": "https://api.coingecko.com/api/v3/simple/price",
         "status": "partial",
-        "checked_at": "2026-08-06T00:46:15.109574+00:00",
+        "checked_at": "2026-08-06T01:01:49.882187+00:00",
         "item_count": 2,
         "data_gap": [
           "binance:BTC:HTTPError",
@@ -2483,7 +2797,7 @@
         "source_url": "https://stooq.com/q/l/",
         "status": "partial",
         "provider_status": "partial",
-        "checked_at": "2026-08-06T00:46:15.559387+00:00",
+        "checked_at": "2026-08-06T01:01:50.223071+00:00",
         "item_count": 2,
         "data_gap": [
           "S&P 500:HTTPError",
@@ -2502,7 +2816,7 @@
         "source_url": "https://api.stlouisfed.org/fred/series/observations",
         "status": "partial",
         "provider_status": "missing_api_key",
-        "checked_at": "2026-08-06T00:46:26.630399+00:00",
+        "checked_at": "2026-08-06T01:02:00.551565+00:00",
         "item_count": 0,
         "data_gap": "FRED_API_KEY 未設定"
       },
@@ -2513,7 +2827,7 @@
         "source_url": "https://api.eia.gov/v2/petroleum/pri/spt/data/",
         "status": "partial",
         "provider_status": "missing_api_key",
-        "checked_at": "2026-08-06T00:46:26.630422+00:00",
+        "checked_at": "2026-08-06T01:02:00.551593+00:00",
         "item_count": 0,
         "data_gap": "EIA_API_KEY 未設定"
       }
@@ -2524,11 +2838,11 @@
     "items": [
       {
         "label": "事件",
-        "text": "Fed／貨幣政策：Fed還能只盯著通膨？美國7月小非農僅增4.4萬人 增幅創半年最低"
+        "text": "台指價格訊號觸發：臺灣加權指數日內變動 -0.52%"
       },
       {
         "label": "事件",
-        "text": "地緣衝突：〈美股早盤〉企業財報與中東樂觀情緒助攻 主要指數開高"
+        "text": "Fed／貨幣政策：Fed還能只盯著通膨？美國7月小非農僅增4.4萬人 增幅創半年最低"
       },
       {
         "label": "風險",
@@ -2554,10 +2868,10 @@
       "name": "美元指數",
       "market": "global",
       "currency": "點",
-      "price": 99.66,
+      "price": 99.65,
       "previous_close": 99.89,
-      "change": -0.23,
-      "change_percent": -0.23,
+      "change": -0.24,
+      "change_percent": -0.24,
       "quote_date": "2026-08-05",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -2566,7 +2880,7 @@
       "technical_context": {
         "window_days": 20,
         "long_window_days": 60,
-        "low": 99.66,
+        "low": 99.65,
         "high": 101.51,
         "long_low": 97.94,
         "long_high": 101.61,
@@ -2579,7 +2893,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:51.285232+00:00",
+      "fetched_at": "2026-08-06T01:01:19.878305+00:00",
       "published_at": "2026-08-05",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -2592,8 +2906,8 @@
         "Yahoo",
         ""
       ],
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "c1841f24186f8551"
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "4219e6fecd9c2657"
     },
     {
       "symbol": "^TNX",
@@ -2626,7 +2940,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:51.473933+00:00",
+      "fetched_at": "2026-08-06T01:01:20.056958+00:00",
       "published_at": "2026-08-05",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -2639,8 +2953,8 @@
         "Yahoo",
         ""
       ],
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "992b8778582089ac"
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "2973fcc2716e676e"
     },
     {
       "symbol": "TWD=X",
@@ -2664,18 +2978,18 @@
         "high": 32.4,
         "long_low": 31.33,
         "long_high": 32.4,
-        "position_pct": 48.8,
+        "position_pct": 49.5,
         "zone": "位於20日區間中段",
         "as_of": "2026-08-06",
         "status": "ok"
       },
       "raw_change": -0.15,
-      "raw_change_percent": -0.47,
+      "raw_change_percent": -0.46,
       "change_consistency": "consistent",
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-06T00:45:51.709645+00:00",
+      "fetched_at": "2026-08-06T01:01:20.355841+00:00",
       "published_at": "2026-08-06",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -2688,14 +3002,14 @@
         "Yahoo",
         ""
       ],
-      "snapshot_id": "0e84b914e6354be5",
-      "observation_id": "e7268fe369fbcf1d"
+      "snapshot_id": "c0bbefcd5490c71f",
+      "observation_id": "51335cff2836cac9"
     }
   ],
   "briefing": {
-    "slot": "pre_open",
-    "title": "台股盤前儀表板",
-    "overview": "Fed／貨幣政策｜重要事件｜觀察｜Fed還能只盯著通膨？美國7月小非農僅增4.4萬人 增幅創半年最低 可能連動 Nasdaq、費半、美元與美債；台股科技開盤反應應以實際報價確認。",
+    "slot": "live",
+    "title": "即時市場儀表板",
+    "overview": "台指價格訊號觸發｜下跌｜波動擴大｜臺灣加權指數 44,381.62 可能連動費半、Nasdaq 與台指期；以後續同步報價確認，而非預設因果。",
     "markets": [
       {
         "symbol": "^TWII",
@@ -2703,14 +3017,14 @@
         "name": "臺灣加權指數",
         "market": "taiwan",
         "currency": "點",
-        "price": 43360.66,
-        "previous_close": 43386.41,
-        "change": -25.75,
-        "change_percent": -0.06,
-        "quote_date": "2026-08-04",
-        "quote_time": null,
-        "quote_basis": "日線收盤",
-        "quote_source": "Yahoo Finance public daily quote",
+        "price": 44381.62,
+        "previous_close": 44611.6,
+        "change": -229.98,
+        "change_percent": -0.52,
+        "quote_date": "2026-08-06",
+        "quote_time": "2026-08-06T09:00:40+08:00",
+        "quote_basis": "TWSE 公開市況；TAIFEX 台指期方向核對",
+        "quote_source": "TWSE MIS cash index + TAIFEX public direction cross-check",
         "source_url": "https://finance.yahoo.com/quote/^TWII",
         "technical_context": {
           "window_days": 20,
@@ -2728,30 +3042,48 @@
         "direction_sign": -1,
         "market_direction": "下跌",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:44.075450+00:00",
+        "fetched_at": "2026-08-06T01:01:08.472039+00:00",
         "published_at": "2026-08-04",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
         "source_label": "Yahoo",
         "quote_basis_label": "最近收盤",
-        "cross_checked": false,
-        "crosscheck_status": "未交叉核對",
-        "crosscheck_sources": [],
+        "cross_checked": true,
+        "crosscheck_status": "已交叉核對",
+        "crosscheck_sources": [
+          {
+            "label": "TWSE",
+            "url": "https://mis.twse.com.tw/stock/api/getStockInfo.jsp",
+            "quote_time": "2026-08-06T09:00:40+08:00",
+            "quote_date": "2026-08-06",
+            "price": 44381.62,
+            "change_percent": -0.52,
+            "available": true
+          },
+          {
+            "label": "TAIFEX",
+            "url": "https://mis.taifex.com.tw/futures/api/getQuoteList",
+            "quote_time": "2026-08-06T09:01:00+08:00",
+            "quote_date": "2026-08-06",
+            "price": 44366.88,
+            "change_percent": -0.55,
+            "available": true
+          }
+        ],
         "expected_sources": [
           "TWSE",
           "TAIFEX"
         ],
-        "freshness": "stale",
-        "data_quality_score": 0.0,
-        "quality_freshness": "stale",
-        "quality_reasons": [
-          "crosscheck_missing",
-          "quote_stale_or_missing"
-        ],
-        "alert_eligible": false,
-        "quality_checked_at": "2026-08-06T00:46:27.505427+00:00",
-        "snapshot_id": "0e84b914e6354be5",
-        "observation_id": "d658e99646120616"
+        "quote_delayed": false,
+        "aggregated_price_gap_percent": 2.35,
+        "freshness": "live",
+        "data_quality_score": 100.0,
+        "quality_freshness": "fresh",
+        "quality_reasons": [],
+        "alert_eligible": true,
+        "quality_checked_at": "2026-08-06T01:02:01.416685+00:00",
+        "snapshot_id": "c0bbefcd5490c71f",
+        "observation_id": "5628fc18709e4f16"
       },
       {
         "symbol": "2330.TW",
@@ -2784,7 +3116,7 @@
         "direction_sign": 1,
         "market_direction": "上漲",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:42.883545+00:00",
+        "fetched_at": "2026-08-06T01:01:06.937470+00:00",
         "published_at": "2026-08-05",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -2804,9 +3136,9 @@
           "crosscheck_missing"
         ],
         "alert_eligible": false,
-        "quality_checked_at": "2026-08-06T00:45:51.115703+00:00",
-        "snapshot_id": "0e84b914e6354be5",
-        "observation_id": "d5688a18375e461d"
+        "quality_checked_at": "2026-08-06T01:01:19.598154+00:00",
+        "snapshot_id": "c0bbefcd5490c71f",
+        "observation_id": "ab05513e24f7464c"
       },
       {
         "symbol": "^N225",
@@ -2814,10 +3146,10 @@
         "name": "日經225",
         "market": "asia",
         "currency": "點",
-        "price": 65343.73,
+        "price": 65399.78,
         "previous_close": 63957.53,
-        "change": 1386.2,
-        "change_percent": 2.17,
+        "change": 1442.25,
+        "change_percent": 2.26,
         "quote_date": "2026-08-06",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -2830,7 +3162,7 @@
           "high": 68751.51,
           "long_low": 59804.41,
           "long_high": 72366.34,
-          "position_pct": 53.4,
+          "position_pct": 54.2,
           "zone": "位於20日區間中段",
           "as_of": "2026-08-06",
           "status": "ok"
@@ -2839,7 +3171,7 @@
         "direction_sign": 1,
         "market_direction": "上漲",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:45.183937+00:00",
+        "fetched_at": "2026-08-06T01:01:10.419522+00:00",
         "published_at": "2026-08-06",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -2870,10 +3202,10 @@
           "crosscheck_missing"
         ],
         "alert_eligible": false,
-        "quality_checked_at": "2026-08-06T00:46:27.505721+00:00",
+        "quality_checked_at": "2026-08-06T01:02:01.417006+00:00",
         "crosscheck_reason": "secondary_source_unavailable",
-        "snapshot_id": "0e84b914e6354be5",
-        "observation_id": "7cb7e9d035279378"
+        "snapshot_id": "c0bbefcd5490c71f",
+        "observation_id": "88683a911710a53f"
       },
       {
         "symbol": "^KS11",
@@ -2881,10 +3213,10 @@
         "name": "韓國綜合",
         "market": "asia",
         "currency": "點",
-        "price": 6453.65,
+        "price": 6399.93,
         "previous_close": 6358.95,
-        "change": 94.7,
-        "change_percent": 1.49,
+        "change": 40.98,
+        "change_percent": 0.64,
         "quote_date": "2026-08-06",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -2897,7 +3229,7 @@
           "high": 7475.94,
           "long_low": 5593.56,
           "long_high": 9114.55,
-          "position_pct": 45.7,
+          "position_pct": 42.8,
           "zone": "位於20日區間中段",
           "as_of": "2026-08-06",
           "status": "ok"
@@ -2906,7 +3238,7 @@
         "direction_sign": 1,
         "market_direction": "上漲",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:45.431586+00:00",
+        "fetched_at": "2026-08-06T01:01:10.654415+00:00",
         "published_at": "2026-08-06",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -2937,10 +3269,10 @@
           "crosscheck_missing"
         ],
         "alert_eligible": false,
-        "quality_checked_at": "2026-08-06T00:46:27.505764+00:00",
+        "quality_checked_at": "2026-08-06T01:02:01.417048+00:00",
         "crosscheck_reason": "secondary_source_unavailable",
-        "snapshot_id": "0e84b914e6354be5",
-        "observation_id": "64512182aa9ee4da"
+        "snapshot_id": "c0bbefcd5490c71f",
+        "observation_id": "cbdc03193adb7fef"
       },
       {
         "symbol": "^IXIC",
@@ -2973,7 +3305,7 @@
         "direction_sign": -1,
         "market_direction": "下跌",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:44.660951+00:00",
+        "fetched_at": "2026-08-06T01:01:09.309476+00:00",
         "published_at": "2026-08-05",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -3004,10 +3336,10 @@
           "crosscheck_missing"
         ],
         "alert_eligible": false,
-        "quality_checked_at": "2026-08-06T00:46:27.505587+00:00",
+        "quality_checked_at": "2026-08-06T01:02:01.416874+00:00",
         "crosscheck_reason": "price_or_time_mismatch",
-        "snapshot_id": "0e84b914e6354be5",
-        "observation_id": "78f9a4d3c4c28942"
+        "snapshot_id": "c0bbefcd5490c71f",
+        "observation_id": "8001e23db8ac5eba"
       },
       {
         "symbol": "^SOX",
@@ -3040,7 +3372,7 @@
         "direction_sign": -1,
         "market_direction": "下跌",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:45.009124+00:00",
+        "fetched_at": "2026-08-06T01:01:10.236965+00:00",
         "published_at": "2026-08-05",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -3071,10 +3403,10 @@
           "crosscheck_missing"
         ],
         "alert_eligible": false,
-        "quality_checked_at": "2026-08-06T00:46:27.505678+00:00",
+        "quality_checked_at": "2026-08-06T01:02:01.416963+00:00",
         "crosscheck_reason": "price_or_time_mismatch",
-        "snapshot_id": "0e84b914e6354be5",
-        "observation_id": "59b1c3849a172ff0"
+        "snapshot_id": "c0bbefcd5490c71f",
+        "observation_id": "9858a948339629aa"
       },
       {
         "symbol": "BZ=F",
@@ -3082,10 +3414,10 @@
         "name": "Brent 原油",
         "market": "global",
         "currency": "USD",
-        "price": 79.29,
+        "price": 79.25,
         "previous_close": 79.36,
-        "change": -0.07,
-        "change_percent": -0.09,
+        "change": -0.11,
+        "change_percent": -0.14,
         "quote_date": "2026-08-05",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -3098,7 +3430,7 @@
           "high": 100.69,
           "long_low": 71.57,
           "long_high": 112.1,
-          "position_pct": 13.3,
+          "position_pct": 13.1,
           "zone": "接近20日支撐區",
           "as_of": "2026-08-05",
           "status": "ok"
@@ -3107,7 +3439,7 @@
         "direction_sign": -1,
         "market_direction": "下跌",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:45.606165+00:00",
+        "fetched_at": "2026-08-06T01:01:10.829506+00:00",
         "published_at": "2026-08-05",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -3139,10 +3471,10 @@
           "quote_stale_or_missing"
         ],
         "alert_eligible": false,
-        "quality_checked_at": "2026-08-06T00:46:27.505837+00:00",
+        "quality_checked_at": "2026-08-06T01:02:01.417090+00:00",
         "crosscheck_reason": "secondary_source_unavailable",
-        "snapshot_id": "0e84b914e6354be5",
-        "observation_id": "fd670a26a22e5dd2"
+        "snapshot_id": "c0bbefcd5490c71f",
+        "observation_id": "21d255d0cb233641"
       },
       {
         "symbol": "CL=F",
@@ -3150,10 +3482,10 @@
         "name": "WTI 原油",
         "market": "global",
         "currency": "USD",
-        "price": 74.92,
+        "price": 74.9,
         "previous_close": 75.77,
-        "change": -0.85,
-        "change_percent": -1.12,
+        "change": -0.87,
+        "change_percent": -1.15,
         "quote_date": "2026-08-05",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -3166,7 +3498,7 @@
           "high": 92.19,
           "long_low": 68.55,
           "long_high": 108.66,
-          "position_pct": 16.9,
+          "position_pct": 16.8,
           "zone": "接近20日支撐區",
           "as_of": "2026-08-05",
           "status": "ok"
@@ -3175,7 +3507,7 @@
         "direction_sign": -1,
         "market_direction": "下跌",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:45.790327+00:00",
+        "fetched_at": "2026-08-06T01:01:11.021776+00:00",
         "published_at": "2026-08-05",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -3207,10 +3539,10 @@
           "quote_stale_or_missing"
         ],
         "alert_eligible": false,
-        "quality_checked_at": "2026-08-06T00:46:27.505881+00:00",
+        "quality_checked_at": "2026-08-06T01:02:01.417131+00:00",
         "crosscheck_reason": "secondary_source_unavailable",
-        "snapshot_id": "0e84b914e6354be5",
-        "observation_id": "de003046f1c7e11a"
+        "snapshot_id": "c0bbefcd5490c71f",
+        "observation_id": "38d5096a17c466c3"
       },
       {
         "symbol": "GC=F",
@@ -3218,10 +3550,10 @@
         "name": "黃金期貨",
         "market": "global",
         "currency": "USD",
-        "price": 4348.1,
+        "price": 4354.3,
         "previous_close": 4095.4,
-        "change": 252.7,
-        "change_percent": 6.17,
+        "change": 258.9,
+        "change_percent": 6.32,
         "quote_date": "2026-08-05",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -3231,7 +3563,7 @@
           "window_days": 20,
           "long_window_days": 60,
           "low": 3985.6,
-          "high": 4348.1,
+          "high": 4354.3,
           "long_low": 3985.6,
           "long_high": 4718.7,
           "position_pct": 100.0,
@@ -3243,7 +3575,7 @@
         "direction_sign": 1,
         "market_direction": "上漲",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:45.964320+00:00",
+        "fetched_at": "2026-08-06T01:01:12.247254+00:00",
         "published_at": "2026-08-05",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -3275,10 +3607,10 @@
           "quote_stale_or_missing"
         ],
         "alert_eligible": false,
-        "quality_checked_at": "2026-08-06T00:46:27.505929+00:00",
+        "quality_checked_at": "2026-08-06T01:02:01.417172+00:00",
         "crosscheck_reason": "secondary_source_unavailable",
-        "snapshot_id": "0e84b914e6354be5",
-        "observation_id": "4c0a964332d49674"
+        "snapshot_id": "c0bbefcd5490c71f",
+        "observation_id": "1e1e1442e6277367"
       },
       {
         "symbol": "BTC-USD",
@@ -3286,9 +3618,9 @@
         "name": "比特幣",
         "market": "global",
         "currency": "USD",
-        "price": 64565.7,
+        "price": 64568.9,
         "previous_close": 64055.95,
-        "change": 509.75,
+        "change": 512.95,
         "change_percent": 0.8,
         "quote_date": "2026-08-06",
         "quote_time": null,
@@ -3302,7 +3634,7 @@
           "high": 66505.12,
           "long_low": 58558.86,
           "long_high": 66505.12,
-          "position_pct": 48.2,
+          "position_pct": 48.3,
           "zone": "位於20日區間中段",
           "as_of": "2026-08-06",
           "status": "ok"
@@ -3311,7 +3643,7 @@
         "direction_sign": 1,
         "market_direction": "上漲",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:46.135427+00:00",
+        "fetched_at": "2026-08-06T01:01:12.664207+00:00",
         "published_at": "2026-08-06",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -3340,9 +3672,9 @@
           "crosscheck_missing"
         ],
         "alert_eligible": false,
-        "quality_checked_at": "2026-08-06T00:46:27.505973+00:00",
-        "snapshot_id": "0e84b914e6354be5",
-        "observation_id": "56ef91bd22d47cae"
+        "quality_checked_at": "2026-08-06T01:02:01.417214+00:00",
+        "snapshot_id": "c0bbefcd5490c71f",
+        "observation_id": "c935fbba4261bec5"
       },
       {
         "symbol": "ETH-USD",
@@ -3350,10 +3682,10 @@
         "name": "以太坊",
         "market": "global",
         "currency": "USD",
-        "price": 1907.13,
+        "price": 1908.16,
         "previous_close": 1868.39,
-        "change": 38.74,
-        "change_percent": 2.07,
+        "change": 39.77,
+        "change_percent": 2.13,
         "quote_date": "2026-08-06",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -3366,7 +3698,7 @@
           "high": 1953.41,
           "long_low": 1564.82,
           "long_high": 1953.41,
-          "position_pct": 58.8,
+          "position_pct": 59.7,
           "zone": "位於20日區間中段",
           "as_of": "2026-08-06",
           "status": "ok"
@@ -3375,7 +3707,7 @@
         "direction_sign": 1,
         "market_direction": "上漲",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:46.377912+00:00",
+        "fetched_at": "2026-08-06T01:01:13.238946+00:00",
         "published_at": "2026-08-06",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -3404,9 +3736,9 @@
           "crosscheck_missing"
         ],
         "alert_eligible": false,
-        "quality_checked_at": "2026-08-06T00:46:27.506014+00:00",
-        "snapshot_id": "0e84b914e6354be5",
-        "observation_id": "a9592793fbcd058f"
+        "quality_checked_at": "2026-08-06T01:02:01.417255+00:00",
+        "snapshot_id": "c0bbefcd5490c71f",
+        "observation_id": "97f04406be7cd53b"
       }
     ],
     "market_topics": [
@@ -3419,14 +3751,14 @@
             "name": "臺灣加權指數",
             "market": "taiwan",
             "currency": "點",
-            "price": 43360.66,
-            "previous_close": 43386.41,
-            "change": -25.75,
-            "change_percent": -0.06,
-            "quote_date": "2026-08-04",
-            "quote_time": null,
-            "quote_basis": "日線收盤",
-            "quote_source": "Yahoo Finance public daily quote",
+            "price": 44381.62,
+            "previous_close": 44611.6,
+            "change": -229.98,
+            "change_percent": -0.52,
+            "quote_date": "2026-08-06",
+            "quote_time": "2026-08-06T09:00:40+08:00",
+            "quote_basis": "TWSE 公開市況；TAIFEX 台指期方向核對",
+            "quote_source": "TWSE MIS cash index + TAIFEX public direction cross-check",
             "source_url": "https://finance.yahoo.com/quote/^TWII",
             "technical_context": {
               "window_days": 20,
@@ -3444,39 +3776,61 @@
             "direction_sign": -1,
             "market_direction": "下跌",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-06T00:45:44.075450+00:00",
+            "fetched_at": "2026-08-06T01:01:08.472039+00:00",
             "published_at": "2026-08-04",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
             "source_label": "Yahoo",
             "quote_basis_label": "最近收盤",
-            "cross_checked": false,
-            "crosscheck_status": "未交叉核對",
-            "crosscheck_sources": [],
+            "cross_checked": true,
+            "crosscheck_status": "已交叉核對",
+            "crosscheck_sources": [
+              {
+                "label": "TWSE",
+                "url": "https://mis.twse.com.tw/stock/api/getStockInfo.jsp",
+                "quote_time": "2026-08-06T09:00:40+08:00",
+                "quote_date": "2026-08-06",
+                "price": 44381.62,
+                "change_percent": -0.52,
+                "available": true
+              },
+              {
+                "label": "TAIFEX",
+                "url": "https://mis.taifex.com.tw/futures/api/getQuoteList",
+                "quote_time": "2026-08-06T09:01:00+08:00",
+                "quote_date": "2026-08-06",
+                "price": 44366.88,
+                "change_percent": -0.55,
+                "available": true
+              }
+            ],
             "expected_sources": [
               "TWSE",
               "TAIFEX"
             ],
-            "freshness": "stale",
-            "data_quality_score": 0.0,
-            "quality_freshness": "stale",
-            "quality_reasons": [
-              "crosscheck_missing",
-              "quote_stale_or_missing"
-            ],
-            "alert_eligible": false,
-            "quality_checked_at": "2026-08-06T00:46:27.505427+00:00",
-            "snapshot_id": "0e84b914e6354be5",
-            "observation_id": "d658e99646120616"
+            "quote_delayed": false,
+            "aggregated_price_gap_percent": 2.35,
+            "freshness": "live",
+            "data_quality_score": 100.0,
+            "quality_freshness": "fresh",
+            "quality_reasons": [],
+            "alert_eligible": true,
+            "quality_checked_at": "2026-08-06T01:02:01.416685+00:00",
+            "snapshot_id": "c0bbefcd5490c71f",
+            "observation_id": "5628fc18709e4f16"
           },
           {
+            "label": "TAIFEX",
+            "url": "https://mis.taifex.com.tw/futures/api/getQuoteList",
+            "quote_time": "2026-08-06T09:01:00+08:00",
+            "quote_date": "2026-08-06",
+            "price": 44366.88,
+            "change_percent": -0.55,
+            "available": true,
             "ticker": "TXF",
             "name": "台指期",
-            "currency": "點",
-            "price": null,
-            "change_percent": null,
-            "quote_basis": "公開資料暫時無法取得",
-            "data_status": "unavailable"
+            "market": "taiwan",
+            "currency": "點"
           }
         ]
       },
@@ -3514,7 +3868,7 @@
             "direction_sign": 1,
             "market_direction": "上漲",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-06T00:45:42.883545+00:00",
+            "fetched_at": "2026-08-06T01:01:06.937470+00:00",
             "published_at": "2026-08-05",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -3534,9 +3888,9 @@
               "crosscheck_missing"
             ],
             "alert_eligible": false,
-            "quality_checked_at": "2026-08-06T00:45:51.115703+00:00",
-            "snapshot_id": "0e84b914e6354be5",
-            "observation_id": "d5688a18375e461d"
+            "quality_checked_at": "2026-08-06T01:01:19.598154+00:00",
+            "snapshot_id": "c0bbefcd5490c71f",
+            "observation_id": "ab05513e24f7464c"
           },
           {
             "symbol": "NVDA",
@@ -3569,7 +3923,7 @@
             "direction_sign": 1,
             "market_direction": "上漲",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-06T00:45:43.902107+00:00",
+            "fetched_at": "2026-08-06T01:01:08.194198+00:00",
             "published_at": "2026-08-05",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -3589,9 +3943,9 @@
               "crosscheck_missing"
             ],
             "alert_eligible": false,
-            "quality_checked_at": "2026-08-06T00:45:51.115909+00:00",
-            "snapshot_id": "0e84b914e6354be5",
-            "observation_id": "f23e2cc21f21c3ca"
+            "quality_checked_at": "2026-08-06T01:01:19.598316+00:00",
+            "snapshot_id": "c0bbefcd5490c71f",
+            "observation_id": "60547dbcccb36365"
           }
         ]
       },
@@ -3604,10 +3958,10 @@
             "name": "日經225",
             "market": "asia",
             "currency": "點",
-            "price": 65343.73,
+            "price": 65399.78,
             "previous_close": 63957.53,
-            "change": 1386.2,
-            "change_percent": 2.17,
+            "change": 1442.25,
+            "change_percent": 2.26,
             "quote_date": "2026-08-06",
             "quote_time": null,
             "quote_basis": "日線收盤",
@@ -3620,7 +3974,7 @@
               "high": 68751.51,
               "long_low": 59804.41,
               "long_high": 72366.34,
-              "position_pct": 53.4,
+              "position_pct": 54.2,
               "zone": "位於20日區間中段",
               "as_of": "2026-08-06",
               "status": "ok"
@@ -3629,7 +3983,7 @@
             "direction_sign": 1,
             "market_direction": "上漲",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-06T00:45:45.183937+00:00",
+            "fetched_at": "2026-08-06T01:01:10.419522+00:00",
             "published_at": "2026-08-06",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -3660,10 +4014,10 @@
               "crosscheck_missing"
             ],
             "alert_eligible": false,
-            "quality_checked_at": "2026-08-06T00:46:27.505721+00:00",
+            "quality_checked_at": "2026-08-06T01:02:01.417006+00:00",
             "crosscheck_reason": "secondary_source_unavailable",
-            "snapshot_id": "0e84b914e6354be5",
-            "observation_id": "7cb7e9d035279378"
+            "snapshot_id": "c0bbefcd5490c71f",
+            "observation_id": "88683a911710a53f"
           },
           {
             "symbol": "^KS11",
@@ -3671,10 +4025,10 @@
             "name": "韓國綜合",
             "market": "asia",
             "currency": "點",
-            "price": 6453.65,
+            "price": 6399.93,
             "previous_close": 6358.95,
-            "change": 94.7,
-            "change_percent": 1.49,
+            "change": 40.98,
+            "change_percent": 0.64,
             "quote_date": "2026-08-06",
             "quote_time": null,
             "quote_basis": "日線收盤",
@@ -3687,7 +4041,7 @@
               "high": 7475.94,
               "long_low": 5593.56,
               "long_high": 9114.55,
-              "position_pct": 45.7,
+              "position_pct": 42.8,
               "zone": "位於20日區間中段",
               "as_of": "2026-08-06",
               "status": "ok"
@@ -3696,7 +4050,7 @@
             "direction_sign": 1,
             "market_direction": "上漲",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-06T00:45:45.431586+00:00",
+            "fetched_at": "2026-08-06T01:01:10.654415+00:00",
             "published_at": "2026-08-06",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -3727,10 +4081,10 @@
               "crosscheck_missing"
             ],
             "alert_eligible": false,
-            "quality_checked_at": "2026-08-06T00:46:27.505764+00:00",
+            "quality_checked_at": "2026-08-06T01:02:01.417048+00:00",
             "crosscheck_reason": "secondary_source_unavailable",
-            "snapshot_id": "0e84b914e6354be5",
-            "observation_id": "64512182aa9ee4da"
+            "snapshot_id": "c0bbefcd5490c71f",
+            "observation_id": "cbdc03193adb7fef"
           }
         ]
       },
@@ -3768,7 +4122,7 @@
             "direction_sign": -1,
             "market_direction": "下跌",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-06T00:45:44.660951+00:00",
+            "fetched_at": "2026-08-06T01:01:09.309476+00:00",
             "published_at": "2026-08-05",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -3799,10 +4153,10 @@
               "crosscheck_missing"
             ],
             "alert_eligible": false,
-            "quality_checked_at": "2026-08-06T00:46:27.505587+00:00",
+            "quality_checked_at": "2026-08-06T01:02:01.416874+00:00",
             "crosscheck_reason": "price_or_time_mismatch",
-            "snapshot_id": "0e84b914e6354be5",
-            "observation_id": "78f9a4d3c4c28942"
+            "snapshot_id": "c0bbefcd5490c71f",
+            "observation_id": "8001e23db8ac5eba"
           },
           {
             "symbol": "^SOX",
@@ -3835,7 +4189,7 @@
             "direction_sign": -1,
             "market_direction": "下跌",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-06T00:45:45.009124+00:00",
+            "fetched_at": "2026-08-06T01:01:10.236965+00:00",
             "published_at": "2026-08-05",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -3866,10 +4220,10 @@
               "crosscheck_missing"
             ],
             "alert_eligible": false,
-            "quality_checked_at": "2026-08-06T00:46:27.505678+00:00",
+            "quality_checked_at": "2026-08-06T01:02:01.416963+00:00",
             "crosscheck_reason": "price_or_time_mismatch",
-            "snapshot_id": "0e84b914e6354be5",
-            "observation_id": "59b1c3849a172ff0"
+            "snapshot_id": "c0bbefcd5490c71f",
+            "observation_id": "9858a948339629aa"
           }
         ]
       }
@@ -3881,10 +4235,10 @@
         "name": "WTI 原油",
         "market": "global",
         "currency": "USD",
-        "price": 74.92,
+        "price": 74.9,
         "previous_close": 75.77,
-        "change": -0.85,
-        "change_percent": -1.12,
+        "change": -0.87,
+        "change_percent": -1.15,
         "quote_date": "2026-08-05",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -3897,7 +4251,7 @@
           "high": 92.19,
           "long_low": 68.55,
           "long_high": 108.66,
-          "position_pct": 16.9,
+          "position_pct": 16.8,
           "zone": "接近20日支撐區",
           "as_of": "2026-08-05",
           "status": "ok"
@@ -3906,7 +4260,7 @@
         "direction_sign": -1,
         "market_direction": "下跌",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:45.790327+00:00",
+        "fetched_at": "2026-08-06T01:01:11.021776+00:00",
         "published_at": "2026-08-05",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -3938,7 +4292,7 @@
           "quote_stale_or_missing"
         ],
         "alert_eligible": false,
-        "quality_checked_at": "2026-08-06T00:46:27.505881+00:00",
+        "quality_checked_at": "2026-08-06T01:02:01.417131+00:00",
         "crosscheck_reason": "secondary_source_unavailable",
         "topic": "事件相關"
       },
@@ -3948,10 +4302,10 @@
         "name": "Brent 原油",
         "market": "global",
         "currency": "USD",
-        "price": 79.29,
+        "price": 79.25,
         "previous_close": 79.36,
-        "change": -0.07,
-        "change_percent": -0.09,
+        "change": -0.11,
+        "change_percent": -0.14,
         "quote_date": "2026-08-05",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -3964,7 +4318,7 @@
           "high": 100.69,
           "long_low": 71.57,
           "long_high": 112.1,
-          "position_pct": 13.3,
+          "position_pct": 13.1,
           "zone": "接近20日支撐區",
           "as_of": "2026-08-05",
           "status": "ok"
@@ -3973,7 +4327,7 @@
         "direction_sign": -1,
         "market_direction": "下跌",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:45.606165+00:00",
+        "fetched_at": "2026-08-06T01:01:10.829506+00:00",
         "published_at": "2026-08-05",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -4005,7 +4359,7 @@
           "quote_stale_or_missing"
         ],
         "alert_eligible": false,
-        "quality_checked_at": "2026-08-06T00:46:27.505837+00:00",
+        "quality_checked_at": "2026-08-06T01:02:01.417090+00:00",
         "crosscheck_reason": "secondary_source_unavailable",
         "topic": "事件相關"
       },
@@ -4015,10 +4369,10 @@
         "name": "黃金期貨",
         "market": "global",
         "currency": "USD",
-        "price": 4348.1,
+        "price": 4354.3,
         "previous_close": 4095.4,
-        "change": 252.7,
-        "change_percent": 6.17,
+        "change": 258.9,
+        "change_percent": 6.32,
         "quote_date": "2026-08-05",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -4028,7 +4382,7 @@
           "window_days": 20,
           "long_window_days": 60,
           "low": 3985.6,
-          "high": 4348.1,
+          "high": 4354.3,
           "long_low": 3985.6,
           "long_high": 4718.7,
           "position_pct": 100.0,
@@ -4040,7 +4394,7 @@
         "direction_sign": 1,
         "market_direction": "上漲",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:45.964320+00:00",
+        "fetched_at": "2026-08-06T01:01:12.247254+00:00",
         "published_at": "2026-08-05",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -4072,7 +4426,7 @@
           "quote_stale_or_missing"
         ],
         "alert_eligible": false,
-        "quality_checked_at": "2026-08-06T00:46:27.505929+00:00",
+        "quality_checked_at": "2026-08-06T01:02:01.417172+00:00",
         "crosscheck_reason": "secondary_source_unavailable",
         "topic": "事件相關"
       },
@@ -4082,10 +4436,10 @@
         "name": "美元指數",
         "market": "global",
         "currency": "點",
-        "price": 99.66,
+        "price": 99.65,
         "previous_close": 99.89,
-        "change": -0.23,
-        "change_percent": -0.23,
+        "change": -0.24,
+        "change_percent": -0.24,
         "quote_date": "2026-08-05",
         "quote_time": null,
         "quote_basis": "日線收盤",
@@ -4094,7 +4448,7 @@
         "technical_context": {
           "window_days": 20,
           "long_window_days": 60,
-          "low": 99.66,
+          "low": 99.65,
           "high": 101.51,
           "long_low": 97.94,
           "long_high": 101.61,
@@ -4107,7 +4461,7 @@
         "direction_sign": -1,
         "market_direction": "下跌",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:51.285232+00:00",
+        "fetched_at": "2026-08-06T01:01:19.878305+00:00",
         "published_at": "2026-08-05",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -4153,7 +4507,7 @@
         "direction_sign": -1,
         "market_direction": "下跌",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:51.473933+00:00",
+        "fetched_at": "2026-08-06T01:01:20.056958+00:00",
         "published_at": "2026-08-05",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -4190,18 +4544,18 @@
           "high": 32.4,
           "long_low": 31.33,
           "long_high": 32.4,
-          "position_pct": 48.8,
+          "position_pct": 49.5,
           "zone": "位於20日區間中段",
           "as_of": "2026-08-06",
           "status": "ok"
         },
         "raw_change": -0.15,
-        "raw_change_percent": -0.47,
+        "raw_change_percent": -0.46,
         "change_consistency": "consistent",
         "direction_sign": -1,
         "market_direction": "下跌",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-06T00:45:51.709645+00:00",
+        "fetched_at": "2026-08-06T01:01:20.355841+00:00",
         "published_at": "2026-08-06",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -4220,31 +4574,31 @@
     "observations": [
       {
         "title": "台股總經",
-        "event": "台指 43,360.66 點（-0.06%）；櫃買指數 383.75 點（+2.33%）。台股風險：極度恐慌 13.3；VIX 0.00（-100.00%）。",
+        "event": "台指 44,381.62 點（-0.52%）；櫃買指數 383.75 點（+2.33%）。台股風險：極度恐慌 13.3；VIX 36.59（+3.48%）。",
         "importance": "加權指數代表大型權值股，櫃買指數較反映中小型股；同步代表盤面廣度較一致，分歧則要保留產業結構差異。",
         "market_impact": "加權指數下跌、櫃買指數上漲，呈現分歧，暫不推論跨市場因果。",
-        "watch": "技術觀察：加權指數近20日區間 39,933.30–45,734.41；近60日 39,933.30–47,741.51，目前位於20日區間中段（區間位置 59%），資料截至 2026-08-04。 櫃買指數近20日區間 378.44–453.50；近52日 378.44–453.50，目前接近20日支撐區（區間位置 0%），資料截至 2026-07-17。 後續核對台指期是否與現貨收斂、成交量是否放大。",
-        "source_note": "資料來源：Yahoo | 2026-08-04；Yahoo | 2026-08-05"
+        "watch": "技術觀察：加權指數近20日區間 39,933.30–45,734.41；近60日 39,933.30–47,741.51，目前位於20日區間中段（區間位置 59%），資料截至 2026-08-04。 櫃買指數近20日區間 378.44–453.50；近51日 378.44–453.50，目前接近20日支撐區（區間位置 0%），資料截至 2026-07-17。 後續核對台指期是否與現貨收斂、成交量是否放大。",
+        "source_note": "資料來源：Yahoo | 2026-08-06 09:00；Yahoo | 2026-08-05"
       },
       {
         "title": "台積電／半導體",
         "event": "台積電 2,405.00 TWD（+3.66%）；費半 12,008.88 點（-1.40%）；Nasdaq 26,363.44 點（-0.83%）。",
         "importance": "台積電、費半與 Nasdaq 同向時，較支持半導體／成長股風險偏好的共同變化；若只有單一市場變動，不足以推論產業趨勢。",
-        "market_impact": "費半下跌、台積電上漲，呈現分歧，暫不推論跨市場因果。 可能連動 Nasdaq、費半、美元與美債；台股科技開盤反應應以實際報價確認。",
+        "market_impact": "費半下跌、台積電上漲，呈現分歧，暫不推論跨市場因果。 可能連動費半、Nasdaq 與台指期；以後續同步報價確認，而非預設因果。",
         "watch": "技術觀察：台積電近20日區間 2,200.00–2,470.00；近60日 2,185.00–2,510.00，目前接近20日壓力區（區間位置 76%），資料截至 2026-08-05。 費半近20日區間 10,447.49–12,967.16；近60日 10,447.49–14,634.72，目前位於20日區間中段（區間位置 62%），資料截至 2026-08-05。 後續核對台積電、AI 供應鏈財報展望與費半是否延續。",
         "source_note": "資料來源：Yahoo | 2026-08-05"
       },
       {
         "title": "科技產業",
-        "event": "Nasdaq 26,363.44 點（-0.83%）；費半 12,008.88 點（-1.40%）；日經225 65,343.73 點（+2.17%）；韓國綜合 6,453.65 點（+1.49%）。",
+        "event": "Nasdaq 26,363.44 點（-0.83%）；費半 12,008.88 點（-1.40%）；日經225 65,399.78 點（+2.26%）；韓國綜合 6,399.93 點（+0.64%）。",
         "importance": "美日韓科技市場同向時，較能反映區域風險偏好；若分歧，可能由匯率、產業權重或本地政策造成，不直接視為全球趨勢。",
         "market_impact": "Nasdaq下跌、韓國綜合上漲，呈現分歧，暫不推論跨市場因果。",
-        "watch": "技術觀察：Nasdaq近20日區間 24,442.94–26,584.99；近60日 24,442.94–27,093.90，目前接近20日壓力區（區間位置 90%），資料截至 2026-08-05。 韓國綜合近20日區間 5,593.56–7,475.94；近60日 5,593.56–9,114.55，目前位於20日區間中段（區間位置 46%），資料截至 2026-08-06。 後續觀察日韓下一交易時段與台股電子權值是否延續或分歧。",
+        "watch": "技術觀察：Nasdaq近20日區間 24,442.94–26,584.99；近60日 24,442.94–27,093.90，目前接近20日壓力區（區間位置 90%），資料截至 2026-08-05。 韓國綜合近20日區間 5,593.56–7,475.94；近60日 5,593.56–9,114.55，目前位於20日區間中段（區間位置 43%），資料截至 2026-08-06。 後續觀察日韓下一交易時段與台股電子權值是否延續或分歧。",
         "source_note": "資料來源：Yahoo | 2026-08-05；Yahoo | 2026-08-06"
       },
       {
         "title": "利率／匯率／黃金能源",
-        "event": "美元指數 99.66 點（-0.23%）；美國10年債殖利率 4.62 %（-0.22%）；美元兌台幣 32.24 TWD（-0.49%）；黃金 4,348.10 USD（+6.17%）；油價 74.92 USD（-1.12%）。",
+        "event": "美元指數 99.65 點（-0.24%）；美國10年債殖利率 4.62 %（-0.22%）；美元兌台幣 32.24 TWD（-0.49%）；黃金 4,354.30 USD（+6.32%）；油價 74.90 USD（-1.15%）。",
         "importance": "利率、美元、黃金與能源共同反映通膨及避險需求；只有同時觀察方向與資料時間，才能分辨利率重估或單一商品波動。",
         "market_impact": "美元指數下跌、黃金上漲，呈現分歧，暫不推論跨市場因果。",
         "watch": "技術觀察：核對美元與黃金是否同向、油價是否突破近20日區間，並觀察科技指數與台股權值是否同步或分歧。",
@@ -4252,25 +4606,22 @@
       },
       {
         "title": "加密市場",
-        "event": "BTC 64,565.70 USD（+0.80%）；ETH 1,907.13 USD（+2.07%）。",
+        "event": "BTC 64,568.90 USD（+0.80%）；ETH 1,908.16 USD（+2.13%）。",
         "importance": "BTC／ETH 是高波動風險偏好的補充觀察；需搭配 Nasdaq、美元與流動性資料，不把單一幣價變動當成股市方向。",
         "market_impact": "BTC與ETH同為上漲，可作為同向價格確認。",
-        "watch": "技術觀察：BTC近20日區間 62,763.32–66,505.12；近60日 58,558.86–66,505.12，目前位於20日區間中段（區間位置 48%），資料截至 2026-08-06。 ETH近20日區間 1,840.99–1,953.41；近60日 1,564.82–1,953.41，目前位於20日區間中段（區間位置 59%），資料截至 2026-08-06。 後續核對兩者是否同步、波動是否放大，以及科技股是否同向。",
+        "watch": "技術觀察：BTC近20日區間 62,763.32–66,505.12；近60日 58,558.86–66,505.12，目前位於20日區間中段（區間位置 48%），資料截至 2026-08-06。 ETH近20日區間 1,840.99–1,953.41；近60日 1,564.82–1,953.41，目前位於20日區間中段（區間位置 60%），資料截至 2026-08-06。 後續核對兩者是否同步、波動是否放大，以及科技股是否同向。",
         "source_note": "資料來源：Yahoo | 2026-08-06"
       },
       {
         "title": "風險提醒",
-        "event": "本次焦點：Fed／貨幣政策｜重要事件｜觀察。Fed還能只盯著通膨？美國7月小非農僅增4.4萬人 增幅創半年最低 美股風險：貪婪 59.7；VIX 15.81（-4.18%）。",
-        "importance": "利率預期可能影響美元、美債殖利率與成長股評價，因此需核對後續價格反應。",
-        "market_impact": "可能連動 Nasdaq、費半、美元與美債；台股科技開盤反應應以實際報價確認。",
-        "watch": "觀察利率預期變化後，科技與半導體權值是否同步或出現分歧。",
-        "source_note": "資料來源：news.cnyes.com"
+        "event": "本次焦點：台指價格訊號觸發｜下跌｜波動擴大。臺灣加權指數 44,381.62 美股風險：貪婪 59.7；VIX 15.81（-4.18%）。",
+        "importance": "日內 -0.52%｜點數 -229.98｜最新 44,381.62。日內變動達固定觀察門檻，需以後續公開報價確認。",
+        "market_impact": "可能連動費半、Nasdaq 與台指期；以後續同步報價確認，而非預設因果。",
+        "watch": "觀察台股權值與電子類股是否與台指期、費半維持同方向。",
+        "source_note": "資料來源：finance.yahoo.com"
       }
     ],
-    "reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
-    "trace_id": "brief-0e84b914e6354be5-pre_open",
-    "snapshot_id": "0e84b914e6354be5",
-    "observation_id": "b493901aa6c66985"
+    "reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。"
   },
   "research_report": {
     "status": "跨市場研究摘要",
@@ -4573,15 +4924,15 @@
       "partial_sources": 0,
       "warming_sources": 1,
       "empty_sources": 0,
-      "age_minutes": 2400.7,
-      "checked_at": "2026-08-06T08:46:28.103304+08:00",
+      "age_minutes": 2416.3,
+      "checked_at": "2026-08-06T09:02:02.140844+08:00",
       "max_age_minutes": 1800,
       "is_expired": true
     },
     "availability": "expired"
   },
   "source_health": {
-    "checked_at": "2026-08-06T08:46:28.103458+08:00",
+    "checked_at": "2026-08-06T09:02:02.141001+08:00",
     "status": "partial",
     "summary": "7 個來源有資料缺口",
     "event_scan": {
@@ -4594,7 +4945,7 @@
         "key": "market_quotes",
         "label": "市場報價",
         "status": "partial",
-        "checked_at": "2026-08-06T08:46:28.103458+08:00",
+        "checked_at": "2026-08-06T09:02:02.141001+08:00",
         "issues": [
           "006208 報價已逾三日，已標示為過期資料",
           "00685L 報價已逾三日，已標示為過期資料"
@@ -4609,10 +4960,10 @@
           },
           "indices": {
             "count": 13,
-            "alert_eligible_count": 0,
-            "stale_count": 4,
-            "cross_checked_count": 0,
-            "data_quality_score": 58.8
+            "alert_eligible_count": 1,
+            "stale_count": 3,
+            "cross_checked_count": 1,
+            "data_quality_score": 66.5
           }
         }
       },
@@ -4620,7 +4971,7 @@
         "key": "official_events",
         "label": "官方重大事件",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:55.119257+00:00",
+        "checked_at": "2026-08-06T01:01:24.073586+00:00",
         "issues": [],
         "source_details": [
           {
@@ -4629,7 +4980,7 @@
             "source_tier": "official",
             "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4640,7 +4991,7 @@
             "source_tier": "official",
             "source_url": "https://www.bls.gov/feed/empsit.rss",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4651,7 +5002,7 @@
             "source_tier": "official",
             "source_url": "https://www.bls.gov/feed/cpi.rss",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4662,7 +5013,7 @@
             "source_tier": "official",
             "source_url": "https://www.bls.gov/feed/ppi.rss",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4673,7 +5024,7 @@
             "source_tier": "official",
             "source_url": "https://www.eia.gov/rss/press_rss.xml",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4684,7 +5035,7 @@
             "source_tier": "official",
             "source_url": "https://apps.bea.gov/rss/rss.xml",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4695,7 +5046,7 @@
             "source_tier": "official",
             "source_url": "https://www.taifex.com.tw/cht/11/pressRelease",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4706,7 +5057,7 @@
             "source_tier": "official",
             "source_url": "https://www.cbc.gov.tw/tw/lp-302-1-391-20.html",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4717,7 +5068,7 @@
             "source_tier": "official",
             "source_url": "https://www.fsc.gov.tw/ch/home.jsp?id=640&parentpath=0,7,478,638",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4728,7 +5079,7 @@
             "source_tier": "official",
             "source_url": "https://www.stat.gov.tw/",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4739,7 +5090,7 @@
             "source_tier": "official",
             "source_url": "https://mnscdn.moea.gov.tw/Mns/dos/bulletin/BulletinQuery.aspx?menu_id=13034",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4750,7 +5101,7 @@
             "source_tier": "official",
             "source_url": "https://www.ecb.europa.eu/rss/press.html",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4761,7 +5112,7 @@
             "source_tier": "official",
             "source_url": "https://www.whitehouse.gov/news/",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4772,7 +5123,7 @@
             "source_tier": "official",
             "source_url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4783,7 +5134,7 @@
             "source_tier": "official",
             "source_url": "https://www.who.int/rss-feeds/news-english.xml",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4794,7 +5145,7 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4805,7 +5156,7 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4816,7 +5167,7 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4827,7 +5178,7 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4838,7 +5189,7 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -4849,13 +5200,13 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:55.119257+00:00",
+            "checked_at": "2026-08-06T01:01:24.073586+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
           }
         ],
-        "last_success_at": "2026-08-06T00:45:55.119257+00:00",
+        "last_success_at": "2026-08-06T01:01:24.073586+00:00",
         "item_count": 0,
         "source_urls": [
           "https://apps.bea.gov/rss/rss.xml",
@@ -4881,7 +5232,7 @@
         "key": "market_news",
         "label": "市場新聞",
         "status": "healthy",
-        "checked_at": "2026-08-06T00:45:53.684323+00:00",
+        "checked_at": "2026-08-06T01:01:22.350147+00:00",
         "issues": [],
         "source_details": [
           {
@@ -4890,7 +5241,7 @@
             "source_tier": "discovery",
             "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:53.684323+00:00",
+            "checked_at": "2026-08-06T01:01:22.350147+00:00",
             "item_count": 5,
             "data_gap": null,
             "fallback_used": true
@@ -4901,12 +5252,12 @@
             "source_tier": "discovery",
             "source_url": "https://news.cnyes.com/news/cat/us_stock",
             "status": "healthy",
-            "checked_at": "2026-08-06T00:45:53.684323+00:00",
+            "checked_at": "2026-08-06T01:01:22.350147+00:00",
             "item_count": 5,
             "data_gap": null
           }
         ],
-        "last_success_at": "2026-08-06T00:45:53.684323+00:00",
+        "last_success_at": "2026-08-06T01:01:22.350147+00:00",
         "item_count": 10,
         "source_urls": [
           "https://news.cnyes.com/news/cat/us_stock",
@@ -4919,7 +5270,7 @@
         "key": "risk",
         "label": "情緒／波動",
         "status": "healthy",
-        "checked_at": "2026-08-06T08:46:28.103458+08:00",
+        "checked_at": "2026-08-06T09:02:02.141001+08:00",
         "issues": []
       },
       {
@@ -4929,7 +5280,7 @@
         "source_url": "https://freesis.kofia.or.kr/stat/FreeSIS.do?parentDivId=MSIS10000000000000&serviceId=STATSCU0100000070",
         "status": "partial",
         "provider_status": "partial",
-        "checked_at": "2026-08-06T00:46:13.917551+00:00"
+        "checked_at": "2026-08-06T01:01:48.361484+00:00"
       },
       {
         "key": "crypto_macd",
@@ -4938,7 +5289,7 @@
         "source_url": "https://api.binance.com/api/v3/klines",
         "status": "partial",
         "provider_status": "partial",
-        "checked_at": "2026-08-06T00:46:14.801082+00:00",
+        "checked_at": "2026-08-06T01:01:49.542870+00:00",
         "item_count": 4,
         "data_gap": [
           "BTCUSDT:1w:HTTPError",
@@ -4954,7 +5305,7 @@
         "source_tier": "public-market",
         "source_url": "https://api.coingecko.com/api/v3/simple/price",
         "status": "partial",
-        "checked_at": "2026-08-06T00:46:15.109574+00:00",
+        "checked_at": "2026-08-06T01:01:49.882187+00:00",
         "item_count": 2,
         "data_gap": [
           "binance:BTC:HTTPError",
@@ -4968,7 +5319,7 @@
         "source_url": "https://stooq.com/q/l/",
         "status": "partial",
         "provider_status": "partial",
-        "checked_at": "2026-08-06T00:46:15.559387+00:00",
+        "checked_at": "2026-08-06T01:01:50.223071+00:00",
         "item_count": 2,
         "data_gap": [
           "S&P 500:HTTPError",
@@ -4987,7 +5338,7 @@
         "source_url": "https://api.stlouisfed.org/fred/series/observations",
         "status": "partial",
         "provider_status": "missing_api_key",
-        "checked_at": "2026-08-06T00:46:26.630399+00:00",
+        "checked_at": "2026-08-06T01:02:00.551565+00:00",
         "item_count": 0,
         "data_gap": "FRED_API_KEY 未設定"
       },
@@ -4998,7 +5349,7 @@
         "source_url": "https://api.eia.gov/v2/petroleum/pri/spt/data/",
         "status": "partial",
         "provider_status": "missing_api_key",
-        "checked_at": "2026-08-06T00:46:26.630422+00:00",
+        "checked_at": "2026-08-06T01:02:00.551593+00:00",
         "item_count": 0,
         "data_gap": "EIA_API_KEY 未設定"
       },
@@ -5006,7 +5357,7 @@
         "key": "research",
         "label": "量化研究",
         "status": "warming",
-        "checked_at": "2026-08-06T08:46:28.103458+08:00",
+        "checked_at": "2026-08-06T09:02:02.141001+08:00",
         "issues": [
           "taiwan 璞玉價值建檔中：已核對 129／150 檔"
         ]
@@ -5064,10 +5415,10 @@
     },
     "indices": {
       "count": 13,
-      "alert_eligible_count": 0,
-      "stale_count": 4,
-      "cross_checked_count": 0,
-      "data_quality_score": 58.8
+      "alert_eligible_count": 1,
+      "stale_count": 3,
+      "cross_checked_count": 1,
+      "data_quality_score": 66.5
     }
   },
   "errors": [
@@ -5080,11 +5431,6 @@
       "ticker": "00685L",
       "message": "00685L 報價已逾三日，已標示為過期資料",
       "scope": ""
-    },
-    {
-      "ticker": "TAIEX",
-      "message": "TAIEX 報價已逾三日，已標示為過期資料",
-      "scope": "index"
     },
     {
       "ticker": "BRENT",
@@ -5103,6 +5449,6 @@
     }
   ],
   "snapshot_schema_version": "3.0",
-  "snapshot_id": "0e84b914e6354be5",
-  "snapshot_published_at": "2026-08-06T00:46:28.107651+00:00"
+  "snapshot_id": "c0bbefcd5490c71f",
+  "snapshot_published_at": "2026-08-06T01:02:02.145282+00:00"
 }
