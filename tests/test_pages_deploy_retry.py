@@ -36,6 +36,22 @@ def test_all_pages_workflows_use_the_retry_wrapper_and_gate_delivery():
         assert "src.release_manifest ||" not in workflow
 
 
+def test_pages_workflows_degrade_on_actions_control_plane_failures():
+    job_names = {
+        "deploy-pages.yml": "  deploy:\n",
+        "emergency-alert.yml": "  send-emergency-alert:\n",
+        "monitor-health.yml": "  publish-monitor-health:\n",
+        "official-event-monitor.yml": "  monitor-send-deploy:\n",
+        "refresh-dashboard.yml": "  refresh-and-deploy:\n",
+        "scheduled-brief.yml": "  refresh-notify-deploy:\n",
+    }
+    for name, marker in job_names.items():
+        workflow = (WORKFLOWS / name).read_text(encoding="utf-8")
+        start = workflow.index(marker)
+        section = workflow[start : start + 360]
+        assert "continue-on-error: true" in section, name
+
+
 def test_delivery_workflows_skip_notifications_when_pages_is_unavailable():
     for name in ("emergency-alert.yml", "official-event-monitor.yml", "scheduled-brief.yml"):
         workflow = (WORKFLOWS / name).read_text(encoding="utf-8")

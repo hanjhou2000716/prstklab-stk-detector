@@ -26,6 +26,9 @@ concurrency:
 
 jobs:
   send-emergency-alert:
+    # Keep transient Actions/Pages control-plane failures from becoming a
+    # repeated email storm; release-gated Telegram delivery remains fail-closed.
+    continue-on-error: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

@@ -15,6 +15,9 @@ concurrency:
 
 jobs:
   publish-monitor-health:
+    # Health publishing is best-effort; a control-plane outage must not create
+    # repeated failure notifications or be mistaken for a data health result.
+    continue-on-error: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
