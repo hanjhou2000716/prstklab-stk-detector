@@ -67,16 +67,27 @@ def _source_label_from_quote(quote: dict[str, Any]) -> str | None:
     preserving the original source URL and timestamp.
     """
     quote_source = str(quote.get("quote_source") or "").lower()
-    source_domain = str(quote.get("source_domain") or "").lower().removeprefix("www.")
     parsed_host = (urlparse(str(quote.get("source_url") or "")).hostname or "").lower().removeprefix("www.")
-    domains = {source_domain, parsed_host}
-    if "tpex.org.tw" in domains or "tpex" in quote_source:
+    # The URL is the strongest provenance evidence.  Older snapshots can
+    # carry a stale source_domain/label from a previous fallback provider;
+    # allowing those fields to override the URL creates invalid releases.
+    if parsed_host:
+        if "tpex.org.tw" in parsed_host:
+            return "TPEx"
+        if "twse.com.tw" in parsed_host:
+            return "TWSE"
+        if "taifex.com.tw" in parsed_host:
+            return "TAIFEX"
+        if parsed_host == "yahoo.com" or parsed_host.endswith(".yahoo.com"):
+            return "Yahoo"
+    source_domain = str(quote.get("source_domain") or "").lower().removeprefix("www.")
+    if "tpex.org.tw" in source_domain or "tpex" in quote_source:
         return "TPEx"
-    if "twse.com.tw" in domains or "twse" in quote_source:
+    if "twse.com.tw" in source_domain or "twse" in quote_source:
         return "TWSE"
-    if "taifex.com.tw" in domains or "taifex" in quote_source:
+    if "taifex.com.tw" in source_domain or "taifex" in quote_source:
         return "TAIFEX"
-    if any(domain == "yahoo.com" or domain.endswith(".yahoo.com") for domain in domains if domain):
+    if source_domain == "yahoo.com" or source_domain.endswith(".yahoo.com"):
         return "Yahoo"
     if "yahoo" in quote_source:
         return "Yahoo"
@@ -100,6 +111,10 @@ def _normalize_market(value: dict[str, Any]) -> list[str]:
             if not isinstance(quote, dict):
                 continue
             provider = _source_label_from_quote(quote)
+            parsed_host = (urlparse(str(quote.get("source_url") or "")).hostname or "").lower().removeprefix("www.")
+            if parsed_host and str(quote.get("source_domain") or "").strip().lower() != parsed_host:
+                quote["source_domain"] = parsed_host
+                notes.append(f"{collection}[{index}].source_domain={parsed_host}")
             if provider and str(quote.get("source_label") or "").strip().lower() != provider.lower():
                 quote["source_label"] = provider
                 notes.append(f"{collection}[{index}].source_label={provider}")
