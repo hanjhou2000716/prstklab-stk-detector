@@ -1,9 +1,19 @@
-import pandas as pd
-
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from src.market_data import MACRO_REFERENCES, MARKET_INDICES, WATCHLIST, _daily_quote, _intraday_quote, annotate_quote_freshness, apply_taiwan_intraday_crosscheck, change_percent, intraday_is_fresh
+import pandas as pd
+
+from src.market_data import (
+    MACRO_REFERENCES,
+    MARKET_INDICES,
+    WATCHLIST,
+    _daily_quote,
+    _intraday_quote,
+    annotate_quote_freshness,
+    apply_taiwan_intraday_crosscheck,
+    change_percent,
+    intraday_is_fresh,
+)
 
 
 def test_change_percent_calculates_and_rounds():
@@ -221,3 +231,20 @@ def test_daily_close_remains_recent_while_the_following_session_is_open():
     )
 
     assert annotated[0]["freshness"] == "recent_close"
+
+
+def test_stale_marker_cannot_be_upgraded_to_live_by_a_replaced_timestamp():
+    quote = {
+        "ticker": "TAIEX",
+        "market": "taiwan",
+        "price": 100,
+        "quote_date": "2026-08-03",
+        "quote_time": "2026-08-03T09:00:00+08:00",
+        "stale_used": True,
+    }
+    annotated = annotate_quote_freshness(
+        [quote], now=datetime(2026, 8, 3, 9, 1, tzinfo=ZoneInfo("Asia/Taipei"))
+    )
+    assert annotated[0]["freshness"] == "recent_close"
+    assert annotated[0]["freshness"] != "live"
+    assert annotated[0]["alert_eligible"] is False
