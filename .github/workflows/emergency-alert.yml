@@ -121,6 +121,8 @@ jobs:
           python -m src.release_gate \
             --manifest "$MANIFEST_PATH" \
             --public-url "${{ steps.deployment.outputs.page_url }}" \
+            --public-attempts 12 \
+            --public-delay 5 \
             >> "$GITHUB_OUTPUT"
       - name: Send Telegram emergency alert
         if: steps.release_gate.outputs.allowed == 'true'
