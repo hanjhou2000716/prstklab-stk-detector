@@ -5,17 +5,21 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 
 
-def test_pages_deploy_wrapper_retries_and_fails_closed():
+def test_pages_deploy_wrapper_retries_and_reports_degraded_status():
     action = (ROOT / ".github" / "actions" / "deploy-pages-retry" / "action.yml").read_text(encoding="utf-8")
 
     assert "actions/deploy-pages@v4" in action
     assert "continue-on-error: true" in action
     assert "steps.first.outcome == 'failure'" in action
-    assert "Neither Pages deployment attempt returned a public URL." in action
-    assert "Fail closed when Pages deployment is unavailable" in action
+    assert 'default: "120000"' in action
+    assert "retry_delay_seconds" in action
+    assert "Neither Pages deployment attempt returned a public URL" in action
+    assert "available:" in action
+    assert "pages_deployment_unavailable" in action
+    assert "exit 1" not in action
 
 
-def test_all_pages_workflows_use_the_retry_wrapper_and_fail_closed_manifests():
+def test_all_pages_workflows_use_the_retry_wrapper_and_gate_delivery():
     pages_workflows = [
         "deploy-pages.yml",
         "emergency-alert.yml",
@@ -30,3 +34,11 @@ def test_all_pages_workflows_use_the_retry_wrapper_and_fail_closed_manifests():
         assert "uses: ./.github/actions/deploy-pages-retry" in workflow
         assert "actions/deploy-pages@v4" not in workflow
         assert "src.release_manifest ||" not in workflow
+
+
+def test_delivery_workflows_skip_notifications_when_pages_is_unavailable():
+    for name in ("emergency-alert.yml", "official-event-monitor.yml", "scheduled-brief.yml"):
+        workflow = (WORKFLOWS / name).read_text(encoding="utf-8")
+        assert "steps.deployment.outputs.available == 'true'" in workflow
+        assert "Telegram delivery intentionally skipped (fail closed)." in workflow
+        assert "continue-on-error: true" in workflow
