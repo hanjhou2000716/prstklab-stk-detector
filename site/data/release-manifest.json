@@ -1,9 +1,9 @@
 {
-  "release_id": "release-cf243e4db7116c86",
-  "created_at": "2026-08-07T03:39:29.485671+00:00",
-  "market_snapshot_id": "84d632cac1736f22",
+  "release_id": "release-b792edbbb741d746",
+  "created_at": "2026-08-07T04:01:55.681665+00:00",
+  "market_snapshot_id": "793d42a3aefcee4b",
   "research_snapshot_id": "research-deaa708d3df48b2a",
-  "event_snapshot_id": "event-e8a7f32f00bdbfbb",
+  "event_snapshot_id": "event-dca2efda0e9d02a6",
   "policy_version": "2026.08",
   "schema_versions": {
     "market": "3.0",
@@ -11,9 +11,9 @@
     "events": "1"
   },
   "artifact_hashes": {
-    "market.json": "fb5db4a4d97939e1b9c5b4229f5b5e1567ed19301a9d2b99bec2036decd3f327",
+    "market.json": "db826f96ba3a4803c7e3f161fc3768293c324a3ba2d7d4317fa5278dcad6c50f",
     "research-report.json": "e9c98268af7afaa993e54eabc994364783b65e69f3c91b9307da938b3e830353",
-    "event-ledger.json": "433ea37149ab90e8626f0cb36b29f664a5bf87da63d4556a21bb3d32ff76f30b"
+    "event-ledger.json": "ef2d5e0bbc886e1b156e926cb8dbd012eca02c0425b4304af0370a537682d051"
   },
   "artifact_paths": {
     "market.json": "data/market.json",
@@ -23,7 +23,8 @@
   "normalization_notes": [
     "market: indices[0].quote_source=Yahoo",
     "market: indices[1].source_label=TPEx",
-    "market: indices[1].technical_context_stale=true"
+    "market: indices[1].technical_context_stale=true",
+    "events: snapshot_id=deterministic"
   ],
   "status": "ready",
   "validation_errors": []
