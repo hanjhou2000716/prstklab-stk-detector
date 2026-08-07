@@ -23,9 +23,10 @@ on:
   repository_dispatch:
     types: [unified-research-report]
   schedule:
-    # Weekdays 13:30 Taiwan time. This leaves a 55-minute window before the
-    # 14:45 post-close brief refreshes and deploys the newest research output.
-    - cron: '30 5 * * 1-5'
+    # Run at 10:00 Taiwan time. GitHub-hosted schedules can be delayed during
+    # load spikes; starting well before the 14:45 post-close brief gives the
+    # bounded MOPS/value scan enough room to publish a fresh release.
+    - cron: '0 2 * * 1-5'
 permissions:
   contents: write
 concurrency:

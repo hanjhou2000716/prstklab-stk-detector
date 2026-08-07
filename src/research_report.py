@@ -28,6 +28,21 @@ def _int_or_none(value: Any) -> int | None:
         return None
 
 
+def _bounded_candidate_count(value: Any, visible: int) -> int | None:
+    """Keep summary counts consistent with the rows actually published.
+
+    A scan summary can be written just before its CSV is interrupted or
+    replaced.  Carrying its old formal/observation count into a report with
+    zero visible rows creates an invalid release (for example 5 formal rows
+    with 0 candidates).  Suppress, rather than invent, counts that cannot be
+    proven by the current CSV.
+    """
+    count = _int_or_none(value)
+    if count is None:
+        return None
+    return max(0, min(count, visible))
+
+
 def _candidate_state(*, scan_state: str | None, visible: int, data_gap: int | None) -> str:
     """Return a machine-readable state; localized status is display-only."""
     if scan_state == "failed":
@@ -169,10 +184,15 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                 "candidate_state": _candidate_state(scan_state=scan_state, visible=0, data_gap=failed_records),
                 "candidates": 0,
                 "visible_candidates": 0,
+                # The summary belongs to a scan output that is unavailable in
+                # this run.  Do not carry its formal/observation totals into
+                # an empty source and thereby fail the release contract.
+                "formal_candidates": 0,
+                "observation_candidates": 0,
                 "complete_records": complete_records,
                 "failed_records": failed_records,
                 "data_gap_counts": failed_records or 0,
-                "blocking_reason": base.get("blocking_reason") or "research source unavailable",
+                "blocking_reason": base.get("blocking_reason") or "research source unavailable; candidate counts suppressed",
                 "candidates_definition": "visible_candidates",
             })
             continue
@@ -215,8 +235,8 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
             "candidates": visible,
             "visible_candidates": visible,
             "candidates_definition": "visible_candidates",
-            "formal_candidates": _int_or_none(base.get("formal_candidates")) if base.get("formal_candidates") is not None else (formal_rows or None),
-            "observation_candidates": _int_or_none(base.get("observation_candidates")) if base.get("observation_candidates") is not None else (observation_rows or None),
+            "formal_candidates": _bounded_candidate_count(base.get("formal_candidates"), visible) if base.get("formal_candidates") is not None else (formal_rows or None),
+            "observation_candidates": _bounded_candidate_count(base.get("observation_candidates"), visible) if base.get("observation_candidates") is not None else (observation_rows or None),
             "requested_records": requested_records,
             "complete_records": complete_records,
             "failed_records": failed_records,
