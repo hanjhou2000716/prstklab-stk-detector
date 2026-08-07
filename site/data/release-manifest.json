@@ -1,7 +1,7 @@
 {
-  "release_id": "release-f1dcb6b61d8fdc68",
-  "created_at": "2026-08-07T06:20:37.310092+00:00",
-  "market_snapshot_id": "ca1d376ed5a29841",
+  "release_id": "release-e2e73582b0e42c5f",
+  "created_at": "2026-08-07T13:01:47.413660+00:00",
+  "market_snapshot_id": "a7a461bf5609b6d1",
   "research_snapshot_id": "research-deaa708d3df48b2a",
   "event_snapshot_id": "event-8209858ae7b29dfc",
   "policy_version": "2026.08",
@@ -11,7 +11,7 @@
     "events": "1"
   },
   "artifact_hashes": {
-    "market.json": "7825e713b7e0b8d1de298dc399929f1aadab7447277fc9bf6df8d6da9fcb159d",
+    "market.json": "0a6674f93a91ec81c6752287c9dc35585d27ae9b703488310a1cde42a07f296d",
     "research-report.json": "e9c98268af7afaa993e54eabc994364783b65e69f3c91b9307da938b3e830353",
     "event-ledger.json": "ab36f45ecdb93147a062f628383b1d3b034cf927bae792e17bd09642fb76e030"
   },
@@ -22,7 +22,11 @@
   },
   "normalization_notes": [
     "market: indices[1].source_label=TWSE",
-    "market: indices[1].technical_context_stale=true"
+    "market: indices[1].technical_context_stale=true",
+    "market: quotes[3].technical_context_stale=true",
+    "market: quotes[4].technical_context_stale=true",
+    "market: quotes[5].technical_context_stale=true",
+    "market: quotes[6].technical_context_stale=true"
   ],
   "status": "ready",
   "validation_errors": []
