@@ -23,3 +23,11 @@ def test_research_workflow_clears_previous_scan_artifacts_and_fails_closed_on_in
 def test_post_close_brief_is_scheduled_for_1445_taipei_time():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
     assert 'cron: "45 6 * * 1-5"' in workflow
+
+
+def test_research_scan_starts_before_post_close_brief_buffer():
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "unified-research-report.yml").read_text(encoding="utf-8")
+    # 02:00 UTC = 10:00 Asia/Taipei, leaving a buffer for schedule jitter and
+    # the bounded historical value scan before the 14:45 release consumer.
+    assert "cron: '0 2 * * 1-5'" in workflow
+    assert "cron: '30 5 * * 1-5'" not in workflow

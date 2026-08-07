@@ -64,3 +64,27 @@ def test_verified_value_rows_remain_visible_during_incremental_history_build(tmp
 
     assert report["candidates"][0]["ticker"] == "2330"
     assert report["sources"][0]["status"] == "建檔中"
+
+
+def test_missing_scan_output_suppresses_stale_formal_counts(tmp_path):
+    """A summary must not make an unavailable CSV look like published rows."""
+    summary = tmp_path / "summary.json"
+    summary.write_text(
+        '{"requested": 105, "data_complete": 97, "failed": 1, '
+        '"scan_state": "failed", "formal_candidates": 5, '
+        '"observation_candidates": 0}',
+        encoding="utf-8",
+    )
+
+    report = build_research_report([{
+        "path": str(tmp_path / "missing.csv"),
+        "summary_path": str(summary),
+        "market": "us",
+        "strategy": "value",
+    }])
+
+    source = report["sources"][0]
+    assert source["candidates"] == 0
+    assert source["formal_candidates"] == 0
+    assert source["observation_candidates"] == 0
+    assert source["candidate_state"] == "data_gap"
