@@ -575,6 +575,18 @@ const researchScoreParts = (item) => {
   return { label: "動能分數", value: `${Number(item.score).toFixed(1)} / 100` };
 };
 
+const researchExplainability = (item) => {
+  const passed = Array.isArray(item.passed_conditions) ? item.passed_conditions : [];
+  const failed = Array.isArray(item.failed_conditions) ? item.failed_conditions : [];
+  const risks = Array.isArray(item.risk_factors) ? item.risk_factors : [];
+  const completeness = item.data_completeness ?? item.data_quality_score;
+  const invalidation = item.invalidation || item.invalidation_condition;
+  if (!passed.length && !failed.length && !risks.length && completeness === undefined && !invalidation) return "";
+  const list = (values, fallback) => values.length ? values.map((value) => `<li>${escapeHtml(value)}</li>`).join("") : `<li>${fallback}</li>`;
+  const quality = completeness === undefined || completeness === null ? "資料完整度暫時無法取得" : `資料完整度 ${escapeHtml(String(completeness))}`;
+  return `<details class="research-explainability"><summary>條件與風險說明</summary><p><b>已通過：</b></p><ul>${list(passed, "尚未提供")}</ul><p><b>未通過：</b></p><ul>${list(failed, "無額外未通過條件")}</ul><p><b>風險：</b></p><ul>${list(risks, "尚未提供")}</ul><small>${escapeHtml(quality)}${invalidation ? `｜失效條件：${escapeHtml(invalidation)}` : ""}。僅供研究觀察，不構成買賣指令。</small></details>`;
+};
+
 const renderResearchList = (id, items, empty) => {
   const container = document.getElementById(id);
   if (!container) return;
@@ -586,7 +598,7 @@ const renderResearchList = (id, items, empty) => {
     const change = item.change_percent === null || item.change_percent === undefined ? "—" : signedPercent(item.change_percent);
     const tags = researchStrategyTags(item).map((label) => `<span class="strategy-chip">${escapeHtml(label)}</span>`).join("");
     const score = researchScoreParts(item);
-    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}</strong></div></li>`;
+    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}</strong></div>${researchExplainability(item)}</li>`;
   }).join("");
 };
 
