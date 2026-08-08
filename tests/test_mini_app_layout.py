@@ -147,6 +147,15 @@ def test_research_candidates_have_optional_explainability_without_advice_languag
     assert ".research-explainability" in styles
 
 
+def test_briefing_intelligence_shows_conditional_impact_and_macro_surprise_only():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert "context.market_impact_graph?.paths" in app
+    assert "等待市場證據" in app
+    assert "context.macro_surprise" in app
+    assert "不單獨推定市場方向" in app
+
+
 def test_quote_provenance_uses_the_compact_provider_and_time_format():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
 
