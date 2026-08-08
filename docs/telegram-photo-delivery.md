@@ -13,3 +13,13 @@ never use production chat IDs.
 
 The card is temporary runtime output and is not written to `data-release`; the
 snapshot and manifest remain the source of truth for Mini App rendering.
+
+## Public card file-id reuse
+
+When `TELEGRAM_FILE_ID_CACHE_PATH` (or the `cache_path` argument) points to a
+persistent JSON file, the first successful recipient upload stores only the
+public card hash, alert/release identifiers, Telegram `file_id`, and creation/
+last-use timestamps. Later recipients reuse that Telegram `file_id` instead of
+uploading the same card again. Recipient IDs and message payloads are never
+stored. A missing or unreadable cache is safe: the first recipient uploads the
+card and the remaining recipients still receive independent messages.

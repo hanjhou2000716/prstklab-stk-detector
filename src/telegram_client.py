@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from time import sleep, time
 
@@ -73,6 +74,7 @@ class PhotoDeliveryReceipt:
     status: str
     message_id: int | None = None
     error_class: str | None = None
+    telegram_file_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -297,6 +299,7 @@ def send_briefs(
 def send_photo_brief(
     *, token: str, chat_id: str, caption: str, photo_path: str | Path,
     mini_app_url: str, alert_id: str, release_id: str, snapshot_id: str,
+    photo_file_id: str | None = None,
 ) -> PhotoDeliveryReceipt:
     """Send one caption-above-photo message with an alert-specific Mini App URL.
 
@@ -306,7 +309,7 @@ def send_photo_brief(
     if not caption.strip() or len(caption) > 40:
         raise ValueError("photo caption must be 1-40 characters")
     path = Path(photo_path)
-    if not path.is_file():
+    if photo_file_id is None and not path.is_file():
         raise FileNotFoundError(path)
     if not mini_app_url.startswith("https://"):
         raise ValueError("Mini App URL must use HTTPS")
@@ -319,19 +322,19 @@ def send_photo_brief(
     for attempt in range(SEND_ATTEMPTS):
         retry_after = None
         try:
-            with path.open("rb") as photo:
-                response = requests.post(
-                    endpoint,
-                    data={
-                        "chat_id": chat_id,
-                        "caption": caption,
-                        "parse_mode": "HTML",
-                        "show_caption_above_media": "true",
-                        "reply_markup": json.dumps({"inline_keyboard": [[mini_app_button(target)]]}),
-                    },
-                    files={"photo": photo},
-                    timeout=30,
-                )
+            data = {
+                "chat_id": chat_id,
+                "caption": caption,
+                "parse_mode": "HTML",
+                "show_caption_above_media": "true",
+                "reply_markup": json.dumps({"inline_keyboard": [[mini_app_button(target)]]}),
+            }
+            if photo_file_id:
+                data["photo"] = photo_file_id
+                response = requests.post(endpoint, data=data, timeout=30)
+            else:
+                with path.open("rb") as photo:
+                    response = requests.post(endpoint, data=data, files={"photo": photo}, timeout=30)
         except requests.RequestException as exc:
             last_error = exc
         else:
@@ -359,12 +362,46 @@ def send_photo_brief(
         error_class = "rate_limit" if getattr(response, "status_code", 0) == 429 else "telegram_api"
         return PhotoDeliveryReceipt(alert_id, release_id, snapshot_id, recipient_hash, "failed", error_class=error_class)
     result = payload.get("result") or {}
-    return PhotoDeliveryReceipt(alert_id, release_id, snapshot_id, recipient_hash, "delivered", message_id=result.get("message_id"))
+    photos = result.get("photo") if isinstance(result, dict) else None
+    file_id = photos[-1].get("file_id") if isinstance(photos, list) and photos and isinstance(photos[-1], dict) else None
+    return PhotoDeliveryReceipt(
+        alert_id,
+        release_id,
+        snapshot_id,
+        recipient_hash,
+        "delivered",
+        message_id=result.get("message_id"),
+        telegram_file_id=file_id,
+    )
+
+
+def _photo_card_hash(photo_path: str | Path) -> str:
+    digest = hashlib.sha256()
+    with Path(photo_path).open("rb") as photo:
+        for chunk in iter(lambda: photo.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _load_photo_file_cache(path: Path) -> dict[str, dict[str, object]]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, OSError, ValueError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _save_photo_file_cache(path: Path, cache: dict[str, dict[str, object]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(json.dumps(cache, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+    temporary.replace(path)
 
 
 def send_photo_briefs(
     *, token: str, chat_ids: tuple[str, ...], caption: str, photo_path: str | Path,
     mini_app_url: str, alert_id: str, release_id: str, snapshot_id: str,
+    cache_path: str | Path | None = None,
 ) -> tuple[PhotoDeliveryReceipt, ...]:
     """Deliver one identical photo message per recipient without fail-fast.
 
@@ -376,6 +413,13 @@ def send_photo_briefs(
     if not chat_ids:
         raise ValueError("Telegram recipient list is empty")
     receipts: list[PhotoDeliveryReceipt] = []
+    card_hash = _photo_card_hash(photo_path)
+    configured_cache = str(cache_path or os.environ.get("TELEGRAM_FILE_ID_CACHE_PATH", "")).strip()
+    cache_file = Path(configured_cache) if configured_cache else None
+    cache = _load_photo_file_cache(cache_file) if cache_file else {}
+    cache_key = f"{alert_id}:{release_id}:{card_hash}"
+    entry = cache.get(cache_key) if isinstance(cache.get(cache_key), dict) else None
+    photo_file_id = str(entry.get("telegram_file_id")) if entry and entry.get("telegram_file_id") else None
     for chat_id in chat_ids:
         recipient_hash = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]
         try:
@@ -388,6 +432,7 @@ def send_photo_briefs(
                 alert_id=alert_id,
                 release_id=release_id,
                 snapshot_id=snapshot_id,
+                photo_file_id=photo_file_id,
             )
         except (TelegramError, OSError, requests.RequestException) as exc:
             receipt = PhotoDeliveryReceipt(
@@ -395,4 +440,19 @@ def send_photo_briefs(
                 error_class=type(exc).__name__.lower(),
             )
         receipts.append(receipt)
+        if receipt.status == "delivered" and receipt.telegram_file_id and not photo_file_id:
+            photo_file_id = receipt.telegram_file_id
+            cache[cache_key] = {
+                "card_hash": card_hash,
+                "telegram_file_id": photo_file_id,
+                "alert_id": alert_id,
+                "release_id": release_id,
+                "created_at": datetime.now(UTC).isoformat(),
+                "last_used_at": datetime.now(UTC).isoformat(),
+            }
+            if cache_file:
+                _save_photo_file_cache(cache_file, cache)
+        elif receipt.status == "delivered" and entry and cache_file:
+            entry["last_used_at"] = datetime.now(UTC).isoformat()
+            _save_photo_file_cache(cache_file, cache)
     return tuple(receipts)
