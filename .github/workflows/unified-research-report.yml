@@ -29,6 +29,8 @@ on:
     - cron: '0 2 * * 1-5'
 permissions:
   contents: write
+  pages: write
+  id-token: write
 concurrency:
   group: unified-research-report
   cancel-in-progress: false
@@ -36,6 +38,9 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 55
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     env:
       TAIWAN_LIMIT: ${{ inputs.taiwan_limit || github.event.client_payload.taiwan_limit || '0' }}
       US_LIMIT: ${{ inputs.us_limit || github.event.client_payload.us_limit || '0' }}
@@ -90,6 +95,15 @@ jobs:
       - name: 保存最新公開研究摘要
         run: |
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json --message "chore: refresh public research report"
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy Pages
+        id: deployment
+        uses: ./.github/actions/deploy-pages-retry
       - uses: actions/upload-artifact@v4
         with:
           name: unified-research-report
