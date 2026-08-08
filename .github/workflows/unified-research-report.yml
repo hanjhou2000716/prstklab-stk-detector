@@ -57,12 +57,12 @@ jobs:
       SEC_FACTS_CACHE_PATH: data/sec-companyfacts-cache.json
       DATA_RELEASE_BRANCH: data-release
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
       - name: Restore last immutable data release
         run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: { python-version: '3.11' }
       - run: pip install -r requirements.txt
       - name: Clear previous research scan artifacts
@@ -109,17 +109,17 @@ jobs:
           fi
       - name: Configure GitHub Pages
         if: env.SCAN_MODE == 'production'
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
       - name: Upload Pages artifact
         if: env.SCAN_MODE == 'production'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           path: site
       - name: Deploy Pages
         id: deployment
         if: env.SCAN_MODE == 'production'
         uses: ./.github/actions/deploy-pages-retry
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: unified-research-report
           path: |

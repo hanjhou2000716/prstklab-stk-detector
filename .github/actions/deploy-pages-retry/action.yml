@@ -25,7 +25,7 @@ runs:
     - name: Deploy Pages (first attempt)
       id: first
       continue-on-error: true
-      uses: actions/deploy-pages@v4
+      uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
       with:
         timeout: ${{ inputs.timeout }}
 
@@ -40,7 +40,7 @@ runs:
       id: retry_attempt
       if: steps.first.outcome == 'failure'
       continue-on-error: true
-      uses: actions/deploy-pages@v4
+      uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
       with:
         timeout: ${{ inputs.timeout }}
 
