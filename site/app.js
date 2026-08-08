@@ -410,10 +410,18 @@ const renderSourceHealth = (health, snapshot = {}) => {
   if (displayedMissing !== missing) summary.textContent = `${displayedMissing} 個來源有資料缺口`;
   if (pending) summary.textContent += `｜${pending} 個事件待核對`;
   const scan = health.event_scan;
-  event.textContent = `${scan.label || "事件掃描"}｜${scan.detail || ""}`;
+  const scanState = scan.state || scan.status || "unknown";
+  const scanStateLabel = scanState === "scan_failed" || scanState === "failed" ? "掃描失敗" : scanState === "no_events" || scanState === "no_event" ? "本輪無事件" : "本輪已掃描";
+  const observation = health.observability || health.slo || health.monitor_health || {};
+  const healthMetricParts = [
+    Number.isFinite(Number(observation.success_rate)) ? `成功率 ${Number(observation.success_rate).toFixed(1)}%` : "",
+    Number.isFinite(Number(observation.crosscheck_rate)) ? `核對率 ${Number(observation.crosscheck_rate).toFixed(1)}%` : "",
+    Number.isFinite(Number(observation.stale_count)) ? `快取 ${Number(observation.stale_count)} 筆` : "",
+  ].filter(Boolean).join("｜");
+  event.textContent = `${scan.label || "事件掃描"}｜${scanStateLabel}${scan.detail ? `｜${scan.detail}` : ""}${healthMetricParts ? `｜${healthMetricParts}` : ""}`;
   event.dataset.status = scan.status || "partial";
   list.innerHTML = health.sources.map((source) => {
-    const status = source.status === "healthy" ? "正常" : source.status === "no_event" ? "無事件" : source.status === "warming" ? "建檔中" : source.status === "pending" ? "待核對" : source.status === "stale" ? "使用快取" : "部分缺漏";
+    const status = source.status === "healthy" ? "正常" : source.status === "no_event" ? "無事件" : source.status === "warming" ? "建檔中" : source.status === "pending" ? "待核對" : source.status === "stale" ? "使用快取" : source.status === "failed" ? "掃描失敗" : "部分缺漏";
     const pendingReasons = source.status === "pending" && source.pending_reasons && typeof source.pending_reasons === "object"
       ? Object.entries(source.pending_reasons).filter(([, count]) => Number(count) > 0).map(([reason, count]) => {
         const labels = {
@@ -447,7 +455,12 @@ const renderSourceHealth = (health, snapshot = {}) => {
     if (Number.isFinite(Number(source.item_count))) freshness.push(`資料 ${Number(source.item_count)} 筆`);
     if (source.last_success_at) freshness.push(`最近成功 ${traceTime(source.last_success_at)}`);
     if (Number.isFinite(Number(source.latency_ms))) freshness.push(`延遲 ${Math.round(Number(source.latency_ms))} ms`);
-    const detail = [issue, candidateNote, provenance, freshness.join("｜")].filter(Boolean).join("｜");
+    const quality = [
+      Number.isFinite(Number(source.success_rate)) ? `成功率 ${Number(source.success_rate).toFixed(1)}%` : "",
+      Number.isFinite(Number(source.consecutive_failures)) ? `連續失敗 ${Number(source.consecutive_failures)} 次` : "",
+      Number.isFinite(Number(source.crosscheck_rate)) ? `核對率 ${Number(source.crosscheck_rate).toFixed(1)}%` : "",
+    ].filter(Boolean).join("｜");
+    const detail = [issue, candidateNote, provenance, quality, freshness.join("｜")].filter(Boolean).join("｜");
     return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${escapeHtml(source.status || "partial")}">${status}</em></li>`;
   }).join("");
   if (card) card.open = false;

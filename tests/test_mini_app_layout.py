@@ -125,6 +125,16 @@ def test_event_timeline_and_feedback_are_optional_and_non_policy_mutating():
     assert ".event-timeline" in styles
 
 
+def test_source_health_distinguishes_empty_scan_from_failure_and_exposes_slo_metrics():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert 'scanState === "scan_failed"' in app
+    assert 'scanState === "no_events"' in app
+    assert "health.observability || health.slo" in app
+    assert "source.consecutive_failures" in app
+    assert "source.crosscheck_rate" in app
+
+
 def test_quote_provenance_uses_the_compact_provider_and_time_format():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
 
