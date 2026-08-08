@@ -11,6 +11,8 @@ from src.release_manifest import content_snapshot_id
 from src.research_health import assess_research_health
 from src.research_report import build_research_report
 
+SCAN_MODES = {"production", "smoke", "debug"}
+
 
 def default_sources(data_dir: Path) -> list[dict[str, str]]:
     return [
@@ -30,12 +32,45 @@ def write_report(report: dict, output: Path) -> None:
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def attach_scan_contract(report: dict, scan_mode: str) -> dict:
+    """Attach publication eligibility without changing candidate semantics."""
+    sources = report.get("sources", [])
+    requested = sum(int(source.get("requested") or 0) for source in sources)
+    completed = sum(
+        int(source.get("complete_records") or source.get("data_complete") or 0)
+        for source in sources
+    )
+    failed = sum(int(source.get("failed_records") or source.get("failed") or 0) for source in sources)
+    states = {str(source.get("scan_state") or "failed") for source in sources}
+    full_scope = requested > 0 and completed >= requested and failed == 0 and states == {"complete"}
+    report.update({
+        "scan_mode": scan_mode,
+        "scan_scope": "full" if scan_mode == "production" else "bounded",
+        "universe_expected": requested,
+        "universe_scanned": completed + failed,
+        "universe_completed": completed,
+        "publish_eligible": scan_mode == "production",
+        "production_eligible": scan_mode == "production" and full_scope,
+        "blocking_reason": None if scan_mode == "production" and full_scope else (
+            "smoke/debug scan is isolated from production publishing"
+            if scan_mode != "production"
+            else "one or more research sources are incomplete or failed"
+        ),
+    })
+    return report
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="台美研究摘要")
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--output", default="site/data/research-report.json")
+    parser.add_argument(
+        "--scan-mode", choices=sorted(SCAN_MODES), default="production",
+        help="production is publishable; smoke/debug are isolated validation runs",
+    )
     args = parser.parse_args()
     report = build_research_report(default_sources(Path(args.data_dir)))
+    attach_scan_contract(report, args.scan_mode)
     report["generated_at"] = datetime.now(ZoneInfo("Asia/Taipei")).isoformat()
     report["health"] = assess_research_health(report)
     # Bind research candidates to this exact point-in-time artifact.  The

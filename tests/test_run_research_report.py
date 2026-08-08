@@ -1,6 +1,6 @@
 import json
 
-from src.run_research_report import default_sources, write_report
+from src.run_research_report import attach_scan_contract, default_sources, write_report
 
 
 def test_default_sources_cover_two_markets_and_two_strategies(tmp_path):
