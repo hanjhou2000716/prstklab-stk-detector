@@ -64,6 +64,7 @@ def test_crypto_spot_failure_is_partial_and_does_not_hide_existing_cards():
     assert all(card["cross_checked"] is False for card in cards[:2])
     assert all(card["ticker"] in {"BTC", "ETH", "NASDAQ"} for card in cards)
     assert cards[0]["crosscheck_status"] == "primary_unavailable"
+    assert snapshot["health"]["health_class"] == "degraded_with_fallback"
 
 
 def test_crypto_spot_retries_transient_provider_failure_once():
