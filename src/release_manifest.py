@@ -171,6 +171,30 @@ def _normalize_research(value: dict[str, Any]) -> list[str]:
         if gaps is not None and source.get("data_gap_counts") != gaps:
             source["data_gap_counts"] = gaps
             notes.append(f"sources[{index}].data_gap_counts=integer")
+
+        # A scan summary and its published rows are produced by separate
+        # steps.  If the row file is interrupted or replaced, an old summary
+        # can still claim formal candidates that are not present in this
+        # release.  Do not let that contradiction block every subsequent
+        # release (and leave the Mini App showing an older snapshot).  Keep
+        # the release usable, but downgrade the source to an explicit data
+        # gap and suppress the unproven counts.
+        visible_count = _gap_count(visible)
+        count_mismatch = False
+        for field in ("formal_candidates", "observation_candidates", "formal_candidate_count", "observation_candidate_count"):
+            count = _gap_count(source.get(field))
+            if count is not None and visible_count is not None and count > visible_count:
+                source[field] = 0
+                notes.append(f"sources[{index}].{field}=0 (exceeds visible_candidates)")
+                count_mismatch = True
+        if count_mismatch:
+            source["candidate_state"] = "data_gap"
+            source["blocking_reason"] = (
+                "published candidate rows do not support the scan summary counts; "
+                "awaiting a complete research scan"
+            )
+            source["data_gap_counts"] = max(gaps or 0, 1)
+            notes.append(f"sources[{index}].candidate_state=data_gap (count mismatch)")
         if source.get("candidate_state") is None:
             scan_state = str(source.get("scan_state") or "")
             unavailable = source.get("data_unavailable") is True or source.get("data_gap") is True

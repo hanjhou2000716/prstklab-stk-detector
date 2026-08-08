@@ -7,6 +7,10 @@ on:
         description: "30 字內測試快報（留空使用預設訊息）"
         required: false
         type: string
+      test_chat_id:
+        description: "Optional single recipient for an explicitly requested smoke test"
+        required: false
+        type: string
   # 第一階段先只提供手動執行；確認後才加入正式排程。
 
 permissions:
@@ -30,7 +34,9 @@ jobs:
       - name: 發送測試快報
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
+          # A supplied test_chat_id is scoped to this one run; otherwise use
+          # the normal plural broadcast configuration.
+          TELEGRAM_CHAT_IDS: ${{ inputs.test_chat_id || secrets.TELEGRAM_CHAT_IDS }}
           DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
         run: |
           if [ -n "${{ inputs.message }}" ]; then
