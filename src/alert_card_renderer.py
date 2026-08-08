@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import struct
 import zlib
+import os
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -32,9 +33,12 @@ def build_card_html(alert: dict[str, Any]) -> str:
 def render_alert_card(alert: dict[str, Any], output: str | Path) -> Path:
     """Render with Playwright when installed; otherwise emit deterministic fallback."""
     target = Path(output)
+    require_renderer = os.environ.get("PRSTK_REQUIRE_PLAYWRIGHT", "").lower() == "true"
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
+        if require_renderer:
+            raise RuntimeError("Playwright is required for a full alert card")
         return fallback_card(target)
     try:
         with sync_playwright() as playwright:
@@ -46,4 +50,6 @@ def render_alert_card(alert: dict[str, Any], output: str | Path) -> Path:
             browser.close()
         return target
     except Exception:
+        if require_renderer:
+            raise
         return fallback_card(target)
