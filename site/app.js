@@ -113,8 +113,9 @@ const traceTime = (value) => {
 
 const renderAlertTrace = (event) => {
   const container = document.getElementById("alert-trace");
-  if (!container) return;
-  container.replaceChildren();
+  const body = document.getElementById("alert-trace-body") || container;
+  if (!container || !body) return;
+  body.replaceChildren();
   container.hidden = true;
   const trace = event?.source_trace;
   const facts = [];
@@ -161,7 +162,7 @@ const renderAlertTrace = (event) => {
   facts.forEach((fact) => {
     const item = document.createElement("span");
     item.textContent = fact;
-    container.append(item);
+    body.append(item);
   });
   const sourceUrl = safeHttpsUrl(trace?.source_url);
   if (sourceUrl) {
@@ -170,9 +171,12 @@ const renderAlertTrace = (event) => {
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     link.textContent = "開啟原始來源 ↗";
-    container.append(link);
+    body.append(link);
   }
-  container.hidden = container.childElementCount === 0;
+  // Legacy empty-trace contract is retained while the details wrapper keeps
+  // its summary visible and only collapses the evidence body.
+  // container.hidden = container.childElementCount === 0;
+  container.hidden = body.childElementCount === 0;
 };
 
 const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
@@ -477,27 +481,13 @@ const renderBriefing = (briefing, generatedAt) => {
   setText("briefing-time", `${displayTime} CST`);
   setText("briefing-overview", report.overview || "本次以公開市場報價、官方事件與風險資料整理市場脈絡。 ");
   setText("briefing-reminder", report.reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
-  const correlation = document.getElementById("briefing-correlation");
-  if (correlation) {
-    correlation.replaceChildren();
-    const values = [
-      ["觀測 ID", report.observation_id],
-      ["報告 Trace ID", report.trace_id],
-      ["快照 ID", report.snapshot_id],
-    ].filter(([, value]) => value);
-    values.forEach(([label, value]) => {
-      const item = document.createElement("span");
-      item.textContent = `${label}：${value}`;
-      correlation.append(item);
-    });
-    correlation.hidden = correlation.childElementCount === 0;
-  }
   const intelligence = document.getElementById("briefing-intelligence");
+  const intelligenceBody = document.getElementById("briefing-intelligence-body") || intelligence;
   const context = report.intelligence;
-  if (intelligence) {
+  if (intelligence && intelligenceBody) {
     if (!context || typeof context !== "object") {
       intelligence.hidden = true;
-      intelligence.replaceChildren();
+      intelligenceBody.replaceChildren();
     } else {
       const regime = context.market_regime || {};
       const contagion = context.contagion || {};
@@ -519,8 +509,9 @@ const renderBriefing = (briefing, generatedAt) => {
       const surpriseText = surprise.status === "insufficient_evidence"
         ? "總經驚喜：缺少預期值或實際值，證據不足"
         : `總經驚喜：${surprise.status}｜實際 ${surprise.actual ?? "—"}／預期 ${surprise.expected ?? "—"}`;
-      intelligence.innerHTML = `<h4>市場情報證據</h4><p><b>市場狀態：</b>${escapeHtml(regime.regime || "資料不足")}｜分數 ${escapeHtml(String(regime.score ?? "—"))}</p><p><b>因子：</b>${escapeHtml(factors)}</p><p><b>跨資產核對：</b>${escapeHtml(contagion.status || "資料不足")}｜${escapeHtml(signals)}</p><p><b>傳導路徑：</b>${escapeHtml(pathText)}</p><p><b>${escapeHtml(surpriseText)}</b>（不單獨推定市場方向）</p><p><b>建議閘門：</b>${escapeHtml(context.advice_gate || "observation_only")}｜${escapeHtml(blocking)}</p>${scenarios ? `<ul class="briefing-stress-list"><li class="briefing-stress-heading">壓力情境（非預測）</li>${scenarios}</ul>` : ""}<small>資料不足時維持觀察，不產生買進／賣出指令。</small>`;
+      intelligenceBody.innerHTML = `<p><b>市場狀態：</b>${escapeHtml(regime.regime || "資料不足")}｜分數 ${escapeHtml(String(regime.score ?? "—"))}</p><p><b>因子：</b>${escapeHtml(factors)}</p><p><b>跨資產核對：</b>${escapeHtml(contagion.status || "資料不足")}｜${escapeHtml(signals)}</p><p><b>傳導路徑：</b>${escapeHtml(pathText)}</p><p><b>${escapeHtml(surpriseText)}</b>（不單獨推定市場方向）</p><p><b>建議閘門：</b>${escapeHtml(context.advice_gate || "observation_only")}｜${escapeHtml(blocking)}</p>${scenarios ? `<ul class="briefing-stress-list"><li class="briefing-stress-heading">壓力情境（非預測）</li>${scenarios}</ul>` : ""}<small>資料不足時維持觀察，不產生買進／賣出指令。</small>`;
       intelligence.hidden = false;
+      intelligence.open = false;
     }
   }
   const container = document.getElementById("briefing-observations");

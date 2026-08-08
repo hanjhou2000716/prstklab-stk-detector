@@ -96,6 +96,17 @@ def test_briefing_report_uses_the_dedicated_observation_list_without_duplicate_m
     assert 'id="briefing-dynamic-markets"' not in page
     assert 'getElementById("briefing-market-topics")' not in app
     assert 'getElementById("briefing-dynamic-markets")' not in app
+    assert 'id="briefing-correlation"' not in page
+
+
+def test_technical_evidence_is_collapsed_until_requested():
+    page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert '<details id="alert-trace"' in page
+    assert 'id="alert-trace-body"' in page
+    assert '<details id="briefing-intelligence"' in page
+    assert 'id="briefing-intelligence-body"' in page
+    assert 'const intelligenceBody = document.getElementById("briefing-intelligence-body")' in app
 
 
 def test_briefing_report_renders_fail_closed_intelligence_context():
