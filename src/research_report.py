@@ -9,6 +9,7 @@ from typing import Any
 
 import pandas as pd
 
+from src.advice_gate import build_explainability_card, evaluate_advice_gate
 from src.price_action import FUNNEL_LABELS, structure_match_score
 
 NOTICE = "不同策略的研究排序不可直接視為同一種分數；本報表僅統一欄位與資料狀態。"
@@ -67,6 +68,57 @@ def _normalize_scan_state(base: dict[str, Any], *, file_readable: bool) -> str:
     if failed:
         return "failed"
     return "building"
+
+
+def _as_condition_list(value: Any) -> list[str]:
+    """Normalize condition fields without inventing a pass/fail result."""
+    if isinstance(value, (list, tuple, set)):
+        return [str(item) for item in value if str(item).strip()]
+    if isinstance(value, str) and value.strip():
+        try:
+            parsed = ast.literal_eval(value)
+        except (ValueError, SyntaxError):
+            return [value.strip()]
+        if isinstance(parsed, (list, tuple, set)):
+            return [str(item) for item in parsed if str(item).strip()]
+        return [value.strip()]
+    return []
+
+
+def _bind_advice_gate(candidate: dict[str, Any]) -> dict[str, Any]:
+    """Attach the conservative advice contract to every published candidate.
+
+    Research cards remain useful when a candidate is visible, but the Advice
+    Gate must fail closed until a valid point-in-time backtest release,
+    freshness, cross-check and complete candidate evidence are all present.
+    """
+    completeness = candidate.get("data_completeness")
+    complete = completeness in {True, "complete", "full", 100}
+    stale = candidate.get("quote_delayed") is True or str(candidate.get("freshness") or "").lower() in {
+        "stale", "unavailable", "unknown", "recent_close",
+    }
+    gate = evaluate_advice_gate({
+        "data_quality_ok": complete and candidate.get("data_quality_score", 100) not in {0, None},
+        "quote_stale": stale,
+        "crosscheck_ok": candidate.get("cross_checked") is True or candidate.get("crosscheck_status") == "confirmed",
+        "backtest_release": candidate.get("backtest_release"),
+        "candidate_data_gap": bool(candidate.get("verification_gaps") or candidate.get("data_gap")),
+        "policy_valid": bool(candidate.get("policy_version")),
+        "general_research": True,
+    })
+    display_candidate = dict(candidate)
+    display_candidate["passed_conditions"] = _as_condition_list(
+        candidate.get("passed_conditions") or candidate.get("conditions_matched")
+    )
+    display_candidate["failed_conditions"] = _as_condition_list(
+        candidate.get("failed_conditions") or candidate.get("verification_gaps")
+    )
+    display_candidate["signal_date"] = candidate.get("signal_date") or candidate.get("as_of")
+    card = build_explainability_card(display_candidate, gate)
+    candidate["advice_gate"] = gate
+    candidate["explainability"] = card
+    candidate["advice_allowed"] = bool(gate.get("allowed"))
+    return candidate
 
 
 def _structure_score(value: Any) -> int:
@@ -266,6 +318,7 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
         })
         candidates.extend(rows)
     counts = Counter(f"{item['market']}:{item['strategy']}" for item in candidates)
+    candidates = [_bind_advice_gate(candidate) for candidate in candidates]
     return {
         "schema_version": "2.0",
         "status": "跨市場研究摘要" if candidates else "目前沒有可整合的研究候選",
