@@ -1,6 +1,24 @@
 import pandas as pd
 
-from src.run_value_quality_scan import load_upstream_candidates
+from src.run_value_quality_scan import candidate_state_for_scan, load_upstream_candidates
+
+
+def test_candidate_state_keeps_completed_rows_visible_during_history_build():
+    assert candidate_state_for_scan(
+        visible_count=5, scan_state="building", history_complete=False
+    ) == "available_from_completed_records"
+
+
+def test_candidate_state_distinguishes_empty_build_from_data_gap():
+    assert candidate_state_for_scan(
+        visible_count=0, scan_state="building", history_complete=False
+    ) == "building"
+    assert candidate_state_for_scan(
+        visible_count=0, scan_state="complete", history_complete=True
+    ) == "no_candidates"
+    assert candidate_state_for_scan(
+        visible_count=0, scan_state="failed", history_complete=False
+    ) == "data_gap"
 
 
 def test_value_scan_collects_unique_upstream_candidates_and_taiwan_symbols(tmp_path):

@@ -28,6 +28,24 @@ from src.value_universe import (
 )
 
 
+def candidate_state_for_scan(
+    *, visible_count: int, scan_state: str, history_complete: bool = True
+) -> str:
+    """Return a truthful candidate state for the scan summary.
+
+    ``building`` is not a failure when completed records already produced
+    visible rows. Conversely, an empty in-progress scan must not be called
+    ``no_candidates`` because the universe has not been fully evaluated.
+    """
+    if visible_count:
+        return "available" if scan_state == "complete" and history_complete else "available_from_completed_records"
+    if scan_state == "complete" and history_complete:
+        return "no_candidates"
+    if scan_state in {"building", "partial"}:
+        return "building"
+    return "data_gap"
+
+
 def load_upstream_candidates(market: str, data_dir: Path, universe_file: str | None) -> list[dict[str, str]]:
     """Legacy compatibility helper; the production value scan no longer calls it."""
     symbols = {}
@@ -190,10 +208,10 @@ def main() -> None:
         scan_state = "partial"
     else:
         scan_state = "failed"
-    candidate_state = (
-        "available" if rows else
-        "data_gap" if scan_state in {"partial", "failed"} else
-        "no_candidates"
+    candidate_state = candidate_state_for_scan(
+        visible_count=len(rows),
+        scan_state=scan_state,
+        history_complete=history_complete,
     )
     summary = {
         "requested": len(candidates),
@@ -240,7 +258,11 @@ def main() -> None:
         summary["history_failure_count"] = len(history_errors)
         if len(history) < len(candidates):
             summary["scan_state"] = "building"
-            summary["candidate_state"] = "data_gap"
+            summary["candidate_state"] = candidate_state_for_scan(
+                visible_count=len(rows),
+                scan_state="building",
+                history_complete=False,
+            )
             summary["status"] = "建檔中"
             summary["notice"] = (
                 f"璞玉價值歷史資料建檔中：已核對 {len(history)}／{len(candidates)} 檔；"
