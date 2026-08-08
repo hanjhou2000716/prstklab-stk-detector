@@ -55,7 +55,7 @@ def test_source_health_is_a_collapsible_card_with_a_warming_state():
     assert 'source.status === "warming" ? "建檔中"' in app
     assert ".source-status.warming" in styles
     assert 'aria-labelledby="source-health-title" open' not in page
-    assert 'const missing = health.sources.filter((source) => ["partial", "failed", "data_gap"].includes(source.status)).length;' in app
+    assert 'const missingClasses = new Set(["critical_gap", "configuration_required", "optional_degraded"]);' in app
     assert 'summary.textContent = `${missing} 個來源有資料缺口`;' in app
     assert app.count("if (card) card.open = false;") == 2
 
@@ -143,6 +143,9 @@ def test_source_health_distinguishes_empty_scan_from_failure_and_exposes_slo_met
     assert "health.observability || health.slo" in app
     assert "source.consecutive_failures" in app
     assert "source.crosscheck_rate" in app
+    assert "critical_gap" in app
+    assert "degraded_with_fallback" in app
+    assert "健康分類" in app
 
 
 def test_research_candidates_have_optional_explainability_without_advice_language():
