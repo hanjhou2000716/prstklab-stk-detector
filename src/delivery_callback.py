@@ -31,6 +31,7 @@ def build_payload() -> dict[str, object]:
         "delivered_count": int(os.environ.get("DELIVERED_COUNT", "0") or 0),
         "failed_count": int(os.environ.get("FAILED_COUNT", "0") or 0),
         "failed_recipient_hashes": hashes,
+        "renderer_error_type": os.environ.get("RENDERER_ERROR_TYPE", "").strip() or None,
         "reported_at": datetime.now(UTC).isoformat(),
     }
 

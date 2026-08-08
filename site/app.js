@@ -725,17 +725,61 @@ const render = (snapshot) => {
 // The manifest is the release boundary.  Fetching an artifact directly could
 // otherwise combine a new market file with an older research/event file when
 // GitHub Pages or Telegram's WebView serves different cache generations.
-const cacheBust = Date.now();
-const fetchJson = (url) => fetch(`${url}${url.includes("?") ? "&" : "?"}v=${cacheBust}`, {
+const cacheBust = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+const fetchJson = (url, attempt = 0) => fetch(`${url}${url.includes("?") ? "&" : "?"}v=${cacheBust()}`, {
   cache: "no-store",
   headers: { "Cache-Control": "no-cache" },
-}).then((response) => response.ok ? response.json() : Promise.reject(new Error(`artifact unavailable: ${url}`)));
+}).then((response) => {
+  if (response.ok) return response.json();
+  if (attempt < 2) return sleep(250 * (attempt + 1)).then(() => fetchJson(url, attempt + 1));
+  return Promise.reject(new Error(`artifact unavailable: ${url} (HTTP ${response.status})`));
+});
 
 const sha256Hex = async (text) => {
   if (!window.crypto?.subtle) throw new Error("integrity verification unavailable");
   const bytes = new TextEncoder().encode(text);
   const digest = await window.crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+};
+
+const LAST_GOOD_RELEASE_KEY = "prstk.lastGoodRelease.v1";
+
+const setReleaseHealth = (message, kind = "degraded") => {
+  const node = document.getElementById("release-health");
+  if (!node) return;
+  node.hidden = !message;
+  node.textContent = message || "";
+  node.dataset.state = kind;
+};
+
+const saveLastGoodRelease = (manifest, artifactTexts) => {
+  try {
+    localStorage.setItem(LAST_GOOD_RELEASE_KEY, JSON.stringify({
+      manifest,
+      artifactTexts,
+      saved_at: new Date().toISOString(),
+    }));
+  } catch (_error) {
+    // Quota/private mode is non-fatal; the current network release is still usable.
+  }
+};
+
+const readLastGoodRelease = async () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LAST_GOOD_RELEASE_KEY) || "null");
+    if (!saved?.manifest || saved.manifest.status !== "ready" || !saved.manifest.release_id) return null;
+    if (!saved.artifactTexts?.["market.json"]) return null;
+    for (const [name, expectedHash] of Object.entries(saved.manifest.artifact_hashes || {})) {
+      const text = saved.artifactTexts[name];
+      if (typeof text !== "string" || await sha256Hex(text) !== String(expectedHash)) return null;
+    }
+    const snapshot = JSON.parse(saved.artifactTexts["market.json"]);
+    if (String(snapshot.snapshot_id || "") !== String(saved.manifest.market_snapshot_id || "")) return null;
+    return { ...saved, snapshot };
+  } catch (_error) {
+    return null;
+  }
 };
 
 const loadPublishedRelease = async () => {
@@ -751,7 +795,7 @@ const loadPublishedRelease = async () => {
     if (!relativePath || relativePath.startsWith("/") || relativePath.includes("..")) {
       throw new Error(`invalid artifact path: ${name}`);
     }
-    const response = await fetch(`data/${relativePath.replace(/^data\//, "")}?v=${cacheBust}`, {
+    const response = await fetch(`data/${relativePath.replace(/^data\//, "")}?v=${cacheBust()}`, {
       cache: "no-store",
       headers: { "Cache-Control": "no-cache" },
     });
@@ -767,12 +811,28 @@ const loadPublishedRelease = async () => {
     throw new Error("market snapshot does not match release");
   }
   window.releaseManifest = manifest;
+  saveLastGoodRelease(manifest, artifactTexts);
   return snapshot;
 };
 
 loadPublishedRelease()
-  .then(render)
-  .catch(() => {
-    setText("data-status", "發布資料不完整");
-    setText("market-focus", "發布資料不完整，等待下一個通過驗證的公開版本。");
+  .then((snapshot) => {
+    render(snapshot);
+    setReleaseHealth(`資料正常｜release ${window.releaseManifest.release_id}`, "ready");
+  })
+  .catch(async (error) => {
+    const saved = await readLastGoodRelease();
+    if (saved) {
+      window.releaseManifest = saved.manifest;
+      render(saved.snapshot);
+      const savedAtValue = saved.manifest.created_at || saved.saved_at;
+      const savedAt = savedAtValue ? new Date(savedAtValue).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "未知";
+      setText("data-status", "資料降級");
+      setText("market-focus", "目前沿用上一個成功版本；本輪資料不可觸發高風險快訊。");
+      setReleaseHealth(`資料降級｜最後成功 ${savedAt}｜來源失敗：${error.message}`, "degraded");
+      return;
+    }
+    setText("data-status", "來源失敗");
+    setText("market-focus", "本輪資料無法取得，暫不判斷市場風險。");
+    setReleaseHealth(`發布資料不完整｜${error.message}｜目前不可觸發高風險快訊`, "error");
   });

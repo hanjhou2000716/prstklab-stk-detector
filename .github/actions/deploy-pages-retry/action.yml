@@ -21,6 +21,7 @@ outputs:
     value: ${{ steps.select-url.outputs.reason }}
 runs:
   using: composite
+  # actions/deploy-pages@v4 (pinned SHA below)
   steps:
     - name: Deploy Pages (first attempt)
       id: first

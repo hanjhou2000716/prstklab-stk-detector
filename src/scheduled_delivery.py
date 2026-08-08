@@ -7,7 +7,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from src.alert_card_renderer import render_alert_card
+from src.alert_card_renderer import RendererError, render_alert_card
 from src.briefing_cards import build_briefing_snapshot
 from src.config import get_settings
 from src.event_ledger import EventLedger
@@ -104,18 +104,32 @@ def send(
     }
     # The release has already passed its public gate.  The card is generated
     # locally after that check and is never committed to the public snapshot.
-    with tempfile.TemporaryDirectory(prefix="prstk-alert-card-") as temporary:
-        photo_path = render_alert_card(card_payload, Path(temporary) / "alert-card.png")
-        receipts = send_photo_briefs(
-            token=settings.telegram_bot_token or "",
-            chat_ids=settings.telegram_chat_ids,
-            caption=caption,
-            photo_path=photo_path,
-            mini_app_url=settings.dashboard_url,
-            alert_id=alert_id,
-            release_id=gate.release_id,
-            snapshot_id=snapshot_id,
-        )
+    try:
+        with tempfile.TemporaryDirectory(prefix="prstk-alert-card-") as temporary:
+            photo_path = render_alert_card(card_payload, Path(temporary) / "alert-card.png")
+            receipts = send_photo_briefs(
+                token=settings.telegram_bot_token or "",
+                chat_ids=settings.telegram_chat_ids,
+                caption=caption,
+                photo_path=photo_path,
+                mini_app_url=settings.dashboard_url,
+                alert_id=alert_id,
+                release_id=gate.release_id,
+                snapshot_id=snapshot_id,
+            )
+    except RendererError as exc:
+        _write_output({
+            "sent": "false",
+            "delivery_status": "blocked",
+            "reason": "renderer_error",
+            "renderer_error_type": exc.error_type,
+            "release_id": gate.release_id,
+            "snapshot_id": snapshot_id,
+            "alert_id": alert_id,
+            "trace_id": trace_id,
+        })
+        print(f"Renderer blocked Telegram delivery: {exc.error_type}")
+        return
     delivered = sum(receipt.status == "delivered" for receipt in receipts)
     failed = sum(receipt.status != "delivered" for receipt in receipts)
     _write_output({

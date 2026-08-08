@@ -71,6 +71,8 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: pip install -r requirements.txt
+      - name: Install Chromium for the formal card renderer
+        run: python -m playwright install --with-deps chromium
       - name: Resolve scheduled slot
         id: window
         run: |
@@ -128,7 +130,7 @@ jobs:
         id: send_brief
         run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --send-only --snapshot "$SNAPSHOT_PATH" --manifest "$MANIFEST_PATH" --public-url "${{ steps.deployment.outputs.page_url }}"
       - name: Persist scheduled-brief delivery receipt to Railway
-        if: always() && steps.send_brief.outputs.sent == 'true'
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome == 'success'
         continue-on-error: true
         env:
           TRACE_ID: ${{ steps.send_brief.outputs.trace_id }}
@@ -137,6 +139,7 @@ jobs:
           DELIVERY_STATUS: ${{ steps.send_brief.outputs.delivery_status }}
           DELIVERED_COUNT: ${{ steps.send_brief.outputs.delivered_count }}
           FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count }}
+          RENDERER_ERROR_TYPE: ${{ steps.send_brief.outputs.renderer_error_type }}
           FAILED_RECIPIENT_HASHES: ""
         run: python -m src.delivery_callback
       - name: Save event delivery lock

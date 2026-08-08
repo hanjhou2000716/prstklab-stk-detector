@@ -30,6 +30,7 @@ jobs:
           python -m pip install -r requirements.txt pytest
           python -m pip install uv
           uv sync --locked --all-groups
+          uv run playwright install --with-deps chromium
       - name: Reset coverage data
         run: uv run coverage erase
       - name: Run full unit tests and publish coverage report
