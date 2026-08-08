@@ -173,6 +173,12 @@ def test_mini_app_hides_empty_event_trace_and_has_a_legacy_health_fallback():
     assert "renderSourceHealth(snapshot.source_health, snapshot)" in app
 
 
+def test_source_health_candidate_note_explains_building_and_data_gap_states():
+    app = (Path(__file__).resolve().parents[1] / "site" / "app.js").read_text(encoding="utf-8")
+    assert "歷史核對中｜已完成" in app
+    assert "資料缺口阻擋候選判定" in app
+
+
 def test_value_drawer_hides_observations_when_five_formal_candidates_exist():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
 

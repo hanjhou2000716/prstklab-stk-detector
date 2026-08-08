@@ -446,8 +446,12 @@ const renderSourceHealth = (health, snapshot = {}) => {
     }
     const candidateNote = source.key === "research" && source.candidate_state
       ? source.candidate_state === "no_candidates"
-        ? "本輪無符合門檻候選"
-        : `候選 ${source.candidate_count ?? 0} 檔｜正式 ${source.formal_candidates ?? 0} 檔｜觀察 ${source.observation_candidates ?? 0} 檔`
+        ? "本輪完成掃描，無符合門檻候選"
+        : source.candidate_state === "building"
+          ? `歷史核對中｜已完成 ${source.candidate_count ?? 0} 檔候選評估`
+          : source.candidate_state === "data_gap"
+            ? "資料缺口阻擋候選判定，等待來源修復"
+            : `候選 ${source.candidate_count ?? 0} 檔｜正式 ${source.formal_candidates ?? 0} 檔｜觀察 ${source.observation_candidates ?? 0} 檔`
       : "";
     const sourceCount = Array.isArray(source.source_urls) ? source.source_urls.length : 0;
     const freshness = [];

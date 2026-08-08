@@ -59,7 +59,59 @@ def _attach_detail_summary(target: dict[str, Any], details: list[dict[str, Any]]
 def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
     """Present research warming, empty results and failures as different states."""
     sources = [item for item in report.get("sources", []) if isinstance(item, dict)]
-    failed = [item for item in sources if str(item.get("status")) in {"資料暫時無法取得", "掃描失敗"}]
+
+    def contract_fields() -> dict[str, Any]:
+        diagnostics = [
+            item.get("selection_diagnostics")
+            for item in sources
+            if isinstance(item.get("selection_diagnostics"), dict)
+        ]
+        formal = sum(int(item.get("formal_candidates") or 0) for item in sources)
+        observation = sum(int(item.get("observation_candidates") or 0) for item in sources)
+        candidate_count = sum(int(item.get("candidates") or 0) for item in sources)
+        states = {str(item.get("candidate_state") or "") for item in sources}
+        scan_states = {str(item.get("scan_state") or "") for item in sources}
+        if "available_from_completed_records" in states:
+            candidate_state = "available_from_completed_records"
+        elif "available" in states:
+            candidate_state = "available"
+        elif "building" in states or "building" in scan_states:
+            candidate_state = "building"
+        elif "data_gap" in states or "failed" in states or "failed" in scan_states:
+            candidate_state = "data_gap"
+        elif "no_candidates" in states:
+            candidate_state = "no_candidates"
+        else:
+            candidate_state = "available" if candidate_count else "no_candidates"
+        scan_state = (
+            "building" if "building" in scan_states or candidate_state == "building"
+            else "failed" if "failed" in scan_states or candidate_state == "data_gap"
+            else "complete" if scan_states and scan_states <= {"complete"}
+            else "partial" if scan_states else None
+        )
+        return {
+            "candidate_state": candidate_state,
+            "scan_state": scan_state,
+            "candidate_count": candidate_count,
+            "formal_candidates": formal,
+            "observation_candidates": observation,
+            "history_pending_count": sum(int(item.get("history_pending") or 0) for item in sources),
+            "source_failure_count": sum(
+                int(item.get("source_failure_count") or item.get("failed") or 0)
+                for item in sources
+            ),
+            "incomplete_record_count": sum(
+                int(item.get("incomplete_record_count") or 0) for item in sources
+            ),
+            "selection_diagnostics": diagnostics,
+        }
+
+    contract = contract_fields()
+    failed = [
+        item for item in sources
+        if str(item.get("status") or "").casefold() in {"failed", "error", "data_gap"}
+        or str(item.get("status")) in {"資料暫時無法取得", "掃描失敗"}
+    ]
     partial = []
     for item in sources:
         if item in failed:
@@ -70,22 +122,26 @@ def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
             failed_count = 0
         if failed_count > 0:
             partial.append(item)
-    warming = [item for item in sources if str(item.get("status")) == "建檔中"]
+    warming = [
+        item for item in sources
+        if str(item.get("status") or "").casefold() in {"warming", "building"}
+        or str(item.get("status")) == "建檔中"
+    ]
     if failed:
         issues = [f"{item.get('market', '')} {item.get('strategy', '')} 掃描失敗".strip() for item in failed]
-        return {"key": "research", "label": "量化研究", "status": "partial", "checked_at": checked_at, "issues": issues[:2]}
+        return {"key": "research", "label": "量化研究", "status": "partial", "checked_at": checked_at, "issues": issues[:2], **contract}
     if partial:
         issues = [f"{item.get('market', '')} {item.get('strategy', '')} 部分資料缺漏".strip() for item in partial]
-        return {"key": "research", "label": "量化研究", "status": "partial", "checked_at": checked_at, "issues": issues[:2]}
+        return {"key": "research", "label": "量化研究", "status": "partial", "checked_at": checked_at, "issues": issues[:2], **contract}
     if warming:
         details = []
         for item in warming:
             cached, expected = item.get("history_cached"), item.get("history_expected")
             progress = f"：已核對 {cached}／{expected} 檔" if cached is not None and expected is not None else ""
             details.append(f"{item.get('market', '')} 璞玉價值建檔中{progress}".strip())
-        return {"key": "research", "label": "量化研究", "status": "warming", "checked_at": checked_at, "issues": details[:2]}
+        return {"key": "research", "label": "量化研究", "status": "warming", "checked_at": checked_at, "issues": details[:2], **contract}
     if (report.get("health") or {}).get("is_expired"):
-        return {"key": "research", "label": "量化研究", "status": "partial", "checked_at": checked_at, "issues": ["研究資料已逾時，候選清單已隱藏"]}
+        return {"key": "research", "label": "量化研究", "status": "partial", "checked_at": checked_at, "issues": ["研究資料已逾時，候選清單已隱藏"], **contract}
     diagnostics = [
         item.get("selection_diagnostics")
         for item in sources
@@ -94,7 +150,36 @@ def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
     formal = sum(int(item.get("formal_candidates") or 0) for item in sources)
     observation = sum(int(item.get("observation_candidates") or 0) for item in sources)
     candidate_count = sum(int(item.get("candidates") or 0) for item in sources)
-    candidate_state = "available" if candidate_count else "no_candidates"
+    states = {str(item.get("candidate_state") or "") for item in sources}
+    scan_states = {str(item.get("scan_state") or "") for item in sources}
+    # Preserve the producer's distinction between a completed empty scan,
+    # an incomplete history build, and a source/parser failure.  Falling back
+    # to the legacy candidate count is kept only for old snapshots.
+    if "available_from_completed_records" in states:
+        candidate_state = "available_from_completed_records"
+    elif "available" in states:
+        candidate_state = "available"
+    elif "building" in states or "building" in scan_states:
+        candidate_state = "building"
+    elif "data_gap" in states or "failed" in states or "failed" in scan_states:
+        candidate_state = "data_gap"
+    elif "no_candidates" in states:
+        candidate_state = "no_candidates"
+    else:
+        candidate_state = "available" if candidate_count else "no_candidates"
+    scan_state = (
+        "building" if "building" in scan_states or candidate_state == "building"
+        else "failed" if "failed" in scan_states or candidate_state == "data_gap"
+        else "complete" if scan_states and scan_states <= {"complete"}
+        else "partial" if scan_states
+        else None
+    )
+    history_pending = sum(int(item.get("history_pending") or 0) for item in sources)
+    source_failures = sum(
+        int(item.get("source_failure_count") or item.get("failed") or 0)
+        for item in sources
+    )
+    incomplete_records = sum(int(item.get("incomplete_record_count") or 0) for item in sources)
     return {
         "key": "research",
         "label": "量化研究",
@@ -102,9 +187,13 @@ def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
         "checked_at": checked_at,
         "issues": [],
         "candidate_state": candidate_state,
+        "scan_state": scan_state,
         "candidate_count": candidate_count,
         "formal_candidates": formal,
         "observation_candidates": observation,
+        "history_pending_count": history_pending,
+        "source_failure_count": source_failures,
+        "incomplete_record_count": incomplete_records,
         "selection_diagnostics": diagnostics,
     }
 

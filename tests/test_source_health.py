@@ -74,6 +74,43 @@ def test_completed_empty_research_is_healthy_but_explicitly_reports_no_candidate
     assert research["candidate_count"] == 0
 
 
+def test_research_health_preserves_incremental_candidates_and_building_state():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": [{
+            "market": "taiwan", "strategy": "value", "status": "建檔中",
+            "scan_state": "building", "candidate_state": "available_from_completed_records",
+            "candidates": 5, "formal_candidates": 5, "observation_candidates": 0,
+            "history_pending": 21, "source_failure_count": 0,
+        }]}, checked_at=NOW,
+    )
+    research = next(item for item in health["sources"] if item["key"] == "research")
+    assert research["status"] == "warming"
+    assert research["candidate_state"] == "available_from_completed_records"
+    assert research["scan_state"] == "building"
+    assert research["candidate_count"] == 5
+    assert research["history_pending_count"] == 21
+
+
+def test_research_health_keeps_empty_build_distinct_from_data_gap():
+    building = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": [{
+            "market": "us", "strategy": "value", "status": "building",
+            "scan_state": "building", "candidate_state": "building", "candidates": 0,
+        }]}, checked_at=NOW,
+    )
+    research = next(item for item in building["sources"] if item["key"] == "research")
+    assert research["candidate_state"] == "building"
+    failed = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": [{
+            "market": "us", "strategy": "value", "status": "failed",
+            "scan_state": "failed", "candidate_state": "data_gap", "candidates": 0,
+        }]}, checked_at=NOW,
+    )
+    failed_research = next(item for item in failed["sources"] if item["key"] == "research")
+    assert failed_research["candidate_state"] == "data_gap"
+    assert failed_research["status"] == "partial"
+
+
 def test_per_source_health_is_exposed_as_a_gap_without_hiding_other_sources():
     health = build_source_health(
         errors=[], events={"is_major": False}, research_report={"sources": []}, checked_at=NOW,
