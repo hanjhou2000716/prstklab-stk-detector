@@ -33,10 +33,10 @@ jobs:
       - name: Reset coverage data
         run: uv run coverage erase
       - name: Run full unit tests and publish coverage report
-        # The full repository report remains visible so legacy coverage debt is
-        # measurable, but this release gate is enforced on the newly integrated
-        # contract, lifecycle, renderer, delivery and release modules below.
-        run: uv run pytest -q --cov=src --cov-report=term-missing --cov-report=xml
+        # The full repository report remains visible.  The 73% floor is the
+        # measured legacy baseline; the newly integrated release/delivery code
+        # is held to the strict 80% gate below until the legacy debt is retired.
+        run: uv run pytest -q --cov=src --cov-report=term-missing --cov-report=xml --cov-fail-under=73
       - name: Enforce core release and delivery coverage gate
         run: >-
           uv run pytest -q
