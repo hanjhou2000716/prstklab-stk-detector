@@ -72,9 +72,9 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
         )})
     sources = [
         {key: source.get(key) for key in (
-            "market", "strategy", "status", "scan_state", "candidate_state", "candidates", "visible_candidates", "candidates_definition", "formal_candidates", "observation_candidates", "requested", "requested_records", "data_complete", "complete_records", "failed", "failed_records",
+            "market", "strategy", "status", "scan_state", "candidate_state", "candidates", "visible_candidates", "visible_candidate_count", "candidates_definition", "formal_candidates", "formal_candidate_count", "observation_candidates", "observation_candidate_count", "requested", "requested_records", "data_complete", "complete_records", "failed", "failed_records",
             "scan_state", "candidate_state", "complete_records", "data_gap_counts", "history_cached", "history_expected", "history_progress_pct",
-            "history_pending", "history_failure_count", "blocking_reason", "notice", "error_details",
+            "history_pending", "history_pending_count", "history_failure_count", "source_failure_count", "incomplete_record_count", "blocking_reason", "notice", "error_details",
             "partial_candidates_allowed",
             "selection_diagnostics",
         )}

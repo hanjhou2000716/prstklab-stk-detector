@@ -1,8 +1,8 @@
 {
-  "release_id": "release-44fa40173cfcb0c0",
-  "created_at": "2026-08-04T12:13:11.022838+00:00",
+  "release_id": "release-fbfaeff19f2dbfaa",
+  "created_at": "2026-08-08T13:40:40.688530+00:00",
   "market_snapshot_id": "5dc6f2a4844682e3",
-  "research_snapshot_id": "research-3343c4f7248f100d",
+  "research_snapshot_id": "research-deaa708d3df48b2a",
   "event_snapshot_id": "event-51bbd25cf6f5d686",
   "policy_version": "2026.08",
   "schema_versions": {
@@ -11,32 +11,41 @@
     "events": "1"
   },
   "artifact_hashes": {
-    "market.json": "4f51226dea39f119957738f06a267d086248b23f766a820afba852d716ccae80",
-    "research-report.json": "c3a88ae97a3d7950f92ddcee747f6f6c44c35896b3ea291de7c06888401c5d80",
-    "event-ledger.json": "8e8e4a707098e24ccc54682392f82a9bb16f4fafce606dd388b40b14ee19c983"
+    "market.json": "51732a8ee55fc753d188091cbc9befb53bb26f5a4bfbcc3c970650c296c1d5a6",
+    "research-report.json": "f86930a9615dc83db3d87f6dbf200ed36dd8f7786e4a3a1590bd0f376efdf253",
+    "event-ledger.json": "8ab0c519c4467f1ca604dbfacaafc06f4e08e84ef7b205734285bd41c6fa9abe"
   },
   "artifact_paths": {
     "market.json": "data/market.json",
     "research-report.json": "data/research-report.json",
     "event-ledger.json": "data/event-ledger.json"
   },
-  "status": "invalid",
-  "validation_errors": [
-    "indices[1]: Yahoo source_label conflicts with source_domain=tpex.org.tw",
-    "indices[1]: source_label is not represented in quote_source",
-    "indices[1]: technical context predates quote without technical_context_stale=true",
-    "quotes[3]: technical context predates quote without technical_context_stale=true",
-    "quotes[4]: technical context predates quote without technical_context_stale=true",
-    "quotes[5]: technical context predates quote without technical_context_stale=true",
-    "quotes[6]: technical context predates quote without technical_context_stale=true",
-    "release: research snapshot_id does not match manifest",
-    "schema: $.sources[0].candidate_state None is not one of ['available', 'no_candidates', 'building', 'data_gap', 'failed']",
-    "schema: $.sources[1].candidate_state None is not one of ['available', 'no_candidates', 'building', 'data_gap', 'failed']",
-    "schema: $.sources[2].candidate_state None is not one of ['available', 'no_candidates', 'building', 'data_gap', 'failed']",
-    "schema: $.sources[3].candidate_state None is not one of ['available', 'no_candidates', 'building', 'data_gap', 'failed']",
-    "schema: $.sources[4].candidate_state None is not one of ['available', 'no_candidates', 'building', 'data_gap', 'failed']",
-    "schema: $.sources[5].candidate_state None is not one of ['available', 'no_candidates', 'building', 'data_gap', 'failed']",
-    "schema: $.sources[6].data_gap_counts {'universe': 0, 'fundamentals': 0, 'quotes': 0, 'history': 0} is not of type 'integer', 'null'",
-    "schema: $.sources[7].data_gap_counts {'universe': 0, 'fundamentals': 0, 'quotes': 0, 'history': 0} is not of type 'integer', 'null'"
-  ]
+  "normalization_notes": [
+    "market: indices[1].source_label=TPEx",
+    "market: indices[1].technical_context_stale=true",
+    "market: quotes[3].technical_context_stale=true",
+    "market: quotes[4].technical_context_stale=true",
+    "market: quotes[5].technical_context_stale=true",
+    "market: quotes[6].technical_context_stale=true",
+    "research: sources[0].visible_candidates=legacy candidates",
+    "research: sources[0].candidate_state=available",
+    "research: sources[1].visible_candidates=legacy candidates",
+    "research: sources[1].candidate_state=available",
+    "research: sources[2].visible_candidates=legacy candidates",
+    "research: sources[2].candidate_state=available",
+    "research: sources[3].visible_candidates=legacy candidates",
+    "research: sources[3].candidate_state=available",
+    "research: sources[4].visible_candidates=legacy candidates",
+    "research: sources[4].candidate_state=available",
+    "research: sources[5].visible_candidates=legacy candidates",
+    "research: sources[5].candidate_state=available",
+    "research: sources[6].visible_candidates=legacy candidates",
+    "research: sources[6].data_gap_counts=integer",
+    "research: sources[7].visible_candidates=legacy candidates",
+    "research: sources[7].data_gap_counts=integer",
+    "research: snapshot_id=deterministic",
+    "events: snapshot_id=deterministic"
+  ],
+  "status": "ready",
+  "validation_errors": []
 }
