@@ -1,6 +1,15 @@
 # Telegram photo delivery
 
-`send_photo_brief` sends one `sendPhoto` message: a caption of at most 40
-characters, a fixed card, and an inline Mini App deep link. The returned
-receipt contains only a recipient hash plus alert/release/snapshot IDs. Tests
-mock Telegram and must never use production chat IDs.
+`scheduled_delivery --send-only` now renders the fixed card only after the
+public release gate passes, then calls `send_photo_briefs`. Each recipient gets
+one `sendPhoto` message containing a caption of at most 40 characters, the
+fixed card, and an inline Mini App deep link targeting the same alert/release.
+
+`send_photo_briefs` isolates recipients and returns one receipt per chat. A
+blocked chat, a bounded 429 retry, or a transport failure is recorded without
+stopping delivery to the remaining recipients. Receipts contain only a
+recipient hash plus alert/release/snapshot IDs. Tests mock Telegram and must
+never use production chat IDs.
+
+The card is temporary runtime output and is not written to `data-release`; the
+snapshot and manifest remain the source of truth for Mini App rendering.

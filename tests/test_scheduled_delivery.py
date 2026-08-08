@@ -14,7 +14,7 @@ def test_scheduled_delivery_blocks_when_manifest_is_not_ready(tmp_path, monkeypa
     def fail_if_called(**_kwargs):
         raise AssertionError("Telegram must not be called when release gate fails")
 
-    monkeypatch.setattr(scheduled_delivery, "send_briefs", fail_if_called)
+    monkeypatch.setattr(scheduled_delivery, "send_photo_briefs", fail_if_called)
     scheduled_delivery.send(snapshot_path, "morning", manifest_path)
     text = output.read_text(encoding="utf-8")
     assert "sent=false" in text

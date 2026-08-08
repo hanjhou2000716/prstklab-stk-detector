@@ -10,3 +10,17 @@ def test_intelligence_pipeline_marks_sync_from_fresh_observation():
     result = build_intelligence_context({"title": "Fed interest rate policy", "source_url": "https://official.test"}, [{"ticker": "NASDAQ", "price": 100, "change_percent": -2}])
     assert "market_impact_graph" in result
     assert "disclaimer" in result
+
+
+def test_intelligence_pipeline_publishes_risk_context_without_unlocking_advice():
+    result = build_intelligence_context(
+        {"title": "Oil supply risk", "source_url": "https://official.test"},
+        [{"ticker": "NASDAQ", "price": 100, "change_percent": -3}],
+        regime_factors={"trend": -1.0, "volatility": -2.0},
+        stress_exposures={"NASDAQ": 1.0},
+        advice_context={"general_research": True},
+    )
+    assert result["market_regime"]["regime"] == "Stress"
+    assert result["stress_scenarios"][0]["non_predictive"] is True
+    assert result["advice_gate"] == "observation_only"
+    assert result["explainability"] is None

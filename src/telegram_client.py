@@ -313,9 +313,44 @@ def send_photo_brief(
     separator = "&" if "?" in mini_app_url else "?"
     target = f"{mini_app_url}{separator}alert={alert_id}&release={release_id}&view=event"
     endpoint = f"https://api.telegram.org/bot{token}/sendPhoto"
-    with path.open("rb") as photo:
-        response = requests.post(endpoint, data={"chat_id": chat_id, "caption": caption, "parse_mode": "HTML", "show_caption_above_media": "true", "reply_markup": json.dumps({"inline_keyboard": [[mini_app_button(target)]]})}, files={"photo": photo}, timeout=30)
     recipient_hash = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]
+    response = None
+    last_error: Exception | None = None
+    for attempt in range(SEND_ATTEMPTS):
+        retry_after = None
+        try:
+            with path.open("rb") as photo:
+                response = requests.post(
+                    endpoint,
+                    data={
+                        "chat_id": chat_id,
+                        "caption": caption,
+                        "parse_mode": "HTML",
+                        "show_caption_above_media": "true",
+                        "reply_markup": json.dumps({"inline_keyboard": [[mini_app_button(target)]]}),
+                    },
+                    files={"photo": photo},
+                    timeout=30,
+                )
+        except requests.RequestException as exc:
+            last_error = exc
+        else:
+            if getattr(response, "status_code", 200) not in RETRYABLE_STATUS_CODES:
+                break
+            last_error = TelegramTransientError(f"HTTP {response.status_code}")
+            if getattr(response, "status_code", 0) == 429:
+                try:
+                    retry_after = int((response.json() or {}).get("parameters", {}).get("retry_after", 0))
+                except (TypeError, ValueError, AttributeError):
+                    retry_after = None
+        if attempt < SEND_ATTEMPTS - 1:
+            sleep(min(60, max(1, retry_after)) if retry_after else 2**attempt)
+
+    if response is None or getattr(response, "status_code", 200) in RETRYABLE_STATUS_CODES:
+        return PhotoDeliveryReceipt(
+            alert_id, release_id, snapshot_id, recipient_hash, "failed",
+            error_class="temporary_transport" if last_error else "temporary_api",
+        )
     try:
         payload = response.json()
     except ValueError:
@@ -325,3 +360,39 @@ def send_photo_brief(
         return PhotoDeliveryReceipt(alert_id, release_id, snapshot_id, recipient_hash, "failed", error_class=error_class)
     result = payload.get("result") or {}
     return PhotoDeliveryReceipt(alert_id, release_id, snapshot_id, recipient_hash, "delivered", message_id=result.get("message_id"))
+
+
+def send_photo_briefs(
+    *, token: str, chat_ids: tuple[str, ...], caption: str, photo_path: str | Path,
+    mini_app_url: str, alert_id: str, release_id: str, snapshot_id: str,
+) -> tuple[PhotoDeliveryReceipt, ...]:
+    """Deliver one identical photo message per recipient without fail-fast.
+
+    Each recipient receives an independent receipt.  A blocked chat, a 429 or
+    a transient transport failure is recorded and cannot prevent delivery to
+    the remaining configured chats.  The function never logs identifiers or
+    Telegram response bodies.
+    """
+    if not chat_ids:
+        raise ValueError("Telegram recipient list is empty")
+    receipts: list[PhotoDeliveryReceipt] = []
+    for chat_id in chat_ids:
+        recipient_hash = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]
+        try:
+            receipt = send_photo_brief(
+                token=token,
+                chat_id=chat_id,
+                caption=caption,
+                photo_path=photo_path,
+                mini_app_url=mini_app_url,
+                alert_id=alert_id,
+                release_id=release_id,
+                snapshot_id=snapshot_id,
+            )
+        except (TelegramError, OSError, requests.RequestException) as exc:
+            receipt = PhotoDeliveryReceipt(
+                alert_id, release_id, snapshot_id, recipient_hash, "failed",
+                error_class=type(exc).__name__.lower(),
+            )
+        receipts.append(receipt)
+    return tuple(receipts)

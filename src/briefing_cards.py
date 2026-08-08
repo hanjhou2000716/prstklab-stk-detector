@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 SLOT_TITLES = {
     "morning": "投資晨報儀表板",
     "pre_open": "台股盤前儀表板",
@@ -260,6 +259,22 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
     observations = _market_observations(all_items, risk, events)
     market_topics, dynamic_markets = _market_topics(all_items, events)
     lead = events[0] if events else observations[0]
+    from src.intelligence_pipeline import build_intelligence_context
+
+    observed_quotes = [*indices, *quotes, *macro_quotes]
+    changes = [float(item["change_percent"]) for item in observed_quotes if item.get("change_percent") is not None]
+    average_change = sum(changes) / len(changes) if changes else None
+    watchlist = [ticker for ticker in ("TAIEX", "NASDAQ", "SOX") if ticker in all_items]
+    public_watchlist = {ticker: round(1 / len(watchlist), 6) for ticker in watchlist} if watchlist else {}
+    intelligence = build_intelligence_context(
+        lead if isinstance(lead, dict) else {"title": "briefing"},
+        observed_quotes,
+        regime_factors={
+            "broad_market": 1 if (average_change or 0) > 0.5 else -1 if (average_change or 0) < -0.5 else 0,
+        },
+        stress_exposures=public_watchlist,
+        advice_context={"general_research": True},
+    )
     return {
         "slot": slot or "live",
         "title": SLOT_TITLES.get(slot or "", "即時市場儀表板"),
@@ -272,5 +287,6 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         "market_topics": market_topics,
         "dynamic_markets": dynamic_markets,
         "observations": observations,
+        "intelligence": intelligence,
         "reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
     }
