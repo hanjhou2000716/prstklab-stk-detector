@@ -47,8 +47,10 @@ jobs:
           # the normal plural broadcast configuration.
           TELEGRAM_CHAT_IDS: ${{ inputs.test_chat_id || secrets.TELEGRAM_CHAT_IDS }}
           DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+          PRSTK_REQUIRE_PLAYWRIGHT: ${{ inputs.photo_test && 'true' || 'false' }}
         run: |
           if [ "${{ inputs.photo_test }}" = "true" ]; then
+            python -m playwright install --with-deps chromium
             python -m src.photo_smoke_test
           elif [ -n "${{ inputs.message }}" ]; then
             python -m src.main --send --message "${{ inputs.message }}"

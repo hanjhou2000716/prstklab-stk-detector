@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import struct
 import tempfile
+import os
 from pathlib import Path
 
 from src.alert_card_renderer import HEIGHT, WIDTH, render_alert_card
@@ -43,20 +44,28 @@ def run() -> int:
         "release_id": RELEASE_ID,
         "snapshot_id": SNAPSHOT_ID,
     }
-    with tempfile.TemporaryDirectory(prefix="prstk-photo-smoke-") as temporary:
-        photo_path = render_alert_card(alert, Path(temporary) / "photo-smoke.png")
-        if _png_dimensions(photo_path) != (WIDTH, HEIGHT):
-            raise RuntimeError("alert card dimensions are not 1080x1350")
-        receipts = send_photo_briefs(
-            token=settings.telegram_bot_token,
-            chat_ids=settings.telegram_chat_ids,
-            caption=CAPTION,
-            photo_path=photo_path,
-            mini_app_url=settings.dashboard_url,
-            alert_id=ALERT_ID,
-            release_id=RELEASE_ID,
-            snapshot_id=SNAPSHOT_ID,
-        )
+    previous_renderer_mode = os.environ.get("PRSTK_REQUIRE_PLAYWRIGHT")
+    os.environ["PRSTK_REQUIRE_PLAYWRIGHT"] = "true"
+    try:
+        with tempfile.TemporaryDirectory(prefix="prstk-photo-smoke-") as temporary:
+            photo_path = render_alert_card(alert, Path(temporary) / "photo-smoke.png")
+            if _png_dimensions(photo_path) != (WIDTH, HEIGHT):
+                raise RuntimeError("alert card dimensions are not 1080x1350")
+            receipts = send_photo_briefs(
+                token=settings.telegram_bot_token,
+                chat_ids=settings.telegram_chat_ids,
+                caption=CAPTION,
+                photo_path=photo_path,
+                mini_app_url=settings.dashboard_url,
+                alert_id=ALERT_ID,
+                release_id=RELEASE_ID,
+                snapshot_id=SNAPSHOT_ID,
+            )
+    finally:
+        if previous_renderer_mode is None:
+            os.environ.pop("PRSTK_REQUIRE_PLAYWRIGHT", None)
+        else:
+            os.environ["PRSTK_REQUIRE_PLAYWRIGHT"] = previous_renderer_mode
 
     delivered = sum(receipt.status == "delivered" for receipt in receipts)
     failed = len(receipts) - delivered
