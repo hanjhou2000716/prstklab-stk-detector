@@ -1,5 +1,10 @@
 # PRStK production integration matrix
 
+Last audited against the current stacked release branches: 2026-08-08.
+`production` means the module is called by a production workflow, contributes
+to a validated artifact, has a tested consumer, and is fail-closed when its
+evidence is unavailable. A file existing by itself is never sufficient.
+
 This inventory distinguishes code that exists from code that is actually
 called by the release pipeline and displayed or delivered to a user.  A
 module is `production` only when it has a producer, an artifact contract, a
@@ -17,15 +22,15 @@ pipeline call and a tested consumer.
 | Macro surprise | `src/surprise_engine.py` | yes | partial | partial | partial | no | partially_integrated |
 | Corporate events | `src/corporate_event_contract.py`, `src/official_events.py` | yes | yes | yes | yes | observe-only/event | production |
 | Market impact graph | `src/market_impact_graph.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing/event | conditional event | production |
-| Alert budget/lifecycle | `src/alert_budget.py`, `src/event_alerts.py` | yes | partial | partial | partial | partial | partially_integrated |
+| Alert budget/lifecycle | `src/alert_budget.py`, `src/alert_dispatch.py`, `src/event_alerts.py` | yes | yes | yes | yes | yes | production |
 | Market regime/contagion | `src/market_regime.py`, `src/cross_asset_risk.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing | briefing context | production |
 | Stress scenarios | `src/stress_scenarios.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing | context only | production |
 | Portfolio risk | `src/portfolio_risk.py` | yes | no | no | no | no | unused |
 | Strategy scans | `src/run_*scan.py`, `src/research_report.py` | yes | yes | yes | yes | briefing/research | production |
 | Strategy registry/explainability | `src/strategy_registry.py`, `src/advice_gate.py` | yes | partial | partial | partial | no | partially_integrated |
 | Backtest/cost model | `src/four_strategy_walk_forward.py`, `src/backtest_costs.py` | yes | scheduled | artifact | no | no | partially_integrated |
-| Release manifest/gate | `src/release_manifest.py`, `src/release_gate.py` | yes | yes | yes | loader gate | send gate | production |
-| Telegram delivery | `src/telegram_client.py`, `src/scheduled_delivery.py` | yes | yes | receipt | no | yes | production |
+| Release manifest/gate | `src/release_manifest.py`, `src/release_gate.py`, `src/canonical_release_publisher.py` | yes | yes | yes | loader gate | send gate | production |
+| Telegram delivery/card renderer | `src/telegram_client.py`, `src/alert_card_renderer.py`, `src/scheduled_delivery.py` | yes | yes | receipt | deep-link button | yes | production |
 | Mini App deep-link/timeline | `site/app.js`, `src/event_timeline.py` | yes | Pages | yes | yes | button target | production |
 | Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | optional endpoint/local queue | no | feedback controls | no | partially_integrated |
 
