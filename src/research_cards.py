@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+# The public notice is intentionally assigned twice below: the final value
+# overrides the raw notice only when the research artifact is expired.
+# ruff: noqa: F601
 import json
 from datetime import datetime
 from pathlib import Path
@@ -9,7 +12,6 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from src.research_health import assess_research_health
-
 
 REPORT_PATH = Path("site/data/research-report.json")
 ALLOWED_STRATEGIES = {"momentum", "price_action", "resonance", "value"}
@@ -64,7 +66,9 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
             "market", "strategy", "rank", "ticker", "name", "score", "close", "previous_close", "change_percent", "turnover", "as_of", "signal_labels", "volume_ratio", "range_contraction", "breakout_20", "vcp_breakout", "new_high_days", "fgi_score", "fgi_status", "conditions_matched", "condition_count", "structure", "status",
             "roe", "pe", "payout_ratio", "metrics_available", "moat_review", "list_type",
             "pristine_conditions_matched", "pristine_conditions_total", "quality_verified",
-            "heat_verified", "verification_gaps"
+            "heat_verified", "verification_gaps", "passed_conditions", "failed_conditions",
+            "risk_factors", "data_completeness", "invalidation", "invalidation_condition",
+            "advice_gate", "strategy_version", "data_version", "backtest_release"
         )})
     sources = [
         {key: source.get(key) for key in (

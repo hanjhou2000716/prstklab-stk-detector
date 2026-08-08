@@ -63,3 +63,25 @@ def test_loader_keeps_verified_rows_when_incremental_scan_allows_partial_candida
 
     assert [item["ticker"] for item in result["candidates"]] == ["3023"]
     assert result["candidates"][0]["list_type"] == "formal"
+
+
+def test_loader_preserves_explainability_and_registry_fields(tmp_path):
+    report = tmp_path / "report.json"
+    report.write_text(json.dumps({
+        "generated_at": "2026-07-25T10:00:00+08:00",
+        "sources": [{"market": "us", "strategy": "value", "status": "可用", "scan_state": "complete"}],
+        "candidates": [{
+            "market": "us", "strategy": "value", "ticker": "MSFT",
+            "passed_conditions": "roe|cash_flow", "failed_conditions": ["valuation"],
+            "risk_factors": ["earnings_gap"], "data_completeness": 96,
+            "invalidation_condition": "資料逾時", "strategy_version": "value-v2",
+            "data_version": "pit-2026-07-25", "backtest_release": "bt-2026-07",
+        }],
+    }, ensure_ascii=False), encoding="utf-8")
+
+    result = load_research_cards(report, now=datetime(2026, 7, 25, 11, 0, tzinfo=ZoneInfo("Asia/Taipei")))
+    candidate = result["candidates"][0]
+    assert candidate["passed_conditions"] == "roe|cash_flow"
+    assert candidate["failed_conditions"] == ["valuation"]
+    assert candidate["invalidation_condition"] == "資料逾時"
+    assert candidate["backtest_release"] == "bt-2026-07"
