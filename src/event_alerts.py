@@ -11,6 +11,7 @@ from src.event_classifier import classify_event_fields, notification_gate
 from src.event_crosscheck import cross_check_event_records
 from src.finance_intel_policy import threshold_rule
 from src.intel_contract import normalize_event_record
+from src.market_impact_graph import build_market_impact_graph
 
 EVENT_RULES = (
     ("Fed／貨幣政策", ("fomc", "fed", "聯準會", "升息", "降息")),
@@ -605,6 +606,12 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     classification = classify_event_fields({**raw_event, **event, "related_quotes": related})
     category = str(event.get("classification") or classification.get("category") or "") or None
     classification_reason = str(event.get("classification_reason") or classification.get("reason") or "")
+    impact_graph = build_market_impact_graph(
+        {**raw_event, **event, "classification": category},
+        related,
+        validated_at=str(event.get("checked_at") or event.get("fetched_at") or released_at or "") or None,
+    )
+    market_sync_confirmed = any(bool(path.get("market_sync")) for path in impact_graph.get("paths", []))
     risk_level = event.get("risk_level") or "持續觀察"
     brief_title = event.get("brief_title") or f"{label}｜重要事件｜觀察"
     event_text = " ".join(
@@ -691,6 +698,8 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "market_move": market_move,
         "related": related,
         "impact_confirmation": impact_confirmation,
+        "market_impact_graph": impact_graph,
+        "market_sync_confirmed": market_sync_confirmed,
         "source_trace": trace,
         "official_confirmed": official_verified,
         "high_risk_eligible": bool(strict_confirmation) if is_black_swan else True,
