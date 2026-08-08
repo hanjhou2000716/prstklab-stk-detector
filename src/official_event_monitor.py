@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from src.alert_dispatch import evaluate_dispatch, record_dispatch
 from src.config import get_settings
 from src.event_ledger import EventLedger, canonical_event_key
 from src.market_data import build_market_snapshot
@@ -258,10 +259,13 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         write_send_output(False, "release_gate_blocked")
         print("Release gate blocked official event delivery: " + "; ".join(gate.errors))
         return False
-    cooldown_record = _observe_event(event)
-    if not cooldown_record.get("should_remind", True):
-        write_send_output(False, "event_cooldown")
-        print("Official event is inside the shared 30-minute cooldown; skipped safely.")
+    decision = evaluate_dispatch(event)
+    if not decision.allowed:
+        write_send_output(False, decision.reason)
+        print(
+            "Official event blocked by shared alert budget: "
+            f"{decision.reason}; event_key={decision.event_key}"
+        )
         return False
     settings = get_settings()
     if not settings.telegram_ready:
@@ -279,7 +283,7 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
     if not delivery_summary.any_delivered:
         write_send_output(False, "all_recipients_failed")
         raise RuntimeError("Telegram delivery failed for every configured recipient")
-    _observe_event(event, reminded=True)
+    record_dispatch(event)
     write_send_output(True, "sent_partial" if delivery_summary.failed_count else "sent")
     return True
 
