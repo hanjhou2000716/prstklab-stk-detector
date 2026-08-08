@@ -1,4 +1,17 @@
-from src.phase_two_sources import _macd_state, fetch_eia_snapshot, fetch_fred_snapshot, fetch_kofia_credit_margin
+from src.phase_two_sources import (
+    _macd_state,
+    classify_provider_health,
+    fetch_eia_snapshot,
+    fetch_fred_snapshot,
+    fetch_kofia_credit_margin,
+)
+
+
+def test_provider_health_classification_separates_config_and_fallback_states():
+    assert classify_provider_health("missing_api_key", required_for="research") == "configuration_required"
+    assert classify_provider_health("failed", required_for="alert", fallback_available=True) == "degraded_with_fallback"
+    assert classify_provider_health("failed", required_for="alert") == "critical_gap"
+    assert classify_provider_health("failed", required_for="optional") == "failed"
 
 
 def test_macd_detects_bearish_cross():
@@ -13,6 +26,8 @@ def test_fred_never_calls_without_key(monkeypatch):
     result = fetch_fred_snapshot()
     assert result["status"] == "missing_api_key"
     assert result["data"] == {}
+    assert result["health"]["health_class"] == "configuration_required"
+    assert result["health"]["required_for"] == "research"
 
 
 def test_eia_never_calls_without_key(monkeypatch):
@@ -20,6 +35,8 @@ def test_eia_never_calls_without_key(monkeypatch):
     result = fetch_eia_snapshot()
     assert result["status"] == "missing_api_key"
     assert result["data"] == {}
+    assert result["health"]["health_class"] == "configuration_required"
+    assert result["health"]["required_for"] == "alert"
 
 
 def test_kofia_reports_unambiguous_gap(monkeypatch):
@@ -32,3 +49,4 @@ def test_kofia_reports_unambiguous_gap(monkeypatch):
     result = fetch_kofia_credit_margin()
     assert result["status"] == "data_gap"
     assert result["health"]["status"] == "partial"
+    assert result["health"]["health_class"] == "optional_degraded"

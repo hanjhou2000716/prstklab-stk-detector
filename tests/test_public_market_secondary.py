@@ -50,6 +50,8 @@ def test_public_secondary_uses_nasdaq_fallback_for_composite_indexes():
     assert result["quotes"]["NASDAQ"]["price"] == 25913.90
     assert result["quotes"]["NASDAQ"]["source_domain"] == "api.nasdaq.com"
     assert not any(error.startswith("NASDAQ:") for error in result["errors"])
+    assert result["health"]["health_class"] == "degraded_with_fallback"
+    assert result["health"]["fallback_active"] is True
 
 
 def test_public_secondary_crosscheck_does_not_replace_primary_price():

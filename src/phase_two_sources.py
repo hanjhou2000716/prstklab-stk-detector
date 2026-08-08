@@ -27,10 +27,51 @@ def _now() -> str:
     return datetime.now(UTC).isoformat()
 
 
-def _health(key: str, label: str, url: str, status: str, checked_at: str, **extra: Any) -> dict[str, Any]:
-    return {"key": key, "label": label, "source_tier": "official", "source_url": url,
-            "status": "healthy" if status == "healthy" else "partial",
-            "provider_status": status, "checked_at": checked_at, **extra}
+def classify_provider_health(
+    provider_status: str,
+    *,
+    required_for: str = "optional",
+    fallback_available: bool = False,
+) -> str:
+    """Map provider outcomes to actionable health classes."""
+    status = str(provider_status or "unknown").casefold()
+    if status in {"healthy", "ok", "success"}:
+        return "healthy"
+    if status in {"missing_api_key", "configuration_required"}:
+        return "configuration_required"
+    if fallback_available:
+        return "degraded_with_fallback"
+    if status in {"partial", "stale", "data_gap"}:
+        return "critical_gap" if required_for in {"core", "alert", "research"} else "optional_degraded"
+    return "critical_gap" if required_for in {"core", "alert", "research"} else "failed"
+
+
+def _health(
+    key: str,
+    label: str,
+    url: str,
+    status: str,
+    checked_at: str,
+    *,
+    required_for: str = "optional",
+    fallback_available: bool = False,
+    **extra: Any,
+) -> dict[str, Any]:
+    return {
+        "key": key,
+        "label": label,
+        "source_tier": "official",
+        "source_url": url,
+        "status": "healthy" if status == "healthy" else "partial",
+        "provider_status": status,
+        "health_class": classify_provider_health(
+            status, required_for=required_for, fallback_available=fallback_available
+        ),
+        "required_for": required_for,
+        "fallback_active": fallback_available,
+        "checked_at": checked_at,
+        **extra,
+    }
 
 
 def _percentile(values: Iterable[float], latest: float) -> float | None:
@@ -92,7 +133,7 @@ def fetch_fred_snapshot(series_ids: dict[str, str] | None = None, *, timeout: in
     key = os.getenv("FRED_API_KEY", "").strip()
     series = series_ids or DEFAULT_FRED_SERIES
     if not key:
-        return {"status": "missing_api_key", "data": {}, "health": _health("fred", "FRED 官方總經資料", FRED_URL, "missing_api_key", checked_at, item_count=0, data_gap="FRED_API_KEY 未設定")}
+        return {"status": "missing_api_key", "data": {}, "health": _health("fred", "FRED 官方總經資料", FRED_URL, "missing_api_key", checked_at, required_for="research", item_count=0, data_gap="FRED_API_KEY 未設定")}
     data: dict[str, Any] = {}
     errors: list[str] = []
     for series_id, label in series.items():
@@ -107,7 +148,7 @@ def fetch_fred_snapshot(series_ids: dict[str, str] | None = None, *, timeout: in
             errors.append(f"{series_id}:{type(exc).__name__}")
     status = "healthy" if data and not errors else "partial" if data else "failed"
     return {"status": status, "data": data, "errors": errors, "fetched_at": checked_at,
-            "health": _health("fred", "FRED 官方總經資料", FRED_URL, status, checked_at, item_count=len(data), data_gap=errors or None)}
+            "health": _health("fred", "FRED 官方總經資料", FRED_URL, status, checked_at, required_for="research", item_count=len(data), data_gap=errors or None)}
 
 
 def fetch_eia_snapshot(*, timeout: int = 20) -> dict[str, Any]:
@@ -115,7 +156,7 @@ def fetch_eia_snapshot(*, timeout: int = 20) -> dict[str, Any]:
     checked_at = _now()
     key = os.getenv("EIA_API_KEY", "").strip()
     if not key:
-        return {"status": "missing_api_key", "data": {}, "health": _health("eia", "EIA 官方能源資料", EIA_URL, "missing_api_key", checked_at, item_count=0, data_gap="EIA_API_KEY 未設定")}
+        return {"status": "missing_api_key", "data": {}, "health": _health("eia", "EIA 官方能源資料", EIA_URL, "missing_api_key", checked_at, required_for="alert", item_count=0, data_gap="EIA_API_KEY 未設定")}
     try:
         response = requests.get(EIA_URL, params={"api_key": key, "frequency": "weekly", "data[0]": "value", "facets[seriesId][]": "RWTC", "sort[0][column]": "period", "sort[0][direction]": "desc", "length": 1}, timeout=timeout)
         response.raise_for_status()
@@ -124,10 +165,10 @@ def fetch_eia_snapshot(*, timeout: int = 20) -> dict[str, Any]:
             raise ValueError("no EIA observation")
         row = rows[0]
         data = {"series": "RWTC", "period": row.get("period"), "value": _to_float(row.get("value")), "unit": row.get("unit") or "USD per barrel"}
-        return {"status": "ok", "data": data, "fetched_at": checked_at, "health": _health("eia", "EIA 官方能源資料", EIA_URL, "healthy", checked_at, item_count=1, data_gap=None)}
+        return {"status": "ok", "data": data, "fetched_at": checked_at, "health": _health("eia", "EIA 官方能源資料", EIA_URL, "healthy", checked_at, required_for="alert", item_count=1, data_gap=None)}
     except Exception as exc:
         return {"status": "failed", "data": {}, "data_gap": type(exc).__name__, "fetched_at": checked_at,
-                "health": _health("eia", "EIA 官方能源資料", EIA_URL, "failed", checked_at, item_count=0, data_gap=type(exc).__name__)}
+                "health": _health("eia", "EIA 官方能源資料", EIA_URL, "failed", checked_at, required_for="alert", item_count=0, data_gap=type(exc).__name__)}
 
 
 def _ema(values: list[float], period: int) -> list[float]:

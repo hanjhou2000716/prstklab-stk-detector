@@ -20,7 +20,22 @@ def _now() -> str:
     return datetime.now(UTC).isoformat()
 
 
-def _health(status: str, checked_at: str, errors: list[str], item_count: int) -> dict[str, Any]:
+def _health(
+    status: str,
+    checked_at: str,
+    errors: list[str],
+    item_count: int,
+    *,
+    primary_count: int,
+    secondary_count: int,
+) -> dict[str, Any]:
+    fallback_active = secondary_count > 0 and primary_count == 0
+    if status == "healthy":
+        health_class = "healthy"
+    elif fallback_active:
+        health_class = "degraded_with_fallback"
+    else:
+        health_class = "critical_gap"
     return {
         "key": "crypto_spot",
         "source_key": "crypto_spot",
@@ -31,6 +46,11 @@ def _health(status: str, checked_at: str, errors: list[str], item_count: int) ->
         "checked_at": checked_at,
         "item_count": item_count,
         "data_gap": errors or None,
+        "health_class": health_class,
+        "required_for": "alert",
+        "fallback_active": fallback_active,
+        "primary_count": primary_count,
+        "secondary_count": secondary_count,
     }
 
 
@@ -116,11 +136,19 @@ def fetch_crypto_spot_snapshot(*, timeout: int = 15, requester: Callable[..., An
         errors.append(f"coingecko:{type(exc).__name__}")
 
     status = "healthy" if primary and secondary and not errors else "partial" if primary or secondary else "failed"
+    health = _health(
+        status,
+        checked_at,
+        errors,
+        len(primary) + len(secondary),
+        primary_count=len(primary),
+        secondary_count=len(secondary),
+    )
     return {
         "status": status,
         "primary": primary,
         "secondary": secondary,
         "errors": errors,
         "fetched_at": checked_at,
-        "health": _health(status, checked_at, errors, len(primary) + len(secondary)),
+        "health": health,
     }

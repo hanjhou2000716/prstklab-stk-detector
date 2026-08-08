@@ -122,6 +122,17 @@ def fetch_public_market_secondary(
                     continue
             errors.append(f"{ticker}:{type(exc).__name__}")
     status = "healthy" if quotes and not errors else "partial" if quotes else "failed"
+    fallback_active = any(
+        "Stooq" not in str(item.get("quote_source") or "")
+        for item in quotes.values()
+    )
+    health_class = (
+        "degraded_with_fallback"
+        if fallback_active
+        else "healthy"
+        if status == "healthy"
+        else "optional_degraded"
+    )
     return {
         "status": status,
         "quotes": quotes,
@@ -134,6 +145,9 @@ def fetch_public_market_secondary(
             "source_url": STOOQ_URL,
             "status": "healthy" if status == "healthy" else "partial",
             "provider_status": status,
+            "health_class": health_class,
+            "required_for": "alert",
+            "fallback_active": fallback_active,
             "checked_at": checked_at,
             "item_count": len(quotes),
             "data_gap": errors or None,
