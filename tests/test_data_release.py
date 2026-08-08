@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 
 import pytest
@@ -18,13 +17,22 @@ def test_all_data_release_publishers_share_one_concurrency_group():
     assert publishers
     for path in publishers:
         text = path.read_text(encoding="utf-8")
-        match = re.search(
-            r"^concurrency:\s*(?:\n\s*#.*|\n\s*)*\n\s+group:\s*([^\s#]+)",
-            text,
-            flags=re.MULTILINE,
-        )
-        assert match, f"{path.name} must define a concurrency group"
-        assert match.group(1) == "main-data-writer", f"{path.name} uses a separate data writer lock"
+        lines = text.splitlines()
+        group = None
+        for index, line in enumerate(lines):
+            if line.strip() != "concurrency:":
+                continue
+            for candidate in lines[index + 1:index + 12]:
+                stripped = candidate.strip()
+                if not stripped or stripped.startswith("#"):
+                    continue
+                if stripped.startswith("group:"):
+                    group = stripped.split(":", 1)[1].strip().split("#", 1)[0].strip()
+                break
+            if group is not None:
+                break
+        assert group is not None, f"{path.name} must define a concurrency group"
+        assert group == "main-data-writer", f"{path.name} uses a separate data writer lock"
 
 
 def test_data_release_rejects_paths_outside_public_data():
