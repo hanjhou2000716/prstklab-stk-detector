@@ -94,7 +94,16 @@ def validate_research(document: dict[str, Any]) -> list[str]:
     parsed for safety decisions.
     """
     errors = _schema_errors(document, "research-report.schema.json")
-    allowed_states = {None, "available", "no_candidates", "data_gap", "building", "failed"}
+    allowed_states = {
+        None,
+        "available",
+        "available_from_completed_records",
+        "no_candidates",
+        "building",
+        "data_gap",
+        "data_unavailable",
+        "failed",
+    }
     for index, source in enumerate(document.get("sources", [])):
         if not isinstance(source, dict):
             continue
@@ -115,7 +124,7 @@ def validate_research(document: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: candidates must equal visible_candidates")
         if candidate_state == "no_candidates" and isinstance(visible, int) and visible != 0:
             errors.append(f"{path}: no_candidates requires visible_candidates=0")
-        if candidate_state == "available" and isinstance(visible, int) and visible == 0:
+        if candidate_state in {"available", "available_from_completed_records"} and isinstance(visible, int) and visible == 0:
             errors.append(f"{path}: available requires visible_candidates>0")
         if isinstance(candidates, int) and isinstance(formal, int) and formal > candidates:
             errors.append(f"{path}: formal_candidates cannot exceed candidates")

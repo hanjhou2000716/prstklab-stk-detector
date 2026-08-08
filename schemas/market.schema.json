@@ -6,6 +6,11 @@
   "properties": {
     "generated_at": {"type": "string", "format": "date-time"},
     "snapshot_id": {"type": "string", "minLength": 8},
+    "overall_state": {"enum": ["live", "mixed", "close_only", "degraded", "unavailable"]},
+    "live_count": {"type": "integer", "minimum": 0},
+    "recent_close_count": {"type": "integer", "minimum": 0},
+    "stale_count": {"type": "integer", "minimum": 0},
+    "unavailable_count": {"type": "integer", "minimum": 0},
     "release_id": {"type": "string", "minLength": 8},
     "policy_version": {"type": "string", "minLength": 1},
     "indices": {"type": "array", "items": {"$ref": "#/$defs/quote"}},
