@@ -34,3 +34,15 @@ def test_material_change_and_direction_reversal():
     assert has_material_change(previous_change=1.0, current_change=2.0, asset_class="market_index")
     assert classify_price_pattern(daily_percent=8, move_15m=-0.5) == "gain_fading"
     assert classify_price_pattern(daily_percent=-2, move_15m=1.2) == "fast_rebound"
+
+
+def test_caption_uses_safe_minimal_fallback_and_validates_boundaries():
+    caption = make_caption(subject="x" * 200, change="y" * 200, state="等待核對", icon="⚠️")
+    assert caption == "⚠️｜等待核對"
+    validate_caption(caption)
+
+
+def test_lifecycle_deescalates_then_resolves_and_rejects_unknown_state():
+    assert transition("escalated", material_change=False) == "deescalated"
+    assert transition("deescalated", condition_active=False) == "resolved"
+    assert transition("resolved") == "resolved"

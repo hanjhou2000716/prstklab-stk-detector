@@ -18,9 +18,11 @@ until the final verification is complete.
 ## Current follow-up stack
 
 The following PRs are the current continuation after the historical delivery
-stack above.  They must be merged in this order; each base is the preceding
-feature branch.  PR #300 is a standalone renderer repair and should be merged
-before this stack when its checks are green.
+stack above.  PR #300 is a standalone renderer repair.  The #306–#308 research
+state fixes and the #309–#321 release/delivery stack are separate ancestry
+lines; merge each line into its declared base, then retarget the next PR to
+the resulting branch when GitHub presents the base as non-main.  Do not infer
+that #306 is the parent of #309.
 
 | Order | PR | Branch | Base / dependency | Scope |
 |---:|---:|---|---|---|
@@ -29,8 +31,8 @@ before this stack when its checks are green.
 | 10 | #307 | `fix/source-health-research-state` | #306 | Keep research building, no-candidate and failure states distinct in source health. |
 | 11 | #308 | `fix/source-provider-classification` | #307 | Classify provider failures, fallback and degraded health without false normal status. |
 | 12 | #309 | `feat/canonical-release-publisher` | `feat/telegram-card-v2` | Validate and publish one canonical release before Pages/Telegram. |
-| 13 | #310 | `feat/event-impact-evidence` | `feat/source-health-class-ui` | Attach conditional market-impact evidence to event cards. |
-| 14 | #311 | `feat/source-health-class-ui` | #309 | Display source-health classes and actionable diagnostics in the Mini App. |
+| 13 | #311 | `feat/source-health-class-ui` | #309 | Display source-health classes and actionable diagnostics in the Mini App. |
+| 14 | #310 | `feat/event-impact-evidence` | #311 | Attach conditional market-impact evidence to event cards. |
 | 15 | #312 | `feat/research-candidate-ui-state` | #310 | Keep research candidate state visible when the scan is partial. |
 | 16 | #313 | `feat/raw-observation-source-provenance` | #312 | Persist raw observation provenance when Railway storage is configured. |
 | 17 | #314 | `feat/full-mypy-clean` | #313 | Make the complete source tree type-safe. |
@@ -39,6 +41,8 @@ before this stack when its checks are green.
 | 20 | #317 | `feat/paper-portfolio-tracking` | #316 | Add public, research-only paper observations with explicit null outcomes. |
 | 21 | #318 | `feat/full-offline-e2e-delivery-gate` | #317 | Verify release → renderer → Mini App link → mocked Telegram sendPhoto. |
 | 22 | #319 | `fix/preserve-advice-gate-card-fields` | #318 | Preserve Advice Gate fields through the public research loader. |
+| 23 | #320 | `docs/current-stacked-merge-order` | #319 | Record the current continuation stack, release checks and rollback procedure. |
+| 24 | #321 | `test/raise-core-coverage-gate` | #320 | Cover core lifecycle/callback branches and keep the strict core coverage gate green. |
 
 ## GitHub merge procedure
 
