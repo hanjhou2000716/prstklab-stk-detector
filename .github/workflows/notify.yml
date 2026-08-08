@@ -36,6 +36,10 @@ jobs:
       - name: 安裝相依套件
         run: pip install -r requirements.txt
 
+      - name: Mask scoped smoke-test recipient
+        if: ${{ inputs.test_chat_id != '' }}
+        run: echo "::add-mask::${{ inputs.test_chat_id }}"
+
       - name: 發送測試快報
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
