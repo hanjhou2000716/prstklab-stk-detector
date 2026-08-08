@@ -112,6 +112,19 @@ def test_briefing_report_renders_fail_closed_intelligence_context():
     assert ".briefing-intelligence" in styles
 
 
+def test_event_timeline_and_feedback_are_optional_and_non_policy_mutating():
+    page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
+
+    assert 'id="event-timeline"' in page
+    assert "lifecycle_history" in app
+    assert 'data-event-feedback="correct"' in app
+    assert "PRSTK_FEEDBACK_ENDPOINT" in app
+    assert "不會自動修改政策" in app
+    assert ".event-timeline" in styles
+
+
 def test_quote_provenance_uses_the_compact_provider_and_time_format():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
 
