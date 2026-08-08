@@ -431,6 +431,29 @@ const renderBriefing = (briefing, generatedAt) => {
     });
     correlation.hidden = correlation.childElementCount === 0;
   }
+  const intelligence = document.getElementById("briefing-intelligence");
+  const context = report.intelligence;
+  if (intelligence) {
+    if (!context || typeof context !== "object") {
+      intelligence.hidden = true;
+      intelligence.replaceChildren();
+    } else {
+      const regime = context.market_regime || {};
+      const contagion = context.contagion || {};
+      const gate = context.advice_gate_detail || {};
+      const factors = Object.entries(regime.factor_contributions || {})
+        .map(([name, value]) => `${name} ${Number(value).toFixed(2)}`)
+        .join("、") || "目前沒有足夠因子";
+      const signals = (contagion.confirmed_signals || []).join("、") || "尚未確認跨資產同步";
+      const blocking = (gate.blocking_reasons || []).join("、") || "研究閘門已通過（仍不構成交易指令）";
+      const scenarios = (context.stress_scenarios || []).slice(0, 3).map((item) => {
+        const effect = Number(item.estimated_weighted_effect || 0).toFixed(2);
+        return `<li><b>${escapeHtml(item.scenario || "情境")}</b><span>非預測情境｜加權影響 ${escapeHtml(effect)}%</span></li>`;
+      }).join("");
+      intelligence.innerHTML = `<h4>市場情報證據</h4><p><b>市場狀態：</b>${escapeHtml(regime.regime || "資料不足")}｜分數 ${escapeHtml(String(regime.score ?? "—"))}</p><p><b>因子：</b>${escapeHtml(factors)}</p><p><b>跨資產核對：</b>${escapeHtml(contagion.status || "資料不足")}｜${escapeHtml(signals)}</p><p><b>建議閘門：</b>${escapeHtml(context.advice_gate || "observation_only")}｜${escapeHtml(blocking)}</p>${scenarios ? `<ul class="briefing-stress-list"><li class="briefing-stress-heading">壓力情境（非預測）</li>${scenarios}</ul>` : ""}<small>資料不足時維持觀察，不產生買進／賣出指令。</small>`;
+      intelligence.hidden = false;
+    }
+  }
   const container = document.getElementById("briefing-observations");
   if (!container) return;
   if (!observations.length) { container.innerHTML = '<p class="empty">本次定時報資料暫時無法取得</p>'; return; }
