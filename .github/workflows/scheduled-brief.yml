@@ -91,10 +91,10 @@ jobs:
       - name: Build release manifest
         if: steps.prepare.outputs.prepared == 'true'
         run: python -m src.release_manifest
-      - name: Publish snapshot and manifest
+      - name: Publish canonical snapshot and manifest
         if: steps.prepare.outputs.prepared == 'true'
         run: |
-          python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
+          python -m src.canonical_release_publisher --branch "$DATA_RELEASE_BRANCH" --include site/data \
             --message "chore: refresh public market snapshot"
       - name: Configure GitHub Pages
         if: steps.prepare.outputs.prepared == 'true'

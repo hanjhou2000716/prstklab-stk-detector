@@ -100,13 +100,10 @@ jobs:
         run: python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE"
       - run: python -m src.run_research_report --scan-mode "$SCAN_MODE"
       - run: python -m src.refresh_market_data
-      - name: Build release manifest
-        if: env.SCAN_MODE == 'production'
-        run: python -m src.release_manifest
       - name: 保存最新公開研究摘要
         run: |
           if [[ "$SCAN_MODE" == "production" ]]; then
-            python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json --message "chore: refresh public research report"
+            python -m src.canonical_release_publisher --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json --message "chore: refresh public research report"
           else
             echo "scan_mode=$SCAN_MODE: isolated artifact only; skipping data-release publication"
           fi

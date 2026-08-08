@@ -102,8 +102,7 @@ jobs:
       - name: Commit refreshed Mini App data
         if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
         run: |
-          python -m src.release_manifest
-          python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
+          python -m src.canonical_release_publisher --branch "$DATA_RELEASE_BRANCH" --include site/data \
             --message "chore: refresh emergency market alert"
       - name: Configure GitHub Pages
         if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'

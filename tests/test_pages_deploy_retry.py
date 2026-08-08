@@ -7,7 +7,7 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 def test_pages_deploy_wrapper_retries_and_reports_degraded_status():
     action = (ROOT / ".github" / "actions" / "deploy-pages-retry" / "action.yml").read_text(encoding="utf-8")
 
-    assert "actions/deploy-pages@v4" in action
+    assert "actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e" in action
     assert "continue-on-error: true" in action
     assert "steps.first.outcome == 'failure'" in action
     assert 'default: "120000"' in action
