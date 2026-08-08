@@ -13,7 +13,7 @@ pipeline call and a tested consumer.
 | Module | File(s) | Tests | Pipeline | JSON | Mini App | Telegram | Status |
 |---|---|---|---|---|---|---|---|
 | Source adapters | `src/source_adapter.py`, `src/phase_two_sources.py` | yes | yes | yes | health | event/brief | partially_integrated |
-| Raw observation store | `src/raw_observation_store.py` | yes | no | no | no | no | experimental |
+| Raw observation store | `src/raw_observation_store.py`, `src/phase_two_sources.py` | yes | optional Railway runtime | health provenance | source diagnostics | no | partially_integrated |
 | Instrument master | `src/instrument_master.py` | yes | partial | partial | no | no | partially_integrated |
 | Data quality/SLA | `src/data_quality.py`, `src/source_health.py` | yes | yes | yes | yes | gate reason | production |
 | Taiwan crosscheck | `src/taiwan_market_crosscheck.py`, `src/market_crosscheck.py` | yes | yes | yes | yes | price gate | production |
@@ -59,6 +59,20 @@ The release manifest normalizer converts legacy gap maps to integer counts and
 backfills candidate state without inventing data.  To roll back, revert the
 producer commit and restore the previous `data-release` manifest; do not copy
 individual artifacts across releases.
+
+## Raw observation persistence
+
+Phase-two provider results can be retained in the append-only raw observation
+store when the Railway service sets `PRSTK_RAW_OBSERVATION_ROOT` to a
+persistent volume.  Each normalized provider result receives an
+`observation_id` and `raw_payload_location` in source health; the immutable
+SQLite index and content-addressed JSON payload remain outside the public
+`data-release` branch.  GitHub Actions intentionally leaves this variable
+unset, so a transient scan cannot accidentally publish raw provider payloads.
+Storage failures are recorded as a provider diagnostic and never turn a
+successful market fetch into an alert-eligible result.  The next rollout can
+promote this row to production only after a Railway backup/restore check is
+available.
 
 ## Alert contract and lifecycle
 
