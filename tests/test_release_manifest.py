@@ -80,6 +80,30 @@ def test_manifest_normalizes_legacy_tpex_and_research_state(tmp_path):
     assert research["snapshot_id"] == manifest["research_snapshot_id"]
 
 
+def test_manifest_downgrades_unproven_formal_candidates_to_data_gap(tmp_path):
+    """A stale summary must not make an empty published file fail the release."""
+    _artifacts(tmp_path)
+    site_data = tmp_path / "site" / "data"
+    (site_data / "research-report.json").write_text(json.dumps({
+        "schema_version": "2.0", "generated_at": "2026-08-04T10:00:00+08:00",
+        "sources": [{
+            "market": "us", "strategy": "value", "scan_state": "complete",
+            "candidates": 0, "visible_candidates": 0,
+            "formal_candidates": 5, "observation_candidates": 0,
+            "candidate_state": "no_candidates",
+        }], "candidates": [], "health": {},
+    }), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+    assert manifest["status"] == "ready"
+    research = json.loads((site_data / "research-report.json").read_text(encoding="utf-8"))
+    source = research["sources"][0]
+    assert source["formal_candidates"] == 0
+    assert source["candidate_state"] == "data_gap"
+    assert source["data_gap_counts"] == 1
+    assert any("count mismatch" in note for note in manifest["normalization_notes"])
+
+
 def test_manifest_url_is_authoritative_when_fallback_domain_is_stale(tmp_path):
     site_data = tmp_path / "site" / "data"
     site_data.mkdir(parents=True)
