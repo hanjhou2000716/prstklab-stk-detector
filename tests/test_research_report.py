@@ -46,3 +46,24 @@ def test_price_action_report_backfills_structure_match_score_from_existing_label
     }])
     candidate = normalize_frame(frame, "taiwan", "price_action")[0]
     assert candidate["score"] == 85
+
+
+def test_report_binds_fail_closed_explainability_and_advice_gate(tmp_path):
+    available = tmp_path / "candidate.csv"
+    pd.DataFrame([{
+        "ticker": "2330",
+        "name": "Taiwan Semiconductor",
+        "score": 88,
+        "passed_conditions": "['momentum']",
+        "data_completeness": "complete",
+    }]).to_csv(available, index=False)
+    report = build_research_report([{
+        "path": str(available),
+        "market": "taiwan",
+        "strategy": "momentum",
+    }])
+    candidate = report["candidates"][0]
+    assert candidate["advice_allowed"] is False
+    assert "backtest" in candidate["advice_gate"]["blocking_reasons"]
+    assert candidate["explainability"]["ticker"] == "2330"
+    assert candidate["explainability"]["passed_conditions"] == ["momentum"]
