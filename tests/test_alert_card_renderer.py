@@ -2,6 +2,7 @@ import struct
 
 from src.alert_card_renderer import HEIGHT, WIDTH, fallback_card, render_alert_card
 
+
 def test_fallback_card_is_fixed_png(tmp_path):
     path = fallback_card(tmp_path / "fallback.png")
     data = path.read_bytes()
