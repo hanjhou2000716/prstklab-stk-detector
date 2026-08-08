@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PRStK Alert Envelope",
+  "type": "object",
+  "required": ["alert_id", "event_cluster_key", "alert_type", "lifecycle_state", "severity", "title", "short_caption", "source_evidence", "release_id", "snapshot_id", "created_at"],
+  "properties": {
+    "alert_id": {"type": "string", "minLength": 1},
+    "event_cluster_key": {"type": "string", "minLength": 1},
+    "alert_type": {"type": "string", "enum": ["briefing", "price_signal", "macro_event", "corporate_event", "geopolitical_event", "market_risk", "source_health", "research_observation", "deescalation", "resolution"]},
+    "lifecycle_state": {"type": "string", "enum": ["detected", "observation", "pending_confirmation", "confirmed", "escalated", "deescalated", "resolved", "suppressed"]},
+    "severity": {"type": "string", "enum": ["normal", "warning", "high-risk"]},
+    "market": {"type": "string"},
+    "ticker": {"type": ["string", "null"]},
+    "title": {"type": "string", "minLength": 1},
+    "short_caption": {"type": "string", "maxLength": 40},
+    "trigger_reason": {"type": "string"},
+    "metrics": {"type": "array", "items": {"type": "object"}},
+    "source_evidence": {"type": "array", "items": {"type": "object"}},
+    "market_evidence": {"type": "array", "items": {"type": "object"}},
+    "data_quality_score": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+    "policy_version": {"type": "string"},
+    "invalidation_condition": {"type": "string"},
+    "release_id": {"type": "string", "minLength": 1},
+    "snapshot_id": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"}
+  },
+  "additionalProperties": true
+}
