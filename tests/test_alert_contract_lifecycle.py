@@ -3,6 +3,7 @@ from src.alert_contract import AlertEnvelope
 from src.alert_lifecycle import transition
 from src.material_change import classify_price_pattern, has_material_change
 
+
 def test_caption_is_short_without_splitting_numbers():
     caption = make_caption(subject="費城半導體指數", change="+5.1%", state="波動", verified=True)
     validate_caption(caption)
