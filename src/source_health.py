@@ -18,6 +18,9 @@ def _source_item(key: str, label: str, issues: list[str], checked_at: str) -> di
         "key": key,
         "label": label,
         "status": "healthy" if not issues else "partial",
+        # ``state`` is deliberately separate from status so the UI can tell
+        # a clean scan with no event from a failed provider request.
+        "state": "no_event" if not issues else "scan_failed",
         "checked_at": checked_at,
         "issues": issues[:2],
     }
