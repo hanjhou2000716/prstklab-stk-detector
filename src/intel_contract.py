@@ -40,7 +40,7 @@ def _normalize_quote_change(item: dict[str, Any]) -> None:
     raw_percent = _number(item.get("change_percent"))
     calculated_change = None
     calculated_percent = None
-    if price is not None and previous not in (None, 0):
+    if price is not None and previous is not None and previous != 0:
         calculated_change = round(price - previous, 2)
         calculated_percent = round((price / previous - 1) * 100, 2)
 
@@ -136,11 +136,13 @@ def normalize_event_record(
             item["market_direction"] = "上漲" if instrument_percent > 0 else "下跌" if instrument_percent < 0 else "持平"
             item["market_move"] = f"{instrument_percent:+.2f}%"
     url = str(item.get("source_url") or item.get("url") or "").strip()
-    trace = item.get("source_trace") if isinstance(item.get("source_trace"), dict) else {}
+    trace_value = item.get("source_trace")
+    trace: dict[str, Any] = trace_value if isinstance(trace_value, dict) else {}
     if not url:
         url = str(trace.get("source_url") or "").strip()
     published = item.get("published_at") or item.get("released_at") or item.get("event_time")
-    impact = item.get("impact_confirmation") if isinstance(item.get("impact_confirmation"), dict) else {}
+    impact_value = item.get("impact_confirmation")
+    impact: dict[str, Any] = impact_value if isinstance(impact_value, dict) else {}
     importance = str(item.get("importance") or "").strip().lower()
     if importance not in IMPORTANCE_LEVELS:
         risk = str(item.get("risk_level") or "").lower()

@@ -40,15 +40,15 @@ def _attach_detail_summary(target: dict[str, Any], details: list[dict[str, Any]]
         if str(item.get("status") or "").lower() in {"healthy", "ok", "success"}
         and (item.get("last_success_at") or item.get("checked_at"))
     ]
-    counts = [item.get("item_count") for item in records if isinstance(item.get("item_count"), (int, float))]
-    latencies = [item.get("latency_ms") for item in records if isinstance(item.get("latency_ms"), (int, float))]
+    counts: list[float] = [float(item["item_count"]) for item in records if isinstance(item.get("item_count"), (int, float))]
+    latencies: list[float] = [float(item["latency_ms"]) for item in records if isinstance(item.get("latency_ms"), (int, float))]
     urls = sorted({str(item.get("source_url") or "") for item in records if item.get("source_url")})
     if checked:
         target["checked_at"] = max(checked)
     if successful:
         target["last_success_at"] = max(successful)
     if counts:
-        target["item_count"] = int(sum(counts))
+        target["item_count"] = int(sum(float(value) for value in counts))
     if latencies:
         target["latency_ms"] = round(max(float(value) for value in latencies), 1)
     if urls:

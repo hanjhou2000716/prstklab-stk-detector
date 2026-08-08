@@ -19,12 +19,13 @@ def quality_score(metrics: dict[str, float | None]) -> int:
 
 def build_value_snapshot(watchlist: tuple[dict[str, str], ...]) -> dict[str, Any]:
     import yfinance as yf
-    candidates, errors = [], []
+    candidates: list[dict[str, Any]] = []
+    errors: list[str] = []
     for item in watchlist:
         try:
             metrics = normalize(yf.Ticker(item["symbol"]).info)
             candidates.append({"ticker": item["ticker"], "name": item["name"], "score": quality_score(metrics), **metrics})
         except Exception:
             errors.append(f"{item['ticker']} 財務資料暫時無法取得")
-    candidates.sort(key=lambda row: row["score"], reverse=True)
+    candidates.sort(key=lambda row: int(row.get("score") or 0), reverse=True)
     return {"status": "價值品質研究", "notice": "公開財務欄位可能因市場與公司而缺漏；僅供研究，不構成買賣建議。", "candidates": candidates[:5], "errors": errors}

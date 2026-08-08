@@ -226,13 +226,15 @@ def _headline_links(html: str, base_url: str) -> list[tuple[str, str, str | None
     seen: set[str] = set()
     for link in soup.select("a[href]"):
         title = " ".join(link.stripped_strings)
-        href = urljoin(base_url, link.get("href", ""))
+        raw_href = link.get("href", "")
+        href = urljoin(base_url, str(raw_href) if isinstance(raw_href, str) else "")
         if not title or not href.startswith("https://") or href in seen:
             continue
         seen.add(href)
         parent = link.find_parent()
         timestamp = parent.find("time") if parent else None
-        released_at = timestamp.get("datetime") if timestamp else None
+        raw_released = timestamp.get("datetime") if timestamp else None
+        released_at = raw_released if isinstance(raw_released, str) else None
         if not released_at and parent:
             released_at = _date_from_text(" ".join(parent.stripped_strings))
         results.append((title, href, _iso(released_at)))
@@ -246,10 +248,11 @@ def _rss_links(xml: str, base_url: str) -> list[tuple[str, str, str | None]]:
     for item in soup.find_all("item") + soup.find_all("entry"):
         title = item.find("title")
         link = item.find("link")
-        href = (link.get("href") or link.get_text(strip=True)) if link else ""
+        raw_href = link.get("href") if link else None
+        href = (raw_href if isinstance(raw_href, str) and raw_href else link.get_text(strip=True) if link else "")
         title_text = title.get_text(" ", strip=True) if title else ""
         timestamp = item.find("pubDate") or item.find("published") or item.find("updated")
-        absolute_url = urljoin(base_url, href)
+        absolute_url = urljoin(base_url, str(href))
         if not title_text or not absolute_url.startswith("https://") or absolute_url in seen:
             continue
         seen.add(absolute_url)
@@ -272,7 +275,7 @@ def _is_recent_release(released_at: str | None) -> bool:
     return timedelta(minutes=-5) <= age <= timedelta(minutes=RECENCY_MINUTES)
 
 
-def _source_items(source: dict[str, Any]) -> list[dict[str, str]]:
+def _source_items(source: dict[str, Any]) -> list[dict[str, Any]]:
     response = _request(source["url"])
     links = _rss_links(response.text, source["url"]) if source["kind"] == "rss" else _headline_links(response.text, source["url"])
     for title, url, released_at in links:
@@ -306,7 +309,7 @@ def _mops_released_at(roc_date: str, clock: str) -> str | None:
     return published.astimezone(UTC).isoformat()
 
 
-def _mops_items() -> list[dict[str, str]]:
+def _mops_items() -> list[dict[str, Any]]:
     """Read current-day MOPS material announcements through its public API."""
     local_now = datetime.now(TAIPEI)
     data = _post_json(MOPS_DAILY_URL, {
@@ -315,7 +318,7 @@ def _mops_items() -> list[dict[str, str]]:
     allowed_codes = _taiwan_0050_codes()
     if not allowed_codes:
         return []
-    items: list[dict[str, str]] = []
+    items: list[dict[str, Any]] = []
     for row in data.get("result", {}).get("data", []):
         if len(row) < 5:
             continue
@@ -334,7 +337,7 @@ def _mops_items() -> list[dict[str, str]]:
     return items[:2]
 
 
-def _twse_items() -> list[dict[str, str]]:
+def _twse_items() -> list[dict[str, Any]]:
     data = _request(TWSE_NEWS_URL).json()
     for row in data:
         title = str(row.get("Title") or "").strip()
@@ -348,9 +351,9 @@ def _twse_items() -> list[dict[str, str]]:
     return []
 
 
-def _twse_market_alert_items() -> list[dict[str, str]]:
+def _twse_market_alert_items() -> list[dict[str, Any]]:
     """Keep only recent attention/disposition events for systemic names."""
-    items: list[dict[str, str]] = []
+    items: list[dict[str, Any]] = []
     for url, category in ((TWSE_NOTICE_URL, "\u6ce8\u610f\u4ea4\u6613"), (TWSE_PUNISH_URL, "\u8655\u7f6e\u80a1\u7968")):
         for row in _request(url).json():
             code = str(row.get("Code") or "").strip()
@@ -371,11 +374,11 @@ def _twse_market_alert_items() -> list[dict[str, str]]:
     return items
 
 
-def _sec_items() -> list[dict[str, str]]:
+def _sec_items() -> list[dict[str, Any]]:
     session = requests.Session()
     session.headers.update(HEADERS)
     ciks = sec_ticker_ciks(session)
-    items: list[dict[str, str]] = []
+    items: list[dict[str, Any]] = []
     for ticker in SEC_WATCHLIST:
         cik = ciks.get(ticker)
         if cik is None:
@@ -403,11 +406,11 @@ def _sec_items() -> list[dict[str, str]]:
     return items
 
 
-def _gdacs_items() -> list[dict[str, str]]:
+def _gdacs_items() -> list[dict[str, Any]]:
     """Keep only GDACS Red alerts, never ordinary global disaster headlines."""
     response = _request(GDACS_RSS_URL)
     soup = BeautifulSoup(response.text, "xml")
-    items: list[dict[str, str]] = []
+    items: list[dict[str, Any]] = []
     for entry in soup.find_all("item"):
         link_node = entry.find("link")
         raw = entry.get_text(" ", strip=True).lower()
@@ -428,9 +431,9 @@ def _gdacs_items() -> list[dict[str, str]]:
     return items
 
 
-def _usgs_items() -> list[dict[str, str]]:
+def _usgs_items() -> list[dict[str, Any]]:
     data = _request(USGS_SIGNIFICANT_URL).json()
-    items: list[dict[str, str]] = []
+    items: list[dict[str, Any]] = []
     for feature in data.get("features", []):
         properties = feature.get("properties") or {}
         magnitude = properties.get("mag")
@@ -458,7 +461,7 @@ def _usgs_items() -> list[dict[str, str]]:
 
 def fetch_official_events() -> dict[str, Any]:
     """Fetch bounded first-party candidates with per-source health metadata."""
-    items: list[dict[str, str]] = []
+    items: list[dict[str, Any]] = []
     errors: list[str] = []
     checked_at = datetime.now(UTC).isoformat()
     source_health: list[dict[str, Any]] = []
@@ -485,7 +488,7 @@ def fetch_official_events() -> dict[str, Any]:
             })
 
     for source in SOURCES:
-        collect(source["key"], source["source"], source["url"], lambda source=source: _source_items(source))
+        collect(str(source["key"]), str(source["source"]), str(source["url"]), lambda source=source: _source_items(source))
     for key, fetcher in (
         ("MOPS", _mops_items),
         ("TWSE", _twse_items),

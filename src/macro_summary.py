@@ -26,7 +26,7 @@ def build_macro_summary(
             "text": program["title"],
             "url": program["url"],
             "source": program["source"],
-            "published_at": program.get("published_at"),
+            "published_at": str(program.get("published_at") or ""),
         })
     else:
         items.append({"label": "節目更新", "text": "最新公開節目暫時無法取得。"})

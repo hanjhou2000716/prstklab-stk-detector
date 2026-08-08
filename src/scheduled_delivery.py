@@ -33,7 +33,7 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
         return snapshot
     event = _pick_event(snapshot, slot)
     correlation = briefing_correlation(snapshot, slot, event)
-    metadata = {
+    metadata: dict[str, object] = {
         "trace_id": correlation["trace_id"],
         "snapshot_id": correlation["snapshot_id"],
         "observation_id": correlation["observation_id"],

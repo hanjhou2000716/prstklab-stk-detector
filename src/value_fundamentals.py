@@ -42,8 +42,8 @@ def _sec_get(client: requests.Session, url: str, *, timeout: int) -> requests.Re
             return response
         except requests.RequestException as error:
             last_error = error
-            response = getattr(error, "response", None)
-            status = getattr(response, "status_code", None)
+            error_response: Any = getattr(error, "response", None)
+            status = getattr(error_response, "status_code", None)
             retryable = status is None or status in {429, 500, 502, 503, 504}
             if retryable and attempt + 1 < SEC_RETRY_ATTEMPTS:
                 time.sleep(0.6 * (attempt + 1))
@@ -113,11 +113,11 @@ def twse_financial_snapshot(
         own = equity.get(ticker)
         if not net and not own and ticker not in pe:
             continue
-        period = net["period"] if net else own["period"] if own else None
+        period_value: str | None = str(net["period"]) if net else str(own["period"]) if own else None
         roe = None
         if net and own and own["value"]:
             # This is an annualised latest-period estimate, not a stability claim.
-            quarter = int(str(period).split("Q")[-1]) if period and "Q" in str(period) else 4
+            quarter = int(str(period_value).split("Q")[-1]) if period_value and "Q" in str(period_value) else 4
             roe = round((net["value"] / max(quarter, 1) * 4) / own["value"], 6)
         output[ticker] = {
             "net_income": net["value"] if net else None,
@@ -199,20 +199,26 @@ def sec_value_metrics(facts: dict[str, Any]) -> dict[str, Any]:
     current_equity = equity_by_year.get(latest_year)
     prior_equity = equity_by_year.get(years[1]) if len(years) > 1 else None
     denominator = (current_equity + prior_equity) / 2 if current_equity and prior_equity else current_equity
-    roe = None if not denominator else round(current_net / denominator, 6)
+    roe = (
+        None
+        if current_net is None or not denominator
+        else round(current_net / denominator, 6)
+    )
     dividend_by_year = {str(row.get("fy") or row.get("end")): number(row.get("val")) for row in dividends}
     payout = None
-    if current_net and dividend_by_year.get(latest_year) is not None:
+    dividend_value = dividend_by_year.get(latest_year)
+    if current_net is not None and current_net != 0 and dividend_value is not None:
         # SEC cash-flow facts are reported as outflows (negative values).
         # Dividend-paid is a presence test, so use the absolute amount.
-        payout = round(abs(dividend_by_year[latest_year]) / abs(current_net), 6)
+        payout = round(abs(dividend_value) / abs(current_net), 6)
     roe_history = []
     for index, year in enumerate(years[:3]):
         current = equity_by_year.get(year)
         previous = equity_by_year.get(years[index + 1]) if index + 1 < len(years) else None
         average = (current + previous) / 2 if current and previous else current
-        if average:
-            roe_history.append(net_by_year[year] / average)
+        net_value = net_by_year.get(year)
+        if average and net_value is not None:
+            roe_history.append(net_value / average)
     annual_eps = _periodic_facts(facts, ("EarningsPerShareDiluted", "EarningsPerShareBasic"), {"10-K", "20-F", "40-F"})
     quarterly_eps = _periodic_facts(facts, ("EarningsPerShareDiluted", "EarningsPerShareBasic"), {"10-Q", "10-K", "20-F", "40-F"})
     annual_eps_values = [number(row.get("val")) for row in annual_eps[:3]]
@@ -297,7 +303,8 @@ def sec_fundamentals(
             except ValueError:
                 cache_time = None
             if cache_time and cache_time >= datetime.now(UTC) - timedelta(days=max_cache_age_days):
-                metrics = dict(cached.get("metrics") or {})
+                cached_metrics = cached.get("metrics") if isinstance(cached, dict) else {}
+                metrics = dict(cached_metrics) if isinstance(cached_metrics, dict) else {}
                 metrics["financial_source"] = "SEC EDGAR CompanyFacts (cached)"
                 metrics["sec_cache_used"] = True
                 metrics["sec_data_fetched_at"] = cached_at

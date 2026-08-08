@@ -115,10 +115,9 @@ def public_quotes(
                     context = latest_quote_context(bars)
                     if context:
                         shares = (share_counts or {}).get(item["symbol"])
-                        quotes[item["symbol"]] = {
-                            **context, **heat_metrics(bars, shares_outstanding=shares),
-                            "turnover_rate_basis": "Yahoo floatShares/shares proxy" if shares else None,
-                        }
+                        metrics = heat_metrics(bars, shares_outstanding=shares)
+                        quotes[item["symbol"]] = {**context, **{key: value for key, value in metrics.items() if value is not None},
+                            "turnover_rate_basis": "Yahoo floatShares/shares proxy" if shares else ""}
                     else:
                         errors.append(f"{item['ticker']} 報價資料不足")
                 except (KeyError, TypeError, ValueError):
