@@ -22,3 +22,20 @@ Production runs remain fail-closed: an incomplete or failed source is retained
 in the report with its candidate state and blocking reason, but it cannot be
 treated as a complete research universe. Existing releases remain available
 until a valid production release replaces them.
+### Candidate state during incremental history builds
+
+Taiwan MOPS history is refreshed in bounded batches.  The candidate contract
+must distinguish an incomplete universe from a failed scan:
+
+- `available_from_completed_records`: completed records produced visible
+  formal or observation candidates while history is still `building`.
+- `building`: the scan is still in progress and no completed record produced a
+  visible candidate yet.
+- `no_candidates`: the complete universe was evaluated successfully and no
+  row passed the configured rules.
+- `data_gap`: the scan could not evaluate the required inputs because the
+  source or parser failed.
+
+An in-progress history build must never relabel already verified candidates as
+`data_gap`, and an empty in-progress run must not be presented as a successful
+"no candidates" result.
