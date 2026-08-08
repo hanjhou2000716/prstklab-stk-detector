@@ -11,6 +11,11 @@ on:
         description: "Optional single recipient for an explicitly requested smoke test"
         required: false
         type: string
+      photo_test:
+        description: "Send one fixed 1080x1350 photo card to the scoped test recipient"
+        required: false
+        type: boolean
+        default: false
   # 第一階段先只提供手動執行；確認後才加入正式排程。
 
 permissions:
@@ -31,6 +36,10 @@ jobs:
       - name: 安裝相依套件
         run: pip install -r requirements.txt
 
+      - name: Mask scoped smoke-test recipient
+        if: ${{ inputs.test_chat_id != '' }}
+        run: echo "::add-mask::${{ inputs.test_chat_id }}"
+
       - name: 發送測試快報
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -39,7 +48,9 @@ jobs:
           TELEGRAM_CHAT_IDS: ${{ inputs.test_chat_id || secrets.TELEGRAM_CHAT_IDS }}
           DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
         run: |
-          if [ -n "${{ inputs.message }}" ]; then
+          if [ "${{ inputs.photo_test }}" = "true" ]; then
+            python -m src.photo_smoke_test
+          elif [ -n "${{ inputs.message }}" ]; then
             python -m src.main --send --message "${{ inputs.message }}"
           else
             python -m src.main --send
