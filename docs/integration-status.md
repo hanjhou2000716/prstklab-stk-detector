@@ -27,12 +27,13 @@ pipeline call and a tested consumer.
 | Stress scenarios | `src/stress_scenarios.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing | context only | production |
 | Portfolio risk | `src/portfolio_risk.py` | yes | no | no | no | no | unused |
 | Strategy scans | `src/run_*scan.py`, `src/research_report.py` | yes | yes | yes | yes | briefing/research | production |
-| Strategy registry/explainability | `src/strategy_registry.py`, `src/advice_gate.py` | yes | partial | partial | partial | no | partially_integrated |
+| Strategy registry/explainability | `src/strategy_registry.py`, `src/advice_gate.py`, `src/research_report.py` | yes | yes | yes | yes | observation-only | partially_integrated |
 | Backtest/cost model | `src/four_strategy_walk_forward.py`, `src/backtest_costs.py` | yes | scheduled | artifact | no | no | partially_integrated |
 | Release manifest/gate | `src/release_manifest.py`, `src/release_gate.py`, `src/canonical_release_publisher.py` | yes | yes | yes | loader gate | send gate | production |
 | Telegram delivery/card renderer | `src/telegram_client.py`, `src/alert_card_renderer.py`, `src/scheduled_delivery.py` | yes | yes | receipt | deep-link button | yes | production |
 | Mini App deep-link/timeline | `site/app.js`, `src/event_timeline.py` | yes | Pages | yes | yes | button target | production |
-| Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | optional endpoint/local queue | no | feedback controls | no | partially_integrated |
+| Feedback/paper portfolio | `src/event_feedback.py`, `src/paper_portfolio.py`, `src/production_evidence.py` | yes | optional endpoint/local queue | no | feedback controls | no | partially_integrated |
+| Offline release/delivery E2E | `src/system_dry_run.py`, `src/full_offline_e2e.py` | yes | quality workflow | report only | no | mocked only | production |
 
 ## Data state contract
 
