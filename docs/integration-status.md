@@ -16,10 +16,10 @@ pipeline call and a tested consumer.
 | Event cluster/ledger | `src/event_ledger.py`, `src/event_output.py` | yes | yes | yes | timeline | event | production |
 | Macro surprise | `src/surprise_engine.py` | yes | partial | partial | partial | no | partially_integrated |
 | Corporate events | `src/corporate_event_contract.py`, `src/official_events.py` | yes | yes | yes | yes | observe-only/event | production |
-| Market impact graph | `src/market_impact_graph.py` | yes | partial | partial | partial | partial | partially_integrated |
+| Market impact graph | `src/market_impact_graph.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing/event | conditional event | production |
 | Alert budget/lifecycle | `src/alert_budget.py`, `src/event_alerts.py` | yes | partial | partial | partial | partial | partially_integrated |
-| Market regime/contagion | `src/market_regime.py`, `src/cross_asset_risk.py` | yes | yes | yes | yes | briefing | production |
-| Stress scenarios | `src/stress_scenarios.py` | yes | no | no | no | no | experimental |
+| Market regime/contagion | `src/market_regime.py`, `src/cross_asset_risk.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing | briefing context | production |
+| Stress scenarios | `src/stress_scenarios.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing | context only | production |
 | Portfolio risk | `src/portfolio_risk.py` | yes | no | no | no | no | unused |
 | Strategy scans | `src/run_*scan.py`, `src/research_report.py` | yes | yes | yes | yes | briefing/research | production |
 | Strategy registry/explainability | `src/strategy_registry.py`, `src/advice_gate.py` | yes | partial | partial | partial | no | partially_integrated |
