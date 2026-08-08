@@ -1,5 +1,6 @@
 from src.intelligence_pipeline import build_intelligence_context
 
+
 def test_intelligence_pipeline_is_conditional_without_market_sync():
     result = build_intelligence_context({"title": "戰爭與原油供應風險", "source_url": "https://official.test"}, [])
     assert result["evidence_status"] == "insufficient_evidence"

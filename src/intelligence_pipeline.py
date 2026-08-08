@@ -1,10 +1,12 @@
 """Compose existing intelligence modules into a fail-closed event result."""
 from __future__ import annotations
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from src.market_impact_graph import build_market_impact_graph
 from src.surprise_engine import calculate_surprise
+
 
 def build_intelligence_context(event: dict[str, Any], observations: Iterable[dict[str, Any]] | None = None, *, macro: dict[str, Any] | None = None) -> dict[str, Any]:
     observations_list = list(observations or [])
