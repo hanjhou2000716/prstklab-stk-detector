@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
+import json
 import os
+from dataclasses import dataclass
+from pathlib import Path
 from time import sleep, time
 
 import requests
@@ -58,6 +60,19 @@ class TelegramDelivery:
     @property
     def delivered(self) -> bool:
         return self.result is not None
+
+
+@dataclass(frozen=True)
+class PhotoDeliveryReceipt:
+    """Auditable result for one sendPhoto call without storing private content."""
+
+    alert_id: str
+    release_id: str
+    snapshot_id: str
+    chat_id_hash: str
+    status: str
+    message_id: int | None = None
+    error_class: str | None = None
 
 
 @dataclass(frozen=True)
@@ -277,3 +292,36 @@ def send_briefs(
                 deliveries[index] = TelegramDelivery(chat_id=delivery.chat_id, result=result)
         pending = next_pending
     return tuple(deliveries)
+
+
+def send_photo_brief(
+    *, token: str, chat_id: str, caption: str, photo_path: str | Path,
+    mini_app_url: str, alert_id: str, release_id: str, snapshot_id: str,
+) -> PhotoDeliveryReceipt:
+    """Send one caption-above-photo message with an alert-specific Mini App URL.
+
+    The function is deliberately small and injectable via monkeypatching
+    `requests.post` for CI. It never logs the token, chat ID, or API payload.
+    """
+    if not caption.strip() or len(caption) > 40:
+        raise ValueError("photo caption must be 1-40 characters")
+    path = Path(photo_path)
+    if not path.is_file():
+        raise FileNotFoundError(path)
+    if not mini_app_url.startswith("https://"):
+        raise ValueError("Mini App URL must use HTTPS")
+    separator = "&" if "?" in mini_app_url else "?"
+    target = f"{mini_app_url}{separator}alert={alert_id}&release={release_id}&view=event"
+    endpoint = f"https://api.telegram.org/bot{token}/sendPhoto"
+    with path.open("rb") as photo:
+        response = requests.post(endpoint, data={"chat_id": chat_id, "caption": caption, "parse_mode": "HTML", "show_caption_above_media": "true", "reply_markup": json.dumps({"inline_keyboard": [[mini_app_button(target)]]})}, files={"photo": photo}, timeout=30)
+    recipient_hash = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = {}
+    if not response.ok or not payload.get("ok"):
+        error_class = "rate_limit" if getattr(response, "status_code", 0) == 429 else "telegram_api"
+        return PhotoDeliveryReceipt(alert_id, release_id, snapshot_id, recipient_hash, "failed", error_class=error_class)
+    result = payload.get("result") or {}
+    return PhotoDeliveryReceipt(alert_id, release_id, snapshot_id, recipient_hash, "delivered", message_id=result.get("message_id"))
