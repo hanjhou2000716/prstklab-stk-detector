@@ -39,6 +39,8 @@ before this stack when its checks are green.
 | 20 | #317 | `feat/paper-portfolio-tracking` | #316 | Add public, research-only paper observations with explicit null outcomes. |
 | 21 | #318 | `feat/full-offline-e2e-delivery-gate` | #317 | Verify release → renderer → Mini App link → mocked Telegram sendPhoto. |
 | 22 | #319 | `fix/preserve-advice-gate-card-fields` | #318 | Preserve Advice Gate fields through the public research loader. |
+| 23 | #320 | `docs/current-stacked-merge-order` | #319 | Record the current continuation stack, release checks and rollback procedure. |
+| 24 | #321 | `test/raise-core-coverage-gate` | #320 | Cover core lifecycle/callback branches and keep the strict core coverage gate green. |
 
 ## GitHub merge procedure
 
