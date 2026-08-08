@@ -410,10 +410,18 @@ const renderSourceHealth = (health, snapshot = {}) => {
   if (displayedMissing !== missing) summary.textContent = `${displayedMissing} 個來源有資料缺口`;
   if (pending) summary.textContent += `｜${pending} 個事件待核對`;
   const scan = health.event_scan;
-  event.textContent = `${scan.label || "事件掃描"}｜${scan.detail || ""}`;
+  const scanState = scan.state || scan.status || "unknown";
+  const scanStateLabel = scanState === "scan_failed" || scanState === "failed" ? "掃描失敗" : scanState === "no_events" || scanState === "no_event" ? "本輪無事件" : "本輪已掃描";
+  const observation = health.observability || health.slo || health.monitor_health || {};
+  const healthMetricParts = [
+    Number.isFinite(Number(observation.success_rate)) ? `成功率 ${Number(observation.success_rate).toFixed(1)}%` : "",
+    Number.isFinite(Number(observation.crosscheck_rate)) ? `核對率 ${Number(observation.crosscheck_rate).toFixed(1)}%` : "",
+    Number.isFinite(Number(observation.stale_count)) ? `快取 ${Number(observation.stale_count)} 筆` : "",
+  ].filter(Boolean).join("｜");
+  event.textContent = `${scan.label || "事件掃描"}｜${scanStateLabel}${scan.detail ? `｜${scan.detail}` : ""}${healthMetricParts ? `｜${healthMetricParts}` : ""}`;
   event.dataset.status = scan.status || "partial";
   list.innerHTML = health.sources.map((source) => {
-    const status = source.status === "healthy" ? "正常" : source.status === "no_event" ? "無事件" : source.status === "warming" ? "建檔中" : source.status === "pending" ? "待核對" : source.status === "stale" ? "使用快取" : "部分缺漏";
+    const status = source.status === "healthy" ? "正常" : source.status === "no_event" ? "無事件" : source.status === "warming" ? "建檔中" : source.status === "pending" ? "待核對" : source.status === "stale" ? "使用快取" : source.status === "failed" ? "掃描失敗" : "部分缺漏";
     const pendingReasons = source.status === "pending" && source.pending_reasons && typeof source.pending_reasons === "object"
       ? Object.entries(source.pending_reasons).filter(([, count]) => Number(count) > 0).map(([reason, count]) => {
         const labels = {
@@ -447,7 +455,12 @@ const renderSourceHealth = (health, snapshot = {}) => {
     if (Number.isFinite(Number(source.item_count))) freshness.push(`資料 ${Number(source.item_count)} 筆`);
     if (source.last_success_at) freshness.push(`最近成功 ${traceTime(source.last_success_at)}`);
     if (Number.isFinite(Number(source.latency_ms))) freshness.push(`延遲 ${Math.round(Number(source.latency_ms))} ms`);
-    const detail = [issue, candidateNote, provenance, freshness.join("｜")].filter(Boolean).join("｜");
+    const quality = [
+      Number.isFinite(Number(source.success_rate)) ? `成功率 ${Number(source.success_rate).toFixed(1)}%` : "",
+      Number.isFinite(Number(source.consecutive_failures)) ? `連續失敗 ${Number(source.consecutive_failures)} 次` : "",
+      Number.isFinite(Number(source.crosscheck_rate)) ? `核對率 ${Number(source.crosscheck_rate).toFixed(1)}%` : "",
+    ].filter(Boolean).join("｜");
+    const detail = [issue, candidateNote, provenance, quality, freshness.join("｜")].filter(Boolean).join("｜");
     return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${escapeHtml(source.status || "partial")}">${status}</em></li>`;
   }).join("");
   if (card) card.open = false;
@@ -562,6 +575,18 @@ const researchScoreParts = (item) => {
   return { label: "動能分數", value: `${Number(item.score).toFixed(1)} / 100` };
 };
 
+const researchExplainability = (item) => {
+  const passed = Array.isArray(item.passed_conditions) ? item.passed_conditions : [];
+  const failed = Array.isArray(item.failed_conditions) ? item.failed_conditions : [];
+  const risks = Array.isArray(item.risk_factors) ? item.risk_factors : [];
+  const completeness = item.data_completeness ?? item.data_quality_score;
+  const invalidation = item.invalidation || item.invalidation_condition;
+  if (!passed.length && !failed.length && !risks.length && completeness === undefined && !invalidation) return "";
+  const list = (values, fallback) => values.length ? values.map((value) => `<li>${escapeHtml(value)}</li>`).join("") : `<li>${fallback}</li>`;
+  const quality = completeness === undefined || completeness === null ? "資料完整度暫時無法取得" : `資料完整度 ${escapeHtml(String(completeness))}`;
+  return `<details class="research-explainability"><summary>條件與風險說明</summary><p><b>已通過：</b></p><ul>${list(passed, "尚未提供")}</ul><p><b>未通過：</b></p><ul>${list(failed, "無額外未通過條件")}</ul><p><b>風險：</b></p><ul>${list(risks, "尚未提供")}</ul><small>${escapeHtml(quality)}${invalidation ? `｜失效條件：${escapeHtml(invalidation)}` : ""}。僅供研究觀察，不構成買賣指令。</small></details>`;
+};
+
 const renderResearchList = (id, items, empty) => {
   const container = document.getElementById(id);
   if (!container) return;
@@ -573,7 +598,7 @@ const renderResearchList = (id, items, empty) => {
     const change = item.change_percent === null || item.change_percent === undefined ? "—" : signedPercent(item.change_percent);
     const tags = researchStrategyTags(item).map((label) => `<span class="strategy-chip">${escapeHtml(label)}</span>`).join("");
     const score = researchScoreParts(item);
-    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}</strong></div></li>`;
+    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}</strong></div>${researchExplainability(item)}</li>`;
   }).join("");
 };
 
