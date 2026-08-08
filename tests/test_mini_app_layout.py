@@ -200,6 +200,15 @@ def test_value_drawer_hides_observations_when_five_formal_candidates_exist():
     assert "const visibleObservation = visibleFormal.length >= 5 ? []" in app
 
 
+def test_research_ui_keeps_completed_rows_visible_during_history_build():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert "const sourceCandidateCount" in app
+    assert "const hasVisibleRows = sourceHasVisibleCandidates(source, strategy);" in app
+    assert "buildingWithoutPartialRows && !partialCandidatesAllowed && !hasVisibleRows" in app
+    assert "目前候選仍可檢視" in app
+
+
 def test_value_drawer_explains_that_mops_history_is_still_being_verified():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
 
