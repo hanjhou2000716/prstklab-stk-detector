@@ -18,7 +18,7 @@
       "type": "object",
       "properties": {
         "scan_state": {"enum": ["complete", "building", "failed"]},
-        "candidate_state": {"enum": ["available", "no_candidates", "building", "data_gap", "failed"]},
+        "candidate_state": {"enum": ["available", "available_from_completed_records", "no_candidates", "building", "data_gap", "data_unavailable", "failed"]},
         "candidates": {"type": ["integer", "null"], "minimum": 0},
         "visible_candidates": {"type": ["integer", "null"], "minimum": 0},
         "formal_candidates": {"type": ["integer", "null"], "minimum": 0},
@@ -27,6 +27,12 @@
         "complete_records": {"type": ["integer", "null"], "minimum": 0},
         "failed_records": {"type": ["integer", "null"], "minimum": 0},
         "data_gap_counts": {"type": ["integer", "null"], "minimum": 0},
+        "visible_candidate_count": {"type": ["integer", "null"], "minimum": 0},
+        "formal_candidate_count": {"type": ["integer", "null"], "minimum": 0},
+        "observation_candidate_count": {"type": ["integer", "null"], "minimum": 0},
+        "history_pending_count": {"type": ["integer", "null"], "minimum": 0},
+        "source_failure_count": {"type": ["integer", "null"], "minimum": 0},
+        "incomplete_record_count": {"type": ["integer", "null"], "minimum": 0},
         "candidates_definition": {"const": "visible_candidates"}
       },
       "additionalProperties": true

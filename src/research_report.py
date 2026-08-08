@@ -1,16 +1,15 @@
 """Normalize public-scan artifacts into one browser- and report-friendly shape."""
 from __future__ import annotations
 
-from collections import Counter
 import ast
 import json
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
 from src.price_action import FUNNEL_LABELS, structure_match_score
-
 
 NOTICE = "不同策略的研究排序不可直接視為同一種分數；本報表僅統一欄位與資料狀態。"
 
@@ -48,7 +47,7 @@ def _candidate_state(*, scan_state: str | None, visible: int, data_gap: int | No
     if scan_state == "failed":
         return "data_gap"
     if scan_state == "building":
-        return "building" if data_gap else ("available" if visible else "building")
+        return "available_from_completed_records" if visible else ("building" if not data_gap else "data_gap")
     if visible:
         return "available"
     return "no_candidates" if scan_state == "complete" else "data_gap"
@@ -125,7 +124,6 @@ def normalize_frame(frame: pd.DataFrame, market: str, strategy: str) -> list[dic
             "value_checks": _value(row.get("value_checks")),
             "strategy_label": _value(row.get("strategy_label")),
             "list_type": _value(row.get("list_type")),
-            "condition_count": _value(row.get("condition_count")),
             "pristine_conditions_matched": _value(row.get("pristine_conditions_matched")),
             "pristine_conditions_total": _value(row.get("pristine_conditions_total")),
             "quality_verified": _value(row.get("quality_verified")),
@@ -173,6 +171,7 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                 else "資料暫時無法取得"
             )
             scan_state = _normalize_scan_state(base, file_readable=False)
+            requested_records = _int_or_none(base.get("requested"))
             failed_records = _int_or_none(base.get("failed"))
             complete_records = _int_or_none(base.get("complete_records"))
             if complete_records is None:
@@ -189,6 +188,12 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                 # an empty source and thereby fail the release contract.
                 "formal_candidates": 0,
                 "observation_candidates": 0,
+                "visible_candidate_count": 0,
+                "formal_candidate_count": 0,
+                "observation_candidate_count": 0,
+                "history_pending_count": _int_or_none(base.get("history_pending")),
+                "source_failure_count": failed_records or 0,
+                "incomplete_record_count": max(0, (requested_records or 0) - (complete_records or 0)) if requested_records is not None else None,
                 "complete_records": complete_records,
                 "failed_records": failed_records,
                 "data_gap_counts": failed_records or 0,
@@ -237,6 +242,12 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
             "candidates_definition": "visible_candidates",
             "formal_candidates": _bounded_candidate_count(base.get("formal_candidates"), visible) if base.get("formal_candidates") is not None else (formal_rows or None),
             "observation_candidates": _bounded_candidate_count(base.get("observation_candidates"), visible) if base.get("observation_candidates") is not None else (observation_rows or None),
+            "visible_candidate_count": visible,
+            "formal_candidate_count": _bounded_candidate_count(base.get("formal_candidates"), visible) if base.get("formal_candidates") is not None else (formal_rows or 0),
+            "observation_candidate_count": _bounded_candidate_count(base.get("observation_candidates"), visible) if base.get("observation_candidates") is not None else (observation_rows or 0),
+            "history_pending_count": _int_or_none(base.get("history_pending")),
+            "source_failure_count": failed_records,
+            "incomplete_record_count": max(0, (requested_records or 0) - (complete_records or 0)) if requested_records is not None else None,
             "requested_records": requested_records,
             "complete_records": complete_records,
             "failed_records": failed_records,

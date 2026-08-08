@@ -310,6 +310,37 @@ def annotate_quote_freshness(quotes: list[dict[str, Any]], *, now: datetime | No
     return annotated
 
 
+def summarize_market_freshness(quotes: list[dict[str, Any]]) -> dict[str, Any]:
+    """Return one honest aggregate state without hiding per-card freshness.
+
+    ``quote_time`` alone is not sufficient: a provider can return an old
+    daily bar with a new fetch timestamp.  Aggregate state is therefore based
+    on the already-classified ``freshness`` field.
+    """
+    counts = {"live": 0, "recent_close": 0, "stale": 0, "unavailable": 0}
+    for quote in quotes:
+        state = str(quote.get("freshness") or "unavailable")
+        counts[state if state in counts else "unavailable"] += 1
+    total = sum(counts.values())
+    if not total or counts["unavailable"] == total:
+        overall = "unavailable"
+    elif counts["stale"] or counts["unavailable"]:
+        overall = "degraded"
+    elif counts["live"] and counts["recent_close"]:
+        overall = "mixed"
+    elif counts["live"]:
+        overall = "live"
+    else:
+        overall = "close_only"
+    return {
+        "overall_state": overall,
+        "live_count": counts["live"],
+        "recent_close_count": counts["recent_close"],
+        "stale_count": counts["stale"],
+        "unavailable_count": counts["unavailable"],
+    }
+
+
 def get_quote(item: dict[str, str], session: str | None = None) -> dict[str, Any]:
     """Collect a five-minute live bar when eligible, otherwise a daily close."""
     import yfinance as yf
@@ -687,8 +718,9 @@ def build_market_snapshot() -> dict[str, Any]:
             "indices": quality_summary(indices),
         },
     )
-    live_quotes = sum(item.get("quote_time") is not None for item in [*quotes, *indices])
-    close_quotes = len(quotes) + len(indices) - live_quotes
+    freshness_summary = summarize_market_freshness([*quotes, *indices])
+    live_quotes = freshness_summary["live_count"]
+    close_quotes = freshness_summary["recent_close_count"] + freshness_summary["stale_count"]
     return {
         "generated_at": scan_completed_at.isoformat(),
         "scan": {
@@ -697,7 +729,9 @@ def build_market_snapshot() -> dict[str, Any]:
             "scope": "公開市場定時掃描",
             "live_quote_count": live_quotes,
             "close_quote_count": close_quotes,
+            **freshness_summary,
         },
+        **freshness_summary,
         "data_status": quote_data_status,
         "markets": markets,
         "indices": indices,
