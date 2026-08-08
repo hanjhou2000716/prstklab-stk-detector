@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -659,7 +660,16 @@ def build_market_snapshot() -> dict[str, Any]:
     risk = build_risk_snapshot()
     news = build_news_snapshot()
     official_events = fetch_official_events()
-    phase_two = build_phase_two_snapshot()
+    raw_store = None
+    raw_root = os.getenv("PRSTK_RAW_OBSERVATION_ROOT", "").strip()
+    if raw_root:
+        # Persistent Railway storage may opt in to the immutable raw store;
+        # GitHub Actions leaves this unset so raw payloads never enter the
+        # public data-release branch accidentally.
+        from src.raw_observation_store import RawObservationStore
+
+        raw_store = RawObservationStore(raw_root)
+    phase_two = build_phase_two_snapshot(raw_store=raw_store)
     # Phase 5: crypto spot prices are independently checked after the regular
     # Yahoo/index pass. Re-annotate freshness because Binance is intraday.
     indices = apply_crypto_spot_crosscheck(indices, phase_two.get("crypto_spot"))

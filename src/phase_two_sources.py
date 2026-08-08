@@ -13,8 +13,11 @@ import re
 from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import Any
+from uuid import uuid4
 
 import requests
+
+from src.raw_observation_store import RawObservationStore
 
 KOFIA_URL = "https://freesis.kofia.or.kr/stat/FreeSIS.do?parentDivId=MSIS10000000000000&serviceId=STATSCU0100000070"
 FRED_URL = "https://api.stlouisfed.org/fred/series/observations"
@@ -214,8 +217,49 @@ def fetch_crypto_macd(*, timeout: int = 20) -> dict[str, Any]:
             "health": _health("crypto_macd", "BTC／ETH MACD", BINANCE_KLINES_URL, status, checked_at, item_count=4, data_gap=errors or None)}
 
 
-def build_phase_two_snapshot() -> dict[str, Any]:
-    """Collect Phase 2 sources independently and expose one health list."""
+def _record_phase_two_observation(
+    store: RawObservationStore | None,
+    key: str,
+    result: dict[str, Any],
+) -> None:
+    """Persist one source result when durable raw storage is configured.
+
+    Providers are intentionally still isolated: a storage failure must not
+    turn a healthy market fetch into a publishable alert.  The health record
+    receives the observation ID only after the immutable payload is written.
+    """
+    if store is None:
+        return
+    health = result.get("health")
+    if not isinstance(health, dict):
+        return
+    endpoint = str(health.get("source_url") or key)
+    fetched_at = str(result.get("fetched_at") or health.get("checked_at") or _now())
+    try:
+        observation = store.record(
+            provider=key,
+            endpoint=endpoint,
+            fetched_at=fetched_at,
+            request_id=f"phase-two-{uuid4().hex}",
+            payload=result,
+            http_status=200 if str(result.get("status")) in {"ok", "healthy"} else None,
+            parser_version="phase-two-v1",
+            parsing_status="normalized_snapshot",
+        )
+    except Exception as exc:  # pragma: no cover - filesystem-specific
+        health["observation_store_error"] = type(exc).__name__
+        return
+    health["observation_id"] = observation.observation_id
+    health["raw_payload_location"] = observation.raw_payload_location
+
+
+def build_phase_two_snapshot(*, raw_store: RawObservationStore | None = None) -> dict[str, Any]:
+    """Collect Phase 2 sources independently and expose one health list.
+
+    ``PRSTK_RAW_OBSERVATION_ROOT`` enables the append-only store in Railway or
+    another persistent runtime.  GitHub Actions can leave it unset so raw
+    payloads never accidentally become part of the public data-release branch.
+    """
     from src.crypto_spot_sources import fetch_crypto_spot_snapshot
     from src.public_market_secondary import fetch_public_market_secondary
 
@@ -225,6 +269,15 @@ def build_phase_two_snapshot() -> dict[str, Any]:
     public_market_secondary = fetch_public_market_secondary()
     fred = fetch_fred_snapshot()
     eia = fetch_eia_snapshot()
+    for key, result in (
+        ("kofia", kofia),
+        ("crypto_macd", crypto),
+        ("crypto_spot", crypto_spot),
+        ("public_market_secondary", public_market_secondary),
+        ("fred", fred),
+        ("eia", eia),
+    ):
+        _record_phase_two_observation(raw_store, key, result)
     return {
         "kofia": kofia,
         "crypto_macd": crypto,
