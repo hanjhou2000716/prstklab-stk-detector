@@ -166,7 +166,7 @@ def crosscheck_taiex_quote(
     aggregated_price = quote.get("price")
     price_gap_percent = None
     try:
-        if float(aggregated_price) > 0:
+        if isinstance(aggregated_price, (int, float)) and float(aggregated_price) > 0:
             price_gap_percent = round((float(twse["price"]) / float(aggregated_price) - 1) * 100, 2)
     except (TypeError, ValueError, KeyError):
         pass

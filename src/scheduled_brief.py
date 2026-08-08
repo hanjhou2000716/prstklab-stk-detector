@@ -129,7 +129,7 @@ def _pick_event(snapshot: dict, slot: str) -> dict | None:
     """Prioritise the market currently relevant to the timed watch brief."""
     events = (snapshot.get("events") or {}).get("items", [])
     if slot in TAIWAN_SESSION_SLOTS:
-        preferred = ("TAIEX", "TPEx")
+        preferred: tuple[str, ...] = ("TAIEX", "TPEx")
     else:
         preferred = ("SOX", "NASDAQ", "S&P 500")
     for ticker in preferred:

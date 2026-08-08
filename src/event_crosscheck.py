@@ -31,7 +31,8 @@ def _load_database() -> dict[str, Any]:
 
 
 _DATABASE = _load_database()
-_GDELT = _DATABASE.get("gdelt") if isinstance(_DATABASE.get("gdelt"), dict) else {}
+_GDELT_VALUE = _DATABASE.get("gdelt")
+_GDELT: dict[str, Any] = _GDELT_VALUE if isinstance(_GDELT_VALUE, dict) else {}
 _ENTITY_ALIASES = tuple(str(value) for value in (_GDELT.get("entities") or ()) if str(value).strip())
 _ACTION_ALIASES = tuple(
     str(value)
@@ -122,13 +123,15 @@ def event_cluster_key(record: dict[str, Any]) -> str:
 
 
 def _source_url(record: dict[str, Any]) -> str:
-    trace = record.get("source_trace") if isinstance(record.get("source_trace"), dict) else {}
+    trace_value = record.get("source_trace")
+    trace: dict[str, Any] = trace_value if isinstance(trace_value, dict) else {}
     return str(record.get("source_url") or record.get("url") or trace.get("source_url") or "").strip()
 
 
 def _source_domains(record: dict[str, Any]) -> set[str]:
     domains = {source_domain(_source_url(record))}
-    trace = record.get("source_trace") if isinstance(record.get("source_trace"), dict) else {}
+    trace_value = record.get("source_trace")
+    trace: dict[str, Any] = trace_value if isinstance(trace_value, dict) else {}
     domains.update(source_domain(value) for value in trace.get("verified_domains") or ())
     return {value for value in domains if value}
 

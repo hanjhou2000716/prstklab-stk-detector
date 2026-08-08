@@ -164,7 +164,7 @@ def _save_news_cache(cache: dict[str, Any]) -> None:
         return
 
 
-def _recent_cached_stories(cache: dict[str, Any], market: str) -> list[dict[str, str]]:
+def _recent_cached_stories(cache: dict[str, Any], market: str) -> list[dict[str, Any]]:
     entry = (cache.get("markets") or {}).get(market)
     if not isinstance(entry, dict) or not isinstance(entry.get("stories"), list):
         return []
@@ -174,7 +174,7 @@ def _recent_cached_stories(cache: dict[str, Any], market: str) -> list[dict[str,
             return []
     except (TypeError, ValueError):
         return []
-    return [dict(item, stale_used=True) for item in entry["stories"] if isinstance(item, dict)]
+    return [{**item, "stale_used": True} for item in entry["stories"] if isinstance(item, dict)]
 
 
 def sentiment_label(score: float | None) -> str:
@@ -197,6 +197,8 @@ def vix_stage(value: float | None, percentile: float | None = None) -> str:
     if value is None and percentile is None:
         return "波動階段暫時無法取得"
     if percentile is None:
+        if value is None:
+            return "波動階段暫時無法取得"
         number = float(value)
         if number < 12:
             return "極度樂觀"
@@ -234,7 +236,7 @@ def _latest_close(symbol: str) -> dict[str, Any]:
         raise ValueError("沒有可用的收盤資料。")
     current = float(close.iloc[-1])
     previous = float(close.iloc[-2]) if len(close) >= 2 else None
-    change_percent = None if previous in (None, 0) else round((current / previous - 1) * 100, 2)
+    change_percent = None if previous is None or previous == 0 else round((current / previous - 1) * 100, 2)
     window = close.tail(252)
     percentile = round(float((window <= current).sum() / len(window) * 100), 1) if len(window) else None
     return {
@@ -433,7 +435,8 @@ def _news_from_html(html: str, market: str, limit: int = 5) -> list[dict[str, st
     market_focus: list[dict[str, str]] = []
     seen: set[str] = set()
     for link in soup.select('a[href^="/news/id/"]'):
-        href = link.get("href", "")
+        raw_href = link.get("href", "")
+        href = raw_href if isinstance(raw_href, str) else ""
         title = " ".join(link.stripped_strings)
         if not title or href in seen:
             continue

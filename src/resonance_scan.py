@@ -17,5 +17,8 @@ def build_resonance_snapshot(watchlist: tuple[dict[str, str], ...], histories=No
                 candidates.append({"ticker": item["ticker"], "name": item["name"], "score": score, "status": label(score)})
         except Exception:
             errors.append(f"{item['ticker']} 共振資料暫時無法取得")
-    candidates.sort(key=lambda item: item["score"])
+    def score_key(item: dict[str, object]) -> float:
+        value = item.get("score")
+        return float(value) if isinstance(value, (int, float)) else 0.0
+    candidates.sort(key=score_key)
     return {"status": "三維共振研究", "notice": "僅呈現 FGI 低於 56 的研究候選，不構成買賣建議。", "candidates": candidates[:10], "errors": errors}

@@ -159,7 +159,8 @@ class EventLedger:
         lock_timeout_seconds: float = 30.0,
         lock_stale_after_seconds: float = 120.0,
     ) -> None:
-        self.path = Path(path or os.getenv("EVENT_LEDGER_PATH", "site/data/event-ledger.json"))
+        configured_path = path or os.getenv("EVENT_LEDGER_PATH") or "site/data/event-ledger.json"
+        self.path = Path(configured_path)
         self.retention_days = max(30, int(retention_days))
         self.lock_timeout_seconds = max(0.1, float(lock_timeout_seconds))
         self.lock_stale_after_seconds = max(1.0, float(lock_stale_after_seconds))
@@ -198,7 +199,7 @@ class EventLedger:
         key = canonical_event_key(event)
         facts = fact_fingerprint(event)
         source_url = normalize_source_url(event.get("source_url") or event.get("url"))
-        source_domain = urlsplit(source_url).hostname.lower().removeprefix("www.") if source_url else ""
+        source_domain = (urlsplit(source_url).hostname or "").lower().removeprefix("www.") if source_url else ""
         record = self.records.get(key)
         changed = False
         if record is None:

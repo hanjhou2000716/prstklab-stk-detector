@@ -65,7 +65,7 @@ def apply_monitor_health(snapshot: dict[str, Any], payload: dict[str, Any]) -> d
     issues = _pending_issues(payload)
     if status == "failed":
         issues = [f"GDELT 掃描失敗：{error or '等待下一輪重試'}"]
-    entry = {
+    entry: dict[str, Any] = {
         "key": "gdelt_crosscheck",
         "label": "GDELT 事件交叉核對",
         "status": source_status,

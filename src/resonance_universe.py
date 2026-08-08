@@ -23,13 +23,14 @@ def rank_records(
         if score is None or quote is None or score >= 56 or quote["turnover"] < min_turnover:
             continue
         summary = smart_money_summary(smart_money_conditions(bars, benchmark_bars))
-        if summary["count"] < 3:
+        count = summary.get("count")
+        if not isinstance(count, (int, float)) or count < 3:
             continue
         rows.append({
             "ticker": record["ticker"], "name": record.get("name", record["ticker"]),
             **quote,
             "score": summary["score"], "fgi_score": score, "status": summary["tier"],
-            "conditions_matched": summary["matched_labels"], "condition_count": summary["count"],
+            "conditions_matched": summary["matched_labels"], "condition_count": int(count),
             "fgi_status": label(score),
         })
     if not rows:

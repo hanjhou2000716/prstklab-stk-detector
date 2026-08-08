@@ -151,9 +151,10 @@ def _resonance_rows(histories: dict[str, pd.DataFrame], tickers: list[str], benc
         conditions = smart_money_conditions(bars, benchmark)
         summary = smart_money_summary(conditions)
         turnover = float(bars.iloc[-1]["Close"] * bars.iloc[-1]["Volume"])
-        if fgi is not None and fgi < 56 and summary["count"] >= 3 and turnover >= threshold:
+        count = summary.get("count")
+        if fgi is not None and fgi < 56 and isinstance(count, (int, float)) and count >= 3 and turnover >= threshold:
             # Four confirmed conditions always rank ahead of a three-condition fallback.
-            rows.append({"ticker": ticker, "score": summary["score"], "fgi": fgi, "condition_count": summary["count"], "conditions": summary["matched_labels"]})
+            rows.append({"ticker": ticker, "score": summary["score"], "fgi": fgi, "condition_count": int(count), "conditions": summary["matched_labels"]})
     return sorted(rows, key=lambda item: (item["condition_count"], item["score"]), reverse=True)
 
 
