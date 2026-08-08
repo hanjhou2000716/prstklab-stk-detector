@@ -54,3 +54,12 @@ The release manifest normalizer converts legacy gap maps to integer counts and
 backfills candidate state without inventing data.  To roll back, revert the
 producer commit and restore the previous `data-release` manifest; do not copy
 individual artifacts across releases.
+
+## Alert contract and lifecycle
+
+All notification paths can use the `AlertEnvelope` contract and deterministic
+lifecycle engine. An observation remains `pending_confirmation` until official,
+independent-source, and market-synchronisation evidence are all present.
+Cooldown and hourly budgets are evaluated before delivery; suppressed records
+remain auditable. `src/alert_caption.py` produces a safe caption no longer than
+40 Unicode characters.
