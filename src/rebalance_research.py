@@ -48,11 +48,11 @@ def review_rebalance(
     if not current:
         return {"status": "尚未提供現有權重", "notice": NOTICE, "should_review": False, "reasons": ["需手動提供現有權重後才能比較漂移"], "drifts": []}
 
-    drifts = []
+    drifts: list[dict[str, Any]] = []
     for ticker in sorted(set(current) | set(target)):
         present, desired = current.get(ticker, 0.0), target.get(ticker, 0.0)
         drifts.append({"ticker": ticker, "current_weight_percent": round(present, 2), "target_weight_percent": round(desired, 2), "drift_percent": round(abs(present - desired), 2)})
-    maximum = max(item["drift_percent"] for item in drifts)
+    maximum = max(float(item["drift_percent"]) for item in drifts)
     reasons = [f"權重漂移最高 {maximum}%（門檻 {drift_threshold_percent}%）"] if maximum >= drift_threshold_percent else []
 
     regime = regime or {}

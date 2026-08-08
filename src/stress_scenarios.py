@@ -25,11 +25,11 @@ def run_stress_scenario(
         raise ValueError(f"unknown stress scenario: {scenario}")
     shocks = dict(SCENARIOS[scenario])
     shocks.update(assumptions or {})
-    contributions = []
+    contributions: list[dict[str, Any]] = []
     for ticker, weight in exposures.items():
         shock = float(shocks.get(ticker, 0.0))
         contributions.append({"ticker": ticker, "weight": float(weight), "shock_percent": shock, "weighted_effect": float(weight) * shock / 100})
-    total_effect = round(sum(item["weighted_effect"] for item in contributions), 6)
+    total_effect = round(sum(float(item["weighted_effect"]) for item in contributions), 6)
     return {
         "scenario": scenario,
         "assumptions": shocks,

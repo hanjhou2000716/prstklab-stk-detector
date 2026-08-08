@@ -114,7 +114,9 @@ def fetch_kofia_credit_margin(*, timeout: int = 20) -> dict[str, Any]:
             numbers = [_to_float(value) for value in number_pattern.findall(row)]
             numbers = [value for value in numbers if value is not None]
             if numbers:
-                candidates.append((date_match.group(1).replace(".", "-"), numbers[-1]))
+                latest = numbers[-1]
+                if latest is not None:
+                    candidates.append((str(date_match.group(1)).replace(".", "-"), latest))
         if not candidates:
             return {"status": "data_gap", "data_gap": "KOFIA response has no unambiguous balance", "health": _health("kofia_margin", "KOFIA 韓國全市場信用融資", KOFIA_URL, "partial", checked_at)}
         candidates.sort(key=lambda item: item[0])
@@ -141,7 +143,8 @@ def fetch_fred_snapshot(series_ids: dict[str, str] | None = None, *, timeout: in
     errors: list[str] = []
     for series_id, label in series.items():
         try:
-            response = requests.get(FRED_URL, params={"api_key": key, "file_type": "json", "series_id": series_id, "sort_order": "desc", "limit": 1}, timeout=timeout)
+            params: dict[str, str | int] = {"api_key": key, "file_type": "json", "series_id": series_id, "sort_order": "desc", "limit": 1}
+            response = requests.get(FRED_URL, params=params, timeout=timeout)
             response.raise_for_status()
             observations = response.json().get("observations", [])
             if not observations or observations[0].get("value") in {None, "."}:
@@ -161,7 +164,8 @@ def fetch_eia_snapshot(*, timeout: int = 20) -> dict[str, Any]:
     if not key:
         return {"status": "missing_api_key", "data": {}, "health": _health("eia", "EIA 官方能源資料", EIA_URL, "missing_api_key", checked_at, required_for="alert", item_count=0, data_gap="EIA_API_KEY 未設定")}
     try:
-        response = requests.get(EIA_URL, params={"api_key": key, "frequency": "weekly", "data[0]": "value", "facets[seriesId][]": "RWTC", "sort[0][column]": "period", "sort[0][direction]": "desc", "length": 1}, timeout=timeout)
+        params: dict[str, str | int] = {"api_key": key, "frequency": "weekly", "data[0]": "value", "facets[seriesId][]": "RWTC", "sort[0][column]": "period", "sort[0][direction]": "desc", "length": 1}
+        response = requests.get(EIA_URL, params=params, timeout=timeout)
         response.raise_for_status()
         rows = response.json().get("response", {}).get("data", [])
         if not rows:

@@ -74,7 +74,7 @@ def _parse_nasdaq_quote(payload: dict[str, Any], ticker: str) -> dict[str, Any]:
         "ticker": ticker,
         "price": float(raw_price),
         "change_percent": float(raw_change) if raw_change else None,
-        "quote_date": str(data.get("timeAsOf") or "") or None,
+        "quote_date": str(data.get("timeAsOf") or "") if isinstance(data, dict) and data.get("timeAsOf") else None,
         "quote_time": None,
         "quote_basis": "最近公開收盤",
         "quote_source": "Nasdaq public index quote",

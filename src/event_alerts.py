@@ -555,7 +555,10 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     label = str(event.get("short_label") or "市場事件")
     title = str(event.get("title") or "公開事件更新")
     why_important, market_context, stock_observation = _event_market_context(label)
-    prior_trace = event.get("source_trace") if isinstance(event.get("source_trace"), dict) else {}
+    prior_trace_value = event.get("source_trace")
+    prior_trace: dict[str, Any] = (
+        prior_trace_value if isinstance(prior_trace_value, dict) else {}
+    )
     url = str(event.get("source_url") or event.get("url") or prior_trace.get("source_url") or "").strip()
     parsed = urlparse(url)
     domain = (parsed.hostname or "").lower().removeprefix("www.")
@@ -668,7 +671,7 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     # the relevant-market synchronization gate. This prevents a SOX move from
     # becoming a fake percentage for a Taiwan corporate notice.
     representative_move = (
-        max(related_moves, key=lambda value: abs(float(value)))
+            max(related_moves, key=lambda value: abs(float(value or 0)))
         if related_moves and impact_confirmation.get("confirmed")
         else None
     )
