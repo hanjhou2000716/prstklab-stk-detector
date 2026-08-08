@@ -38,7 +38,10 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: unified-research-report
+  # All workflows that publish data-release share one writer lock.  Keeping
+  # research in a separate group allowed a refresh/brief workflow to race its
+  # immutable snapshot commit and produce non-fast-forward or mixed releases.
+  group: main-data-writer
   cancel-in-progress: false
 jobs:
   build-and-deploy:
