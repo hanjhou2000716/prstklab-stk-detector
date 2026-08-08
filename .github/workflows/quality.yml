@@ -67,3 +67,5 @@ jobs:
         run: python -m src.delivery_smoke_test
       - name: Offline release-to-delivery dry run
         run: python -m src.system_dry_run
+      - name: Full offline Actions-to-Telegram E2E
+        run: python -m src.full_offline_e2e
