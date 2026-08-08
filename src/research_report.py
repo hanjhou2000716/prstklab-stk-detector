@@ -129,6 +129,16 @@ def normalize_frame(frame: pd.DataFrame, market: str, strategy: str) -> list[dic
             "quality_verified": _value(row.get("quality_verified")),
             "heat_verified": _value(row.get("heat_verified")),
             "verification_gaps": _value(row.get("verification_gaps")),
+            "passed_conditions": _value(row.get("passed_conditions")),
+            "failed_conditions": _value(row.get("failed_conditions")),
+            "risk_factors": _value(row.get("risk_factors")),
+            "data_completeness": _value(row.get("data_completeness")),
+            "invalidation": _value(row.get("invalidation")),
+            "invalidation_condition": _value(row.get("invalidation_condition")),
+            "advice_gate": _value(row.get("advice_gate")),
+            "strategy_version": _value(row.get("strategy_version")),
+            "data_version": _value(row.get("data_version")),
+            "backtest_release": _value(row.get("backtest_release")),
         })
     return candidates
 

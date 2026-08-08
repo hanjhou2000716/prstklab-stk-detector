@@ -576,9 +576,10 @@ const researchScoreParts = (item) => {
 };
 
 const researchExplainability = (item) => {
-  const passed = Array.isArray(item.passed_conditions) ? item.passed_conditions : [];
-  const failed = Array.isArray(item.failed_conditions) ? item.failed_conditions : [];
-  const risks = Array.isArray(item.risk_factors) ? item.risk_factors : [];
+  const asList = (value) => Array.isArray(value) ? value : String(value || "").split(/[|,、;]/).map((entry) => entry.trim()).filter(Boolean);
+  const passed = asList(item.passed_conditions);
+  const failed = asList(item.failed_conditions);
+  const risks = asList(item.risk_factors);
   const completeness = item.data_completeness ?? item.data_quality_score;
   const invalidation = item.invalidation || item.invalidation_condition;
   if (!passed.length && !failed.length && !risks.length && completeness === undefined && !invalidation) return "";
