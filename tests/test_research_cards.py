@@ -98,6 +98,7 @@ def test_loader_preserves_explainability_and_registry_fields(tmp_path):
             "risk_factors": ["earnings_gap"], "data_completeness": 96,
             "invalidation_condition": "資料逾時", "strategy_version": "value-v2",
             "data_version": "pit-2026-07-25", "backtest_release": "bt-2026-07",
+            "advice_allowed": False, "explainability": {"ticker": "MSFT"},
         }],
     }, ensure_ascii=False), encoding="utf-8")
 
@@ -107,3 +108,5 @@ def test_loader_preserves_explainability_and_registry_fields(tmp_path):
     assert candidate["failed_conditions"] == ["valuation"]
     assert candidate["invalidation_condition"] == "資料逾時"
     assert candidate["backtest_release"] == "bt-2026-07"
+    assert candidate["advice_allowed"] is False
+    assert candidate["explainability"]["ticker"] == "MSFT"
