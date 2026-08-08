@@ -3,6 +3,7 @@ import json
 from src import telegram_client
 from src.telegram_client import send_photo_brief
 
+
 class Response:
     status_code = 200
     ok = True
