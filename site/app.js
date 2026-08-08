@@ -405,7 +405,9 @@ const renderSourceHealth = (health, snapshot = {}) => {
     if (card) card.open = false;
     return;
   }
-  const missing = health.sources.filter((source) => ["partial", "failed", "data_gap"].includes(source.status)).length;
+  const missingClasses = new Set(["critical_gap", "configuration_required", "optional_degraded"]);
+  const missing = health.sources.filter((source) => ["partial", "failed", "data_gap"].includes(source.status)
+    || missingClasses.has(String(source.health_class || source.classification || ""))).length;
   const displayedMissing = Number.isFinite(Number(health.missing_source_count))
     ? Number(health.missing_source_count)
     : missing;
@@ -425,7 +427,16 @@ const renderSourceHealth = (health, snapshot = {}) => {
   event.textContent = `${scan.label || "事件掃描"}｜${scanStateLabel}${scan.detail ? `｜${scan.detail}` : ""}${healthMetricParts ? `｜${healthMetricParts}` : ""}`;
   event.dataset.status = scan.status || "partial";
   list.innerHTML = health.sources.map((source) => {
-    const status = source.status === "healthy" ? "正常" : source.status === "no_event" ? "無事件" : source.status === "warming" ? "建檔中" : source.status === "pending" ? "待核對" : source.status === "stale" ? "使用快取" : source.status === "failed" ? "掃描失敗" : "部分缺漏";
+    const healthClass = String(source.health_class || source.classification || "");
+    const healthClassLabels = {
+      healthy: "來源正常",
+      degraded_with_fallback: "備援運作",
+      optional_degraded: "可選來源缺口",
+      configuration_required: "待設定",
+      critical_gap: "關鍵缺口",
+      failed: "來源失敗",
+    };
+    const status = healthClassLabels[healthClass] || (source.status === "healthy" ? "正常" : source.status === "no_event" ? "無事件" : source.status === "warming" ? "建檔中" : source.status === "pending" ? "待核對" : source.status === "stale" ? "使用快取" : source.status === "failed" ? "掃描失敗" : "部分缺漏");
     const pendingReasons = source.status === "pending" && source.pending_reasons && typeof source.pending_reasons === "object"
       ? Object.entries(source.pending_reasons).filter(([, count]) => Number(count) > 0).map(([reason, count]) => {
         const labels = {
@@ -468,8 +479,10 @@ const renderSourceHealth = (health, snapshot = {}) => {
       Number.isFinite(Number(source.consecutive_failures)) ? `連續失敗 ${Number(source.consecutive_failures)} 次` : "",
       Number.isFinite(Number(source.crosscheck_rate)) ? `核對率 ${Number(source.crosscheck_rate).toFixed(1)}%` : "",
     ].filter(Boolean).join("｜");
-    const detail = [issue, candidateNote, provenance, quality, freshness.join("｜")].filter(Boolean).join("｜");
-    return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${escapeHtml(source.status || "partial")}">${status}</em></li>`;
+    const classification = healthClassLabels[healthClass] && healthClass !== "healthy" ? `健康分類：${healthClassLabels[healthClass]}` : "";
+    const detail = [classification, issue, candidateNote, provenance, quality, freshness.join("｜")].filter(Boolean).join("｜");
+    const statusClass = [source.status || "partial", healthClass].filter((value) => /^[a-z_]+$/.test(String(value))).join(" ");
+    return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${statusClass}">${status}</em></li>`;
   }).join("");
   if (card) card.open = false;
 };
