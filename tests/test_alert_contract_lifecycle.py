@@ -1,4 +1,5 @@
 from src.alert_caption import make_caption, validate_caption
+
 from src.alert_contract import AlertEnvelope
 from src.alert_lifecycle import transition
 from src.material_change import classify_price_pattern, has_material_change
