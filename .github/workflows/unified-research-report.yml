@@ -20,6 +20,12 @@ on:
         # Keep the work incremental, but finish a 0050+0051 pool in days
         # rather than weeks. The job remains bounded by the 55-minute limit.
         default: '24'
+      scan_mode:
+        description: production publishes; smoke/debug only upload an isolated artifact
+        required: true
+        type: choice
+        options: [production, smoke, debug]
+        default: production
   repository_dispatch:
     types: [unified-research-report]
   schedule:
@@ -46,6 +52,7 @@ jobs:
       US_LIMIT: ${{ inputs.us_limit || github.event.client_payload.us_limit || '0' }}
       BATCH_SIZE: ${{ inputs.batch_size || github.event.client_payload.batch_size || '50' }}
       MOPS_MAX_REFRESH: ${{ inputs.mops_max_refresh || github.event.client_payload.mops_max_refresh || '24' }}
+      SCAN_MODE: ${{ inputs.scan_mode || github.event.client_payload.scan_mode || 'production' }}
       NEWS_CACHE_PATH: site/data/news-cache.json
       SEC_FACTS_CACHE_PATH: data/sec-companyfacts-cache.json
       DATA_RELEASE_BRANCH: data-release
@@ -88,21 +95,29 @@ jobs:
       - name: 美股品質價值覆核
         continue-on-error: true
         run: python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE"
-      - run: python -m src.run_research_report
+      - run: python -m src.run_research_report --scan-mode "$SCAN_MODE"
       - run: python -m src.refresh_market_data
       - name: Build release manifest
+        if: env.SCAN_MODE == 'production'
         run: python -m src.release_manifest
       - name: 保存最新公開研究摘要
         run: |
-          python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json --message "chore: refresh public research report"
+          if [[ "$SCAN_MODE" == "production" ]]; then
+            python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json --message "chore: refresh public research report"
+          else
+            echo "scan_mode=$SCAN_MODE: isolated artifact only; skipping data-release publication"
+          fi
       - name: Configure GitHub Pages
+        if: env.SCAN_MODE == 'production'
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
+        if: env.SCAN_MODE == 'production'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
       - name: Deploy Pages
         id: deployment
+        if: env.SCAN_MODE == 'production'
         uses: ./.github/actions/deploy-pages-retry
       - uses: actions/upload-artifact@v4
         with:
