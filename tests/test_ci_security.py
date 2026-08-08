@@ -16,6 +16,6 @@ def test_quality_workflow_uses_locked_environment_and_coverage():
     assert "uv sync --locked --all-groups" in workflow
     assert "--cov=src" in workflow
     assert "coverage erase" in workflow
-    assert "--cov-fail-under=0" in workflow
+    assert "--cov-fail-under=80" in workflow
     assert "uv run ruff" in workflow
     assert "uv run mypy" in workflow
