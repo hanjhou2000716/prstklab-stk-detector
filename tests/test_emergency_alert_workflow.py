@@ -10,5 +10,5 @@ def test_emergency_workflow_has_fixed_major_event_categories_and_mini_app_delive
     assert "DASHBOARD_URL" in workflow
     assert "external-market-alert" in workflow
     assert "EXTERNAL_ALERT_SHARED_SECRET" in workflow
-    assert "actions/cache/restore@v4" in workflow
+    assert "actions/cache/restore@0400d5f644dc74513175e3cd8d07132dd4860809" in workflow
     assert "src.delivery_callback" in workflow

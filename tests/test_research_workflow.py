@@ -4,12 +4,12 @@ from pathlib import Path
 def test_research_workflow_deploys_the_new_research_snapshot_to_pages():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "unified-research-report.yml").read_text(encoding="utf-8")
 
-    assert "group: unified-research-report" in workflow
+    assert "group: main-data-writer" in workflow
     assert "types: [unified-research-report]" in workflow
     assert "github.event.client_payload.taiwan_limit" in workflow
     assert "pages: write" in workflow
     assert "id-token: write" in workflow
-    assert "actions/upload-pages-artifact@v3" in workflow
+    assert "actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa" in workflow
     assert "uses: ./.github/actions/deploy-pages-retry" in workflow
     assert "id: deployment" in workflow
     assert "scan_mode" in workflow
