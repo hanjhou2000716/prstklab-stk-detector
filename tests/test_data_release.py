@@ -26,6 +26,35 @@ def test_publish_rejects_empty_release(tmp_path):
         publish(root=tmp_path, includes=["site/data"], dry_run=True)
 
 
+def test_publish_force_adds_ignored_release_artifacts(tmp_path, monkeypatch):
+    """Ignored data files must still be staged into the isolated release index."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    (data_dir / "snapshot.json").write_text("{}", encoding="utf-8")
+    calls = []
+
+    monkeypatch.setattr(data_release, "_fetch_branch", lambda branch: True)
+
+    def fake_run(*args, **kwargs):
+        command = args[0]
+        calls.append(command)
+        if command[:2] == ["git", "write-tree"]:
+            return data_release.subprocess.CompletedProcess(command, 0, "tree123\n", "")
+        if command[:2] == ["git", "commit-tree"]:
+            return data_release.subprocess.CompletedProcess(command, 0, "commit123\n", "")
+        return data_release.subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(data_release.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        data_release, "_run",
+        lambda *args, **kwargs: data_release.subprocess.CompletedProcess(args, 0, "", ""),
+    )
+
+    result = publish(root=tmp_path, includes=["data/snapshot.json"])
+    assert result["published"] is True
+    assert ["git", "add", "-f", "--", "data/snapshot.json"] in calls
+
+
 def test_restore_skips_cache_paths_missing_from_remote_branch(tmp_path, monkeypatch):
     site_data = tmp_path / "site" / "data"
     site_data.mkdir(parents=True)

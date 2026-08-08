@@ -150,7 +150,17 @@ def publish(
     env["GIT_INDEX_FILE"] = str(index)
     try:
         subprocess.run(["git", "read-tree", "--empty"], check=True, capture_output=True, text=True, env=env)
-        subprocess.run(["git", "add", "--", *files], check=True, capture_output=True, text=True, env=env)
+        # Release artifacts are intentionally ignored by the source checkout
+        # (they are data-only outputs).  A fresh temporary index therefore
+        # needs -f, otherwise git add returns exit 1 and the entire research
+        # workflow stops before it can publish a new snapshot.
+        staged = subprocess.run(
+            ["git", "add", "-f", "--", *files],
+            check=False, capture_output=True, text=True, env=env,
+        )
+        if staged.returncode:
+            detail = staged.stderr.strip() or staged.stdout.strip() or "unknown git add error"
+            raise DataReleaseError(f"git add failed: {detail}")
         tree = subprocess.run(["git", "write-tree"], check=True, capture_output=True, text=True, env=env).stdout.strip()
         parent_result = _run("rev-parse", f"refs/remotes/origin/{branch}", check=False)
         parent = parent_result.stdout.strip() if parent_result.returncode == 0 else ""
