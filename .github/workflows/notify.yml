@@ -35,6 +35,8 @@ jobs:
 
       - name: 安裝相依套件
         run: pip install -r requirements.txt
+      - name: Install Chromium for the formal card renderer
+        run: python -m playwright install --with-deps chromium
 
       - name: Mask scoped smoke-test recipient
         if: ${{ inputs.test_chat_id != '' }}

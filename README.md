@@ -547,3 +547,20 @@ see [`docs/MERGE_ORDER.md`](docs/MERGE_ORDER.md) and
 The production notification contract is one `sendPhoto` message: a caption of
 at most 40 Unicode characters, a fixed 1080×1350 PNG and a deep-link Mini App
 button.  Publishing and manifest verification always complete before delivery.
+
+### Renderer and release recovery
+
+Production photo delivery requires the locked Playwright/Pillow dependencies
+and a matching Chromium runtime.  A missing browser, font, invalid PNG, or
+single-colour output is a typed renderer failure: the workflow records
+`renderer_error_type` and stops before Telegram, so it cannot send a black
+placeholder card.  `fallback_card()` is diagnostic-only and is never sent.
+
+Pages deployments restore the latest `ready` commit from `data-release` and
+validate the manifest, snapshot IDs and artifact hashes before upload.  An
+invalid release leaves the last public release untouched.  The Mini App retries
+with cache-busting; if the network release cannot be verified, it uses one
+complete last-known-good release from local storage, labels the page
+「資料降級」 with its last-success time and disables high-risk interpretation.
+If no verified release is available it distinguishes 「來源失敗」 from a
+normal 「本輪無事件」 result.

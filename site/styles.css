@@ -357,3 +357,8 @@ h1 { font-size: clamp(1.1rem, 5.2vw, 1.55rem); }
 
 /* A clean scan with no matching headlines is not a failure. */
 .source-status.no_event { background: #edf0f5; color: #596575; }
+
+.release-health { margin: 12px 0 0; padding: 9px 11px; border-radius: 10px; background: rgba(255,255,255,.12); color: #e4edf1; font-size: .72rem; line-height: 1.45; overflow-wrap: anywhere; }
+.release-health[data-state="degraded"] { background: #665020; color: #fff4d0; }
+.release-health[data-state="error"] { background: #6b2d2a; color: #ffe7e4; }
+.release-health[data-state="ready"] { background: rgba(57,120,95,.32); color: #e8fff1; }

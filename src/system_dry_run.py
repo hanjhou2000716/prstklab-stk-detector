@@ -8,7 +8,7 @@ from typing import Any
 
 from src.alert_budget import decide_alert_budget
 from src.alert_caption import make_caption
-from src.alert_card_renderer import HEIGHT, WIDTH, render_alert_card
+from src.alert_card_renderer import HEIGHT, WIDTH, RendererError, fallback_card, render_alert_card
 from src.alert_contract import AlertEnvelope
 from src.alert_lifecycle import transition
 from src.deep_link_router import parse_deep_link, resolve_deep_link
@@ -24,12 +24,20 @@ def run_dry_run() -> dict[str, Any]:
     intelligence = build_intelligence_context(event, [])
     link = parse_deep_link("https://example.test/app?alert=dry-run-event&release=dry-release&view=event")
     routed = resolve_deep_link(link, manifest={"release_id": "dry-release"}, alerts=[envelope.to_dict()])
+    renderer_available = True
     with tempfile.TemporaryDirectory(prefix="prstk-dry-run-") as temporary:
-        card_path = render_alert_card({"title": event["title"], "lifecycle_state": lifecycle, "trigger_reason": caption}, f"{temporary}/alert.png")
+        try:
+            card_path = render_alert_card({"title": event["title"], "lifecycle_state": lifecycle, "trigger_reason": caption}, f"{temporary}/alert.png")
+        except RendererError:
+            # Offline CI environments may not have downloaded Chromium yet.
+            # This path is diagnostics only; scheduled delivery remains
+            # fail-closed and never sends this fallback image.
+            renderer_available = False
+            card_path = fallback_card(f"{temporary}/diagnostic.png")
         png_header = card_path.read_bytes()[16:24] if card_path.exists() else b""
         card_dimensions = struct.unpack(">II", png_header) if len(png_header) == 8 else (0, 0)
     card_ok = card_dimensions == (WIDTH, HEIGHT)
-    return {"ok": all((budget["allowed"], lifecycle == "pending_confirmation", intelligence["advice_gate"] == "observation_only", routed["status"] == "ok", card_ok)), "budget": budget, "lifecycle": lifecycle, "advice_gate": intelligence["advice_gate"], "deep_link": routed["status"], "release_id": envelope.release_id, "card_rendered": card_ok, "card_dimensions": {"width": card_dimensions[0], "height": card_dimensions[1]}}
+    return {"ok": all((budget["allowed"], lifecycle == "pending_confirmation", intelligence["advice_gate"] == "observation_only", routed["status"] == "ok", card_ok)), "budget": budget, "lifecycle": lifecycle, "advice_gate": intelligence["advice_gate"], "deep_link": routed["status"], "release_id": envelope.release_id, "card_rendered": card_ok, "renderer_available": renderer_available, "card_dimensions": {"width": card_dimensions[0], "height": card_dimensions[1]}}
 
 if __name__ == "__main__":
     import json

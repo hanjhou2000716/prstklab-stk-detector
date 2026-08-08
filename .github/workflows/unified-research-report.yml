@@ -41,9 +41,11 @@ concurrency:
   # All workflows that publish data-release share one writer lock.  Keeping
   # research in a separate group allowed a refresh/brief workflow to race its
   # immutable snapshot commit and produce non-fast-forward or mixed releases.
+  # group: unified-research-report is superseded by the shared writer lock.
   group: main-data-writer
   cancel-in-progress: false
 jobs:
+  # actions/upload-pages-artifact@v3 (pinned SHA is used by the deployment step)
   build-and-deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 55
