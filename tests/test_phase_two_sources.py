@@ -1,10 +1,13 @@
 from src.phase_two_sources import (
     _macd_state,
+    _record_phase_two_observation,
+    build_phase_two_snapshot,
     classify_provider_health,
     fetch_eia_snapshot,
     fetch_fred_snapshot,
     fetch_kofia_credit_margin,
 )
+from src.raw_observation_store import RawObservationStore
 
 
 def test_provider_health_classification_separates_config_and_fallback_states():
@@ -50,3 +53,43 @@ def test_kofia_reports_unambiguous_gap(monkeypatch):
     assert result["status"] == "data_gap"
     assert result["health"]["status"] == "partial"
     assert result["health"]["health_class"] == "optional_degraded"
+
+
+def test_phase_two_observation_store_binds_immutable_provenance(tmp_path):
+    store = RawObservationStore(tmp_path / "raw")
+    result = {
+        "status": "ok",
+        "data": {"value": 1},
+        "fetched_at": "2026-08-08T09:00:00+00:00",
+        "health": {"source_url": "https://example.test/feed", "checked_at": "2026-08-08T09:00:00+00:00"},
+    }
+
+    _record_phase_two_observation(store, "example", result)
+
+    health = result["health"]
+    assert health["observation_id"]
+    assert health["raw_payload_location"]
+    assert store.count(provider="example") == 1
+
+
+def test_phase_two_snapshot_records_each_configured_result(monkeypatch, tmp_path):
+    def result(key):
+        return {
+            "status": "ok",
+            "data": {"key": key},
+            "fetched_at": "2026-08-08T09:00:00+00:00",
+            "health": {"key": key, "source_url": f"https://example.test/{key}", "checked_at": "2026-08-08T09:00:00+00:00"},
+        }
+
+    monkeypatch.setattr("src.phase_two_sources.fetch_kofia_credit_margin", lambda: result("kofia"))
+    monkeypatch.setattr("src.phase_two_sources.fetch_crypto_macd", lambda: result("crypto_macd"))
+    monkeypatch.setattr("src.phase_two_sources.fetch_fred_snapshot", lambda: result("fred"))
+    monkeypatch.setattr("src.phase_two_sources.fetch_eia_snapshot", lambda: result("eia"))
+    monkeypatch.setattr("src.crypto_spot_sources.fetch_crypto_spot_snapshot", lambda: result("crypto_spot"))
+    monkeypatch.setattr("src.public_market_secondary.fetch_public_market_secondary", lambda: result("secondary"))
+    store = RawObservationStore(tmp_path / "raw")
+
+    snapshot = build_phase_two_snapshot(raw_store=store)
+
+    assert store.count() == 6
+    assert all(item.get("observation_id") for item in snapshot["sources"])
