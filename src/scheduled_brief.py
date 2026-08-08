@@ -7,6 +7,7 @@ import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from src.alert_dispatch import evaluate_dispatch, record_dispatch
 from src.briefing_cards import build_briefing_snapshot
 from src.config import get_settings
 from src.market_data import build_market_snapshot
@@ -255,6 +256,26 @@ def main() -> None:
         return
     write_event_lock_key(event)
     brief = build_brief(snapshot, slot)
+    dispatch_event = dict(event or {})
+    if not dispatch_event:
+        dispatch_event = {
+            "kind": "briefing",
+            "event_type": "briefing",
+            "topic_key": f"briefing:{slot}:{snapshot_id}",
+            "title": brief,
+            "risk_level": "normal",
+            "published_at": snapshot.get("generated_at"),
+        }
+    decision = evaluate_dispatch(dispatch_event)
+    if not decision.allowed:
+        _write_output({
+            "sent": "false",
+            "reason": decision.reason,
+            "delivery_status": "blocked",
+            "event_key": decision.event_key,
+        })
+        print(f"Scheduled brief suppressed by shared alert budget: {decision.reason}")
+        return
     results = send_briefs(
         token=settings.telegram_bot_token or "",
         chat_ids=settings.telegram_chat_ids,
@@ -275,12 +296,9 @@ def main() -> None:
         "delivered_count": summary["delivered"],
         "failed_count": summary["failed"],
     })
-    if event:
-        from src.event_ledger import EventLedger
-        ledger = EventLedger()
-        ledger.mark_reminded({**event, "trace_id": trace_id})
-        ledger.save()
     delivered = summary["delivered"]
+    if delivered:
+        record_dispatch({**dispatch_event, "trace_id": trace_id})
     unavailable = [result.chat_id for result in results if not result.delivered]
     print(f"已發送 {slot} 快報給 {delivered}/{len(results)} 位收件人。")
     if unavailable:

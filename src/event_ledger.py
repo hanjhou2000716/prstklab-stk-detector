@@ -29,12 +29,29 @@ FACT_FIELDS = {
     "action": ("action", "actions", "event_action", "verbs"),
 }
 
-RISK_RANK = {"觀察": 0, "持續觀察": 0, "市場待核對": 0, "警戒": 1, "高波動": 1, "高風險": 2}
+RISK_RANK = {
+    "觀察": 0,
+    "持續觀察": 0,
+    "市場待核對": 0,
+    "normal": 0,
+    "observe": 0,
+    "observation": 0,
+    "警戒": 1,
+    "高波動": 1,
+    "warning": 1,
+    "warn": 1,
+    "高風險": 2,
+    "high-risk": 2,
+    "high_risk": 2,
+    "high risk": 2,
+    "critical": 2,
+}
 DEFAULT_COOLDOWN_SECONDS = 30 * 60
 
 
 def _risk_rank(value: Any) -> int:
-    return RISK_RANK.get(str(value or "").strip(), 0)
+    raw = str(value or "").strip()
+    return RISK_RANK.get(raw, RISK_RANK.get(raw.casefold(), 0))
 
 
 def normalize_source_url(value: Any) -> str:

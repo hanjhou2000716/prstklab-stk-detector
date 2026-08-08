@@ -8,9 +8,9 @@ import tempfile
 from pathlib import Path
 
 from src.alert_card_renderer import render_alert_card
+from src.alert_dispatch import evaluate_dispatch, record_dispatch
 from src.briefing_cards import build_briefing_snapshot
 from src.config import get_settings
-from src.event_ledger import EventLedger
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import merge_published_metadata, write_snapshot
 from src.release_gate import verify_release_for_delivery
@@ -88,6 +88,28 @@ def send(
     trace_id = str(briefing.get("trace_id") or correlation["trace_id"])
     observation_id = str(briefing.get("observation_id") or correlation["observation_id"])
     caption = build_brief(snapshot, slot)
+    dispatch_event = dict(event or {})
+    if not dispatch_event:
+        dispatch_event = {
+            "kind": "briefing",
+            "event_type": "briefing",
+            "topic_key": f"briefing:{slot}:{snapshot_id}",
+            "title": briefing.get("title") or caption,
+            "risk_level": "normal",
+            "published_at": snapshot.get("generated_at"),
+        }
+    dispatch_event.setdefault("event_type", "briefing")
+    dispatch_event.setdefault("topic_key", f"briefing:{slot}:{snapshot_id}")
+    decision = evaluate_dispatch(dispatch_event)
+    if not decision.allowed:
+        _write_output({
+            "sent": "false",
+            "delivery_status": "blocked",
+            "reason": decision.reason,
+            "event_key": decision.event_key,
+            "alert_budget_upgraded": str(decision.upgraded).lower(),
+        })
+        return
     alert_id = str(
         (event or {}).get("event_cluster_key")
         or (event or {}).get("event_key")
@@ -133,9 +155,8 @@ def send(
     })
     if event:
         write_event_lock_key(event)
-        ledger = EventLedger()
-        ledger.mark_reminded({**event, "trace_id": trace_id})
-        ledger.save()
+    if delivered:
+        record_dispatch({**dispatch_event, "trace_id": trace_id})
 
 
 def main() -> int:

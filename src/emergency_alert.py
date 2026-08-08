@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 
+from src.alert_dispatch import evaluate_dispatch, record_dispatch
 from src.config import get_settings
 from src.telegram_client import send_briefs, summarize_deliveries, validate_brief
 
@@ -67,6 +68,19 @@ def main() -> None:
         print("重大災害尚未同時完成官方來源與相關市場同步確認，僅保留 Mini App 觀察，不發送高風險 Telegram 快訊。")
         return
     text = build_emergency_brief(args.category, args.summary)
+    event = {
+        "kind": "emergency_alert",
+        "event_type": args.category,
+        "topic_key": f"manual:{args.category}:{args.summary}",
+        "title": args.summary,
+        "summary": args.summary,
+        "risk_level": risk_level,
+        "escalation": args.category in STRICT_HIGH_RISK_CATEGORIES,
+    }
+    decision = evaluate_dispatch(event)
+    if not decision.allowed:
+        print(f"Emergency alert suppressed by shared alert budget: {decision.reason}")
+        return
     results = send_briefs(
         token=settings.telegram_bot_token or "",
         chat_ids=settings.telegram_chat_ids,
@@ -92,6 +106,7 @@ def main() -> None:
         print("\n".join(lines))
     if not summary.any_delivered:
         raise RuntimeError("Telegram delivery failed for every configured recipient")
+    record_dispatch(event)
     print(f"Telegram delivery: {summary.delivered_count} delivered, {summary.failed_count} failed")
 
 

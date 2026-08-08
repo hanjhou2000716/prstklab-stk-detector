@@ -6,7 +6,23 @@ from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-LEVELS = {"normal": 0, "warning": 1, "high-risk": 2}
+LEVELS = {
+    "normal": 0,
+    "observe": 0,
+    "observation": 0,
+    "觀察": 0,
+    "持續觀察": 0,
+    "市場待核對": 0,
+    "warning": 1,
+    "warn": 1,
+    "警戒": 1,
+    "高波動": 1,
+    "high-risk": 2,
+    "high_risk": 2,
+    "high risk": 2,
+    "critical": 2,
+    "高風險": 2,
+}
 
 
 def _time(value: Any, fallback: datetime) -> datetime:
@@ -24,11 +40,22 @@ def decide_alert_budget(
     """Decide whether an event may be sent without hiding its reason."""
     current = now or datetime.now(UTC)
     key = str(event.get("event_key") or event.get("event_cluster_key") or event.get("source_url") or "").strip()
-    level = str(event.get("importance") or event.get("risk_level") or "normal").lower()
+    level = str(event.get("importance") or event.get("risk_level") or "normal").strip().casefold()
     level_value = LEVELS.get(level, 0)
     rows = [row for row in history if str(row.get("event_key") or row.get("event_cluster_key") or "") == key]
     recent = [_time(row.get("sent_at"), current) for row in history if current - _time(row.get("sent_at"), current) <= timedelta(hours=1)]
-    previous_level = max((LEVELS.get(str(row.get("importance") or "normal").lower(), 0) for row in rows), default=-1)
+    previous_level = max(
+        (
+            LEVELS.get(
+                str(row.get("importance") or row.get("risk_level") or "normal")
+                .strip()
+                .casefold(),
+                0,
+            )
+            for row in rows
+        ),
+        default=-1,
+    )
     upgraded = level_value > previous_level and previous_level >= 0
     if len(recent) >= max_hourly and not upgraded:
         return {"allowed": False, "reason": "hourly_budget_exhausted", "upgraded": False, "event_key": key}
