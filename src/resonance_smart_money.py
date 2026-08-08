@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pandas as pd
 
-
 SMART_MONEY_RULES = (
     ("absorption", "爆量吸收／長下影", 35),
     ("liquidity_sweep", "跌破前低後收回", 30),

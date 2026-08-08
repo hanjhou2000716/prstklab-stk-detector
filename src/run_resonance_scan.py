@@ -56,7 +56,8 @@ def main() -> None:
     except Exception:
         pass
     result = rank_records(records, min_turnover=threshold, benchmark_bars=benchmark_bars)
-    directory = Path("data"); directory.mkdir(exist_ok=True)
+    directory = Path("data")
+    directory.mkdir(exist_ok=True)
     suffix = f"-{args.offset}" if args.market == "taiwan" else ""
     scan_path = directory / f"{args.market}-resonance-scan{suffix}.csv"
     summary_path = directory / f"{args.market}-resonance-summary{suffix}.json"

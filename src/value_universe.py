@@ -7,9 +7,9 @@ owner: 0050 + 0051 in Taiwan, and VOO in the United States.
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime, timedelta
 from io import StringIO
-import re
 from typing import Any
 
 import pandas as pd
@@ -21,7 +21,6 @@ from src.us_universe import (
     SEMICONDUCTOR_CORE,
     parse_nasdaq100_constituents,
 )
-
 
 YUANTA_PCF_URL = "https://www.yuantaetfs.com/tradeInfo/pcf/{fund}"
 YUANTA_PCF_API_URL = "https://etfapi.yuantaetfs.com/ectranslation/api/bridge"

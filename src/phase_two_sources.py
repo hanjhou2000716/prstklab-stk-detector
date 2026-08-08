@@ -7,14 +7,14 @@ variables and are never included in returned data.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 import math
 import os
 import re
-from typing import Any, Iterable
+from collections.abc import Iterable
+from datetime import UTC, datetime
+from typing import Any
 
 import requests
-
 
 KOFIA_URL = "https://freesis.kofia.or.kr/stat/FreeSIS.do?parentDivId=MSIS10000000000000&serviceId=STATSCU0100000070"
 FRED_URL = "https://api.stlouisfed.org/fred/series/observations"
@@ -142,7 +142,7 @@ def _macd_state(closes: list[float]) -> dict[str, Any]:
     if len(closes) < 35:
         raise ValueError("MACD 歷史樣本不足")
     fast, slow = _ema(closes, 12), _ema(closes, 26)
-    macd = [left - right for left, right in zip(fast, slow)]
+    macd = [left - right for left, right in zip(fast, slow, strict=True)]
     signal = _ema(macd, 9)
     previous_diff, current_diff = macd[-2] - signal[-2], macd[-1] - signal[-1]
     bearish = previous_diff >= 0 and current_diff < 0

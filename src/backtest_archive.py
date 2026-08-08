@@ -8,7 +8,6 @@ from typing import Any
 
 from src.four_strategy_walk_forward import survivorship_audit
 
-
 REQUIRED_MANIFEST_KEYS = {
     "schema_version",
     "market",

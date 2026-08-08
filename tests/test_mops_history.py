@@ -1,6 +1,12 @@
 from pathlib import Path
 
-from src.mops_history import MopsPublicClient, mops_pristine_history, parse_dividend_history, parse_eps_report, parse_net_income_report
+from src.mops_history import (
+    MopsPublicClient,
+    mops_pristine_history,
+    parse_dividend_history,
+    parse_eps_report,
+    parse_net_income_report,
+)
 
 
 def test_parse_eps_report_reads_current_and_comparative_values():

@@ -2,7 +2,6 @@ from datetime import UTC, datetime, timedelta
 
 from src.alert_budget import decide_alert_budget
 
-
 NOW = datetime(2026, 8, 5, 2, 0, tzinfo=UTC)
 
 

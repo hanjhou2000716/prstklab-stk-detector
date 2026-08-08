@@ -7,7 +7,6 @@ from typing import Any
 
 import requests
 
-
 YUTINGHAO_CHANNEL_ID = "UC0lbAQVpenvfA2QqzsRtL_g"
 YUTINGHAO_FEED_URL = f"https://www.youtube.com/feeds/videos.xml?channel_id={YUTINGHAO_CHANNEL_ID}"
 ATOM = "{http://www.w3.org/2005/Atom}"

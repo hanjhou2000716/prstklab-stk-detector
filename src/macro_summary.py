@@ -1,6 +1,8 @@
 """Create neutral macro summaries strictly from the current public snapshot."""
 from __future__ import annotations
+
 from typing import Any
+
 
 def build_macro_summary(
     events: dict[str, Any], risk: dict[str, Any], program: dict[str, Any] | None = None

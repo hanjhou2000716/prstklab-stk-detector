@@ -6,7 +6,7 @@ from typing import Any
 
 import pandas as pd
 
-from src.price_action import PriceActionResearchScanner, REQUIRED_COLUMNS
+from src.price_action import REQUIRED_COLUMNS, PriceActionResearchScanner
 from src.research_backtest import NOTICE, calculate_hypothetical_return
 
 
@@ -80,7 +80,7 @@ def _weighted_return(entry_price: float, legs: list[dict[str, float]], market: s
     """Combine independently cost-adjusted research exit legs by weight."""
     results = [calculate_hypothetical_return(entry_price, leg["price"], market) for leg in legs]
     return {
-        key: round(sum(leg["weight"] * result[key] for leg, result in zip(legs, results)), 4)
+        key: round(sum(leg["weight"] * result[key] for leg, result in zip(legs, results, strict=True)), 4)
         for key in ("gross_return_percent", "net_return_percent", "cost_drag_percent")
     }
 

@@ -7,7 +7,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 REASON_LABELS = {
     "waiting_second_trusted_source": "等待第二來源：尚未有第二個可信新聞網域核對",
     "waiting_shared_entity_action": "等待共同實體／動作：來源尚未指向同一事件",

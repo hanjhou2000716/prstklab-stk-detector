@@ -1,13 +1,15 @@
 """Command-line runner for a bounded manual Taiwan momentum scan."""
 from __future__ import annotations
+
 import argparse
 import json
 from pathlib import Path
-import pandas as pd
+
 from src.batch_download import batches
 from src.public_download import download_daily_batch
-from src.taiwan_universe import load_or_fetch_taiwan_universe
 from src.taiwan_momentum_scan import TAIWAN_MIN_TURNOVER, rank_records
+from src.taiwan_universe import load_or_fetch_taiwan_universe
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -51,4 +53,5 @@ def main() -> None:
     }, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"掃描 {len(universe)} 檔，資料完整 {len(records)} 檔，研究候選 {len(result)} 檔，失敗 {len(failed)} 檔：{destination}、{summary_path}")
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()

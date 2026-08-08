@@ -12,7 +12,7 @@ import hmac
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import requests
 
@@ -31,7 +31,7 @@ def build_payload() -> dict[str, object]:
         "delivered_count": int(os.environ.get("DELIVERED_COUNT", "0") or 0),
         "failed_count": int(os.environ.get("FAILED_COUNT", "0") or 0),
         "failed_recipient_hashes": hashes,
-        "reported_at": datetime.now(timezone.utc).isoformat(),
+        "reported_at": datetime.now(UTC).isoformat(),
     }
 
 

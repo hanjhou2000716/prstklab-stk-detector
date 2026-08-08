@@ -1,6 +1,8 @@
 """Public fundamental-quality research with explicit missing-data handling."""
 from __future__ import annotations
+
 from typing import Any
+
 
 def normalize(info: dict[str, Any]) -> dict[str, float | None]:
     def number(key: str) -> float | None:

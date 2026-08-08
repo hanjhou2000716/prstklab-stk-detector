@@ -8,16 +8,16 @@ does not repeatedly request the same historical filings.
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
 import json
-from pathlib import Path
 import re
 import time
-from typing import Any, Iterable
+from collections.abc import Iterable
+from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
+from typing import Any
 
-from bs4 import BeautifulSoup
 import requests
-
+from bs4 import BeautifulSoup
 
 MOPS_API = "https://mops.twse.com.tw/mops/api/redirectToOld"
 MOPS_OLD = "https://mopsov.twse.com.tw/mops/web"
@@ -286,7 +286,7 @@ def fetch_pristine_history(
         "dividend_years": dividend_years,
         "roe_years": 0,
         "financial_source": "MOPS historical filings (t164sb04/t05st09_1)",
-        "history_checked_at": datetime.now(timezone.utc).isoformat(),
+        "history_checked_at": datetime.now(UTC).isoformat(),
     }
 
 
@@ -334,7 +334,7 @@ def mops_pristine_history(
     cache = _load_cache(cache_path)
     records: dict[str, dict[str, Any]] = cache["records"]
     failures: dict[str, dict[str, Any]] = cache["failures"]
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     errors: list[str] = []
     attempted = 0
     client = client or MopsPublicClient()

@@ -35,9 +35,14 @@ def score_bars(df: pd.DataFrame) -> float | None:
 
 
 def label(score: float | None) -> str:
-    if score is None: return "資料暫時無法取得"
-    if score < 26: return "極度恐慌"
-    if score < 45: return "恐慌"
-    if score < 56: return "中立"
-    if score < 75: return "貪婪"
+    if score is None:
+        return "資料暫時無法取得"
+    if score < 26:
+        return "極度恐慌"
+    if score < 45:
+        return "恐慌"
+    if score < 56:
+        return "中立"
+    if score < 75:
+        return "貪婪"
     return "極度貪婪"

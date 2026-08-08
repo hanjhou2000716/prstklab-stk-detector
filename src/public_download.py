@@ -1,8 +1,8 @@
 """Bounded, retried public daily-bar downloads for research scans."""
 from __future__ import annotations
 
-from typing import Any, Callable
-
+from collections.abc import Callable
+from typing import Any
 
 DOWNLOAD_TIMEOUT_SECONDS = 8
 

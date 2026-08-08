@@ -11,7 +11,6 @@ from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlparse
 
-
 SOURCE_TIERS = {"official", "public-market", "discovery"}
 EVENT_TYPES = {
     "macro", "central-bank", "policy", "conflict", "energy", "semiconductor",

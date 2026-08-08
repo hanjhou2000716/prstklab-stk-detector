@@ -1,5 +1,7 @@
 import pandas as pd
+
 from src.taiwan_momentum_scan import rank_records
+
 
 def bars(step, volume=200000):
     close = [100 + i * step for i in range(70)]

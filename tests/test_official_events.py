@@ -1,18 +1,18 @@
+from src.corporate_event_contract import normalize_corporate_event
 from src.official_events import (
     MOPS_TERMS,
+    SOURCES,
     TWSE_TERMS,
     _date_from_text,
     _headline_links,
+    _is_recent_release,
     _mops_items,
     _rss_links,
     _twse_items,
     _twse_market_alert_items,
     _usgs_items,
-    _is_recent_release,
     fetch_official_events,
-    SOURCES,
 )
-from src.corporate_event_contract import normalize_corporate_event
 
 
 def test_headline_links_are_deduplicated_and_resolved():

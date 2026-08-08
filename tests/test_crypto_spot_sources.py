@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from src.crypto_spot_sources import fetch_crypto_spot_snapshot
 from src.market_data import apply_crypto_spot_crosscheck
@@ -16,7 +16,7 @@ class FakeResponse:
 
 
 def test_crypto_spot_fetches_both_public_providers_and_isolates_quotes():
-    now_ms = int(datetime(2026, 8, 1, 1, 0, tzinfo=timezone.utc).timestamp() * 1000)
+    now_ms = int(datetime(2026, 8, 1, 1, 0, tzinfo=UTC).timestamp() * 1000)
 
     def requester(url, *, params, timeout, headers):
         assert timeout == 15

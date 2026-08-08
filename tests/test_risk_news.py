@@ -1,5 +1,4 @@
 from src.risk_news import (
-    classify_news_market,
     _filter_market_news,
     _market_news_rss_url,
     _market_risk,
@@ -8,6 +7,7 @@ from src.risk_news import (
     _parse_taifex_vix_file,
     build_news_snapshot,
     build_risk_snapshot,
+    classify_news_market,
     fetch_taifex_vix_quote,
     sentiment_label,
     vix_stage,

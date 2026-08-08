@@ -12,13 +12,13 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from src.event_classifier import build_haystack, classify_event_fields, normalize_text
 from src.intel_contract import normalize_event_record, source_domain
-
 
 _KEYWORD_PATH = Path(__file__).resolve().parents[1] / "config" / "event_keywords.json"
 

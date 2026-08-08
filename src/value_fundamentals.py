@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from collections import defaultdict
-from datetime import UTC, datetime, timedelta
 import json
-from pathlib import Path
 import time
-from typing import Any, Iterable
+from collections.abc import Iterable
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any
 
 import requests
-
 
 TWSE_BASE = "https://openapi.twse.com.tw/v1"
 TWSE_INCOME_ENDPOINTS = (

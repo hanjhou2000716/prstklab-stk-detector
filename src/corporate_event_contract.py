@@ -8,11 +8,9 @@ provenance explicit, and fails closed when a required field is absent.
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
 from typing import Any
 
 from src.intel_contract import normalize_event_record
-
 
 CORPORATE_SOURCE_KEYS = {"mops", "twse", "twse_market", "sec"}
 ISSUER_CODE_RE = re.compile(r"(?<!\d)(\d{4})(?!\d)")

@@ -1,12 +1,12 @@
-from importlib.util import module_from_spec, spec_from_file_location
 import asyncio
 import os
-from pathlib import Path
 import subprocess
 import sys
 import threading
-import pytest
+from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
 
+import pytest
 
 MODULE_PATH = Path(__file__).parents[1] / "railway-monitor" / "app.py"
 SPEC = spec_from_file_location("railway_monitor_app", MODULE_PATH)

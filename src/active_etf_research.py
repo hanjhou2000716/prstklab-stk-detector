@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 NOTICE = "僅供研究與風險教育；不構成買賣建議，也不會執行交易。"
 
 
@@ -92,7 +91,7 @@ def build_research_allocation(
     cap = _weight_cap(len(valid), max_weight_per_stock)
     weights = _capped_inverse_risk_weights(risks, cap)
     allocations = []
-    for item, risk, weight in zip(valid, risks, weights):
+    for item, risk, weight in zip(valid, risks, weights, strict=True):
         allocations.append({
             "ticker": item["ticker"],
             "name": item["name"],

@@ -15,7 +15,7 @@
 
 完成以下四項，即可視為研究版 Beta 可日常使用：
 
-- [ ] Telegram 可收到一則不超過 30 字的快報，且按鈕能打開儀表板。
+- [ ] Telegram 可收到一則不超過 40 字的 caption、固定圖卡與 Mini App 按鈕。
 - [ ] 儀表板顯示代表標的、新聞／風控、研究卡片與資料狀態。
 - [ ] 手動執行 **Unified Taiwan-US research report** 後，Actions 顯示成功，儀表板的「台美全市場研究摘要」有資料或明確顯示無候選／來源缺漏。
 - [ ] 在該次 Actions 下載 Artifact，能看到 CSV 與 JSON 報表。

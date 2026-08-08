@@ -7,9 +7,9 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from src.research_report import build_research_report
-from src.research_health import assess_research_health
 from src.release_manifest import content_snapshot_id
+from src.research_health import assess_research_health
+from src.research_report import build_research_report
 
 
 def default_sources(data_dir: Path) -> list[dict[str, str]]:

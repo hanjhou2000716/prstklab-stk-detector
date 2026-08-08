@@ -7,9 +7,9 @@ into a directional trading instruction.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import UTC, datetime
-from typing import Any, Iterable
-
+from typing import Any
 
 PATHWAYS: tuple[dict[str, Any], ...] = (
     {
@@ -73,7 +73,7 @@ def build_market_impact_graph(
         paths.append({
             "key": pathway["key"],
             "nodes": list(pathway["nodes"]),
-            "edges": [{"from": left, "to": right, "direction": pathway["direction"]} for left, right in zip(pathway["nodes"], pathway["nodes"][1:])],
+            "edges": [{"from": left, "to": right, "direction": pathway["direction"]} for left, right in zip(pathway["nodes"], pathway["nodes"][1:], strict=False)],
             "confidence": 0.8 if matched else 0.55,
             "evidence": evidence,
             "time_horizon": pathway["horizon"],

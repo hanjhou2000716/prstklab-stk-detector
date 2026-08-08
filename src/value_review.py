@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 TW_NET_INCOME_MINIMUM = 5_000_000_000
 US_NET_INCOME_MINIMUM = 500_000_000
 

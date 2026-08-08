@@ -10,8 +10,7 @@ not trading instructions.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -22,7 +21,6 @@ from src.research_backtest import MARKET_COSTS, calculate_hypothetical_return
 from src.resonance_research import score_bars
 from src.resonance_smart_money import smart_money_conditions, smart_money_summary
 from src.value_review import score_public_fundamentals
-
 
 STRATEGIES = ("momentum", "resonance", "price_action", "value")
 
@@ -45,7 +43,7 @@ def fixed_windows(config: dict[str, Any]) -> list[Window]:
         if start >= end:
             raise ValueError(f"fixed window {name} has invalid dates")
         windows.append(Window(name, start, end))
-    for previous, current in zip(windows, windows[1:]):
+    for previous, current in zip(windows, windows[1:], strict=False):
         if previous.end >= current.start:
             raise ValueError("fixed windows must not overlap")
     return windows

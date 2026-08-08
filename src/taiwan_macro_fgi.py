@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import pandas as pd
-
 
 SYMBOLS = ("^TWII", "^TWOII", "TWD=X")
 
@@ -45,10 +45,11 @@ def calculate_taiwan_macro_fgi(
     if downloader is None:
         import yfinance as yf
 
-        downloader = lambda symbol: yf.download(
-            symbol, period="2y", interval="1d", auto_adjust=False,
-            progress=False, threads=False,
-        )
+        def downloader(symbol: str) -> Any:
+            return yf.download(
+                symbol, period="2y", interval="1d", auto_adjust=False,
+                progress=False, threads=False,
+            )
 
     raw = {symbol: downloader(symbol) for symbol in SYMBOLS}
     twii, twoii, twd = raw["^TWII"], raw["^TWOII"], raw["TWD=X"]

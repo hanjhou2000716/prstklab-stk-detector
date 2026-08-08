@@ -1,8 +1,10 @@
 """Public US large-cap universe discovery for research scans."""
 from __future__ import annotations
-from typing import Any
-from io import StringIO
+
 from datetime import date, timedelta
+from io import StringIO
+from typing import Any
+
 import pandas as pd
 import requests
 

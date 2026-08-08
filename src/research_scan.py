@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import pandas as pd
 
-from src.price_action import PriceActionResearchScanner
-from src.price_action import structure_match_score
+from src.price_action import PriceActionResearchScanner, structure_match_score
 
 
 def download_daily_bars(symbol: str) -> pd.DataFrame:

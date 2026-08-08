@@ -7,13 +7,13 @@ a health gap instead of being interpreted as a confirmation.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 import csv
 import io
-from typing import Any, Callable
+from collections.abc import Callable
+from datetime import UTC, datetime
+from typing import Any
 
 import requests
-
 
 STOOQ_URL = "https://stooq.com/q/l/"
 NASDAQ_QUOTE_URL = "https://api.nasdaq.com/api/quote/{symbol}/info"
