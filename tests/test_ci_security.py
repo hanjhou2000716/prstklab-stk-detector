@@ -15,7 +15,9 @@ def test_quality_workflow_uses_locked_environment_and_coverage():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "quality.yml").read_text(encoding="utf-8")
     assert "uv sync --locked --all-groups" in workflow
     assert "--cov=src" in workflow
+    assert "--cov=src.alert_contract" in workflow
+    assert "Enforce core release and delivery coverage gate" in workflow
     assert "coverage erase" in workflow
-    assert "--cov-fail-under=0" in workflow
+    assert "--cov-fail-under=80" in workflow
     assert "uv run ruff" in workflow
     assert "uv run mypy" in workflow
