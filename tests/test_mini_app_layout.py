@@ -156,6 +156,9 @@ def test_research_candidates_have_optional_explainability_without_advice_languag
     assert "passed_conditions" in app
     assert "failed_conditions" in app
     assert "invalidation_condition" in app
+    assert "advice_gate" in app
+    assert "blocking_reasons" in app
+    assert "情境建議閘門：僅觀察" in app
     assert "不構成買賣指令" in app
     assert ".research-explainability" in styles
 
