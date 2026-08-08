@@ -335,12 +335,56 @@ const renderEvents = (events) => {
   const container = document.getElementById("event-list");
   if (!container) return;
   const secondary = events?.items?.slice(1) || [];
-  if (!secondary.length) { container.innerHTML = '<li class="empty">目前沒有其他同步市場訊號</li>'; return; }
-  container.innerHTML = `<li class="signal-list-title">同步市場訊號</li>${secondary.map((event) => {
+  if (!secondary.length) { container.innerHTML = '<li class="empty">目前沒有其他同步市場訊號</li>'; }
+  else container.innerHTML = `<li class="signal-list-title">同步市場訊號</li>${secondary.map((event) => {
     const title = event.brief_title || `${event.short_label}｜${event.title}`;
     return `<li class="signal-card"><b class="${movementClass(title)}">${escapeHtml(title)}</b><small>${escapeHtml(event.source || "公開市場報價")}</small></li>`;
   }).join("")}`;
+  const timeline = document.getElementById("event-timeline");
+  const timelineList = document.getElementById("event-timeline-list");
+  const feedback = document.getElementById("event-feedback");
+  if (!timeline || !timelineList || !feedback) return;
+  const rows = (events?.items || []).flatMap((event) => {
+    const history = Array.isArray(event.lifecycle_history) ? event.lifecycle_history : [];
+    return history.map((entry) => ({ ...entry, event_key: entry.event_key || event.event_cluster_key || event.event_key, title: event.brief_title || event.title }));
+  }).filter((entry) => entry.event_key && (entry.at || entry.timestamp || entry.created_at));
+  if (!rows.length) {
+    timeline.hidden = true;
+    timelineList.replaceChildren();
+    feedback.hidden = true;
+    feedback.replaceChildren();
+    return;
+  }
+  timelineList.innerHTML = rows.slice(-8).reverse().map((entry) => `<li><time>${escapeHtml(traceTime(entry.at || entry.timestamp || entry.created_at) || "時間暫時無法取得")}</time><b>${escapeHtml(entry.state || entry.lifecycle_state || "事件更新")}</b><span>${escapeHtml(entry.reason || entry.note || entry.title || "公開事件狀態更新")}</span></li>`).join("");
+  const eventKey = rows[0].event_key;
+  feedback.innerHTML = `<span>這則事件對你有幫助嗎？</span><div role="group" aria-label="事件回饋"><button type="button" data-event-feedback="correct" data-event-key="${escapeHtml(eventKey)}">正確</button><button type="button" data-event-feedback="irrelevant" data-event-key="${escapeHtml(eventKey)}">不相關</button><button type="button" data-event-feedback="duplicate" data-event-key="${escapeHtml(eventKey)}">重複</button><button type="button" data-event-feedback="too_late" data-event-key="${escapeHtml(eventKey)}">太晚通知</button></div><small>回饋僅供品質檢視，不會自動修改警報門檻。</small>`;
+  timeline.hidden = false;
+  feedback.hidden = false;
 };
+
+document.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-event-feedback]");
+  if (!button) return;
+  const key = button.dataset.eventKey;
+  const label = button.dataset.eventFeedback;
+  if (!key || !label) return;
+  const payload = { event_key: key, label, release_id: window.marketSnapshot?.release_id || null, snapshot_id: window.marketSnapshot?.snapshot_id || null };
+  const endpoint = String(window.PRSTK_FEEDBACK_ENDPOINT || "").trim();
+  try {
+    if (endpoint) {
+      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (!response.ok) throw new Error("feedback rejected");
+    } else {
+      const pending = JSON.parse(window.localStorage?.getItem("prstk_event_feedback") || "[]");
+      pending.push(payload);
+      window.localStorage?.setItem("prstk_event_feedback", JSON.stringify(pending.slice(-100)));
+    }
+    button.parentElement.querySelectorAll("button").forEach((item) => { item.disabled = true; });
+    button.parentElement.insertAdjacentHTML("afterend", `<small class="feedback-confirmed">已記錄${endpoint ? "並送出" : "於本機待同步"}，不會自動修改政策。</small>`);
+  } catch (_) {
+    button.insertAdjacentText("afterend", "（暫時無法送出）");
+  }
+});
 
 const renderSourceHealth = (health, snapshot = {}) => {
   const card = document.getElementById("source-health");
@@ -430,6 +474,29 @@ const renderBriefing = (briefing, generatedAt) => {
       correlation.append(item);
     });
     correlation.hidden = correlation.childElementCount === 0;
+  }
+  const intelligence = document.getElementById("briefing-intelligence");
+  const context = report.intelligence;
+  if (intelligence) {
+    if (!context || typeof context !== "object") {
+      intelligence.hidden = true;
+      intelligence.replaceChildren();
+    } else {
+      const regime = context.market_regime || {};
+      const contagion = context.contagion || {};
+      const gate = context.advice_gate_detail || {};
+      const factors = Object.entries(regime.factor_contributions || {})
+        .map(([name, value]) => `${name} ${Number(value).toFixed(2)}`)
+        .join("、") || "目前沒有足夠因子";
+      const signals = (contagion.confirmed_signals || []).join("、") || "尚未確認跨資產同步";
+      const blocking = (gate.blocking_reasons || []).join("、") || "研究閘門已通過（仍不構成交易指令）";
+      const scenarios = (context.stress_scenarios || []).slice(0, 3).map((item) => {
+        const effect = Number(item.estimated_weighted_effect || 0).toFixed(2);
+        return `<li><b>${escapeHtml(item.scenario || "情境")}</b><span>非預測情境｜加權影響 ${escapeHtml(effect)}%</span></li>`;
+      }).join("");
+      intelligence.innerHTML = `<h4>市場情報證據</h4><p><b>市場狀態：</b>${escapeHtml(regime.regime || "資料不足")}｜分數 ${escapeHtml(String(regime.score ?? "—"))}</p><p><b>因子：</b>${escapeHtml(factors)}</p><p><b>跨資產核對：</b>${escapeHtml(contagion.status || "資料不足")}｜${escapeHtml(signals)}</p><p><b>建議閘門：</b>${escapeHtml(context.advice_gate || "observation_only")}｜${escapeHtml(blocking)}</p>${scenarios ? `<ul class="briefing-stress-list"><li class="briefing-stress-heading">壓力情境（非預測）</li>${scenarios}</ul>` : ""}<small>資料不足時維持觀察，不產生買進／賣出指令。</small>`;
+      intelligence.hidden = false;
+    }
   }
   const container = document.getElementById("briefing-observations");
   if (!container) return;

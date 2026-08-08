@@ -26,8 +26,8 @@ pipeline call and a tested consumer.
 | Backtest/cost model | `src/four_strategy_walk_forward.py`, `src/backtest_costs.py` | yes | scheduled | artifact | no | no | partially_integrated |
 | Release manifest/gate | `src/release_manifest.py`, `src/release_gate.py` | yes | yes | yes | loader gate | send gate | production |
 | Telegram delivery | `src/telegram_client.py`, `src/scheduled_delivery.py` | yes | yes | receipt | no | yes | partially_integrated |
-| Mini App deep-link/timeline | `site/app.js`, `src/event_timeline.py` | yes | Pages | yes | yes | button target | partially_integrated |
-| Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | no | no | partial | no | experimental |
+| Mini App deep-link/timeline | `site/app.js`, `src/event_timeline.py` | yes | Pages | yes | yes | button target | production |
+| Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | optional endpoint/local queue | no | feedback controls | no | partially_integrated |
 
 ## Data state contract
 
