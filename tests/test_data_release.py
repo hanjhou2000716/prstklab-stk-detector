@@ -1,7 +1,30 @@
+import re
+from pathlib import Path
+
 import pytest
 
 from src import data_release
 from src.data_release import DataReleaseError, _safe_path, publish
+
+
+def test_all_data_release_publishers_share_one_concurrency_group():
+    """Prevent concurrent workflows from racing the immutable data branch."""
+    root = Path(__file__).resolve().parents[1]
+    workflows = sorted((root / ".github" / "workflows").glob("*.yml"))
+    publishers = [
+        path for path in workflows
+        if "python -m src.data_release --publish" in path.read_text(encoding="utf-8")
+    ]
+    assert publishers
+    for path in publishers:
+        text = path.read_text(encoding="utf-8")
+        match = re.search(
+            r"^concurrency:\s*(?:\n\s*#.*|\n\s*)*\n\s+group:\s*([^\s#]+)",
+            text,
+            flags=re.MULTILINE,
+        )
+        assert match, f"{path.name} must define a concurrency group"
+        assert match.group(1) == "main-data-writer", f"{path.name} uses a separate data writer lock"
 
 
 def test_data_release_rejects_paths_outside_public_data():
