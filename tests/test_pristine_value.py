@@ -1,6 +1,11 @@
 import pandas as pd
 
-from src.pristine_value import heat_metrics, pristine_selection_diagnostics, review_pristine_observation_pool, review_pristine_pool
+from src.pristine_value import (
+    heat_metrics,
+    pristine_selection_diagnostics,
+    review_pristine_observation_pool,
+    review_pristine_pool,
+)
 
 
 def _row(ticker: str, *, income=6_000_000_000, heat=1, return_3m=0.05):

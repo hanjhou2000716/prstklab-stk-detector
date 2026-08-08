@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 NOTICE = "僅供收盤後研究檢視；不讀取帳戶、不產生下單或調整指令。"
 
 

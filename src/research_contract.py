@@ -10,7 +10,6 @@ from typing import Any
 
 import pandas as pd
 
-
 PUBLIC_CANDIDATE_FIELDS = (
     "ticker",
     "name",

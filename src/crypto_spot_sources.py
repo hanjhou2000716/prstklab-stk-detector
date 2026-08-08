@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any, Callable
+from typing import Any
 
 import requests
-
 
 BINANCE_TICKER_URL = "https://api.binance.com/api/v3/ticker/24hr"
 COINGECKO_SIMPLE_URL = "https://api.coingecko.com/api/v3/simple/price"

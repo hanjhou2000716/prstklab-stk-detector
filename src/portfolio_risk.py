@@ -8,8 +8,9 @@ result after rendering a private risk view.
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterable
 from statistics import mean
-from typing import Any, Iterable
+from typing import Any
 
 
 def _group_exposure(positions: list[dict[str, Any]], field: str, total: float) -> dict[str, float]:

@@ -11,7 +11,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-
 REQUIRED_COLUMNS = {"Open", "High", "Low", "Close", "Volume"}
 FUNNEL_LABELS = {
     "Funnel_1": "撐壓互換回踩",

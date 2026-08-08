@@ -1,7 +1,15 @@
-import requests
 import pytest
+import requests
 
-from src.telegram_client import mini_app_button, mini_app_menu_button, send_brief, send_briefs, summarize_deliveries, validate_brief, versioned_mini_app_url
+from src.telegram_client import (
+    mini_app_button,
+    mini_app_menu_button,
+    send_brief,
+    send_briefs,
+    summarize_deliveries,
+    validate_brief,
+    versioned_mini_app_url,
+)
 
 
 def test_accepts_30_character_brief():

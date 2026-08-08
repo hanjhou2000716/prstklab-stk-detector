@@ -8,7 +8,6 @@ import sys
 from src.config import get_settings
 from src.telegram_client import TelegramError, send_briefs, validate_brief
 
-
 DEFAULT_TEST_MESSAGE = "測試｜PRStK 通知系統已啟動🟰"
 
 

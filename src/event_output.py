@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 SECTION_KEYS = ("event", "importance", "market_impact", "watch")
 SECTION_LABELS = ("事件", "為何重要", "可能連動", "股市觀察")
 
@@ -17,7 +16,7 @@ def four_section_event(event: dict[str, Any]) -> dict[str, str]:
         event.get("market_impact") or event.get("market_context") or "可能連動主要市場，暫不預設因果。",
         event.get("watch") or event.get("stock_observation") or "觀察後續公開報價與官方更新。",
     )
-    return dict(zip(SECTION_KEYS, (" ".join(str(value).split()) for value in values)))
+    return dict(zip(SECTION_KEYS, (" ".join(str(value).split()) for value in values), strict=True))
 
 
 def short_event_message(event: dict[str, Any], *, prefix: str = "快訊") -> str:

@@ -7,12 +7,11 @@ import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from src.config import get_settings
 from src.briefing_cards import build_briefing_snapshot
+from src.config import get_settings
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import merge_published_metadata, write_snapshot
 from src.telegram_client import send_briefs
-
 
 SLOT_LABELS = {
     "morning": "晨報",
@@ -194,8 +193,8 @@ def write_event_lock_key(event: dict | None) -> None:
     """Let a timed briefing suppress the same monitor alert immediately after."""
     if not event:
         return
-    from src.official_event_monitor import event_key
     from src.event_ledger import EventLedger
+    from src.official_event_monitor import event_key
 
     ledger = EventLedger()
     ledger.observe(event)

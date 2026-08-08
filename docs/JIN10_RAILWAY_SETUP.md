@@ -103,7 +103,7 @@ Railway 用 `EXTERNAL_ALERT_SHARED_SECRET` 對上方文字做 HMAC-SHA256，並�
 - 分類限於 `fed`、`macro`、`policy`、`conflict`、`semiconductor`、`market`。
 - 必須有格式正確的事件 ID 與 ISO 8601 發生時間。
 - 簽章必須正確。
-- Telegram 最終訊息必須小於等於 30 字。
+- Telegram caption 必須小於等於 40 個 Unicode 字元；圖片、按鈕與 caption 必須同一則訊息。
 - 同一個事件 ID 只會發送一次。
 - 驗證成功後才刷新市場資料、更新 Mini App、部署 Pages 與發送 Telegram。
 

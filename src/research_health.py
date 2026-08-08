@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
-
 DEFAULT_MAX_AGE_MINUTES = 30 * 60
 
 

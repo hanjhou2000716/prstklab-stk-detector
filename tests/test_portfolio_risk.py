@@ -2,7 +2,6 @@ import pytest
 
 from src.portfolio_risk import portfolio_risk_snapshot
 
-
 POSITIONS = [
     {"ticker": "AAA", "value": 60, "sector": "tech", "country": "US", "currency": "USD", "beta": 1.2},
     {"ticker": "BBB", "value": 40, "sector": "energy", "country": "TW", "currency": "TWD", "beta": 0.8},

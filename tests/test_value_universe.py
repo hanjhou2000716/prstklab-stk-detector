@@ -3,7 +3,13 @@ import requests
 
 from src.value_fundamentals import sec_fundamentals, sec_value_metrics
 from src.value_review import review_public_pool, score_public_fundamentals
-from src.value_universe import _yuanta_pcf_rows, fetch_us_value_universe, parse_sp500_constituents, parse_vanguard_holdings, parse_yuanta_holdings
+from src.value_universe import (
+    _yuanta_pcf_rows,
+    fetch_us_value_universe,
+    parse_sp500_constituents,
+    parse_vanguard_holdings,
+    parse_yuanta_holdings,
+)
 
 
 def test_yuanta_parser_keeps_only_taiwan_common_stock_rows():
@@ -79,7 +85,8 @@ def test_value_score_does_not_label_one_roe_observation_as_three_year_stability(
 def test_sec_value_metrics_requires_three_annual_roe_observations_for_stable_label():
     def fact(values):
         return {"units": {"USD": values}}
-    annual = lambda year, value: {"fy": year, "end": f"{year}-12-31", "filed": f"{year + 1}-02-01", "fp": "FY", "form": "10-K", "val": value}
+    def annual(year, value):
+        return {"fy": year, "end": f"{year}-12-31", "filed": f"{year + 1}-02-01", "fp": "FY", "form": "10-K", "val": value}
     facts = {"facts": {"us-gaap": {
         "NetIncomeLoss": fact([annual(2025, 30), annual(2024, 28), annual(2023, 25)]),
         "StockholdersEquity": fact([annual(2025, 150), annual(2024, 140), annual(2023, 130), annual(2022, 120)]),
@@ -91,7 +98,8 @@ def test_sec_value_metrics_requires_three_annual_roe_observations_for_stable_lab
 
 
 def test_sec_value_metrics_uses_dei_share_count_as_turnover_fallback():
-    annual = lambda year, value: {"fy": year, "end": f"{year}-12-31", "filed": f"{year + 1}-02-01", "fp": "FY", "form": "10-K", "val": value}
+    def annual(year, value):
+        return {"fy": year, "end": f"{year}-12-31", "filed": f"{year + 1}-02-01", "fp": "FY", "form": "10-K", "val": value}
     facts = {"facts": {
         "us-gaap": {"NetIncomeLoss": {"units": {"USD": [annual(2025, 30), annual(2024, 28), annual(2023, 25)]}}},
         "dei": {"EntityCommonStockSharesOutstanding": {"units": {"shares": [{"end": "2026-07-31", "filed": "2026-08-01", "val": 1_000_000}]}}},

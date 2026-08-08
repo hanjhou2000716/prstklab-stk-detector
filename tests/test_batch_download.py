@@ -1,5 +1,6 @@
 from src.batch_download import batches, download_in_batches
 
+
 def test_batches_and_failure_isolation():
     items = [{"ticker": str(i)} for i in range(5)]
     assert [len(group) for group in batches(items, 2)] == [2, 2, 1]

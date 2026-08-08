@@ -1,8 +1,11 @@
 """Bounded-watchlist adapter for three-dimensional resonance research."""
 from __future__ import annotations
+
 from typing import Any
+
 from src.research_scan import download_daily_bars
 from src.resonance_research import label, score_bars
+
 
 def build_resonance_snapshot(watchlist: tuple[dict[str, str], ...], histories=None) -> dict[str, Any]:
     candidates, errors = [], []

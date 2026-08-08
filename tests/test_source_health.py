@@ -3,7 +3,6 @@ from zoneinfo import ZoneInfo
 
 from src.source_health import build_source_health
 
-
 NOW = datetime(2026, 7, 29, 10, 0, tzinfo=ZoneInfo("Asia/Taipei"))
 
 

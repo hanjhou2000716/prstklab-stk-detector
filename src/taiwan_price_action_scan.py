@@ -3,8 +3,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from src.price_action import PriceActionResearchScanner
-from src.price_action import structure_match_score
+from src.price_action import PriceActionResearchScanner, structure_match_score
 
 
 def rank_records(

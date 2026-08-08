@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
-from src.research_scan import download_daily_bars
 from src.research_contract import latest_quote_context
-
+from src.research_scan import download_daily_bars
 
 WEIGHTS = {
     "hist_vol": 29.08, "bb_width": 19.33, "p_ma60": 10.39,

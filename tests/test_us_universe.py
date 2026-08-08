@@ -1,5 +1,7 @@
 import pandas as pd
+
 from src.us_universe import SEMICONDUCTOR_CORE, normalize_symbol, parse_constituents, parse_nasdaq100_constituents
+
 
 def test_parses_public_constituents_and_normalizes_share_classes():
     tables = [pd.DataFrame({"Symbol": ["BRK.B", "NVDA"], "Security": ["Berkshire", "NVIDIA"]})]

@@ -7,7 +7,6 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-
 POLICY_PATH = Path(__file__).resolve().parents[1] / "config" / "finance_intel_policy.json"
 
 

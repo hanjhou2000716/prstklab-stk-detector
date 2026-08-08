@@ -15,12 +15,12 @@ import json
 import os
 import re
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
-
 
 TRACKING_QUERY_KEYS = {"fbclid", "gclid", "dclid", "mc_cid", "mc_eid", "ref", "ref_src"}
 FACT_FIELDS = {
@@ -344,7 +344,7 @@ class EventLedger:
                 except OSError:
                     pass
                 if time.monotonic() >= deadline:
-                    raise TimeoutError(f"timed out waiting for event ledger lock: {lock_path}")
+                    raise TimeoutError(f"timed out waiting for event ledger lock: {lock_path}") from None
                 time.sleep(0.05)
         try:
             yield

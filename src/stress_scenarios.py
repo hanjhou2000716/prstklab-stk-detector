@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 SCENARIOS: dict[str, dict[str, float]] = {
     "nasdaq_shock": {"NASDAQ": -10.0},
     "semiconductor_shock": {"SOX": -15.0, "TSM": -12.0},

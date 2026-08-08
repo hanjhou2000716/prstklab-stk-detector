@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 import os
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime, UTC
 
 from src.market_data import build_market_snapshot
 
@@ -56,7 +56,7 @@ def _observation_id(snapshot_id: str, item: dict, *, kind: str, ordinal: int) ->
         "fetched_at": item.get("fetched_at"),
     }
     encoded = json.dumps(identity, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(f"{snapshot_id}:{encoded}".encode("utf-8")).hexdigest()[:16]
+    return hashlib.sha256(f"{snapshot_id}:{encoded}".encode()).hexdigest()[:16]
 
 
 def _attach_observation_provenance(payload: dict) -> None:

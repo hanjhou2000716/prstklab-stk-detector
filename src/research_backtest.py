@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 NOTICE = "歷史研究結果不代表未來表現；僅供回測與風險教育，不構成買賣建議。"
 
 # Default assumptions taken from the project specification.  They are explicit

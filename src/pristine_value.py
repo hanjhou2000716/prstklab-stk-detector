@@ -9,12 +9,11 @@ deliberately explicit so the Mini App can explain why a row is only observed.
 
 from __future__ import annotations
 
-from math import sqrt
 from collections import Counter
+from math import sqrt
 from typing import Any
 
 import pandas as pd
-
 
 TW_NET_INCOME_MINIMUM = 5_000_000_000
 US_NET_INCOME_MINIMUM = 500_000_000

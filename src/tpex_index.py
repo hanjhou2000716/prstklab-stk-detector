@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Iterable
+from collections.abc import Iterable
+from datetime import UTC, datetime
+from typing import Any
 from zoneinfo import ZoneInfo
 
 import requests
-
 
 TPEX_INDEX_URL = "https://www.tpex.org.tw/openapi/v1/tpex_index"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
@@ -205,7 +205,7 @@ def fetch_tpex_yahoo_chart_fallback(
     public fallback before it marks TPEx unavailable.
     """
     client = session or requests.Session()
-    now = int(datetime.now(timezone.utc).timestamp())
+    now = int(datetime.now(UTC).timestamp())
     response = client.get(
         YAHOO_CHART_URL.format(symbol="%5ETWOII"),
         params={
@@ -226,7 +226,7 @@ def fetch_tpex_yahoo_chart_fallback(
     closes = quote.get("close") or []
     observations = [
         (int(timestamp), float(close))
-        for timestamp, close in zip(timestamps, closes)
+        for timestamp, close in zip(timestamps, closes, strict=True)
         if timestamp is not None and close is not None
     ]
     if not observations:

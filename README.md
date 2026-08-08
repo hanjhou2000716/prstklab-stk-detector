@@ -8,7 +8,7 @@ PRStK 是部署於 GitHub 的公開市場資訊整理、風險監測與量化研
 
 ## 服務範圍
 
-- **Telegram 快報**：固定報告與符合門檻的速報；本文限制 30 字內，按鈕為「📡 開啟稜量速報系統」。
+- **Telegram 快報**：固定報告與符合門檻的速報；caption 限制 40 字內，圖片與 Mini App 按鈕同一則訊息。
 - **Telegram Mini App**：GitHub Pages 儀表板顯示完整市場卡、風控、研究清單、已核對事件與資料時間。
 - **公開市場快照**：台股、日股、韓股、美股、半導體、能源、黃金與加密資產的公開報價、交易日與資料新鮮度。
 - **重大事件流程**：官方一手來源、金十 MCP 授權快訊，及「多來源交叉核對」的探索訊號，皆經去重與市場資料核對才可能推播。
@@ -29,7 +29,7 @@ PRStK 是部署於 GitHub 的公開市場資訊整理、風險監測與量化研
 
 ## 一頁式使用流程
 
-1. **先看 Telegram 短訊息**：只把「事件類型｜市場方向｜變動幅度｜風險等級」送到手錶／手機，最多 30 字。
+1. **先看 Telegram 短訊息**：只把「事件類型｜市場方向｜變動幅度｜風險等級」送到手錶／手機，最多 40 字；完整證據留在圖卡與 Mini App。
 2. **點擊 `📡 開啟稜量速報系統`**：在 Telegram 內開啟 GitHub Pages Mini App，閱讀四段事件脈絡、來源 URL、交叉核對時間、研究候選與資料健康度。
 3. **先看來源健康狀態**：區分「本輪無重大事件」與「部分來源失敗」；看到資料缺口時，不把空白或舊候選解讀成市場沒有訊號。
 4. **再看市場脈動**：先看台指／台積電與全球指數，再看 TPEx、日韓、Nasdaq、費半、BTC／ETH 等卡片的來源與新鮮度。
@@ -50,7 +50,7 @@ flowchart LR
   B --> I[site/data JSON]
   H --> I
   I --> J[GitHub Pages / Telegram Mini App]
-  H --> K[Telegram 30 字快報]
+  H --> K[Telegram 40 字 caption + 圖卡]
   B --> K
   L[cron-job.org] -->|備援 dispatch| B
   L -->|備援 dispatch| D
@@ -319,7 +319,7 @@ Binance／CoinGecko、油價／黃金 Yahoo／EIA 或公開市場來源、VIX Ya
 | `src/risk_news.py` | FGI、VIX、台美新聞、Cnyes／Google RSS 分流與來源健康 |
 | `src/event_alerts.py`、`src/official_event_monitor.py` | 價格級距、重大事件四段內容、官方確認與市場同步升級 |
 | `src/event_ledger.py` | canonical key、URL／人物／地點／動作指紋、30 天帳本 |
-| `src/scheduled_brief.py` | 時段解析、台股優先、30 字短訊息與同時段防重複 |
+| `src/scheduled_brief.py` | 時段解析、台股優先、40 字 caption 與同時段防重複 |
 | `src/momentum_*`、`src/taiwan_momentum_scan.py` | 動能狙擊與台股成交額門檻 |
 | `src/resonance_*` | 三維共振與 Smart Money 四項條件排序 |
 | `src/price_action.py` | 四種裸 K 結構與嚴格訂單塊 |
@@ -469,7 +469,7 @@ python -m src.delivery_smoke_test
 ```
 
 The default mode makes no network request. It verifies the plural
-`TELEGRAM_CHAT_IDS` list, HTTPS `DASHBOARD_URL`, the 30-character brief rule,
+`TELEGRAM_CHAT_IDS` list, HTTPS `DASHBOARD_URL`, the 40-character caption rule,
 and that `RAILWAY_STATUS_URL` and `RAILWAY_STATUS_SHARED_SECRET` are supplied
 together. Only when an operator explicitly chooses to send one test message
 should they run:
@@ -540,3 +540,10 @@ check.
 For the P2 market-specific news routing rules, aliases, audit fields, and the
 remaining P3–P5 reliability backlog, see
 [`docs/P2_MARKET_NEWS_ROUTING.md`](docs/P2_MARKET_NEWS_ROUTING.md).
+
+For the post-merge stacked PR order and the release verification checklist,
+see [`docs/MERGE_ORDER.md`](docs/MERGE_ORDER.md) and
+[`docs/OPERATIONS_RELEASE_CHECKLIST.md`](docs/OPERATIONS_RELEASE_CHECKLIST.md).
+The production notification contract is one `sendPhoto` message: a caption of
+at most 40 Unicode characters, a fixed 1080×1350 PNG and a deep-link Mini App
+button.  Publishing and manifest verification always complete before delivery.

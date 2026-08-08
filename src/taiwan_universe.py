@@ -1,9 +1,11 @@
 """Public Taiwan listed/OTC stock-universe discovery for research scans."""
 from __future__ import annotations
-from io import StringIO
+
 import json
+from io import StringIO
 from pathlib import Path
 from typing import Any
+
 import pandas as pd
 import requests
 

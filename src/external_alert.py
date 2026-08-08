@@ -6,15 +6,14 @@ import argparse
 import hashlib
 import hmac
 import json
-import re
 import os
+import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunsplit
 
 from src.emergency_alert import CATEGORY_LABELS, build_emergency_brief
-
 
 ALLOWED_SOURCES = {"jin10", "gdelt"}
 EVENT_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
@@ -176,7 +175,7 @@ def stamp_snapshot(alert: ExternalAlert, snapshot_path: Path) -> None:
         snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise ValueError("無法讀取市場快照") from exc
-    received_at = datetime.now(timezone.utc)
+    received_at = datetime.now(UTC)
     snapshot["external_alert"] = {
         "category": alert.category,
         "summary": alert.summary,

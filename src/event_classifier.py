@@ -11,9 +11,9 @@ from __future__ import annotations
 import json
 import re
 import unicodedata
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
-
+from typing import Any
 
 _KEYWORD_PATH = Path(__file__).resolve().parents[1] / "config" / "event_keywords.json"
 

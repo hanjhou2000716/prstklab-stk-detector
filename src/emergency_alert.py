@@ -8,7 +8,6 @@ import os
 from src.config import get_settings
 from src.telegram_client import send_briefs, summarize_deliveries, validate_brief
 
-
 STRICT_HIGH_RISK_CATEGORIES = {"black_swan", "conflict"}
 
 

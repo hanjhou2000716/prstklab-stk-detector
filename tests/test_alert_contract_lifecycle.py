@@ -9,6 +9,16 @@ def test_caption_is_short_without_splitting_numbers():
     validate_caption(caption)
     assert "+5.1%" in caption
 
+
+def test_caption_compacts_long_subject_without_cutting_status():
+    caption = make_caption(
+        subject="一個非常長的市場事件標題需要壓縮但不能破壞語意",
+        change="+12.34%",
+        state="等待市場同步",
+    )
+    validate_caption(caption)
+    assert caption.endswith("等待市場同步")
+
 def test_alert_envelope_requires_provenance():
     envelope = AlertEnvelope.from_event({"event_key": "e1", "title": "測試", "alert_type": "market_risk", "severity": "warning"}, release_id="r1", snapshot_id="s1", short_caption="🔵 測試｜觀察")
     assert envelope.to_dict()["event_cluster_key"] == "e1"
@@ -17,6 +27,8 @@ def test_lifecycle_waits_for_all_confirmation_evidence():
     assert transition("observation", official_confirmed=True, second_source=True, market_sync=False) == "pending_confirmation"
     assert transition("pending_confirmation", official_confirmed=True, second_source=True, market_sync=True) == "confirmed"
     assert transition("confirmed", material_change=True) == "escalated"
+    assert transition("confirmed", condition_active=False) == "resolved"
+    assert transition("observation", budget_allowed=False) == "suppressed"
 
 def test_material_change_and_direction_reversal():
     assert has_material_change(previous_change=1.0, current_change=2.0, asset_class="market_index")

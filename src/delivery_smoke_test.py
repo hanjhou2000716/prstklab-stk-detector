@@ -15,7 +15,6 @@ from typing import Any
 from src.config import get_settings
 from src.telegram_client import mini_app_button, send_briefs, summarize_deliveries, validate_brief
 
-
 SMOKE_TEXT = "測試｜派送鏈路驗證"
 
 

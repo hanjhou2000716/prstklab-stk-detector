@@ -4,6 +4,7 @@ import requests
 
 from src.taiwan_universe import load_or_fetch_taiwan_universe, parse_isin_table
 
+
 def test_isin_parser_keeps_only_four_digit_ordinary_shares():
     html = """<table><tr><th>名稱</th><th>a</th><th>b</th><th>c</th><th>類別</th></tr>
     <tr><td>2330 台積電</td><td></td><td></td><td></td><td>半導體業</td></tr>

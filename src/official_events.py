@@ -7,10 +7,10 @@ pipeline with current market observations.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+import re
+from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
 from functools import lru_cache
-import re
 from typing import Any
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
@@ -18,12 +18,11 @@ from zoneinfo import ZoneInfo
 import requests
 from bs4 import BeautifulSoup
 
-from src.finance_intel_policy import polling_rule, threshold_rule
 from src.corporate_event_contract import normalize_corporate_event
+from src.finance_intel_policy import polling_rule, threshold_rule
 from src.intel_contract import normalize_event_record
 from src.value_fundamentals import SEC_USER_AGENT, sec_ticker_ciks
 from src.value_universe import fetch_taiwan_0050_universe
-
 
 HEADERS = {"User-Agent": SEC_USER_AGENT}
 RECENCY_MINUTES = int(polling_rule("officialEventMaxAgeMinutes"))
@@ -199,8 +198,8 @@ def _iso(value: str | None) -> str | None:
         except (TypeError, ValueError):
             return None
     if timestamp.tzinfo is None:
-        timestamp = timestamp.replace(tzinfo=timezone.utc)
-    return timestamp.astimezone(timezone.utc).isoformat()
+        timestamp = timestamp.replace(tzinfo=UTC)
+    return timestamp.astimezone(UTC).isoformat()
 
 
 def _date_from_text(value: str) -> str | None:
@@ -215,7 +214,7 @@ def _date_from_text(value: str) -> str | None:
         year, month, day = (int(part) for part in roc_match.groups())
         year += 1911
     try:
-        return datetime(year, month, day, tzinfo=TAIPEI).astimezone(timezone.utc).isoformat()
+        return datetime(year, month, day, tzinfo=TAIPEI).astimezone(UTC).isoformat()
     except ValueError:
         return None
 
@@ -266,8 +265,8 @@ def _is_recent_release(released_at: str | None) -> bool:
     except ValueError:
         return False
     if published.tzinfo is None:
-        published = published.replace(tzinfo=timezone.utc)
-    age = datetime.now(timezone.utc) - published
+        published = published.replace(tzinfo=UTC)
+    age = datetime.now(UTC) - published
     # A publisher can be a few minutes ahead, but a future-dated listing must
     # never become an alert candidate.
     return timedelta(minutes=-5) <= age <= timedelta(minutes=RECENCY_MINUTES)
@@ -304,7 +303,7 @@ def _mops_released_at(roc_date: str, clock: str) -> str | None:
         )
     except (ValueError, IndexError):
         return None
-    return published.astimezone(timezone.utc).isoformat()
+    return published.astimezone(UTC).isoformat()
 
 
 def _mops_items() -> list[dict[str, str]]:
@@ -410,9 +409,7 @@ def _gdacs_items() -> list[dict[str, str]]:
     soup = BeautifulSoup(response.text, "xml")
     items: list[dict[str, str]] = []
     for entry in soup.find_all("item"):
-        title_node = entry.find("title")
         link_node = entry.find("link")
-        title = title_node.get_text(" ", strip=True) if title_node else ""
         raw = entry.get_text(" ", strip=True).lower()
         published = entry.find("pubDate") or entry.find("published") or entry.find("updated")
         released_at = _iso(published.get_text(strip=True) if published else None)
@@ -438,7 +435,7 @@ def _usgs_items() -> list[dict[str, str]]:
         properties = feature.get("properties") or {}
         magnitude = properties.get("mag")
         occurred = properties.get("time")
-        released_at = datetime.fromtimestamp(float(occurred) / 1000, tz=timezone.utc).isoformat() if occurred else None
+        released_at = datetime.fromtimestamp(float(occurred) / 1000, tz=UTC).isoformat() if occurred else None
         place = str(properties.get("place") or "")
         relevant_region = any(word in place.lower() for word in ("japan", "taiwan", "philippines", "korea"))
         tsunami = bool(properties.get("tsunami"))
@@ -463,7 +460,7 @@ def fetch_official_events() -> dict[str, Any]:
     """Fetch bounded first-party candidates with per-source health metadata."""
     items: list[dict[str, str]] = []
     errors: list[str] = []
-    checked_at = datetime.now(timezone.utc).isoformat()
+    checked_at = datetime.now(UTC).isoformat()
     source_health: list[dict[str, Any]] = []
 
     def collect(key: str, label: str, url: str, fetcher: Any) -> None:
