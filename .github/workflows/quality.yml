@@ -51,13 +51,14 @@ jobs:
           --cov=src.artifact_contract
           --cov=src.release_manifest
           --cov=src.release_gate
+          --cov=src.canonical_release_publisher
           --cov=src.system_dry_run
           --cov-report=term-missing
           --cov-fail-under=80
       - name: Ruff baseline (new violations fail)
-        run: uv run ruff check src/data_release.py tests/test_data_release.py
+        run: uv run ruff check src/data_release.py src/canonical_release_publisher.py tests/test_data_release.py tests/test_canonical_release_publisher.py
       - name: Mypy baseline (new module)
-        run: uv run mypy src/data_release.py
+        run: uv run mypy src/data_release.py src/canonical_release_publisher.py
       - name: Compile Python modules
         run: python -m compileall -q src railway-monitor
       - name: Validate checked-in Mini App artifacts
