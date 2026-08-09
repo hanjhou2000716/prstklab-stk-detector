@@ -48,6 +48,19 @@ when its output is missing, candidate counts are suppressed and the state is a
 data gap.  This prevents a summary file from making an unavailable CSV look
 like a formal candidate release.
 
+## Investor-facing disclosure contract
+
+The Mini App keeps investor content and engineering evidence in separate
+disclosures. `市場定時報告` is expanded on first load so the current briefing
+is immediately readable. `系統分析資料` and `市場情報證據` are collapsed by
+default and contain observation, snapshot, trace, provenance, regime and
+cross-asset details only when a valid report provides them. Source health is
+also collapsed by default; its summary uses one aggregate state (`資料正常`,
+`部分資料降級`, or `核心資料不足`) and the expanded rows carry the individual
+source state. VIX investor cards show the value, change, stage and an available
+historical percentile without exposing fetch timestamps or unavailable-data
+placeholders; raw freshness remains in the JSON provenance fields.
+
 ## Migration and rollback
 
 The new fields are additive and readers continue to accept the legacy fields.

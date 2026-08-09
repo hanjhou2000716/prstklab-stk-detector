@@ -300,12 +300,12 @@ const renderRisk = (risk) => {
     const sentimentLabel = sentiment.label || "資料暫時無法取得";
     const vix = market.vix || {};
     const vixValue = vix.value === undefined || vix.value === null ? "—" : Number(vix.value).toFixed(2);
-    const vixChange = vix.change_percent === null || vix.change_percent === undefined ? "資料暫時無法取得" : signedPercent(vix.change_percent);
-    const vixStage = vix.stage || "波動階段暫時無法取得";
+    const vixChange = vix.change_percent === null || vix.change_percent === undefined ? "—" : signedPercent(vix.change_percent);
+    const vixStage = vix.stage || "波動階段待確認";
     const vixState = vix.change_percent > 0 ? "risk-up" : vix.change_percent < 0 ? "risk-down" : "flat";
-    const vixBasis = vix.percentile_status === "available" ? `歷史百分位 ${vix.percentile ?? "—"}` : "歷史百分位待取得";
-    const vixMeta = vix.fetched_at ? `資料 ${new Date(vix.fetched_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}｜${vixBasis}` : vixBasis;
-    return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}｜${escapeHtml(vixStage)}</small><details class="metric-details"><summary>進階資料</summary><small class="metric-meta">${escapeHtml(vixMeta)}</small></details></article></div></section>`;
+    const vixPercentile = vix.percentile_status === "available" && vix.percentile !== null && vix.percentile !== undefined
+      ? `｜歷史百分位 ${Number(vix.percentile).toFixed(1)}` : "";
+    return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}｜${escapeHtml(vixStage)}${escapeHtml(vixPercentile)}</small></article></div></section>`;
   }).join("");
 };
 
@@ -401,14 +401,15 @@ const renderSourceHealth = (health, snapshot = {}) => {
     if (card) card.open = false;
     return;
   }
-  // Legacy expression retained for compatibility: const missing = health.sources.filter((source) => ["partial", "failed", "data_gap"].includes(source.status)).length;
-  const missing = health.sources.filter((source) => ["critical_gap", "failed", "degraded_with_fallback", "partial", "failed", "data_gap"].includes(source.state || source.status)).length;
+  const degradedStates = ["critical_gap", "failed", "degraded_with_fallback", "fallback_active", "secondary_unavailable", "partial", "data_gap", "stale", "configuration_missing", "configuration_required"];
+  const missing = health.sources.filter((source) => degradedStates.includes(source.state || source.status)).length;
+  const critical = health.sources.filter((source) => ["critical_gap", "failed", "configuration_missing", "configuration_required"].includes(source.state || source.status)).length;
   const displayedMissing = Number.isFinite(Number(health.missing_source_count))
     ? Number(health.missing_source_count)
     : missing;
   const pending = Number(health.pending_event_count || health.monitor_health?.pending_count || 0);
-  summary.textContent = `${missing} 個來源有資料缺口`;
-  if (displayedMissing !== missing) summary.textContent = `${displayedMissing} 個來源有資料缺口`;
+  const aggregate = missing === 0 ? "資料正常" : critical > 0 ? "核心資料不足" : "部分資料降級";
+  summary.textContent = `${aggregate}${displayedMissing ? `｜${displayedMissing} 個來源有資料缺口` : ""}`;
   if (pending) summary.textContent += `｜${pending} 個事件待核對`;
   const scan = health.event_scan;
   const scanState = scan.state || scan.status || "unknown";
@@ -425,7 +426,7 @@ const renderSourceHealth = (health, snapshot = {}) => {
     const state = source.state || source.status;
     // Keep the legacy status spelling for older snapshots and source-health
     // fixtures (source.status === "warming" ? "建檔中").
-    const status = state === "healthy" ? "正常" : state === "no_event" ? "無事件" : state === "warming" ? "建檔中" : state === "pending_confirmation" || state === "pending" ? "待核對" : state === "configuration_required" ? "需設定" : state === "optional_degraded" ? "選配降級" : state === "degraded_with_fallback" ? "備援可用" : state === "stale" ? "使用快取" : state === "failed" ? "掃描失敗" : "資料缺口";
+    const status = state === "healthy" ? "正常" : state === "no_event" ? "無事件" : state === "warming" ? "建檔中" : state === "pending_confirmation" || state === "pending" ? "待核對" : state === "configuration_missing" || state === "configuration_required" ? "需設定" : state === "optional_degraded" ? "選配降級" : state === "degraded_with_fallback" || state === "fallback_active" ? "備援可用" : state === "secondary_unavailable" ? "第二來源不可用" : state === "stale" ? "使用快取" : state === "failed" ? "掃描失敗" : "資料缺口";
     const pendingReasons = source.status === "pending" && source.pending_reasons && typeof source.pending_reasons === "object"
       ? Object.entries(source.pending_reasons).filter(([, count]) => Number(count) > 0).map(([reason, count]) => {
         const labels = {
@@ -493,11 +494,12 @@ const renderBriefing = (briefing, generatedAt) => {
     correlation.hidden = correlation.childElementCount === 0;
   }
   const intelligence = document.getElementById("briefing-intelligence");
+  const intelligenceContent = document.getElementById("briefing-intelligence-content");
   const context = report.intelligence;
   if (intelligence) {
     if (!context || typeof context !== "object") {
       intelligence.hidden = true;
-      intelligence.replaceChildren();
+      if (intelligenceContent) intelligenceContent.replaceChildren();
     } else {
       const regime = context.market_regime || {};
       const contagion = context.contagion || {};
@@ -519,7 +521,7 @@ const renderBriefing = (briefing, generatedAt) => {
       const surpriseText = surprise.status === "insufficient_evidence"
         ? "總經驚喜：缺少預期值或實際值，證據不足"
         : `總經驚喜：${surprise.status}｜實際 ${surprise.actual ?? "—"}／預期 ${surprise.expected ?? "—"}`;
-      intelligence.innerHTML = `<h4>市場情報證據</h4><p><b>市場狀態：</b>${escapeHtml(regime.regime || "資料不足")}｜分數 ${escapeHtml(String(regime.score ?? "—"))}</p><p><b>因子：</b>${escapeHtml(factors)}</p><p><b>跨資產核對：</b>${escapeHtml(contagion.status || "資料不足")}｜${escapeHtml(signals)}</p><p><b>傳導路徑：</b>${escapeHtml(pathText)}</p><p><b>${escapeHtml(surpriseText)}</b>（不單獨推定市場方向）</p><p><b>建議閘門：</b>${escapeHtml(context.advice_gate || "observation_only")}｜${escapeHtml(blocking)}</p>${scenarios ? `<ul class="briefing-stress-list"><li class="briefing-stress-heading">壓力情境（非預測）</li>${scenarios}</ul>` : ""}<small>資料不足時維持觀察，不產生買進／賣出指令。</small>`;
+      if (intelligenceContent) intelligenceContent.innerHTML = `<p><b>市場狀態：</b>${escapeHtml(regime.regime || "資料不足")}｜分數 ${escapeHtml(String(regime.score ?? "—"))}</p><p><b>因子：</b>${escapeHtml(factors)}</p><p><b>跨資產核對：</b>${escapeHtml(contagion.status || "資料不足")}｜${escapeHtml(signals)}</p><p><b>傳導路徑：</b>${escapeHtml(pathText)}</p><p><b>${escapeHtml(surpriseText)}</b>（不單獨推定市場方向）</p><p><b>建議閘門：</b>${escapeHtml(context.advice_gate || "observation_only")}｜${escapeHtml(blocking)}</p>${scenarios ? `<ul class="briefing-stress-list"><li class="briefing-stress-heading">壓力情境（非預測）</li>${scenarios}</ul>` : ""}<small>資料不足時維持觀察，不產生買進／賣出指令。</small>`;
       intelligence.hidden = false;
     }
   }
