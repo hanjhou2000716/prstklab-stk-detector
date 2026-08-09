@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import argparse
 import json
-import tempfile
 from pathlib import Path
 
 from src.alert_budget import decide_alert_budget
-from src.alert_card_renderer import RendererError, render_alert_card
 from src.briefing_cards import build_briefing_snapshot
 from src.config import get_settings
 from src.event_ledger import EventLedger
@@ -22,7 +20,7 @@ from src.scheduled_brief import (
     build_brief,
     write_event_lock_key,
 )
-from src.telegram_client import send_photo_briefs
+from src.telegram_client import alert_mini_app_url, send_briefs, summarize_deliveries
 
 
 def prepare(slot: str, snapshot_path: Path) -> dict:
@@ -113,40 +111,24 @@ def send(
         or (event or {}).get("event_key")
         or trace_id
     )
-    try:
-        with tempfile.TemporaryDirectory(prefix="prstk-alert-card-") as temporary:
-            photo_path = render_alert_card(
-                {
-                    "title": (event or {}).get("title") or f"{slot} market briefing",
-                    "lifecycle_state": (event or {}).get("lifecycle_state") or "observation",
-                    "trigger_reason": caption,
-                    "release_id": gate.release_id,
-                    "snapshot_id": snapshot_id,
-                },
-                Path(temporary) / "alert.png",
-            )
-            deliveries = send_photo_briefs(
-                token=settings.telegram_bot_token or "",
-                chat_ids=settings.telegram_chat_ids,
-                caption=caption,
-                photo_path=photo_path,
-                mini_app_url=settings.dashboard_url,
-                alert_id=alert_id,
-                release_id=gate.release_id or "",
-                snapshot_id=snapshot_id,
-            )
-    except (RendererError, OSError, ValueError) as exc:
-        _write_output({
-            "sent": "false",
-            "delivery_status": "blocked",
-            "reason": "renderer_failed",
-            "renderer_error_type": getattr(exc, "error_type", type(exc).__name__),
-            "release_id": gate.release_id,
-            "snapshot_id": snapshot_id,
-        })
-        return
-    delivered = sum(delivery.status == "delivered" for delivery in deliveries)
-    failed = len(deliveries) - delivered
+    # Production notifications are deliberately text-only.  The renderer is
+    # kept behind the explicitly scoped ``photo_test`` workflow so a missing
+    # browser/font dependency can never block scheduled market delivery.
+    deliveries = send_briefs(
+        token=settings.telegram_bot_token or "",
+        chat_ids=settings.telegram_chat_ids,
+        text=caption,
+        dashboard_url=settings.dashboard_url,
+        target_url=alert_mini_app_url(
+            settings.dashboard_url,
+            alert_id=alert_id,
+            release_id=gate.release_id,
+            snapshot_id=snapshot_id,
+        ),
+    )
+    summary = summarize_deliveries(deliveries)
+    delivered = summary.delivered_count
+    failed = summary.failed_count
     _write_output({
         "sent": "true",
         "reason": "sent_partial" if failed else "sent",
@@ -157,9 +139,10 @@ def send(
         "delivery_status": "delivered" if not failed else "partial" if delivered else "failed",
         "delivered_count": delivered,
         "failed_count": failed,
-        "delivery_mode": "photo",
+        "delivery_mode": "text",
         "alert_id": alert_id,
         "alert_budget": budget,
+        "failed_recipient_hashes": list(summary.failed_recipient_hashes),
     })
     if event:
         write_event_lock_key(event)

@@ -1,11 +1,16 @@
 # Telegram production notification policy
 
-Production scheduled and event notifications use one `sendPhoto` message after
-the release gate succeeds. The message contains a short caption (maximum 40
-Unicode characters), a validated 1080x1350 PNG, and a Mini App inline button
-whose query includes the alert, release, and snapshot identifiers. Full
-evidence, provenance, market context and research details remain in the
-release referenced by the button.
+> Current policy: scheduled production uses `sendMessage` text delivery. The
+> legacy photo description below applies only to the scoped `photo_test`
+> diagnostic workflow; see `docs/telegram-production-text.md`.
+
+Production scheduled and event notifications use one `sendMessage` after the
+release gate succeeds. The message contains the existing short caption (at
+most 30 characters) and a Mini App inline button whose query includes the
+alert, release, snapshot and view identifiers. Full evidence, provenance,
+market context and research details remain in the release referenced by the
+button. The fixed 1080x1350 image is reserved for the explicit single-recipient
+`photo_test` smoke workflow.
 
 The renderer is fail-closed: a missing browser, invalid dimensions, blank
 image, or missing required fields blocks delivery and records the renderer

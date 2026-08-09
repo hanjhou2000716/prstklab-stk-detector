@@ -544,9 +544,17 @@ remaining P3–P5 reliability backlog, see
 For the post-merge stacked PR order and the release verification checklist,
 see [`docs/MERGE_ORDER.md`](docs/MERGE_ORDER.md) and
 [`docs/OPERATIONS_RELEASE_CHECKLIST.md`](docs/OPERATIONS_RELEASE_CHECKLIST.md).
-The production notification contract is one `sendPhoto` message: a caption of
-at most 40 Unicode characters, a fixed 1080×1350 PNG and a deep-link Mini App
-button.  Publishing and manifest verification always complete before delivery.
+The production notification contract is one `sendMessage` text notification (the fixed card is reserved for the explicit `photo_test` smoke workflow):
+at most 30 characters and a release/alert deep-link Mini App button. Publishing
+and manifest verification always complete before delivery.
+
+### Production notification mode
+
+Scheduled production delivery is text-only (`sendMessage`) and keeps the
+existing 30-character caption plus the Mini App deep-link button. The fixed
+1080×1350 renderer is reserved for the explicitly scoped `photo_test` smoke
+workflow, so browser/font failures cannot block normal market delivery. See
+[`docs/telegram-production-text.md`](docs/telegram-production-text.md).
 
 ### Renderer and release recovery
 
