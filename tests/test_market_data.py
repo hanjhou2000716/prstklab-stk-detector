@@ -211,6 +211,16 @@ def test_stale_daily_quote_is_explicitly_marked_for_the_ui():
     assert quotes[0]["freshness"] == "stale"
 
 
+def test_crypto_daily_quote_uses_utc_calendar_at_taipei_midnight():
+    now = datetime(2026, 8, 10, 0, 30, tzinfo=ZoneInfo("Asia/Taipei"))
+    quotes = annotate_quote_freshness(
+        [{"ticker": "BTC", "market": "global", "price": 1, "quote_date": "2026-08-09"}],
+        now=now,
+    )
+    assert quotes[0]["freshness"] == "recent_close"
+    assert quotes[0]["alert_eligible"] is False
+
+
 def test_daily_close_becomes_stale_after_the_next_completed_taiwan_session():
     quote = {"ticker": "2330", "market": "taiwan", "price": 1000, "quote_date": "2026-07-30"}
 
