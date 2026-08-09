@@ -275,6 +275,14 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         stress_exposures=public_watchlist,
         advice_context={"general_research": True},
     )
+    from src.production_integration import bind_intelligence
+
+    intelligence = bind_intelligence(
+        intelligence,
+        snapshot=snapshot,
+        observations=observed_quotes,
+        policy_version=snapshot.get("policy_version"),
+    )
     return {
         "slot": slot or "live",
         "title": SLOT_TITLES.get(slot or "", "即時市場儀表板"),

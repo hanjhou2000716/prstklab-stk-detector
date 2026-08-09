@@ -63,3 +63,24 @@ independent-source, and market-synchronisation evidence are all present.
 Cooldown and hourly budgets are evaluated before delivery; suppressed records
 remain auditable. `src/alert_caption.py` produces a safe caption no longer than
 40 Unicode characters.
+
+## Production intelligence binding
+
+`src/production_integration.py` is called by `build_briefing_snapshot` and is
+the single boundary between the intelligence modules and a public briefing.
+It resolves quote identities through `InstrumentMaster`, emits a mixed/live/
+close-only/degraded quality summary, and records the provenance fields that
+are available in the current snapshot. Missing release, snapshot, observation,
+or source identifiers intentionally produce `observation_only` and keep the
+advice gate closed; the binder never invents identifiers or market evidence.
+
+Strategy metadata is likewise observation-only until a real `backtest_release`
+is present. Raw observations remain an optional local append-only store and are
+represented in public output only by quality metadata, not by raw payloads.
+
+### Rollback
+
+The integration is additive. Reverting the binding commit restores the prior
+briefing shape, while the release gate continues to validate the existing
+market, research, and event artifacts. Restore the last `status=ready` manifest
+as one immutable release; never mix individual files from different releases.
