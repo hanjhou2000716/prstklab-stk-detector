@@ -635,7 +635,11 @@ def build_market_snapshot() -> dict[str, Any]:
         errors = [error for error in errors if error.get("ticker") != "TPEx"]
     quotes = annotate_quote_freshness(quotes)
     indices = annotate_quote_freshness(indices)
-    from src.production_evidence import bind_market_evidence, quality_summary
+    from src.production_evidence import (
+        bind_market_evidence,
+        quality_summary,
+        raw_observation_store_summary,
+    )
 
     quotes = bind_market_evidence(quotes)
     indices = bind_market_evidence(indices)
@@ -756,5 +760,6 @@ def build_market_snapshot() -> dict[str, Any]:
             "quotes": quality_summary(quotes),
             "indices": quality_summary(indices),
         },
+        "raw_observation_store": raw_observation_store_summary(),
         "errors": errors,
     }

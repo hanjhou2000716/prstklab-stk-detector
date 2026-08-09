@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 
-from src.production_evidence import bind_market_evidence, quality_summary
+from src.production_evidence import bind_market_evidence, quality_summary, raw_observation_store_summary
+from src.raw_observation_store import RawObservationStore
 
 
 def test_stale_quote_remains_visible_but_is_not_alert_eligible() -> None:
@@ -58,4 +59,35 @@ def test_quality_summary_counts_stale_and_verified_quotes() -> None:
         "stale_count": 1,
         "cross_checked_count": 1,
         "data_quality_score": 50.0,
+    }
+
+
+def test_raw_observation_store_summary_is_safe_and_tracks_latest(tmp_path) -> None:
+    store = RawObservationStore(tmp_path / "raw")
+    assert raw_observation_store_summary(store)["enabled"] is True
+    store.record(
+        provider="twse",
+        endpoint="https://example.invalid/quote",
+        fetched_at="2026-08-09T01:00:00+00:00",
+        request_id="req-1",
+        payload={"ticker": "TAIEX", "price": 1},
+        http_status=200,
+        parser_version="test",
+        parsing_status="normalized",
+    )
+    summary = raw_observation_store_summary(store)
+    assert summary["observation_count"] == 1
+    assert summary["latest_fetched_at"] == "2026-08-09T01:00:00+00:00"
+    assert "raw_payload" not in summary
+
+
+def test_raw_observation_store_summary_is_disabled_without_configuration(monkeypatch) -> None:
+    monkeypatch.delenv("RAW_OBSERVATION_ROOT", raising=False)
+    summary = raw_observation_store_summary()
+    assert summary == {
+        "enabled": False,
+        "schema_version": None,
+        "observation_count": 0,
+        "latest_fetched_at": None,
+        "error": None,
     }

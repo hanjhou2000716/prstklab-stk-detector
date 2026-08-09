@@ -23,6 +23,38 @@ def _store_from_env() -> RawObservationStore | None:
     return RawObservationStore(root) if root else None
 
 
+def raw_observation_store_summary(
+    store: RawObservationStore | None = None,
+) -> dict[str, Any]:
+    """Expose safe store health metadata without publishing raw payloads."""
+    active = store if store is not None else _store_from_env()
+    if active is None:
+        return {
+            "enabled": False,
+            "schema_version": None,
+            "observation_count": 0,
+            "latest_fetched_at": None,
+            "error": None,
+        }
+    try:
+        latest = active.list_recent(limit=1)
+        return {
+            "enabled": True,
+            "schema_version": 1,
+            "observation_count": active.count(),
+            "latest_fetched_at": latest[0].fetched_at if latest else None,
+            "error": None,
+        }
+    except (OSError, RuntimeError, ValueError):
+        return {
+            "enabled": True,
+            "schema_version": 1,
+            "observation_count": 0,
+            "latest_fetched_at": None,
+            "error": "store_unavailable",
+        }
+
+
 def bind_quote_evidence(
     quote: dict[str, Any],
     *,
