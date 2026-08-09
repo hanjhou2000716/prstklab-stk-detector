@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from src.source_health import build_source_health
 
@@ -8,7 +8,7 @@ def _health(additional_sources=None, errors=None):
         errors=errors or [],
         events={"is_major": False},
         research_report={"sources": []},
-        checked_at=datetime.now(timezone.utc),
+        checked_at=datetime.now(UTC),
         additional_sources=additional_sources,
     )
 
