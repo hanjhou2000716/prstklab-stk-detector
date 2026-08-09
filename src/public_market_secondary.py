@@ -15,6 +15,8 @@ from typing import Any
 
 import requests
 
+from src.provider_health import classify_provider_error
+
 STOOQ_URL = "https://stooq.com/q/l/"
 NASDAQ_QUOTE_URL = "https://api.nasdaq.com/api/quote/{symbol}/info"
 SYMBOLS = {
@@ -92,6 +94,8 @@ def fetch_public_market_secondary(
     checked_at = _now()
     quotes: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
+    error_details: list[dict[str, Any]] = []
+    fallback_used = False
     for ticker, symbol in SYMBOLS.items():
         try:
             response = requester(
@@ -117,16 +121,22 @@ def fetch_public_market_secondary(
                     )
                     fallback.raise_for_status()
                     quotes[ticker] = _parse_nasdaq_quote(fallback.json(), ticker)
+                    quotes[ticker]["fallback_used"] = True
+                    fallback_used = True
                     continue
                 except Exception as fallback_exc:
-                    errors.append(f"{ticker}:{type(fallback_exc).__name__}")
+                    errors.append(f"{ticker}:{classify_provider_error(fallback_exc)['code']}")
+                    error_details.append({"provider": "nasdaq", "item": ticker, **classify_provider_error(fallback_exc)})
                     continue
-            errors.append(f"{ticker}:{type(exc).__name__}")
+            errors.append(f"{ticker}:{classify_provider_error(exc)['code']}")
+            error_details.append({"provider": "stooq", "item": ticker, **classify_provider_error(exc)})
     status = "healthy" if quotes and not errors else "partial" if quotes else "failed"
     return {
         "status": status,
         "quotes": quotes,
         "errors": errors,
+        "error_details": error_details,
+        "fallback_used": fallback_used,
         "fetched_at": checked_at,
         "health": {
             "key": "public_market_secondary",
@@ -138,5 +148,7 @@ def fetch_public_market_secondary(
             "checked_at": checked_at,
             "item_count": len(quotes),
             "data_gap": errors or None,
+            "error_details": error_details or None,
+            "fallback_used": fallback_used,
         },
     }

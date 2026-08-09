@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from urllib.parse import urlparse
 
 from src.crypto_spot_sources import fetch_crypto_spot_snapshot
 from src.market_data import apply_crypto_spot_crosscheck
@@ -20,7 +21,7 @@ def test_crypto_spot_fetches_both_public_providers_and_isolates_quotes():
 
     def requester(url, *, params, timeout, headers):
         assert timeout == 15
-        if "binance.com" in url:
+        if urlparse(url).hostname == "api.binance.com":
             return FakeResponse(
                 {
                     "lastPrice": "100.0" if params["symbol"] == "BTCUSDT" else "10.0",
@@ -46,7 +47,7 @@ def test_crypto_spot_fetches_both_public_providers_and_isolates_quotes():
 
 def test_crypto_spot_failure_is_partial_and_does_not_hide_existing_cards():
     def requester(url, *, params, timeout, headers):
-        if "binance.com" in url:
+        if urlparse(url).hostname == "api.binance.com":
             raise TimeoutError("binance unavailable")
         return FakeResponse({"bitcoin": {"usd": 100.0}, "ethereum": {"usd": 10.0}})
 
@@ -70,7 +71,7 @@ def test_crypto_spot_retries_transient_provider_failure_once():
     calls = {"binance": 0}
 
     def requester(url, *, params, timeout, headers):
-        if "binance.com" in url:
+        if urlparse(url).hostname == "api.binance.com":
             calls["binance"] += 1
             if calls["binance"] == 1:
                 raise TimeoutError("temporary provider timeout")
@@ -82,6 +83,24 @@ def test_crypto_spot_retries_transient_provider_failure_once():
     assert calls["binance"] == 3
     assert snapshot["status"] == "healthy"
     assert set(snapshot["primary"]) == {"BTC", "ETH"}
+
+
+def test_crypto_spot_uses_binance_us_when_global_endpoint_is_blocked():
+    now_ms = int(datetime(2026, 8, 1, 1, 0, tzinfo=UTC).timestamp() * 1000)
+
+    def requester(url, *, params, timeout, headers):
+        if urlparse(url).hostname == "api.binance.com":
+            raise RuntimeError("blocked")
+        if urlparse(url).hostname == "api.binance.us":
+            return FakeResponse({"lastPrice": "100", "priceChangePercent": "1.0", "closeTime": now_ms})
+        return FakeResponse({"bitcoin": {"usd": 100.2}, "ethereum": {"usd": 10.1}})
+
+    snapshot = fetch_crypto_spot_snapshot(requester=requester)
+
+    assert set(snapshot["primary"]) == {"BTC", "ETH"}
+    assert snapshot["fallback_used"] is True
+    assert snapshot["primary"]["BTC"]["source_domain"] == "api.binance.us"
+    assert snapshot["health"]["fallback_used"] is True
 
 
 def test_crypto_spot_crosscheck_marks_aligned_prices_confirmed():
