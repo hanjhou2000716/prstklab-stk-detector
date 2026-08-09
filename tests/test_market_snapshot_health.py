@@ -27,6 +27,10 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
     # is an external provider path and must be covered by its own adapter
     # tests, not allowed to change the aggregate quote status here.
     monkeypatch.setattr("src.phase_two_sources.build_phase_two_snapshot", lambda: {"crypto_spot": []})
+    # Keep the direct cross-check path deterministic as well when the
+    # preceding MOPS/provenance fixes are merged into main.  This test is
+    # scoped to the risk-provider error, not public crypto availability.
+    monkeypatch.setattr("src.market_data.apply_crypto_spot_crosscheck", lambda indices, _spot: indices)
     monkeypatch.setattr("src.research_cards.load_research_cards", lambda: {
         "status": "研究報告", "sources": [], "candidates": [{
             "ticker": "2330", "name": "台積電", "market": "taiwan", "strategy": "price_action", "rank": 1,
