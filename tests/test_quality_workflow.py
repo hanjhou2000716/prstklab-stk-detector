@@ -21,16 +21,16 @@ def test_notify_workflow_supports_an_explicit_single_recipient_smoke_test():
     assert "photo_test requires an explicit single test_chat_id" in workflow
 
 
-def test_scheduled_production_workflow_does_not_install_renderer_browser():
+def test_scheduled_production_workflow_installs_renderer_browser():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
     assert "send-only" in workflow
     assert "requirements-production.txt" in workflow
-    assert "playwright install" not in workflow
+    assert "playwright install --with-deps chromium" in workflow
 
 
-def test_event_production_workflows_use_text_delivery_dependencies():
+def test_event_production_workflows_install_renderer_browser():
     root = Path(__file__).resolve().parents[1] / ".github" / "workflows"
     for name in ("official-event-monitor.yml", "emergency-alert.yml"):
         workflow = (root / name).read_text(encoding="utf-8")
         assert "requirements-production.txt" in workflow
-        assert "playwright install" not in workflow
+        assert "playwright install --with-deps chromium" in workflow

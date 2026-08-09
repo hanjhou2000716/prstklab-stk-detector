@@ -35,8 +35,7 @@ jobs:
 
       - name: 安裝相依套件
         run: pip install -r requirements.txt
-      - name: Install renderer dependencies only for explicit visual smoke
-        if: ${{ inputs.photo_test == true }}
+      - name: Install Chromium for formal card renderer
         run: |
           python -m pip install playwright
           python -m playwright install --with-deps chromium

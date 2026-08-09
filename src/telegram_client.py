@@ -74,6 +74,9 @@ class PhotoDeliveryReceipt:
     status: str
     message_id: int | None = None
     error_class: str | None = None
+    # Kept internal to the process; only a short hash is safe to persist.
+    telegram_file_id: str | None = None
+    telegram_file_id_hash: str | None = None
 
 
 @dataclass(frozen=True)
@@ -312,6 +315,7 @@ def send_briefs(
 def send_photo_brief(
     *, token: str, chat_id: str, caption: str, photo_path: str | Path,
     mini_app_url: str, alert_id: str, release_id: str, snapshot_id: str,
+    telegram_file_id: str | None = None,
 ) -> PhotoDeliveryReceipt:
     """Send one caption-above-photo message with an alert-specific Mini App URL.
 
@@ -334,19 +338,27 @@ def send_photo_brief(
     for attempt in range(SEND_ATTEMPTS):
         retry_after = None
         try:
-            with path.open("rb") as photo:
+            payload = {
+                "chat_id": chat_id,
+                "caption": caption,
+                "parse_mode": "HTML",
+                "show_caption_above_media": "true",
+                "reply_markup": json.dumps({"inline_keyboard": [[mini_app_button(target)]]}),
+            }
+            if telegram_file_id:
                 response = requests.post(
                     endpoint,
-                    data={
-                        "chat_id": chat_id,
-                        "caption": caption,
-                        "parse_mode": "HTML",
-                        "show_caption_above_media": "true",
-                        "reply_markup": json.dumps({"inline_keyboard": [[mini_app_button(target)]]}),
-                    },
-                    files={"photo": photo},
+                    data={**payload, "photo": telegram_file_id},
                     timeout=30,
                 )
+            else:
+                with path.open("rb") as photo:
+                    response = requests.post(
+                        endpoint,
+                        data=payload,
+                        files={"photo": photo},
+                        timeout=30,
+                    )
         except requests.RequestException as exc:
             last_error = exc
         else:
@@ -373,8 +385,36 @@ def send_photo_brief(
     if not response.ok or not payload.get("ok"):
         error_class = "rate_limit" if getattr(response, "status_code", 0) == 429 else "telegram_api"
         return PhotoDeliveryReceipt(alert_id, release_id, snapshot_id, recipient_hash, "failed", error_class=error_class)
-    result = payload.get("result") or {}
-    return PhotoDeliveryReceipt(alert_id, release_id, snapshot_id, recipient_hash, "delivered", message_id=result.get("message_id"))
+    raw_result = payload.get("result")
+    result: dict[str, object] = raw_result if isinstance(raw_result, dict) else {}
+    file_id = None
+    if not telegram_file_id:
+        photos = result.get("photo")
+        if isinstance(photos, list) and photos:
+            last_photo = photos[-1]
+            if isinstance(last_photo, dict):
+                candidate = last_photo.get("file_id")
+                if isinstance(candidate, str) and candidate:
+                    file_id = candidate
+    file_id = telegram_file_id or file_id
+    raw_message_id = result.get("message_id")
+    message_id = raw_message_id if isinstance(raw_message_id, int) else None
+    return PhotoDeliveryReceipt(
+        alert_id, release_id, snapshot_id, recipient_hash, "delivered",
+        message_id=message_id,
+        telegram_file_id=file_id,
+        telegram_file_id_hash=hashlib.sha256(file_id.encode("utf-8")).hexdigest()[:12] if file_id else None,
+    )
+
+
+def summarize_photo_deliveries(deliveries: tuple[PhotoDeliveryReceipt, ...] | list[PhotoDeliveryReceipt]) -> DeliverySummary:
+    """Aggregate sendPhoto receipts without exposing chat IDs or file IDs."""
+    failed = [item for item in deliveries if item.status != "delivered"]
+    return DeliverySummary(
+        delivered_count=len(deliveries) - len(failed),
+        failed_count=len(failed),
+        failed_recipient_hashes=tuple(item.chat_id_hash for item in failed),
+    )
 
 
 def send_photo_briefs(
@@ -391,6 +431,7 @@ def send_photo_briefs(
     if not chat_ids:
         raise ValueError("Telegram recipient list is empty")
     receipts: list[PhotoDeliveryReceipt] = []
+    shared_file_id: str | None = None
     for chat_id in chat_ids:
         recipient_hash = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]
         try:
@@ -403,6 +444,7 @@ def send_photo_briefs(
                 alert_id=alert_id,
                 release_id=release_id,
                 snapshot_id=snapshot_id,
+                telegram_file_id=shared_file_id,
             )
         except (TelegramError, OSError, requests.RequestException) as exc:
             receipt = PhotoDeliveryReceipt(
@@ -410,4 +452,6 @@ def send_photo_briefs(
                 error_class=type(exc).__name__.lower(),
             )
         receipts.append(receipt)
+        if receipt.status == "delivered" and receipt.telegram_file_id:
+            shared_file_id = receipt.telegram_file_id
     return tuple(receipts)
