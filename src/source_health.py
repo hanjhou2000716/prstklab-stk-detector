@@ -24,6 +24,48 @@ CANONICAL_STATES = {
     "pending_confirmation",
 }
 
+# Stable semantic labels consumed by the investor summary.  The legacy
+# ``state`` values remain for backwards compatibility, while
+# ``semantic_state`` is the single vocabulary used for gap counting and UI
+# aggregation.
+SEMANTIC_STATES = {
+    "healthy", "no_event", "fallback_active", "secondary_unavailable",
+    "configuration_missing", "warming", "stale", "partial", "failed", "critical",
+}
+
+
+def _semantic_state(item: dict[str, Any]) -> str:
+    explicit = str(item.get("semantic_state") or "").strip()
+    if explicit in SEMANTIC_STATES:
+        return explicit
+    status = str(item.get("status") or "").strip().lower()
+    if status == "partial" or status == "data_gap":
+        return "partial"
+    if status in {"failed", "scan_failed", "掃描失敗"}:
+        return "failed"
+    legacy = _canonical_state(item)
+    if legacy == "degraded_with_fallback":
+        return "fallback_active"
+    if legacy == "optional_degraded":
+        return "partial"
+    if legacy == "configuration_required":
+        return "configuration_missing"
+    if legacy == "critical_gap":
+        return "critical"
+    if legacy == "pending_confirmation":
+        return "secondary_unavailable"
+    freshness = str(item.get("freshness") or "").lower()
+    if freshness in {"stale", "expired", "recent_close_stale"}:
+        return "stale"
+    return legacy if legacy in SEMANTIC_STATES else "critical"
+
+
+def _is_gap(item: dict[str, Any]) -> bool:
+    return _semantic_state(item) in {
+        "fallback_active", "configuration_missing",
+        "stale", "partial", "failed", "critical",
+    }
+
 
 def _canonical_state(item: dict[str, Any]) -> str:
     """Map legacy provider statuses to the public source-health taxonomy."""
@@ -49,7 +91,7 @@ def _canonical_state(item: dict[str, Any]) -> str:
 
 
 def _source_item(key: str, label: str, issues: list[str], checked_at: str) -> dict[str, Any]:
-    return {
+    item = {
         "key": key,
         "label": label,
         "status": "healthy" if not issues else "partial",
@@ -60,6 +102,8 @@ def _source_item(key: str, label: str, issues: list[str], checked_at: str) -> di
         "checked_at": checked_at,
         "issues": issues[:2],
     }
+    item["semantic_state"] = "no_event" if not issues else "failed"
+    return item
 
 
 def _attach_detail_summary(target: dict[str, Any], details: list[dict[str, Any]]) -> None:
@@ -112,19 +156,19 @@ def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
     warming = [item for item in sources if str(item.get("status")) == "建檔中"]
     if failed:
         issues = [f"{item.get('market', '')} {item.get('strategy', '')} 掃描失敗".strip() for item in failed]
-        return {"key": "research", "label": "量化研究", "status": "partial", "checked_at": checked_at, "issues": issues[:2]}
+        return {"key": "research", "label": "量化研究", "status": "partial", "semantic_state": "failed", "checked_at": checked_at, "issues": issues[:2]}
     if partial:
         issues = [f"{item.get('market', '')} {item.get('strategy', '')} 部分資料缺漏".strip() for item in partial]
-        return {"key": "research", "label": "量化研究", "status": "partial", "checked_at": checked_at, "issues": issues[:2]}
+        return {"key": "research", "label": "量化研究", "status": "partial", "semantic_state": "partial", "checked_at": checked_at, "issues": issues[:2]}
     if warming:
         details = []
         for item in warming:
             cached, expected = item.get("history_cached"), item.get("history_expected")
             progress = f"：已核對 {cached}／{expected} 檔" if cached is not None and expected is not None else ""
             details.append(f"{item.get('market', '')} 璞玉價值建檔中{progress}".strip())
-        return {"key": "research", "label": "量化研究", "status": "warming", "checked_at": checked_at, "issues": details[:2]}
+        return {"key": "research", "label": "量化研究", "status": "warming", "semantic_state": "warming", "checked_at": checked_at, "issues": details[:2]}
     if (report.get("health") or {}).get("is_expired"):
-        return {"key": "research", "label": "量化研究", "status": "partial", "checked_at": checked_at, "issues": ["研究資料已逾時，候選清單已隱藏"]}
+        return {"key": "research", "label": "量化研究", "status": "partial", "semantic_state": "stale", "checked_at": checked_at, "issues": ["研究資料已逾時，候選清單已隱藏"]}
     diagnostics = [
         item.get("selection_diagnostics")
         for item in sources
@@ -138,6 +182,7 @@ def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
         "key": "research",
         "label": "量化研究",
         "status": "healthy",
+        "semantic_state": "healthy",
         "checked_at": checked_at,
         "issues": [],
         "candidate_state": candidate_state,
@@ -177,6 +222,7 @@ def _monitor_health_item(monitor_health: dict[str, Any], checked_at: str) -> dic
         "pending_count": pending_count,
         "pending_reasons": reasons,
         "market_sync_status": monitor_health.get("market_sync_status") or "not_confirmed",
+        "semantic_state": "failed" if status == "failed" else "secondary_unavailable" if pending_count else "healthy",
     }
 
 
@@ -232,6 +278,7 @@ def build_source_health(
                 continue
             normalized = dict(item)
             normalized["state"] = _canonical_state(normalized)
+            normalized["semantic_state"] = _semantic_state(normalized)
             normalized.setdefault("role", "optional")
             # The current refresh succeeded for healthy providers, so this is a
             # legitimate success timestamp; failed/partial providers stay unset.
@@ -276,9 +323,19 @@ def build_source_health(
             "label": "本輪無重大事件",
             "detail": "事件來源已完成掃描，未發現符合提醒門檻的重大事件。",
         }
-    partial = sum(source.get("state") in {"critical_gap", "failed", "degraded_with_fallback"} or source["status"] in {"partial", "failed", "missing_api_key", "data_gap"} for source in sources)
+    for source in sources:
+        if source.get("status") in {"partial", "failed", "missing_api_key", "data_gap"} and source.get("semantic_state") in {"healthy", "no_event"}:
+            source["semantic_state"] = "failed" if source.get("status") == "failed" else "partial"
+        source["semantic_state"] = _semantic_state(source)
+    gap_sources = [source for source in sources if _is_gap(source)]
+    partial = len(gap_sources)
     warming = sum(source["status"] == "warming" for source in sources)
-    status = "partial" if partial else "warming" if warming else "healthy"
+    core_gap = any(
+        _is_gap(source) and str(source.get("role") or "") == "required_for_core"
+        for source in sources
+    )
+    status = "critical" if core_gap else "partial" if partial else "warming" if warming else "healthy"
+    investor_status = "核心資料不足" if core_gap else "部分資料降級" if partial else "資料正常"
     summary = (
         f"{partial} 個來源有資料缺口" if partial else
         "璞玉價值歷史資料建檔中" if warming else
@@ -286,16 +343,18 @@ def build_source_health(
     )
     data_gaps = [
         {"source": source["label"], "key": source["key"], "issues": source.get("issues", [])}
-        for source in sources if source.get("status") not in {"healthy", "no_event", "pending", "warming"}
+        for source in gap_sources
     ]
     return {
         "checked_at": checked,
         "status": status,
         "summary": summary,
+        "investor_status": investor_status,
         "event_scan": event_scan,
         "sources": sources,
         "data_gaps": data_gaps,
-        "missing_source_count": len(data_gaps),
+        "missing_source_count": len(gap_sources),
+        "gap_source_keys": [str(source.get("key") or "") for source in gap_sources],
         "state_counts": {
             state: sum(_canonical_state(source) == state for source in sources)
             for state in sorted(CANONICAL_STATES)
