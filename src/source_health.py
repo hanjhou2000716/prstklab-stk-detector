@@ -12,6 +12,41 @@ SOURCE_DEFINITIONS = (
     ("risk", "情緒／波動", {"risk"}),
 )
 
+CANONICAL_STATES = {
+    "healthy",
+    "degraded_with_fallback",
+    "optional_degraded",
+    "configuration_required",
+    "critical_gap",
+    "failed",
+    "warming",
+    "no_event",
+    "pending_confirmation",
+}
+
+
+def _canonical_state(item: dict[str, Any]) -> str:
+    """Map legacy provider statuses to the public source-health taxonomy."""
+    explicit = str(item.get("state") or "").strip()
+    if explicit in CANONICAL_STATES:
+        return explicit
+    status = str(item.get("status") or "").lower()
+    if status in {"healthy", "ok", "success", "no_event"}:
+        return "no_event" if status == "no_event" else "healthy"
+    if status in {"warming", "建檔中"}:
+        return "warming"
+    if status in {"pending", "pending_confirmation"}:
+        return "pending_confirmation"
+    if status in {"missing_api_key", "configuration_required", "not_configured"}:
+        return "configuration_required"
+    if status in {"optional_degraded", "optional_gap"}:
+        return "optional_degraded"
+    if status in {"partial", "fallback", "degraded_with_fallback"}:
+        return "degraded_with_fallback" if item.get("fallback_used") else "critical_gap"
+    if status in {"failed", "scan_failed", "掃描失敗"}:
+        return "failed"
+    return "critical_gap"
+
 
 def _source_item(key: str, label: str, issues: list[str], checked_at: str) -> dict[str, Any]:
     return {
@@ -20,7 +55,8 @@ def _source_item(key: str, label: str, issues: list[str], checked_at: str) -> di
         "status": "healthy" if not issues else "partial",
         # ``state`` is deliberately separate from status so the UI can tell
         # a clean scan with no event from a failed provider request.
-        "state": "no_event" if not issues else "scan_failed",
+        "state": "no_event" if not issues else "failed",
+        "role": "required_for_core" if key in {"market_quotes", "official_events"} else "required_for_alert",
         "checked_at": checked_at,
         "issues": issues[:2],
     }
@@ -195,6 +231,8 @@ def build_source_health(
             if not isinstance(item, dict):
                 continue
             normalized = dict(item)
+            normalized["state"] = _canonical_state(normalized)
+            normalized.setdefault("role", "optional")
             # The current refresh succeeded for healthy providers, so this is a
             # legitimate success timestamp; failed/partial providers stay unset.
             if normalized.get("status") == "healthy" and not normalized.get("last_success_at"):
@@ -238,7 +276,7 @@ def build_source_health(
             "label": "本輪無重大事件",
             "detail": "事件來源已完成掃描，未發現符合提醒門檻的重大事件。",
         }
-    partial = sum(source["status"] in {"partial", "failed", "missing_api_key", "data_gap"} for source in sources)
+    partial = sum(source.get("state") in {"critical_gap", "failed", "degraded_with_fallback"} or source["status"] in {"partial", "failed", "missing_api_key", "data_gap"} for source in sources)
     warming = sum(source["status"] == "warming" for source in sources)
     status = "partial" if partial else "warming" if warming else "healthy"
     summary = (
@@ -258,4 +296,12 @@ def build_source_health(
         "sources": sources,
         "data_gaps": data_gaps,
         "missing_source_count": len(data_gaps),
+        "state_counts": {
+            state: sum(_canonical_state(source) == state for source in sources)
+            for state in sorted(CANONICAL_STATES)
+        },
+        "source_roles": {
+            role: sum(str(source.get("role") or "optional") == role for source in sources)
+            for role in ("required_for_core", "required_for_alert", "required_for_research", "optional")
+        },
     }
