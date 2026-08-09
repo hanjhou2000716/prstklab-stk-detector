@@ -28,8 +28,16 @@ def _now() -> str:
 
 
 def _health(key: str, label: str, url: str, status: str, checked_at: str, **extra: Any) -> dict[str, Any]:
+    state = {
+        "healthy": "healthy",
+        "missing_api_key": "configuration_required",
+        "data_gap": "optional_degraded" if key == "kofia_margin" else "critical_gap",
+        "partial": "optional_degraded" if key == "kofia_margin" else "critical_gap",
+        "failed": "optional_degraded" if key == "kofia_margin" else "failed",
+    }.get(status, "critical_gap")
+    role = "optional" if key in {"kofia_margin", "fred", "eia", "crypto_macd"} else "required_for_core"
     return {"key": key, "label": label, "source_tier": "official", "source_url": url,
-            "status": "healthy" if status == "healthy" else "partial",
+            "status": "healthy" if status == "healthy" else "partial", "state": state, "role": role,
             "provider_status": status, "checked_at": checked_at, **extra}
 
 

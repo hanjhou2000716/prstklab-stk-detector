@@ -304,7 +304,15 @@ def annotate_quote_freshness(quotes: list[dict[str, Any]], *, now: datetime | No
         if item.get("stale_used") is True and freshness == "live":
             freshness = quote_freshness({**item, "quote_delayed": True}, now=now)
         item["freshness"] = freshness
-        if item.get("stale_used") is True:
+        item["data_status"] = {
+            "live": "盤中",
+            "recent_close": "最近收盤",
+            "stale": "資料過期",
+            "unavailable": "暫無資料",
+        }.get(freshness, "時間待核對")
+        # A delayed or close-only quote can remain visible, but cannot create a
+        # high-risk alert.  This is the hard freshness gate from the TXT.
+        if freshness != "live" or item.get("stale_used") is True or item.get("quote_delayed") is True:
             item["alert_eligible"] = False
         annotated.append(item)
     return annotated
@@ -339,6 +347,17 @@ def summarize_market_freshness(quotes: list[dict[str, Any]]) -> dict[str, Any]:
         "stale_count": counts["stale"],
         "unavailable_count": counts["unavailable"],
     }
+
+
+def market_data_status(summary: dict[str, Any]) -> str:
+    """Render an honest aggregate label from the classified freshness state."""
+    return {
+        "live": "即時",
+        "mixed": "混合資料",
+        "close_only": "最近收盤",
+        "degraded": "部分缺漏",
+        "unavailable": "無法取得",
+    }.get(str(summary.get("overall_state") or ""), "無法取得")
 
 
 def get_quote(item: dict[str, str], session: str | None = None) -> dict[str, Any]:
@@ -662,7 +681,6 @@ def build_market_snapshot() -> dict[str, Any]:
         except Exception as exc:
             errors.append({"ticker": item["ticker"], "message": str(exc), "scope": "macro_quote"})
     macro_quotes = [normalize_quote_record(item) for item in macro_quotes]
-    quote_data_status = "即時" if not errors else "部分缺漏"
     risk = build_risk_snapshot()
     news = build_news_snapshot()
     official_events = fetch_official_events()
@@ -728,6 +746,10 @@ def build_market_snapshot() -> dict[str, Any]:
     freshness_summary = summarize_market_freshness([*quotes, *indices])
     live_quotes = freshness_summary["live_count"]
     close_quotes = freshness_summary["recent_close_count"] + freshness_summary["stale_count"]
+    # The aggregate label must follow classified quote freshness, not merely
+    # whether an unrelated optional provider returned an error.  A close-only
+    # snapshot must never be advertised as "即時".
+    data_status = market_data_status(freshness_summary)
     snapshot = {
         "generated_at": scan_completed_at.isoformat(),
         "scan": {
@@ -739,7 +761,7 @@ def build_market_snapshot() -> dict[str, Any]:
             **freshness_summary,
         },
         **freshness_summary,
-        "data_status": quote_data_status,
+        "data_status": data_status,
         "markets": markets,
         "indices": indices,
         "quotes": quotes,

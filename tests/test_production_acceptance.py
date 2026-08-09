@@ -42,3 +42,18 @@ def test_high_risk_without_evidence_is_rejected():
     result = validate_production_bundle(**bundle)
     assert not result.allowed
 
+
+def test_incomplete_production_research_is_rejected():
+    bundle = _bundle()
+    bundle["research"].update(
+        scan_mode="production",
+        publish_eligible=False,
+        production_eligible=False,
+        universe_expected=10,
+        universe_scanned=9,
+        universe_completed=9,
+    )
+    result = validate_production_bundle(**bundle)
+    assert not result.allowed
+    assert "production research" in " ".join(result.errors)
+

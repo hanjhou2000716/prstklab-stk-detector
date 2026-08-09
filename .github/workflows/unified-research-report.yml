@@ -67,6 +67,12 @@ jobs:
           fetch-depth: 0
       - name: Restore last immutable data release
         run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json
+      - name: Save last successful research snapshot
+        run: |
+          mkdir -p research-artifacts
+          if [[ -s site/data/research-report.json ]]; then
+            cp site/data/research-report.json research-artifacts/research-report-previous.json
+          fi
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: { python-version: '3.11' }
       - run: pip install -r requirements.txt
@@ -101,20 +107,38 @@ jobs:
         continue-on-error: true
         run: python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE"
       - run: python -m src.run_research_report --scan-mode "$SCAN_MODE"
-      - name: Block incomplete production research publication
+      - name: Gate research publication and preserve previous success
+        id: research_gate
         if: env.SCAN_MODE == 'production'
         run: |
           python - <<'PY'
           import json
+          import os
+          import shutil
           from pathlib import Path
           report = json.loads(Path("site/data/research-report.json").read_text(encoding="utf-8"))
-          if report.get("production_eligible") is not True:
-              reason = report.get("blocking_reason") or "research scan is incomplete"
-              raise SystemExit(f"production research publication blocked: {reason}")
+          eligible = report.get("production_eligible") is True and report.get("publish_eligible") is True
+          Path("research-artifacts/research-report-latest.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+          )
+          output = Path(os.environ["GITHUB_OUTPUT"])
+          if eligible:
+              output.open("a", encoding="utf-8").write("publish=true\n")
+              print("Research scan is complete and eligible for publication.")
+          else:
+              previous = Path("research-artifacts/research-report-previous.json")
+              if previous.is_file():
+                  shutil.copyfile(previous, "site/data/research-report.json")
+                  output.open("a", encoding="utf-8").write("publish=true\n")
+                  reason = report.get("blocking_reason") or "research scan is incomplete"
+                  print(f"::warning::{reason}; keeping the last successful research snapshot")
+              else:
+                  output.open("a", encoding="utf-8").write("publish=false\n")
+                  print("::warning::research scan is incomplete and no previous successful snapshot exists")
           PY
       - run: python -m src.refresh_market_data
       - name: Build release manifest
-        if: env.SCAN_MODE == 'production'
+        if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
         run: python -m src.release_manifest
       - name: 保存最新公開研究摘要
         run: |
@@ -124,16 +148,16 @@ jobs:
             echo "scan_mode=$SCAN_MODE: isolated artifact only; skipping data-release publication"
           fi
       - name: Configure GitHub Pages
-        if: env.SCAN_MODE == 'production'
+        if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
       - name: Upload Pages artifact
-        if: env.SCAN_MODE == 'production'
+        if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           path: site
       - name: Deploy Pages
         id: deployment
-        if: env.SCAN_MODE == 'production'
+        if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
         uses: ./.github/actions/deploy-pages-retry
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -144,3 +168,4 @@ jobs:
             data/taiwan-mops-pristine-history.json
             data/sec-companyfacts-cache.json
             site/data/research-report.json
+            research-artifacts

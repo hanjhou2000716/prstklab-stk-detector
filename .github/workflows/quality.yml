@@ -29,7 +29,6 @@ jobs:
           python -m pip install -r requirements.txt pytest
           python -m pip install uv
           uv sync --locked --all-groups
-          uv run playwright install --with-deps chromium
       - name: Reset coverage data
         run: uv run coverage erase
       - name: Run full unit tests and publish coverage report
@@ -53,10 +52,10 @@ jobs:
           --cov=src.system_dry_run
           --cov-report=term-missing
           --cov-fail-under=90
-      - name: Ruff baseline (new violations fail)
-        run: uv run ruff check src/data_release.py tests/test_data_release.py
-      - name: Mypy baseline (new module)
-        run: uv run mypy src/data_release.py
+      - name: Ruff full source and test gate
+        run: uv run ruff check src tests
+      - name: Mypy full source gate
+        run: uv run mypy src
       - name: Compile Python modules
         run: python -m compileall -q src railway-monitor
       - name: Validate checked-in Mini App artifacts
