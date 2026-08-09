@@ -45,7 +45,7 @@ def run_dry_run() -> dict[str, Any]:
         "caption_valid": len(caption) <= 40 and bool(caption.strip()),
         "dimensions_valid": card_ok,
         "deep_link_valid": routed["status"] == "ok",
-        "delivery_status": "delivered" if card_ok and routed["status"] == "ok" else "blocked",
+        "delivery_status": "delivered" if renderer_available and card_ok and routed["status"] == "ok" else "blocked",
         "release_id": envelope.release_id,
         "snapshot_id": envelope.snapshot_id,
     }

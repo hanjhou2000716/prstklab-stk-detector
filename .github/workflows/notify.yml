@@ -51,6 +51,10 @@ jobs:
           DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
         run: |
           if [ "${{ inputs.photo_test }}" = "true" ]; then
+            if [ -z "${{ inputs.test_chat_id }}" ]; then
+              echo "photo_test requires an explicit single test_chat_id" >&2
+              exit 2
+            fi
             python -m src.photo_smoke_test
           elif [ -n "${{ inputs.message }}" ]; then
             python -m src.main --send --message "${{ inputs.message }}"
