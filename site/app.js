@@ -29,7 +29,7 @@ const compactQuoteMeta = (item) => {
     ? "最近收盤"
     : provider;
   const time = `${date}${clock}`;
-  const freshness = item.freshness === "stale" ? "｜逾時" : item.freshness === "live" ? "｜盤中" : "";
+  const freshness = item.data_status ? `｜${item.data_status}` : item.freshness === "stale" ? "｜逾時" : item.freshness === "live" ? "｜盤中" : "";
   const checked = item.cross_checked ? "｜已核對" : "｜未核對";
   const base = `${label} | ${time}${freshness}`;
   // Legacy compact form: return `${label} | ${time}${freshness}`

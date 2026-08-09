@@ -304,7 +304,15 @@ def annotate_quote_freshness(quotes: list[dict[str, Any]], *, now: datetime | No
         if item.get("stale_used") is True and freshness == "live":
             freshness = quote_freshness({**item, "quote_delayed": True}, now=now)
         item["freshness"] = freshness
-        if item.get("stale_used") is True:
+        item["data_status"] = {
+            "live": "盤中",
+            "recent_close": "最近收盤",
+            "stale": "資料過期",
+            "unavailable": "暫無資料",
+        }.get(freshness, "時間待核對")
+        # A delayed or close-only quote can remain visible, but cannot create a
+        # high-risk alert.  This is the hard freshness gate from the TXT.
+        if freshness != "live" or item.get("stale_used") is True or item.get("quote_delayed") is True:
             item["alert_eligible"] = False
         annotated.append(item)
     return annotated
