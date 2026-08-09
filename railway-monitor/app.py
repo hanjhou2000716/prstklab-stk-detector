@@ -1724,6 +1724,23 @@ def _decode_discovery_articles(rows: list[dict[str, str]]) -> list[DiscoveryArti
 
 _GDELT_BACKOFF_UNTIL = 0.0
 _GDELT_FAILURE_COUNT = 0
+GDELT_USER_AGENT = (
+    "PRStK-Stock-Detector/1.0 "
+    "(+https://github.com/hanjhou2000716/prstklab-stk-detector)"
+)
+
+
+def gdelt_error_label(error: BaseException) -> str:
+    """Return a safe, stable provider error label for health diagnostics."""
+    if isinstance(error, httpx.HTTPStatusError) and error.response is not None:
+        return f"HTTP_{error.response.status_code}"
+    if isinstance(error, httpx.TimeoutException):
+        return "timeout"
+    if isinstance(error, json.JSONDecodeError):
+        return "invalid_json"
+    if isinstance(error, ValueError):
+        return "invalid_payload"
+    return type(error).__name__
 
 
 async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[DiscoveryArticle]:
@@ -1746,7 +1763,10 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
         raise RuntimeError("GDELT backoff active after rate limit")
     params = {"query": os.environ.get("GDELT_QUERY", GDELT_QUERY), "mode": "artlist", "format": "json", "sort": "datedesc", "maxrecords": 75}
     try:
-        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=20, follow_redirects=True, headers={
+            "Accept": "application/json",
+            "User-Agent": GDELT_USER_AGENT,
+        }) as client:
             response = await client.get(GDELT_DOC_URL, params=params)
         if response.status_code == 429:
             retry_after = 0
@@ -2245,7 +2265,7 @@ async def monitor_forever() -> None:
                 gdelt_baseline = False
             except Exception as error:
                 update_health("gdelt", status="failed", last_failure_at=datetime.now(timezone.utc).isoformat(),
-                              error=type(error).__name__)
+                              error=gdelt_error_label(error))
                 logging.exception("GDELT discovery failed; will wait for the next interval")
                 try:
                     await dispatch_monitor_health(
