@@ -1,3 +1,5 @@
+import pytest
+
 from src.alert_caption import make_caption, validate_caption
 from src.alert_contract import AlertEnvelope
 from src.alert_lifecycle import transition
@@ -34,3 +36,29 @@ def test_material_change_and_direction_reversal():
     assert has_material_change(previous_change=1.0, current_change=2.0, asset_class="market_index")
     assert classify_price_pattern(daily_percent=8, move_15m=-0.5) == "gain_fading"
     assert classify_price_pattern(daily_percent=-2, move_15m=1.2) == "fast_rebound"
+
+
+def test_caption_verified_and_validation_rejects_invalid_lengths():
+    caption = make_caption(subject="台指", change="+2.1%", verified=True)
+    assert "台指" in caption
+    validate_caption(caption)
+    with pytest.raises(ValueError):
+        validate_caption("")
+    with pytest.raises(ValueError):
+        validate_caption("x" * 41)
+
+
+def test_lifecycle_handles_invalid_and_deescalation_paths():
+    with pytest.raises(ValueError):
+        transition("unknown")
+    assert transition("escalated", material_change=False) == "deescalated"
+    assert transition("deescalated", condition_active=False) == "resolved"
+
+
+def test_material_change_fail_closed_and_pattern_boundaries():
+    assert not has_material_change(previous_change=None, current_change=2.0, asset_class="equity")
+    assert has_material_change(previous_change=0.0, current_change=0.0, asset_class="equity", new_evidence=True)
+    assert classify_price_pattern(daily_percent=5, move_15m=1.0) == "intraday_acceleration"
+    assert classify_price_pattern(daily_percent=5, move_15m=None) == "daily_breakout"
+    assert classify_price_pattern(daily_percent=-5, move_15m=None) == "sharp_drop"
+    assert classify_price_pattern(daily_percent=-1, move_15m=0.5) == "direction_reversal"
