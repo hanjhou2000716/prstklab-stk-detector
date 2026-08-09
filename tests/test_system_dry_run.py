@@ -8,3 +8,12 @@ def test_system_dry_run_is_fail_closed_and_traceable():
     assert result["deep_link"] == "ok"
     assert result["card_rendered"] is True
     assert result["card_dimensions"] == {"width": 1080, "height": 1350}
+    assert result["photo_contract"] == {
+        "mocked": True,
+        "caption_valid": True,
+        "dimensions_valid": True,
+        "deep_link_valid": True,
+        "delivery_status": "delivered",
+        "release_id": "dry-release",
+        "snapshot_id": "dry-snapshot",
+    }

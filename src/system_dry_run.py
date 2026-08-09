@@ -37,7 +37,19 @@ def run_dry_run() -> dict[str, Any]:
         png_header = card_path.read_bytes()[16:24] if card_path.exists() else b""
         card_dimensions = struct.unpack(">II", png_header) if len(png_header) == 8 else (0, 0)
     card_ok = card_dimensions == (WIDTH, HEIGHT)
-    return {"ok": all((budget["allowed"], lifecycle == "pending_confirmation", intelligence["advice_gate"] == "observation_only", routed["status"] == "ok", card_ok)), "budget": budget, "lifecycle": lifecycle, "advice_gate": intelligence["advice_gate"], "deep_link": routed["status"], "release_id": envelope.release_id, "card_rendered": card_ok, "renderer_available": renderer_available, "card_dimensions": {"width": card_dimensions[0], "height": card_dimensions[1]}}
+    # Keep the Telegram boundary offline but exercise the same invariants as
+    # production: one caption, one fixed-size photo, and one release-scoped
+    # deep link.  This is deliberately a mock receipt, never a real send.
+    photo_contract = {
+        "mocked": True,
+        "caption_valid": len(caption) <= 40 and bool(caption.strip()),
+        "dimensions_valid": card_ok,
+        "deep_link_valid": routed["status"] == "ok",
+        "delivery_status": "delivered" if card_ok and routed["status"] == "ok" else "blocked",
+        "release_id": envelope.release_id,
+        "snapshot_id": envelope.snapshot_id,
+    }
+    return {"ok": all((budget["allowed"], lifecycle == "pending_confirmation", intelligence["advice_gate"] == "observation_only", routed["status"] == "ok", card_ok, photo_contract["caption_valid"])), "budget": budget, "lifecycle": lifecycle, "advice_gate": intelligence["advice_gate"], "deep_link": routed["status"], "release_id": envelope.release_id, "card_rendered": card_ok, "renderer_available": renderer_available, "card_dimensions": {"width": card_dimensions[0], "height": card_dimensions[1]}, "photo_contract": photo_contract}
 
 if __name__ == "__main__":
     import json
