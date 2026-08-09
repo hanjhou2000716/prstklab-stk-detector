@@ -144,12 +144,21 @@ def publish(
         return {"published": False, "dry_run": True, "branch": branch, "files": files}
 
     _fetch_branch(branch)
+    # The release branch is an append-only immutable store.  Every publisher
+    # may select a different subset (for example, the market refresh workflow
+    # publishes only ``site/data`` while the research workflow also publishes
+    # its MOPS/SEC caches).  Resolve the current parent before creating the
+    # temporary index so a partial publisher cannot silently delete artifacts
+    # written by another workflow.
+    parent_result = _run("rev-parse", f"refs/remotes/origin/{branch}", check=False)
+    parent = parent_result.stdout.strip() if parent_result.returncode == 0 else ""
     index = root / ".git" / "data-release-index"
     index.unlink(missing_ok=True)
     env = os.environ.copy()
     env["GIT_INDEX_FILE"] = str(index)
     try:
-        subprocess.run(["git", "read-tree", "--empty"], check=True, capture_output=True, text=True, env=env)
+        read_tree = ["git", "read-tree", parent] if parent else ["git", "read-tree", "--empty"]
+        subprocess.run(read_tree, check=True, capture_output=True, text=True, env=env)
         # Release artifacts are intentionally ignored by the source checkout
         # (they are data-only outputs).  A fresh temporary index therefore
         # needs -f, otherwise git add returns exit 1 and the entire research
@@ -162,8 +171,6 @@ def publish(
             detail = staged.stderr.strip() or staged.stdout.strip() or "unknown git add error"
             raise DataReleaseError(f"git add failed: {detail}")
         tree = subprocess.run(["git", "write-tree"], check=True, capture_output=True, text=True, env=env).stdout.strip()
-        parent_result = _run("rev-parse", f"refs/remotes/origin/{branch}", check=False)
-        parent = parent_result.stdout.strip() if parent_result.returncode == 0 else ""
         current_tree = _run("rev-parse", f"{parent}^{{tree}}", check=False).stdout.strip() if parent else ""
         if current_tree and current_tree == tree:
             return {"published": False, "unchanged": True, "branch": branch, "files": files, "tree": tree}
