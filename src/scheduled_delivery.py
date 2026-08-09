@@ -6,6 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
+from src.alert_budget import decide_alert_budget
 from src.briefing_cards import build_briefing_snapshot
 from src.config import get_settings
 from src.event_ledger import EventLedger
@@ -81,6 +82,25 @@ def send(
     if not settings.telegram_ready:
         raise RuntimeError("Telegram configuration is incomplete")
     event = _pick_event(snapshot, slot)
+    budget = {"allowed": True, "reason": "no_event", "event_key": ""}
+    if event:
+        ledger = EventLedger()
+        history = [
+            {**record, "event_key": key, "sent_at": record.get("last_reminded_at")}
+            for key, record in ledger.records.items()
+            if record.get("last_reminded_at")
+        ]
+        budget = decide_alert_budget(event, history)
+        if not budget["allowed"]:
+            _write_output({
+                "sent": "false",
+                "delivery_status": "suppressed",
+                "reason": budget["reason"],
+                "event_key": budget.get("event_key", ""),
+                "snapshot_id": snapshot_id,
+                "release_id": gate.release_id,
+            })
+            return
     briefing = snapshot.get("briefing") or {}
     correlation = briefing_correlation(snapshot, slot, event)
     trace_id = str(briefing.get("trace_id") or correlation["trace_id"])
@@ -114,6 +134,7 @@ def send(
         "failed_count": failed,
         "delivery_mode": "text",
         "alert_id": alert_id,
+        "alert_budget": budget,
     })
     if event:
         write_event_lock_key(event)
