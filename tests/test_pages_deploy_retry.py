@@ -35,7 +35,7 @@ def test_all_pages_workflows_use_the_retry_wrapper_and_gate_delivery():
         assert "src.release_manifest ||" not in workflow
 
 
-def test_pages_workflows_degrade_on_actions_control_plane_failures():
+def test_pages_workflows_do_not_mask_release_contract_failures():
     job_names = {
         "deploy-pages.yml": "  deploy:\n",
         "emergency-alert.yml": "  send-emergency-alert:\n",
@@ -48,7 +48,7 @@ def test_pages_workflows_degrade_on_actions_control_plane_failures():
         workflow = (WORKFLOWS / name).read_text(encoding="utf-8")
         start = workflow.index(marker)
         section = workflow[start : start + 360]
-        assert "continue-on-error: true" in section, name
+        assert "continue-on-error: true" not in section, name
 
 
 def test_delivery_workflows_skip_notifications_when_pages_is_unavailable():
@@ -56,4 +56,7 @@ def test_delivery_workflows_skip_notifications_when_pages_is_unavailable():
         workflow = (WORKFLOWS / name).read_text(encoding="utf-8")
         assert "steps.deployment.outputs.available == 'true'" in workflow
         assert "Telegram delivery intentionally skipped (fail closed)." in workflow
-        assert "continue-on-error: true" in workflow
+        gate_start = workflow.index("name: Verify deployed release")
+        gate_end = workflow.find("- name:", gate_start + 1)
+        gate = workflow[gate_start : gate_end if gate_end > gate_start else None]
+        assert "continue-on-error: true" not in gate

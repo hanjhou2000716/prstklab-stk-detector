@@ -38,9 +38,8 @@ concurrency:
 
 jobs:
   refresh-notify-deploy:
-    # Pages/Actions outages are degraded publication; notification stays
-    # fail-closed through the release gate and must never run without a URL.
-    continue-on-error: true
+    # The Pages retry action exposes temporary unavailability through outputs;
+    # release-gate failures remain hard failures and block notification.
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -112,7 +111,6 @@ jobs:
         uses: ./.github/actions/deploy-pages-retry
       - name: Verify deployed release before delivery
         if: steps.prepare.outputs.prepared == 'true' && steps.deployment.outputs.available == 'true'
-        continue-on-error: true
         id: release_gate
         run: |
           python -m src.release_gate \
