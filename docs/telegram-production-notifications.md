@@ -1,13 +1,17 @@
 # Telegram production notification policy
 
-Production scheduled and event notifications use `sendMessage` only. The
-message is a short (maximum 30 characters for the existing brief contract)
-summary plus the Mini App inline button. Full evidence, provenance, market
-context and research details remain in the release referenced by the button.
+Production scheduled and event notifications use one `sendPhoto` message after
+the release gate succeeds. The message contains a short caption (maximum 40
+Unicode characters), a validated 1080x1350 PNG, and a Mini App inline button
+whose query includes the alert, release, and snapshot identifiers. Full
+evidence, provenance, market context and research details remain in the
+release referenced by the button.
 
-The Playwright renderer and `sendPhoto` client remain available only for the
-explicitly scoped photo smoke test. A smoke test must provide one test chat ID;
-it must never use the normal broadcast list.
+The renderer is fail-closed: a missing browser, invalid dimensions, blank
+image, or missing required fields blocks delivery and records the renderer
+error type. It never sends a solid or blank fallback card. The scoped photo
+smoke test still requires one explicit test chat ID and must never use the
+normal broadcast list.
 
 ## Rollback
 
