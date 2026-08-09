@@ -55,8 +55,8 @@ def test_source_health_is_a_collapsible_card_with_a_warming_state():
     assert 'source.status === "warming" ? "建檔中"' in app
     assert ".source-status.warming" in styles
     assert 'aria-labelledby="source-health-title" open' not in page
-    assert 'const missing = health.sources.filter((source) => ["partial", "failed", "data_gap"].includes(source.status)).length;' in app
-    assert 'summary.textContent = `${missing} 個來源有資料缺口`;' in app
+    assert 'const aggregate = missing === 0 ? "資料正常" : critical > 0 ? "核心資料不足" : "部分資料降級";' in app
+    assert 'summary.textContent = `${aggregate}' in app
     assert app.count("if (card) card.open = false;") == 2
 
 
@@ -72,7 +72,7 @@ def test_dashboard_sections_share_card_chrome_and_news_uses_full_width_switching
     styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
 
     assert 'id="alert-card" class="alert-card collapsible-card"' in page
-    assert 'id="briefing-report" class="briefing-report collapsible-card"' in page
+    assert 'id="briefing-report" class="briefing-report collapsible-card" open' in page
     assert 'class="panel index-panel collapsible-card"' in page
     assert 'class="panel compact-panel news-panel collapsible-card"' in page
     assert ".section-block > details.collapsible-card > summary" in styles
@@ -104,10 +104,13 @@ def test_briefing_report_renders_fail_closed_intelligence_context():
     styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
 
     assert 'id="briefing-intelligence"' in page
+    assert '<details id="briefing-intelligence"' in page
+    assert '<details id="briefing-intelligence" class="briefing-intelligence" aria-label="市場情報證據" open' not in page
     assert 'const context = report.intelligence;' in app
     assert 'context.market_regime' in app
     assert 'context.stress_scenarios' in app
     assert 'intelligence.hidden = true;' in app
+    assert 'briefing-intelligence-content' in app
     assert ".briefing-intelligence" in styles
 
 
