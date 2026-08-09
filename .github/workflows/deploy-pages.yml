@@ -20,10 +20,9 @@ concurrency:
 
 jobs:
   deploy:
-    # GitHub Actions service outages must not generate a repeated failure storm.
-    # A Pages outage is degraded availability; downstream notification workflows
-    # retain their own release gate and never send without a verified URL.
-    continue-on-error: true
+    # Pages control-plane outages are handled as a degraded deployment by the
+    # retry action.  Release-gate and artifact contract failures remain hard
+    # failures so invalid data can never look like a successful deployment.
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

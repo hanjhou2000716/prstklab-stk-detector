@@ -235,7 +235,12 @@ def _latest_completed_session_date(quote: dict[str, Any], reference: datetime) -
     ticker = str(quote.get("ticker") or "")
     market = str(quote.get("market") or "global")
     if ticker in {"BTC", "ETH"}:
-        return reference.astimezone(ZoneInfo("Asia/Taipei")).date()
+        # Binance/CoinGecko and Yahoo crypto daily bars are keyed to UTC.
+        # Comparing them with the Taipei calendar turns a valid quote into a
+        # false stale state during 00:00–08:00 Asia/Taipei, which can suppress
+        # otherwise valid cross-asset observations and distort the aggregate
+        # market health label.
+        return reference.astimezone(ZoneInfo("UTC")).date()
 
     market_config = MARKETS.get(market)
     if market_config:

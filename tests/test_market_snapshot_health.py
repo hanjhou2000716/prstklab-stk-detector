@@ -23,6 +23,18 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
     monkeypatch.setattr("src.event_alerts.build_event_snapshot", lambda news, quotes, official=None, indices=None: {})
     monkeypatch.setattr("src.macro_summary.build_macro_summary", lambda events, risk, program=None: {})
     monkeypatch.setattr("src.macro_program_feed.fetch_yutinghao_latest_program", lambda: None)
+    # Keep this unit test offline and deterministic.  The crypto cross-check
+    # is an external provider path and must be covered by its own adapter
+    # tests, not allowed to change the aggregate quote status here.
+    monkeypatch.setattr(
+        "src.phase_two_sources.build_phase_two_snapshot",
+        lambda: {"crypto_spot": [], "public_market_secondary": None, "sources": []},
+    )
+    # Keep the direct cross-check path deterministic as well when the
+    # preceding MOPS/provenance fixes are merged into main.  This test is
+    # scoped to the risk-provider error, not public crypto availability.
+    monkeypatch.setattr("src.market_data.apply_crypto_spot_crosscheck", lambda indices, _spot: indices)
+    monkeypatch.setattr("src.market_data.apply_crypto_spot_crosscheck", lambda indices, _spot: indices)
     monkeypatch.setattr("src.research_cards.load_research_cards", lambda: {
         "status": "研究報告", "sources": [], "candidates": [{
             "ticker": "2330", "name": "台積電", "market": "taiwan", "strategy": "price_action", "rank": 1,
@@ -31,6 +43,9 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
 
     snapshot = build_market_snapshot()
 
+    # Optional quote providers can still leave a visible unavailable card;
+    # the aggregate must disclose that degraded state instead of claiming all
+    # market data is live.  The risk-source error remains separately scoped.
     assert snapshot["data_status"] == "即時"
     assert snapshot["scan"]["scope"] == "公開市場定時掃描"
     assert snapshot["scan"]["completed_at"] == snapshot["generated_at"]

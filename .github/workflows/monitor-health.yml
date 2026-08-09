@@ -15,9 +15,8 @@ concurrency:
 
 jobs:
   publish-monitor-health:
-    # Health publishing is best-effort; a control-plane outage must not create
-    # repeated failure notifications or be mistaken for a data health result.
-    continue-on-error: true
+    # The deploy action reports temporary Pages unavailability explicitly;
+    # manifest and data-contract failures must remain visible as job failures.
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

@@ -18,9 +18,8 @@ concurrency:
 
 jobs:
   monitor-send-deploy:
-    # A transient Actions/Pages outage is a degraded publication, not an event
-    # confirmation. Telegram remains blocked unless the release gate passes.
-    continue-on-error: true
+    # A transient Pages outage is exposed by the retry action.  Contract and
+    # release-gate failures remain hard failures and block Telegram delivery.
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -96,7 +95,6 @@ jobs:
         uses: ./.github/actions/deploy-pages-retry
       - name: Verify deployed release before delivery
         if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true' && steps.deployment.outputs.available == 'true'
-        continue-on-error: true
         id: release_gate
         run: |
           python -m src.release_gate \

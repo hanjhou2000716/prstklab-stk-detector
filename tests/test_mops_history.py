@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import src.mops_history as mops_history
 from src.mops_history import (
     MopsPublicClient,
     mops_pristine_history,
@@ -81,3 +82,25 @@ def test_mops_client_uses_legacy_public_endpoint_after_redirect_failure():
     client._report_once = lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("redirect blocked"))
     client._legacy_report_once = lambda *args, **kwargs: "<table><tr><td>ok</td></tr></table>"
     assert client.report("t164sb04", "2330", year=114, season=1) == "<table><tr><td>ok</td></tr></table>"
+
+
+def test_mops_client_rotates_session_after_both_public_paths_fail(monkeypatch):
+    monkeypatch.setattr(mops_history, "MIN_REQUEST_INTERVAL_SECONDS", 0)
+    client = MopsPublicClient()
+    old_session = client.session
+    attempts = {"redirect": 0, "legacy": 0}
+
+    def redirect(*args, **kwargs):
+        attempts["redirect"] += 1
+        if attempts["redirect"] == 1:
+            raise RuntimeError("security block")
+        return "redirect-ok"
+
+    def legacy(*args, **kwargs):
+        attempts["legacy"] += 1
+        raise RuntimeError("legacy security block")
+
+    client._report_once = redirect
+    client._legacy_report_once = legacy
+    assert client.report("t164sb04", "2330", year=114, season=1) == "redirect-ok"
+    assert client.session is not old_session

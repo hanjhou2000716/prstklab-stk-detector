@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   refresh-and-deploy:
-    # Keep external Pages control-plane outages from producing repeated emails.
-    continue-on-error: true
+    # The Pages retry action reports transient control-plane degradation without
+    # throwing.  Data contract and manifest failures must still fail this job.
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

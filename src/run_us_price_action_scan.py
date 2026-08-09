@@ -16,7 +16,8 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--batch-size", type=int, default=50)
     args = parser.parse_args()
-    universe = fetch_us_research_universe()
+    resolved_universe = fetch_us_research_universe()
+    universe = resolved_universe
     if args.limit > 0:
         universe = universe[:args.limit]
 
@@ -40,6 +41,9 @@ def main() -> None:
     result.to_csv(csv_path, index=False, encoding="utf-8-sig")
     summary_path.write_text(json.dumps({
         "requested": len(universe), "data_complete": len(records), "candidates": len(result),
+        "universe_mode": "full" if args.limit <= 0 else "bounded",
+        "universe_expected": len(resolved_universe), "universe_scanned": len(universe),
+        "universe_completed": len(records), "universe_failed": len(failed),
         "failed": len(failed), "batch_size": args.batch_size,
         "notice": "美股大型股公開資料研究，不等同 VOO 精確成分股，也不構成買賣建議。",
         "scan_state": "complete",

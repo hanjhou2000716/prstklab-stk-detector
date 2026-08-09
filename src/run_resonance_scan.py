@@ -31,7 +31,8 @@ def main() -> None:
     parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--universe-file", default=None)
     args = parser.parse_args()
-    universe = universe_for(args.market, args.universe_file)[args.offset:]
+    resolved_universe = universe_for(args.market, args.universe_file)
+    universe = resolved_universe[args.offset:]
     if args.limit > 0:
         universe = universe[:args.limit]
 
@@ -64,6 +65,9 @@ def main() -> None:
     result.to_csv(scan_path, index=False, encoding="utf-8-sig")
     summary_path.write_text(json.dumps({
         "requested": len(universe), "data_complete": len(records), "candidates": len(result),
+        "universe_mode": "full" if args.limit <= 0 else "bounded",
+        "universe_expected": len(resolved_universe), "universe_scanned": len(universe),
+        "universe_completed": len(records), "universe_failed": len(failed),
         "failed": len(failed), "batch_size": args.batch_size, "offset": args.offset,
         "benchmark": benchmark_symbol, "benchmark_available": benchmark_bars is not None,
         "minimum_conditions": 3, "priority": "四項共振優先；無四項時顯示三項備選",

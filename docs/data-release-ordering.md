@@ -16,3 +16,14 @@ scans every publisher workflow. Adding a new data-release writer without the
 shared lock fails CI. A failed writer remains fail-closed: it does not send a
 Telegram notification for an unpublished release, and the previous immutable
 release remains the rollback target.
+
+## Partial publish preservation
+
+Writers are allowed to publish different subsets of the public tree. For
+example, a market refresh publishes `site/data`, while the research workflow
+also publishes the MOPS and SEC checkpoint caches under `data/`. The publisher
+therefore seeds its temporary Git index from the current `data-release` parent
+before staging the requested paths. A partial writer updates only its selected
+artifacts and carries every other artifact forward; it must never turn a
+market-only refresh into a cache deletion. This is covered by
+`test_publish_stages_on_existing_release_tree`.
