@@ -286,7 +286,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         observations=observed_quotes,
         policy_version=snapshot.get("policy_version"),
     )
-    from src.paper_portfolio import build_paper_portfolio_snapshot
+    from src.paper_portfolio import build_paper_portfolio_snapshot, update_paper_observations
 
     research = snapshot.get("research_report") or {}
     paper_portfolio = build_paper_portfolio_snapshot(
@@ -294,6 +294,29 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         observed_quotes,
         release_id=snapshot.get("release_id"),
     )
+    # Historical closes are optional.  When a point-in-time archive is
+    # available, update the same release-bound paper observations; otherwise
+    # keep horizons explicitly pending instead of estimating returns.
+    paper_history = snapshot.get("paper_portfolio_history")
+    if isinstance(paper_history, dict) and paper_portfolio.get("records"):
+        paper_portfolio["records"] = update_paper_observations(
+            paper_portfolio["records"], paper_history
+        )
+        completed = sum(
+            len(record.get("completed_horizons") or [])
+            for record in paper_portfolio["records"]
+        )
+        paper_portfolio["tracking"] = {
+            "status": "updated",
+            "completed_horizon_count": completed,
+            "history_source": "snapshot.paper_portfolio_history",
+        }
+    else:
+        paper_portfolio["tracking"] = {
+            "status": "pending",
+            "completed_horizon_count": 0,
+            "history_source": None,
+        }
     return {
         "slot": slot or "live",
         "title": SLOT_TITLES.get(slot or "", "即時市場儀表板"),

@@ -14,6 +14,7 @@ def test_briefing_forwards_complete_macro_observation_to_surprise_engine():
     assert surprise["status"] == "above_expectation"
     assert surprise["surprise"] == 0.4
     assert surprise["market_direction"] == "not_determined"
+    assert briefing["paper_portfolio"]["tracking"]["status"] == "pending"
 
 
 def test_incomplete_macro_summary_stays_not_provided():
