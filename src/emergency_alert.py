@@ -5,10 +5,13 @@ from __future__ import annotations
 import argparse
 import os
 import tempfile
+from datetime import UTC, datetime
 from pathlib import Path
 
+from src.alert_budget import decide_alert_budget
 from src.alert_card_renderer import RendererError, render_alert_card
 from src.config import get_settings
+from src.event_ledger import EventLedger
 from src.telegram_client import send_photo_briefs, summarize_photo_deliveries, validate_brief
 
 STRICT_HIGH_RISK_CATEGORIES = {"black_swan", "conflict"}
@@ -75,6 +78,42 @@ def main() -> None:
     if not release_id or not snapshot_id:
         raise RuntimeError("Emergency photo delivery requires RELEASE_ID and SNAPSHOT_ID")
     alert_id = os.environ.get("ALERT_ID", f"manual-{args.category}")
+    trace_id = os.environ.get("TRACE_ID", f"manual-{args.category}")
+    event = {
+        "event_key": alert_id,
+        "event_cluster_key": alert_id,
+        "source_key": f"emergency:{args.category}",
+        "title": args.summary,
+        "summary": args.summary,
+        "event_type": args.category,
+        "risk_level": risk_level,
+        "released_at": os.environ.get("EXTERNAL_OCCURRED_AT") or datetime.now(UTC).isoformat(),
+        "trace_id": trace_id,
+    }
+    ledger = EventLedger()
+    budget = decide_alert_budget(event, ledger.delivery_history())
+    if not budget.get("allowed", False):
+        lines = [
+            f"trace_id={trace_id}",
+            f"alert_id={alert_id}",
+            f"release_id={release_id}",
+            f"snapshot_id={snapshot_id}",
+            "sent=false",
+            "delivery_status=suppressed",
+            f"reason=alert_budget:{budget.get('reason', 'suppressed')}",
+            "alert_budget_allowed=false",
+            f"alert_budget_reason={budget.get('reason', 'suppressed')}",
+            f"alert_budget_upgraded={'true' if budget.get('upgraded') else 'false'}",
+            "delivery_mode=photo",
+        ]
+        destination = os.environ.get("GITHUB_OUTPUT")
+        if destination:
+            with open(destination, "a", encoding="utf-8") as handle:
+                handle.write("\n".join(lines) + "\n")
+        else:
+            print("\n".join(lines))
+        print(f"Emergency alert suppressed by alert budget: {budget.get('reason', 'suppressed')}")
+        return
     try:
         with tempfile.TemporaryDirectory(prefix="prstk-emergency-card-") as temporary:
             photo_path = render_alert_card(
@@ -101,7 +140,6 @@ def main() -> None:
         print(f"renderer_failed={getattr(exc, 'error_type', type(exc).__name__)}")
         raise RuntimeError("renderer failed; Telegram photo was not sent") from exc
     summary = summarize_photo_deliveries(results)
-    trace_id = os.environ.get("TRACE_ID", f"manual-{args.category}")
     lines = [
         f"trace_id={trace_id}",
         f"alert_id={os.environ.get('ALERT_ID', f'manual-{args.category}')}",
@@ -112,6 +150,10 @@ def main() -> None:
         f"delivery_status={'delivered' if summary.failed_count == 0 else 'partial' if summary.delivered_count else 'failed'}",
         "delivery_mode=photo",
         f"failed_recipient_hashes={','.join(summary.failed_recipient_hashes)}",
+        "alert_budget_allowed=true",
+        f"alert_budget_reason={budget.get('reason', 'budget_available')}",
+        f"alert_budget_upgraded={'true' if budget.get('upgraded') else 'false'}",
+        f"alert_budget_event_key={budget.get('event_key', '')}",
     ]
     destination = os.environ.get("GITHUB_OUTPUT")
     if destination:
@@ -121,6 +163,8 @@ def main() -> None:
         print("\n".join(lines))
     if not summary.any_delivered:
         raise RuntimeError("Telegram delivery failed for every configured recipient")
+    ledger.record_delivery(event, trace_id=trace_id, reason="emergency_alert")
+    ledger.save()
     print(f"Telegram delivery: {summary.delivered_count} delivered, {summary.failed_count} failed")
 
 

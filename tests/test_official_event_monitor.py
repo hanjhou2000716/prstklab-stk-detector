@@ -1,8 +1,9 @@
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from src import official_event_monitor as monitor
 from src.official_event_monitor import build_official_event_brief, event_key, select_official_event
+from src.release_gate import ReleaseGateResult
 
 
 def test_black_swan_needs_related_market_confirmation_before_delivery():
@@ -127,3 +128,34 @@ def test_taiwan_market_window_prefers_taiex_and_suppresses_unrelated_price_signa
     assert select_official_event(snapshot, now)["instrument"]["ticker"] == "TAIEX"
     only_wti = {**snapshot, "events": {"items": [snapshot["events"]["items"][0]]}}
     assert select_official_event(only_wti, now) is None
+
+
+def test_official_monitor_suppresses_budgeted_event_before_renderer(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    event = {
+        "event_key": "iran-1",
+        "event_cluster_key": "iran-1",
+        "title": "Iran statement",
+        "risk_level": "警戒",
+        "source_url": "https://example.test/iran",
+    }
+    monkeypatch.setattr(monitor, "prepare_snapshot", lambda: ({"snapshot_id": "snap-1"}, event))
+    monkeypatch.setattr(monitor, "event_key", lambda _event: "iran-1")
+    monkeypatch.setattr(monitor, "verify_release_for_delivery", lambda **_kwargs: ReleaseGateResult(True, release_id="release-1", snapshot_id="snap-1"))
+    monkeypatch.setattr(monitor, "_observe_event", lambda *_args, **_kwargs: {"should_remind": True})
+
+    class FakeLedger:
+        def __init__(self):
+            self.records = {}
+
+        def delivery_history(self):
+            return [{"event_key": "iran-1", "importance": "警戒", "sent_at": (datetime.now(UTC) - timedelta(minutes=5)).isoformat()}]
+
+    monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
+    monkeypatch.setattr(monitor, "send_photo_briefs", lambda **_kwargs: (_ for _ in ()).throw(AssertionError("renderer must not run")))
+
+    assert monitor.send_current_event() is False
+    text = output.read_text(encoding="utf-8")
+    assert "sent=false" in text
+    assert "reason=alert_budget:cooldown" in text

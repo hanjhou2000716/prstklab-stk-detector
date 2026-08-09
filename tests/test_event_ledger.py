@@ -37,6 +37,26 @@ def test_default_event_cooldown_is_thirty_minutes(tmp_path):
     assert ledger.should_remind(event, now=first + timedelta(minutes=30)) is True
 
 
+def test_delivery_history_records_each_material_send(tmp_path):
+    path = tmp_path / "ledger.json"
+    ledger = EventLedger(path)
+    event = {
+        "source_key": "energy",
+        "title": "Oil supply disruption",
+        "url": "https://energy.example/oil",
+        "released_at": "2026-08-01T10:00:00+00:00",
+        "risk_level": "警戒",
+    }
+    first = datetime(2026, 8, 1, 10, 0, tzinfo=UTC)
+    second = datetime(2026, 8, 1, 10, 40, tzinfo=UTC)
+    ledger.record_delivery(event, sent_at=first, trace_id="trace-1", reason="official_event_monitor")
+    ledger.record_delivery(event, sent_at=second, trace_id="trace-2", reason="official_event_monitor")
+    ledger.save()
+    rows = EventLedger(path).delivery_history()
+    assert [row["trace_id"] for row in rows] == ["trace-1", "trace-2"]
+    assert all(row["event_key"] == canonical_event_key(event) for row in rows)
+
+
 def test_save_merges_two_instances_loaded_before_either_save(tmp_path):
     path = tmp_path / "ledger.json"
     first = EventLedger(path)

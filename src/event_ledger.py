@@ -164,6 +164,12 @@ class EventLedger:
         cutoff = current - timedelta(days=self.retention_days)
         removed = 0
         for key, record in list(self.records.items()):
+            history = record.get("delivery_history")
+            if isinstance(history, list):
+                record["delivery_history"] = [
+                    item for item in history
+                    if isinstance(item, dict) and self._timestamp(item.get("sent_at")) >= cutoff
+                ]
             raw = record.get("last_reminded_at") or record.get("first_discovered_at")
             try:
                 timestamp = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
@@ -279,6 +285,69 @@ class EventLedger:
         self.records[key]["escalated"] = bool(self.records[key].get("escalated") or event.get("escalation") or event.get("risk_level") == "高風險")
         return key
 
+    def delivery_history(self) -> list[dict[str, Any]]:
+        """Return alert-budget rows from the durable ledger.
+
+        Older ledgers only have ``last_reminded_at``.  They are represented as
+        one legacy row so the cooldown remains fail-closed while new sends
+        record every material delivery for hourly and per-event budgets.
+        """
+        rows: list[dict[str, Any]] = []
+        for key, record in self.records.items():
+            history = record.get("delivery_history")
+            if isinstance(history, list) and history:
+                for item in history:
+                    if isinstance(item, dict) and item.get("sent_at"):
+                        rows.append({**item, "event_key": str(item.get("event_key") or key)})
+                continue
+            reminded = record.get("last_reminded_at")
+            if reminded:
+                rows.append({
+                    "event_key": key,
+                    "sent_at": reminded,
+                    "importance": record.get("risk_level", "normal"),
+                    "legacy": True,
+                })
+        return rows
+
+    def record_delivery(
+        self,
+        event: dict[str, Any],
+        *,
+        sent_at: datetime | None = None,
+        trace_id: str | None = None,
+        reason: str = "delivered",
+    ) -> dict[str, Any]:
+        """Append a bounded, provenance-safe delivery row to the event record."""
+        current = sent_at or datetime.now(UTC)
+        key = canonical_event_key(event)
+        self.observe(event, now=current)
+        record = self.records[key]
+        history = record.setdefault("delivery_history", [])
+        if not isinstance(history, list):
+            history = []
+            record["delivery_history"] = history
+        trace = str(trace_id or event.get("trace_id") or "").strip()
+        if trace and any(str(item.get("trace_id") or "") == trace for item in history if isinstance(item, dict)):
+            return history[-1] if history else {}
+        row = {
+            "event_key": key,
+            "sent_at": current.isoformat(),
+            "importance": str(event.get("importance") or event.get("risk_level") or "normal"),
+            "alert_type": str(event.get("alert_type") or event.get("event_type") or event.get("kind") or "market"),
+            "lifecycle_state": str(event.get("lifecycle_state") or "confirmed"),
+            "reason": reason,
+        }
+        if trace:
+            row["trace_id"] = trace
+        history.append(row)
+        # Retain enough rows for the hourly/per-event limits without allowing a
+        # malformed producer to grow the public ledger indefinitely.
+        record["delivery_history"] = history[-100:]
+        record["last_reminded_at"] = current.isoformat()
+        record["updated_at"] = current.isoformat()
+        return row
+
     @staticmethod
     def _timestamp(value: Any) -> datetime:
         try:
@@ -312,6 +381,20 @@ class EventLedger:
         ]))
         if verified:
             merged["verified_sources"] = verified
+        deliveries = [
+            *(left.get("delivery_history") or []),
+            *(right.get("delivery_history") or []),
+        ]
+        unique: dict[str, dict[str, Any]] = {}
+        for item in deliveries:
+            if not isinstance(item, dict):
+                continue
+            identity = str(item.get("trace_id") or f"{item.get('sent_at', '')}:{item.get('reason', '')}")
+            unique[identity] = item
+        if unique:
+            merged["delivery_history"] = sorted(
+                unique.values(), key=lambda item: cls._timestamp(item.get("sent_at"))
+            )[-100:]
         return merged
 
     @staticmethod

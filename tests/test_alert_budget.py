@@ -30,3 +30,14 @@ def test_alert_budget_applies_hourly_cap():
     result = decide_alert_budget({"event_key": "new", "importance": "normal"}, history, now=NOW, max_hourly=8)
     assert result["allowed"] is False
     assert result["reason"] == "hourly_budget_exhausted"
+
+
+def test_alert_budget_normalizes_chinese_risk_labels_for_upgrade():
+    result = decide_alert_budget(
+        {"event_key": "iran-1", "risk_level": "高風險"},
+        [{"event_key": "iran-1", "importance": "警戒", "sent_at": (NOW - timedelta(minutes=5)).isoformat()}],
+        now=NOW,
+    )
+    assert result["allowed"] is True
+    assert result["upgraded"] is True
+    assert result["reason"] == "risk_upgrade"
