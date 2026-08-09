@@ -62,6 +62,8 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements-production.txt
+      - name: Install Chromium for formal card renderer
+        run: python -m playwright install --with-deps chromium
       - name: Validate signed external alert
         id: external
         if: github.event_name == 'repository_dispatch'
@@ -155,6 +157,8 @@ jobs:
           TRACE_ID: ${{ steps.send.outputs.trace_id }}
           RELEASE_ID: ${{ steps.send.outputs.release_id || steps.release_gate.outputs.release_id }}
           SNAPSHOT_ID: ${{ steps.send.outputs.snapshot_id || steps.release_gate.outputs.snapshot_id }}
+          ALERT_ID: ${{ steps.send.outputs.alert_id }}
+          DELIVERY_MODE: ${{ steps.send.outputs.delivery_mode }}
           DELIVERY_STATUS: ${{ steps.send.outputs.delivery_status }}
           DELIVERED_COUNT: ${{ steps.send.outputs.delivered_count }}
           FAILED_COUNT: ${{ steps.send.outputs.failed_count }}

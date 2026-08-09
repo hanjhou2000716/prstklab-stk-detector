@@ -8,7 +8,7 @@ class Response:
     status_code = 200
     ok = True
     def json(self):
-        return {"ok": True, "result": {"message_id": 42}}
+        return {"ok": True, "result": {"message_id": 42, "photo": [{"file_id": "file-1"}]}}
 
 def test_photo_delivery_uses_one_message_and_deep_link(monkeypatch, tmp_path):
     photo = tmp_path / "card.png"
@@ -24,6 +24,26 @@ def test_photo_delivery_uses_one_message_and_deep_link(monkeypatch, tmp_path):
     assert "photo" in captured["kwargs"]["files"]
     payload = json.loads(captured["kwargs"]["data"]["reply_markup"])
     assert "alert=a1" in payload["inline_keyboard"][0][0]["web_app"]["url"]
+
+
+def test_photo_delivery_can_send_reused_file_id(monkeypatch, tmp_path):
+    photo = tmp_path / "card.png"
+    photo.write_bytes(b"png")
+    captured = {}
+
+    def post(url, **kwargs):
+        captured.update(url=url, kwargs=kwargs)
+        return Response()
+
+    monkeypatch.setattr(telegram_client.requests, "post", post)
+    receipt = send_photo_brief(
+        token="secret", chat_id="123", caption="ok", photo_path=photo,
+        mini_app_url="https://example.test/app", alert_id="a1", release_id="r1", snapshot_id="s1",
+        telegram_file_id="file-previous",
+    )
+    assert receipt.telegram_file_id == "file-previous"
+    assert captured["kwargs"]["data"]["photo"] == "file-previous"
+    assert "files" not in captured["kwargs"]
 
 
 def test_photo_broadcast_isolates_one_failed_recipient(monkeypatch, tmp_path):
@@ -44,6 +64,28 @@ def test_photo_broadcast_isolates_one_failed_recipient(monkeypatch, tmp_path):
     )
     assert calls == ["blocked", "ok"]
     assert [item.status for item in receipts] == ["failed", "delivered"]
+
+
+def test_photo_broadcast_reuses_uploaded_file_id(monkeypatch, tmp_path):
+    photo = tmp_path / "card.png"
+    photo.write_bytes(b"png")
+    calls = []
+
+    def fake_send(**kwargs):
+        calls.append(kwargs)
+        return telegram_client.PhotoDeliveryReceipt(
+            "a1", "r1", "s1", "ok", "delivered", message_id=7,
+            telegram_file_id=kwargs.get("telegram_file_id") or "telegram-file-1",
+        )
+
+    monkeypatch.setattr(telegram_client, "send_photo_brief", fake_send)
+    receipts = send_photo_briefs(
+        token="secret", chat_ids=("one", "two"), caption="皜祈岫", photo_path=photo,
+        mini_app_url="https://example.test/app", alert_id="a1", release_id="r1", snapshot_id="s1",
+    )
+    assert [item.status for item in receipts] == ["delivered", "delivered"]
+    assert calls[0]["telegram_file_id"] is None
+    assert calls[1]["telegram_file_id"] == "telegram-file-1"
 
 
 def test_photo_delivery_validates_inputs(tmp_path):
