@@ -14,6 +14,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import requests
 
 from src.artifact_contract import validate_release
+from src.production_acceptance import validate_production_bundle
 from src.release_manifest import verify_release_files
 
 
@@ -103,6 +104,13 @@ def verify_release_for_delivery(
                 manifest=manifest,
             )
         )
+        acceptance = validate_production_bundle(
+            manifest=manifest,
+            market=artifacts["market.json"],
+            research=artifacts["research-report.json"],
+            events=artifacts["event-ledger.json"],
+        )
+        errors.extend(acceptance.errors)
 
     if public_url:
         remote_url = public_url.rstrip("/") + "/data/release-manifest.json"
