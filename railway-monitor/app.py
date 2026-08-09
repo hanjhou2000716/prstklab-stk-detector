@@ -1161,7 +1161,10 @@ class SeenStore:
     def record_delivery_status(self, payload: dict[str, Any]) -> bool:
         """Persist an authenticated GitHub per-run delivery receipt."""
         trace_id = str(payload.get("trace_id") or "").strip()
+        receipt_kind = str(payload.get("receipt_kind") or "production").strip()
         status = str(payload.get("delivery_status") or "unknown").strip()
+        if receipt_kind not in {"production", "photo_smoke"}:
+            raise ValueError("invalid delivery receipt kind")
         if not trace_id or status not in {"delivered", "partial", "failed"}:
             raise ValueError("invalid delivery receipt")
         failed_hashes = payload.get("failed_recipient_hashes") or []
@@ -1181,8 +1184,43 @@ class SeenStore:
                 "SELECT 1 FROM delivery_outbox WHERE trace_id = ?", (trace_id,)
             ).fetchone()
             if exists is None:
-                logging.warning("delivery receipt for unknown trace_id=%s", trace_id)
-                return False
+                # A scoped photo smoke test is intentionally emitted before
+                # any Railway outbox row exists.  Accept only this explicit,
+                # non-production contract; formal receipts for unknown traces
+                # remain rejected to prevent forged or misrouted evidence.
+                if not (
+                    receipt_kind == "photo_smoke"
+                    and payload.get("release_id") == "photo-smoke-test"
+                    and payload.get("snapshot_id") == "photo-smoke-test"
+                    and payload.get("alert_id") == "photo-smoke-test"
+                    and payload.get("delivery_mode") == "photo"
+                ):
+                    logging.warning("delivery receipt for unknown trace_id=%s", trace_id)
+                    return False
+                smoke_payload = {
+                    "receipt_kind": receipt_kind,
+                    "release_id": payload.get("release_id"),
+                    "snapshot_id": payload.get("snapshot_id"),
+                    "alert_id": payload.get("alert_id"),
+                    "delivery_mode": payload.get("delivery_mode"),
+                }
+                db.execute(
+                    """INSERT INTO delivery_outbox(
+                        trace_id,canonical_key,source,event_id,category,payload_json,
+                        status,created_at,updated_at
+                    ) VALUES(?,?,?,?,?,?,?, ?, ?)""",
+                    (
+                        trace_id,
+                        f"photo-smoke:{trace_id}",
+                        "github_actions",
+                        "photo-smoke-test",
+                        "photo_smoke",
+                        json.dumps(smoke_payload, ensure_ascii=False, sort_keys=True),
+                        status,
+                        now,
+                        now,
+                    ),
+                )
             db.execute(
                 "UPDATE delivery_outbox SET status=?, last_error=?, updated_at=? WHERE trace_id=?",
                 (status, None if status == "delivered" else "recipient delivery incomplete", now, trace_id),

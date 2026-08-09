@@ -9,6 +9,7 @@ def test_delivery_callback_payload_contains_counts_and_only_failed_hashes(monkey
     monkeypatch.setenv("FAILED_RECIPIENT_HASHES", "abc123,def456")
     monkeypatch.setenv("RELEASE_ID", "release-123")
     monkeypatch.setenv("SNAPSHOT_ID", "market-123")
+    monkeypatch.setenv("DELIVERY_RECEIPT_KIND", "production")
     payload = build_payload()
     assert payload["trace_id"] == "prstk-jin10-abcd"
     assert payload["delivery_status"] == "partial"
@@ -16,4 +17,5 @@ def test_delivery_callback_payload_contains_counts_and_only_failed_hashes(monkey
     assert payload["failed_recipient_hashes"] == ["abc123", "def456"]
     assert payload["release_id"] == "release-123"
     assert payload["snapshot_id"] == "market-123"
+    assert payload["receipt_kind"] == "production"
     assert "chat_id" not in str(payload)
