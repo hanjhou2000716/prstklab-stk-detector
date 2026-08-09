@@ -11,6 +11,16 @@ def test_normalize_preserves_missing_strategy_fields_as_none():
     assert "structural_stop" not in candidate
 
 
+def test_normalize_binds_known_instrument_and_marks_unknown_without_guessing():
+    frame = pd.DataFrame([{"ticker": "2330"}, {"ticker": "3037"}])
+    rows = normalize_frame(frame, "taiwan", "momentum")
+    assert rows[0]["instrument_resolution"] == "resolved"
+    assert rows[0]["instrument_id"] == "twse:2330"
+    assert rows[0]["currency"] == "TWD"
+    assert rows[1]["instrument_resolution"] == "unknown"
+    assert rows[1]["instrument_id"] is None
+
+
 def test_normalize_keeps_public_quote_fields_for_research_cards():
     frame = pd.DataFrame([{"ticker": "NVDA", "name": "NVIDIA", "close": 180.25, "change_percent": -1.5, "score": 88.5}])
     candidate = normalize_frame(frame, "us", "momentum")[0]
