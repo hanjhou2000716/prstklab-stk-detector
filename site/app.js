@@ -726,6 +726,42 @@ const render = (snapshot) => {
   renderNewsList("us-news", snapshot.news?.us);
 };
 
+// Telegram buttons carry the release and alert identity.  Resolve that
+// identity only after the manifest/hash boundary has succeeded; never fall
+// back to an unrelated current event when a deep link is stale or unknown.
+const applyDeepLink = (snapshot) => {
+  const params = new URLSearchParams(window.location.search);
+  const requestedRelease = String(params.get("release") || "").trim();
+  const requestedAlert = String(params.get("alert") || "").trim();
+  const view = String(params.get("view") || "").trim().toLowerCase();
+  if (!requestedRelease && !requestedAlert && !view) return;
+  const manifestRelease = String(window.releaseManifest?.release_id || "");
+  if (!requestedRelease || requestedRelease !== manifestRelease) {
+    setReleaseHealth("該訊息版本已歸檔或不可用；目前顯示最新安全版本。", "error");
+    setText("market-focus", "訊息版本與目前公開 release 不一致，暫不載入其他事件。");
+    return;
+  }
+  const sectionByView = {
+    event: "risk", resolved: "risk", market: "market", briefing: "briefing-report",
+    research: "research", "source-health": "source-health",
+  };
+  const targetId = sectionByView[view] || (requestedAlert ? "risk" : "");
+  const target = targetId ? document.getElementById(targetId) : null;
+  if (target?.tagName === "DETAILS") target.open = true;
+  if (requestedAlert) {
+    const items = Array.isArray(snapshot.events?.items) ? snapshot.events.items : [];
+    const event = items.find((item) => [item.alert_id, item.event_id, item.id, item.canonical_key]
+      .filter(Boolean).some((value) => String(value) === requestedAlert));
+    if (!event) {
+      setReleaseHealth("該訊息已歸檔或不可用；未顯示其他事件。", "error");
+      setText("market-focus", "找不到此 alert 的同一 release 證據，暫不替換為其他事件。");
+      return;
+    }
+    renderAlertCard({ items: [event] }, snapshot.generated_at, null, snapshot.indices || []);
+  }
+  if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
 // The manifest is the release boundary.  Fetching an artifact directly could
 // otherwise combine a new market file with an older research/event file when
 // GitHub Pages or Telegram's WebView serves different cache generations.
@@ -822,6 +858,7 @@ const loadPublishedRelease = async () => {
 loadPublishedRelease()
   .then((snapshot) => {
     render(snapshot);
+    applyDeepLink(snapshot);
     // Healthy is the normal state; keep engineering metadata out of the hero.
     setReleaseHealth("", "ready");
   })
