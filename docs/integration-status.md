@@ -8,7 +8,7 @@ pipeline call and a tested consumer.
 | Module | File(s) | Tests | Pipeline | JSON | Mini App | Telegram | Status |
 |---|---|---|---|---|---|---|---|
 | Source adapters | `src/source_adapter.py`, `src/adapters/catalog.py`, `src/phase_two_sources.py` | yes | yes | yes | health | event/brief | production |
-| Raw observation store | `src/raw_observation_store.py` | yes | no | no | no | no | experimental |
+| Raw observation store | `src/raw_observation_store.py`, `src/production_evidence.py` | yes | optional market snapshot hook | quality metadata | no raw payload | no | partially_integrated |
 | Instrument master | `src/instrument_master.py` | yes | partial | partial | no | no | partially_integrated |
 | Data quality/SLA | `src/data_quality.py`, `src/source_health.py` | yes | yes | yes | yes | gate reason | production |
 | Taiwan crosscheck | `src/taiwan_market_crosscheck.py`, `src/market_crosscheck.py` | yes | yes | yes | yes | price gate | production |
@@ -76,8 +76,18 @@ or source identifiers intentionally produce `observation_only` and keep the
 advice gate closed; the binder never invents identifiers or market evidence.
 
 Strategy metadata is likewise observation-only until a real `backtest_release`
-is present. Raw observations remain an optional local append-only store and are
-represented in public output only by quality metadata, not by raw payloads.
+is present. Raw observations are persisted as immutable records when
+`RAW_OBSERVATION_ROOT` is configured. The market producer records one
+normalized snapshot per release; local runs without that setting remain
+explicitly disabled. Public output contains only safe store metadata, never
+raw payloads. The store is not yet the primary historical backend.
+
+### Raw observation configuration
+
+Set `RAW_OBSERVATION_ROOT` only in a writable worker or scheduled job. Missing
+configuration is reported as disabled, and a store error cannot make a quote
+alertable. Records are content-addressed and append-only; rollback restores a
+previous release manifest rather than deleting individual observations.
 
 ### Adapter quality contract
 

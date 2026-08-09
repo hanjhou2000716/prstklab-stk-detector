@@ -639,6 +639,7 @@ def build_market_snapshot() -> dict[str, Any]:
         bind_market_evidence,
         quality_summary,
         raw_observation_store_summary,
+        record_market_snapshot_observation,
     )
 
     quotes = bind_market_evidence(quotes)
@@ -727,7 +728,7 @@ def build_market_snapshot() -> dict[str, Any]:
     freshness_summary = summarize_market_freshness([*quotes, *indices])
     live_quotes = freshness_summary["live_count"]
     close_quotes = freshness_summary["recent_close_count"] + freshness_summary["stale_count"]
-    return {
+    snapshot = {
         "generated_at": scan_completed_at.isoformat(),
         "scan": {
             "started_at": scan_started_at.isoformat(),
@@ -763,3 +764,9 @@ def build_market_snapshot() -> dict[str, Any]:
         "raw_observation_store": raw_observation_store_summary(),
         "errors": errors,
     }
+    observation = record_market_snapshot_observation(snapshot)
+    snapshot["raw_observation_store"] = {
+        **snapshot.get("raw_observation_store", {}),
+        **observation,
+    }
+    return snapshot
