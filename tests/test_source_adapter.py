@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 
 import pytest
 
@@ -42,6 +43,44 @@ def test_adapter_returns_provenance_and_normalizes_payload() -> None:
     assert calls[0]["timeout"] == 10.0
     assert calls[0]["headers"]["User-Agent"].startswith("PRStK")
     assert adapter.health()["status"] == "healthy"
+
+
+def test_adapter_provenance_exposes_conservative_quality_contract() -> None:
+    adapter = JsonSourceAdapter(
+        AdapterConfig(provider="demo", endpoint="https://example.test/data"),
+        transport=lambda url, **kwargs: FakeResponse(200, {"ok": True}),
+    )
+    observation = adapter.fetch()
+    now = datetime.fromisoformat(observation.fetched_at)
+    quality = observation.quality(now=now)
+    provenance = observation.provenance()
+
+    assert quality["data_quality_score"] == 85.0
+    assert quality["alert_eligible"] is False
+    assert "crosscheck_missing" in quality["reasons"]
+    assert provenance["data_quality_score"] == 85.0
+    assert provenance["quality_freshness"] == "fresh"
+
+
+def test_stale_adapter_fallback_is_never_reported_as_live() -> None:
+    responses = [FakeResponse(200, {"value": 1}), FakeResponse(503, {})]
+
+    def transport(url: str, **kwargs):
+        return responses.pop(0)
+
+    adapter = JsonSourceAdapter(
+        AdapterConfig(provider="cache", endpoint="https://example.test", max_retries=0, max_stale_seconds=60),
+        transport=transport,
+    )
+    adapter.fetch()
+    observation = adapter.fetch(allow_stale=True)
+    quality = observation.quality()
+
+    assert quality["freshness"] == "stale"
+    assert quality["data_quality_score"] == 0.0
+    assert quality["alert_eligible"] is False
+    assert quality["display_eligible"] is False
+    assert "stale_used" in quality["reasons"]
 
 
 def test_adapter_retries_transient_http_then_succeeds() -> None:

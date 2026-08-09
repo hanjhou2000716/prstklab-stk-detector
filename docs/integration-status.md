@@ -79,6 +79,18 @@ Strategy metadata is likewise observation-only until a real `backtest_release`
 is present. Raw observations remain an optional local append-only store and are
 represented in public output only by quality metadata, not by raw payloads.
 
+### Adapter quality contract
+
+Every `SourceObservation.provenance()` now includes the shared quality fields
+`data_quality_score`, `quality_freshness`, `quality_reasons`,
+`display_eligible`, and `alert_eligible`. A single adapter can establish
+availability, parsing, and freshness, but it cannot establish independent
+market confirmation; therefore its own `alert_eligible` value remains false
+until a cross-source check is recorded. A stale-cache observation is always
+scored as stale with score zero, even though the fallback was fetched during
+the current run. This prevents a recently-read cached payload from being
+mislabelled as live.
+
 ### Rollback
 
 The integration is additive. Reverting the binding commit restores the prior
