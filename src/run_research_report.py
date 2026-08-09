@@ -43,6 +43,18 @@ def attach_scan_contract(report: dict, scan_mode: str) -> dict:
     failed = sum(int(source.get("failed_records") or source.get("failed") or 0) for source in sources)
     states = {str(source.get("scan_state") or "failed") for source in sources}
     full_scope = requested > 0 and completed >= requested and failed == 0 and states == {"complete"}
+    strategy_publication = []
+    for source in sources:
+        source_requested = int(source.get("requested") or 0)
+        source_completed = int(source.get("complete_records") or source.get("data_complete") or 0)
+        source_failed = int(source.get("failed_records") or source.get("failed") or 0)
+        source_state = str(source.get("scan_state") or "failed")
+        eligible = scan_mode == "production" and source_requested > 0 and source_completed >= source_requested and source_failed == 0 and source_state == "complete"
+        strategy_publication.append({
+            "market": source.get("market"), "strategy": source.get("strategy"),
+            "eligible": eligible, "state": source_state,
+            "blocking_reason": None if eligible else "本策略本輪未完成，保留觀察／上一成功版本",
+        })
     report.update({
         "scan_mode": scan_mode,
         "scan_scope": "full" if scan_mode == "production" else "bounded",
@@ -51,6 +63,7 @@ def attach_scan_contract(report: dict, scan_mode: str) -> dict:
         "universe_completed": completed,
         "publish_eligible": scan_mode == "production",
         "production_eligible": scan_mode == "production" and full_scope,
+        "strategy_publication": strategy_publication,
         "blocking_reason": None if scan_mode == "production" and full_scope else (
             "smoke/debug scan is isolated from production publishing"
             if scan_mode != "production"
