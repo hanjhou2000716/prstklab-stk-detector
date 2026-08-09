@@ -6,7 +6,7 @@ import argparse
 import os
 
 from src.config import get_settings
-from src.telegram_client import send_briefs, summarize_deliveries, validate_brief
+from src.telegram_client import alert_mini_app_url, send_briefs, summarize_deliveries, validate_brief
 
 STRICT_HIGH_RISK_CATEGORIES = {"black_swan", "conflict"}
 
@@ -67,11 +67,22 @@ def main() -> None:
         print("重大災害尚未同時完成官方來源與相關市場同步確認，僅保留 Mini App 觀察，不發送高風險 Telegram 快訊。")
         return
     text = build_emergency_brief(args.category, args.summary)
+    release_id = os.environ.get("RELEASE_ID", "")
+    snapshot_id = os.environ.get("SNAPSHOT_ID", "")
+    target_url = settings.dashboard_url
+    if release_id and snapshot_id:
+        target_url = alert_mini_app_url(
+            settings.dashboard_url,
+            alert_id=os.environ.get("ALERT_ID", f"manual-{args.category}"),
+            release_id=release_id,
+            snapshot_id=snapshot_id,
+        )
     results = send_briefs(
         token=settings.telegram_bot_token or "",
         chat_ids=settings.telegram_chat_ids,
         text=text,
         dashboard_url=settings.dashboard_url,
+        target_url=target_url,
     )
     summary = summarize_deliveries(results)
     trace_id = os.environ.get("TRACE_ID", f"manual-{args.category}")

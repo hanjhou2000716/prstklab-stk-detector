@@ -11,7 +11,7 @@ from src.briefing_cards import build_briefing_snapshot
 from src.config import get_settings
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import merge_published_metadata, write_snapshot
-from src.telegram_client import send_briefs
+from src.telegram_client import alert_mini_app_url, send_briefs
 
 SLOT_LABELS = {
     "morning": "晨報",
@@ -261,6 +261,16 @@ def main() -> None:
         chat_ids=settings.telegram_chat_ids,
         text=brief,
         dashboard_url=settings.dashboard_url,
+        target_url=(
+            alert_mini_app_url(
+                settings.dashboard_url,
+                alert_id=str((event or {}).get("event_cluster_key") or (event or {}).get("event_key") or trace_id),
+                release_id=str(snapshot.get("release_id") or os.environ.get("RELEASE_ID") or ""),
+                snapshot_id=snapshot_id,
+            )
+            if (snapshot.get("release_id") or os.environ.get("RELEASE_ID"))
+            else None
+        ),
     )
     summary = {
         "delivered": sum(result.delivered for result in results),
