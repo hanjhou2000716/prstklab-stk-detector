@@ -31,6 +31,11 @@ REQUEST_RETRIES = 2
 # pace the historical report requests so one batch does not look like a scrape.
 REQUEST_BACKOFF_SECONDS = 1.25
 REPORT_INTERVAL_SECONDS = 0.35
+# Hosted CI addresses are more likely to receive a temporary MOPS security
+# page when several report forms are submitted in one burst.  Keep a small
+# inter-request interval and rotate the session after a blocked response;
+# this is still bounded and does not bypass rate limits.
+MIN_REQUEST_INTERVAL_SECONDS = 0.8
 
 
 def _number(value: str | None) -> float | None:
@@ -129,15 +134,36 @@ class MopsPublicClient:
 
     def __init__(self, session: requests.Session | None = None) -> None:
         self.session = session or requests.Session()
+        self._last_request_at = 0.0
+        self._session_factory = requests.Session
         # requests installs its own default UA, so setdefault would leave it in
         # place and MOPS would return a security-block page instead of JSON.
         self.session.headers["User-Agent"] = USER_AGENT
         self.session.headers.setdefault("Accept-Language", "zh-TW,zh;q=0.9,en;q=0.7")
 
+    def _pace(self) -> None:
+        elapsed = time.monotonic() - self._last_request_at
+        if elapsed < MIN_REQUEST_INTERVAL_SECONDS:
+            time.sleep(MIN_REQUEST_INTERVAL_SECONDS - elapsed)
+        self._last_request_at = time.monotonic()
+
+    def _rotate_session(self) -> None:
+        """Start a clean public session after a provider security page.
+
+        MOPS uses short-lived cookies and can attach a block to one session.
+        Rotating only after a failed request avoids retaining a poisoned
+        cookie jar while keeping request volume bounded.
+        """
+        session = self._session_factory()
+        session.headers["User-Agent"] = USER_AGENT
+        session.headers.setdefault("Accept-Language", "zh-TW,zh;q=0.9,en;q=0.7")
+        self.session = session
+
     def report(self, api_name: str, company_id: str, **parameters: str | int) -> str:
         last_error: Exception | None = None
         for attempt in range(REQUEST_RETRIES):
             try:
+                self._pace()
                 return self._report_once(api_name, company_id, parameters)
             except (OSError, ValueError, requests.RequestException, RuntimeError) as error:
                 last_error = error
@@ -146,9 +172,11 @@ class MopsPublicClient:
                 # public report remains available through the legacy MOPS
                 # endpoint, so try it before spending the next retry window.
                 try:
+                    self._pace()
                     return self._legacy_report_once(api_name, company_id, parameters)
                 except (OSError, ValueError, requests.RequestException, RuntimeError) as fallback_error:
                     last_error = fallback_error
+                    self._rotate_session()
                 if attempt + 1 < REQUEST_RETRIES:
                     time.sleep(REQUEST_BACKOFF_SECONDS * (attempt + 1))
         assert last_error is not None
