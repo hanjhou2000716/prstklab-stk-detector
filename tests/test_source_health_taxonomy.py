@@ -31,3 +31,15 @@ def test_fallback_is_degraded_with_fallback():
     health = _health([{"key": "stooq", "label": "Stooq", "status": "partial", "fallback_used": True}])
     item = next(item for item in health["sources"] if item["key"] == "stooq")
     assert item["state"] == "degraded_with_fallback"
+
+
+def test_semantic_state_and_gap_count_are_derived_from_source_rows():
+    health = _health([
+        {"key": "provider-a", "label": "A", "status": "partial"},
+        {"key": "provider-b", "label": "B", "status": "pending"},
+    ])
+    rows = {item["key"]: item for item in health["sources"]}
+    assert rows["provider-a"]["semantic_state"] == "partial"
+    assert rows["provider-b"]["semantic_state"] == "secondary_unavailable"
+    assert health["missing_source_count"] == len(health["data_gaps"]) == 1
+    assert health["gap_source_keys"] == ["provider-a"]
