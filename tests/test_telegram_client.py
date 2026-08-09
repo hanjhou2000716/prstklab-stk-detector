@@ -3,6 +3,7 @@ import requests
 
 from src import telegram_client
 from src.telegram_client import (
+    alert_mini_app_url,
     mini_app_button,
     mini_app_menu_button,
     send_brief,
@@ -45,6 +46,15 @@ def test_versioned_mini_app_url_busts_webview_cache(monkeypatch):
     assert versioned_mini_app_url("https://example.github.io/app/?menu=1") == "https://example.github.io/app/?menu=1&v=1234"
 
 
+def test_alert_mini_app_url_targets_published_alert_release_and_snapshot():
+    assert alert_mini_app_url(
+        "https://example.github.io/app/",
+        alert_id="evt-1",
+        release_id="rel-2",
+        snapshot_id="snap-3",
+    ) == "https://example.github.io/app/?alert=evt-1&release=rel-2&snapshot=snap-3&view=event"
+
+
 def test_mini_app_menu_button_uses_persistent_web_app_shape():
     assert mini_app_menu_button("https://example.github.io/app/") == {
         "type": "web_app",
@@ -84,6 +94,28 @@ def test_send_brief_rejects_invalid_json_response(monkeypatch):
     monkeypatch.setattr("src.telegram_client.requests.post", lambda *args, **kwargs: Response())
     with pytest.raises(telegram_client.TelegramError):
         send_brief(token="t", chat_id="1", text="ok", dashboard_url="https://example.test")
+
+
+def test_send_brief_uses_alert_deep_link_when_provided(monkeypatch):
+    captured = {}
+
+    class Response:
+        ok = True
+        status_code = 200
+        def json(self): return {"ok": True, "result": {"message_id": 1}}
+
+    def post(url, json, timeout):
+        captured.update(json)
+        return Response()
+
+    monkeypatch.setattr("src.telegram_client.requests.post", post)
+    send_brief(
+        token="t", chat_id="1", text="ok", dashboard_url="https://example.test",
+        target_url="https://example.test/?alert=evt&release=rel&snapshot=snap&view=event",
+    )
+    assert captured["reply_markup"]["inline_keyboard"][0][0]["web_app"]["url"].startswith(
+        "https://example.test/?alert=evt&release=rel&snapshot=snap&view=event&v="
+    )
 
 
 def test_send_briefs_delivers_to_each_configured_recipient(monkeypatch):

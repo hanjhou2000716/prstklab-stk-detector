@@ -8,6 +8,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from time import sleep, time
+from urllib.parse import urlencode
 
 import requests
 
@@ -125,6 +126,17 @@ def versioned_mini_app_url(mini_app_url: str) -> str:
     return f"{mini_app_url}{separator}v={int(time() * 1000)}"
 
 
+def alert_mini_app_url(
+    mini_app_url: str, *, alert_id: str, release_id: str, snapshot_id: str, view: str = "event"
+) -> str:
+    """Build a cache-busting Mini App URL that targets one published artifact."""
+    if not mini_app_url.startswith("https://"):
+        raise ValueError("Mini App URL must use HTTPS")
+    separator = "&" if "?" in mini_app_url else "?"
+    query = urlencode({"alert": alert_id, "release": release_id, "snapshot": snapshot_id, "view": view})
+    return f"{mini_app_url}{separator}{query}"
+
+
 def mini_app_menu_button(mini_app_url: str) -> dict[str, object]:
     """Build the persistent Telegram chat-menu entry for this Mini App."""
     if not mini_app_url.startswith("https://"):
@@ -188,7 +200,8 @@ def configure_mini_app_menus(*, token: str, chat_ids: tuple[str, ...], mini_app_
 
 
 def send_brief(
-    *, token: str, chat_id: str, text: str, dashboard_url: str
+    *, token: str, chat_id: str, text: str, dashboard_url: str,
+    target_url: str | None = None,
 ) -> TelegramResult:
     """Send a brief with one dashboard button through Telegram Bot API."""
     validate_brief(text)
@@ -196,7 +209,7 @@ def send_brief(
         "chat_id": chat_id,
         "text": text,
         "disable_web_page_preview": True,
-        "reply_markup": {"inline_keyboard": [[mini_app_button(versioned_mini_app_url(dashboard_url))]]},
+        "reply_markup": {"inline_keyboard": [[mini_app_button(versioned_mini_app_url(target_url or dashboard_url))]]},
     }
     endpoint = f"https://api.telegram.org/bot{token}/sendMessage"
     response = None
@@ -242,7 +255,8 @@ def send_brief(
 
 
 def send_briefs(
-    *, token: str, chat_ids: tuple[str, ...], text: str, dashboard_url: str
+    *, token: str, chat_ids: tuple[str, ...], text: str, dashboard_url: str,
+    target_url: str | None = None,
 ) -> tuple[TelegramDelivery, ...]:
     """Send one identical brief to every reachable configured recipient.
 
@@ -256,7 +270,7 @@ def send_briefs(
     deliveries: list[TelegramDelivery] = []
     for chat_id in chat_ids:
         try:
-            result = send_brief(token=token, chat_id=chat_id, text=text, dashboard_url=dashboard_url)
+            result = send_brief(token=token, chat_id=chat_id, text=text, dashboard_url=dashboard_url, target_url=target_url)
         except TelegramError as exc:
             if not (_recipient_unavailable(exc) or isinstance(exc, TelegramTransientError)):
                 raise
@@ -283,6 +297,7 @@ def send_briefs(
                     chat_id=delivery.chat_id,
                     text=text,
                     dashboard_url=dashboard_url,
+                    target_url=target_url,
                 )
             except TelegramError as exc:
                 deliveries[index] = TelegramDelivery(chat_id=delivery.chat_id, error=str(exc))
