@@ -42,6 +42,9 @@ jobs:
       - name: Restore latest immutable data release
         run: |
           python -m src.data_release --restore --branch data-release --include site/data
+      - name: Build cache-busted static assets
+        run: |
+          python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
       - name: Validate release before Pages upload
         run: |
           python -m src.release_gate --manifest site/data/release-manifest.json

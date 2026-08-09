@@ -1,0 +1,49 @@
+import hashlib
+import json
+from pathlib import Path
+
+import pytest
+
+from src.build_assets import ASSETS, PLACEHOLDER, build_assets
+
+
+def _fixture(tmp_path: Path) -> Path:
+    root = tmp_path / "site"
+    (root / "assets").mkdir(parents=True)
+    (root / "index.html").write_text(
+        '<link href="styles.css?v=__ASSET_VERSION__"><script src="app.js?v=__ASSET_VERSION__"></script>'
+        '<img src="assets/hero-prism-cover.png?v=__ASSET_VERSION__">',
+        encoding="utf-8",
+    )
+    (root / "app.js").write_bytes(b"app")
+    (root / "styles.css").write_bytes(b"css")
+    (root / "assets" / "hero-prism-cover.png").write_bytes(b"png")
+    return root
+
+
+def test_build_assets_replaces_all_placeholders_and_writes_manifest(tmp_path):
+    root = _fixture(tmp_path)
+    manifest = build_assets(root, build_sha="abc123")
+    html = (root / "index.html").read_text(encoding="utf-8")
+    assert PLACEHOLDER not in html
+    assert html.count(manifest["asset_version"]) == 3
+    assert manifest["build_sha"] == "abc123"
+    saved = json.loads((root / "asset-manifest.json").read_text(encoding="utf-8"))
+    assert saved == manifest
+    for relative in ASSETS:
+        expected = hashlib.sha256((root / relative).read_bytes()).hexdigest()
+        assert manifest["entries"][relative] == expected
+
+
+def test_build_assets_fails_when_an_asset_is_missing(tmp_path):
+    root = _fixture(tmp_path)
+    (root / "styles.css").unlink()
+    with pytest.raises(FileNotFoundError):
+        build_assets(root)
+
+
+def test_build_assets_requires_source_placeholder(tmp_path):
+    root = _fixture(tmp_path)
+    (root / "index.html").write_text("<html></html>", encoding="utf-8")
+    with pytest.raises(ValueError, match="placeholder"):
+        build_assets(root)
