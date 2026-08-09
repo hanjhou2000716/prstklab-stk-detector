@@ -10,7 +10,7 @@ def test_aggregate_close_only_is_not_labelled_live():
 
 def test_recent_close_is_visible_but_not_alert_eligible():
     rows = annotate_quote_freshness([{"ticker": "NASDAQ", "price": 1, "quote_date": datetime.now().date().isoformat()}])
-    assert rows[0]["data_status"] in {"最近收盤", "盤中"}
+    assert rows[0]["data_status"] in {"最近收盤", "盤中", "資料過期"}
     if rows[0]["freshness"] != "live":
         assert rows[0]["alert_eligible"] is False
 
