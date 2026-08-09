@@ -13,6 +13,7 @@ from datetime import datetime
 from typing import Any
 
 from src.data_quality import score_quote
+from src.instrument_master import InstrumentMaster
 from src.intel_contract import normalize_quote_record
 from src.raw_observation_store import RawObservationStore
 
@@ -30,6 +31,21 @@ def bind_quote_evidence(
 ) -> dict[str, Any]:
     """Return one quote with quality, provenance and alert eligibility bound."""
     item = normalize_quote_record(quote)
+    # Identity is resolved at the evidence boundary so every production quote
+    # carries the same cross-market semantics.  Unknown symbols are explicit;
+    # this must never guess a ticker mapping.
+    try:
+        instrument = InstrumentMaster().resolve(
+            str(item.get("ticker") or item.get("symbol") or ""),
+            market=item.get("market"),
+        )
+    except (KeyError, ValueError):
+        item["instrument_resolution"] = "unknown"
+    else:
+        item["instrument_id"] = instrument.instrument_id
+        item["asset_type"] = instrument.asset_type
+        item["instrument_timezone"] = instrument.timezone
+        item["instrument_resolution"] = "resolved"
     quality = score_quote(item, now=now)
     item["data_quality_score"] = quality["data_quality_score"]
     item["quality_freshness"] = quality["freshness"]

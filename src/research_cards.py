@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from src.production_integration import bind_strategy_provenance
 from src.research_health import assess_research_health
 
 REPORT_PATH = Path("site/data/research-report.json")
@@ -62,14 +63,19 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
             continue
         if (str(item.get("market")), str(item.get("strategy"))) in blocked_sources:
             continue
-        candidates.append({key: item.get(key) for key in (
+        candidate = {key: item.get(key) for key in (
             "market", "strategy", "rank", "ticker", "name", "score", "close", "previous_close", "change_percent", "turnover", "as_of", "signal_labels", "volume_ratio", "range_contraction", "breakout_20", "vcp_breakout", "new_high_days", "fgi_score", "fgi_status", "conditions_matched", "condition_count", "structure", "status",
             "roe", "pe", "payout_ratio", "metrics_available", "moat_review", "list_type",
             "pristine_conditions_matched", "pristine_conditions_total", "quality_verified",
             "heat_verified", "verification_gaps", "passed_conditions", "failed_conditions",
             "risk_factors", "data_completeness", "invalidation", "invalidation_condition",
             "advice_gate", "strategy_version", "data_version", "backtest_release"
-        )})
+        )}
+        binding = bind_strategy_provenance(candidate)
+        candidate["strategy_binding"] = binding
+        if binding["state"] != "production":
+            candidate["advice_gate"] = "observation_only"
+        candidates.append(candidate)
     sources = [
         {key: source.get(key) for key in (
             "market", "strategy", "status", "scan_state", "candidate_state", "candidates", "visible_candidates", "candidates_definition", "formal_candidates", "observation_candidates", "requested", "requested_records", "data_complete", "complete_records", "failed", "failed_records",
