@@ -55,10 +55,7 @@ def test_scheduled_delivery_blocks_when_manifest_is_not_ready(tmp_path, monkeypa
 def test_scheduled_delivery_uses_photo_delivery_after_release_gate(tmp_path, monkeypatch):
     snapshot_path = tmp_path / "market.json"
     manifest_path = tmp_path / "release-manifest.json"
-    snapshot_path.write_text(
-        json.dumps({"snapshot_id": "market-12345678", "quotes": [], "indices": [], "briefing": {}}),
-        encoding="utf-8",
-    )
+    snapshot_path.write_text(json.dumps({"snapshot_id": "market-12345678", "quotes": [], "indices": [], "briefing": {}}), encoding="utf-8")
     manifest_path.write_text("{}", encoding="utf-8")
     output = tmp_path / "output"
     _patch_ready(monkeypatch, output)
@@ -79,10 +76,7 @@ def test_scheduled_delivery_uses_photo_delivery_after_release_gate(tmp_path, mon
 def test_scheduled_delivery_blocks_photo_when_renderer_fails(tmp_path, monkeypatch):
     snapshot_path = tmp_path / "market.json"
     manifest_path = tmp_path / "release-manifest.json"
-    snapshot_path.write_text(
-        json.dumps({"snapshot_id": "market-12345678", "quotes": [], "indices": [], "briefing": {}}),
-        encoding="utf-8",
-    )
+    snapshot_path.write_text(json.dumps({"snapshot_id": "market-12345678", "quotes": [], "indices": [], "briefing": {}}), encoding="utf-8")
     manifest_path.write_text("{}", encoding="utf-8")
     output = tmp_path / "output"
     _patch_ready(monkeypatch, output)
