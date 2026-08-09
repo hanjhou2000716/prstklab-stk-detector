@@ -26,3 +26,11 @@ def test_scheduled_production_workflow_does_not_install_renderer_browser():
     assert "send-only" in workflow
     assert "requirements-production.txt" in workflow
     assert "playwright install" not in workflow
+
+
+def test_event_production_workflows_use_text_delivery_dependencies():
+    root = Path(__file__).resolve().parents[1] / ".github" / "workflows"
+    for name in ("official-event-monitor.yml", "emergency-alert.yml"):
+        workflow = (root / name).read_text(encoding="utf-8")
+        assert "requirements-production.txt" in workflow
+        assert "playwright install" not in workflow

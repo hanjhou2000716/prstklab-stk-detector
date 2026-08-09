@@ -20,7 +20,7 @@ from src.scheduled_brief import (
     build_brief,
     write_event_lock_key,
 )
-from src.telegram_client import send_briefs, summarize_deliveries
+from src.telegram_client import alert_mini_app_url, send_briefs, summarize_deliveries
 
 
 def prepare(slot: str, snapshot_path: Path) -> dict:
@@ -119,6 +119,12 @@ def send(
         chat_ids=settings.telegram_chat_ids,
         text=caption,
         dashboard_url=settings.dashboard_url,
+        target_url=alert_mini_app_url(
+            settings.dashboard_url,
+            alert_id=alert_id,
+            release_id=gate.release_id,
+            snapshot_id=snapshot_id,
+        ),
     )
     summary = summarize_deliveries(deliveries)
     delivered = summary.delivered_count

@@ -17,10 +17,11 @@ workflow cannot be mistaken for a successfully delivered alert.
 ## Delivery gate
 
 - [ ] Pages is publicly readable and returns the expected `release_id`.
-- [ ] Card renderer produced a readable PNG exactly 1080×1350 pixels.
-- [ ] Caption is at most 40 Unicode characters and contains no secret or raw
+- [ ] Production caption is at most 30 characters and contains no secret or raw
       recipient ID.
-- [ ] One `sendPhoto` message contains the caption, photo and deep-link button.
+- [ ] One `sendMessage` contains the caption and a release/alert deep-link
+      Mini App button. The 1080×1350 card is tested only by the explicit,
+      single-recipient `photo_test` workflow.
 - [ ] Each recipient has an isolated receipt (`delivered`, `partial`, `failed`
       or `blocked`).
 - [ ] Railway `/health` shows the same release, alert and delivery trace.
