@@ -66,13 +66,15 @@ jobs:
           fi
       - name: Persist photo smoke delivery receipt to Railway
         if: always() && inputs.photo_test == true && steps.photo_smoke.outputs.sent == 'true'
-        continue-on-error: true
         env:
           RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
           RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET }}
+          DELIVERY_RECEIPT_KIND: photo_smoke
           TRACE_ID: ${{ steps.photo_smoke.outputs.trace_id }}
+          ALERT_ID: ${{ steps.photo_smoke.outputs.alert_id }}
           RELEASE_ID: ${{ steps.photo_smoke.outputs.release_id }}
           SNAPSHOT_ID: ${{ steps.photo_smoke.outputs.snapshot_id }}
+          DELIVERY_MODE: ${{ steps.photo_smoke.outputs.delivery_mode }}
           DELIVERY_STATUS: ${{ steps.photo_smoke.outputs.delivery_status }}
           DELIVERED_COUNT: ${{ steps.photo_smoke.outputs.delivered_count }}
           FAILED_COUNT: ${{ steps.photo_smoke.outputs.failed_count }}

@@ -69,8 +69,10 @@ def run() -> int:
             "\n".join((
                 "sent=true",
                 f"trace_id={trace_id}",
+                f"alert_id={ALERT_ID}",
                 f"release_id={RELEASE_ID}",
                 f"snapshot_id={SNAPSHOT_ID}",
+                "delivery_mode=photo",
                 f"delivery_status={'delivered' if failed == 0 else 'partial'}",
                 f"delivered_count={delivered}",
                 f"failed_count={failed}",

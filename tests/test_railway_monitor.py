@@ -911,6 +911,44 @@ def test_seen_store_rejects_invalid_delivery_counters(tmp_path):
         })
 
 
+def test_seen_store_accepts_scoped_photo_smoke_receipt_without_outbox(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    trace_id = "photo-smoke-test-1234"
+    assert store.record_delivery_status({
+        "trace_id": trace_id,
+        "receipt_kind": "photo_smoke",
+        "release_id": "photo-smoke-test",
+        "snapshot_id": "photo-smoke-test",
+        "alert_id": "photo-smoke-test",
+        "delivery_mode": "photo",
+        "delivery_status": "delivered",
+        "delivered_count": 1,
+        "failed_count": 0,
+        "failed_recipient_hashes": [],
+    })
+    row = store.connection.execute(
+        "SELECT source,event_id,category,status FROM delivery_outbox WHERE trace_id = ?",
+        (trace_id,),
+    ).fetchone()
+    assert row == ("github_actions", "photo-smoke-test", "photo_smoke", "delivered")
+    assert store.connection.execute(
+        "SELECT status,delivered_count,failed_count FROM delivery_receipts WHERE trace_id=? AND recipient_hash='__aggregate__'",
+        (trace_id,),
+    ).fetchone() == ("delivered", 1, 0)
+
+
+def test_seen_store_rejects_unknown_production_receipt(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    assert store.record_delivery_status({
+        "trace_id": "unknown-production-trace",
+        "receipt_kind": "production",
+        "delivery_status": "delivered",
+        "delivered_count": 1,
+        "failed_count": 0,
+        "failed_recipient_hashes": [],
+    }) is False
+
+
 def test_delivery_diagnostics_does_not_apply_older_receipt_to_newer_outbox(tmp_path):
     store = monitor.SeenStore(tmp_path / "state.sqlite3")
     first = monitor.Alert("older-delivery", "macro", "CPI release", "2026-08-02T10:00:00+00:00")

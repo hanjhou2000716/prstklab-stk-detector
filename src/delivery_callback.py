@@ -25,6 +25,7 @@ def build_payload() -> dict[str, object]:
     ]
     return {
         "trace_id": os.environ.get("TRACE_ID", "").strip(),
+        "receipt_kind": os.environ.get("DELIVERY_RECEIPT_KIND", "production").strip() or "production",
         "release_id": os.environ.get("RELEASE_ID", "").strip(),
         "snapshot_id": os.environ.get("SNAPSHOT_ID", "").strip(),
         "alert_id": os.environ.get("ALERT_ID", "").strip() or None,
