@@ -181,6 +181,7 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                 summary = json.loads(Path(summary_path).read_text(encoding="utf-8"))
                 base.update({key: summary.get(key) for key in (
                     "requested", "requested_records", "data_complete", "complete_records", "failed", "failed_records", "scan_state", "status", "error_details",
+                    "universe_mode", "universe_expected", "universe_scanned", "universe_completed", "universe_failed",
                     "candidates", "formal_candidates", "observation_candidates",
                     "candidate_state", "complete_records", "data_gap_counts",
                     "history_cached", "history_expected", "history_progress_pct",

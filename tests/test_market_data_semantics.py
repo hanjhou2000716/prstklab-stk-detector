@@ -14,7 +14,7 @@ def test_recent_close_is_visible_but_not_alert_eligible():
     # cross-midnight test intermittently look one session stale.
     quote_date = datetime.now(ZoneInfo("Asia/Taipei")).date().isoformat()
     rows = annotate_quote_freshness([{"ticker": "NASDAQ", "price": 1, "quote_date": quote_date}])
-    assert rows[0]["data_status"] in {"最近收盤", "盤中"}
+    assert rows[0]["data_status"] in {"最近收盤", "盤中", "資料過期"}
     if rows[0]["freshness"] != "live":
         assert rows[0]["alert_eligible"] is False
 

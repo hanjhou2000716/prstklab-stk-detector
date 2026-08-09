@@ -16,7 +16,8 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--batch-size", type=int, default=50)
     args = parser.parse_args()
-    universe = fetch_us_research_universe()[:args.limit] if args.limit > 0 else fetch_us_research_universe()
+    resolved_universe = fetch_us_research_universe()
+    universe = resolved_universe[:args.limit] if args.limit > 0 else resolved_universe
     records, failed = [], []
     for group in batches(universe, args.batch_size):
         try:
@@ -35,7 +36,7 @@ def main() -> None:
     result = rank_records(records, min_turnover=10_000_000)
     Path("data").mkdir(exist_ok=True)
     result.drop(columns=["bars"], errors="ignore").to_csv("data/us-momentum-scan.csv", index=False, encoding="utf-8-sig")
-    Path("data/us-momentum-summary.json").write_text(json.dumps({"requested": len(universe), "data_complete": len(records), "candidates": len(result), "failed": len(failed), "scan_state": "complete", "status": "可用" if not failed else "部分缺漏", "error_details": failed[:20]}, ensure_ascii=False), encoding="utf-8")
+    Path("data/us-momentum-summary.json").write_text(json.dumps({"requested": len(universe), "data_complete": len(records), "candidates": len(result), "failed": len(failed), "universe_mode": "full" if args.limit <= 0 else "bounded", "universe_expected": len(resolved_universe), "universe_scanned": len(universe), "universe_completed": len(records), "universe_failed": len(failed), "scan_state": "complete", "status": "可用" if not failed else "部分缺漏", "error_details": failed[:20]}, ensure_ascii=False), encoding="utf-8")
 
 
 if __name__ == "__main__":

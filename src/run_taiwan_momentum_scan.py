@@ -1,4 +1,4 @@
-"""Command-line runner for a bounded manual Taiwan momentum scan."""
+"""Command-line runner for a production Taiwan momentum scan."""
 from __future__ import annotations
 
 import argparse
@@ -13,15 +13,15 @@ from src.taiwan_universe import load_or_fetch_taiwan_universe
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--limit", type=int, default=100)
+    parser.add_argument("--limit", type=int, default=0, help="0 scans the complete resolved universe")
     parser.add_argument("--batch-size", type=int, default=50)
     parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--universe-file", default=None, help="同一次工作共用的最新公開台股清單")
     args = parser.parse_args()
-    universe = load_or_fetch_taiwan_universe(args.universe_file)
+    resolved_universe = load_or_fetch_taiwan_universe(args.universe_file)
     if args.offset < 0:
         raise ValueError("offset 不可小於 0")
-    universe = universe[args.offset:]
+    universe = resolved_universe[args.offset:]
     if args.limit > 0:
         universe = universe[:args.limit]
     records = []
@@ -45,6 +45,9 @@ def main() -> None:
     summary_path = Path(f"data/taiwan-momentum-summary-{args.offset}.json")
     summary_path.write_text(json.dumps({
         "requested": len(universe), "data_complete": len(records), "candidates": len(result),
+        "universe_mode": "full" if args.limit <= 0 else "bounded",
+        "universe_expected": len(resolved_universe), "universe_scanned": len(universe),
+        "universe_completed": len(records), "universe_failed": len(failed),
         "failed": len(failed), "batch_size": args.batch_size, "offset": args.offset,
         "min_turnover": TAIWAN_MIN_TURNOVER, "candidate_limit": 5,
         "scan_state": "complete",
