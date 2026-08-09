@@ -661,6 +661,14 @@ def test_health_snapshot_exposes_source_diagnostics_without_secrets():
     assert "GITHUB_DISPATCH_TOKEN" not in str(snapshot)
 
 
+def test_gdelt_error_label_preserves_status_without_exposing_response_body():
+    response = monitor.httpx.Response(429, request=monitor.httpx.Request("GET", "https://example.test"))
+    error = monitor.httpx.HTTPStatusError("rate limited", request=response.request, response=response)
+    assert monitor.gdelt_error_label(error) == "HTTP_429"
+    assert monitor.gdelt_error_label(monitor.httpx.TimeoutException("slow")) == "timeout"
+    assert monitor.gdelt_error_label(ValueError("invalid payload")) == "invalid_payload"
+
+
 def test_monitor_health_forbidden_is_degraded_but_nonfatal(monkeypatch):
     class Response:
         status_code = 403
