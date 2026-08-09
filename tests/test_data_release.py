@@ -86,6 +86,40 @@ def test_publish_force_adds_ignored_release_artifacts(tmp_path, monkeypatch):
     assert ["git", "add", "-f", "--", "data/snapshot.json"] in calls
 
 
+def test_publish_stages_on_existing_release_tree(tmp_path, monkeypatch):
+    """A partial publisher must preserve caches written by another workflow."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    (data_dir / "market.json").write_text("{}", encoding="utf-8")
+    calls = []
+
+    monkeypatch.setattr(data_release, "_fetch_branch", lambda branch: True)
+
+    def fake_run(*args, **kwargs):
+        command = args[0]
+        calls.append(command)
+        if command[:2] == ["git", "write-tree"]:
+            return data_release.subprocess.CompletedProcess(command, 0, "tree123\n", "")
+        if command[:2] == ["git", "commit-tree"]:
+            return data_release.subprocess.CompletedProcess(command, 0, "commit123\n", "")
+        return data_release.subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(data_release.subprocess, "run", fake_run)
+
+    def fake_git_run(*args, **kwargs):
+        if args[:2] == ("rev-parse", "refs/remotes/origin/data-release"):
+            return data_release.subprocess.CompletedProcess(args, 0, "parent123\n", "")
+        if args[:2] == ("rev-parse", "parent123^{tree}"):
+            return data_release.subprocess.CompletedProcess(args, 0, "oldtree\n", "")
+        return data_release.subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(data_release, "_run", fake_git_run)
+    result = publish(root=tmp_path, includes=["data/market.json"])
+
+    assert result["published"] is True
+    assert ["git", "read-tree", "parent123"] in calls
+
+
 def test_restore_skips_cache_paths_missing_from_remote_branch(tmp_path, monkeypatch):
     site_data = tmp_path / "site" / "data"
     site_data.mkdir(parents=True)
