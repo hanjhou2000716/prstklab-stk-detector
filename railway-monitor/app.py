@@ -316,7 +316,7 @@ HEALTH_STATE: dict[str, Any] = {
     "service": "prstk-jin10-monitor",
     "started_at": datetime.now(timezone.utc).isoformat(),
     "jin10": {"status": "not_checked", "last_success_at": None, "last_failure_at": None, "item_count": 0, "error": None},
-    "gdelt": {"enabled": True, "status": "not_checked", "last_success_at": None, "last_failure_at": None, "article_count": 0, "alert_count": 0, "pending_count": 0, "pending_reasons": {}, "error": None},
+    "gdelt": {"enabled": True, "status": "not_checked", "last_success_at": None, "last_failure_at": None, "article_count": 0, "alert_count": 0, "pending_count": 0, "pending_reasons": {}, "error": None, "stale_cache_used": False, "health_dispatch_status": "not_checked", "health_dispatch_error": None, "health_dispatch_next_retry_at": None},
     "classification": {
         "status": "not_checked",
         "updated_at": None,
@@ -1537,8 +1537,24 @@ async def dispatch_monitor_health(*, token: str, repository: str, gdelt: dict[st
     bounded counts/reason codes are sent; article bodies, URLs and secrets
     stay inside Railway's local audit store.
     """
+    global _HEALTH_DISPATCH_BACKOFF_UNTIL, _HEALTH_DISPATCH_BACKOFF_STATUS, _HEALTH_DISPATCH_BACKOFF_ERROR, _HEALTH_DISPATCH_BACKOFF_NEXT_AT
     if not token or not repository:
+        update_health(
+            "gdelt",
+            health_dispatch_status="configuration_missing",
+            health_dispatch_error="missing_github_dispatch_configuration",
+            health_dispatch_next_retry_at=None,
+        )
         logging.warning("monitor health dispatch skipped: GitHub credentials are not configured")
+        return
+    if time.monotonic() < _HEALTH_DISPATCH_BACKOFF_UNTIL:
+        update_health(
+            "gdelt",
+            health_dispatch_status=_HEALTH_DISPATCH_BACKOFF_STATUS,
+            health_dispatch_error=_HEALTH_DISPATCH_BACKOFF_ERROR,
+            health_dispatch_next_retry_at=_HEALTH_DISPATCH_BACKOFF_NEXT_AT,
+        )
+        logging.info("monitor health dispatch backoff active status=%s", _HEALTH_DISPATCH_BACKOFF_STATUS)
         return
     payload = {
         "event_type": "monitor-health",
@@ -1567,7 +1583,11 @@ async def dispatch_monitor_health(*, token: str, repository: str, gdelt: dict[st
                 response = await client.post(endpoint, headers=headers, json=payload)
             except httpx.HTTPError as exc:
                 if attempt == 2:
-                    update_health("gdelt", health_dispatch_status="degraded", health_dispatch_error=type(exc).__name__)
+                    _HEALTH_DISPATCH_BACKOFF_UNTIL = time.monotonic() + 60
+                    _HEALTH_DISPATCH_BACKOFF_STATUS = "degraded"
+                    _HEALTH_DISPATCH_BACKOFF_ERROR = type(exc).__name__
+                    _HEALTH_DISPATCH_BACKOFF_NEXT_AT = (datetime.now(timezone.utc) + timedelta(seconds=60)).isoformat()
+                    update_health("gdelt", health_dispatch_status="degraded", health_dispatch_error=type(exc).__name__, health_dispatch_next_retry_at=_HEALTH_DISPATCH_BACKOFF_NEXT_AT)
                     logging.warning("monitor health dispatch unavailable error=%s", type(exc).__name__)
                     return
                 await asyncio.sleep(2**attempt)
@@ -1576,15 +1596,24 @@ async def dispatch_monitor_health(*, token: str, repository: str, gdelt: dict[st
                 # This callback is observability only.  A repository token
                 # without dispatch permission must not crash or spin the
                 # source monitor; local Railway health remains authoritative.
+                _HEALTH_DISPATCH_BACKOFF_UNTIL = time.monotonic() + 900
+                _HEALTH_DISPATCH_BACKOFF_STATUS = "configuration_missing" if response.status_code == 401 else "permission_denied"
+                _HEALTH_DISPATCH_BACKOFF_ERROR = f"HTTP_{response.status_code}"
+                _HEALTH_DISPATCH_BACKOFF_NEXT_AT = (datetime.now(timezone.utc) + timedelta(seconds=900)).isoformat()
                 update_health(
-                    "gdelt", health_dispatch_status="degraded",
-                    health_dispatch_error=f"HTTP_{response.status_code}",
+                    "gdelt", health_dispatch_status=_HEALTH_DISPATCH_BACKOFF_STATUS,
+                    health_dispatch_error=_HEALTH_DISPATCH_BACKOFF_ERROR,
+                    health_dispatch_next_retry_at=_HEALTH_DISPATCH_BACKOFF_NEXT_AT,
                 )
                 logging.warning("monitor health dispatch rejected status=%s; local health retained", response.status_code)
                 return
             if response.status_code == 429 or response.status_code >= 500:
                 if attempt == 2:
-                    update_health("gdelt", health_dispatch_status="degraded", health_dispatch_error=f"HTTP_{response.status_code}")
+                    _HEALTH_DISPATCH_BACKOFF_UNTIL = time.monotonic() + 300
+                    _HEALTH_DISPATCH_BACKOFF_STATUS = "degraded"
+                    _HEALTH_DISPATCH_BACKOFF_ERROR = f"HTTP_{response.status_code}"
+                    _HEALTH_DISPATCH_BACKOFF_NEXT_AT = (datetime.now(timezone.utc) + timedelta(seconds=300)).isoformat()
+                    update_health("gdelt", health_dispatch_status="degraded", health_dispatch_error=_HEALTH_DISPATCH_BACKOFF_ERROR, health_dispatch_next_retry_at=_HEALTH_DISPATCH_BACKOFF_NEXT_AT)
                     logging.warning("monitor health dispatch rate-limited/unavailable status=%s", response.status_code)
                     return
                 retry_after = 0
@@ -1595,7 +1624,11 @@ async def dispatch_monitor_health(*, token: str, repository: str, gdelt: dict[st
                 await asyncio.sleep(min(60, max(1, retry_after)) if retry_after else 2**attempt)
                 continue
             response.raise_for_status()
-            update_health("gdelt", health_dispatch_status="healthy", health_dispatch_error=None)
+            _HEALTH_DISPATCH_BACKOFF_UNTIL = 0.0
+            _HEALTH_DISPATCH_BACKOFF_STATUS = "not_checked"
+            _HEALTH_DISPATCH_BACKOFF_ERROR = None
+            _HEALTH_DISPATCH_BACKOFF_NEXT_AT = None
+            update_health("gdelt", health_dispatch_status="healthy", health_dispatch_error=None, health_dispatch_next_retry_at=None)
             logging.info("monitor health dispatch accepted status=%s", response.status_code)
             return
 
@@ -1724,6 +1757,12 @@ def _decode_discovery_articles(rows: list[dict[str, str]]) -> list[DiscoveryArti
 
 _GDELT_BACKOFF_UNTIL = 0.0
 _GDELT_FAILURE_COUNT = 0
+_GDELT_LAST_FETCH_STATE = "unknown"
+_GDELT_LAST_FETCH_ERROR: str | None = None
+_HEALTH_DISPATCH_BACKOFF_UNTIL = 0.0
+_HEALTH_DISPATCH_BACKOFF_STATUS = "not_checked"
+_HEALTH_DISPATCH_BACKOFF_ERROR: str | None = None
+_HEALTH_DISPATCH_BACKOFF_NEXT_AT: str | None = None
 GDELT_USER_AGENT = (
     "PRStK-Stock-Detector/1.0 "
     "(+https://github.com/hanjhou2000716/prstklab-stk-detector)"
@@ -1745,13 +1784,15 @@ def gdelt_error_label(error: BaseException) -> str:
 
 async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[DiscoveryArticle]:
     """Fetch discovery headlines with a 15-minute cache and 120-minute fallback."""
-    global _GDELT_BACKOFF_UNTIL, _GDELT_FAILURE_COUNT
+    global _GDELT_BACKOFF_UNTIL, _GDELT_FAILURE_COUNT, _GDELT_LAST_FETCH_STATE, _GDELT_LAST_FETCH_ERROR
     fresh_cache_seconds = max(60, int(os.environ.get("GDELT_CACHE_MINUTES", "15")) * 60)
     stale_cache_seconds = max(fresh_cache_seconds, int(os.environ.get("GDELT_STALE_CACHE_MINUTES", "120")) * 60)
     fresh_age_seconds = max(60, int(os.environ.get("GDELT_MAX_FRESH_AGE_MINUTES", "45")) * 60)
     if store:
         cached = store.read_cache("gdelt-success", fresh_cache_seconds)
         if cached is not None:
+            _GDELT_LAST_FETCH_STATE = "fresh_cache"
+            _GDELT_LAST_FETCH_ERROR = None
             return _decode_discovery_articles(cached)
     now = time.monotonic()
     if now < _GDELT_BACKOFF_UNTIL:
@@ -1759,7 +1800,10 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
             stale = store.read_cache("gdelt-success", stale_cache_seconds)
             if stale is not None:
                 logging.warning("GDELT backoff active; using cached success until next retry window")
+                _GDELT_LAST_FETCH_STATE = "stale_cache"
                 return _decode_discovery_articles(stale)
+        _GDELT_LAST_FETCH_STATE = "failed"
+        _GDELT_LAST_FETCH_ERROR = "rate_limited"
         raise RuntimeError("GDELT backoff active after rate limit")
     params = {"query": os.environ.get("GDELT_QUERY", GDELT_QUERY), "mode": "artlist", "format": "json", "sort": "datedesc", "maxrecords": 75}
     try:
@@ -1781,12 +1825,17 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
         response.raise_for_status()
         _GDELT_FAILURE_COUNT = 0
         _GDELT_BACKOFF_UNTIL = 0.0
-    except Exception:
+        _GDELT_LAST_FETCH_STATE = "live"
+        _GDELT_LAST_FETCH_ERROR = None
+    except Exception as error:
+        _GDELT_LAST_FETCH_ERROR = gdelt_error_label(error)
         if store:
             stale = store.read_cache("gdelt-success", stale_cache_seconds)
             if stale is not None:
                 logging.warning("GDELT temporarily unavailable; using the most recent cached success")
+                _GDELT_LAST_FETCH_STATE = "stale_cache"
                 return _decode_discovery_articles(stale)
+        _GDELT_LAST_FETCH_STATE = "failed"
         raise
     cutoff = datetime.now(timezone.utc).timestamp() - fresh_age_seconds
     articles: list[DiscoveryArticle] = []
@@ -2189,7 +2238,12 @@ async def monitor_forever() -> None:
                 # time-aligned move before producing a warning-level alert.
                 market_sync = await fetch_market_sync_snapshot()
                 pending = pending_gdelt_candidates(articles, market_sync)
-                alerts = cross_checked_gdelt_alerts(articles, market_sync)
+                # A stale cache can keep the discovery pane useful, but it is
+                # never eligible to create a new Telegram alert.  The source
+                # health payload records the fallback explicitly so the UI
+                # cannot mistake cached headlines for a live confirmation.
+                stale_cache_used = _GDELT_LAST_FETCH_STATE == "stale_cache"
+                alerts = [] if stale_cache_used else cross_checked_gdelt_alerts(articles, market_sync)
                 dispatched = 0
                 for alert in alerts:
                     previous_classification = store.classification_for(alert.event_id)
@@ -2244,14 +2298,28 @@ async def monitor_forever() -> None:
                 for candidate in pending:
                     reason = str(candidate.get("reason") or "unknown")
                     pending_reasons[reason] = pending_reasons.get(reason, 0) + 1
+                if stale_cache_used:
+                    pending_reasons["stale_source_cache"] = pending_reasons.get("stale_source_cache", 0) + len(articles)
                 logging.info(
                     "GDELT cross-check completed: %s article(s), %s alert(s) dispatched, %s candidate(s) pending",
                     len(articles), dispatched, len(pending),
                 )
-                update_health("gdelt", status="healthy", last_success_at=datetime.now(timezone.utc).isoformat(),
-                              article_count=len(articles), alert_count=dispatched,
-                              market_sync_status="confirmed" if any(alert.market_sync_confirmed for alert in alerts) else "not_confirmed",
-                              pending_count=len(pending), pending_reasons=pending_reasons, error=None)
+                now_iso = datetime.now(timezone.utc).isoformat()
+                health_values: dict[str, Any] = {
+                    "status": "fallback_active" if stale_cache_used else "healthy",
+                    "article_count": len(articles),
+                    "alert_count": dispatched,
+                    "market_sync_status": "confirmed" if any(alert.market_sync_confirmed for alert in alerts) else "not_confirmed",
+                    "pending_count": len(pending),
+                    "pending_reasons": pending_reasons,
+                    "stale_cache_used": stale_cache_used,
+                    "error": _GDELT_LAST_FETCH_ERROR if stale_cache_used else None,
+                }
+                if stale_cache_used:
+                    health_values["last_failure_at"] = now_iso
+                else:
+                    health_values["last_success_at"] = now_iso
+                update_health("gdelt", **health_values)
                 try:
                     await dispatch_monitor_health(
                         token=github_token,

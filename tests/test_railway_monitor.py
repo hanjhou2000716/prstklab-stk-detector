@@ -703,6 +703,42 @@ def test_gdelt_request_uses_identifiable_json_headers(monkeypatch):
     assert "github.com/hanjhou2000716/prstklab-stk-detector" in captured["headers"]["User-Agent"]
 
 
+def test_gdelt_rate_limit_fallback_is_marked_stale_and_not_live(monkeypatch, tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    payload = [{
+        "title": "Iran conflict",
+        "url": "https://www.reuters.com/a",
+        "domain": "reuters.com",
+        "seen_at": "2026-08-09T01:00:00+00:00",
+    }]
+    store.write_cache("gdelt-success", payload)
+    store.connection.execute(
+        "UPDATE cache SET refreshed_at=? WHERE cache_key=?",
+        ((monitor.datetime.now(monitor.timezone.utc) - monitor.timedelta(minutes=20)).isoformat(), "gdelt-success"),
+    )
+    store.connection.commit()
+
+    request = monitor.httpx.Request("GET", "https://api.gdeltproject.org/api/v2/doc/doc")
+    response = monitor.httpx.Response(429, request=request, headers={"Retry-After": "60"})
+
+    class Client:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def get(self, *_args, **_kwargs):
+            return response
+
+    monkeypatch.setattr(monitor.httpx, "AsyncClient", lambda **_kwargs: Client())
+    monitor._GDELT_BACKOFF_UNTIL = 0.0
+    articles = asyncio.run(monitor.fetch_gdelt_articles(store))
+    assert len(articles) == 1
+    assert monitor._GDELT_LAST_FETCH_STATE == "stale_cache"
+    assert monitor._GDELT_LAST_FETCH_ERROR == "HTTP_429"
+
+
 def test_monitor_health_forbidden_is_degraded_but_nonfatal(monkeypatch):
     class Response:
         status_code = 403
@@ -722,9 +758,46 @@ def test_monitor_health_forbidden_is_degraded_but_nonfatal(monkeypatch):
             return Response()
 
     monkeypatch.setattr(monitor.httpx, "AsyncClient", lambda **_kwargs: Client())
+    monitor._HEALTH_DISPATCH_BACKOFF_UNTIL = 0.0
     asyncio.run(monitor.dispatch_monitor_health(token="token", repository="owner/repo", gdelt={"status": "failed"}))
-    assert monitor.health_snapshot()["gdelt"]["health_dispatch_status"] == "degraded"
+    assert monitor.health_snapshot()["gdelt"]["health_dispatch_status"] == "permission_denied"
     assert monitor.health_snapshot()["gdelt"]["health_dispatch_error"] == "HTTP_403"
+
+
+def test_monitor_health_forbidden_is_bounded_until_permission_changes(monkeypatch):
+    calls = 0
+
+    class Response:
+        status_code = 403
+        headers = {}
+
+    class Client:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def post(self, *_args, **_kwargs):
+            nonlocal calls
+            calls += 1
+            return Response()
+
+    monkeypatch.setattr(monitor.httpx, "AsyncClient", lambda **_kwargs: Client())
+    monitor._HEALTH_DISPATCH_BACKOFF_UNTIL = 0.0
+    asyncio.run(monitor.dispatch_monitor_health(token="token", repository="owner/repo", gdelt={"status": "failed"}))
+    asyncio.run(monitor.dispatch_monitor_health(token="token", repository="owner/repo", gdelt={"status": "failed"}))
+    assert calls == 1
+    assert monitor.health_snapshot()["gdelt"]["health_dispatch_status"] == "permission_denied"
+    assert monitor.health_snapshot()["gdelt"]["health_dispatch_next_retry_at"]
+
+
+def test_monitor_health_without_dispatch_configuration_is_explicit(monkeypatch):
+    monitor._HEALTH_DISPATCH_BACKOFF_UNTIL = 0.0
+    asyncio.run(monitor.dispatch_monitor_health(token="", repository="owner/repo", gdelt={"status": "failed"}))
+    diagnostics = monitor.health_snapshot()["gdelt"]
+    assert diagnostics["health_dispatch_status"] == "configuration_missing"
+    assert diagnostics["health_dispatch_error"] == "missing_github_dispatch_configuration"
 
 
 def test_monitor_health_429_honors_retry_after_then_accepts(monkeypatch):
