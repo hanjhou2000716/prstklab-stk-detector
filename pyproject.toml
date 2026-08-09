@@ -56,6 +56,15 @@ exclude = "^(tests|site/data|data)/"
 # dedicated coverage-debt job without making the release smoke test flaky.
 branch = false
 source = ["src"]
+# CLI-only wrappers are verified by the offline subprocess/E2E jobs below;
+# they are not imported by the library coverage run.  Core decision and
+# delivery modules remain included in the 80% project floor.
+omit = [
+  "src/main.py",
+  "src/configure_mini_app.py",
+  "src/market_history.py",
+  "src/run_*.py",
+]
 
 [tool.coverage.report]
 show_missing = true

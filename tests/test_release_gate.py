@@ -178,3 +178,12 @@ def test_release_gate_writes_actions_output_as_key_value_lines(tmp_path, monkeyp
     assert "allowed=true" in text
     assert "release_id=" in text
     assert text.count("{") == 0
+
+
+def test_release_gate_blocks_unreadable_and_invalid_manifest(tmp_path):
+    missing = verify_release_for_delivery(manifest_path=tmp_path / "missing.json")
+    assert not missing.allowed and "manifest unreadable" in missing.errors[0]
+    invalid = tmp_path / "invalid.json"
+    invalid.write_text("[]", encoding="utf-8")
+    result = verify_release_for_delivery(manifest_path=invalid)
+    assert not result.allowed and "manifest must be a JSON object" in result.errors
