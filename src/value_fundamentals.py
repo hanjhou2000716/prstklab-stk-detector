@@ -42,8 +42,8 @@ def _sec_get(client: requests.Session, url: str, *, timeout: int) -> requests.Re
             return response
         except requests.RequestException as error:
             last_error = error
-            response = getattr(error, "response", None)
-            status = getattr(response, "status_code", None)
+            error_response = getattr(error, "response", None)
+            status = getattr(error_response, "status_code", None)
             retryable = status is None or status in {429, 500, 502, 503, 504}
             if retryable and attempt + 1 < SEC_RETRY_ATTEMPTS:
                 time.sleep(0.6 * (attempt + 1))
@@ -113,11 +113,11 @@ def twse_financial_snapshot(
         own = equity.get(ticker)
         if not net and not own and ticker not in pe:
             continue
-        period = net["period"] if net else own["period"] if own else None
+        reporting_period = str(net["period"] if net else own["period"] if own else "") or None
         roe = None
         if net and own and own["value"]:
             # This is an annualised latest-period estimate, not a stability claim.
-            quarter = int(str(period).split("Q")[-1]) if period and "Q" in str(period) else 4
+            quarter = int(str(reporting_period).split("Q")[-1]) if reporting_period and "Q" in str(reporting_period) else 4
             roe = round((net["value"] / max(quarter, 1) * 4) / own["value"], 6)
         output[ticker] = {
             "net_income": net["value"] if net else None,
@@ -129,7 +129,7 @@ def twse_financial_snapshot(
             "three_year_eps_positive": None,
             "four_quarter_eps_positive": None,
             "three_year_dividend_paid": None,
-            "reporting_period": period,
+            "reporting_period": reporting_period,
             "roe_basis": "TWSE latest filing annualised estimate" if roe is not None else None,
             "financial_source": "TWSE OpenAPI",
         }
@@ -196,6 +196,7 @@ def sec_value_metrics(facts: dict[str, Any]) -> dict[str, Any]:
     years = [year for year, value in net_by_year.items() if value is not None]
     latest_year = years[0]
     current_net = net_by_year[latest_year]
+    assert current_net is not None
     current_equity = equity_by_year.get(latest_year)
     prior_equity = equity_by_year.get(years[1]) if len(years) > 1 else None
     denominator = (current_equity + prior_equity) / 2 if current_equity and prior_equity else current_equity
@@ -205,14 +206,18 @@ def sec_value_metrics(facts: dict[str, Any]) -> dict[str, Any]:
     if current_net and dividend_by_year.get(latest_year) is not None:
         # SEC cash-flow facts are reported as outflows (negative values).
         # Dividend-paid is a presence test, so use the absolute amount.
-        payout = round(abs(dividend_by_year[latest_year]) / abs(current_net), 6)
+        dividend_value = dividend_by_year[latest_year]
+        assert dividend_value is not None
+        payout = round(abs(dividend_value) / abs(current_net), 6)
     roe_history = []
     for index, year in enumerate(years[:3]):
         current = equity_by_year.get(year)
         previous = equity_by_year.get(years[index + 1]) if index + 1 < len(years) else None
         average = (current + previous) / 2 if current and previous else current
         if average:
-            roe_history.append(net_by_year[year] / average)
+            net_value = net_by_year[year]
+            assert net_value is not None
+            roe_history.append(net_value / average)
     annual_eps = _periodic_facts(facts, ("EarningsPerShareDiluted", "EarningsPerShareBasic"), {"10-K", "20-F", "40-F"})
     quarterly_eps = _periodic_facts(facts, ("EarningsPerShareDiluted", "EarningsPerShareBasic"), {"10-Q", "10-K", "20-F", "40-F"})
     annual_eps_values = [number(row.get("val")) for row in annual_eps[:3]]
@@ -296,7 +301,7 @@ def sec_fundamentals(
                 cache_time = datetime.fromisoformat(str(cached_at).replace("Z", "+00:00")) if cached_at else None
             except ValueError:
                 cache_time = None
-            if cache_time and cache_time >= datetime.now(UTC) - timedelta(days=max_cache_age_days):
+            if cache_time and cache_time >= datetime.now(UTC) - timedelta(days=max_cache_age_days) and isinstance(cached, dict):
                 metrics = dict(cached.get("metrics") or {})
                 metrics["financial_source"] = "SEC EDGAR CompanyFacts (cached)"
                 metrics["sec_cache_used"] = True

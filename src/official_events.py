@@ -226,13 +226,13 @@ def _headline_links(html: str, base_url: str) -> list[tuple[str, str, str | None
     seen: set[str] = set()
     for link in soup.select("a[href]"):
         title = " ".join(link.stripped_strings)
-        href = urljoin(base_url, link.get("href", ""))
+        href = urljoin(base_url, str(link.get("href", "")))
         if not title or not href.startswith("https://") or href in seen:
             continue
         seen.add(href)
         parent = link.find_parent()
         timestamp = parent.find("time") if parent else None
-        released_at = timestamp.get("datetime") if timestamp else None
+        released_at = str(timestamp.get("datetime") or "") if timestamp else None
         if not released_at and parent:
             released_at = _date_from_text(" ".join(parent.stripped_strings))
         results.append((title, href, _iso(released_at)))
@@ -246,7 +246,7 @@ def _rss_links(xml: str, base_url: str) -> list[tuple[str, str, str | None]]:
     for item in soup.find_all("item") + soup.find_all("entry"):
         title = item.find("title")
         link = item.find("link")
-        href = (link.get("href") or link.get_text(strip=True)) if link else ""
+        href = str((link.get("href") or link.get_text(strip=True)) if link else "")
         title_text = title.get_text(" ", strip=True) if title else ""
         timestamp = item.find("pubDate") or item.find("published") or item.find("updated")
         absolute_url = urljoin(base_url, href)
@@ -315,7 +315,7 @@ def _mops_items() -> list[dict[str, str]]:
     allowed_codes = _taiwan_0050_codes()
     if not allowed_codes:
         return []
-    items: list[dict[str, str]] = []
+    items: list[dict[str, Any]] = []
     for row in data.get("result", {}).get("data", []):
         if len(row) < 5:
             continue
@@ -343,7 +343,7 @@ def _twse_items() -> list[dict[str, str]]:
             return [{
                 "title": title, "url": str(row.get("Url") or ""),
                 "source": "TWSE OpenAPI\uff5c\u5b98\u65b9\u767c\u5e03", "short_label": "\u53f0\u80a1\u5b98\u65b9\u8a0a\u606f",
-                "relevance": "official", "released_at": released_at, "source_key": "twse",
+                "relevance": "official", "released_at": released_at or "", "source_key": "twse",
             }]
     return []
 
@@ -397,7 +397,7 @@ def _sec_items() -> list[dict[str, str]]:
                 "title": f"{ticker} SEC {form} \u8ca1\u52d9\u7533\u5831",
                 "url": f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession}/{document}",
                 "source": "SEC EDGAR\uff5c\u5b98\u65b9\u7533\u5831", "short_label": "\u534a\u5c0e\u9ad4\u8ca1\u5831",
-                "relevance": "official", "released_at": released_at, "source_key": "sec",
+                "relevance": "official", "released_at": released_at or "", "source_key": "sec",
             })
             break
     return items
@@ -449,7 +449,7 @@ def _usgs_items() -> list[dict[str, str]]:
         items.append({
             "title": f"USGS M{magnitude:.1f} \u5730\u9707\uff1a{place}", "url": str(properties.get("url") or ""),
             "source": "USGS\uff5c\u5b98\u65b9\u5373\u6642\u5730\u9707\u8cc7\u6599", "short_label": "\u9ed1\u5929\u9d5d\uff0f\u5730\u7de3",
-            "relevance": "official", "source_tier": "official", "released_at": released_at,
+            "relevance": "official", "source_tier": "official", "released_at": released_at or "",
             "brief_summary": f"USGS M{magnitude:.1f} 地震：{place}",
             "source_key": "usgs", "topic_key": "usgs", "importance": "high-risk",
         })
@@ -485,7 +485,7 @@ def fetch_official_events() -> dict[str, Any]:
             })
 
     for source in SOURCES:
-        collect(source["key"], source["source"], source["url"], lambda source=source: _source_items(source))
+        collect(str(source["key"]), str(source["source"]), str(source["url"]), lambda source=source: _source_items(source))
     for key, fetcher in (
         ("MOPS", _mops_items),
         ("TWSE", _twse_items),

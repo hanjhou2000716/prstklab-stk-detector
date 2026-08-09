@@ -70,8 +70,12 @@ def evaluate_hypothetical_trades(trades: list[dict[str, Any]]) -> dict[str, Any]
     for trade in trades:
         ticker = str(trade.get("ticker") or "未命名標的")
         try:
+            entry_price = _positive_number(trade.get("entry_price"))
+            exit_price = _positive_number(trade.get("exit_price"))
+            if entry_price is None or exit_price is None:
+                raise ValueError("invalid trade prices")
             result = calculate_hypothetical_return(
-                trade.get("entry_price"), trade.get("exit_price"), str(trade.get("market")),
+                entry_price, exit_price, str(trade.get("market")),
                 commission_rate=trade.get("commission_rate"), slippage_rate=trade.get("slippage_rate"),
             )
         except (TypeError, ValueError):

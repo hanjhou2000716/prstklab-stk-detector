@@ -127,10 +127,11 @@ def _pick_quote(snapshot: dict, slot: str) -> dict | None:
 def _pick_event(snapshot: dict, slot: str) -> dict | None:
     """Prioritise the market currently relevant to the timed watch brief."""
     events = (snapshot.get("events") or {}).get("items", [])
+    preferred: tuple[str, ...]
     if slot in TAIWAN_SESSION_SLOTS:
-        preferred = ("TAIEX", "TPEx")
+        preferred = tuple(["TAIEX", "TPEx"])
     else:
-        preferred = ("SOX", "NASDAQ", "S&P 500")
+        preferred = tuple(["SOX", "NASDAQ", "S&P 500"])
     for ticker in preferred:
         selected = next(
             (event for event in events if event.get("instrument", {}).get("ticker") == ticker),

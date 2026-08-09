@@ -166,8 +166,9 @@ def crosscheck_taiex_quote(
     aggregated_price = quote.get("price")
     price_gap_percent = None
     try:
-        if float(aggregated_price) > 0:
-            price_gap_percent = round((float(twse["price"]) / float(aggregated_price) - 1) * 100, 2)
+        aggregate_value = float(str(aggregated_price))
+        if aggregate_value > 0:
+            price_gap_percent = round((float(twse["price"]) / aggregate_value - 1) * 100, 2)
     except (TypeError, ValueError, KeyError):
         pass
     status = "已交叉核對" if confirmed else "現貨期貨方向不一致"
