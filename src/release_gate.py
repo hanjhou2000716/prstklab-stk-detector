@@ -109,6 +109,7 @@ def verify_release_for_delivery(
             market=artifacts["market.json"],
             research=artifacts["research-report.json"],
             events=artifacts["event-ledger.json"],
+            require_production_research=True,
         )
         errors.extend(acceptance.errors)
 
