@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from src.advice_gate import build_explainability_card, evaluate_advice_gate
 from src.production_integration import bind_strategy_provenance
 from src.research_health import assess_research_health
 
@@ -75,6 +76,22 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
         candidate["strategy_binding"] = binding
         if binding["state"] != "production":
             candidate["advice_gate"] = "observation_only"
+        completeness = candidate.get("data_completeness")
+        try:
+            quality_ok = float(completeness) >= 90 if completeness is not None else False
+        except (TypeError, ValueError):
+            quality_ok = False
+        gate = evaluate_advice_gate({
+            "data_quality_ok": quality_ok,
+            "quote_stale": candidate.get("freshness") in {"stale", "unavailable"},
+            "crosscheck_ok": candidate.get("cross_checked") is True,
+            "backtest_release": candidate.get("backtest_release"),
+            "candidate_data_gap": bool(candidate.get("verification_gaps") or candidate.get("failed_conditions")),
+            "policy_valid": binding["state"] == "production",
+            "general_research": True,
+        })
+        candidate["advice_gate_detail"] = gate
+        candidate["explainability"] = build_explainability_card(candidate, gate)
         candidates.append(candidate)
     sources = [
         {key: source.get(key) for key in (
