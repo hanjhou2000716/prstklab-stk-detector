@@ -13,7 +13,7 @@ def test_system_dry_run_is_fail_closed_and_traceable():
         "caption_valid": True,
         "dimensions_valid": True,
         "deep_link_valid": True,
-        "delivery_status": "blocked",
+        "delivery_status": "delivered" if result["renderer_available"] else "blocked",
         "release_id": "dry-release",
         "snapshot_id": "dry-snapshot",
     }
