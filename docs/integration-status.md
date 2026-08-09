@@ -149,3 +149,16 @@ The integration is additive. Reverting the binding commit restores the prior
 briefing shape, while the release gate continues to validate the existing
 market, research, and event artifacts. Restore the last `status=ready` manifest
 as one immutable release; never mix individual files from different releases.
+
+## Browser contract
+
+The investor-facing Mini App shell is covered by
+`tests/test_mini_app_browser_contract.py`. The contract runs against a local
+static server with a real headless Chromium instance and verifies that the
+briefing is expanded by default while source health, intelligence, and
+technical provenance remain opt-in. It also checks that engineering-only
+freshness placeholders are not exposed in the investor surface and that the
+technical drawer opens through a real click. The quality workflow provisions
+the Playwright Chromium dependency before running the suite; local runs without
+the browser binary skip this browser-only check rather than fabricating an
+acceptance result.
