@@ -1,6 +1,11 @@
 from datetime import UTC, datetime
 
-from src.production_evidence import bind_market_evidence, quality_summary, raw_observation_store_summary
+from src.production_evidence import (
+    bind_market_evidence,
+    quality_summary,
+    raw_observation_store_summary,
+    record_market_snapshot_observation,
+)
 from src.raw_observation_store import RawObservationStore
 
 
@@ -91,3 +96,37 @@ def test_raw_observation_store_summary_is_disabled_without_configuration(monkeyp
         "latest_fetched_at": None,
         "error": None,
     }
+
+
+def test_market_snapshot_observation_is_disabled_without_configuration(monkeypatch) -> None:
+    monkeypatch.delenv("RAW_OBSERVATION_ROOT", raising=False)
+    assert record_market_snapshot_observation({"snapshot_id": "snap-12345678"}) == {
+        "enabled": False,
+        "recorded": False,
+        "reason": "not_configured",
+    }
+
+
+def test_market_snapshot_observation_requires_snapshot_id(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("RAW_OBSERVATION_ROOT", str(tmp_path / "raw"))
+    assert record_market_snapshot_observation({}) == {
+        "enabled": True,
+        "recorded": False,
+        "reason": "snapshot_id_missing",
+    }
+
+
+def test_market_snapshot_observation_persists_normalized_snapshot(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("RAW_OBSERVATION_ROOT", str(tmp_path / "raw"))
+    result = record_market_snapshot_observation(
+        {
+            "snapshot_id": "snap-12345678",
+            "generated_at": "2026-08-09T00:00:00+00:00",
+            "primary": {"TAIEX": {"price": 43119}},
+        }
+    )
+    assert result["enabled"] is True
+    assert result["recorded"] is True
+    summary = raw_observation_store_summary()
+    assert summary["observation_count"] == 1
+    assert summary["latest_fetched_at"] == "2026-08-09T00:00:00+00:00"

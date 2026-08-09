@@ -55,6 +55,33 @@ def raw_observation_store_summary(
         }
 
 
+def record_market_snapshot_observation(snapshot: dict[str, Any]) -> dict[str, Any]:
+    """Persist one immutable normalized snapshot when configured."""
+    import os
+    from datetime import UTC, datetime
+
+    root = os.getenv("RAW_OBSERVATION_ROOT", "").strip()
+    if not root:
+        return {"enabled": False, "recorded": False, "reason": "not_configured"}
+    snapshot_id = str(snapshot.get("snapshot_id") or "")
+    if not snapshot_id:
+        return {"enabled": True, "recorded": False, "reason": "snapshot_id_missing"}
+    try:
+        observation = RawObservationStore(root).record(
+            provider="prstk-pipeline",
+            endpoint="market_snapshot",
+            fetched_at=str(snapshot.get("generated_at") or datetime.now(UTC).isoformat()),
+            request_id=snapshot_id,
+            payload=snapshot,
+            http_status=200,
+            parser_version="market_snapshot-v1",
+            parsing_status="normalized",
+        )
+        return {"enabled": True, "recorded": True, "observation_id": observation.observation_id}
+    except (OSError, ValueError, TypeError, RuntimeError) as exc:
+        return {"enabled": True, "recorded": False, "reason": type(exc).__name__}
+
+
 def bind_quote_evidence(
     quote: dict[str, Any],
     *,
