@@ -669,6 +669,40 @@ def test_gdelt_error_label_preserves_status_without_exposing_response_body():
     assert monitor.gdelt_error_label(ValueError("invalid payload")) == "invalid_payload"
 
 
+def test_gdelt_request_uses_identifiable_json_headers(monkeypatch):
+    captured = {}
+
+    class Response:
+        status_code = 200
+        headers = {}
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"articles": []}
+
+    class Client:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def get(self, *_args, **_kwargs):
+            return Response()
+
+    monkeypatch.setattr(monitor.httpx, "AsyncClient", Client)
+    monkeypatch.setattr(monitor, "_GDELT_BACKOFF_UNTIL", 0.0)
+    asyncio.run(monitor.fetch_gdelt_articles())
+    assert captured["headers"]["Accept"] == "application/json"
+    assert captured["headers"]["User-Agent"].startswith("PRStK-Stock-Detector/1.0")
+    assert "github.com/hanjhou2000716/prstklab-stk-detector" in captured["headers"]["User-Agent"]
+
+
 def test_monitor_health_forbidden_is_degraded_but_nonfatal(monkeypatch):
     class Response:
         status_code = 403
