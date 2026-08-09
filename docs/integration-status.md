@@ -21,6 +21,7 @@ pipeline call and a tested consumer.
 | Market regime/contagion | `src/market_regime.py`, `src/cross_asset_risk.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing | briefing context | production |
 | Stress scenarios | `src/stress_scenarios.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing | context only | production |
 | Portfolio risk | `src/portfolio_risk.py` | yes | no | no | no | no | unused |
+| Paper portfolio | `src/paper_portfolio.py` | yes | yes | briefing | briefing | no | production |
 | Strategy scans | `src/run_*scan.py`, `src/research_report.py` | yes | yes | yes | yes | briefing/research | production |
 | Strategy registry/explainability | `src/strategy_registry.py`, `src/advice_gate.py` | yes | partial | partial | partial | no | partially_integrated |
 | Backtest/cost model | `src/four_strategy_walk_forward.py`, `src/backtest_costs.py` | yes | scheduled | artifact | no | no | partially_integrated |

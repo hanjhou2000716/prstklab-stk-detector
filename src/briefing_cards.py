@@ -286,6 +286,14 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         observations=observed_quotes,
         policy_version=snapshot.get("policy_version"),
     )
+    from src.paper_portfolio import build_paper_portfolio_snapshot
+
+    research = snapshot.get("research_report") or {}
+    paper_portfolio = build_paper_portfolio_snapshot(
+        research.get("candidates", []) if isinstance(research, dict) else [],
+        observed_quotes,
+        release_id=snapshot.get("release_id"),
+    )
     return {
         "slot": slot or "live",
         "title": SLOT_TITLES.get(slot or "", "即時市場儀表板"),
@@ -299,5 +307,6 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         "dynamic_markets": dynamic_markets,
         "observations": observations,
         "intelligence": intelligence,
+        "paper_portfolio": paper_portfolio,
         "reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
     }
