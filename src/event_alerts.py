@@ -554,7 +554,8 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     label = str(event.get("short_label") or "市場事件")
     title = str(event.get("title") or "公開事件更新")
     why_important, market_context, stock_observation = _event_market_context(label)
-    prior_trace = event.get("source_trace") if isinstance(event.get("source_trace"), dict) else {}
+    prior_trace_value = event.get("source_trace")
+    prior_trace: dict[str, Any] = prior_trace_value if isinstance(prior_trace_value, dict) else {}
     url = str(event.get("source_url") or event.get("url") or prior_trace.get("source_url") or "").strip()
     parsed = urlparse(url)
     domain = (parsed.hostname or "").lower().removeprefix("www.")
@@ -656,7 +657,11 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         why_important = "重大災害可能改變區域供應、航運、能源或避險需求；實際影響須由官方資訊與公開市場資料共同確認。"
         market_context = f"市場傳導：{confirmation}；本輪連動觀察為 {related_names}。"
         stock_observation = "後續觀察：官方災情與基建／航運資訊、能源與避險資產，以及主要股市是否持續同步波動。"
-    related_moves = [item.get("change_percent") for item in related if isinstance(item, dict) and item.get("change_percent") is not None]
+    related_moves: list[float] = [
+        float(item["change_percent"])
+        for item in related
+        if isinstance(item, dict) and item.get("change_percent") is not None
+    ]
     # Never publish a direction/percentage for an event that has not passed
     # the relevant-market synchronization gate. This prevents a SOX move from
     # becoming a fake percentage for a Taiwan corporate notice.

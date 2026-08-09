@@ -70,8 +70,12 @@ def parse_tpex_index(payload: Any) -> dict[str, Any] | None:
     rows.sort(key=lambda item: item[0])
     quote_date, close, latest = rows[-1]
     prior_close = rows[-2][1] if len(rows) >= 2 else None
-    change = round(close - prior_close, 2) if prior_close not in (None, 0) else None
-    change_percent = round((close / prior_close - 1) * 100, 2) if prior_close not in (None, 0) else None
+    if prior_close in (None, 0):
+        change = change_percent = None
+    else:
+        assert prior_close is not None
+        change = round(close - prior_close, 2)
+        change_percent = round((close / prior_close - 1) * 100, 2)
     return {
         "symbol": "^TWOII",
         "ticker": "TPEx",
@@ -130,6 +134,12 @@ def parse_twse_mis_tpex(payload: Any) -> dict[str, Any] | None:
             return None
     if close is None:
         return None
+    if previous in (None, 0):
+        change = change_percent = None
+    else:
+        assert previous is not None
+        change = round(close - previous, 2)
+        change_percent = round((close / previous - 1) * 100, 2)
     return {
         "symbol": "^TWOII",
         "ticker": "TPEx",
@@ -138,8 +148,8 @@ def parse_twse_mis_tpex(payload: Any) -> dict[str, Any] | None:
         "currency": "點",
         "price": round(close, 2),
         "previous_close": round(previous, 2) if previous is not None else None,
-        "change": round(close - previous, 2) if previous not in (None, 0) else None,
-        "change_percent": round((close / previous - 1) * 100, 2) if previous not in (None, 0) else None,
+        "change": change,
+        "change_percent": change_percent,
         "quote_date": observed.date().isoformat(),
         "quote_time": observed.isoformat(),
         "quote_source": "TWSE MIS official OTC index",
@@ -172,6 +182,12 @@ def _recent_close_record(
     basis: str = "最近收盤",
     source_url: str | None = None,
 ) -> dict[str, Any]:
+    if previous in (None, 0):
+        change = change_percent = None
+    else:
+        assert previous is not None
+        change = round(latest - previous, 2)
+        change_percent = round((latest / previous - 1) * 100, 2)
     record: dict[str, Any] = {
         "symbol": "^TWOII",
         "ticker": "TPEx",
@@ -180,8 +196,8 @@ def _recent_close_record(
         "currency": "點",
         "price": round(latest, 2),
         "previous_close": round(previous, 2) if previous is not None else None,
-        "change": round(latest - previous, 2) if previous not in (None, 0) else None,
-        "change_percent": round((latest / previous - 1) * 100, 2) if previous not in (None, 0) else None,
+        "change": change,
+        "change_percent": change_percent,
         "quote_date": quote_date,
         "quote_time": None,
         "quote_source": source,
@@ -206,14 +222,15 @@ def fetch_tpex_yahoo_chart_fallback(
     """
     client = session or requests.Session()
     now = int(datetime.now(UTC).timestamp())
+    params: dict[str, int | str] = {
+        "period1": now - 86400 * 30,
+        "period2": now,
+        "interval": "1d",
+        "events": "history",
+    }
     response = client.get(
         YAHOO_CHART_URL.format(symbol="%5ETWOII"),
-        params={
-            "period1": now - 86400 * 30,
-            "period2": now,
-            "interval": "1d",
-            "events": "history",
-        },
+        params=params,
         headers=HEADERS,
         timeout=15,
     )

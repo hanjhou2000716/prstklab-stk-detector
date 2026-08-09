@@ -1,8 +1,9 @@
 # PRStK merge order
 
-The open production-upgrade PRs are reviewed independently and must be merged
-in the order below. No PR is auto-merged by the automation. Keep each branch
-until the next diff has been inspected and the post-merge checks are green.
+The production-upgrade PRs below are retained as the historical merge order.
+They were reviewed independently and merged in order. No PR is auto-merged by
+the automation; keep future dependent branches until the next diff has been
+inspected and the post-merge checks are green.
 
 | Order | PR | Branch | Depends on | Scope |
 |---:|---:|---|---|---|
@@ -17,6 +18,7 @@ until the next diff has been inspected and the post-merge checks are green.
 | 9 | #346 | `feat/production-photo-delivery` | #345 | Release-gated 1080x1350 `sendPhoto` production path. |
 | 10 | #347 | `feat/photo-delivery-docs` | #346 | Production photo-delivery documentation and offline contract. |
 | 11 | #348 | `feat/photo-smoke-scope` | #347 | Explicit single-recipient photo smoke-test guard. |
+| 12 | #349 | `feat/p7-integration-matrix` | #348 | Final integration matrix and merge-order documentation. |
 
 Use **Create a merge commit** for each PR. Do not squash or rebase stacked
 work, and do not delete an earlier branch before its dependent PR is merged.

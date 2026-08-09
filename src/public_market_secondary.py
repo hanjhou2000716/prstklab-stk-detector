@@ -62,7 +62,8 @@ def _parse_row(text: str, ticker: str) -> dict[str, Any]:
 
 
 def _parse_nasdaq_quote(payload: dict[str, Any], ticker: str) -> dict[str, Any]:
-    data = payload.get("data") if isinstance(payload, dict) else None
+    data_value = payload.get("data")
+    data: dict[str, Any] = data_value if isinstance(data_value, dict) else {}
     primary = data.get("primaryData") if isinstance(data, dict) else None
     if not isinstance(primary, dict):
         raise ValueError("missing nasdaq primaryData")

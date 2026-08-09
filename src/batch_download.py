@@ -12,7 +12,8 @@ def batches(items: list[dict[str, Any]], size: int = 50) -> Iterable[list[dict[s
         yield items[start:start + size]
 
 def download_in_batches(items: list[dict[str, Any]], fetch: Callable[[list[dict[str, Any]]], dict[str, Any]], size: int = 50) -> tuple[dict[str, Any], list[str]]:
-    data, errors = {}, []
+    data: dict[str, Any] = {}
+    errors: list[str] = []
     for group in batches(items, size):
         try:
             data.update(fetch(group))

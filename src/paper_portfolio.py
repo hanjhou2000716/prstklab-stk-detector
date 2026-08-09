@@ -18,7 +18,7 @@ from src.production_integration import bind_strategy_provenance
 def _price(row: dict[str, Any]) -> float | None:
     value = row.get("close", row.get("price", row.get("simulated_entry_price")))
     try:
-        return None if value in (None, "") else float(value)
+        return None if value in (None, "") else float(str(value))
     except (TypeError, ValueError):
         return None
 

@@ -56,7 +56,10 @@ def heat_percentiles(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Attach cross-pool percentiles; missing public fields remain explicit."""
     output = [dict(row) for row in rows]
     for metric in HEAT_METRICS:
-        available = sorted(_number(row.get(metric)) for row in output if _number(row.get(metric)) is not None)
+        available: list[float] = sorted(
+            value for row in output
+            if (value := _number(row.get(metric))) is not None
+        )
         if not available:
             continue
         for row in output:
