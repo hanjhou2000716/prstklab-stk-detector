@@ -1,0 +1,15 @@
+from pathlib import Path
+
+APP = Path("site/app.js").read_text(encoding="utf-8")
+
+
+def test_mini_app_resolves_deep_link_only_with_matching_release():
+    assert "new URLSearchParams(window.location.search)" in APP
+    assert "requestedRelease !== manifestRelease" in APP
+    assert "該訊息版本已歸檔或不可用" in APP
+
+
+def test_mini_app_does_not_replace_unknown_alert_with_current_event():
+    assert "找不到此 alert 的同一 release 證據" in APP
+    assert "renderAlertCard({ items: [event] }" in APP
+    assert "applyDeepLink(snapshot)" in APP
