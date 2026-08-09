@@ -55,7 +55,7 @@ def test_source_health_is_a_collapsible_card_with_a_warming_state():
     assert 'source.status === "warming" ? "建檔中"' in app
     assert ".source-status.warming" in styles
     assert 'aria-labelledby="source-health-title" open' not in page
-    assert 'const aggregate = missing === 0 ? "資料正常" : critical > 0 ? "核心資料不足" : "部分資料降級";' in app
+    assert 'health.investor_status || (missing === 0 ? "資料正常" : critical > 0 ? "核心資料不足" : "部分資料降級")' in app
     assert 'summary.textContent = `${aggregate}' in app
     assert app.count("if (card) card.open = false;") == 2
 
