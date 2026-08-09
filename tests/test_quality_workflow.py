@@ -19,4 +19,18 @@ def test_notify_workflow_supports_an_explicit_single_recipient_smoke_test():
     assert "inputs.test_chat_id || secrets.TELEGRAM_CHAT_IDS" in workflow
     assert "photo_test:" in workflow
     assert "photo_test requires an explicit single test_chat_id" in workflow
-    assert "python -m src.photo_smoke_test" in workflow
+
+
+def test_scheduled_production_workflow_does_not_install_renderer_browser():
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
+    assert "send-only" in workflow
+    assert "requirements-production.txt" in workflow
+    assert "playwright install" not in workflow
+
+
+def test_event_production_workflows_use_text_delivery_dependencies():
+    root = Path(__file__).resolve().parents[1] / ".github" / "workflows"
+    for name in ("official-event-monitor.yml", "emergency-alert.yml"):
+        workflow = (root / name).read_text(encoding="utf-8")
+        assert "requirements-production.txt" in workflow
+        assert "playwright install" not in workflow

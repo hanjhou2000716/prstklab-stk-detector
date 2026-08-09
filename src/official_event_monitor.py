@@ -15,7 +15,7 @@ from src.event_ledger import EventLedger, canonical_event_key
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import write_snapshot
 from src.release_gate import verify_release_for_delivery
-from src.telegram_client import send_briefs, summarize_deliveries, validate_brief
+from src.telegram_client import alert_mini_app_url, send_briefs, summarize_deliveries, validate_brief
 
 
 def _is_taiwan_market_window(now: datetime | None = None) -> bool:
@@ -268,11 +268,18 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         raise RuntimeError("缺少 Telegram 設定，無法送出官方事件快訊")
     observation_id = str(event.get("observation_id") or (event.get("instrument") or {}).get("observation_id") or "")
     trace_id = f"official-{observation_id or current_key[:20]}"
+    event_id = str(event.get("event_cluster_key") or event.get("event_key") or observation_id or trace_id)
     deliveries = send_briefs(
         token=settings.telegram_bot_token or "",
         chat_ids=settings.telegram_chat_ids,
         text=build_official_event_brief(event),
         dashboard_url=settings.dashboard_url,
+        target_url=alert_mini_app_url(
+            settings.dashboard_url,
+            alert_id=event_id,
+            release_id=gate.release_id,
+            snapshot_id=str(snapshot.get("snapshot_id") or ""),
+        ),
     )
     _write_delivery_output(trace_id=trace_id, deliveries=deliveries, event=event)
     delivery_summary = summarize_deliveries(deliveries)
