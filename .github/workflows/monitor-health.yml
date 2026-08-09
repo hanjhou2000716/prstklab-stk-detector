@@ -40,7 +40,7 @@ jobs:
         run: python -m src.monitor_health --payload "$MONITOR_HEALTH_PAYLOAD" --snapshot site/data/market.json --state site/data/monitor-health.json
       - name: Commit monitor diagnostics
         run: |
-          python -m src.release_manifest
+          python -m src.release_manifest --require-production-research
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --message "chore: publish monitor health diagnostics"
       - name: Configure GitHub Pages
         id: pages

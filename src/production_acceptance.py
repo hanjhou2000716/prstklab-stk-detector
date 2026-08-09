@@ -8,6 +8,7 @@ deliverable.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -22,6 +23,52 @@ def _count(value: Any) -> int:
         return max(0, int(value or 0))
     except (TypeError, ValueError):
         return 0
+
+
+def _parse_time(value: Any) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        return parsed.replace(tzinfo=UTC) if parsed.tzinfo is None else parsed.astimezone(UTC)
+    except (TypeError, ValueError):
+        return None
+
+
+def production_research_contract_errors(research: dict[str, Any]) -> list[str]:
+    """Return errors for a research artifact that is eligible for publication.
+
+    A report is not production-ready merely because it has rows.  The scan
+    must cover the declared universe, use the production/full contract and
+    explicitly opt in to publication.  This helper is shared by manifest and
+    delivery gates so a workflow cannot accidentally bypass the same rules.
+    """
+    errors: list[str] = []
+    if str(research.get("scan_mode") or "") != "production":
+        errors.append("research artifact is not a production scan")
+    if research.get("publish_eligible") is not True:
+        errors.append("production research is not publish_eligible")
+    if research.get("production_eligible") is not True:
+        errors.append("production research is not production_eligible")
+    if str(research.get("scan_scope") or "") != "full":
+        errors.append("production research scan scope is not full")
+    expected = _count(research.get("universe_expected"))
+    scanned = _count(research.get("universe_scanned"))
+    completed = _count(research.get("universe_completed"))
+    if expected <= 0 or scanned < expected or completed < expected:
+        errors.append("production research universe is incomplete")
+    for index, source in enumerate(research.get("sources", [])) if isinstance(research.get("sources"), list) else []:
+        if not isinstance(source, dict):
+            errors.append(f"research source {index} is not an object")
+            continue
+        if str(source.get("scan_state") or "") != "complete":
+            errors.append(f"research source {index} is not complete")
+        failed = _count(source.get("failed_records", source.get("failed")))
+        requested = _count(source.get("requested_records", source.get("requested")))
+        completed_source = _count(source.get("complete_records", source.get("data_complete")))
+        if requested <= 0 or completed_source < requested or failed:
+            errors.append(f"research source {index} universe is incomplete")
+    return sorted(set(errors))
 
 
 def validate_production_bundle(
@@ -46,20 +93,10 @@ def validate_production_bundle(
     # newly generated production report may never pass the delivery gate
     # while its universe is partial or a provider failed.
     scan_mode = str(research.get("scan_mode") or "")
-    if require_production_research and scan_mode != "production":
-        errors.append("research artifact is not a production scan")
-    if scan_mode == "production" or require_production_research:
-        if research.get("publish_eligible") is not True:
-            errors.append("production research is not publish_eligible")
-        if research.get("production_eligible") is not True:
-            errors.append("production research is not production_eligible")
-        research_expected = _count(research.get("universe_expected"))
-        completed = _count(research.get("universe_completed"))
-        scanned = _count(research.get("universe_scanned"))
-        if research_expected <= 0 or completed < research_expected or scanned < research_expected:
-            errors.append("production research universe is incomplete")
-        if str(research.get("scan_scope") or "") != "full":
-            errors.append("production research scan scope is not full")
+    if require_production_research:
+        errors.extend(production_research_contract_errors(research))
+    elif scan_mode == "production":
+        errors.extend(production_research_contract_errors(research))
 
     expected_market = str(manifest.get("market_snapshot_id") or "")
     expected_research = str(manifest.get("research_snapshot_id") or "")

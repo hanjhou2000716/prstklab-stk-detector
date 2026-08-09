@@ -15,6 +15,9 @@
     "policy_version": {"type": "string", "minLength": 1},
     "schema_versions": {"type": "object"},
     "artifact_hashes": {"type": "object", "minProperties": 1},
+    "research_freshness": {"enum": ["fresh", "stale_fallback", "unverified", "unknown"]},
+    "research_fallback_used": {"type": "boolean"},
+    "research_fallback_reason": {"type": ["string", "null"]},
     "status": {"enum": ["ready", "rolled_back", "invalid"]}
   },
   "additionalProperties": true

@@ -68,6 +68,7 @@ def attach_scan_contract(report: dict, scan_mode: str) -> dict:
         # the workflow keeps the last successful public research snapshot.
         "publish_eligible": scan_mode == "production" and full_scope,
         "production_eligible": scan_mode == "production" and full_scope,
+        "publication_state": "production" if scan_mode == "production" and full_scope else "diagnostic",
         "strategy_publication": strategy_publication,
         "blocking_reason": None if scan_mode == "production" and full_scope else (
             "smoke/debug scan is isolated from production publishing"

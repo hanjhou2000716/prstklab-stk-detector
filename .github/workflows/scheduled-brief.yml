@@ -92,7 +92,7 @@ jobs:
         run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --prepare-only --snapshot "$SNAPSHOT_PATH" >> "$GITHUB_OUTPUT"
       - name: Build release manifest
         if: steps.prepare.outputs.prepared == 'true'
-        run: python -m src.release_manifest
+        run: python -m src.release_manifest --require-production-research
       - name: Publish snapshot and manifest
         if: steps.prepare.outputs.prepared == 'true'
         run: |
