@@ -818,7 +818,8 @@ const loadPublishedRelease = async () => {
 loadPublishedRelease()
   .then((snapshot) => {
     render(snapshot);
-    setReleaseHealth(`資料正常｜release ${window.releaseManifest.release_id}`, "ready");
+    // Healthy is the normal state; keep engineering metadata out of the hero.
+    setReleaseHealth("", "ready");
   })
   .catch(async (error) => {
     const saved = await readLastGoodRelease();
