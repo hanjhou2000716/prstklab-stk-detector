@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -97,10 +98,11 @@ def public_quotes(
                     context = latest_quote_context(bars)
                     if context:
                         shares = (share_counts or {}).get(item["symbol"])
-                        quotes[item["symbol"]] = {
+                        quote: dict[str, Any] = {
                             **context, **heat_metrics(bars, shares_outstanding=shares),
                             "turnover_rate_basis": "Yahoo floatShares/shares proxy" if shares else None,
                         }
+                        quotes[item["symbol"]] = quote
                     else:
                         errors.append(f"{item['ticker']} 報價資料不足")
                 except (KeyError, TypeError, ValueError):

@@ -7,7 +7,7 @@ from typing import Any
 def build_macro_summary(
     events: dict[str, Any], risk: dict[str, Any], program: dict[str, Any] | None = None
 ) -> dict[str, Any]:
-    items = []
+    items: list[dict[str, Any]] = []
     if events.get("is_major"):
         for event in events.get("items", [])[:2]:
             items.append({"label": "事件", "text": f"{event['short_label']}：{event['title']}"})
@@ -26,7 +26,7 @@ def build_macro_summary(
             "text": program["title"],
             "url": program["url"],
             "source": program["source"],
-            "published_at": program.get("published_at"),
+            "published_at": str(program.get("published_at") or "") or None,
         })
     else:
         items.append({"label": "節目更新", "text": "最新公開節目暫時無法取得。"})

@@ -43,7 +43,11 @@ def quote_from_info(info: dict[str, Any]) -> dict[str, float | None]:
 
     close = number("currentPrice", "regularMarketPrice")
     previous = number("previousClose", "regularMarketPreviousClose")
-    change_percent = None if close is None or previous in (None, 0) else round((close / previous - 1) * 100, 2)
+    if close is None or previous in (None, 0):
+        change_percent = None
+    else:
+        assert previous is not None
+        change_percent = round((close / previous - 1) * 100, 2)
     return {"close": close, "change_percent": change_percent}
 
 

@@ -26,7 +26,7 @@ pipeline call and a tested consumer.
 | Strategy registry/explainability | `src/strategy_registry.py`, `src/advice_gate.py` | yes | partial | partial | partial | no | partially_integrated |
 | Backtest/cost model | `src/four_strategy_walk_forward.py`, `src/backtest_costs.py` | yes | scheduled | artifact | no | no | partially_integrated |
 | Release manifest/gate | `src/release_manifest.py`, `src/release_gate.py` | yes | yes | yes | loader gate | send gate | production |
-| Telegram delivery | `src/telegram_client.py`, `src/scheduled_delivery.py` | yes | release-gated text path; scoped photo smoke | receipt | deep-link button | validated `sendMessage` + scoped `sendPhoto` | production |
+| Telegram delivery | `src/telegram_client.py`, `src/scheduled_delivery.py` | yes | release-gated photo path | receipt | no | validated `sendPhoto` | production |
 | Mini App deep-link/timeline | `site/app.js`, `src/event_timeline.py` | yes | Pages | yes | yes | button target | production |
 | Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | briefing contract + optional endpoint/local queue | yes | feedback controls | no | partially_integrated |
 

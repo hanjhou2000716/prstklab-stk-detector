@@ -59,11 +59,11 @@ def _technical_line(item: dict[str, Any] | None, name: str) -> str:
     if context.get("status") != "ok":
         return f"{name}近20日區間資料不足，暫不判定支撐／壓力位置。"
     days = int(context.get("window_days") or 20)
-    low = float(context.get("low"))
-    high = float(context.get("high"))
+    low = float(str(context.get("low")))
+    high = float(str(context.get("high")))
     long_low = context.get("long_low")
     long_high = context.get("long_high")
-    position = float(context.get("position_pct"))
+    position = float(str(context.get("position_pct")))
     zone = context.get("zone") or "位於20日區間中段"
     as_of = str(context.get("as_of") or "").strip()
     long_range = ""
@@ -224,8 +224,14 @@ def _market_topics(items: dict[str, dict[str, Any]], events: list[dict[str, Any]
         {"title": "亞洲相關", "items": [_topic_quote(items, "NIKKEI", "日經225", "點"), _topic_quote(items, "KOSPI", "韓國綜合", "點")]},
         {"title": "美股相關", "items": [_topic_quote(items, "NASDAQ", "Nasdaq", "點"), _topic_quote(items, "SOX", "費半", "點")]},
     ]
-    fixed = {str(item.get("ticker")) for topic in topics for item in topic["items"]}
+    fixed = {
+        str(item.get("ticker"))
+        for topic in topics
+        for item in topic["items"]
+        if isinstance(item, dict)
+    }
     event_text = " ".join(str(event.get(key) or "") for event in events for key in ("event_type", "short_label", "brief_title", "title" )).lower()
+    dynamic_tickers: tuple[str, ...]
     dynamic_tickers = ("BTC", "ETH") if any(term in event_text for term in ("crypto", "加密", "btc", "eth")) else ()
     if any(term in event_text for term in ("oil", "energy", "能源", "原油", "gold", "黃金", "地緣")):
         dynamic_tickers += ("WTI", "BRENT", "GOLD")

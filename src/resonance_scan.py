@@ -8,7 +8,8 @@ from src.resonance_research import label, score_bars
 
 
 def build_resonance_snapshot(watchlist: tuple[dict[str, str], ...], histories=None) -> dict[str, Any]:
-    candidates, errors = [], []
+    candidates: list[dict[str, Any]] = []
+    errors: list[str] = []
     for item in watchlist:
         try:
             daily = histories[item["symbol"]] if histories and item["symbol"] in histories else download_daily_bars(item["symbol"])
@@ -17,5 +18,5 @@ def build_resonance_snapshot(watchlist: tuple[dict[str, str], ...], histories=No
                 candidates.append({"ticker": item["ticker"], "name": item["name"], "score": score, "status": label(score)})
         except Exception:
             errors.append(f"{item['ticker']} 共振資料暫時無法取得")
-    candidates.sort(key=lambda item: item["score"])
+    candidates.sort(key=lambda item: float(item.get("score") or 0))
     return {"status": "三維共振研究", "notice": "僅呈現 FGI 低於 56 的研究候選，不構成買賣建議。", "candidates": candidates[:10], "errors": errors}
