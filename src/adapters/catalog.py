@@ -1,0 +1,67 @@
+"""Allow-listed public source catalog.
+
+The catalog contains transport policy only.  Fetching remains explicit at the
+caller, so listing a provider never silently starts a network request.
+"""
+
+from __future__ import annotations
+
+import os
+from dataclasses import asdict, dataclass
+from typing import Any
+
+from src.source_adapter import AdapterConfig, JsonSourceAdapter
+
+DEFAULT_REPOSITORY_URL = "https://github.com/hanjhou2000716/prstklab-stk-detector"
+
+
+@dataclass(frozen=True)
+class AdapterSpec:
+    provider: str
+    endpoint: str
+    source_tier: str
+    can_trigger_alert: bool
+    update_frequency: str
+    requires_key: bool = False
+    user_agent: str = "PRStK-public-readonly/1.0"
+
+
+ADAPTER_CATALOG: tuple[AdapterSpec, ...] = (
+    AdapterSpec("TWSE", "https://mis.twse.com.tw/stock/api/getStockInfo.jsp", "official", True, "intraday"),
+    AdapterSpec("TAIFEX", "https://openapi.taifex.com.tw", "official", True, "intraday"),
+    AdapterSpec("TPEx", "https://www.tpex.org.tw", "official", True, "daily"),
+    AdapterSpec("Yahoo", "https://query1.finance.yahoo.com/v8/finance/chart", "public-market", False, "delayed"),
+    AdapterSpec("SEC", "https://www.sec.gov/cgi-bin/browse-edgar", "official", True, "event-driven"),
+    AdapterSpec("FRED", "https://api.stlouisfed.org/fred", "official", True, "daily", True),
+    AdapterSpec("EIA", "https://api.eia.gov/v2", "official", True, "daily", True),
+    AdapterSpec("Binance", "https://api.binance.com/api/v3", "public-market", False, "intraday"),
+    AdapterSpec("GDELT", "https://api.gdeltproject.org/api/v2/doc/doc", "discovery", False, "15-minute"),
+    AdapterSpec("ECB", "https://www.ecb.europa.eu/rss/press.html", "official", True, "event-driven"),
+)
+
+
+def _spec(provider: str) -> AdapterSpec:
+    for item in ADAPTER_CATALOG:
+        if item.provider.casefold() == provider.casefold():
+            return item
+    raise KeyError(f"unknown public provider: {provider}")
+
+
+def build_adapter(provider: str, *, parser=lambda payload: payload, transport=None, raw_store=None) -> JsonSourceAdapter:
+    """Build one configured adapter; credentials are supplied by the caller."""
+    spec = _spec(provider)
+    user_agent = spec.user_agent
+    if spec.provider == "SEC":
+        user_agent = os.getenv("SEC_USER_AGENT") or f"PRStK ({os.getenv('GITHUB_REPOSITORY_URL', DEFAULT_REPOSITORY_URL)})"
+    config = AdapterConfig(
+        provider=spec.provider,
+        endpoint=spec.endpoint,
+        source_tier=spec.source_tier,
+        user_agent=user_agent,
+    )
+    return JsonSourceAdapter(config=config, parser=parser, transport=transport, raw_store=raw_store)
+
+
+def build_adapter_catalog() -> list[dict[str, Any]]:
+    """Return a JSON-safe catalog for source health and audit pages."""
+    return [asdict(item) for item in ADAPTER_CATALOG]

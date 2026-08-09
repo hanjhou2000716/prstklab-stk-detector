@@ -588,6 +588,8 @@ def apply_public_market_secondary_crosscheck(
 
 
 def build_market_snapshot() -> dict[str, Any]:
+    from src.adapters.catalog import build_adapter_catalog
+
     """Build a browser-friendly snapshot; one ticker failure never stops others."""
     from src.briefing_cards import build_briefing_snapshot
     from src.event_alerts import build_event_snapshot
@@ -749,6 +751,7 @@ def build_market_snapshot() -> dict[str, Any]:
         }),
         "research_report": research_report,
         "source_health": source_health,
+        "source_catalog": build_adapter_catalog(),
         "evidence": {
             "quotes": quality_summary(quotes),
             "indices": quality_summary(indices),

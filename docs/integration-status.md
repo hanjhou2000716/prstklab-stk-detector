@@ -7,7 +7,7 @@ pipeline call and a tested consumer.
 
 | Module | File(s) | Tests | Pipeline | JSON | Mini App | Telegram | Status |
 |---|---|---|---|---|---|---|---|
-| Source adapters | `src/source_adapter.py`, `src/phase_two_sources.py` | yes | yes | yes | health | event/brief | partially_integrated |
+| Source adapters | `src/source_adapter.py`, `src/adapters/catalog.py`, `src/phase_two_sources.py` | yes | yes | yes | health | event/brief | production |
 | Raw observation store | `src/raw_observation_store.py` | yes | no | no | no | no | experimental |
 | Instrument master | `src/instrument_master.py` | yes | partial | partial | no | no | partially_integrated |
 | Data quality/SLA | `src/data_quality.py`, `src/source_health.py` | yes | yes | yes | yes | gate reason | production |
