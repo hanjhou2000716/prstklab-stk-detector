@@ -16,10 +16,13 @@ from typing import Any
 
 import requests
 
+from src.provider_health import classify_provider_error, error_token
+
 KOFIA_URL = "https://freesis.kofia.or.kr/stat/FreeSIS.do?parentDivId=MSIS10000000000000&serviceId=STATSCU0100000070"
 FRED_URL = "https://api.stlouisfed.org/fred/series/observations"
 EIA_URL = "https://api.eia.gov/v2/petroleum/pri/spt/data/"
 BINANCE_KLINES_URL = "https://api.binance.com/api/v3/klines"
+BINANCE_US_KLINES_URL = "https://api.binance.us/api/v3/klines"
 DEFAULT_FRED_SERIES = {"DFF": "effective federal funds rate", "DGS10": "US 10-year Treasury yield", "CPIAUCSL": "US CPI"}
 
 
@@ -115,7 +118,7 @@ def fetch_fred_snapshot(series_ids: dict[str, str] | None = None, *, timeout: in
                 raise ValueError("no observation")
             data[series_id] = {"label": label, "date": observations[0].get("date"), "value": _to_float(observations[0].get("value"))}
         except Exception as exc:
-            errors.append(f"{series_id}:{type(exc).__name__}")
+            errors.append(error_token("fred", series_id, exc))
     status = "healthy" if data and not errors else "partial" if data else "failed"
     return {"status": status, "data": data, "errors": errors, "fetched_at": checked_at,
             "health": _health("fred", "FRED 官方總經資料", FRED_URL, status, checked_at, item_count=len(data), data_gap=errors or None)}
@@ -168,6 +171,9 @@ def fetch_crypto_macd(*, timeout: int = 20) -> dict[str, Any]:
     checked_at = _now()
     results: dict[str, Any] = {}
     errors: list[str] = []
+    error_details: list[dict[str, Any]] = []
+    fallback_used = False
+    success_count = 0
     for asset in ("BTCUSDT", "ETHUSDT"):
         results[asset] = {}
         for interval in ("1w", "1M"):
@@ -178,10 +184,25 @@ def fetch_crypto_macd(*, timeout: int = 20) -> dict[str, Any]:
                 state = _macd_state([float(row[4]) for row in rows])
                 state.update({"interval": interval, "source_url": BINANCE_KLINES_URL, "fetched_at": checked_at})
                 results[asset][interval] = state
+                success_count += 1
             except Exception as exc:
-                errors.append(f"{asset}:{interval}:{type(exc).__name__}")
-    status = "healthy" if not errors else "partial" if results else "failed"
-    return {"status": status, "data": results, "errors": errors, "fetched_at": checked_at,
+                try:
+                    response = requests.get(BINANCE_US_KLINES_URL, params={"symbol": asset, "interval": interval, "limit": 80}, timeout=timeout)
+                    response.raise_for_status()
+                    rows = response.json()
+                    state = _macd_state([float(row[4]) for row in rows])
+                    state.update({"interval": interval, "source_url": BINANCE_US_KLINES_URL, "fetched_at": checked_at, "fallback_used": True})
+                    results[asset][interval] = state
+                    fallback_used = True
+                    success_count += 1
+                except Exception as fallback_exc:
+                    errors.extend([error_token("binance", f"{asset}:{interval}", exc), error_token("binance_us", f"{asset}:{interval}", fallback_exc)])
+                    error_details.extend([
+                        {"provider": "binance", "item": f"{asset}:{interval}", **classify_provider_error(exc)},
+                        {"provider": "binance_us", "item": f"{asset}:{interval}", **classify_provider_error(fallback_exc)},
+                    ])
+    status = "healthy" if success_count == 4 else "partial" if success_count else "failed"
+    return {"status": status, "data": results, "errors": errors, "error_details": error_details, "fallback_used": fallback_used, "fetched_at": checked_at,
             "health": _health("crypto_macd", "BTC／ETH MACD", BINANCE_KLINES_URL, status, checked_at, item_count=4, data_gap=errors or None)}
 
 
