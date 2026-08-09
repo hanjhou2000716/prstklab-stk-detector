@@ -48,6 +48,20 @@ when its output is missing, candidate counts are suppressed and the state is a
 data gap.  This prevents a summary file from making an unavailable CSV look
 like a formal candidate release.
 
+## Production research publication gate
+
+Production workflows invoke `src.release_manifest` with
+`--require-production-research`. A report must declare
+`scan_mode=production`, `scan_scope=full`, both eligibility flags, and complete
+every declared universe and source before a `ready` manifest can be published.
+Bounded, smoke, failed, or building scans remain diagnostic artifacts and
+cannot silently become a research release. If a previously valid production
+report is reused while a new scan is incomplete, the workflow may explicitly
+mark `research_fallback_used=true` and `research_freshness=stale_fallback`;
+legacy or contract-incomplete reports remain blocked. This prevents a market
+refresh from combining a new market snapshot with an unverified historical
+research file.
+
 ## Investor-facing disclosure contract
 
 The Mini App keeps investor content and engineering evidence in separate
