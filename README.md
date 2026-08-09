@@ -548,6 +548,14 @@ The production notification contract is one `sendPhoto` message: a caption of
 at most 40 Unicode characters, a fixed 1080×1350 PNG and a deep-link Mini App
 button.  Publishing and manifest verification always complete before delivery.
 
+### Production notification mode
+
+Scheduled production delivery is text-only (`sendMessage`) and keeps the
+existing 30-character caption plus the Mini App deep-link button. The fixed
+1080×1350 renderer is reserved for the explicitly scoped `photo_test` smoke
+workflow, so browser/font failures cannot block normal market delivery. See
+[`docs/telegram-production-text.md`](docs/telegram-production-text.md).
+
 ### Renderer and release recovery
 
 Production photo delivery requires the locked Playwright/Pillow dependencies

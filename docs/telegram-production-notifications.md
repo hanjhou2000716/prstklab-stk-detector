@@ -1,5 +1,9 @@
 # Telegram production notification policy
 
+> Current policy: scheduled production uses `sendMessage` text delivery. The
+> legacy photo description below applies only to the scoped `photo_test`
+> diagnostic workflow; see `docs/telegram-production-text.md`.
+
 Production scheduled and event notifications use one `sendPhoto` message after
 the release gate succeeds. The message contains a short caption (maximum 40
 Unicode characters), a validated 1080x1350 PNG, and a Mini App inline button
