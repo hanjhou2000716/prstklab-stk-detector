@@ -13,6 +13,7 @@ def test_fred_never_calls_without_key(monkeypatch):
     result = fetch_fred_snapshot()
     assert result["status"] == "missing_api_key"
     assert result["data"] == {}
+    assert result["health"]["state"] == "configuration_required"
 
 
 def test_eia_never_calls_without_key(monkeypatch):
@@ -20,6 +21,7 @@ def test_eia_never_calls_without_key(monkeypatch):
     result = fetch_eia_snapshot()
     assert result["status"] == "missing_api_key"
     assert result["data"] == {}
+    assert result["health"]["state"] == "configuration_required"
 
 
 def test_kofia_reports_unambiguous_gap(monkeypatch):
@@ -32,3 +34,4 @@ def test_kofia_reports_unambiguous_gap(monkeypatch):
     result = fetch_kofia_credit_margin()
     assert result["status"] == "data_gap"
     assert result["health"]["status"] == "partial"
+    assert result["health"]["state"] == "optional_degraded"
