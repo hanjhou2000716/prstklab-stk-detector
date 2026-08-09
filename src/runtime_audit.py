@@ -101,7 +101,7 @@ def audit_artifacts(
         issues.append(f"Mini App entry missing or empty: {index_path}")
     market_counts = _audit_market(market, issues, warnings) if market else {"indices": 0, "quotes": 0}
     research_counts = _audit_research(research, issues, warnings) if research else {"sources": 0, "candidates": 0}
-    if manifest and market and research and manifest.get("event_snapshot_id"):
+    if manifest and market and research and manifest.get("event_snapshot_id") and manifest_path.parent == market_path.parent:
         events = _load_json(Path("site/data/event-ledger.json"), "events", issues)
         if events:
             acceptance = validate_production_bundle(manifest=manifest, market=market, research=research, events=events)
