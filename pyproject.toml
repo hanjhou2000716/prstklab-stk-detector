@@ -14,6 +14,9 @@ dependencies = [
   "httpx>=0.27,<1",
   "jsonschema>=4.23,<5",
   "Pillow>=10,<13",
+  # NumPy 2.4 ships stubs using Python 3.12-only syntax.  CI and scheduled
+  # jobs still support Python 3.11, so keep the type/runtime matrix aligned.
+  "numpy>=1.26,<2.4",
 ]
 
 [dependency-groups]

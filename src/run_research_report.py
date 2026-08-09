@@ -53,7 +53,9 @@ def attach_scan_contract(report: dict, scan_mode: str) -> dict:
         strategy_publication.append({
             "market": source.get("market"), "strategy": source.get("strategy"),
             "eligible": eligible, "state": source_state,
-            "blocking_reason": None if eligible else "本策略本輪未完成，保留觀察／上一成功版本",
+            "blocking_reason": None if eligible else (
+                "研究資料尚未完成全市場核對；本策略僅供觀察，不列入正式發布"
+            ),
         })
     report.update({
         "scan_mode": scan_mode,
@@ -61,13 +63,16 @@ def attach_scan_contract(report: dict, scan_mode: str) -> dict:
         "universe_expected": requested,
         "universe_scanned": completed + failed,
         "universe_completed": completed,
-        "publish_eligible": scan_mode == "production",
+        # A production-shaped report is not automatically publishable. A
+        # partial scan is retained as an explicit diagnostic artifact while
+        # the workflow keeps the last successful public research snapshot.
+        "publish_eligible": scan_mode == "production" and full_scope,
         "production_eligible": scan_mode == "production" and full_scope,
         "strategy_publication": strategy_publication,
         "blocking_reason": None if scan_mode == "production" and full_scope else (
             "smoke/debug scan is isolated from production publishing"
             if scan_mode != "production"
-            else "one or more research sources are incomplete or failed"
+            else "一個以上研究來源尚未完成或發生失敗；等待下一輪完整掃描"
         ),
     })
     return report

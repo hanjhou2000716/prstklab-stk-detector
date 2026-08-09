@@ -26,6 +26,16 @@ def test_research_workflow_clears_previous_scan_artifacts_and_fails_closed_on_in
     assert "src.release_manifest ||" not in workflow
 
 
+def test_incomplete_research_keeps_last_successful_snapshot_and_uploads_diagnostic():
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "unified-research-report.yml").read_text(encoding="utf-8")
+
+    assert "Save last successful research snapshot" in workflow
+    assert "Gate research publication and preserve previous success" in workflow
+    assert "research-report-latest.json" in workflow
+    assert "keeping the last successful research snapshot" in workflow
+    assert "steps.research_gate.outputs.publish == 'true'" in workflow
+
+
 def test_post_close_brief_is_scheduled_for_1445_taipei_time():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
     assert 'cron: "45 6 * * 1-5"' in workflow

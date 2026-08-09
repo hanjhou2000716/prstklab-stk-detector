@@ -40,6 +40,22 @@ def validate_production_bundle(
     if not release_id:
         errors.append("release_id is missing")
 
+    # New research artifacts carry an explicit publication contract. Legacy
+    # snapshots without these fields remain readable for rollback, but a
+    # newly generated production report may never pass the delivery gate
+    # while its universe is partial or a provider failed.
+    scan_mode = str(research.get("scan_mode") or "")
+    if scan_mode == "production":
+        if research.get("publish_eligible") is not True:
+            errors.append("production research is not publish_eligible")
+        if research.get("production_eligible") is not True:
+            errors.append("production research is not production_eligible")
+        research_expected = _count(research.get("universe_expected"))
+        completed = _count(research.get("universe_completed"))
+        scanned = _count(research.get("universe_scanned"))
+        if research_expected <= 0 or completed < research_expected or scanned < research_expected:
+            errors.append("production research universe is incomplete")
+
     expected_market = str(manifest.get("market_snapshot_id") or "")
     expected_research = str(manifest.get("research_snapshot_id") or "")
     expected_events = str(manifest.get("event_snapshot_id") or "")
