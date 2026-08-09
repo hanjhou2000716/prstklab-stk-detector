@@ -1,4 +1,12 @@
-from src.phase_two_sources import _macd_state, fetch_eia_snapshot, fetch_fred_snapshot, fetch_kofia_credit_margin
+from urllib.parse import urlparse
+
+from src.phase_two_sources import (
+    _macd_state,
+    fetch_crypto_macd,
+    fetch_eia_snapshot,
+    fetch_fred_snapshot,
+    fetch_kofia_credit_margin,
+)
 
 
 def test_macd_detects_bearish_cross():
@@ -35,3 +43,30 @@ def test_kofia_reports_unambiguous_gap(monkeypatch):
     assert result["status"] == "data_gap"
     assert result["health"]["status"] == "partial"
     assert result["health"]["state"] == "optional_degraded"
+
+
+def test_crypto_macd_uses_binance_us_fallback_and_counts_success(monkeypatch):
+    rows = [[0, 0, 0, 0, float(index), 0] for index in range(80)]
+
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self.payload
+
+    def requester(url, **kwargs):
+        if urlparse(url).hostname == "api.binance.com":
+            raise RuntimeError("blocked")
+        return Response(rows)
+
+    monkeypatch.setattr("src.phase_two_sources.requests.get", requester)
+    result = fetch_crypto_macd()
+
+    assert result["status"] == "healthy"
+    assert result["fallback_used"] is True
+    assert result["health"]["item_count"] == 4
+    assert all(state["fallback_used"] for values in result["data"].values() for state in values.values())

@@ -8,7 +8,10 @@ from typing import Any
 
 import requests
 
+from src.provider_health import classify_provider_error, error_token
+
 BINANCE_TICKER_URL = "https://api.binance.com/api/v3/ticker/24hr"
+BINANCE_US_TICKER_URL = "https://api.binance.us/api/v3/ticker/24hr"
 COINGECKO_SIMPLE_URL = "https://api.coingecko.com/api/v3/simple/price"
 ASSETS = {
     "BTC": {"binance": "BTCUSDT", "coingecko": "bitcoin"},
@@ -20,7 +23,15 @@ def _now() -> str:
     return datetime.now(UTC).isoformat()
 
 
-def _health(status: str, checked_at: str, errors: list[str], item_count: int) -> dict[str, Any]:
+def _health(
+    status: str,
+    checked_at: str,
+    errors: list[str],
+    item_count: int,
+    *,
+    error_details: list[dict[str, Any]] | None = None,
+    fallback_used: bool = False,
+) -> dict[str, Any]:
     return {
         "key": "crypto_spot",
         "source_key": "crypto_spot",
@@ -31,6 +42,8 @@ def _health(status: str, checked_at: str, errors: list[str], item_count: int) ->
         "checked_at": checked_at,
         "item_count": item_count,
         "data_gap": errors or None,
+        "error_details": error_details or None,
+        "fallback_used": fallback_used,
     }
 
 
@@ -66,10 +79,40 @@ def fetch_crypto_spot_snapshot(*, timeout: int = 15, requester: Callable[..., An
     primary: dict[str, dict[str, Any]] = {}
     secondary: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
+    error_details: list[dict[str, Any]] = []
+    fallback_used = False
 
     for ticker, config in ASSETS.items():
+        row: Any = None
+        selected_url = BINANCE_TICKER_URL
+        selected_domain = "api.binance.com"
         try:
             row = _request_json(requester, BINANCE_TICKER_URL, params={"symbol": config["binance"]}, timeout=timeout)
+        except Exception as primary_exc:
+            # Binance.US is a same-provider-family availability fallback.  It
+            # keeps the card observable during regional blocks, but it never
+            # counts as the independent CoinGecko cross-check.
+            try:
+                row = _request_json(
+                    requester,
+                    BINANCE_US_TICKER_URL,
+                    params={"symbol": config["binance"]},
+                    timeout=timeout,
+                )
+                selected_url = BINANCE_US_TICKER_URL
+                selected_domain = "api.binance.us"
+                fallback_used = True
+            except Exception as fallback_exc:
+                errors.append(error_token("binance", ticker, primary_exc))
+                errors.append(error_token("binance_us", ticker, fallback_exc))
+                error_details.extend(
+                    [
+                        {"provider": "binance", "item": ticker, **classify_provider_error(primary_exc)},
+                        {"provider": "binance_us", "item": ticker, **classify_provider_error(fallback_exc)},
+                    ]
+                )
+                continue
+        try:
             price = float(row["lastPrice"])
             primary[ticker] = {
                 "ticker": ticker,
@@ -78,12 +121,13 @@ def fetch_crypto_spot_snapshot(*, timeout: int = 15, requester: Callable[..., An
                 "quote_time": datetime.fromtimestamp(int(row.get("closeTime", 0)) / 1000, UTC).isoformat()
                 if row.get("closeTime") else checked_at,
                 "quote_basis": "盤中",
-                "quote_source": "Binance public spot quote",
-                "source_url": f"{BINANCE_TICKER_URL}?symbol={config['binance']}",
-                "source_domain": "api.binance.com",
+                "quote_source": "Binance.US public spot quote" if selected_domain == "api.binance.us" else "Binance public spot quote",
+                "source_url": f"{selected_url}?symbol={config['binance']}",
+                "source_domain": selected_domain,
             }
         except Exception as exc:
-            errors.append(f"binance:{ticker}:{type(exc).__name__}")
+            errors.append(error_token("binance", ticker, exc))
+            error_details.append({"provider": "binance", "item": ticker, **classify_provider_error(exc)})
 
     try:
         payload = _request_json(
@@ -113,7 +157,8 @@ def fetch_crypto_spot_snapshot(*, timeout: int = 15, requester: Callable[..., An
                 "source_domain": "api.coingecko.com",
             }
     except Exception as exc:
-        errors.append(f"coingecko:{type(exc).__name__}")
+        errors.append(error_token("coingecko", "spot", exc))
+        error_details.append({"provider": "coingecko", "item": "spot", **classify_provider_error(exc)})
 
     status = "healthy" if primary and secondary and not errors else "partial" if primary or secondary else "failed"
     return {
@@ -121,6 +166,15 @@ def fetch_crypto_spot_snapshot(*, timeout: int = 15, requester: Callable[..., An
         "primary": primary,
         "secondary": secondary,
         "errors": errors,
+        "error_details": error_details,
+        "fallback_used": fallback_used,
         "fetched_at": checked_at,
-        "health": _health(status, checked_at, errors, len(primary) + len(secondary)),
+        "health": _health(
+            status,
+            checked_at,
+            errors,
+            len(primary) + len(secondary),
+            error_details=error_details,
+            fallback_used=fallback_used,
+        ),
     }
