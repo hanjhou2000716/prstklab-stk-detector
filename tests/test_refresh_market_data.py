@@ -22,7 +22,25 @@ def test_write_snapshot_publishes_metadata_atomically(tmp_path):
     assert payload["snapshot_schema_version"] == "3.0"
     assert len(payload["snapshot_id"]) == 16
     assert payload["snapshot_published_at"]
+    assert payload["raw_observation"] == {
+        "enabled": False,
+        "recorded": False,
+        "reason": "not_configured",
+    }
     assert not list(tmp_path.glob(".*.tmp"))
+
+
+def test_write_snapshot_records_normalized_artifact_when_store_configured(tmp_path, monkeypatch):
+    monkeypatch.setenv("RAW_OBSERVATION_ROOT", str(tmp_path / "raw"))
+    destination = tmp_path / "market.json"
+    snapshot = _snapshot("2026-08-09T10:00:00+08:00", "2026-08-09T10:01:00+08:00")
+    assert write_snapshot(snapshot, destination) is True
+    payload = json.loads(destination.read_text(encoding="utf-8"))
+    metadata = payload["raw_observation"]
+    assert metadata["enabled"] is True
+    assert metadata["recorded"] is True
+    assert len(metadata["observation_id"]) == 32
+    assert list((tmp_path / "raw").rglob("*.json"))
 
 
 def test_write_snapshot_binds_quotes_and_events_to_snapshot(tmp_path):

@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from src.market_data import build_market_snapshot
+from src.production_evidence import record_market_snapshot_observation
 
 
 def _iso(value: object) -> str:
@@ -37,6 +38,9 @@ def _prepare_snapshot(snapshot: dict) -> dict:
     payload["snapshot_id"] = hashlib.sha256(digest_payload.encode("utf-8")).hexdigest()[:16]
     _attach_observation_provenance(payload)
     payload["snapshot_published_at"] = datetime.now(UTC).isoformat()
+    # Keep the public artifact linked to the immutable normalized observation
+    # when the append-only store is configured. Only safe metadata is exposed.
+    payload["raw_observation"] = record_market_snapshot_observation(payload)
     return payload
 
 
