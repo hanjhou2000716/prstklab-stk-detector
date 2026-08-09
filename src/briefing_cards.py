@@ -269,6 +269,9 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
     intelligence = build_intelligence_context(
         lead if isinstance(lead, dict) else {"title": "briefing"},
         observed_quotes,
+        macro=(snapshot.get("macro") if isinstance(snapshot.get("macro"), dict) and {
+            "expected", "actual"
+        }.issubset(snapshot["macro"]) else None),
         regime_factors={
             "broad_market": 1 if (average_change or 0) > 0.5 else -1 if (average_change or 0) < -0.5 else 0,
         },
