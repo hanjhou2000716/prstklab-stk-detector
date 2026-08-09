@@ -22,7 +22,8 @@ def test_research_workflow_clears_previous_scan_artifacts_and_fails_closed_on_in
 
     assert "Clear previous research scan artifacts" in workflow
     assert "rm -f data/*-scan*.csv data/*-summary*.json" in workflow
-    assert "run: python -m src.release_manifest\n" in workflow
+    assert "python -m src.release_manifest" in workflow
+    assert "--require-production-research" in workflow
     assert "src.release_manifest ||" not in workflow
 
 

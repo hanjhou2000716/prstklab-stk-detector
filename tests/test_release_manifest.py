@@ -44,6 +44,50 @@ def test_manifest_fails_closed_for_missing_artifact(tmp_path):
     assert any("missing artifact" in item for item in manifest["validation_errors"])
 
 
+def test_strict_manifest_rejects_legacy_research_artifact(tmp_path):
+    _artifacts(tmp_path)
+    manifest = build_release_manifest(root=tmp_path, require_production_research=True)
+    assert manifest["status"] == "invalid"
+    assert any("not a production scan" in item for item in manifest["validation_errors"])
+
+
+def test_strict_manifest_marks_explicit_stale_fallback(tmp_path):
+    _artifacts(tmp_path)
+    data = tmp_path / "site" / "data"
+    research = json.loads((data / "research-report.json").read_text(encoding="utf-8"))
+    research.update({
+        "scan_mode": "production", "scan_scope": "full", "publish_eligible": True,
+        "production_eligible": True, "universe_expected": 1, "universe_scanned": 1,
+        "universe_completed": 1,
+    })
+    (data / "research-report.json").write_text(json.dumps(research), encoding="utf-8")
+    manifest = build_release_manifest(
+        root=tmp_path,
+        require_production_research=True,
+        allow_stale_research=True,
+        research_fallback_reason="last-known-good research snapshot",
+    )
+    assert manifest["status"] == "ready"
+    assert manifest["research_freshness"] == "stale_fallback"
+    assert manifest["research_fallback_used"] is True
+
+
+def test_strict_manifest_rejects_missing_production_timestamps(tmp_path):
+    _artifacts(tmp_path)
+    data = tmp_path / "site" / "data"
+    research = json.loads((data / "research-report.json").read_text(encoding="utf-8"))
+    research.update({
+        "scan_mode": "production", "scan_scope": "full", "publish_eligible": True,
+        "production_eligible": True, "universe_expected": 1, "universe_scanned": 1,
+        "universe_completed": 1,
+    })
+    research.pop("generated_at", None)
+    (data / "research-report.json").write_text(json.dumps(research), encoding="utf-8")
+    manifest = build_release_manifest(root=tmp_path, require_production_research=True)
+    assert manifest["status"] == "invalid"
+    assert any("generated_at" in item for item in manifest["validation_errors"])
+
+
 def test_manifest_detects_hash_tampering(tmp_path):
     _artifacts(tmp_path)
     manifest = build_release_manifest(root=tmp_path)
