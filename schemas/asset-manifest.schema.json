@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["asset_version", "entries"],
+  "properties": {
+    "asset_version": {"type": "string", "minLength": 8},
+    "build_sha": {"type": ["string", "null"]},
+    "entries": {
+      "type": "object",
+      "minProperties": 3,
+      "additionalProperties": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+    }
+  },
+  "additionalProperties": false
+}
