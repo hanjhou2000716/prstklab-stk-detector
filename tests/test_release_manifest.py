@@ -1,6 +1,16 @@
 import json
 
-from src.release_manifest import build_release_manifest, verify_release_files, write_release_manifest
+from src.release_manifest import (
+    _gap_count,
+    _normalize_market,
+    _normalize_research,
+    _read_object,
+    build_release_manifest,
+    content_snapshot_id,
+    sha256_file,
+    verify_release_files,
+    write_release_manifest,
+)
 
 
 def _artifacts(tmp_path):
@@ -163,3 +173,65 @@ def test_manifest_downgrades_stale_live_quote_and_blocks_alert(tmp_path):
     quote = json.loads((site_data / "market.json").read_text(encoding="utf-8"))["indices"][0]
     assert quote["freshness"] == "recent_close"
     assert quote["alert_eligible"] is False
+
+
+def test_manifest_helpers_cover_invalid_objects_and_gap_types(tmp_path):
+    missing, error = _read_object(tmp_path / "missing.json")
+    assert missing is None and "missing artifact" in error
+    bad = tmp_path / "bad.json"
+    bad.write_text("[]", encoding="utf-8")
+    value, error = _read_object(bad)
+    assert value is None and "must be an object" in error
+    assert _gap_count(True) == 1
+    assert _gap_count(2.0) == 2
+    assert _gap_count({"a": 2, "b": 1.5}) == 3
+    assert _gap_count("not-a-count") is None
+    assert content_snapshot_id({}, "market").startswith("market-")
+    payload = tmp_path / "payload"
+    payload.write_bytes(b"abc")
+    assert len(sha256_file(payload)) == 64
+
+
+def test_manifest_normalizers_reconcile_provider_and_candidate_fields():
+    market = {
+        "indices": [{
+            "ticker": "TPEx", "source_url": "https://www.tpex.org.tw/q",
+            "source_label": "Yahoo", "quote_source": "Yahoo", "source_domain": "old.example",
+            "quote_date": "2026-08-09", "technical_context": {"as_of": "2026-08-01"},
+            "freshness": "live", "stale_used": True, "alert_eligible": True,
+        }],
+        "quotes": [],
+    }
+    notes = _normalize_market(market)
+    quote = market["indices"][0]
+    assert notes and quote["source_label"] == "TPEx"
+    assert quote["source_domain"] == "tpex.org.tw"
+    assert quote["freshness"] == "recent_close"
+    assert quote["technical_context_stale"] is True
+    research = {"sources": [{"candidates": 2, "formal_candidates": 3, "data_gap_counts": {"a": 1}}]}
+    notes = _normalize_research(research)
+    source = research["sources"][0]
+    assert notes and source["visible_candidates"] == 2
+    assert source["candidate_state"] == "data_gap"
+    assert source["formal_candidates"] == 0
+
+
+def test_verify_release_files_reports_missing_hash_and_path(tmp_path):
+    errors = verify_release_files({"artifact_hashes": {"market.json": "x", "event.json": "y"}, "artifact_paths": {"market.json": "missing.json"}}, root=tmp_path)
+    assert any("artifact missing" in item for item in errors)
+    assert any("artifact missing" in item for item in errors)
+    assert verify_release_files({"artifact_hashes": None, "artifact_paths": None}, root=tmp_path)
+
+
+def test_manifest_read_object_rejects_invalid_json(tmp_path):
+    path = tmp_path / "invalid.json"
+    path.write_text("{", encoding="utf-8")
+    value, error = _read_object(path)
+    assert value is None and "JSONDecodeError" in error
+
+
+def test_manifest_normalizer_handles_non_lists_and_unknown_provider():
+    market = {"indices": "invalid", "quotes": [{"source_url": "https://example.test/q", "source_label": ""}]}
+    assert _normalize_market(market)
+    assert market["quotes"][0].get("source_label") == ""
+    assert _normalize_research({"sources": "invalid"}) == []

@@ -92,6 +92,7 @@ class SourceObservation:
         return "unknown" if self.stale_used else "fresh"
 
     def provenance(self) -> dict[str, Any]:
+        quality = self.quality()
         return {
             "provider": self.provider,
             "endpoint": self.endpoint,
@@ -108,7 +109,48 @@ class SourceObservation:
             "parsing_status": self.parsing_status,
             "stale_used": self.stale_used,
             "freshness": self.freshness,
+            "data_quality_score": quality["data_quality_score"],
+            "quality_freshness": quality["freshness"],
+            "quality_reasons": quality["reasons"],
+            "display_eligible": quality["display_eligible"],
+            "alert_eligible": quality["alert_eligible"],
         }
+
+    def quality(self, *, now: datetime | None = None) -> dict[str, Any]:
+        """Score this observation without treating it as cross-checked.
+
+        An adapter can prove availability, parsing and freshness, but it cannot
+        claim independent market confirmation by itself.  The shared quality
+        scorer therefore keeps ``crosscheck_missing`` and ``alert_eligible``
+        false until a caller supplies a second-source reconciliation.
+        """
+        from src.data_quality import score_source
+
+        status = "failed" if self.error else "healthy"
+        result = score_source(
+            {
+                "provider": self.provider,
+                "status": status,
+                "fetched_at": self.fetched_at,
+                "cross_checked": False,
+                "completeness": 100 if self.payload is not None and not self.error else 0,
+                "parsing_confidence": 100 if self.parsing_status == "parsed" and not self.error else 0,
+                "stale_used": self.stale_used,
+                "consecutive_failures": 1 if self.error else 0,
+            },
+            now=now,
+        )
+        # ``fetched_at`` records when the fallback was read, not when the
+        # provider produced the cached payload.  Never let a freshly fetched
+        # stale fallback score as live or become alert eligible.
+        if self.stale_used:
+            result["freshness"] = "stale"
+            result["data_quality_score"] = 0.0
+            result["alert_eligible"] = False
+            result["display_eligible"] = False
+            if "stale_used" not in result["reasons"]:
+                result["reasons"].append("stale_used")
+        return result
 
 
 @dataclass

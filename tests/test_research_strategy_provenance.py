@@ -18,6 +18,8 @@ def test_research_candidate_without_backtest_is_observation_only(tmp_path):
     candidate = result["candidates"][0]
     assert candidate["strategy_binding"]["state"] == "observation_only"
     assert candidate["advice_gate"] == "observation_only"
+    assert candidate["explainability"]["advice_gate"]["allowed"] is False
+    assert "backtest" in candidate["explainability"]["advice_gate"]["blocking_reasons"]
 
 
 def test_research_candidate_with_backtest_can_be_bound(tmp_path):
@@ -33,3 +35,4 @@ def test_research_candidate_with_backtest_can_be_bound(tmp_path):
 
     candidate = load_research_cards(path)["candidates"][0]
     assert candidate["strategy_binding"]["state"] == "production"
+    assert candidate["explainability"]["advice_gate"]["allowed"] is False

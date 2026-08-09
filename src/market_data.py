@@ -588,6 +588,8 @@ def apply_public_market_secondary_crosscheck(
 
 
 def build_market_snapshot() -> dict[str, Any]:
+    from src.adapters.catalog import build_adapter_catalog
+
     """Build a browser-friendly snapshot; one ticker failure never stops others."""
     from src.briefing_cards import build_briefing_snapshot
     from src.event_alerts import build_event_snapshot
@@ -633,7 +635,11 @@ def build_market_snapshot() -> dict[str, Any]:
         errors = [error for error in errors if error.get("ticker") != "TPEx"]
     quotes = annotate_quote_freshness(quotes)
     indices = annotate_quote_freshness(indices)
-    from src.production_evidence import bind_market_evidence, quality_summary
+    from src.production_evidence import (
+        bind_market_evidence,
+        quality_summary,
+        raw_observation_store_summary,
+    )
 
     quotes = bind_market_evidence(quotes)
     indices = bind_market_evidence(indices)
@@ -749,9 +755,11 @@ def build_market_snapshot() -> dict[str, Any]:
         }),
         "research_report": research_report,
         "source_health": source_health,
+        "source_catalog": build_adapter_catalog(),
         "evidence": {
             "quotes": quality_summary(quotes),
             "indices": quality_summary(indices),
         },
+        "raw_observation_store": raw_observation_store_summary(),
         "errors": errors,
     }

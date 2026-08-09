@@ -44,3 +44,39 @@ def test_photo_broadcast_isolates_one_failed_recipient(monkeypatch, tmp_path):
     )
     assert calls == ["blocked", "ok"]
     assert [item.status for item in receipts] == ["failed", "delivered"]
+
+
+def test_photo_delivery_validates_inputs(tmp_path):
+    import pytest
+    photo = tmp_path / "card.png"
+    photo.write_bytes(b"png")
+    with pytest.raises(ValueError):
+        send_photo_brief(token="t", chat_id="1", caption="", photo_path=photo, mini_app_url="https://example.test", alert_id="a", release_id="r", snapshot_id="s")
+    with pytest.raises(ValueError):
+        send_photo_brief(token="t", chat_id="1", caption="ok", photo_path=photo, mini_app_url="http://example.test", alert_id="a", release_id="r", snapshot_id="s")
+    with pytest.raises(FileNotFoundError):
+        send_photo_brief(token="t", chat_id="1", caption="ok", photo_path=tmp_path / "missing", mini_app_url="https://example.test", alert_id="a", release_id="r", snapshot_id="s")
+
+
+def test_photo_delivery_records_api_error_and_rate_limit_retry(monkeypatch, tmp_path):
+    photo = tmp_path / "card.png"
+    photo.write_bytes(b"png")
+    sleeps = []
+
+    class Response:
+        ok = False
+        status_code = 429
+        def json(self):
+            return {"ok": False, "parameters": {"retry_after": 1}}
+
+    monkeypatch.setattr(telegram_client.requests, "post", lambda *args, **kwargs: Response())
+    monkeypatch.setattr(telegram_client, "sleep", sleeps.append)
+    receipt = send_photo_brief(token="t", chat_id="1", caption="ok", photo_path=photo, mini_app_url="https://example.test", alert_id="a", release_id="r", snapshot_id="s")
+    assert receipt.status == "failed" and receipt.error_class == "temporary_transport"
+    assert sleeps == [1, 1]
+
+
+def test_send_photo_briefs_rejects_empty_recipients(tmp_path):
+    import pytest
+    with pytest.raises(ValueError, match="recipient"):
+        send_photo_briefs(token="t", chat_ids=(), caption="ok", photo_path=tmp_path / "x", mini_app_url="https://example.test", alert_id="a", release_id="r", snapshot_id="s")

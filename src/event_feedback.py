@@ -17,6 +17,36 @@ FEEDBACK_LABELS = {
     "not_needed",
 }
 
+FEEDBACK_LABEL_ORDER = (
+    "correct",
+    "irrelevant",
+    "duplicate",
+    "wrong_direction",
+    "insufficient_source",
+    "too_late",
+    "not_needed",
+)
+
+
+def build_feedback_contract(event: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Build a public feedback affordance without exposing recipient data."""
+    event = event or {}
+    event_key = str(event.get("event_key") or event.get("event_cluster_key") or "").strip()
+    contract: dict[str, Any] = {
+        "enabled": True,
+        "labels": list(FEEDBACK_LABEL_ORDER),
+        "storage": "review_queue",
+        "review_required": True,
+        "policy_update_allowed": False,
+        "pii_included": False,
+    }
+    if event_key:
+        contract["event_key"] = event_key
+    event_type = str(event.get("event_type") or "").strip()
+    if event_type:
+        contract["event_type"] = event_type
+    return contract
+
 
 def _timestamp(value: Any) -> str:
     if value is None or not str(value).strip():

@@ -34,10 +34,9 @@ jobs:
       - name: Reset coverage data
         run: uv run coverage erase
       - name: Run full unit tests and publish coverage report
-        # The full repository report remains visible.  The 73% floor is the
-        # measured legacy baseline; the newly integrated release/delivery code
-        # is held to the strict 80% gate below until the legacy debt is retired.
-        run: uv run pytest -q --cov=src --cov-report=term-missing --cov-report=xml --cov-fail-under=73
+        # CLI wrappers are covered by subprocess/E2E jobs; library modules
+        # remain in the project-wide 80% floor configured in pyproject.toml.
+        run: uv run pytest -q --cov=src --cov-report=term-missing --cov-report=xml --cov-fail-under=80
       - name: Enforce core release and delivery coverage gate
         run: >-
           uv run pytest -q
@@ -54,7 +53,7 @@ jobs:
           --cov=src.release_gate
           --cov=src.system_dry_run
           --cov-report=term-missing
-          --cov-fail-under=80
+          --cov-fail-under=90
       - name: Ruff baseline (new violations fail)
         run: uv run ruff check src/data_release.py tests/test_data_release.py
       - name: Mypy baseline (new module)

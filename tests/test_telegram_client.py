@@ -1,6 +1,7 @@
 import pytest
 import requests
 
+from src import telegram_client
 from src.telegram_client import (
     mini_app_button,
     mini_app_menu_button,
@@ -50,6 +51,39 @@ def test_mini_app_menu_button_uses_persistent_web_app_shape():
         "text": "稜量系統",
         "web_app": {"url": "https://example.github.io/app/"},
     }
+
+
+def test_configure_mini_app_menus_isolates_unstarted_chat(monkeypatch):
+    calls = []
+    class Response:
+        ok = True
+        def __init__(self, chat_id): self.chat_id = chat_id
+        def json(self):
+            if self.chat_id == "blocked":
+                return {"ok": False, "description": "bot was blocked by the user"}
+            return {"ok": True}
+    def post(url, json, timeout):
+        calls.append(json)
+        return Response(json.get("chat_id"))
+    monkeypatch.setattr("src.telegram_client.requests.post", post)
+    results = telegram_client.configure_mini_app_menus(token="t", chat_ids=("ok", "blocked"), mini_app_url="https://example.test")
+    assert [item.delivered for item in results] == [True, False]
+    assert len(calls) == 3
+
+
+def test_send_briefs_rejects_empty_recipients():
+    with pytest.raises(ValueError):
+        send_briefs(token="t", chat_ids=(), text="ok", dashboard_url="https://example.test")
+
+
+def test_send_brief_rejects_invalid_json_response(monkeypatch):
+    class Response:
+        ok = True
+        status_code = 200
+        def json(self): raise ValueError("bad json")
+    monkeypatch.setattr("src.telegram_client.requests.post", lambda *args, **kwargs: Response())
+    with pytest.raises(telegram_client.TelegramError):
+        send_brief(token="t", chat_id="1", text="ok", dashboard_url="https://example.test")
 
 
 def test_send_briefs_delivers_to_each_configured_recipient(monkeypatch):
