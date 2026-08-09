@@ -101,6 +101,17 @@ jobs:
         continue-on-error: true
         run: python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE"
       - run: python -m src.run_research_report --scan-mode "$SCAN_MODE"
+      - name: Block incomplete production research publication
+        if: env.SCAN_MODE == 'production'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("site/data/research-report.json").read_text(encoding="utf-8"))
+          if report.get("production_eligible") is not True:
+              reason = report.get("blocking_reason") or "research scan is incomplete"
+              raise SystemExit(f"production research publication blocked: {reason}")
+          PY
       - run: python -m src.refresh_market_data
       - name: Build release manifest
         if: env.SCAN_MODE == 'production'
