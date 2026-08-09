@@ -199,6 +199,11 @@ def main() -> None:
     )
     summary = {
         "requested": len(candidates),
+        "universe_mode": "full",
+        "universe_expected": len(candidates),
+        "universe_scanned": len(candidates),
+        "universe_completed": complete_records,
+        "universe_failed": failed_total,
         # A current TWSE snapshot is not a completed Taiwan Pristine Value
         # verification until the three-year MOPS history has been cached.
         "data_complete": len(history) if args.market == "taiwan" else len(fundamentals),

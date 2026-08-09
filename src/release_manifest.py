@@ -17,6 +17,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from src.artifact_contract import validate_release
+from src.production_acceptance import validate_production_bundle
 
 DEFAULT_ARTIFACTS = {
     "market.json": Path("site/data/market.json"),
@@ -248,6 +249,10 @@ def build_release_manifest(
     output: Path | str = Path("site/data/release-manifest.json"),
     policy_version: str | None = None,
     artifacts: dict[str, Path] | None = None,
+    require_production_research: bool = False,
+    allow_stale_research: bool = False,
+    research_fallback_reason: str | None = None,
+    max_research_age_hours: float = 24.0,
 ) -> dict[str, Any]:
     """Build a manifest without fabricating readiness.
 
@@ -315,6 +320,9 @@ def build_release_manifest(
         # know the repository checkout layout.
         "artifact_paths": public_paths,
         "normalization_notes": normalization_notes,
+        "research_freshness": "unknown",
+        "research_fallback_used": bool(allow_stale_research),
+        "research_fallback_reason": research_fallback_reason if allow_stale_research else None,
         "status": "invalid",
     }
     if not market_id or not research_id or not event_id:
@@ -328,10 +336,44 @@ def build_release_manifest(
                 manifest={**manifest, "status": "ready"},
             )
         )
+        if require_production_research:
+            acceptance = validate_production_bundle(
+                manifest={**manifest, "status": "ready"},
+                market=market,
+                research=research,
+                events=events,
+                require_production_research=True,
+            )
+            errors.extend(acceptance.errors)
+            market_time = _parse_artifact_time(market.get("generated_at"))
+            research_time = _parse_artifact_time(research.get("generated_at"))
+            if market_time is None or research_time is None:
+                errors.append("production release requires market/research generated_at")
+            else:
+                age_hours = max(0.0, (market_time - research_time).total_seconds() / 3600.0)
+                if age_hours > max(0.0, float(max_research_age_hours)):
+                    if not allow_stale_research:
+                        errors.append("research snapshot is older than production freshness window")
+                    else:
+                        manifest["research_freshness"] = "stale_fallback"
+                else:
+                    manifest["research_freshness"] = "stale_fallback" if allow_stale_research else "fresh"
+        elif research:
+            manifest["research_freshness"] = "unverified"
     manifest["validation_errors"] = sorted(set(errors))
     if not errors:
         manifest["status"] = "ready"
     return manifest
+
+
+def _parse_artifact_time(value: Any) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        return parsed.replace(tzinfo=UTC) if parsed.tzinfo is None else parsed.astimezone(UTC)
+    except (TypeError, ValueError):
+        return None
 
 
 def write_release_manifest(manifest: dict[str, Any], output: Path | str) -> None:
@@ -374,8 +416,20 @@ def main() -> int:
     parser.add_argument("--root", type=Path, default=Path("."))
     parser.add_argument("--output", type=Path, default=Path("site/data/release-manifest.json"))
     parser.add_argument("--policy-version", default=None)
+    parser.add_argument("--require-production-research", action="store_true")
+    parser.add_argument("--allow-stale-research", action="store_true")
+    parser.add_argument("--research-fallback-reason", default=None)
+    parser.add_argument("--max-research-age-hours", type=float, default=24.0)
     args = parser.parse_args()
-    manifest = build_release_manifest(root=args.root, output=args.output, policy_version=args.policy_version)
+    manifest = build_release_manifest(
+        root=args.root,
+        output=args.output,
+        policy_version=args.policy_version,
+        require_production_research=args.require_production_research,
+        allow_stale_research=args.allow_stale_research,
+        research_fallback_reason=args.research_fallback_reason,
+        max_research_age_hours=args.max_research_age_hours,
+    )
     write_release_manifest(manifest, args.output)
     print(json.dumps({"status": manifest["status"], "release_id": manifest["release_id"], "validation_errors": manifest["validation_errors"]}, ensure_ascii=False))
     return 0 if manifest["status"] == "ready" else 1

@@ -401,14 +401,17 @@ const renderSourceHealth = (health, snapshot = {}) => {
     if (card) card.open = false;
     return;
   }
-  const degradedStates = ["critical_gap", "failed", "degraded_with_fallback", "fallback_active", "secondary_unavailable", "partial", "data_gap", "stale", "configuration_missing", "configuration_required"];
-  const missing = health.sources.filter((source) => degradedStates.includes(source.state || source.status)).length;
-  const critical = health.sources.filter((source) => ["critical_gap", "failed", "configuration_missing", "configuration_required"].includes(source.state || source.status)).length;
-  const displayedMissing = Number.isFinite(Number(health.missing_source_count))
+  const degradedStates = ["critical", "critical_gap", "failed", "degraded_with_fallback", "fallback_active", "partial", "data_gap", "stale", "configuration_missing", "configuration_required"];
+  const sourceState = (source) => source.semantic_state || source.state || source.status;
+  const missing = health.sources.filter((source) => degradedStates.includes(sourceState(source))).length;
+  const critical = health.sources.filter((source) => ["critical", "critical_gap", "failed", "configuration_missing", "configuration_required"].includes(sourceState(source))).length;
+  // Recompute from source rows so a stale aggregate cannot hide a new gap.
+  const declaredMissing = Number.isFinite(Number(health.missing_source_count))
     ? Number(health.missing_source_count)
     : missing;
+  const displayedMissing = Math.max(missing, declaredMissing);
   const pending = Number(health.pending_event_count || health.monitor_health?.pending_count || 0);
-  const aggregate = missing === 0 ? "資料正常" : critical > 0 ? "核心資料不足" : "部分資料降級";
+  const aggregate = health.investor_status || (missing === 0 ? "資料正常" : critical > 0 ? "核心資料不足" : "部分資料降級");
   summary.textContent = `${aggregate}${displayedMissing ? `｜${displayedMissing} 個來源有資料缺口` : ""}`;
   if (pending) summary.textContent += `｜${pending} 個事件待核對`;
   const scan = health.event_scan;

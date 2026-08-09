@@ -13,6 +13,17 @@
     "unavailable_count": {"type": "integer", "minimum": 0},
     "release_id": {"type": "string", "minLength": 8},
     "policy_version": {"type": "string", "minLength": 1},
+    "raw_observation": {
+      "type": "object",
+      "required": ["enabled", "recorded"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "recorded": {"type": "boolean"},
+        "observation_id": {"type": ["string", "null"]},
+        "reason": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
     "indices": {"type": "array", "items": {"$ref": "#/$defs/quote"}},
     "quotes": {"type": "array", "items": {"$ref": "#/$defs/quote"}},
     "source_health": {"type": "object"}

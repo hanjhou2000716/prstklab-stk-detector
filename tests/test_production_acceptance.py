@@ -1,4 +1,4 @@
-from src.production_acceptance import validate_production_bundle
+from src.production_acceptance import _parse_time, production_research_contract_errors, validate_production_bundle
 
 
 def _bundle():
@@ -62,4 +62,21 @@ def test_delivery_mode_rejects_legacy_research_snapshot():
     result = validate_production_bundle(**_bundle(), require_production_research=True)
     assert not result.allowed
     assert "not a production scan" in " ".join(result.errors)
+
+
+def test_production_contract_rejects_incomplete_source_metadata():
+    research = {
+        "scan_mode": "production", "scan_scope": "full",
+        "publish_eligible": True, "production_eligible": True,
+        "universe_expected": 1, "universe_scanned": 1, "universe_completed": 1,
+        "sources": [{"scan_state": "building", "requested": 2, "complete_records": 1}],
+    }
+    errors = production_research_contract_errors(research)
+    assert "research source 0 is not complete" in errors
+    assert "research source 0 universe is incomplete" in errors
+
+
+def test_acceptance_time_parser_is_fail_closed_for_naive_and_invalid_values():
+    assert _parse_time("2026-08-09T10:00:00") is not None
+    assert _parse_time("not-a-time") is None
 

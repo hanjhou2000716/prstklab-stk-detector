@@ -35,31 +35,38 @@ def write_report(report: dict, output: Path) -> None:
 def attach_scan_contract(report: dict, scan_mode: str) -> dict:
     """Attach publication eligibility without changing candidate semantics."""
     sources = report.get("sources", [])
-    requested = sum(int(source.get("requested") or 0) for source in sources)
-    completed = sum(
-        int(source.get("complete_records") or source.get("data_complete") or 0)
-        for source in sources
-    )
-    failed = sum(int(source.get("failed_records") or source.get("failed") or 0) for source in sources)
+    def scope(source: dict) -> dict:
+        mode = str(source.get("universe_mode") or "unknown")
+        expected = int(source.get("universe_expected") or source.get("requested") or 0)
+        scanned = int(source.get("universe_scanned") or source.get("requested") or 0)
+        completed = int(source.get("universe_completed") or source.get("complete_records") or source.get("data_complete") or 0)
+        failed = int(source.get("universe_failed") or source.get("failed_records") or source.get("failed") or 0)
+        valid = mode == "full" and expected > 0 and scanned >= expected and completed + failed >= expected
+        return {"mode": mode, "expected": expected, "scanned": scanned, "completed": completed, "failed": failed, "valid": valid}
+    scopes = [scope(source) for source in sources]
+    requested = sum(item["expected"] for item in scopes)
+    completed = sum(item["completed"] for item in scopes)
+    failed = sum(item["failed"] for item in scopes)
     states = {str(source.get("scan_state") or "failed") for source in sources}
-    full_scope = requested > 0 and completed >= requested and failed == 0 and states == {"complete"}
+    full_scope = bool(scopes) and all(item["valid"] for item in scopes) and completed >= requested and failed == 0 and states == {"complete"}
     strategy_publication = []
-    for source in sources:
-        source_requested = int(source.get("requested") or 0)
-        source_completed = int(source.get("complete_records") or source.get("data_complete") or 0)
-        source_failed = int(source.get("failed_records") or source.get("failed") or 0)
+    for source, source_scope in zip(sources, scopes, strict=True):
+        source_requested = source_scope["expected"]
+        source_completed = source_scope["completed"]
+        source_failed = source_scope["failed"]
         source_state = str(source.get("scan_state") or "failed")
-        eligible = scan_mode == "production" and source_requested > 0 and source_completed >= source_requested and source_failed == 0 and source_state == "complete"
+        eligible = scan_mode == "production" and source_scope["valid"] and source_completed >= source_requested and source_failed == 0 and source_state == "complete"
         strategy_publication.append({
             "market": source.get("market"), "strategy": source.get("strategy"),
-            "eligible": eligible, "state": source_state,
+            "eligible": eligible, "state": source_state, "universe_mode": source_scope["mode"],
+            "universe_expected": source_requested, "universe_scanned": source_scope["scanned"],
             "blocking_reason": None if eligible else (
                 "研究資料尚未完成全市場核對；本策略僅供觀察，不列入正式發布"
             ),
         })
     report.update({
         "scan_mode": scan_mode,
-        "scan_scope": "full" if scan_mode == "production" else "bounded",
+        "scan_scope": "full" if full_scope else "bounded",
         "universe_expected": requested,
         "universe_scanned": completed + failed,
         "universe_completed": completed,
@@ -68,11 +75,12 @@ def attach_scan_contract(report: dict, scan_mode: str) -> dict:
         # the workflow keeps the last successful public research snapshot.
         "publish_eligible": scan_mode == "production" and full_scope,
         "production_eligible": scan_mode == "production" and full_scope,
+        "publication_state": "production" if scan_mode == "production" and full_scope else "diagnostic",
         "strategy_publication": strategy_publication,
         "blocking_reason": None if scan_mode == "production" and full_scope else (
             "smoke/debug scan is isolated from production publishing"
             if scan_mode != "production"
-            else "一個以上研究來源尚未完成或發生失敗；等待下一輪完整掃描"
+            else "研究掃描 universe 缺少 full 範圍或仍有資料缺口；拒絕正式發布"
         ),
     })
     return report

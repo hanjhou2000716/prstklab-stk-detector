@@ -9,6 +9,7 @@ from typing import Any
 
 import pandas as pd
 
+from src.instrument_master import InstrumentMaster
 from src.price_action import FUNNEL_LABELS, structure_match_score
 
 NOTICE = "不同策略的研究排序不可直接視為同一種分數；本報表僅統一欄位與資料狀態。"
@@ -87,7 +88,30 @@ def normalize_frame(frame: pd.DataFrame, market: str, strategy: str) -> list[dic
     if frame.empty or "ticker" not in frame.columns:
         return []
     candidates = []
+    instruments = InstrumentMaster()
     for rank, (_, row) in enumerate(frame.iterrows(), start=1):
+        ticker = str(row["ticker"])
+        identity: dict[str, Any] = {
+            "instrument_resolution": "unknown",
+            "instrument_id": None,
+            "asset_type": None,
+            "currency": None,
+            "instrument_timezone": None,
+        }
+        try:
+            instrument = instruments.resolve(ticker, market=market)
+        except (KeyError, ValueError):
+            # Research universes are intentionally larger than the compact
+            # master registry. Unknown identity is explicit and never guessed.
+            pass
+        else:
+            identity.update({
+                "instrument_resolution": "resolved",
+                "instrument_id": instrument.instrument_id,
+                "asset_type": instrument.asset_type,
+                "currency": instrument.currency,
+                "instrument_timezone": instrument.timezone,
+            })
         structure = _value(row.get("funnel_labels"))
         score = _value(row.get("score"))
         if strategy == "price_action" and score is None:
@@ -96,7 +120,8 @@ def normalize_frame(frame: pd.DataFrame, market: str, strategy: str) -> list[dic
             "market": market,
             "strategy": strategy,
             "rank": rank,
-            "ticker": str(row["ticker"]),
+            "ticker": ticker,
+            **identity,
             "name": _value(row.get("name")),
             "score": score,
             "close": _value(row.get("close")) if _value(row.get("close")) is not None else _value(row.get("reference_close")),
@@ -156,6 +181,7 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                 summary = json.loads(Path(summary_path).read_text(encoding="utf-8"))
                 base.update({key: summary.get(key) for key in (
                     "requested", "requested_records", "data_complete", "complete_records", "failed", "failed_records", "scan_state", "status", "error_details",
+                    "universe_mode", "universe_expected", "universe_scanned", "universe_completed", "universe_failed",
                     "candidates", "formal_candidates", "observation_candidates",
                     "candidate_state", "complete_records", "data_gap_counts",
                     "history_cached", "history_expected", "history_progress_pct",

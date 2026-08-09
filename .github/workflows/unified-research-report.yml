@@ -124,22 +124,30 @@ jobs:
           output = Path(os.environ["GITHUB_OUTPUT"])
           if eligible:
               output.open("a", encoding="utf-8").write("publish=true\n")
+              output.open("a", encoding="utf-8").write("fallback=false\n")
               print("Research scan is complete and eligible for publication.")
           else:
               previous = Path("research-artifacts/research-report-previous.json")
               if previous.is_file():
                   shutil.copyfile(previous, "site/data/research-report.json")
                   output.open("a", encoding="utf-8").write("publish=true\n")
+                  output.open("a", encoding="utf-8").write("fallback=true\n")
                   reason = report.get("blocking_reason") or "research scan is incomplete"
                   print(f"::warning::{reason}; keeping the last successful research snapshot")
               else:
                   output.open("a", encoding="utf-8").write("publish=false\n")
+                  output.open("a", encoding="utf-8").write("fallback=false\n")
                   print("::warning::research scan is incomplete and no previous successful snapshot exists")
           PY
       - run: python -m src.refresh_market_data
       - name: Build release manifest
         if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
-        run: python -m src.release_manifest
+        run: |
+          args=(--require-production-research)
+          if [[ "${{ steps.research_gate.outputs.fallback }}" == "true" ]]; then
+            args+=(--allow-stale-research --research-fallback-reason "last-known-good research snapshot")
+          fi
+          python -m src.release_manifest "${args[@]}"
       - name: 保存最新公開研究摘要
         run: |
           if [[ "$SCAN_MODE" == "production" ]]; then
