@@ -28,7 +28,7 @@ pipeline call and a tested consumer.
 | Release manifest/gate | `src/release_manifest.py`, `src/release_gate.py` | yes | yes | yes | loader gate | send gate | production |
 | Telegram delivery | `src/telegram_client.py`, `src/scheduled_delivery.py` | yes | yes | receipt | no | yes | production |
 | Mini App deep-link/timeline | `site/app.js`, `src/event_timeline.py` | yes | Pages | yes | yes | button target | production |
-| Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | optional endpoint/local queue | no | feedback controls | no | partially_integrated |
+| Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | briefing contract + optional endpoint/local queue | yes | feedback controls | no | partially_integrated |
 
 ## Data state contract
 
@@ -90,6 +90,16 @@ until a cross-source check is recorded. A stale-cache observation is always
 scored as stale with score zero, even though the fallback was fetched during
 the current run. This prevents a recently-read cached payload from being
 mislabelled as live.
+
+### Feedback contract
+
+Briefing JSON exposes an anonymous `event_feedback` contract for each displayed
+event (or a briefing-level contract when this round has no event). It contains
+only review labels and queue/policy flags; chat IDs, tokens, and recipient data
+are never emitted. Submissions remain review-required and
+`policy_update_allowed=false`, so feedback can be measured without silently
+changing alert thresholds. The endpoint/local queue remains optional until a
+persistent review store is provisioned.
 
 ### Rollback
 

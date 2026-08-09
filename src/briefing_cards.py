@@ -286,6 +286,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         observations=observed_quotes,
         policy_version=snapshot.get("policy_version"),
     )
+    from src.event_feedback import build_feedback_contract
     from src.paper_portfolio import build_paper_portfolio_snapshot, update_paper_observations
 
     research = snapshot.get("research_report") or {}
@@ -317,6 +318,13 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
             "completed_horizon_count": 0,
             "history_source": None,
         }
+    feedback_events = [
+        build_feedback_contract(event)
+        for event in events[:10]
+        if isinstance(event, dict)
+    ]
+    if not feedback_events:
+        feedback_events = [build_feedback_contract({"event_type": "briefing"})]
     return {
         "slot": slot or "live",
         "title": SLOT_TITLES.get(slot or "", "即時市場儀表板"),
@@ -331,5 +339,11 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         "observations": observations,
         "intelligence": intelligence,
         "paper_portfolio": paper_portfolio,
+        "event_feedback": {
+            "enabled": True,
+            "events": feedback_events,
+            "policy_update_allowed": False,
+            "pii_included": False,
+        },
         "reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
     }

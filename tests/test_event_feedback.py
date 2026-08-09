@@ -1,6 +1,28 @@
 import pytest
 
-from src.event_feedback import record_feedback, summarize_feedback
+from src.event_feedback import build_feedback_contract, record_feedback, summarize_feedback
+
+
+def test_feedback_contract_is_public_safe_and_does_not_mutate_policy():
+    contract = build_feedback_contract(
+        {"event_cluster_key": "cluster-1", "event_type": "geopolitical_event"}
+    )
+    assert contract["event_key"] == "cluster-1"
+    assert contract["event_type"] == "geopolitical_event"
+    assert contract["review_required"] is True
+    assert contract["policy_update_allowed"] is False
+    assert contract["pii_included"] is False
+    assert set(contract["labels"]) == {
+        "correct", "irrelevant", "duplicate", "wrong_direction",
+        "insufficient_source", "too_late", "not_needed",
+    }
+    assert "chat_id" not in contract
+
+
+def test_feedback_contract_does_not_invent_an_event_key():
+    contract = build_feedback_contract({"event_type": "briefing"})
+    assert "event_key" not in contract
+    assert contract["enabled"] is True
 
 
 def test_feedback_is_pii_free_and_requires_known_label():
