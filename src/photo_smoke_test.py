@@ -7,8 +7,10 @@ scope ``TELEGRAM_CHAT_IDS`` to one explicitly requested chat for a real
 
 from __future__ import annotations
 
+import os
 import struct
 import tempfile
+import uuid
 from pathlib import Path
 
 from src.alert_card_renderer import HEIGHT, WIDTH, render_alert_card
@@ -60,6 +62,21 @@ def run() -> int:
 
     delivered = sum(receipt.status == "delivered" for receipt in receipts)
     failed = len(receipts) - delivered
+    trace_id = f"photo-smoke-{uuid.uuid4().hex[:16]}"
+    output_path = Path(os.environ["GITHUB_OUTPUT"]) if os.environ.get("GITHUB_OUTPUT") else None
+    if output_path:
+        output_path.open("a", encoding="utf-8").write(
+            "\n".join((
+                "sent=true",
+                f"trace_id={trace_id}",
+                f"release_id={RELEASE_ID}",
+                f"snapshot_id={SNAPSHOT_ID}",
+                f"delivery_status={'delivered' if failed == 0 else 'partial'}",
+                f"delivered_count={delivered}",
+                f"failed_count={failed}",
+                "renderer_error_type=",
+            )) + "\n"
+        )
     print(f"photo_card_dimensions={WIDTH}x{HEIGHT}")
     print(f"photo_delivery_delivered={delivered}")
     print(f"photo_delivery_failed={failed}")

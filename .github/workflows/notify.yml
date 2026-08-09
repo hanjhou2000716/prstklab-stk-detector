@@ -46,6 +46,7 @@ jobs:
         run: echo "::add-mask::${{ inputs.test_chat_id }}"
 
       - name: 發送測試快報
+        id: photo_smoke
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           # A supplied test_chat_id is scoped to this one run; otherwise use
@@ -64,3 +65,18 @@ jobs:
           else
             python -m src.main --send
           fi
+      - name: Persist photo smoke delivery receipt to Railway
+        if: always() && inputs.photo_test == true && steps.photo_smoke.outputs.sent == 'true'
+        continue-on-error: true
+        env:
+          RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
+          RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET }}
+          TRACE_ID: ${{ steps.photo_smoke.outputs.trace_id }}
+          RELEASE_ID: ${{ steps.photo_smoke.outputs.release_id }}
+          SNAPSHOT_ID: ${{ steps.photo_smoke.outputs.snapshot_id }}
+          DELIVERY_STATUS: ${{ steps.photo_smoke.outputs.delivery_status }}
+          DELIVERED_COUNT: ${{ steps.photo_smoke.outputs.delivered_count }}
+          FAILED_COUNT: ${{ steps.photo_smoke.outputs.failed_count }}
+          RENDERER_ERROR_TYPE: ${{ steps.photo_smoke.outputs.renderer_error_type }}
+          FAILED_RECIPIENT_HASHES: ""
+        run: python -m src.delivery_callback
