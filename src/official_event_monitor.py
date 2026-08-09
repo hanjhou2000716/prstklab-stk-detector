@@ -5,17 +5,19 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import tempfile
 from datetime import datetime, time
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from src.alert_card_renderer import RendererError, render_alert_card
 from src.config import get_settings
 from src.event_ledger import EventLedger, canonical_event_key
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import write_snapshot
 from src.release_gate import verify_release_for_delivery
-from src.telegram_client import alert_mini_app_url, send_briefs, summarize_deliveries, validate_brief
+from src.telegram_client import send_photo_briefs, summarize_photo_deliveries, validate_brief
 
 
 def _is_taiwan_market_window(now: datetime | None = None) -> bool:
@@ -193,17 +195,19 @@ def write_send_output(sent: bool, reason: str) -> None:
 
 
 def _write_delivery_output(*, trace_id: str, deliveries: tuple[Any, ...], event: dict[str, Any] | None = None) -> None:
-    summary = summarize_deliveries(deliveries)
+    summary = summarize_photo_deliveries(deliveries)
     lines = [
         f"trace_id={trace_id}",
         f"release_id={os.environ.get('RELEASE_ID', '')}",
         f"delivered_count={summary.delivered_count}",
         f"failed_count={summary.failed_count}",
         f"delivery_status={'delivered' if summary.failed_count == 0 else 'partial' if summary.delivered_count else 'failed'}",
+        "delivery_mode=photo",
         f"failed_recipient_hashes={','.join(summary.failed_recipient_hashes)}",
     ]
     if event:
         lines.extend([
+            f"alert_id={event.get('event_cluster_key') or event.get('event_key') or ''}",
             f"snapshot_id={event.get('snapshot_id') or ''}",
             f"observation_id={event.get('observation_id') or (event.get('instrument') or {}).get('observation_id') or ''}",
         ])
@@ -269,20 +273,36 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
     observation_id = str(event.get("observation_id") or (event.get("instrument") or {}).get("observation_id") or "")
     trace_id = f"official-{observation_id or current_key[:20]}"
     event_id = str(event.get("event_cluster_key") or event.get("event_key") or observation_id or trace_id)
-    deliveries = send_briefs(
-        token=settings.telegram_bot_token or "",
-        chat_ids=settings.telegram_chat_ids,
-        text=build_official_event_brief(event),
-        dashboard_url=settings.dashboard_url,
-        target_url=alert_mini_app_url(
-            settings.dashboard_url,
-            alert_id=event_id,
-            release_id=gate.release_id,
-            snapshot_id=str(snapshot.get("snapshot_id") or ""),
-        ),
-    )
+    caption = build_official_event_brief(event)
+    snapshot_id = str(snapshot.get("snapshot_id") or "")
+    try:
+        with tempfile.TemporaryDirectory(prefix="prstk-official-card-") as temporary:
+            photo_path = render_alert_card(
+                {
+                    "title": event.get("title") or "官方市場事件",
+                    "lifecycle_state": event.get("lifecycle_state") or "confirmed",
+                    "trigger_reason": caption,
+                    "release_id": gate.release_id,
+                    "snapshot_id": snapshot_id,
+                },
+                Path(temporary) / "alert.png",
+            )
+            deliveries = send_photo_briefs(
+                token=settings.telegram_bot_token or "",
+                chat_ids=settings.telegram_chat_ids,
+                caption=caption,
+                photo_path=photo_path,
+                mini_app_url=settings.dashboard_url,
+                alert_id=event_id,
+                release_id=gate.release_id or "",
+                snapshot_id=snapshot_id,
+            )
+    except (RendererError, OSError, ValueError) as exc:
+        write_send_output(False, "renderer_failed")
+        print(f"Renderer blocked official event delivery: {getattr(exc, 'error_type', type(exc).__name__)}")
+        return False
     _write_delivery_output(trace_id=trace_id, deliveries=deliveries, event=event)
-    delivery_summary = summarize_deliveries(deliveries)
+    delivery_summary = summarize_photo_deliveries(deliveries)
     if not delivery_summary.any_delivered:
         write_send_output(False, "all_recipients_failed")
         raise RuntimeError("Telegram delivery failed for every configured recipient")
