@@ -71,8 +71,9 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Install Chromium for the formal card renderer
-        run: python -m playwright install --with-deps chromium
+      # Scheduled production delivery is text-only.  The 1080x1350 renderer
+      # is exercised by the explicitly scoped photo smoke workflow instead of
+      # being a production dependency or failure point.
       - name: Resolve scheduled slot
         id: window
         run: |
