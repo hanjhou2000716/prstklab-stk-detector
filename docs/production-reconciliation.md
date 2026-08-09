@@ -12,8 +12,8 @@
 | Source health and research state | `src/research_health.py`, `src/source_health.py`, PRs #306--311 | partial_in_main | verify before extending |
 | Intelligence evidence | `src/market_impact_graph.py`, `src/macro_surprise.py`, PRs #264--289 | production | keep |
 | Offline delivery and CI gates | `.github/workflows/quality.yml`, `src/system_dry_run.py`, PR #290 | production | keep |
-| Renderer recovery | `src/alert_card_renderer.py`, `site/app.js`, PR #323 | production | keep; production photo policy is handled by the next PR |
-| Telegram production transport | `src/telegram_client.py`, `src/scheduled_delivery.py` | pending PR #346 | merge the validated `sendPhoto` path after its checks pass |
+| Renderer recovery | `src/alert_card_renderer.py`, `site/app.js`, PR #323 | smoke_only | keep for explicit `photo_test`; never block scheduled delivery |
+| Telegram production transport | `src/telegram_client.py`, `src/scheduled_delivery.py`, PR #351 | text_production | merge #350 first, then #351; photo remains scoped smoke only |
 
 ## Branch / PR inventory
 
