@@ -349,6 +349,17 @@ def summarize_market_freshness(quotes: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def market_data_status(summary: dict[str, Any]) -> str:
+    """Render an honest aggregate label from the classified freshness state."""
+    return {
+        "live": "即時",
+        "mixed": "混合資料",
+        "close_only": "最近收盤",
+        "degraded": "部分缺漏",
+        "unavailable": "無法取得",
+    }.get(str(summary.get("overall_state") or ""), "無法取得")
+
+
 def get_quote(item: dict[str, str], session: str | None = None) -> dict[str, Any]:
     """Collect a five-minute live bar when eligible, otherwise a daily close."""
     import yfinance as yf
@@ -670,7 +681,6 @@ def build_market_snapshot() -> dict[str, Any]:
         except Exception as exc:
             errors.append({"ticker": item["ticker"], "message": str(exc), "scope": "macro_quote"})
     macro_quotes = [normalize_quote_record(item) for item in macro_quotes]
-    quote_data_status = "即時" if not errors else "部分缺漏"
     risk = build_risk_snapshot()
     news = build_news_snapshot()
     official_events = fetch_official_events()
@@ -736,6 +746,10 @@ def build_market_snapshot() -> dict[str, Any]:
     freshness_summary = summarize_market_freshness([*quotes, *indices])
     live_quotes = freshness_summary["live_count"]
     close_quotes = freshness_summary["recent_close_count"] + freshness_summary["stale_count"]
+    # The aggregate label must follow classified quote freshness, not merely
+    # whether an unrelated optional provider returned an error.  A close-only
+    # snapshot must never be advertised as "即時".
+    data_status = market_data_status(freshness_summary)
     snapshot = {
         "generated_at": scan_completed_at.isoformat(),
         "scan": {
@@ -747,7 +761,7 @@ def build_market_snapshot() -> dict[str, Any]:
             **freshness_summary,
         },
         **freshness_summary,
-        "data_status": quote_data_status,
+        "data_status": data_status,
         "markets": markets,
         "indices": indices,
         "quotes": quotes,

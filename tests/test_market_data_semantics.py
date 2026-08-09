@@ -1,6 +1,11 @@
 from datetime import datetime
 
-from src.market_data import annotate_quote_freshness
+from src.market_data import annotate_quote_freshness, market_data_status
+
+
+def test_aggregate_close_only_is_not_labelled_live():
+    assert market_data_status({"overall_state": "close_only"}) == "最近收盤"
+    assert market_data_status({"overall_state": "mixed"}) == "混合資料"
 
 
 def test_recent_close_is_visible_but_not_alert_eligible():
