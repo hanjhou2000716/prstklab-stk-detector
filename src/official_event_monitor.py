@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from src.alert_budget import decide_alert_budget
 from src.alert_card_renderer import RendererError, render_alert_card
 from src.config import get_settings
 from src.event_ledger import EventLedger, canonical_event_key
@@ -194,7 +195,10 @@ def write_send_output(sent: bool, reason: str) -> None:
         print("\n".join(lines))
 
 
-def _write_delivery_output(*, trace_id: str, deliveries: tuple[Any, ...], event: dict[str, Any] | None = None) -> None:
+def _write_delivery_output(
+    *, trace_id: str, deliveries: tuple[Any, ...], event: dict[str, Any] | None = None,
+    budget: dict[str, Any] | None = None,
+) -> None:
     summary = summarize_photo_deliveries(deliveries)
     lines = [
         f"trace_id={trace_id}",
@@ -210,6 +214,13 @@ def _write_delivery_output(*, trace_id: str, deliveries: tuple[Any, ...], event:
             f"alert_id={event.get('event_cluster_key') or event.get('event_key') or ''}",
             f"snapshot_id={event.get('snapshot_id') or ''}",
             f"observation_id={event.get('observation_id') or (event.get('instrument') or {}).get('observation_id') or ''}",
+        ])
+    if budget is not None:
+        lines.extend([
+            f"alert_budget_allowed={'true' if budget.get('allowed') else 'false'}",
+            f"alert_budget_reason={budget.get('reason', '')}",
+            f"alert_budget_upgraded={'true' if budget.get('upgraded') else 'false'}",
+            f"alert_budget_event_key={budget.get('event_key', '')}",
         ])
     destination = os.getenv("GITHUB_OUTPUT")
     if destination:
@@ -267,6 +278,13 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         write_send_output(False, "event_cooldown")
         print("Official event is inside the shared 30-minute cooldown; skipped safely.")
         return False
+    ledger = EventLedger()
+    budget_event = {**event, "event_key": current_key}
+    budget = decide_alert_budget(budget_event, ledger.delivery_history())
+    if not budget.get("allowed", False):
+        write_send_output(False, f"alert_budget:{budget.get('reason', 'suppressed')}")
+        print(f"Official event suppressed by alert budget: {budget.get('reason', 'suppressed')}")
+        return False
     settings = get_settings()
     if not settings.telegram_ready:
         raise RuntimeError("缺少 Telegram 設定，無法送出官方事件快訊")
@@ -301,12 +319,17 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         write_send_output(False, "renderer_failed")
         print(f"Renderer blocked official event delivery: {getattr(exc, 'error_type', type(exc).__name__)}")
         return False
-    _write_delivery_output(trace_id=trace_id, deliveries=deliveries, event=event)
+    _write_delivery_output(trace_id=trace_id, deliveries=deliveries, event=event, budget=budget)
     delivery_summary = summarize_photo_deliveries(deliveries)
     if not delivery_summary.any_delivered:
         write_send_output(False, "all_recipients_failed")
         raise RuntimeError("Telegram delivery failed for every configured recipient")
-    _observe_event(event, reminded=True)
+    ledger.record_delivery(
+        {**budget_event, "trace_id": trace_id},
+        trace_id=trace_id,
+        reason="official_event_monitor",
+    )
+    ledger.save()
     write_send_output(True, "sent_partial" if delivery_summary.failed_count else "sent")
     return True
 

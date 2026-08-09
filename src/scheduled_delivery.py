@@ -85,11 +85,7 @@ def send(
     budget = {"allowed": True, "reason": "no_event", "event_key": ""}
     if event:
         ledger = EventLedger()
-        history = [
-            {**record, "event_key": key, "sent_at": record.get("last_reminded_at")}
-            for key, record in ledger.records.items()
-            if record.get("last_reminded_at")
-        ]
+        history = ledger.delivery_history()
         budget = decide_alert_budget(event, history)
         if not budget["allowed"]:
             _write_output({
@@ -147,7 +143,11 @@ def send(
     if event:
         write_event_lock_key(event)
         ledger = EventLedger()
-        ledger.mark_reminded({**event, "trace_id": trace_id})
+        ledger.record_delivery(
+            {**event, "trace_id": trace_id},
+            trace_id=trace_id,
+            reason="scheduled_delivery",
+        )
         ledger.save()
 
 

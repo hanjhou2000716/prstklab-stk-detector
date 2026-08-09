@@ -17,7 +17,7 @@ pipeline call and a tested consumer.
 | Macro surprise | `src/surprise_engine.py` | yes | partial | partial | partial | no | partially_integrated |
 | Corporate events | `src/corporate_event_contract.py`, `src/official_events.py` | yes | yes | yes | yes | observe-only/event | production |
 | Market impact graph | `src/market_impact_graph.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing/event | conditional event | production |
-| Alert budget/lifecycle | `src/alert_budget.py`, `src/event_alerts.py` | yes | partial | partial | partial | partial | partially_integrated |
+| Alert budget/lifecycle | `src/alert_budget.py`, `src/event_alerts.py`, `src/event_ledger.py` | yes | scheduled/official/emergency | delivery history | suppression reason | all alert paths | production |
 | Market regime/contagion | `src/market_regime.py`, `src/cross_asset_risk.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing | briefing context | production |
 | Stress scenarios | `src/stress_scenarios.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing | context only | production |
 | Portfolio risk | `src/portfolio_risk.py` | yes | no | no | no | no | unused |
@@ -61,10 +61,14 @@ individual artifacts across releases.
 All notification paths can use the `AlertEnvelope` contract and deterministic
 lifecycle engine. An observation remains `pending_confirmation` until official,
 independent-source, and market-synchronisation evidence are all present.
-Cooldown and hourly budgets are evaluated before delivery; suppressed records
-remain auditable. `src/alert_caption.py` produces a safe caption no longer than
-40 Unicode characters above a fixed 1080x1350 photo for every formal alert path
-captions remain limited to the existing 30-character contract.
+Cooldown and hourly budgets are evaluated before delivery by scheduled briefs,
+official event monitoring, and emergency alerts; suppressed records remain
+auditable with a reason and budget decision in workflow outputs. The durable
+event ledger keeps bounded per-delivery history so a cache eviction cannot
+reset the hourly or per-event budget. `src/alert_caption.py` produces a safe
+caption no longer than 40 Unicode characters above a fixed 1080x1350 photo for
+every formal alert path; production captions remain limited to the existing
+30-character contract.
 
 ## Production intelligence binding
 
