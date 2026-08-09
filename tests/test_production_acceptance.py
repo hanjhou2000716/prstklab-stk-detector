@@ -57,3 +57,9 @@ def test_incomplete_production_research_is_rejected():
     assert not result.allowed
     assert "production research" in " ".join(result.errors)
 
+
+def test_delivery_mode_rejects_legacy_research_snapshot():
+    result = validate_production_bundle(**_bundle(), require_production_research=True)
+    assert not result.allowed
+    assert "not a production scan" in " ".join(result.errors)
+

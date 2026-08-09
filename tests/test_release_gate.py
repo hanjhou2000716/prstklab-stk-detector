@@ -16,6 +16,9 @@ def _ready_release(tmp_path):
     (data / "research-report.json").write_text(json.dumps({
         "schema_version": "2.0", "generated_at": "2026-08-04T10:00:00+08:00",
         "snapshot_id": "research-12345678", "sources": [], "candidates": [], "health": {},
+        "scan_mode": "production", "scan_scope": "full", "publish_eligible": True,
+        "production_eligible": True, "universe_expected": 1, "universe_scanned": 1,
+        "universe_completed": 1,
     }), encoding="utf-8")
     (data / "event-ledger.json").write_text(json.dumps({"schema_version": 1, "retention_days": 30, "events": {}}), encoding="utf-8")
     manifest = build_release_manifest(root=tmp_path)

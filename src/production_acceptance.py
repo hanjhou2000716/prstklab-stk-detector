@@ -30,6 +30,7 @@ def validate_production_bundle(
     market: dict[str, Any],
     research: dict[str, Any],
     events: dict[str, Any],
+    require_production_research: bool = False,
 ) -> AcceptanceResult:
     """Check cross-artifact invariants before Pages or Telegram delivery."""
 
@@ -45,7 +46,9 @@ def validate_production_bundle(
     # newly generated production report may never pass the delivery gate
     # while its universe is partial or a provider failed.
     scan_mode = str(research.get("scan_mode") or "")
-    if scan_mode == "production":
+    if require_production_research and scan_mode != "production":
+        errors.append("research artifact is not a production scan")
+    if scan_mode == "production" or require_production_research:
         if research.get("publish_eligible") is not True:
             errors.append("production research is not publish_eligible")
         if research.get("production_eligible") is not True:
@@ -55,6 +58,8 @@ def validate_production_bundle(
         scanned = _count(research.get("universe_scanned"))
         if research_expected <= 0 or completed < research_expected or scanned < research_expected:
             errors.append("production research universe is incomplete")
+        if str(research.get("scan_scope") or "") != "full":
+            errors.append("production research scan scope is not full")
 
     expected_market = str(manifest.get("market_snapshot_id") or "")
     expected_research = str(manifest.get("research_snapshot_id") or "")

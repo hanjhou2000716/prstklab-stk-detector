@@ -276,10 +276,25 @@ def sec_fundamentals(
         else:
             mapping_error = None
     output, errors = {}, []
+    mapping_failed_without_fallback = False
     cache_changed = False
     for ticker in ticker_list:
-        cik = overrides.get(ticker.upper()) or ciks.get(ticker.upper())
+        ticker_key = ticker.upper()
+        cik = overrides.get(ticker_key) or ciks.get(ticker_key)
         if cik is None:
+            # The SEC ticker mapping endpoint is an external dependency and
+            # can temporarily return 403/429 or omit a recently changed
+            # listing.  A recent cache entry already contains the immutable
+            # CIK used to fetch its CompanyFacts payload; use that identity
+            # before declaring the row unavailable.  This keeps a transient
+            # mapping outage from suppressing the entire US value scan while
+            # preserving the freshness gate on the cached fundamentals.
+            cached_identity = cache.get(ticker_key)
+            cached_cik = cached_identity.get("cik") if isinstance(cached_identity, dict) else None
+            if str(cached_cik or "").isdigit():
+                cik = int(str(cached_cik))
+        if cik is None:
+            mapping_failed_without_fallback = bool(mapping_error)
             errors.append(f"{ticker} 無 SEC CIK")
             continue
         try:
@@ -309,7 +324,7 @@ def sec_fundamentals(
                 output[ticker] = metrics
             else:
                 errors.append(f"{ticker} SEC facts：{type(error).__name__}")
-    if mapping_error and len(overrides) < len({ticker.upper() for ticker in ticker_list}):
+    if mapping_error and mapping_failed_without_fallback:
         errors.insert(0, mapping_error)
     if cache_file and cache_changed:
         try:

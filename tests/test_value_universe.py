@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 import requests
 
@@ -129,6 +131,37 @@ def test_sec_fundamentals_uses_recent_cache_when_sec_is_temporarily_unavailable(
     second, second_errors = sec_fundamentals(["AAPL"], Client(), cik_overrides={"AAPL": "320193"}, cache_path=cache)
     assert second_errors == []
     assert second["AAPL"]["sec_cache_used"] is True
+
+
+def test_sec_fundamentals_uses_cached_cik_when_ticker_mapping_is_unavailable(tmp_path, monkeypatch):
+    class Client:
+        headers = {}
+
+    cache = tmp_path / "sec-cache.json"
+    cache.write_text(
+        json.dumps({
+            "AEP": {
+                "cik": 4904,
+                "fetched_at": "2026-08-08T12:00:00+00:00",
+                "metrics": {"years_available": 3},
+            }
+        }),
+        encoding="utf-8",
+    )
+
+    def unavailable_mapping(*args, **kwargs):
+        raise requests.HTTPError("SEC ticker mapping unavailable")
+
+    monkeypatch.setattr("src.value_fundamentals.sec_ticker_ciks", unavailable_mapping)
+
+    def unavailable_facts(*args, **kwargs):
+        raise requests.HTTPError("SEC facts unavailable")
+
+    monkeypatch.setattr("src.value_fundamentals._sec_get", unavailable_facts)
+    result, errors = sec_fundamentals(["AEP"], Client(), cache_path=cache)
+
+    assert errors == []
+    assert result["AEP"]["sec_cache_used"] is True
 
 
 def test_independent_pool_does_not_require_an_upstream_technical_candidate():
