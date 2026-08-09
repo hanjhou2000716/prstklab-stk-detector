@@ -47,6 +47,8 @@ jobs:
           python-version: "3.11"
       - name: Install production text-delivery dependencies
         run: pip install -r requirements-production.txt
+      - name: Install Chromium for formal card renderer
+        run: python -m playwright install --with-deps chromium
       - name: Restore official-source baseline
         id: baseline
         uses: actions/cache/restore@0400d5f644dc74513175e3cd8d07132dd4860809
@@ -123,6 +125,8 @@ jobs:
           TRACE_ID: ${{ steps.send.outputs.trace_id }}
           RELEASE_ID: ${{ steps.send.outputs.release_id || steps.release_gate.outputs.release_id }}
           SNAPSHOT_ID: ${{ steps.send.outputs.snapshot_id || steps.release_gate.outputs.snapshot_id }}
+          ALERT_ID: ${{ steps.send.outputs.alert_id }}
+          DELIVERY_MODE: ${{ steps.send.outputs.delivery_mode }}
           DELIVERY_STATUS: ${{ steps.send.outputs.delivery_status }}
           DELIVERED_COUNT: ${{ steps.send.outputs.delivered_count }}
           FAILED_COUNT: ${{ steps.send.outputs.failed_count }}

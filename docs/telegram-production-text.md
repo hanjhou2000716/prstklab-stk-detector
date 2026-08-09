@@ -1,17 +1,20 @@
-# Production Telegram delivery
+# Production Telegram photo delivery
 
-Scheduled and official production notifications use one `sendMessage` call
-after the release gate succeeds. The message contains the existing 30-character
-caption and the Mini App inline button; the button points at the same release
-and alert context. Full evidence remains in the immutable release.
+Scheduled, official-event and emergency notifications use one release-gated
+`sendPhoto` call per recipient. The message contains an at-most-30-character
+caption above a validated 1080×1350 PNG and an inline Mini App button targeting
+the same alert, release and snapshot. A renderer or font failure blocks the
+send; no black or single-colour fallback is transmitted.
 
-The 1080×1350 renderer is intentionally development/smoke-test only. The
-`photo_test` workflow requires one explicit test chat ID and is the only path
-that installs Chromium and calls `sendPhoto`. A renderer or font failure can
-therefore never block scheduled market delivery, and no black fallback image
-is sent.
+The first successful recipient uploads the card. Subsequent recipients reuse
+the returned Telegram `file_id`, while each recipient receives an independent
+delivery receipt. Only a short hash of the file ID and chat ID may be persisted.
+Transient failures are bounded and a blocked recipient does not stop other
+recipients.
 
 ## Rollback
 
-Revert the production transport commit and rerun the release gate. Keep the
-scoped photo smoke workflow independent for renderer diagnostics.
+If the renderer or Telegram path is unhealthy, keep the last successful release
+public, stop notification at the release gate, and rerun the scoped photo smoke
+workflow with one explicit test chat ID. Revert the transport commit only after
+the current release and delivery receipts are archived.

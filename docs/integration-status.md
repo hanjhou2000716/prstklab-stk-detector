@@ -26,7 +26,7 @@ pipeline call and a tested consumer.
 | Strategy registry/explainability | `src/strategy_registry.py`, `src/advice_gate.py` | yes | partial | partial | partial | no | partially_integrated |
 | Backtest/cost model | `src/four_strategy_walk_forward.py`, `src/backtest_costs.py` | yes | scheduled | artifact | no | no | partially_integrated |
 | Release manifest/gate | `src/release_manifest.py`, `src/release_gate.py` | yes | yes | yes | loader gate | send gate | production |
-| Telegram delivery | `src/telegram_client.py`, `src/scheduled_delivery.py`, `src/official_event_monitor.py`, `src/emergency_alert.py` | yes | release-gated text path; visual photo smoke only | receipt | alert/release deep-link button | validated `sendMessage`; photo is never production | production |
+| Telegram delivery | `src/telegram_client.py`, `src/scheduled_delivery.py`, `src/official_event_monitor.py`, `src/emergency_alert.py` | yes | release-gated `sendPhoto` path with shared file ID | photo receipt | alert/release deep-link button | renderer failure is fail-closed; recipient failures are isolated | production |
 | Mini App deep-link/timeline | `site/app.js`, `src/event_timeline.py` | yes | Pages | yes | yes | button target | production |
 | Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | briefing contract + optional endpoint/local queue | yes | feedback controls | no | partially_integrated |
 
@@ -63,7 +63,7 @@ lifecycle engine. An observation remains `pending_confirmation` until official,
 independent-source, and market-synchronisation evidence are all present.
 Cooldown and hourly budgets are evaluated before delivery; suppressed records
 remain auditable. `src/alert_caption.py` produces a safe caption no longer than
-40 Unicode characters for the photo smoke path; production `sendMessage`
+40 Unicode characters above a fixed 1080x1350 photo for every formal alert path
 captions remain limited to the existing 30-character contract.
 
 ## Production intelligence binding

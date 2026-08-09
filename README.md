@@ -544,17 +544,18 @@ remaining P3–P5 reliability backlog, see
 For the post-merge stacked PR order and the release verification checklist,
 see [`docs/MERGE_ORDER.md`](docs/MERGE_ORDER.md) and
 [`docs/OPERATIONS_RELEASE_CHECKLIST.md`](docs/OPERATIONS_RELEASE_CHECKLIST.md).
-The production notification contract is one `sendMessage` text notification (the fixed card is reserved for the explicit `photo_test` smoke workflow):
-at most 30 characters and a release/alert deep-link Mini App button. Publishing
-and manifest verification always complete before delivery.
+The production notification contract is one release-gated `sendPhoto` message:
+an at-most-30-character caption above a fixed 1080×1350 card and a release/alert
+deep-link Mini App button. Publishing and manifest verification always complete
+before delivery; renderer failure is fail-closed and never sends a blank card.
 
 ### Production notification mode
 
-Scheduled production delivery is text-only (`sendMessage`) and keeps the
-existing 30-character caption plus the Mini App deep-link button. The fixed
-1080×1350 renderer is reserved for the explicitly scoped `photo_test` smoke
-workflow, so browser/font failures cannot block normal market delivery. See
-[`docs/telegram-production-text.md`](docs/telegram-production-text.md).
+Scheduled, official-event and emergency delivery use the same release-gated
+`sendPhoto` contract. The first recipient uploads the validated card and later
+recipients reuse Telegram's file ID; each recipient still receives an isolated
+delivery receipt. The explicit `photo_test` workflow remains available for a
+single-recipient smoke test. See [`docs/alert-card-renderer.md`](docs/alert-card-renderer.md).
 
 ### Renderer and release recovery
 

@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import argparse
 import os
+import tempfile
+from pathlib import Path
 
+from src.alert_card_renderer import RendererError, render_alert_card
 from src.config import get_settings
-from src.telegram_client import alert_mini_app_url, send_briefs, summarize_deliveries, validate_brief
+from src.telegram_client import send_photo_briefs, summarize_photo_deliveries, validate_brief
 
 STRICT_HIGH_RISK_CATEGORIES = {"black_swan", "conflict"}
 
@@ -69,30 +72,45 @@ def main() -> None:
     text = build_emergency_brief(args.category, args.summary)
     release_id = os.environ.get("RELEASE_ID", "")
     snapshot_id = os.environ.get("SNAPSHOT_ID", "")
-    target_url = settings.dashboard_url
-    if release_id and snapshot_id:
-        target_url = alert_mini_app_url(
-            settings.dashboard_url,
-            alert_id=os.environ.get("ALERT_ID", f"manual-{args.category}"),
-            release_id=release_id,
-            snapshot_id=snapshot_id,
-        )
-    results = send_briefs(
-        token=settings.telegram_bot_token or "",
-        chat_ids=settings.telegram_chat_ids,
-        text=text,
-        dashboard_url=settings.dashboard_url,
-        target_url=target_url,
-    )
-    summary = summarize_deliveries(results)
+    if not release_id or not snapshot_id:
+        raise RuntimeError("Emergency photo delivery requires RELEASE_ID and SNAPSHOT_ID")
+    alert_id = os.environ.get("ALERT_ID", f"manual-{args.category}")
+    try:
+        with tempfile.TemporaryDirectory(prefix="prstk-emergency-card-") as temporary:
+            photo_path = render_alert_card(
+                {
+                    "title": CATEGORY_LABELS[args.category],
+                    "lifecycle_state": "escalated" if args.category in STRICT_HIGH_RISK_CATEGORIES else "confirmed",
+                    "trigger_reason": text,
+                    "release_id": release_id,
+                    "snapshot_id": snapshot_id,
+                },
+                Path(temporary) / "alert.png",
+            )
+            results = send_photo_briefs(
+                token=settings.telegram_bot_token or "",
+                chat_ids=settings.telegram_chat_ids,
+                caption=text,
+                photo_path=photo_path,
+                mini_app_url=settings.dashboard_url,
+                alert_id=alert_id,
+                release_id=release_id,
+                snapshot_id=snapshot_id,
+            )
+    except (RendererError, OSError, ValueError) as exc:
+        print(f"renderer_failed={getattr(exc, 'error_type', type(exc).__name__)}")
+        raise RuntimeError("renderer failed; Telegram photo was not sent") from exc
+    summary = summarize_photo_deliveries(results)
     trace_id = os.environ.get("TRACE_ID", f"manual-{args.category}")
     lines = [
         f"trace_id={trace_id}",
+        f"alert_id={os.environ.get('ALERT_ID', f'manual-{args.category}')}",
         f"release_id={os.environ.get('RELEASE_ID', '')}",
         f"snapshot_id={os.environ.get('SNAPSHOT_ID', '')}",
         f"delivered_count={summary.delivered_count}",
         f"failed_count={summary.failed_count}",
         f"delivery_status={'delivered' if summary.failed_count == 0 else 'partial' if summary.delivered_count else 'failed'}",
+        "delivery_mode=photo",
         f"failed_recipient_hashes={','.join(summary.failed_recipient_hashes)}",
     ]
     destination = os.environ.get("GITHUB_OUTPUT")

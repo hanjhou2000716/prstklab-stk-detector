@@ -27,6 +27,8 @@ def build_payload() -> dict[str, object]:
         "trace_id": os.environ.get("TRACE_ID", "").strip(),
         "release_id": os.environ.get("RELEASE_ID", "").strip(),
         "snapshot_id": os.environ.get("SNAPSHOT_ID", "").strip(),
+        "alert_id": os.environ.get("ALERT_ID", "").strip() or None,
+        "delivery_mode": os.environ.get("DELIVERY_MODE", "text").strip(),
         "delivery_status": os.environ.get("DELIVERY_STATUS", "unknown").strip(),
         "delivered_count": int(os.environ.get("DELIVERED_COUNT", "0") or 0),
         "failed_count": int(os.environ.get("FAILED_COUNT", "0") or 0),

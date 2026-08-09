@@ -71,9 +71,8 @@ jobs:
           python-version: "3.11"
       - name: Install production text-delivery dependencies
         run: pip install -r requirements-production.txt
-      # Scheduled production delivery is text-only.  The 1080x1350 renderer
-      # is exercised by the explicitly scoped photo smoke workflow instead of
-      # being a production dependency or failure point.
+      - name: Install Chromium for formal card renderer
+        run: python -m playwright install --with-deps chromium
       - name: Resolve scheduled slot
         id: window
         run: |
@@ -137,6 +136,8 @@ jobs:
           TRACE_ID: ${{ steps.send_brief.outputs.trace_id }}
           RELEASE_ID: ${{ steps.send_brief.outputs.release_id }}
           SNAPSHOT_ID: ${{ steps.send_brief.outputs.snapshot_id }}
+          ALERT_ID: ${{ steps.send_brief.outputs.alert_id }}
+          DELIVERY_MODE: ${{ steps.send_brief.outputs.delivery_mode }}
           DELIVERY_STATUS: ${{ steps.send_brief.outputs.delivery_status }}
           DELIVERED_COUNT: ${{ steps.send_brief.outputs.delivered_count }}
           FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count }}
