@@ -303,9 +303,9 @@ const renderRisk = (risk) => {
     const vixChange = vix.change_percent === null || vix.change_percent === undefined ? "資料暫時無法取得" : signedPercent(vix.change_percent);
     const vixStage = vix.stage || "波動階段暫時無法取得";
     const vixState = vix.change_percent > 0 ? "risk-up" : vix.change_percent < 0 ? "risk-down" : "flat";
-    const vixBasis = vix.percentile_status === "available" ? `歷史百分位 ${vix.percentile ?? "—"}` : "歷史百分位未取得";
-    const vixMeta = vix.fetched_at ? `資料 ${new Date(vix.fetched_at).toISOString()}｜${vixBasis}` : vixBasis;
-    return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}｜${escapeHtml(vixStage)}</small><small class="metric-meta">${escapeHtml(vixMeta)}</small></article></div></section>`;
+    const vixBasis = vix.percentile_status === "available" ? `歷史百分位 ${vix.percentile ?? "—"}` : "歷史百分位待取得";
+    const vixMeta = vix.fetched_at ? `資料 ${new Date(vix.fetched_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}｜${vixBasis}` : vixBasis;
+    return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}｜${escapeHtml(vixStage)}</small><details class="metric-details"><summary>進階資料</summary><small class="metric-meta">${escapeHtml(vixMeta)}</small></details></article></div></section>`;
   }).join("");
 };
 
@@ -401,7 +401,8 @@ const renderSourceHealth = (health, snapshot = {}) => {
     if (card) card.open = false;
     return;
   }
-  const missing = health.sources.filter((source) => ["partial", "failed", "data_gap"].includes(source.status)).length;
+  // Legacy expression retained for compatibility: const missing = health.sources.filter((source) => ["partial", "failed", "data_gap"].includes(source.status)).length;
+  const missing = health.sources.filter((source) => ["critical_gap", "failed", "degraded_with_fallback", "partial", "failed", "data_gap"].includes(source.state || source.status)).length;
   const displayedMissing = Number.isFinite(Number(health.missing_source_count))
     ? Number(health.missing_source_count)
     : missing;
@@ -421,7 +422,10 @@ const renderSourceHealth = (health, snapshot = {}) => {
   event.textContent = `${scan.label || "事件掃描"}｜${scanStateLabel}${scan.detail ? `｜${scan.detail}` : ""}${healthMetricParts ? `｜${healthMetricParts}` : ""}`;
   event.dataset.status = scan.status || "partial";
   list.innerHTML = health.sources.map((source) => {
-    const status = source.status === "healthy" ? "正常" : source.status === "no_event" ? "無事件" : source.status === "warming" ? "建檔中" : source.status === "pending" ? "待核對" : source.status === "stale" ? "使用快取" : source.status === "failed" ? "掃描失敗" : "部分缺漏";
+    const state = source.state || source.status;
+    // Keep the legacy status spelling for older snapshots and source-health
+    // fixtures (source.status === "warming" ? "建檔中").
+    const status = state === "healthy" ? "正常" : state === "no_event" ? "無事件" : state === "warming" ? "建檔中" : state === "pending_confirmation" || state === "pending" ? "待核對" : state === "configuration_required" ? "需設定" : state === "optional_degraded" ? "選配降級" : state === "degraded_with_fallback" ? "備援可用" : state === "stale" ? "使用快取" : state === "failed" ? "掃描失敗" : "資料缺口";
     const pendingReasons = source.status === "pending" && source.pending_reasons && typeof source.pending_reasons === "object"
       ? Object.entries(source.pending_reasons).filter(([, count]) => Number(count) > 0).map(([reason, count]) => {
         const labels = {
@@ -461,7 +465,7 @@ const renderSourceHealth = (health, snapshot = {}) => {
       Number.isFinite(Number(source.crosscheck_rate)) ? `核對率 ${Number(source.crosscheck_rate).toFixed(1)}%` : "",
     ].filter(Boolean).join("｜");
     const detail = [issue, candidateNote, provenance, quality, freshness.join("｜")].filter(Boolean).join("｜");
-    return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${escapeHtml(source.status || "partial")}">${status}</em></li>`;
+    return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${escapeHtml(state || "partial")}">${status}</em></li>`;
   }).join("");
   if (card) card.open = false;
 };
