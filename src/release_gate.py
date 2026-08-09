@@ -109,7 +109,13 @@ def verify_release_for_delivery(
             market=artifacts["market.json"],
             research=artifacts["research-report.json"],
             events=artifacts["event-ledger.json"],
-            require_production_research=True,
+            # A ready release may intentionally carry a legacy or explicitly
+            # partial research snapshot while the bounded scanner catches up.
+            # ``release_manifest --require-production-research`` remains the
+            # publication gate for newly generated production scans; the
+            # delivery gate must still serve the last valid, immutable bundle
+            # instead of taking the whole dashboard offline.
+            require_production_research=False,
         )
         errors.extend(acceptance.errors)
 

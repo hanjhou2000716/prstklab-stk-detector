@@ -33,6 +33,25 @@ def test_release_gate_accepts_ready_matching_snapshot(tmp_path):
     assert result.release_id == manifest["release_id"]
 
 
+def test_release_gate_accepts_ready_legacy_research_snapshot(tmp_path):
+    """A valid rollback release may predate the production scan contract."""
+    path, manifest = _ready_release(tmp_path)
+    research_path = tmp_path / "site" / "data" / "research-report.json"
+    legacy = {
+        "schema_version": "1.0",
+        "generated_at": "2026-08-04T10:00:00+08:00",
+        "snapshot_id": "research-12345678",
+        "sources": [],
+        "candidates": [],
+        "health": {},
+    }
+    research_path.write_text(json.dumps(legacy), encoding="utf-8")
+    manifest["artifact_hashes"]["research-report.json"] = sha256_file(research_path)
+    write_release_manifest(manifest, path)
+    result = verify_release_for_delivery(manifest_path=path, expected_snapshot_id="market-12345678")
+    assert result.allowed is True
+
+
 def test_release_gate_blocks_snapshot_mismatch(tmp_path):
     path, _ = _ready_release(tmp_path)
     result = verify_release_for_delivery(manifest_path=path, expected_snapshot_id="market-other")

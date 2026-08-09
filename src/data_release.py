@@ -72,7 +72,18 @@ def _expand_includes(root: Path, includes: list[str]) -> list[str]:
 
 
 def _fetch_branch(branch: str) -> bool:
-    result = _run("fetch", "origin", branch, check=False)
+    # ``git fetch origin <branch>`` only guarantees FETCH_HEAD.  In a
+    # checkout that did not create a remote-tracking ref (the Pages job can
+    # be configured this way), a subsequent ``origin/<branch>`` lookup may
+    # resolve to an old ref or fail altogether.  Update the exact remote
+    # tracking ref used by restore/publish so every workflow observes the
+    # branch tip fetched in this run.
+    result = _run(
+        "fetch",
+        "origin",
+        f"refs/heads/{branch}:refs/remotes/origin/{branch}",
+        check=False,
+    )
     return result.returncode == 0
 
 

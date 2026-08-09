@@ -42,6 +42,28 @@ def test_data_release_rejects_paths_outside_public_data():
         _safe_path("site/data/../secret.json")
 
 
+def test_fetch_branch_updates_remote_tracking_ref(monkeypatch):
+    calls = []
+
+    def fake_run(*args, **kwargs):
+        calls.append((args, kwargs))
+        return data_release.subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(data_release, "_run", fake_run)
+
+    assert data_release._fetch_branch("data-release") is True
+    assert calls == [
+        (
+            (
+                "fetch",
+                "origin",
+                "refs/heads/data-release:refs/remotes/origin/data-release",
+            ),
+            {"check": False},
+        )
+    ]
+
+
 def test_publish_dry_run_expands_only_existing_data(tmp_path):
     data = tmp_path / "site" / "data"
     data.mkdir(parents=True)
