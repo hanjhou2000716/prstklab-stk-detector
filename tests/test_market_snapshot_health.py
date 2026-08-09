@@ -31,7 +31,10 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
 
     snapshot = build_market_snapshot()
 
-    assert snapshot["data_status"] == "即時"
+    # Optional quote providers can still leave a visible unavailable card;
+    # the aggregate must disclose that degraded state instead of claiming all
+    # market data is live.  The risk-source error remains separately scoped.
+    assert snapshot["data_status"] == "部分缺漏"
     assert snapshot["scan"]["scope"] == "公開市場定時掃描"
     assert snapshot["scan"]["completed_at"] == snapshot["generated_at"]
     assert snapshot["errors"] == [{

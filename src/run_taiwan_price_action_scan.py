@@ -13,14 +13,15 @@ from src.taiwan_universe import load_or_fetch_taiwan_universe
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="台股裸 K 結構研究掃描")
-    parser.add_argument("--limit", type=int, default=100)
+    parser.add_argument("--limit", type=int, default=0, help="0 scans the complete resolved universe")
     parser.add_argument("--batch-size", type=int, default=50)
     parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--universe-file", default=None, help="同一次工作共用的最新公開台股清單")
     args = parser.parse_args()
     if args.offset < 0:
         raise ValueError("offset 不可小於 0")
-    universe = load_or_fetch_taiwan_universe(args.universe_file)[args.offset:]
+    resolved_universe = load_or_fetch_taiwan_universe(args.universe_file)
+    universe = resolved_universe[args.offset:]
     if args.limit > 0:
         universe = universe[:args.limit]
 
@@ -44,6 +45,9 @@ def main() -> None:
     result.to_csv(csv_path, index=False, encoding="utf-8-sig")
     summary_path.write_text(json.dumps({
         "requested": len(universe), "data_complete": len(records), "candidates": len(result),
+        "universe_mode": "full" if args.limit <= 0 else "bounded",
+        "universe_expected": len(resolved_universe), "universe_scanned": len(universe),
+        "universe_completed": len(records), "universe_failed": len(failed),
         "failed": len(failed), "batch_size": args.batch_size, "offset": args.offset,
         "notice": "僅供公開市場結構研究，不構成買賣建議。",
         "scan_state": "complete",
