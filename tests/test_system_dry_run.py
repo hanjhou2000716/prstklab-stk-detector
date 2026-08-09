@@ -1,3 +1,7 @@
+import json
+import subprocess
+import sys
+
 from src.system_dry_run import run_dry_run
 
 
@@ -17,3 +21,15 @@ def test_system_dry_run_is_fail_closed_and_traceable():
         "release_id": "dry-release",
         "snapshot_id": "dry-snapshot",
     }
+
+
+def test_system_dry_run_module_entrypoint_emits_json():
+    completed = subprocess.run(
+        [sys.executable, "-m", "src.system_dry_run"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(completed.stdout)
+    assert payload["ok"] is True
+    assert payload["release_id"] == "dry-release"

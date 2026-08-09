@@ -90,3 +90,70 @@ def test_validate_png_rejects_single_color_and_wrong_dimensions(tmp_path):
     Image.new("RGB", (10, 10), (0, 0, 0)).save(wrong)
     with pytest.raises(RendererError, match="expected"):
         _validate_png(wrong)
+
+
+def test_renderer_classifies_chromium_launch_failure(monkeypatch, tmp_path):
+    class Context:
+        def __enter__(self):
+            return types.SimpleNamespace(
+                chromium=types.SimpleNamespace(
+                    launch=lambda **_kwargs: (_ for _ in ()).throw(
+                        RuntimeError("browser executable missing")
+                    )
+                )
+            )
+
+        def __exit__(self, *args):
+            return None
+
+    module = types.ModuleType("playwright.sync_api")
+    module.sync_playwright = lambda: Context()
+    monkeypatch.setitem(sys.modules, "playwright.sync_api", module)
+    with pytest.raises(RendererError, match="browser executable missing") as error:
+        render_alert_card({"title": "x"}, tmp_path / "broken.png")
+    assert error.value.error_type == "chromium_unavailable"
+
+
+def test_renderer_closes_browser_even_when_close_fails(monkeypatch, tmp_path):
+    class Page:
+        def set_content(self, *args, **kwargs):
+            return None
+
+        def screenshot(self, *, path, **kwargs):
+            fallback_card(path)
+
+    class Browser:
+        def new_page(self, **kwargs):
+            return Page()
+
+        def close(self):
+            raise RuntimeError("close failed")
+
+    class Context:
+        def __enter__(self):
+            return types.SimpleNamespace(
+                chromium=types.SimpleNamespace(launch=lambda **kwargs: Browser())
+            )
+
+        def __exit__(self, *args):
+            return None
+
+    module = types.ModuleType("playwright.sync_api")
+    module.sync_playwright = lambda: Context()
+    monkeypatch.setitem(sys.modules, "playwright.sync_api", module)
+    result = render_alert_card({"title": "x"}, tmp_path / "closed.png")
+    assert result.exists()
+
+
+def test_renderer_reports_missing_playwright_import(monkeypatch, tmp_path):
+    original_import = __import__("builtins").__import__
+
+    def fail_playwright(name, *args, **kwargs):
+        if name == "playwright.sync_api":
+            raise ImportError("Playwright unavailable")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr("builtins.__import__", fail_playwright)
+    with pytest.raises(RendererError, match="Playwright is required") as error:
+        render_alert_card({"title": "x"}, tmp_path / "missing.png")
+    assert error.value.error_type == "playwright_missing"

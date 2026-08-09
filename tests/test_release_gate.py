@@ -190,3 +190,11 @@ def test_release_gate_blocks_unreadable_and_invalid_manifest(tmp_path):
     invalid.write_text("[]", encoding="utf-8")
     result = verify_release_for_delivery(manifest_path=invalid)
     assert not result.allowed and "manifest must be a JSON object" in result.errors
+
+
+def test_release_gate_reports_unreadable_artifact(tmp_path):
+    path, _ = _ready_release(tmp_path)
+    (tmp_path / "site" / "data" / "event-ledger.json").unlink()
+    result = verify_release_for_delivery(manifest_path=path, expected_snapshot_id="market-12345678")
+    assert result.allowed is False
+    assert any("artifact unreadable event-ledger.json" in error for error in result.errors)
