@@ -15,10 +15,10 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from src.backtest_release import build_backtest_release
 from src.momentum_research import WEIGHTS, features
 from src.price_action import PriceActionResearchScanner
 from src.research_backtest import MARKET_COSTS, calculate_hypothetical_return
-from src.backtest_release import build_backtest_release
 from src.resonance_research import score_bars
 from src.resonance_smart_money import smart_money_conditions, smart_money_summary
 from src.value_review import score_public_fundamentals
