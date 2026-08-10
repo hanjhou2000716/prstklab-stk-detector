@@ -224,3 +224,9 @@ unlock trading language or create a performance forecast.
 Market news routing is fail-closed for unclassified headlines. Only explicit
 regional evidence or an auditable global/cross-market classification can reach
 a tab; empty scans and provider failures remain separate source-health states.
+
+Candidate explainability is an additive machine-readable contract. When a
+candidate emits `explainability`, release validation requires passed and
+failed conditions, data completeness, risk factors, evidence, signal date,
+and an invalidation condition. Legacy rows remain readable but do not gain
+advice permissions merely by having a score or ticker.

@@ -67,9 +67,10 @@ def evaluate_advice_gate(context: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+
 def build_explainability_card(candidate: dict[str, Any], gate: dict[str, Any]) -> dict[str, Any]:
     """Build a transparent candidate card without an unexplained total score."""
-    return {
+    card = {
         "ticker": candidate.get("ticker"),
         "name": candidate.get("name"),
         "strategy": candidate.get("strategy"),
@@ -86,4 +87,14 @@ def build_explainability_card(candidate: dict[str, Any], gate: dict[str, Any]) -
         "advice_gate": gate,
         "disclaimer": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
     }
+    card["explainability"] = {
+        "passed_conditions": card["passed_conditions"],
+        "failed_conditions": card["failed_conditions"],
+        "data_completeness": card["data_completeness"],
+        "risk_factors": card["risk_factors"],
+        "evidence": card["evidence"],
+        "signal_date": card["signal_date"],
+        "invalidation": card["invalidation"],
+    }
+    return card
 

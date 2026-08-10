@@ -35,10 +35,31 @@
     },
     "blocking_reason": {"type": ["string", "null"]},
     "sources": {"type": "array", "items": {"$ref": "#/$defs/source"}},
-    "candidates": {"type": "array", "items": {"type": "object"}},
+    "candidates": {"type": "array", "items": {"$ref": "#/$defs/candidate"}},
     "health": {"type": "object"}
   },
   "$defs": {
+    "candidate": {
+      "type": "object",
+      "properties": {
+        "explainability": {"$ref": "#/$defs/explainability"}
+      },
+      "additionalProperties": true
+    },
+    "explainability": {
+      "type": "object",
+      "required": ["passed_conditions", "failed_conditions", "data_completeness", "risk_factors", "evidence", "signal_date", "invalidation"],
+      "properties": {
+        "passed_conditions": {"type": "array", "items": {"type": "string"}},
+        "failed_conditions": {"type": "array", "items": {"type": "string"}},
+        "data_completeness": {},
+        "risk_factors": {"type": "array", "items": {"type": "string"}},
+        "evidence": {"type": "array", "items": {"type": "object"}},
+        "signal_date": {"type": ["string", "null"]},
+        "invalidation": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
     "source": {
       "type": "object",
       "properties": {

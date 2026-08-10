@@ -217,6 +217,40 @@ def validate_research(document: dict[str, Any]) -> list[str]:
     if document.get("research_fallback_used") is True and document.get("production_eligible") is True:
         errors.append("research fallback cannot be production_eligible=true")
     errors.extend(_backtest_release_contract_errors(document))
+    errors.extend(_candidate_explainability_errors(document))
+    return errors
+
+
+def _candidate_explainability_errors(document: dict[str, Any]) -> list[str]:
+    """Validate the optional machine-readable candidate explanation contract.
+
+    The nested object is additive for legacy reports.  Once a producer emits
+    it, all decision-relevant fields must be present and type-safe so the UI
+    cannot present an unexplained score as a formal candidate.
+    """
+    errors: list[str] = []
+    rows = document.get("candidates")
+    if not isinstance(rows, list):
+        return errors
+    list_fields = ("passed_conditions", "failed_conditions", "risk_factors", "evidence")
+    required = set(list_fields) | {"data_completeness", "signal_date", "invalidation"}
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict) or "explainability" not in row:
+            continue
+        path = f"candidates[{index}].explainability"
+        explanation = row.get("explainability")
+        if not isinstance(explanation, dict):
+            errors.append(f"{path} must be an object")
+            continue
+        missing = sorted(required - explanation.keys())
+        if missing:
+            errors.append(f"{path} missing required fields: {', '.join(missing)}")
+        for field in list_fields:
+            value = explanation.get(field)
+            if value is not None and not isinstance(value, list):
+                errors.append(f"{path}.{field} must be an array")
+        if explanation.get("signal_date") is not None and not isinstance(explanation.get("signal_date"), str):
+            errors.append(f"{path}.signal_date must be a string or null")
     return errors
 
 
