@@ -60,3 +60,10 @@ def test_delivery_workflows_skip_notifications_when_pages_is_unavailable():
         gate_end = workflow.find("- name:", gate_start + 1)
         gate = workflow[gate_start : gate_end if gate_end > gate_start else None]
         assert "continue-on-error: true" not in gate
+
+
+def test_market_event_sidecars_use_explicit_research_fallback():
+    for name in ("emergency-alert.yml", "monitor-health.yml"):
+        workflow = (WORKFLOWS / name).read_text(encoding="utf-8")
+        assert "--allow-stale-research" in workflow
+        assert "--research-fallback-reason" in workflow
