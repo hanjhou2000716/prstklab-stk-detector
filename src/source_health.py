@@ -164,7 +164,8 @@ def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
         except (TypeError, ValueError):
             failed_count = 0
         scan_state = str(item.get("scan_state") or "").strip().lower()
-        if failed_count > 0 or scan_state in {"partial", "data_gap"}:
+        status_state = str(item.get("status") or "").strip().lower()
+        if failed_count > 0 or scan_state in {"partial", "data_gap"} or status_state in {"partial", "data_gap"}:
             partial.append(item)
     warming = [
         item for item in sources

@@ -144,6 +144,18 @@ def test_research_machine_failed_state_is_not_reported_as_healthy():
     assert health["missing_source_count"] >= 1
 
 
+def test_research_partial_display_status_is_not_treated_as_empty_success():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": [{
+            "market": "taiwan", "strategy": "momentum", "status": "partial",
+            "candidates": 0,
+        }]}, checked_at=NOW,
+    )
+    research = next(item for item in health["sources"] if item["key"] == "research")
+    assert research["semantic_state"] == "partial"
+    assert research["status"] == "partial"
+
+
 def test_research_machine_building_state_preserves_partial_progress():
     health = build_source_health(
         errors=[], events={"is_major": False}, research_report={"sources": [{
