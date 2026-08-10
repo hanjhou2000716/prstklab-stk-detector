@@ -102,6 +102,15 @@ The following changes are prepared but intentionally not merged by the agent:
 - #415 source-health schema and runtime cross-field audit
 - #416 bind backtest identity to release manifests
 - #417 bind backtest identity to research candidates and Actions input
+- #418 P0 backtest contract invariants
+- #419 P1 instrument-master provenance
+- #420 P5 structured advice contract
+- #421 P4 audited backtest performance contract
+- #422 P2 fail-closed market-news routing
+- #423 P4 candidate explainability contract
+- #424 P3 intelligence evidence contract
+- #425 P4 strategy-registry binding
+- #426 P3 private portfolio boundary
 
 Merge these in dependency order with **Create a merge commit**.  A module is
 not promoted to `production` in this matrix until its PR is merged and the
