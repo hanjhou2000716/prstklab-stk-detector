@@ -49,6 +49,8 @@ def test_value_walk_forward_uses_prior_fundamental_snapshot_and_next_open_costs(
     fundamentals = [{"as_of": "2020-12-31", "market": "us", "ticker": "AAA", "point_in_time": True, "net_income": 600_000_000, "roe": 0.20, "payout_ratio": 0.30, "pe": 20, "financial_source": "SEC EDGAR archived filing"}]
     report = run_walk_forward({"AAA": bars()}, universes(), market="us", config=config(), fundamental_snapshots=fundamentals, strategies=("value",))
     assert report["status"] == "complete"
+    assert report["backtest_release_contract"]["publication_state"] == "ready"
+    assert report["backtest_release_contract"]["publish_eligible"] is True
     trades = report["strategies"]["value"]["windows"]["training"]
     assert trades
     assert trades[0]["entry_date"] > trades[0]["signal_date"]
@@ -59,3 +61,7 @@ def test_value_strategy_reports_gap_instead_of_using_today_fundamentals_for_hist
     report = run_walk_forward({"AAA": bars()}, universes(), market="us", config=config(), strategies=("value",))
     assert report["strategies"]["value"]["windows"]["training"] == []
     assert any("fundamentals unavailable" in gap["reason"] for gap in report["strategies"]["value"]["data_gaps"])
+    contract = report["backtest_release_contract"]
+    assert contract["publication_state"] == "blocked"
+    assert contract["publish_eligible"] is False
+    assert "value: unresolved data gaps" in contract["blocking_reasons"]
