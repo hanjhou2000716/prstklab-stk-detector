@@ -96,5 +96,9 @@ def build_explainability_card(candidate: dict[str, Any], gate: dict[str, Any]) -
         "signal_date": card["signal_date"],
         "invalidation": card["invalidation"],
     }
+    if candidate.get("strategy_registry") is not None:
+        from src.production_integration import bind_strategy_provenance
+
+        card["explainability"]["strategy_binding"] = bind_strategy_provenance(candidate)
     return card
 

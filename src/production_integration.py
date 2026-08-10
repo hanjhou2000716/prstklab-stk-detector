@@ -117,14 +117,36 @@ def bind_strategy_provenance(candidate: dict[str, Any] | None) -> dict[str, Any]
     row = candidate or {}
     required = ("strategy_version", "data_version", "backtest_release")
     missing = [key for key in required if not row.get(key)]
+    registry = row.get("strategy_registry")
+    registry_errors: list[str] = []
+    if registry is not None:
+        if not isinstance(registry, dict):
+            registry_errors.append("strategy_registry must be an object")
+        else:
+            pairs = {
+                "strategy_id": row.get("strategy") or row.get("strategy_id"),
+                "strategy_version": row.get("strategy_version"),
+                "data_version": row.get("data_version"),
+                "backtest_release": row.get("backtest_release"),
+            }
+            for key, expected in pairs.items():
+                if expected not in (None, "") and registry.get(key) != expected:
+                    registry_errors.append(f"strategy_registry.{key} does not match candidate")
+            for key in ("parameter_hash", "universe_version", "code_commit"):
+                if not registry.get(key):
+                    registry_errors.append(f"strategy_registry.{key} is missing")
+    if registry_errors:
+        missing.append("strategy_registry")
     return {
         "state": "production" if not missing else "observation_only",
         "strategy_id": row.get("strategy") or row.get("strategy_id"),
         "strategy_version": row.get("strategy_version"),
         "data_version": row.get("data_version"),
         "backtest_release": row.get("backtest_release"),
+        "registry_state": "verified" if registry is not None and not registry_errors else "unverified" if registry is not None else "not_provided",
+        "registry_errors": registry_errors,
         "missing": missing,
-        "reason": None if not missing else "no_valid_backtest_release",
+        "reason": None if not missing else "invalid_strategy_registry" if registry_errors else "no_valid_backtest_release",
     }
 
 

@@ -41,3 +41,18 @@ def test_advice_card_exposes_nested_explainability_contract():
         {"allowed": False},
     )
     assert card["explainability"]["passed_conditions"] == ["quality"]
+
+
+def test_advice_card_exposes_strategy_registry_binding_when_present():
+    card = build_explainability_card(
+        {
+            "ticker": "2330", "strategy": "momentum", "strategy_version": "2", "data_version": "d1",
+            "backtest_release": "bt1",
+            "strategy_registry": {
+                "strategy_id": "momentum", "strategy_version": "2", "data_version": "d1", "backtest_release": "bt1",
+                "parameter_hash": "abc", "universe_version": "u1", "code_commit": "deadbeef",
+            },
+        },
+        {"allowed": False},
+    )
+    assert card["explainability"]["strategy_binding"]["registry_state"] == "verified"
