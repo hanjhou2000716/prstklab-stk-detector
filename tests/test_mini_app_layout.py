@@ -122,6 +122,8 @@ def test_event_timeline_and_feedback_are_optional_and_non_policy_mutating():
     assert 'id="event-timeline"' in page
     assert "lifecycle_history" in app
     assert 'data-event-feedback="correct"' in app
+    assert "證據狀態" in app
+    assert "等待第二來源" in app
     assert "PRSTK_FEEDBACK_ENDPOINT" in app
     assert "不會自動修改政策" in app
     assert ".event-timeline" in styles

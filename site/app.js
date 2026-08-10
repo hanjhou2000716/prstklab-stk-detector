@@ -142,6 +142,19 @@ const renderAlertTrace = (event) => {
         : "等待第二來源";
     facts.push(`事件交叉核對：${label}${crosscheckDomains.length ? `（${crosscheckDomains.join("、")}）` : ""}`);
   }
+  const evidenceState = String(event?.evidence_state || trace?.evidence_state || "").trim();
+  const evidenceReason = String(event?.evidence_reason || trace?.evidence_reason || "").trim();
+  if (evidenceState || evidenceReason) {
+    const stateLabels = {
+      discovery: "探索中",
+      single_source: "單一來源",
+      pending_crosscheck: "等待核對",
+      corroborated: "第二來源已核對",
+      official_confirmed: "官方已確認",
+    };
+    const stateLabel = stateLabels[evidenceState] || evidenceState || "證據狀態待確認";
+    facts.push(`證據狀態：${stateLabel}${evidenceReason ? `｜${evidenceReason}` : ""}`);
+  }
   const eventTime = traceTime(trace?.event_time);
   if (eventTime) facts.push(`事件時間：${eventTime} CST`);
   const checkedAt = traceTime(trace?.checked_at);
