@@ -94,6 +94,12 @@ def attach_backtest_contract(report: dict, path: Path | None) -> dict:
         "blocking_reasons": ["backtest artifact unavailable or invalid"],
     }
     report["backtest_release_status"] = report["backtest_release_contract"].get("publication_state", "blocked")
+    # Bind the same identity to visible candidates so explainability cards and
+    # Advice Gate cannot accidentally read a different or unstamped study.
+    for candidate in report.get("candidates", []):
+        if isinstance(candidate, dict):
+            candidate["backtest_release"] = report["backtest_release_contract"].get("backtest_release")
+            candidate["backtest_release_contract"] = report["backtest_release_contract"]
     return report
 
 
