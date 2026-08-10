@@ -216,3 +216,7 @@ symbols remain unresolved and cannot become alert evidence.
 
 The Advice Gate also requires the structured backtest contract. A bare release
 ID is treated as unverified and cannot unlock contextual decision support.
+
+Walk-forward contracts now expose sanitized net performance metrics and the
+survivorship audit snapshot dates. These are research evidence only and do not
+unlock trading language or create a performance forecast.

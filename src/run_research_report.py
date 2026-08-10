@@ -60,7 +60,8 @@ def _load_backtest_contract(path: Path | None) -> dict[str, Any] | None:
         }
     allowed = (
         "backtest_release", "market", "publication_state", "publish_eligible",
-        "blocking_reasons", "strategy_registry", "research_only",
+        "blocking_reasons", "strategy_registry", "performance_summary",
+        "survivorship_audit", "research_only",
     )
     result = {key: contract[key] for key in allowed if key in contract}
     if not isinstance(result.get("blocking_reasons"), list) or not all(
