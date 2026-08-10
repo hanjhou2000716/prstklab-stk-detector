@@ -96,10 +96,13 @@ The following changes are prepared but intentionally not merged by the agent:
 - #407 event evidence lifecycle state contract
 - #408 risk-adjusted walk-forward summary metrics
 - #409 Mini App evidence wait-reason display
+- #410 refresh the production integration matrix
+- #411 offline production acceptance gate
 
 Merge these in dependency order with **Create a merge commit**.  A module is
 not promoted to `production` in this matrix until its PR is merged and the
-release pipeline has emitted a matching manifest.
+release pipeline has emitted a matching manifest.  Keep the feature branches
+until the complete stack is merged so each dependency remains reviewable.
 
 ## Alert contract and lifecycle
 
