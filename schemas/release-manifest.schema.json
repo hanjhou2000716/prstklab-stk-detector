@@ -18,6 +18,9 @@
     "research_freshness": {"enum": ["fresh", "stale_fallback", "unverified", "unknown"]},
     "research_fallback_used": {"type": "boolean"},
     "research_fallback_reason": {"type": ["string", "null"]},
+    "backtest_release": {"type": ["string", "null"]},
+    "backtest_publication_state": {"enum": ["ready", "blocked", "unavailable"]},
+    "strategy_registry": {"type": "array", "items": {"type": "object"}},
     "status": {"enum": ["ready", "rolled_back", "invalid"]}
   },
   "additionalProperties": true

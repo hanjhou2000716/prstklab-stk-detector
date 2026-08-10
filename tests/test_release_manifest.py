@@ -36,6 +36,28 @@ def test_manifest_is_ready_and_hashes_are_verifiable(tmp_path):
     assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 
+def test_manifest_carries_backtest_release_state_without_unlocking_advice(tmp_path):
+    _artifacts(tmp_path)
+    data = tmp_path / "site" / "data"
+    research_path = data / "research-report.json"
+    research = json.loads(research_path.read_text(encoding="utf-8"))
+    research["backtest_release_contract"] = {
+        "backtest_release": "backtest-12345678",
+        "publication_state": "blocked",
+        "publish_eligible": False,
+        "blocking_reasons": ["survivorship audit did not pass"],
+        "strategy_registry": [{"strategy_id": "value", "strategy_version": "v1"}],
+    }
+    research_path.write_text(json.dumps(research), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+
+    assert manifest["status"] == "ready"
+    assert manifest["backtest_release"] == "backtest-12345678"
+    assert manifest["backtest_publication_state"] == "blocked"
+    assert manifest["strategy_registry"][0]["strategy_id"] == "value"
+
+
 def test_manifest_fails_closed_for_missing_artifact(tmp_path):
     _artifacts(tmp_path)
     (tmp_path / "site" / "data" / "event-ledger.json").unlink()
