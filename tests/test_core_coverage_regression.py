@@ -7,7 +7,6 @@ from src.alert_caption import make_caption
 from src.alert_contract import AlertEnvelope
 from src.deep_link_router import parse_deep_link, resolve_deep_link
 
-
 NOW = datetime(2026, 8, 10, 8, 0, tzinfo=UTC)
 
 
