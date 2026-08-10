@@ -313,6 +313,16 @@ def build_release_manifest(
     market = loaded.get("market.json", {})
     research = loaded.get("research-report.json", {})
     events = loaded.get("event-ledger.json", {})
+    backtest_contract = research.get("backtest_release_contract") if isinstance(research, dict) else None
+    if not isinstance(backtest_contract, dict):
+        backtest_contract = {}
+    backtest_release = backtest_contract.get("backtest_release")
+    backtest_state = backtest_contract.get("publication_state")
+    if backtest_state not in {"ready", "blocked"}:
+        backtest_state = "unavailable"
+    registry = backtest_contract.get("strategy_registry")
+    if not isinstance(registry, list):
+        registry = []
     market_id = content_snapshot_id(market, "market") if market else ""
     research_id = content_snapshot_id(research, "research") if research else ""
     event_id = content_snapshot_id(events, "event") if events else ""
@@ -322,6 +332,9 @@ def build_release_manifest(
         "market_snapshot_id": market_id,
         "research_snapshot_id": research_id,
         "event_snapshot_id": event_id,
+        "backtest_release": backtest_release,
+        "backtest_publication_state": backtest_state,
+        "strategy_registry": registry,
         "artifact_hashes": hashes,
         "policy_version": policy,
     }
@@ -336,6 +349,9 @@ def build_release_manifest(
         "market_snapshot_id": market_id,
         "research_snapshot_id": research_id,
         "event_snapshot_id": event_id,
+        "backtest_release": backtest_release,
+        "backtest_publication_state": backtest_state,
+        "strategy_registry": registry,
         "policy_version": policy,
         "schema_versions": {
             "market": str(market.get("snapshot_schema_version") or "1.0"),
