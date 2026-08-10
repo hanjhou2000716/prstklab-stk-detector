@@ -196,3 +196,13 @@ technical drawer opens through a real click. The quality workflow provisions
 the Playwright Chromium dependency before running the suite; local runs without
 the browser binary skip this browser-only check rather than fabricating an
 acceptance result.
+
+## Research/backtest identity invariant
+
+The research publisher now validates the optional `backtest_release_contract`
+before a release can proceed. A ready contract must be publish-eligible and
+have a release ID; blocked or unavailable contracts cannot unlock candidates.
+Candidate rows must carry the same release ID and publication state as the
+research-level contract. Legacy observation reports without backtest fields
+remain readable, but remain research-only. See
+`docs/p4-research-backtest-invariants.md` for rollback and failure rules.

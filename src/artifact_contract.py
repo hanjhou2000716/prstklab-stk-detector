@@ -216,6 +216,71 @@ def validate_research(document: dict[str, Any]) -> list[str]:
         errors.append("research production_eligible=true requires publish_eligible=true")
     if document.get("research_fallback_used") is True and document.get("production_eligible") is True:
         errors.append("research fallback cannot be production_eligible=true")
+    errors.extend(_backtest_release_contract_errors(document))
+    return errors
+
+
+def _backtest_release_contract_errors(document: dict[str, Any]) -> list[str]:
+    """Keep research and candidate backtest identity consistent.
+
+    The contract is additive so older observation-only reports remain readable.
+    Once a report advertises a backtest status or candidate binding, every
+    identity and publication flag is checked fail-closed.
+    """
+    errors: list[str] = []
+    status = document.get("backtest_release_status")
+    contract = document.get("backtest_release_contract")
+    rows = document.get("candidates")
+    candidates = rows if isinstance(rows, list) else []
+    candidate_bound = any(
+        isinstance(row, dict)
+        and ("backtest_release" in row or "backtest_release_contract" in row)
+        for row in candidates
+    )
+    if status is None and contract is None and not candidate_bound:
+        return errors
+    if status is not None and status not in {"ready", "blocked", "unavailable"}:
+        errors.append(f"backtest_release_status has unknown value={status!r}")
+    if contract is not None and not isinstance(contract, dict):
+        errors.append("backtest_release_contract must be an object")
+        contract = None
+    contract_state = contract.get("publication_state") if contract else None
+    release_id = str(contract.get("backtest_release") or "").strip() if contract else ""
+    publish_eligible = contract.get("publish_eligible") if contract else None
+    if status in {"ready", "blocked"} and contract is None:
+        errors.append(f"backtest_release_status={status} requires backtest_release_contract")
+    if contract is not None:
+        if contract_state not in {"ready", "blocked", "unavailable"}:
+            errors.append(f"backtest_release_contract has unknown publication_state={contract_state!r}")
+        if status is not None and contract_state != status:
+            errors.append("backtest_release_status must match contract.publication_state")
+        if contract_state == "ready" and publish_eligible is not True:
+            errors.append("ready backtest contract requires publish_eligible=true")
+        if contract_state in {"blocked", "unavailable"} and publish_eligible is True:
+            errors.append("blocked/unavailable backtest contract cannot be publish_eligible=true")
+        if contract_state == "ready" and not release_id:
+            errors.append("ready backtest contract requires backtest_release")
+    for index, row in enumerate(candidates):
+        if not isinstance(row, dict):
+            continue
+        candidate_release = str(row.get("backtest_release") or "").strip()
+        candidate_contract = row.get("backtest_release_contract")
+        path = f"candidates[{index}]"
+        if candidate_release and not release_id:
+            errors.append(f"{path}: backtest_release has no matching research contract")
+        if candidate_release and release_id and candidate_release != release_id:
+            errors.append(f"{path}: backtest_release does not match research contract")
+        if candidate_contract is not None:
+            if not isinstance(candidate_contract, dict):
+                errors.append(f"{path}: backtest_release_contract must be an object")
+                continue
+            candidate_release_id = str(candidate_contract.get("backtest_release") or "").strip()
+            if release_id and candidate_release_id != release_id:
+                errors.append(f"{path}: candidate contract release does not match research contract")
+            if contract_state and candidate_contract.get("publication_state") != contract_state:
+                errors.append(f"{path}: candidate contract state does not match research contract")
+            if candidate_contract.get("publish_eligible") is True and contract_state != "ready":
+                errors.append(f"{path}: candidate cannot be publish_eligible unless research contract is ready")
     return errors
 
 
