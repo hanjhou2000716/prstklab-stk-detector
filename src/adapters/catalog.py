@@ -10,6 +10,7 @@ import os
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from src.raw_observation_store import RawObservationStore
 from src.source_adapter import AdapterConfig, JsonSourceAdapter
 
 DEFAULT_REPOSITORY_URL = "https://github.com/hanjhou2000716/prstklab-stk-detector"
@@ -48,7 +49,13 @@ def _spec(provider: str) -> AdapterSpec:
 
 
 def build_adapter(provider: str, *, parser=lambda payload: payload, transport=None, raw_store=None) -> JsonSourceAdapter:
-    """Build one configured adapter; credentials are supplied by the caller."""
+    """Build one configured adapter; credentials are supplied by the caller.
+
+    When ``RAW_OBSERVATION_ROOT`` is configured, the adapter automatically
+    persists the provider response before parsing.  The environment variable
+    is intentionally opt-in so local smoke tests and read-only development
+    runs do not create an implicit data directory.
+    """
     spec = _spec(provider)
     user_agent = spec.user_agent
     if spec.provider == "SEC":
@@ -59,7 +66,12 @@ def build_adapter(provider: str, *, parser=lambda payload: payload, transport=No
         source_tier=spec.source_tier,
         user_agent=user_agent,
     )
-    return JsonSourceAdapter(config=config, parser=parser, transport=transport, raw_store=raw_store)
+    effective_store = raw_store
+    if effective_store is None:
+        root = os.getenv("RAW_OBSERVATION_ROOT", "").strip()
+        if root:
+            effective_store = RawObservationStore(root)
+    return JsonSourceAdapter(config=config, parser=parser, transport=transport, raw_store=effective_store)
 
 
 def build_adapter_catalog() -> list[dict[str, Any]]:
