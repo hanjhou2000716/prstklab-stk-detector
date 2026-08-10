@@ -50,7 +50,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 55
     environment:
-      name: github-pages
+      # Smoke/debug runs must be executable from feature branches.  Only a
+      # production publication is bound to the protected Pages environment;
+      # otherwise GitHub rejects the job before the scanner starts.
+      name: ${{ (inputs.scan_mode || github.event.client_payload.scan_mode || 'production') == 'production' && 'github-pages' || 'research-smoke' }}
       url: ${{ steps.deployment.outputs.page_url }}
     env:
       TAIWAN_LIMIT: ${{ inputs.taiwan_limit || github.event.client_payload.taiwan_limit || '0' }}
