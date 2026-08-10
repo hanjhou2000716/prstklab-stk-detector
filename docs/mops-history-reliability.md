@@ -1,19 +1,22 @@
 # MOPS 歷史資料可靠性
 
-台股璞玉價值的 EPS 與配息條件只能使用已取得並解析完成的 MOPS 歷史資料。MOPS
-端點偶爾會對 CI 網段回傳 security page 或暫時性空回應；這些資料不可被推定為
-「沒有配息」或「沒有候選」。掃描器會將該股票保留在未完成佇列，並讓研究報表維持
-`scan_state=building`，直到資料完成。
+台股璞玉價值的 EPS／配息硬性條件仍維持嚴格規則。這次修正只處理資料取得
+流程，不放寬選股門檻：
 
-`MopsPublicClient` 的可靠性策略如下：
+- 尚未發布的季度（例如當年度第四季）會被記錄為 `missing_periods`，並繼續向
+  更早季度查詢；不能因未來季度不存在而讓整檔公司永久失敗。
+- 只有三年年度 EPS、四季 EPS 與三年配息資料都具備時，才會寫入
+  `history_data_complete=true` 並進入正式候選評估。
+- 不完整記錄不會寫入已驗證快取，只會寫入失敗帳本，於冷卻時間後重試。
+- 連線、逾時、安全阻擋及速率限制不會被當成「沒有配息」或「沒有候選」；
+  仍會 fail closed，並保留錯誤類型與截短診斷訊息供下一輪追查。
 
-1. 每次報表請求之間保留固定間隔，避免短時間 burst 被服務端暫時封鎖。
-2. redirect API 失敗時，先嘗試同一份公開報表的 legacy MOPS endpoint。
-3. 兩條端點都失敗時，旋轉短期 session cookie，再於下一個 bounded retry 重試。
-4. 失敗的 ticker 寫入 cache 的 `failures`，受 cooldown 控制，不會在每輪重複轟炸。
-5. cache 只保存衍生 eligibility facts；未完成資料不會進入正式候選，也不會覆蓋上一個
-   成功 release。
+## 回滾
 
-這不是繞過 MOPS 限流或安全機制；所有重試皆有上限，且不使用登入、隱藏端點或付費資料。
-若資料仍不可取得，Mini App 應顯示歷史核對中／資料缺口，並保留 last-known-good
-research release。
+撤回本 PR 即可恢復原本的 MOPS 歷史請求流程。既有快取格式仍可讀取；新增欄位
+均為向後相容的附加欄位。
+
+## 驗證
+
+`python -m pytest -q tests/test_mops_history.py` 覆蓋未發布季度、完整資料快取、
+不完整資料不入快取、冷卻與重試，以及公開端點 fallback。

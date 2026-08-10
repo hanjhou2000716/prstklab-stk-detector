@@ -38,6 +38,32 @@ REPORT_INTERVAL_SECONDS = 0.35
 MIN_REQUEST_INTERVAL_SECONDS = 0.8
 
 
+class IncompleteMopsHistoryError(RuntimeError):
+    """The public reports were reachable but did not cover the required window."""
+
+    def __init__(self, ticker: str, record: dict[str, Any]) -> None:
+        self.ticker = ticker
+        self.record = record
+        super().__init__(f"MOPS history incomplete for {ticker}")
+
+
+def _is_missing_report(error: Exception) -> bool:
+    """Return whether MOPS simply has no report for a requested period.
+
+    A future quarter (or a company without a legacy report) is not a provider
+    outage.  It must not abort the whole ticker's historical walk, while a
+    security block, timeout, or connection error must still fail closed.
+    """
+    message = str(error).lower()
+    return any(
+        marker in message
+        for marker in (
+            "did not return a report url",
+            "legacy endpoint returned empty response",
+        )
+    )
+
+
 def _number(value: str | None) -> float | None:
     if value is None:
         return None
@@ -280,10 +306,19 @@ def fetch_pristine_history(
     roc_year = (as_of or date.today()).year - 1911
     quarterly: dict[tuple[int, int], float] = {}
     annual: dict[int, float] = {}
+    missing_periods: list[str] = []
 
     # Work backwards: missing future filings are normal, not substituted.
     for year, quarter in _recent_periods(roc_year):
-        report = client.report("t164sb04", ticker, year=year, season=quarter, dataType="2")
+        try:
+            report = client.report("t164sb04", ticker, year=year, season=quarter, dataType="2")
+        except (RuntimeError, ValueError) as error:
+            # MOPS normally has no current-year Q4 report yet.  Continue to
+            # older periods; only a security/transport failure should abort.
+            if _is_missing_report(error):
+                missing_periods.append(f"{year}Q{quarter}")
+                continue
+            raise
         current, prior = parse_eps_report(report)
         if current is not None:
             quarterly[(year, quarter)] = current
@@ -297,10 +332,22 @@ def fetch_pristine_history(
             break
         time.sleep(REPORT_INTERVAL_SECONDS)
 
-    dividends = parse_dividend_history(client.report("t05st09_1", ticker))
+    try:
+        dividends = parse_dividend_history(client.report("t05st09_1", ticker))
+    except (RuntimeError, ValueError) as error:
+        if _is_missing_report(error):
+            missing_periods.append("dividend")
+            dividends = {}
+        else:
+            raise
     annual_years = sorted(annual, reverse=True)[:3]
     quarter_values = [value for _, value in sorted(quarterly.items(), reverse=True)[:4]]
     dividend_years = sorted(dividends, reverse=True)[:3]
+    history_data_complete = (
+        len(annual_years) >= 3
+        and len(quarter_values) >= 4
+        and len(dividend_years) >= 3
+    )
     return {
         "three_year_eps_positive": len(annual_years) >= 3 and all(annual[year] > 0 for year in annual_years),
         "four_quarter_eps_positive": len(quarter_values) >= 4 and all(value > 0 for value in quarter_values),
@@ -315,6 +362,8 @@ def fetch_pristine_history(
         "roe_years": 0,
         "financial_source": "MOPS historical filings (t164sb04/t05st09_1)",
         "history_checked_at": datetime.now(UTC).isoformat(),
+        "history_data_complete": history_data_complete,
+        "missing_periods": missing_periods,
     }
 
 
@@ -382,13 +431,25 @@ def mops_pristine_history(
             break
         attempted += 1
         try:
-            records[ticker] = fetch_pristine_history(ticker, client=client)
+            record = fetch_pristine_history(ticker, client=client)
+            if not record.get("history_data_complete"):
+                raise IncompleteMopsHistoryError(ticker, record)
+            records[ticker] = record
             failures.pop(ticker, None)
+        except IncompleteMopsHistoryError as error:
+            errors.append(f"{ticker} MOPS history: incomplete")
+            failures[ticker] = {
+                "attempted_at": now.isoformat(),
+                "error": "incomplete_history",
+                "missing_periods": error.record.get("missing_periods", []),
+                "attempts": int(previous_failure.get("attempts", 0)) + 1 if isinstance(previous_failure, dict) else 1,
+            }
         except (OSError, ValueError, requests.RequestException, RuntimeError) as error:
             errors.append(f"{ticker} MOPS history: {type(error).__name__}")
             failures[ticker] = {
                 "attempted_at": now.isoformat(),
                 "error": type(error).__name__,
+                "detail": str(error)[:240],
                 "attempts": int(previous_failure.get("attempts", 0)) + 1 if isinstance(previous_failure, dict) else 1,
             }
     cache_path.parent.mkdir(parents=True, exist_ok=True)
