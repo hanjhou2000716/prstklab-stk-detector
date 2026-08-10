@@ -199,19 +199,48 @@ def _strategy_candidates(
     raise ValueError(f"unknown strategy: {strategy}")
 
 
-def _summary(trades: list[dict[str, Any]]) -> dict[str, Any]:
+def _summary(trades: list[dict[str, Any]], *, holding_days: int) -> dict[str, Any]:
     if not trades:
-        return {"trade_count": 0, "average_net_return_percent": None, "win_rate_percent": None, "cost_drag_percent": None}
+        return {
+            "trade_count": 0,
+            "average_net_return_percent": None,
+            "win_rate_percent": None,
+            "cost_drag_percent": None,
+            "cumulative_net_return_percent": None,
+            "annualized_return_percent": None,
+            "annualized_volatility_percent": None,
+            "sharpe": None,
+            "sortino": None,
+            "max_drawdown_percent": None,
+            "calmar": None,
+            "turnover_proxy": 0,
+        }
     returns = np.array([trade["net_return_percent"] for trade in trades], dtype=float)
     cumulative = np.cumprod(1 + returns / 100)
     peak = np.maximum.accumulate(cumulative)
     drawdown = (cumulative / peak - 1) * 100
+    periods_per_year = 252 / max(1, holding_days)
+    mean_period = float(returns.mean()) / 100
+    volatility = float(returns.std(ddof=1)) / 100 if len(returns) > 1 else 0.0
+    downside = returns[returns < 0]
+    downside_volatility = float(downside.std(ddof=1)) / 100 if len(downside) > 1 else 0.0
+    annualized_return = (float(cumulative[-1]) ** (periods_per_year / len(returns)) - 1) if cumulative[-1] > 0 else -1.0
+    max_drawdown = float(drawdown.min())
     return {
         "trade_count": len(trades),
         "average_net_return_percent": round(float(returns.mean()), 4),
         "win_rate_percent": round(float((returns > 0).mean() * 100), 2),
         "total_cost_drag_percent": round(float(sum(trade["cost_drag_percent"] for trade in trades)), 4),
-        "max_drawdown_percent": round(float(drawdown.min()), 4),
+        "cumulative_net_return_percent": round(float((cumulative[-1] - 1) * 100), 4),
+        "annualized_return_percent": round(annualized_return * 100, 4),
+        "annualized_volatility_percent": round(volatility * np.sqrt(periods_per_year) * 100, 4),
+        "sharpe": round(mean_period / volatility * np.sqrt(periods_per_year), 4) if volatility else None,
+        "sortino": round(mean_period / downside_volatility * np.sqrt(periods_per_year), 4) if downside_volatility else None,
+        "max_drawdown_percent": round(max_drawdown, 4),
+        "calmar": round(annualized_return / abs(max_drawdown / 100), 4) if max_drawdown < 0 else None,
+        # Trade count is intentionally a proxy: the archive has no portfolio
+        # weights, so a monetary turnover number would be fabricated.
+        "turnover_proxy": len(trades),
     }
 
 
@@ -275,7 +304,10 @@ def run_walk_forward(
                         "entry_price": round(entry_price, 4), "exit_price": round(exit_price, 4), **trade,
                     })
     for strategy in strategies:
-        results[strategy]["summary"] = {name: _summary(trades) for name, trades in results[strategy]["windows"].items()}
+        results[strategy]["summary"] = {
+            name: _summary(trades, holding_days=holding_days)
+            for name, trades in results[strategy]["windows"].items()
+        }
     report = {
         "status": "complete" if audit["status"] == "pass" else "blocked_by_survivorship_audit",
         "research_only": True,

@@ -55,6 +55,10 @@ def test_value_walk_forward_uses_prior_fundamental_snapshot_and_next_open_costs(
     assert trades
     assert trades[0]["entry_date"] > trades[0]["signal_date"]
     assert trades[0]["net_return_percent"] < trades[0]["gross_return_percent"]
+    summary = report["strategies"]["value"]["summary"]["training"]
+    assert summary["cumulative_net_return_percent"] is not None
+    assert summary["annualized_volatility_percent"] is not None
+    assert summary["turnover_proxy"] == summary["trade_count"]
 
 
 def test_value_strategy_reports_gap_instead_of_using_today_fundamentals_for_history():
