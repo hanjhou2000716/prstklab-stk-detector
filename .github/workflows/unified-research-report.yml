@@ -114,8 +114,8 @@ jobs:
           python - <<'PY'
           import json
           import os
-          import shutil
           from pathlib import Path
+          from src.research_fallback import mark_stale_research_fallback
           report = json.loads(Path("site/data/research-report.json").read_text(encoding="utf-8"))
           eligible = report.get("production_eligible") is True and report.get("publish_eligible") is True
           Path("research-artifacts/research-report-latest.json").write_text(
@@ -129,10 +129,14 @@ jobs:
           else:
               previous = Path("research-artifacts/research-report-previous.json")
               if previous.is_file():
-                  shutil.copyfile(previous, "site/data/research-report.json")
+                  previous_report = json.loads(previous.read_text(encoding="utf-8"))
+                  reason = report.get("blocking_reason") or "research scan is incomplete"
+                  fallback = mark_stale_research_fallback(previous_report, reason)
+                  Path("site/data/research-report.json").write_text(
+                      json.dumps(fallback, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+                  )
                   output.open("a", encoding="utf-8").write("publish=true\n")
                   output.open("a", encoding="utf-8").write("fallback=true\n")
-                  reason = report.get("blocking_reason") or "research scan is incomplete"
                   print(f"::warning::{reason}; keeping the last successful research snapshot")
               else:
                   output.open("a", encoding="utf-8").write("publish=false\n")
@@ -143,9 +147,10 @@ jobs:
       - name: Build release manifest
         if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
         run: |
-          args=(--require-production-research)
           if [[ "${{ steps.research_gate.outputs.fallback }}" == "true" ]]; then
-            args+=(--allow-stale-research --research-fallback-reason "last-known-good research snapshot")
+            args=(--allow-stale-research --research-fallback-reason "research scan incomplete; stale fallback")
+          else
+            args=(--require-production-research)
           fi
           python -m src.release_manifest "${args[@]}"
       - name: 保存最新公開研究摘要

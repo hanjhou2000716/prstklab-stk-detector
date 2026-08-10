@@ -10,7 +10,106 @@ import pandas as pd
 import requests
 
 ISIN_URL = "https://isin.twse.com.tw/isin/C_public.jsp?strMode={mode}"
+# The ISIN HTML page is a convenient discovery source but has repeatedly
+# changed shape/returned an empty document.  These public official endpoints
+# are the fail-closed fallback for a production scan.
+TWSE_OPENAPI_URL = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L"
+TPEX_CLOSE_URL = "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes"
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; PRStKInvestmentSystem/1.0)"}
+
+
+_NON_ORDINARY_TERMS = tuple(
+    term.lower()
+    for term in (
+        "ETF", "ETN", "權證", "認購", "認售", "債券", "受益證券", "存託憑證", "特別股",
+        "指數股票型", "槓桿型", "反向型", "基金", "公司債", "金融債",
+    )
+)
+
+
+def _is_ordinary_share(code: Any, name: Any = "") -> bool:
+    """Keep four-digit ordinary shares and exclude derivatives/funds."""
+    code_text = str(code or "").strip()
+    if len(code_text) != 4 or not code_text.isdigit():
+        return False
+    name_text = str(name or "").strip().lower()
+    return not any(term in name_text for term in _NON_ORDINARY_TERMS)
+
+
+def _value(record: dict[str, Any], *keys: str) -> Any:
+    for key in keys:
+        if key in record and record[key] not in (None, ""):
+            return record[key]
+    return None
+
+
+def parse_twse_openapi_records(payload: Any) -> list[dict[str, str]]:
+    """Normalize TWSE's official listed-company OpenAPI response."""
+    records = payload if isinstance(payload, list) else payload.get("data", []) if isinstance(payload, dict) else []
+    items: list[dict[str, str]] = []
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        code = _value(record, "公司代號", "公司代碼", "Code", "code")
+        name = _value(record, "公司簡稱", "公司名稱", "CompanyName", "name")
+        if not _is_ordinary_share(code, name):
+            continue
+        code_text = str(code).strip()
+        items.append({
+            "ticker": code_text,
+            "name": str(name or code_text).strip(),
+            "symbol": f"{code_text}.TW",
+            "category": str(_value(record, "產業別", "產業類別", "industry") or "").strip(),
+        })
+    return items
+
+
+def parse_tpex_daily_close_records(payload: Any) -> list[dict[str, str]]:
+    """Normalize TPEx's official daily-close OpenAPI response."""
+    records = payload if isinstance(payload, list) else payload.get("data", []) if isinstance(payload, dict) else []
+    items: list[dict[str, str]] = []
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        code = _value(record, "SecuritiesCompanyCode", "證券代號", "Code", "code")
+        name = _value(record, "CompanyName", "公司名稱", "公司簡稱", "name")
+        if not _is_ordinary_share(code, name):
+            continue
+        code_text = str(code).strip()
+        items.append({
+            "ticker": code_text,
+            "name": str(name or code_text).strip(),
+            "symbol": f"{code_text}.TWO",
+            "category": "TPEx ordinary share",
+        })
+    return items
+
+
+def _official_json(session: Any, url: str) -> Any:
+    response = session.get(url, headers=HEADERS, timeout=20)
+    response.raise_for_status()
+    return response.json()
+
+
+def fetch_official_taiwan_universe(session: Any = requests) -> list[dict[str, str]]:
+    """Fetch listed/OTC ordinary shares from official TWSE/TPEx APIs."""
+    errors: list[str] = []
+    items: list[dict[str, str]] = []
+    try:
+        items.extend(parse_twse_openapi_records(_official_json(session, TWSE_OPENAPI_URL)))
+    except Exception as error:
+        errors.append(f"TWSE OpenAPI: {type(error).__name__}")
+    try:
+        items.extend(parse_tpex_daily_close_records(_official_json(session, TPEX_CLOSE_URL)))
+    except Exception as error:
+        errors.append(f"TPEx OpenAPI: {type(error).__name__}")
+    unique: dict[str, dict[str, str]] = {}
+    for item in items:
+        unique.setdefault(item["symbol"], item)
+    if unique:
+        return list(unique.values())
+    detail = "; ".join(errors) or "empty response"
+    raise RuntimeError(f"official Taiwan universe sources unavailable: {detail}")
 
 def parse_isin_table(html: str, suffix: str) -> list[dict[str, str]]:
     table = pd.read_html(StringIO(html), header=None)[0]
@@ -33,11 +132,17 @@ def fetch_taiwan_universe(session: Any = requests) -> list[dict[str, str]]:
                 response = session.get(ISIN_URL.format(mode=mode), headers=HEADERS, timeout=20)
                 response.raise_for_status()
                 items.extend(parse_isin_table(response.text, suffix))
-            return items
-        except requests.RequestException as error:
+            if items:
+                return items
+            raise ValueError("ISIN source returned no ordinary shares")
+        except (requests.RequestException, ValueError, IndexError, TypeError, ImportError) as error:
             last_error = error
-    assert last_error is not None
-    raise last_error
+    try:
+        return fetch_official_taiwan_universe(session)
+    except Exception as official_error:
+        if last_error is not None:
+            raise RuntimeError(f"Taiwan universe discovery failed: {last_error}; {official_error}") from official_error
+        raise
 
 
 def load_or_fetch_taiwan_universe(cache_path: str | Path | None = None) -> list[dict[str, str]]:
