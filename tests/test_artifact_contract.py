@@ -54,6 +54,47 @@ def test_research_rejects_complete_scan_with_data_gap():
     assert any("no_candidates and data_gap" in error for error in errors) is False
 
 
+def test_research_rejects_complete_scan_with_failed_records_or_incomplete_universe():
+    errors = validate_research(_research(sources=[{
+        "market": "taiwan", "strategy": "value", "scan_state": "complete",
+        "candidate_state": "available", "candidates": 1, "visible_candidates": 1,
+        "formal_candidates": 1, "requested_records": 10, "complete_records": 9,
+        "failed_records": 1, "data_gap_counts": {"history": 1},
+    }]))
+    assert any("failed records" in error for error in errors)
+    assert any("data gaps" in error for error in errors)
+    assert any("universe is incomplete" in error for error in errors)
+
+
+def test_research_accepts_structured_data_gap_counts_for_partial_scan():
+    errors = validate_research(_research(sources=[{
+        "market": "taiwan", "strategy": "value", "scan_state": "building",
+        "candidate_state": "available_from_completed_records", "candidates": 1,
+        "visible_candidates": 1, "formal_candidates": 1, "requested_records": 10,
+        "complete_records": 9, "failed_records": 1,
+        "data_gap_counts": {"history": 1},
+    }]))
+    assert errors == []
+
+
+def test_research_publication_flags_require_production_full_scan():
+    errors = validate_research(_research(
+        scan_mode="smoke", scan_scope="bounded", publish_eligible=True,
+        production_eligible=True,
+    ))
+    assert any("scan_mode=production" in error for error in errors)
+    assert any("scan_scope=full" in error for error in errors)
+    assert any("production_eligible=true" in error for error in errors)
+
+
+def test_research_fallback_cannot_be_production_eligible():
+    errors = validate_research(_research(
+        scan_mode="production", scan_scope="full", publish_eligible=False,
+        production_eligible=True, research_fallback_used=True,
+    ))
+    assert any("fallback cannot be production_eligible" in error for error in errors)
+
+
 def test_release_rejects_mismatched_snapshot_ids():
     research = _research(snapshot_id="research-other")
     errors = validate_release(market=_market(), research=research, manifest=_manifest())
