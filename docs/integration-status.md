@@ -238,6 +238,16 @@ reported as `observation_only` with `invalid_strategy_registry`; a complete
 match is marked `registry_state=verified`. Candidates without the optional
 entry retain the legacy observation-only compatibility path.
 
+## Private portfolio boundary
+
+`src/private_portfolio.py` is the only supported adapter for an optional
+personal risk view. It accepts caller-owned in-memory positions, delegates to
+`portfolio_risk_snapshot`, and annotates the result as
+`private_local_only`/`caller_memory_only`. The payload is never a release
+artifact, never enters Telegram delivery, and cannot access a broker account
+or place an order. This keeps portfolio risk isolated from the public Pages
+and data-release pipeline.
+
 ## Intelligence evidence contract
 
 `src/intelligence_contract.py` validates the cross-field meaning of the
