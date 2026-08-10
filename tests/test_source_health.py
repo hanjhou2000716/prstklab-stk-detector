@@ -128,3 +128,60 @@ def test_monitor_health_pending_reason_survives_normal_market_refresh():
     assert gdelt["status"] == "pending"
     assert gdelt["pending_count"] == 2
     assert health["missing_source_count"] == 0
+
+
+def test_research_machine_failed_state_is_not_reported_as_healthy():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": [{
+            "market": "us", "strategy": "value", "status": "failed",
+            "scan_state": "failed", "candidates": 0,
+            "failed_records": 3,
+        }]}, checked_at=NOW,
+    )
+    research = next(item for item in health["sources"] if item["key"] == "research")
+    assert research["semantic_state"] == "failed"
+    assert research["status"] == "partial"
+    assert health["missing_source_count"] >= 1
+
+
+def test_research_partial_display_status_is_not_treated_as_empty_success():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": [{
+            "market": "taiwan", "strategy": "momentum", "status": "partial",
+            "candidates": 0,
+        }]}, checked_at=NOW,
+    )
+    research = next(item for item in health["sources"] if item["key"] == "research")
+    assert research["semantic_state"] == "partial"
+    assert research["status"] == "partial"
+
+
+def test_research_machine_building_state_preserves_partial_progress():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": [{
+            "market": "taiwan", "strategy": "value", "status": "building",
+            "scan_state": "building", "candidates": 2,
+            "history_cached": 20, "history_expected": 150,
+        }]}, checked_at=NOW,
+    )
+    research = next(item for item in health["sources"] if item["key"] == "research")
+    assert research["status"] == "warming"
+    assert research["semantic_state"] == "warming"
+    assert "20／150" in research["issues"][0]
+
+
+def test_source_health_publishes_observability_counts_for_mini_app():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": []}, checked_at=NOW,
+        additional_sources=[
+            {"key": "clean", "label": "Clean", "status": "healthy", "cross_checked": True},
+            {"key": "quiet", "label": "Quiet", "status": "no_event"},
+            {"key": "stale", "label": "Stale", "status": "healthy", "freshness": "stale"},
+        ],
+    )
+    metrics = health["observability"]
+    assert metrics["observations"] >= 3
+    assert metrics["no_event_count"] == 1
+    assert metrics["stale_count"] == 1
+    assert metrics["crosscheck_rate"] > 0
+    assert metrics["state"] == "partial"
