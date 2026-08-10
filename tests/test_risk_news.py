@@ -139,13 +139,13 @@ def test_duplicate_market_payload_uses_separate_fallback_feeds(monkeypatch):
     monkeypatch.setattr("src.risk_news.fetch_market_news", lambda market: duplicate.copy())
     monkeypatch.setattr(
         "src.risk_news.fetch_market_news_fallback",
-        lambda market: [{"title": market, "url": f"https://news.google.com/rss/articles/{market}"}],
+            lambda market: [{"title": "Taiwan market" if market == "taiwan" else "US stocks", "url": f"https://news.google.com/rss/articles/{market}"}],
     )
 
     snapshot = build_news_snapshot()
 
-    assert snapshot["taiwan"][0]["title"] == "taiwan"
-    assert snapshot["us"][0]["title"] == "us"
+    assert snapshot["taiwan"][0]["title"] == "Taiwan market"
+    assert snapshot["us"][0]["title"] == "US stocks"
     assert all(item.get("fallback_used") for item in snapshot["source_health"])
 
 
@@ -153,13 +153,13 @@ def test_news_cache_prevents_empty_us_panel_after_transient_outage(monkeypatch, 
     cache_path = tmp_path / "news-cache.json"
     monkeypatch.setenv("NEWS_CACHE_PATH", str(cache_path))
     fresh = {
-        "taiwan": [{"title": "Taiwan", "url": "https://example.test/tw"}],
-        "us": [{"title": "US", "url": "https://example.test/us"}],
+        "taiwan": [{"title": "Taiwan market", "url": "https://example.test/tw"}],
+        "us": [{"title": "US stocks", "url": "https://example.test/us"}],
     }
     monkeypatch.setattr("src.risk_news.fetch_market_news", lambda market: fresh[market])
     monkeypatch.setattr("src.risk_news.fetch_market_news_fallback", lambda market: [])
     first = build_news_snapshot()
-    assert first["us"][0]["title"] == "US"
+    assert first["us"][0]["title"] == "US stocks"
     assert cache_path.exists()
 
     def unavailable(_market):
@@ -168,7 +168,7 @@ def test_news_cache_prevents_empty_us_panel_after_transient_outage(monkeypatch, 
     monkeypatch.setattr("src.risk_news.fetch_market_news", unavailable)
     second = build_news_snapshot()
 
-    assert second["us"][0]["title"] == "US"
+    assert second["us"][0]["title"] == "US stocks"
     assert second["us"][0]["stale_used"] is True
     us_health = next(item for item in second["source_health"] if item["key"] == "news_us")
     assert us_health["status"] == "stale"
@@ -213,6 +213,13 @@ def test_market_classifier_routes_fed_and_lai_to_their_own_tabs():
     assert classify_news_market(lai)["market_scope"] == "taiwan"
     assert _filter_market_news([fed, lai], "taiwan")[0]["title"].startswith("Taiwan")
     assert _filter_market_news([fed, lai], "us")[0]["title"].startswith("Federal")
+
+
+def test_market_filter_rejects_unclassified_headline_instead_of_copying_to_both_tabs():
+    story = {"title": "Company announces quarterly update", "url": "https://example.test/neutral"}
+    assert classify_news_market(story)["market_scope"] == "unclassified"
+    assert _filter_market_news([story], "taiwan") == []
+    assert _filter_market_news([story], "us") == []
 
 
 def test_global_or_cross_market_story_is_explicitly_auditable():
