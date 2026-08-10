@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from src.health_observability import aggregate_source_health
+
 SOURCE_DEFINITIONS = (
     ("market_quotes", "市場報價", {"", "index", "macro_quote", "taiwan_crosscheck"}),
     ("official_events", "官方重大事件", {"official_event"}),
@@ -361,11 +363,13 @@ def build_source_health(
         {"source": source["label"], "key": source["key"], "issues": source.get("issues", [])}
         for source in gap_sources
     ]
+    observability = aggregate_source_health(sources)
     return {
         "checked_at": checked,
         "status": status,
         "summary": summary,
         "investor_status": investor_status,
+        "observability": observability,
         "event_scan": event_scan,
         "sources": sources,
         "data_gaps": data_gaps,

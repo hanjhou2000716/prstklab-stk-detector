@@ -25,3 +25,13 @@ This prevents a translated label change from hiding a failed scan.  A
 partially completed value scan remains visible as progress, while its
 candidate list stays blocked until the producer's completeness policy allows
 publication.
+
+## Observability summary
+
+The published `source_health.observability` object is computed from the same
+source rows shown in the card.  It includes `observations`, `success_rate`,
+`failure_count`, `no_event_count`, `stale_count`, `degraded_count`,
+`crosscheck_rate`, and `parser_error_count`.  A successful scan with no matching
+event counts as a successful observation (`no_event_count`), while stale data
+still keeps the aggregate in `partial` so it cannot be mistaken for a healthy
+live feed.
