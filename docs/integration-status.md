@@ -206,3 +206,10 @@ Candidate rows must carry the same release ID and publication state as the
 research-level contract. Legacy observation reports without backtest fields
 remain readable, but remain research-only. See
 `docs/p4-research-backtest-invariants.md` for rollback and failure rules.
+
+## Instrument Master provenance
+
+`InstrumentMaster.artifact()` is the deterministic public registry contract.
+Production quote evidence records its `instrument_master_id` and version for
+every resolution attempt, including unknown symbols. Ambiguous or unknown
+symbols remain unresolved and cannot become alert evidence.

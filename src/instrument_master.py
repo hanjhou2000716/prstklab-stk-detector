@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import asdict, dataclass
 from datetime import date
@@ -99,13 +100,25 @@ class InstrumentMaster:
             if (market is None or item.market == market) and (asset_type is None or item.asset_type == asset_type)
         ]
 
+    def artifact(self) -> dict[str, Any]:
+        """Return a deterministic, public-safe registry artifact.
+
+        The registry ID is content addressed so every quote can identify the
+        exact symbol mapping used at observation time without exposing private
+        account data or relying on the mutable working tree.
+        """
+        rows = [item.to_dict() for item in self._instruments]
+        canonical = json.dumps(rows, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        return {
+            "schema_version": 1,
+            "registry_id": f"instrument-{hashlib.sha256(canonical).hexdigest()[:16]}",
+            "instruments": rows,
+        }
+
     def save(self, path: Path | str) -> None:
         destination = Path(path)
         destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_text(
-            json.dumps({"schema_version": 1, "instruments": [item.to_dict() for item in self._instruments]}, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+        destination.write_text(json.dumps(self.artifact(), ensure_ascii=False, indent=2), encoding="utf-8")
 
     @classmethod
     def load(cls, path: Path | str) -> InstrumentMaster:
