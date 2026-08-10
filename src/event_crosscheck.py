@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from src.event_classifier import build_haystack, classify_event_fields, normalize_text
+from src.event_evidence import attach_evidence_state
 from src.intel_contract import normalize_event_record, source_domain
 
 _KEYWORD_PATH = Path(__file__).resolve().parents[1] / "config" / "event_keywords.json"
@@ -178,7 +179,7 @@ def _annotate(record: dict[str, Any], *, status: str, sources: Iterable[str]) ->
     if urls:
         trace["crosscheck_sources"] = urls
     item["source_trace"] = trace
-    return item
+    return attach_evidence_state(item)
 
 
 def cross_check_event_records(records: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
