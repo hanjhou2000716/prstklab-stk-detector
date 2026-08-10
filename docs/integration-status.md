@@ -230,3 +230,19 @@ candidate emits `explainability`, release validation requires passed and
 failed conditions, data completeness, risk factors, evidence, signal date,
 and an invalidation condition. Legacy rows remain readable but do not gain
 advice permissions merely by having a score or ticker.
+
+## Intelligence evidence contract
+
+`src/intelligence_contract.py` validates the cross-field meaning of the
+briefing intelligence payload before a market artifact can be released. A
+confirmed market sync must have a synchronized impact-graph path with explicit
+market evidence; a high-confidence conditional path without that evidence is
+rejected. Regime factor counts, contagion signal counts, non-predictive stress
+scenarios, and fail-closed advice bindings are checked as well. This keeps the
+Mini App's conditional transmission hypotheses from becoming directional
+claims during serialization or release publication.
+
+The contract is additive and accepts older market snapshots without an
+`intelligence` block. To roll back, remove the producer's briefing intelligence
+block or revert the validation commit; the existing market, release, and
+Telegram gates remain fail-closed.

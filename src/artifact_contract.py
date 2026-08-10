@@ -14,6 +14,8 @@ from urllib.parse import urlparse
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+from src.intelligence_contract import validate_intelligence
+
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "schemas"
 
@@ -90,6 +92,9 @@ def validate_market(document: dict[str, Any]) -> list[str]:
     # canonical source-health envelope is present.
     if isinstance(source_health, dict) and {"status", "sources", "event_scan"}.issubset(source_health):
         errors.extend(validate_source_health(source_health))
+    briefing = document.get("briefing")
+    if isinstance(briefing, dict) and isinstance(briefing.get("intelligence"), dict):
+        errors.extend(validate_intelligence(briefing["intelligence"]))
     return errors
 
 

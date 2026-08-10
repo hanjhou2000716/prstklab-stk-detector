@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/intelligence.schema.json",
+  "type": "object",
+  "properties": {
+    "market_sync_confirmed": {"type": "boolean"},
+    "evidence_status": {"enum": ["confirmed", "insufficient_evidence", "not_available", "not_provided"]},
+    "market_impact_graph": {"type": "object"},
+    "market_regime": {"type": "object"},
+    "contagion": {"type": "object"},
+    "stress_scenarios": {"type": "array", "items": {"type": "object"}},
+    "advice_gate": {"type": "string"}
+  },
+  "additionalProperties": true
+}
