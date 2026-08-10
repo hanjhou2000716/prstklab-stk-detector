@@ -157,6 +157,8 @@ def test_briefing_intelligence_shows_conditional_impact_and_macro_surprise_only(
     assert "context.market_impact_graph?.paths" in app
     assert "等待市場證據" in app
     assert "context.macro_surprise" in app
+    assert "market_reaction" in app
+    assert "市場第一反應" in app
     assert "不單獨推定市場方向" in app
 
 

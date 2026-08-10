@@ -15,7 +15,7 @@ pipeline call and a tested consumer.
 | Event source catalog | `src/event_source_catalog.py` | yes | yes | yes | health | event | production |
 | Event cluster/ledger | `src/event_ledger.py`, `src/event_output.py` | yes | yes | yes | timeline | event | production |
 | Event evidence state | `src/event_evidence.py`, `src/event_crosscheck.py` | yes | yes | yes | wait reason/timeline | lifecycle gate | production |
-| Macro surprise | `src/surprise_engine.py` | yes | partial | partial | partial | no | partially_integrated |
+| Macro surprise | `src/surprise_engine.py`, `src/intelligence_pipeline.py` | yes | yes | yes | yes | no | production |
 | Corporate events | `src/corporate_event_contract.py`, `src/official_events.py` | yes | yes | yes | yes | observe-only/event | production |
 | Market impact graph | `src/market_impact_graph.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing/event | conditional event | production |
 | Alert budget/lifecycle | `src/alert_budget.py`, `src/event_alerts.py`, `src/event_ledger.py` | yes | scheduled/official/emergency | delivery history | suppression reason | all alert paths | production |
