@@ -99,7 +99,9 @@ The following changes are prepared but intentionally not merged by the agent:
 - #410 refresh the production integration matrix
 - #411 offline production acceptance gate
 - #414 source-health scan-state and observability contract
-- next: source-health schema and runtime cross-field audit (this PR)
+- #415 source-health schema and runtime cross-field audit
+- #416 bind backtest identity to release manifests
+- #417 bind backtest identity to research candidates and Actions input
 
 Merge these in dependency order with **Create a merge commit**.  A module is
 not promoted to `production` in this matrix until its PR is merged and the
