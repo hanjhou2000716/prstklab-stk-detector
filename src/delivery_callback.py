@@ -24,6 +24,7 @@ def build_payload() -> dict[str, object]:
         if item.strip()
     ]
     return {
+        "receipt_origin": "github_actions",
         "trace_id": os.environ.get("TRACE_ID", "").strip(),
         "receipt_kind": os.environ.get("DELIVERY_RECEIPT_KIND", "production").strip() or "production",
         "release_id": os.environ.get("RELEASE_ID", "").strip(),
