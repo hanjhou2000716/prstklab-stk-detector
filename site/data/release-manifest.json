@@ -1,9 +1,9 @@
 {
-  "release_id": "release-03ec079055f13f8c",
-  "created_at": "2026-08-10T03:30:26.103174+00:00",
-  "market_snapshot_id": "324e715d4cfd3763",
+  "release_id": "release-316acd0a4808f2bf",
+  "created_at": "2026-08-10T03:32:24.400786+00:00",
+  "market_snapshot_id": "43890043f9426fad",
   "research_snapshot_id": "research-05c7ae8487b01350",
-  "event_snapshot_id": "event-aef6826d45327217",
+  "event_snapshot_id": "event-e2686495a0cc6bfc",
   "policy_version": "2026.08",
   "schema_versions": {
     "market": "3.0",
@@ -11,9 +11,9 @@
     "events": "1"
   },
   "artifact_hashes": {
-    "market.json": "58edbafaee53dbcb022c385610681beff3c72aae4af00bbae98b878545c5ff7d",
-    "research-report.json": "7dc010be43cbd13a7c557c4c115e081b490be72c76e6093e569722bfba3b7916",
-    "event-ledger.json": "934dfdc610b134a550861051afa610e7d8b31a7311b9b4aae83035656838159e"
+    "market.json": "fbf95d2a0c4ba5e40ec6442ab517d33b6f959cbcd8d09d1375b509ca5c4384ab",
+    "research-report.json": "68a24e800852604a214246733d621f0b9e226e52430a155e09666773c9de250a",
+    "event-ledger.json": "ea1a951f198adfb91551633ceece691aae903c1850b050269feea96112a81d60"
   },
   "artifact_paths": {
     "market.json": "data/market.json",
@@ -23,11 +23,12 @@
   "normalization_notes": [
     "market: indices[0].quote_source=Yahoo",
     "market: indices[1].source_label=TWSE",
-    "market: indices[1].technical_context_stale=true"
+    "market: indices[1].technical_context_stale=true",
+    "events: snapshot_id=deterministic"
   ],
   "research_freshness": "unverified",
   "research_fallback_used": true,
-  "research_fallback_reason": "research scan incomplete; stale fallback",
+  "research_fallback_reason": "research scan incomplete; preserving last-known-good research snapshot",
   "status": "ready",
   "validation_errors": []
 }
