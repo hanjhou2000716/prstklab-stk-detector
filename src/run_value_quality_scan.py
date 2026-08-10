@@ -112,6 +112,15 @@ def public_quotes(
     return quotes, errors
 
 
+def candidate_state_for(rows: list[dict[str, Any]], scan_state: str) -> str:
+    """Describe usable candidates independently from whole-universe completion."""
+    if rows:
+        return "available" if scan_state == "complete" else "available_from_completed_records"
+    if scan_state in {"partial", "building", "failed"}:
+        return "data_gap"
+    return "no_candidates"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Independent public value-investing research")
     parser.add_argument("--market", choices=("taiwan", "us"), required=True)
@@ -192,11 +201,7 @@ def main() -> None:
         scan_state = "partial"
     else:
         scan_state = "failed"
-    candidate_state = (
-        "available" if rows else
-        "data_gap" if scan_state in {"partial", "failed"} else
-        "no_candidates"
-    )
+    candidate_state = candidate_state_for(rows, scan_state)
     summary = {
         "requested": len(candidates),
         "universe_mode": "full",
@@ -247,7 +252,7 @@ def main() -> None:
         summary["history_failure_count"] = len(history_errors)
         if len(history) < len(candidates):
             summary["scan_state"] = "building"
-            summary["candidate_state"] = "data_gap"
+            summary["candidate_state"] = candidate_state_for(rows, "building")
             summary["status"] = "建檔中"
             summary["notice"] = (
                 f"璞玉價值歷史資料建檔中：已核對 {len(history)}／{len(candidates)} 檔；"

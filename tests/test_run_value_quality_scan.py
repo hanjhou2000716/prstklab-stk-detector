@@ -1,6 +1,17 @@
 import pandas as pd
 
-from src.run_value_quality_scan import load_upstream_candidates
+from src.run_value_quality_scan import candidate_state_for, load_upstream_candidates
+
+
+def test_partial_scan_keeps_completed_candidates_visible():
+    assert candidate_state_for([{"ticker": "2330"}], "building") == "available_from_completed_records"
+    assert candidate_state_for([{"ticker": "2330"}], "partial") == "available_from_completed_records"
+
+
+def test_empty_partial_scan_remains_a_data_gap():
+    assert candidate_state_for([], "building") == "data_gap"
+    assert candidate_state_for([], "failed") == "data_gap"
+    assert candidate_state_for([], "complete") == "no_candidates"
 
 
 def test_value_scan_collects_unique_upstream_candidates_and_taiwan_symbols(tmp_path):
