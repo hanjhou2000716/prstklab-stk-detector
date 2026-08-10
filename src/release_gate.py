@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import requests
 
@@ -57,6 +58,78 @@ def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tup
             errors.append(f"artifact must be an object: {name}")
             continue
         loaded[name] = value
+    return loaded, errors
+
+
+def _fetch_public_release_artifacts(
+    manifest: dict[str, Any], *, public_url: str, timeout: float,
+) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    """Fetch and verify the immutable bundle advertised by a Pages manifest.
+
+    Verifying only the manifest URL is insufficient: a CDN or deployment can
+    serve a ready manifest while one of its referenced artifacts is stale,
+    missing, or from a different release.  The remote bytes are hashed before
+    parsing so a semantically valid but different JSON file cannot pass.
+    """
+    paths = manifest.get("artifact_paths")
+    hashes = manifest.get("artifact_hashes")
+    if not isinstance(paths, dict) or not isinstance(hashes, dict):
+        return {}, ["public manifest artifact paths/hashes are missing"]
+    base = urlsplit(public_url)
+    if base.scheme != "https" or not base.hostname:
+        return {}, ["public release URL must use HTTPS"]
+    headers = {
+        "Accept": "application/json",
+        "Cache-Control": "no-cache, no-store",
+        "Pragma": "no-cache",
+        "User-Agent": "PRStK-release-gate",
+    }
+    loaded: dict[str, dict[str, Any]] = {}
+    errors: list[str] = []
+    for name in ("market.json", "research-report.json", "event-ledger.json"):
+        raw_path = paths.get(name)
+        expected_hash = hashes.get(name)
+        if not isinstance(raw_path, str) or not raw_path.strip():
+            errors.append(f"public manifest path missing: {name}")
+            continue
+        if not isinstance(expected_hash, str) or len(expected_hash) != 64:
+            errors.append(f"public manifest hash missing: {name}")
+            continue
+        url = urljoin(public_url.rstrip("/") + "/", raw_path.lstrip("/"))
+        target = urlsplit(url)
+        if target.scheme != base.scheme or target.hostname != base.hostname:
+            errors.append(f"public artifact URL leaves release host: {name}")
+            continue
+        try:
+            response = requests.get(url, timeout=timeout, headers=headers)
+            response.raise_for_status()
+            body = bytes(response.content)
+        except (requests.RequestException, TypeError, ValueError) as exc:
+            errors.append(f"public artifact unavailable {name}: {type(exc).__name__}")
+            continue
+        actual_hash = hashlib.sha256(body).hexdigest()
+        if actual_hash != expected_hash:
+            errors.append(f"public artifact hash mismatch: {name}")
+            continue
+        try:
+            value = json.loads(body.decode("utf-8"))
+        except (UnicodeError, json.JSONDecodeError):
+            errors.append(f"public artifact invalid JSON: {name}")
+            continue
+        if not isinstance(value, dict):
+            errors.append(f"public artifact must be an object: {name}")
+            continue
+        loaded[name] = value
+    if errors:
+        return loaded, errors
+    errors.extend(
+        validate_release(
+            market=loaded["market.json"],
+            research=loaded["research-report.json"],
+            events=loaded["event-ledger.json"],
+            manifest=manifest,
+        )
+    )
     return loaded, errors
 
 
@@ -151,8 +224,14 @@ def verify_release_for_delivery(
                 elif expected_snapshot_id and str(remote.get("market_snapshot_id") or "") != str(expected_snapshot_id):
                     public_error = "public manifest market snapshot does not match prepared snapshot"
                 else:
-                    public_error = ""
-                    break
+                    _, bundle_errors = _fetch_public_release_artifacts(
+                        remote, public_url=public_url, timeout=timeout,
+                    )
+                    if bundle_errors:
+                        public_error = "; ".join(sorted(set(bundle_errors)))
+                    else:
+                        public_error = ""
+                        break
             except (requests.RequestException, ValueError) as exc:
                 public_error = f"public manifest unavailable: {type(exc).__name__}"
             if attempt < attempts - 1 and public_delay > 0:
