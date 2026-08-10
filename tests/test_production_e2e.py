@@ -20,7 +20,7 @@ def test_ready_fixture_passes_all_offline_gates():
 def test_renderer_failure_is_reported_and_blocks_acceptance():
     report = run_offline_e2e(
         dry_run=lambda: {
-            "ok": False,
+            "ok": True,
             "renderer_available": False,
             "card_dimensions": {"width": 1080, "height": 1350},
             "photo_contract": {"dimensions_valid": True, "deep_link_valid": True, "delivery_status": "blocked"},

@@ -68,7 +68,9 @@ def run_offline_e2e(
     checks = {
         "release_contract": release.allowed,
         "telegram_configuration": telegram.get("ok") is True,
-        "offline_pipeline": pipeline.get("ok") is True,
+        "offline_pipeline": pipeline.get("ok") is True
+        and pipeline.get("renderer_available") is True
+        and pipeline.get("photo_contract", {}).get("delivery_status") != "blocked",
         "photo_contract": pipeline.get("photo_contract", {}).get("dimensions_valid") is True
         and pipeline.get("photo_contract", {}).get("deep_link_valid") is True,
     }
