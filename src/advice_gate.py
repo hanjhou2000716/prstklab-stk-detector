@@ -87,7 +87,7 @@ def build_explainability_card(candidate: dict[str, Any], gate: dict[str, Any]) -
         "advice_gate": gate,
         "disclaimer": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
     }
-    card["explainability"] = {
+    explainability: dict[str, Any] = {
         "passed_conditions": card["passed_conditions"],
         "failed_conditions": card["failed_conditions"],
         "data_completeness": card["data_completeness"],
@@ -99,6 +99,7 @@ def build_explainability_card(candidate: dict[str, Any], gate: dict[str, Any]) -
     if candidate.get("strategy_registry") is not None:
         from src.production_integration import bind_strategy_provenance
 
-        card["explainability"]["strategy_binding"] = bind_strategy_provenance(candidate)
+        explainability["strategy_binding"] = bind_strategy_provenance(candidate)
+    card["explainability"] = explainability
     return card
 

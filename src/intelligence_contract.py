@@ -37,7 +37,8 @@ def validate_intelligence(document: dict[str, Any]) -> list[str]:
             continue
         path_name = f"briefing.intelligence.market_impact_graph.paths[{index}]"
         path_sync = path.get("market_sync") is True
-        evidence = path.get("evidence") if isinstance(path.get("evidence"), list) else []
+        raw_evidence = path.get("evidence")
+        evidence: list[Any] = raw_evidence if isinstance(raw_evidence, list) else []
         has_market_evidence = any(isinstance(item, dict) and item.get("type") == "market_sync" for item in evidence)
         if path_sync:
             synchronized_paths += 1
@@ -69,4 +70,3 @@ def validate_intelligence(document: dict[str, Any]) -> list[str]:
     if isinstance(binding, dict) and binding.get("fail_closed") is True and document.get("advice_gate") != "observation_only":
         errors.append("fail_closed production binding requires advice_gate=observation_only")
     return errors
-
