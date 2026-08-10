@@ -433,6 +433,8 @@ const renderSourceHealth = (health, snapshot = {}) => {
   const observation = health.observability || health.slo || health.monitor_health || {};
   const healthMetricParts = [
     Number.isFinite(Number(observation.success_rate)) ? `成功率 ${Number(observation.success_rate).toFixed(1)}%` : "",
+    Number.isFinite(Number(observation.no_event_count)) ? `無事件 ${Number(observation.no_event_count)} 個` : "",
+    Number.isFinite(Number(observation.failure_count)) ? `掃描失敗 ${Number(observation.failure_count)} 個` : "",
     Number.isFinite(Number(observation.crosscheck_rate)) ? `核對率 ${Number(observation.crosscheck_rate).toFixed(1)}%` : "",
     Number.isFinite(Number(observation.stale_count)) ? `快取 ${Number(observation.stale_count)} 筆` : "",
   ].filter(Boolean).join("｜");

@@ -135,6 +135,8 @@ def test_source_health_distinguishes_empty_scan_from_failure_and_exposes_slo_met
     assert 'scanState === "scan_failed"' in app
     assert 'scanState === "no_events"' in app
     assert "health.observability || health.slo" in app
+    assert "observation.no_event_count" in app
+    assert "observation.failure_count" in app
     assert "source.consecutive_failures" in app
     assert "source.crosscheck_rate" in app
 
