@@ -51,3 +51,12 @@ def test_blocked_backtest_contract_cannot_open_gate():
     assert result["allowed"] is False
     assert "invalid_backtest_release" in result["blocking_reasons"]
 
+
+def test_bare_backtest_release_id_cannot_open_gate():
+    context = _valid_context()
+    context.pop("backtest_release_contract")
+    context["backtest_release"] = "backtest-12345678"
+    result = evaluate_advice_gate(context)
+    assert result["allowed"] is False
+    assert "invalid_backtest_release" in result["blocking_reasons"]
+

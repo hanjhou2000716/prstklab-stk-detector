@@ -213,3 +213,6 @@ remain readable, but remain research-only. See
 Production quote evidence records its `instrument_master_id` and version for
 every resolution attempt, including unknown symbols. Ambiguous or unknown
 symbols remain unresolved and cannot become alert evidence.
+
+The Advice Gate also requires the structured backtest contract. A bare release
+ID is treated as unverified and cannot unlock contextual decision support.
