@@ -5,6 +5,7 @@ import argparse
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from src.release_manifest import content_snapshot_id
@@ -30,6 +31,70 @@ def default_sources(data_dir: Path) -> list[dict[str, str]]:
 def write_report(report: dict, output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _load_backtest_contract(path: Path | None) -> dict[str, Any] | None:
+    """Load only the auditable release contract from a walk-forward artifact.
+
+    The full backtest report is intentionally not copied into the public
+    research artifact.  A missing, malformed, or blocked study remains an
+    explicit observation-only state instead of being treated as a valid
+    release.
+    """
+    if path is None:
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return {
+            "publication_state": "blocked",
+            "publish_eligible": False,
+            "blocking_reasons": ["backtest artifact unavailable or invalid"],
+        }
+    contract = payload.get("backtest_release_contract") if isinstance(payload, dict) else None
+    if not isinstance(contract, dict):
+        return {
+            "publication_state": "blocked",
+            "publish_eligible": False,
+            "blocking_reasons": ["backtest release contract missing"],
+        }
+    allowed = (
+        "backtest_release", "market", "publication_state", "publish_eligible",
+        "blocking_reasons", "strategy_registry", "research_only",
+    )
+    result = {key: contract[key] for key in allowed if key in contract}
+    if not isinstance(result.get("blocking_reasons"), list) or not all(
+        isinstance(reason, str) for reason in result.get("blocking_reasons", [])
+    ):
+        result["blocking_reasons"] = ["invalid backtest blocking reasons"]
+        result["publish_eligible"] = False
+    state = result.get("publication_state")
+    if state not in {"ready", "blocked", "unavailable"}:
+        result["publication_state"] = "blocked"
+        result.setdefault("blocking_reasons", []).append("invalid backtest publication state")
+        result["publish_eligible"] = False
+    if result.get("publication_state") != "ready":
+        result["publish_eligible"] = False
+    return result
+
+
+def attach_backtest_contract(report: dict, path: Path | None) -> dict:
+    """Bind a validated walk-forward identity without unlocking advice.
+
+    This is deliberately additive: no path means the report stays compatible
+    with existing research scans, while Advice Gate continues to fail closed.
+    """
+    if path is None:
+        report["backtest_release_status"] = "unavailable"
+        return report
+    contract = _load_backtest_contract(path)
+    report["backtest_release_contract"] = contract or {
+        "publication_state": "blocked",
+        "publish_eligible": False,
+        "blocking_reasons": ["backtest artifact unavailable or invalid"],
+    }
+    report["backtest_release_status"] = report["backtest_release_contract"].get("publication_state", "blocked")
+    return report
 
 
 def attach_scan_contract(report: dict, scan_mode: str) -> dict:
@@ -94,9 +159,15 @@ def main() -> None:
         "--scan-mode", choices=sorted(SCAN_MODES), default="production",
         help="production is publishable; smoke/debug are isolated validation runs",
     )
+    parser.add_argument(
+        "--backtest-release",
+        type=Path,
+        help="optional walk-forward JSON; only its validated backtest_release_contract is copied",
+    )
     args = parser.parse_args()
     report = build_research_report(default_sources(Path(args.data_dir)))
     attach_scan_contract(report, args.scan_mode)
+    attach_backtest_contract(report, args.backtest_release)
     report["generated_at"] = datetime.now(ZoneInfo("Asia/Taipei")).isoformat()
     report["health"] = assess_research_health(report)
     # Bind research candidates to this exact point-in-time artifact.  The

@@ -26,6 +26,10 @@ on:
         type: choice
         options: [production, smoke, debug]
         default: production
+      backtest_release_path:
+        description: optional point-in-time walk-forward artifact to bind to this research release
+        required: false
+        default: ''
   repository_dispatch:
     types: [unified-research-report]
   schedule:
@@ -58,6 +62,7 @@ jobs:
       BATCH_SIZE: ${{ inputs.batch_size || github.event.client_payload.batch_size || '50' }}
       MOPS_MAX_REFRESH: ${{ inputs.mops_max_refresh || github.event.client_payload.mops_max_refresh || '24' }}
       SCAN_MODE: ${{ inputs.scan_mode || github.event.client_payload.scan_mode || 'production' }}
+      BACKTEST_RELEASE_PATH: ${{ inputs.backtest_release_path || github.event.client_payload.backtest_release_path || '' }}
       NEWS_CACHE_PATH: site/data/news-cache.json
       SEC_FACTS_CACHE_PATH: data/sec-companyfacts-cache.json
       DATA_RELEASE_BRANCH: data-release
@@ -106,7 +111,13 @@ jobs:
       - name: 美股品質價值覆核
         continue-on-error: true
         run: python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE"
-      - run: python -m src.run_research_report --scan-mode "$SCAN_MODE"
+      - name: Build research report with optional backtest identity
+        run: |
+          args=(--scan-mode "$SCAN_MODE")
+          if [[ -n "$BACKTEST_RELEASE_PATH" ]]; then
+            args+=(--backtest-release "$BACKTEST_RELEASE_PATH")
+          fi
+          python -m src.run_research_report "${args[@]}"
       - name: Gate research publication and preserve previous success
         id: research_gate
         if: env.SCAN_MODE == 'production'

@@ -16,6 +16,21 @@
     "universe_completed": {"type": "integer", "minimum": 0},
     "publish_eligible": {"type": "boolean"},
     "production_eligible": {"type": "boolean"},
+    "backtest_release_status": {"enum": ["ready", "blocked", "unavailable"]},
+    "backtest_release_contract": {
+      "type": "object",
+      "required": ["publication_state", "publish_eligible"],
+      "properties": {
+        "backtest_release": {"type": "string", "minLength": 8},
+        "market": {"type": "string", "minLength": 1},
+        "publication_state": {"enum": ["ready", "blocked", "unavailable"]},
+        "publish_eligible": {"type": "boolean"},
+        "blocking_reasons": {"type": "array", "items": {"type": "string"}},
+        "strategy_registry": {"type": "array", "items": {"type": "object"}},
+        "research_only": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
     "blocking_reason": {"type": ["string", "null"]},
     "sources": {"type": "array", "items": {"$ref": "#/$defs/source"}},
     "candidates": {"type": "array", "items": {"type": "object"}},
