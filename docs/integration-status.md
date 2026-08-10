@@ -14,6 +14,7 @@ pipeline call and a tested consumer.
 | Taiwan crosscheck | `src/taiwan_market_crosscheck.py`, `src/market_crosscheck.py` | yes | yes | yes | yes | price gate | production |
 | Event source catalog | `src/event_source_catalog.py` | yes | yes | yes | health | event | production |
 | Event cluster/ledger | `src/event_ledger.py`, `src/event_output.py` | yes | yes | yes | timeline | event | production |
+| Event evidence state | `src/event_evidence.py`, `src/event_crosscheck.py` | yes | yes | yes | wait reason/timeline | lifecycle gate | production |
 | Macro surprise | `src/surprise_engine.py` | yes | partial | partial | partial | no | partially_integrated |
 | Corporate events | `src/corporate_event_contract.py`, `src/official_events.py` | yes | yes | yes | yes | observe-only/event | production |
 | Market impact graph | `src/market_impact_graph.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing/event | conditional event | production |
@@ -24,7 +25,7 @@ pipeline call and a tested consumer.
 | Paper portfolio | `src/paper_portfolio.py` | yes | yes | briefing | briefing | no | production |
 | Strategy scans | `src/run_*scan.py`, `src/research_report.py` | yes | yes | yes | yes | briefing/research | production |
 | Strategy registry/explainability | `src/strategy_registry.py`, `src/advice_gate.py` | yes | partial | partial | partial | no | partially_integrated |
-| Backtest/cost model | `src/four_strategy_walk_forward.py`, `src/backtest_costs.py` | yes | scheduled | artifact | no | no | partially_integrated |
+| Backtest/cost model | `src/four_strategy_walk_forward.py`, `src/backtest_costs.py`, `src/backtest_release.py` | yes | scheduled | artifact + risk-adjusted metrics | no | no | partially_integrated |
 | Release manifest/gate | `src/release_manifest.py`, `src/release_gate.py` | yes | yes | yes | loader gate | send gate | production |
 | Telegram delivery | `src/telegram_client.py`, `src/scheduled_delivery.py`, `src/official_event_monitor.py`, `src/emergency_alert.py` | yes | release-gated `sendPhoto` path with shared file ID | photo receipt | alert/release deep-link button | renderer failure is fail-closed; recipient failures are isolated | production |
 | Mini App deep-link/timeline | `site/app.js`, `src/event_timeline.py` | yes | Pages | yes | yes | button target | production |
@@ -82,6 +83,23 @@ The release manifest normalizer converts legacy gap maps to integer counts and
 backfills candidate state without inventing data.  To roll back, revert the
 producer commit and restore the previous `data-release` manifest; do not copy
 individual artifacts across releases.
+
+## Current stacked integration PRs
+
+The following changes are prepared but intentionally not merged by the agent:
+
+- #402 public release artifact hash gate
+- #403 formal point-in-time backtest publication contract
+- #404 Advice Gate binding to a valid backtest release
+- #405 opt-in raw observation persistence at the adapter boundary
+- #406 regime and cross-asset evidence quality fields
+- #407 event evidence lifecycle state contract
+- #408 risk-adjusted walk-forward summary metrics
+- #409 Mini App evidence wait-reason display
+
+Merge these in dependency order with **Create a merge commit**.  A module is
+not promoted to `production` in this matrix until its PR is merged and the
+release pipeline has emitted a matching manifest.
 
 ## Alert contract and lifecycle
 
