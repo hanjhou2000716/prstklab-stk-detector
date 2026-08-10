@@ -155,6 +155,7 @@ def test_tpex_official_close_replaces_stale_yahoo_quote_even_outside_session():
     assert errors == []
     assert indices[0]["price"] == 334.24
     assert indices[0]["quote_date"] == "2026-07-29"
+    assert indices[0]["source_label"] == "TPEx"
 
 
 def test_tpex_official_close_restores_a_missing_yahoo_index_row():
@@ -167,6 +168,7 @@ def test_tpex_official_close_restores_a_missing_yahoo_index_row():
     assert errors == []
     assert indices[-1]["ticker"] == "TPEx"
     assert indices[-1]["price"] == 334.24
+    assert indices[-1]["source_label"] == "TPEx"
 
 
 def test_tpex_unavailable_keeps_a_visible_non_actionable_row():

@@ -28,6 +28,32 @@ def _int_or_none(value: Any) -> int | None:
         return None
 
 
+def _gap_count(value: Any) -> int | None:
+    """Collapse structured source gaps to one deterministic count.
+
+    Scan workers keep per-domain diagnostics (for example ``history`` and
+    ``quotes``) in their summaries.  The public report must expose the same
+    machine-readable integer used by the release contract, without discarding
+    those gaps when the summary is read back.
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, (int, float)):
+        try:
+            return max(0, int(value))
+        except (TypeError, ValueError):
+            return None
+    if isinstance(value, dict):
+        counts = [_gap_count(item) for item in value.values()]
+        return sum(item for item in counts if item is not None)
+    if isinstance(value, (list, tuple)):
+        counts = [_gap_count(item) for item in value]
+        return sum(item for item in counts if item is not None)
+    return None
+
+
 def _bounded_candidate_count(value: Any, visible: int) -> int | None:
     """Keep summary counts consistent with the rows actually published.
 
@@ -232,7 +258,7 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                 "incomplete_record_count": max(0, (requested_records or 0) - (complete_records or 0)) if requested_records is not None else None,
                 "complete_records": complete_records,
                 "failed_records": failed_records,
-                "data_gap_counts": failed_records or 0,
+                "data_gap_counts": _gap_count(base.get("data_gap_counts")) or failed_records or 0,
                 "blocking_reason": base.get("blocking_reason") or "research source unavailable; candidate counts suppressed",
                 "candidates_definition": "visible_candidates",
             })
@@ -243,7 +269,7 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
         if complete_records is None:
             complete_records = _int_or_none(base.get("data_complete"))
         requested_records = _int_or_none(base.get("requested"))
-        data_gap_counts = _int_or_none(base.get("data_gap_counts"))
+        data_gap_counts = _gap_count(base.get("data_gap_counts"))
         if data_gap_counts is None:
             data_gap_counts = failed_records
         blocked = (
@@ -276,11 +302,15 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
             "candidates": visible,
             "visible_candidates": visible,
             "candidates_definition": "visible_candidates",
-            "formal_candidates": _bounded_candidate_count(base.get("formal_candidates"), visible) if base.get("formal_candidates") is not None else (formal_rows or None),
-            "observation_candidates": _bounded_candidate_count(base.get("observation_candidates"), visible) if base.get("observation_candidates") is not None else (observation_rows or None),
+            # Counts are always integers in a generated report.  A missing
+            # list_type in an older scan is not evidence of an unknown count;
+            # the current published rows are deterministically zero formal /
+            # zero observation until the producer emits the classification.
+            "formal_candidates": _bounded_candidate_count(base.get("formal_candidates"), visible) if base.get("formal_candidates") is not None else formal_rows,
+            "observation_candidates": _bounded_candidate_count(base.get("observation_candidates"), visible) if base.get("observation_candidates") is not None else observation_rows,
             "visible_candidate_count": visible,
-            "formal_candidate_count": _bounded_candidate_count(base.get("formal_candidates"), visible) if base.get("formal_candidates") is not None else (formal_rows or 0),
-            "observation_candidate_count": _bounded_candidate_count(base.get("observation_candidates"), visible) if base.get("observation_candidates") is not None else (observation_rows or 0),
+            "formal_candidate_count": _bounded_candidate_count(base.get("formal_candidates"), visible) if base.get("formal_candidates") is not None else formal_rows,
+            "observation_candidate_count": _bounded_candidate_count(base.get("observation_candidates"), visible) if base.get("observation_candidates") is not None else observation_rows,
             "history_pending_count": _int_or_none(base.get("history_pending")),
             "source_failure_count": failed_records,
             "incomplete_record_count": max(0, (requested_records or 0) - (complete_records or 0)) if requested_records is not None else None,
