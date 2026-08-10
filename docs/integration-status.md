@@ -26,7 +26,7 @@ pipeline call and a tested consumer.
 | Strategy scans | `src/run_*scan.py`, `src/research_report.py` | yes | yes | yes | yes | briefing/research | production |
 | Strategy registry/explainability | `src/strategy_registry.py`, `src/advice_gate.py` | yes | partial | partial | partial | no | partially_integrated |
 | Backtest/cost model | `src/four_strategy_walk_forward.py`, `src/backtest_costs.py`, `src/backtest_release.py` | yes | scheduled | artifact + risk-adjusted metrics | no | no | partially_integrated |
-| Release manifest/gate | `src/release_manifest.py`, `src/release_gate.py` | yes | yes | yes | loader gate | send gate | production |
+| Release manifest/gate | `src/release_manifest.py`, `src/release_gate.py`, `src/production_e2e.py` | yes | yes | yes | loader gate | send gate | production |
 | Telegram delivery | `src/telegram_client.py`, `src/scheduled_delivery.py`, `src/official_event_monitor.py`, `src/emergency_alert.py` | yes | release-gated `sendPhoto` path with shared file ID | photo receipt | alert/release deep-link button | renderer failure is fail-closed; recipient failures are isolated | production |
 | Mini App deep-link/timeline | `site/app.js`, `src/event_timeline.py` | yes | Pages | yes | yes | button target | production |
 | Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | briefing contract + optional endpoint/local queue | yes | feedback controls | no | partially_integrated |
@@ -167,6 +167,15 @@ The integration is additive. Reverting the binding commit restores the prior
 briefing shape, while the release gate continues to validate the existing
 market, research, and event artifacts. Restore the last `status=ready` manifest
 as one immutable release; never mix individual files from different releases.
+
+### Offline production acceptance
+
+`python -m src.production_e2e` runs a deterministic release-to-delivery check
+with a complete production research fixture, the release contract, the Mini App
+deep-link/photo contract, and the non-network Telegram configuration check. It
+never sends a message or contacts Railway. A renderer or release-contract
+failure returns a non-zero status so CI cannot report a green integration gate
+while delivery would be blocked in production.
 
 ## Browser contract
 
