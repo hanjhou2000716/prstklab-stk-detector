@@ -35,3 +35,14 @@ source rows shown in the card.  It includes `observations`, `success_rate`,
 event counts as a successful observation (`no_event_count`), while stale data
 still keeps the aggregate in `partial` so it cannot be mistaken for a healthy
 live feed.
+
+## Published artifact validation
+
+`schemas/source-health.schema.json` defines the canonical envelope used when a
+market artifact includes the complete health record: `status`, `sources`, and
+`event_scan`. `src.artifact_contract.validate_source_health` checks the
+cross-field rules: a `healthy` or `no_event` row cannot carry a failed, stale,
+or partial semantic state, and `event_scan=no_event` cannot coexist with a
+failed core source. Legacy releases that only contain the old `data_gaps`
+field remain readable; the next producer upgrades them rather than silently
+treating them as a healthy scan.
