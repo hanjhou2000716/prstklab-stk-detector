@@ -72,6 +72,29 @@ def test_strict_manifest_marks_explicit_stale_fallback(tmp_path):
     assert manifest["research_fallback_used"] is True
 
 
+def test_allow_stale_research_converts_incomplete_scan_to_explicit_fallback(tmp_path):
+    _artifacts(tmp_path)
+    data = tmp_path / "site" / "data"
+    research = json.loads((data / "research-report.json").read_text(encoding="utf-8"))
+    research.update({
+        "scan_mode": "production", "scan_scope": "bounded",
+        "publish_eligible": False, "production_eligible": False,
+        "universe_expected": 10, "universe_scanned": 3,
+        "universe_completed": 3,
+    })
+    (data / "research-report.json").write_text(json.dumps(research), encoding="utf-8")
+    manifest = build_release_manifest(
+        root=tmp_path,
+        allow_stale_research=True,
+        research_fallback_reason="scan incomplete",
+    )
+    assert manifest["status"] == "ready"
+    assert manifest["research_fallback_used"] is True
+    stored = json.loads((data / "research-report.json").read_text(encoding="utf-8"))
+    assert stored["publication_state"] == "fallback"
+    assert stored["research_fallback_used"] is True
+
+
 def test_strict_manifest_rejects_missing_production_timestamps(tmp_path):
     _artifacts(tmp_path)
     data = tmp_path / "site" / "data"

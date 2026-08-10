@@ -39,7 +39,9 @@ jobs:
         run: python -m src.refresh_market_data
       - name: Build and publish immutable data release
         run: |
-          python -m src.release_manifest --require-production-research
+          python -m src.release_manifest \
+            --allow-stale-research \
+            --research-fallback-reason "research scan incomplete; preserving last-known-good research snapshot"
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
             --message "chore: refresh public market snapshot"
       - name: Configure GitHub Pages

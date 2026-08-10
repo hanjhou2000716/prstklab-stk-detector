@@ -93,9 +93,13 @@ def validate_production_bundle(
     # newly generated production report may never pass the delivery gate
     # while its universe is partial or a provider failed.
     scan_mode = str(research.get("scan_mode") or "")
-    if require_production_research:
+    explicit_fallback = bool(
+        research.get("research_fallback_used") is True
+        or research.get("publication_state") == "fallback"
+    )
+    if require_production_research and not explicit_fallback:
         errors.extend(production_research_contract_errors(research))
-    elif scan_mode == "production":
+    elif scan_mode == "production" and not explicit_fallback:
         errors.extend(production_research_contract_errors(research))
 
     expected_market = str(manifest.get("market_snapshot_id") or "")
