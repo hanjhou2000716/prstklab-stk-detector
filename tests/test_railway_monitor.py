@@ -1159,6 +1159,11 @@ def test_delivery_receipt_can_be_saved_from_health_server_thread(tmp_path):
     assert result == [True]
 
 
+def test_health_endpoint_accepts_cache_busting_query_string():
+    assert monitor._health_request_path("/health?ts=31353476129") == "/health"
+    assert monitor._health_request_path("/") == "/"
+
+
 def test_trade_war_easing_market_commentary_is_material_positive():
     flash = monitor.Flash(
         "cncb-daily-open-relief",
