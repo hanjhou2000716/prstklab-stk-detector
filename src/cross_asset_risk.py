@@ -31,4 +31,14 @@ def detect_contagion(observations: dict[str, dict[str, float | None]]) -> dict[s
     usd = observations.get("usd") or {}
     if usd.get("change_percent", 0) is not None and float(usd.get("change_percent") or 0) >= 1:
         checks.append("usd_up")
-    return {"contagion": len(checks) >= 2, "confirmed_signals": checks, "status": "observed" if checks else "no_confirmed_sync"}
+    required = ("equities", "vix", "usd")
+    missing_inputs = [name for name in required if name not in observations]
+    return {
+        "contagion": len(checks) >= 2,
+        "confirmed_signals": checks,
+        "status": "observed" if checks else "no_confirmed_sync",
+        "missing_inputs": missing_inputs,
+        "evidence_sufficient": len(checks) >= 2,
+        "data_quality_score": round((len(required) - len(missing_inputs)) / len(required) * 100, 1),
+        "non_predictive": True,
+    }
