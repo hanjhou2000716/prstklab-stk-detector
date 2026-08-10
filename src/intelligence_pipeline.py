@@ -23,7 +23,21 @@ def build_intelligence_context(
 ) -> dict[str, Any]:
     observations_list = list(observations or [])
     graph = build_market_impact_graph(event, observations_list)
-    surprise = calculate_surprise(**(macro or {})) if macro is not None else {"status": "not_provided", "market_direction": "not_determined"}
+    if macro is None:
+        surprise = {"status": "not_provided", "market_direction": "not_determined"}
+    else:
+        # Keep partial producer payloads observable.  The calculator requires
+        # explicit expected/actual keys so a missing value becomes
+        # `insufficient_evidence`, never a TypeError or an invented result.
+        surprise = calculate_surprise(
+            expected=macro.get("expected"),
+            actual=macro.get("actual"),
+            previous=macro.get("previous"),
+            historical_std=macro.get("historical_std"),
+            revision=macro.get("revision"),
+            release_time=macro.get("release_time"),
+            source_url=macro.get("source_url"),
+        )
     synchronized = any(path.get("confidence", 0) >= 0.8 for path in graph.get("paths", []))
     regime = classify_regime(regime_factors or {})
     contagion = detect_contagion(contagion_observations or {})

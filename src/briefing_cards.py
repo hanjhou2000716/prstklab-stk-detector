@@ -272,12 +272,24 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
     average_change = sum(changes) / len(changes) if changes else None
     watchlist = [ticker for ticker in ("TAIEX", "NASDAQ", "SOX") if ticker in all_items]
     public_watchlist = {ticker: round(1 / len(watchlist), 6) for ticker in watchlist} if watchlist else {}
+    raw_macro = snapshot.get("macro")
+    macro_input = None
+    if isinstance(raw_macro, dict):
+        # Forward partial macro observations so the surprise engine can expose
+        # `insufficient_evidence` instead of silently turning them into
+        # `not_provided`.  Unknown producer fields are intentionally ignored.
+        macro_input = {
+            key: raw_macro[key]
+            for key in (
+                "expected", "actual", "previous", "historical_std",
+                "revision", "release_time", "source_url",
+            )
+            if key in raw_macro
+        }
     intelligence = build_intelligence_context(
         lead if isinstance(lead, dict) else {"title": "briefing"},
         observed_quotes,
-        macro=(snapshot.get("macro") if isinstance(snapshot.get("macro"), dict) and {
-            "expected", "actual"
-        }.issubset(snapshot["macro"]) else None),
+        macro=macro_input,
         regime_factors={
             "broad_market": 1 if (average_change or 0) > 0.5 else -1 if (average_change or 0) < -0.5 else 0,
         },

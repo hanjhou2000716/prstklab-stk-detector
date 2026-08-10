@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import src.mops_history as mops_history
@@ -8,6 +9,41 @@ from src.mops_history import (
     parse_eps_report,
     parse_net_income_report,
 )
+
+
+def test_missing_future_period_does_not_abort_history_walk(monkeypatch):
+    monkeypatch.setattr(mops_history, "parse_eps_report", lambda _html: (1.0, 1.0))
+    class FuturePeriodMissingClient:
+        def report(self, api_name, company_id, **parameters):
+            if api_name == "t164sb04" and int(parameters["year"]) == 115 and int(parameters["season"]) == 4:
+                raise RuntimeError("MOPS t164sb04 did not return a report URL")
+            if api_name == "t164sb04":
+                year, quarter = int(parameters["year"]), int(parameters["season"])
+                return f"<table><tr><td>?箸瘥??</td><td>{year - 100 + quarter / 10}</td><td>1.0</td></tr></table>"
+            return "<table>" + "".join(
+                f"<tr><td>{year}</td><td>1</td><td></td><td></td><td>0</td><td>0</td><td>0</td><td>0</td><td>1.0</td></tr>"
+                for year in (115, 114, 113)
+            ) + "</table>"
+
+    record = mops_history.fetch_pristine_history("2330", client=FuturePeriodMissingClient())
+    assert record["history_data_complete"] is True
+    assert "115Q4" in record["missing_periods"]
+
+
+def test_incomplete_history_is_not_cached_as_verified(tmp_path: Path):
+    class IncompleteClient:
+        def report(self, api_name, company_id, **parameters):
+            if api_name == "t164sb04":
+                return "<table><tr><td>?箸瘥??</td><td>1.0</td><td>1.0</td></tr></table>"
+            raise RuntimeError("MOPS t05st09_1 did not return a report URL")
+
+    path = tmp_path / "mops.json"
+    records, errors = mops_pristine_history(["2330"], path, client=IncompleteClient())
+    assert records == {}
+    assert errors == ["2330 MOPS history: incomplete"]
+    cached = json.loads(path.read_text(encoding="utf-8"))
+    assert "2330" not in cached["records"]
+    assert cached["failures"]["2330"]["error"] == "incomplete_history"
 
 
 def test_parse_eps_report_reads_current_and_comparative_values():

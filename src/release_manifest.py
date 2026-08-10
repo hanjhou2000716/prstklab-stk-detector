@@ -193,6 +193,13 @@ def _normalize_research(value: dict[str, Any]) -> list[str]:
                 notes.append(f"sources[{index}].{field}=0 (exceeds visible_candidates)")
                 count_mismatch = True
         if count_mismatch:
+            # A summary that claims completion while its published rows are
+            # empty is not a complete scan.  Normalize the machine-readable
+            # state together with the candidate counts so the release can
+            # remain usable without violating the complete-scan invariant.
+            if source.get("scan_state") == "complete":
+                source["scan_state"] = "building"
+                notes.append(f"sources[{index}].scan_state=building (count mismatch)")
             source["candidate_state"] = "data_gap"
             source["blocking_reason"] = (
                 "published candidate rows do not support the scan summary counts; "

@@ -114,8 +114,36 @@ def validate_research(document: dict[str, Any]) -> list[str]:
         visible = source.get("visible_candidates")
         formal = source.get("formal_candidates")
         unavailable = source.get("data_unavailable") is True or source.get("data_gap") is True
+        failed_records = source.get("failed_records", source.get("failed"))
+        try:
+            failed_count = max(0, int(failed_records or 0))
+        except (TypeError, ValueError):
+            failed_count = 0
+        gap_value = source.get("data_gap_counts")
+        def _safe_count(value: Any) -> int:
+            try:
+                return max(0, int(value or 0))
+            except (TypeError, ValueError):
+                return 0
+
+        if isinstance(gap_value, dict):
+            gap_count = sum(_safe_count(value) for value in gap_value.values())
+        else:
+            gap_count = _safe_count(gap_value)
+        requested = source.get("requested_records", source.get("requested"))
+        completed = source.get("complete_records", source.get("data_complete"))
+        requested_count = _safe_count(requested)
+        completed_count = _safe_count(completed)
         if scan_state == "complete" and unavailable:
             errors.append(f"{path}: complete scan cannot be marked data_unavailable/data_gap")
+        if scan_state == "complete" and failed_count:
+            errors.append(f"{path}: complete scan cannot contain failed records")
+        if scan_state == "complete" and gap_count:
+            errors.append(f"{path}: complete scan cannot contain data gaps")
+        if scan_state == "complete" and requested_count and completed_count < requested_count:
+            errors.append(f"{path}: complete scan universe is incomplete")
+        if scan_state == "complete" and candidate_state in {"building", "data_gap", "data_unavailable", "failed"}:
+            errors.append(f"{path}: complete scan cannot use incomplete candidate_state={candidate_state}")
         if candidate_state not in allowed_states:
             errors.append(f"{path}: unknown candidate_state={candidate_state!r}")
         if candidate_state == "no_candidates" and unavailable:
@@ -128,6 +156,19 @@ def validate_research(document: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: available requires visible_candidates>0")
         if isinstance(candidates, int) and isinstance(formal, int) and formal > candidates:
             errors.append(f"{path}: formal_candidates cannot exceed candidates")
+    scan_mode = str(document.get("scan_mode") or "")
+    if document.get("publish_eligible") is True and scan_mode != "production":
+        errors.append("research publish_eligible=true requires scan_mode=production")
+    if document.get("publish_eligible") is True and document.get("scan_scope") != "full":
+        errors.append("research publish_eligible=true requires scan_scope=full")
+    if document.get("production_eligible") is True and scan_mode != "production":
+        errors.append("research production_eligible=true requires scan_mode=production")
+    if document.get("production_eligible") is True and document.get("scan_scope") != "full":
+        errors.append("research production_eligible=true requires scan_scope=full")
+    if document.get("production_eligible") is True and document.get("publish_eligible") is not True:
+        errors.append("research production_eligible=true requires publish_eligible=true")
+    if document.get("research_fallback_used") is True and document.get("production_eligible") is True:
+        errors.append("research fallback cannot be production_eligible=true")
     return errors
 
 

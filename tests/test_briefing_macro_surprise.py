@@ -19,9 +19,20 @@ def test_briefing_forwards_complete_macro_observation_to_surprise_engine():
     assert briefing["event_feedback"]["policy_update_allowed"] is False
 
 
-def test_incomplete_macro_summary_stays_not_provided():
+def test_incomplete_macro_summary_is_explicitly_insufficient():
     briefing = build_briefing_snapshot({
         "indices": [], "quotes": [], "macro_quotes": [], "events": {"items": []},
         "macro": {"items": []},
     })
-    assert briefing["intelligence"]["macro_surprise"]["status"] == "not_provided"
+    assert briefing["intelligence"]["macro_surprise"]["status"] == "insufficient_evidence"
+
+
+def test_missing_historical_std_does_not_invent_surprise_z():
+    briefing = build_briefing_snapshot({
+        "indices": [], "quotes": [], "macro_quotes": [], "events": {"items": []},
+        "macro": {"expected": 3.0, "actual": 3.4},
+    })
+    surprise = briefing["intelligence"]["macro_surprise"]
+    assert surprise["status"] == "above_expectation"
+    assert surprise["surprise"] == 0.4
+    assert surprise["surprise_z"] is None

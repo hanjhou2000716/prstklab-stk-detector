@@ -15,6 +15,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from src.backtest_release import build_backtest_release
 from src.momentum_research import WEIGHTS, features
 from src.price_action import PriceActionResearchScanner
 from src.research_backtest import MARKET_COSTS, calculate_hypothetical_return
@@ -104,7 +105,7 @@ def survivorship_audit(
         if not isinstance(item.get("tickers"), list) or not item["tickers"]:
             reasons.append(f"{item.get('as_of', 'unknown')}: ticker membership is missing")
     dates = sorted({str(item.get("as_of")) for item in relevant})
-    return {
+    report = {
         "status": "pass" if not reasons else "failed",
         "market": market,
         "snapshot_count": len(relevant),
@@ -113,6 +114,7 @@ def survivorship_audit(
         "current_constituents_rejected": True,
         "delisted_symbols_required_when_known": True,
     }
+    return report
 
 
 def _monthly_signal_dates(anchor: pd.DataFrame, window: Window) -> list[pd.Timestamp]:
@@ -274,7 +276,7 @@ def run_walk_forward(
                     })
     for strategy in strategies:
         results[strategy]["summary"] = {name: _summary(trades) for name, trades in results[strategy]["windows"].items()}
-    return {
+    report = {
         "status": "complete" if audit["status"] == "pass" else "blocked_by_survivorship_audit",
         "research_only": True,
         "methodology": {
@@ -284,3 +286,10 @@ def run_walk_forward(
         "survivorship_audit": audit,
         "strategies": results,
     }
+    report["backtest_release_contract"] = build_backtest_release(
+        report,
+        market=market,
+        config=config,
+        code_commit=str(config.get("code_commit") or "local"),
+    )
+    return report

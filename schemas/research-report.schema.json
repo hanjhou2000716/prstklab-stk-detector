@@ -34,7 +34,15 @@
         "requested_records": {"type": ["integer", "null"], "minimum": 0},
         "complete_records": {"type": ["integer", "null"], "minimum": 0},
         "failed_records": {"type": ["integer", "null"], "minimum": 0},
-        "data_gap_counts": {"type": ["integer", "null"], "minimum": 0},
+        "data_gap_counts": {
+          "anyOf": [
+            {"type": ["integer", "null"], "minimum": 0},
+            {
+              "type": "object",
+              "additionalProperties": {"type": "integer", "minimum": 0}
+            }
+          ]
+        },
         "visible_candidate_count": {"type": ["integer", "null"], "minimum": 0},
         "formal_candidate_count": {"type": ["integer", "null"], "minimum": 0},
         "observation_candidate_count": {"type": ["integer", "null"], "minimum": 0},
