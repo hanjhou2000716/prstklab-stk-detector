@@ -51,10 +51,16 @@ def build_intelligence_context(
         "quote_stale": bool(context.get("quote_stale", True)),
         "crosscheck_ok": synchronized and bool(context.get("crosscheck_ok")),
         "backtest_release": context.get("backtest_release"),
+        "backtest_release_contract": context.get("backtest_release_contract"),
         "candidate_data_gap": bool(context.get("candidate_data_gap", True)),
         "policy_valid": bool(context.get("policy_valid")),
         "risk_profile_known": bool(context.get("risk_profile_known")),
         "general_research": bool(context.get("general_research", True)),
+        "evidence": context.get("evidence") or observations_list,
+        "invalidation_condition": context.get("invalidation_condition") or event.get("invalidation_condition"),
+        "alternative_scenario": context.get("alternative_scenario"),
+        "horizon": context.get("horizon"),
+        "confidence": context.get("confidence"),
     })
     return {
         "market_impact_graph": graph,
