@@ -1,7 +1,11 @@
 import json
 from pathlib import Path
 
-from src.release_gate import verify_release_for_delivery
+from src.release_gate import (
+    _fetch_public_release_artifacts,
+    _load_release_artifacts,
+    verify_release_for_delivery,
+)
 from src.release_manifest import build_release_manifest, sha256_file, write_release_manifest
 
 
@@ -280,3 +284,42 @@ def test_release_gate_reports_unreadable_artifact(tmp_path):
     result = verify_release_for_delivery(manifest_path=path, expected_snapshot_id="market-12345678")
     assert result.allowed is False
     assert any("artifact unreadable event-ledger.json" in error for error in result.errors)
+
+
+def test_release_gate_defensive_artifact_loaders_fail_closed(tmp_path):
+    """Malformed public manifests must produce explicit errors, not partial success."""
+    loaded, errors = _load_release_artifacts({}, site_root=tmp_path)
+    assert loaded == {}
+    assert errors == ["manifest artifact paths are missing"]
+
+    (tmp_path / "bad.json").write_text("{", encoding="utf-8")
+    (tmp_path / "list.json").write_text("[]", encoding="utf-8")
+    loaded, errors = _load_release_artifacts(
+        {"artifact_paths": {
+            "market.json": "bad.json",
+            "research-report.json": "list.json",
+            "event-ledger.json": "missing.json",
+        }},
+        site_root=tmp_path,
+    )
+    assert loaded == {}
+    assert any("JSONDecodeError" in error for error in errors)
+    assert any("must be an object" in error for error in errors)
+    assert any("FileNotFoundError" in error for error in errors)
+
+    _, errors = _fetch_public_release_artifacts(
+        {"artifact_paths": {}, "artifact_hashes": {}},
+        public_url="https://example.test/",
+        timeout=1,
+    )
+    assert errors == [
+        "public manifest path missing: market.json",
+        "public manifest path missing: research-report.json",
+        "public manifest path missing: event-ledger.json",
+    ]
+    _, errors = _fetch_public_release_artifacts(
+        {"artifact_paths": {}, "artifact_hashes": {}},
+        public_url="http://example.test/",
+        timeout=1,
+    )
+    assert errors == ["public release URL must use HTTPS"]
