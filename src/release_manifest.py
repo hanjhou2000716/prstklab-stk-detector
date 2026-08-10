@@ -17,7 +17,11 @@ from typing import Any
 from urllib.parse import urlparse
 
 from src.artifact_contract import validate_release
-from src.production_acceptance import validate_production_bundle
+from src.production_acceptance import (
+    production_research_contract_errors,
+    validate_production_bundle,
+)
+from src.research_fallback import mark_stale_research_fallback
 
 DEFAULT_ARTIFACTS = {
     "market.json": Path("site/data/market.json"),
@@ -273,6 +277,22 @@ def build_release_manifest(
             continue
         assert value is not None
         loaded[name] = value
+
+    # Routine market/event publishers must remain available when the bounded
+    # research scan is incomplete.  Convert that artifact into an explicit
+    # stale fallback before hashing it, so the release is internally
+    # consistent and the UI can hide candidates instead of silently treating
+    # partial research as live.  Strict production callers do not opt into
+    # this path unless ``allow_stale_research`` is explicitly set.
+    research_candidate = loaded.get("research-report.json")
+    if allow_stale_research and research_candidate:
+        research_errors = production_research_contract_errors(research_candidate)
+        if research_errors:
+            reason = research_fallback_reason or "; ".join(research_errors)
+            loaded["research-report.json"] = mark_stale_research_fallback(
+                research_candidate,
+                reason,
+            )
 
     normalization_notes = _normalize_artifacts(loaded)
     for name, value in loaded.items():
