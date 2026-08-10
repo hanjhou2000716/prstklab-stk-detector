@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 from src.research_cards import load_research_cards
 
@@ -14,7 +15,7 @@ def test_research_candidate_without_backtest_is_observation_only(tmp_path):
         }],
     }), encoding="utf-8")
 
-    result = load_research_cards(path)
+    result = load_research_cards(path, now=datetime.fromisoformat("2026-08-09T10:00:00+08:00"))
     candidate = result["candidates"][0]
     assert candidate["strategy_binding"]["state"] == "observation_only"
     assert candidate["advice_gate"] == "observation_only"
@@ -33,6 +34,8 @@ def test_research_candidate_with_backtest_can_be_bound(tmp_path):
         }],
     }), encoding="utf-8")
 
-    candidate = load_research_cards(path)["candidates"][0]
+    candidate = load_research_cards(
+        path, now=datetime.fromisoformat("2026-08-09T10:00:00+08:00")
+    )["candidates"][0]
     assert candidate["strategy_binding"]["state"] == "production"
     assert candidate["explainability"]["advice_gate"]["allowed"] is False

@@ -1,7 +1,11 @@
 import json
 from pathlib import Path
 
-from src.release_gate import verify_release_for_delivery
+from src.release_gate import (
+    _fetch_public_release_artifacts,
+    _load_release_artifacts,
+    verify_release_for_delivery,
+)
 from src.release_manifest import build_release_manifest, sha256_file, write_release_manifest
 
 
@@ -24,6 +28,28 @@ def _ready_release(tmp_path):
     manifest = build_release_manifest(root=tmp_path)
     write_release_manifest(manifest, data / "release-manifest.json")
     return data / "release-manifest.json", manifest
+
+
+def _public_response(body: bytes, value=None):
+    class Response:
+        content = body
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return value if value is not None else json.loads(body.decode("utf-8"))
+
+    return Response()
+
+
+def _public_artifact_response(manifest, data, url):
+    path = url.split("?", 1)[0]
+    name = path.rstrip("/").rsplit("/", 1)[-1]
+    if name == "release-manifest.json":
+        body = json.dumps(manifest, ensure_ascii=False).encode("utf-8")
+        return _public_response(body, manifest)
+    return _public_response((data / name).read_bytes())
 
 
 def test_release_gate_accepts_ready_matching_snapshot(tmp_path):
@@ -94,10 +120,15 @@ def test_release_gate_revalidates_artifact_semantics(tmp_path):
 
 def test_release_gate_retries_pages_propagation_until_release_matches(tmp_path, monkeypatch):
     path, manifest = _ready_release(tmp_path)
+    data = tmp_path / "site" / "data"
 
     class Response:
         def __init__(self, release_id):
             self.release_id = release_id
+            self.content = json.dumps({
+                "status": "ready", "release_id": release_id,
+                "market_snapshot_id": "market-12345678",
+            }).encode("utf-8")
 
         def raise_for_status(self):
             return None
@@ -109,8 +140,17 @@ def test_release_gate_retries_pages_propagation_until_release_matches(tmp_path, 
                 "market_snapshot_id": "market-12345678",
             }
 
-    responses = iter([Response("release-old"), Response(manifest["release_id"])])
-    monkeypatch.setattr("src.release_gate.requests.get", lambda *args, **kwargs: next(responses))
+    calls = {"manifest": 0}
+
+    def get(url, **kwargs):
+        if url.split("?", 1)[0].endswith("release-manifest.json"):
+            calls["manifest"] += 1
+            if calls["manifest"] == 1:
+                return Response("release-old")
+            return _public_artifact_response(manifest, data, url)
+        return _public_artifact_response(manifest, data, url)
+
+    monkeypatch.setattr("src.release_gate.requests.get", get)
     monkeypatch.setattr("src.release_gate.time.sleep", lambda *_args: None)
 
     result = verify_release_for_delivery(
@@ -153,7 +193,8 @@ def test_release_gate_blocks_public_snapshot_mismatch(tmp_path, monkeypatch):
 
 def test_release_gate_cache_busts_public_manifest_requests(tmp_path, monkeypatch):
     path, manifest = _ready_release(tmp_path)
-    seen = {}
+    data = tmp_path / "site" / "data"
+    seen = {"manifest_url": ""}
 
     class Response:
         def raise_for_status(self):
@@ -167,9 +208,11 @@ def test_release_gate_cache_busts_public_manifest_requests(tmp_path, monkeypatch
             }
 
     def get(url, **kwargs):
-        seen["url"] = url
         seen["headers"] = kwargs["headers"]
-        return Response()
+        if url.split("?", 1)[0].endswith("release-manifest.json"):
+            seen["manifest_url"] = url
+            return _public_artifact_response(manifest, data, url)
+        return _public_artifact_response(manifest, data, url)
 
     monkeypatch.setattr("src.release_gate.requests.get", get)
     result = verify_release_for_delivery(
@@ -181,9 +224,33 @@ def test_release_gate_cache_busts_public_manifest_requests(tmp_path, monkeypatch
     )
 
     assert result.allowed is True
-    assert "release_id=" in seen["url"]
-    assert "attempt=1" in seen["url"]
+    assert "release_id=" in seen["manifest_url"]
+    assert "attempt=1" in seen["manifest_url"]
     assert seen["headers"]["Cache-Control"] == "no-cache, no-store"
+
+
+def test_release_gate_blocks_public_artifact_hash_mismatch(tmp_path, monkeypatch):
+    path, manifest = _ready_release(tmp_path)
+    data = tmp_path / "site" / "data"
+
+    def get(url, **kwargs):
+        if url.split("?", 1)[0].endswith("release-manifest.json"):
+            return _public_artifact_response(manifest, data, url)
+        if url.split("?", 1)[0].endswith("market.json"):
+            return _public_response(b"{\"tampered\":true}")
+        return _public_artifact_response(manifest, data, url)
+
+    monkeypatch.setattr("src.release_gate.requests.get", get)
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_snapshot_id="market-12345678",
+        public_url="https://example.test/",
+        public_attempts=1,
+        public_delay=0,
+    )
+
+    assert result.allowed is False
+    assert "public artifact hash mismatch: market.json" in ";".join(result.errors)
 
 
 def test_release_gate_writes_actions_output_as_key_value_lines(tmp_path, monkeypatch):
@@ -217,3 +284,42 @@ def test_release_gate_reports_unreadable_artifact(tmp_path):
     result = verify_release_for_delivery(manifest_path=path, expected_snapshot_id="market-12345678")
     assert result.allowed is False
     assert any("artifact unreadable event-ledger.json" in error for error in result.errors)
+
+
+def test_release_gate_defensive_artifact_loaders_fail_closed(tmp_path):
+    """Malformed public manifests must produce explicit errors, not partial success."""
+    loaded, errors = _load_release_artifacts({}, site_root=tmp_path)
+    assert loaded == {}
+    assert errors == ["manifest artifact paths are missing"]
+
+    (tmp_path / "bad.json").write_text("{", encoding="utf-8")
+    (tmp_path / "list.json").write_text("[]", encoding="utf-8")
+    loaded, errors = _load_release_artifacts(
+        {"artifact_paths": {
+            "market.json": "bad.json",
+            "research-report.json": "list.json",
+            "event-ledger.json": "missing.json",
+        }},
+        site_root=tmp_path,
+    )
+    assert loaded == {}
+    assert any("JSONDecodeError" in error for error in errors)
+    assert any("must be an object" in error for error in errors)
+    assert any("FileNotFoundError" in error for error in errors)
+
+    _, errors = _fetch_public_release_artifacts(
+        {"artifact_paths": {}, "artifact_hashes": {}},
+        public_url="https://example.test/",
+        timeout=1,
+    )
+    assert errors == [
+        "public manifest path missing: market.json",
+        "public manifest path missing: research-report.json",
+        "public manifest path missing: event-ledger.json",
+    ]
+    _, errors = _fetch_public_release_artifacts(
+        {"artifact_paths": {}, "artifact_hashes": {}},
+        public_url="http://example.test/",
+        timeout=1,
+    )
+    assert errors == ["public release URL must use HTTPS"]
