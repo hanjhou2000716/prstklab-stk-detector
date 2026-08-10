@@ -98,6 +98,8 @@ The following changes are prepared but intentionally not merged by the agent:
 - #409 Mini App evidence wait-reason display
 - #410 refresh the production integration matrix
 - #411 offline production acceptance gate
+- #414 source-health scan-state and observability contract
+- next: source-health schema and runtime cross-field audit (this PR)
 
 Merge these in dependency order with **Create a merge commit**.  A module is
 not promoted to `production` in this matrix until its PR is merged and the

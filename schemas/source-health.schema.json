@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/source-health.schema.json",
+  "type": "object",
+  "required": ["status", "sources", "event_scan"],
+  "properties": {
+    "checked_at": {"type": ["string", "null"], "format": "date-time"},
+    "status": {"enum": ["healthy", "partial", "warming", "critical"]},
+    "summary": {"type": "string"},
+    "missing_source_count": {"type": "integer", "minimum": 0},
+    "data_gaps": {"type": "array"},
+    "sources": {"type": "array", "items": {"$ref": "#/$defs/source"}},
+    "event_scan": {"$ref": "#/$defs/eventScan"},
+    "observability": {"$ref": "#/$defs/observability"}
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": ["key", "status"],
+      "properties": {
+        "key": {"type": "string", "minLength": 1},
+        "label": {"type": "string"},
+        "status": {"type": "string", "minLength": 1},
+        "state": {"type": "string"},
+        "semantic_state": {"type": "string"},
+        "role": {"type": "string"},
+        "checked_at": {"type": ["string", "null"], "format": "date-time"},
+        "last_success_at": {"type": ["string", "null"], "format": "date-time"},
+        "data_gaps": {"type": "array"},
+        "issues": {"type": "array", "items": {"type": "string"}},
+        "no_event": {"type": "boolean"},
+        "pending_count": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": true
+    },
+    "eventScan": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {"enum": ["no_event", "event_detected", "incomplete"]},
+        "label": {"type": "string"},
+        "detail": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "observability": {
+      "type": "object",
+      "properties": {
+        "observations": {"type": "integer", "minimum": 0},
+        "success_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+        "failure_count": {"type": "integer", "minimum": 0},
+        "no_event_count": {"type": "integer", "minimum": 0},
+        "stale_count": {"type": "integer", "minimum": 0},
+        "degraded_count": {"type": "integer", "minimum": 0},
+        "crosscheck_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+        "parser_error_count": {"type": "integer", "minimum": 0},
+        "state": {"enum": ["healthy", "partial", "failed", "no_observations"]}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

@@ -84,6 +84,53 @@ def validate_market(document: dict[str, Any]) -> list[str]:
         for index, quote in enumerate(document.get(collection, [])):
             if isinstance(quote, dict):
                 errors.extend(_quote_contract_errors(quote, f"{collection}[{index}]"))
+    source_health = document.get("source_health")
+    # Older releases only contain a legacy ``data_gaps`` map.  Keep those
+    # artifacts readable while enforcing the full contract whenever the
+    # canonical source-health envelope is present.
+    if isinstance(source_health, dict) and {"status", "sources", "event_scan"}.issubset(source_health):
+        errors.extend(validate_source_health(source_health))
+    return errors
+
+
+def validate_source_health(document: dict[str, Any]) -> list[str]:
+    """Validate source-health semantics without collapsing no-event into failure.
+
+    The field is intentionally additive for older releases.  When present,
+    machine states must agree with the display status so a healthy card cannot
+    hide a failed scan, and an empty-but-successful scan remains observable.
+    """
+    errors = _schema_errors(document, "source-health.schema.json")
+    allowed_status = {"healthy", "partial", "warming", "critical", "pending", "failed", "no_event"}
+    gap_states = {"fallback_active", "configuration_missing", "stale", "partial", "failed", "critical"}
+    for index, source in enumerate(document.get("sources", [])):
+        if not isinstance(source, dict):
+            continue
+        path = f"source_health.sources[{index}]"
+        status = str(source.get("status") or "")
+        semantic = str(source.get("semantic_state") or "")
+        if status and status not in allowed_status:
+            errors.append(f"{path}: unknown status={status!r}")
+        if status in {"healthy", "no_event"} and semantic in gap_states:
+            errors.append(f"{path}: healthy/no_event status conflicts with semantic_state={semantic}")
+        if semantic in {"healthy", "no_event"} and status in {"failed", "partial", "critical"}:
+            errors.append(f"{path}: failed status conflicts with semantic_state={semantic}")
+        if source.get("no_event") is True and status in {"failed", "partial", "critical"}:
+            errors.append(f"{path}: no_event cannot be a failed source")
+    event_scan = document.get("event_scan")
+    if isinstance(event_scan, dict) and event_scan.get("status") == "no_event":
+        failed = [
+            source for source in document.get("sources", [])
+            if isinstance(source, dict) and source.get("status") in {"failed", "critical"}
+        ]
+        if failed:
+            errors.append("source_health: event_scan=no_event cannot coexist with failed core sources")
+    observability = document.get("observability")
+    if isinstance(observability, dict):
+        failures = observability.get("failure_count")
+        no_events = observability.get("no_event_count")
+        if isinstance(failures, int) and isinstance(no_events, int) and failures < 0:
+            errors.append("source_health.observability.failure_count must be non-negative")
     return errors
 
 
