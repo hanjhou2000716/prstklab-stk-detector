@@ -1186,19 +1186,32 @@ class SeenStore:
             if exists is None:
                 # A scoped photo smoke test is intentionally emitted before
                 # any Railway outbox row exists.  Accept only this explicit,
-                # non-production contract; formal receipts for unknown traces
-                # remain rejected to prevent forged or misrouted evidence.
-                if not (
+                # non-production contract.  Production GitHub Actions jobs
+                # publish immutable release metadata before the callback, but
+                # do not create a Railway outbox row.  The signed callback is
+                # therefore allowed to register that row when it carries the
+                # complete release/snapshot/alert tuple and explicit origin.
+                photo_smoke = (
                     receipt_kind == "photo_smoke"
                     and payload.get("release_id") == "photo-smoke-test"
                     and payload.get("snapshot_id") == "photo-smoke-test"
                     and payload.get("alert_id") == "photo-smoke-test"
                     and payload.get("delivery_mode") == "photo"
-                ):
+                )
+                production_receipt = (
+                    receipt_kind == "production"
+                    and payload.get("receipt_origin") == "github_actions"
+                    and bool(payload.get("release_id"))
+                    and bool(payload.get("snapshot_id"))
+                    and bool(payload.get("alert_id"))
+                    and payload.get("delivery_mode") in {"text", "photo"}
+                )
+                if not (photo_smoke or production_receipt):
                     logging.warning("delivery receipt for unknown trace_id=%s", trace_id)
                     return False
                 smoke_payload = {
                     "receipt_kind": receipt_kind,
+                    "receipt_origin": payload.get("receipt_origin"),
                     "release_id": payload.get("release_id"),
                     "snapshot_id": payload.get("snapshot_id"),
                     "alert_id": payload.get("alert_id"),
@@ -1211,10 +1224,14 @@ class SeenStore:
                     ) VALUES(?,?,?,?,?,?,?, ?, ?)""",
                     (
                         trace_id,
-                        f"photo-smoke:{trace_id}",
+                        (
+                            f"photo-smoke:{trace_id}"
+                            if photo_smoke
+                            else f"github-actions:{payload.get('alert_id')}"
+                        ),
                         "github_actions",
-                        "photo-smoke-test",
-                        "photo_smoke",
+                        payload.get("alert_id") or "photo-smoke-test",
+                        "photo_smoke" if photo_smoke else "production_receipt",
                         json.dumps(smoke_payload, ensure_ascii=False, sort_keys=True),
                         status,
                         now,

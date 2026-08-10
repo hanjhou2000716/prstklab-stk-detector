@@ -1052,6 +1052,33 @@ def test_seen_store_accepts_scoped_photo_smoke_receipt_without_outbox(tmp_path):
     ).fetchone() == ("delivered", 1, 0)
 
 
+def test_seen_store_registers_signed_production_receipt_without_outbox(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    trace_id = "brief-production-test-1234"
+    assert store.record_delivery_status({
+        "trace_id": trace_id,
+        "receipt_kind": "production",
+        "receipt_origin": "github_actions",
+        "release_id": "release-abc",
+        "snapshot_id": "snapshot-abc",
+        "alert_id": "brief-abc",
+        "delivery_mode": "photo",
+        "delivery_status": "partial",
+        "delivered_count": 4,
+        "failed_count": 3,
+        "failed_recipient_hashes": ["deadbeef"],
+    })
+    row = store.connection.execute(
+        "SELECT source,event_id,category,status FROM delivery_outbox WHERE trace_id = ?",
+        (trace_id,),
+    ).fetchone()
+    assert row == ("github_actions", "brief-abc", "production_receipt", "partial")
+    assert store.connection.execute(
+        "SELECT delivered_count,failed_count FROM delivery_receipts WHERE trace_id=? AND recipient_hash='__aggregate__'",
+        (trace_id,),
+    ).fetchone() == (4, 3)
+
+
 def test_seen_store_rejects_unknown_production_receipt(tmp_path):
     store = monitor.SeenStore(tmp_path / "state.sqlite3")
     assert store.record_delivery_status({
