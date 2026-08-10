@@ -142,7 +142,17 @@ def _attach_detail_summary(target: dict[str, Any], details: list[dict[str, Any]]
 def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
     """Present research warming, empty results and failures as different states."""
     sources = [item for item in report.get("sources", []) if isinstance(item, dict)]
-    failed = [item for item in sources if str(item.get("status")) in {"資料暫時無法取得", "掃描失敗"}]
+    # Producers historically emitted localized display labels, while current
+    # producers emit machine states.  Always prefer the stable scan_state so
+    # a label change cannot turn a failed scan into a healthy source row.
+    failed_states = {"failed", "scan_failed", "data_unavailable", "unavailable"}
+    building_states = {"building", "warming", "partial", "in_progress"}
+    failed = [
+        item for item in sources
+        if str(item.get("scan_state") or "").strip().lower() in failed_states
+        or str(item.get("status") or "").strip().lower() in failed_states
+        or str(item.get("status")) in {"資料暫時無法取得", "掃描失敗"}
+    ]
     partial = []
     for item in sources:
         if item in failed:
@@ -151,9 +161,15 @@ def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
             failed_count = int(item.get("failed") or 0)
         except (TypeError, ValueError):
             failed_count = 0
-        if failed_count > 0:
+        scan_state = str(item.get("scan_state") or "").strip().lower()
+        if failed_count > 0 or scan_state in {"partial", "data_gap"}:
             partial.append(item)
-    warming = [item for item in sources if str(item.get("status")) == "建檔中"]
+    warming = [
+        item for item in sources
+        if str(item.get("scan_state") or "").strip().lower() in building_states
+        or str(item.get("status") or "").strip().lower() in building_states
+        or str(item.get("status")) == "建檔中"
+    ]
     if failed:
         issues = [f"{item.get('market', '')} {item.get('strategy', '')} 掃描失敗".strip() for item in failed]
         return {"key": "research", "label": "量化研究", "status": "partial", "semantic_state": "failed", "checked_at": checked_at, "issues": issues[:2]}

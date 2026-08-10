@@ -128,3 +128,31 @@ def test_monitor_health_pending_reason_survives_normal_market_refresh():
     assert gdelt["status"] == "pending"
     assert gdelt["pending_count"] == 2
     assert health["missing_source_count"] == 0
+
+
+def test_research_machine_failed_state_is_not_reported_as_healthy():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": [{
+            "market": "us", "strategy": "value", "status": "failed",
+            "scan_state": "failed", "candidates": 0,
+            "failed_records": 3,
+        }]}, checked_at=NOW,
+    )
+    research = next(item for item in health["sources"] if item["key"] == "research")
+    assert research["semantic_state"] == "failed"
+    assert research["status"] == "partial"
+    assert health["missing_source_count"] >= 1
+
+
+def test_research_machine_building_state_preserves_partial_progress():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": [{
+            "market": "taiwan", "strategy": "value", "status": "building",
+            "scan_state": "building", "candidates": 2,
+            "history_cached": 20, "history_expected": 150,
+        }]}, checked_at=NOW,
+    )
+    research = next(item for item in health["sources"] if item["key"] == "research")
+    assert research["status"] == "warming"
+    assert research["semantic_state"] == "warming"
+    assert "20／150" in research["issues"][0]
