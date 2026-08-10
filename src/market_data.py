@@ -526,6 +526,12 @@ def apply_crypto_spot_crosscheck(
         if primary:
             result = compare_quotes(primary, secondary, max_age_minutes=60, max_gap_percent=2.0)
             merged = {**item, **primary}
+            # The primary provider wins the displayed provenance.  Without
+            # this assignment a Yahoo card can retain ``source_label=Yahoo``
+            # while its URL/domain is Binance.US, making the release manifest
+            # correctly reject an otherwise valid crypto observation.
+            merged["source_label"] = "Binance"
+            merged["quote_source"] = primary.get("quote_source") or "Binance public spot quote"
             merged["name"] = item.get("name") or primary.get("ticker")
             merged["market"] = item.get("market") or "global"
             merged["currency"] = item.get("currency") or "USD"
