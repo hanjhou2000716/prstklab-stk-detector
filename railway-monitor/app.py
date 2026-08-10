@@ -2024,9 +2024,18 @@ def cross_checked_gdelt_alerts(
     return alerts
 
 
+def _health_request_path(request_target: str) -> str:
+    """Extract the route path while ignoring probe cache-busting parameters."""
+    return urlparse(request_target).path or "/"
+
+
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
-        if self.path not in {"/", "/health"}:
+        # Monitoring probes and browser cache-busting commonly append a
+        # query string.  Route by the URL path, not the raw request target, so
+        # `/health?ts=...` remains the same public health endpoint.
+        request_path = _health_request_path(self.path)
+        if request_path not in {"/", "/health"}:
             self.send_error(404)
             return
         body = (json.dumps(health_snapshot(), ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
