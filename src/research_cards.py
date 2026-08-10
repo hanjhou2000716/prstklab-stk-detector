@@ -70,7 +70,9 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
             "pristine_conditions_matched", "pristine_conditions_total", "quality_verified",
             "heat_verified", "verification_gaps", "passed_conditions", "failed_conditions",
             "risk_factors", "data_completeness", "invalidation", "invalidation_condition",
-            "advice_gate", "strategy_version", "data_version", "backtest_release"
+            "advice_gate", "strategy_version", "data_version", "backtest_release",
+            "backtest_release_contract", "freshness", "cross_checked", "evidence",
+            "source_evidence", "alternative_scenario", "horizon", "confidence"
         )}
         binding = bind_strategy_provenance(candidate)
         candidate["strategy_binding"] = binding
@@ -86,9 +88,15 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
             "quote_stale": candidate.get("freshness") in {"stale", "unavailable"},
             "crosscheck_ok": candidate.get("cross_checked") is True,
             "backtest_release": candidate.get("backtest_release"),
+            "backtest_release_contract": candidate.get("backtest_release_contract"),
             "candidate_data_gap": bool(candidate.get("verification_gaps") or candidate.get("failed_conditions")),
             "policy_valid": binding["state"] == "production",
             "general_research": True,
+            "evidence": candidate.get("evidence") or candidate.get("source_evidence"),
+            "invalidation_condition": candidate.get("invalidation_condition") or candidate.get("invalidation"),
+            "alternative_scenario": candidate.get("alternative_scenario"),
+            "horizon": candidate.get("horizon"),
+            "confidence": candidate.get("confidence"),
         })
         candidate["advice_gate_detail"] = gate
         candidate["explainability"] = build_explainability_card(candidate, gate)
