@@ -95,6 +95,66 @@ def test_research_fallback_cannot_be_production_eligible():
     assert any("fallback cannot be production_eligible" in error for error in errors)
 
 
+def _backtest_contract(**overrides):
+    value = {
+        "backtest_release": "backtest-12345678",
+        "market": "taiwan",
+        "publication_state": "ready",
+        "publish_eligible": True,
+        "strategy_registry": [{"strategy_id": "value"}],
+        "research_only": True,
+    }
+    value.update(overrides)
+    return value
+
+
+def test_research_backtest_contract_requires_matching_ready_state():
+    research = _research(
+        backtest_release_status="ready",
+        backtest_release_contract=_backtest_contract(publish_eligible=False),
+    )
+    errors = validate_research(research)
+    assert any("ready backtest contract requires publish_eligible=true" in error for error in errors)
+
+
+def test_research_backtest_contract_rejects_candidate_release_mismatch():
+    research = _research(
+        backtest_release_status="ready",
+        backtest_release_contract=_backtest_contract(),
+        candidates=[{
+            "ticker": "2330",
+            "backtest_release": "backtest-other",
+            "backtest_release_contract": _backtest_contract(backtest_release="backtest-other"),
+        }],
+    )
+    errors = validate_research(research)
+    assert any("backtest_release does not match research contract" in error for error in errors)
+    assert any("candidate contract release does not match research contract" in error for error in errors)
+
+
+def test_research_blocked_backtest_cannot_unlock_candidate():
+    research = _research(
+        backtest_release_status="blocked",
+        backtest_release_contract=_backtest_contract(
+            publication_state="blocked", publish_eligible=False,
+        ),
+        candidates=[{
+            "ticker": "2330",
+            "backtest_release": "backtest-12345678",
+            "backtest_release_contract": _backtest_contract(
+                publication_state="blocked", publish_eligible=True,
+            ),
+        }],
+    )
+    errors = validate_research(research)
+    assert any("candidate cannot be publish_eligible" in error for error in errors)
+
+
+def test_research_unavailable_status_can_omit_contract_for_legacy_report():
+    research = _research(backtest_release_status="unavailable")
+    assert validate_research(research) == []
+
+
 def test_release_rejects_mismatched_snapshot_ids():
     research = _research(snapshot_id="research-other")
     errors = validate_release(market=_market(), research=research, manifest=_manifest())
