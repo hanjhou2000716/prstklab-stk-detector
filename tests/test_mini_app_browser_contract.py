@@ -44,6 +44,7 @@ def test_mini_app_investor_shell_and_drawer_contract() -> None:
             assert page.locator("#briefing-report").get_attribute("open") == ""
             assert page.locator("#source-health").get_attribute("open") is None
             assert page.locator("#briefing-intelligence").get_attribute("open") is None
+            assert page.locator("#briefing-intelligence").get_attribute("hidden") is None
             assert page.locator(".technical-details").count() >= 2
             assert page.locator(".technical-details[open]").count() == 0
 

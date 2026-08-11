@@ -109,7 +109,8 @@ def test_briefing_report_renders_fail_closed_intelligence_context():
     assert 'const context = report.intelligence;' in app
     assert 'context.market_regime' in app
     assert 'context.stress_scenarios' in app
-    assert 'intelligence.hidden = true;' in app
+    assert 'intelligence.open = false;' in app
+    assert 'intelligence.hidden = true;' not in app
     assert 'briefing-intelligence-content' in app
     assert ".briefing-intelligence" in styles
 
