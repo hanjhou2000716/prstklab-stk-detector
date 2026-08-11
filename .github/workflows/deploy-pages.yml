@@ -40,7 +40,27 @@ jobs:
         run: python -m pip install -r requirements-production.txt
       - name: Restore latest immutable data release
         run: |
+          # Explicitly refresh the remote-tracking ref and restore the data
+          # tree from that ref.  The checkout action can retain a stale
+          # remote-tracking ref when a data-only branch is updated between
+          # workflow runs; silently validating main's invalid placeholder
+          # would make Pages fail with no useful diagnostic.
+          git fetch --no-tags origin refs/heads/data-release:refs/remotes/origin/data-release
           python -m src.data_release --restore --branch data-release --include site/data
+          git restore --source=origin/data-release --worktree -- site/data/
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path("site/data/release-manifest.json").read_text(encoding="utf-8"))
+          print(json.dumps({
+              "release_id": manifest.get("release_id"),
+              "status": manifest.get("status"),
+              "market_snapshot_id": manifest.get("market_snapshot_id"),
+              "research_snapshot_id": manifest.get("research_snapshot_id"),
+          }, ensure_ascii=False, sort_keys=True))
+          if manifest.get("status") != "ready":
+              raise SystemExit("data-release manifest is not ready")
       - name: Build cache-busted static assets
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
@@ -49,7 +69,10 @@ jobs:
           python -m src.asset_contract --root site
       - name: Validate release before Pages upload
         run: |
-          python -m src.release_gate --manifest site/data/release-manifest.json
+          # GITHUB_OUTPUT makes release_gate intentionally quiet; unset it in
+          # this diagnostic step so a failed gate leaves actionable errors in
+          # the Actions log while retaining fail-closed behaviour.
+          env -u GITHUB_OUTPUT python -m src.release_gate --manifest site/data/release-manifest.json
       - name: 設定 GitHub Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
         with:
