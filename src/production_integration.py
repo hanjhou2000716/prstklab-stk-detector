@@ -13,6 +13,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from src.instrument_master import InstrumentMaster
+from src.strategy_registry import validate_strategy_release
 
 PROVENANCE_FIELDS = (
     "release_id",
@@ -120,9 +121,8 @@ def bind_strategy_provenance(candidate: dict[str, Any] | None) -> dict[str, Any]
     registry = row.get("strategy_registry")
     registry_errors: list[str] = []
     if registry is not None:
-        if not isinstance(registry, dict):
-            registry_errors.append("strategy_registry must be an object")
-        else:
+        registry_errors.extend(validate_strategy_release(registry))
+        if isinstance(registry, dict):
             pairs = {
                 "strategy_id": row.get("strategy") or row.get("strategy_id"),
                 "strategy_version": row.get("strategy_version"),
@@ -132,9 +132,6 @@ def bind_strategy_provenance(candidate: dict[str, Any] | None) -> dict[str, Any]
             for key, expected in pairs.items():
                 if expected not in (None, "") and registry.get(key) != expected:
                     registry_errors.append(f"strategy_registry.{key} does not match candidate")
-            for key in ("parameter_hash", "universe_version", "code_commit"):
-                if not registry.get(key):
-                    registry_errors.append(f"strategy_registry.{key} is missing")
     if registry_errors:
         missing.append("strategy_registry")
     return {

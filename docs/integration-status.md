@@ -246,10 +246,11 @@ advice permissions merely by having a score or ticker.
 
 When a candidate includes a `strategy_registry` entry, the production binder
 compares the strategy ID, version, data version and backtest release, and
-requires the parameter hash, universe version and code commit. A mismatch is
-reported as `observation_only` with `invalid_strategy_registry`; a complete
-match is marked `registry_state=verified`. Candidates without the optional
-entry retain the legacy observation-only compatibility path.
+requires all seven string identity fields (including parameter hash, universe
+version and code commit). A partial, non-string, or mismatched row is reported
+as `observation_only` with `invalid_strategy_registry`; a complete match is
+marked `registry_state=verified`. Candidates without the optional entry retain
+the legacy observation-only compatibility path.
 
 ## Private portfolio boundary
 
