@@ -113,6 +113,21 @@ def test_mops_history_skips_recent_failures_and_advances_to_new_tickers(tmp_path
     assert len(errors) == 1
 
 
+def test_mops_history_full_run_retries_recent_failures(tmp_path: Path):
+    """A zero refresh limit means verify the whole pool, not skip cooldowns."""
+
+    class FailingClient:
+        def report(self, *args, **kwargs):
+            raise RuntimeError("temporary MOPS failure")
+
+    path = tmp_path / "mops.json"
+    # Seed one recent failure with the bounded/incremental mode.
+    mops_pristine_history(["1101"], path, max_refresh=1, client=FailingClient())
+    _, errors = mops_pristine_history(["1101"], path, max_refresh=0, client=FailingClient())
+
+    assert errors == ["1101 MOPS history: RuntimeError"]
+
+
 def test_mops_client_uses_legacy_public_endpoint_after_redirect_failure():
     client = MopsPublicClient()
     client._report_once = lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("redirect blocked"))

@@ -404,9 +404,13 @@ def mops_pristine_history(
 ) -> tuple[dict[str, dict[str, Any]], list[str]]:
     """Return cached/verified MOPS eligibility observations for a ticker set.
 
-    ``max_refresh=0`` means complete the requested universe. A non-zero value
-    caps *attempts* (not only successful downloads), so a slow or failing MOPS
-    report cannot consume the scheduled full-market time budget.
+    ``max_refresh=0`` means complete the requested universe, including retrying
+    previously failed records. A non-zero value caps *attempts* (not only
+    successful downloads), so a slow or failing MOPS report cannot consume the
+    scheduled full-market time budget. This distinction matters for production:
+    a zero limit must not silently skip records in the six-hour retry cooldown,
+    otherwise the release can remain ``building`` forever even when the next
+    run has enough time to verify the pool.
     """
     cache = _load_cache(cache_path)
     records: dict[str, dict[str, Any]] = cache["records"]
@@ -425,7 +429,7 @@ def mops_pristine_history(
     pending.sort(key=lambda ticker: (0 if ticker not in failures else (1 if _retry_due(failures[ticker], now) else 2), ticker))
     for ticker in pending:
         previous_failure = failures.get(ticker)
-        if isinstance(previous_failure, dict) and not _retry_due(previous_failure, now):
+        if max_refresh and isinstance(previous_failure, dict) and not _retry_due(previous_failure, now):
             continue
         if max_refresh and attempted >= max_refresh:
             break
