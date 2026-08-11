@@ -24,7 +24,9 @@ def test_write_snapshot_publishes_metadata_atomically(tmp_path):
     assert payload["snapshot_published_at"]
     assert payload["raw_observation"] == {
         "enabled": False,
+        "required": False,
         "recorded": False,
+        "state": "disabled",
         "reason": "not_configured",
     }
     assert not list(tmp_path.glob(".*.tmp"))
@@ -38,6 +40,7 @@ def test_write_snapshot_records_normalized_artifact_when_store_configured(tmp_pa
     payload = json.loads(destination.read_text(encoding="utf-8"))
     metadata = payload["raw_observation"]
     assert metadata["enabled"] is True
+    assert metadata["state"] == "recorded"
     assert metadata["recorded"] is True
     assert len(metadata["observation_id"]) == 32
     assert list((tmp_path / "raw").rglob("*.json"))

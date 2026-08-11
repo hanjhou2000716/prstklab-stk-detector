@@ -18,6 +18,18 @@ from src.intel_contract import normalize_quote_record
 from src.raw_observation_store import RawObservationStore
 
 
+def _raw_observation_required() -> bool:
+    """Return whether a release requires durable raw observations.
+
+    The default remains optional for backwards compatibility with local and
+    legacy jobs. Production workers can opt into the fail-closed contract by
+    setting ``RAW_OBSERVATION_REQUIRED=true`` together with a writable root.
+    """
+    return str(os.getenv("RAW_OBSERVATION_REQUIRED") or "").strip().lower() in {
+        "1", "true", "yes", "on"
+    }
+
+
 def _store_from_env() -> RawObservationStore | None:
     root = str(os.getenv("RAW_OBSERVATION_ROOT") or "").strip()
     return RawObservationStore(root) if root else None
@@ -31,6 +43,8 @@ def raw_observation_store_summary(
     if active is None:
         return {
             "enabled": False,
+            "required": _raw_observation_required(),
+            "state": "disabled",
             "schema_version": None,
             "observation_count": 0,
             "latest_fetched_at": None,
@@ -40,6 +54,8 @@ def raw_observation_store_summary(
         latest = active.list_recent(limit=1)
         return {
             "enabled": True,
+            "required": _raw_observation_required(),
+            "state": "recorded",
             "schema_version": 1,
             "observation_count": active.count(),
             "latest_fetched_at": latest[0].fetched_at if latest else None,
@@ -48,6 +64,8 @@ def raw_observation_store_summary(
     except (OSError, RuntimeError, ValueError):
         return {
             "enabled": True,
+            "required": _raw_observation_required(),
+            "state": "unavailable",
             "schema_version": 1,
             "observation_count": 0,
             "latest_fetched_at": None,
@@ -61,11 +79,24 @@ def record_market_snapshot_observation(snapshot: dict[str, Any]) -> dict[str, An
     from datetime import UTC, datetime
 
     root = os.getenv("RAW_OBSERVATION_ROOT", "").strip()
+    required = _raw_observation_required()
     if not root:
-        return {"enabled": False, "recorded": False, "reason": "not_configured"}
+        return {
+            "enabled": False,
+            "required": required,
+            "recorded": False,
+            "state": "unavailable" if required else "disabled",
+            "reason": "required_not_configured" if required else "not_configured",
+        }
     snapshot_id = str(snapshot.get("snapshot_id") or "")
     if not snapshot_id:
-        return {"enabled": True, "recorded": False, "reason": "snapshot_id_missing"}
+        return {
+            "enabled": True,
+            "required": required,
+            "recorded": False,
+            "state": "unavailable",
+            "reason": "snapshot_id_missing",
+        }
     try:
         observation = RawObservationStore(root).record(
             provider="prstk-pipeline",
@@ -77,9 +108,21 @@ def record_market_snapshot_observation(snapshot: dict[str, Any]) -> dict[str, An
             parser_version="market_snapshot-v1",
             parsing_status="normalized",
         )
-        return {"enabled": True, "recorded": True, "observation_id": observation.observation_id}
+        return {
+            "enabled": True,
+            "required": required,
+            "recorded": True,
+            "state": "recorded",
+            "observation_id": observation.observation_id,
+        }
     except (OSError, ValueError, TypeError, RuntimeError) as exc:
-        return {"enabled": True, "recorded": False, "reason": type(exc).__name__}
+        return {
+            "enabled": True,
+            "required": required,
+            "recorded": False,
+            "state": "unavailable",
+            "reason": type(exc).__name__,
+        }
 
 
 def bind_quote_evidence(

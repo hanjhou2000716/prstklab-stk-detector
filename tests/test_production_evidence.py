@@ -85,6 +85,7 @@ def test_raw_observation_store_summary_is_safe_and_tracks_latest(tmp_path) -> No
     summary = raw_observation_store_summary(store)
     assert summary["observation_count"] == 1
     assert summary["latest_fetched_at"] == "2026-08-09T01:00:00+00:00"
+    assert summary["state"] == "recorded"
     assert "raw_payload" not in summary
 
 
@@ -93,6 +94,8 @@ def test_raw_observation_store_summary_is_disabled_without_configuration(monkeyp
     summary = raw_observation_store_summary()
     assert summary == {
         "enabled": False,
+        "required": False,
+        "state": "disabled",
         "schema_version": None,
         "observation_count": 0,
         "latest_fetched_at": None,
@@ -104,7 +107,9 @@ def test_market_snapshot_observation_is_disabled_without_configuration(monkeypat
     monkeypatch.delenv("RAW_OBSERVATION_ROOT", raising=False)
     assert record_market_snapshot_observation({"snapshot_id": "snap-12345678"}) == {
         "enabled": False,
+        "required": False,
         "recorded": False,
+        "state": "disabled",
         "reason": "not_configured",
     }
 
@@ -113,7 +118,9 @@ def test_market_snapshot_observation_requires_snapshot_id(monkeypatch, tmp_path)
     monkeypatch.setenv("RAW_OBSERVATION_ROOT", str(tmp_path / "raw"))
     assert record_market_snapshot_observation({}) == {
         "enabled": True,
+        "required": False,
         "recorded": False,
+        "state": "unavailable",
         "reason": "snapshot_id_missing",
     }
 
@@ -132,3 +139,16 @@ def test_market_snapshot_observation_persists_normalized_snapshot(monkeypatch, t
     summary = raw_observation_store_summary()
     assert summary["observation_count"] == 1
     assert summary["latest_fetched_at"] == "2026-08-09T00:00:00+00:00"
+
+
+def test_required_raw_observation_fails_closed_when_root_is_missing(monkeypatch) -> None:
+    monkeypatch.delenv("RAW_OBSERVATION_ROOT", raising=False)
+    monkeypatch.setenv("RAW_OBSERVATION_REQUIRED", "true")
+    result = record_market_snapshot_observation({"snapshot_id": "snap-12345678"})
+    assert result == {
+        "enabled": False,
+        "required": True,
+        "recorded": False,
+        "state": "unavailable",
+        "reason": "required_not_configured",
+    }

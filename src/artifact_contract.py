@@ -109,6 +109,7 @@ def _quote_contract_errors(quote: dict[str, Any], path: str) -> list[str]:
 def validate_market(document: dict[str, Any]) -> list[str]:
     """Validate market schema and quote-level safety invariants."""
     errors = _schema_errors(document, "market.schema.json")
+    errors.extend(_raw_observation_contract_errors(document))
     errors.extend(_instrument_master_contract_errors(document))
     for collection in ("indices", "quotes"):
         for index, quote in enumerate(document.get(collection, [])):
@@ -123,6 +124,32 @@ def validate_market(document: dict[str, Any]) -> list[str]:
     briefing = document.get("briefing")
     if isinstance(briefing, dict) and isinstance(briefing.get("intelligence"), dict):
         errors.extend(validate_intelligence(briefing["intelligence"]))
+    return errors
+
+
+def _raw_observation_contract_errors(document: dict[str, Any]) -> list[str]:
+    """Validate durable raw-observation state without hiding degradation."""
+    envelope = document.get("raw_observation")
+    if envelope is None:
+        return []
+    if not isinstance(envelope, dict):
+        return ["market.raw_observation must be an object"]
+    errors: list[str] = []
+    enabled = envelope.get("enabled") is True
+    recorded = envelope.get("recorded") is True
+    required = envelope.get("required") is True
+    state = envelope.get("state")
+    observation_id = str(envelope.get("observation_id") or "").strip()
+    if state == "recorded" and not (enabled and recorded and observation_id):
+        errors.append("market.raw_observation state=recorded requires enabled, recorded and observation_id")
+    if state == "disabled" and (enabled or recorded or required):
+        errors.append("market.raw_observation state=disabled conflicts with enabled/recorded/required")
+    if state == "unavailable" and recorded:
+        errors.append("market.raw_observation state=unavailable cannot be recorded")
+    if required and not recorded:
+        errors.append("market.raw_observation required=true requires recorded=true")
+    if recorded and not observation_id:
+        errors.append("market.raw_observation recorded=true requires observation_id")
     return errors
 
 
