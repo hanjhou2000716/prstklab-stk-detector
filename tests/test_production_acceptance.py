@@ -64,7 +64,7 @@ def test_delivery_mode_rejects_legacy_research_snapshot():
     assert "not a production scan" in " ".join(result.errors)
 
 
-def test_explicit_stale_fallback_is_deliverable_but_not_production_research():
+def test_explicit_stale_fallback_is_blocked_from_production_delivery():
     bundle = _bundle()
     bundle["research"].update(
         scan_mode="production",
@@ -77,7 +77,8 @@ def test_explicit_stale_fallback_is_deliverable_but_not_production_research():
         universe_completed=3,
     )
     result = validate_production_bundle(**bundle, require_production_research=True)
-    assert result.allowed
+    assert not result.allowed
+    assert "production release cannot use stale research fallback" in result.errors
 
 
 def test_production_contract_rejects_incomplete_source_metadata():

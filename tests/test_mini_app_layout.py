@@ -109,7 +109,8 @@ def test_briefing_report_renders_fail_closed_intelligence_context():
     assert 'const context = report.intelligence;' in app
     assert 'context.market_regime' in app
     assert 'context.stress_scenarios' in app
-    assert 'intelligence.hidden = true;' in app
+    assert 'intelligence.open = false;' in app
+    assert 'intelligence.hidden = true;' not in app
     assert 'briefing-intelligence-content' in app
     assert ".briefing-intelligence" in styles
 
@@ -197,8 +198,9 @@ def test_value_drawer_explains_that_mops_history_is_still_being_verified():
     assert "不列入正式璞玉價值候選" in app
 
 
-def test_source_health_investor_count_is_derived_from_source_rows():
+def test_source_health_investor_count_uses_backend_canonical_gap_count():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "const declaredMissing = Number(health.missing_source_count);" in app
     assert "const displayedMissing = missing;" in app
     assert "Math.max(missing, declaredMissing)" not in app
 

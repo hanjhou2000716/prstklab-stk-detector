@@ -146,9 +146,12 @@ jobs:
                   Path("site/data/research-report.json").write_text(
                       json.dumps(fallback, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
                   )
-                  output.open("a", encoding="utf-8").write("publish=true\n")
+                  # Keep the fallback only as a diagnostic artifact. A new
+                  # market refresh must never be repackaged with old research
+                  # and published as a ready release.
+                  output.open("a", encoding="utf-8").write("publish=false\n")
                   output.open("a", encoding="utf-8").write("fallback=true\n")
-                  print(f"::warning::{reason}; keeping the last successful research snapshot")
+                  print(f"::warning::{reason}; no public release will be published")
               else:
                   output.open("a", encoding="utf-8").write("publish=false\n")
                   output.open("a", encoding="utf-8").write("fallback=false\n")
@@ -165,6 +168,7 @@ jobs:
           fi
           python -m src.release_manifest "${args[@]}"
       - name: 保存最新公開研究摘要
+        if: env.SCAN_MODE != 'production' || steps.research_gate.outputs.publish == 'true'
         run: |
           if [[ "$SCAN_MODE" == "production" ]]; then
             python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json --message "chore: refresh public research report"

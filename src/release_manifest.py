@@ -292,6 +292,8 @@ def build_release_manifest(
     # partial research as live.  Strict production callers do not opt into
     # this path unless ``allow_stale_research`` is explicitly set.
     research_candidate = loaded.get("research-report.json")
+    fallback_applied = False
+    fallback_reason = None
     if allow_stale_research and research_candidate:
         research_errors = production_research_contract_errors(research_candidate)
         if research_errors:
@@ -300,6 +302,8 @@ def build_release_manifest(
                 research_candidate,
                 reason,
             )
+            fallback_applied = True
+            fallback_reason = reason
 
     normalization_notes = _normalize_artifacts(loaded)
     for name, value in loaded.items():
@@ -364,10 +368,14 @@ def build_release_manifest(
         "artifact_paths": public_paths,
         "normalization_notes": normalization_notes,
         "research_freshness": "unknown",
-        "research_fallback_used": bool(allow_stale_research),
-        "research_fallback_reason": research_fallback_reason if allow_stale_research else None,
+        "research_fallback_used": fallback_applied,
+        "research_fallback_reason": fallback_reason,
         "status": "invalid",
     }
+    if fallback_applied:
+        # A stale report may be retained as an audit/rollback artifact, but it
+        # must never be paired with a new market snapshot in a ready release.
+        errors.append("stale research fallback cannot produce a ready manifest")
     if not market_id or not research_id or not event_id:
         errors.append("all three snapshot IDs are required")
     if market and research and "event-ledger.json" in loaded:
@@ -395,12 +403,10 @@ def build_release_manifest(
             else:
                 age_hours = max(0.0, (market_time - research_time).total_seconds() / 3600.0)
                 if age_hours > max(0.0, float(max_research_age_hours)):
-                    if not allow_stale_research:
-                        errors.append("research snapshot is older than production freshness window")
-                    else:
-                        manifest["research_freshness"] = "stale_fallback"
+                    errors.append("research snapshot is older than production freshness window")
+                    manifest["research_freshness"] = "stale"
                 else:
-                    manifest["research_freshness"] = "stale_fallback" if allow_stale_research else "fresh"
+                    manifest["research_freshness"] = "fresh"
         elif research:
             manifest["research_freshness"] = "unverified"
     manifest["validation_errors"] = sorted(set(errors))

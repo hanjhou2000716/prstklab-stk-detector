@@ -97,7 +97,9 @@ def validate_production_bundle(
         research.get("research_fallback_used") is True
         or research.get("publication_state") == "fallback"
     )
-    if require_production_research and not explicit_fallback:
+    if require_production_research and explicit_fallback:
+        errors.append("production release cannot use stale research fallback")
+    elif require_production_research and not explicit_fallback:
         errors.extend(production_research_contract_errors(research))
     elif scan_mode == "production" and not explicit_fallback:
         errors.extend(production_research_contract_errors(research))
