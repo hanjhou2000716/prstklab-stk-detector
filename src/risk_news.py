@@ -534,8 +534,12 @@ def _filter_market_news(stories: list[dict[str, str]], market: str) -> list[dict
         enriched = dict(story)
         classification = classify_news_market(enriched)
         scope = classification["market_scope"]
-        # Unknown headlines are retained for availability, but never claim a
-        # regional match; they are explicitly labelled in the Mini App.
+        # Unknown headlines have no auditable market scope.  Keeping them in
+        # both tabs creates the exact false-routing failure this filter is
+        # designed to prevent, so fail closed and let the source-health card
+        # distinguish an empty scan from a provider failure.
+        if scope == "unclassified":
+            continue
         if scope in {"taiwan", "us"} and scope != market:
             continue
         enriched.update(classification)
