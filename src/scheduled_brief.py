@@ -267,6 +267,7 @@ def main() -> None:
                 alert_id=str((event or {}).get("event_cluster_key") or (event or {}).get("event_key") or trace_id),
                 release_id=str(snapshot.get("release_id") or os.environ.get("RELEASE_ID") or ""),
                 snapshot_id=snapshot_id,
+                observation_id=observation_id,
             )
             if (snapshot.get("release_id") or os.environ.get("RELEASE_ID"))
             else None

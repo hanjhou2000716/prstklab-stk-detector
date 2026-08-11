@@ -10,6 +10,21 @@ def test_intelligence_pipeline_marks_sync_from_fresh_observation():
     result = build_intelligence_context({"title": "Fed interest rate policy", "source_url": "https://official.test"}, [{"ticker": "NASDAQ", "price": 100, "change_percent": -2}])
     assert "market_impact_graph" in result
     assert "disclaimer" in result
+    reaction = result["macro_surprise"]["market_reaction"]
+    assert reaction["status"] == "observed_only"
+    assert reaction["direction_confirmed"] is False
+    assert reaction["quotes"][0]["ticker"] == "NASDAQ"
+
+
+def test_macro_reaction_is_explicitly_unavailable_without_quotes():
+    result = build_intelligence_context(
+        {"title": "CPI release", "source_url": "https://official.test"},
+        [],
+        macro={"expected": 2.0, "actual": 2.1},
+    )
+    reaction = result["macro_surprise"]["market_reaction"]
+    assert reaction["status"] == "not_available"
+    assert reaction["direction_confirmed"] is False
 
 
 def test_intelligence_pipeline_publishes_risk_context_without_unlocking_advice():

@@ -142,6 +142,19 @@ const renderAlertTrace = (event) => {
         : "等待第二來源";
     facts.push(`事件交叉核對：${label}${crosscheckDomains.length ? `（${crosscheckDomains.join("、")}）` : ""}`);
   }
+  const evidenceState = String(event?.evidence_state || trace?.evidence_state || "").trim();
+  const evidenceReason = String(event?.evidence_reason || trace?.evidence_reason || "").trim();
+  if (evidenceState || evidenceReason) {
+    const stateLabels = {
+      discovery: "探索中",
+      single_source: "單一來源",
+      pending_crosscheck: "等待核對",
+      corroborated: "第二來源已核對",
+      official_confirmed: "官方已確認",
+    };
+    const stateLabel = stateLabels[evidenceState] || evidenceState || "證據狀態待確認";
+    facts.push(`證據狀態：${stateLabel}${evidenceReason ? `｜${evidenceReason}` : ""}`);
+  }
   const eventTime = traceTime(trace?.event_time);
   if (eventTime) facts.push(`事件時間：${eventTime} CST`);
   const checkedAt = traceTime(trace?.checked_at);
@@ -405,11 +418,11 @@ const renderSourceHealth = (health, snapshot = {}) => {
   const sourceState = (source) => source.semantic_state || source.state || source.status;
   const missing = health.sources.filter((source) => degradedStates.includes(sourceState(source))).length;
   const critical = health.sources.filter((source) => ["critical", "critical_gap", "failed", "configuration_missing", "configuration_required"].includes(sourceState(source))).length;
-  // Recompute from source rows so a stale aggregate cannot hide a new gap.
-  const declaredMissing = Number.isFinite(Number(health.missing_source_count))
-    ? Number(health.missing_source_count)
-    : missing;
-  const displayedMissing = Math.max(missing, declaredMissing);
+  // `sources[]` is the single source of truth for the investor count. Older
+  // snapshots may carry a stale aggregate, but it must not make the UI claim
+  // that a healthy source is missing. The raw aggregate remains available to
+  // engineering diagnostics in the snapshot, not in this investor summary.
+  const displayedMissing = missing;
   const pending = Number(health.pending_event_count || health.monitor_health?.pending_count || 0);
   const aggregate = health.investor_status || (missing === 0 ? "資料正常" : critical > 0 ? "核心資料不足" : "部分資料降級");
   summary.textContent = `${aggregate}${displayedMissing ? `｜${displayedMissing} 個來源有資料缺口` : ""}`;
@@ -420,6 +433,8 @@ const renderSourceHealth = (health, snapshot = {}) => {
   const observation = health.observability || health.slo || health.monitor_health || {};
   const healthMetricParts = [
     Number.isFinite(Number(observation.success_rate)) ? `成功率 ${Number(observation.success_rate).toFixed(1)}%` : "",
+    Number.isFinite(Number(observation.no_event_count)) ? `無事件 ${Number(observation.no_event_count)} 個` : "",
+    Number.isFinite(Number(observation.failure_count)) ? `掃描失敗 ${Number(observation.failure_count)} 個` : "",
     Number.isFinite(Number(observation.crosscheck_rate)) ? `核對率 ${Number(observation.crosscheck_rate).toFixed(1)}%` : "",
     Number.isFinite(Number(observation.stale_count)) ? `快取 ${Number(observation.stale_count)} 筆` : "",
   ].filter(Boolean).join("｜");
@@ -524,7 +539,12 @@ const renderBriefing = (briefing, generatedAt) => {
       const surpriseText = surprise.status === "insufficient_evidence"
         ? "總經驚喜：缺少預期值或實際值，證據不足"
         : `總經驚喜：${surprise.status}｜實際 ${surprise.actual ?? "—"}／預期 ${surprise.expected ?? "—"}`;
-      if (intelligenceContent) intelligenceContent.innerHTML = `<p><b>市場狀態：</b>${escapeHtml(regime.regime || "資料不足")}｜分數 ${escapeHtml(String(regime.score ?? "—"))}</p><p><b>因子：</b>${escapeHtml(factors)}</p><p><b>跨資產核對：</b>${escapeHtml(contagion.status || "資料不足")}｜${escapeHtml(signals)}</p><p><b>傳導路徑：</b>${escapeHtml(pathText)}</p><p><b>${escapeHtml(surpriseText)}</b>（不單獨推定市場方向）</p><p><b>建議閘門：</b>${escapeHtml(context.advice_gate || "observation_only")}｜${escapeHtml(blocking)}</p>${scenarios ? `<ul class="briefing-stress-list"><li class="briefing-stress-heading">壓力情境（非預測）</li>${scenarios}</ul>` : ""}<small>資料不足時維持觀察，不產生買進／賣出指令。</small>`;
+      const reaction = surprise.market_reaction || {};
+      const reactionQuotes = Array.isArray(reaction.quotes) ? reaction.quotes : [];
+      const reactionText = reaction.status === "observed_only"
+        ? `已觀測 ${reactionQuotes.length} 筆價格反應，尚未確認方向`
+        : "本輪沒有可用的事件後市場報價";
+      if (intelligenceContent) intelligenceContent.innerHTML = `<p><b>市場狀態：</b>${escapeHtml(regime.regime || "資料不足")}｜分數 ${escapeHtml(String(regime.score ?? "—"))}</p><p><b>因子：</b>${escapeHtml(factors)}</p><p><b>跨資產核對：</b>${escapeHtml(contagion.status || "資料不足")}｜${escapeHtml(signals)}</p><p><b>傳導路徑：</b>${escapeHtml(pathText)}</p><p><b>${escapeHtml(surpriseText)}</b>（不單獨推定市場方向）</p><p><b>市場第一反應：</b>${escapeHtml(reactionText)}｜${escapeHtml(reaction.reason || "")}</p><p><b>建議閘門：</b>${escapeHtml(context.advice_gate || "observation_only")}｜${escapeHtml(blocking)}</p>${scenarios ? `<ul class="briefing-stress-list"><li class="briefing-stress-heading">壓力情境（非預測）</li>${scenarios}</ul>` : ""}<small>資料不足時維持觀察，不產生買進／賣出指令。</small>`;
       intelligence.hidden = false;
     }
   }
@@ -666,7 +686,11 @@ const renderResearch = (snapshot) => {
   const sourceMessage = (strategy, fallback) => {
     const source = sourceFor(strategy);
     if (unavailable) return unavailable;
-    if (source.status === "掃描失敗" || source.scan_state === "failed") return "本輪掃描失敗，等待重試；不沿用舊候選。";
+    if (source.status === "掃描失敗" || source.scan_state === "failed") {
+      const evidence = source.failure_evidence || {};
+      const attempts = Number.isFinite(Number(evidence.attempts)) ? `（已重試 ${Number(evidence.attempts)} 次）` : "";
+      return `本輪掃描失敗${attempts}，等待重試；不沿用舊候選。`;
+    }
     if (source.status === "資料暫時無法取得") return "本輪資料暫時無法取得；不沿用舊候選。";
     if (source.failed > 0) return `本輪有 ${source.failed} 檔資料缺漏，候選僅供檢視。`;
     return fallback;
@@ -738,12 +762,24 @@ const applyDeepLink = (snapshot) => {
   const params = new URLSearchParams(window.location.search);
   const requestedRelease = String(params.get("release") || "").trim();
   const requestedAlert = String(params.get("alert") || "").trim();
+  const requestedSnapshot = String(params.get("snapshot") || "").trim();
+  const requestedObservation = String(params.get("observation") || "").trim();
   const view = String(params.get("view") || "").trim().toLowerCase();
   if (!requestedRelease && !requestedAlert && !view) return;
   const manifestRelease = String(window.releaseManifest?.release_id || "");
   if (!requestedRelease || requestedRelease !== manifestRelease) {
     setReleaseHealth("該訊息版本已歸檔或不可用；目前顯示最新安全版本。", "error");
     setText("market-focus", "訊息版本與目前公開 release 不一致，暫不載入其他事件。");
+    return;
+  }
+  const knownSnapshots = [
+    window.releaseManifest?.market_snapshot_id,
+    window.releaseManifest?.research_snapshot_id,
+    window.releaseManifest?.event_snapshot_id,
+  ].filter(Boolean).map(String);
+  if (requestedSnapshot && knownSnapshots.length && !knownSnapshots.includes(requestedSnapshot)) {
+    setReleaseHealth("該訊息快照不屬於目前 release；暫不載入其他資料。", "error");
+    setText("market-focus", "訊息快照與公開版本不一致，暫不替換為其他事件。");
     return;
   }
   const sectionByView = {
@@ -760,6 +796,16 @@ const applyDeepLink = (snapshot) => {
     if (!event) {
       setReleaseHealth("該訊息已歸檔或不可用；未顯示其他事件。", "error");
       setText("market-focus", "找不到此 alert 的同一 release 證據，暫不替換為其他事件。");
+      return;
+    }
+    if (requestedSnapshot && event.snapshot_id && String(event.snapshot_id) !== requestedSnapshot) {
+      setReleaseHealth("該訊息快照與事件不一致；暫不載入其他事件。", "error");
+      setText("market-focus", "事件與快照核對失敗，暫不替換為其他事件。");
+      return;
+    }
+    if (requestedObservation && event.observation_id && String(event.observation_id) !== requestedObservation) {
+      setReleaseHealth("該訊息觀測 ID 與事件不一致；暫不載入其他事件。", "error");
+      setText("market-focus", "事件與來源觀測核對失敗，暫不替換為其他事件。");
       return;
     }
     renderAlertCard({ items: [event] }, snapshot.generated_at, null, snapshot.indices || []);
@@ -821,6 +867,10 @@ const readLastGoodRelease = async () => {
     }
     const snapshot = JSON.parse(saved.artifactTexts["market.json"]);
     if (String(snapshot.snapshot_id || "") !== String(saved.manifest.market_snapshot_id || "")) return null;
+    const research = saved.artifactTexts["research-report.json"] ? JSON.parse(saved.artifactTexts["research-report.json"]) : null;
+    const events = saved.artifactTexts["event-ledger.json"] ? JSON.parse(saved.artifactTexts["event-ledger.json"]) : null;
+    if (saved.manifest.research_snapshot_id && String(research?.snapshot_id || "") !== String(saved.manifest.research_snapshot_id)) return null;
+    if (saved.manifest.event_snapshot_id && String(events?.snapshot_id || "") !== String(saved.manifest.event_snapshot_id)) return null;
     return { ...saved, snapshot };
   } catch (_error) {
     return null;
@@ -854,6 +904,20 @@ const loadPublishedRelease = async () => {
   const snapshot = JSON.parse(marketText);
   if (String(snapshot.snapshot_id || "") !== String(manifest.market_snapshot_id || "")) {
     throw new Error("market snapshot does not match release");
+  }
+  const researchText = artifactTexts["research-report.json"];
+  if (manifest.research_snapshot_id && researchText) {
+    const research = JSON.parse(researchText);
+    if (String(research.snapshot_id || "") !== String(manifest.research_snapshot_id)) {
+      throw new Error("research snapshot does not match release");
+    }
+  }
+  const eventText = artifactTexts["event-ledger.json"];
+  if (manifest.event_snapshot_id && eventText) {
+    const events = JSON.parse(eventText);
+    if (String(events.snapshot_id || "") !== String(manifest.event_snapshot_id)) {
+      throw new Error("event snapshot does not match release");
+    }
   }
   window.releaseManifest = manifest;
   saveLastGoodRelease(manifest, artifactTexts);

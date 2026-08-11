@@ -22,8 +22,8 @@ def run_dry_run() -> dict[str, Any]:
     budget = decide_alert_budget(event, [], now=datetime.now(UTC))
     lifecycle = transition("observation", official_confirmed=False, second_source=False, market_sync=False)
     intelligence = build_intelligence_context(event, [])
-    link = parse_deep_link("https://example.test/app?alert=dry-run-event&release=dry-release&view=event")
-    routed = resolve_deep_link(link, manifest={"release_id": "dry-release"}, alerts=[envelope.to_dict()])
+    link = parse_deep_link("https://example.test/app?alert=dry-run-event&release=dry-release&snapshot=dry-snapshot&observation=dry-observation&view=event")
+    routed = resolve_deep_link(link, manifest={"release_id": "dry-release", "market_snapshot_id": "dry-snapshot"}, alerts=[{**envelope.to_dict(), "snapshot_id": "dry-snapshot"}])
     renderer_available = True
     with tempfile.TemporaryDirectory(prefix="prstk-dry-run-") as temporary:
         try:
@@ -48,8 +48,10 @@ def run_dry_run() -> dict[str, Any]:
         "delivery_status": "delivered" if renderer_available and card_ok and routed["status"] == "ok" else "blocked",
         "release_id": envelope.release_id,
         "snapshot_id": envelope.snapshot_id,
+        "observation_id": link.observation,
     }
-    return {"ok": all((budget["allowed"], lifecycle == "pending_confirmation", intelligence["advice_gate"] == "observation_only", routed["status"] == "ok", card_ok, photo_contract["caption_valid"])), "budget": budget, "lifecycle": lifecycle, "advice_gate": intelligence["advice_gate"], "deep_link": routed["status"], "release_id": envelope.release_id, "card_rendered": card_ok, "renderer_available": renderer_available, "card_dimensions": {"width": card_dimensions[0], "height": card_dimensions[1]}, "photo_contract": photo_contract}
+    traceable_link = routed["status"] == "ok" and routed["snapshot_id"] == "dry-snapshot" and routed["observation_id"] == "dry-observation"
+    return {"ok": all((budget["allowed"], lifecycle == "pending_confirmation", intelligence["advice_gate"] == "observation_only", traceable_link, card_ok, photo_contract["caption_valid"])), "budget": budget, "lifecycle": lifecycle, "advice_gate": intelligence["advice_gate"], "deep_link": routed["status"], "release_id": envelope.release_id, "observation_id": link.observation, "card_rendered": card_ok, "renderer_available": renderer_available, "card_dimensions": {"width": card_dimensions[0], "height": card_dimensions[1]}, "photo_contract": photo_contract}
 
 if __name__ == "__main__":
     import json

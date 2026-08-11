@@ -12,6 +12,7 @@ def test_tpex_index_uses_the_latest_two_official_closes():
     assert quote["change"] == -18.18
     assert quote["change_percent"] == -5.16
     assert quote["quote_source"] == "TPEx OpenAPI official close"
+    assert quote["source_label"] == "TPEx"
 
 
 def test_tpex_index_accepts_container_payload_and_roc_dates():
@@ -41,6 +42,7 @@ def test_twse_mis_tpex_fallback_parses_official_otc_row():
     assert quote["name"] == "臺灣櫃買指數"
     assert quote["price"] == 348.59
     assert quote["quote_source"] == "TWSE MIS official OTC index"
+    assert quote["source_label"] == "TWSE"
     assert quote["quote_basis"] == "最近收盤"
 
 
@@ -78,4 +80,5 @@ def test_yahoo_chart_fallback_provides_a_labeled_recent_close():
     assert quote["ticker"] == "TPEx"
     assert quote["price"] == 347.85
     assert quote["quote_source"] == "Yahoo Finance public chart fallback"
+    assert quote["source_label"] == "Yahoo"
     assert quote["data_status"] == "recent_close"

@@ -12,6 +12,36 @@ from src.stress_scenarios import run_stress_scenario
 from src.surprise_engine import calculate_surprise
 
 
+def _market_reaction(observations: Iterable[dict[str, Any]]) -> dict[str, Any]:
+    """Expose the observed first reaction without inferring causality.
+
+    A macro surprise and a price move are separate observations.  Keeping the
+    quotes in the intelligence payload makes the evidence visible to the
+    Mini App while leaving confirmation to the explicit cross-check policy.
+    """
+    quotes: list[dict[str, Any]] = []
+    for item in observations:
+        ticker = item.get("ticker") or item.get("symbol")
+        change = item.get("change_percent")
+        if not ticker or not isinstance(change, (int, float)):
+            continue
+        quotes.append({
+            "ticker": str(ticker),
+            "change_percent": float(change),
+            "freshness": item.get("freshness") or item.get("data_status"),
+            "source_url": item.get("source_url"),
+        })
+    return {
+        "status": "observed_only" if quotes else "not_available",
+        "direction_confirmed": False,
+        "quotes": quotes,
+        "reason": (
+            "市場第一反應僅為觀測，尚未完成事件與價格的同向核對。"
+            if quotes else "本輪沒有可用的事件後市場報價。"
+        ),
+    }
+
+
 def build_intelligence_context(
     event: dict[str, Any], observations: Iterable[dict[str, Any]] | None = None, *,
     macro: dict[str, Any] | None = None,
@@ -23,6 +53,7 @@ def build_intelligence_context(
 ) -> dict[str, Any]:
     observations_list = list(observations or [])
     graph = build_market_impact_graph(event, observations_list)
+    surprise: dict[str, Any]
     if macro is None:
         surprise = {"status": "not_provided", "market_direction": "not_determined"}
     else:
@@ -38,6 +69,8 @@ def build_intelligence_context(
             release_time=macro.get("release_time"),
             source_url=macro.get("source_url"),
         )
+    reaction = _market_reaction(observations_list)
+    surprise["market_reaction"] = reaction
     synchronized = any(path.get("confidence", 0) >= 0.8 for path in graph.get("paths", []))
     regime = classify_regime(regime_factors or {})
     contagion = detect_contagion(contagion_observations or {})
@@ -51,10 +84,16 @@ def build_intelligence_context(
         "quote_stale": bool(context.get("quote_stale", True)),
         "crosscheck_ok": synchronized and bool(context.get("crosscheck_ok")),
         "backtest_release": context.get("backtest_release"),
+        "backtest_release_contract": context.get("backtest_release_contract"),
         "candidate_data_gap": bool(context.get("candidate_data_gap", True)),
         "policy_valid": bool(context.get("policy_valid")),
         "risk_profile_known": bool(context.get("risk_profile_known")),
         "general_research": bool(context.get("general_research", True)),
+        "evidence": context.get("evidence") or observations_list,
+        "invalidation_condition": context.get("invalidation_condition") or event.get("invalidation_condition"),
+        "alternative_scenario": context.get("alternative_scenario"),
+        "horizon": context.get("horizon"),
+        "confidence": context.get("confidence"),
     })
     return {
         "market_impact_graph": graph,

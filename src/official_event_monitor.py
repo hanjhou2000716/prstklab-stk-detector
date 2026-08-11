@@ -314,6 +314,7 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
                 alert_id=event_id,
                 release_id=gate.release_id or "",
                 snapshot_id=snapshot_id,
+                observation_id=observation_id,
             )
     except (RendererError, OSError, ValueError) as exc:
         write_send_output(False, "renderer_failed")

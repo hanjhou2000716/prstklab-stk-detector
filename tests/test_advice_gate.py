@@ -12,3 +12,51 @@ def test_card_contains_conditions_and_disclaimer():
     assert card["failed_conditions"] == ["valuation"]
     assert "不構成投資建議" in card["disclaimer"]
 
+
+def _valid_context() -> dict:
+    return {
+        "data_quality_ok": True,
+        "quote_stale": False,
+        "crosscheck_ok": True,
+        "backtest_release_contract": {
+            "publication_state": "ready",
+            "publish_eligible": True,
+        },
+        "candidate_data_gap": False,
+        "policy_valid": True,
+        "general_research": True,
+        "evidence": [{"source_url": "https://example.test/evidence"}],
+        "invalidation_condition": "crosscheck no longer agrees",
+        "alternative_scenario": "market regime reverses",
+        "horizon": "20d",
+        "confidence": "medium",
+    }
+
+
+def test_structured_backtest_contract_is_required_for_contextual_advice():
+    result = evaluate_advice_gate(_valid_context())
+    assert result["allowed"] is True
+    assert result["checks"]["backtest"] is True
+    assert result["decision_support"]["actionable"] is False
+    assert result["decision_support"]["horizon"] == "20d"
+
+
+def test_blocked_backtest_contract_cannot_open_gate():
+    context = _valid_context()
+    context["backtest_release_contract"] = {
+        "publication_state": "blocked",
+        "publish_eligible": False,
+    }
+    result = evaluate_advice_gate(context)
+    assert result["allowed"] is False
+    assert "invalid_backtest_release" in result["blocking_reasons"]
+
+
+def test_bare_backtest_release_id_cannot_open_gate():
+    context = _valid_context()
+    context.pop("backtest_release_contract")
+    context["backtest_release"] = "backtest-12345678"
+    result = evaluate_advice_gate(context)
+    assert result["allowed"] is False
+    assert "invalid_backtest_release" in result["blocking_reasons"]
+

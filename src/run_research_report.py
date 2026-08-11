@@ -3,15 +3,46 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 from zoneinfo import ZoneInfo
 
+from src.instrument_master import InstrumentMaster
 from src.release_manifest import content_snapshot_id
 from src.research_health import assess_research_health
 from src.research_report import build_research_report
+from src.research_run_contract import attach_research_run
+from src.research_scan_failures import apply_scan_failures, load_scan_failures
 
 SCAN_MODES = {"production", "smoke", "debug"}
+
+
+def attach_instrument_lineage(report: dict[str, Any]) -> dict[str, Any]:
+    """Stamp candidates with the exact public instrument registry used.
+
+    Unknown symbols remain visible as ``unresolved`` research rows; this is
+    lineage metadata, not a reason to invent a mapping or remove a candidate.
+    """
+    master = InstrumentMaster()
+    artifact = master.artifact()
+    for candidate in report.get("candidates", []):
+        if not isinstance(candidate, dict):
+            continue
+        candidate["instrument_master_id"] = artifact["registry_id"]
+        candidate["instrument_master_version"] = artifact["schema_version"]
+        query = str(candidate.get("ticker") or candidate.get("symbol") or "")
+        try:
+            resolved = master.resolve(query, market=candidate.get("market"))
+        except (KeyError, ValueError):
+            candidate["instrument_resolution"] = "unresolved"
+            candidate["instrument_id"] = None
+        else:
+            candidate["instrument_resolution"] = "resolved"
+            candidate["instrument_id"] = resolved.instrument_id
+    report["instrument_master_id"] = artifact["registry_id"]
+    report["instrument_master_version"] = artifact["schema_version"]
+    return report
 
 
 def default_sources(data_dir: Path) -> list[dict[str, str]]:
@@ -30,6 +61,77 @@ def default_sources(data_dir: Path) -> list[dict[str, str]]:
 def write_report(report: dict, output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _load_backtest_contract(path: Path | None) -> dict[str, Any] | None:
+    """Load only the auditable release contract from a walk-forward artifact.
+
+    The full backtest report is intentionally not copied into the public
+    research artifact.  A missing, malformed, or blocked study remains an
+    explicit observation-only state instead of being treated as a valid
+    release.
+    """
+    if path is None:
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return {
+            "publication_state": "blocked",
+            "publish_eligible": False,
+            "blocking_reasons": ["backtest artifact unavailable or invalid"],
+        }
+    contract = payload.get("backtest_release_contract") if isinstance(payload, dict) else None
+    if not isinstance(contract, dict):
+        return {
+            "publication_state": "blocked",
+            "publish_eligible": False,
+            "blocking_reasons": ["backtest release contract missing"],
+        }
+    allowed = (
+        "backtest_release", "market", "publication_state", "publish_eligible",
+        "blocking_reasons", "strategy_registry", "performance_summary",
+        "survivorship_audit", "research_only",
+    )
+    result = {key: contract[key] for key in allowed if key in contract}
+    if not isinstance(result.get("blocking_reasons"), list) or not all(
+        isinstance(reason, str) for reason in result.get("blocking_reasons", [])
+    ):
+        result["blocking_reasons"] = ["invalid backtest blocking reasons"]
+        result["publish_eligible"] = False
+    state = result.get("publication_state")
+    if state not in {"ready", "blocked", "unavailable"}:
+        result["publication_state"] = "blocked"
+        result.setdefault("blocking_reasons", []).append("invalid backtest publication state")
+        result["publish_eligible"] = False
+    if result.get("publication_state") != "ready":
+        result["publish_eligible"] = False
+    return result
+
+
+def attach_backtest_contract(report: dict, path: Path | None) -> dict:
+    """Bind a validated walk-forward identity without unlocking advice.
+
+    This is deliberately additive: no path means the report stays compatible
+    with existing research scans, while Advice Gate continues to fail closed.
+    """
+    if path is None:
+        report["backtest_release_status"] = "unavailable"
+        return report
+    contract = _load_backtest_contract(path)
+    report["backtest_release_contract"] = contract or {
+        "publication_state": "blocked",
+        "publish_eligible": False,
+        "blocking_reasons": ["backtest artifact unavailable or invalid"],
+    }
+    report["backtest_release_status"] = report["backtest_release_contract"].get("publication_state", "blocked")
+    # Bind the same identity to visible candidates so explainability cards and
+    # Advice Gate cannot accidentally read a different or unstamped study.
+    for candidate in report.get("candidates", []):
+        if isinstance(candidate, dict):
+            candidate["backtest_release"] = report["backtest_release_contract"].get("backtest_release")
+            candidate["backtest_release_contract"] = report["backtest_release_contract"]
+    return report
 
 
 def attach_scan_contract(report: dict, scan_mode: str) -> dict:
@@ -87,6 +189,7 @@ def attach_scan_contract(report: dict, scan_mode: str) -> dict:
 
 
 def main() -> None:
+    run_started_at = datetime.now(UTC)
     parser = argparse.ArgumentParser(description="台美研究摘要")
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--output", default="site/data/research-report.json")
@@ -94,10 +197,31 @@ def main() -> None:
         "--scan-mode", choices=sorted(SCAN_MODES), default="production",
         help="production is publishable; smoke/debug are isolated validation runs",
     )
+    parser.add_argument(
+        "--backtest-release",
+        type=Path,
+        help="optional walk-forward JSON; only its validated backtest_release_contract is copied",
+    )
+    parser.add_argument("--scan-failures", type=Path)
+    parser.add_argument("--run-id", help="optional external workflow run identifier")
+    parser.add_argument("--source-commit-sha", help="source commit used for the scan")
     args = parser.parse_args()
     report = build_research_report(default_sources(Path(args.data_dir)))
+    apply_scan_failures(report, load_scan_failures(args.scan_failures) if args.scan_failures else [])
+    attach_instrument_lineage(report)
     attach_scan_contract(report, args.scan_mode)
-    report["generated_at"] = datetime.now(ZoneInfo("Asia/Taipei")).isoformat()
+    attach_backtest_contract(report, args.backtest_release)
+    finished_at = datetime.now(UTC)
+    attach_research_run(
+        report,
+        scan_mode=args.scan_mode,
+        scan_scope=report["scan_scope"],
+        started_at=run_started_at,
+        finished_at=finished_at,
+        run_id=args.run_id,
+        source_commit_sha=args.source_commit_sha,
+    )
+    report["generated_at"] = finished_at.astimezone(ZoneInfo("Asia/Taipei")).isoformat()
     report["health"] = assess_research_health(report)
     # Bind research candidates to this exact point-in-time artifact.  The
     # release manifest later uses the ID to prevent mixing old research with

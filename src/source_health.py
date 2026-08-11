@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from src.health_observability import aggregate_source_health
+
 SOURCE_DEFINITIONS = (
     ("market_quotes", "市場報價", {"", "index", "macro_quote", "taiwan_crosscheck"}),
     ("official_events", "官方重大事件", {"official_event"}),
@@ -142,7 +144,17 @@ def _attach_detail_summary(target: dict[str, Any], details: list[dict[str, Any]]
 def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
     """Present research warming, empty results and failures as different states."""
     sources = [item for item in report.get("sources", []) if isinstance(item, dict)]
-    failed = [item for item in sources if str(item.get("status")) in {"資料暫時無法取得", "掃描失敗"}]
+    # Producers historically emitted localized display labels, while current
+    # producers emit machine states.  Always prefer the stable scan_state so
+    # a label change cannot turn a failed scan into a healthy source row.
+    failed_states = {"failed", "scan_failed", "data_unavailable", "unavailable"}
+    building_states = {"building", "warming", "partial", "in_progress"}
+    failed = [
+        item for item in sources
+        if str(item.get("scan_state") or "").strip().lower() in failed_states
+        or str(item.get("status") or "").strip().lower() in failed_states
+        or str(item.get("status")) in {"資料暫時無法取得", "掃描失敗"}
+    ]
     partial = []
     for item in sources:
         if item in failed:
@@ -151,9 +163,16 @@ def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:
             failed_count = int(item.get("failed") or 0)
         except (TypeError, ValueError):
             failed_count = 0
-        if failed_count > 0:
+        scan_state = str(item.get("scan_state") or "").strip().lower()
+        status_state = str(item.get("status") or "").strip().lower()
+        if failed_count > 0 or scan_state in {"partial", "data_gap"} or status_state in {"partial", "data_gap"}:
             partial.append(item)
-    warming = [item for item in sources if str(item.get("status")) == "建檔中"]
+    warming = [
+        item for item in sources
+        if str(item.get("scan_state") or "").strip().lower() in building_states
+        or str(item.get("status") or "").strip().lower() in building_states
+        or str(item.get("status")) == "建檔中"
+    ]
     if failed:
         issues = [f"{item.get('market', '')} {item.get('strategy', '')} 掃描失敗".strip() for item in failed]
         return {"key": "research", "label": "量化研究", "status": "partial", "semantic_state": "failed", "checked_at": checked_at, "issues": issues[:2]}
@@ -345,11 +364,13 @@ def build_source_health(
         {"source": source["label"], "key": source["key"], "issues": source.get("issues", [])}
         for source in gap_sources
     ]
+    observability = aggregate_source_health(sources)
     return {
         "checked_at": checked,
         "status": status,
         "summary": summary,
         "investor_status": investor_status,
+        "observability": observability,
         "event_scan": event_scan,
         "sources": sources,
         "data_gaps": data_gaps,

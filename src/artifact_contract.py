@@ -14,6 +14,8 @@ from urllib.parse import urlparse
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+from src.intelligence_contract import validate_intelligence
+
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "schemas"
 
@@ -38,6 +40,33 @@ def _schema_errors(document: dict[str, Any], schema_name: str) -> list[str]:
     schema = json.loads((SCHEMA_DIR / schema_name).read_text(encoding="utf-8"))
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     return [f"schema: {error.json_path} {error.message}" for error in validator.iter_errors(document)]
+
+
+def _instrument_master_contract_errors(document: dict[str, Any]) -> list[str]:
+    """Keep quote identity bound to the registry embedded in the snapshot.
+
+    The field is additive for legacy artifacts. Once a producer emits the
+    registry artifact, every quote must carry the same content-addressed ID so
+    a release cannot combine a quote with a different symbol mapping.
+    """
+    artifact = document.get("instrument_master")
+    if artifact is None:
+        return []
+    if not isinstance(artifact, dict):
+        return ["market.instrument_master must be an object"]
+    errors = _schema_errors(artifact, "instrument-master.schema.json")
+    registry_id = str(artifact.get("registry_id") or "")
+    schema_version = artifact.get("schema_version")
+    for collection in ("indices", "quotes"):
+        for index, quote in enumerate(document.get(collection, [])):
+            if not isinstance(quote, dict):
+                continue
+            path = f"{collection}[{index}]"
+            if quote.get("instrument_master_id") != registry_id:
+                errors.append(f"{path}: instrument_master_id does not match market registry")
+            if quote.get("instrument_master_version") != schema_version:
+                errors.append(f"{path}: instrument_master_version does not match market registry")
+    return errors
 
 
 def _quote_contract_errors(quote: dict[str, Any], path: str) -> list[str]:
@@ -80,10 +109,71 @@ def _quote_contract_errors(quote: dict[str, Any], path: str) -> list[str]:
 def validate_market(document: dict[str, Any]) -> list[str]:
     """Validate market schema and quote-level safety invariants."""
     errors = _schema_errors(document, "market.schema.json")
+    errors.extend(_instrument_master_contract_errors(document))
     for collection in ("indices", "quotes"):
         for index, quote in enumerate(document.get(collection, [])):
             if isinstance(quote, dict):
                 errors.extend(_quote_contract_errors(quote, f"{collection}[{index}]"))
+    source_health = document.get("source_health")
+    # Older releases only contain a legacy ``data_gaps`` map.  Keep those
+    # artifacts readable while enforcing the full contract whenever the
+    # canonical source-health envelope is present.
+    if isinstance(source_health, dict) and {"status", "sources", "event_scan"}.issubset(source_health):
+        errors.extend(validate_source_health(source_health))
+    briefing = document.get("briefing")
+    if isinstance(briefing, dict) and isinstance(briefing.get("intelligence"), dict):
+        errors.extend(validate_intelligence(briefing["intelligence"]))
+    return errors
+
+
+def validate_source_health(document: dict[str, Any]) -> list[str]:
+    """Validate source-health semantics without collapsing no-event into failure.
+
+    The field is intentionally additive for older releases.  When present,
+    machine states must agree with the display status so a healthy card cannot
+    hide a failed scan, and an empty-but-successful scan remains observable.
+    """
+    errors = _schema_errors(document, "source-health.schema.json")
+    allowed_status = {"healthy", "partial", "warming", "critical", "pending", "failed", "no_event"}
+    gap_states = {"fallback_active", "configuration_missing", "stale", "partial", "failed", "critical"}
+    declared_missing = document.get("missing_source_count")
+    if isinstance(declared_missing, int) and declared_missing >= 0:
+        actual_missing = 0
+        for source in document.get("sources", []):
+            if isinstance(source, dict) and str(source.get("semantic_state") or source.get("status") or "") in gap_states:
+                actual_missing += 1
+        if declared_missing != actual_missing:
+            errors.append(
+                "source_health.missing_source_count does not match source semantic states"
+            )
+    for index, source in enumerate(document.get("sources", [])):
+        if not isinstance(source, dict):
+            continue
+        path = f"source_health.sources[{index}]"
+        status = str(source.get("status") or "")
+        semantic = str(source.get("semantic_state") or "")
+        if status and status not in allowed_status:
+            errors.append(f"{path}: unknown status={status!r}")
+        if status in {"healthy", "no_event"} and semantic in gap_states:
+            errors.append(f"{path}: healthy/no_event status conflicts with semantic_state={semantic}")
+        if semantic in {"healthy", "no_event"} and status in {"failed", "partial", "critical"}:
+            errors.append(f"{path}: failed status conflicts with semantic_state={semantic}")
+        if source.get("no_event") is True and status in {"failed", "partial", "critical"}:
+            errors.append(f"{path}: no_event cannot be a failed source")
+    event_scan = document.get("event_scan")
+    if isinstance(event_scan, dict) and event_scan.get("status") == "no_event":
+        failed = [
+            source for source in document.get("sources", [])
+            if isinstance(source, dict) and source.get("status") in {"failed", "critical"}
+        ]
+        if failed:
+            errors.append("source_health: event_scan=no_event cannot coexist with failed core sources")
+    observability = document.get("observability")
+    if isinstance(observability, dict):
+        failures = observability.get("failure_count")
+        no_events = observability.get("no_event_count")
+        if isinstance(failures, int) and isinstance(no_events, int) and failures < 0:
+            errors.append("source_health.observability.failure_count must be non-negative")
     return errors
 
 
@@ -169,6 +259,105 @@ def validate_research(document: dict[str, Any]) -> list[str]:
         errors.append("research production_eligible=true requires publish_eligible=true")
     if document.get("research_fallback_used") is True and document.get("production_eligible") is True:
         errors.append("research fallback cannot be production_eligible=true")
+    errors.extend(_backtest_release_contract_errors(document))
+    errors.extend(_candidate_explainability_errors(document))
+    return errors
+
+
+def _candidate_explainability_errors(document: dict[str, Any]) -> list[str]:
+    """Validate the optional machine-readable candidate explanation contract.
+
+    The nested object is additive for legacy reports.  Once a producer emits
+    it, all decision-relevant fields must be present and type-safe so the UI
+    cannot present an unexplained score as a formal candidate.
+    """
+    errors: list[str] = []
+    rows = document.get("candidates")
+    if not isinstance(rows, list):
+        return errors
+    list_fields = ("passed_conditions", "failed_conditions", "risk_factors", "evidence")
+    required = set(list_fields) | {"data_completeness", "signal_date", "invalidation"}
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict) or "explainability" not in row:
+            continue
+        path = f"candidates[{index}].explainability"
+        explanation = row.get("explainability")
+        if not isinstance(explanation, dict):
+            errors.append(f"{path} must be an object")
+            continue
+        missing = sorted(required - explanation.keys())
+        if missing:
+            errors.append(f"{path} missing required fields: {', '.join(missing)}")
+        for field in list_fields:
+            value = explanation.get(field)
+            if value is not None and not isinstance(value, list):
+                errors.append(f"{path}.{field} must be an array")
+        if explanation.get("signal_date") is not None and not isinstance(explanation.get("signal_date"), str):
+            errors.append(f"{path}.signal_date must be a string or null")
+    return errors
+
+
+def _backtest_release_contract_errors(document: dict[str, Any]) -> list[str]:
+    """Keep research and candidate backtest identity consistent.
+
+    The contract is additive so older observation-only reports remain readable.
+    Once a report advertises a backtest status or candidate binding, every
+    identity and publication flag is checked fail-closed.
+    """
+    errors: list[str] = []
+    status = document.get("backtest_release_status")
+    contract = document.get("backtest_release_contract")
+    rows = document.get("candidates")
+    candidates = rows if isinstance(rows, list) else []
+    candidate_bound = any(
+        isinstance(row, dict)
+        and ("backtest_release" in row or "backtest_release_contract" in row)
+        for row in candidates
+    )
+    if status is None and contract is None and not candidate_bound:
+        return errors
+    if status is not None and status not in {"ready", "blocked", "unavailable"}:
+        errors.append(f"backtest_release_status has unknown value={status!r}")
+    if contract is not None and not isinstance(contract, dict):
+        errors.append("backtest_release_contract must be an object")
+        contract = None
+    contract_state = contract.get("publication_state") if contract else None
+    release_id = str(contract.get("backtest_release") or "").strip() if contract else ""
+    publish_eligible = contract.get("publish_eligible") if contract else None
+    if status in {"ready", "blocked"} and contract is None:
+        errors.append(f"backtest_release_status={status} requires backtest_release_contract")
+    if contract is not None:
+        if contract_state not in {"ready", "blocked", "unavailable"}:
+            errors.append(f"backtest_release_contract has unknown publication_state={contract_state!r}")
+        if status is not None and contract_state != status:
+            errors.append("backtest_release_status must match contract.publication_state")
+        if contract_state == "ready" and publish_eligible is not True:
+            errors.append("ready backtest contract requires publish_eligible=true")
+        if contract_state in {"blocked", "unavailable"} and publish_eligible is True:
+            errors.append("blocked/unavailable backtest contract cannot be publish_eligible=true")
+        if contract_state == "ready" and not release_id:
+            errors.append("ready backtest contract requires backtest_release")
+    for index, row in enumerate(candidates):
+        if not isinstance(row, dict):
+            continue
+        candidate_release = str(row.get("backtest_release") or "").strip()
+        candidate_contract = row.get("backtest_release_contract")
+        path = f"candidates[{index}]"
+        if candidate_release and not release_id:
+            errors.append(f"{path}: backtest_release has no matching research contract")
+        if candidate_release and release_id and candidate_release != release_id:
+            errors.append(f"{path}: backtest_release does not match research contract")
+        if candidate_contract is not None:
+            if not isinstance(candidate_contract, dict):
+                errors.append(f"{path}: backtest_release_contract must be an object")
+                continue
+            candidate_release_id = str(candidate_contract.get("backtest_release") or "").strip()
+            if release_id and candidate_release_id != release_id:
+                errors.append(f"{path}: candidate contract release does not match research contract")
+            if contract_state and candidate_contract.get("publication_state") != contract_state:
+                errors.append(f"{path}: candidate contract state does not match research contract")
+            if candidate_contract.get("publish_eligible") is True and contract_state != "ready":
+                errors.append(f"{path}: candidate cannot be publish_eligible unless research contract is ready")
     return errors
 
 

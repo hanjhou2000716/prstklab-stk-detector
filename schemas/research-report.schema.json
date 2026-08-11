@@ -11,17 +11,72 @@
     "policy_version": {"type": "string", "minLength": 1},
     "scan_mode": {"enum": ["production", "smoke", "debug"]},
     "scan_scope": {"enum": ["full", "bounded"]},
+    "run_id": {"type": "string", "minLength": 1},
+    "source_commit_sha": {"type": ["string", "null"], "minLength": 7},
+    "research_run": {
+      "type": "object",
+      "required": ["run_id", "run_started_at", "run_finished_at", "scan_mode", "scan_scope", "producer"],
+      "properties": {
+        "run_id": {"type": "string", "minLength": 1},
+        "source_commit_sha": {"type": ["string", "null"], "minLength": 7},
+        "run_started_at": {"type": "string", "format": "date-time"},
+        "run_finished_at": {"type": "string", "format": "date-time"},
+        "scan_mode": {"enum": ["production", "smoke", "debug"]},
+        "scan_scope": {"enum": ["full", "bounded"]},
+        "producer": {"type": "string", "minLength": 1},
+        "producer_version": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
     "universe_expected": {"type": "integer", "minimum": 0},
     "universe_scanned": {"type": "integer", "minimum": 0},
     "universe_completed": {"type": "integer", "minimum": 0},
     "publish_eligible": {"type": "boolean"},
     "production_eligible": {"type": "boolean"},
+    "backtest_release_status": {"enum": ["ready", "blocked", "unavailable"]},
+    "backtest_release_contract": {
+      "type": "object",
+      "required": ["publication_state", "publish_eligible"],
+      "properties": {
+        "backtest_release": {"type": "string", "minLength": 8},
+        "market": {"type": "string", "minLength": 1},
+        "publication_state": {"enum": ["ready", "blocked", "unavailable"]},
+        "publish_eligible": {"type": "boolean"},
+        "blocking_reasons": {"type": "array", "items": {"type": "string"}},
+        "strategy_registry": {"type": "array", "items": {"type": "object"}},
+        "performance_summary": {"type": "object"},
+        "survivorship_audit": {"type": "object"},
+        "research_only": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
     "blocking_reason": {"type": ["string", "null"]},
     "sources": {"type": "array", "items": {"$ref": "#/$defs/source"}},
-    "candidates": {"type": "array", "items": {"type": "object"}},
+    "candidates": {"type": "array", "items": {"$ref": "#/$defs/candidate"}},
     "health": {"type": "object"}
   },
   "$defs": {
+    "candidate": {
+      "type": "object",
+      "properties": {
+        "explainability": {"$ref": "#/$defs/explainability"}
+      },
+      "additionalProperties": true
+    },
+    "explainability": {
+      "type": "object",
+      "required": ["passed_conditions", "failed_conditions", "data_completeness", "risk_factors", "evidence", "signal_date", "invalidation"],
+      "properties": {
+        "passed_conditions": {"type": "array", "items": {"type": "string"}},
+        "failed_conditions": {"type": "array", "items": {"type": "string"}},
+        "data_completeness": {},
+        "risk_factors": {"type": "array", "items": {"type": "string"}},
+        "evidence": {"type": "array", "items": {"type": "object"}},
+        "signal_date": {"type": ["string", "null"]},
+        "invalidation": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
     "source": {
       "type": "object",
       "properties": {

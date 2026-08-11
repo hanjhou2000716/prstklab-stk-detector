@@ -15,6 +15,33 @@ def test_report_exposes_public_scan_coverage_when_summary_exists(tmp_path):
     assert report["sources"][0]["data_complete"] == 510
 
 
+def test_report_normalizes_missing_candidate_counts_and_structured_gaps(tmp_path):
+    """Generated research never publishes null counts or drops gap detail."""
+    scan = tmp_path / "scan.csv"
+    scan.write_text("ticker,name\nNVDA,NVIDIA\n", encoding="utf-8")
+    summary = tmp_path / "summary.json"
+    summary.write_text(
+        '{"requested": 10, "data_complete": 8, "failed": 0, '
+        '"scan_state": "building", "partial_candidates_allowed": true, '
+        '"data_gap_counts": '
+        '{"history": 2, "quotes": 0}}',
+        encoding="utf-8",
+    )
+
+    report = build_research_report([{
+        "path": str(scan), "summary_path": str(summary),
+        "market": "us", "strategy": "momentum",
+    }])
+
+    source = report["sources"][0]
+    assert source["candidate_state"] == "available_from_completed_records"
+    assert source["formal_candidates"] == 0
+    assert source["observation_candidates"] == 0
+    assert source["formal_candidate_count"] == 0
+    assert source["observation_candidate_count"] == 0
+    assert source["data_gap_counts"] == 2
+
+
 
 def test_failed_scan_does_not_reuse_candidates_from_previous_csv(tmp_path):
     scan = tmp_path / "scan.csv"

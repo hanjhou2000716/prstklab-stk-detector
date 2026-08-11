@@ -14,6 +14,8 @@ def test_research_workflow_deploys_the_new_research_snapshot_to_pages():
     assert "id: deployment" in workflow
     assert "scan_mode" in workflow
     assert "--scan-mode \"$SCAN_MODE\"" in workflow
+    assert "backtest_release_path" in workflow
+    assert "--backtest-release \"$BACKTEST_RELEASE_PATH\"" in workflow
     assert "isolated artifact only; skipping data-release publication" in workflow
 
 

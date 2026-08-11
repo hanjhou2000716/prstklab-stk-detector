@@ -474,7 +474,20 @@ def apply_taiwan_intraday_crosscheck(
         # canonical label so the Mini App never renders a bare TPEx row.
         indices = [*indices, {**tpex_metadata, **tpex}]
     if session != "交易中":
-        return [({**tpex_metadata, **item, **tpex} if item.get("ticker") == "TPEx" and tpex else item) for item in indices], errors
+        merged_indices: list[dict[str, Any]] = []
+        for item in indices:
+            if item.get("ticker") != "TPEx" or not tpex:
+                merged_indices.append(item)
+                continue
+            merged = {**tpex_metadata, **item, **tpex}
+            source = str(merged.get("quote_source") or "").lower()
+            merged["source_label"] = str(
+                tpex.get("source_label")
+                or ("TWSE" if "twse" in source or "mis" in source
+                    else "Yahoo" if "yahoo" in source else "TPEx")
+            )
+            merged_indices.append(merged)
+        return merged_indices, errors
     from src.taiwan_market_crosscheck import crosscheck_taiex_quote, fetch_taifex_txf, fetch_twse_taiex
 
     twse_fetcher = twse_fetcher or fetch_twse_taiex
@@ -495,7 +508,14 @@ def apply_taiwan_intraday_crosscheck(
         if item.get("ticker") == "TAIEX":
             checked.append(crosscheck_taiex_quote(item, twse=twse, taifex=taifex))
         elif item.get("ticker") == "TPEx" and tpex:
-            checked.append({**tpex_metadata, **item, **tpex})
+            merged = {**tpex_metadata, **item, **tpex}
+            source = str(merged.get("quote_source") or "").lower()
+            merged["source_label"] = str(
+                tpex.get("source_label")
+                or ("TWSE" if "twse" in source or "mis" in source
+                    else "Yahoo" if "yahoo" in source else "TPEx")
+            )
+            checked.append(merged)
         else:
             checked.append(item)
     return checked, errors
@@ -665,6 +685,7 @@ def build_market_snapshot() -> dict[str, Any]:
         errors = [error for error in errors if error.get("ticker") != "TPEx"]
     quotes = annotate_quote_freshness(quotes)
     indices = annotate_quote_freshness(indices)
+    from src.instrument_master import InstrumentMaster
     from src.production_evidence import (
         bind_market_evidence,
         quality_summary,
@@ -761,6 +782,11 @@ def build_market_snapshot() -> dict[str, Any]:
     # whether an unrelated optional provider returned an error.  A close-only
     # snapshot must never be advertised as "即時".
     data_status = market_data_status(freshness_summary)
+    # Publish the exact symbol registry used by bind_market_evidence alongside
+    # the snapshot. Quote rows carry its content-addressed ID; keeping the
+    # registry artifact in the same snapshot prevents a later registry change
+    # from silently reinterpreting historical symbols.
+    instrument_master_artifact = InstrumentMaster().artifact()
     snapshot = {
         "generated_at": scan_completed_at.isoformat(),
         "scan": {
@@ -773,6 +799,7 @@ def build_market_snapshot() -> dict[str, Any]:
         },
         **freshness_summary,
         "data_status": data_status,
+        "instrument_master": instrument_master_artifact,
         "markets": markets,
         "indices": indices,
         "quotes": quotes,

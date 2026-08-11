@@ -26,6 +26,10 @@ on:
         type: choice
         options: [production, smoke, debug]
         default: production
+      backtest_release_path:
+        description: optional point-in-time walk-forward artifact to bind to this research release
+        required: false
+        default: ''
   repository_dispatch:
     types: [unified-research-report]
   schedule:
@@ -58,6 +62,7 @@ jobs:
       BATCH_SIZE: ${{ inputs.batch_size || github.event.client_payload.batch_size || '50' }}
       MOPS_MAX_REFRESH: ${{ inputs.mops_max_refresh || github.event.client_payload.mops_max_refresh || '24' }}
       SCAN_MODE: ${{ inputs.scan_mode || github.event.client_payload.scan_mode || 'production' }}
+      BACKTEST_RELEASE_PATH: ${{ inputs.backtest_release_path || github.event.client_payload.backtest_release_path || '' }}
       NEWS_CACHE_PATH: site/data/news-cache.json
       SEC_FACTS_CACHE_PATH: data/sec-companyfacts-cache.json
       DATA_RELEASE_BRANCH: data-release
@@ -82,31 +87,30 @@ jobs:
           # earlier release.  Missing outputs are rendered as an explicit
           # data gap by run_research_report instead of stale candidates.
           rm -f data/*-scan*.csv data/*-summary*.json
+          : > research-artifacts/scan-failures.ndjson
       - name: 台股動能研究掃描
-        continue-on-error: true
-        run: python -m src.run_taiwan_momentum_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
+        run: python -m src.research_worker_runner --retries 1 --market taiwan --strategy momentum --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_taiwan_momentum_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
       - name: 美股動能研究掃描
-        continue-on-error: true
-        run: python -m src.run_us_momentum_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
+        run: python -m src.research_worker_runner --retries 1 --market us --strategy momentum --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_us_momentum_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股裸 K 結構研究掃描
-        continue-on-error: true
-        run: python -m src.run_taiwan_price_action_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
+        run: python -m src.research_worker_runner --retries 1 --market taiwan --strategy price_action --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_taiwan_price_action_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
       - name: 美股裸 K 結構研究掃描
-        continue-on-error: true
-        run: python -m src.run_us_price_action_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
+        run: python -m src.research_worker_runner --retries 1 --market us --strategy price_action --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_us_price_action_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股三維共振研究掃描
-        continue-on-error: true
-        run: python -m src.run_resonance_scan --market taiwan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
+        run: python -m src.research_worker_runner --retries 1 --market taiwan --strategy resonance --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_resonance_scan --market taiwan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
       - name: 美股三維共振研究掃描
-        continue-on-error: true
-        run: python -m src.run_resonance_scan --market us --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
+        run: python -m src.research_worker_runner --retries 1 --market us --strategy resonance --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_resonance_scan --market us --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股品質價值覆核
-        continue-on-error: true
-        run: python -m src.run_value_quality_scan --market taiwan --batch-size "$BATCH_SIZE" --mops-max-refresh "$MOPS_MAX_REFRESH"
+        run: python -m src.research_worker_runner --retries 1 --market taiwan --strategy value --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_value_quality_scan --market taiwan --batch-size "$BATCH_SIZE" --mops-max-refresh "$MOPS_MAX_REFRESH"
       - name: 美股品質價值覆核
-        continue-on-error: true
-        run: python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE"
-      - run: python -m src.run_research_report --scan-mode "$SCAN_MODE"
+        run: python -m src.research_worker_runner --retries 1 --market us --strategy value --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE"
+      - name: Build research report with optional backtest identity
+        run: |
+          args=(--scan-mode "$SCAN_MODE")
+          if [[ -n "$BACKTEST_RELEASE_PATH" ]]; then
+            args+=(--backtest-release "$BACKTEST_RELEASE_PATH")
+          fi
+          python -m src.run_research_report "${args[@]}" --scan-failures research-artifacts/scan-failures.ndjson
       - name: Gate research publication and preserve previous success
         id: research_gate
         if: env.SCAN_MODE == 'production'

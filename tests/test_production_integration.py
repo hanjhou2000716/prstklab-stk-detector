@@ -28,6 +28,31 @@ def test_strategy_without_backtest_remains_observation_only():
     assert "backtest_release" in binding["missing"]
 
 
+def test_strategy_registry_mismatch_remains_observation_only():
+    binding = bind_strategy_provenance({
+        "strategy": "momentum", "strategy_version": "2", "data_version": "d1", "backtest_release": "bt1",
+        "strategy_registry": {
+            "strategy_id": "value", "strategy_version": "2", "data_version": "d1", "backtest_release": "bt1",
+            "parameter_hash": "abc", "universe_version": "u1", "code_commit": "deadbeef",
+        },
+    })
+    assert binding["state"] == "observation_only"
+    assert binding["registry_state"] == "unverified"
+    assert "strategy_registry" in binding["missing"]
+
+
+def test_strategy_registry_complete_binding_is_verified():
+    binding = bind_strategy_provenance({
+        "strategy": "momentum", "strategy_version": "2", "data_version": "d1", "backtest_release": "bt1",
+        "strategy_registry": {
+            "strategy_id": "momentum", "strategy_version": "2", "data_version": "d1", "backtest_release": "bt1",
+            "parameter_hash": "abc", "universe_version": "u1", "code_commit": "deadbeef",
+        },
+    })
+    assert binding["state"] == "production"
+    assert binding["registry_state"] == "verified"
+
+
 def test_intelligence_binding_fails_closed_when_release_ids_missing():
     result = bind_intelligence(
         {"advice_gate": "research_only"},

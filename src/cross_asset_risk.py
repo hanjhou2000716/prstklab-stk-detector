@@ -20,15 +20,57 @@ def rolling_correlation(left: Sequence[float], right: Sequence[float], window: i
 
 
 def detect_contagion(observations: dict[str, dict[str, float | None]]) -> dict[str, Any]:
-    """Flag synchronized stress without predicting a future price move."""
+    """Flag synchronized stress without predicting a future price move.
+
+    Explicitly stale, delayed, unavailable, or non-alertable quotes remain
+    visible but cannot count as market-synchronisation evidence.
+    """
     checks: list[str] = []
+    evidence: list[dict[str, Any]] = []
+    unusable_inputs: list[str] = []
+
+    def eligible(name: str, item: dict[str, Any]) -> bool:
+        freshness = str(item.get("freshness") or item.get("data_status") or "").lower()
+        if freshness in {"stale", "delayed", "unavailable", "failed", "unknown"}:
+            unusable_inputs.append(name)
+            return False
+        if item.get("quote_delayed") is True or item.get("alert_eligible") is False:
+            unusable_inputs.append(name)
+            return False
+        return True
+
+    def add_signal(name: str, item: dict[str, Any], label: str) -> None:
+        if not eligible(name, item):
+            return
+        checks.append(label)
+        evidence.append({
+            "name": name,
+            "source_url": item.get("source_url"),
+            "fetched_at": item.get("fetched_at"),
+            "freshness": item.get("freshness") or item.get("data_status") or "unspecified",
+            "data_quality_score": item.get("data_quality_score"),
+        })
     equities = observations.get("equities") or {}
     if equities.get("change_percent", 0) is not None and float(equities.get("change_percent") or 0) <= -3:
-        checks.append("equities_down")
+        add_signal("equities", equities, "equities_down")
     vix = observations.get("vix") or {}
     if vix.get("change_percent", 0) is not None and float(vix.get("change_percent") or 0) >= 10:
-        checks.append("vix_up")
+        add_signal("vix", vix, "vix_up")
     usd = observations.get("usd") or {}
     if usd.get("change_percent", 0) is not None and float(usd.get("change_percent") or 0) >= 1:
-        checks.append("usd_up")
-    return {"contagion": len(checks) >= 2, "confirmed_signals": checks, "status": "observed" if checks else "no_confirmed_sync"}
+        add_signal("usd", usd, "usd_up")
+    required = ("equities", "vix", "usd")
+    missing_inputs = [name for name in required if name not in observations]
+    usable_count = len([name for name in required if name in observations and name not in unusable_inputs])
+    confirmed = len(checks) >= 2
+    return {
+        "contagion": confirmed,
+        "confirmed_signals": checks,
+        "signal_evidence": evidence,
+        "status": "observed" if confirmed else "insufficient_evidence" if checks or unusable_inputs else "no_confirmed_sync",
+        "missing_inputs": missing_inputs,
+        "unusable_inputs": sorted(set(unusable_inputs)),
+        "evidence_sufficient": confirmed,
+        "data_quality_score": round(usable_count / len(required) * 100, 1),
+        "non_predictive": True,
+    }

@@ -138,4 +138,6 @@ def test_mini_app_loads_only_a_hash_verified_release():
     assert 'manifest.status !== "ready"' in app
     assert "artifact_hashes" in app
     assert "crypto.subtle.digest" in app
+    assert "research snapshot does not match release" in app
+    assert "event snapshot does not match release" in app
     assert "發布資料不完整" in app

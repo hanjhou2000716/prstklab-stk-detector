@@ -89,6 +89,7 @@ def parse_tpex_index(payload: Any) -> dict[str, Any] | None:
         "quote_date": quote_date,
         "quote_time": None,
         "quote_source": "TPEx OpenAPI official close",
+        "source_label": "TPEx",
         "source_url": TPEX_INDEX_URL,
         "quote_basis": "TPEx 官方最近收盤",
         "quote_delayed": False,
@@ -153,6 +154,7 @@ def parse_twse_mis_tpex(payload: Any) -> dict[str, Any] | None:
         "quote_date": observed.date().isoformat(),
         "quote_time": observed.isoformat(),
         "quote_source": "TWSE MIS official OTC index",
+        "source_label": "TWSE",
         "source_url": TWSE_MIS_URL,
         "quote_basis": "最近收盤",
         "quote_delayed": True,
@@ -201,6 +203,11 @@ def _recent_close_record(
         "quote_date": quote_date,
         "quote_time": None,
         "quote_source": source,
+        "source_label": (
+            "TWSE" if "twse" in source.lower() or "mis" in source.lower()
+            else "Yahoo" if "yahoo" in source.lower()
+            else "TPEx"
+        ),
         "quote_basis": basis,
         "quote_delayed": True,
         "data_status": "recent_close",

@@ -6,11 +6,29 @@ def test_regime_exposes_factor_contributions():
     result = classify_regime({"trend": 1.0, "volatility": -2.0, "credit": -1.0})
     assert result["regime"] == "Stress"
     assert result["factor_contributions"]["volatility"] == -2.0
+    assert "breadth" in result["missing_factors"]
+    assert result["evidence_status"] == "sufficient"
+    assert result["non_predictive"] is True
 
 
 def test_contagion_requires_two_confirmations():
-    assert detect_contagion({"equities": {"change_percent": -4}, "vix": {"change_percent": 12}})["contagion"] is True
-    assert detect_contagion({"equities": {"change_percent": -4}})["contagion"] is False
+    confirmed = detect_contagion({"equities": {"change_percent": -4}, "vix": {"change_percent": 12}})
+    assert confirmed["contagion"] is True
+    assert confirmed["evidence_sufficient"] is True
+    partial = detect_contagion({"equities": {"change_percent": -4}})
+    assert partial["contagion"] is False
+    assert "vix" in partial["missing_inputs"]
+
+
+def test_stale_contagion_inputs_do_not_confirm_market_sync():
+    result = detect_contagion({
+        "equities": {"change_percent": -4, "freshness": "stale"},
+        "vix": {"change_percent": 12, "freshness": "live"},
+    })
+    assert result["contagion"] is False
+    assert result["evidence_sufficient"] is False
+    assert result["unusable_inputs"] == ["equities"]
+    assert result["status"] == "insufficient_evidence"
 
 
 def test_rolling_correlation_requires_full_window():

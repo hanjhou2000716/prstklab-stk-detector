@@ -122,6 +122,8 @@ def test_event_timeline_and_feedback_are_optional_and_non_policy_mutating():
     assert 'id="event-timeline"' in page
     assert "lifecycle_history" in app
     assert 'data-event-feedback="correct"' in app
+    assert "證據狀態" in app
+    assert "等待第二來源" in app
     assert "PRSTK_FEEDBACK_ENDPOINT" in app
     assert "不會自動修改政策" in app
     assert ".event-timeline" in styles
@@ -133,6 +135,8 @@ def test_source_health_distinguishes_empty_scan_from_failure_and_exposes_slo_met
     assert 'scanState === "scan_failed"' in app
     assert 'scanState === "no_events"' in app
     assert "health.observability || health.slo" in app
+    assert "observation.no_event_count" in app
+    assert "observation.failure_count" in app
     assert "source.consecutive_failures" in app
     assert "source.crosscheck_rate" in app
 
@@ -155,6 +159,8 @@ def test_briefing_intelligence_shows_conditional_impact_and_macro_surprise_only(
     assert "context.market_impact_graph?.paths" in app
     assert "等待市場證據" in app
     assert "context.macro_surprise" in app
+    assert "market_reaction" in app
+    assert "市場第一反應" in app
     assert "不單獨推定市場方向" in app
 
 
@@ -189,3 +195,16 @@ def test_value_drawer_explains_that_mops_history_is_still_being_verified():
     assert 'const valuePending = valueSource?.scan_state === "building";' in app
     assert "歷史核對中：已完成" in app
     assert "不列入正式璞玉價值候選" in app
+
+
+def test_source_health_investor_count_is_derived_from_source_rows():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "const displayedMissing = missing;" in app
+    assert "Math.max(missing, declaredMissing)" not in app
+
+
+def test_research_failure_message_exposes_retry_state_without_raw_errors():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "source.failure_evidence || {}" in app
+    assert "已重試" in app
+    assert "不沿用舊候選" in app

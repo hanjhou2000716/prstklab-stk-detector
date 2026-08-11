@@ -38,7 +38,8 @@ def main() -> None:
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"{report['status']}: {destination}")
+    contract = report.get("backtest_release_contract") or {}
+    print(f"{report['status']} ({contract.get('publication_state', 'blocked')}): {destination}")
 
 
 if __name__ == "__main__":

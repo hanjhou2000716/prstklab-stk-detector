@@ -65,3 +65,5 @@ jobs:
         run: python -m src.delivery_smoke_test
       - name: Offline release-to-delivery dry run
         run: python -m src.system_dry_run
+      - name: Offline production release-to-delivery acceptance
+        run: python -m src.production_e2e

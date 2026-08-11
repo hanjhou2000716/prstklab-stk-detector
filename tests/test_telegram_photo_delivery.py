@@ -122,3 +122,35 @@ def test_send_photo_briefs_rejects_empty_recipients(tmp_path):
     import pytest
     with pytest.raises(ValueError, match="recipient"):
         send_photo_briefs(token="t", chat_ids=(), caption="ok", photo_path=tmp_path / "x", mini_app_url="https://example.test", alert_id="a", release_id="r", snapshot_id="s")
+
+
+def test_photo_delivery_propagates_observation_to_receipt_and_deep_link(monkeypatch, tmp_path):
+    photo = tmp_path / "card.png"
+    photo.write_bytes(b"png")
+
+    class ObservationResponse:
+        status_code = 200
+        ok = True
+
+        def json(self):
+            return {"ok": True, "result": {"message_id": 9, "photo": [{"file_id": "f-9"}]}}
+
+    captured = {}
+
+    def post(url, **kwargs):
+        captured.update(kwargs)
+        return ObservationResponse()
+
+    monkeypatch.setattr(telegram_client.requests, "post", post)
+    receipt = send_photo_brief(
+        token="t", chat_id="1", caption="ok", photo_path=photo,
+        mini_app_url="https://example.test/app", alert_id="a", release_id="r",
+        snapshot_id="s", observation_id="obs-9",
+    )
+    assert receipt.observation_id == "obs-9"
+    markup = json.loads(captured["data"]["reply_markup"])
+    target = markup["inline_keyboard"][0][0]["web_app"]["url"]
+    assert "alert=a" in target
+    assert "release=r" in target
+    assert "snapshot=s" in target
+    assert "observation=obs-9" in target

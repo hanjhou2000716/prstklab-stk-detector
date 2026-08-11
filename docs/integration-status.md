@@ -14,18 +14,19 @@ pipeline call and a tested consumer.
 | Taiwan crosscheck | `src/taiwan_market_crosscheck.py`, `src/market_crosscheck.py` | yes | yes | yes | yes | price gate | production |
 | Event source catalog | `src/event_source_catalog.py` | yes | yes | yes | health | event | production |
 | Event cluster/ledger | `src/event_ledger.py`, `src/event_output.py` | yes | yes | yes | timeline | event | production |
-| Macro surprise | `src/surprise_engine.py` | yes | partial | partial | partial | no | partially_integrated |
+| Event evidence state | `src/event_evidence.py`, `src/event_crosscheck.py` | yes | yes | yes | wait reason/timeline | lifecycle gate | production |
+| Macro surprise | `src/surprise_engine.py`, `src/intelligence_pipeline.py` | yes | yes | yes | yes | no | production |
 | Corporate events | `src/corporate_event_contract.py`, `src/official_events.py` | yes | yes | yes | yes | observe-only/event | production |
 | Market impact graph | `src/market_impact_graph.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing/event | conditional event | production |
 | Alert budget/lifecycle | `src/alert_budget.py`, `src/event_alerts.py`, `src/event_ledger.py` | yes | scheduled/official/emergency | delivery history | suppression reason | all alert paths | production |
 | Market regime/contagion | `src/market_regime.py`, `src/cross_asset_risk.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing | briefing context | production |
 | Stress scenarios | `src/stress_scenarios.py`, `src/intelligence_pipeline.py` | yes | yes | yes | briefing | context only | production |
-| Portfolio risk | `src/portfolio_risk.py` | yes | no | no | no | no | unused |
+| Portfolio risk | `src/portfolio_risk.py`, `src/private_portfolio.py` | yes | local-only adapter | private payload | private local view | prohibited | partially_integrated |
 | Paper portfolio | `src/paper_portfolio.py` | yes | yes | briefing | briefing | no | production |
 | Strategy scans | `src/run_*scan.py`, `src/research_report.py` | yes | yes | yes | yes | briefing/research | production |
 | Strategy registry/explainability | `src/strategy_registry.py`, `src/advice_gate.py` | yes | partial | partial | partial | no | partially_integrated |
-| Backtest/cost model | `src/four_strategy_walk_forward.py`, `src/backtest_costs.py` | yes | scheduled | artifact | no | no | partially_integrated |
-| Release manifest/gate | `src/release_manifest.py`, `src/release_gate.py` | yes | yes | yes | loader gate | send gate | production |
+| Backtest/cost model | `src/four_strategy_walk_forward.py`, `src/backtest_costs.py`, `src/backtest_release.py` | yes | scheduled | artifact + risk-adjusted metrics | no | no | partially_integrated |
+| Release manifest/gate | `src/release_manifest.py`, `src/release_gate.py`, `src/production_e2e.py` | yes | yes | yes | loader gate | send gate | production |
 | Telegram delivery | `src/telegram_client.py`, `src/scheduled_delivery.py`, `src/official_event_monitor.py`, `src/emergency_alert.py` | yes | release-gated `sendPhoto` path with shared file ID | photo receipt | alert/release deep-link button | renderer failure is fail-closed; recipient failures are isolated | production |
 | Mini App deep-link/timeline | `site/app.js`, `src/event_timeline.py` | yes | Pages | yes | yes | button target | production |
 | Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | briefing contract + optional endpoint/local queue | yes | feedback controls | no | partially_integrated |
@@ -82,6 +83,54 @@ The release manifest normalizer converts legacy gap maps to integer counts and
 backfills candidate state without inventing data.  To roll back, revert the
 producer commit and restore the previous `data-release` manifest; do not copy
 individual artifacts across releases.
+
+## Current stacked integration PRs
+
+The following changes are prepared but intentionally not merged by the agent:
+
+- #402 public release artifact hash gate
+- #403 formal point-in-time backtest publication contract
+- #404 Advice Gate binding to a valid backtest release
+- #405 opt-in raw observation persistence at the adapter boundary
+- #406 regime and cross-asset evidence quality fields
+- #407 event evidence lifecycle state contract
+- #408 risk-adjusted walk-forward summary metrics
+- #409 Mini App evidence wait-reason display
+- #410 refresh the production integration matrix
+- #411 offline production acceptance gate
+- #414 source-health scan-state and observability contract
+- #415 source-health schema and runtime cross-field audit
+- #416 bind backtest identity to release manifests
+- #417 bind backtest identity to research candidates and Actions input
+- #418 P0 backtest contract invariants
+- #419 P1 instrument-master provenance
+- #420 P5 structured advice contract
+- #421 P4 audited backtest performance contract
+- #422 P2 fail-closed market-news routing
+- #423 P4 candidate explainability contract
+- #424 P3 intelligence evidence contract
+- #425 P4 strategy-registry binding
+- #426 P3 private portfolio boundary
+- #427 P7 Telegram photo receipt observation traceability
+- #428 P3 cross-asset contagion freshness gate
+- #429 P1 publish instrument-master registry with every market snapshot
+- #430 P0 validate complete release lineage in Mini App
+- #431 P1 enforce static asset cache contract
+- #432 P0 repair research scan state after partial provider failures
+- #433 P0 persist research worker failure ledger
+- #434 P0 derive Mini App source-health count from source rows
+- #435 P0 make research worker failures explicit in CI
+- #436 P0 validate source-health gap count contract
+- #437 P0 retry research workers and preserve failure evidence
+- #438 P0 expose bounded research failure evidence in report sources
+- #439 P0 show research retry state in Mini App
+- #440 P1 bind research candidates to Instrument Master lineage
+- #441 P1 bind research reports to execution lineage
+
+Merge these in dependency order with **Create a merge commit**.  A module is
+not promoted to `production` in this matrix until its PR is merged and the
+release pipeline has emitted a matching manifest.  Keep the feature branches
+until the complete stack is merged so each dependency remains reviewable.
 
 ## Alert contract and lifecycle
 
@@ -150,6 +199,15 @@ briefing shape, while the release gate continues to validate the existing
 market, research, and event artifacts. Restore the last `status=ready` manifest
 as one immutable release; never mix individual files from different releases.
 
+### Offline production acceptance
+
+`python -m src.production_e2e` runs a deterministic release-to-delivery check
+with a complete production research fixture, the release contract, the Mini App
+deep-link/photo contract, and the non-network Telegram configuration check. It
+never sends a message or contacts Railway. A renderer or release-contract
+failure returns a non-zero status so CI cannot report a green integration gate
+while delivery would be blocked in production.
+
 ## Browser contract
 
 The investor-facing Mini App shell is covered by
@@ -162,3 +220,125 @@ technical drawer opens through a real click. The quality workflow provisions
 the Playwright Chromium dependency before running the suite; local runs without
 the browser binary skip this browser-only check rather than fabricating an
 acceptance result.
+
+## Research/backtest identity invariant
+
+The research publisher now validates the optional `backtest_release_contract`
+before a release can proceed. A ready contract must be publish-eligible and
+have a release ID; blocked or unavailable contracts cannot unlock candidates.
+Candidate rows must carry the same release ID and publication state as the
+research-level contract. Legacy observation reports without backtest fields
+remain readable, but remain research-only. See
+`docs/p4-research-backtest-invariants.md` for rollback and failure rules.
+
+## Instrument Master provenance
+
+`InstrumentMaster.artifact()` is the deterministic public registry contract.
+Production quote evidence records its `instrument_master_id` and version for
+every resolution attempt, including unknown symbols. Ambiguous or unknown
+symbols remain unresolved and cannot become alert evidence.
+
+The Advice Gate also requires the structured backtest contract. A bare release
+ID is treated as unverified and cannot unlock contextual decision support.
+
+Walk-forward contracts now expose sanitized net performance metrics and the
+survivorship audit snapshot dates. These are research evidence only and do not
+unlock trading language or create a performance forecast.
+
+Market news routing is fail-closed for unclassified headlines. Only explicit
+regional evidence or an auditable global/cross-market classification can reach
+a tab; empty scans and provider failures remain separate source-health states.
+
+Candidate explainability is an additive machine-readable contract. When a
+candidate emits `explainability`, release validation requires passed and
+failed conditions, data completeness, risk factors, evidence, signal date,
+and an invalidation condition. Legacy rows remain readable but do not gain
+advice permissions merely by having a score or ticker.
+
+When a candidate includes a `strategy_registry` entry, the production binder
+compares the strategy ID, version, data version and backtest release, and
+requires the parameter hash, universe version and code commit. A mismatch is
+reported as `observation_only` with `invalid_strategy_registry`; a complete
+match is marked `registry_state=verified`. Candidates without the optional
+entry retain the legacy observation-only compatibility path.
+
+## Private portfolio boundary
+
+`src/private_portfolio.py` is the only supported adapter for an optional
+personal risk view. It accepts caller-owned in-memory positions, delegates to
+`portfolio_risk_snapshot`, and annotates the result as
+`private_local_only`/`caller_memory_only`. The payload is never a release
+artifact, never enters Telegram delivery, and cannot access a broker account
+or place an order. This keeps portfolio risk isolated from the public Pages
+and data-release pipeline.
+
+## Intelligence evidence contract
+
+`src/intelligence_contract.py` validates the cross-field meaning of the
+briefing intelligence payload before a market artifact can be released. A
+confirmed market sync must have a synchronized impact-graph path with explicit
+market evidence; a high-confidence conditional path without that evidence is
+rejected. Regime factor counts, contagion signal counts, non-predictive stress
+scenarios, and fail-closed advice bindings are checked as well. This keeps the
+Mini App's conditional transmission hypotheses from becoming directional
+claims during serialization or release publication.
+
+The contract is additive and accepts older market snapshots without an
+`intelligence` block. To roll back, remove the producer's briefing intelligence
+block or revert the validation commit; the existing market, release, and
+Telegram gates remain fail-closed.
+
+## Telegram observation traceability
+
+Photo delivery receipts now carry the source `observation_id` in addition to
+the alert, release and snapshot IDs. Every scheduled brief and official event
+photo call passes the same observation ID that produced the published artifact.
+The Mini App button target includes `alert`, `release`, `snapshot`, and (when
+available) `observation`, so a receipt can be traced to one immutable source
+observation without exposing recipient identifiers or Telegram file IDs.
+The backend and browser router reject a snapshot or observation mismatch rather
+than opening an unrelated current event.
+Legacy callers may omit the optional observation ID; such receipts remain
+valid but are explicitly unbound rather than guessed. Rollback is safe because
+the field is additive and defaults to an empty string.
+
+Cross-asset contagion evidence is also freshness-gated: stale, delayed,
+unavailable, or non-alertable quotes remain visible in the context but cannot
+confirm synchronised stress. The output records `signal_evidence`,
+`unusable_inputs`, and a conservative quality score so the Mini App can explain
+why a market-sync confirmation is still pending.
+
+## Research worker state integrity
+
+All five market research workers use the shared
+`src.research_scan_state.classify_scan_state` helper. A batch failure is
+reported as `building` when some rows completed, or `failed` when none did;
+only a run with zero failures and all requested rows completed is `complete`.
+The report normalizer applies the same correction to legacy summaries that
+incorrectly wrote `complete` alongside failed rows. A provider outage can
+therefore never become a successful empty candidate list or a publishable
+research snapshot.
+
+The current reliability stack continues from that contract:
+
+- #433 records worker exits in a machine-readable failure ledger.
+- #434 makes the investor-facing source-gap count deterministic from
+  `source_health.sources[]`.
+- #435 removes hidden worker-step `continue-on-error`; isolation is retained by
+  the explicit ledger path, and publication remains fail-closed.
+- The next contract also validates that `missing_source_count` equals the
+  number of degraded semantic source rows; stale backend aggregates are now a
+  release validation error rather than an investor-facing mismatch.
+
+## Research worker failure ledger
+
+The unified research workflow keeps worker isolation while making each
+non-zero worker exit explicit in a failure ledger. Each worker failure is written
+to `research-artifacts/scan-failures.ndjson` with its market and strategy, then
+passed to `run_research_report --scan-failures`. The report marks that source
+`scan_state=failed`, `candidate_state=data_gap`, and blocks publication while
+preserving the last successful release. This distinguishes a failed scan from
+a successful scan with no candidates and prevents an empty strategy drawer from
+being mistaken for a healthy result. The ledger is diagnostic-only and is not
+used to fabricate rows or scores. Rollback is additive: remove the option and
+ledger step to restore legacy worker behaviour.

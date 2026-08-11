@@ -24,6 +24,16 @@
       },
       "additionalProperties": false
     },
+    "instrument_master": {
+      "type": "object",
+      "required": ["schema_version", "registry_id", "instruments"],
+      "properties": {
+        "schema_version": {"type": "integer", "const": 1},
+        "registry_id": {"type": "string", "pattern": "^instrument-[a-f0-9]{16}$"},
+        "instruments": {"type": "array", "items": {"type": "object"}}
+      },
+      "additionalProperties": true
+    },
     "indices": {"type": "array", "items": {"$ref": "#/$defs/quote"}},
     "quotes": {"type": "array", "items": {"$ref": "#/$defs/quote"}},
     "source_health": {"type": "object"}
