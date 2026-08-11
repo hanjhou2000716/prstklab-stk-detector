@@ -20,6 +20,17 @@ def test_contagion_requires_two_confirmations():
     assert "vix" in partial["missing_inputs"]
 
 
+def test_stale_contagion_inputs_do_not_confirm_market_sync():
+    result = detect_contagion({
+        "equities": {"change_percent": -4, "freshness": "stale"},
+        "vix": {"change_percent": 12, "freshness": "live"},
+    })
+    assert result["contagion"] is False
+    assert result["evidence_sufficient"] is False
+    assert result["unusable_inputs"] == ["equities"]
+    assert result["status"] == "insufficient_evidence"
+
+
 def test_rolling_correlation_requires_full_window():
     assert rolling_correlation([1, 2], [1, 2], 3) is None
     assert rolling_correlation([1, 2, 3], [1, 2, 3], 3) == 1.0

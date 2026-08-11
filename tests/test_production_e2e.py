@@ -9,7 +9,7 @@ def test_ready_fixture_passes_all_offline_gates():
             "ok": True,
             "renderer_available": True,
             "card_dimensions": {"width": 1080, "height": 1350},
-            "photo_contract": {"dimensions_valid": True, "deep_link_valid": True, "delivery_status": "delivered"},
+            "photo_contract": {"dimensions_valid": True, "deep_link_valid": True, "observation_id": "obs-e2e", "delivery_status": "delivered"},
         },
         delivery_check=lambda **_: {"ok": True, "recipient_count": 1, "errors": []},
     )

@@ -111,6 +111,8 @@ The following changes are prepared but intentionally not merged by the agent:
 - #424 P3 intelligence evidence contract
 - #425 P4 strategy-registry binding
 - #426 P3 private portfolio boundary
+- #427 P7 Telegram photo receipt observation traceability
+- #428 P3 cross-asset contagion freshness gate
 
 Merge these in dependency order with **Create a merge commit**.  A module is
 not promoted to `production` in this matrix until its PR is merged and the
@@ -272,3 +274,23 @@ The contract is additive and accepts older market snapshots without an
 `intelligence` block. To roll back, remove the producer's briefing intelligence
 block or revert the validation commit; the existing market, release, and
 Telegram gates remain fail-closed.
+
+## Telegram observation traceability
+
+Photo delivery receipts now carry the source `observation_id` in addition to
+the alert, release and snapshot IDs. Every scheduled brief and official event
+photo call passes the same observation ID that produced the published artifact.
+The Mini App button target includes `alert`, `release`, `snapshot`, and (when
+available) `observation`, so a receipt can be traced to one immutable source
+observation without exposing recipient identifiers or Telegram file IDs.
+The backend and browser router reject a snapshot or observation mismatch rather
+than opening an unrelated current event.
+Legacy callers may omit the optional observation ID; such receipts remain
+valid but are explicitly unbound rather than guessed. Rollback is safe because
+the field is additive and defaults to an empty string.
+
+Cross-asset contagion evidence is also freshness-gated: stale, delayed,
+unavailable, or non-alertable quotes remain visible in the context but cannot
+confirm synchronised stress. The output records `signal_evidence`,
+`unusable_inputs`, and a conservative quality score so the Mini App can explain
+why a market-sync confirmation is still pending.

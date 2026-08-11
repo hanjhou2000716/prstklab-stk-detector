@@ -55,6 +55,17 @@ def test_alert_mini_app_url_targets_published_alert_release_and_snapshot():
     ) == "https://example.github.io/app/?alert=evt-1&release=rel-2&snapshot=snap-3&view=event"
 
 
+def test_alert_mini_app_url_can_target_source_observation():
+    target = alert_mini_app_url(
+        "https://example.github.io/app/",
+        alert_id="evt-1",
+        release_id="rel-2",
+        snapshot_id="snap-3",
+        observation_id="obs-4",
+    )
+    assert target.endswith("&observation=obs-4")
+
+
 def test_mini_app_menu_button_uses_persistent_web_app_shape():
     assert mini_app_menu_button("https://example.github.io/app/") == {
         "type": "web_app",

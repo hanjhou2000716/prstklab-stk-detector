@@ -758,12 +758,24 @@ const applyDeepLink = (snapshot) => {
   const params = new URLSearchParams(window.location.search);
   const requestedRelease = String(params.get("release") || "").trim();
   const requestedAlert = String(params.get("alert") || "").trim();
+  const requestedSnapshot = String(params.get("snapshot") || "").trim();
+  const requestedObservation = String(params.get("observation") || "").trim();
   const view = String(params.get("view") || "").trim().toLowerCase();
   if (!requestedRelease && !requestedAlert && !view) return;
   const manifestRelease = String(window.releaseManifest?.release_id || "");
   if (!requestedRelease || requestedRelease !== manifestRelease) {
     setReleaseHealth("該訊息版本已歸檔或不可用；目前顯示最新安全版本。", "error");
     setText("market-focus", "訊息版本與目前公開 release 不一致，暫不載入其他事件。");
+    return;
+  }
+  const knownSnapshots = [
+    window.releaseManifest?.market_snapshot_id,
+    window.releaseManifest?.research_snapshot_id,
+    window.releaseManifest?.event_snapshot_id,
+  ].filter(Boolean).map(String);
+  if (requestedSnapshot && knownSnapshots.length && !knownSnapshots.includes(requestedSnapshot)) {
+    setReleaseHealth("該訊息快照不屬於目前 release；暫不載入其他資料。", "error");
+    setText("market-focus", "訊息快照與公開版本不一致，暫不替換為其他事件。");
     return;
   }
   const sectionByView = {
@@ -780,6 +792,16 @@ const applyDeepLink = (snapshot) => {
     if (!event) {
       setReleaseHealth("該訊息已歸檔或不可用；未顯示其他事件。", "error");
       setText("market-focus", "找不到此 alert 的同一 release 證據，暫不替換為其他事件。");
+      return;
+    }
+    if (requestedSnapshot && event.snapshot_id && String(event.snapshot_id) !== requestedSnapshot) {
+      setReleaseHealth("該訊息快照與事件不一致；暫不載入其他事件。", "error");
+      setText("market-focus", "事件與快照核對失敗，暫不替換為其他事件。");
+      return;
+    }
+    if (requestedObservation && event.observation_id && String(event.observation_id) !== requestedObservation) {
+      setReleaseHealth("該訊息觀測 ID 與事件不一致；暫不載入其他事件。", "error");
+      setText("market-focus", "事件與來源觀測核對失敗，暫不替換為其他事件。");
       return;
     }
     renderAlertCard({ items: [event] }, snapshot.generated_at, null, snapshot.indices || []);

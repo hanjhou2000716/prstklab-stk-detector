@@ -130,6 +130,7 @@ def send(
                 alert_id=alert_id,
                 release_id=gate.release_id or "",
                 snapshot_id=snapshot_id,
+                observation_id=observation_id,
             )
     except (RendererError, OSError, ValueError) as exc:
         _write_output({

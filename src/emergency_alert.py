@@ -135,6 +135,7 @@ def main() -> None:
                 alert_id=alert_id,
                 release_id=release_id,
                 snapshot_id=snapshot_id,
+                observation_id=trace_id,
             )
     except (RendererError, OSError, ValueError) as exc:
         print(f"renderer_failed={getattr(exc, 'error_type', type(exc).__name__)}")
