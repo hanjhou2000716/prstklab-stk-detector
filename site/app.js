@@ -418,11 +418,11 @@ const renderSourceHealth = (health, snapshot = {}) => {
   const sourceState = (source) => source.semantic_state || source.state || source.status;
   const missing = health.sources.filter((source) => degradedStates.includes(sourceState(source))).length;
   const critical = health.sources.filter((source) => ["critical", "critical_gap", "failed", "configuration_missing", "configuration_required"].includes(sourceState(source))).length;
-  // Recompute from source rows so a stale aggregate cannot hide a new gap.
-  const declaredMissing = Number.isFinite(Number(health.missing_source_count))
-    ? Number(health.missing_source_count)
-    : missing;
-  const displayedMissing = Math.max(missing, declaredMissing);
+  // `sources[]` is the single source of truth for the investor count. Older
+  // snapshots may carry a stale aggregate, but it must not make the UI claim
+  // that a healthy source is missing. The raw aggregate remains available to
+  // engineering diagnostics in the snapshot, not in this investor summary.
+  const displayedMissing = missing;
   const pending = Number(health.pending_event_count || health.monitor_health?.pending_count || 0);
   const aggregate = health.investor_status || (missing === 0 ? "資料正常" : critical > 0 ? "核心資料不足" : "部分資料降級");
   summary.textContent = `${aggregate}${displayedMissing ? `｜${displayedMissing} 個來源有資料缺口` : ""}`;

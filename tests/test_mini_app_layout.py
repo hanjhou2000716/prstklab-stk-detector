@@ -195,3 +195,9 @@ def test_value_drawer_explains_that_mops_history_is_still_being_verified():
     assert 'const valuePending = valueSource?.scan_state === "building";' in app
     assert "歷史核對中：已完成" in app
     assert "不列入正式璞玉價值候選" in app
+
+
+def test_source_health_investor_count_is_derived_from_source_rows():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "const displayedMissing = missing;" in app
+    assert "Math.max(missing, declaredMissing)" not in app
