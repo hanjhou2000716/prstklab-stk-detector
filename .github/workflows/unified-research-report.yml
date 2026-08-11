@@ -66,12 +66,14 @@ jobs:
       NEWS_CACHE_PATH: site/data/news-cache.json
       SEC_FACTS_CACHE_PATH: data/sec-companyfacts-cache.json
       DATA_RELEASE_BRANCH: data-release
+      RAW_OBSERVATION_ROOT: data/raw-observations
+      RAW_OBSERVATION_REQUIRED: "true"
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
       - name: Restore last immutable data release
-        run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json
+        run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json
       - name: Save last successful research snapshot
         run: |
           mkdir -p research-artifacts
@@ -171,7 +173,7 @@ jobs:
         if: env.SCAN_MODE != 'production' || steps.research_gate.outputs.publish == 'true'
         run: |
           if [[ "$SCAN_MODE" == "production" ]]; then
-            python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json --message "chore: refresh public research report"
+            python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json --message "chore: refresh public research report"
           else
             echo "scan_mode=$SCAN_MODE: isolated artifact only; skipping data-release publication"
           fi

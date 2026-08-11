@@ -23,6 +23,8 @@ jobs:
     env:
       NEWS_CACHE_PATH: site/data/news-cache.json
       DATA_RELEASE_BRANCH: data-release
+      RAW_OBSERVATION_ROOT: data/raw-observations
+      RAW_OBSERVATION_REQUIRED: "true"
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -34,7 +36,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Restore last immutable data release
-        run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data
+        run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations
       - name: Refresh public market data
         run: python -m src.refresh_market_data
       - name: Build and publish immutable data release
@@ -42,7 +44,7 @@ jobs:
           python -m src.release_manifest \
             --allow-stale-research \
             --research-fallback-reason "research scan incomplete; preserving last-known-good research snapshot"
-          python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
+          python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations \
             --message "chore: refresh public market snapshot"
       - name: Configure GitHub Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b

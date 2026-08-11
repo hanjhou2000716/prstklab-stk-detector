@@ -51,12 +51,14 @@ jobs:
       NEWS_CACHE_PATH: site/data/news-cache.json
       MANIFEST_PATH: site/data/release-manifest.json
       DATA_RELEASE_BRANCH: data-release
+      RAW_OBSERVATION_ROOT: data/raw-observations
+      RAW_OBSERVATION_REQUIRED: "true"
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
       - name: Restore last immutable data release
-        run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data
+        run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.11"
@@ -107,7 +109,7 @@ jobs:
           python -m src.release_manifest \
             --allow-stale-research \
             --research-fallback-reason "research scan incomplete; preserving last-known-good research snapshot"
-          python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
+          python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations \
             --message "chore: refresh emergency market alert"
       - name: Configure GitHub Pages
         if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
