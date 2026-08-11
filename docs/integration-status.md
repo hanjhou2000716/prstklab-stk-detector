@@ -113,6 +113,7 @@ The following changes are prepared but intentionally not merged by the agent:
 - #426 P3 private portfolio boundary
 - #427 P7 Telegram photo receipt observation traceability
 - #428 P3 cross-asset contagion freshness gate
+- #429 P1 publish instrument-master registry with every market snapshot
 
 Merge these in dependency order with **Create a merge commit**.  A module is
 not promoted to `production` in this matrix until its PR is merged and the

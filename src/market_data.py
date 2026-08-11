@@ -685,6 +685,7 @@ def build_market_snapshot() -> dict[str, Any]:
         errors = [error for error in errors if error.get("ticker") != "TPEx"]
     quotes = annotate_quote_freshness(quotes)
     indices = annotate_quote_freshness(indices)
+    from src.instrument_master import InstrumentMaster
     from src.production_evidence import (
         bind_market_evidence,
         quality_summary,
@@ -781,6 +782,11 @@ def build_market_snapshot() -> dict[str, Any]:
     # whether an unrelated optional provider returned an error.  A close-only
     # snapshot must never be advertised as "即時".
     data_status = market_data_status(freshness_summary)
+    # Publish the exact symbol registry used by bind_market_evidence alongside
+    # the snapshot. Quote rows carry its content-addressed ID; keeping the
+    # registry artifact in the same snapshot prevents a later registry change
+    # from silently reinterpreting historical symbols.
+    instrument_master_artifact = InstrumentMaster().artifact()
     snapshot = {
         "generated_at": scan_completed_at.isoformat(),
         "scan": {
@@ -793,6 +799,7 @@ def build_market_snapshot() -> dict[str, Any]:
         },
         **freshness_summary,
         "data_status": data_status,
+        "instrument_master": instrument_master_artifact,
         "markets": markets,
         "indices": indices,
         "quotes": quotes,

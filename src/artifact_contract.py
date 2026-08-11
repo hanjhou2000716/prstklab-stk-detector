@@ -42,6 +42,33 @@ def _schema_errors(document: dict[str, Any], schema_name: str) -> list[str]:
     return [f"schema: {error.json_path} {error.message}" for error in validator.iter_errors(document)]
 
 
+def _instrument_master_contract_errors(document: dict[str, Any]) -> list[str]:
+    """Keep quote identity bound to the registry embedded in the snapshot.
+
+    The field is additive for legacy artifacts. Once a producer emits the
+    registry artifact, every quote must carry the same content-addressed ID so
+    a release cannot combine a quote with a different symbol mapping.
+    """
+    artifact = document.get("instrument_master")
+    if artifact is None:
+        return []
+    if not isinstance(artifact, dict):
+        return ["market.instrument_master must be an object"]
+    errors = _schema_errors(artifact, "instrument-master.schema.json")
+    registry_id = str(artifact.get("registry_id") or "")
+    schema_version = artifact.get("schema_version")
+    for collection in ("indices", "quotes"):
+        for index, quote in enumerate(document.get(collection, [])):
+            if not isinstance(quote, dict):
+                continue
+            path = f"{collection}[{index}]"
+            if quote.get("instrument_master_id") != registry_id:
+                errors.append(f"{path}: instrument_master_id does not match market registry")
+            if quote.get("instrument_master_version") != schema_version:
+                errors.append(f"{path}: instrument_master_version does not match market registry")
+    return errors
+
+
 def _quote_contract_errors(quote: dict[str, Any], path: str) -> list[str]:
     errors: list[str] = []
     freshness = str(quote.get("freshness") or "")
@@ -82,6 +109,7 @@ def _quote_contract_errors(quote: dict[str, Any], path: str) -> list[str]:
 def validate_market(document: dict[str, Any]) -> list[str]:
     """Validate market schema and quote-level safety invariants."""
     errors = _schema_errors(document, "market.schema.json")
+    errors.extend(_instrument_master_contract_errors(document))
     for collection in ("indices", "quotes"):
         for index, quote in enumerate(document.get(collection, [])):
             if isinstance(quote, dict):
