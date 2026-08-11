@@ -136,6 +136,16 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
     errors = _schema_errors(document, "source-health.schema.json")
     allowed_status = {"healthy", "partial", "warming", "critical", "pending", "failed", "no_event"}
     gap_states = {"fallback_active", "configuration_missing", "stale", "partial", "failed", "critical"}
+    declared_missing = document.get("missing_source_count")
+    if isinstance(declared_missing, int) and declared_missing >= 0:
+        actual_missing = 0
+        for source in document.get("sources", []):
+            if isinstance(source, dict) and str(source.get("semantic_state") or source.get("status") or "") in gap_states:
+                actual_missing += 1
+        if declared_missing != actual_missing:
+            errors.append(
+                "source_health.missing_source_count does not match source semantic states"
+            )
     for index, source in enumerate(document.get("sources", [])):
         if not isinstance(source, dict):
             continue

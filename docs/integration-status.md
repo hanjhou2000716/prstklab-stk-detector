@@ -317,6 +317,9 @@ The current reliability stack continues from that contract:
   `source_health.sources[]`.
 - #435 removes hidden worker-step `continue-on-error`; isolation is retained by
   the explicit ledger path, and publication remains fail-closed.
+- The next contract also validates that `missing_source_count` equals the
+  number of degraded semantic source rows; stale backend aggregates are now a
+  release validation error rather than an investor-facing mismatch.
 
 ## Research worker failure ledger
 

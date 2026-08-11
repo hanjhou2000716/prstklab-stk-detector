@@ -55,3 +55,11 @@ def test_source_health_schema_rejects_negative_observability_counter():
     value = _health(observability={"failure_count": -1})
     errors = validate_source_health(value)
     assert any("schema" in error and "failure_count" in error for error in errors)
+
+
+def test_source_health_rejects_stale_aggregate_gap_count():
+    value = _health(
+        missing_source_count=1,
+        sources=[{"key": "market_quotes", "status": "healthy", "semantic_state": "healthy"}],
+    )
+    assert any("missing_source_count" in error for error in validate_source_health(value))
