@@ -281,6 +281,8 @@ photo call passes the same observation ID that produced the published artifact.
 The Mini App button target includes `alert`, `release`, `snapshot`, and (when
 available) `observation`, so a receipt can be traced to one immutable source
 observation without exposing recipient identifiers or Telegram file IDs.
+The backend and browser router reject a snapshot or observation mismatch rather
+than opening an unrelated current event.
 Legacy callers may omit the optional observation ID; such receipts remain
 valid but are explicitly unbound rather than guessed. Rollback is safe because
 the field is additive and defaults to an empty string.

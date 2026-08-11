@@ -13,3 +13,10 @@ def test_mini_app_does_not_replace_unknown_alert_with_current_event():
     assert "找不到此 alert 的同一 release 證據" in APP
     assert "renderAlertCard({ items: [event] }" in APP
     assert "applyDeepLink(snapshot)" in APP
+
+
+def test_mini_app_verifies_snapshot_and_observation_identity():
+    assert 'params.get("snapshot")' in APP
+    assert 'params.get("observation")' in APP
+    assert "knownSnapshots.includes(requestedSnapshot)" in APP
+    assert "event.observation_id" in APP
