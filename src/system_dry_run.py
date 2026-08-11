@@ -48,6 +48,7 @@ def run_dry_run() -> dict[str, Any]:
         "delivery_status": "delivered" if renderer_available and card_ok and routed["status"] == "ok" else "blocked",
         "release_id": envelope.release_id,
         "snapshot_id": envelope.snapshot_id,
+        "observation_id": link.observation,
     }
     traceable_link = routed["status"] == "ok" and routed["snapshot_id"] == "dry-snapshot" and routed["observation_id"] == "dry-observation"
     return {"ok": all((budget["allowed"], lifecycle == "pending_confirmation", intelligence["advice_gate"] == "observation_only", traceable_link, card_ok, photo_contract["caption_valid"])), "budget": budget, "lifecycle": lifecycle, "advice_gate": intelligence["advice_gate"], "deep_link": routed["status"], "release_id": envelope.release_id, "observation_id": link.observation, "card_rendered": card_ok, "renderer_available": renderer_available, "card_dimensions": {"width": card_dimensions[0], "height": card_dimensions[1]}, "photo_contract": photo_contract}
