@@ -13,6 +13,7 @@ from src.source_adapter import AdapterConfig, AdapterError, JsonSourceAdapter
 class FakeResponse:
     status_code: int
     body: dict
+    headers: dict[str, str] | None = None
 
     @property
     def content(self) -> bytes:
@@ -100,6 +101,37 @@ def test_adapter_retries_transient_http_then_succeeds() -> None:
     assert attempts == 2
     assert observation.payload == {"ok": True}
     assert adapter.health()["consecutive_failures"] == 0
+
+
+def test_adapter_honours_bounded_retry_after_header(monkeypatch) -> None:
+    attempts = 0
+    sleeps: list[float] = []
+
+    def transport(url: str, **kwargs):
+        nonlocal attempts
+        attempts += 1
+        return FakeResponse(429, {}, {"Retry-After": "2"}) if attempts == 1 else FakeResponse(200, {"ok": True})
+
+    monkeypatch.setattr("src.source_adapter.time.sleep", lambda seconds: sleeps.append(seconds))
+    adapter = JsonSourceAdapter(
+        AdapterConfig(provider="retry-after", endpoint="https://example.test", max_retries=1),
+        transport=transport,
+    )
+    adapter.fetch()
+
+    assert attempts == 2
+    assert sleeps == [2.0]
+
+
+def test_adapter_caps_excessive_retry_after_header(monkeypatch) -> None:
+    monkeypatch.setattr("src.source_adapter.time.sleep", lambda seconds: (_ for _ in ()).throw(AssertionError(seconds)))
+    adapter = JsonSourceAdapter(
+        AdapterConfig(provider="retry-after", endpoint="https://example.test", max_retries=0),
+        transport=lambda url, **kwargs: FakeResponse(429, {}, {"Retry-After": "999"}),
+    )
+    with pytest.raises(AdapterError) as error:
+        adapter.fetch()
+    assert error.value.code == "rate_limited"
 
 
 def test_adapter_fails_closed_without_stale_opt_in() -> None:
