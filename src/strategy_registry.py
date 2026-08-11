@@ -8,6 +8,16 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+REQUIRED_RELEASE_FIELDS = (
+    "strategy_id",
+    "strategy_version",
+    "parameter_hash",
+    "universe_version",
+    "data_version",
+    "code_commit",
+    "backtest_release",
+)
+
 
 @dataclass(frozen=True)
 class StrategyRelease:
@@ -54,3 +64,22 @@ class StrategyRegistry:
 
     def find(self, strategy_id: str, strategy_version: str) -> dict[str, Any] | None:
         return next((row for row in self.rows if row.get("strategy_id") == strategy_id and row.get("strategy_version") == strategy_version), None)
+
+
+def validate_strategy_release(row: Any) -> list[str]:
+    """Validate a registry row before it can unlock production explainability.
+
+    Registry metadata is provenance, not a score.  A partially populated row
+    must therefore fail closed instead of being treated as a valid backtest
+    binding merely because its strategy/version happen to match.
+    """
+    if not isinstance(row, dict):
+        return ["strategy_registry must be an object"]
+    errors: list[str] = []
+    for field in REQUIRED_RELEASE_FIELDS:
+        value = row.get(field)
+        if value in (None, ""):
+            errors.append(f"strategy_registry.{field} is missing")
+        elif not isinstance(value, str):
+            errors.append(f"strategy_registry.{field} must be a string")
+    return errors
