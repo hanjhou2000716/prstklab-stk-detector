@@ -36,6 +36,11 @@ REPORT_INTERVAL_SECONDS = 0.35
 # inter-request interval and rotate the session after a blocked response;
 # this is still bounded and does not bypass rate limits.
 MIN_REQUEST_INTERVAL_SECONDS = 0.8
+# A security page is a provider-side throttle, not a normal parse failure.
+# Give the WAF time to release the session before trying the legacy route and
+# again before the next attempt.  This remains bounded and does not bypass
+# rate limits; it only makes production retries less bursty.
+SECURITY_BLOCK_BACKOFF_SECONDS = 8.0
 
 
 class IncompleteMopsHistoryError(RuntimeError):
@@ -185,6 +190,10 @@ class MopsPublicClient:
         session.headers.setdefault("Accept-Language", "zh-TW,zh;q=0.9,en;q=0.7")
         self.session = session
 
+    @staticmethod
+    def _is_security_block(error: Exception) -> bool:
+        return "security block" in str(error).lower()
+
     def report(self, api_name: str, company_id: str, **parameters: str | int) -> str:
         last_error: Exception | None = None
         for attempt in range(REQUEST_RETRIES):
@@ -197,12 +206,16 @@ class MopsPublicClient:
                 # returns an HTML security page from hosted CI.  The same
                 # public report remains available through the legacy MOPS
                 # endpoint, so try it before spending the next retry window.
+                if self._is_security_block(error):
+                    time.sleep(SECURITY_BLOCK_BACKOFF_SECONDS)
                 try:
                     self._pace()
                     return self._legacy_report_once(api_name, company_id, parameters)
                 except (OSError, ValueError, requests.RequestException, RuntimeError) as fallback_error:
                     last_error = fallback_error
                     self._rotate_session()
+                    if self._is_security_block(fallback_error):
+                        time.sleep(SECURITY_BLOCK_BACKOFF_SECONDS)
                 if attempt + 1 < REQUEST_RETRIES:
                     time.sleep(REQUEST_BACKOFF_SECONDS * (attempt + 1))
         assert last_error is not None

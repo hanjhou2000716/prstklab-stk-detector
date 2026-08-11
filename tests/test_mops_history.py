@@ -165,6 +165,8 @@ def test_mops_client_uses_legacy_public_endpoint_after_redirect_failure():
 
 def test_mops_client_rotates_session_after_both_public_paths_fail(monkeypatch):
     monkeypatch.setattr(mops_history, "MIN_REQUEST_INTERVAL_SECONDS", 0)
+    sleeps: list[float] = []
+    monkeypatch.setattr(mops_history.time, "sleep", lambda seconds: sleeps.append(seconds))
     client = MopsPublicClient()
     old_session = client.session
     attempts = {"redirect": 0, "legacy": 0}
@@ -183,3 +185,4 @@ def test_mops_client_rotates_session_after_both_public_paths_fail(monkeypatch):
     client._legacy_report_once = legacy
     assert client.report("t164sb04", "2330", year=114, season=1) == "redirect-ok"
     assert client.session is not old_session
+    assert mops_history.SECURITY_BLOCK_BACKOFF_SECONDS in sleeps
