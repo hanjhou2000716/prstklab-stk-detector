@@ -545,7 +545,7 @@ For the post-merge stacked PR order and the release verification checklist,
 see [`docs/MERGE_ORDER.md`](docs/MERGE_ORDER.md) and
 [`docs/OPERATIONS_RELEASE_CHECKLIST.md`](docs/OPERATIONS_RELEASE_CHECKLIST.md).
 The production notification contract is one release-gated `sendPhoto` message:
-an at-most-30-character caption above a fixed 1080×1350 card and a release/alert
+an at-most-40-character caption above a fixed 1080×1350 card and a release/alert
 deep-link Mini App button. Publishing and manifest verification always complete
 before delivery; renderer failure is fail-closed and never sends a blank card.
 

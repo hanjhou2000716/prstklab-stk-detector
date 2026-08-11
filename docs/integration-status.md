@@ -84,54 +84,32 @@ backfills candidate state without inventing data.  To roll back, revert the
 producer commit and restore the previous `data-release` manifest; do not copy
 individual artifacts across releases.
 
-## Current stacked integration PRs
+## Historical stacked integration PRs
 
-The following changes are prepared but intentionally not merged by the agent:
+The numbered stack above is historical context, not an outstanding merge
+queue.  The current `main` already contains the merged production changes;
+do not merge or resurrect those branches.  The authoritative state is the
+current `main` commit, its generated release manifest, and the latest
+successful production workflow.  Any new work must branch from the latest
+`main`, include its own tests and release evidence, and be reviewed as a new
+PR.
 
-- #402 public release artifact hash gate
-- #403 formal point-in-time backtest publication contract
-- #404 Advice Gate binding to a valid backtest release
-- #405 opt-in raw observation persistence at the adapter boundary
-- #406 regime and cross-asset evidence quality fields
-- #407 event evidence lifecycle state contract
-- #408 risk-adjusted walk-forward summary metrics
-- #409 Mini App evidence wait-reason display
-- #410 refresh the production integration matrix
-- #411 offline production acceptance gate
-- #414 source-health scan-state and observability contract
-- #415 source-health schema and runtime cross-field audit
-- #416 bind backtest identity to release manifests
-- #417 bind backtest identity to research candidates and Actions input
-- #418 P0 backtest contract invariants
-- #419 P1 instrument-master provenance
-- #420 P5 structured advice contract
-- #421 P4 audited backtest performance contract
-- #422 P2 fail-closed market-news routing
-- #423 P4 candidate explainability contract
-- #424 P3 intelligence evidence contract
-- #425 P4 strategy-registry binding
-- #426 P3 private portfolio boundary
-- #427 P7 Telegram photo receipt observation traceability
-- #428 P3 cross-asset contagion freshness gate
-- #429 P1 publish instrument-master registry with every market snapshot
-- #430 P0 validate complete release lineage in Mini App
-- #431 P1 enforce static asset cache contract
-- #432 P0 repair research scan state after partial provider failures
-- #433 P0 persist research worker failure ledger
-- #434 P0 derive Mini App source-health count from source rows
-- #435 P0 make research worker failures explicit in CI
-- #436 P0 validate source-health gap count contract
-- #437 P0 retry research workers and preserve failure evidence
-- #438 P0 expose bounded research failure evidence in report sources
-- #439 P0 show research retry state in Mini App
-- #440 P1 bind research candidates to Instrument Master lineage
-- #441 P1 bind research reports to execution lineage
-- Current follow-up: merge Taiwan offset scan fragments before report production
+### Last verified production release
 
-Merge these in dependency order with **Create a merge commit**.  A module is
-not promoted to `production` in this matrix until its PR is merged and the
-release pipeline has emitted a matching manifest.  Keep the feature branches
-until the complete stack is merged so each dependency remains reviewable.
+- Main commit: `14e0da4aef67e5b825c5465bab21c2cfe52dc602`
+- Research workflow: [31541538510](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31541538510)
+- Photo smoke workflow: [31542687299](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31542687299)
+- Quality/delivery workflow: [31542804176](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31542804176)
+- Release: `release-9467de40e52da8ca`
+- Market snapshot: `f14f706c6c4c883d`
+- Research snapshot: `research-1ebeaed172ae3957`
+- Event snapshot: `event-29b154fcefc773a0`
+- Manifest status: `ready`; research mode/scope: `production` / `full`
+
+The photo smoke receipt is intentionally a single-recipient diagnostic and
+uses a synthetic smoke alert identity.  It proves renderer, sendPhoto and
+receipt plumbing, not the content of a live event.  A release-gated production
+delivery must use the release identifiers above.
 
 ## Alert contract and lifecycle
 
@@ -145,7 +123,8 @@ event ledger keeps bounded per-delivery history so a cache eviction cannot
 reset the hourly or per-event budget. `src/alert_caption.py` produces a safe
 caption no longer than 40 Unicode characters above a fixed 1080x1350 photo for
 every formal alert path; production captions remain limited to the existing
-30-character contract.
+40-character photo-caption contract.  The legacy text-only helper remains
+30-character limited and is not used by production photo delivery.
 
 ## Production intelligence binding
 
