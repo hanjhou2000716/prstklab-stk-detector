@@ -310,6 +310,14 @@ incorrectly wrote `complete` alongside failed rows. A provider outage can
 therefore never become a successful empty candidate list or a publishable
 research snapshot.
 
+The current reliability stack continues from that contract:
+
+- #433 records worker exits in a machine-readable failure ledger.
+- #434 makes the investor-facing source-gap count deterministic from
+  `source_health.sources[]`.
+- #435 removes hidden worker-step `continue-on-error`; isolation is retained by
+  the explicit ledger path, and publication remains fail-closed.
+
 ## Research worker failure ledger
 
 The unified research workflow keeps worker isolation while making each
