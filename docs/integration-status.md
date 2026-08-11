@@ -117,6 +117,12 @@ The following changes are prepared but intentionally not merged by the agent:
 - #430 P0 validate complete release lineage in Mini App
 - #431 P1 enforce static asset cache contract
 - #432 P0 repair research scan state after partial provider failures
+- #433 P0 persist research worker failure ledger
+- #434 P0 derive Mini App source-health count from source rows
+- #435 P0 make research worker failures explicit in CI
+- #436 P0 validate source-health gap count contract
+- #437 P0 retry research workers and preserve failure evidence
+- #438 P0 expose bounded research failure evidence in report sources
 
 Merge these in dependency order with **Create a merge commit**.  A module is
 not promoted to `production` in this matrix until its PR is merged and the
