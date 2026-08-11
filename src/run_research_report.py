@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from src.release_manifest import content_snapshot_id
 from src.research_health import assess_research_health
 from src.research_report import build_research_report
+from src.research_scan_failures import apply_scan_failures, load_scan_failures
 
 SCAN_MODES = {"production", "smoke", "debug"}
 
@@ -171,8 +172,10 @@ def main() -> None:
         type=Path,
         help="optional walk-forward JSON; only its validated backtest_release_contract is copied",
     )
+    parser.add_argument("--scan-failures", type=Path)
     args = parser.parse_args()
     report = build_research_report(default_sources(Path(args.data_dir)))
+    apply_scan_failures(report, load_scan_failures(args.scan_failures) if args.scan_failures else [])
     attach_scan_contract(report, args.scan_mode)
     attach_backtest_contract(report, args.backtest_release)
     report["generated_at"] = datetime.now(ZoneInfo("Asia/Taipei")).isoformat()

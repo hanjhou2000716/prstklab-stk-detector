@@ -309,3 +309,16 @@ The report normalizer applies the same correction to legacy summaries that
 incorrectly wrote `complete` alongside failed rows. A provider outage can
 therefore never become a successful empty candidate list or a publishable
 research snapshot.
+
+## Research worker failure ledger
+
+The unified research workflow keeps worker isolation while making each
+non-zero worker exit explicit in a failure ledger. Each worker failure is written
+to `research-artifacts/scan-failures.ndjson` with its market and strategy, then
+passed to `run_research_report --scan-failures`. The report marks that source
+`scan_state=failed`, `candidate_state=data_gap`, and blocks publication while
+preserving the last successful release. This distinguishes a failed scan from
+a successful scan with no candidates and prevents an empty strategy drawer from
+being mistaken for a healthy result. The ledger is diagnostic-only and is not
+used to fabricate rows or scores. Rollback is additive: remove the option and
+ledger step to restore legacy worker behaviour.
