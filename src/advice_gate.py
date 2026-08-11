@@ -21,7 +21,10 @@ def _backtest_is_valid(context: dict[str, Any]) -> tuple[bool, str | None]:
             return False, "invalid_backtest_release"
         return True, None
     if context.get("backtest_release"):
-        return True, None
+        # A bare release ID cannot prove publication state or eligibility. It
+        # may come from a stale candidate row, so keep the advice gate closed
+        # until the structured contract is attached.
+        return False, "invalid_backtest_release"
     return False, "no_backtest_release"
 
 
