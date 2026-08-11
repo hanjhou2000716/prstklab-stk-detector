@@ -63,7 +63,6 @@ def test_alert_contract_rejects_invalid_enum_and_missing_timezone():
     with pytest.raises(ValueError, match="timezone"):
         envelope.validate()
 
-
 def test_caption_fallback_uses_safe_template_when_subject_is_too_long():
     caption = make_caption(
         subject="X" * 200,
@@ -107,4 +106,3 @@ def test_alert_contract_rejects_out_of_range_quality_score():
     )
     with pytest.raises(ValueError, match="data_quality_score"):
         envelope.validate()
-
