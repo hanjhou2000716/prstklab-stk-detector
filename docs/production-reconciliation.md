@@ -12,14 +12,14 @@
 | Source health and research state | `src/research_health.py`, `src/source_health.py`, PRs #306--311 | partial_in_main | verify before extending |
 | Intelligence evidence | `src/market_impact_graph.py`, `src/macro_surprise.py`, PRs #264--289 | production | keep |
 | Offline delivery and CI gates | `.github/workflows/quality.yml`, `src/system_dry_run.py`, PR #290 | production | keep |
-| Renderer recovery | `src/alert_card_renderer.py`, `site/app.js`, PR #323 | smoke_only | keep for explicit `photo_test`; never block scheduled delivery |
-| Telegram production transport | `src/telegram_client.py`, `src/scheduled_delivery.py`, PR #352 | text_production | merge #352 into `main`; PR #351 was merged into a stacked branch, not `main`; photo remains scoped smoke only |
+| Renderer recovery | `src/alert_card_renderer.py`, `site/app.js`, PR #323 | production_photo | scheduled, official-event and emergency delivery render a validated 1080x1350 card and fail closed on renderer errors |
+| Telegram production transport | `src/telegram_client.py`, `src/scheduled_delivery.py`, PRs #346/#427 | photo_production | release-gated `sendPhoto` with a deep-link button; photo smoke remains available for one-recipient diagnostics |
 
 ## Branch / PR inventory
 
 PRs #284--#305 and #312--#323 are merged to `main` and their merge commits are present in the current `origin/main`. PRs #306--#311 are open stacked branches whose scope is represented partially by later merged work. They must not be merged as a stale stack; re-create only demonstrated gaps from latest `main`.
 
-PR #352 (`feat/production-text-main-sync`) is open against `main` and restores the production text-delivery changes onto the actual `main` baseline. PR #351 was merged into `feat/p7-mypy-cleanup` and must not be treated as a `main` merge. Keep #352 open until its checks pass and the user merges it.
+The current `main` baseline already contains the production photo transport. Do not use the older #351/#352 text-transport notes as merge instructions; they are historical stack artifacts. PR #450 is a separate MOPS provider-resilience fix and remains reviewable against `main`.
 
 ## Verification
 
