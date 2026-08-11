@@ -198,8 +198,9 @@ def test_value_drawer_explains_that_mops_history_is_still_being_verified():
     assert "不列入正式璞玉價值候選" in app
 
 
-def test_source_health_investor_count_is_derived_from_source_rows():
+def test_source_health_investor_count_uses_backend_canonical_gap_count():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "const declaredMissing = Number(health.missing_source_count);" in app
     assert "const displayedMissing = missing;" in app
     assert "Math.max(missing, declaredMissing)" not in app
 

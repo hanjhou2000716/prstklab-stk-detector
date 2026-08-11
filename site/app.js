@@ -416,12 +416,14 @@ const renderSourceHealth = (health, snapshot = {}) => {
   }
   const degradedStates = ["critical", "critical_gap", "failed", "degraded_with_fallback", "fallback_active", "partial", "data_gap", "stale", "configuration_missing", "configuration_required"];
   const sourceState = (source) => source.semantic_state || source.state || source.status;
-  const missing = health.sources.filter((source) => degradedStates.includes(sourceState(source))).length;
+  // The backend emits the canonical semantic gap count.  Older snapshots may
+  // not have it, so retain a deterministic compatibility fallback; current
+  // releases must never derive a second, divergent investor count in the UI.
+  const declaredMissing = Number(health.missing_source_count);
+  const missing = Number.isFinite(declaredMissing) && declaredMissing >= 0
+    ? Math.trunc(declaredMissing)
+    : health.sources.filter((source) => degradedStates.includes(sourceState(source))).length;
   const critical = health.sources.filter((source) => ["critical", "critical_gap", "failed", "configuration_missing", "configuration_required"].includes(sourceState(source))).length;
-  // `sources[]` is the single source of truth for the investor count. Older
-  // snapshots may carry a stale aggregate, but it must not make the UI claim
-  // that a healthy source is missing. The raw aggregate remains available to
-  // engineering diagnostics in the snapshot, not in this investor summary.
   const displayedMissing = missing;
   const pending = Number(health.pending_event_count || health.monitor_health?.pending_count || 0);
   const aggregate = health.investor_status || (missing === 0 ? "資料正常" : critical > 0 ? "核心資料不足" : "部分資料降級");
