@@ -7,6 +7,7 @@ from pathlib import Path
 
 from src.batch_download import batches
 from src.public_download import download_daily_batch
+from src.research_scan_state import classify_scan_state
 from src.taiwan_price_action_scan import rank_records
 from src.us_universe import fetch_us_research_universe
 
@@ -46,7 +47,7 @@ def main() -> None:
         "universe_completed": len(records), "universe_failed": len(failed),
         "failed": len(failed), "batch_size": args.batch_size,
         "notice": "美股大型股公開資料研究，不等同 VOO 精確成分股，也不構成買賣建議。",
-        "scan_state": "complete",
+        "scan_state": classify_scan_state(expected=len(universe), completed=len(records), failed=len(failed)),
         "status": "可用" if not failed else "部分缺漏",
         "error_details": failed[:20],
     }, ensure_ascii=False, indent=2), encoding="utf-8")

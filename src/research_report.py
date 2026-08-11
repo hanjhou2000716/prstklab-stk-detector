@@ -82,13 +82,28 @@ def _candidate_state(*, scan_state: str | None, visible: int, data_gap: int | No
 
 def _normalize_scan_state(base: dict[str, Any], *, file_readable: bool) -> str:
     state = str(base.get("scan_state") or "").strip().lower()
+    requested = _int_or_none(base.get("requested"))
+    complete = _int_or_none(base.get("data_complete"))
+    if complete is None:
+        complete = _int_or_none(base.get("complete_records"))
+    failed = _int_or_none(base.get("failed"))
+    if failed is None:
+        failed = _int_or_none(base.get("failed_records"))
+    if failed is None:
+        failed = _int_or_none(base.get("universe_failed"))
+    failed = failed or 0
+    # Older workers wrote ``complete`` before a failed batch was discovered.
+    # Correct the contradiction at the report boundary as a second safety
+    # net; a legacy artifact must not look healthy merely because its writer
+    # used the wrong state.
+    if state == "complete" and (failed > 0 or (
+        requested is not None and complete is not None and complete < requested
+    )):
+        return "building" if (complete or 0) > 0 else "failed"
     if state in {"complete", "building", "failed"}:
         return state
     if not file_readable:
         return "failed"
-    requested = _int_or_none(base.get("requested"))
-    complete = _int_or_none(base.get("data_complete"))
-    failed = _int_or_none(base.get("failed")) or 0
     if requested is not None and complete == requested and failed == 0:
         return "complete"
     if failed:
