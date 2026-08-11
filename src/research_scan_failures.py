@@ -33,6 +33,21 @@ def apply_scan_failures(report: dict[str, Any], failures: list[dict[str, Any]]) 
         source["failed_records"] = max(int(source.get("failed_records") or 0), 1)
         source["blocking_reason"] = "research worker failed; candidate output is unavailable"
         source["candidate_state"] = "data_gap"
+        evidence = next(
+            (item for item in reversed(failures)
+             if (str(item.get("market")), str(item.get("strategy"))) == key),
+            None,
+        )
+        if evidence:
+            # Keep bounded diagnostics for the UI without exposing a traceback
+            # or any provider credential.
+            source["failure_evidence"] = {
+                "attempts": evidence.get("attempts"),
+                "exit_code": evidence.get("exit_code"),
+                "started_at": evidence.get("started_at"),
+                "finished_at": evidence.get("finished_at"),
+                "error": str(evidence.get("error") or "worker failed")[-1200:],
+            }
     report["scan_failures"] = failures
     report["scan_failure_count"] = len(failures)
     report["production_eligible"] = False

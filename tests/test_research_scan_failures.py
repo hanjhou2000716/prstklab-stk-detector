@@ -15,3 +15,17 @@ def test_apply_scan_failures_blocks_publication_without_fabricating_candidates()
     assert result["production_eligible"] is False
     assert result["publish_eligible"] is False
     assert result["scan_failure_count"] == 1
+
+
+def test_apply_scan_failures_exposes_bounded_failure_evidence():
+    report = {"sources": [{"market": "us", "strategy": "value"}]}
+    failures = [{
+        "market": "us", "strategy": "value", "attempts": 2,
+        "exit_code": 3, "started_at": "2026-08-11T00:00:00+00:00",
+        "finished_at": "2026-08-11T00:01:00+00:00", "error": "provider unavailable",
+    }]
+    apply_scan_failures(report, failures)
+    evidence = report["sources"][0]["failure_evidence"]
+    assert evidence["attempts"] == 2
+    assert evidence["exit_code"] == 3
+    assert evidence["error"] == "provider unavailable"
