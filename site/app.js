@@ -863,6 +863,10 @@ const readLastGoodRelease = async () => {
     }
     const snapshot = JSON.parse(saved.artifactTexts["market.json"]);
     if (String(snapshot.snapshot_id || "") !== String(saved.manifest.market_snapshot_id || "")) return null;
+    const research = saved.artifactTexts["research-report.json"] ? JSON.parse(saved.artifactTexts["research-report.json"]) : null;
+    const events = saved.artifactTexts["event-ledger.json"] ? JSON.parse(saved.artifactTexts["event-ledger.json"]) : null;
+    if (saved.manifest.research_snapshot_id && String(research?.snapshot_id || "") !== String(saved.manifest.research_snapshot_id)) return null;
+    if (saved.manifest.event_snapshot_id && String(events?.snapshot_id || "") !== String(saved.manifest.event_snapshot_id)) return null;
     return { ...saved, snapshot };
   } catch (_error) {
     return null;
@@ -896,6 +900,20 @@ const loadPublishedRelease = async () => {
   const snapshot = JSON.parse(marketText);
   if (String(snapshot.snapshot_id || "") !== String(manifest.market_snapshot_id || "")) {
     throw new Error("market snapshot does not match release");
+  }
+  const researchText = artifactTexts["research-report.json"];
+  if (manifest.research_snapshot_id && researchText) {
+    const research = JSON.parse(researchText);
+    if (String(research.snapshot_id || "") !== String(manifest.research_snapshot_id)) {
+      throw new Error("research snapshot does not match release");
+    }
+  }
+  const eventText = artifactTexts["event-ledger.json"];
+  if (manifest.event_snapshot_id && eventText) {
+    const events = JSON.parse(eventText);
+    if (String(events.snapshot_id || "") !== String(manifest.event_snapshot_id)) {
+      throw new Error("event snapshot does not match release");
+    }
   }
   window.releaseManifest = manifest;
   saveLastGoodRelease(manifest, artifactTexts);
