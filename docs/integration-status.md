@@ -126,6 +126,7 @@ The following changes are prepared but intentionally not merged by the agent:
 - #439 P0 show research retry state in Mini App
 - #440 P1 bind research candidates to Instrument Master lineage
 - #441 P1 bind research reports to execution lineage
+- Current follow-up: merge Taiwan offset scan fragments before report production
 
 Merge these in dependency order with **Create a merge commit**.  A module is
 not promoted to `production` in this matrix until its PR is merged and the
