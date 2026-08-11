@@ -93,8 +93,9 @@ def bind_quote_evidence(
     # Identity is resolved at the evidence boundary so every production quote
     # carries the same cross-market semantics.  Unknown symbols are explicit;
     # this must never guess a ticker mapping.
+    master = InstrumentMaster()
     try:
-        instrument = InstrumentMaster().resolve(
+        instrument = master.resolve(
             str(item.get("ticker") or item.get("symbol") or ""),
             market=item.get("market"),
         )
@@ -105,6 +106,11 @@ def bind_quote_evidence(
         item["asset_type"] = instrument.asset_type
         item["instrument_timezone"] = instrument.timezone
         item["instrument_resolution"] = "resolved"
+    # Bind the exact public symbol registry used for resolution.  Unknown
+    # tickers still carry the registry ID but remain explicitly unresolved.
+    registry_artifact = master.artifact()
+    item["instrument_master_id"] = registry_artifact["registry_id"]
+    item["instrument_master_version"] = registry_artifact["schema_version"]
     quality = score_quote(item, now=now)
     item["data_quality_score"] = quality["data_quality_score"]
     item["quality_freshness"] = quality["freshness"]

@@ -1,6 +1,9 @@
+import json
 from datetime import date
+from pathlib import Path
 
 import pytest
+from jsonschema import Draft202012Validator
 
 from src.instrument_master import Instrument, InstrumentMaster
 
@@ -28,3 +31,13 @@ def test_master_round_trip(tmp_path) -> None:
     master.save(path)
     loaded = InstrumentMaster.load(path)
     assert loaded.resolve("^IXIC").instrument_id == "us:nasdaq"
+
+
+def test_master_artifact_is_content_addressed_and_schema_valid() -> None:
+    master = InstrumentMaster()
+    artifact = master.artifact()
+    schema = json.loads((Path("schemas") / "instrument-master.schema.json").read_text(encoding="utf-8"))
+    errors = list(Draft202012Validator(schema).iter_errors(artifact))
+    assert errors == []
+    assert artifact["registry_id"] == master.artifact()["registry_id"]
+    assert len(artifact["instruments"]) == len(master.all())

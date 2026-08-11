@@ -63,3 +63,46 @@ def test_alert_contract_rejects_invalid_enum_and_missing_timezone():
     with pytest.raises(ValueError, match="timezone"):
         envelope.validate()
 
+def test_caption_fallback_uses_safe_template_when_subject_is_too_long():
+    caption = make_caption(
+        subject="X" * 200,
+        change="+9.9%",
+        state="等待官方核對",
+        icon="!",
+    )
+    assert caption == "!｜等待官方核對"
+
+
+def test_alert_contract_rejects_overlong_caption():
+    envelope = AlertEnvelope(
+        alert_id="a1",
+        event_cluster_key="e1",
+        alert_type="briefing",
+        lifecycle_state="detected",
+        severity="normal",
+        title="title",
+        short_caption="x" * 41,
+        release_id="r1",
+        snapshot_id="s1",
+        created_at=NOW.isoformat(),
+    )
+    with pytest.raises(ValueError, match="short_caption"):
+        envelope.validate()
+
+
+def test_alert_contract_rejects_out_of_range_quality_score():
+    envelope = AlertEnvelope(
+        alert_id="a1",
+        event_cluster_key="e1",
+        alert_type="briefing",
+        lifecycle_state="detected",
+        severity="normal",
+        title="title",
+        short_caption="ok",
+        data_quality_score=101,
+        release_id="r1",
+        snapshot_id="s1",
+        created_at=NOW.isoformat(),
+    )
+    with pytest.raises(ValueError, match="data_quality_score"):
+        envelope.validate()

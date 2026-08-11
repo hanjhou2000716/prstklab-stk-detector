@@ -29,6 +29,8 @@ def test_stale_quote_remains_visible_but_is_not_alert_eligible() -> None:
     assert items[0]["price"] == 43119
     assert items[0]["alert_eligible"] is False
     assert items[0]["data_quality_score"] == 0.0
+    assert items[0]["instrument_master_id"].startswith("instrument-")
+    assert items[0]["instrument_master_version"] == 1
 
 
 def test_fresh_cross_checked_quote_is_alert_eligible() -> None:
