@@ -1,10 +1,15 @@
 from src.artifact_contract import (
+    _parse_time,
     validate_events,
     validate_manifest,
     validate_market,
     validate_release,
     validate_research,
 )
+
+
+def test_invalid_timestamp_fails_closed_without_crashing():
+    assert _parse_time("not-an-iso-timestamp") is None
 
 
 def _market(**overrides):
