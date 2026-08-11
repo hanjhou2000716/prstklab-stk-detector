@@ -106,7 +106,14 @@ jobs:
         run: python -m src.research_worker_runner --retries 1 --market us --strategy value --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE"
       - name: Build research report with optional backtest identity
         run: |
-          args=(--scan-mode "$SCAN_MODE")
+          # Bind the published research snapshot to the exact Actions run and
+          # checkout commit.  The report contract still falls back safely for
+          # local runs, but production artifacts must never be anonymous.
+          args=(
+            --scan-mode "$SCAN_MODE"
+            --run-id "github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            --source-commit-sha "$GITHUB_SHA"
+          )
           if [[ -n "$BACKTEST_RELEASE_PATH" ]]; then
             args+=(--backtest-release "$BACKTEST_RELEASE_PATH")
           fi

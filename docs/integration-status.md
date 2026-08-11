@@ -331,6 +331,17 @@ The current reliability stack continues from that contract:
   number of degraded semantic source rows; stale backend aggregates are now a
   release validation error rather than an investor-facing mismatch.
 
+Research workflow lineage is explicit as well: the unified report producer
+receives the GitHub run ID/attempt and checkout SHA, then stamps both onto the
+research report and visible candidates. This prevents a released scan from
+being mistaken for a later rerun or an untracked local artifact.
+
+The offline production E2E now uses an explicit mocked Telegram boundary. It
+does not require `TELEGRAM_CHAT_IDS` or a bot token and cannot contact real
+recipients; renderer, release, deep-link and photo-contract gates remain
+strict. Real delivery configuration is checked only by the separate delivery
+smoke test.
+
 ## Research worker failure ledger
 
 The unified research workflow keeps worker isolation while making each
