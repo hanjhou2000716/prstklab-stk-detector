@@ -123,6 +123,8 @@ The following changes are prepared but intentionally not merged by the agent:
 - #436 P0 validate source-health gap count contract
 - #437 P0 retry research workers and preserve failure evidence
 - #438 P0 expose bounded research failure evidence in report sources
+- #439 P0 show research retry state in Mini App
+- #440 P1 bind research candidates to Instrument Master lineage
 
 Merge these in dependency order with **Create a merge commit**.  A module is
 not promoted to `production` in this matrix until its PR is merged and the
