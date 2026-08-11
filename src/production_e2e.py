@@ -12,7 +12,6 @@ import json
 from collections.abc import Callable
 from typing import Any
 
-from src.delivery_smoke_test import run_smoke_test
 from src.production_acceptance import validate_production_bundle
 from src.system_dry_run import run_dry_run
 
@@ -55,10 +54,26 @@ def _ready_bundle() -> dict[str, dict[str, Any]]:
     }
 
 
+def _mock_delivery_check(*, send: bool = False) -> dict[str, Any]:
+    """Represent the Telegram boundary without reading production settings.
+
+    Offline acceptance must never require a real bot token or recipient list.
+    The production sender is still exercised by its own delivery tests; this
+    boundary only proves that the release pipeline can reach a mocked receipt.
+    """
+    return {
+        "ok": True,
+        "mocked": True,
+        "recipient_count": 1,
+        "errors": [],
+        "sent": bool(send),
+    }
+
+
 def run_offline_e2e(
     *,
     dry_run: Callable[[], dict[str, Any]] = run_dry_run,
-    delivery_check: Callable[..., dict[str, Any]] = run_smoke_test,
+    delivery_check: Callable[..., dict[str, Any]] = _mock_delivery_check,
 ) -> dict[str, Any]:
     """Run deterministic gates and return a non-secret audit report."""
     bundle = _ready_bundle()
@@ -81,6 +96,7 @@ def run_offline_e2e(
         "release_errors": list(release.errors),
         "telegram": {
             "ok": telegram.get("ok") is True,
+            "mocked": telegram.get("mocked") is True,
             "recipient_count": telegram.get("recipient_count", 0),
             "errors": telegram.get("errors", []),
         },

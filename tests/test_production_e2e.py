@@ -35,3 +35,22 @@ def test_ready_fixture_has_complete_research_contract():
     bundle = _ready_bundle()
     assert bundle["research"]["scan_mode"] == "production"
     assert bundle["research"]["universe_completed"] == bundle["research"]["universe_expected"]
+
+
+def test_offline_e2e_uses_mock_delivery_without_production_recipients(monkeypatch):
+    monkeypatch.delenv("TELEGRAM_CHAT_IDS", raising=False)
+    report = run_offline_e2e(
+        dry_run=lambda: {
+            "ok": True,
+            "renderer_available": True,
+            "card_dimensions": {"width": 1080, "height": 1350},
+            "photo_contract": {
+                "dimensions_valid": True,
+                "deep_link_valid": True,
+                "observation_id": "obs-e2e",
+                "delivery_status": "delivered",
+            },
+        }
+    )
+    assert report["ok"] is True
+    assert report["telegram"]["mocked"] is True
