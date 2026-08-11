@@ -114,6 +114,9 @@ The following changes are prepared but intentionally not merged by the agent:
 - #427 P7 Telegram photo receipt observation traceability
 - #428 P3 cross-asset contagion freshness gate
 - #429 P1 publish instrument-master registry with every market snapshot
+- #430 P0 validate complete release lineage in Mini App
+- #431 P1 enforce static asset cache contract
+- #432 P0 repair research scan state after partial provider failures
 
 Merge these in dependency order with **Create a merge commit**.  A module is
 not promoted to `production` in this matrix until its PR is merged and the
@@ -295,3 +298,14 @@ unavailable, or non-alertable quotes remain visible in the context but cannot
 confirm synchronised stress. The output records `signal_evidence`,
 `unusable_inputs`, and a conservative quality score so the Mini App can explain
 why a market-sync confirmation is still pending.
+
+## Research worker state integrity
+
+All five market research workers use the shared
+`src.research_scan_state.classify_scan_state` helper. A batch failure is
+reported as `building` when some rows completed, or `failed` when none did;
+only a run with zero failures and all requested rows completed is `complete`.
+The report normalizer applies the same correction to legacy summaries that
+incorrectly wrote `complete` alongside failed rows. A provider outage can
+therefore never become a successful empty candidate list or a publishable
+research snapshot.

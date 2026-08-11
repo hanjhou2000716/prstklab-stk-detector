@@ -8,6 +8,7 @@ from pathlib import Path
 
 from src.batch_download import batches
 from src.public_download import download_daily_batch
+from src.research_scan_state import classify_scan_state
 from src.resonance_universe import rank_records
 from src.taiwan_universe import load_or_fetch_taiwan_universe
 from src.us_universe import fetch_us_research_universe
@@ -71,7 +72,7 @@ def main() -> None:
         "failed": len(failed), "batch_size": args.batch_size, "offset": args.offset,
         "benchmark": benchmark_symbol, "benchmark_available": benchmark_bars is not None,
         "minimum_conditions": 3, "priority": "四項共振優先；無四項時顯示三項備選",
-        "scan_state": "complete",
+        "scan_state": classify_scan_state(expected=len(universe), completed=len(records), failed=len(failed)),
         "status": "可用" if not failed else "部分缺漏",
         "error_details": failed[:20],
     }, ensure_ascii=False, indent=2), encoding="utf-8")
