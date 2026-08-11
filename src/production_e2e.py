@@ -72,7 +72,8 @@ def run_offline_e2e(
         and pipeline.get("renderer_available") is True
         and pipeline.get("photo_contract", {}).get("delivery_status") != "blocked",
         "photo_contract": pipeline.get("photo_contract", {}).get("dimensions_valid") is True
-        and pipeline.get("photo_contract", {}).get("deep_link_valid") is True,
+        and pipeline.get("photo_contract", {}).get("deep_link_valid") is True
+        and bool(pipeline.get("photo_contract", {}).get("observation_id")),
     }
     return {
         "ok": all(checks.values()),

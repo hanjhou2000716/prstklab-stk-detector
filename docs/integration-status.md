@@ -111,6 +111,8 @@ The following changes are prepared but intentionally not merged by the agent:
 - #424 P3 intelligence evidence contract
 - #425 P4 strategy-registry binding
 - #426 P3 private portfolio boundary
+- #427 P7 Telegram photo receipt observation traceability
+- #428 P3 cross-asset contagion freshness gate
 
 Merge these in dependency order with **Create a merge commit**.  A module is
 not promoted to `production` in this matrix until its PR is merged and the
@@ -286,3 +288,9 @@ than opening an unrelated current event.
 Legacy callers may omit the optional observation ID; such receipts remain
 valid but are explicitly unbound rather than guessed. Rollback is safe because
 the field is additive and defaults to an empty string.
+
+Cross-asset contagion evidence is also freshness-gated: stale, delayed,
+unavailable, or non-alertable quotes remain visible in the context but cannot
+confirm synchronised stress. The output records `signal_evidence`,
+`unusable_inputs`, and a conservative quality score so the Mini App can explain
+why a market-sync confirmation is still pending.
