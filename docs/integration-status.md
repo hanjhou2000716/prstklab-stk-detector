@@ -286,3 +286,9 @@ than opening an unrelated current event.
 Legacy callers may omit the optional observation ID; such receipts remain
 valid but are explicitly unbound rather than guessed. Rollback is safe because
 the field is additive and defaults to an empty string.
+
+Cross-asset contagion evidence is also freshness-gated: stale, delayed,
+unavailable, or non-alertable quotes remain visible in the context but cannot
+confirm synchronised stress. The output records `signal_evidence`,
+`unusable_inputs`, and a conservative quality score so the Mini App can explain
+why a market-sync confirmation is still pending.
