@@ -1,6 +1,6 @@
 import json
 
-from src.run_research_report import attach_backtest_contract, default_sources, write_report
+from src.run_research_report import attach_backtest_contract, attach_instrument_lineage, default_sources, write_report
 
 
 def test_backtest_contract_is_not_embedded_as_full_report(tmp_path):
@@ -59,3 +59,15 @@ def test_write_report_creates_dashboard_json(tmp_path):
     output = tmp_path / "site" / "data" / "research-report.json"
     write_report({"status": "測試"}, output)
     assert json.loads(output.read_text(encoding="utf-8"))["status"] == "測試"
+
+
+def test_instrument_lineage_is_stamped_without_guessing_unknown_symbols():
+    report = {"candidates": [
+        {"ticker": "2330", "market": "taiwan"},
+        {"ticker": "UNKNOWN", "market": "us"},
+    ]}
+    result = attach_instrument_lineage(report)
+    assert result["instrument_master_id"].startswith("instrument-")
+    assert result["candidates"][0]["instrument_id"] == "twse:2330"
+    assert result["candidates"][1]["instrument_resolution"] == "unresolved"
+    assert result["candidates"][1]["instrument_id"] is None

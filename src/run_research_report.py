@@ -8,12 +8,40 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from src.instrument_master import InstrumentMaster
 from src.release_manifest import content_snapshot_id
 from src.research_health import assess_research_health
 from src.research_report import build_research_report
 from src.research_scan_failures import apply_scan_failures, load_scan_failures
 
 SCAN_MODES = {"production", "smoke", "debug"}
+
+
+def attach_instrument_lineage(report: dict[str, Any]) -> dict[str, Any]:
+    """Stamp candidates with the exact public instrument registry used.
+
+    Unknown symbols remain visible as ``unresolved`` research rows; this is
+    lineage metadata, not a reason to invent a mapping or remove a candidate.
+    """
+    master = InstrumentMaster()
+    artifact = master.artifact()
+    for candidate in report.get("candidates", []):
+        if not isinstance(candidate, dict):
+            continue
+        candidate["instrument_master_id"] = artifact["registry_id"]
+        candidate["instrument_master_version"] = artifact["schema_version"]
+        query = str(candidate.get("ticker") or candidate.get("symbol") or "")
+        try:
+            resolved = master.resolve(query, market=candidate.get("market"))
+        except (KeyError, ValueError):
+            candidate["instrument_resolution"] = "unresolved"
+            candidate["instrument_id"] = None
+        else:
+            candidate["instrument_resolution"] = "resolved"
+            candidate["instrument_id"] = resolved.instrument_id
+    report["instrument_master_id"] = artifact["registry_id"]
+    report["instrument_master_version"] = artifact["schema_version"]
+    return report
 
 
 def default_sources(data_dir: Path) -> list[dict[str, str]]:
@@ -176,6 +204,7 @@ def main() -> None:
     args = parser.parse_args()
     report = build_research_report(default_sources(Path(args.data_dir)))
     apply_scan_failures(report, load_scan_failures(args.scan_failures) if args.scan_failures else [])
+    attach_instrument_lineage(report)
     attach_scan_contract(report, args.scan_mode)
     attach_backtest_contract(report, args.backtest_release)
     report["generated_at"] = datetime.now(ZoneInfo("Asia/Taipei")).isoformat()
