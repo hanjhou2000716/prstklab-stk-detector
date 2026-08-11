@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 
 from src.instrument_master import InstrumentMaster
 from src.release_manifest import content_snapshot_id
+from src.research_fragments import merge_taiwan_scan_fragments
 from src.research_health import assess_research_health
 from src.research_report import build_research_report
 from src.research_run_contract import attach_research_run
@@ -206,6 +207,7 @@ def main() -> None:
     parser.add_argument("--run-id", help="optional external workflow run identifier")
     parser.add_argument("--source-commit-sha", help="source commit used for the scan")
     args = parser.parse_args()
+    merge_taiwan_scan_fragments(Path(args.data_dir))
     report = build_research_report(default_sources(Path(args.data_dir)))
     apply_scan_failures(report, load_scan_failures(args.scan_failures) if args.scan_failures else [])
     attach_instrument_lineage(report)
