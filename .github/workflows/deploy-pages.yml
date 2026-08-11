@@ -44,6 +44,9 @@ jobs:
       - name: Build cache-busted static assets
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
+      - name: Validate static asset contract
+        run: |
+          python -m src.asset_contract --root site
       - name: Validate release before Pages upload
         run: |
           python -m src.release_gate --manifest site/data/release-manifest.json
