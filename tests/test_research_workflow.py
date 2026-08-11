@@ -35,8 +35,18 @@ def test_incomplete_research_keeps_last_successful_snapshot_and_uploads_diagnost
     assert "Save last successful research snapshot" in workflow
     assert "Gate research publication and preserve previous success" in workflow
     assert "research-report-latest.json" in workflow
-    assert "keeping the last successful research snapshot" in workflow
+    assert "no public release will be published" in workflow
     assert "steps.research_gate.outputs.publish == 'true'" in workflow
+
+
+def test_incomplete_research_cannot_publish_data_release_after_market_refresh():
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "unified-research-report.yml").read_text(encoding="utf-8")
+
+    publish_marker = "python -m src.data_release --publish --branch \"$DATA_RELEASE_BRANCH\""
+    publish_index = workflow.index(publish_marker)
+    before_publish = workflow[max(0, publish_index - 260):publish_index]
+    assert "steps.research_gate.outputs.publish == 'true'" in before_publish
+    assert "publish=false" in workflow
 
 
 def test_post_close_brief_is_scheduled_for_1445_taipei_time():
