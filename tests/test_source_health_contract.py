@@ -29,6 +29,17 @@ def test_source_health_accepts_successful_empty_scan():
     assert validate_source_health(_health()) == []
 
 
+def test_source_health_accepts_canonical_degraded_aggregate_states():
+    for state in ("no_event", "fallback_active", "secondary_unavailable",
+                  "configuration_missing", "warming", "stale", "partial",
+                  "failed", "critical", "pending"):
+        value = _health(status=state)
+        # The aggregate state may be degraded while the sample source remains
+        # a successful no-event row; the row-level contradiction rules still
+        # apply independently.
+        assert validate_source_health(value) == [], state
+
+
 def test_source_health_rejects_failed_source_hidden_as_no_event():
     value = _health(
         sources=[{

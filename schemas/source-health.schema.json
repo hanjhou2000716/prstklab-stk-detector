@@ -5,7 +5,7 @@
   "required": ["status", "sources", "event_scan"],
   "properties": {
     "checked_at": {"type": ["string", "null"], "format": "date-time"},
-    "status": {"enum": ["healthy", "partial", "warming", "critical"]},
+    "status": {"enum": ["healthy", "no_event", "fallback_active", "secondary_unavailable", "configuration_missing", "warming", "stale", "partial", "failed", "critical", "pending"]},
     "summary": {"type": "string"},
     "missing_source_count": {"type": "integer", "minimum": 0},
     "data_gaps": {"type": "array"},
