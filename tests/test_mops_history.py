@@ -40,10 +40,10 @@ def test_incomplete_history_is_not_cached_as_verified(tmp_path: Path):
     path = tmp_path / "mops.json"
     records, errors = mops_pristine_history(["2330"], path, client=IncompleteClient())
     assert records == {}
-    assert errors == ["2330 MOPS history: incomplete"]
+    assert errors == ["2330 MOPS history: RuntimeError"]
     cached = json.loads(path.read_text(encoding="utf-8"))
     assert "2330" not in cached["records"]
-    assert cached["failures"]["2330"]["error"] == "incomplete_history"
+    assert cached["failures"]["2330"]["error"] == "RuntimeError"
 
 
 def test_parse_eps_report_reads_current_and_comparative_values():
@@ -66,6 +66,34 @@ def test_parse_dividend_history_uses_shareholder_dividend_columns_only():
     </table>
     """
     assert parse_dividend_history(html) == {115: True, 114: False}
+
+
+def test_no_dividend_year_is_complete_history_not_provider_failure(monkeypatch):
+    """A year-specific MOPS 'no records' page is a valid negative fact."""
+
+    monkeypatch.setattr(mops_history, "parse_eps_report", lambda _html: (1.0, 1.0))
+
+    class NoDividendYearClient:
+        def report(self, api_name, company_id, **parameters):
+            if api_name == "t164sb04":
+                year, quarter = int(parameters["year"]), int(parameters["season"])
+                return (
+                    "<table><tr><td>?箸瘥??</td>"
+                    f"<td>{year - 100 + quarter / 10}</td><td>1.0</td></tr></table>"
+                )
+            year = int(parameters["year"])
+            if year == 113:
+                return "<html><body>查無資料</body></html>"
+            return (
+                "<table><tr><td>"
+                f"{year}</td><td>1</td><td></td><td></td><td>0</td><td>0</td>"
+                "<td>0</td><td>0</td><td>1.0</td></tr></table>"
+            )
+
+    record = mops_history.fetch_pristine_history("7769", client=NoDividendYearClient())
+    assert record["history_data_complete"] is True
+    assert record["three_year_dividend_paid"] is False
+    assert 113 not in record["dividend_years"]
 
 
 class _FakeClient:

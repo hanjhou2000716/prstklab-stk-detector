@@ -234,7 +234,10 @@ class MopsPublicClient:
         if api_name in {"t164sb04", "t164sb03"}:
             form.update({"year": str(parameters["year"]), "season": f"{int(parameters['season']):02d}"})
         elif api_name == "t05st09_1":
-            form["year"] = ""
+            # Query one ROC fiscal year at a time.  An explicit "查無資料"
+            # response is a valid zero-dividend observation, not a provider
+            # outage or an incomplete history record.
+            form["year"] = str(parameters.get("year") or "")
         else:
             raise ValueError(f"Unsupported MOPS report: {api_name}")
         report = self.session.post(
@@ -264,7 +267,7 @@ class MopsPublicClient:
         if api_name in {"t164sb04", "t164sb03"}:
             form.update({"year": str(parameters["year"]), "season": f"{int(parameters['season']):02d}"})
         elif api_name == "t05st09_1":
-            form["year"] = ""
+            form["year"] = str(parameters.get("year") or "")
         else:
             raise ValueError(f"Unsupported MOPS report: {api_name}")
         response = self.session.post(
@@ -332,26 +335,34 @@ def fetch_pristine_history(
             break
         time.sleep(REPORT_INTERVAL_SECONDS)
 
-    try:
-        dividends = parse_dividend_history(client.report("t05st09_1", ticker))
-    except (RuntimeError, ValueError) as error:
-        if _is_missing_report(error):
-            missing_periods.append("dividend")
-            dividends = {}
-        else:
+    # The unscoped dividend endpoint commonly returns only the latest two
+    # rows.  Query each required fiscal year explicitly so a "查無資料"
+    # response can be recorded as a real no-dividend result rather than
+    # incorrectly blocking the entire production universe.
+    dividend_results: dict[int, bool] = {}
+    dividend_history_years = [roc_year - offset for offset in range(3)]
+    for dividend_year in dividend_history_years:
+        try:
+            dividend_report = client.report("t05st09_1", ticker, year=dividend_year)
+            dividend_results[dividend_year] = bool(parse_dividend_history(dividend_report).get(dividend_year, False))
+        except (RuntimeError, ValueError):
+            # Unlike a year-specific HTML page containing "查無資料", an
+            # endpoint/transport failure is not evidence of zero dividend.
+            # Preserve fail-closed semantics by letting the ticker fail and
+            # retry on the next batch.
             raise
     annual_years = sorted(annual, reverse=True)[:3]
     quarter_values = [value for _, value in sorted(quarterly.items(), reverse=True)[:4]]
-    dividend_years = sorted(dividends, reverse=True)[:3]
+    dividend_years = [year for year in dividend_history_years if dividend_results.get(year, False)]
     history_data_complete = (
         len(annual_years) >= 3
         and len(quarter_values) >= 4
-        and len(dividend_years) >= 3
+        and all(year in dividend_results for year in dividend_history_years)
     )
     return {
         "three_year_eps_positive": len(annual_years) >= 3 and all(annual[year] > 0 for year in annual_years),
         "four_quarter_eps_positive": len(quarter_values) >= 4 and all(value > 0 for value in quarter_values),
-        "three_year_dividend_paid": len(dividend_years) >= 3 and all(dividends[year] for year in dividend_years),
+        "three_year_dividend_paid": history_data_complete and all(dividend_results[year] for year in dividend_history_years),
         # Current ROE remains sourced from the TWSE latest filing.  A future
         # balance-sheet history enhancement may replace this with a three-year
         # ROE stability check, but it must not be fabricated meanwhile.
@@ -359,6 +370,7 @@ def fetch_pristine_history(
         "annual_eps_years": annual_years,
         "quarter_eps_count": len(quarter_values),
         "dividend_years": dividend_years,
+        "dividend_history_years": dividend_history_years,
         "roe_years": 0,
         "financial_source": "MOPS historical filings (t164sb04/t05st09_1)",
         "history_checked_at": datetime.now(UTC).isoformat(),
