@@ -13,6 +13,7 @@ def test_backtest_contract_is_not_embedded_as_full_report(tmp_path):
             "publication_state": "ready",
             "publish_eligible": True,
             "strategy_registry": [{"strategy_id": "momentum"}],
+            "performance_summary": {"momentum": {"test": {"sharpe": 0.7}}},
             "research_only": True,
         },
     }), encoding="utf-8")
@@ -25,6 +26,7 @@ def test_backtest_contract_is_not_embedded_as_full_report(tmp_path):
     assert report["backtest_release_status"] == "ready"
     assert report["backtest_release_contract"]["backtest_release"] == "backtest-12345678"
     assert "strategies" not in report["backtest_release_contract"]
+    assert report["backtest_release_contract"]["performance_summary"]["momentum"]["test"]["sharpe"] == 0.7
     assert report["candidates"][0]["backtest_release"] == "backtest-12345678"
 
 

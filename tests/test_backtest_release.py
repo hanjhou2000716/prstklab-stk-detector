@@ -31,3 +31,22 @@ def test_backtest_release_blocks_gaps_and_matches_schema():
     assert contract["blocking_reasons"]
     schema = json.loads(Path("schemas/backtest-release.schema.json").read_text(encoding="utf-8"))
     validate(contract, schema)
+
+
+def test_backtest_release_preserves_net_performance_and_audit_provenance():
+    report = _report()
+    report["strategies"]["momentum"]["summary"] = {
+        "test": {
+            "trade_count": 12,
+            "cumulative_net_return_percent": 8.5,
+            "sharpe": 0.71,
+            "max_drawdown_percent": -4.2,
+            "private_internal_field": "must not escape",
+        }
+    }
+    contract = build_backtest_release(report, market="us", config={})
+    assert contract["performance_summary"]["momentum"]["test"]["sharpe"] == 0.71
+    assert "private_internal_field" not in contract["performance_summary"]["momentum"]["test"]
+    assert contract["survivorship_audit"]["status"] == "pass"
+    schema = json.loads(Path("schemas/backtest-release.schema.json").read_text(encoding="utf-8"))
+    validate(contract, schema)

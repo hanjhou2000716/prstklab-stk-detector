@@ -55,11 +55,32 @@ def build_backtest_release(
         }
         for strategy in sorted(strategies)
     ]
+    metric_fields = {
+        "trade_count", "average_net_return_percent", "win_rate_percent",
+        "total_cost_drag_percent", "cost_drag_percent", "cumulative_net_return_percent",
+        "annualized_return_percent", "annualized_volatility_percent", "sharpe",
+        "sortino", "max_drawdown_percent", "calmar", "turnover_proxy",
+    }
+    performance_summary: dict[str, dict[str, dict[str, Any]]] = {}
+    for strategy, result in strategies.items():
+        summaries = result.get("summary") if isinstance(result, dict) else None
+        if not isinstance(summaries, dict):
+            continue
+        performance_summary[strategy] = {
+            str(window): {key: value for key, value in metrics.items() if key in metric_fields}
+            for window, metrics in summaries.items()
+            if isinstance(metrics, dict)
+        }
     identity = {
         "market": market,
         "audit": audit,
         "methodology": report.get("methodology"),
         "strategy_registry": strategy_registry,
+        "performance_summary": performance_summary,
+        "survivorship_audit": {
+            "status": (audit or {}).get("status"),
+            "snapshot_dates": list((audit or {}).get("snapshot_dates") or []),
+        },
     }
     release_id = f"backtest-{hashlib.sha256(_canonical(identity)).hexdigest()[:16]}"
     eligible = not reasons and report.get("status") == "complete"
@@ -70,5 +91,7 @@ def build_backtest_release(
         "publish_eligible": eligible,
         "blocking_reasons": reasons,
         "strategy_registry": strategy_registry,
+        "performance_summary": performance_summary,
+        "survivorship_audit": identity["survivorship_audit"],
         "research_only": True,
     }
