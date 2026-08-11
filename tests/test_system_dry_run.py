@@ -20,6 +20,7 @@ def test_system_dry_run_is_fail_closed_and_traceable():
         "delivery_status": "delivered" if result["renderer_available"] else "blocked",
         "release_id": "dry-release",
         "snapshot_id": "dry-snapshot",
+        "observation_id": "dry-observation",
     }
 
 
