@@ -146,9 +146,18 @@ raw payloads. The store is not yet the primary historical backend.
 ### Raw observation configuration
 
 Set `RAW_OBSERVATION_ROOT` only in a writable worker or scheduled job. Missing
-configuration is reported as disabled, and a store error cannot make a quote
-alertable. Records are content-addressed and append-only; rollback restores a
-previous release manifest rather than deleting individual observations.
+configuration is reported as `state=disabled`, and a store error is reported
+as `state=unavailable`; neither state can make a quote alertable. Records are
+content-addressed and append-only; rollback restores a previous release
+manifest rather than deleting individual observations.
+
+For a production worker that must prove raw capture before publishing, set
+`RAW_OBSERVATION_REQUIRED=true` together with a writable
+`RAW_OBSERVATION_ROOT`. The market artifact then carries an explicit
+`raw_observation` envelope (`required`, `state`, `recorded`, and
+`observation_id`). The release validator rejects `required=true` unless the
+snapshot was recorded successfully. The default remains optional so local
+development and legacy replay jobs do not silently become unpublishable.
 
 ### Adapter quality contract
 

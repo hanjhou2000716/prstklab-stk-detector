@@ -19,6 +19,8 @@
       "properties": {
         "enabled": {"type": "boolean"},
         "recorded": {"type": "boolean"},
+        "required": {"type": "boolean"},
+        "state": {"enum": ["recorded", "disabled", "unavailable"]},
         "observation_id": {"type": ["string", "null"]},
         "reason": {"type": ["string", "null"]}
       },
