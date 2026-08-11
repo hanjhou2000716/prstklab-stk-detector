@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -12,6 +12,7 @@ from src.instrument_master import InstrumentMaster
 from src.release_manifest import content_snapshot_id
 from src.research_health import assess_research_health
 from src.research_report import build_research_report
+from src.research_run_contract import attach_research_run
 from src.research_scan_failures import apply_scan_failures, load_scan_failures
 
 SCAN_MODES = {"production", "smoke", "debug"}
@@ -188,6 +189,7 @@ def attach_scan_contract(report: dict, scan_mode: str) -> dict:
 
 
 def main() -> None:
+    run_started_at = datetime.now(UTC)
     parser = argparse.ArgumentParser(description="台美研究摘要")
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--output", default="site/data/research-report.json")
@@ -201,13 +203,25 @@ def main() -> None:
         help="optional walk-forward JSON; only its validated backtest_release_contract is copied",
     )
     parser.add_argument("--scan-failures", type=Path)
+    parser.add_argument("--run-id", help="optional external workflow run identifier")
+    parser.add_argument("--source-commit-sha", help="source commit used for the scan")
     args = parser.parse_args()
     report = build_research_report(default_sources(Path(args.data_dir)))
     apply_scan_failures(report, load_scan_failures(args.scan_failures) if args.scan_failures else [])
     attach_instrument_lineage(report)
     attach_scan_contract(report, args.scan_mode)
     attach_backtest_contract(report, args.backtest_release)
-    report["generated_at"] = datetime.now(ZoneInfo("Asia/Taipei")).isoformat()
+    finished_at = datetime.now(UTC)
+    attach_research_run(
+        report,
+        scan_mode=args.scan_mode,
+        scan_scope=report["scan_scope"],
+        started_at=run_started_at,
+        finished_at=finished_at,
+        run_id=args.run_id,
+        source_commit_sha=args.source_commit_sha,
+    )
+    report["generated_at"] = finished_at.astimezone(ZoneInfo("Asia/Taipei")).isoformat()
     report["health"] = assess_research_health(report)
     # Bind research candidates to this exact point-in-time artifact.  The
     # release manifest later uses the ID to prevent mixing old research with

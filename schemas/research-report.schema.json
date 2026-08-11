@@ -11,6 +11,23 @@
     "policy_version": {"type": "string", "minLength": 1},
     "scan_mode": {"enum": ["production", "smoke", "debug"]},
     "scan_scope": {"enum": ["full", "bounded"]},
+    "run_id": {"type": "string", "minLength": 1},
+    "source_commit_sha": {"type": ["string", "null"], "minLength": 7},
+    "research_run": {
+      "type": "object",
+      "required": ["run_id", "run_started_at", "run_finished_at", "scan_mode", "scan_scope", "producer"],
+      "properties": {
+        "run_id": {"type": "string", "minLength": 1},
+        "source_commit_sha": {"type": ["string", "null"], "minLength": 7},
+        "run_started_at": {"type": "string", "format": "date-time"},
+        "run_finished_at": {"type": "string", "format": "date-time"},
+        "scan_mode": {"enum": ["production", "smoke", "debug"]},
+        "scan_scope": {"enum": ["full", "bounded"]},
+        "producer": {"type": "string", "minLength": 1},
+        "producer_version": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
     "universe_expected": {"type": "integer", "minimum": 0},
     "universe_scanned": {"type": "integer", "minimum": 0},
     "universe_completed": {"type": "integer", "minimum": 0},
