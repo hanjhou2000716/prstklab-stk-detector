@@ -89,28 +89,20 @@ jobs:
           rm -f data/*-scan*.csv data/*-summary*.json
           : > research-artifacts/scan-failures.ndjson
       - name: 台股動能研究掃描
-        continue-on-error: true
         run: python -m src.run_taiwan_momentum_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json || printf '{"market":"taiwan","strategy":"momentum","exit_code":1}\n' >> research-artifacts/scan-failures.ndjson
       - name: 美股動能研究掃描
-        continue-on-error: true
         run: python -m src.run_us_momentum_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE" || printf '{"market":"us","strategy":"momentum","exit_code":1}\n' >> research-artifacts/scan-failures.ndjson
       - name: 台股裸 K 結構研究掃描
-        continue-on-error: true
         run: python -m src.run_taiwan_price_action_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json || printf '{"market":"taiwan","strategy":"price_action","exit_code":1}\n' >> research-artifacts/scan-failures.ndjson
       - name: 美股裸 K 結構研究掃描
-        continue-on-error: true
         run: python -m src.run_us_price_action_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE" || printf '{"market":"us","strategy":"price_action","exit_code":1}\n' >> research-artifacts/scan-failures.ndjson
       - name: 台股三維共振研究掃描
-        continue-on-error: true
         run: python -m src.run_resonance_scan --market taiwan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json || printf '{"market":"taiwan","strategy":"resonance","exit_code":1}\n' >> research-artifacts/scan-failures.ndjson
       - name: 美股三維共振研究掃描
-        continue-on-error: true
         run: python -m src.run_resonance_scan --market us --limit "$US_LIMIT" --batch-size "$BATCH_SIZE" || printf '{"market":"us","strategy":"resonance","exit_code":1}\n' >> research-artifacts/scan-failures.ndjson
       - name: 台股品質價值覆核
-        continue-on-error: true
         run: python -m src.run_value_quality_scan --market taiwan --batch-size "$BATCH_SIZE" --mops-max-refresh "$MOPS_MAX_REFRESH" || printf '{"market":"taiwan","strategy":"value","exit_code":1}\n' >> research-artifacts/scan-failures.ndjson
       - name: 美股品質價值覆核
-        continue-on-error: true
         run: python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE" || printf '{"market":"us","strategy":"value","exit_code":1}\n' >> research-artifacts/scan-failures.ndjson
       - name: Build research report with optional backtest identity
         run: |
