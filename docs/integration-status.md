@@ -272,3 +272,15 @@ The contract is additive and accepts older market snapshots without an
 `intelligence` block. To roll back, remove the producer's briefing intelligence
 block or revert the validation commit; the existing market, release, and
 Telegram gates remain fail-closed.
+
+## Telegram observation traceability
+
+Photo delivery receipts now carry the source `observation_id` in addition to
+the alert, release and snapshot IDs. Every scheduled brief and official event
+photo call passes the same observation ID that produced the published artifact.
+The Mini App button target includes `alert`, `release`, `snapshot`, and (when
+available) `observation`, so a receipt can be traced to one immutable source
+observation without exposing recipient identifiers or Telegram file IDs.
+Legacy callers may omit the optional observation ID; such receipts remain
+valid but are explicitly unbound rather than guessed. Rollback is safe because
+the field is additive and defaults to an empty string.

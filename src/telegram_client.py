@@ -77,6 +77,10 @@ class PhotoDeliveryReceipt:
     # Kept internal to the process; only a short hash is safe to persist.
     telegram_file_id: str | None = None
     telegram_file_id_hash: str | None = None
+    # Correlates the Telegram receipt with the exact source observation used
+    # to produce the published alert.  Kept last with a default for backward
+    # compatibility with existing positional test fixtures.
+    observation_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -130,13 +134,22 @@ def versioned_mini_app_url(mini_app_url: str) -> str:
 
 
 def alert_mini_app_url(
-    mini_app_url: str, *, alert_id: str, release_id: str, snapshot_id: str, view: str = "event"
+    mini_app_url: str, *, alert_id: str, release_id: str, snapshot_id: str,
+    observation_id: str = "", view: str = "event"
 ) -> str:
     """Build a cache-busting Mini App URL that targets one published artifact."""
     if not mini_app_url.startswith("https://"):
         raise ValueError("Mini App URL must use HTTPS")
     separator = "&" if "?" in mini_app_url else "?"
-    query = urlencode({"alert": alert_id, "release": release_id, "snapshot": snapshot_id, "view": view})
+    query_values = {
+        "alert": alert_id,
+        "release": release_id,
+        "snapshot": snapshot_id,
+        "view": view,
+    }
+    if observation_id:
+        query_values["observation"] = observation_id
+    query = urlencode(query_values)
     return f"{mini_app_url}{separator}{query}"
 
 
@@ -316,6 +329,7 @@ def send_photo_brief(
     *, token: str, chat_id: str, caption: str, photo_path: str | Path,
     mini_app_url: str, alert_id: str, release_id: str, snapshot_id: str,
     telegram_file_id: str | None = None,
+    observation_id: str = "",
 ) -> PhotoDeliveryReceipt:
     """Send one caption-above-photo message with an alert-specific Mini App URL.
 
@@ -329,8 +343,13 @@ def send_photo_brief(
         raise FileNotFoundError(path)
     if not mini_app_url.startswith("https://"):
         raise ValueError("Mini App URL must use HTTPS")
-    separator = "&" if "?" in mini_app_url else "?"
-    target = f"{mini_app_url}{separator}alert={alert_id}&release={release_id}&view=event"
+    target = alert_mini_app_url(
+        mini_app_url,
+        alert_id=alert_id,
+        release_id=release_id,
+        snapshot_id=snapshot_id,
+        observation_id=observation_id,
+    )
     endpoint = f"https://api.telegram.org/bot{token}/sendPhoto"
     recipient_hash = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]
     response = None
@@ -377,6 +396,7 @@ def send_photo_brief(
         return PhotoDeliveryReceipt(
             alert_id, release_id, snapshot_id, recipient_hash, "failed",
             error_class="temporary_transport" if last_error else "temporary_api",
+            observation_id=observation_id,
         )
     try:
         payload = response.json()
@@ -384,7 +404,10 @@ def send_photo_brief(
         payload = {}
     if not response.ok or not payload.get("ok"):
         error_class = "rate_limit" if getattr(response, "status_code", 0) == 429 else "telegram_api"
-        return PhotoDeliveryReceipt(alert_id, release_id, snapshot_id, recipient_hash, "failed", error_class=error_class)
+        return PhotoDeliveryReceipt(
+            alert_id, release_id, snapshot_id, recipient_hash, "failed",
+            error_class=error_class, observation_id=observation_id,
+        )
     raw_result = payload.get("result")
     result: dict[str, object] = raw_result if isinstance(raw_result, dict) else {}
     file_id = None
@@ -404,6 +427,7 @@ def send_photo_brief(
         message_id=message_id,
         telegram_file_id=file_id,
         telegram_file_id_hash=hashlib.sha256(file_id.encode("utf-8")).hexdigest()[:12] if file_id else None,
+        observation_id=observation_id,
     )
 
 
@@ -420,6 +444,7 @@ def summarize_photo_deliveries(deliveries: tuple[PhotoDeliveryReceipt, ...] | li
 def send_photo_briefs(
     *, token: str, chat_ids: tuple[str, ...], caption: str, photo_path: str | Path,
     mini_app_url: str, alert_id: str, release_id: str, snapshot_id: str,
+    observation_id: str = "",
 ) -> tuple[PhotoDeliveryReceipt, ...]:
     """Deliver one identical photo message per recipient without fail-fast.
 
@@ -445,11 +470,13 @@ def send_photo_briefs(
                 release_id=release_id,
                 snapshot_id=snapshot_id,
                 telegram_file_id=shared_file_id,
+                observation_id=observation_id,
             )
         except (TelegramError, OSError, requests.RequestException) as exc:
             receipt = PhotoDeliveryReceipt(
                 alert_id, release_id, snapshot_id, recipient_hash, "failed",
                 error_class=type(exc).__name__.lower(),
+                observation_id=observation_id,
             )
         receipts.append(receipt)
         if receipt.status == "delivered" and receipt.telegram_file_id:
