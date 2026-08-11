@@ -23,7 +23,7 @@ def run_worker(
     strategy: str,
     ledger: Path,
     retries: int = 2,
-    timeout_seconds: int = 20 * 60,
+    timeout_seconds: int | None = None,
     retry_delay_seconds: float = 2.0,
 ) -> int:
     """Run a worker and append one record only when all attempts fail.
@@ -43,7 +43,7 @@ def run_worker(
                 check=False,
                 capture_output=True,
                 text=True,
-                timeout=max(1, int(timeout_seconds)),
+                timeout=(max(1, int(timeout_seconds)) if timeout_seconds else None),
             )
         except subprocess.TimeoutExpired:
             errors.append(f"attempt {attempt}: timeout after {timeout_seconds}s")
@@ -84,7 +84,10 @@ def main() -> int:
     parser.add_argument("--strategy", required=True)
     parser.add_argument("--ledger", type=Path, required=True)
     parser.add_argument("--retries", type=int, default=2)
-    parser.add_argument("--timeout-seconds", type=int, default=20 * 60)
+    parser.add_argument(
+        "--timeout-seconds", type=int, default=0,
+        help="optional per-attempt timeout; 0 defers to the workflow job timeout",
+    )
     parser.add_argument("--retry-delay-seconds", type=float, default=2.0)
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
