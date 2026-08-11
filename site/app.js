@@ -686,7 +686,11 @@ const renderResearch = (snapshot) => {
   const sourceMessage = (strategy, fallback) => {
     const source = sourceFor(strategy);
     if (unavailable) return unavailable;
-    if (source.status === "掃描失敗" || source.scan_state === "failed") return "本輪掃描失敗，等待重試；不沿用舊候選。";
+    if (source.status === "掃描失敗" || source.scan_state === "failed") {
+      const evidence = source.failure_evidence || {};
+      const attempts = Number.isFinite(Number(evidence.attempts)) ? `（已重試 ${Number(evidence.attempts)} 次）` : "";
+      return `本輪掃描失敗${attempts}，等待重試；不沿用舊候選。`;
+    }
     if (source.status === "資料暫時無法取得") return "本輪資料暫時無法取得；不沿用舊候選。";
     if (source.failed > 0) return `本輪有 ${source.failed} 檔資料缺漏，候選僅供檢視。`;
     return fallback;

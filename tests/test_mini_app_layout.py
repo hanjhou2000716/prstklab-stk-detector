@@ -201,3 +201,10 @@ def test_source_health_investor_count_is_derived_from_source_rows():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert "const displayedMissing = missing;" in app
     assert "Math.max(missing, declaredMissing)" not in app
+
+
+def test_research_failure_message_exposes_retry_state_without_raw_errors():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "source.failure_evidence || {}" in app
+    assert "已重試" in app
+    assert "不沿用舊候選" in app
