@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/source-health-artifact.schema.json",
+  "type": "object",
+  "required": ["schema_version", "snapshot_id", "market_snapshot_id", "generated_at", "source_health"],
+  "properties": {
+    "schema_version": {"type": "string", "minLength": 1},
+    "snapshot_id": {"type": "string", "minLength": 1},
+    "market_snapshot_id": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "source_health": {"type": "object", "required": ["status", "sources", "event_scan"]}
+  },
+  "additionalProperties": false
+}

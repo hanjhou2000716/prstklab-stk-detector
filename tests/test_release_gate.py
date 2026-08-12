@@ -149,6 +149,27 @@ def test_release_gate_public_source_health_artifact_is_hash_and_schema_checked(t
     assert any("missing_source_count" in error for error in errors)
 
 
+def test_release_gate_rejects_source_health_binding_mismatch(tmp_path):
+    path, manifest = _ready_release(tmp_path)
+    data = path.parent
+    health = {
+        "schema_version": "1.0",
+        "snapshot_id": "wrong-health",
+        "market_snapshot_id": "market-12345678",
+        "generated_at": "2026-08-04T10:00:00+00:00",
+        "source_health": {"status": "healthy", "sources": [], "event_scan": {"status": "no_event"}},
+    }
+    health_path = data / "source-health.json"
+    health_path.write_text(json.dumps(health), encoding="utf-8")
+    manifest["artifact_paths"]["source-health.json"] = "data/source-health.json"
+    manifest["artifact_hashes"]["source-health.json"] = sha256_file(health_path)
+    write_release_manifest(manifest, path)
+    artifacts, errors = _load_release_artifacts(manifest, site_root=tmp_path / "site")
+    assert artifacts["source-health.json"]["snapshot_id"] == "wrong-health"
+    from src.artifact_contract import validate_source_health_artifact
+    assert any("does not match" in error for error in validate_source_health_artifact(health))
+
+
 def test_release_gate_strict_mode_blocks_legacy_research_snapshot(tmp_path):
     path, manifest = _ready_release(tmp_path)
     research_path = tmp_path / "site" / "data" / "research-report.json"
