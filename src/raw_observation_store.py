@@ -120,10 +120,6 @@ class RawObservationStore:
         destination.parent.mkdir(parents=True, exist_ok=True)
         if not destination.exists():
             temporary = destination.with_name(f".{destination.name}.{observation_id}.tmp")
-            # Re-ensure the parent immediately before the atomic write.  This
-            # matters on ephemeral runners where the configured root may be a
-            # relative path and an external cleanup can remove its tree.
-            temporary.parent.mkdir(parents=True, exist_ok=True)
             temporary.write_bytes(payload_bytes)
             try:
                 temporary.replace(destination)
