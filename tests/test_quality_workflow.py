@@ -49,3 +49,8 @@ def test_public_release_smoke_workflow_is_read_only_and_non_delivery():
     assert "contents: read" in workflow
     assert "src.public_release_smoke" in workflow
     assert "TELEGRAM" not in workflow
+
+
+def test_security_workflow_uses_current_pinned_sbom_action():
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "security.yml").read_text(encoding="utf-8")
+    assert "anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610" in workflow
