@@ -826,14 +826,18 @@ const applyDeepLink = (snapshot) => {
 // GitHub Pages or Telegram's WebView serves different cache generations.
 const cacheBust = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
-const fetchJson = (url, attempt = 0) => fetch(`${url}${url.includes("?") ? "&" : "?"}v=${cacheBust()}`, {
+const fetchResponseWithRetry = (url, attempt = 0) => fetch(`${url}${url.includes("?") ? "&" : "?"}v=${cacheBust()}`, {
   cache: "no-store",
   headers: { "Cache-Control": "no-cache" },
 }).then((response) => {
-  if (response.ok) return response.json();
-  if (attempt < 2) return sleep(250 * (attempt + 1)).then(() => fetchJson(url, attempt + 1));
-  return Promise.reject(new Error(`artifact unavailable: ${url} (HTTP ${response.status})`));
+  if (response.ok) return response;
+  throw new Error(`HTTP ${response.status}`);
+}).catch((error) => {
+  if (attempt < 2) return sleep(250 * (attempt + 1)).then(() => fetchResponseWithRetry(url, attempt + 1));
+  throw new Error(`artifact unavailable: ${url} (${error.message})`);
 });
+
+const fetchJson = (url) => fetchResponseWithRetry(url).then((response) => response.json());
 
 const sha256Hex = async (text) => {
   if (!window.crypto?.subtle) throw new Error("integrity verification unavailable");
@@ -898,11 +902,7 @@ const loadPublishedRelease = async () => {
     if (!relativePath || relativePath.startsWith("/") || relativePath.includes("..")) {
       throw new Error(`invalid artifact path: ${name}`);
     }
-    const response = await fetch(`data/${relativePath.replace(/^data\//, "")}?v=${cacheBust()}`, {
-      cache: "no-store",
-      headers: { "Cache-Control": "no-cache" },
-    });
-    if (!response.ok) throw new Error(`artifact unavailable: ${name}`);
+    const response = await fetchResponseWithRetry(`data/${relativePath.replace(/^data\//, "")}`);
     const text = await response.text();
     if (await sha256Hex(text) !== String(expectedHash)) throw new Error(`artifact hash mismatch: ${name}`);
     artifactTexts[name] = text;
