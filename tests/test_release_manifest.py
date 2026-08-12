@@ -313,6 +313,20 @@ def test_verify_release_files_reports_missing_hash_and_path(tmp_path):
     assert verify_release_files({"artifact_hashes": None, "artifact_paths": None}, root=tmp_path)
 
 
+def test_verify_release_files_requires_all_core_artifacts(tmp_path):
+    errors = verify_release_files(
+        {
+            "artifact_hashes": {"market.json": "a" * 64},
+            "artifact_paths": {"market.json": "data/market.json"},
+        },
+        root=tmp_path,
+    )
+    assert "manifest hash missing: research-report.json" in errors
+    assert "manifest path missing: research-report.json" in errors
+    assert "manifest hash missing: event-ledger.json" in errors
+    assert "manifest path missing: event-ledger.json" in errors
+
+
 def test_manifest_read_object_rejects_invalid_json(tmp_path):
     path = tmp_path / "invalid.json"
     path.write_text("{", encoding="utf-8")
