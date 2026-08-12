@@ -317,8 +317,10 @@ const renderRisk = (risk) => {
     const vixStage = vix.stage || "波動階段待確認";
     const vixState = vix.change_percent > 0 ? "risk-up" : vix.change_percent < 0 ? "risk-down" : "flat";
     const vixPercentile = vix.percentile_status === "available" && vix.percentile !== null && vix.percentile !== undefined
-      ? `｜歷史百分位 ${Number(vix.percentile).toFixed(1)}` : "";
-    return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}｜${escapeHtml(vixStage)}${escapeHtml(vixPercentile)}</small></article></div></section>`;
+      ? `歷史百分位 ${Number(vix.percentile).toFixed(1)}` : "歷史百分位待取得";
+    const vixFetchedAt = traceTime(vix.fetched_at);
+    const vixTime = vixFetchedAt ? `資料時間 ${vixFetchedAt} CST` : "資料時間暫時無法取得";
+    return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}｜${escapeHtml(vixStage)}｜${escapeHtml(vixPercentile)}</small><small class="risk-metric-time">${escapeHtml(vixTime)}</small></article></div></section>`;
   }).join("");
 };
 

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 ROOT = Path(__file__).parents[1]
 
 
@@ -9,8 +10,16 @@ def test_technical_evidence_is_collapsed_by_default():
     assert 'class="technical-details" open' not in page
 
 
-def test_vix_investor_view_does_not_expose_fetch_timestamp_or_missing_percentile_placeholder():
+def test_vix_investor_view_uses_readable_time_instead_of_raw_field_access():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
-    assert "vix.fetched_at" not in app
-    assert "歷史百分位待取得" not in app
-    assert "歷史百分位未取得" not in app
+    assert "const vixFetchedAt = traceTime(vix.fetched_at);" in app
+    assert "toLocaleString(\"zh-TW\"" in app
+
+
+def test_vix_investor_view_exposes_time_stage_and_percentile_state():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
+    assert "資料時間暫時無法取得" in app
+    assert "歷史百分位待取得" in app
+    assert "risk-metric-time" in app
+    assert ".risk-metric-card small.risk-metric-time" in styles
