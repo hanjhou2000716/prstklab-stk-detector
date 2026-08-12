@@ -141,6 +141,7 @@ def normalize_creator_insight(record: dict[str, Any]) -> dict[str, Any]:
         "creator_market_view": _text(record.get("creator_market_view")),
         "creator_strategy_view": _text(record.get("creator_strategy_view")),
         "creator_risk_view": _text(record.get("creator_risk_view")),
+        "consensus_stance": _text(record.get("consensus_stance")) if _text(record.get("consensus_stance")).casefold() in {"risk_on", "risk_off", "neutral"} else "",
         "key_numbers": record.get("key_numbers") if isinstance(record.get("key_numbers"), list) else [],
         "claims": strings("claims"),
         "opinions": strings("opinions"),

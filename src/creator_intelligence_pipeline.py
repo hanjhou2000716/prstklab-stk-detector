@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.creator_consensus import build_creator_consensus
 from src.creator_release import build_creator_release
 from src.email_intelligence import normalize_creator_insight
 
@@ -48,7 +49,11 @@ def build_creator_intelligence_release(
             continue
         seen.add(key)
         insights.append(normalized)
-    artifact = build_creator_release(insights, parent_manifest=parent_manifest)
+    artifact = build_creator_release(
+        insights,
+        parent_manifest=parent_manifest,
+        creator_consensus=build_creator_consensus(insights),
+    )
     return {
         "artifact": artifact,
         "accepted_count": len(insights),

@@ -20,6 +20,7 @@
     "key_takeaways": {"type": "array", "items": {"type": "string"}},
     "claims": {"type": "array", "items": {"type": "string"}},
     "opinions": {"type": "array", "items": {"type": "string"}},
+    "consensus_stance": {"enum": ["", "risk_on", "risk_off", "neutral"]},
     "verification_state": {"enum": ["verified", "partially_verified", "unverified", "contradicted", "not_applicable"]},
     "evidence_alignment": {"enum": ["aligned", "partially_aligned", "not_verifiable", "market_divergent"]},
     "summary_image_available": {"type": "boolean"},
