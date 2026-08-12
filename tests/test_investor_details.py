@@ -1,7 +1,5 @@
 from pathlib import Path
 
-
-
 ROOT = Path(__file__).parents[1]
 
 
@@ -11,7 +9,7 @@ def test_technical_evidence_is_collapsed_by_default():
     assert 'class="technical-details" open' not in page
 
 
-def test_vix_investor_view_uses_readable_time_instead_of_raw_field_access():
+def test_vix_investor_view_uses_readable_time():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert "const vixFetchedAt = traceTime(vix.fetched_at);" in app
     assert "toLocaleString(\"zh-TW\"" in app
