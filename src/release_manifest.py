@@ -382,6 +382,16 @@ def build_release_manifest(
         else []
     )
     creator_status = "ready" if isinstance(creator_artifact, dict) and not creator_errors else ("unavailable" if isinstance(creator_artifact, dict) else "not_available")
+    creator_path: Path | None = None
+    if isinstance(creator_artifact, dict):
+        creator_path = root / "site" / "data" / "creator-release.json"
+        try:
+            _write_normalized_artifact(creator_path, creator_artifact)
+            resolved["creator-release.json"] = creator_path
+            loaded["creator-release.json"] = creator_artifact
+            hashes["creator-release.json"] = sha256_file(creator_path)
+        except OSError as exc:
+            errors.append(f"cannot persist/hash artifact {creator_path.as_posix()}: {type(exc).__name__}")
     public_paths = {
         name: (path.relative_to(root / "site").as_posix() if path.is_relative_to(root / "site") else path.as_posix())
         for name, path in resolved.items()
