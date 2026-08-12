@@ -35,7 +35,7 @@ def _usable_change(item: dict[str, Any] | None) -> float | None:
         return None
 
 
-def _regime_factors(items: dict[str, dict[str, Any]], risk: dict[str, Any]) -> dict[str, float]:
+def _regime_factors(items: dict[str, dict[str, Any]], risk: dict[str, Any]) -> dict[str, float | int | None]:
     """Build conservative factor evidence from timestamped public quotes.
 
     Missing factors are intentionally omitted; ``classify_regime`` exposes the
