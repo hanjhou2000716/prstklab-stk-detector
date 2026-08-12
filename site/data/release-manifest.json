@@ -1,7 +1,7 @@
 {
-  "release_id": "release-6f5fa1398a936efa",
-  "created_at": "2026-08-12T14:03:14.758853+00:00",
-  "market_snapshot_id": "4d3e9ac29feffb43",
+  "release_id": "release-be3d1dfe3e988b1a",
+  "created_at": "2026-08-12T22:02:15.205126+00:00",
+  "market_snapshot_id": "89b59d9570264584",
   "research_snapshot_id": "research-acddbf45ffd6e4db",
   "event_snapshot_id": "event-f67c25c9f5e6f24d",
   "backtest_release": null,
@@ -14,10 +14,10 @@
     "events": "1"
   },
   "artifact_hashes": {
-    "market.json": "3ba8bfec4a08d3f1b218f13de1b11ecf1ba514bac0ab828ecad16d9efcbc8fbd",
+    "market.json": "09a3422156def65dbe1e4fdc32dbcd55e2371ce1a957c5965b2bc2c5ec794fd3",
     "research-report.json": "92a292fd2cb87949f22d532ac5d763d9f5c8ebbc9fde526ab200e1677b48afd9",
     "event-ledger.json": "5f133e7e7b2bb9f489589b00c571b98390c8b547a672d3931290b444b6e30c40",
-    "source-health.json": "b423b0ee70359c41b9aec78741f4a391f5f11e41fb33e7452c6066881aa3a5eb"
+    "source-health.json": "b6d1163b71e5b35b368acb2d761c1ea9c9c92b8375cd1207b9f69dd00745cab1"
   },
   "artifact_paths": {
     "market.json": "data/market.json",
@@ -26,11 +26,16 @@
     "source-health.json": "data/source-health.json"
   },
   "normalization_notes": [
-    "events: snapshot_id=deterministic"
+    "market: indices[1].technical_context_stale=true"
   ],
   "research_freshness": "fresh",
   "research_fallback_used": false,
   "research_fallback_reason": null,
+  "creator_release_id": null,
+  "creator_status": "not_available",
+  "creator_validation_errors": [],
+  "creator_artifact_hash": null,
+  "creator_input_hash": null,
   "status": "ready",
   "validation_errors": []
 }
