@@ -53,3 +53,6 @@ def test_briefing_forwards_external_observations_to_conservative_risk_engine():
     risk = briefing["intelligence"]["external_event_risk"]
     assert risk["status"] == "pending"
     assert risk["score"]["prstk_risk_level"] == "R2"
+    assert risk["unified_events"][0]["lifecycle_state"] == "pending_confirmation"
+    assert risk["unified_events"][0]["notification"]["allowed"] is False
+    assert risk["pending_reasons"]

@@ -6,6 +6,7 @@ from typing import Any
 
 from src.advice_gate import build_explainability_card, evaluate_advice_gate
 from src.cross_asset_risk import detect_contagion
+from src.external_event_pipeline import build_external_event
 from src.external_event_risk import cluster_external_events, notification_decision, score_prstk_risk
 from src.financialjuice_contract import normalize_financialjuice
 from src.market_impact_graph import build_market_impact_graph
@@ -55,7 +56,8 @@ def build_intelligence_context(
     advice_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     observations_list = list(observations or [])
-    external_clusters = cluster_external_events(list(external_observations or []))
+    external_input = list(external_observations or [])
+    external_clusters = cluster_external_events(external_input)
     external_risk: dict[str, Any] = {"status": "not_available", "clusters": []}
     if external_clusters:
         first_cluster = external_clusters[0]
@@ -83,6 +85,22 @@ def build_intelligence_context(
         }
         if financialjuice is not None:
             external_risk["financialjuice"] = financialjuice
+        unified_events = [
+            build_external_event(
+                item,
+                source_observations=[other for other in external_input if other is not item],
+                official_confirmed=bool(event.get("official_confirmed")),
+                market_sync_confirmed=bool(event.get("market_sync_confirmed")),
+            )
+            for item in external_input
+            if isinstance(item, dict)
+        ]
+        external_risk["unified_events"] = unified_events
+        external_risk["pending_reasons"] = sorted({
+            reason
+            for unified in unified_events
+            for reason in unified.get("pending_reasons", [])
+        })
     graph = build_market_impact_graph(event, observations_list)
     surprise: dict[str, Any]
     if macro is None:
