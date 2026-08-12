@@ -9,7 +9,8 @@ from typing import Any
 def aggregate_source_health(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
     rows = list(records)
     total = len(rows)
-    semantic = lambda row: str(row.get("semantic_state") or row.get("state") or row.get("status", "")).lower()
+    def semantic(row: dict[str, Any]) -> str:
+        return str(row.get("semantic_state") or row.get("state") or row.get("status", "")).lower()
     successful = sum(semantic(row) in {"ok", "healthy", "success", "no_event"} for row in rows)
     # ``state= no_event`` is an internal compatibility field on legacy rows;
     # the investor count is based on an explicit provider status only.
