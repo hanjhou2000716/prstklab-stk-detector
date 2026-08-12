@@ -15,6 +15,7 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import requests
 
+from src.asset_contract import validate_assets
 from src.artifact_contract import validate_release, validate_source_health_artifact
 from src.production_acceptance import validate_production_bundle
 from src.release_manifest import verify_release_files
@@ -231,6 +232,12 @@ def verify_release_for_delivery(
     # Manifest artifact paths are relative to the Pages root (site/).
     site_root = path.parent.parent if path.parent.name == "data" else path.parent
     errors.extend(verify_release_files(manifest, root=site_root))
+    # A Pages release is not deliverable with a mixed-generation static shell.
+    # Keep legacy rollback fixtures readable when no asset manifest exists,
+    # but fail closed whenever a publisher has emitted one.
+    asset_manifest = site_root / "asset-manifest.json"
+    if asset_manifest.is_file():
+        errors.extend(validate_assets(site_root))
     artifacts, artifact_errors = _load_release_artifacts(manifest, site_root=site_root)
     errors.extend(artifact_errors)
     if not artifact_errors and not errors:
