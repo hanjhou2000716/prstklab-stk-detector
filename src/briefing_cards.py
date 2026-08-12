@@ -41,7 +41,7 @@ def _regime_factors(items: dict[str, dict[str, Any]], risk: dict[str, Any]) -> d
     Missing factors are intentionally omitted; ``classify_regime`` exposes the
     resulting gaps instead of treating a single index move as a full regime.
     """
-    factors: dict[str, float] = {}
+    factors: dict[str, float | int | None] = {}
     equity_tickers = ("TAIEX", "NASDAQ", "SOX", "NIKKEI", "KOSPI")
     equity_moves = [move for ticker in equity_tickers if (move := _usable_change(items.get(ticker))) is not None]
     if equity_moves:
@@ -77,7 +77,10 @@ def _contagion_inputs(items: dict[str, dict[str, Any]], risk: dict[str, Any]) ->
         value.get("vix") for value in risk.values()
         if isinstance(value, dict) and isinstance(value.get("vix"), dict)
     ]
-    vix = next((item for item in vix_items if _usable_change(item) is not None), vix_items[0] if vix_items else {})
+    vix: dict[str, Any] = next(
+        (item for item in vix_items if _usable_change(item) is not None),
+        vix_items[0] if vix_items else {},
+    )
     usd = items.get("DXY") or {}
     return {"equities": equities, "vix": vix, "usd": usd}
 
