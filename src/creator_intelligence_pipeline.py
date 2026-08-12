@@ -15,6 +15,7 @@ def build_creator_intelligence_release(
     records: list[dict[str, Any]],
     *,
     parent_manifest: dict[str, Any],
+    history_store: Any | None = None,
 ) -> dict[str, Any]:
     """Normalize already-sanitized records and build one lineage-bound artifact.
 
@@ -49,6 +50,11 @@ def build_creator_intelligence_release(
             continue
         seen.add(key)
         insights.append(normalized)
+    history_recorded_count = 0
+    if history_store is not None:
+        for insight in insights:
+            history_store.append(insight)
+            history_recorded_count += 1
     artifact = build_creator_release(
         insights,
         parent_manifest=parent_manifest,
@@ -60,6 +66,7 @@ def build_creator_intelligence_release(
         "dropped_count": len(dropped),
         "dropped_reasons": dropped,
         "source_state": "available" if insights else "no_creator_insights",
+        "history_recorded_count": history_recorded_count,
     }
 
 
