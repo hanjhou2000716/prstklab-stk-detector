@@ -46,6 +46,42 @@ def test_adapter_returns_provenance_and_normalizes_payload() -> None:
     assert adapter.health()["status"] == "healthy"
 
 
+def test_adapter_exposes_shared_normalize_and_health_quality_contract() -> None:
+    adapter = JsonSourceAdapter(
+        AdapterConfig(provider="demo", endpoint="https://example.test/data"),
+        parser=lambda payload: {"value": int(payload["value"])},
+        transport=lambda url, **kwargs: FakeResponse(200, {"value": "7"}),
+    )
+    assert adapter.normalize({"value": "3"}) == {"value": 3}
+    observation = adapter.fetch()
+    health = adapter.health()
+    assert health["source_tier"] == "public-market"
+    assert health["source_url"] == "https://example.test/data"
+    assert health["freshness"] == "fresh"
+    assert health["data_quality_score"] == 85.0
+    assert health["display_eligible"] is True
+    assert health["alert_eligible"] is False
+    assert health["last_observation_id"] == observation.observation_id
+
+
+def test_failed_latest_request_cannot_inherit_previous_health_quality() -> None:
+    responses = [FakeResponse(200, {"value": 1}), FakeResponse(503, {})]
+    adapter = JsonSourceAdapter(
+        AdapterConfig(provider="demo", endpoint="https://example.test/data", max_retries=0),
+        transport=lambda url, **kwargs: responses.pop(0),
+    )
+    adapter.fetch()
+    with pytest.raises(AdapterError):
+        adapter.fetch()
+    health = adapter.health()
+    assert health["status"] == "failed"
+    assert health["freshness"] == "unavailable"
+    assert health["data_quality_score"] == 0.0
+    assert health["display_eligible"] is False
+    assert health["alert_eligible"] is False
+    assert "latest_request_failed" in health["quality_reasons"]
+
+
 def test_adapter_provenance_exposes_conservative_quality_contract() -> None:
     adapter = JsonSourceAdapter(
         AdapterConfig(provider="demo", endpoint="https://example.test/data"),

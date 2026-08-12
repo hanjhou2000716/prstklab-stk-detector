@@ -21,3 +21,5 @@ def test_health_keeps_last_success_observation_provenance() -> None:
     assert health["last_success_observation_id"] == observation.observation_id
     assert health["last_success_payload_hash"] == observation.payload_hash
     assert health["last_success_http_status"] == 200
+    assert health["last_observation_id"] == observation.observation_id
+    assert health["data_quality_score"] == 85.0
