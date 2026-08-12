@@ -17,6 +17,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from src.artifact_contract import validate_release
+from src.creator_release import validate_creator_release
 from src.production_acceptance import (
     production_research_contract_errors,
     validate_production_bundle,
@@ -266,6 +267,7 @@ def build_release_manifest(
     allow_stale_research: bool = False,
     research_fallback_reason: str | None = None,
     max_research_age_hours: float = 24.0,
+    creator_artifact: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a manifest without fabricating readiness.
 
@@ -356,6 +358,7 @@ def build_release_manifest(
     market_id = content_snapshot_id(market, "market") if market else ""
     research_id = content_snapshot_id(research, "research") if research else ""
     event_id = content_snapshot_id(events, "event") if events else ""
+    creator_hash = hashlib.sha256(_canonical_json(creator_artifact)).hexdigest() if isinstance(creator_artifact, dict) else None
     policy = str(policy_version or os.getenv("POLICY_VERSION") or "2026.08")
     created_at = datetime.now(UTC).isoformat()
     release_material = {
@@ -369,6 +372,16 @@ def build_release_manifest(
         "policy_version": policy,
     }
     release_id = f"release-{hashlib.sha256(_canonical_json(release_material)).hexdigest()[:16]}"
+    creator_errors = (
+        validate_creator_release(creator_artifact, parent_manifest={
+            "release_id": release_id,
+            "market_snapshot_id": market_id,
+            "event_snapshot_id": event_id,
+        })
+        if isinstance(creator_artifact, dict)
+        else []
+    )
+    creator_status = "ready" if isinstance(creator_artifact, dict) and not creator_errors else ("unavailable" if isinstance(creator_artifact, dict) else "not_available")
     public_paths = {
         name: (path.relative_to(root / "site").as_posix() if path.is_relative_to(root / "site") else path.as_posix())
         for name, path in resolved.items()
@@ -396,6 +409,10 @@ def build_release_manifest(
         "research_freshness": "unknown",
         "research_fallback_used": fallback_applied,
         "research_fallback_reason": fallback_reason,
+        "creator_release_id": (creator_artifact or {}).get("release_id") if isinstance(creator_artifact, dict) else None,
+        "creator_status": creator_status,
+        "creator_validation_errors": creator_errors,
+        "creator_artifact_hash": creator_hash,
         "status": "invalid",
     }
     if fallback_applied:
