@@ -54,3 +54,14 @@ def test_configuration_missing_is_visible_but_not_runtime_failure():
     assert health["runtime_failure_count"] == 1
     assert health["observability"]["configuration_missing_count"] == 1
     assert health["observability"]["failure_count"] == 1
+
+
+def test_partial_display_with_missing_key_provider_status_is_configuration_gap():
+    health = _health([{
+        "key": "fred", "label": "FRED", "status": "partial",
+        "state": "configuration_required", "provider_status": "missing_api_key",
+    }])
+    item = next(item for item in health["sources"] if item["key"] == "fred")
+    assert item["semantic_state"] == "configuration_missing"
+    assert health["configuration_missing_count"] == 1
+    assert health["runtime_failure_count"] == 0
