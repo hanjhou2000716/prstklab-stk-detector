@@ -19,6 +19,18 @@ def _backtest_is_valid(context: dict[str, Any]) -> tuple[bool, str | None]:
             return False, "invalid_backtest_release"
         if contract.get("publication_state") != "ready" or contract.get("publish_eligible") is not True:
             return False, "invalid_backtest_release"
+        registry = contract.get("strategy_registry")
+        if not isinstance(registry, list) or not registry:
+            return False, "invalid_strategy_registry"
+        strategy_id = context.get("strategy") or context.get("strategy_id")
+        if strategy_id is not None:
+            registry_ids = {
+                str(row.get("strategy_id"))
+                for row in registry
+                if isinstance(row, dict) and row.get("strategy_id")
+            }
+            if str(strategy_id) not in registry_ids:
+                return False, "invalid_strategy_registry"
         return True, None
     if context.get("backtest_release"):
         # A bare release ID cannot prove publication state or eligibility. It
