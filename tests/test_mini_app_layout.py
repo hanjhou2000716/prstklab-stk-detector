@@ -205,6 +205,12 @@ def test_source_health_investor_count_uses_backend_canonical_gap_count():
     assert "Math.max(missing, declaredMissing)" not in app
 
 
+def test_source_health_rows_use_the_same_canonical_state_as_the_aggregate():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "const sourceState = (source) => source.semantic_state || source.state || source.status;" in app
+    assert "const state = source.semantic_state || source.state || source.status;" in app
+
+
 def test_research_failure_message_exposes_retry_state_without_raw_errors():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert "source.failure_evidence || {}" in app
