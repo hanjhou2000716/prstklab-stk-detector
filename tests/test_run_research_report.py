@@ -28,6 +28,19 @@ def test_backtest_contract_is_not_embedded_as_full_report(tmp_path):
     assert "strategies" not in report["backtest_release_contract"]
     assert report["backtest_release_contract"]["performance_summary"]["momentum"]["test"]["sharpe"] == 0.7
     assert report["candidates"][0]["backtest_release"] == "backtest-12345678"
+    assert "strategy_registry" not in report["candidates"][0]
+
+
+def test_backtest_registry_row_is_stamped_on_matching_candidate(tmp_path):
+    artifact = tmp_path / "walk-forward.json"
+    artifact.write_text(json.dumps({
+        "backtest_release_contract": {
+            "backtest_release": "bt1", "publication_state": "ready", "publish_eligible": True,
+            "strategy_registry": [{"strategy_id": "value", "strategy_version": "v1", "data_version": "d1", "backtest_release": "bt1", "parameter_hash": "p", "universe_version": "u", "code_commit": "c"}],
+        },
+    }), encoding="utf-8")
+    report = attach_backtest_contract({"candidates": [{"strategy": "value"}]}, artifact)
+    assert report["candidates"][0]["strategy_registry"]["strategy_id"] == "value"
 
 
 def test_missing_or_blocked_backtest_stays_explicitly_unavailable(tmp_path):
