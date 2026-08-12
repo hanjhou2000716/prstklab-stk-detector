@@ -346,3 +346,13 @@ a successful scan with no candidates and prevents an empty strategy drawer from
 being mistaken for a healthy result. The ledger is diagnostic-only and is not
 used to fabricate rows or scores. Rollback is additive: remove the option and
 ledger step to restore legacy worker behaviour.
+
+## Production research semantic gate
+
+The production acceptance gate rejects research artifacts whose timestamps,
+provider state, and candidate state contradict one another. A source cannot be
+`complete` while claiming an unavailable provider or a `data_unavailable`,
+`failed`, or `building` candidate state; `no_candidates` must have zero visible
+rows. The report generation time may not be materially later than its recorded
+run finish time. These checks prevent a partial or stale research artifact from
+being repackaged into a ready market release.
