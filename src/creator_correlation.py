@@ -87,9 +87,10 @@ def correlate_creator_insight(
     creator_tickers = _strings(insight.get("tickers"))
     creator_sectors = _strings(insight.get("sectors"))
     topic_tokens = _strings(insight.get("topics"))
+    market_tickers: set[str] = set()
+    market_sectors: set[str] = set()
     if not isinstance(market_snapshot, dict) and not isinstance(research_snapshot, dict):
         state, reason = "not_comparable", "market_and_research_snapshots_missing"
-        market_tickers, market_sectors = set(), set()
     elif not isinstance(market_snapshot, dict):
         state, reason = "awaiting_market", "market_snapshot_missing"
         market_tickers, market_sectors = set(), set()
@@ -109,6 +110,7 @@ def correlate_creator_insight(
             reason = "explicit_entity_match" if state == "aligned" else "no_explicit_entity_match"
     matched_tickers = sorted(creator_tickers & market_tickers)
     matched_sectors = sorted(creator_sectors & market_sectors)
+    correlation_time = _time(as_of)
     return {
         "correlation_state": state,
         "reason": reason,
@@ -117,7 +119,7 @@ def correlate_creator_insight(
         "creator_topics": sorted(topic_tokens),
         "market_snapshot_id": market_id,
         "research_snapshot_id": research_id,
-        "as_of": _time(as_of).isoformat() if _time(as_of) else now.isoformat(),
+        "as_of": correlation_time.isoformat() if correlation_time else now.isoformat(),
         "evidence": [
             item for item in (
                 "market_snapshot" if market_id else "",

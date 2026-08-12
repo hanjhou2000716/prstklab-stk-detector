@@ -45,7 +45,8 @@ def normalize_railway_health(
             "restart_recommended": False, "secret_values_exposed": False,
         }
     current = _time(now) or datetime.now(UTC)
-    components = payload.get("components") if isinstance(payload.get("components"), dict) else {}
+    raw_components = payload.get("components")
+    components: dict[str, Any] = raw_components if isinstance(raw_components, dict) else {}
     safe_components: dict[str, dict[str, Any]] = {}
     retryable = False
     configuration_missing = False
@@ -78,7 +79,9 @@ def normalize_railway_health(
         or payload.get("last_success_at")
     )
     heartbeat_age = (current - heartbeat).total_seconds() if heartbeat else None
-    stale = heartbeat is None or heartbeat_age > max(1, int(heartbeat_timeout_seconds))
+    stale = heartbeat is None or (
+        heartbeat_age is not None and heartbeat_age > max(1, int(heartbeat_timeout_seconds))
+    )
     if failed:
         status = "failed"
     elif configuration_missing and not retryable:
