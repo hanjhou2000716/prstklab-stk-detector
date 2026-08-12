@@ -1,0 +1,40 @@
+from src.creator_source_adapters import parse_creator_template
+
+
+def test_known_template_splits_fact_and_opinion_without_guessing() -> None:
+    result = parse_creator_template(
+        source="haojiao",
+        sender="digest@example.invalid",
+        subject="Episode 42",
+        body="""Title: Semiconductor cycle\nFact: Issuer filing reports flat revenue.\nOpinion: Market may remain volatile.\nRisk: Wait for official guidance.""",
+        message_id="msg-42",
+    )
+    assert result["parse_status"] == "parsed"
+    assert result["claims"] == ["Issuer filing reports flat revenue."]
+    assert result["opinions"] == ["Market may remain volatile.", "Wait for official guidance."]
+    assert result["verification_state"] == "unverified"
+    assert result["public_safe"] is True
+    assert "body" not in result
+
+
+def test_unknown_template_is_explicit_and_not_guessed() -> None:
+    result = parse_creator_template(
+        source="gooaye",
+        sender="digest@example.invalid",
+        subject="Episode 43",
+        body="A free-form paragraph without labelled sections.",
+        message_id="msg-43",
+    )
+    assert result["parse_status"] == "unsupported_template"
+    assert result["failure_reason"] == "missing_fact_or_opinion_sections"
+    assert result["template_fingerprint"]
+
+
+def test_wrong_source_fails_closed() -> None:
+    result = parse_creator_template(
+        source="unknown",
+        sender="digest@example.invalid",
+        subject="Episode 44",
+        body="Title: x\nFact: y",
+    )
+    assert result["parse_status"] == "invalid_source"
