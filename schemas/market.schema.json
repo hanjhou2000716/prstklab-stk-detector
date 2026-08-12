@@ -36,6 +36,10 @@
       },
       "additionalProperties": true
     },
+    "source_catalog": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/sourceCatalogItem"}
+    },
     "indices": {"type": "array", "items": {"$ref": "#/$defs/quote"}},
     "quotes": {"type": "array", "items": {"$ref": "#/$defs/quote"}},
     "source_health": {"type": "object"}
@@ -55,6 +59,20 @@
         "freshness": {"type": "string"},
         "stale_used": {"type": "boolean"},
         "quote_delayed": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    },
+    "sourceCatalogItem": {
+      "type": "object",
+      "required": ["provider", "endpoint", "source_tier", "adapter_contract_version", "provenance_fields", "health_fields", "alert_policy"],
+      "properties": {
+        "provider": {"type": "string", "minLength": 1},
+        "endpoint": {"type": "string", "format": "uri"},
+        "source_tier": {"enum": ["official", "public-market", "discovery"]},
+        "adapter_contract_version": {"type": "integer", "minimum": 1},
+        "provenance_fields": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1},
+        "health_fields": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1},
+        "alert_policy": {"enum": ["crosscheck_required", "display_only"]}
       },
       "additionalProperties": true
     }
