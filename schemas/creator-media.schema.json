@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/creator-media.schema.json",
+  "type": "object",
+  "required": ["media_id", "mime_type", "byte_size", "sha256", "availability", "storage_scope", "public_safe"],
+  "properties": {
+    "media_id": {"type": "string"},
+    "mime_type": {"type": "string"},
+    "byte_size": {"type": "integer", "minimum": 0},
+    "sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "availability": {"enum": ["private_ready", "unavailable"]},
+    "storage_scope": {"const": "private"},
+    "validation_errors": {"type": "array", "items": {"type": "string"}},
+    "public_safe": {"const": true}
+  },
+  "additionalProperties": false
+}
