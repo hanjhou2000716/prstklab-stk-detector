@@ -5,6 +5,7 @@ from src.artifact_contract import (
     validate_market,
     validate_release,
     validate_research,
+    validate_source_health,
 )
 
 
@@ -43,6 +44,42 @@ def test_market_rejects_stale_live_and_source_mismatch():
     errors = validate_market(market)
     assert any("stale_used" in error for error in errors)
     assert any("source_domain" in error for error in errors)
+
+
+def _source_health(**overrides):
+    document = {
+        "status": "partial",
+        "sources": [{"key": "official_events", "status": "healthy", "semantic_state": "healthy"}],
+        "event_scan": {"status": "no_event", "has_events": False},
+        "observability": {"failure_count": 0, "no_event_count": 1},
+    }
+    document.update(overrides)
+    return document
+
+
+def test_source_health_accepts_explicit_scan_failed_state():
+    health = _source_health(
+        event_scan={"status": "scan_failed", "has_events": False, "detail": "timeout"},
+        sources=[{"key": "official_events", "status": "scan_failed", "semantic_state": "failed"}],
+    )
+    assert not any("event_scan" in error for error in validate_source_health(health))
+
+
+def test_source_health_rejects_no_event_when_core_scan_failed():
+    health = _source_health(
+        event_scan={"status": "no_event", "has_events": False},
+        sources=[{"key": "official_events", "status": "partial", "semantic_state": "failed"}],
+    )
+    errors = validate_source_health(health)
+    assert any("cannot coexist" in error for error in errors)
+
+
+def test_source_health_rejects_scan_failed_with_events():
+    health = _source_health(
+        event_scan={"status": "scan_failed", "has_events": True},
+    )
+    errors = validate_source_health(health)
+    assert any("has_events=true" in error for error in errors)
 
 
 def test_research_rejects_formal_candidates_exceeding_candidates():
