@@ -73,8 +73,8 @@ def _regime_factors(items: dict[str, dict[str, Any]], risk: dict[str, Any]) -> d
 def _contagion_inputs(items: dict[str, dict[str, Any]], risk: dict[str, Any]) -> dict[str, dict[str, Any]]:
     """Map the public snapshot into the cross-asset monitor contract."""
     equities = items.get("TAIEX") or items.get("NASDAQ") or {}
-    vix_items = [
-        value.get("vix") for value in risk.values()
+    vix_items: list[dict[str, Any]] = [
+        value["vix"] for value in risk.values()
         if isinstance(value, dict) and isinstance(value.get("vix"), dict)
     ]
     vix: dict[str, Any] = next(
