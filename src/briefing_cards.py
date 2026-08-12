@@ -368,6 +368,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         observations=observed_quotes,
         policy_version=snapshot.get("policy_version"),
     )
+    from src.creator_intelligence_pipeline import build_creator_intelligence_release
     from src.event_feedback import build_feedback_contract
     from src.paper_portfolio import build_paper_portfolio_snapshot, update_paper_observations
 
@@ -407,6 +408,18 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
     ]
     if not feedback_events:
         feedback_events = [build_feedback_contract({"event_type": "briefing"})]
+    creator_release = None
+    creator_records = snapshot.get("creator_insights")
+    if isinstance(creator_records, list):
+        creator_result = build_creator_intelligence_release(
+            [item for item in creator_records if isinstance(item, dict)],
+            parent_manifest={
+                "release_id": snapshot.get("release_id"),
+                "market_snapshot_id": snapshot.get("market_snapshot_id"),
+                "event_snapshot_id": snapshot.get("event_snapshot_id"),
+            },
+        )
+        creator_release = creator_result["artifact"]
     return {
         "slot": slot or "live",
         "title": SLOT_TITLES.get(slot or "", "即時市場儀表板"),
@@ -420,6 +433,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         "dynamic_markets": dynamic_markets,
         "observations": observations,
         "intelligence": intelligence,
+        "creator_release": creator_release,
         "paper_portfolio": paper_portfolio,
         "event_feedback": {
             "enabled": True,
