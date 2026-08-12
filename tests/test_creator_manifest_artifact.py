@@ -83,6 +83,22 @@ def test_manifest_can_build_creator_artifact_from_sanitized_records(tmp_path):
     assert loaded["creator-release.json"]["status"] == "ready"
 
 
+def test_creator_input_changes_release_identity(tmp_path):
+    artifacts = _artifacts(tmp_path)
+    first = build_release_manifest(
+        root=tmp_path,
+        artifacts=artifacts,
+        creator_records=[{"content_origin": "haojiao", "episode_key": "one", "public_safe": True}],
+    )
+    second = build_release_manifest(
+        root=tmp_path,
+        artifacts=artifacts,
+        creator_records=[{"content_origin": "haojiao", "episode_key": "two", "public_safe": True}],
+    )
+    assert first["creator_input_hash"] != second["creator_input_hash"]
+    assert first["release_id"] != second["release_id"]
+
+
 def test_manifest_cli_accepts_creator_records_file(tmp_path, monkeypatch):
     _artifacts(tmp_path)
     records_path = tmp_path / "creator-records.json"

@@ -37,6 +37,24 @@ def _canonical_json(value: Any) -> bytes:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
+def _creator_identity_hash(
+    creator_artifact: dict[str, Any] | None,
+    creator_records: list[dict[str, Any]] | None,
+) -> str | None:
+    """Hash creator content before derived release lineage is attached."""
+    if creator_records is not None:
+        material: Any = creator_records
+    elif isinstance(creator_artifact, dict):
+        material = {
+            key: value
+            for key, value in creator_artifact.items()
+            if key not in {"release_id", "parent_release_id", "creator_release_id"}
+        }
+    else:
+        return None
+    return hashlib.sha256(_canonical_json(material)).hexdigest()
+
+
 def content_snapshot_id(value: dict[str, Any], prefix: str) -> str:
     """Return a deterministic ID for a normalized artifact payload."""
     existing = str(value.get("snapshot_id") or "").strip()
@@ -359,6 +377,7 @@ def build_release_manifest(
     market_id = content_snapshot_id(market, "market") if market else ""
     research_id = content_snapshot_id(research, "research") if research else ""
     event_id = content_snapshot_id(events, "event") if events else ""
+    creator_input_hash = _creator_identity_hash(creator_artifact, creator_records)
     policy = str(policy_version or os.getenv("POLICY_VERSION") or "2026.08")
     created_at = datetime.now(UTC).isoformat()
     release_material = {
@@ -371,6 +390,8 @@ def build_release_manifest(
         "artifact_hashes": hashes,
         "policy_version": policy,
     }
+    if creator_input_hash:
+        release_material["creator_input_hash"] = creator_input_hash
     release_id = f"release-{hashlib.sha256(_canonical_json(release_material)).hexdigest()[:16]}"
     if creator_artifact is None and creator_records is not None:
         # Records are expected to be sanitized at ingress. The pipeline still
@@ -438,6 +459,7 @@ def build_release_manifest(
         "creator_status": creator_status,
         "creator_validation_errors": creator_errors,
         "creator_artifact_hash": creator_hash,
+        "creator_input_hash": creator_input_hash,
         "status": "invalid",
     }
     if fallback_applied:
