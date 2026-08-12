@@ -102,15 +102,24 @@ def audit_artifacts(
         issues.append(f"Mini App entry missing or empty: {index_path}")
     market_counts = _audit_market(market, issues, warnings) if market else {"indices": 0, "quotes": 0}
     research_counts = _audit_research(research, issues, warnings) if research else {"sources": 0, "candidates": 0}
-    if manifest and market and research and manifest.get("event_snapshot_id") and manifest_path.parent == market_path.parent:
-        events = _load_json(Path("site/data/event-ledger.json"), "events", issues)
-        if events:
-            acceptance = validate_production_bundle(manifest=manifest, market=market, research=research, events=events)
+    if manifest and market and research:
+        events_path = manifest_path.parent / "event-ledger.json"
+        events = _load_json(events_path, "events", issues)
+        if events is not None:
+            acceptance = validate_production_bundle(
+                manifest=manifest,
+                market=market,
+                research=research,
+                events=events,
+                require_production_research=require_production,
+            )
             messages = [f"production acceptance: {error}" for error in acceptance.errors]
             if require_production:
                 issues.extend(messages)
             else:
                 warnings.extend(messages)
+        elif require_production:
+            issues.append("production event artifact is required")
     if require_production and manifest is None:
         issues.append("production release manifest is required")
     return {

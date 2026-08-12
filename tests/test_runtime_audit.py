@@ -87,3 +87,27 @@ def test_production_audit_fails_closed_on_fixture_without_manifest(tmp_path):
 
     assert report["ok"] is False
     assert any("production release manifest is required" in issue for issue in report["issues"])
+
+
+def test_production_audit_requires_event_artifact(tmp_path):
+    _write_valid_artifacts(tmp_path)
+    manifest = {
+        "status": "ready",
+        "release_id": "release",
+        "market_snapshot_id": "market",
+        "research_snapshot_id": "research",
+        "event_snapshot_id": "events",
+    }
+    site_data = tmp_path / "site" / "data"
+    site_data.mkdir(parents=True)
+    (site_data / "release-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    report = audit_artifacts(
+        market_path=tmp_path / "market.json",
+        research_path=tmp_path / "research.json",
+        index_path=tmp_path / "site" / "index.html",
+        manifest_path=site_data / "release-manifest.json",
+        require_production=True,
+    )
+
+    assert report["ok"] is False
+    assert any("production event artifact is required" in issue for issue in report["issues"])
