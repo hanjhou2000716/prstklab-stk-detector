@@ -348,9 +348,12 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
             )
             if key in raw_macro
         }
+    raw_external = snapshot.get("external_observations")
+    external_input = raw_external if isinstance(raw_external, list) else []
     intelligence = build_intelligence_context(
         lead if isinstance(lead, dict) else {"title": "briefing"},
         observed_quotes,
+        external_observations=external_input,
         macro=macro_input,
         regime_factors=_regime_factors(all_items, risk),
         contagion_observations=_contagion_inputs(all_items, risk),
