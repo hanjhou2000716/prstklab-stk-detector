@@ -12,6 +12,18 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 
+REQUIRED_RESEARCH_STRATEGIES = frozenset({
+    ("taiwan", "momentum"),
+    ("taiwan", "price_action"),
+    ("taiwan", "resonance"),
+    ("taiwan", "value"),
+    ("us", "momentum"),
+    ("us", "price_action"),
+    ("us", "resonance"),
+    ("us", "value"),
+})
+
+
 @dataclass(frozen=True)
 class AcceptanceResult:
     allowed: bool
@@ -114,6 +126,37 @@ def production_research_contract_errors(research: dict[str, Any]) -> list[str]:
     return sorted(set(errors))
 
 
+def production_strategy_matrix_errors(research: dict[str, Any]) -> list[str]:
+    """Require every market/strategy source for a strict public release.
+
+    Aggregate universe counts are not sufficient evidence of a complete
+    research release: a producer could accidentally omit one strategy while
+    reporting the other rows as complete.  The matrix is deliberately
+    explicit so a missing or duplicated source fails closed instead of
+    becoming an empty strategy drawer in the Mini App.
+    """
+    sources = research.get("sources")
+    if not isinstance(sources, list):
+        return ["production research source matrix is missing"]
+    seen: list[tuple[str, str]] = []
+    errors: list[str] = []
+    for index, source in enumerate(sources):
+        if not isinstance(source, dict):
+            continue
+        key = (str(source.get("market") or "").strip().lower(), str(source.get("strategy") or "").strip().lower())
+        if key in seen:
+            errors.append(f"production research source matrix has duplicate {key[0]}/{key[1]} at index {index}")
+        seen.append(key)
+    actual = set(seen)
+    missing = sorted(REQUIRED_RESEARCH_STRATEGIES - actual)
+    if missing:
+        errors.append("production research source matrix missing: " + ", ".join(f"{market}/{strategy}" for market, strategy in missing))
+    unknown = sorted(actual - REQUIRED_RESEARCH_STRATEGIES)
+    if unknown:
+        errors.append("production research source matrix has unknown entries: " + ", ".join(f"{market}/{strategy}" for market, strategy in unknown))
+    return errors
+
+
 def validate_production_bundle(
     *,
     manifest: dict[str, Any],
@@ -146,6 +189,8 @@ def validate_production_bundle(
         errors.extend(production_research_contract_errors(research))
     elif scan_mode == "production" and not explicit_fallback:
         errors.extend(production_research_contract_errors(research))
+    if require_production_research and not explicit_fallback:
+        errors.extend(production_strategy_matrix_errors(research))
 
     expected_market = str(manifest.get("market_snapshot_id") or "")
     expected_research = str(manifest.get("research_snapshot_id") or "")

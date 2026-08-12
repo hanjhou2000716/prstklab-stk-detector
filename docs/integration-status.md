@@ -56,6 +56,10 @@ Production workflows invoke `src.release_manifest` with
 `--require-production-research`. A report must declare
 `scan_mode=production`, `scan_scope=full`, both eligibility flags, and complete
 every declared universe and source before a `ready` manifest can be published.
+Strict delivery also requires the complete eight-entry matrix: Taiwan and US
+for momentum, price action, resonance, and value. Missing, duplicated, or
+unknown market/strategy rows fail closed even when aggregate universe counts
+look complete.
 Bounded, smoke, failed, or building scans remain diagnostic artifacts and
 cannot silently become a research release. If a previously valid production
 report is reused while a new scan is incomplete, the workflow may explicitly

@@ -1,4 +1,4 @@
-from src.production_acceptance import _parse_time, production_research_contract_errors, validate_production_bundle
+from src.production_acceptance import _parse_time, production_research_contract_errors, production_strategy_matrix_errors, validate_production_bundle
 
 
 def _bundle():
@@ -62,6 +62,33 @@ def test_delivery_mode_rejects_legacy_research_snapshot():
     result = validate_production_bundle(**_bundle(), require_production_research=True)
     assert not result.allowed
     assert "not a production scan" in " ".join(result.errors)
+
+
+def test_strict_delivery_requires_all_market_strategy_sources():
+    bundle = _bundle()
+    bundle["research"].update(
+        scan_mode="production", scan_scope="full", publish_eligible=True,
+        production_eligible=True, universe_expected=1,
+        universe_scanned=1, universe_completed=1, universe_failed=0,
+        research_run={"run_id": "r", "source_commit_sha": "a" * 40,
+                      "scan_mode": "production", "scan_scope": "full",
+                      "run_finished_at": "2026-08-04T10:00:00+00:00"},
+        run_id="r", generated_at="2026-08-04T10:00:00+00:00",
+    )
+    result = validate_production_bundle(**bundle, require_production_research=True)
+    assert not result.allowed
+    assert any("source matrix missing" in error for error in result.errors)
+
+
+def test_strategy_matrix_rejects_duplicate_and_unknown_sources():
+    research = {"sources": [
+        {"market": "taiwan", "strategy": "momentum"},
+        {"market": "taiwan", "strategy": "momentum"},
+        {"market": "mars", "strategy": "momentum"},
+    ]}
+    errors = production_strategy_matrix_errors(research)
+    assert any("duplicate taiwan/momentum" in error for error in errors)
+    assert any("unknown entries" in error for error in errors)
 
 
 def test_explicit_stale_fallback_is_blocked_from_production_delivery():
