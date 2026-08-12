@@ -48,7 +48,16 @@ def _creator_identity_hash(
         material = {
             key: value
             for key, value in creator_artifact.items()
-            if key not in {"release_id", "parent_release_id", "creator_release_id"}
+            if key
+            not in {
+                "release_id",
+                "parent_release_id",
+                "creator_release_id",
+                "generated_at",
+                "validation_errors",
+                "status",
+                "artifact_hash",
+            }
         }
     else:
         return None

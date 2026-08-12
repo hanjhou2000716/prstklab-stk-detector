@@ -1,5 +1,6 @@
 import json
 import sys
+from datetime import UTC, datetime, timedelta
 
 from src import release_manifest
 from src.release_gate import _load_release_artifacts
@@ -97,6 +98,29 @@ def test_creator_input_changes_release_identity(tmp_path):
     )
     assert first["creator_input_hash"] != second["creator_input_hash"]
     assert first["release_id"] != second["release_id"]
+
+
+def test_derived_creator_timestamps_do_not_change_release_identity(tmp_path):
+    artifacts = _artifacts(tmp_path)
+    first_artifact = {
+        "schema_version": "1.0",
+        "parent_release_id": "wrong",
+        "market_snapshot_id": "market-12345678",
+        "event_snapshot_id": "event-",
+        "generated_at": datetime.now(UTC).isoformat(),
+        "insights": [],
+        "public_safe": True,
+        "release_id": "creator-1",
+        "status": "unavailable",
+        "validation_errors": ["placeholder"],
+    }
+    first = build_release_manifest(root=tmp_path, artifacts=artifacts, creator_artifact=first_artifact)
+    second_artifact = dict(first_artifact)
+    second_artifact["generated_at"] = (datetime.now(UTC) + timedelta(hours=1)).isoformat()
+    second_artifact["validation_errors"] = ["different-placeholder"]
+    second = build_release_manifest(root=tmp_path, artifacts=artifacts, creator_artifact=second_artifact)
+    assert first["creator_input_hash"] == second["creator_input_hash"]
+    assert first["release_id"] == second["release_id"]
 
 
 def test_manifest_cli_accepts_creator_records_file(tmp_path, monkeypatch):
