@@ -96,3 +96,14 @@ def test_source_health_rejects_inconsistent_runtime_count():
         sources=[{"key": "stooq", "status": "partial", "semantic_state": "partial"}],
     )
     assert any("runtime_failure_count" in error for error in validate_source_health(value))
+
+
+def test_source_health_schema_accepts_investor_health_counts():
+    value = _health(
+        investor_status="部分資料降級",
+        missing_source_count=1,
+        runtime_failure_count=1,
+        configuration_missing_count=0,
+        sources=[{"key": "stooq", "status": "partial", "semantic_state": "partial"}],
+    )
+    assert validate_source_health(value) == []
