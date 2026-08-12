@@ -68,6 +68,25 @@ def test_release_gate_accepts_ready_matching_snapshot(tmp_path):
     assert result.release_id == manifest["release_id"]
 
 
+def test_release_gate_loads_and_validates_release_bound_source_health(tmp_path):
+    data = tmp_path / "site" / "data"
+    data.mkdir(parents=True)
+    health = {
+        "status": "healthy",
+        "sources": [{"key": "market", "status": "healthy", "semantic_state": "healthy"}],
+        "event_scan": {"status": "no_event"},
+    }
+    (data / "market.json").write_text(json.dumps({"generated_at": "2026-08-04T10:00:00+00:00", "snapshot_id": "market-12345678", "indices": [], "quotes": [], "source_health": health}), encoding="utf-8")
+    (data / "research-report.json").write_text(json.dumps({"schema_version": "2.0", "generated_at": "2026-08-04T10:00:00+00:00", "snapshot_id": "research-12345678", "sources": [], "candidates": [], "health": {}}), encoding="utf-8")
+    (data / "event-ledger.json").write_text(json.dumps({"schema_version": 1, "retention_days": 30, "events": {}}), encoding="utf-8")
+    manifest = build_release_manifest(root=tmp_path)
+    write_release_manifest(manifest, data / "release-manifest.json")
+    artifacts, errors = _load_release_artifacts(manifest, site_root=tmp_path / "site")
+    assert errors == []
+    assert artifacts["source-health.json"]["market_snapshot_id"] == manifest["market_snapshot_id"]
+    assert verify_release_for_delivery(manifest_path=data / "release-manifest.json", expected_snapshot_id="market-12345678").allowed
+
+
 def test_release_gate_accepts_ready_legacy_research_snapshot(tmp_path):
     """A valid rollback release may predate the production scan contract."""
     path, manifest = _ready_release(tmp_path)
