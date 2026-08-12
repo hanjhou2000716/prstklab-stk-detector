@@ -37,6 +37,17 @@ SEMANTIC_STATES = {
 
 
 def _semantic_state(item: dict[str, Any]) -> str:
+    # Provider adapters may normalize an unavailable credential as
+    # ``status=partial`` while retaining the machine-readable state or
+    # provider status.  Configuration is an operator action, not a runtime
+    # outage; resolve it before trusting the display status/semantic label so
+    # aggregate health cannot over-count it as a failed source.
+    explicit_state = str(item.get("state") or "").strip()
+    provider_status = str(item.get("provider_status") or item.get("error_code") or "").strip().lower()
+    if explicit_state in {"configuration_required", "configuration_missing"} or provider_status in {
+        "missing_api_key", "configuration_required", "not_configured",
+    }:
+        return "configuration_missing"
     explicit = str(item.get("semantic_state") or "").strip()
     if explicit in SEMANTIC_STATES:
         return explicit
