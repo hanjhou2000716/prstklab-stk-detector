@@ -418,6 +418,12 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
                 "market_snapshot_id": snapshot.get("market_snapshot_id"),
                 "event_snapshot_id": snapshot.get("event_snapshot_id"),
             },
+            market_snapshot={
+                "snapshot_id": snapshot.get("market_snapshot_id"),
+                "as_of": snapshot.get("as_of") or snapshot.get("fetched_at") or snapshot.get("created_at"),
+                "quotes": [*indices, *quotes, *macro_quotes],
+            },
+            research_snapshot=snapshot.get("research_report") if isinstance(snapshot.get("research_report"), dict) else None,
         )
         creator_release = creator_result["artifact"]
     return {
