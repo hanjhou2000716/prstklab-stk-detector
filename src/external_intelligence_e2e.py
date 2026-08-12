@@ -11,6 +11,7 @@ from typing import Any
 
 from src.creator_delivery_contract import decide_creator_delivery
 from src.creator_intelligence_pipeline import build_creator_intelligence_release
+from src.creator_photo_delivery import plan_creator_delivery
 from src.email_intelligence import normalize_email_observation
 from src.external_event_risk import cluster_external_events, notification_decision, score_prstk_risk
 from src.external_source_parsers import parse_external_email
@@ -57,6 +58,14 @@ def run_external_intelligence_dry_run() -> dict[str, Any]:
         release_ready=creator["status"] == "ready",
         media_available=False,
     )
+    creator_plan = plan_creator_delivery(
+        creator_insight,
+        release_id=creator.get("release_id") or "creator-release-dry-run",
+        creator_snapshot_id=creator.get("snapshot_id") or "creator-snapshot-dry-run",
+        mini_app_url="https://example.test/app",
+        release_ready=creator["status"] == "ready",
+        media_available=False,
+    )
     return {
         "email_observation": {"parse_status": observation["parse_status"], "content_origin": observation["content_origin"]},
         "parser": {"parse_status": parsed.get("parse_status"), "failure_reason": parsed.get("failure_reason")},
@@ -64,6 +73,12 @@ def run_external_intelligence_dry_run() -> dict[str, Any]:
         "creator_release": {"status": creator["status"], "parent_release_id": creator["parent_release_id"]},
         "creator_pipeline": {"accepted_count": creator_result["accepted_count"], "dropped_count": creator_result["dropped_count"]},
         "creator_delivery": creator_delivery,
+        "creator_photo_plan": {
+            "allowed": creator_plan["allowed"],
+            "media_mode": creator_plan["media_mode"],
+            "deep_link_view": "view=creator" in creator_plan["mini_app_url"],
+            "release_id": creator_plan["release_id"],
+        },
         "network_used": False,
         "secrets_used": False,
         "formal_delivery": False,
