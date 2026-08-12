@@ -571,6 +571,15 @@ const renderBriefing = (briefing, generatedAt) => {
       const pathText = impactPaths.length
         ? impactPaths.slice(0, 3).map((path) => `${path.key || "傳導路徑"}｜${path.market_sync ? "已有市場同步" : "等待市場證據"}`).join("；")
         : "尚無符合事件的傳導路徑";
+      const externalRisk = context.external_event_risk || {};
+      const unifiedEvents = Array.isArray(externalRisk.unified_events) ? externalRisk.unified_events : [];
+      const unifiedText = unifiedEvents.slice(0, 3).map((item) => {
+        const state = item.lifecycle_state || "pending_confirmation";
+        const reasons = Array.isArray(item.pending_reasons) && item.pending_reasons.length
+          ? item.pending_reasons.join("、")
+          : "證據已完成核對";
+        return `${state}｜${reasons}`;
+      }).join("；") || "本輪沒有外部事件候選";
       const surpriseText = surprise.status === "insufficient_evidence"
         ? "總經驚喜：缺少預期值或實際值，證據不足"
         : `總經驚喜：${surprise.status}｜實際 ${surprise.actual ?? "—"}／預期 ${surprise.expected ?? "—"}`;
@@ -579,7 +588,7 @@ const renderBriefing = (briefing, generatedAt) => {
       const reactionText = reaction.status === "observed_only"
         ? `已觀測 ${reactionQuotes.length} 筆價格反應，尚未確認方向`
         : "本輪沒有可用的事件後市場報價";
-      if (intelligenceContent) intelligenceContent.innerHTML = `<p><b>市場狀態：</b>${escapeHtml(regime.regime || "資料不足")}｜分數 ${escapeHtml(String(regime.score ?? "—"))}</p><p><b>因子：</b>${escapeHtml(factors)}</p><p><b>跨資產核對：</b>${escapeHtml(contagion.status || "資料不足")}｜${escapeHtml(signals)}</p><p><b>傳導路徑：</b>${escapeHtml(pathText)}</p><p><b>${escapeHtml(surpriseText)}</b>（不單獨推定市場方向）</p><p><b>市場第一反應：</b>${escapeHtml(reactionText)}｜${escapeHtml(reaction.reason || "")}</p><p><b>建議閘門：</b>${escapeHtml(context.advice_gate || "observation_only")}｜${escapeHtml(blocking)}</p>${scenarios ? `<ul class="briefing-stress-list"><li class="briefing-stress-heading">壓力情境（非預測）</li>${scenarios}</ul>` : ""}<small>資料不足時維持觀察，不產生買進／賣出指令。</small>`;
+      if (intelligenceContent) intelligenceContent.innerHTML = `<p><b>市場狀態：</b>${escapeHtml(regime.regime || "資料不足")}｜分數 ${escapeHtml(String(regime.score ?? "—"))}</p><p><b>因子：</b>${escapeHtml(factors)}</p><p><b>跨資產核對：</b>${escapeHtml(contagion.status || "資料不足")}｜${escapeHtml(signals)}</p><p><b>傳導路徑：</b>${escapeHtml(pathText)}</p><p><b>外部事件證據：</b>${escapeHtml(unifiedText)}</p><p><b>${escapeHtml(surpriseText)}</b>（不單獨推定市場方向）</p><p><b>市場第一反應：</b>${escapeHtml(reactionText)}｜${escapeHtml(reaction.reason || "")}</p><p><b>建議閘門：</b>${escapeHtml(context.advice_gate || "observation_only")}｜${escapeHtml(blocking)}</p>${scenarios ? `<ul class="briefing-stress-list"><li class="briefing-stress-heading">壓力情境（非預測）</li>${scenarios}</ul>` : ""}<small>資料不足時維持觀察，不產生買進／賣出指令。</small>`;
       intelligence.open = false;
     }
   }
