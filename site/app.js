@@ -816,7 +816,13 @@ const renderCreatorInsights = (creatorRelease) => {
     content.innerHTML = '<p class="empty">Creator 來源目前不可用；不影響核心市場 release。</p>';
     return;
   }
-  const insights = Array.isArray(creatorRelease.insights) ? creatorRelease.insights : [];
+  let insights = Array.isArray(creatorRelease.insights) ? creatorRelease.insights : [];
+  if (!insights.length && creatorRelease.creators && typeof creatorRelease.creators === "object") {
+    insights = Object.values(creatorRelease.creators).flatMap((creator) => {
+      const episodes = Array.isArray(creator?.episodes) ? creator.episodes : [];
+      return episodes.map((episode) => ({ ...episode, creator_name: creator.creator_name || creator.creator_id }));
+    });
+  }
   if (!insights.length) {
     content.innerHTML = '<p class="empty">本輪沒有可核對的 Creator Insight。</p>';
     return;
@@ -846,7 +852,8 @@ const render = (snapshot) => {
   renderEvents(snapshot.events);
   renderSourceHealth(snapshot.source_health, snapshot);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
-  renderCreatorInsights(snapshot.creator_release || snapshot.creator_intelligence);
+  const creatorSource = snapshot.creator_release || snapshot.creator_public_artifact || snapshot.creator_intelligence;
+  renderCreatorInsights(creatorSource);
   renderResearch(snapshot);
   renderNewsList("taiwan-news", snapshot.news?.taiwan);
   renderNewsList("us-news", snapshot.news?.us);
@@ -981,6 +988,16 @@ const readLastGoodRelease = async () => {
       if (saved.manifest.creator_release_id && String(creator.release_id || "") !== String(saved.manifest.creator_release_id)) return null;
       snapshot.creator_release = creator;
     }
+    const creatorPublicText = saved.artifactTexts["creator-insights.json"];
+    if (creatorPublicText) {
+      const creatorPublic = JSON.parse(creatorPublicText);
+      if (String(creatorPublic.parent_release_id || "") !== String(saved.manifest.release_id || "")) return null;
+      if (String(creatorPublic.market_snapshot_id || "") !== String(saved.manifest.market_snapshot_id || "")) return null;
+      if (String(creatorPublic.research_snapshot_id || "") !== String(saved.manifest.research_snapshot_id || "")) return null;
+      if (String(creatorPublic.event_snapshot_id || "") !== String(saved.manifest.event_snapshot_id || "")) return null;
+      if (saved.manifest.creator_snapshot_id && String(creatorPublic.snapshot_id || "") !== String(saved.manifest.creator_snapshot_id)) return null;
+      snapshot.creator_public_artifact = creatorPublic;
+    }
     return { ...saved, snapshot };
   } catch (_error) {
     return null;
@@ -1041,6 +1058,26 @@ const loadPublishedRelease = async () => {
       throw new Error("creator release id does not match release manifest");
     }
     snapshot.creator_release = creator;
+  }
+  const creatorPublicText = artifactTexts["creator-insights.json"];
+  if (creatorPublicText) {
+    const creatorPublic = JSON.parse(creatorPublicText);
+    if (String(creatorPublic.parent_release_id || "") !== String(manifest.release_id || "")) {
+      throw new Error("creator public artifact parent does not match release");
+    }
+    if (String(creatorPublic.market_snapshot_id || "") !== String(manifest.market_snapshot_id || "")) {
+      throw new Error("creator public artifact market snapshot does not match release");
+    }
+    if (String(creatorPublic.research_snapshot_id || "") !== String(manifest.research_snapshot_id || "")) {
+      throw new Error("creator public artifact research snapshot does not match release");
+    }
+    if (String(creatorPublic.event_snapshot_id || "") !== String(manifest.event_snapshot_id || "")) {
+      throw new Error("creator public artifact event snapshot does not match release");
+    }
+    if (manifest.creator_snapshot_id && String(creatorPublic.snapshot_id || "") !== String(manifest.creator_snapshot_id)) {
+      throw new Error("creator public snapshot does not match release manifest");
+    }
+    snapshot.creator_public_artifact = creatorPublic;
   }
   const healthText = artifactTexts["source-health.json"];
   if (healthText) {

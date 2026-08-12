@@ -75,6 +75,7 @@ def build_creator_intelligence_release(
         generated_at=artifact.get("generated_at"),
         parent_release_id=artifact.get("parent_release_id", ""),
         market_snapshot_id=artifact.get("market_snapshot_id", ""),
+        research_snapshot_id=artifact.get("research_snapshot_id", "") or str((research_snapshot or {}).get("snapshot_id") or ""),
         event_snapshot_id=artifact.get("event_snapshot_id", ""),
     )
     return {

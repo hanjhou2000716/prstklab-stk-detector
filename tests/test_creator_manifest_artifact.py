@@ -84,6 +84,31 @@ def test_manifest_can_build_creator_artifact_from_sanitized_records(tmp_path):
     assert loaded["creator-release.json"]["status"] == "ready"
 
 
+def test_manifest_also_publishes_bounded_creator_insights_artifact(tmp_path):
+    result = build_release_manifest(
+        root=tmp_path,
+        artifacts=_artifacts(tmp_path),
+        creator_records=[{
+            "content_origin": "gooaye",
+            "episode_key": "episode-public",
+            "episode_title": "Public episode",
+            "claims": ["safe claim"],
+            "verification_state": "unverified",
+            "public_safe": True,
+        }],
+    )
+    assert result["creator_public_status"] == "ready"
+    assert result["artifact_paths"]["creator-insights.json"] == "data/creator-insights.json"
+    public_path = tmp_path / "site" / "data" / "creator-insights.json"
+    public = json.loads(public_path.read_text(encoding="utf-8"))
+    assert public["parent_release_id"] == result["release_id"]
+    assert public["research_snapshot_id"] == result["research_snapshot_id"]
+    assert result["artifact_hashes"]["creator-insights.json"]
+    loaded, errors = _load_release_artifacts(result, site_root=tmp_path / "site")
+    assert errors == []
+    assert loaded["creator-insights.json"]["status"] == "ready"
+
+
 def test_creator_input_changes_release_identity(tmp_path):
     artifacts = _artifacts(tmp_path)
     first = build_release_manifest(
