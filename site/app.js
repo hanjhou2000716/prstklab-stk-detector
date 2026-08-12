@@ -792,6 +792,34 @@ document.querySelectorAll(".news-tab").forEach((tab) => tab.addEventListener("cl
   });
 }));
 
+const renderCreatorInsights = (creatorRelease) => {
+  const panel = document.getElementById("creator-intelligence");
+  const content = document.getElementById("creator-intelligence-content");
+  if (!panel || !content) return;
+  panel.hidden = true;
+  content.replaceChildren();
+  if (!creatorRelease || typeof creatorRelease !== "object") return;
+  panel.hidden = false;
+  if (creatorRelease.status !== "ready") {
+    content.innerHTML = '<p class="empty">Creator 來源目前不可用；不影響核心市場 release。</p>';
+    return;
+  }
+  const insights = Array.isArray(creatorRelease.insights) ? creatorRelease.insights : [];
+  if (!insights.length) {
+    content.innerHTML = '<p class="empty">本輪沒有可核對的 Creator Insight。</p>';
+    return;
+  }
+  content.innerHTML = insights.slice(0, 5).map((item) => {
+    const title = escapeHtml(item.episode_title || item.episode_key || "Creator Insight");
+    const verification = escapeHtml(item.verification_state || "unverified");
+    const claims = Array.isArray(item.claims) ? item.claims.filter(Boolean).slice(0, 3) : [];
+    const opinions = Array.isArray(item.opinions) ? item.opinions.filter(Boolean).slice(0, 2) : [];
+    const facts = claims.map((value) => `<li>事實：${escapeHtml(value)}</li>`).join("");
+    const views = opinions.map((value) => `<li>觀點：${escapeHtml(value)}</li>`).join("");
+    return `<article class="creator-insight"><h4>${title}</h4><small>核對狀態：${verification}</small><ul>${facts}${views}</ul></article>`;
+  }).join("");
+};
+
 const render = (snapshot) => {
   window.marketSnapshot = snapshot;
   const externalAlert = activeExternalAlert(snapshot.external_alert);
@@ -806,6 +834,7 @@ const render = (snapshot) => {
   renderEvents(snapshot.events);
   renderSourceHealth(snapshot.source_health, snapshot);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
+  renderCreatorInsights(snapshot.creator_release || snapshot.creator_intelligence);
   renderResearch(snapshot);
   renderNewsList("taiwan-news", snapshot.news?.taiwan);
   renderNewsList("us-news", snapshot.news?.us);
