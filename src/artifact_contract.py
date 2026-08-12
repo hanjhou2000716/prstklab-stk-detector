@@ -109,6 +109,7 @@ def _quote_contract_errors(quote: dict[str, Any], path: str) -> list[str]:
 def validate_market(document: dict[str, Any]) -> list[str]:
     """Validate market schema and quote-level safety invariants."""
     errors = _schema_errors(document, "market.schema.json")
+    errors.extend(validate_source_catalog(document.get("source_catalog")))
     errors.extend(_raw_observation_contract_errors(document))
     errors.extend(_instrument_master_contract_errors(document))
     for collection in ("indices", "quotes"):
@@ -228,6 +229,49 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
         no_events = observability.get("no_event_count")
         if isinstance(failures, int) and isinstance(no_events, int) and failures < 0:
             errors.append("source_health.observability.failure_count must be non-negative")
+    return errors
+
+
+def validate_source_catalog(catalog: Any) -> list[str]:
+    """Validate the declarative adapter catalog embedded in a market release.
+
+    The catalog is evidence about the adapters used by the producer, not just
+    display metadata.  Reject duplicate providers and incomplete contracts so
+    a release cannot claim a cross-check policy that its source registry does
+    not describe.
+    """
+    if catalog is None:
+        return []
+    if not isinstance(catalog, list):
+        return ["market.source_catalog must be an array"]
+    errors: list[str] = []
+    providers: set[str] = set()
+    for index, item in enumerate(catalog):
+        path = f"source_catalog[{index}]"
+        if not isinstance(item, dict):
+            errors.append(f"{path} must be an object")
+            continue
+        provider = str(item.get("provider") or "").strip()
+        if not provider:
+            errors.append(f"{path}.provider is required")
+        elif provider.casefold() in providers:
+            errors.append(f"{path}.provider is duplicated")
+        else:
+            providers.add(provider.casefold())
+        contract = item.get("adapter_contract_version")
+        if not isinstance(contract, int) or contract < 1:
+            errors.append(f"{path}.adapter_contract_version must be a positive integer")
+        for field in ("provenance_fields", "health_fields"):
+            values = item.get(field)
+            if not isinstance(values, list) or not all(isinstance(value, str) and value.strip() for value in values):
+                errors.append(f"{path}.{field} must be a non-empty string array")
+        policy = str(item.get("alert_policy") or "")
+        if policy not in {"crosscheck_required", "display_only"}:
+            errors.append(f"{path}.alert_policy is invalid")
+        if item.get("can_trigger_alert") is True and policy != "crosscheck_required":
+            errors.append(f"{path}.can_trigger_alert requires crosscheck_required")
+        if item.get("can_trigger_alert") is False and policy == "crosscheck_required":
+            errors.append(f"{path}.can_trigger_alert=false conflicts with crosscheck_required")
     return errors
 
 

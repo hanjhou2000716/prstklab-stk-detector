@@ -1,4 +1,5 @@
 from src.artifact_contract import (
+    validate_source_catalog,
     _parse_time,
     validate_events,
     validate_manifest,
@@ -7,6 +8,34 @@ from src.artifact_contract import (
     validate_research,
     validate_source_health,
 )
+
+
+def test_source_catalog_contract_rejects_duplicate_and_policy_mismatch():
+    catalog = [{
+        "provider": "TWSE", "can_trigger_alert": True,
+        "adapter_contract_version": 1,
+        "provenance_fields": ["provider"], "health_fields": ["status"],
+        "alert_policy": "display_only",
+    }, {
+        "provider": "twse", "can_trigger_alert": False,
+        "adapter_contract_version": 1,
+        "provenance_fields": ["provider"], "health_fields": ["status"],
+        "alert_policy": "crosscheck_required",
+    }]
+    errors = validate_source_catalog(catalog)
+    assert any("duplicated" in error for error in errors)
+    assert any("requires crosscheck_required" in error for error in errors)
+    assert any("conflicts with crosscheck_required" in error for error in errors)
+
+
+def test_source_catalog_contract_accepts_catalogued_adapter():
+    assert validate_source_catalog([{
+        "provider": "TWSE", "can_trigger_alert": True,
+        "adapter_contract_version": 1,
+        "provenance_fields": ["provider", "source_url"],
+        "health_fields": ["status", "freshness"],
+        "alert_policy": "crosscheck_required",
+    }]) == []
 
 
 def test_invalid_timestamp_fails_closed_without_crashing():
