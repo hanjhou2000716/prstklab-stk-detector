@@ -37,8 +37,24 @@
     "research_fallback_reason": {"type": ["string", "null"]},
     "backtest_release": {"type": ["string", "null"]},
     "backtest_publication_state": {"enum": ["ready", "blocked", "unavailable"]},
-    "strategy_registry": {"type": "array", "items": {"type": "object"}},
+    "strategy_registry": {"type": "array", "items": {"$ref": "#/$defs/strategy_release"}},
     "status": {"enum": ["ready", "rolled_back", "invalid"]}
+  },
+  "$defs": {
+    "strategy_release": {
+      "type": "object",
+      "required": ["strategy_id", "strategy_version", "parameter_hash", "universe_version", "data_version", "code_commit", "backtest_release"],
+      "properties": {
+        "strategy_id": {"type": "string", "minLength": 1},
+        "strategy_version": {"type": "string", "minLength": 1},
+        "parameter_hash": {"type": "string", "minLength": 8},
+        "universe_version": {"type": "string", "minLength": 1},
+        "data_version": {"type": "string", "minLength": 1},
+        "code_commit": {"type": "string", "minLength": 7},
+        "backtest_release": {"type": "string", "minLength": 8}
+      },
+      "additionalProperties": true
+    }
   },
   "additionalProperties": true
 }
