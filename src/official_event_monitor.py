@@ -268,6 +268,7 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
     gate = verify_release_for_delivery(
         expected_snapshot_id=str(snapshot.get("snapshot_id") or ""),
         public_url=os.environ.get("PUBLIC_RELEASE_URL") or None,
+        require_production_research=True,
     )
     if not gate.allowed:
         write_send_output(False, "release_gate_blocked")

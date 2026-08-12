@@ -132,6 +132,7 @@ jobs:
             --public-url "${{ steps.deployment.outputs.page_url }}" \
             --public-attempts 12 \
             --public-delay 5 \
+            --require-production-research \
             >> "$GITHUB_OUTPUT"
       - name: Record delivery gate when Pages is unavailable
         if: (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true') && steps.deployment.outputs.available != 'true'

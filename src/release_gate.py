@@ -141,6 +141,7 @@ def verify_release_for_delivery(
     timeout: float = 15.0,
     public_attempts: int = 12,
     public_delay: float = 5.0,
+    require_production_research: bool = False,
 ) -> ReleaseGateResult:
     """Verify readiness, local hashes and optionally the deployed Pages copy."""
     path = Path(manifest_path)
@@ -182,15 +183,11 @@ def verify_release_for_delivery(
             market=artifacts["market.json"],
             research=artifacts["research-report.json"],
             events=artifacts["event-ledger.json"],
-            # A ready release may intentionally carry a legacy or explicitly
-            # partial research snapshot while the bounded scanner catches up.
-            # ``release_manifest --require-production-research`` remains the
-            # publication gate for newly generated production scans; the
-            # delivery gate must still serve the last valid, immutable bundle
-            # instead of taking the whole dashboard offline.
-            require_production_research=False,
+            require_production_research=require_production_research,
         )
         errors.extend(acceptance.errors)
+        if require_production_research and manifest.get("research_freshness") != "fresh":
+            errors.append("production release research_freshness is not fresh")
 
     if public_url:
         remote_url = public_url.rstrip("/") + "/data/release-manifest.json"
@@ -255,6 +252,11 @@ def main() -> int:
     parser.add_argument("--public-url", default=None)
     parser.add_argument("--public-attempts", type=int, default=12)
     parser.add_argument("--public-delay", type=float, default=5.0)
+    parser.add_argument(
+        "--require-production-research",
+        action="store_true",
+        help="require a fresh production/full research artifact for delivery",
+    )
     args = parser.parse_args()
     result = verify_release_for_delivery(
         manifest_path=args.manifest,
@@ -262,6 +264,7 @@ def main() -> int:
         public_url=args.public_url,
         public_attempts=args.public_attempts,
         public_delay=args.public_delay,
+        require_production_research=args.require_production_research,
     )
     values = {
         "allowed": result.allowed,
