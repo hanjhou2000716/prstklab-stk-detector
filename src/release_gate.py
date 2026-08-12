@@ -63,6 +63,7 @@ def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tup
 
 def _fetch_public_release_artifacts(
     manifest: dict[str, Any], *, public_url: str, timeout: float,
+    require_production_research: bool = False,
 ) -> tuple[dict[str, dict[str, Any]], list[str]]:
     """Fetch and verify the immutable bundle advertised by a Pages manifest.
 
@@ -130,6 +131,17 @@ def _fetch_public_release_artifacts(
             manifest=manifest,
         )
     )
+    if require_production_research:
+        acceptance = validate_production_bundle(
+            manifest=manifest,
+            market=loaded["market.json"],
+            research=loaded["research-report.json"],
+            events=loaded["event-ledger.json"],
+            require_production_research=True,
+        )
+        errors.extend(acceptance.errors)
+        if manifest.get("research_freshness") != "fresh":
+            errors.append("public production release research_freshness is not fresh")
     return loaded, errors
 
 
@@ -222,7 +234,10 @@ def verify_release_for_delivery(
                     public_error = "public manifest market snapshot does not match prepared snapshot"
                 else:
                     _, bundle_errors = _fetch_public_release_artifacts(
-                        remote, public_url=public_url, timeout=timeout,
+                        remote,
+                        public_url=public_url,
+                        timeout=timeout,
+                        require_production_research=require_production_research,
                     )
                     if bundle_errors:
                         public_error = "; ".join(sorted(set(bundle_errors)))
