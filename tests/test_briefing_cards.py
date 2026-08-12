@@ -1,4 +1,4 @@
-from src.briefing_cards import _regime_factors, build_briefing_snapshot
+from src.briefing_cards import _contagion_inputs, _regime_factors, build_briefing_snapshot
 
 
 def test_regime_factors_omit_stale_quotes_and_expose_partial_evidence():
@@ -19,6 +19,16 @@ def test_regime_factors_do_not_use_delayed_quote_as_market_evidence():
         {"TAIEX": {"change_percent": 8.0, "quote_delayed": True}}, {},
     )
     assert factors == {}
+
+
+def test_contagion_inputs_are_bound_to_snapshot_quotes_and_vix():
+    inputs = _contagion_inputs(
+        {"TAIEX": {"change_percent": -3.2}, "DXY": {"change_percent": 1.1}},
+        {"taiwan": {"vix": {"change_percent": 12.0}}},
+    )
+    assert inputs["equities"]["change_percent"] == -3.2
+    assert inputs["vix"]["change_percent"] == 12.0
+    assert inputs["usd"]["change_percent"] == 1.1
 
 
 def test_midday_briefing_includes_japan_korea_and_public_observation_cards():

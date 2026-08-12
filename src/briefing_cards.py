@@ -70,6 +70,18 @@ def _regime_factors(items: dict[str, dict[str, Any]], risk: dict[str, Any]) -> d
     return factors
 
 
+def _contagion_inputs(items: dict[str, dict[str, Any]], risk: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Map the public snapshot into the cross-asset monitor contract."""
+    equities = items.get("TAIEX") or items.get("NASDAQ") or {}
+    vix_items = [
+        value.get("vix") for value in risk.values()
+        if isinstance(value, dict) and isinstance(value.get("vix"), dict)
+    ]
+    vix = next((item for item in vix_items if _usable_change(item) is not None), vix_items[0] if vix_items else {})
+    usd = items.get("DXY") or {}
+    return {"equities": equities, "vix": vix, "usd": usd}
+
+
 def _move(item: dict[str, Any] | None) -> str:
     """Format a quote movement without treating a missing value as a signal."""
     if not item or item.get("change_percent") is None:
@@ -338,6 +350,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         observed_quotes,
         macro=macro_input,
         regime_factors=_regime_factors(all_items, risk),
+        contagion_observations=_contagion_inputs(all_items, risk),
         stress_exposures=public_watchlist,
         advice_context={"general_research": True},
     )
