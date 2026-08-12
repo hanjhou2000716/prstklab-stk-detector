@@ -110,3 +110,26 @@ def test_manifest_cli_accepts_creator_records_file(tmp_path, monkeypatch):
     )
     assert release_manifest.main() == 0
     assert json.loads(output.read_text(encoding="utf-8"))["creator_status"] == "ready"
+
+
+def test_manifest_cli_rejects_creator_records_inside_public_site(tmp_path, monkeypatch):
+    _artifacts(tmp_path)
+    records_path = tmp_path / "site" / "data" / "creator-records.json"
+    records_path.write_text("[]", encoding="utf-8")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "release_manifest",
+            "--root",
+            str(tmp_path),
+            "--creator-records",
+            str(records_path),
+        ],
+    )
+    try:
+        release_manifest.main()
+    except SystemExit as exc:
+        assert exc.code == 2
+    else:
+        raise AssertionError("public creator records path should be rejected")

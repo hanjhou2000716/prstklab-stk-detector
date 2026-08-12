@@ -29,6 +29,13 @@ def test_scheduled_production_workflow_installs_renderer_browser():
     assert "playwright install --with-deps chromium" in workflow
 
 
+def test_scheduled_workflow_only_passes_explicit_external_creator_records():
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
+    assert "CREATOR_RECORDS_PATH" in workflow
+    assert "-f \"$CREATOR_RECORDS_PATH\"" in workflow
+    assert "--creator-records \"$CREATOR_RECORDS_PATH\"" in workflow
+
+
 def test_event_production_workflows_install_renderer_browser():
     root = Path(__file__).resolve().parents[1] / ".github" / "workflows"
     for name in ("official-event-monitor.yml", "emergency-alert.yml"):

@@ -583,8 +583,12 @@ def main() -> int:
     args = parser.parse_args()
     creator_records: list[dict[str, Any]] | None = None
     if args.creator_records is not None:
+        creator_path = args.creator_records.resolve()
+        public_root = (args.root / "site").resolve()
+        if creator_path.is_relative_to(public_root):
+            parser.error("creator records must be outside the public site tree")
         try:
-            payload = json.loads(args.creator_records.read_text(encoding="utf-8"))
+            payload = json.loads(creator_path.read_text(encoding="utf-8"))
         except (OSError, UnicodeError, json.JSONDecodeError) as exc:
             parser.error(f"creator records are unreadable: {type(exc).__name__}")
         if isinstance(payload, dict):

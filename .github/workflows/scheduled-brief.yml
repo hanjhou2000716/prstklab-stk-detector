@@ -57,6 +57,10 @@ jobs:
       SNAPSHOT_PATH: site/data/market.json
       MANIFEST_PATH: site/data/release-manifest.json
       DATA_RELEASE_BRANCH: data-release
+      # Optional path to an already-sanitized Creator Insight records file.
+      # Keep it outside site/ so raw ingress material can never be uploaded
+      # as part of the Pages artifact.
+      CREATOR_RECORDS_PATH: ${{ vars.CREATOR_RECORDS_PATH }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -91,10 +95,15 @@ jobs:
         run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --prepare-only --snapshot "$SNAPSHOT_PATH" >> "$GITHUB_OUTPUT"
       - name: Build release manifest
         if: steps.prepare.outputs.prepared == 'true'
-        run: >-
-          python -m src.release_manifest
-          --allow-stale-research
-          --research-fallback-reason "research scan incomplete; preserving last-known-good research snapshot"
+        run: |
+          arguments=(
+            --allow-stale-research
+            --research-fallback-reason "research scan incomplete; preserving last-known-good research snapshot"
+          )
+          if [ -n "${CREATOR_RECORDS_PATH:-}" ] && [ -f "$CREATOR_RECORDS_PATH" ]; then
+            arguments+=(--creator-records "$CREATOR_RECORDS_PATH")
+          fi
+          python -m src.release_manifest "${arguments[@]}"
       - name: Publish snapshot and manifest
         if: steps.prepare.outputs.prepared == 'true'
         run: |
