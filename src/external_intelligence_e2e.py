@@ -13,6 +13,7 @@ from src.creator_delivery_contract import decide_creator_delivery
 from src.creator_intelligence_pipeline import build_creator_intelligence_release
 from src.creator_photo_delivery import plan_creator_delivery
 from src.email_intelligence import normalize_email_observation
+from src.external_event_pipeline import build_external_event
 from src.external_event_risk import cluster_external_events, notification_decision, score_prstk_risk
 from src.external_source_parsers import parse_external_email
 
@@ -42,6 +43,7 @@ def run_external_intelligence_dry_run() -> dict[str, Any]:
     }
     clusters = cluster_external_events([external])
     score = score_prstk_risk(clusters[0]) if clusters else {"prstk_risk_level": "R0", "notification_eligible": False}
+    event_pipeline = build_external_event(external)
     parent = {"release_id": "release-dry-run", "market_snapshot_id": "market-dry-run", "event_snapshot_id": "event-dry-run"}
     creator_insight = {
         "content_origin": "haojiao",
@@ -70,6 +72,11 @@ def run_external_intelligence_dry_run() -> dict[str, Any]:
         "email_observation": {"parse_status": observation["parse_status"], "content_origin": observation["content_origin"]},
         "parser": {"parse_status": parsed.get("parse_status"), "failure_reason": parsed.get("failure_reason")},
         "external_risk": {"level": score.get("prstk_risk_level"), "notification": notification_decision(score)},
+        "event_pipeline": {
+            "lifecycle_state": event_pipeline["lifecycle_state"],
+            "notification": event_pipeline["notification"],
+            "pending_reasons": event_pipeline["pending_reasons"],
+        },
         "creator_release": {"status": creator["status"], "parent_release_id": creator["parent_release_id"]},
         "creator_pipeline": {"accepted_count": creator_result["accepted_count"], "dropped_count": creator_result["dropped_count"]},
         "creator_delivery": creator_delivery,

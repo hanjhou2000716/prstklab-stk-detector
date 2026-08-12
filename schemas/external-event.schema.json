@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["pipeline_version", "classification", "cluster", "risk", "notification", "lifecycle_state", "source_evidence", "market_evidence"],
+  "properties": {
+    "pipeline_version": {"type": "string"},
+    "observation_id": {"type": ["string", "null"]},
+    "event_cluster_key": {"type": ["string", "null"]},
+    "classification": {"type": "object"},
+    "cluster": {"type": "object"},
+    "risk": {"type": "object"},
+    "notification": {"type": "object"},
+    "lifecycle_state": {"enum": ["observation", "pending_confirmation", "confirmed", "escalated", "suppressed", "resolved"]},
+    "pending_reasons": {"type": "array", "items": {"type": "string"}},
+    "source_evidence": {"type": "array"},
+    "market_evidence": {"type": "array"},
+    "created_at": {"type": "string", "format": "date-time"}
+  },
+  "additionalProperties": true
+}
