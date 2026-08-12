@@ -45,6 +45,7 @@
       "required": ["status"],
       "properties": {
         "status": {"enum": ["no_event", "event_detected", "incomplete", "scan_failed"]},
+        "has_events": {"type": "boolean"},
         "label": {"type": "string"},
         "detail": {"type": "string"}
       },

@@ -22,7 +22,8 @@ def test_failed_event_source_never_claims_no_event():
     )
     official = next(item for item in health["sources"] if item["key"] == "official_events")
     assert official["status"] == "partial"
-    assert health["event_scan"]["status"] == "incomplete"
+    assert health["event_scan"]["status"] == "scan_failed"
+    assert health["event_scan"]["has_events"] is False
     assert "不能將本輪解讀為沒有事件" in health["event_scan"]["detail"]
 
 

@@ -347,18 +347,21 @@ def build_source_health(
     if events.get("is_major"):
         event_scan = {
             "status": "event_detected",
+            "has_events": True,
             "label": "已核對重大事件",
             "detail": "本輪掃描已發現符合門檻的市場事件。",
         }
     elif dependency_failed:
         event_scan = {
-            "status": "incomplete",
+            "status": "scan_failed",
+            "has_events": False,
             "label": "部分來源失敗",
             "detail": "部分事件來源暫時無法取得，不能將本輪解讀為沒有事件。",
         }
     else:
         event_scan = {
             "status": "no_event",
+            "has_events": False,
             "label": "本輪無重大事件",
             "detail": "事件來源已完成掃描，未發現符合提醒門檻的重大事件。",
         }

@@ -24,7 +24,7 @@ def test_no_event_and_failed_scan_are_distinct():
     health = _health(errors=[{"scope": "news", "ticker": "新聞", "message": "timeout"}])
     market_news = next(item for item in health["sources"] if item["key"] == "market_news")
     assert market_news["state"] == "failed"
-    assert health["event_scan"]["status"] == "incomplete"
+    assert health["event_scan"]["status"] == "scan_failed"
 
 
 def test_fallback_is_degraded_with_fallback():
