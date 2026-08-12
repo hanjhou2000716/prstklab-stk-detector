@@ -108,6 +108,18 @@ def test_ingress_accepts_replay_safe_observation_and_dedupes(tmp_path: Path) -> 
     assert store.health()["raw_content_stored"] is False
 
 
+def test_push_advances_durable_cursor_without_storing_message_body(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    service = GmailIngressService(store, _config())
+    result = service.accept_push(_push(), _headers())
+    assert result["accepted"] is True
+    assert result["history_id"] == "123"
+    cursor = store.cursor()
+    assert cursor["last_history_id"] == "123"
+    assert cursor["last_notification_at"]
+    assert store.health()["raw_content_stored"] is False
+
+
 def test_known_source_template_failure_enters_dlq(tmp_path: Path) -> None:
     store = EmailStore(tmp_path / "mail.sqlite3")
     service = GmailIngressService(store, _config())

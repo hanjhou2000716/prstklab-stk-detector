@@ -108,5 +108,23 @@ class GmailIngressService:
     def health(self) -> dict[str, Any]:
         return {"watch": watch_health(self.config, self.store.cursor()), "store": self.store.health()}
 
+    def accept_push(self, body: bytes | str, headers: Mapping[str, str]) -> dict[str, Any]:
+        """Authenticate and durably record one bounded Gmail notification.
+
+        Pub/Sub notifications contain only a Gmail history cursor. Message
+        bodies are fetched separately by the worker and never enter this HTTP
+        handler or its logs.
+        """
+        notification = self.decode_push(body, headers)
+        history_id = str(notification.get("history_id") or "").strip()
+        if not history_id:
+            raise GmailIngressError("gmail_history_id_missing")
+        current = self.store.save_cursor(
+            last_history_id=history_id,
+            last_notification_at=_now(),
+            last_sync_at=_now(),
+        )
+        return {"accepted": True, "history_id": history_id, "cursor": current}
+
 
 __all__ = ["GmailIngressError", "GmailIngressService"]

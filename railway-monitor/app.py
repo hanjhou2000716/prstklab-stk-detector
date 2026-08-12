@@ -339,8 +339,16 @@ HEALTH_STATE: dict[str, Any] = {
         "last_cycle_started_at": None,
         "last_cycle_completed_at": None,
     },
+    "gmail": {
+        "status": "not_configured",
+        "watch_status": "not_checked",
+        "last_notification_at": None,
+        "last_history_id": None,
+        "error": None,
+    },
 }
 DELIVERY_STORE: SeenStore | None = None
+EMAIL_INGRESS: Any | None = None
 
 
 def update_health(component: str, **values: Any) -> None:
@@ -2029,6 +2037,33 @@ def _health_request_path(request_target: str) -> str:
     return urlparse(request_target).path or "/"
 
 
+def configure_gmail_ingress() -> None:
+    """Attach the bounded Gmail Pub/Sub ingress when the Railway worker starts."""
+    global EMAIL_INGRESS
+    try:
+        from email_store import EmailStore
+        from gmail_ingress import GmailIngressService
+        from gmail_watch import GmailWatchConfig
+
+        config = GmailWatchConfig.from_env()
+        path = os.environ.get("GMAIL_STATE_PATH", "/data/gmail-ingress.sqlite3")
+        EMAIL_INGRESS = GmailIngressService(EmailStore(path), config)
+        diagnostics = EMAIL_INGRESS.health()
+        watch = diagnostics.get("watch") if isinstance(diagnostics, dict) else {}
+        store = diagnostics.get("store") if isinstance(diagnostics, dict) else {}
+        update_health(
+            "gmail",
+            status="configuration_missing" if config.missing else "ready",
+            watch_status=(watch or {}).get("status", "not_checked"),
+            last_notification_at=(store or {}).get("cursor", {}).get("last_notification_at"),
+            last_history_id=(store or {}).get("cursor", {}).get("last_history_id"),
+            error=None,
+        )
+    except Exception as error:  # pragma: no cover - defensive startup path
+        EMAIL_INGRESS = None
+        update_health("gmail", status="failed", error=type(error).__name__)
+
+
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         # Monitoring probes and browser cache-busting commonly append a
@@ -2046,6 +2081,38 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_POST(self) -> None:  # noqa: N802
+        if _health_request_path(self.path) == "/gmail/push":
+            if EMAIL_INGRESS is None:
+                self.send_error(503, "gmail ingress is unavailable")
+                return
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if length < 0 or length > 256 * 1024:
+                    self.send_error(413, "push body too large")
+                    return
+                body = self.rfile.read(length)
+                headers = {str(key).lower(): str(value) for key, value in self.headers.items()}
+                result = EMAIL_INGRESS.accept_push(body, headers)
+                cursor = result.get("cursor") if isinstance(result, dict) else {}
+                update_health(
+                    "gmail",
+                    status="healthy",
+                    watch_status="healthy",
+                    last_notification_at=(cursor or {}).get("last_notification_at"),
+                    last_history_id=(cursor or {}).get("last_history_id"),
+                    error=None,
+                )
+                response = b'{"accepted":true}\n'
+                self.send_response(204)
+                self.send_header("Content-Length", str(len(response)))
+                self.end_headers()
+                return
+            except Exception as error:
+                # Never echo bearer tokens, message IDs or request bodies.
+                update_health("gmail", status="failed", error=type(error).__name__)
+                code = 401 if type(error).__name__ in {"GmailIngressError"} else 400
+                self.send_error(code, "gmail push rejected")
+                return
         if self.path != "/delivery-status":
             self.send_error(404)
             return
@@ -2082,6 +2149,7 @@ class HealthHandler(BaseHTTPRequestHandler):
 
 
 def start_health_server() -> None:
+    configure_gmail_ingress()
     port = int(os.environ.get("PORT", "8080"))
     server = ThreadingHTTPServer(("0.0.0.0", port), HealthHandler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
