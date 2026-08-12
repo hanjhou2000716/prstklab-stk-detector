@@ -6,6 +6,14 @@ def test_catalog_has_allowlisted_primary_and_discovery_sources():
     assert {"TWSE", "TAIFEX", "TPEx", "SEC", "GDELT"}.issubset(providers)
 
 
+def test_catalog_declares_independent_secondary_market_sources():
+    providers = {item["provider"] for item in build_adapter_catalog()}
+    assert {"CoinGecko", "Stooq", "Nasdaq", "KOFIA"}.issubset(providers)
+    specs = {item["provider"]: item for item in build_adapter_catalog()}
+    assert specs["KOFIA"]["source_tier"] == "official"
+    assert specs["Stooq"]["can_trigger_alert"] is False
+
+
 def test_sec_adapter_uses_repository_identifying_user_agent(monkeypatch):
     monkeypatch.delenv("SEC_USER_AGENT", raising=False)
     adapter = build_adapter("SEC", transport=lambda *args, **kwargs: None)
