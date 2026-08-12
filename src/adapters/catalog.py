@@ -36,6 +36,11 @@ ADAPTER_CATALOG: tuple[AdapterSpec, ...] = (
     AdapterSpec("FRED", "https://api.stlouisfed.org/fred", "official", True, "daily", True),
     AdapterSpec("EIA", "https://api.eia.gov/v2", "official", True, "daily", True),
     AdapterSpec("Binance", "https://api.binance.com/api/v3", "public-market", False, "intraday"),
+    AdapterSpec("CoinGecko", "https://api.coingecko.com/api/v3", "public-market", False, "intraday"),
+    AdapterSpec("Binance.US", "https://api.binance.us/api/v3", "public-market", False, "intraday"),
+    AdapterSpec("Stooq", "https://stooq.com/q/d/l/", "public-market", False, "daily"),
+    AdapterSpec("Nasdaq", "https://api.nasdaq.com/api", "public-market", False, "daily"),
+    AdapterSpec("KOFIA", "https://freesis.kofia.or.kr/stat/FreeSIS.do", "official", False, "daily"),
     AdapterSpec("GDELT", "https://api.gdeltproject.org/api/v2/doc/doc", "discovery", False, "15-minute"),
     AdapterSpec("ECB", "https://www.ecb.europa.eu/rss/press.html", "official", True, "event-driven"),
 )
