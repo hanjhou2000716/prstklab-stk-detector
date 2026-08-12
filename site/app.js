@@ -945,6 +945,10 @@ const loadPublishedRelease = async () => {
     if (!healthEnvelope.source_health || !Array.isArray(healthEnvelope.source_health.sources)) {
       throw new Error("source-health artifact is invalid");
     }
+    if (String(healthEnvelope.snapshot_id || "") !== `${manifest.market_snapshot_id}-health`) {
+      throw new Error("source-health artifact binding is invalid");
+    }
+    snapshot.source_health = healthEnvelope.source_health;
   }
   window.releaseManifest = manifest;
   saveLastGoodRelease(manifest, artifactTexts);
