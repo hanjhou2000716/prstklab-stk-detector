@@ -51,6 +51,16 @@ def _ready_bundle() -> dict[str, dict[str, Any]]:
                 "scan_scope": "full",
                 "run_finished_at": "2026-08-12T10:00:00+00:00",
             },
+            "backtest_release_status": "ready",
+            "backtest_release_contract": {
+                "backtest_release": "e2e-backtest",
+                "publication_state": "ready",
+                "publish_eligible": True,
+                "strategy_registry": [
+                    {"strategy_id": strategy, "strategy_version": "e2e", "data_version": "e2e"}
+                    for strategy in ("momentum", "price_action", "resonance", "value")
+                ],
+            },
             # Keep the offline fixture representative of the strict
             # production contract: every market/strategy row must be present
             # and independently complete.  A single aggregate row would
