@@ -76,6 +76,18 @@ def test_backtest_contract_must_match_candidate_release():
     assert "backtest_release does not match research contract" in binding["contract_errors"]
 
 
+def test_backtest_contract_must_include_candidate_strategy():
+    binding = bind_strategy_provenance({
+        "strategy": "momentum", "strategy_version": "2", "data_version": "d1", "backtest_release": "bt1",
+        "backtest_release_contract": {
+            "backtest_release": "bt1", "publication_state": "ready", "publish_eligible": True,
+            "strategy_registry": [{"strategy_id": "value", "strategy_version": "2"}],
+        },
+    })
+    assert binding["state"] == "observation_only"
+    assert "backtest_release_contract has no matching strategy" in binding["contract_errors"]
+
+
 def test_intelligence_binding_fails_closed_when_release_ids_missing():
     result = bind_intelligence(
         {"advice_gate": "research_only"},
