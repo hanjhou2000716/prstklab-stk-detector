@@ -55,6 +55,20 @@ def production_research_contract_errors(research: dict[str, Any]) -> list[str]:
     delivery gates so a workflow cannot accidentally bypass the same rules.
     """
     errors: list[str] = []
+    backtest = research.get("backtest_release_contract")
+    if isinstance(backtest, dict) and backtest.get("publication_state") == "ready":
+        registry = backtest.get("strategy_registry")
+        if not isinstance(registry, list) or not registry:
+            errors.append("ready backtest contract requires strategy_registry")
+        else:
+            registry_ids = {str(row.get("strategy_id")) for row in registry if isinstance(row, dict) and row.get("strategy_id")}
+            candidates = research.get("candidates")
+            if isinstance(candidates, list):
+                for index, candidate in enumerate(candidates):
+                    if isinstance(candidate, dict):
+                        strategy_id = candidate.get("strategy") or candidate.get("strategy_id")
+                        if strategy_id and str(strategy_id) not in registry_ids:
+                            errors.append(f"research candidate {index} strategy is absent from ready backtest registry")
     if str(research.get("scan_mode") or "") != "production":
         errors.append("research artifact is not a production scan")
     if research.get("publish_eligible") is not True:

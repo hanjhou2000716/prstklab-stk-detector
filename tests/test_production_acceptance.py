@@ -125,6 +125,29 @@ def test_production_contract_rejects_incomplete_source_metadata():
     assert "research source 0 universe is incomplete" in errors
 
 
+def test_ready_backtest_requires_strategy_registry_in_production_acceptance():
+    research = _complete_production_research()
+    research["backtest_release_contract"] = {
+        "publication_state": "ready",
+        "publish_eligible": True,
+        "strategy_registry": [],
+    }
+    errors = production_research_contract_errors(research)
+    assert "ready backtest contract requires strategy_registry" in errors
+
+
+def test_production_candidate_must_match_ready_backtest_registry():
+    research = _complete_production_research()
+    research["backtest_release_contract"] = {
+        "publication_state": "ready",
+        "publish_eligible": True,
+        "strategy_registry": [{"strategy_id": "momentum"}],
+    }
+    research["candidates"] = [{"ticker": "2330", "strategy": "value"}]
+    errors = production_research_contract_errors(research)
+    assert any("candidate 0 strategy is absent" in error for error in errors)
+
+
 def _complete_production_research():
     return {
         "scan_mode": "production",
