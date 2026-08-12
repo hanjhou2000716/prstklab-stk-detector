@@ -691,7 +691,11 @@ const renderResearch = (snapshot) => {
   const generatedAt = report.generated_at ? ` 掃描時間：${new Date(report.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}` : "";
   setText("research-tag", activeResearchMarket === "taiwan" ? "台股" : "美股");
   const unavailable = report.availability === "expired" ? "研究資料逾時，等待下一次全市場掃描" : null;
-  setText("research-notice", unavailable || generatedAt.trim() || "掃描時間暫時無法取得");
+  const backtestState = String(report.backtest_release_status || "").toLowerCase();
+  const backtestNotice = backtestState === "unavailable" || backtestState === "blocked"
+    ? "正式回測尚未可用；目前僅供研究觀察，不提供操作判斷。"
+    : "";
+  setText("research-notice", unavailable || backtestNotice || generatedAt.trim() || "掃描時間暫時無法取得");
   const sourceFor = (strategy) => (report.sources || []).find((item) => item.market === activeResearchMarket && item.strategy === strategy) || {};
   const sourceBlocked = (strategy) => {
     const source = sourceFor(strategy);

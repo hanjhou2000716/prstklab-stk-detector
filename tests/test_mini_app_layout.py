@@ -161,6 +161,12 @@ def test_research_cards_expose_advice_gate_state_and_blocking_reason():
     assert "阻擋原因" in app
 
 
+def test_research_header_discloses_missing_formal_backtest():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "backtest_release_status" in app
+    assert "正式回測尚未可用" in app
+
+
 def test_briefing_intelligence_shows_conditional_impact_and_macro_surprise_only():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
 
