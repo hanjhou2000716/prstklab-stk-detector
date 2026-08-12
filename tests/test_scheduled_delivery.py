@@ -101,3 +101,35 @@ def test_scheduled_delivery_blocks_photo_when_renderer_fails(tmp_path, monkeypat
     assert "sent=false" in text
     assert "reason=renderer_failed" in text
     assert "renderer_error_type=chromium_unavailable" in text
+
+
+def test_scheduled_delivery_blocks_quality_ineligible_event_before_renderer(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / "market.json"
+    manifest_path = tmp_path / "release-manifest.json"
+    snapshot_path.write_text(
+        json.dumps({"snapshot_id": "market-12345678", "quotes": [], "indices": [], "briefing": {}}),
+        encoding="utf-8",
+    )
+    manifest_path.write_text("{}", encoding="utf-8")
+    output = tmp_path / "output"
+    _patch_ready(monkeypatch, output)
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "_pick_event",
+        lambda *_args: {
+            "event_key": "stale-event",
+            "title": "stale event",
+            "alert_eligible": False,
+            "quality_reasons": ["quote_stale"],
+        },
+    )
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "render_alert_card",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("quality gate must run before renderer")),
+    )
+    scheduled_delivery.send(snapshot_path, "morning", manifest_path)
+    text = output.read_text(encoding="utf-8")
+    assert "sent=false" in text
+    assert "delivery_status=suppressed" in text
+    assert "reason=quote_stale" in text
