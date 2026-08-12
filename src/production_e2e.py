@@ -13,6 +13,7 @@ from collections.abc import Callable
 from typing import Any
 
 from src.creator_delivery_contract import decide_creator_delivery
+from src.creator_intelligence_pipeline import build_creator_intelligence_release
 from src.production_acceptance import validate_production_bundle
 from src.system_dry_run import run_dry_run
 
@@ -131,6 +132,22 @@ def run_offline_e2e(
         release_ready=release.allowed,
         media_available=pipeline.get("renderer_available") is True,
     )
+    creator_result = build_creator_intelligence_release(
+        [{
+            "content_origin": "haojiao",
+            "episode_key": "production-e2e-creator-release",
+            "episode_title": "Public creator observation",
+            "claims": ["A public claim"],
+            "verification_state": "unverified",
+            "public_safe": True,
+        }],
+        parent_manifest={
+            "release_id": bundle["manifest"]["release_id"],
+            "market_snapshot_id": bundle["manifest"]["market_snapshot_id"],
+            "event_snapshot_id": bundle["manifest"]["event_snapshot_id"],
+        },
+    )
+    creator_release = creator_result["artifact"]
     checks = {
         "release_contract": release.allowed,
         "telegram_configuration": telegram.get("ok") is True,
@@ -141,6 +158,8 @@ def run_offline_e2e(
         and pipeline.get("photo_contract", {}).get("deep_link_valid") is True
         and bool(pipeline.get("photo_contract", {}).get("observation_id")),
         "creator_delivery_contract": creator_delivery["allowed"] is True,
+        "creator_release_contract": creator_release["status"] == "ready"
+        and creator_release["parent_release_id"] == bundle["manifest"]["release_id"],
     }
     return {
         "ok": all(checks.values()),
@@ -159,6 +178,12 @@ def run_offline_e2e(
             "delivery_status": pipeline.get("photo_contract", {}).get("delivery_status"),
         },
         "creator_delivery": creator_delivery,
+        "creator_release": {
+            "status": creator_release["status"],
+            "release_id": creator_release["release_id"],
+            "parent_release_id": creator_release["parent_release_id"],
+            "insight_count": len(creator_release.get("insights") or []),
+        },
     }
 
 
