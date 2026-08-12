@@ -632,10 +632,14 @@ const researchExplainability = (item) => {
   const risks = asList(item.risk_factors);
   const completeness = item.data_completeness ?? item.data_quality_score;
   const invalidation = item.invalidation || item.invalidation_condition;
-  if (!passed.length && !failed.length && !risks.length && completeness === undefined && !invalidation) return "";
+  const gate = item.advice_gate_detail || (item.explainability && item.explainability.advice_gate) || {};
+  if (!passed.length && !failed.length && !risks.length && completeness === undefined && !invalidation && !Object.keys(gate).length) return "";
   const list = (values, fallback) => values.length ? values.map((value) => `<li>${escapeHtml(value)}</li>`).join("") : `<li>${fallback}</li>`;
   const quality = completeness === undefined || completeness === null ? "資料完整度暫時無法取得" : `資料完整度 ${escapeHtml(String(completeness))}`;
-  return `<details class="research-explainability"><summary>條件與風險說明</summary><p><b>已通過：</b></p><ul>${list(passed, "尚未提供")}</ul><p><b>未通過：</b></p><ul>${list(failed, "無額外未通過條件")}</ul><p><b>風險：</b></p><ul>${list(risks, "尚未提供")}</ul><small>${escapeHtml(quality)}${invalidation ? `｜失效條件：${escapeHtml(invalidation)}` : ""}。僅供研究觀察，不構成買賣指令。</small></details>`;
+  const gateLabel = gate.allowed === true ? "條件式研究內容可用" : "僅供研究觀察";
+  const gateReasons = asList(gate.blocking_reasons);
+  const gateReason = gateReasons.length ? `｜阻擋原因：${gateReasons.join("、")}` : "";
+  return `<details class="research-explainability"><summary>條件與風險說明</summary><p><b>研究閘門：</b>${escapeHtml(gateLabel)}${escapeHtml(gateReason)}</p><p><b>已通過：</b></p><ul>${list(passed, "尚未提供")}</ul><p><b>未通過：</b></p><ul>${list(failed, "無額外未通過條件")}</ul><p><b>風險：</b></p><ul>${list(risks, "尚未提供")}</ul><small>${escapeHtml(quality)}${invalidation ? `｜失效條件：${escapeHtml(invalidation)}` : ""}。僅供研究觀察，不構成買賣指令。</small></details>`;
 };
 
 const renderResearchList = (id, items, empty) => {
