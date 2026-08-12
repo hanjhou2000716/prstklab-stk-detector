@@ -1,8 +1,8 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from src.scheduled_brief import briefing_correlation, build_brief, resolve_slot
 from src.alert_budget import decide_alert_budget
+from src.scheduled_brief import briefing_correlation, build_brief, resolve_slot
 
 
 def test_taiwan_price_brief_includes_the_current_percent_move():
