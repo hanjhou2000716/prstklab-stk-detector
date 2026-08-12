@@ -3,6 +3,13 @@ import json
 from src.backtest_archive import audit_backtest_archive
 
 
+def test_missing_archive_is_explicitly_incomplete_not_no_candidates(tmp_path):
+    report = audit_backtest_archive(tmp_path, "taiwan")
+    assert report["status"] == "incomplete"
+    assert any("manifest" in reason for reason in report["reasons"])
+    assert report["bar_file_count"] == 0
+
+
 def test_archive_audit_blocks_missing_historical_inputs(tmp_path):
     report = audit_backtest_archive(tmp_path, "taiwan")
     assert report["status"] == "incomplete"
