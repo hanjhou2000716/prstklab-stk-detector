@@ -5,7 +5,7 @@ from __future__ import annotations
 import base64
 import binascii
 import json
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from typing import Any
 
@@ -26,9 +26,16 @@ def _now() -> str:
 
 
 class GmailIngressService:
-    def __init__(self, store: EmailStore, config: GmailWatchConfig) -> None:
+    def __init__(
+        self,
+        store: EmailStore,
+        config: GmailWatchConfig,
+        *,
+        token_verifier: Callable[[str, str], bool] | None = None,
+    ) -> None:
         self.store = store
         self.config = config
+        self.token_verifier = token_verifier
 
     def _authenticate(self, headers: Mapping[str, str]) -> None:
         if self.config.missing:
@@ -38,6 +45,10 @@ class GmailIngressService:
         service_account = headers.get("x-goog-authenticated-user-email", "").removeprefix("accounts.google.com:")
         if not auth.casefold().startswith("bearer "):
             raise GmailIngressError("unauthenticated_pubsub_push")
+        token = auth.split(" ", 1)[1].strip()
+        if self.config.require_jwt_verification:
+            if self.token_verifier is None or not self.token_verifier(token, self.config.audience):
+                raise GmailIngressError("pubsub_jwt_verification_failed")
         if audience != self.config.audience:
             raise GmailIngressError("pubsub_audience_mismatch")
         if service_account != self.config.service_account:

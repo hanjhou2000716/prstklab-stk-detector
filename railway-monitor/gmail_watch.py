@@ -21,6 +21,7 @@ class GmailWatchConfig:
     oauth_state: str
     audience: str
     service_account: str
+    require_jwt_verification: bool = False
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> GmailWatchConfig:
@@ -32,6 +33,7 @@ class GmailWatchConfig:
             oauth_state=source.get("GMAIL_OAUTH_STATE", "").strip(),
             audience=source.get("GMAIL_PUBSUB_AUDIENCE", "").strip(),
             service_account=source.get("GMAIL_PUBSUB_SERVICE_ACCOUNT", "").strip(),
+            require_jwt_verification=source.get("GMAIL_PUBSUB_REQUIRE_JWT", "false").strip().casefold() == "true",
         )
 
     @property

@@ -60,6 +60,37 @@ def test_ingress_rejects_when_gateway_configuration_is_missing(tmp_path: Path) -
         service.decode_push(_push(), _headers())
 
 
+def test_ingress_strict_mode_requires_verified_jwt(tmp_path: Path) -> None:
+    strict = GmailWatchConfig(
+        topic_name="projects/p/topics/t",
+        label_ids=("Label_1",),
+        oauth_state="configured",
+        audience="https://railway.example/gmail/push",
+        service_account="push@example.iam.gserviceaccount.com",
+        require_jwt_verification=True,
+    )
+    service = GmailIngressService(EmailStore(tmp_path / "mail.sqlite3"), strict)
+    with pytest.raises(GmailIngressError, match="jwt_verification"):
+        service.decode_push(_push(), _headers())
+
+
+def test_ingress_strict_mode_uses_injected_jwt_verifier(tmp_path: Path) -> None:
+    strict = GmailWatchConfig(
+        topic_name="projects/p/topics/t",
+        label_ids=("Label_1",),
+        oauth_state="configured",
+        audience="https://railway.example/gmail/push",
+        service_account="push@example.iam.gserviceaccount.com",
+        require_jwt_verification=True,
+    )
+    service = GmailIngressService(
+        EmailStore(tmp_path / "mail.sqlite3"),
+        strict,
+        token_verifier=lambda token, audience: token == "verified-jwt" and audience == strict.audience,
+    )
+    assert service.decode_push(_push(), _headers())["history_id"] == "123"
+
+
 def test_ingress_accepts_replay_safe_observation_and_dedupes(tmp_path: Path) -> None:
     store = EmailStore(tmp_path / "mail.sqlite3")
     service = GmailIngressService(store, _config())
