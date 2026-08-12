@@ -73,3 +73,17 @@ def test_audit_rejects_missing_research_artifact(tmp_path):
 
     assert report["ok"] is False
     assert any("research missing" in issue for issue in report["issues"])
+
+
+def test_production_audit_fails_closed_on_fixture_without_manifest(tmp_path):
+    _write_valid_artifacts(tmp_path)
+    report = audit_artifacts(
+        market_path=tmp_path / "market.json",
+        research_path=tmp_path / "research.json",
+        index_path=tmp_path / "site" / "index.html",
+        manifest_path=tmp_path / "missing-manifest.json",
+        require_production=True,
+    )
+
+    assert report["ok"] is False
+    assert any("production release manifest is required" in issue for issue in report["issues"])

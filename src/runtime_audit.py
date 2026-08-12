@@ -90,6 +90,7 @@ def audit_artifacts(
     research_path: Path = Path("site/data/research-report.json"),
     index_path: Path = Path("site/index.html"),
     manifest_path: Path = Path("site/data/release-manifest.json"),
+    require_production: bool = False,
 ) -> dict[str, Any]:
     """Return a non-secret structural audit of the files published to Pages."""
     issues: list[str] = []
@@ -105,7 +106,13 @@ def audit_artifacts(
         events = _load_json(Path("site/data/event-ledger.json"), "events", issues)
         if events:
             acceptance = validate_production_bundle(manifest=manifest, market=market, research=research, events=events)
-            warnings.extend(f"production acceptance: {error}" for error in acceptance.errors)
+            messages = [f"production acceptance: {error}" for error in acceptance.errors]
+            if require_production:
+                issues.extend(messages)
+            else:
+                warnings.extend(messages)
+    if require_production and manifest is None:
+        issues.append("production release manifest is required")
     return {
         "ok": not issues,
         "issues": issues,
@@ -121,8 +128,19 @@ def main() -> int:
     parser.add_argument("--research", type=Path, default=Path("site/data/research-report.json"))
     parser.add_argument("--index", type=Path, default=Path("site/index.html"))
     parser.add_argument("--manifest", type=Path, default=Path("site/data/release-manifest.json"))
+    parser.add_argument(
+        "--require-production",
+        action="store_true",
+        help="fail when the checked artifacts are not a ready production release",
+    )
     args = parser.parse_args()
-    report = audit_artifacts(market_path=args.market, research_path=args.research, index_path=args.index, manifest_path=args.manifest)
+    report = audit_artifacts(
+        market_path=args.market,
+        research_path=args.research,
+        index_path=args.index,
+        manifest_path=args.manifest,
+        require_production=args.require_production,
+    )
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0 if report["ok"] else 1
 
