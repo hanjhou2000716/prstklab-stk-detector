@@ -215,6 +215,13 @@ def test_market_classifier_routes_fed_and_lai_to_their_own_tabs():
     assert _filter_market_news([fed, lai], "us")[0]["title"].startswith("Federal")
 
 
+def test_market_classifier_retains_routing_evidence_on_story():
+    story = {"title": "Federal Reserve outlook", "summary": "US rates", "url": "https://example.test/fed"}
+    classification = classify_news_market(story)
+    assert classification["routing_evidence"]["title_summary_scanned"] is True
+    assert classification["routing_evidence"]["matched_term_count"] >= 1
+
+
 def test_market_filter_rejects_unclassified_headline_instead_of_copying_to_both_tabs():
     story = {"title": "Company announces quarterly update", "url": "https://example.test/neutral"}
     assert classify_news_market(story)["market_scope"] == "unclassified"

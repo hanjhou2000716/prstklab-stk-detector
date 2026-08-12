@@ -132,6 +132,11 @@ def classify_news_market(story: dict[str, str]) -> dict[str, Any]:
         "us_matches": us,
         "global_matches": global_terms,
         "classification_status": "matched" if scope != "unclassified" else "unclassified",
+        "routing_evidence": {
+            "title_summary_scanned": True,
+            "matched_term_count": len(taiwan) + len(us) + len(global_terms),
+            "source_market_hint": story.get("market") or story.get("category"),
+        },
     }
 
 
@@ -534,6 +539,7 @@ def _filter_market_news(stories: list[dict[str, str]], market: str) -> list[dict
         enriched = dict(story)
         classification = classify_news_market(enriched)
         scope = classification["market_scope"]
+        enriched["market_classification"] = classification
         # Unknown headlines have no auditable market scope.  Keeping them in
         # both tabs creates the exact false-routing failure this filter is
         # designed to prevent, so fail closed and let the source-health card
