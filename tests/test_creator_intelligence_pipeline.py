@@ -27,3 +27,31 @@ def test_pipeline_drops_private_or_unknown_records_fail_closed():
     assert result["accepted_count"] == 0
     assert result["source_state"] == "no_creator_insights"
     assert result["artifact"]["status"] == "ready"
+
+
+def test_pipeline_drops_parser_failures_before_public_release():
+    result = build_creator_intelligence_release(
+        [
+            {
+                "content_origin": "haojiao",
+                "episode_key": "ep-bad",
+                "episode_title": "Unparsed",
+                "parse_status": "unsupported_template",
+                "failure_reason": "missing_fact_or_opinion_sections",
+            },
+            {
+                "content_origin": "gooaye",
+                "episode_key": "ep-incomplete",
+                "episode_title": "Incomplete",
+                "parse_status": "parsed",
+                "source_adapter": "creator-template-v2",
+                "required_fields_present": False,
+            },
+        ],
+        parent_manifest=PARENT,
+    )
+    assert result["accepted_count"] == 0
+    assert result["dropped_reasons"] == [
+        "0:unsupported_template",
+        "1:adapter_required_fields_missing",
+    ]

@@ -7,6 +7,8 @@ from typing import Any
 from src.creator_release import build_creator_release
 from src.email_intelligence import normalize_creator_insight
 
+_PARSER_FAILURE_STATES = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
+
 
 def build_creator_intelligence_release(
     records: list[dict[str, Any]],
@@ -26,7 +28,17 @@ def build_creator_intelligence_release(
         if any(record.get(field) for field in ("body", "raw_body", "local_path", "private_url", "attachments")):
             dropped.append(f"{index}:private_field")
             continue
+        parse_status = str(record.get("parse_status") or "normalized")
+        if parse_status in _PARSER_FAILURE_STATES:
+            dropped.append(f"{index}:{parse_status}")
+            continue
+        if record.get("source_adapter") and record.get("required_fields_present") is False:
+            dropped.append(f"{index}:adapter_required_fields_missing")
+            continue
         normalized = normalize_creator_insight(record)
+        if (record.get("parse_status") or record.get("source_adapter")) and not normalized["episode_title"]:
+            dropped.append(f"{index}:missing_episode_title")
+            continue
         if normalized["content_origin"] not in {"haojiao", "gooaye"}:
             dropped.append(f"{index}:unknown_creator_source")
             continue
