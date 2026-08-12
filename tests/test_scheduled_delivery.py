@@ -133,3 +133,39 @@ def test_scheduled_delivery_blocks_quality_ineligible_event_before_renderer(tmp_
     assert "sent=false" in text
     assert "delivery_status=suppressed" in text
     assert "reason=quote_stale" in text
+import json
+
+from src.scheduled_delivery import _load_creator_records
+
+
+def test_creator_records_are_loaded_only_from_sanitized_external_path(tmp_path, monkeypatch):
+    records = tmp_path / "creator-records.json"
+    records.write_text(json.dumps({"records": [{"source": "haojiao", "title": "public"}]}), encoding="utf-8")
+    monkeypatch.setenv("CREATOR_RECORDS_PATH", str(records))
+    assert _load_creator_records() == [{"source": "haojiao", "title": "public"}]
+
+
+def test_creator_records_inside_site_are_rejected(tmp_path, monkeypatch):
+    site = tmp_path / "site"
+    site.mkdir()
+    records = site / "creator.json"
+    records.write_text("[]", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("CREATOR_RECORDS_PATH", str(records))
+    assert _load_creator_records() == []
+
+
+def test_prepare_binds_creator_records_to_the_published_snapshot(tmp_path, monkeypatch):
+    records = tmp_path / "creator-records.json"
+    records.write_text(json.dumps([{"source": "gooaye", "title": "public"}]), encoding="utf-8")
+    snapshot_path = tmp_path / "market.json"
+    monkeypatch.setenv("CREATOR_RECORDS_PATH", str(records))
+    monkeypatch.setattr(scheduled_delivery, "build_market_snapshot", lambda: {"snapshot_id": "m-1", "quotes": [], "indices": []})
+    monkeypatch.setattr(scheduled_delivery, "build_briefing_snapshot", lambda snapshot, _slot: {"creator_release": snapshot.get("creator_insights")})
+    monkeypatch.setattr(scheduled_delivery, "write_snapshot", lambda snapshot, path: path.write_text(json.dumps(snapshot), encoding="utf-8") is None)
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: None)
+    monkeypatch.setattr(scheduled_delivery, "briefing_correlation", lambda *_args: {"trace_id": "t", "snapshot_id": "m-1", "observation_id": ""})
+    monkeypatch.setattr(scheduled_delivery, "merge_published_metadata", lambda *_args, **_kwargs: True)
+    scheduled_delivery.prepare("morning", snapshot_path)
+    published = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    assert published["creator_insights"][0]["source"] == "gooaye"
