@@ -51,15 +51,34 @@ def _ready_bundle() -> dict[str, dict[str, Any]]:
                 "scan_scope": "full",
                 "run_finished_at": "2026-08-12T10:00:00+00:00",
             },
+            # Keep the offline fixture representative of the strict
+            # production contract: every market/strategy row must be present
+            # and independently complete.  A single aggregate row would
+            # otherwise pass the old gate while the Mini App had empty
+            # strategy drawers.
             "sources": [
                 {
+                    "market": market,
+                    "strategy": strategy,
                     "scan_state": "complete",
+                    "candidate_state": "no_candidates",
                     "requested": 1,
                     "requested_records": 1,
                     "universe_scanned": 1,
                     "complete_records": 1,
                     "failed_records": 0,
+                    "visible_candidates": 0,
                 }
+                for market, strategy in (
+                    ("taiwan", "momentum"),
+                    ("taiwan", "price_action"),
+                    ("taiwan", "resonance"),
+                    ("taiwan", "value"),
+                    ("us", "momentum"),
+                    ("us", "price_action"),
+                    ("us", "resonance"),
+                    ("us", "value"),
+                )
             ],
         },
         "events": {"snapshot_id": "e2e-events", "events": []},
