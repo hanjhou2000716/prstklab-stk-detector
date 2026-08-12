@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.creator_artifact import build_creator_artifact
 from src.creator_consensus import build_creator_consensus
 from src.creator_correlation import correlate_creator_insight
 from src.creator_release import build_creator_release
@@ -68,8 +69,17 @@ def build_creator_intelligence_release(
         parent_manifest=parent_manifest,
         creator_consensus=build_creator_consensus(insights),
     )
+    public_artifact = build_creator_artifact(
+        insights,
+        snapshot_id=artifact.get("release_id"),
+        generated_at=artifact.get("generated_at"),
+        parent_release_id=artifact.get("parent_release_id", ""),
+        market_snapshot_id=artifact.get("market_snapshot_id", ""),
+        event_snapshot_id=artifact.get("event_snapshot_id", ""),
+    )
     return {
         "artifact": artifact,
+        "public_artifact": public_artifact,
         "accepted_count": len(insights),
         "dropped_count": len(dropped),
         "dropped_reasons": dropped,
