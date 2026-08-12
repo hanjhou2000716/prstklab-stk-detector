@@ -12,6 +12,7 @@ import json
 from collections.abc import Callable
 from typing import Any
 
+from src.creator_delivery_contract import decide_creator_delivery
 from src.production_acceptance import validate_production_bundle
 from src.system_dry_run import run_dry_run
 
@@ -121,6 +122,15 @@ def run_offline_e2e(
     release = validate_production_bundle(**bundle, require_production_research=True)
     telegram = delivery_check(send=False)
     pipeline = dry_run()
+    creator_delivery = decide_creator_delivery(
+        {
+            "episode_key": "production-e2e-creator-episode",
+            "notification_type": "initial",
+            "public_safe": True,
+        },
+        release_ready=release.allowed,
+        media_available=pipeline.get("renderer_available") is True,
+    )
     checks = {
         "release_contract": release.allowed,
         "telegram_configuration": telegram.get("ok") is True,
@@ -130,6 +140,7 @@ def run_offline_e2e(
         "photo_contract": pipeline.get("photo_contract", {}).get("dimensions_valid") is True
         and pipeline.get("photo_contract", {}).get("deep_link_valid") is True
         and bool(pipeline.get("photo_contract", {}).get("observation_id")),
+        "creator_delivery_contract": creator_delivery["allowed"] is True,
     }
     return {
         "ok": all(checks.values()),
@@ -147,6 +158,7 @@ def run_offline_e2e(
             "card_dimensions": pipeline.get("card_dimensions", {}),
             "delivery_status": pipeline.get("photo_contract", {}).get("delivery_status"),
         },
+        "creator_delivery": creator_delivery,
     }
 
 
