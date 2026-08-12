@@ -80,12 +80,14 @@ def build_intelligence_context(
     ]
     context = advice_context or {}
     candidate_row = candidate if isinstance(candidate, dict) else {}
+    backtest_contract = context.get("backtest_release_contract") or candidate_row.get("backtest_release_contract")
+    backtest_release = context.get("backtest_release") or candidate_row.get("backtest_release")
     advice = evaluate_advice_gate({
         "data_quality_ok": bool(context.get("data_quality_ok")),
         "quote_stale": bool(context.get("quote_stale", True)),
         "crosscheck_ok": synchronized and bool(context.get("crosscheck_ok")),
-        "backtest_release": context.get("backtest_release"),
-        "backtest_release_contract": context.get("backtest_release_contract"),
+        "backtest_release": backtest_release,
+        "backtest_release_contract": backtest_contract,
         "strategy": candidate_row.get("strategy") or candidate_row.get("strategy_id") or context.get("strategy"),
         "candidate_data_gap": bool(context.get("candidate_data_gap", True)),
         "policy_valid": bool(context.get("policy_valid")),
