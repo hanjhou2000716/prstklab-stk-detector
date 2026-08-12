@@ -9,7 +9,9 @@ from typing import Any
 
 import pandas as pd
 
+from src.advice_gate import build_explainability_card, evaluate_advice_gate
 from src.instrument_master import InstrumentMaster
+from src.production_integration import bind_strategy_provenance
 from src.price_action import FUNNEL_LABELS, structure_match_score
 
 NOTICE = "不同策略的研究排序不可直接視為同一種分數；本報表僅統一欄位與資料狀態。"
@@ -209,6 +211,42 @@ def normalize_frame(frame: pd.DataFrame, market: str, strategy: str) -> list[dic
     return candidates
 
 
+def _attach_candidate_contracts(candidates: list[dict[str, Any]]) -> None:
+    """Stamp the producer artifact with the same conservative research contract.
+
+    The browser loader also performs this check for backward compatibility, but
+    the immutable research JSON must be self-describing for release validation,
+    Telegram cards and non-browser consumers.
+    """
+    for candidate in candidates:
+        binding = bind_strategy_provenance(candidate)
+        if binding["state"] != "production":
+            candidate["advice_gate"] = "observation_only"
+        completeness = candidate.get("data_completeness")
+        try:
+            quality_ok = float(completeness) >= 90 if completeness is not None else False
+        except (TypeError, ValueError):
+            quality_ok = False
+        gate = evaluate_advice_gate({
+            "data_quality_ok": quality_ok,
+            "quote_stale": candidate.get("freshness") in {"stale", "unavailable"},
+            "crosscheck_ok": candidate.get("cross_checked") is True,
+            "backtest_release": candidate.get("backtest_release"),
+            "backtest_release_contract": candidate.get("backtest_release_contract"),
+            "candidate_data_gap": bool(candidate.get("verification_gaps") or candidate.get("failed_conditions")),
+            "policy_valid": binding["state"] == "production",
+            "general_research": True,
+            "evidence": candidate.get("evidence") or candidate.get("source_evidence"),
+            "invalidation_condition": candidate.get("invalidation_condition") or candidate.get("invalidation"),
+            "alternative_scenario": candidate.get("alternative_scenario"),
+            "horizon": candidate.get("horizon"),
+            "confidence": candidate.get("confidence"),
+        })
+        candidate["strategy_binding"] = binding
+        candidate["advice_gate_detail"] = gate
+        candidate["explainability"] = build_explainability_card(candidate, gate)["explainability"]
+
+
 def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
     """Read named CSV artifacts, disclosing unavailable or empty source files."""
     candidates: list[dict[str, Any]] = []
@@ -336,6 +374,7 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
             "blocking_reason": base.get("blocking_reason") or ("scan incomplete" if blocked else None),
         })
         candidates.extend(rows)
+    _attach_candidate_contracts(candidates)
     counts = Counter(f"{item['market']}:{item['strategy']}" for item in candidates)
     return {
         "schema_version": "2.0",

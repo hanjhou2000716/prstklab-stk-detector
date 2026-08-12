@@ -28,6 +28,23 @@ def test_normalize_keeps_public_quote_fields_for_research_cards():
     assert candidate["change_percent"] == -1.5
 
 
+def test_research_producer_stamps_explainability_and_fail_closed_advice_gate(tmp_path):
+    available = tmp_path / "scan.csv"
+    pd.DataFrame([{
+        "ticker": "2330", "name": "TSM", "turnover": 9_000_000,
+        "close": 100, "change_percent": 1.2, "roe": 18.0,
+    }]).to_csv(available, index=False)
+    report = build_research_report([{
+        "path": str(available), "market": "taiwan", "strategy": "momentum",
+    }])
+    candidate = report["candidates"][0]
+    assert candidate["strategy_binding"]["state"] == "observation_only"
+    assert candidate["advice_gate"] == "observation_only"
+    assert candidate["advice_gate_detail"]["allowed"] is False
+    assert candidate["explainability"]["liquidity"] == 9_000_000
+    assert candidate["explainability"]["quality_position"] == 18.0
+
+
 def test_report_combines_available_sources_and_discloses_missing_ones(tmp_path):
     available = tmp_path / "taiwan.csv"
     pd.DataFrame([{"ticker": "2330", "name": "台積電", "turnover": 9_000_000, "reference_close": 100, "reference_stop": 90}]).to_csv(available, index=False)
