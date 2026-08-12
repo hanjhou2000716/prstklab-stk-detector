@@ -109,6 +109,29 @@ def test_manifest_also_publishes_bounded_creator_insights_artifact(tmp_path):
     assert loaded["creator-insights.json"]["status"] == "ready"
 
 
+def test_invalid_public_creator_artifact_does_not_block_core_release(tmp_path):
+    result = build_release_manifest(
+        root=tmp_path,
+        artifacts=_artifacts(tmp_path),
+        creator_public_artifact={
+            "schema_version": "1.0",
+            "status": "ready",
+            "parent_release_id": "wrong-parent",
+            "market_snapshot_id": "wrong-market",
+            "research_snapshot_id": "wrong-research",
+            "event_snapshot_id": "wrong-event",
+            "snapshot_id": "creator-snapshot",
+            "insights": [],
+            "public_safe": True,
+        },
+    )
+    assert result["status"] == "ready"
+    assert result["creator_public_status"] == "unavailable"
+    assert result["creator_public_validation_errors"]
+    _, errors = _load_release_artifacts(result, site_root=tmp_path / "site")
+    assert errors == []
+
+
 def test_creator_input_changes_release_identity(tmp_path):
     artifacts = _artifacts(tmp_path)
     first = build_release_manifest(

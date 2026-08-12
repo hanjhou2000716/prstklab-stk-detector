@@ -101,7 +101,7 @@ def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tup
     if creator is not None:
         errors.extend(_validate_creator_artifact(creator, manifest))
     creator_public = loaded.get("creator-insights.json")
-    if creator_public is not None:
+    if creator_public is not None and manifest.get("creator_public_status") == "ready":
         errors.extend(_validate_creator_public_artifact(creator_public, manifest))
     return loaded, errors
 
@@ -173,7 +173,7 @@ def _fetch_public_release_artifacts(
     if creator is not None:
         errors.extend(_validate_creator_artifact(creator, manifest))
     creator_public = loaded.get("creator-insights.json")
-    if creator_public is not None:
+    if creator_public is not None and manifest.get("creator_public_status") == "ready":
         errors.extend(_validate_creator_public_artifact(creator_public, manifest))
     if errors:
         return loaded, errors

@@ -465,9 +465,15 @@ def build_release_manifest(
             creator_public_hash = sha256_file(creator_public_path)
             hashes["creator-insights.json"] = creator_public_hash
         except OSError as exc:
-            errors.append(f"cannot persist/hash public creator artifact {creator_public_path.as_posix()}: {type(exc).__name__}")
-    if creator_public_errors:
-        errors.extend(creator_public_errors)
+            # Creator Intelligence is an optional public lane.  A malformed
+            # or unavailable creator artifact must be represented in its own
+            # status fields and must not invalidate an otherwise complete
+            # market/research/event release.
+            creator_public_errors.append(
+                f"cannot persist/hash public creator artifact {creator_public_path.as_posix()}: {type(exc).__name__}"
+            )
+    # Do not add optional creator validation errors to the core release
+    # errors.  The creator lane is fail-closed independently at delivery time.
     public_paths = {
         name: (path.relative_to(root / "site").as_posix() if path.is_relative_to(root / "site") else path.as_posix())
         for name, path in resolved.items()
