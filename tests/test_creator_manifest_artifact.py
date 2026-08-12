@@ -1,5 +1,6 @@
 import json
 
+from src.release_gate import _load_release_artifacts
 from src.release_manifest import build_release_manifest
 
 
@@ -30,3 +31,26 @@ def test_creator_artifact_is_published_with_manifest_lineage(tmp_path):
     assert result["artifact_paths"]["creator-release.json"] == "data/creator-release.json"
     assert result["artifact_hashes"]["creator-release.json"]
     assert (tmp_path / "site" / "data" / "creator-release.json").exists()
+
+
+def test_release_gate_loads_creator_artifact_only_when_parent_release_matches(tmp_path):
+    result = build_release_manifest(
+        root=tmp_path,
+        artifacts=_artifacts(tmp_path),
+        creator_artifact={
+            "schema_version": "1.0",
+            "parent_release_id": "placeholder",
+            "market_snapshot_id": "market-12345678",
+            "event_snapshot_id": "event-",
+            "insights": [],
+            "public_safe": True,
+            "release_id": "creator-1",
+        },
+    )
+    # The fixture intentionally has an invalid creator parent, so the core
+    # release remains readable but the optional artifact must fail closed.
+    path = tmp_path / "site" / "data" / "release-manifest.json"
+    path.write_text(json.dumps(result), encoding="utf-8")
+    loaded, errors = _load_release_artifacts(result, site_root=tmp_path / "site")
+    assert "creator-release.json" in loaded
+    assert any("parent release mismatch" in error for error in errors)

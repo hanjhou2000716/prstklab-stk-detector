@@ -972,6 +972,15 @@ const readLastGoodRelease = async () => {
     const events = saved.artifactTexts["event-ledger.json"] ? JSON.parse(saved.artifactTexts["event-ledger.json"]) : null;
     if (saved.manifest.research_snapshot_id && String(research?.snapshot_id || "") !== String(saved.manifest.research_snapshot_id)) return null;
     if (saved.manifest.event_snapshot_id && String(events?.snapshot_id || "") !== String(saved.manifest.event_snapshot_id)) return null;
+    const creatorText = saved.artifactTexts["creator-release.json"];
+    if (creatorText) {
+      const creator = JSON.parse(creatorText);
+      if (String(creator.parent_release_id || "") !== String(saved.manifest.release_id || "")) return null;
+      if (String(creator.market_snapshot_id || "") !== String(saved.manifest.market_snapshot_id || "")) return null;
+      if (String(creator.event_snapshot_id || "") !== String(saved.manifest.event_snapshot_id || "")) return null;
+      if (saved.manifest.creator_release_id && String(creator.release_id || "") !== String(saved.manifest.creator_release_id)) return null;
+      snapshot.creator_release = creator;
+    }
     return { ...saved, snapshot };
   } catch (_error) {
     return null;
@@ -1015,6 +1024,23 @@ const loadPublishedRelease = async () => {
     if (String(events.snapshot_id || "") !== String(manifest.event_snapshot_id)) {
       throw new Error("event snapshot does not match release");
     }
+  }
+  const creatorText = artifactTexts["creator-release.json"];
+  if (creatorText) {
+    const creator = JSON.parse(creatorText);
+    if (String(creator.parent_release_id || "") !== String(manifest.release_id || "")) {
+      throw new Error("creator release parent does not match release");
+    }
+    if (String(creator.market_snapshot_id || "") !== String(manifest.market_snapshot_id || "")) {
+      throw new Error("creator release market snapshot does not match release");
+    }
+    if (String(creator.event_snapshot_id || "") !== String(manifest.event_snapshot_id || "")) {
+      throw new Error("creator release event snapshot does not match release");
+    }
+    if (manifest.creator_release_id && String(creator.release_id || "") !== String(manifest.creator_release_id)) {
+      throw new Error("creator release id does not match release manifest");
+    }
+    snapshot.creator_release = creator;
   }
   const healthText = artifactTexts["source-health.json"];
   if (healthText) {
