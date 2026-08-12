@@ -188,7 +188,13 @@ const renderAlertTrace = (event) => {
   container.hidden = container.childElementCount === 0;
 };
 
-const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
+const externalRiskReasonLabel = (reason) => ({
+  risk_threshold_not_reached: "風險門檻尚未達成",
+  official_confirmation_missing: "等待官方核對",
+  market_sync_missing: "等待市場同步",
+})[String(reason || "")] || `待核對：${String(reason || "資料證據不足")}`;
+
+const renderAlertCard = (events, generatedAt, externalAlert, indices = [], externalRisk = null) => {
   const profile = externalAlert ? externalAlertProfile(externalAlert.category, indices) : null;
   const event = externalAlert ? {
     kind: "external_alert", risk_level: externalAlert.category === "black_swan" ? "高風險" : "警戒", short_label: externalAlertLabel(externalAlert.category),
@@ -220,6 +226,12 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
     const reasons = [...new Set(pendingItems.flatMap((item) => Array.isArray(item.notification_reasons)
       ? item.notification_reasons
       : (item.notification_reason ? [item.notification_reason] : [])))];
+    const externalReasons = externalRisk?.status === "pending"
+      ? (Array.isArray(externalRisk.notification?.reasons) ? externalRisk.notification.reasons : [])
+      : [];
+    const externalText = externalReasons.length
+      ? `外部事件 ${externalRisk.score?.prstk_risk_level || "R2"}｜${externalReasons.map(externalRiskReasonLabel).join("、")}｜目前不具備高風險推播資格`
+      : "";
     const suppressed = externalAlert ? [] : (events?.suppressed_signals || []);
     const suppressedText = suppressed.slice(0, 3).map((item) => {
       const ticker = item.ticker || "市場";
@@ -233,7 +245,7 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
       }
       return `${ticker} 暫未達提醒條件`;
     });
-    const detail = [...reasons.map((reason) => `核對：${reason}`), ...suppressedText];
+    const detail = [externalText, ...reasons.map((reason) => `核對：${reason}`), ...suppressedText].filter(Boolean);
     pendingNode.hidden = detail.length === 0;
     pendingNode.textContent = detail.length ? `未推播原因：${detail.join("；")}` : "";
   }
@@ -830,7 +842,7 @@ const render = (snapshot) => {
   renderQuoteList("index-list", snapshot.indices || []);
   renderQuoteList("quote-list", snapshot.quotes || []);
   renderRisk(snapshot.risk);
-  renderAlertCard(snapshot.events, snapshot.generated_at, externalAlert, snapshot.indices || []);
+  renderAlertCard(snapshot.events, snapshot.generated_at, externalAlert, snapshot.indices || [], snapshot.intelligence?.external_event_risk);
   renderEvents(snapshot.events);
   renderSourceHealth(snapshot.source_health, snapshot);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
