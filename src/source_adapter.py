@@ -23,10 +23,11 @@ TRANSIENT_HTTP_STATUSES = frozenset({408, 425, 429, 500, 502, 503, 504})
 class AdapterError(RuntimeError):
     """A normalized provider/transport error with a stable error code."""
 
-    def __init__(self, message: str, *, code: str, retryable: bool = False) -> None:
+    def __init__(self, message: str, *, code: str, retryable: bool = False, retry_after_seconds: float | None = None) -> None:
         super().__init__(message)
         self.code = code
         self.retryable = retryable
+        self.retry_after_seconds = retry_after_seconds
 
 
 class ResponseLike(Protocol):
@@ -227,10 +228,18 @@ class JsonSourceAdapter:
             raise AdapterError(str(exc), code="network_error", retryable=True) from exc
         status = int(getattr(response, "status_code", 0) or 0)
         if status >= 400:
+            retry_after: float | None = None
+            if status == 429:
+                raw_retry_after = getattr(response, "headers", {}).get("Retry-After")
+                try:
+                    retry_after = max(0.0, float(raw_retry_after)) if raw_retry_after is not None else None
+                except (TypeError, ValueError):
+                    retry_after = None
             raise AdapterError(
                 f"HTTP {status} from {self.config.provider}",
                 code="rate_limited" if status == 429 else "http_error",
                 retryable=status in TRANSIENT_HTTP_STATUSES,
+                retry_after_seconds=retry_after,
             )
         return response
 
@@ -311,7 +320,12 @@ class JsonSourceAdapter:
                 last_error = exc
                 if not exc.retryable or attempt >= self.config.max_retries:
                     break
-                time.sleep(min(2**attempt, 4))
+                delay = last_error.retry_after_seconds
+                if delay is None:
+                    delay = min(2**attempt, 4)
+                # A provider-controlled header must not turn one failed call
+                # into an unbounded workflow hang.
+                time.sleep(min(max(delay, 0.0), 30.0))
         assert last_error is not None
         failed_at = datetime.now(UTC).isoformat()
         self._health.update({
