@@ -19,7 +19,7 @@ def _ready_release(tmp_path):
     }), encoding="utf-8")
     (data / "research-report.json").write_text(json.dumps({
         "schema_version": "2.0", "generated_at": "2026-08-04T10:00:00+08:00",
-        "snapshot_id": "research-12345678", "sources": [], "candidates": [], "health": {},
+        "snapshot_id": "research-12345678", "candidates": [], "health": {},
         "scan_mode": "production", "scan_scope": "full", "publish_eligible": True,
         "production_eligible": True, "universe_expected": 1, "universe_scanned": 1,
         "universe_completed": 1, "universe_failed": 0,

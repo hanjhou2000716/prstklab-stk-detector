@@ -1,4 +1,9 @@
-from src.production_acceptance import _parse_time, production_research_contract_errors, production_strategy_matrix_errors, validate_production_bundle
+from src.production_acceptance import (
+    _parse_time,
+    production_research_contract_errors,
+    production_strategy_matrix_errors,
+    validate_production_bundle,
+)
 
 
 def _bundle():
