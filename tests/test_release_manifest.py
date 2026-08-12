@@ -73,6 +73,30 @@ def test_strict_manifest_rejects_legacy_research_artifact(tmp_path):
     assert any("not a production scan" in item for item in manifest["validation_errors"])
 
 
+def test_routine_manifest_computes_freshness_for_complete_production_research(tmp_path):
+    _artifacts(tmp_path)
+    data = tmp_path / "site" / "data"
+    research_path = data / "research-report.json"
+    research = json.loads(research_path.read_text(encoding="utf-8"))
+    research.update({
+        "scan_mode": "production", "scan_scope": "full",
+        "publish_eligible": True, "production_eligible": True,
+        "universe_expected": 1, "universe_scanned": 1,
+        "universe_completed": 1, "universe_failed": 0,
+        "research_run": {
+            "run_id": "run-12345678", "scan_mode": "production",
+            "scan_scope": "full", "source_commit_sha": "a" * 40,
+            "producer": "pytest", "run_started_at": "2026-08-04T10:00:00+08:00",
+            "run_finished_at": "2026-08-04T10:05:00+08:00",
+        },
+        "run_id": "run-12345678",
+    })
+    research_path.write_text(json.dumps(research), encoding="utf-8")
+    manifest = build_release_manifest(root=tmp_path)
+    assert manifest["status"] == "ready"
+    assert manifest["research_freshness"] == "fresh"
+
+
 def test_strict_manifest_marks_explicit_stale_fallback(tmp_path):
     _artifacts(tmp_path)
     data = tmp_path / "site" / "data"

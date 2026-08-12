@@ -408,7 +408,32 @@ def build_release_manifest(
                 else:
                     manifest["research_freshness"] = "fresh"
         elif research:
-            manifest["research_freshness"] = "unverified"
+            # A routine market/event publisher still needs to describe the
+            # freshness of a production research snapshot.  Previously this
+            # branch always emitted ``unverified`` even when the research
+            # artifact was a complete production/full scan.  The resulting
+            # ready manifest then failed the downstream delivery gate and
+            # made every scheduled brief look stale.  Keep non-production or
+            # fallback reports explicitly unverified, but compute the same
+            # market-vs-research age used by the strict path whenever the
+            # research contract is complete.
+            market_time = _parse_artifact_time(market.get("generated_at"))
+            research_time = _parse_artifact_time(research.get("generated_at"))
+            is_production = (
+                research.get("scan_mode") == "production"
+                and research.get("scan_scope") == "full"
+                and research.get("publish_eligible") is True
+                and research.get("production_eligible") is True
+                and not fallback_applied
+            )
+            if is_production and market_time is not None and research_time is not None:
+                age_hours = (market_time - research_time).total_seconds() / 3600.0
+                if 0 <= age_hours <= max(0.0, float(max_research_age_hours)):
+                    manifest["research_freshness"] = "fresh"
+                else:
+                    manifest["research_freshness"] = "stale"
+            else:
+                manifest["research_freshness"] = "unverified"
     manifest["validation_errors"] = sorted(set(errors))
     if not errors:
         manifest["status"] = "ready"
