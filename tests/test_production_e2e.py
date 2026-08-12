@@ -73,3 +73,5 @@ def test_offline_e2e_exposes_creator_delivery_contract():
     )
     assert report["checks"]["creator_delivery_contract"] is True
     assert report["creator_delivery"]["notification_key"].startswith("creator:production-e2e-creator-episode:")
+    assert report["checks"]["creator_release_contract"] is True
+    assert report["creator_release"]["insight_count"] == 1
