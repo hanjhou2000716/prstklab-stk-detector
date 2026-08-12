@@ -9,7 +9,7 @@ pipeline call and a tested consumer.
 |---|---|---|---|---|---|---|---|
 | Source adapters | `src/source_adapter.py`, `src/adapters/catalog.py`, `src/phase_two_sources.py` | yes | yes | yes | health | event/brief | production |
 | Raw observation store | `src/raw_observation_store.py`, `src/production_evidence.py` | yes | market/research/brief workflows persist immutable records | quality metadata + observation envelope | no raw payload | no | production |
-| Instrument master | `src/instrument_master.py` | yes | partial | partial | no | no | partially_integrated |
+| Instrument master | `src/instrument_master.py` | yes | research + market producers | candidate/quote lineage | no | no | production |
 | Data quality/SLA | `src/data_quality.py`, `src/source_health.py` | yes | yes | yes | yes | gate reason | production |
 | Taiwan crosscheck | `src/taiwan_market_crosscheck.py`, `src/market_crosscheck.py` | yes | yes | yes | yes | price gate | production |
 | Event source catalog | `src/event_source_catalog.py` | yes | yes | yes | health | event | production |
@@ -228,7 +228,11 @@ remain readable, but remain research-only. See
 `InstrumentMaster.artifact()` is the deterministic public registry contract.
 Production quote evidence records its `instrument_master_id` and version for
 every resolution attempt, including unknown symbols. Ambiguous or unknown
-symbols remain unresolved and cannot become alert evidence.
+symbols remain unresolved and cannot become alert evidence. Research reports
+extend the compact headline registry from explicit public-universe rows
+(ticker, issuer name and market) without fuzzy matching, giving ordinary
+production candidates deterministic IDs while malformed or ambiguous rows
+remain unresolved.
 
 The Advice Gate also requires the structured backtest contract. A bare release
 ID is treated as unverified and cannot unlock contextual decision support.

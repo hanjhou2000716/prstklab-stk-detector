@@ -19,13 +19,20 @@ from src.research_scan_failures import apply_scan_failures, load_scan_failures
 SCAN_MODES = {"production", "smoke", "debug"}
 
 
-def attach_instrument_lineage(report: dict[str, Any]) -> dict[str, Any]:
+def attach_instrument_lineage(report: dict[str, Any], *, extend_from_candidates: bool = False) -> dict[str, Any]:
     """Stamp candidates with the exact public instrument registry used.
 
     Unknown symbols remain visible as ``unresolved`` research rows; this is
     lineage metadata, not a reason to invent a mapping or remove a candidate.
     """
     master = InstrumentMaster()
+    # The compact registry contains only headline instruments.  Production
+    # scan rows carry an explicit public ticker/name/market identity, so use
+    # that identity to extend this run's registry without fuzzy matching.
+    if extend_from_candidates:
+        master = master.with_research_rows([
+            item for item in report.get("candidates", []) if isinstance(item, dict)
+        ])
     artifact = master.artifact()
     for candidate in report.get("candidates", []):
         if not isinstance(candidate, dict):
@@ -210,7 +217,7 @@ def main() -> None:
     merge_taiwan_scan_fragments(Path(args.data_dir))
     report = build_research_report(default_sources(Path(args.data_dir)))
     apply_scan_failures(report, load_scan_failures(args.scan_failures) if args.scan_failures else [])
-    attach_instrument_lineage(report)
+    attach_instrument_lineage(report, extend_from_candidates=True)
     attach_scan_contract(report, args.scan_mode)
     attach_backtest_contract(report, args.backtest_release)
     finished_at = datetime.now(UTC)
