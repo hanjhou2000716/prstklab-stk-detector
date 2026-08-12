@@ -230,6 +230,12 @@ def test_mini_app_consumes_release_bound_source_health_artifact():
     assert "snapshot.source_health = healthEnvelope.source_health" in app
 
 
+def test_research_ui_discloses_unpublished_backtest_state():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "backtest_publication_state" in app
+    assert "正式回測尚未發布；候選僅供研究觀察" in app
+
+
 def test_research_failure_message_exposes_retry_state_without_raw_errors():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert "source.failure_evidence || {}" in app
