@@ -161,7 +161,7 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
     hide a failed scan, and an empty-but-successful scan remains observable.
     """
     errors = _schema_errors(document, "source-health.schema.json")
-    allowed_status = {"healthy", "partial", "warming", "critical", "pending", "failed", "no_event"}
+    allowed_status = {"healthy", "partial", "warming", "critical", "pending", "failed", "scan_failed", "no_event"}
     gap_states = {"fallback_active", "configuration_missing", "stale", "partial", "failed", "critical"}
     declared_missing = document.get("missing_source_count")
     if isinstance(declared_missing, int) and declared_missing >= 0:
@@ -204,18 +204,24 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: unknown status={status!r}")
         if status in {"healthy", "no_event"} and semantic in gap_states:
             errors.append(f"{path}: healthy/no_event status conflicts with semantic_state={semantic}")
-        if semantic in {"healthy", "no_event"} and status in {"failed", "partial", "critical"}:
+        if semantic in {"healthy", "no_event"} and status in {"failed", "scan_failed", "partial", "critical"}:
             errors.append(f"{path}: failed status conflicts with semantic_state={semantic}")
-        if source.get("no_event") is True and status in {"failed", "partial", "critical"}:
+        if source.get("no_event") is True and status in {"failed", "scan_failed", "partial", "critical"}:
             errors.append(f"{path}: no_event cannot be a failed source")
     event_scan = document.get("event_scan")
-    if isinstance(event_scan, dict) and event_scan.get("status") == "no_event":
+    if isinstance(event_scan, dict) and event_scan.get("status") in {"no_event", "no_events"}:
         failed = [
             source for source in document.get("sources", [])
-            if isinstance(source, dict) and source.get("status") in {"failed", "critical"}
+            if isinstance(source, dict) and (
+                source.get("status") in {"failed", "scan_failed", "critical"}
+                or source.get("semantic_state") in {"failed", "critical"}
+            )
         ]
         if failed:
             errors.append("source_health: event_scan=no_event cannot coexist with failed core sources")
+    if isinstance(event_scan, dict) and event_scan.get("status") == "scan_failed":
+        if event_scan.get("has_events") is True:
+            errors.append("source_health.event_scan=scan_failed cannot claim has_events=true")
     observability = document.get("observability")
     if isinstance(observability, dict):
         failures = observability.get("failure_count")
