@@ -79,6 +79,7 @@ def test_routine_manifest_computes_freshness_for_complete_production_research(tm
     research_path = data / "research-report.json"
     research = json.loads(research_path.read_text(encoding="utf-8"))
     research.update({
+        "generated_at": "2026-08-04T09:55:00+08:00",
         "scan_mode": "production", "scan_scope": "full",
         "publish_eligible": True, "production_eligible": True,
         "universe_expected": 1, "universe_scanned": 1,
@@ -103,6 +104,7 @@ def test_routine_manifest_marks_old_production_research_stale(tmp_path):
     research_path = data / "research-report.json"
     research = json.loads(research_path.read_text(encoding="utf-8"))
     research.update({
+        "generated_at": "2026-08-01T10:05:00+08:00",
         "scan_mode": "production", "scan_scope": "full",
         "publish_eligible": True, "production_eligible": True,
         "universe_expected": 1, "universe_scanned": 1,
