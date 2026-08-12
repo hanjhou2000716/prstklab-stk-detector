@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/gmail-watch.schema.json",
+  "type": "object",
+  "required": ["watch_active", "dedupe_size"],
+  "properties": {
+    "watch_active": {"type": "boolean"},
+    "watch_expiration": {"type": ["string", "null"], "format": "date-time"},
+    "last_history_id": {"type": ["string", "null"]},
+    "last_notification_at": {"type": ["string", "null"], "format": "date-time"},
+    "last_sync_at": {"type": ["string", "null"], "format": "date-time"},
+    "last_full_sync_at": {"type": ["string", "null"], "format": "date-time"},
+    "last_message_id": {"type": ["string", "null"]},
+    "dedupe_size": {"type": "integer", "minimum": 0}
+  },
+  "additionalProperties": false
+}

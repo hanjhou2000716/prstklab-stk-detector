@@ -188,7 +188,13 @@ const renderAlertTrace = (event) => {
   container.hidden = container.childElementCount === 0;
 };
 
-const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
+const externalRiskReasonLabel = (reason) => ({
+  risk_threshold_not_reached: "風險門檻尚未達成",
+  official_confirmation_missing: "等待官方核對",
+  market_sync_missing: "等待市場同步",
+})[String(reason || "")] || `待核對：${String(reason || "資料證據不足")}`;
+
+const renderAlertCard = (events, generatedAt, externalAlert, indices = [], externalRisk = null) => {
   const profile = externalAlert ? externalAlertProfile(externalAlert.category, indices) : null;
   const event = externalAlert ? {
     kind: "external_alert", risk_level: externalAlert.category === "black_swan" ? "高風險" : "警戒", short_label: externalAlertLabel(externalAlert.category),
@@ -220,6 +226,12 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
     const reasons = [...new Set(pendingItems.flatMap((item) => Array.isArray(item.notification_reasons)
       ? item.notification_reasons
       : (item.notification_reason ? [item.notification_reason] : [])))];
+    const externalReasons = externalRisk?.status === "pending"
+      ? (Array.isArray(externalRisk.notification?.reasons) ? externalRisk.notification.reasons : [])
+      : [];
+    const externalText = externalReasons.length
+      ? `外部事件 ${externalRisk.score?.prstk_risk_level || "R2"}｜${externalReasons.map(externalRiskReasonLabel).join("、")}｜目前不具備高風險推播資格`
+      : "";
     const suppressed = externalAlert ? [] : (events?.suppressed_signals || []);
     const suppressedText = suppressed.slice(0, 3).map((item) => {
       const ticker = item.ticker || "市場";
@@ -233,7 +245,7 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = []) => {
       }
       return `${ticker} 暫未達提醒條件`;
     });
-    const detail = [...reasons.map((reason) => `核對：${reason}`), ...suppressedText];
+    const detail = [externalText, ...reasons.map((reason) => `核對：${reason}`), ...suppressedText].filter(Boolean);
     pendingNode.hidden = detail.length === 0;
     pendingNode.textContent = detail.length ? `未推播原因：${detail.join("；")}` : "";
   }
@@ -436,7 +448,17 @@ const renderSourceHealth = (health, snapshot = {}) => {
   if (pending) summary.textContent += `｜${pending} 個事件待核對`;
   const scan = health.event_scan;
   const scanState = scan.state || scan.status || "unknown";
-  const scanStateLabel = scanState === "scan_failed" || scanState === "failed" ? "掃描失敗" : scanState === "no_events" || scanState === "no_event" ? "本輪無事件" : "本輪已掃描";
+  // Normalize legacy/backend aliases in one place so an empty successful
+  // scan can never be presented as a failed source (or vice versa).
+  const sourceHealthStateLabel = (state) => {
+    const normalized = String(state || "").trim().toLowerCase();
+    if (["scan_failed", "failed", "failure", "error"].includes(normalized)) return "掃描失敗";
+    if (["no_events", "no_event", "empty", "none"].includes(normalized)) return "本輪無事件";
+    if (["scanning", "running", "in_progress"].includes(normalized)) return "掃描中";
+    if (["healthy", "ok", "complete", "completed"].includes(normalized)) return "本輪已掃描";
+    return "狀態待確認";
+  };
+  const scanStateLabel = sourceHealthStateLabel(scanState);
   const observation = health.observability || health.slo || health.monitor_health || {};
   const healthMetricParts = [
     Number.isFinite(Number(observation.success_rate)) ? `成功率 ${Number(observation.success_rate).toFixed(1)}%` : "",
@@ -453,7 +475,7 @@ const renderSourceHealth = (health, snapshot = {}) => {
     const state = source.semantic_state || source.state || source.status;
     // Keep the legacy status spelling for older snapshots and source-health
     // fixtures (source.status === "warming" ? "建檔中").
-    const status = state === "healthy" ? "正常" : state === "no_event" ? "無事件" : state === "warming" ? "建檔中" : state === "pending_confirmation" || state === "pending" ? "待核對" : state === "configuration_missing" || state === "configuration_required" ? "需設定" : state === "optional_degraded" ? "選配降級" : state === "degraded_with_fallback" || state === "fallback_active" ? "備援可用" : state === "secondary_unavailable" ? "第二來源不可用" : state === "stale" ? "使用快取" : state === "failed" ? "掃描失敗" : "資料缺口";
+    const status = state === "healthy" ? "正常" : ["no_event", "no_events", "empty", "none"].includes(String(state || "").toLowerCase()) ? "無事件" : state === "warming" ? "建檔中" : state === "pending_confirmation" || state === "pending" ? "待核對" : state === "configuration_missing" || state === "configuration_required" ? "需設定" : state === "optional_degraded" ? "選配降級" : state === "degraded_with_fallback" || state === "fallback_active" ? "備援可用" : state === "secondary_unavailable" ? "第二來源不可用" : state === "stale" ? "使用快取" : ["failed", "scan_failed", "failure", "error"].includes(String(state || "").toLowerCase()) ? "掃描失敗" : "資料缺口";
     const pendingReasons = source.status === "pending" && source.pending_reasons && typeof source.pending_reasons === "object"
       ? Object.entries(source.pending_reasons).filter(([, count]) => Number(count) > 0).map(([reason, count]) => {
         const labels = {
@@ -561,6 +583,24 @@ const renderBriefing = (briefing, generatedAt) => {
       intelligence.open = false;
     }
   }
+  const paper = document.getElementById("briefing-paper");
+  const paperContent = document.getElementById("briefing-paper-content");
+  if (paper && paperContent) {
+    const tracker = report.paper_portfolio;
+    paper.open = false;
+    if (!tracker || typeof tracker !== "object") {
+      paperContent.innerHTML = '<p class="empty">本輪紙上研究追蹤資料暫時無法取得。</p>';
+    } else {
+      const records = Array.isArray(tracker.records) ? tracker.records : [];
+      const tracking = tracker.tracking || {};
+      const state = tracker.state === "available" ? "可追蹤" : "僅觀察／等待有效回測與報價";
+      const rows = records.slice(0, 5).map((item) => {
+        const horizons = item.horizons || {};
+        return `<li><b>${escapeHtml(item.ticker || "—")}</b>｜${escapeHtml(item.strategy || "研究觀察")}｜5日 ${escapeHtml(String(horizons["5d"] ?? "待完成"))}%｜20日 ${escapeHtml(String(horizons["20d"] ?? "待完成"))}%｜60日 ${escapeHtml(String(horizons["60d"] ?? "待完成"))}%</li>`;
+      }).join("");
+      paperContent.innerHTML = `<p><b>狀態：</b>${escapeHtml(state)}</p><p><b>追蹤進度：</b>${escapeHtml(String(tracking.completed_horizon_count ?? 0))} 個期限已完成</p>${rows ? `<ul>${rows}</ul>` : '<p class="empty">目前沒有符合紙上追蹤條件的研究候選。</p>'}<small>僅為公開資料的紙上研究觀察，不代表實際持倉或交易績效。</small>`;
+    }
+  }
   const container = document.getElementById("briefing-observations");
   if (!container) return;
   if (!observations.length) { container.innerHTML = '<p class="empty">本次定時報資料暫時無法取得</p>'; return; }
@@ -633,13 +673,19 @@ const researchExplainability = (item) => {
   const completeness = item.data_completeness ?? item.data_quality_score;
   const invalidation = item.invalidation || item.invalidation_condition;
   const gate = item.advice_gate_detail || (item.explainability && item.explainability.advice_gate) || {};
-  if (!passed.length && !failed.length && !risks.length && completeness === undefined && !invalidation && !Object.keys(gate).length) return "";
+  const binding = item.strategy_binding || (item.explainability && item.explainability.strategy_binding) || {};
+  const backtest = item.backtest_release_contract || {};
+  if (!passed.length && !failed.length && !risks.length && completeness === undefined && !invalidation && !Object.keys(gate).length && !Object.keys(binding).length && !Object.keys(backtest).length) return "";
   const list = (values, fallback) => values.length ? values.map((value) => `<li>${escapeHtml(value)}</li>`).join("") : `<li>${fallback}</li>`;
   const quality = completeness === undefined || completeness === null ? "資料完整度暫時無法取得" : `資料完整度 ${escapeHtml(String(completeness))}`;
   const gateLabel = gate.allowed === true ? "條件式研究內容可用" : "僅供研究觀察";
   const gateReasons = asList(gate.blocking_reasons);
   const gateReason = gateReasons.length ? `｜阻擋原因：${gateReasons.join("、")}` : "";
-  return `<details class="research-explainability"><summary>條件與風險說明</summary><p><b>研究閘門：</b>${escapeHtml(gateLabel)}${escapeHtml(gateReason)}</p><p><b>已通過：</b></p><ul>${list(passed, "尚未提供")}</ul><p><b>未通過：</b></p><ul>${list(failed, "無額外未通過條件")}</ul><p><b>風險：</b></p><ul>${list(risks, "尚未提供")}</ul><small>${escapeHtml(quality)}${invalidation ? `｜失效條件：${escapeHtml(invalidation)}` : ""}。僅供研究觀察，不構成買賣指令。</small></details>`;
+  const bindingState = binding.state || (Object.keys(backtest).length ? "unverified" : "not_provided");
+  const bindingReason = binding.reason || (backtest.publication_state === "ready" ? "候選尚未完成策略版本核對" : "正式回測尚未發布");
+  const releaseLabel = backtest.backtest_release || item.backtest_release || "尚未提供";
+  const registryLabel = binding.strategy_id ? `${binding.strategy_id}${binding.strategy_version ? ` v${binding.strategy_version}` : ""}` : "尚未核對";
+  return `<details class="research-explainability"><summary>條件與風險說明</summary><p><b>研究閘門：</b>${escapeHtml(gateLabel)}${escapeHtml(gateReason)}</p><p><b>策略綁定：</b>${escapeHtml(bindingState)}｜${escapeHtml(registryLabel)}<br><small>${escapeHtml(bindingReason)}｜回測版本：${escapeHtml(releaseLabel)}</small></p><p><b>已通過：</b></p><ul>${list(passed, "尚未提供")}</ul><p><b>未通過：</b></p><ul>${list(failed, "無額外未通過條件")}</ul><p><b>風險：</b></p><ul>${list(risks, "尚未提供")}</ul><small>${escapeHtml(quality)}${invalidation ? `｜失效條件：${escapeHtml(invalidation)}` : ""}。僅供研究觀察，不構成買賣指令。</small></details>`;
 };
 
 const renderResearchList = (id, items, empty) => {
@@ -678,7 +724,8 @@ const renderValueResearch = (id, items, empty) => {
     const change = item.change_percent === null || item.change_percent === undefined ? "—" : signedPercent(item.change_percent);
     const tags = researchStrategyTags(item).map((label) => `<span class="strategy-chip">${escapeHtml(label)}</span>`).join("");
     const score = researchScoreParts(item);
-    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}${item.condition_count ? ` · ${escapeHtml(item.condition_count)}` : ""}</strong></div></li>`;
+    const explanation = researchExplainability(item);
+    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}${item.condition_count ? ` · ${escapeHtml(item.condition_count)}` : ""}</strong></div>${explanation}</li>`;
   }).join("");
   container.innerHTML = `${visibleFormal.length ? `<li class="research-subheading">正式候選（至少 5/6，最多 5 檔）</li>${renderGroup("正式候選", visibleFormal)}` : ""}${visibleObservation.length ? `<li class="research-subheading">觀察名單（3/6 或 4/6，補足至 5 檔）</li>${renderGroup("觀察名單", visibleObservation)}` : ""}`;
 };
@@ -691,7 +738,11 @@ const renderResearch = (snapshot) => {
   const generatedAt = report.generated_at ? ` 掃描時間：${new Date(report.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}` : "";
   setText("research-tag", activeResearchMarket === "taiwan" ? "台股" : "美股");
   const unavailable = report.availability === "expired" ? "研究資料逾時，等待下一次全市場掃描" : null;
-  setText("research-notice", unavailable || generatedAt.trim() || "掃描時間暫時無法取得");
+  const backtestState = window.releaseManifest?.backtest_publication_state;
+  const backtestNotice = backtestState && backtestState !== "ready"
+    ? "正式回測尚未發布；候選僅供研究觀察，不提供操作判斷。"
+    : "";
+  setText("research-notice", unavailable || backtestNotice || generatedAt.trim() || "掃描時間暫時無法取得");
   const sourceFor = (strategy) => (report.sources || []).find((item) => item.market === activeResearchMarket && item.strategy === strategy) || {};
   const sourceBlocked = (strategy) => {
     const source = sourceFor(strategy);
@@ -753,6 +804,34 @@ document.querySelectorAll(".news-tab").forEach((tab) => tab.addEventListener("cl
   });
 }));
 
+const renderCreatorInsights = (creatorRelease) => {
+  const panel = document.getElementById("creator-intelligence");
+  const content = document.getElementById("creator-intelligence-content");
+  if (!panel || !content) return;
+  panel.hidden = true;
+  content.replaceChildren();
+  if (!creatorRelease || typeof creatorRelease !== "object") return;
+  panel.hidden = false;
+  if (creatorRelease.status !== "ready") {
+    content.innerHTML = '<p class="empty">Creator 來源目前不可用；不影響核心市場 release。</p>';
+    return;
+  }
+  const insights = Array.isArray(creatorRelease.insights) ? creatorRelease.insights : [];
+  if (!insights.length) {
+    content.innerHTML = '<p class="empty">本輪沒有可核對的 Creator Insight。</p>';
+    return;
+  }
+  content.innerHTML = insights.slice(0, 5).map((item) => {
+    const title = escapeHtml(item.episode_title || item.episode_key || "Creator Insight");
+    const verification = escapeHtml(item.verification_state || "unverified");
+    const claims = Array.isArray(item.claims) ? item.claims.filter(Boolean).slice(0, 3) : [];
+    const opinions = Array.isArray(item.opinions) ? item.opinions.filter(Boolean).slice(0, 2) : [];
+    const facts = claims.map((value) => `<li>事實：${escapeHtml(value)}</li>`).join("");
+    const views = opinions.map((value) => `<li>觀點：${escapeHtml(value)}</li>`).join("");
+    return `<article class="creator-insight"><h4>${title}</h4><small>核對狀態：${verification}</small><ul>${facts}${views}</ul></article>`;
+  }).join("");
+};
+
 const render = (snapshot) => {
   window.marketSnapshot = snapshot;
   const externalAlert = activeExternalAlert(snapshot.external_alert);
@@ -763,10 +842,11 @@ const render = (snapshot) => {
   renderQuoteList("index-list", snapshot.indices || []);
   renderQuoteList("quote-list", snapshot.quotes || []);
   renderRisk(snapshot.risk);
-  renderAlertCard(snapshot.events, snapshot.generated_at, externalAlert, snapshot.indices || []);
+  renderAlertCard(snapshot.events, snapshot.generated_at, externalAlert, snapshot.indices || [], snapshot.intelligence?.external_event_risk);
   renderEvents(snapshot.events);
   renderSourceHealth(snapshot.source_health, snapshot);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
+  renderCreatorInsights(snapshot.creator_release || snapshot.creator_intelligence);
   renderResearch(snapshot);
   renderNewsList("taiwan-news", snapshot.news?.taiwan);
   renderNewsList("us-news", snapshot.news?.us);
@@ -892,6 +972,15 @@ const readLastGoodRelease = async () => {
     const events = saved.artifactTexts["event-ledger.json"] ? JSON.parse(saved.artifactTexts["event-ledger.json"]) : null;
     if (saved.manifest.research_snapshot_id && String(research?.snapshot_id || "") !== String(saved.manifest.research_snapshot_id)) return null;
     if (saved.manifest.event_snapshot_id && String(events?.snapshot_id || "") !== String(saved.manifest.event_snapshot_id)) return null;
+    const creatorText = saved.artifactTexts["creator-release.json"];
+    if (creatorText) {
+      const creator = JSON.parse(creatorText);
+      if (String(creator.parent_release_id || "") !== String(saved.manifest.release_id || "")) return null;
+      if (String(creator.market_snapshot_id || "") !== String(saved.manifest.market_snapshot_id || "")) return null;
+      if (String(creator.event_snapshot_id || "") !== String(saved.manifest.event_snapshot_id || "")) return null;
+      if (saved.manifest.creator_release_id && String(creator.release_id || "") !== String(saved.manifest.creator_release_id)) return null;
+      snapshot.creator_release = creator;
+    }
     return { ...saved, snapshot };
   } catch (_error) {
     return null;
@@ -935,6 +1024,23 @@ const loadPublishedRelease = async () => {
     if (String(events.snapshot_id || "") !== String(manifest.event_snapshot_id)) {
       throw new Error("event snapshot does not match release");
     }
+  }
+  const creatorText = artifactTexts["creator-release.json"];
+  if (creatorText) {
+    const creator = JSON.parse(creatorText);
+    if (String(creator.parent_release_id || "") !== String(manifest.release_id || "")) {
+      throw new Error("creator release parent does not match release");
+    }
+    if (String(creator.market_snapshot_id || "") !== String(manifest.market_snapshot_id || "")) {
+      throw new Error("creator release market snapshot does not match release");
+    }
+    if (String(creator.event_snapshot_id || "") !== String(manifest.event_snapshot_id || "")) {
+      throw new Error("creator release event snapshot does not match release");
+    }
+    if (manifest.creator_release_id && String(creator.release_id || "") !== String(manifest.creator_release_id)) {
+      throw new Error("creator release id does not match release manifest");
+    }
+    snapshot.creator_release = creator;
   }
   const healthText = artifactTexts["source-health.json"];
   if (healthText) {

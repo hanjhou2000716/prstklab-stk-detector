@@ -92,6 +92,7 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
             "crosscheck_ok": candidate.get("cross_checked") is True,
             "backtest_release": candidate.get("backtest_release"),
             "backtest_release_contract": candidate.get("backtest_release_contract"),
+            "strategy": candidate.get("strategy") or candidate.get("strategy_id"),
             "candidate_data_gap": bool(candidate.get("verification_gaps") or candidate.get("failed_conditions")),
             "policy_valid": binding["state"] == "production",
             "general_research": True,

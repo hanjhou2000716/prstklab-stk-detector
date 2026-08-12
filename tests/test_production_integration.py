@@ -53,6 +53,41 @@ def test_strategy_registry_complete_binding_is_verified():
     assert binding["registry_state"] == "verified"
 
 
+def test_non_publishable_backtest_contract_remains_observation_only():
+    binding = bind_strategy_provenance({
+        "strategy": "momentum", "strategy_version": "2", "data_version": "d1", "backtest_release": "bt1",
+        "backtest_release_contract": {
+            "backtest_release": "bt1", "publication_state": "blocked", "publish_eligible": False,
+        },
+    })
+    assert binding["state"] == "observation_only"
+    assert binding["contract_state"] == "unverified"
+    assert "backtest_release_contract" in binding["missing"]
+
+
+def test_backtest_contract_must_match_candidate_release():
+    binding = bind_strategy_provenance({
+        "strategy": "momentum", "strategy_version": "2", "data_version": "d1", "backtest_release": "bt1",
+        "backtest_release_contract": {
+            "backtest_release": "bt-other", "publication_state": "ready", "publish_eligible": True,
+        },
+    })
+    assert binding["state"] == "observation_only"
+    assert "backtest_release does not match research contract" in binding["contract_errors"]
+
+
+def test_backtest_contract_must_include_candidate_strategy():
+    binding = bind_strategy_provenance({
+        "strategy": "momentum", "strategy_version": "2", "data_version": "d1", "backtest_release": "bt1",
+        "backtest_release_contract": {
+            "backtest_release": "bt1", "publication_state": "ready", "publish_eligible": True,
+            "strategy_registry": [{"strategy_id": "value", "strategy_version": "2"}],
+        },
+    })
+    assert binding["state"] == "observation_only"
+    assert "backtest_release_contract has no matching strategy" in binding["contract_errors"]
+
+
 def test_intelligence_binding_fails_closed_when_release_ids_missing():
     result = bind_intelligence(
         {"advice_gate": "research_only"},

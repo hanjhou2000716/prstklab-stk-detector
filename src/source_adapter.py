@@ -177,6 +177,7 @@ class JsonSourceAdapter:
     clock: Callable[[], float] = time.monotonic
     _last_request_at: float | None = field(default=None, init=False, repr=False)
     _cache: _CacheEntry | None = field(default=None, init=False, repr=False)
+    _last_observation: SourceObservation | None = field(default=None, init=False, repr=False)
     _health: dict[str, Any] = field(default_factory=dict, init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -197,7 +198,21 @@ class JsonSourceAdapter:
             "consecutive_failures": 0,
             "request_count": 0,
             "error_class": None,
+            "last_success_observation_id": None,
+            "last_success_payload_hash": None,
+            "last_success_http_status": None,
         }
+
+    def normalize(self, payload: Any) -> Any:
+        """Normalize a provider payload through the configured parser.
+
+        Keeping this as a public operation lets callers validate or replay a
+        raw observation without performing another network request.
+        """
+        try:
+            return self.parser(payload)
+        except Exception as exc:
+            raise AdapterError(str(exc), code="parse_error", retryable=False) from exc
 
     def _sleep_for_rate_limit(self) -> None:
         if self._last_request_at is None:
@@ -287,10 +302,7 @@ class JsonSourceAdapter:
                         parser_version=self.config.parser_version,
                         parsing_status="raw_received",
                     )
-                try:
-                    payload = self.parser(raw)
-                except Exception as exc:
-                    raise AdapterError(str(exc), code="parse_error", retryable=False) from exc
+                payload = self.normalize(raw)
                 observation = SourceObservation(
                     provider=self.config.provider,
                     endpoint=self.config.endpoint,
@@ -307,6 +319,7 @@ class JsonSourceAdapter:
                     raw_payload_location=getattr(raw_record, "raw_payload_location", None),
                 )
                 self._cache = _CacheEntry(observation, self.clock())
+                self._last_observation = observation
                 self._health.update({
                     "status": "healthy",
                     "last_success_at": observation.fetched_at,
@@ -314,6 +327,9 @@ class JsonSourceAdapter:
                     "consecutive_failures": 0,
                     "error_class": None,
                     "last_latency_ms": observation.latency_ms,
+                    "last_success_observation_id": observation.observation_id,
+                    "last_success_payload_hash": observation.payload_hash,
+                    "last_success_http_status": observation.http_status,
                 })
                 return observation
             except AdapterError as exc:
@@ -338,12 +354,50 @@ class JsonSourceAdapter:
             stale = self._failed_observation(last_error, request_id=request_id, started=started)
             if stale is not None:
                 self._health["status"] = "stale"
+                self._last_observation = stale
                 return stale
         raise last_error
 
     def health(self) -> dict[str, Any]:
         """Return a copy suitable for source-health snapshots."""
-        return dict(self._health)
+        health = dict(self._health)
+        observation = self._last_observation
+        if observation is None:
+            health.update({
+                "source_tier": self.config.source_tier,
+                "source_url": self.config.endpoint,
+                "freshness": "unavailable" if health.get("status") == "failed" else "unknown",
+                "data_quality_score": 0.0,
+                "display_eligible": False,
+                "alert_eligible": False,
+                "quality_reasons": ["no_observation"],
+            })
+            return health
+        quality = observation.quality()
+        # A failed request with an old successful observation is still a
+        # runtime failure; it must not inherit the previous observation's
+        # freshness or alert eligibility.
+        if health.get("status") == "failed":
+            quality = {
+                **quality,
+                "freshness": "unavailable",
+                "data_quality_score": 0.0,
+                "display_eligible": False,
+                "alert_eligible": False,
+                "reasons": [*quality.get("reasons", []), "latest_request_failed"],
+            }
+        health.update({
+            "source_tier": observation.source_tier,
+            "source_url": observation.source_url or self.config.endpoint,
+            "freshness": quality["freshness"],
+            "data_quality_score": quality["data_quality_score"],
+            "display_eligible": quality["display_eligible"],
+            "alert_eligible": quality["alert_eligible"],
+            "quality_reasons": quality["reasons"],
+            "last_observation_id": observation.observation_id,
+            "last_payload_hash": observation.payload_hash,
+        })
+        return health
 
     def provenance(self, observation: SourceObservation) -> dict[str, Any]:
         data = observation.provenance()

@@ -274,6 +274,7 @@ def build_source_health(
     official_sources: list[dict[str, Any]] | None = None,
     news_sources: list[dict[str, Any]] | None = None,
     additional_sources: list[dict[str, Any]] | None = None,
+    creator_sources: list[dict[str, Any]] | None = None,
     monitor_health: dict[str, Any] | None = None,
     quote_evidence: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -324,6 +325,18 @@ def build_source_health(
             if normalized.get("status") == "healthy" and not normalized.get("last_success_at"):
                 normalized["last_success_at"] = normalized.get("checked_at")
             sources.append(normalized)
+    if creator_sources:
+        for item in creator_sources:
+            if not isinstance(item, dict):
+                continue
+            normalized = dict(item)
+            normalized.setdefault("key", f"creator_{normalized.get('provider') or 'unknown'}")
+            normalized.setdefault("label", f"Creator｜{normalized.get('provider') or 'unknown'}")
+            normalized.setdefault("role", "optional")
+            normalized["state"] = _canonical_state(normalized)
+            normalized["semantic_state"] = _semantic_state(normalized)
+            normalized.setdefault("creator_health", normalized["semantic_state"])
+            sources.append(normalized)
     if monitor_health:
         monitor_item = _monitor_health_item(monitor_health, checked)
         if monitor_item:
@@ -347,18 +360,21 @@ def build_source_health(
     if events.get("is_major"):
         event_scan = {
             "status": "event_detected",
+            "has_events": True,
             "label": "已核對重大事件",
             "detail": "本輪掃描已發現符合門檻的市場事件。",
         }
     elif dependency_failed:
         event_scan = {
-            "status": "incomplete",
+            "status": "scan_failed",
+            "has_events": False,
             "label": "部分來源失敗",
             "detail": "部分事件來源暫時無法取得，不能將本輪解讀為沒有事件。",
         }
     else:
         event_scan = {
             "status": "no_event",
+            "has_events": False,
             "label": "本輪無重大事件",
             "detail": "事件來源已完成掃描，未發現符合提醒門檻的重大事件。",
         }

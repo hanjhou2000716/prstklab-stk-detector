@@ -7,8 +7,10 @@ import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from src.alert_budget import decide_alert_budget
 from src.briefing_cards import build_briefing_snapshot
 from src.config import get_settings
+from src.event_ledger import EventLedger
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import merge_published_metadata, write_snapshot
 from src.telegram_client import alert_mini_app_url, send_briefs
@@ -194,7 +196,6 @@ def write_event_lock_key(event: dict | None) -> None:
     """Let a timed briefing suppress the same monitor alert immediately after."""
     if not event:
         return
-    from src.event_ledger import EventLedger
     from src.official_event_monitor import event_key
 
     ledger = EventLedger()
@@ -254,6 +255,19 @@ def main() -> None:
     ):
         _write_output({"sent": "false", "reason": "snapshot_metadata_merge_skipped", "trace_id": trace_id})
         return
+    ledger = EventLedger()
+    budget = decide_alert_budget(event, ledger.delivery_history()) if event else {
+        "allowed": True, "reason": "no_event", "event_key": ""
+    }
+    if not budget["allowed"]:
+        _write_output({
+            "sent": "false", "delivery_status": "suppressed",
+            "reason": budget["reason"],
+            "event_key": budget.get("event_key", ""),
+            "alert_budget_allowed": "false",
+        })
+        print(f"Scheduled briefing suppressed by alert budget: {budget['reason']}")
+        return
     write_event_lock_key(event)
     brief = build_brief(snapshot, slot)
     results = send_briefs(
@@ -286,10 +300,10 @@ def main() -> None:
         "delivery_status": "delivered" if not summary["failed"] else "partial" if summary["delivered"] else "failed",
         "delivered_count": summary["delivered"],
         "failed_count": summary["failed"],
+        "alert_budget_allowed": "true",
+        "alert_budget_reason": budget.get("reason", "budget_available"),
     })
-    if event:
-        from src.event_ledger import EventLedger
-        ledger = EventLedger()
+    if event and summary["delivered"]:
         ledger.mark_reminded({**event, "trace_id": trace_id})
         ledger.save()
     delivered = summary["delivered"]

@@ -62,6 +62,23 @@ def build_card_html(alert: dict[str, Any]) -> str:
     reason = escape(str(alert.get("trigger_reason") or "資料整理與核對中"))
     release_id = escape(str(alert.get("release_id") or "待核對"))
     snapshot_id = escape(str(alert.get("snapshot_id") or "待核對"))
+    def text(key: str, default: str) -> str:
+        value = alert.get(key)
+        return escape(str(value if value not in (None, "") else default))
+
+    def evidence(key: str, default: str) -> str:
+        value = alert.get(key)
+        if isinstance(value, (list, tuple)):
+            value = "；".join(str(item) for item in value if item not in (None, ""))
+        return escape(str(value if value not in (None, "") else default))
+
+    event = text("event", "公開事件資料整理中，等待核對。")
+    importance = text("importance", "重要性仍需以公開來源與市場反應確認。")
+    transmission = text("market_transmission", "尚無足夠市場證據判定傳導方向。")
+    watch = text("watch", "觀察後續官方資料與可比較行情。")
+    sources = evidence("source_evidence", "來源核對狀態：待核對。")
+    market = evidence("market_evidence", "市場同步狀態：待核對。")
+    invalidation = text("invalidation_condition", "若來源或行情核對不成立，取消本次判定。")
     return f"""<!doctype html>
 <html lang="zh-Hant"><meta charset="utf-8">
 <style>
@@ -71,14 +88,15 @@ main{{box-sizing:border-box;padding:64px 72px;width:100%;height:100%}}
 h1{{font-size:58px;line-height:1.18;margin:34px 0 30px}}
 .state{{display:inline-block;background:#c85d27;color:#fff;font-size:30px;padding:12px 22px;border-radius:12px}}
 .panel{{margin-top:32px;background:#fff;border:2px solid #d3d9dd;border-radius:24px;padding:28px}}
-.panel p{{font-size:34px;line-height:1.42;margin:0 0 18px}}
+.panel p{{font-size:30px;line-height:1.34;margin:0 0 16px}}
+.label{{color:#c85d27;font-weight:700}}
 .meta{{font-size:22px;line-height:1.55;color:#4b6378}}
 .footer{{position:absolute;left:72px;bottom:62px;font-size:20px;color:#4b6378}}
 </style><main><div class="brand">PRStK MARKET INTELLIGENCE</div>
 <h1>{title}</h1><div class="state">狀態｜{state}</div>
 <section class="panel"><p>{reason}</p><div class="meta">release｜{release_id}<br>snapshot｜{snapshot_id}</div></section>
 <div class="footer">僅供公開資訊整理與教育性觀察，不構成投資建議。</div>
-</main></html>"""
+</main><section class="panel"><p><span class="label">事件：</span>{event}</p><p><span class="label">為何重要：</span>{importance}</p><p><span class="label">可能連動：</span>{transmission}</p><p><span class="label">股市觀察：</span>{watch}</p><p><span class="label">來源：</span>{sources}</p><p><span class="label">行情核對：</span>{market}</p><p><span class="label">失效條件：</span>{invalidation}</p></section></html>"""
 
 
 def _validate_png(target: Path) -> None:

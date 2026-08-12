@@ -14,6 +14,17 @@ from src.raw_observation_store import RawObservationStore
 from src.source_adapter import AdapterConfig, JsonSourceAdapter
 
 DEFAULT_REPOSITORY_URL = "https://github.com/hanjhou2000716/prstklab-stk-detector"
+ADAPTER_CONTRACT_VERSION = 1
+PROVENANCE_FIELDS = (
+    "provider", "source_tier", "source_url", "request_id", "fetched_at",
+    "published_at", "observation_id", "payload_hash", "parser_version",
+    "stale_used", "freshness", "data_quality_score", "alert_eligible",
+)
+HEALTH_FIELDS = (
+    "status", "last_success_at", "last_failure_at", "consecutive_failures",
+    "error_class", "freshness", "data_quality_score", "display_eligible",
+    "alert_eligible", "quality_reasons",
+)
 
 
 @dataclass(frozen=True)
@@ -80,5 +91,20 @@ def build_adapter(provider: str, *, parser=lambda payload: payload, transport=No
 
 
 def build_adapter_catalog() -> list[dict[str, Any]]:
-    """Return a JSON-safe catalog for source health and audit pages."""
-    return [asdict(item) for item in ADAPTER_CATALOG]
+    """Return a JSON-safe adapter contract catalog for health and audit pages.
+
+    The catalog is declarative: it describes the allow-listed transport and
+    the fields every adapter must expose.  It never performs a network call.
+    This makes the market artifact self-describing while keeping collection
+    and source health decisions in the explicit pipeline.
+    """
+    return [
+        {
+            **asdict(item),
+            "adapter_contract_version": ADAPTER_CONTRACT_VERSION,
+            "provenance_fields": list(PROVENANCE_FIELDS),
+            "health_fields": list(HEALTH_FIELDS),
+            "alert_policy": "crosscheck_required" if item.can_trigger_alert else "display_only",
+        }
+        for item in ADAPTER_CATALOG
+    ]

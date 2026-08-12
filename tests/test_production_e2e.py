@@ -54,3 +54,24 @@ def test_offline_e2e_uses_mock_delivery_without_production_recipients(monkeypatc
     )
     assert report["ok"] is True
     assert report["telegram"]["mocked"] is True
+
+
+def test_offline_e2e_exposes_creator_delivery_contract():
+    report = run_offline_e2e(
+        dry_run=lambda: {
+            "ok": True,
+            "renderer_available": True,
+            "card_dimensions": {"width": 1080, "height": 1350},
+            "photo_contract": {
+                "dimensions_valid": True,
+                "deep_link_valid": True,
+                "observation_id": "obs-e2e",
+                "delivery_status": "delivered",
+            },
+        },
+        delivery_check=lambda **_: {"ok": True, "recipient_count": 1, "errors": []},
+    )
+    assert report["checks"]["creator_delivery_contract"] is True
+    assert report["creator_delivery"]["notification_key"].startswith("creator:production-e2e-creator-episode:")
+    assert report["checks"]["creator_release_contract"] is True
+    assert report["creator_release"]["insight_count"] == 1

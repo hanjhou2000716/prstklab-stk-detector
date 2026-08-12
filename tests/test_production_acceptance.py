@@ -1,4 +1,9 @@
-from src.production_acceptance import _parse_time, production_research_contract_errors, validate_production_bundle
+from src.production_acceptance import (
+    _parse_time,
+    production_research_contract_errors,
+    production_strategy_matrix_errors,
+    validate_production_bundle,
+)
 
 
 def _bundle():
@@ -64,6 +69,33 @@ def test_delivery_mode_rejects_legacy_research_snapshot():
     assert "not a production scan" in " ".join(result.errors)
 
 
+def test_strict_delivery_requires_all_market_strategy_sources():
+    bundle = _bundle()
+    bundle["research"].update(
+        scan_mode="production", scan_scope="full", publish_eligible=True,
+        production_eligible=True, universe_expected=1,
+        universe_scanned=1, universe_completed=1, universe_failed=0,
+        research_run={"run_id": "r", "source_commit_sha": "a" * 40,
+                      "scan_mode": "production", "scan_scope": "full",
+                      "run_finished_at": "2026-08-04T10:00:00+00:00"},
+        run_id="r", generated_at="2026-08-04T10:00:00+00:00",
+    )
+    result = validate_production_bundle(**bundle, require_production_research=True)
+    assert not result.allowed
+    assert any("source matrix missing" in error for error in result.errors)
+
+
+def test_strategy_matrix_rejects_duplicate_and_unknown_sources():
+    research = {"sources": [
+        {"market": "taiwan", "strategy": "momentum"},
+        {"market": "taiwan", "strategy": "momentum"},
+        {"market": "mars", "strategy": "momentum"},
+    ]}
+    errors = production_strategy_matrix_errors(research)
+    assert any("duplicate taiwan/momentum" in error for error in errors)
+    assert any("unknown entries" in error for error in errors)
+
+
 def test_explicit_stale_fallback_is_blocked_from_production_delivery():
     bundle = _bundle()
     bundle["research"].update(
@@ -91,6 +123,29 @@ def test_production_contract_rejects_incomplete_source_metadata():
     errors = production_research_contract_errors(research)
     assert "research source 0 is not complete" in errors
     assert "research source 0 universe is incomplete" in errors
+
+
+def test_ready_backtest_requires_strategy_registry_in_production_acceptance():
+    research = _complete_production_research()
+    research["backtest_release_contract"] = {
+        "publication_state": "ready",
+        "publish_eligible": True,
+        "strategy_registry": [],
+    }
+    errors = production_research_contract_errors(research)
+    assert "ready backtest contract requires strategy_registry" in errors
+
+
+def test_production_candidate_must_match_ready_backtest_registry():
+    research = _complete_production_research()
+    research["backtest_release_contract"] = {
+        "publication_state": "ready",
+        "publish_eligible": True,
+        "strategy_registry": [{"strategy_id": "momentum"}],
+    }
+    research["candidates"] = [{"ticker": "2330", "strategy": "value"}]
+    errors = production_research_contract_errors(research)
+    assert any("candidate 0 strategy is absent" in error for error in errors)
 
 
 def _complete_production_research():

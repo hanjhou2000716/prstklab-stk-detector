@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/creator-release.schema.json",
+  "type": "object",
+  "required": ["schema_version", "parent_release_id", "market_snapshot_id", "event_snapshot_id", "generated_at", "insights", "status", "artifact_hash", "release_id", "public_safe"],
+  "properties": {
+    "schema_version": {"enum": ["1.0", "1.1"]},
+    "parent_release_id": {"type": "string"},
+    "market_snapshot_id": {"type": "string"},
+    "event_snapshot_id": {"type": "string"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "insights": {"type": "array", "items": {"type": "object"}},
+    "validation_errors": {"type": "array", "items": {"type": "string"}},
+    "status": {"enum": ["ready", "unavailable"]},
+    "artifact_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "release_id": {"type": "string", "minLength": 1},
+    "public_safe": {"const": true}
+  },
+  "additionalProperties": false
+}

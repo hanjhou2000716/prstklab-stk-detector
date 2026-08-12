@@ -17,6 +17,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from src.artifact_contract import validate_release
+from src.creator_release import validate_creator_release
 from src.production_acceptance import (
     production_research_contract_errors,
     validate_production_bundle,
@@ -34,6 +35,33 @@ SOURCE_HEALTH_ARTIFACT = "source-health.json"
 
 def _canonical_json(value: Any) -> bytes:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def _creator_identity_hash(
+    creator_artifact: dict[str, Any] | None,
+    creator_records: list[dict[str, Any]] | None,
+) -> str | None:
+    """Hash creator content before derived release lineage is attached."""
+    if creator_records is not None:
+        material: Any = creator_records
+    elif isinstance(creator_artifact, dict):
+        material = {
+            key: value
+            for key, value in creator_artifact.items()
+            if key
+            not in {
+                "release_id",
+                "parent_release_id",
+                "creator_release_id",
+                "generated_at",
+                "validation_errors",
+                "status",
+                "artifact_hash",
+            }
+        }
+    else:
+        return None
+    return hashlib.sha256(_canonical_json(material)).hexdigest()
 
 
 def content_snapshot_id(value: dict[str, Any], prefix: str) -> str:
@@ -266,6 +294,8 @@ def build_release_manifest(
     allow_stale_research: bool = False,
     research_fallback_reason: str | None = None,
     max_research_age_hours: float = 24.0,
+    creator_artifact: dict[str, Any] | None = None,
+    creator_records: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Build a manifest without fabricating readiness.
 
@@ -356,6 +386,7 @@ def build_release_manifest(
     market_id = content_snapshot_id(market, "market") if market else ""
     research_id = content_snapshot_id(research, "research") if research else ""
     event_id = content_snapshot_id(events, "event") if events else ""
+    creator_input_hash = _creator_identity_hash(creator_artifact, creator_records)
     policy = str(policy_version or os.getenv("POLICY_VERSION") or "2026.08")
     created_at = datetime.now(UTC).isoformat()
     release_material = {
@@ -368,7 +399,44 @@ def build_release_manifest(
         "artifact_hashes": hashes,
         "policy_version": policy,
     }
+    if creator_input_hash:
+        release_material["creator_input_hash"] = creator_input_hash
     release_id = f"release-{hashlib.sha256(_canonical_json(release_material)).hexdigest()[:16]}"
+    if creator_artifact is None and creator_records is not None:
+        # Records are expected to be sanitized at ingress. The pipeline still
+        # rechecks privacy/source rules before writing a public artifact.
+        from src.creator_intelligence_pipeline import build_creator_intelligence_release
+
+        creator_result = build_creator_intelligence_release(
+            creator_records,
+            parent_manifest={
+                "release_id": release_id,
+                "market_snapshot_id": market_id,
+                "event_snapshot_id": event_id,
+            },
+        )
+        creator_artifact = creator_result["artifact"]
+    creator_hash = hashlib.sha256(_canonical_json(creator_artifact)).hexdigest() if isinstance(creator_artifact, dict) else None
+    creator_errors = (
+        validate_creator_release(creator_artifact, parent_manifest={
+            "release_id": release_id,
+            "market_snapshot_id": market_id,
+            "event_snapshot_id": event_id,
+        })
+        if isinstance(creator_artifact, dict)
+        else []
+    )
+    creator_status = "ready" if isinstance(creator_artifact, dict) and not creator_errors else ("unavailable" if isinstance(creator_artifact, dict) else "not_available")
+    creator_path: Path | None = None
+    if isinstance(creator_artifact, dict):
+        creator_path = root / "site" / "data" / "creator-release.json"
+        try:
+            _write_normalized_artifact(creator_path, creator_artifact)
+            resolved["creator-release.json"] = creator_path
+            loaded["creator-release.json"] = creator_artifact
+            hashes["creator-release.json"] = sha256_file(creator_path)
+        except OSError as exc:
+            errors.append(f"cannot persist/hash artifact {creator_path.as_posix()}: {type(exc).__name__}")
     public_paths = {
         name: (path.relative_to(root / "site").as_posix() if path.is_relative_to(root / "site") else path.as_posix())
         for name, path in resolved.items()
@@ -396,6 +464,11 @@ def build_release_manifest(
         "research_freshness": "unknown",
         "research_fallback_used": fallback_applied,
         "research_fallback_reason": fallback_reason,
+        "creator_release_id": (creator_artifact or {}).get("release_id") if isinstance(creator_artifact, dict) else None,
+        "creator_status": creator_status,
+        "creator_validation_errors": creator_errors,
+        "creator_artifact_hash": creator_hash,
+        "creator_input_hash": creator_input_hash,
         "status": "invalid",
     }
     if fallback_applied:
@@ -532,7 +605,28 @@ def main() -> int:
     parser.add_argument("--allow-stale-research", action="store_true")
     parser.add_argument("--research-fallback-reason", default=None)
     parser.add_argument("--max-research-age-hours", type=float, default=24.0)
+    parser.add_argument(
+        "--creator-records",
+        type=Path,
+        default=None,
+        help="optional JSON array of sanitized public Creator Insight records",
+    )
     args = parser.parse_args()
+    creator_records: list[dict[str, Any]] | None = None
+    if args.creator_records is not None:
+        creator_path = args.creator_records.resolve()
+        public_root = (args.root / "site").resolve()
+        if creator_path.is_relative_to(public_root):
+            parser.error("creator records must be outside the public site tree")
+        try:
+            payload = json.loads(creator_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            parser.error(f"creator records are unreadable: {type(exc).__name__}")
+        if isinstance(payload, dict):
+            payload = payload.get("records")
+        if not isinstance(payload, list) or not all(isinstance(item, dict) for item in payload):
+            parser.error("creator records must be a JSON array of objects")
+        creator_records = payload
     manifest = build_release_manifest(
         root=args.root,
         output=args.output,
@@ -541,6 +635,7 @@ def main() -> int:
         allow_stale_research=args.allow_stale_research,
         research_fallback_reason=args.research_fallback_reason,
         max_research_age_hours=args.max_research_age_hours,
+        creator_records=creator_records,
     )
     write_release_manifest(manifest, args.output)
     print(json.dumps({"status": manifest["status"], "release_id": manifest["release_id"], "validation_errors": manifest["validation_errors"]}, ensure_ascii=False))

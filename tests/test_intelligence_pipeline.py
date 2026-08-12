@@ -39,3 +39,21 @@ def test_intelligence_pipeline_publishes_risk_context_without_unlocking_advice()
     assert result["stress_scenarios"][0]["non_predictive"] is True
     assert result["advice_gate"] == "observation_only"
     assert result["explainability"] is None
+
+
+def test_candidate_backtest_contract_reaches_advice_gate():
+    result = build_intelligence_context(
+        {"title": "strategy event", "source_url": "https://official.test"},
+        [],
+        candidate={
+            "strategy": "value",
+            "backtest_release": "bt1",
+            "backtest_release_contract": {
+                "publication_state": "ready",
+                "publish_eligible": True,
+                "strategy_registry": [{"strategy_id": "value"}],
+            },
+        },
+        advice_context={"general_research": True},
+    )
+    assert result["advice_gate_detail"]["checks"]["backtest"] is True

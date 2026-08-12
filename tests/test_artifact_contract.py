@@ -5,7 +5,37 @@ from src.artifact_contract import (
     validate_market,
     validate_release,
     validate_research,
+    validate_source_catalog,
+    validate_source_health,
 )
+
+
+def test_source_catalog_contract_rejects_duplicate_and_policy_mismatch():
+    catalog = [{
+        "provider": "TWSE", "can_trigger_alert": True,
+        "adapter_contract_version": 1,
+        "provenance_fields": ["provider"], "health_fields": ["status"],
+        "alert_policy": "display_only",
+    }, {
+        "provider": "twse", "can_trigger_alert": False,
+        "adapter_contract_version": 1,
+        "provenance_fields": ["provider"], "health_fields": ["status"],
+        "alert_policy": "crosscheck_required",
+    }]
+    errors = validate_source_catalog(catalog)
+    assert any("duplicated" in error for error in errors)
+    assert any("requires crosscheck_required" in error for error in errors)
+    assert any("conflicts with crosscheck_required" in error for error in errors)
+
+
+def test_source_catalog_contract_accepts_catalogued_adapter():
+    assert validate_source_catalog([{
+        "provider": "TWSE", "can_trigger_alert": True,
+        "adapter_contract_version": 1,
+        "provenance_fields": ["provider", "source_url"],
+        "health_fields": ["status", "freshness"],
+        "alert_policy": "crosscheck_required",
+    }]) == []
 
 
 def test_invalid_timestamp_fails_closed_without_crashing():
@@ -43,6 +73,42 @@ def test_market_rejects_stale_live_and_source_mismatch():
     errors = validate_market(market)
     assert any("stale_used" in error for error in errors)
     assert any("source_domain" in error for error in errors)
+
+
+def _source_health(**overrides):
+    document = {
+        "status": "partial",
+        "sources": [{"key": "official_events", "status": "healthy", "semantic_state": "healthy"}],
+        "event_scan": {"status": "no_event", "has_events": False},
+        "observability": {"failure_count": 0, "no_event_count": 1},
+    }
+    document.update(overrides)
+    return document
+
+
+def test_source_health_accepts_explicit_scan_failed_state():
+    health = _source_health(
+        event_scan={"status": "scan_failed", "has_events": False, "detail": "timeout"},
+        sources=[{"key": "official_events", "status": "scan_failed", "semantic_state": "failed"}],
+    )
+    assert not any("event_scan" in error for error in validate_source_health(health))
+
+
+def test_source_health_rejects_no_event_when_core_scan_failed():
+    health = _source_health(
+        event_scan={"status": "no_event", "has_events": False},
+        sources=[{"key": "official_events", "status": "partial", "semantic_state": "failed"}],
+    )
+    errors = validate_source_health(health)
+    assert any("cannot coexist" in error for error in errors)
+
+
+def test_source_health_rejects_scan_failed_with_events():
+    health = _source_health(
+        event_scan={"status": "scan_failed", "has_events": True},
+    )
+    errors = validate_source_health(health)
+    assert any("has_events=true" in error for error in errors)
 
 
 def test_research_rejects_formal_candidates_exceeding_candidates():
@@ -121,6 +187,40 @@ def test_research_backtest_contract_requires_matching_ready_state():
     )
     errors = validate_research(research)
     assert any("ready backtest contract requires publish_eligible=true" in error for error in errors)
+
+
+def test_ready_backtest_contract_requires_strategy_registry():
+    research = _research(
+        backtest_release_status="ready",
+        backtest_release_contract=_backtest_contract(strategy_registry=[]),
+    )
+    errors = validate_research(research)
+    assert any("ready backtest contract requires strategy_registry" in error for error in errors)
+
+
+def test_ready_backtest_registry_requires_complete_provenance():
+    document = _research(
+        backtest_release_status="ready",
+        backtest_release_contract=_backtest_contract(
+            strategy_registry=[{"strategy_id": "value"}],
+        ),
+    )
+    errors = validate_research(document)
+    assert any("ready backtest strategy_registry.strategy_version is missing" in error for error in errors)
+
+
+def test_candidate_strategy_must_be_present_in_ready_registry():
+    research = _research(
+        backtest_release_status="ready",
+        backtest_release_contract=_backtest_contract(strategy_registry=[{"strategy_id": "momentum"}]),
+        candidates=[{
+            "ticker": "2330",
+            "strategy": "value",
+            "backtest_release": "backtest-12345678",
+        }],
+    )
+    errors = validate_research(research)
+    assert any("strategy is absent from ready backtest registry" in error for error in errors)
 
 
 def test_research_backtest_contract_rejects_candidate_release_mismatch():

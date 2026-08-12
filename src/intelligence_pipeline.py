@@ -6,6 +6,7 @@ from typing import Any
 
 from src.advice_gate import build_explainability_card, evaluate_advice_gate
 from src.cross_asset_risk import detect_contagion
+from src.external_event_risk import cluster_external_events, notification_decision, score_prstk_risk
 from src.market_impact_graph import build_market_impact_graph
 from src.market_regime import classify_regime
 from src.stress_scenarios import run_stress_scenario
@@ -44,6 +45,7 @@ def _market_reaction(observations: Iterable[dict[str, Any]]) -> dict[str, Any]:
 
 def build_intelligence_context(
     event: dict[str, Any], observations: Iterable[dict[str, Any]] | None = None, *,
+    external_observations: Iterable[dict[str, Any]] | None = None,
     macro: dict[str, Any] | None = None,
     regime_factors: dict[str, float | int | None] | None = None,
     contagion_observations: dict[str, dict[str, float | None]] | None = None,
@@ -52,6 +54,22 @@ def build_intelligence_context(
     advice_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     observations_list = list(observations or [])
+    external_clusters = cluster_external_events(list(external_observations or []))
+    external_risk: dict[str, Any] = {"status": "not_available", "clusters": []}
+    if external_clusters:
+        first_cluster = external_clusters[0]
+        score = score_prstk_risk(
+            first_cluster,
+            official_confirmed=bool(event.get("official_confirmed")),
+            market_sync_confirmed=bool(event.get("market_sync_confirmed")),
+            vendor_importance=event.get("vendor_importance"),
+        )
+        external_risk = {
+            "status": "eligible" if score["notification_eligible"] else "pending",
+            "cluster": first_cluster,
+            "score": score,
+            "notification": notification_decision(score),
+        }
     graph = build_market_impact_graph(event, observations_list)
     surprise: dict[str, Any]
     if macro is None:
@@ -79,12 +97,16 @@ def build_intelligence_context(
         for name in ("nasdaq_shock", "semiconductor_shock", "energy_supply_shock")
     ]
     context = advice_context or {}
+    candidate_row = candidate if isinstance(candidate, dict) else {}
+    backtest_contract = context.get("backtest_release_contract") or candidate_row.get("backtest_release_contract")
+    backtest_release = context.get("backtest_release") or candidate_row.get("backtest_release")
     advice = evaluate_advice_gate({
         "data_quality_ok": bool(context.get("data_quality_ok")),
         "quote_stale": bool(context.get("quote_stale", True)),
         "crosscheck_ok": synchronized and bool(context.get("crosscheck_ok")),
-        "backtest_release": context.get("backtest_release"),
-        "backtest_release_contract": context.get("backtest_release_contract"),
+        "backtest_release": backtest_release,
+        "backtest_release_contract": backtest_contract,
+        "strategy": candidate_row.get("strategy") or candidate_row.get("strategy_id") or context.get("strategy"),
         "candidate_data_gap": bool(context.get("candidate_data_gap", True)),
         "policy_valid": bool(context.get("policy_valid")),
         "risk_profile_known": bool(context.get("risk_profile_known")),
@@ -97,6 +119,7 @@ def build_intelligence_context(
     })
     return {
         "market_impact_graph": graph,
+        "external_event_risk": external_risk,
         "macro_surprise": surprise,
         "market_sync_confirmed": synchronized,
         "evidence_status": "confirmed" if synchronized else "insufficient_evidence",

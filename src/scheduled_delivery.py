@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import tempfile
 from pathlib import Path
 
@@ -25,9 +26,32 @@ from src.scheduled_brief import (
 from src.telegram_client import send_photo_briefs
 
 
+def _load_creator_records() -> list[dict]:
+    """Load only the optional sanitized creator input outside the Pages tree."""
+    raw_path = os.getenv("CREATOR_RECORDS_PATH", "").strip()
+    if not raw_path:
+        return []
+    path = Path(raw_path).resolve()
+    public_root = (Path.cwd() / "site").resolve()
+    if path.is_relative_to(public_root) or not path.is_file():
+        return []
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return []
+    if isinstance(payload, dict):
+        payload = payload.get("records")
+    if not isinstance(payload, list):
+        return []
+    return [item for item in payload if isinstance(item, dict)]
+
+
 def prepare(slot: str, snapshot_path: Path) -> dict:
     """Create the exact snapshot that will later be deployed and delivered."""
     snapshot = build_market_snapshot()
+    creator_records = _load_creator_records()
+    if creator_records:
+        snapshot["creator_insights"] = creator_records
     snapshot["briefing"] = build_briefing_snapshot(snapshot, slot)
     if not write_snapshot(snapshot, snapshot_path):
         _write_output({"prepared": "false", "sent": "false", "reason": "snapshot_publish_skipped"})
@@ -112,14 +136,19 @@ def send(
     )
     try:
         with tempfile.TemporaryDirectory(prefix="prstk-alert-card-") as temporary:
-            photo_path = render_alert_card(
-                {
+            card_alert = {
                     "title": (event or {}).get("title") or f"{slot} market briefing",
                     "lifecycle_state": (event or {}).get("lifecycle_state") or "observation",
                     "trigger_reason": caption,
                     "release_id": gate.release_id,
                     "snapshot_id": snapshot_id,
-                },
+                }
+            if isinstance(event, dict):
+                for key in ("event", "importance", "market_transmission", "watch", "source_evidence", "market_evidence", "invalidation_condition"):
+                    if event.get(key) not in (None, "", []):
+                        card_alert[key] = event[key]
+            photo_path = render_alert_card(
+                card_alert,
                 Path(temporary) / "alert.png",
             )
             deliveries = send_photo_briefs(

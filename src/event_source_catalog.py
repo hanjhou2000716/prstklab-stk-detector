@@ -31,9 +31,13 @@ EVENT_SOURCES: tuple[EventSource, ...] = (
     EventSource("usgs", "disaster", "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_hour.geojson", "official", 5, 90, True),
     EventSource("gdelt", "discovery", "https://api.gdeltproject.org/api/v2/doc/doc", "discovery", 15, 45, False),
     EventSource("reuters", "discovery", "https://www.reuters.com/", "discovery", 15, 45, False),
+    EventSource("financialjuice", "discovery", "https://www.financialjuice.com/", "discovery", 5, 45, False),
+    EventSource("gmail", "transport", "https://gmail.googleapis.com/", "transport", 5, 15, False),
+    EventSource("haojiao", "editorial", "https://www.youtube.com/", "editorial", 15, 180, False),
+    EventSource("gooaye", "editorial", "https://www.youtube.com/", "editorial", 15, 180, False),
 )
 
-_ALLOWED_TIERS = {"official", "public-market", "discovery"}
+_ALLOWED_TIERS = {"official", "public-market", "discovery", "transport", "editorial"}
 _ALLOWED_STATUSES = {"healthy", "no_event", "stale", "failed", "not_scanned"}
 
 

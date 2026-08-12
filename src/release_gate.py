@@ -16,6 +16,8 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 import requests
 
 from src.artifact_contract import validate_release, validate_source_health_artifact
+from src.asset_contract import validate_assets
+from src.creator_release import validate_creator_release
 from src.production_acceptance import validate_production_bundle
 from src.release_manifest import verify_release_files
 
@@ -37,15 +39,33 @@ class ReleaseGateResult:
     manifest: dict[str, Any] = field(default_factory=dict)
 
 
+def _validate_creator_artifact(artifact: dict[str, Any], manifest: dict[str, Any]) -> list[str]:
+    """Validate an optional creator artifact against the exact parent release."""
+    errors = validate_creator_release(
+        artifact,
+        parent_manifest={
+            "release_id": manifest.get("release_id"),
+            "market_snapshot_id": manifest.get("market_snapshot_id"),
+            "event_snapshot_id": manifest.get("event_snapshot_id"),
+        },
+    )
+    declared_id = manifest.get("creator_release_id")
+    if declared_id and str(artifact.get("release_id") or "") != str(declared_id):
+        errors.append("creator artifact release_id does not match manifest")
+    if manifest.get("creator_status") == "ready" and artifact.get("status") != "ready":
+        errors.append("manifest declares creator release ready but artifact is not ready")
+    return sorted(set(errors))
+
+
 def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tuple[dict[str, dict[str, Any]], list[str]]:
-    """Load the three contract artifacts referenced by a manifest."""
+    """Load and validate the contract artifacts referenced by a manifest."""
     paths = manifest.get("artifact_paths")
     if not isinstance(paths, dict):
         return {}, ["manifest artifact paths are missing"]
     loaded: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
-    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json"):
-        if name == "source-health.json" and name not in paths:
+    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json", "creator-release.json"):
+        if name in {"source-health.json", "creator-release.json"} and name not in paths:
             continue
         raw_path = paths.get(name)
         if not isinstance(raw_path, str):
@@ -61,6 +81,9 @@ def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tup
             errors.append(f"artifact must be an object: {name}")
             continue
         loaded[name] = value
+    creator = loaded.get("creator-release.json")
+    if creator is not None:
+        errors.extend(_validate_creator_artifact(creator, manifest))
     return loaded, errors
 
 
@@ -91,8 +114,8 @@ def _fetch_public_release_artifacts(
     }
     loaded: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
-    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json"):
-        if name == "source-health.json" and name not in paths:
+    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json", "creator-release.json"):
+        if name in {"source-health.json", "creator-release.json"} and name not in paths:
             continue
         raw_path = paths.get(name)
         expected_hash = hashes.get(name)
@@ -127,6 +150,9 @@ def _fetch_public_release_artifacts(
             errors.append(f"public artifact must be an object: {name}")
             continue
         loaded[name] = value
+    creator = loaded.get("creator-release.json")
+    if creator is not None:
+        errors.extend(_validate_creator_artifact(creator, manifest))
     if errors:
         return loaded, errors
     if "source-health.json" in paths:
@@ -231,6 +257,12 @@ def verify_release_for_delivery(
     # Manifest artifact paths are relative to the Pages root (site/).
     site_root = path.parent.parent if path.parent.name == "data" else path.parent
     errors.extend(verify_release_files(manifest, root=site_root))
+    # A Pages release is not deliverable with a mixed-generation static shell.
+    # Keep legacy rollback fixtures readable when no asset manifest exists,
+    # but fail closed whenever a publisher has emitted one.
+    asset_manifest = site_root / "asset-manifest.json"
+    if asset_manifest.is_file():
+        errors.extend(validate_assets(site_root))
     artifacts, artifact_errors = _load_release_artifacts(manifest, site_root=site_root)
     errors.extend(artifact_errors)
     if not artifact_errors and not errors:

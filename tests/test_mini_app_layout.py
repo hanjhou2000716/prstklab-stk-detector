@@ -133,13 +133,17 @@ def test_event_timeline_and_feedback_are_optional_and_non_policy_mutating():
 def test_source_health_distinguishes_empty_scan_from_failure_and_exposes_slo_metrics():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
 
-    assert 'scanState === "scan_failed"' in app
-    assert 'scanState === "no_events"' in app
+    assert '"scan_failed", "failed"' in app
+    assert '"no_events", "no_event"' in app
     assert "health.observability || health.slo" in app
     assert "observation.no_event_count" in app
     assert "observation.failure_count" in app
     assert "source.consecutive_failures" in app
     assert "source.crosscheck_rate" in app
+    assert "const sourceHealthStateLabel" in app
+    assert '"failure", "error"' in app
+    assert '"empty", "none"' in app
+    assert '"狀態待確認"' in app
 
 
 def test_research_candidates_have_optional_explainability_without_advice_language():
@@ -230,8 +234,27 @@ def test_mini_app_consumes_release_bound_source_health_artifact():
     assert "snapshot.source_health = healthEnvelope.source_health" in app
 
 
+def test_research_ui_discloses_unpublished_backtest_state():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "backtest_publication_state" in app
+    assert "正式回測尚未發布；候選僅供研究觀察" in app
+
+
 def test_research_failure_message_exposes_retry_state_without_raw_errors():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert "source.failure_evidence || {}" in app
     assert "已重試" in app
     assert "不沿用舊候選" in app
+def test_research_cards_expose_strategy_binding_and_backtest_provenance():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "const binding = item.strategy_binding" in app
+    assert "backtest_release_contract" in app
+    assert "策略綁定" in app
+    assert "回測版本" in app
+
+
+def test_value_research_cards_reuse_explainability_renderer():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    marker = 'const explanation = researchExplainability(item);'
+    assert marker in app
+    assert app.index(marker) > app.index("const renderValueResearch")

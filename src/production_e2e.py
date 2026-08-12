@@ -12,6 +12,8 @@ import json
 from collections.abc import Callable
 from typing import Any
 
+from src.creator_delivery_contract import decide_creator_delivery
+from src.creator_intelligence_pipeline import build_creator_intelligence_release
 from src.production_acceptance import validate_production_bundle
 from src.system_dry_run import run_dry_run
 
@@ -51,15 +53,44 @@ def _ready_bundle() -> dict[str, dict[str, Any]]:
                 "scan_scope": "full",
                 "run_finished_at": "2026-08-12T10:00:00+00:00",
             },
+            "backtest_release_status": "ready",
+            "backtest_release_contract": {
+                "backtest_release": "e2e-backtest",
+                "publication_state": "ready",
+                "publish_eligible": True,
+                "strategy_registry": [
+                    {"strategy_id": strategy, "strategy_version": "e2e", "data_version": "e2e"}
+                    for strategy in ("momentum", "price_action", "resonance", "value")
+                ],
+            },
+            # Keep the offline fixture representative of the strict
+            # production contract: every market/strategy row must be present
+            # and independently complete.  A single aggregate row would
+            # otherwise pass the old gate while the Mini App had empty
+            # strategy drawers.
             "sources": [
                 {
+                    "market": market,
+                    "strategy": strategy,
                     "scan_state": "complete",
+                    "candidate_state": "no_candidates",
                     "requested": 1,
                     "requested_records": 1,
                     "universe_scanned": 1,
                     "complete_records": 1,
                     "failed_records": 0,
+                    "visible_candidates": 0,
                 }
+                for market, strategy in (
+                    ("taiwan", "momentum"),
+                    ("taiwan", "price_action"),
+                    ("taiwan", "resonance"),
+                    ("taiwan", "value"),
+                    ("us", "momentum"),
+                    ("us", "price_action"),
+                    ("us", "resonance"),
+                    ("us", "value"),
+                )
             ],
         },
         "events": {"snapshot_id": "e2e-events", "events": []},
@@ -92,6 +123,31 @@ def run_offline_e2e(
     release = validate_production_bundle(**bundle, require_production_research=True)
     telegram = delivery_check(send=False)
     pipeline = dry_run()
+    creator_delivery = decide_creator_delivery(
+        {
+            "episode_key": "production-e2e-creator-episode",
+            "notification_type": "initial",
+            "public_safe": True,
+        },
+        release_ready=release.allowed,
+        media_available=pipeline.get("renderer_available") is True,
+    )
+    creator_result = build_creator_intelligence_release(
+        [{
+            "content_origin": "haojiao",
+            "episode_key": "production-e2e-creator-release",
+            "episode_title": "Public creator observation",
+            "claims": ["A public claim"],
+            "verification_state": "unverified",
+            "public_safe": True,
+        }],
+        parent_manifest={
+            "release_id": bundle["manifest"]["release_id"],
+            "market_snapshot_id": bundle["manifest"]["market_snapshot_id"],
+            "event_snapshot_id": bundle["manifest"]["event_snapshot_id"],
+        },
+    )
+    creator_release = creator_result["artifact"]
     checks = {
         "release_contract": release.allowed,
         "telegram_configuration": telegram.get("ok") is True,
@@ -101,6 +157,9 @@ def run_offline_e2e(
         "photo_contract": pipeline.get("photo_contract", {}).get("dimensions_valid") is True
         and pipeline.get("photo_contract", {}).get("deep_link_valid") is True
         and bool(pipeline.get("photo_contract", {}).get("observation_id")),
+        "creator_delivery_contract": creator_delivery["allowed"] is True,
+        "creator_release_contract": creator_release["status"] == "ready"
+        and creator_release["parent_release_id"] == bundle["manifest"]["release_id"],
     }
     return {
         "ok": all(checks.values()),
@@ -117,6 +176,13 @@ def run_offline_e2e(
             "renderer_available": pipeline.get("renderer_available", False),
             "card_dimensions": pipeline.get("card_dimensions", {}),
             "delivery_status": pipeline.get("photo_contract", {}).get("delivery_status"),
+        },
+        "creator_delivery": creator_delivery,
+        "creator_release": {
+            "status": creator_release["status"],
+            "release_id": creator_release["release_id"],
+            "parent_release_id": creator_release["parent_release_id"],
+            "insight_count": len(creator_release.get("insights") or []),
         },
     }
 

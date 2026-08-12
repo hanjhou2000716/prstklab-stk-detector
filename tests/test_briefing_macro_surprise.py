@@ -36,3 +36,20 @@ def test_missing_historical_std_does_not_invent_surprise_z():
     assert surprise["status"] == "above_expectation"
     assert surprise["surprise"] == 0.4
     assert surprise["surprise_z"] is None
+
+
+def test_briefing_forwards_external_observations_to_conservative_risk_engine():
+    briefing = build_briefing_snapshot({
+        "indices": [], "quotes": [], "macro_quotes": [], "events": {"items": []},
+        "external_observations": [{
+            "event_type": "energy",
+            "title": "Iran oil supply risk",
+            "summary": "discovery signal",
+            "source": "financialjuice",
+            "source_tier": "discovery",
+            "source_url": "https://discovery.example/event",
+        }],
+    })
+    risk = briefing["intelligence"]["external_event_risk"]
+    assert risk["status"] == "pending"
+    assert risk["score"]["prstk_risk_level"] == "R2"

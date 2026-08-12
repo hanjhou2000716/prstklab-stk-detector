@@ -6,6 +6,16 @@ def test_catalog_has_allowlisted_primary_and_discovery_sources():
     assert {"TWSE", "TAIFEX", "TPEx", "SEC", "GDELT"}.issubset(providers)
 
 
+def test_catalog_publishes_shared_provenance_and_health_contract():
+    specs = {item["provider"]: item for item in build_adapter_catalog()}
+    twse = specs["TWSE"]
+    assert twse["adapter_contract_version"] == 1
+    assert {"provider", "source_url", "fetched_at", "observation_id"}.issubset(twse["provenance_fields"])
+    assert {"status", "freshness", "data_quality_score", "alert_eligible"}.issubset(twse["health_fields"])
+    assert twse["alert_policy"] == "crosscheck_required"
+    assert specs["Yahoo"]["alert_policy"] == "display_only"
+
+
 def test_catalog_declares_independent_secondary_market_sources():
     providers = {item["provider"] for item in build_adapter_catalog()}
     assert {"CoinGecko", "Stooq", "Nasdaq", "KOFIA"}.issubset(providers)

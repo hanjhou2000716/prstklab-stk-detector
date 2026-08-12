@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/email-observation.schema.json",
+  "type": "object",
+  "required": ["observation_id", "transport_source", "content_origin", "content_type", "body_hash", "parse_status", "is_public_safe"],
+  "properties": {
+    "observation_id": {"type": "string", "minLength": 8},
+    "gmail_message_id": {"type": "string"},
+    "gmail_thread_id": {"type": "string"},
+    "gmail_history_id": {"type": "string"},
+    "transport_source": {"const": "gmail"},
+    "content_origin": {"enum": ["financialjuice", "haojiao", "gooaye", "unknown"]},
+    "content_type": {"enum": ["breaking_news", "creator_analysis", "unknown"]},
+    "sender": {"type": "string"},
+    "subject": {"type": "string"},
+    "received_at": {"type": ["string", "null"], "format": "date-time"},
+    "source_published_at": {"type": ["string", "null"], "format": "date-time"},
+    "body_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "mime_type": {"type": "string"},
+    "attachment_count": {"type": "integer", "minimum": 0},
+    "attachment_hashes": {"type": "array", "items": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
+    "parser_version": {"type": "string", "minLength": 1},
+    "parse_status": {"enum": ["received", "identified", "parsed", "normalized", "routed", "parse_failed", "unsupported_template", "invalid_source", "duplicate"]},
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "is_public_safe": {"const": true}
+  },
+  "additionalProperties": true
+}

@@ -30,6 +30,11 @@ pipeline call and a tested consumer.
 | Telegram delivery | `src/telegram_client.py`, `src/scheduled_delivery.py`, `src/official_event_monitor.py`, `src/emergency_alert.py` | yes | release-gated `sendPhoto` path with shared file ID | photo receipt | alert/release deep-link button | renderer failure is fail-closed; recipient failures are isolated | production |
 | Source-health release artifact | `src/release_manifest.py`, `src/release_gate.py`, `site/app.js` | yes | manifest/release gate | `data/source-health.json` | release-bound health view | gate evidence only | production |
 | Mini App deep-link/timeline | `site/app.js`, `src/event_timeline.py` | yes | Pages | yes | yes | button target | production |
+| External source email contract | `src/email_intelligence.py`, `src/gmail_ingress.py`, `src/external_source_parsers.py`, `railway-monitor/gmail_ingress.py`, `railway-monitor/gmail_watch.py`, `railway-monitor/email_store.py`, `railway-monitor/email_router.py` | yes | bounded Railway ingress + parser/DLQ boundary | sanitized EmailObservation + private cursor/DLQ | source health/pending reasons | no raw mail | partially_integrated |
+| External event risk | `src/external_event_risk.py`, `src/intelligence_pipeline.py` | yes | intelligence context | external risk status + pending reasons | event trace/pending path | eligible only after evidence gates | production |
+| Creator media boundary | `src/creator_media.py` | yes | private attachment boundary | hash + private availability only | no raw media | no | partially_integrated |
+| Creator release lineage | `src/creator_release.py`, `src/creator_intelligence_pipeline.py`, `src/release_manifest.py` | yes | scheduled input + optional manifest artifact | parent release/hash/status | release-bound creator drawer | no raw creator media | production |
+| Creator scheduled input | `src/scheduled_delivery.py`, `.github/workflows/scheduled-brief.yml` | yes | optional sanitized `CREATOR_RECORDS_PATH` | same market/creator release lineage | creator release | no raw creator media | production |
 | Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | briefing contract + optional endpoint/local queue | yes | feedback controls | no | partially_integrated |
 
 ## Data state contract
@@ -56,6 +61,10 @@ Production workflows invoke `src.release_manifest` with
 `--require-production-research`. A report must declare
 `scan_mode=production`, `scan_scope=full`, both eligibility flags, and complete
 every declared universe and source before a `ready` manifest can be published.
+Strict delivery also requires the complete eight-entry matrix: Taiwan and US
+for momentum, price action, resonance, and value. Missing, duplicated, or
+unknown market/strategy rows fail closed even when aggregate universe counts
+look complete.
 Bounded, smoke, failed, or building scans remain diagnostic artifacts and
 cannot silently become a research release. If a previously valid production
 report is reused while a new scan is incomplete, the workflow may explicitly

@@ -48,7 +48,11 @@
         "survivorship_audit": {"type": "object"},
         "research_only": {"type": "boolean"}
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [{
+        "if": {"properties": {"publication_state": {"const": "ready"}}},
+        "then": {"properties": {"strategy_registry": {"type": "array", "items": {"$ref": "#/$defs/strategy_release"}}}}
+      }]
     },
     "blocking_reason": {"type": ["string", "null"]},
     "sources": {"type": "array", "items": {"$ref": "#/$defs/source"}},
@@ -56,6 +60,20 @@
     "health": {"type": "object"}
   },
   "$defs": {
+    "strategy_release": {
+      "type": "object",
+      "required": ["strategy_id", "strategy_version", "parameter_hash", "universe_version", "data_version", "code_commit", "backtest_release"],
+      "properties": {
+        "strategy_id": {"type": "string", "minLength": 1},
+        "strategy_version": {"type": "string", "minLength": 1},
+        "parameter_hash": {"type": "string", "minLength": 8},
+        "universe_version": {"type": "string", "minLength": 1},
+        "data_version": {"type": "string", "minLength": 1},
+        "code_commit": {"type": "string", "minLength": 7},
+        "backtest_release": {"type": "string", "minLength": 8}
+      },
+      "additionalProperties": true
+    },
     "candidate": {
       "type": "object",
       "properties": {

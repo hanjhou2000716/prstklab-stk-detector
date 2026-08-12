@@ -109,6 +109,7 @@ def _quote_contract_errors(quote: dict[str, Any], path: str) -> list[str]:
 def validate_market(document: dict[str, Any]) -> list[str]:
     """Validate market schema and quote-level safety invariants."""
     errors = _schema_errors(document, "market.schema.json")
+    errors.extend(validate_source_catalog(document.get("source_catalog")))
     errors.extend(_raw_observation_contract_errors(document))
     errors.extend(_instrument_master_contract_errors(document))
     for collection in ("indices", "quotes"):
@@ -161,7 +162,7 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
     hide a failed scan, and an empty-but-successful scan remains observable.
     """
     errors = _schema_errors(document, "source-health.schema.json")
-    allowed_status = {"healthy", "partial", "warming", "critical", "pending", "failed", "no_event"}
+    allowed_status = {"healthy", "partial", "warming", "critical", "pending", "failed", "scan_failed", "no_event"}
     gap_states = {"fallback_active", "configuration_missing", "stale", "partial", "failed", "critical"}
     declared_missing = document.get("missing_source_count")
     if isinstance(declared_missing, int) and declared_missing >= 0:
@@ -204,24 +205,73 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: unknown status={status!r}")
         if status in {"healthy", "no_event"} and semantic in gap_states:
             errors.append(f"{path}: healthy/no_event status conflicts with semantic_state={semantic}")
-        if semantic in {"healthy", "no_event"} and status in {"failed", "partial", "critical"}:
+        if semantic in {"healthy", "no_event"} and status in {"failed", "scan_failed", "partial", "critical"}:
             errors.append(f"{path}: failed status conflicts with semantic_state={semantic}")
-        if source.get("no_event") is True and status in {"failed", "partial", "critical"}:
+        if source.get("no_event") is True and status in {"failed", "scan_failed", "partial", "critical"}:
             errors.append(f"{path}: no_event cannot be a failed source")
     event_scan = document.get("event_scan")
-    if isinstance(event_scan, dict) and event_scan.get("status") == "no_event":
+    if isinstance(event_scan, dict) and event_scan.get("status") in {"no_event", "no_events"}:
         failed = [
             source for source in document.get("sources", [])
-            if isinstance(source, dict) and source.get("status") in {"failed", "critical"}
+            if isinstance(source, dict) and (
+                source.get("status") in {"failed", "scan_failed", "critical"}
+                or source.get("semantic_state") in {"failed", "critical"}
+            )
         ]
         if failed:
             errors.append("source_health: event_scan=no_event cannot coexist with failed core sources")
+    if isinstance(event_scan, dict) and event_scan.get("status") == "scan_failed":
+        if event_scan.get("has_events") is True:
+            errors.append("source_health.event_scan=scan_failed cannot claim has_events=true")
     observability = document.get("observability")
     if isinstance(observability, dict):
         failures = observability.get("failure_count")
         no_events = observability.get("no_event_count")
         if isinstance(failures, int) and isinstance(no_events, int) and failures < 0:
             errors.append("source_health.observability.failure_count must be non-negative")
+    return errors
+
+
+def validate_source_catalog(catalog: Any) -> list[str]:
+    """Validate the declarative adapter catalog embedded in a market release.
+
+    The catalog is evidence about the adapters used by the producer, not just
+    display metadata.  Reject duplicate providers and incomplete contracts so
+    a release cannot claim a cross-check policy that its source registry does
+    not describe.
+    """
+    if catalog is None:
+        return []
+    if not isinstance(catalog, list):
+        return ["market.source_catalog must be an array"]
+    errors: list[str] = []
+    providers: set[str] = set()
+    for index, item in enumerate(catalog):
+        path = f"source_catalog[{index}]"
+        if not isinstance(item, dict):
+            errors.append(f"{path} must be an object")
+            continue
+        provider = str(item.get("provider") or "").strip()
+        if not provider:
+            errors.append(f"{path}.provider is required")
+        elif provider.casefold() in providers:
+            errors.append(f"{path}.provider is duplicated")
+        else:
+            providers.add(provider.casefold())
+        contract = item.get("adapter_contract_version")
+        if not isinstance(contract, int) or contract < 1:
+            errors.append(f"{path}.adapter_contract_version must be a positive integer")
+        for field in ("provenance_fields", "health_fields"):
+            values = item.get(field)
+            if not isinstance(values, list) or not all(isinstance(value, str) and value.strip() for value in values):
+                errors.append(f"{path}.{field} must be a non-empty string array")
+        policy = str(item.get("alert_policy") or "")
+        if policy not in {"crosscheck_required", "display_only"}:
+            errors.append(f"{path}.alert_policy is invalid")
+        if item.get("can_trigger_alert") is True and policy != "crosscheck_required":
+            errors.append(f"{path}.can_trigger_alert requires crosscheck_required")
+        if item.get("can_trigger_alert") is False and policy == "crosscheck_required":
+            errors.append(f"{path}.can_trigger_alert=false conflicts with crosscheck_required")
     return errors
 
 
@@ -398,6 +448,23 @@ def _backtest_release_contract_errors(document: dict[str, Any]) -> list[str]:
             errors.append("blocked/unavailable backtest contract cannot be publish_eligible=true")
         if contract_state == "ready" and not release_id:
             errors.append("ready backtest contract requires backtest_release")
+        registry_ids = {
+            str(item.get("strategy_id"))
+            for item in (contract.get("strategy_registry") or [])
+            if isinstance(item, dict) and item.get("strategy_id")
+        }
+        if contract_state == "ready" and not registry_ids:
+            errors.append("ready backtest contract requires strategy_registry")
+        if contract_state == "ready":
+            for item in (contract.get("strategy_registry") or []):
+                if not isinstance(item, dict):
+                    errors.append("ready backtest strategy_registry rows must be objects")
+                    continue
+                for field in ("strategy_id", "strategy_version", "parameter_hash", "universe_version", "data_version", "code_commit", "backtest_release"):
+                    if item.get(field) in (None, ""):
+                        errors.append(f"ready backtest strategy_registry.{field} is missing")
+                if item.get("backtest_release") not in (None, release_id):
+                    errors.append("ready backtest strategy_registry.backtest_release does not match contract")
     for index, row in enumerate(candidates):
         if not isinstance(row, dict):
             continue
@@ -408,6 +475,9 @@ def _backtest_release_contract_errors(document: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: backtest_release has no matching research contract")
         if candidate_release and release_id and candidate_release != release_id:
             errors.append(f"{path}: backtest_release does not match research contract")
+        strategy_id = str(row.get("strategy") or row.get("strategy_id") or "").strip()
+        if contract_state == "ready" and strategy_id and strategy_id not in registry_ids:
+            errors.append(f"{path}: strategy is absent from ready backtest registry")
         if candidate_contract is not None:
             if not isinstance(candidate_contract, dict):
                 errors.append(f"{path}: backtest_release_contract must be an object")

@@ -159,6 +159,16 @@ def bind_quote_evidence(
     item["quality_freshness"] = quality["freshness"]
     item["quality_reasons"] = quality["reasons"]
     item["alert_eligible"] = quality["alert_eligible"]
+    # A catalogued display-only provider (for example Yahoo) can support a
+    # visible quote but may not independently trigger a high-risk alert.
+    # Legacy callers may bind evidence before the adapter catalog has been
+    # attached.  Preserve their normal quality semantics; once the catalog
+    # explicitly publishes a policy, enforce it as the source of truth.
+    adapter_policy = item.get("adapter_alert_policy")
+    if adapter_policy is not None and adapter_policy != "crosscheck_required":
+        item["alert_eligible"] = False
+        if "adapter_policy_display_only" not in item["quality_reasons"]:
+            item["quality_reasons"].append("adapter_policy_display_only")
     item["quality_checked_at"] = (now or datetime.now().astimezone()).isoformat()
 
     if raw_store is not None:

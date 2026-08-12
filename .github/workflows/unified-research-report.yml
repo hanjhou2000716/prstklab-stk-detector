@@ -14,6 +14,10 @@ on:
         description: Symbols per public-data request
         required: true
         default: '50'
+      worker_timeout_seconds:
+        description: Per-strategy worker timeout before recording a data gap
+        required: true
+        default: '240'
       mops_max_refresh:
         description: Taiwan MOPS historical records to refresh per run
         required: true
@@ -68,6 +72,7 @@ jobs:
       DATA_RELEASE_BRANCH: data-release
       RAW_OBSERVATION_ROOT: data/raw-observations
       RAW_OBSERVATION_REQUIRED: "true"
+      WORKER_TIMEOUT_SECONDS: ${{ inputs.worker_timeout_seconds || github.event.client_payload.worker_timeout_seconds || '240' }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -91,21 +96,21 @@ jobs:
           rm -f data/*-scan*.csv data/*-summary*.json
           : > research-artifacts/scan-failures.ndjson
       - name: 台股動能研究掃描
-        run: python -m src.research_worker_runner --retries 1 --market taiwan --strategy momentum --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_taiwan_momentum_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
+        run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy momentum --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_taiwan_momentum_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
       - name: 美股動能研究掃描
-        run: python -m src.research_worker_runner --retries 1 --market us --strategy momentum --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_us_momentum_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
+        run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy momentum --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_us_momentum_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股裸 K 結構研究掃描
-        run: python -m src.research_worker_runner --retries 1 --market taiwan --strategy price_action --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_taiwan_price_action_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
+        run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy price_action --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_taiwan_price_action_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
       - name: 美股裸 K 結構研究掃描
-        run: python -m src.research_worker_runner --retries 1 --market us --strategy price_action --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_us_price_action_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
+        run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy price_action --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_us_price_action_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股三維共振研究掃描
-        run: python -m src.research_worker_runner --retries 1 --market taiwan --strategy resonance --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_resonance_scan --market taiwan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
+        run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy resonance --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_resonance_scan --market taiwan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
       - name: 美股三維共振研究掃描
-        run: python -m src.research_worker_runner --retries 1 --market us --strategy resonance --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_resonance_scan --market us --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
+        run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy resonance --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_resonance_scan --market us --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股品質價值覆核
-        run: python -m src.research_worker_runner --retries 1 --market taiwan --strategy value --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_value_quality_scan --market taiwan --batch-size "$BATCH_SIZE" --mops-max-refresh "$MOPS_MAX_REFRESH"
+        run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy value --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_value_quality_scan --market taiwan --batch-size "$BATCH_SIZE" --mops-max-refresh "$MOPS_MAX_REFRESH"
       - name: 美股品質價值覆核
-        run: python -m src.research_worker_runner --retries 1 --market us --strategy value --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE"
+        run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy value --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE"
       - name: Build research report with optional backtest identity
         run: |
           # Bind the published research snapshot to the exact Actions run and
@@ -177,6 +182,11 @@ jobs:
           else
             echo "scan_mode=$SCAN_MODE: isolated artifact only; skipping data-release publication"
           fi
+      - name: Build and validate cache-busted static assets
+        if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
+        run: |
+          python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
+          python -m src.asset_contract --root site
       - name: Configure GitHub Pages
         if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b

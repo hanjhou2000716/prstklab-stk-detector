@@ -21,6 +21,7 @@ def _valid_context() -> dict:
         "backtest_release_contract": {
             "publication_state": "ready",
             "publish_eligible": True,
+            "strategy_registry": [{"strategy_id": "value"}],
         },
         "candidate_data_gap": False,
         "policy_valid": True,
@@ -50,6 +51,23 @@ def test_blocked_backtest_contract_cannot_open_gate():
     result = evaluate_advice_gate(context)
     assert result["allowed"] is False
     assert "invalid_backtest_release" in result["blocking_reasons"]
+
+
+def test_ready_backtest_contract_requires_registry_membership():
+    context = _valid_context()
+    context["strategy"] = "value"
+    context["backtest_release_contract"]["strategy_registry"] = [{"strategy_id": "momentum"}]
+    result = evaluate_advice_gate(context)
+    assert result["allowed"] is False
+    assert "invalid_strategy_registry" in result["blocking_reasons"]
+
+
+def test_ready_backtest_contract_without_registry_stays_closed():
+    context = _valid_context()
+    context["backtest_release_contract"].pop("strategy_registry", None)
+    result = evaluate_advice_gate(context)
+    assert result["allowed"] is False
+    assert "invalid_strategy_registry" in result["blocking_reasons"]
 
 
 def test_bare_backtest_release_id_cannot_open_gate():

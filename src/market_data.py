@@ -639,6 +639,7 @@ def apply_public_market_secondary_crosscheck(
 
 def build_market_snapshot() -> dict[str, Any]:
     from src.adapters.catalog import build_adapter_catalog
+    from src.market_data_adapter import bind_adapter_contract
 
     """Build a browser-friendly snapshot; one ticker failure never stops others."""
     from src.briefing_cards import build_briefing_snapshot
@@ -723,6 +724,10 @@ def build_market_snapshot() -> dict[str, Any]:
     indices = apply_public_market_secondary_crosscheck(
         indices, phase_two.get("public_market_secondary")
     )
+    source_catalog = build_adapter_catalog()
+    quotes = bind_adapter_contract(quotes, source_catalog)
+    indices = bind_adapter_contract(indices, source_catalog)
+    macro_quotes = bind_adapter_contract(macro_quotes, source_catalog)
     indices = bind_market_evidence(annotate_quote_freshness(indices))
     events = build_event_snapshot(news, quotes, official_events, indices=indices)
     try:
@@ -816,7 +821,7 @@ def build_market_snapshot() -> dict[str, Any]:
         }),
         "research_report": research_report,
         "source_health": source_health,
-        "source_catalog": build_adapter_catalog(),
+        "source_catalog": source_catalog,
         "evidence": {
             "quotes": quality_summary(quotes),
             "indices": quality_summary(indices),
