@@ -154,6 +154,13 @@ def test_research_candidates_have_optional_explainability_without_advice_languag
     assert ".research-explainability" in styles
 
 
+def test_research_cards_expose_advice_gate_state_and_blocking_reason():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "advice_gate_detail" in app
+    assert "僅供研究觀察" in app
+    assert "阻擋原因" in app
+
+
 def test_briefing_intelligence_shows_conditional_impact_and_macro_surprise_only():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
 

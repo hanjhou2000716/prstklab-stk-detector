@@ -71,3 +71,14 @@ def test_instrument_lineage_is_stamped_without_guessing_unknown_symbols():
     assert result["candidates"][0]["instrument_id"] == "twse:2330"
     assert result["candidates"][1]["instrument_resolution"] == "unresolved"
     assert result["candidates"][1]["instrument_id"] is None
+
+
+def test_production_lineage_can_resolve_explicit_research_universe_rows():
+    report = {"candidates": [
+        {"ticker": "3037", "symbol": "3037.TW", "name": "欣興", "market": "taiwan"},
+        {"ticker": "AAPL", "symbol": "AAPL", "name": "Apple Inc.", "market": "us"},
+    ]}
+    result = attach_instrument_lineage(report, extend_from_candidates=True)
+    assert all(row["instrument_resolution"] == "resolved" for row in result["candidates"])
+    assert result["candidates"][0]["instrument_id"] == "taiwan:equity:3037"
+    assert result["candidates"][1]["instrument_id"] == "us:equity:aapl"

@@ -41,3 +41,14 @@ def test_master_artifact_is_content_addressed_and_schema_valid() -> None:
     assert errors == []
     assert artifact["registry_id"] == master.artifact()["registry_id"]
     assert len(artifact["instruments"]) == len(master.all())
+
+
+def test_research_universe_extension_resolves_explicit_public_rows() -> None:
+    master = InstrumentMaster().with_research_rows([
+        {"ticker": "3037", "symbol": "3037.TW", "name": "欣興", "market": "taiwan"},
+        {"ticker": "AAPL", "symbol": "AAPL", "name": "Apple Inc.", "market": "us"},
+        {"ticker": "", "name": "missing", "market": "us"},
+    ])
+    assert master.resolve("3037", market="taiwan").instrument_id == "taiwan:equity:3037"
+    assert master.resolve("AAPL", market="us").instrument_id == "us:equity:aapl"
+    assert len(master.all()) == len(InstrumentMaster().all()) + 2

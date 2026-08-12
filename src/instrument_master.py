@@ -100,6 +100,58 @@ class InstrumentMaster:
             if (market is None or item.market == market) and (asset_type is None or item.asset_type == asset_type)
         ]
 
+    def with_research_rows(self, rows: list[dict[str, Any]] | tuple[dict[str, Any], ...]) -> InstrumentMaster:
+        """Return a registry extended by explicit research-universe identities.
+
+        The compact built-in registry covers headline instruments only.  A
+        production research universe is itself an explicit public identity
+        source (ticker, issuer name and market), so leaving every otherwise
+        valid candidate as ``unresolved`` would discard provenance at the
+        report boundary.  We extend the immutable-in-practice registry with
+        those rows, while refusing rows without a ticker, issuer name or
+        market.  No fuzzy alias or symbol guess is introduced.
+        """
+        additions: list[Instrument] = []
+        existing = {item.instrument_id for item in self._instruments}
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            ticker = str(row.get("ticker") or row.get("symbol") or "").strip()
+            name = str(row.get("name") or "").strip()
+            market = str(row.get("market") or "").strip().lower()
+            if not ticker or not name or market not in {"taiwan", "us", "global"}:
+                continue
+            normalized_ticker = ticker.split(".", 1)[0] if market == "taiwan" else ticker
+            instrument_id = f"{market}:equity:{normalized_ticker.casefold()}"
+            if instrument_id in existing:
+                continue
+            # Preserve a canonical built-in identity when it already resolves
+            # for this market (for example TSM, NVDA or 2330).  Adding a second
+            # row with the same ticker would make the alias ambiguous.
+            try:
+                self.resolve(ticker, market=market)
+            except (KeyError, ValueError):
+                pass
+            else:
+                continue
+            symbols = (ticker, str(row.get("symbol") or ticker).strip())
+            currency = "TWD" if market == "taiwan" else "USD"
+            timezone = "Asia/Taipei" if market == "taiwan" else "America/New_York"
+            additions.append(Instrument(
+                instrument_id=instrument_id,
+                ticker=normalized_ticker,
+                name=name,
+                market=market,
+                asset_type="equity",
+                currency=currency,
+                timezone=timezone,
+                symbols=tuple(dict.fromkeys(value for value in symbols if value)),
+                aliases=(),
+                sec_cik=str(row.get("cik") or "") or None,
+            ))
+            existing.add(instrument_id)
+        return InstrumentMaster((*self._instruments, *additions))
+
     def artifact(self) -> dict[str, Any]:
         """Return a deterministic, public-safe registry artifact.
 
