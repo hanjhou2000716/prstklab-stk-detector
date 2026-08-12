@@ -29,6 +29,8 @@ DEFAULT_ARTIFACTS = {
     "event-ledger.json": Path("site/data/event-ledger.json"),
 }
 
+SOURCE_HEALTH_ARTIFACT = "source-health.json"
+
 
 def _canonical_json(value: Any) -> bytes:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -306,6 +308,30 @@ def build_release_manifest(
             fallback_reason = reason
 
     normalization_notes = _normalize_artifacts(loaded)
+    # Publish source health after legacy normalization so its bound market
+    # snapshot ID always points at the exact bytes used by the release.
+    market = loaded.get("market.json")
+    market_document: dict[str, Any] = market if isinstance(market, dict) else {}
+    market_health = market_document.get("source_health")
+    if (
+        isinstance(market_health, dict)
+        and {"status", "sources", "event_scan"}.issubset(market_health)
+    ):
+        source_health_path = root / "site" / "data" / SOURCE_HEALTH_ARTIFACT
+        market_id = content_snapshot_id(market_document, "market")
+        source_health = {
+            "schema_version": "1.0",
+            "snapshot_id": f"{market_id}-health",
+            "market_snapshot_id": market_id,
+            "generated_at": market_document.get("generated_at"),
+            "source_health": market_health,
+        }
+        try:
+            _write_normalized_artifact(source_health_path, source_health)
+            resolved[SOURCE_HEALTH_ARTIFACT] = source_health_path
+            loaded[SOURCE_HEALTH_ARTIFACT] = source_health
+        except OSError as exc:
+            errors.append(f"cannot persist source health artifact {source_health_path.as_posix()}: {type(exc).__name__}")
     for name, value in loaded.items():
         path = resolved[name]
         try:
