@@ -43,7 +43,18 @@ def _load_creator_records() -> list[dict]:
         payload = payload.get("records")
     if not isinstance(payload, list):
         return []
-    return [item for item in payload if isinstance(item, dict)]
+    safe_records: list[dict] = []
+    blocked_states = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
+    private_fields = {"body", "raw_body", "local_path", "private_url", "attachments", "data"}
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        if any(item.get(field) not in (None, "", [], {}) for field in private_fields):
+            continue
+        if str(item.get("parse_status") or "").strip() in blocked_states:
+            continue
+        safe_records.append(item)
+    return safe_records
 
 
 def prepare(slot: str, snapshot_path: Path) -> dict:

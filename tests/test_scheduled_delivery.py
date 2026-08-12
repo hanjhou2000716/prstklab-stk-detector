@@ -151,6 +151,20 @@ def test_creator_records_inside_site_are_rejected(tmp_path, monkeypatch):
     assert _load_creator_records() == []
 
 
+def test_creator_records_with_private_body_or_parser_failure_are_rejected(tmp_path, monkeypatch):
+    records = tmp_path / "creator-records.json"
+    records.write_text(
+        json.dumps({"records": [
+            {"source": "gooaye", "title": "private", "body": "raw"},
+            {"source": "gooaye", "title": "unsupported", "parse_status": "unsupported_template"},
+            {"source": "gooaye", "title": "safe", "parse_status": "parsed"},
+        ]}),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("CREATOR_RECORDS_PATH", str(records))
+    assert _load_creator_records() == [{"source": "gooaye", "title": "safe", "parse_status": "parsed"}]
+
+
 def test_prepare_binds_creator_records_to_the_published_snapshot(tmp_path, monkeypatch):
     records = tmp_path / "creator-records.json"
     records.write_text(json.dumps([{"source": "gooaye", "title": "public"}]), encoding="utf-8")
