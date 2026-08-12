@@ -311,18 +311,19 @@ def build_release_manifest(
     # Publish source health after legacy normalization so its bound market
     # snapshot ID always points at the exact bytes used by the release.
     market = loaded.get("market.json")
-    market_health = market.get("source_health") if isinstance(market, dict) else None
+    market_document: dict[str, Any] = market if isinstance(market, dict) else {}
+    market_health = market_document.get("source_health")
     if (
         isinstance(market_health, dict)
         and {"status", "sources", "event_scan"}.issubset(market_health)
     ):
         source_health_path = root / "site" / "data" / SOURCE_HEALTH_ARTIFACT
-        market_id = content_snapshot_id(market, "market")
+        market_id = content_snapshot_id(market_document, "market")
         source_health = {
             "schema_version": "1.0",
             "snapshot_id": f"{market_id}-health",
             "market_snapshot_id": market_id,
-            "generated_at": market.get("generated_at"),
+            "generated_at": market_document.get("generated_at"),
             "source_health": market_health,
         }
         try:
