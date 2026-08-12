@@ -370,7 +370,9 @@ def build_source_health(
         for source in sources
     )
     status = "critical" if core_gap else "partial" if partial else "warming" if warming else "healthy"
-    investor_status = "核心資料不足" if core_gap else "部分資料降級" if partial else "資料正常"
+    # Optional credentials are disclosed separately; they do not downgrade
+    # the investor-facing aggregate when all required runtime sources work.
+    investor_status = "核心資料不足" if core_gap else "部分資料降級" if runtime_gap_sources else "資料正常"
     summary = (
         f"{partial} 個來源有資料缺口" if partial else
         "璞玉價值歷史資料建檔中" if warming else
