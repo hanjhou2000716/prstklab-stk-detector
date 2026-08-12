@@ -83,6 +83,11 @@ jobs:
             --research-fallback-reason "research scan incomplete; preserving last-known-good research snapshot"
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
             --message "chore: refresh official event snapshot"
+      - name: Build and validate cache-busted static assets
+        if: steps.status.outputs.ledger_changed == 'true' || (steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true')
+        run: |
+          python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
+          python -m src.asset_contract --root site
       - name: Configure GitHub Pages
         if: steps.status.outputs.ledger_changed == 'true' || (steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true')
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b

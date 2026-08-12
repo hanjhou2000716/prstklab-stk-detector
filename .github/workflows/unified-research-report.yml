@@ -177,6 +177,11 @@ jobs:
           else
             echo "scan_mode=$SCAN_MODE: isolated artifact only; skipping data-release publication"
           fi
+      - name: Build and validate cache-busted static assets
+        if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
+        run: |
+          python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
+          python -m src.asset_contract --root site
       - name: Configure GitHub Pages
         if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
