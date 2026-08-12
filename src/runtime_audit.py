@@ -89,22 +89,27 @@ def audit_artifacts(
     market_path: Path = Path("site/data/market.json"),
     research_path: Path = Path("site/data/research-report.json"),
     index_path: Path = Path("site/index.html"),
-    manifest_path: Path = Path("site/data/release-manifest.json"),
+    manifest_path: Path | None = None,
     require_production: bool = False,
 ) -> dict[str, Any]:
     """Return a non-secret structural audit of the files published to Pages."""
     issues: list[str] = []
     warnings: list[str] = []
+    # Resolve the default manifest beside the requested research artifact.  This
+    # prevents a structural audit of an alternate bundle from accidentally
+    # reading an unrelated manifest in the process working directory.
+    if manifest_path is None:
+        manifest_path = research_path.parent / "release-manifest.json"
     market = _load_json(market_path, "market", issues)
     research = _load_json(research_path, "research", issues)
-    manifest = _load_json(manifest_path, "release manifest", issues)
+    manifest = _load_json(manifest_path, "release manifest", issues) if manifest_path.is_file() else None
     if not index_path.is_file() or index_path.stat().st_size == 0:
         issues.append(f"Mini App entry missing or empty: {index_path}")
     market_counts = _audit_market(market, issues, warnings) if market else {"indices": 0, "quotes": 0}
     research_counts = _audit_research(research, issues, warnings) if research else {"sources": 0, "candidates": 0}
     if manifest and market and research:
         events_path = manifest_path.parent / "event-ledger.json"
-        events = _load_json(events_path, "events", issues)
+        events = _load_json(events_path, "events", issues) if events_path.is_file() else None
         if events is not None:
             acceptance = validate_production_bundle(
                 manifest=manifest,
@@ -119,6 +124,7 @@ def audit_artifacts(
             else:
                 warnings.extend(messages)
         elif require_production:
+            issues.append(f"events missing: {events_path}")
             issues.append("production event artifact is required")
     if require_production and manifest is None:
         issues.append("production release manifest is required")
