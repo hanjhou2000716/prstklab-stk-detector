@@ -106,6 +106,49 @@ def test_release_gate_accepts_ready_legacy_research_snapshot(tmp_path):
     assert result.allowed is True
 
 
+def test_release_gate_public_source_health_artifact_is_hash_and_schema_checked(tmp_path, monkeypatch):
+    path, manifest = _ready_release(tmp_path)
+    data = path.parent
+    health = {
+        "status": "healthy",
+        "sources": [{"key": "TWSE", "name": "TWSE", "status": "healthy", "semantic_state": "healthy"}],
+        "event_scan": {"status": "no_event"},
+        "missing_source_count": 0,
+        "runtime_failure_count": 0,
+        "configuration_missing_count": 0,
+    }
+    source_health = {
+        "schema_version": "1.0",
+        "snapshot_id": "market-12345678-health",
+        "market_snapshot_id": "market-12345678",
+        "generated_at": "2026-08-04T10:00:00+00:00",
+        "source_health": health,
+    }
+    health_path = data / "source-health.json"
+    health_path.write_text(json.dumps(source_health), encoding="utf-8")
+    manifest["artifact_paths"]["source-health.json"] = "data/source-health.json"
+    manifest["artifact_hashes"]["source-health.json"] = sha256_file(health_path)
+    write_release_manifest(manifest, path)
+    monkeypatch.setattr(
+        "src.release_gate.requests.get",
+        lambda url, **kwargs: _public_artifact_response(manifest, data, url),
+    )
+    loaded, errors = _fetch_public_release_artifacts(
+        manifest, public_url="https://example.test/", timeout=1,
+    )
+    assert errors == []
+    assert loaded["source-health.json"]["market_snapshot_id"] == "market-12345678"
+
+    source_health["source_health"]["missing_source_count"] = 1
+    health_path.write_text(json.dumps(source_health), encoding="utf-8")
+    manifest["artifact_hashes"]["source-health.json"] = sha256_file(health_path)
+    write_release_manifest(manifest, path)
+    _, errors = _fetch_public_release_artifacts(
+        manifest, public_url="https://example.test/", timeout=1,
+    )
+    assert any("missing_source_count" in error for error in errors)
+
+
 def test_release_gate_strict_mode_blocks_legacy_research_snapshot(tmp_path):
     path, manifest = _ready_release(tmp_path)
     research_path = tmp_path / "site" / "data" / "research-report.json"

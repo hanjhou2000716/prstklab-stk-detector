@@ -406,3 +406,17 @@ def test_manifest_normalizer_handles_non_lists_and_unknown_provider():
     assert _normalize_market(market)
     assert market["quotes"][0].get("source_label") == ""
     assert _normalize_research({"sources": "invalid"}) == []
+
+
+def test_manifest_normalizer_uses_declared_provider_when_url_is_absent():
+    market = {
+        "indices": [{
+            "ticker": "TAIEX", "source_label": "TWSE",
+            "quote_source": "TWSE MIS", "source_domain": "twse.com.tw",
+        }],
+        "quotes": [{"ticker": "BTC", "quote_source": "Yahoo Finance"}],
+    }
+    notes = _normalize_market(market)
+    assert notes
+    assert market["indices"][0]["source_label"] == "TWSE"
+    assert market["quotes"][0]["source_label"] == "Yahoo"
