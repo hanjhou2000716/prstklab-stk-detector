@@ -41,3 +41,35 @@ def test_alert_budget_normalizes_chinese_risk_labels_for_upgrade():
     assert result["allowed"] is True
     assert result["upgraded"] is True
     assert result["reason"] == "risk_upgrade"
+
+
+def test_alert_budget_blocks_explicit_quality_ineligibility():
+    result = decide_alert_budget(
+        {
+            "event_key": "stale-quote",
+            "importance": "high-risk",
+            "alert_eligible": False,
+            "quality_reasons": ["quote_stale"],
+        },
+        [],
+        now=NOW,
+    )
+    assert result == {
+        "allowed": False,
+        "reason": "quote_stale",
+        "upgraded": False,
+        "event_key": "stale-quote",
+    }
+
+
+def test_alert_budget_blocks_delayed_and_unverified_evidence():
+    delayed = decide_alert_budget(
+        {"event_key": "delayed", "quote_delayed": True}, [], now=NOW
+    )
+    pending = decide_alert_budget(
+        {"event_key": "pending", "requires_crosscheck": True, "cross_checked": False},
+        [],
+        now=NOW,
+    )
+    assert delayed["reason"] == "quote_delayed"
+    assert pending["reason"] == "crosscheck_pending"
