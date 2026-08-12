@@ -32,6 +32,30 @@ def _ready_release(tmp_path):
             "run_finished_at": "2026-08-04T10:00:00+00:00",
             "producer": "src.run_research_report",
         },
+        "sources": [
+            {
+                "market": market,
+                "strategy": strategy,
+                "scan_state": "complete",
+                "candidate_state": "no_candidates",
+                "requested": 1,
+                "requested_records": 1,
+                "universe_scanned": 1,
+                "complete_records": 1,
+                "failed_records": 0,
+                "visible_candidates": 0,
+            }
+            for market, strategy in (
+                ("taiwan", "momentum"),
+                ("taiwan", "price_action"),
+                ("taiwan", "resonance"),
+                ("taiwan", "value"),
+                ("us", "momentum"),
+                ("us", "price_action"),
+                ("us", "resonance"),
+                ("us", "value"),
+            )
+        ],
     }), encoding="utf-8")
     (data / "event-ledger.json").write_text(json.dumps({"schema_version": 1, "retention_days": 30, "events": {}}), encoding="utf-8")
     manifest = build_release_manifest(root=tmp_path, require_production_research=True)
