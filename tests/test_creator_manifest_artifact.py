@@ -1,6 +1,8 @@
 import json
+import sys
 
 from src.release_gate import _load_release_artifacts
+from src import release_manifest
 from src.release_manifest import build_release_manifest
 
 
@@ -79,3 +81,32 @@ def test_manifest_can_build_creator_artifact_from_sanitized_records(tmp_path):
     loaded, errors = _load_release_artifacts(result, site_root=tmp_path / "site")
     assert errors == []
     assert loaded["creator-release.json"]["status"] == "ready"
+
+
+def test_manifest_cli_accepts_creator_records_file(tmp_path, monkeypatch):
+    _artifacts(tmp_path)
+    records_path = tmp_path / "creator-records.json"
+    records_path.write_text(json.dumps({"records": [{
+        "content_origin": "gooaye",
+        "episode_key": "episode-cli",
+        "episode_title": "CLI creator observation",
+        "claims": ["A public claim"],
+        "verification_state": "unverified",
+        "public_safe": True,
+    }]}), encoding="utf-8")
+    output = tmp_path / "site" / "data" / "release-manifest-cli.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "release_manifest",
+            "--root",
+            str(tmp_path),
+            "--output",
+            str(output),
+            "--creator-records",
+            str(records_path),
+        ],
+    )
+    assert release_manifest.main() == 0
+    assert json.loads(output.read_text(encoding="utf-8"))["creator_status"] == "ready"
