@@ -15,8 +15,8 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import requests
 
-from src.asset_contract import validate_assets
 from src.artifact_contract import validate_release, validate_source_health_artifact
+from src.asset_contract import validate_assets
 from src.production_acceptance import validate_production_bundle
 from src.release_manifest import verify_release_files
 

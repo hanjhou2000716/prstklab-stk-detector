@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 from src.asset_contract import validate_assets
-from src.release_gate import verify_release_for_delivery
 
 
 def test_asset_contract_is_checked_when_a_release_emits_asset_manifest(tmp_path: Path):
@@ -21,4 +20,3 @@ def test_asset_contract_is_checked_when_a_release_emits_asset_manifest(tmp_path:
         "entries": {"app.js": "wrong", "styles.css": "wrong", "assets/hero-prism-cover.png": "wrong"},
     }), encoding="utf-8")
     assert any("hash mismatch" in item for item in validate_assets(site))
-
