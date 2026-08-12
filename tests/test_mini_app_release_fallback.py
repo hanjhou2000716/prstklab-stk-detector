@@ -12,3 +12,13 @@ def test_mini_app_has_retry_last_good_release_and_degraded_status():
     assert "setReleaseHealth" in app
     assert "release-health" in html
     assert "attempt < 2" in app
+
+
+def test_mini_app_retries_network_failures_for_manifest_and_artifacts():
+    root = Path(__file__).resolve().parents[1]
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert "const fetchResponseWithRetry" in app
+    assert ".catch((error) =>" in app
+    assert "fetchResponseWithRetry(`data/${relativePath.replace(/^data\\//, \"\")}`)" in app
+    assert "const fetchJson = (url) => fetchResponseWithRetry(url).then" in app

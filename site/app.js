@@ -317,8 +317,10 @@ const renderRisk = (risk) => {
     const vixStage = vix.stage || "波動階段待確認";
     const vixState = vix.change_percent > 0 ? "risk-up" : vix.change_percent < 0 ? "risk-down" : "flat";
     const vixPercentile = vix.percentile_status === "available" && vix.percentile !== null && vix.percentile !== undefined
-      ? `｜歷史百分位 ${Number(vix.percentile).toFixed(1)}` : "";
-    return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}｜${escapeHtml(vixStage)}${escapeHtml(vixPercentile)}</small></article></div></section>`;
+      ? `歷史百分位 ${Number(vix.percentile).toFixed(1)}` : "歷史百分位待取得";
+    const vixFetchedAt = traceTime(vix.fetched_at);
+    const vixTime = vixFetchedAt ? `資料時間 ${vixFetchedAt} CST` : "資料時間暫時無法取得";
+    return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}｜${escapeHtml(vixStage)}｜${escapeHtml(vixPercentile)}</small><small class="risk-metric-time">${escapeHtml(vixTime)}</small></article></div></section>`;
   }).join("");
 };
 
@@ -443,7 +445,9 @@ const renderSourceHealth = (health, snapshot = {}) => {
   event.textContent = `${scan.label || "事件掃描"}｜${scanStateLabel}${scan.detail ? `｜${scan.detail}` : ""}${healthMetricParts ? `｜${healthMetricParts}` : ""}`;
   event.dataset.status = scan.status || "partial";
   list.innerHTML = health.sources.map((source) => {
-    const state = source.state || source.status;
+    // Use the canonical semantic state for both the aggregate count and the
+    // row label; legacy state/status fields are only compatibility fallbacks.
+    const state = source.semantic_state || source.state || source.status;
     // Keep the legacy status spelling for older snapshots and source-health
     // fixtures (source.status === "warming" ? "建檔中").
     const status = state === "healthy" ? "正常" : state === "no_event" ? "無事件" : state === "warming" ? "建檔中" : state === "pending_confirmation" || state === "pending" ? "待核對" : state === "configuration_missing" || state === "configuration_required" ? "需設定" : state === "optional_degraded" ? "選配降級" : state === "degraded_with_fallback" || state === "fallback_active" ? "備援可用" : state === "secondary_unavailable" ? "第二來源不可用" : state === "stale" ? "使用快取" : state === "failed" ? "掃描失敗" : "資料缺口";
@@ -824,14 +828,18 @@ const applyDeepLink = (snapshot) => {
 // GitHub Pages or Telegram's WebView serves different cache generations.
 const cacheBust = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
-const fetchJson = (url, attempt = 0) => fetch(`${url}${url.includes("?") ? "&" : "?"}v=${cacheBust()}`, {
+const fetchResponseWithRetry = (url, attempt = 0) => fetch(`${url}${url.includes("?") ? "&" : "?"}v=${cacheBust()}`, {
   cache: "no-store",
   headers: { "Cache-Control": "no-cache" },
 }).then((response) => {
-  if (response.ok) return response.json();
-  if (attempt < 2) return sleep(250 * (attempt + 1)).then(() => fetchJson(url, attempt + 1));
-  return Promise.reject(new Error(`artifact unavailable: ${url} (HTTP ${response.status})`));
+  if (response.ok) return response;
+  throw new Error(`HTTP ${response.status}`);
+}).catch((error) => {
+  if (attempt < 2) return sleep(250 * (attempt + 1)).then(() => fetchResponseWithRetry(url, attempt + 1));
+  throw new Error(`artifact unavailable: ${url} (${error.message})`);
 });
+
+const fetchJson = (url) => fetchResponseWithRetry(url).then((response) => response.json());
 
 const sha256Hex = async (text) => {
   if (!window.crypto?.subtle) throw new Error("integrity verification unavailable");
@@ -896,11 +904,7 @@ const loadPublishedRelease = async () => {
     if (!relativePath || relativePath.startsWith("/") || relativePath.includes("..")) {
       throw new Error(`invalid artifact path: ${name}`);
     }
-    const response = await fetch(`data/${relativePath.replace(/^data\//, "")}?v=${cacheBust()}`, {
-      cache: "no-store",
-      headers: { "Cache-Control": "no-cache" },
-    });
-    if (!response.ok) throw new Error(`artifact unavailable: ${name}`);
+    const response = await fetchResponseWithRetry(`data/${relativePath.replace(/^data\//, "")}`);
     const text = await response.text();
     if (await sha256Hex(text) !== String(expectedHash)) throw new Error(`artifact hash mismatch: ${name}`);
     artifactTexts[name] = text;
