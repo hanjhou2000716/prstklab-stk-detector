@@ -1,4 +1,24 @@
-from src.briefing_cards import build_briefing_snapshot
+from src.briefing_cards import _regime_factors, build_briefing_snapshot
+
+
+def test_regime_factors_omit_stale_quotes_and_expose_partial_evidence():
+    factors = _regime_factors(
+        {
+            "TAIEX": {"change_percent": 2.0, "freshness": "live"},
+            "NASDAQ": {"change_percent": 1.0, "freshness": "stale"},
+            "SOX": {"change_percent": -1.0, "freshness": "live"},
+        },
+        {},
+    )
+    assert "trend" in factors
+    assert "breadth" not in factors
+
+
+def test_regime_factors_do_not_use_delayed_quote_as_market_evidence():
+    factors = _regime_factors(
+        {"TAIEX": {"change_percent": 8.0, "quote_delayed": True}}, {},
+    )
+    assert factors == {}
 
 
 def test_midday_briefing_includes_japan_korea_and_public_observation_cards():
