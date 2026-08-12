@@ -28,6 +28,7 @@ pipeline call and a tested consumer.
 | Backtest/cost model | `src/four_strategy_walk_forward.py`, `src/backtest_costs.py`, `src/backtest_release.py` | yes | scheduled | artifact + risk-adjusted metrics | no | no | partially_integrated |
 | Release manifest/gate | `src/release_manifest.py`, `src/release_gate.py`, `src/production_e2e.py` | yes | yes | yes | loader gate | send gate | production |
 | Telegram delivery | `src/telegram_client.py`, `src/scheduled_delivery.py`, `src/official_event_monitor.py`, `src/emergency_alert.py` | yes | release-gated `sendPhoto` path with shared file ID | photo receipt | alert/release deep-link button | renderer failure is fail-closed; recipient failures are isolated | production |
+| Source-health release artifact | `src/release_manifest.py`, `src/release_gate.py`, `site/app.js` | yes | manifest/release gate | `data/source-health.json` | release-bound health view | gate evidence only | production |
 | Mini App deep-link/timeline | `site/app.js`, `src/event_timeline.py` | yes | Pages | yes | yes | button target | production |
 | Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | briefing contract + optional endpoint/local queue | yes | feedback controls | no | partially_integrated |
 
@@ -109,6 +110,10 @@ that every optional provider or historical backtest is available.
 - Research snapshot: `research-acddbf45ffd6e4db`
 - Event snapshot: `event-1c1c81d0f4e30a41`
 - Manifest status: `ready`; research mode/scope: `production` / `full`
+- Source health is now also emitted as a release-bound `data/source-health.json`
+  artifact when the producer has the canonical health envelope. The legacy
+  embedded `market.source_health` remains for compatibility; older releases
+  without the optional artifact remain readable.
 - Research universe: `7772 / 7772` completed; 40 visible candidates
 - Formal backtest: `unavailable`; Advice Gate therefore remains observation-only
 

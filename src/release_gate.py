@@ -15,7 +15,7 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import requests
 
-from src.artifact_contract import validate_release
+from src.artifact_contract import validate_release, validate_source_health
 from src.production_acceptance import validate_production_bundle
 from src.release_manifest import verify_release_files
 
@@ -44,7 +44,9 @@ def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tup
         return {}, ["manifest artifact paths are missing"]
     loaded: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
-    for name in ("market.json", "research-report.json", "event-ledger.json"):
+    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json"):
+        if name == "source-health.json" and name not in paths:
+            continue
         raw_path = paths.get(name)
         if not isinstance(raw_path, str):
             errors.append(f"manifest path missing: {name}")
@@ -89,7 +91,9 @@ def _fetch_public_release_artifacts(
     }
     loaded: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
-    for name in ("market.json", "research-report.json", "event-ledger.json"):
+    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json"):
+        if name == "source-health.json" and name not in paths:
+            continue
         raw_path = paths.get(name)
         expected_hash = hashes.get(name)
         if not isinstance(raw_path, str) or not raw_path.strip():
@@ -125,6 +129,14 @@ def _fetch_public_release_artifacts(
         loaded[name] = value
     if errors:
         return loaded, errors
+    if "source-health.json" in paths:
+        health = loaded.get("source-health.json")
+        if health is None:
+            return loaded, ["public source-health artifact is missing"]
+        source_health = health.get("source_health")
+        if not isinstance(source_health, dict):
+            return loaded, ["public source-health artifact envelope is invalid"]
+        errors.extend(validate_source_health(source_health))
     errors.extend(
         validate_release(
             market=loaded["market.json"],
@@ -230,6 +242,12 @@ def verify_release_for_delivery(
                 manifest=manifest,
             )
         )
+        if "source-health.json" in artifacts:
+            health = artifacts["source-health.json"].get("source_health")
+            if not isinstance(health, dict):
+                errors.append("source-health artifact envelope is invalid")
+            else:
+                errors.extend(validate_source_health(health))
         acceptance = validate_production_bundle(
             manifest=manifest,
             market=artifacts["market.json"],

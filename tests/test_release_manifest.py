@@ -36,6 +36,23 @@ def test_manifest_is_ready_and_hashes_are_verifiable(tmp_path):
     assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 
+def test_manifest_publishes_release_bound_source_health_artifact(tmp_path):
+    _artifacts(tmp_path)
+    health_path = tmp_path / "site" / "data" / "source-health.json"
+    # Minimal legacy source_health is intentionally not promoted; the
+    # producer must provide the canonical health envelope before publication.
+    assert not health_path.exists()
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["source_health"] = {"status": "healthy", "sources": [], "event_scan": {"status": "no_event"}}
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+    manifest = build_release_manifest(root=tmp_path)
+    assert manifest["artifact_paths"]["source-health.json"] == "data/source-health.json"
+    health = json.loads(health_path.read_text(encoding="utf-8"))
+    assert health["market_snapshot_id"] == manifest["market_snapshot_id"]
+    assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
 def test_manifest_carries_backtest_release_state_without_unlocking_advice(tmp_path):
     _artifacts(tmp_path)
     data = tmp_path / "site" / "data"

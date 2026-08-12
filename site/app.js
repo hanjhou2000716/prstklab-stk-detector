@@ -936,6 +936,16 @@ const loadPublishedRelease = async () => {
       throw new Error("event snapshot does not match release");
     }
   }
+  const healthText = artifactTexts["source-health.json"];
+  if (healthText) {
+    const healthEnvelope = JSON.parse(healthText);
+    if (String(healthEnvelope.market_snapshot_id || "") !== String(manifest.market_snapshot_id || "")) {
+      throw new Error("source-health snapshot does not match release");
+    }
+    if (!healthEnvelope.source_health || !Array.isArray(healthEnvelope.source_health.sources)) {
+      throw new Error("source-health artifact is invalid");
+    }
+  }
   window.releaseManifest = manifest;
   saveLastGoodRelease(manifest, artifactTexts);
   return snapshot;
