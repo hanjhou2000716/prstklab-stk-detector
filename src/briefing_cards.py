@@ -19,6 +19,70 @@ SLOT_TITLES = {
 # benchmarks.  The Mini App uses ``market_topics`` below for the new grouped
 # layout and can add event-related instruments separately.
 GLOBAL_TICKERS = ("TAIEX", "2330", "NIKKEI", "KOSPI", "NASDAQ", "SOX", "BRENT", "WTI", "GOLD", "BTC", "ETH")
+_UNUSABLE_FRESHNESS = frozenset({"stale", "delayed", "unavailable", "unknown", "failed"})
+
+
+def _usable_change(item: dict[str, Any] | None) -> float | None:
+    """Return a change only when its quote is usable for regime evidence."""
+    if not item or item.get("change_percent") is None:
+        return None
+    freshness = str(item.get("freshness") or item.get("data_status") or "live").lower()
+    if freshness in _UNUSABLE_FRESHNESS or item.get("quote_delayed") is True:
+        return None
+    try:
+        return float(item["change_percent"])
+    except (TypeError, ValueError):
+        return None
+
+
+def _regime_factors(items: dict[str, dict[str, Any]], risk: dict[str, Any]) -> dict[str, float | int | None]:
+    """Build conservative factor evidence from timestamped public quotes.
+
+    Missing factors are intentionally omitted; ``classify_regime`` exposes the
+    resulting gaps instead of treating a single index move as a full regime.
+    """
+    factors: dict[str, float | int | None] = {}
+    equity_tickers = ("TAIEX", "NASDAQ", "SOX", "NIKKEI", "KOSPI")
+    equity_moves = [move for ticker in equity_tickers if (move := _usable_change(items.get(ticker))) is not None]
+    if equity_moves:
+        factors["trend"] = round(max(-2.0, min(2.0, sum(equity_moves) / len(equity_moves) / 2)), 3)
+    if len(equity_moves) >= 3:
+        breadth = sum(1 if move > 0 else -1 if move < 0 else 0 for move in equity_moves)
+        factors["breadth"] = round(max(-2.0, min(2.0, breadth / len(equity_moves) * 2)), 3)
+    vix_changes: list[float] = []
+    for value in risk.values() if isinstance(risk, dict) else ():
+        vix = value.get("vix") if isinstance(value, dict) else None
+        move = _usable_change(vix if isinstance(vix, dict) else None)
+        if move is not None:
+            vix_changes.append(move)
+    if vix_changes:
+        factors["volatility"] = round(max(-2.0, min(2.0, -sum(vix_changes) / len(vix_changes) / 5)), 3)
+    for factor, ticker, sign, divisor in (
+        ("rates", "US10Y", -1, 1), ("usd", "DXY", -1, 1),
+        ("gold", "GOLD", -1, 2), ("oil", "WTI", -1, 2),
+    ):
+        move = _usable_change(items.get(ticker))
+        if move is not None:
+            factors[factor] = round(max(-2.0, min(2.0, sign * move / divisor)), 3)
+    crypto = [move for ticker in ("BTC", "ETH") if (move := _usable_change(items.get(ticker))) is not None]
+    if crypto:
+        factors["crypto"] = round(max(-2.0, min(2.0, sum(crypto) / len(crypto) / 2)), 3)
+    return factors
+
+
+def _contagion_inputs(items: dict[str, dict[str, Any]], risk: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Map the public snapshot into the cross-asset monitor contract."""
+    equities = items.get("TAIEX") or items.get("NASDAQ") or {}
+    vix_items: list[dict[str, Any]] = [
+        value["vix"] for value in risk.values()
+        if isinstance(value, dict) and isinstance(value.get("vix"), dict)
+    ]
+    vix: dict[str, Any] = next(
+        (item for item in vix_items if _usable_change(item) is not None),
+        vix_items[0] if vix_items else {},
+    )
+    usd = items.get("DXY") or {}
+    return {"equities": equities, "vix": vix, "usd": usd}
 
 
 def _move(item: dict[str, Any] | None) -> str:
@@ -268,8 +332,6 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
     from src.intelligence_pipeline import build_intelligence_context
 
     observed_quotes = [*indices, *quotes, *macro_quotes]
-    changes = [float(item["change_percent"]) for item in observed_quotes if item.get("change_percent") is not None]
-    average_change = sum(changes) / len(changes) if changes else None
     watchlist = [ticker for ticker in ("TAIEX", "NASDAQ", "SOX") if ticker in all_items]
     public_watchlist = {ticker: round(1 / len(watchlist), 6) for ticker in watchlist} if watchlist else {}
     raw_macro = snapshot.get("macro")
@@ -290,9 +352,8 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         lead if isinstance(lead, dict) else {"title": "briefing"},
         observed_quotes,
         macro=macro_input,
-        regime_factors={
-            "broad_market": 1 if (average_change or 0) > 0.5 else -1 if (average_change or 0) < -0.5 else 0,
-        },
+        regime_factors=_regime_factors(all_items, risk),
+        contagion_observations=_contagion_inputs(all_items, risk),
         stress_exposures=public_watchlist,
         advice_context={"general_research": True},
     )
