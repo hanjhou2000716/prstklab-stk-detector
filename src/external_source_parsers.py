@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from src.creator_source_adapters import parse_creator_template
 from src.email_intelligence import normalize_creator_insight, route_email_source
 
 MAX_FIELD_CHARS = 600
@@ -74,8 +75,12 @@ def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_
     }
 
 
-def parse_creator_email(*, sender: str, subject: str, body: str, source: str | None = None, message_id: str = "") -> dict[str, Any]:
-    """Parse a creator template into a CreatorInsight with explicit attribution."""
+def _parse_creator_email_legacy(*, sender: str, subject: str, body: str, source: str, message_id: str = "") -> dict[str, Any]:
+    """Compatibility parser for historical sanitized fixtures.
+
+    Real production templates use :func:`parse_creator_template`; this path
+    remains only for old records whose labels were normalized before storage.
+    """
     route = route_email_source(sender=sender, subject=subject, body=body)
     origin = source or route["source"]
     if origin not in {"haojiao", "gooaye"}:
@@ -106,7 +111,40 @@ def parse_creator_email(*, sender: str, subject: str, body: str, source: str | N
     insight["parse_status"] = "parsed"
     insight["parser_version"] = f"{origin}-v1"
     insight["source_message_id"] = message_id
+    insight["source_adapter"] = "legacy-creator-parser"
+    insight["adapter_fallback_reason"] = "historical_template_labels"
     return insight
+
+
+def parse_creator_email(*, sender: str, subject: str, body: str, source: str | None = None, message_id: str = "") -> dict[str, Any]:
+    """Parse a creator template with deterministic adapter and safe fallback."""
+    route = route_email_source(sender=sender, subject=subject, body=body)
+    origin = source or route["source"]
+    if origin not in {"haojiao", "gooaye"}:
+        return {"parse_status": "invalid_source", "failure_reason": "source_not_creator", "message_id": message_id}
+    adapted = parse_creator_template(
+        source=origin,
+        sender=sender,
+        subject=subject,
+        body=body,
+        message_id=message_id,
+    )
+    if adapted.get("parse_status") == "parsed":
+        return adapted
+    # Do not guess a new event.  Keep compatibility only for the known legacy
+    # sanitized format and expose that fallback in the derived record.
+    legacy = _parse_creator_email_legacy(
+        sender=sender,
+        subject=subject,
+        body=body,
+        source=origin,
+        message_id=message_id,
+    )
+    if legacy.get("parse_status") == "parsed":
+        legacy["adapter_status"] = adapted.get("parse_status")
+        legacy["adapter_failure_reason"] = adapted.get("failure_reason")
+        return legacy
+    return adapted
 
 
 def parse_external_email(**kwargs: Any) -> dict[str, Any]:
