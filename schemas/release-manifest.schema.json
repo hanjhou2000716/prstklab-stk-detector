@@ -38,6 +38,10 @@
     "backtest_release": {"type": ["string", "null"]},
     "backtest_publication_state": {"enum": ["ready", "blocked", "unavailable"]},
     "strategy_registry": {"type": "array", "items": {"type": "object"}},
+    "creator_release_id": {"type": ["string", "null"]},
+    "creator_status": {"enum": ["ready", "unavailable", "not_available"]},
+    "creator_validation_errors": {"type": "array", "items": {"type": "string"}},
+    "creator_artifact_hash": {"type": ["string", "null"], "pattern": "^[a-fA-F0-9]{64}$"},
     "status": {"enum": ["ready", "rolled_back", "invalid"]}
   },
   "$defs": {
