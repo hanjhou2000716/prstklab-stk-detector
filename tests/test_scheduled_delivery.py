@@ -2,6 +2,7 @@ import json
 
 from src import scheduled_delivery
 from src.release_gate import ReleaseGateResult
+from src.scheduled_delivery import _load_creator_records
 
 
 def _settings():
@@ -133,11 +134,6 @@ def test_scheduled_delivery_blocks_quality_ineligible_event_before_renderer(tmp_
     assert "sent=false" in text
     assert "delivery_status=suppressed" in text
     assert "reason=quote_stale" in text
-import json
-
-from src.scheduled_delivery import _load_creator_records
-
-
 def test_creator_records_are_loaded_only_from_sanitized_external_path(tmp_path, monkeypatch):
     records = tmp_path / "creator-records.json"
     records.write_text(json.dumps({"records": [{"source": "haojiao", "title": "public"}]}), encoding="utf-8")
