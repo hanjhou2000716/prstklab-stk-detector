@@ -93,6 +93,58 @@ def test_production_contract_rejects_incomplete_source_metadata():
     assert "research source 0 universe is incomplete" in errors
 
 
+def _complete_production_research():
+    return {
+        "scan_mode": "production",
+        "scan_scope": "full",
+        "publish_eligible": True,
+        "production_eligible": True,
+        "generated_at": "2026-08-12T10:00:00+00:00",
+        "run_id": "run-1",
+        "universe_expected": 2,
+        "universe_scanned": 2,
+        "universe_completed": 2,
+        "universe_failed": 0,
+        "research_run": {
+            "run_id": "run-1",
+            "source_commit_sha": "a" * 40,
+            "scan_mode": "production",
+            "scan_scope": "full",
+            "run_finished_at": "2026-08-12T10:00:00+00:00",
+        },
+        "sources": [{
+            "scan_state": "complete", "requested": 2, "universe_scanned": 2,
+            "complete_records": 2, "failed": 0, "candidate_state": "no_candidates",
+        }],
+    }
+
+
+def test_complete_production_research_requires_and_accepts_lineage():
+    assert production_research_contract_errors(_complete_production_research()) == []
+
+
+def test_production_research_rejects_mismatched_run_provenance():
+    research = _complete_production_research()
+    research["run_id"] = "different-run"
+    errors = production_research_contract_errors(research)
+    assert "research run_id does not match research_run provenance" in errors
+
+
+def test_production_research_rejects_inconsistent_universe_counts():
+    research = _complete_production_research()
+    research["universe_scanned"] = 3
+    errors = production_research_contract_errors(research)
+    assert "production research universe counts are inconsistent" in errors
+
+
+def test_available_source_requires_visible_candidates():
+    research = _complete_production_research()
+    research["sources"][0]["candidate_state"] = "available"
+    research["sources"][0]["candidates"] = 0
+    errors = production_research_contract_errors(research)
+    assert "available state has no visible candidates" in errors[0]
+
+
 def test_acceptance_time_parser_is_fail_closed_for_naive_and_invalid_values():
     assert _parse_time("2026-08-09T10:00:00") is not None
     assert _parse_time("not-a-time") is None
