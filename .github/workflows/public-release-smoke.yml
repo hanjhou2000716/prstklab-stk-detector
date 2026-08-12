@@ -1,0 +1,33 @@
+name: Public release smoke check
+
+on:
+  workflow_dispatch:
+    inputs:
+      public_url:
+        description: "Public Pages base URL"
+        required: true
+        type: string
+      expected_snapshot_id:
+        description: "Optional prepared market snapshot ID"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11"
+      - name: Install release-gate dependencies
+        run: pip install -r requirements.txt
+      - name: Verify public release (no delivery)
+        run: >-
+          python -m src.public_release_smoke
+          --public-url "${{ inputs.public_url }}"
+          ${{ inputs.expected_snapshot_id != '' && format('--expected-snapshot-id "{0}"', inputs.expected_snapshot_id) || '' }}
