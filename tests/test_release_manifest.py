@@ -76,6 +76,10 @@ def test_strict_manifest_rejects_legacy_research_artifact(tmp_path):
 def test_routine_manifest_computes_freshness_for_complete_production_research(tmp_path):
     _artifacts(tmp_path)
     data = tmp_path / "site" / "data"
+    market_path = data / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["generated_at"] = "2026-08-04T10:00:00+08:00"
+    market_path.write_text(json.dumps(market), encoding="utf-8")
     research_path = data / "research-report.json"
     research = json.loads(research_path.read_text(encoding="utf-8"))
     research.update({
@@ -100,6 +104,10 @@ def test_routine_manifest_computes_freshness_for_complete_production_research(tm
 def test_routine_manifest_marks_old_production_research_stale(tmp_path):
     _artifacts(tmp_path)
     data = tmp_path / "site" / "data"
+    market_path = data / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["generated_at"] = "2026-08-04T10:00:00+08:00"
+    market_path.write_text(json.dumps(market), encoding="utf-8")
     research_path = data / "research-report.json"
     research = json.loads(research_path.read_text(encoding="utf-8"))
     research.update({
