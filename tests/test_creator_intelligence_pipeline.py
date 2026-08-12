@@ -55,3 +55,19 @@ def test_pipeline_drops_parser_failures_before_public_release():
         "0:unsupported_template",
         "1:adapter_required_fields_missing",
     ]
+
+
+def test_creator_release_rejects_parser_failure_even_if_called_directly():
+    result = build_creator_intelligence_release(
+        [
+            {
+                "content_origin": "haojiao",
+                "episode_key": "ep-direct",
+                "episode_title": "Direct failure",
+                "parse_status": "parse_failed",
+            }
+        ],
+        parent_manifest=PARENT,
+    )
+    assert result["accepted_count"] == 0
+    assert result["artifact"]["status"] == "ready"

@@ -1,9 +1,13 @@
-# P0 Creator release contract
+# Creator release contract hardening
 
-Creator Intelligence 是核心市場 release 的附加 artifact，不會覆寫市場、研究或事件資料。每份 artifact 都綁定 `parent_release_id`、`market_snapshot_id` 與 `event_snapshot_id`，並保留自己的 hash。
+The creator release validator is a second safety boundary after the parser
+gate. Even if a caller invokes `build_creator_release` directly, a record with
+`parse_failed`, `unsupported_template`, `invalid_source`, or `duplicate` can
+never be included in a publishable artifact. Adapter records that explicitly
+declare missing required fields are rejected as well.
 
-若 claims/opinions、驗證狀態或私有欄位不符合契約，artifact 狀態為 `unavailable`；父 release 仍可正常發布，Mini App 顯示來源不可用而不是混用新舊版本。
-
-## Rollback
-
-刪除 creator artifact 的發布指標即可回退到 parent release；核心市場、研究與事件 snapshot 不受影響。
+The check is additive and preserves historical normalized records that do not
+carry parser metadata. It does not turn missing creator content into a market
+event or a high-risk alert. Rollback is safe: revert this commit to restore the
+previous additive artifact validator; the parent market release remains
+independent.
