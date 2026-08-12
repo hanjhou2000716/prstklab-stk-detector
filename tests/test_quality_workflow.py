@@ -54,3 +54,5 @@ def test_public_release_smoke_workflow_is_read_only_and_non_delivery():
 def test_security_workflow_uses_current_pinned_sbom_action():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "security.yml").read_text(encoding="utf-8")
     assert "anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610" in workflow
+    assert "fallback_sbom.py" in workflow
+    assert "steps.syft.outcome == 'failure'" in workflow

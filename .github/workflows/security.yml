@@ -46,9 +46,21 @@ jobs:
         # v0.24.0 uses the maintained Node 24 runner and current Syft
         # bootstrap path.  Keep the commit pinned so supply-chain checks
         # remain reproducible while avoiding the retired v0.17 bootstrap.
+        id: syft
+        continue-on-error: true
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
           path: .
           format: cyclonedx-json
           artifact-name: prstk-sbom.cdx.json
           output-file: prstk-sbom.cdx.json
+      - name: Build direct-dependency SBOM fallback
+        if: steps.syft.outcome == 'failure'
+        run: python .github/scripts/fallback_sbom.py
+      - name: Upload SBOM fallback
+        if: steps.syft.outcome == 'failure'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: prstk-sbom-fallback
+          path: prstk-sbom.cdx.json
+          if-no-files-found: error
