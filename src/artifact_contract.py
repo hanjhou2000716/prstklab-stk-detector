@@ -398,6 +398,13 @@ def _backtest_release_contract_errors(document: dict[str, Any]) -> list[str]:
             errors.append("blocked/unavailable backtest contract cannot be publish_eligible=true")
         if contract_state == "ready" and not release_id:
             errors.append("ready backtest contract requires backtest_release")
+        registry_ids = {
+            str(item.get("strategy_id"))
+            for item in (contract.get("strategy_registry") or [])
+            if isinstance(item, dict) and item.get("strategy_id")
+        }
+        if contract_state == "ready" and not registry_ids:
+            errors.append("ready backtest contract requires strategy_registry")
     for index, row in enumerate(candidates):
         if not isinstance(row, dict):
             continue
@@ -408,6 +415,9 @@ def _backtest_release_contract_errors(document: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: backtest_release has no matching research contract")
         if candidate_release and release_id and candidate_release != release_id:
             errors.append(f"{path}: backtest_release does not match research contract")
+        strategy_id = str(row.get("strategy") or row.get("strategy_id") or "").strip()
+        if contract_state == "ready" and strategy_id and strategy_id not in registry_ids:
+            errors.append(f"{path}: strategy is absent from ready backtest registry")
         if candidate_contract is not None:
             if not isinstance(candidate_contract, dict):
                 errors.append(f"{path}: backtest_release_contract must be an object")

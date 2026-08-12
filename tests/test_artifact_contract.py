@@ -123,6 +123,29 @@ def test_research_backtest_contract_requires_matching_ready_state():
     assert any("ready backtest contract requires publish_eligible=true" in error for error in errors)
 
 
+def test_ready_backtest_contract_requires_strategy_registry():
+    research = _research(
+        backtest_release_status="ready",
+        backtest_release_contract=_backtest_contract(strategy_registry=[]),
+    )
+    errors = validate_research(research)
+    assert any("ready backtest contract requires strategy_registry" in error for error in errors)
+
+
+def test_candidate_strategy_must_be_present_in_ready_registry():
+    research = _research(
+        backtest_release_status="ready",
+        backtest_release_contract=_backtest_contract(strategy_registry=[{"strategy_id": "momentum"}]),
+        candidates=[{
+            "ticker": "2330",
+            "strategy": "value",
+            "backtest_release": "backtest-12345678",
+        }],
+    )
+    errors = validate_research(research)
+    assert any("strategy is absent from ready backtest registry" in error for error in errors)
+
+
 def test_research_backtest_contract_rejects_candidate_release_mismatch():
     research = _research(
         backtest_release_status="ready",
