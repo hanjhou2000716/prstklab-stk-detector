@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/external-parse-result.schema.json",
+  "type": "object",
+  "required": ["parse_status", "message_id"],
+  "properties": {
+    "parse_status": {"enum": ["parsed", "parse_failed", "unsupported_template", "invalid_source", "duplicate"]},
+    "failure_reason": {"type": "string"},
+    "message_id": {"type": "string"},
+    "content_origin": {"enum": ["financialjuice", "haojiao", "gooaye"]},
+    "content_type": {"enum": ["breaking_news", "creator_analysis"]},
+    "vendor_importance": {"type": ["integer", "null"], "minimum": 0, "maximum": 10},
+    "vendor_importance_present": {"type": "boolean"},
+    "vendor_original_headline": {"type": "string"},
+    "vendor_translation": {"type": "string"},
+    "vendor_analysis": {"type": "string"},
+    "vendor_possible_impact": {"type": "string"},
+    "attribution": {"type": "string"},
+    "public_safe": {"const": true}
+  },
+  "additionalProperties": true
+}
