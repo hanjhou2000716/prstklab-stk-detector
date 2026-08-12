@@ -50,6 +50,18 @@ def test_card_html_uses_safe_defaults():
     assert "observation" in html
 
 
+def test_card_html_includes_evidence_sections():
+    html = build_card_html({
+        "title": "事件", "event": "發生什麼事", "importance": "為何重要",
+        "market_transmission": "可能連動", "watch": "股市觀察",
+        "source_evidence": ["官方來源", "第二來源"],
+        "market_evidence": ["台指同步"],
+        "invalidation_condition": "核對不成立",
+    })
+    for text in ("發生什麼事", "為何重要", "可能連動", "股市觀察", "官方來源", "台指同步", "核對不成立"):
+        assert text in html
+
+
 def test_validate_png_rejects_corrupt_file(tmp_path):
     pytest.importorskip("PIL.Image")
     target = tmp_path / "corrupt.png"
