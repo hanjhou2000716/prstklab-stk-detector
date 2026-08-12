@@ -67,6 +67,7 @@ def send(
         manifest_path=manifest_path,
         expected_snapshot_id=snapshot_id,
         public_url=public_url,
+        require_production_research=True,
     )
     if not gate.allowed:
         _write_output({

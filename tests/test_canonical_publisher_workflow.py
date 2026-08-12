@@ -9,6 +9,7 @@ def test_pages_is_the_single_release_publisher():
     assert 'manifest.get("status") != "ready"' in workflow
     assert "src.release_gate" in workflow
     assert "env -u GITHUB_OUTPUT python -m src.release_gate" in workflow
+    assert "--require-production-research" in workflow
     assert "upload-pages-artifact" in workflow
     assert "concurrency:" in workflow
 

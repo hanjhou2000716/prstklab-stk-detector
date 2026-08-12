@@ -72,7 +72,7 @@ jobs:
           # GITHUB_OUTPUT makes release_gate intentionally quiet; unset it in
           # this diagnostic step so a failed gate leaves actionable errors in
           # the Actions log while retaining fail-closed behaviour.
-          env -u GITHUB_OUTPUT python -m src.release_gate --manifest site/data/release-manifest.json
+          env -u GITHUB_OUTPUT python -m src.release_gate --manifest site/data/release-manifest.json --require-production-research
       - name: 設定 GitHub Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
         with:

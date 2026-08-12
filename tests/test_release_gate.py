@@ -34,7 +34,7 @@ def _ready_release(tmp_path):
         },
     }), encoding="utf-8")
     (data / "event-ledger.json").write_text(json.dumps({"schema_version": 1, "retention_days": 30, "events": {}}), encoding="utf-8")
-    manifest = build_release_manifest(root=tmp_path)
+    manifest = build_release_manifest(root=tmp_path, require_production_research=True)
     write_release_manifest(manifest, data / "release-manifest.json")
     return data / "release-manifest.json", manifest
 
@@ -85,6 +85,42 @@ def test_release_gate_accepts_ready_legacy_research_snapshot(tmp_path):
     write_release_manifest(manifest, path)
     result = verify_release_for_delivery(manifest_path=path, expected_snapshot_id="market-12345678")
     assert result.allowed is True
+
+
+def test_release_gate_strict_mode_blocks_legacy_research_snapshot(tmp_path):
+    path, manifest = _ready_release(tmp_path)
+    research_path = tmp_path / "site" / "data" / "research-report.json"
+    legacy = {
+        "schema_version": "1.0",
+        "generated_at": "2026-08-04T10:00:00+00:00",
+        "snapshot_id": "research-12345678",
+        "sources": [],
+        "candidates": [],
+        "health": {},
+    }
+    research_path.write_text(json.dumps(legacy), encoding="utf-8")
+    manifest["artifact_hashes"]["research-report.json"] = sha256_file(research_path)
+    write_release_manifest(manifest, path)
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_snapshot_id="market-12345678",
+        require_production_research=True,
+    )
+    assert result.allowed is False
+    assert any("not a production scan" in error for error in result.errors)
+
+
+def test_release_gate_strict_mode_blocks_stale_research_marker(tmp_path):
+    path, manifest = _ready_release(tmp_path)
+    manifest["research_freshness"] = "stale"
+    write_release_manifest(manifest, path)
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_snapshot_id="market-12345678",
+        require_production_research=True,
+    )
+    assert result.allowed is False
+    assert "research_freshness is not fresh" in ";".join(result.errors)
 
 
 def test_release_gate_blocks_snapshot_mismatch(tmp_path):
