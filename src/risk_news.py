@@ -536,7 +536,7 @@ def _filter_market_news(stories: list[dict[str, str]], market: str) -> list[dict
         url = str(story.get("url", "")).strip()
         if not title or not url:
             continue
-        enriched = dict(story)
+        enriched: dict[str, Any] = dict(story)
         classification = classify_news_market(enriched)
         scope = classification["market_scope"]
         enriched["market_classification"] = classification
