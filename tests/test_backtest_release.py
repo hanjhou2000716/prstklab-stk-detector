@@ -4,6 +4,7 @@ from pathlib import Path
 from jsonschema import validate
 
 from src.backtest_release import build_backtest_release
+from src.strategy_registry import validate_strategy_release
 
 
 def _report(*, status="complete", gaps=None):
@@ -23,6 +24,8 @@ def test_backtest_release_is_deterministic_and_registry_bound():
     assert first["publication_state"] == "ready"
     assert first["strategy_registry"][0]["strategy_version"] == "m1"
     assert len(first["strategy_registry"][0]["parameter_hash"]) == 16
+    assert first["strategy_registry"][0]["backtest_release"] == first["backtest_release"]
+    assert validate_strategy_release(first["strategy_registry"][0]) == []
 
 
 def test_backtest_release_blocks_gaps_and_matches_schema():

@@ -83,6 +83,11 @@ def build_backtest_release(
         },
     }
     release_id = f"backtest-{hashlib.sha256(_canonical(identity)).hexdigest()[:16]}"
+    # Bind every registry row to the exact release that produced it.  Without
+    # this field the strategy registry validator must keep candidates
+    # observation-only even when the walk-forward study itself passed.
+    for row in strategy_registry:
+        row["backtest_release"] = release_id
     eligible = not reasons and report.get("status") == "complete"
     return {
         "backtest_release": release_id,
