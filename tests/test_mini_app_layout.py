@@ -241,3 +241,9 @@ def test_research_failure_message_exposes_retry_state_without_raw_errors():
     assert "source.failure_evidence || {}" in app
     assert "已重試" in app
     assert "不沿用舊候選" in app
+def test_research_cards_expose_strategy_binding_and_backtest_provenance():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "const binding = item.strategy_binding" in app
+    assert "backtest_release_contract" in app
+    assert "策略綁定" in app
+    assert "回測版本" in app

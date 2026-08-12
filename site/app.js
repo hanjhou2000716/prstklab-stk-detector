@@ -651,13 +651,19 @@ const researchExplainability = (item) => {
   const completeness = item.data_completeness ?? item.data_quality_score;
   const invalidation = item.invalidation || item.invalidation_condition;
   const gate = item.advice_gate_detail || (item.explainability && item.explainability.advice_gate) || {};
-  if (!passed.length && !failed.length && !risks.length && completeness === undefined && !invalidation && !Object.keys(gate).length) return "";
+  const binding = item.strategy_binding || (item.explainability && item.explainability.strategy_binding) || {};
+  const backtest = item.backtest_release_contract || {};
+  if (!passed.length && !failed.length && !risks.length && completeness === undefined && !invalidation && !Object.keys(gate).length && !Object.keys(binding).length && !Object.keys(backtest).length) return "";
   const list = (values, fallback) => values.length ? values.map((value) => `<li>${escapeHtml(value)}</li>`).join("") : `<li>${fallback}</li>`;
   const quality = completeness === undefined || completeness === null ? "資料完整度暫時無法取得" : `資料完整度 ${escapeHtml(String(completeness))}`;
   const gateLabel = gate.allowed === true ? "條件式研究內容可用" : "僅供研究觀察";
   const gateReasons = asList(gate.blocking_reasons);
   const gateReason = gateReasons.length ? `｜阻擋原因：${gateReasons.join("、")}` : "";
-  return `<details class="research-explainability"><summary>條件與風險說明</summary><p><b>研究閘門：</b>${escapeHtml(gateLabel)}${escapeHtml(gateReason)}</p><p><b>已通過：</b></p><ul>${list(passed, "尚未提供")}</ul><p><b>未通過：</b></p><ul>${list(failed, "無額外未通過條件")}</ul><p><b>風險：</b></p><ul>${list(risks, "尚未提供")}</ul><small>${escapeHtml(quality)}${invalidation ? `｜失效條件：${escapeHtml(invalidation)}` : ""}。僅供研究觀察，不構成買賣指令。</small></details>`;
+  const bindingState = binding.state || (Object.keys(backtest).length ? "unverified" : "not_provided");
+  const bindingReason = binding.reason || (backtest.publication_state === "ready" ? "候選尚未完成策略版本核對" : "正式回測尚未發布");
+  const releaseLabel = backtest.backtest_release || item.backtest_release || "尚未提供";
+  const registryLabel = binding.strategy_id ? `${binding.strategy_id}${binding.strategy_version ? ` v${binding.strategy_version}` : ""}` : "尚未核對";
+  return `<details class="research-explainability"><summary>條件與風險說明</summary><p><b>研究閘門：</b>${escapeHtml(gateLabel)}${escapeHtml(gateReason)}</p><p><b>策略綁定：</b>${escapeHtml(bindingState)}｜${escapeHtml(registryLabel)}<br><small>${escapeHtml(bindingReason)}｜回測版本：${escapeHtml(releaseLabel)}</small></p><p><b>已通過：</b></p><ul>${list(passed, "尚未提供")}</ul><p><b>未通過：</b></p><ul>${list(failed, "無額外未通過條件")}</ul><p><b>風險：</b></p><ul>${list(risks, "尚未提供")}</ul><small>${escapeHtml(quality)}${invalidation ? `｜失效條件：${escapeHtml(invalidation)}` : ""}。僅供研究觀察，不構成買賣指令。</small></details>`;
 };
 
 const renderResearchList = (id, items, empty) => {
