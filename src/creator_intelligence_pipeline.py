@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from src.creator_consensus import build_creator_consensus
+from src.creator_correlation import correlate_creator_insight
 from src.creator_release import build_creator_release
 from src.email_intelligence import normalize_creator_insight
 
@@ -16,6 +17,8 @@ def build_creator_intelligence_release(
     *,
     parent_manifest: dict[str, Any],
     history_store: Any | None = None,
+    market_snapshot: dict[str, Any] | None = None,
+    research_snapshot: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Normalize already-sanitized records and build one lineage-bound artifact.
 
@@ -38,6 +41,11 @@ def build_creator_intelligence_release(
             dropped.append(f"{index}:adapter_required_fields_missing")
             continue
         normalized = normalize_creator_insight(record)
+        normalized["prstk_correlation"] = correlate_creator_insight(
+            normalized,
+            market_snapshot=market_snapshot,
+            research_snapshot=research_snapshot,
+        )
         if (record.get("parse_status") or record.get("source_adapter")) and not normalized["episode_title"]:
             dropped.append(f"{index}:missing_episode_title")
             continue

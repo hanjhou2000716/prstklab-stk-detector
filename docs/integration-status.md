@@ -34,6 +34,7 @@ pipeline call and a tested consumer.
 | External event risk | `src/external_event_risk.py`, `src/intelligence_pipeline.py` | yes | intelligence context | external risk status + pending reasons | event trace/pending path | eligible only after evidence gates | production |
 | Creator media boundary | `src/creator_media.py` | yes | private attachment boundary | hash + private availability only | no raw media | no | partially_integrated |
 | Creator release lineage | `src/creator_release.py`, `src/creator_intelligence_pipeline.py`, `src/release_manifest.py` | yes | scheduled input + optional manifest artifact | parent release/hash/status | release-bound creator drawer | no raw creator media | production |
+| Creator/PRStK correlation | `src/creator_correlation.py`, `src/creator_intelligence_pipeline.py`, `src/briefing_cards.py` | yes | briefing creator binding | explicit entity matches + snapshot IDs | creator correlation state/reason | never a standalone signal | production |
 | Creator scheduled input | `src/scheduled_delivery.py`, `.github/workflows/scheduled-brief.yml` | yes | optional sanitized `CREATOR_RECORDS_PATH` | same market/creator release lineage | creator release | no raw creator media | production |
 | Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | briefing contract + optional endpoint/local queue | yes | feedback controls | no | partially_integrated |
 
