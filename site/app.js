@@ -561,6 +561,24 @@ const renderBriefing = (briefing, generatedAt) => {
       intelligence.open = false;
     }
   }
+  const paper = document.getElementById("briefing-paper");
+  const paperContent = document.getElementById("briefing-paper-content");
+  if (paper && paperContent) {
+    const tracker = report.paper_portfolio;
+    paper.open = false;
+    if (!tracker || typeof tracker !== "object") {
+      paperContent.innerHTML = '<p class="empty">本輪紙上研究追蹤資料暫時無法取得。</p>';
+    } else {
+      const records = Array.isArray(tracker.records) ? tracker.records : [];
+      const tracking = tracker.tracking || {};
+      const state = tracker.state === "available" ? "可追蹤" : "僅觀察／等待有效回測與報價";
+      const rows = records.slice(0, 5).map((item) => {
+        const horizons = item.horizons || {};
+        return `<li><b>${escapeHtml(item.ticker || "—")}</b>｜${escapeHtml(item.strategy || "研究觀察")}｜5日 ${escapeHtml(String(horizons["5d"] ?? "待完成"))}%｜20日 ${escapeHtml(String(horizons["20d"] ?? "待完成"))}%｜60日 ${escapeHtml(String(horizons["60d"] ?? "待完成"))}%</li>`;
+      }).join("");
+      paperContent.innerHTML = `<p><b>狀態：</b>${escapeHtml(state)}</p><p><b>追蹤進度：</b>${escapeHtml(String(tracking.completed_horizon_count ?? 0))} 個期限已完成</p>${rows ? `<ul>${rows}</ul>` : '<p class="empty">目前沒有符合紙上追蹤條件的研究候選。</p>'}<small>僅為公開資料的紙上研究觀察，不代表實際持倉或交易績效。</small>`;
+    }
+  }
   const container = document.getElementById("briefing-observations");
   if (!container) return;
   if (!observations.length) { container.innerHTML = '<p class="empty">本次定時報資料暫時無法取得</p>'; return; }
