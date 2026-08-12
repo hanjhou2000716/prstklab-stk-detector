@@ -15,7 +15,7 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import requests
 
-from src.artifact_contract import validate_release, validate_source_health
+from src.artifact_contract import validate_release, validate_source_health_artifact
 from src.production_acceptance import validate_production_bundle
 from src.release_manifest import verify_release_files
 
@@ -136,7 +136,7 @@ def _fetch_public_release_artifacts(
         source_health = health.get("source_health")
         if not isinstance(source_health, dict):
             return loaded, ["public source-health artifact envelope is invalid"]
-        errors.extend(validate_source_health(source_health))
+        errors.extend(validate_source_health_artifact(health))
     errors.extend(
         validate_release(
             market=loaded["market.json"],
@@ -247,7 +247,7 @@ def verify_release_for_delivery(
             if not isinstance(health, dict):
                 errors.append("source-health artifact envelope is invalid")
             else:
-                errors.extend(validate_source_health(health))
+                errors.extend(validate_source_health_artifact(artifacts["source-health.json"]))
         acceptance = validate_production_bundle(
             manifest=manifest,
             market=artifacts["market.json"],

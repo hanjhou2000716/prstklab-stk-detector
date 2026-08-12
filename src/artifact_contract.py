@@ -225,6 +225,19 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
     return errors
 
 
+def validate_source_health_artifact(document: dict[str, Any]) -> list[str]:
+    """Validate the release-bound source-health envelope and its binding."""
+    errors = _schema_errors(document, "source-health-artifact.schema.json")
+    market_snapshot_id = str(document.get("market_snapshot_id") or "").strip()
+    snapshot_id = str(document.get("snapshot_id") or "").strip()
+    if market_snapshot_id and snapshot_id and snapshot_id != f"{market_snapshot_id}-health":
+        errors.append("source_health_artifact.snapshot_id does not match market_snapshot_id")
+    health = document.get("source_health")
+    if isinstance(health, dict):
+        errors.extend(validate_source_health(health))
+    return errors
+
+
 def validate_research(document: dict[str, Any]) -> list[str]:
     """Validate candidate state semantics and source completeness.
 
