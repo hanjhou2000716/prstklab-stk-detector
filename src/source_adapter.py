@@ -197,6 +197,9 @@ class JsonSourceAdapter:
             "consecutive_failures": 0,
             "request_count": 0,
             "error_class": None,
+            "last_success_observation_id": None,
+            "last_success_payload_hash": None,
+            "last_success_http_status": None,
         }
 
     def _sleep_for_rate_limit(self) -> None:
@@ -314,6 +317,9 @@ class JsonSourceAdapter:
                     "consecutive_failures": 0,
                     "error_class": None,
                     "last_latency_ms": observation.latency_ms,
+                    "last_success_observation_id": observation.observation_id,
+                    "last_success_payload_hash": observation.payload_hash,
+                    "last_success_http_status": observation.http_status,
                 })
                 return observation
             except AdapterError as exc:
