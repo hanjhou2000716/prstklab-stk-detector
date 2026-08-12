@@ -96,15 +96,27 @@ PR.
 
 ### Last verified production release
 
-- Main commit: `14e0da4aef67e5b825c5465bab21c2cfe52dc602`
-- Research workflow: [31541538510](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31541538510)
-- Photo smoke workflow: [31542687299](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31542687299)
-- Quality/delivery workflow: [31542804176](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31542804176)
-- Release: `release-9467de40e52da8ca`
-- Market snapshot: `f14f706c6c4c883d`
-- Research snapshot: `research-1ebeaed172ae3957`
-- Event snapshot: `event-29b154fcefc773a0`
+This section is updated only from the public manifest and the latest successful
+main-branch workflows. It is evidence of the deployed release, not a claim
+that every optional provider or historical backtest is available.
+
+- Main commit: `6b3efac8b666ebcfb87337fec68e6b7536e65c37`
+- Pages deployment: [31567941161](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31567941161)
+- Quality/delivery workflow: [31567941144](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31567941144)
+- Official macro/price workflow: [31567991408](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31567991408)
+- Release: `release-9f742bf9a0c579e4`
+- Market snapshot: `e5a30f1e6aee3c23`
+- Research snapshot: `research-acddbf45ffd6e4db`
+- Event snapshot: `event-1c1c81d0f4e30a41`
 - Manifest status: `ready`; research mode/scope: `production` / `full`
+- Research universe: `7772 / 7772` completed; 40 visible candidates
+- Formal backtest: `unavailable`; Advice Gate therefore remains observation-only
+
+The public source of truth is
+[`release-manifest.json`](https://hanjhou2000716.github.io/prstklab-stk-detector/data/release-manifest.json).
+If this section and the manifest disagree, the manifest and its artifact
+hashes take precedence and this document must be corrected before claiming a
+new production verification.
 
 The photo smoke receipt is intentionally a single-recipient diagnostic and
 uses a synthetic smoke alert identity.  It proves renderer, sendPhoto and
