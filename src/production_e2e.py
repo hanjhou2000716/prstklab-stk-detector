@@ -41,10 +41,22 @@ def _ready_bundle() -> dict[str, dict[str, Any]]:
             "universe_expected": 1,
             "universe_scanned": 1,
             "universe_completed": 1,
+            "universe_failed": 0,
+            "generated_at": "2026-08-12T10:00:00+00:00",
+            "run_id": "e2e-research-run",
+            "research_run": {
+                "run_id": "e2e-research-run",
+                "source_commit_sha": "e" * 40,
+                "scan_mode": "production",
+                "scan_scope": "full",
+                "run_finished_at": "2026-08-12T10:00:00+00:00",
+            },
             "sources": [
                 {
                     "scan_state": "complete",
+                    "requested": 1,
                     "requested_records": 1,
+                    "universe_scanned": 1,
                     "complete_records": 1,
                     "failed_records": 0,
                 }

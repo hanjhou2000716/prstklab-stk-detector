@@ -22,7 +22,16 @@ def _ready_release(tmp_path):
         "snapshot_id": "research-12345678", "sources": [], "candidates": [], "health": {},
         "scan_mode": "production", "scan_scope": "full", "publish_eligible": True,
         "production_eligible": True, "universe_expected": 1, "universe_scanned": 1,
-        "universe_completed": 1,
+        "universe_completed": 1, "universe_failed": 0,
+        "run_id": "fixture-research-run",
+        "research_run": {
+            "run_id": "fixture-research-run",
+            "source_commit_sha": "f" * 40,
+            "scan_mode": "production", "scan_scope": "full",
+            "run_started_at": "2026-08-04T09:59:00+00:00",
+            "run_finished_at": "2026-08-04T10:00:00+00:00",
+            "producer": "src.run_research_report",
+        },
     }), encoding="utf-8")
     (data / "event-ledger.json").write_text(json.dumps({"schema_version": 1, "retention_days": 30, "events": {}}), encoding="utf-8")
     manifest = build_release_manifest(root=tmp_path)

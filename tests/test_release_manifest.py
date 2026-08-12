@@ -89,9 +89,9 @@ def test_strict_manifest_marks_explicit_stale_fallback(tmp_path):
         allow_stale_research=True,
         research_fallback_reason="last-known-good research snapshot",
     )
-    assert manifest["status"] == "ready"
-    assert manifest["research_freshness"] == "fresh"
-    assert manifest["research_fallback_used"] is False
+    assert manifest["status"] == "invalid"
+    assert manifest["research_fallback_used"] is True
+    assert any("stale research fallback" in item for item in manifest["validation_errors"])
 
 
 def test_allow_stale_research_converts_incomplete_scan_to_explicit_fallback(tmp_path):

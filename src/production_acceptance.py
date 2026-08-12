@@ -52,11 +52,35 @@ def production_research_contract_errors(research: dict[str, Any]) -> list[str]:
         errors.append("production research is not production_eligible")
     if str(research.get("scan_scope") or "") != "full":
         errors.append("production research scan scope is not full")
+    run = research.get("research_run")
+    if not isinstance(run, dict):
+        errors.append("production research run provenance is missing")
+    else:
+        if not str(run.get("run_id") or "").strip():
+            errors.append("production research run_id is missing")
+        if not str(run.get("source_commit_sha") or "").strip():
+            errors.append("production research source_commit_sha is missing")
+        if str(run.get("scan_mode") or "") != "production":
+            errors.append("research run scan mode does not match production")
+        if str(run.get("scan_scope") or "") != "full":
+            errors.append("research run scan scope is not full")
+        if str(research.get("run_id") or "") != str(run.get("run_id") or ""):
+            errors.append("research run_id does not match research_run provenance")
+    generated_at = _parse_time(research.get("generated_at"))
+    finished_at = _parse_time(run.get("run_finished_at")) if isinstance(run, dict) else None
+    if generated_at is None:
+        errors.append("production research generated_at is missing or invalid")
+    if finished_at is None:
+        errors.append("production research run_finished_at is missing or invalid")
     expected = _count(research.get("universe_expected"))
     scanned = _count(research.get("universe_scanned"))
     completed = _count(research.get("universe_completed"))
     if expected <= 0 or scanned < expected or completed < expected:
         errors.append("production research universe is incomplete")
+    if scanned != completed + _count(research.get("universe_failed")):
+        errors.append("production research universe counts are inconsistent")
+    if _count(research.get("universe_failed")):
+        errors.append("production research contains failed universe records")
     for index, source in enumerate(research.get("sources", [])) if isinstance(research.get("sources"), list) else []:
         if not isinstance(source, dict):
             errors.append(f"research source {index} is not an object")
@@ -66,8 +90,15 @@ def production_research_contract_errors(research: dict[str, Any]) -> list[str]:
         failed = _count(source.get("failed_records", source.get("failed")))
         requested = _count(source.get("requested_records", source.get("requested")))
         completed_source = _count(source.get("complete_records", source.get("data_complete")))
-        if requested <= 0 or completed_source < requested or failed:
+        scanned_source = _count(source.get("universe_scanned", source.get("requested")))
+        if requested <= 0 or scanned_source < requested or completed_source < requested or failed:
             errors.append(f"research source {index} universe is incomplete")
+        if scanned_source != completed_source + failed:
+            errors.append(f"research source {index} universe counts are inconsistent")
+        if str(source.get("candidate_state") or "") == "available" and _count(
+            source.get("visible_candidates", source.get("candidates"))
+        ) == 0:
+            errors.append(f"research source {index} available state has no visible candidates")
     return sorted(set(errors))
 
 
