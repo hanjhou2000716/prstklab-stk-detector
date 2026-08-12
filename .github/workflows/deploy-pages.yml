@@ -73,6 +73,8 @@ jobs:
           # this diagnostic step so a failed gate leaves actionable errors in
           # the Actions log while retaining fail-closed behaviour.
           env -u GITHUB_OUTPUT python -m src.release_gate --manifest site/data/release-manifest.json --require-production-research
+      - name: Audit production artifacts before Pages upload
+        run: python -m src.runtime_audit --require-production
       - name: 設定 GitHub Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
         with:

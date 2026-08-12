@@ -9,6 +9,30 @@ from typing import Any
 LEVELS = {"normal": 0, "warning": 1, "high-risk": 2}
 
 
+def _quality_block_reason(event: dict[str, Any]) -> str | None:
+    """Fail closed when an event explicitly carries unsafe evidence flags.
+
+    Producers may still expose degraded observations in the Mini App, but a
+    budget decision is the last common gate before delivery.  Keeping this
+    check here prevents scheduled, official, and manual alert paths from
+    accidentally treating stale or unverified observations as sendable.
+    """
+    if event.get("alert_eligible") is False:
+        reasons = event.get("quality_reasons") or event.get("blocking_reason")
+        if isinstance(reasons, (list, tuple)) and reasons:
+            return str(reasons[0])
+        return str(reasons or "quality_gate")
+    if event.get("source_quality_ok") is False:
+        return "source_quality_gate"
+    if event.get("stale_used") is True:
+        return "stale_data"
+    if event.get("quote_delayed") is True:
+        return "quote_delayed"
+    if event.get("cross_checked") is False and event.get("requires_crosscheck") is True:
+        return "crosscheck_pending"
+    return None
+
+
 def _level(value: Any) -> str:
     """Normalize English and UI-facing Chinese risk labels to one policy scale."""
     text = str(value or "normal").strip().lower().replace("_", "-")
@@ -40,6 +64,9 @@ def decide_alert_budget(
     """Decide whether an event may be sent without hiding its reason."""
     current = now or datetime.now(UTC)
     key = str(event.get("event_key") or event.get("event_cluster_key") or event.get("source_url") or "").strip()
+    quality_reason = _quality_block_reason(event)
+    if quality_reason:
+        return {"allowed": False, "reason": quality_reason, "upgraded": False, "event_key": key}
     level = _level(event.get("importance") or event.get("risk_level") or "normal")
     level_value = LEVELS.get(level, 0)
     rows = [row for row in history if str(row.get("event_key") or row.get("event_cluster_key") or "") == key]

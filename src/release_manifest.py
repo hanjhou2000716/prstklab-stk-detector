@@ -441,14 +441,26 @@ def verify_release_files(manifest: dict[str, Any], *, root: Path | str = Path(".
     paths = manifest.get("artifact_paths")
     if not isinstance(hashes, dict) or not isinstance(paths, dict):
         return ["manifest artifact hashes/paths are missing"]
+    required = ("market.json", "research-report.json", "event-ledger.json")
+    for name in required:
+        if name not in hashes:
+            errors.append(f"manifest hash missing: {name}")
+        if name not in paths:
+            errors.append(f"manifest path missing: {name}")
     for name, expected in hashes.items():
         raw_path = paths.get(name)
         if not isinstance(raw_path, str):
             errors.append(f"manifest path missing: {name}")
             continue
+        if not raw_path.strip():
+            errors.append(f"manifest path empty: {name}")
+            continue
         path = root / raw_path
         if not path.is_file():
             errors.append(f"artifact missing: {name}")
+            continue
+        if not isinstance(expected, str) or len(expected) != 64:
+            errors.append(f"manifest hash invalid: {name}")
             continue
         try:
             actual = sha256_file(path)

@@ -89,23 +89,45 @@ def audit_artifacts(
     market_path: Path = Path("site/data/market.json"),
     research_path: Path = Path("site/data/research-report.json"),
     index_path: Path = Path("site/index.html"),
-    manifest_path: Path = Path("site/data/release-manifest.json"),
+    manifest_path: Path | None = None,
+    require_production: bool = False,
 ) -> dict[str, Any]:
     """Return a non-secret structural audit of the files published to Pages."""
     issues: list[str] = []
     warnings: list[str] = []
+    # Resolve the default manifest beside the requested research artifact.  This
+    # prevents a structural audit of an alternate bundle from accidentally
+    # reading an unrelated manifest in the process working directory.
+    if manifest_path is None:
+        manifest_path = research_path.parent / "release-manifest.json"
     market = _load_json(market_path, "market", issues)
     research = _load_json(research_path, "research", issues)
-    manifest = _load_json(manifest_path, "release manifest", issues)
+    manifest = _load_json(manifest_path, "release manifest", issues) if manifest_path.is_file() else None
     if not index_path.is_file() or index_path.stat().st_size == 0:
         issues.append(f"Mini App entry missing or empty: {index_path}")
     market_counts = _audit_market(market, issues, warnings) if market else {"indices": 0, "quotes": 0}
     research_counts = _audit_research(research, issues, warnings) if research else {"sources": 0, "candidates": 0}
-    if manifest and market and research and manifest.get("event_snapshot_id") and manifest_path.parent == market_path.parent:
-        events = _load_json(Path("site/data/event-ledger.json"), "events", issues)
-        if events:
-            acceptance = validate_production_bundle(manifest=manifest, market=market, research=research, events=events)
-            warnings.extend(f"production acceptance: {error}" for error in acceptance.errors)
+    if manifest and market and research:
+        events_path = manifest_path.parent / "event-ledger.json"
+        events = _load_json(events_path, "events", issues) if events_path.is_file() else None
+        if events is not None:
+            acceptance = validate_production_bundle(
+                manifest=manifest,
+                market=market,
+                research=research,
+                events=events,
+                require_production_research=require_production,
+            )
+            messages = [f"production acceptance: {error}" for error in acceptance.errors]
+            if require_production:
+                issues.extend(messages)
+            else:
+                warnings.extend(messages)
+        elif require_production:
+            issues.append(f"events missing: {events_path}")
+            issues.append("production event artifact is required")
+    if require_production and manifest is None:
+        issues.append("production release manifest is required")
     return {
         "ok": not issues,
         "issues": issues,
@@ -121,8 +143,19 @@ def main() -> int:
     parser.add_argument("--research", type=Path, default=Path("site/data/research-report.json"))
     parser.add_argument("--index", type=Path, default=Path("site/index.html"))
     parser.add_argument("--manifest", type=Path, default=Path("site/data/release-manifest.json"))
+    parser.add_argument(
+        "--require-production",
+        action="store_true",
+        help="fail when the checked artifacts are not a ready production release",
+    )
     args = parser.parse_args()
-    report = audit_artifacts(market_path=args.market, research_path=args.research, index_path=args.index, manifest_path=args.manifest)
+    report = audit_artifacts(
+        market_path=args.market,
+        research_path=args.research,
+        index_path=args.index,
+        manifest_path=args.manifest,
+        require_production=args.require_production,
+    )
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0 if report["ok"] else 1
 

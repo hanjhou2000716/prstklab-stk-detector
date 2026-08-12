@@ -79,6 +79,7 @@ def score_source(
         and cross_source >= 100
         and consecutive_failures == 0
     )
+    reasons = _reasons(freshness, cross_source, completeness, availability, consecutive_failures)
     return {
         "provider": record.get("provider") or record.get("source") or "unknown",
         "status": status,
@@ -95,7 +96,10 @@ def score_source(
         "display_eligible": score >= config.display_min_score,
         "alert_eligible": alert_eligible,
         "stale_used": bool(record.get("stale_used")),
-        "reasons": _reasons(freshness, cross_source, completeness, availability, consecutive_failures),
+        "reasons": reasons,
+        # Stable name consumed by alert contracts and delivery diagnostics.
+        # Keep ``reasons`` for backward compatibility with existing artifacts.
+        "quality_reasons": reasons,
     }
 
 
@@ -139,6 +143,7 @@ def score_quote(
         base["alert_eligible"] = False
         if "quote_delayed" not in base["reasons"]:
             base["reasons"].append("quote_delayed")
+        base["quality_reasons"] = list(base["reasons"])
     base["crosscheck_status"] = quote.get("crosscheck_status") or "未交叉核對"
     return base
 
