@@ -298,6 +298,34 @@ def test_release_gate_blocks_public_artifact_hash_mismatch(tmp_path, monkeypatch
     assert "public artifact hash mismatch: market.json" in ";".join(result.errors)
 
 
+def test_public_bundle_strict_mode_rejects_legacy_research(tmp_path, monkeypatch):
+    path, manifest = _ready_release(tmp_path)
+    research_path = tmp_path / "site" / "data" / "research-report.json"
+    legacy = {
+        "schema_version": "1.0",
+        "generated_at": "2026-08-04T10:00:00+00:00",
+        "snapshot_id": "research-12345678",
+        "sources": [], "candidates": [], "health": {},
+    }
+    research_path.write_text(json.dumps(legacy), encoding="utf-8")
+    manifest["artifact_hashes"]["research-report.json"] = sha256_file(research_path)
+    write_release_manifest(manifest, path)
+    data = path.parent
+    monkeypatch.setattr(
+        "src.release_gate.requests.get",
+        lambda url, **kwargs: _public_artifact_response(manifest, data, url),
+    )
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_snapshot_id="market-12345678",
+        public_url="https://example.test/app",
+        public_attempts=1,
+        require_production_research=True,
+    )
+    assert result.allowed is False
+    assert any("not a production scan" in error for error in result.errors)
+
+
 def test_release_gate_writes_actions_output_as_key_value_lines(tmp_path, monkeypatch):
     path, _ = _ready_release(tmp_path)
     output = tmp_path / "github-output"

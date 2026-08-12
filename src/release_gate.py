@@ -8,6 +8,7 @@ import json
 import os
 import time
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
@@ -63,6 +64,8 @@ def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tup
 
 def _fetch_public_release_artifacts(
     manifest: dict[str, Any], *, public_url: str, timeout: float,
+    require_production_research: bool = False,
+    max_research_age_hours: float = 24.0,
 ) -> tuple[dict[str, dict[str, Any]], list[str]]:
     """Fetch and verify the immutable bundle advertised by a Pages manifest.
 
@@ -130,7 +133,55 @@ def _fetch_public_release_artifacts(
             manifest=manifest,
         )
     )
+    if require_production_research:
+        acceptance = validate_production_bundle(
+            manifest=manifest,
+            market=loaded["market.json"],
+            research=loaded["research-report.json"],
+            events=loaded["event-ledger.json"],
+            require_production_research=True,
+        )
+        errors.extend(acceptance.errors)
+        errors.extend(
+            _strict_research_freshness_errors(
+                manifest,
+                loaded["research-report.json"],
+                max_research_age_hours=max_research_age_hours,
+                public=True,
+            )
+        )
     return loaded, errors
+
+
+def _strict_research_freshness_errors(
+    manifest: dict[str, Any],
+    research: dict[str, Any],
+    *,
+    max_research_age_hours: float,
+    public: bool = False,
+) -> list[str]:
+    """Reject a labelled-fresh report whose timestamp is actually too old."""
+    prefix = "public production release" if public else "production release"
+    errors: list[str] = []
+    if manifest.get("research_freshness") != "fresh":
+        errors.append(f"{prefix} research_freshness is not fresh")
+    value = research.get("generated_at")
+    try:
+        generated = datetime.fromisoformat(str(value).replace("Z", "+00:00")) if value else None
+        if generated is not None:
+            generated = generated.replace(tzinfo=UTC) if generated.tzinfo is None else generated.astimezone(UTC)
+    except (TypeError, ValueError):
+        generated = None
+    if generated is None:
+        return errors
+    now = datetime.now(UTC)
+    if generated > now + timedelta(minutes=5):
+        errors.append(f"{prefix} research generated_at is in the future")
+    else:
+        age_hours = max(0.0, (now - generated).total_seconds() / 3600.0)
+        if age_hours > max(0.0, float(max_research_age_hours)):
+            errors.append(f"{prefix} research is older than {max_research_age_hours:g} hours")
+    return errors
 
 
 def verify_release_for_delivery(
@@ -142,6 +193,7 @@ def verify_release_for_delivery(
     public_attempts: int = 12,
     public_delay: float = 5.0,
     require_production_research: bool = False,
+    max_research_age_hours: float = 24.0,
 ) -> ReleaseGateResult:
     """Verify readiness, local hashes and optionally the deployed Pages copy."""
     path = Path(manifest_path)
@@ -186,8 +238,14 @@ def verify_release_for_delivery(
             require_production_research=require_production_research,
         )
         errors.extend(acceptance.errors)
-        if require_production_research and manifest.get("research_freshness") != "fresh":
-            errors.append("production release research_freshness is not fresh")
+        if require_production_research:
+            errors.extend(
+                _strict_research_freshness_errors(
+                    manifest,
+                    artifacts["research-report.json"],
+                    max_research_age_hours=max_research_age_hours,
+                )
+            )
 
     if public_url:
         remote_url = public_url.rstrip("/") + "/data/release-manifest.json"
@@ -222,7 +280,11 @@ def verify_release_for_delivery(
                     public_error = "public manifest market snapshot does not match prepared snapshot"
                 else:
                     _, bundle_errors = _fetch_public_release_artifacts(
-                        remote, public_url=public_url, timeout=timeout,
+                        remote,
+                        public_url=public_url,
+                        timeout=timeout,
+                        require_production_research=require_production_research,
+                        max_research_age_hours=max_research_age_hours,
                     )
                     if bundle_errors:
                         public_error = "; ".join(sorted(set(bundle_errors)))
@@ -257,6 +319,7 @@ def main() -> int:
         action="store_true",
         help="require a fresh production/full research artifact for delivery",
     )
+    parser.add_argument("--max-research-age-hours", type=float, default=24.0)
     args = parser.parse_args()
     result = verify_release_for_delivery(
         manifest_path=args.manifest,
@@ -265,6 +328,7 @@ def main() -> int:
         public_attempts=args.public_attempts,
         public_delay=args.public_delay,
         require_production_research=args.require_production_research,
+        max_research_age_hours=args.max_research_age_hours,
     )
     values = {
         "allowed": result.allowed,
