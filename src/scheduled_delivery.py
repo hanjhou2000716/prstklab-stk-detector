@@ -112,14 +112,19 @@ def send(
     )
     try:
         with tempfile.TemporaryDirectory(prefix="prstk-alert-card-") as temporary:
-            photo_path = render_alert_card(
-                {
+            card_alert = {
                     "title": (event or {}).get("title") or f"{slot} market briefing",
                     "lifecycle_state": (event or {}).get("lifecycle_state") or "observation",
                     "trigger_reason": caption,
                     "release_id": gate.release_id,
                     "snapshot_id": snapshot_id,
-                },
+                }
+            if isinstance(event, dict):
+                for key in ("event", "importance", "market_transmission", "watch", "source_evidence", "market_evidence", "invalidation_condition"):
+                    if event.get(key) not in (None, "", []):
+                        card_alert[key] = event[key]
+            photo_path = render_alert_card(
+                card_alert,
                 Path(temporary) / "alert.png",
             )
             deliveries = send_photo_briefs(
