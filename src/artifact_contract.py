@@ -405,6 +405,16 @@ def _backtest_release_contract_errors(document: dict[str, Any]) -> list[str]:
         }
         if contract_state == "ready" and not registry_ids:
             errors.append("ready backtest contract requires strategy_registry")
+        if contract_state == "ready":
+            for item in (contract.get("strategy_registry") or []):
+                if not isinstance(item, dict):
+                    errors.append("ready backtest strategy_registry rows must be objects")
+                    continue
+                for field in ("strategy_id", "strategy_version", "parameter_hash", "universe_version", "data_version", "code_commit", "backtest_release"):
+                    if item.get(field) in (None, ""):
+                        errors.append(f"ready backtest strategy_registry.{field} is missing")
+                if item.get("backtest_release") not in (None, release_id):
+                    errors.append("ready backtest strategy_registry.backtest_release does not match contract")
     for index, row in enumerate(candidates):
         if not isinstance(row, dict):
             continue
