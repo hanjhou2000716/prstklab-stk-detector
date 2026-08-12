@@ -128,6 +128,9 @@ def _attach_detail_summary(target: dict[str, Any], details: list[dict[str, Any]]
     counts: list[float] = [float(item["item_count"]) for item in records if isinstance(item.get("item_count"), (int, float))]
     latencies: list[float] = [float(item["latency_ms"]) for item in records if isinstance(item.get("latency_ms"), (int, float))]
     urls = sorted({str(item.get("source_url") or "") for item in records if item.get("source_url")})
+    failures = [int(item["consecutive_failures"]) for item in records if isinstance(item.get("consecutive_failures"), int) and item["consecutive_failures"] >= 0]
+    fallback_count = sum(1 for item in records if item.get("fallback_used") is True)
+    error_codes = sorted({str(item.get("error_code")) for item in records if item.get("error_code")})
     if checked:
         target["checked_at"] = max(checked)
     if successful:
@@ -139,6 +142,12 @@ def _attach_detail_summary(target: dict[str, Any], details: list[dict[str, Any]]
     if urls:
         target["source_urls"] = urls
         target.setdefault("source_url", urls[0])
+    if failures:
+        target["max_consecutive_failures"] = max(failures)
+    if fallback_count:
+        target["fallback_count"] = fallback_count
+    if error_codes:
+        target["error_codes"] = error_codes[:8]
 
 
 def _research_item(report: dict[str, Any], checked_at: str) -> dict[str, Any]:

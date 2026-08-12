@@ -112,6 +112,22 @@ def test_detail_sources_expose_freshness_summary_without_fabricating_failed_succ
     assert "bls" not in official.get("last_success_at", "")
 
 
+def test_detail_sources_expose_bounded_failure_and_fallback_observability():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": []}, checked_at=NOW,
+        official_sources=[
+            {"key": "fred", "status": "failed", "checked_at": NOW.isoformat(),
+             "consecutive_failures": 3, "error_code": "http_429", "fallback_used": True},
+            {"key": "eia", "status": "healthy", "checked_at": NOW.isoformat(),
+             "consecutive_failures": 0, "error_code": ""},
+        ],
+    )
+    official = next(item for item in health["sources"] if item["key"] == "official_events")
+    assert official["max_consecutive_failures"] == 3
+    assert official["fallback_count"] == 1
+    assert official["error_codes"] == ["http_429"]
+
+
 def test_monitor_health_pending_reason_survives_normal_market_refresh():
     health = build_source_health(
         errors=[], events={"is_major": False}, research_report={"sources": []}, checked_at=NOW,
