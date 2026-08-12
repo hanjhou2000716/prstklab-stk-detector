@@ -2,6 +2,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from src.scheduled_brief import briefing_correlation, build_brief, resolve_slot
+from src.alert_budget import decide_alert_budget
 
 
 def test_taiwan_price_brief_includes_the_current_percent_move():
@@ -110,3 +111,14 @@ def test_scheduled_brief_correlation_uses_published_observation_id():
         "snapshot_id": "snap123456789012",
         "observation_id": "obs123",
     }
+
+
+def test_scheduled_delivery_uses_shared_budget_for_repeated_event():
+    now = datetime(2026, 8, 5, 2, 0, tzinfo=ZoneInfo("UTC"))
+    result = decide_alert_budget(
+        {"event_key": "brief-event", "importance": "warning"},
+        [{"event_key": "brief-event", "importance": "warning", "sent_at": now.isoformat()}],
+        now=now,
+    )
+    assert result["allowed"] is False
+    assert result["reason"] == "cooldown"
