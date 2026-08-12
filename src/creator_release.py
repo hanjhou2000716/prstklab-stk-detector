@@ -54,6 +54,10 @@ def validate_creator_release(
             errors.append("creator insight verification state invalid")
         if item.get("raw_body") or item.get("local_path") or item.get("private_url"):
             errors.append("creator insight contains private raw fields")
+        if item.get("parse_status") in {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}:
+            errors.append("creator insight parser failure cannot be published")
+        if item.get("source_adapter") and item.get("required_fields_present") is False:
+            errors.append("creator insight adapter required fields missing")
     return sorted(set(errors))
 
 
