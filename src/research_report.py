@@ -11,8 +11,8 @@ import pandas as pd
 
 from src.advice_gate import build_explainability_card, evaluate_advice_gate
 from src.instrument_master import InstrumentMaster
-from src.production_integration import bind_strategy_provenance
 from src.price_action import FUNNEL_LABELS, structure_match_score
+from src.production_integration import bind_strategy_provenance
 
 NOTICE = "不同策略的研究排序不可直接視為同一種分數；本報表僅統一欄位與資料狀態。"
 
