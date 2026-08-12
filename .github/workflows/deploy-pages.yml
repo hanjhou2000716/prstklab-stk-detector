@@ -48,6 +48,12 @@ jobs:
           git fetch --no-tags origin refs/heads/data-release:refs/remotes/origin/data-release
           python -m src.data_release --restore --branch data-release --include site/data
           git restore --source=origin/data-release --worktree -- site/data/
+          # The data branch may contain a manifest produced by a market/event
+          # publisher before the latest research snapshot was available.  Do
+          # not trust that copied metadata: rebuild it from the restored,
+          # hash-addressed artifacts so freshness and lineage are evaluated at
+          # the Pages boundary itself.
+          python -m src.release_manifest --require-production-research
           python - <<'PY'
           import json
           from pathlib import Path
