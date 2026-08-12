@@ -40,6 +40,22 @@ def _text(value: Any) -> str:
     return str(value or "").strip()
 
 
+def creator_episode_key(record: dict[str, Any]) -> str:
+    """Build a stable public-safe creator episode identity for deduplication."""
+    source = _text(record.get("content_origin") or record.get("source")) or "unknown"
+    explicit = _text(record.get("episode_key"))
+    if explicit:
+        return explicit
+    material = "|".join((
+        source.casefold(),
+        _text(record.get("episode_id") or record.get("source_message_id") or record.get("message_id")),
+        _text(record.get("episode_title") or record.get("subject")),
+        (_utc(record.get("published_at") or record.get("source_published_at")) or "")[:10],
+    )).casefold()
+    digest = hashlib.sha256(material.encode("utf-8")).hexdigest()[:20]
+    return f"{source.casefold()}:{digest}"
+
+
 def route_email_source(*, sender: str = "", subject: str = "", body: str = "") -> dict[str, str]:
     """Route by deterministic sender/marker signals; unknown mail is DLQ-safe."""
     haystack = " ".join((_text(sender), _text(subject), _text(body))).casefold()
@@ -110,7 +126,7 @@ def normalize_creator_insight(record: dict[str, Any]) -> dict[str, Any]:
     return {
         "creator_id": _text(record.get("creator_id")),
         "creator_name": _text(record.get("creator_name")),
-        "episode_key": _text(record.get("episode_key")),
+        "episode_key": creator_episode_key(record),
         "episode_id": _text(record.get("episode_id")),
         "episode_title": _text(record.get("episode_title")),
         "published_at": _utc(record.get("published_at")),
@@ -141,4 +157,4 @@ def normalize_creator_insight(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-__all__ = ["normalize_creator_insight", "normalize_email_observation", "route_email_source"]
+__all__ = ["creator_episode_key", "normalize_creator_insight", "normalize_email_observation", "route_email_source"]

@@ -3,7 +3,12 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-from src.email_intelligence import normalize_creator_insight, normalize_email_observation, route_email_source
+from src.email_intelligence import (
+    creator_episode_key,
+    normalize_creator_insight,
+    normalize_email_observation,
+    route_email_source,
+)
 
 
 def test_router_separates_transport_from_content_origin() -> None:
@@ -44,3 +49,9 @@ def test_creator_schema_accepts_explicit_unverified_state() -> None:
     result = normalize_creator_insight({"episode_key": "haojiao:ep-1", "content_origin": "haojiao"})
     schema = json.loads(Path("schemas/creator-insight.schema.json").read_text(encoding="utf-8"))
     assert not list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(result))
+
+
+def test_creator_episode_key_is_stable_without_raw_body() -> None:
+    record = {"content_origin": "gooaye", "episode_id": "EP-7", "episode_title": "市場觀察", "published_at": "2026-08-12T02:03:00Z", "body": "private"}
+    assert creator_episode_key(record) == creator_episode_key(dict(record))
+    assert normalize_creator_insight(record)["episode_key"].startswith("gooaye:")
