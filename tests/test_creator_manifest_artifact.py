@@ -1,8 +1,8 @@
 import json
 import sys
 
-from src.release_gate import _load_release_artifacts
 from src import release_manifest
+from src.release_gate import _load_release_artifacts
 from src.release_manifest import build_release_manifest
 
 
