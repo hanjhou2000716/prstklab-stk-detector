@@ -1,4 +1,10 @@
-from src.external_event_risk import cluster_external_events, event_cluster_key, notification_decision, score_prstk_risk
+from src.external_event_risk import (
+    cluster_external_events,
+    event_cluster_key,
+    event_fingerprint,
+    notification_decision,
+    score_prstk_risk,
+)
 
 
 def test_same_event_from_two_sources_forms_one_cluster() -> None:
@@ -37,3 +43,10 @@ def test_r4_requires_official_and_market_sync() -> None:
 def test_cluster_key_is_stable() -> None:
     event = {"event_type": "policy", "actor": "Trump", "action": "tariff", "location": "US", "published_at": "2026-08-12T01:00:00Z"}
     assert event_cluster_key(event) == event_cluster_key(dict(event))
+
+
+def test_multilingual_aliases_share_identity() -> None:
+    traditional = {"event_type": "衝突", "actor": "川普", "action": "談判", "location": "伊朗", "published_at": "2026-08-12T01:00:00Z"}
+    english = {"event_type": "conflict", "actor": "Trump", "action": "negotiation", "location": "Iran", "published_at": "2026-08-12T01:00:00Z"}
+    assert event_cluster_key(traditional) == event_cluster_key(english)
+    assert event_fingerprint(traditional) == {"entity": "trump", "action": "talk", "location": "iran"}
