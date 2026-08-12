@@ -274,6 +274,7 @@ def build_source_health(
     official_sources: list[dict[str, Any]] | None = None,
     news_sources: list[dict[str, Any]] | None = None,
     additional_sources: list[dict[str, Any]] | None = None,
+    creator_sources: list[dict[str, Any]] | None = None,
     monitor_health: dict[str, Any] | None = None,
     quote_evidence: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -323,6 +324,18 @@ def build_source_health(
             # legitimate success timestamp; failed/partial providers stay unset.
             if normalized.get("status") == "healthy" and not normalized.get("last_success_at"):
                 normalized["last_success_at"] = normalized.get("checked_at")
+            sources.append(normalized)
+    if creator_sources:
+        for item in creator_sources:
+            if not isinstance(item, dict):
+                continue
+            normalized = dict(item)
+            normalized.setdefault("key", f"creator_{normalized.get('provider') or 'unknown'}")
+            normalized.setdefault("label", f"Creator｜{normalized.get('provider') or 'unknown'}")
+            normalized.setdefault("role", "optional")
+            normalized["state"] = _canonical_state(normalized)
+            normalized["semantic_state"] = _semantic_state(normalized)
+            normalized.setdefault("creator_health", normalized["semantic_state"])
             sources.append(normalized)
     if monitor_health:
         monitor_item = _monitor_health_item(monitor_health, checked)
