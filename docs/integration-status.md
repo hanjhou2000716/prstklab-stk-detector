@@ -33,7 +33,8 @@ pipeline call and a tested consumer.
 | External source email contract | `src/email_intelligence.py`, `src/gmail_ingress.py`, `src/external_source_parsers.py` | yes | ingress/parser boundary | sanitized EmailObservation | source health/pending reasons | no raw mail | partially_integrated |
 | External event risk | `src/external_event_risk.py`, `src/intelligence_pipeline.py` | yes | intelligence context | external risk status + pending reasons | event trace/pending path | eligible only after evidence gates | production |
 | Creator media boundary | `src/creator_media.py` | yes | private attachment boundary | hash + private availability only | no raw media | no | partially_integrated |
-| Creator release lineage | `src/creator_release.py`, `src/release_manifest.py` | yes | optional manifest artifact | parent release/hash/status | pending integration | no | partially_integrated |
+| Creator release lineage | `src/creator_release.py`, `src/creator_intelligence_pipeline.py`, `src/release_manifest.py` | yes | scheduled input + optional manifest artifact | parent release/hash/status | release-bound creator drawer | no raw creator media | production |
+| Creator scheduled input | `src/scheduled_delivery.py`, `.github/workflows/scheduled-brief.yml` | yes | optional sanitized `CREATOR_RECORDS_PATH` | same market/creator release lineage | creator release | no raw creator media | production |
 | Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | briefing contract + optional endpoint/local queue | yes | feedback controls | no | partially_integrated |
 
 ## Data state contract
