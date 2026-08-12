@@ -130,6 +130,12 @@ def bind_strategy_provenance(candidate: dict[str, Any] | None) -> dict[str, Any]
                 contract_errors.append("backtest_release_contract is not publishable")
             if row.get("backtest_release") and contract.get("backtest_release") != row.get("backtest_release"):
                 contract_errors.append("backtest_release does not match research contract")
+            registry_rows = contract.get("strategy_registry")
+            strategy_id = row.get("strategy") or row.get("strategy_id")
+            if isinstance(registry_rows, list) and strategy_id:
+                matching = [item for item in registry_rows if isinstance(item, dict) and item.get("strategy_id") == strategy_id]
+                if not matching:
+                    contract_errors.append("backtest_release_contract has no matching strategy")
     if registry is not None:
         registry_errors.extend(validate_strategy_release(registry))
         if isinstance(registry, dict):
