@@ -224,6 +224,12 @@ def test_source_health_investor_summary_uses_runtime_failure_count_when_present(
     assert "const displayedMissing = Number.isFinite(declaredRuntimeFailure)" in app
 
 
+def test_mini_app_consumes_release_bound_source_health_artifact():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert 'healthEnvelope.snapshot_id || "") !== `${manifest.market_snapshot_id}-health`' in app
+    assert "snapshot.source_health = healthEnvelope.source_health" in app
+
+
 def test_research_failure_message_exposes_retry_state_without_raw_errors():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert "source.failure_evidence || {}" in app
