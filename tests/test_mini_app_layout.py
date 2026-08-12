@@ -247,3 +247,10 @@ def test_research_cards_expose_strategy_binding_and_backtest_provenance():
     assert "backtest_release_contract" in app
     assert "策略綁定" in app
     assert "回測版本" in app
+
+
+def test_value_research_cards_reuse_explainability_renderer():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    marker = 'const explanation = researchExplainability(item);'
+    assert marker in app
+    assert app.index(marker) > app.index("const renderValueResearch")
