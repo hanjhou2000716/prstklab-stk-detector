@@ -10,6 +10,7 @@ def test_external_intelligence_offline_dry_run_is_fail_closed():
     assert result["external_risk"]["level"] == "R2"
     assert result["external_risk"]["notification"]["status"] == "pending"
     assert result["creator_release"]["status"] == "ready"
+    assert result["creator_pipeline"] == {"accepted_count": 1, "dropped_count": 0}
     assert result["creator_delivery"]["allowed"] is True
     assert result["creator_delivery"]["media_mode"] == "text_only"
     assert result["creator_delivery"]["status"] == "media_degraded"
