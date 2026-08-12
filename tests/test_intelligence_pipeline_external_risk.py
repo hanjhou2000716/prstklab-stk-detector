@@ -13,6 +13,25 @@ def test_pipeline_exposes_pending_external_event_reason() -> None:
     assert "risk_threshold_not_reached" in context["external_event_risk"]["notification"]["reasons"]
 
 
+def test_financialjuice_observation_uses_vendor_contract_in_pipeline() -> None:
+    context = build_intelligence_context(
+        {"event_type": "energy"},
+        external_observations=[
+            {
+                "source": "financialjuice",
+                "event_type": "energy",
+                "title": "Oil supply",
+                "vendor_importance": 10,
+                "source_url": "https://financialjuice.com/item/1",
+            }
+        ],
+    )
+    contract = context["external_event_risk"]["financialjuice"]
+    assert contract["vendor_importance"] == 10
+    assert contract["prstk_risk"]["prstk_risk_level"] == "R2"
+    assert "等待官方核對" in contract["pending_reasons"]
+
+
 def test_pipeline_allows_confirmed_cross_source_event_but_keeps_advice_gate() -> None:
     context = build_intelligence_context(
         {"event_type": "black_swan", "official_confirmed": True},
