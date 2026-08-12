@@ -11,6 +11,7 @@ def test_quality_marks_old_source_stale_and_not_alert_eligible() -> None:
     )
     assert result["freshness"] == "stale"
     assert result["alert_eligible"] is False
+    assert "quote_stale_or_missing" in result["quality_reasons"]
     assert "quote_stale_or_missing" in result["reasons"]
 
 
@@ -22,6 +23,7 @@ def test_fresh_cross_checked_complete_source_is_alert_eligible() -> None:
     )
     assert result["data_quality_score"] == 100
     assert result["alert_eligible"] is True
+    assert result["quality_reasons"] == []
 
 
 def test_missing_timestamp_is_unavailable_even_if_provider_says_healthy() -> None:
