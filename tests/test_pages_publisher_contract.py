@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 WORKFLOW_DIR = Path(__file__).parents[1] / ".github" / "workflows"
 PUBLISHERS = (
     "refresh-dashboard.yml",
