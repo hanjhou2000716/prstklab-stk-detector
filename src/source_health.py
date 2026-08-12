@@ -357,6 +357,13 @@ def build_source_health(
         source["semantic_state"] = _semantic_state(source)
     gap_sources = [source for source in sources if _is_gap(source)]
     partial = len(gap_sources)
+    configuration_sources = [
+        source for source in sources if _semantic_state(source) == "configuration_missing"
+    ]
+    runtime_gap_sources = [
+        source for source in gap_sources
+        if _semantic_state(source) != "configuration_missing"
+    ]
     warming = sum(source["status"] == "warming" for source in sources)
     core_gap = any(
         _is_gap(source) and str(source.get("role") or "") == "required_for_core"
@@ -374,6 +381,16 @@ def build_source_health(
         for source in gap_sources
     ]
     observability = aggregate_source_health(sources)
+    # Configuration is an explicit operator action, not a provider outage.
+    # Keep it visible for engineering users, but do not fold it into runtime
+    # failure counts or imply that the configured market sources are broken.
+    observability["configuration_missing_count"] = len(configuration_sources)
+    observability["runtime_failure_count"] = len(runtime_gap_sources)
+    observability["state"] = (
+        "healthy" if not runtime_gap_sources else
+        "partial" if any(source.get("status") not in {"failed", "critical"} for source in runtime_gap_sources)
+        else "failed"
+    )
     return {
         "checked_at": checked,
         "status": status,
@@ -384,6 +401,8 @@ def build_source_health(
         "sources": sources,
         "data_gaps": data_gaps,
         "missing_source_count": len(gap_sources),
+        "runtime_failure_count": len(runtime_gap_sources),
+        "configuration_missing_count": len(configuration_sources),
         "gap_source_keys": [str(source.get("key") or "") for source in gap_sources],
         "state_counts": {
             state: sum(_canonical_state(source) == state for source in sources)
