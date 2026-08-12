@@ -37,7 +37,7 @@
     "research_fallback_reason": {"type": ["string", "null"]},
     "backtest_release": {"type": ["string", "null"]},
     "backtest_publication_state": {"enum": ["ready", "blocked", "unavailable"]},
-    "strategy_registry": {"type": "array", "items": {"$ref": "#/$defs/strategy_release"}},
+    "strategy_registry": {"type": "array", "items": {"type": "object"}},
     "status": {"enum": ["ready", "rolled_back", "invalid"]}
   },
   "$defs": {

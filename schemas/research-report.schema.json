@@ -43,12 +43,16 @@
         "publication_state": {"enum": ["ready", "blocked", "unavailable"]},
         "publish_eligible": {"type": "boolean"},
         "blocking_reasons": {"type": "array", "items": {"type": "string"}},
-        "strategy_registry": {"type": "array", "items": {"$ref": "#/$defs/strategy_release"}},
+        "strategy_registry": {"type": "array", "items": {"type": "object"}},
         "performance_summary": {"type": "object"},
         "survivorship_audit": {"type": "object"},
         "research_only": {"type": "boolean"}
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [{
+        "if": {"properties": {"publication_state": {"const": "ready"}}},
+        "then": {"properties": {"strategy_registry": {"type": "array", "items": {"$ref": "#/$defs/strategy_release"}}}}
+      }]
     },
     "blocking_reason": {"type": ["string", "null"]},
     "sources": {"type": "array", "items": {"$ref": "#/$defs/source"}},
