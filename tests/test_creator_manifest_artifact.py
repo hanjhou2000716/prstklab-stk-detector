@@ -54,3 +54,28 @@ def test_release_gate_loads_creator_artifact_only_when_parent_release_matches(tm
     loaded, errors = _load_release_artifacts(result, site_root=tmp_path / "site")
     assert "creator-release.json" in loaded
     assert any("parent release mismatch" in error for error in errors)
+
+
+def test_manifest_can_build_creator_artifact_from_sanitized_records(tmp_path):
+    result = build_release_manifest(
+        root=tmp_path,
+        artifacts=_artifacts(tmp_path),
+        creator_records=[{
+            "content_origin": "haojiao",
+            "episode_key": "episode-1",
+            "episode_title": "Public creator observation",
+            "claims": ["A public claim"],
+            "opinions": ["A clearly attributed opinion"],
+            "verification_state": "unverified",
+            "public_safe": True,
+        }],
+    )
+    assert result["creator_status"] == "ready"
+    assert result["creator_release_id"].startswith("creator-")
+    creator = json.loads((tmp_path / "site" / "data" / "creator-release.json").read_text(encoding="utf-8"))
+    assert creator["parent_release_id"] == result["release_id"]
+    assert creator["market_snapshot_id"] == result["market_snapshot_id"]
+    assert creator["event_snapshot_id"] == result["event_snapshot_id"]
+    loaded, errors = _load_release_artifacts(result, site_root=tmp_path / "site")
+    assert errors == []
+    assert loaded["creator-release.json"]["status"] == "ready"

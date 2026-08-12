@@ -268,6 +268,7 @@ def build_release_manifest(
     research_fallback_reason: str | None = None,
     max_research_age_hours: float = 24.0,
     creator_artifact: dict[str, Any] | None = None,
+    creator_records: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Build a manifest without fabricating readiness.
 
@@ -358,7 +359,6 @@ def build_release_manifest(
     market_id = content_snapshot_id(market, "market") if market else ""
     research_id = content_snapshot_id(research, "research") if research else ""
     event_id = content_snapshot_id(events, "event") if events else ""
-    creator_hash = hashlib.sha256(_canonical_json(creator_artifact)).hexdigest() if isinstance(creator_artifact, dict) else None
     policy = str(policy_version or os.getenv("POLICY_VERSION") or "2026.08")
     created_at = datetime.now(UTC).isoformat()
     release_material = {
@@ -372,6 +372,21 @@ def build_release_manifest(
         "policy_version": policy,
     }
     release_id = f"release-{hashlib.sha256(_canonical_json(release_material)).hexdigest()[:16]}"
+    if creator_artifact is None and creator_records is not None:
+        # Records are expected to be sanitized at ingress. The pipeline still
+        # rechecks privacy/source rules before writing a public artifact.
+        from src.creator_intelligence_pipeline import build_creator_intelligence_release
+
+        creator_result = build_creator_intelligence_release(
+            creator_records,
+            parent_manifest={
+                "release_id": release_id,
+                "market_snapshot_id": market_id,
+                "event_snapshot_id": event_id,
+            },
+        )
+        creator_artifact = creator_result["artifact"]
+    creator_hash = hashlib.sha256(_canonical_json(creator_artifact)).hexdigest() if isinstance(creator_artifact, dict) else None
     creator_errors = (
         validate_creator_release(creator_artifact, parent_manifest={
             "release_id": release_id,
@@ -559,7 +574,24 @@ def main() -> int:
     parser.add_argument("--allow-stale-research", action="store_true")
     parser.add_argument("--research-fallback-reason", default=None)
     parser.add_argument("--max-research-age-hours", type=float, default=24.0)
+    parser.add_argument(
+        "--creator-records",
+        type=Path,
+        default=None,
+        help="optional JSON array of sanitized public Creator Insight records",
+    )
     args = parser.parse_args()
+    creator_records: list[dict[str, Any]] | None = None
+    if args.creator_records is not None:
+        try:
+            payload = json.loads(args.creator_records.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            parser.error(f"creator records are unreadable: {type(exc).__name__}")
+        if isinstance(payload, dict):
+            payload = payload.get("records")
+        if not isinstance(payload, list) or not all(isinstance(item, dict) for item in payload):
+            parser.error("creator records must be a JSON array of objects")
+        creator_records = payload
     manifest = build_release_manifest(
         root=args.root,
         output=args.output,
@@ -568,6 +600,7 @@ def main() -> int:
         allow_stale_research=args.allow_stale_research,
         research_fallback_reason=args.research_fallback_reason,
         max_research_age_hours=args.max_research_age_hours,
+        creator_records=creator_records,
     )
     write_release_manifest(manifest, args.output)
     print(json.dumps({"status": manifest["status"], "release_id": manifest["release_id"], "validation_errors": manifest["validation_errors"]}, ensure_ascii=False))
