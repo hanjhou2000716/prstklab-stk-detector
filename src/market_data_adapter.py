@@ -7,11 +7,11 @@ from typing import Any, Protocol, TypeVar, runtime_checkable
 
 from src.source_adapter import SourceObservation
 
-PayloadT = TypeVar("PayloadT")
+PayloadT_co = TypeVar("PayloadT_co", covariant=True)
 
 
 @runtime_checkable
-class MarketDataAdapter(Protocol[PayloadT]):
+class MarketDataAdapter(Protocol[PayloadT_co]):
     """Provider adapter boundary used by production callers and replays.
 
     Implementations must keep transport, normalization, health and
@@ -27,7 +27,7 @@ class MarketDataAdapter(Protocol[PayloadT]):
         allow_stale: bool = False,
     ) -> SourceObservation: ...
 
-    def normalize(self, payload: Any) -> PayloadT: ...
+    def normalize(self, payload: Any) -> PayloadT_co: ...
 
     def health(self) -> dict[str, Any]: ...
 
