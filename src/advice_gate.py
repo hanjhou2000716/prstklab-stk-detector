@@ -70,6 +70,21 @@ def evaluate_advice_gate(context: dict[str, Any]) -> dict[str, Any]:
 
 def build_explainability_card(candidate: dict[str, Any], gate: dict[str, Any]) -> dict[str, Any]:
     """Build a transparent candidate card without an unexplained total score."""
+    def first(*keys: str) -> Any:
+        for key in keys:
+            value = candidate.get(key)
+            if value not in (None, ""):
+                return value
+        return None
+
+    strategy_binding = None
+    if candidate.get("strategy_registry") is not None or any(
+        candidate.get(key) not in (None, "")
+        for key in ("strategy_version", "data_version", "backtest_release")
+    ):
+        from src.production_integration import bind_strategy_provenance
+
+        strategy_binding = bind_strategy_provenance(candidate)
     card = {
         "ticker": candidate.get("ticker"),
         "name": candidate.get("name"),
@@ -78,6 +93,11 @@ def build_explainability_card(candidate: dict[str, Any], gate: dict[str, Any]) -
         "failed_conditions": list(candidate.get("failed_conditions") or []),
         "data_completeness": candidate.get("data_completeness"),
         "risk_factors": list(candidate.get("risk_factors") or []),
+        "liquidity": first("liquidity", "liquidity_metrics", "turnover"),
+        "recent_events": list(first("recent_events", "events") or []),
+        "valuation_position": first("valuation_position", "value_position", "pe"),
+        "momentum_position": first("momentum_position", "momentum", "change_percent"),
+        "quality_position": first("quality_position", "quality", "roe"),
         "evidence": list(candidate.get("evidence") or []),
         "alternative_scenario": candidate.get("alternative_scenario"),
         "horizon": candidate.get("horizon") or "research",
@@ -85,6 +105,7 @@ def build_explainability_card(candidate: dict[str, Any], gate: dict[str, Any]) -
         "signal_date": candidate.get("signal_date"),
         "invalidation": candidate.get("invalidation"),
         "advice_gate": gate,
+        "strategy_binding": strategy_binding,
         "disclaimer": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
     }
     explainability: dict[str, Any] = {
@@ -92,14 +113,17 @@ def build_explainability_card(candidate: dict[str, Any], gate: dict[str, Any]) -
         "failed_conditions": card["failed_conditions"],
         "data_completeness": card["data_completeness"],
         "risk_factors": card["risk_factors"],
+        "liquidity": card["liquidity"],
+        "recent_events": card["recent_events"],
+        "valuation_position": card["valuation_position"],
+        "momentum_position": card["momentum_position"],
+        "quality_position": card["quality_position"],
         "evidence": card["evidence"],
         "signal_date": card["signal_date"],
         "invalidation": card["invalidation"],
     }
-    if candidate.get("strategy_registry") is not None:
-        from src.production_integration import bind_strategy_provenance
-
-        explainability["strategy_binding"] = bind_strategy_provenance(candidate)
+    if strategy_binding is not None:
+        explainability["strategy_binding"] = strategy_binding
     card["explainability"] = explainability
     return card
 

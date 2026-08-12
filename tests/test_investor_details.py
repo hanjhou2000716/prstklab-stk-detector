@@ -9,16 +9,14 @@ def test_technical_evidence_is_collapsed_by_default():
     assert 'class="technical-details" open' not in page
 
 
-def test_vix_investor_view_uses_readable_time():
+def test_vix_investor_view_keeps_stage_and_optional_percentile_without_engineering_time():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
-    assert "const vixFetchedAt = traceTime(vix.fetched_at);" in app
-    assert "toLocaleString(\"zh-TW\"" in app
+    assert "const vixStage" in app
+    assert "const vixPercentile" in app
+    assert "vixTime" not in app
+    assert "const vixFetchedAt" not in app
 
 
-def test_vix_investor_view_exposes_time_stage_and_percentile_state():
-    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+def test_vix_engineering_time_style_remains_available_for_non_investor_diagnostics():
     styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
-    assert "資料時間暫時無法取得" in app
-    assert "歷史百分位待取得" in app
-    assert "risk-metric-time" in app
     assert ".risk-metric-card small.risk-metric-time" in styles

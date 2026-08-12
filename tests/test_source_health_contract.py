@@ -74,3 +74,36 @@ def test_source_health_rejects_stale_aggregate_gap_count():
         sources=[{"key": "market_quotes", "status": "healthy", "semantic_state": "healthy"}],
     )
     assert any("missing_source_count" in error for error in validate_source_health(value))
+
+
+def test_source_health_accepts_explicit_runtime_and_configuration_counts():
+    value = _health(
+        missing_source_count=2,
+        runtime_failure_count=1,
+        configuration_missing_count=1,
+        sources=[
+            {"key": "stooq", "status": "partial", "semantic_state": "partial"},
+            {"key": "fred", "status": "partial", "semantic_state": "configuration_missing"},
+        ],
+    )
+    assert validate_source_health(value) == []
+
+
+def test_source_health_rejects_inconsistent_runtime_count():
+    value = _health(
+        runtime_failure_count=0,
+        configuration_missing_count=0,
+        sources=[{"key": "stooq", "status": "partial", "semantic_state": "partial"}],
+    )
+    assert any("runtime_failure_count" in error for error in validate_source_health(value))
+
+
+def test_source_health_schema_accepts_investor_health_counts():
+    value = _health(
+        investor_status="部分資料降級",
+        missing_source_count=1,
+        runtime_failure_count=1,
+        configuration_missing_count=0,
+        sources=[{"key": "stooq", "status": "partial", "semantic_state": "partial"}],
+    )
+    assert validate_source_health(value) == []

@@ -317,10 +317,8 @@ const renderRisk = (risk) => {
     const vixStage = vix.stage || "波動階段待確認";
     const vixState = vix.change_percent > 0 ? "risk-up" : vix.change_percent < 0 ? "risk-down" : "flat";
     const vixPercentile = vix.percentile_status === "available" && vix.percentile !== null && vix.percentile !== undefined
-      ? `歷史百分位 ${Number(vix.percentile).toFixed(1)}` : "歷史百分位待取得";
-    const vixFetchedAt = traceTime(vix.fetched_at);
-    const vixTime = vixFetchedAt ? `資料時間 ${vixFetchedAt} CST` : "資料時間暫時無法取得";
-    return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}｜${escapeHtml(vixStage)}｜${escapeHtml(vixPercentile)}</small><small class="risk-metric-time">${escapeHtml(vixTime)}</small></article></div></section>`;
+      ? `｜歷史百分位 ${Number(vix.percentile).toFixed(1)}` : "";
+    return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}｜${escapeHtml(vixStage)}${escapeHtml(vixPercentile)}</small></article></div></section>`;
   }).join("");
 };
 
@@ -425,8 +423,13 @@ const renderSourceHealth = (health, snapshot = {}) => {
   const missing = Number.isFinite(declaredMissing) && declaredMissing >= 0
     ? Math.trunc(declaredMissing)
     : health.sources.filter((source) => degradedStates.includes(sourceState(source))).length;
+  const declaredRuntimeFailure = Number(health.runtime_failure_count);
   const critical = health.sources.filter((source) => ["critical", "critical_gap", "failed", "configuration_missing", "configuration_required"].includes(sourceState(source))).length;
-  const displayedMissing = missing;
+  // Keep optional credential gaps in engineering rows, but show investors the
+  // canonical runtime degradation count rather than implying an outage for
+  // an unconfigured enrichment provider.
+  const displayedMissing = Number.isFinite(declaredRuntimeFailure) && declaredRuntimeFailure >= 0
+    ? Math.trunc(declaredRuntimeFailure) : missing;
   const pending = Number(health.pending_event_count || health.monitor_health?.pending_count || 0);
   const aggregate = health.investor_status || (missing === 0 ? "資料正常" : critical > 0 ? "核心資料不足" : "部分資料降級");
   summary.textContent = `${aggregate}${displayedMissing ? `｜${displayedMissing} 個來源有資料缺口` : ""}`;

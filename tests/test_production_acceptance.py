@@ -149,3 +149,31 @@ def test_acceptance_time_parser_is_fail_closed_for_naive_and_invalid_values():
     assert _parse_time("2026-08-09T10:00:00") is not None
     assert _parse_time("not-a-time") is None
 
+
+def test_production_research_rejects_generated_time_after_run_finish():
+    research = _complete_production_research()
+    research["generated_at"] = "2026-08-12T10:06:00+00:00"
+    errors = production_research_contract_errors(research)
+    assert "production research generated_at is after run_finished_at" in errors
+
+
+def test_complete_source_cannot_claim_unavailable_provider():
+    research = _complete_production_research()
+    research["sources"][0]["source_unavailable"] = True
+    errors = production_research_contract_errors(research)
+    assert "complete state contradicts unavailable source" in " ".join(errors)
+
+
+def test_candidate_state_cannot_contradict_scan_state():
+    research = _complete_production_research()
+    research["sources"][0]["candidate_state"] = "data_unavailable"
+    errors = production_research_contract_errors(research)
+    assert any("complete state contradicts candidate state data_unavailable" in error for error in errors)
+
+
+def test_no_candidates_state_cannot_have_visible_rows():
+    research = _complete_production_research()
+    research["sources"][0].update(candidate_state="no_candidates", visible_candidates=1)
+    errors = production_research_contract_errors(research)
+    assert any("no_candidates state has visible candidates" in error for error in errors)
+

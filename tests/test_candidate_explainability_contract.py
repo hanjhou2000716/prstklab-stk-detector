@@ -43,6 +43,26 @@ def test_advice_card_exposes_nested_explainability_contract():
     assert card["explainability"]["passed_conditions"] == ["quality"]
 
 
+def test_advice_card_preserves_investor_facing_evidence_dimensions():
+    card = build_explainability_card(
+        {
+            "ticker": "2330",
+            "turnover": 1234567,
+            "recent_events": [{"title": "earnings", "source_url": "https://example.test/event"}],
+            "pe": 18.2,
+            "change_percent": 2.1,
+            "roe": 21.0,
+        },
+        {"allowed": False},
+    )
+    explainability = card["explainability"]
+    assert explainability["liquidity"] == 1234567
+    assert explainability["recent_events"][0]["title"] == "earnings"
+    assert explainability["valuation_position"] == 18.2
+    assert explainability["momentum_position"] == 2.1
+    assert explainability["quality_position"] == 21.0
+
+
 def test_advice_card_exposes_strategy_registry_binding_when_present():
     card = build_explainability_card(
         {

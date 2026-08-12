@@ -173,6 +173,27 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
             errors.append(
                 "source_health.missing_source_count does not match source semantic states"
             )
+    for field in ("runtime_failure_count", "configuration_missing_count"):
+        value = document.get(field)
+        if isinstance(value, int) and value < 0:
+            errors.append(f"source_health.{field} must be non-negative")
+    runtime_failure_count = document.get("runtime_failure_count")
+    configuration_missing_count = document.get("configuration_missing_count")
+    if isinstance(runtime_failure_count, int) and isinstance(configuration_missing_count, int):
+        actual_runtime = 0
+        actual_configuration = 0
+        for source in document.get("sources", []):
+            if not isinstance(source, dict):
+                continue
+            semantic = str(source.get("semantic_state") or source.get("status") or "")
+            if semantic == "configuration_missing":
+                actual_configuration += 1
+            elif semantic in gap_states:
+                actual_runtime += 1
+        if runtime_failure_count != actual_runtime:
+            errors.append("source_health.runtime_failure_count does not match source semantic states")
+        if configuration_missing_count != actual_configuration:
+            errors.append("source_health.configuration_missing_count does not match source semantic states")
     for index, source in enumerate(document.get("sources", [])):
         if not isinstance(source, dict):
             continue

@@ -201,7 +201,7 @@ def test_value_drawer_explains_that_mops_history_is_still_being_verified():
 def test_source_health_investor_count_uses_backend_canonical_gap_count():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert "const declaredMissing = Number(health.missing_source_count);" in app
-    assert "const displayedMissing = missing;" in app
+    assert "const displayedMissing = Number.isFinite(declaredRuntimeFailure)" in app
     assert "Math.max(missing, declaredMissing)" not in app
 
 
@@ -209,6 +209,12 @@ def test_source_health_rows_use_the_same_canonical_state_as_the_aggregate():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert "const sourceState = (source) => source.semantic_state || source.state || source.status;" in app
     assert "const state = source.semantic_state || source.state || source.status;" in app
+
+
+def test_source_health_investor_summary_uses_runtime_failure_count_when_present():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "const declaredRuntimeFailure = Number(health.runtime_failure_count);" in app
+    assert "const displayedMissing = Number.isFinite(declaredRuntimeFailure)" in app
 
 
 def test_research_failure_message_exposes_retry_state_without_raw_errors():

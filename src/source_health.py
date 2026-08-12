@@ -357,13 +357,23 @@ def build_source_health(
         source["semantic_state"] = _semantic_state(source)
     gap_sources = [source for source in sources if _is_gap(source)]
     partial = len(gap_sources)
+    configuration_sources = [
+        source for source in sources if _semantic_state(source) == "configuration_missing"
+    ]
+    runtime_gap_sources = [
+        source for source in gap_sources
+        if _semantic_state(source) != "configuration_missing"
+    ]
     warming = sum(source["status"] == "warming" for source in sources)
     core_gap = any(
-        _is_gap(source) and str(source.get("role") or "") == "required_for_core"
+        _semantic_state(source) != "configuration_missing"
+        and _is_gap(source) and str(source.get("role") or "") == "required_for_core"
         for source in sources
     )
-    status = "critical" if core_gap else "partial" if partial else "warming" if warming else "healthy"
-    investor_status = "核心資料不足" if core_gap else "部分資料降級" if partial else "資料正常"
+    status = "critical" if core_gap else "partial" if runtime_gap_sources else "warming" if warming else "healthy"
+    # Optional credentials are disclosed separately; they do not downgrade
+    # the investor-facing aggregate when all required runtime sources work.
+    investor_status = "核心資料不足" if core_gap else "部分資料降級" if runtime_gap_sources else "資料正常"
     summary = (
         f"{partial} 個來源有資料缺口" if partial else
         "璞玉價值歷史資料建檔中" if warming else
@@ -374,6 +384,16 @@ def build_source_health(
         for source in gap_sources
     ]
     observability = aggregate_source_health(sources)
+    # Configuration is an explicit operator action, not a provider outage.
+    # Keep it visible for engineering users, but do not fold it into runtime
+    # failure counts or imply that the configured market sources are broken.
+    observability["configuration_missing_count"] = len(configuration_sources)
+    observability["runtime_failure_count"] = len(runtime_gap_sources)
+    observability["state"] = (
+        "healthy" if not runtime_gap_sources else
+        "partial" if any(source.get("status") not in {"failed", "critical"} for source in runtime_gap_sources)
+        else "failed"
+    )
     return {
         "checked_at": checked,
         "status": status,
@@ -384,6 +404,8 @@ def build_source_health(
         "sources": sources,
         "data_gaps": data_gaps,
         "missing_source_count": len(gap_sources),
+        "runtime_failure_count": len(runtime_gap_sources),
+        "configuration_missing_count": len(configuration_sources),
         "gap_source_keys": [str(source.get("key") or "") for source in gap_sources],
         "state_counts": {
             state: sum(_canonical_state(source) == state for source in sources)

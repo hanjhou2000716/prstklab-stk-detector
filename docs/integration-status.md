@@ -346,3 +346,32 @@ a successful scan with no candidates and prevents an empty strategy drawer from
 being mistaken for a healthy result. The ledger is diagnostic-only and is not
 used to fabricate rows or scores. Rollback is additive: remove the option and
 ledger step to restore legacy worker behaviour.
+
+## Production research semantic gate
+
+The production acceptance gate rejects research artifacts whose timestamps,
+provider state, and candidate state contradict one another. A source cannot be
+`complete` while claiming an unavailable provider or a `data_unavailable`,
+`failed`, or `building` candidate state; `no_candidates` must have zero visible
+rows. The report generation time may not be materially later than its recorded
+run finish time. These checks prevent a partial or stale research artifact from
+being repackaged into a ready market release.
+
+## Source-health aggregate contract
+
+Source rows use `semantic_state` as the machine-readable authority. The public
+aggregate keeps three separate concepts:
+
+- `missing_source_count`: every degraded row, including an unconfigured
+  optional provider;
+- `runtime_failure_count`: providers that failed, are stale, partial, or
+  otherwise unavailable during this scan;
+- `configuration_missing_count`: providers waiting for an operator-managed
+  credential or setting, such as optional FRED/EIA enrichment.
+
+An absent optional credential is visible to engineering users but is not
+reported as a runtime outage. `investor_status` is `資料正常` when all required
+runtime sources are healthy, `部分資料降級` when an optional/runtime source is
+degraded, and `核心資料不足` when a core source is unavailable. The release
+contract validates both counts against `sources[].semantic_state`, so the Mini
+App cannot invent a divergent gap count.

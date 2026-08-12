@@ -8,7 +8,7 @@ deliverable.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 
@@ -72,6 +72,9 @@ def production_research_contract_errors(research: dict[str, Any]) -> list[str]:
         errors.append("production research generated_at is missing or invalid")
     if finished_at is None:
         errors.append("production research run_finished_at is missing or invalid")
+    if generated_at is not None and finished_at is not None:
+        if generated_at > finished_at + timedelta(minutes=5):
+            errors.append("production research generated_at is after run_finished_at")
     expected = _count(research.get("universe_expected"))
     scanned = _count(research.get("universe_scanned"))
     completed = _count(research.get("universe_completed"))
@@ -85,8 +88,13 @@ def production_research_contract_errors(research: dict[str, Any]) -> list[str]:
         if not isinstance(source, dict):
             errors.append(f"research source {index} is not an object")
             continue
-        if str(source.get("scan_state") or "") != "complete":
+        scan_state = str(source.get("scan_state") or "")
+        if scan_state != "complete":
             errors.append(f"research source {index} is not complete")
+        if scan_state == "complete" and any(
+            source.get(key) is True for key in ("source_unavailable", "data_unavailable", "provider_failed")
+        ):
+            errors.append(f"research source {index} complete state contradicts unavailable source")
         failed = _count(source.get("failed_records", source.get("failed")))
         requested = _count(source.get("requested_records", source.get("requested")))
         completed_source = _count(source.get("complete_records", source.get("data_complete")))
@@ -95,10 +103,14 @@ def production_research_contract_errors(research: dict[str, Any]) -> list[str]:
             errors.append(f"research source {index} universe is incomplete")
         if scanned_source != completed_source + failed:
             errors.append(f"research source {index} universe counts are inconsistent")
-        if str(source.get("candidate_state") or "") == "available" and _count(
-            source.get("visible_candidates", source.get("candidates"))
-        ) == 0:
+        candidate_state = str(source.get("candidate_state") or "")
+        visible = _count(source.get("visible_candidates", source.get("candidates")))
+        if candidate_state == "available" and visible == 0:
             errors.append(f"research source {index} available state has no visible candidates")
+        if candidate_state == "no_candidates" and visible:
+            errors.append(f"research source {index} no_candidates state has visible candidates")
+        if scan_state == "complete" and candidate_state in {"data_gap", "data_unavailable", "failed", "building"}:
+            errors.append(f"research source {index} complete state contradicts candidate state {candidate_state}")
     return sorted(set(errors))
 
 

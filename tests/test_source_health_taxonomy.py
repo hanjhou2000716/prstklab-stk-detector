@@ -43,3 +43,14 @@ def test_semantic_state_and_gap_count_are_derived_from_source_rows():
     assert rows["provider-b"]["semantic_state"] == "secondary_unavailable"
     assert health["missing_source_count"] == len(health["data_gaps"]) == 1
     assert health["gap_source_keys"] == ["provider-a"]
+
+
+def test_configuration_missing_is_visible_but_not_runtime_failure():
+    health = _health([
+        {"key": "fred", "label": "FRED", "status": "missing_api_key"},
+        {"key": "stooq", "label": "Stooq", "status": "partial"},
+    ])
+    assert health["configuration_missing_count"] == 1
+    assert health["runtime_failure_count"] == 1
+    assert health["observability"]["configuration_missing_count"] == 1
+    assert health["observability"]["failure_count"] == 1

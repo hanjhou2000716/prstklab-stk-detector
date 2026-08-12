@@ -73,6 +73,9 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
             "advice_gate", "strategy_version", "data_version", "backtest_release",
             "backtest_release_contract", "freshness", "cross_checked", "evidence",
             "source_evidence", "alternative_scenario", "horizon", "confidence"
+            ,"strategy_registry", "liquidity", "liquidity_metrics", "recent_events", "events",
+            "valuation_position", "value_position", "momentum_position", "momentum",
+            "quality_position", "quality", "signal_date"
         )}
         binding = bind_strategy_provenance(candidate)
         candidate["strategy_binding"] = binding
