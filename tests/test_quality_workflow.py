@@ -35,3 +35,10 @@ def test_event_production_workflows_install_renderer_browser():
         workflow = (root / name).read_text(encoding="utf-8")
         assert "requirements-production.txt" in workflow
         assert "playwright install --with-deps chromium" in workflow
+
+
+def test_public_release_smoke_workflow_is_read_only_and_non_delivery():
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "public-release-smoke.yml").read_text(encoding="utf-8")
+    assert "contents: read" in workflow
+    assert "src.public_release_smoke" in workflow
+    assert "TELEGRAM" not in workflow
