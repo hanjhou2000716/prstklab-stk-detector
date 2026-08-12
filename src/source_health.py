@@ -366,10 +366,11 @@ def build_source_health(
     ]
     warming = sum(source["status"] == "warming" for source in sources)
     core_gap = any(
-        _is_gap(source) and str(source.get("role") or "") == "required_for_core"
+        _semantic_state(source) != "configuration_missing"
+        and _is_gap(source) and str(source.get("role") or "") == "required_for_core"
         for source in sources
     )
-    status = "critical" if core_gap else "partial" if partial else "warming" if warming else "healthy"
+    status = "critical" if core_gap else "partial" if runtime_gap_sources else "warming" if warming else "healthy"
     # Optional credentials are disclosed separately; they do not downgrade
     # the investor-facing aggregate when all required runtime sources work.
     investor_status = "核心資料不足" if core_gap else "部分資料降級" if runtime_gap_sources else "資料正常"
