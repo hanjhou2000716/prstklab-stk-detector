@@ -79,12 +79,14 @@ def build_intelligence_context(
         for name in ("nasdaq_shock", "semiconductor_shock", "energy_supply_shock")
     ]
     context = advice_context or {}
+    candidate_row = candidate if isinstance(candidate, dict) else {}
     advice = evaluate_advice_gate({
         "data_quality_ok": bool(context.get("data_quality_ok")),
         "quote_stale": bool(context.get("quote_stale", True)),
         "crosscheck_ok": synchronized and bool(context.get("crosscheck_ok")),
         "backtest_release": context.get("backtest_release"),
         "backtest_release_contract": context.get("backtest_release_contract"),
+        "strategy": candidate_row.get("strategy") or candidate_row.get("strategy_id") or context.get("strategy"),
         "candidate_data_gap": bool(context.get("candidate_data_gap", True)),
         "policy_valid": bool(context.get("policy_valid")),
         "risk_profile_known": bool(context.get("risk_profile_known")),
