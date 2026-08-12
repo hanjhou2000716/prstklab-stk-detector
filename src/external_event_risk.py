@@ -23,6 +23,30 @@ SOURCE_TIERS = {
 }
 EDITORIAL_SOURCES = {"haojiao", "gooaye"}
 
+# Normalize common Traditional/Simplified Chinese and English aliases before
+# clustering.  This is deliberately a small deterministic lexicon: it helps
+# identify the same event across feeds without pretending semantic certainty.
+TERM_ALIASES = {
+    "川普": "trump",
+    "特朗普": "trump",
+    "donald trump": "trump",
+    "taco": "taco",
+    "伊朗": "iran",
+    "波斯": "iran",
+    "戰爭": "war",
+    "战争": "war",
+    "衝突": "conflict",
+    "冲突": "conflict",
+    "會談": "talk",
+    "谈判": "talk",
+    "談判": "talk",
+    "協商": "talk",
+    "协商": "talk",
+    "talks": "talk",
+    "negotiation": "talk",
+    "dialogue": "talk",
+}
+
 
 def source_tier(source: str) -> str:
     return SOURCE_TIERS.get(str(source or "").casefold(), "discovery")
@@ -30,7 +54,10 @@ def source_tier(source: str) -> str:
 
 def _norm(value: Any) -> str:
     text = " ".join(str(value or "").casefold().split())
-    return re.sub(r"[^\w\u3400-\u9fff]+", " ", text).strip()
+    text = re.sub(r"[^\w\u3400-\u9fff]+", " ", text).strip()
+    for alias, canonical in sorted(TERM_ALIASES.items(), key=lambda item: -len(item[0])):
+        text = text.replace(alias.casefold(), canonical)
+    return " ".join(text.split())
 
 
 def _bucket(value: Any, minutes: int = 120) -> str:
@@ -55,6 +82,15 @@ def event_cluster_key(event: dict[str, Any]) -> str:
     return f"evt-{hashlib.sha256(material.encode('utf-8')).hexdigest()[:24]}"
 
 
+def event_fingerprint(event: dict[str, Any]) -> dict[str, str]:
+    """Return explainable entity/action/location identity fields."""
+    return {
+        "entity": _norm(event.get("actor") or event.get("person") or event.get("entities")),
+        "action": _norm(event.get("action") or event.get("event_action")),
+        "location": _norm(event.get("location") or event.get("market")),
+    }
+
+
 def cluster_external_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Merge observations while excluding editorial commentary from evidence."""
     clusters: dict[str, dict[str, Any]] = {}
@@ -68,6 +104,7 @@ def cluster_external_events(events: list[dict[str, Any]]) -> list[dict[str, Any]
             "source_domains": [],
             "evidence_sources": [],
             "editorial_sources": [],
+            "fingerprints": event_fingerprint(event),
         })
         observation = dict(event)
         observation["source_tier"] = source_tier(source)
@@ -134,4 +171,4 @@ def notification_decision(score: dict[str, Any]) -> dict[str, Any]:
     return {"allowed": not reasons, "status": "eligible" if not reasons else "pending", "reasons": reasons}
 
 
-__all__ = ["cluster_external_events", "event_cluster_key", "notification_decision", "score_prstk_risk", "source_tier"]
+__all__ = ["cluster_external_events", "event_cluster_key", "event_fingerprint", "notification_decision", "score_prstk_risk", "source_tier"]
