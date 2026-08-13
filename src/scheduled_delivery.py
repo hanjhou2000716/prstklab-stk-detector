@@ -57,6 +57,26 @@ def _load_creator_records() -> list[dict]:
     return safe_records
 
 
+def _creator_input_failures() -> dict[str, str]:
+    """Classify configured input failures without exposing paths or payloads."""
+    raw_path = os.getenv("CREATOR_RECORDS_PATH", "").strip()
+    if not raw_path or os.getenv("CREATOR_NOTIFICATION_ENABLED", "").strip().lower() != "true":
+        return {}
+    path = Path(raw_path).resolve()
+    public_root = (Path.cwd() / "site").resolve()
+    if path.is_relative_to(public_root) or not path.is_file():
+        return {"haojiao": "creator_records_unavailable", "gooaye": "creator_records_unavailable"}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return {"haojiao": "creator_records_parse_failed", "gooaye": "creator_records_parse_failed"}
+    if isinstance(payload, dict):
+        payload = payload.get("records")
+    if not isinstance(payload, list):
+        return {"haojiao": "creator_records_invalid_shape", "gooaye": "creator_records_invalid_shape"}
+    return {}
+
+
 def prepare(slot: str, snapshot_path: Path) -> dict:
     """Create the exact snapshot that will later be deployed and delivered."""
     snapshot = build_market_snapshot()
@@ -75,6 +95,7 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
             checked_at=datetime.now(UTC),
             enabled=os.getenv("CREATOR_NOTIFICATION_ENABLED", "").strip().lower() == "true",
             configured=bool(os.getenv("CREATOR_RECORDS_PATH", "").strip()),
+            failures=_creator_input_failures(),
         )
         snapshot["source_health"] = merge_creator_sources(snapshot.get("source_health") or {}, creator_rows)
         snapshot["creator_source_health"] = creator_rows
