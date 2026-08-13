@@ -22,6 +22,20 @@ def validate_intelligence(document: dict[str, Any]) -> list[str]:
     if not isinstance(document, dict):
         return ["briefing.intelligence must be an object"]
     errors = _schema_errors(document)
+    external_risk = document.get("external_event_risk")
+    if isinstance(external_risk, dict):
+        unified_events = external_risk.get("unified_events")
+        if isinstance(unified_events, list):
+            for index, unified in enumerate(unified_events):
+                if not isinstance(unified, dict):
+                    continue
+                notification_id = str(unified.get("notification_id") or "").strip()
+                lifecycle = str(unified.get("lifecycle_state") or "")
+                if not notification_id and lifecycle != "suppressed":
+                    errors.append(
+                        f"briefing.intelligence.external_event_risk.unified_events[{index}]: "
+                        "notification_id is required for an unsuppressed event"
+                    )
     graph = document.get("market_impact_graph")
     paths = graph.get("paths") if isinstance(graph, dict) else []
     paths = paths if isinstance(paths, list) else []

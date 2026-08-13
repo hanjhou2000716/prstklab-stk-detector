@@ -35,3 +35,25 @@ def test_market_contract_validates_embedded_intelligence():
     }
     assert validate_market(market) == []
 
+
+def test_intelligence_contract_rejects_unsuppressed_event_without_notification_id():
+    intelligence = build_intelligence_context(
+        {"title": "Iran oil supply risk", "source_url": "https://official.test"},
+        external_observations=[
+            {"source": "reuters", "event_type": "energy", "title": "Oil supply"}
+        ],
+    )
+    intelligence["external_event_risk"]["unified_events"][0]["notification_id"] = None
+    errors = validate_intelligence(intelligence)
+    assert "notification_id is required" in " ".join(errors)
+
+
+def test_intelligence_contract_allows_suppressed_event_without_notification_id():
+    intelligence = build_intelligence_context(
+        {"title": "Iran oil supply risk", "source_url": "https://official.test"},
+        external_observations=[
+            {"parse_status": "compound_unresolved", "message_id": "msg-1"}
+        ],
+    )
+    assert validate_intelligence(intelligence) == []
+
