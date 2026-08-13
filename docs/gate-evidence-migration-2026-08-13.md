@@ -130,3 +130,29 @@ is authoritative for the Gate-Driven migration audit.
 ## Next gate
 
 Review/merge PR #565 only after human review. Do not merge automatically. After merge, rerun main-branch smoke and production acceptance before claiming completion.
+
+## Gate-Driven P0-21 through P0-29 evidence (2026-08-14)
+
+- P0-21 Mini App routing: 12 targeted tests passed; release, snapshot and
+  observation mismatches remain archived/missing; PASS / LOCKED.
+- P0-22 timeline and feedback: 12 targeted tests passed; exact event-cluster
+  filtering and review-only feedback policy preserved; PASS / LOCKED.
+- P0-23/P0-24/P0-26 risk, contagion, stress and advice gates: 23 targeted
+  tests passed; missing factors, non-predictive scenarios and insufficient
+  evidence remain fail-closed; PASS / LOCKED.
+- P0-25/P0-27 research provenance and paper portfolio: 13 targeted tests
+  passed; invalid strategy releases and unverified candidates remain blocked;
+  PASS / LOCKED.
+- P0-28 observability: 31 targeted tests passed; no-event, scan-failed,
+  configuration-missing and stale states remain separate; PASS / LOCKED.
+- P0-29 backup/rollback/DR: 87 targeted data, manifest, release-gate and
+  recovery tests passed; dry-run is non-mutating, restore skips missing
+  optional paths, hash tampering fails closed, and rollback identity is
+  explicit; PASS / LOCKED.
+- Required CI evidence for the atomic P0-29 checkpoint and all preceding
+  branch work: quality `31724781388` / job `94530324291` passed in 2m36s;
+  CodeQL, dependency review and SBOM all passed (`31724781328`).
+
+These entries are evidence-backed locks, not claims based solely on code
+existence. Main-branch post-merge verification and production acceptance
+remain separate gates and are not asserted here.

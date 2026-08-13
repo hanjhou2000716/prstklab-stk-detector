@@ -27,15 +27,15 @@ evidence remains `NEEDS_REVERIFY`.
 | P0-18 external alert trust boundary | `src/external_alert.py`, `tests/test_p0_18_external_alert_contract.py` | CI run `31721326422` / job `94518750439` green; targeted 19 passed | signed canonical payload; HTTPS provenance; official/market-sync high-risk gate | PASS → LOCKED |
 | P0-19 Gmail ingress | `railway-monitor/gmail_ingress.py`, `railway-monitor/email_store.py`, `tests/test_p0_19_gmail_ingress_contract.py` | targeted 20 passed; CI run `31722239089` / job `94521788534` green; security/CodeQL/SBOM passed | authenticated bounded Pub/Sub; cursor-only persistence; replay-safe dedupe; malformed/configuration failures fail closed | PASS → LOCKED |
 | P0-20 Railway health callback | `src/railway_health_contract.py`, `tests/test_p0_20_railway_health_contract.py` | targeted 7 passed with isolated basetemp; CI run `31722834875` / job `94523793185` green; security/CodeQL/SBOM passed | 401/403 configuration is not restart; 429/5xx are bounded retry; stale heartbeat is explicit | PASS → LOCKED |
-| P0-21 Mini App release/deep-link | public loader/deep link | Existing tests; current audit pending | release mismatch safe fallback | NEEDS_REVERIFY |
-| P0-22 event timeline and feedback | timeline/feedback modules | Existing tests; current audit pending | feedback cannot mutate policy automatically | NEEDS_REVERIFY |
-| P0-23 market regime/contagion | regime and cross-asset modules | Existing tests; current audit pending | missing factors remain explicit | NEEDS_REVERIFY |
-| P0-24 stress scenario | stress scenario module | Existing tests; current audit pending | scenario is non-predictive | NEEDS_REVERIFY |
-| P0-25 strategy registry and explainability | strategy/backtest registry | Existing tests; current audit pending | no advice before valid backtest | NEEDS_REVERIFY |
-| P0-26 advice gate | `src/advice_gate.py` | Existing tests; current audit pending | fail closed with data shortage | NEEDS_REVERIFY |
-| P0-27 paper portfolio | paper portfolio module | Existing tests; current audit pending | no unverified performance claims | NEEDS_REVERIFY |
-| P0-28 source and release observability | source health/manifest/receipt metrics | Existing tests; current audit pending | SLO and delivery lineage preserved | NEEDS_REVERIFY |
-| P0-29 backup, rollback, and disaster recovery | release branch and runbooks | P0-04/P0-06 evidence; restore drill pending | no destructive main/data deletion | NEEDS_REVERIFY |
+| P0-21 Mini App release/deep-link | `src/deep_link_router.py`, public loader | `tests/test_p0_21_mini_app_routing_contract.py`; 12 targeted; CI run 31724781388 / job 94530324291 | release mismatch and missing alerts stay archived/missing | PASS / LOCKED |
+| P0-22 event timeline and feedback | `src/event_timeline.py`, `src/event_feedback.py` | `tests/test_p0_22_timeline_feedback_contract.py`; 12 targeted; CI run 31724781388 / job 94530324291 | feedback cannot mutate policy automatically | PASS / LOCKED |
+| P0-23 market regime/contagion | `src/market_regime.py`, `src/cross_asset_risk.py` | `tests/test_p0_23_26_risk_advice_contract.py`; 23 targeted; CI run 31724781388 / job 94530324291 | missing factors and stale contagion remain explicit | PASS / LOCKED |
+| P0-24 stress scenario | `src/stress_scenarios.py` | same 23-test risk/advice contract suite; CI run 31724781388 / job 94530324291 | scenarios remain non-predictive | PASS / LOCKED |
+| P0-25 strategy registry and explainability | `src/strategy_registry.py`, production provenance | `tests/test_p0_25_27_research_contract.py`; 13 targeted; CI run 31724781388 / job 94530324291 | invalid strategy provenance remains blocked | PASS / LOCKED |
+| P0-26 advice gate | `src/advice_gate.py` | same 23-test risk/advice contract suite; CI run 31724781388 / job 94530324291 | no actionable output without fresh evidence/backtest | PASS / LOCKED |
+| P0-27 paper portfolio | `src/paper_portfolio.py` | same 13-test research contract suite; CI run 31724781388 / job 94530324291 | unverified candidates cannot enter paper tracking | PASS / LOCKED |
+| P0-28 source and release observability | `src/health_observability.py`, source-health/release metrics | `tests/test_p0_28_observability_contract.py`; 31 targeted; CI run 31724781388 / job 94530324291 | no-event, scan-failed and configuration gaps remain distinct | PASS / LOCKED |
+| P0-29 backup, rollback, and disaster recovery | `src/data_release.py`, manifest/release gate | `tests/test_p0_29_backup_rollback_contract.py` plus data/release suites; 87 targeted; CI run 31724781388 / job 94530324291 | non-mutating dry-run, restore drill, hash tamper detection and rollback identity | PASS / LOCKED |
 
 ## Gate
 
