@@ -4,7 +4,6 @@ from zoneinfo import ZoneInfo
 from src.artifact_contract import validate_source_health
 from src.source_health import build_source_health
 
-
 NOW = datetime(2026, 8, 13, 10, 0, tzinfo=ZoneInfo("Asia/Taipei"))
 
 

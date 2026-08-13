@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 REGISTRY = Path(__file__).resolve().parents[1] / "docs" / "p0-requirement-traceability.md"
 
 
