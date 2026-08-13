@@ -25,8 +25,8 @@ new parallel implementation.  The attachment requirements map as follows:
 | Market News provider registry and URL contract | `src/news_intelligence.py`, `schemas/news-story.schema.json`, `schemas/news-intelligence.schema.json` | provider/domain, unknown URL, schema and dedup tests | PASS / LOCKED |
 | Official news-feed adapters (TWSE/MOPS/SEC/Fed/Nasdaq) | `src/news_feed_adapters.py`; isolated TWSE/MOPS/SEC/Fed adapters; Nasdaq remains explicitly disabled until a stable documented endpoint is configured | parser, timeout/429 isolation and catalog tests; live feed evidence pending | partially_integrated |
 | News interest graph, ranking and dedup | `src/news_intelligence.py`, `risk_news.build_news_snapshot` | ticker/sector reasons, authority ordering and supporting-source tests | PASS / LOCKED |
-| News Mini App rendering | `site/app.js` release-provided provider allowlist | Mini App asset and URL-safety tests | NEEDS_REVERIFY |
-| News artifact in release lineage | `src/release_manifest.py`, `src/release_gate.py`, `src/artifact_contract.py` | manifest/hash, release-gate lineage and mixed-release tests (`51 passed` in targeted release/news gate suite) | PASS / LOCKED |
+| News Mini App rendering | `site/app.js` release-provided provider allowlist and `news.json` lineage loader | Mini App asset, URL-safety, and release-loader contract tests | NEEDS_REVERIFY |
+| News artifact in release lineage | `src/release_manifest.py`, `src/release_gate.py`, `src/artifact_contract.py`, `site/app.js` | manifest/hash, multi-market release, release-gate lineage and mixed-release tests (`52 passed` in targeted release/news gate suite) | PASS / LOCKED |
 | Production release and Telegram acceptance | `src/release_gate.py`, workflows, delivery receipts | local contracts pass; production credentials/release evidence required | BLOCKED (external) |
 
 The legacy Anue/Google arrays remain compatibility fields.  The canonical
