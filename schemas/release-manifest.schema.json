@@ -46,6 +46,8 @@
     "creator_public_validation_errors": {"type": "array", "items": {"type": "string"}},
     "creator_snapshot_id": {"type": ["string", "null"], "minLength": 1},
     "creator_public_artifact_hash": {"type": ["string", "null"], "pattern": "^[a-fA-F0-9]{64}$"},
+    "news_snapshot_id": {"type": ["string", "null"], "minLength": 1},
+    "news_status": {"enum": ["ready", "unavailable", "not_available"]},
     "rollback_release_id": {"type": "string", "minLength": 8},
     "status": {"enum": ["ready", "rolled_back", "invalid"]}
   },

@@ -395,12 +395,16 @@ def build_release_manifest(
     # not advertise a separate news artifact.
     news_payload = market.get("news") if isinstance(market, dict) else None
     news_artifact = news_payload.get("intelligence") if isinstance(news_payload, dict) else None
+    news_snapshot_id: str | None = None
+    news_status = "not_available"
     if isinstance(news_artifact, dict) and isinstance(news_artifact.get("stories"), list):
         news_artifact = {
             **news_artifact,
             "market_snapshot_id": market_id,
             "snapshot_id": content_snapshot_id(news_artifact, "news"),
         }
+        news_snapshot_id = str(news_artifact["snapshot_id"])
+        news_status = "ready" if news_artifact.get("status") in {"ready", "no_event"} else "unavailable"
         news_path = root / "site" / "data" / "news.json"
         try:
             from src.artifact_contract import validate_news_intelligence
@@ -536,6 +540,8 @@ def build_release_manifest(
         "creator_public_validation_errors": sorted(set(creator_public_errors)),
         "creator_snapshot_id": (creator_public_artifact or {}).get("snapshot_id") if isinstance(creator_public_artifact, dict) else None,
         "creator_public_artifact_hash": creator_public_hash,
+        "news_snapshot_id": news_snapshot_id,
+        "news_status": news_status,
         "status": "invalid",
     }
     if fallback_applied:

@@ -26,7 +26,7 @@ new parallel implementation.  The attachment requirements map as follows:
 | Official news-feed adapters (TWSE/MOPS/SEC/Fed/Nasdaq) | `src/news_feed_adapters.py`; isolated TWSE/MOPS/SEC/Fed adapters; Nasdaq remains explicitly disabled until a stable documented endpoint is configured | parser, timeout/429 isolation and catalog tests; live feed evidence pending | partially_integrated |
 | News interest graph, ranking and dedup | `src/news_intelligence.py`, `risk_news.build_news_snapshot` | ticker/sector reasons, authority ordering and supporting-source tests | PASS / LOCKED |
 | News Mini App rendering | `site/app.js` release-provided provider allowlist | Mini App asset and URL-safety tests | NEEDS_REVERIFY |
-| News artifact in release lineage | `src/release_manifest.py`, `src/artifact_contract.py` | manifest/hash and mixed-release tests | NEEDS_REVERIFY |
+| News artifact in release lineage | `src/release_manifest.py`, `src/release_gate.py`, `src/artifact_contract.py` | manifest/hash, release-gate lineage and mixed-release tests (`51 passed` in targeted release/news gate suite) | PASS / LOCKED |
 | Production release and Telegram acceptance | `src/release_gate.py`, workflows, delivery receipts | local contracts pass; production credentials/release evidence required | BLOCKED (external) |
 
 The legacy Anue/Google arrays remain compatibility fields.  The canonical
@@ -38,9 +38,9 @@ URL validation rather than a hard-coded domain list.
 ## Evidence boundaries
 
 `PASS / LOCKED` means implementation, targeted verification and preservation
-tests are present on this branch.  The two `NEEDS_REVERIFY` rows require a
-full Pages release and browser verification after the next manifest is built;
-they are not claimed as production acceptance.  Production acceptance remains
+tests are present on this branch.  The remaining `NEEDS_REVERIFY` row requires
+a full Pages release and browser verification after the next manifest is built;
+it is not claimed as production acceptance.  Production acceptance remains
 blocked when no ready release or Telegram delivery configuration is available.
 
 ## Rollback

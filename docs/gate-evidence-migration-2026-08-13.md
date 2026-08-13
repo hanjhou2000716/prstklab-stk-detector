@@ -224,3 +224,16 @@ and protected runtime configuration after the PR is merged.
 - Live official feed, Pages publication, Railway and Telegram delivery remain
   `NEEDS_REVERIFY`/`BLOCKED` until a real ready release and protected runtime
   configuration are available.
+
+## Migration audit update (2026-08-14, News release-gate lineage)
+
+- `release_manifest` now records `news_snapshot_id` and `news_status` whenever
+  the canonical News Intelligence artifact is published.
+- Local and public release-gate loaders verify `news.json` hash, provider
+  domains, market snapshot lineage and News snapshot identity before delivery.
+- A mismatched News market snapshot is rejected by the gate; the fail-soft
+  collection path remains unchanged when no News artifact is available.
+- Targeted release/news gate suite: `51 passed`; full local regression:
+  `1129 passed, 1 skipped`; Ruff, Mypy and Mini App syntax checks passed.
+- News artifact lineage is now `PASS / LOCKED`; Mini App browser publication,
+  live Pages release and protected production delivery remain external gates.

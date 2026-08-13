@@ -15,7 +15,7 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import requests
 
-from src.artifact_contract import validate_release, validate_source_health_artifact
+from src.artifact_contract import validate_news_intelligence, validate_release, validate_source_health_artifact
 from src.asset_contract import validate_assets
 from src.creator_artifact import validate_creator_artifact
 from src.creator_release import validate_creator_release
@@ -73,6 +73,25 @@ def _validate_creator_public_artifact(artifact: dict[str, Any], manifest: dict[s
     return sorted(set(errors))
 
 
+def _validate_news_artifact(artifact: dict[str, Any], manifest: dict[str, Any]) -> list[str]:
+    """Validate the optional News artifact as part of the same release.
+
+    News is fail-soft at collection time, but once a publisher advertises
+    ``news.json`` its lineage is no longer optional: the browser and notifier
+    must never combine headlines from another market snapshot.
+    """
+    errors = validate_news_intelligence(artifact)
+    expected_market = str(manifest.get("market_snapshot_id") or "")
+    if expected_market and str(artifact.get("market_snapshot_id") or "") != expected_market:
+        errors.append("news artifact market_snapshot_id does not match manifest")
+    declared_news = str(manifest.get("news_snapshot_id") or "")
+    if declared_news and str(artifact.get("snapshot_id") or "") != declared_news:
+        errors.append("news artifact snapshot_id does not match manifest")
+    if manifest.get("news_status") == "ready" and artifact.get("status") not in {"ready", "no_event"}:
+        errors.append("manifest declares news ready but artifact is not publishable")
+    return sorted(set(errors))
+
+
 def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tuple[dict[str, dict[str, Any]], list[str]]:
     """Load and validate the contract artifacts referenced by a manifest."""
     paths = manifest.get("artifact_paths")
@@ -80,8 +99,8 @@ def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tup
         return {}, ["manifest artifact paths are missing"]
     loaded: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
-    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json", "creator-release.json", "creator-insights.json"):
-        if name in {"source-health.json", "creator-release.json", "creator-insights.json"} and name not in paths:
+    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json", "creator-release.json", "creator-insights.json", "news.json"):
+        if name in {"source-health.json", "creator-release.json", "creator-insights.json", "news.json"} and name not in paths:
             continue
         raw_path = paths.get(name)
         if not isinstance(raw_path, str):
@@ -103,6 +122,9 @@ def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tup
     creator_public = loaded.get("creator-insights.json")
     if creator_public is not None and manifest.get("creator_public_status") == "ready":
         errors.extend(_validate_creator_public_artifact(creator_public, manifest))
+    news = loaded.get("news.json")
+    if news is not None:
+        errors.extend(_validate_news_artifact(news, manifest))
     return loaded, errors
 
 
@@ -133,8 +155,8 @@ def _fetch_public_release_artifacts(
     }
     loaded: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
-    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json", "creator-release.json", "creator-insights.json"):
-        if name in {"source-health.json", "creator-release.json", "creator-insights.json"} and name not in paths:
+    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json", "creator-release.json", "creator-insights.json", "news.json"):
+        if name in {"source-health.json", "creator-release.json", "creator-insights.json", "news.json"} and name not in paths:
             continue
         raw_path = paths.get(name)
         expected_hash = hashes.get(name)
@@ -175,6 +197,9 @@ def _fetch_public_release_artifacts(
     creator_public = loaded.get("creator-insights.json")
     if creator_public is not None and manifest.get("creator_public_status") == "ready":
         errors.extend(_validate_creator_public_artifact(creator_public, manifest))
+    news = loaded.get("news.json")
+    if news is not None:
+        errors.extend(_validate_news_artifact(news, manifest))
     if errors:
         return loaded, errors
     if "source-health.json" in paths:
