@@ -9,12 +9,12 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/safe-data-publishing-contract` |
-| HEAD | `7f1fd60ba2859747876f8767919b4f53032581cd` |
+| HEAD | `8833627` (latest verified News release-lineage evidence) |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current` |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1130 passed, 1 skipped` |
 | Static checks | Ruff, Mypy, compileall and `node --check site/app.js` passed |
-| Remote PR | [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578), open; required quality/security checks pass |
+| Remote PR | [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578), open; required quality/security checks pass for the latest head |
 
 ## Current task reconciliation
 
