@@ -199,6 +199,7 @@ def main() -> None:
     )
     summary = {
         "requested": len(candidates),
+        "requested_records": len(candidates),
         "universe_mode": "full",
         "universe_expected": len(candidates),
         "universe_scanned": len(candidates),
