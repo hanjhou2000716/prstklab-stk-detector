@@ -25,7 +25,6 @@ from src.scheduled_brief import (
 )
 from src.telegram_client import send_photo_briefs
 
-
 _DEFAULT_CREATOR_RECORDS_PATH = Path("creator/public-records.json")
 
 
