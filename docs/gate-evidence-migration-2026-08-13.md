@@ -2,6 +2,23 @@
 
 ## Current state
 
+### Migration reconciliation update (2026-08-13)
+
+The original snapshot below records the initial registry branch. The active
+stack has since advanced through the contract-hardening branches; this update
+is authoritative for the Gate-Driven migration audit.
+
+- Active branch: `feat/release-manifest-integrity`.
+- Active HEAD: `0c1d71d`.
+- Active PR: [#575](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/575),
+  targeting `feat/research-state-schema`.
+- Recovery checkpoint: `3c27fe6` (manifest integrity contract) and `0c1d71d`
+  (portable cross-platform path validation). No reset, merge, force-push or
+  destructive cleanup was performed.
+- Historical untracked pytest/temp artifacts remain preserved and are not
+  staged; they are tracked as completion debt rather than treated as product
+  output.
+
 - Baseline `main`: `2b05dfba79061a065bb92d374fdbe813f75e2e95`.
 - Active branch: `feat/canonical-creator-provider-registry`.
 - Active HEAD: `ae319fa`.
@@ -21,7 +38,11 @@
 | Event ledger decision provenance | PASS / LOCKED | PR #569; 25 targeted tests, Ruff, Mypy, compile and CI runs 31700567920/31700568021 passed |
 | Event ledger delivery integration | PASS / LOCKED | PR #569; official monitor regression 27 passed; CI run 31701134871 and security run 31701134916 passed |
 | Alert notification identity | PASS / LOCKED | PR #570; 34 targeted tests, Ruff, Mypy and CI run 31701759034/security run 31701759052 passed |
-| Alert envelope notification contract | IN_PROGRESS | Common AlertEnvelope/schema expose shared notification_id |
+| Alert envelope notification contract | PASS / LOCKED | PR #571; shared AlertEnvelope/schema notification identity; CI run 31705378535 / job 94464483887 and security run 31705378337 passed |
+| Intelligence notification schema | PASS / LOCKED | PR #572; unsuppressed unified events require notification identity; CI run 31706330202 / job 94467703595 and security run 31706330210 passed |
+| Market provenance contract | PASS / LOCKED | PR #573; quote source/time, domain, crosscheck and technical-context freshness are schema checked; CI run 31707106925 / job 94470318661 passed |
+| Research candidate-state contract | PASS / LOCKED | PR #574; available/no-candidates/building/data-unavailable states are separated; CI run 31707956986 / job 94473193712 passed |
+| Release manifest integrity | PASS / LOCKED | PR #575; portable artifact paths, rollback identity and ready/rollback exclusivity; targeted artifact tests 32 passed with `-p no:tmpdir`; CI run 31709364212 / job 94478005695 and security run 31709364141 passed |
 | Existing P0 requirements from the continuation brief | NEEDS_REVERIFY | The brief enumerates P0-01 through P0-29; this branch only addresses provider-registry scope. Each remaining DoD needs a separate evidence row before being marked PASS. |
 
 ## Verification evidence
@@ -62,11 +83,15 @@
 | DEBT-565-001 | Historical untracked pytest/temp artifacts in working tree | preserved; never staged; cleanup requires separate approved maintenance task | OPEN (non-production workspace hygiene) |
 | DEBT-565-002 | P0-02..P0-29 evidence reconciliation is incomplete | continue with evidence audit and separate atomic tasks | OPEN |
 
+| DEBT-575-001 | Full local suite cannot create pytest temporary directories because the shared Windows temp root contains permission-denied historical folders | CI Linux full suite passed 1046 tests; local targeted manifest suite used `-p no:tmpdir` and passed 32 tests | OPEN (environment-only; no product failure) |
+
 ## Preservation contracts
 
 - PC-001: existing provider routing and fail-closed unknown-source behavior preserved by targeted tests — PASS.
 - PC-002: Creator content remains editorial and cannot become market-event evidence — PASS by registry policy/tests.
 - PC-003: release-gate and notification code paths remain unchanged except dynamic provider inputs — PASS by CI dry-run.
+
+- PC-004: manifest release/rollback integrity and fail-closed artifact path validation — PASS by PR #575 CI and targeted tests.
 
 ## Next gate
 
