@@ -39,6 +39,14 @@ def test_incomplete_research_keeps_last_successful_snapshot_and_uploads_diagnost
     assert "steps.research_gate.outputs.publish == 'true'" in workflow
 
 
+def test_research_gate_reuses_production_acceptance_before_manifest_publish():
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "unified-research-report.yml").read_text(encoding="utf-8")
+
+    assert "production_research_contract_errors" in workflow
+    assert "production_strategy_matrix_errors" in workflow
+    assert "and not contract_errors" in workflow
+
+
 def test_incomplete_research_cannot_publish_data_release_after_market_refresh():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "unified-research-report.yml").read_text(encoding="utf-8")
 
