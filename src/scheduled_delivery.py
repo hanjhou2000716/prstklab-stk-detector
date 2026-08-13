@@ -26,14 +26,29 @@ from src.scheduled_brief import (
 from src.telegram_client import send_photo_briefs
 
 
-def _load_creator_records() -> list[dict]:
-    """Load only the optional sanitized creator input outside the Pages tree."""
-    raw_path = os.getenv("CREATOR_RECORDS_PATH", "").strip()
-    if not raw_path:
-        return []
-    path = Path(raw_path).resolve()
+_DEFAULT_CREATOR_RECORDS_PATH = Path("creator/public-records.json")
+
+
+def _creator_records_path() -> Path | None:
+    """Resolve an external, public-safe Creator records file.
+
+    The checked-in default contains only reviewed public observations.  It is
+    deliberately outside the Pages tree and travels through the same privacy
+    boundary as an operator-provided ingress file.
+    """
+    configured = os.getenv("CREATOR_RECORDS_PATH", "").strip()
+    candidate = Path(configured).expanduser() if configured else _DEFAULT_CREATOR_RECORDS_PATH
+    path = candidate.resolve()
     public_root = (Path.cwd() / "site").resolve()
     if path.is_relative_to(public_root) or not path.is_file():
+        return None
+    return path
+
+
+def _load_creator_records() -> list[dict]:
+    """Load only the optional sanitized creator input outside the Pages tree."""
+    path = _creator_records_path()
+    if path is None:
         return []
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -59,12 +74,11 @@ def _load_creator_records() -> list[dict]:
 
 def _creator_input_failures() -> dict[str, str]:
     """Classify configured input failures without exposing paths or payloads."""
-    raw_path = os.getenv("CREATOR_RECORDS_PATH", "").strip()
-    if not raw_path or os.getenv("CREATOR_NOTIFICATION_ENABLED", "").strip().lower() != "true":
+    configured = bool(os.getenv("CREATOR_RECORDS_PATH", "").strip()) or _DEFAULT_CREATOR_RECORDS_PATH.is_file()
+    if not configured or os.getenv("CREATOR_NOTIFICATION_ENABLED", "").strip().lower() != "true":
         return {}
-    path = Path(raw_path).resolve()
-    public_root = (Path.cwd() / "site").resolve()
-    if path.is_relative_to(public_root) or not path.is_file():
+    path = _creator_records_path()
+    if path is None:
         return {"haojiao": "creator_records_unavailable", "gooaye": "creator_records_unavailable"}
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -98,7 +112,7 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
     # same source-health contract as the published market snapshot.  Keep this
     # merge after loading the external file so the market builder remains
     # reusable for non-Creator refreshes.
-    if os.getenv("CREATOR_RECORDS_PATH", "").strip() or os.getenv("CREATOR_NOTIFICATION_ENABLED", "").strip():
+    if _creator_records_path() is not None or os.getenv("CREATOR_NOTIFICATION_ENABLED", "").strip():
         from datetime import UTC, datetime
 
         from src.creator_source_health import build_creator_source_health, merge_creator_sources
@@ -107,7 +121,7 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
             creator_records,
             checked_at=datetime.now(UTC),
             enabled=os.getenv("CREATOR_NOTIFICATION_ENABLED", "").strip().lower() == "true",
-            configured=bool(os.getenv("CREATOR_RECORDS_PATH", "").strip()),
+            configured=_creator_records_path() is not None,
             failures=_creator_input_failures(),
         )
         snapshot["source_health"] = merge_creator_sources(snapshot.get("source_health") or {}, creator_rows)
