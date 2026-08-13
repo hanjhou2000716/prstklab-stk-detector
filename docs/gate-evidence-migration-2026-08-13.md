@@ -209,6 +209,8 @@ and protected runtime configuration after the PR is merged.
 
 - Atomic commit `c0b3b7c` adds isolated TWSE/MOPS/SEC/Federal Reserve feed
   adapters and wires the official-first path into `risk_news.fetch_market_news`.
+- Atomic commit `707e118` resolves the CodeQL URL-taint finding in the adapter
+  regression fixture; the latest head checks are all green.
 - Nasdaq remains explicitly disabled because no stable documented public feed
   endpoint is configured; no undocumented endpoint is inferred.
 - Provider failures, XML/JSON parse errors and HTTP 429 are captured per
