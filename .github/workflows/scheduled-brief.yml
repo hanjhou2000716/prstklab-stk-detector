@@ -176,6 +176,30 @@ jobs:
             --manifest "$MANIFEST_PATH" \
             --public-url "${{ steps.deployment.outputs.page_url }}" \
             >> "$GITHUB_OUTPUT"
+      - name: Summarize Creator notification decision
+        if: always() && steps.release_gate.outputs.allowed == 'true' && env.CREATOR_NOTIFICATION_ENABLED == 'true'
+        env:
+          CREATOR_STATUS: ${{ steps.creator_dispatch.outputs.creator_status || 'not_run' }}
+          CREATOR_SENT: ${{ steps.creator_dispatch.outputs.creator_sent || '0' }}
+          CREATOR_BLOCKED: ${{ steps.creator_dispatch.outputs.creator_blocked || '0' }}
+          CREATOR_REASON: ${{ steps.creator_dispatch.outputs.creator_blocking_reason || '' }}
+          CREATOR_REMOTE_HISTORY: ${{ steps.creator_dispatch.outputs.creator_remote_history_status || 'unknown' }}
+          CREATOR_DELIVERY_STATUS: ${{ steps.creator_dispatch.outputs.creator_delivery_status || 'not_recorded' }}
+          CREATOR_RELEASE_ID: ${{ steps.creator_dispatch.outputs.creator_release_id || '' }}
+        run: |
+          {
+            echo "## Creator notification decision"
+            echo "- status: ${CREATOR_STATUS}"
+            echo "- sent episodes: ${CREATOR_SENT}"
+            echo "- blocked episodes: ${CREATOR_BLOCKED}"
+            echo "- delivery status: ${CREATOR_DELIVERY_STATUS}"
+            echo "- remote history: ${CREATOR_REMOTE_HISTORY}"
+            if [ -n "${CREATOR_RELEASE_ID}" ]; then echo "- creator release: ${CREATOR_RELEASE_ID}"; fi
+            if [ -n "${CREATOR_REASON}" ]; then echo "- blocking reason: ${CREATOR_REASON}"; fi
+            if [ "${CREATOR_SENT}" = "0" ]; then
+              echo "- no Creator Telegram message was sent in this run; fail-closed policy remained active"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Persist Creator delivery receipt to Railway
         if: always() && steps.creator_dispatch.outcome == 'success' && steps.creator_dispatch.outputs.creator_delivery_status != '' && steps.creator_dispatch.outputs.creator_sent != '0'
         continue-on-error: true
