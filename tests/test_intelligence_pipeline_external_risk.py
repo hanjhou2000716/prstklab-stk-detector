@@ -43,3 +43,19 @@ def test_pipeline_allows_confirmed_cross_source_event_but_keeps_advice_gate() ->
     assert context["external_event_risk"]["score"]["prstk_risk_level"] == "R3"
     assert context["external_event_risk"]["status"] == "eligible"
     assert context["advice_gate"] == "observation_only"
+
+
+def test_pipeline_keeps_all_financialjuice_items_and_clusters() -> None:
+    context = build_intelligence_context(
+        {"event_type": "energy"},
+        external_observations=[{
+            "source": "financialjuice",
+            "items": [
+                {"item_id": "fj-item-1", "event_cluster_key": "fj-cluster-1", "original_headline": "Oil supply", "event_type": "energy", "vendor_importance": 8},
+                {"item_id": "fj-item-2", "event_cluster_key": "fj-cluster-2", "original_headline": "Chip controls", "event_type": "policy", "vendor_importance": 7},
+            ],
+        }],
+    )
+    assert len(context["external_event_risk"]["unified_events"]) == 2
+    assert {row["item_id"] for row in context["external_event_risk"]["financialjuice_items"]} == {"fj-item-1", "fj-item-2"}
+    assert len(context["external_event_risk"]["clusters"]) == 2

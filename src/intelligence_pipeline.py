@@ -56,7 +56,22 @@ def build_intelligence_context(
     advice_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     observations_list = list(observations or [])
-    external_input = list(external_observations or [])
+    external_input: list[dict[str, Any]] = []
+    for observation in external_observations or []:
+        if not isinstance(observation, dict):
+            continue
+        items = observation.get("items")
+        if isinstance(items, list) and items:
+            for item in items:
+                if isinstance(item, dict):
+                    external_input.append({
+                        **item,
+                        "source": observation.get("source") or observation.get("content_origin") or "financialjuice",
+                        "content_origin": observation.get("content_origin") or "financialjuice",
+                        "message_id": observation.get("message_id"),
+                    })
+        else:
+            external_input.append(observation)
     external_clusters = cluster_external_events(external_input)
     external_risk: dict[str, Any] = {"status": "not_available", "clusters": []}
     if external_clusters:
@@ -80,6 +95,7 @@ def build_intelligence_context(
         external_risk = {
             "status": "eligible" if score["notification_eligible"] else "pending",
             "cluster": first_cluster,
+            "clusters": external_clusters,
             "score": score,
             "notification": notification_decision(score),
         }
@@ -96,6 +112,16 @@ def build_intelligence_context(
                 market_sync_confirmed=bool(event.get("market_sync_confirmed")),
             ))
         external_risk["unified_events"] = unified_events
+        external_risk["financialjuice_items"] = [
+            {
+                "item_id": item.get("item_id"),
+                "event_cluster_key": item.get("event_cluster_key"),
+                "vendor_importance": item.get("vendor_importance"),
+                "headline": item.get("original_headline") or item.get("headline"),
+            }
+            for item in external_input
+            if str(item.get("source") or item.get("content_origin") or "").casefold() == "financialjuice"
+        ]
         external_risk["pending_reasons"] = sorted({
             reason
             for unified in unified_events
