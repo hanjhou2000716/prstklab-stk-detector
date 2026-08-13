@@ -12,7 +12,8 @@ class _Response:
 def test_remote_creator_history_request_is_signed(monkeypatch):
     captured = {}
 
-    def post(*_args, **kwargs):
+    def post(*args, **kwargs):
+        captured["url"] = args[0] if args else kwargs.get("url")
         captured.update(kwargs)
         return _Response()
 
