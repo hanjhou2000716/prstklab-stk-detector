@@ -7,8 +7,8 @@ from typing import Any
 from src.creator_artifact import build_creator_artifact
 from src.creator_consensus import build_creator_consensus
 from src.creator_correlation import correlate_creator_insight
-from src.creator_release import build_creator_release
 from src.creator_provider_registry import is_known_creator
+from src.creator_release import build_creator_release
 from src.email_intelligence import normalize_creator_insight
 
 _PARSER_FAILURE_STATES = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}

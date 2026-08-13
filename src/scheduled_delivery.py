@@ -12,6 +12,7 @@ from src.alert_budget import decide_alert_budget
 from src.alert_card_renderer import RendererError, render_alert_card
 from src.briefing_cards import build_briefing_snapshot
 from src.config import get_settings
+from src.creator_provider_registry import creator_ids
 from src.event_ledger import EventLedger
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import merge_published_metadata, write_snapshot
@@ -24,7 +25,6 @@ from src.scheduled_brief import (
     write_event_lock_key,
 )
 from src.telegram_client import send_photo_briefs
-from src.creator_provider_registry import creator_ids
 
 _DEFAULT_CREATOR_RECORDS_PATH = Path("creator/public-records.json")
 

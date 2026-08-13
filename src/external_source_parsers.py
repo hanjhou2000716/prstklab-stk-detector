@@ -10,8 +10,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from src.creator_source_adapters import parse_creator_template
 from src.creator_provider_registry import is_known_creator
+from src.creator_source_adapters import parse_creator_template
 from src.email_intelligence import normalize_creator_insight, route_email_source
 
 MAX_FIELD_CHARS = 600
