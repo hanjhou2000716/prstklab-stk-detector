@@ -12,7 +12,6 @@ SEVERITIES = {"normal", "warning", "high-risk"}
 @dataclass
 class AlertEnvelope:
     alert_id: str
-    notification_id: str
     event_cluster_key: str
     alert_type: str
     lifecycle_state: str
@@ -22,6 +21,9 @@ class AlertEnvelope:
     release_id: str
     snapshot_id: str
     created_at: str
+    # Optional for legacy direct constructors; from_event always populates it
+    # and validate() still rejects an empty identity for valid envelopes.
+    notification_id: str = ""
     market: str = ""
     ticker: str | None = None
     trigger_reason: str = ""
@@ -31,6 +33,10 @@ class AlertEnvelope:
     data_quality_score: float | None = None
     policy_version: str = ""
     invalidation_condition: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.notification_id:
+            self.notification_id = self.alert_id
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
