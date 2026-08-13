@@ -30,11 +30,15 @@ pipeline call and a tested consumer.
 | Telegram delivery | `src/telegram_client.py`, `src/scheduled_delivery.py`, `src/official_event_monitor.py`, `src/emergency_alert.py` | yes | release-gated `sendPhoto` path with shared file ID | photo receipt | alert/release deep-link button | renderer failure is fail-closed; recipient failures are isolated | production |
 | Source-health release artifact | `src/release_manifest.py`, `src/release_gate.py`, `site/app.js` | yes | manifest/release gate | `data/source-health.json` | release-bound health view | gate evidence only | production |
 | Mini App deep-link/timeline | `site/app.js`, `src/event_timeline.py` | yes | Pages | yes | yes | button target | production |
-| External source email contract | `src/email_intelligence.py`, `src/gmail_ingress.py`, `src/external_source_parsers.py`, `railway-monitor/gmail_ingress.py`, `railway-monitor/gmail_watch.py`, `railway-monitor/email_store.py`, `railway-monitor/email_router.py` | yes | bounded Railway ingress + parser/DLQ boundary | sanitized EmailObservation + private cursor/DLQ | source health/pending reasons | no raw mail | partially_integrated |
+| External source email contract | `src/email_intelligence.py`, `src/gmail_ingress.py`, `src/external_source_parsers.py`, `src/creator_source_adapters.py`, `railway-monitor/gmail_ingress.py`, `railway-monitor/gmail_watch.py`, `railway-monitor/email_store.py`, `railway-monitor/email_router.py` | yes | bounded Railway ingress + parser/DLQ boundary | sanitized EmailObservation + private cursor/DLQ | source health/pending reasons | no raw mail | partially_integrated |
 | External event risk | `src/external_event_risk.py`, `src/intelligence_pipeline.py` | yes | intelligence context | external risk status + pending reasons | event trace/pending path | eligible only after evidence gates | production |
-| Creator media boundary | `src/creator_media.py` | yes | private attachment boundary | hash + private availability only | no raw media | no | partially_integrated |
+| Creator media boundary | `src/creator_media.py`, `src/creator_photo_delivery.py` | yes | private attachment boundary + transport-neutral plan | hash + private availability only | no raw media | bounded photo/text plan; receipt contract | partially_integrated |
 | Creator release lineage | `src/creator_release.py`, `src/creator_intelligence_pipeline.py`, `src/release_manifest.py` | yes | scheduled input + optional manifest artifact | parent release/hash/status | release-bound creator drawer | no raw creator media | production |
+| Creator/PRStK correlation | `src/creator_correlation.py`, `src/creator_intelligence_pipeline.py`, `src/briefing_cards.py` | yes | briefing creator binding | explicit entity matches + snapshot IDs | creator correlation state/reason | never a standalone signal | production |
+| Railway health contract | `src/railway_health_contract.py`, `railway-monitor/app.py` | yes | monitor health boundary | bounded status/retry/heartbeat | source health | observability only | partially_integrated |
 | Creator scheduled input | `src/scheduled_delivery.py`, `.github/workflows/scheduled-brief.yml` | yes | optional sanitized `CREATOR_RECORDS_PATH` | same market/creator release lineage | creator release | no raw creator media | production |
+| Creator source health runtime | `src/creator_source_health.py`, `src/scheduled_delivery.py`, `site/app.js` | yes | scheduled snapshot preparation | `source_health` + `creator_source_health` | optional source rows and no-event/failed distinction | observability only | production |
+| Creator delivery lineage | `src/creator_delivery_store.py`, `src/delivery_callback.py`, `railway-monitor/app.py` | yes | signed Creator callback + history read | private Railway receipt metadata | no raw receipt data | dedupe evidence | production |
 | Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | briefing contract + optional endpoint/local queue | yes | feedback controls | no | partially_integrated |
 
 ## Data state contract
@@ -136,6 +140,16 @@ The photo smoke receipt is intentionally a single-recipient diagnostic and
 uses a synthetic smoke alert identity.  It proves renderer, sendPhoto and
 receipt plumbing, not the content of a live event.  A release-gated production
 delivery must use the release identifiers above.
+
+### Creator delivery durability
+
+Creator dispatch first combines the bounded runner-local receipt file with the
+optional signed Railway `/creator-delivery-history` response.  Railway stores
+only notification keys, release/snapshot lineage, status and aggregate counts;
+it does not receive raw episode text, media, Telegram IDs or tokens.  A Railway
+outage is reported as `remote_history_status=unavailable` and is not treated as
+an empty history.  This keeps the dispatch fail-closed for release readiness
+while making the operational limitation explicit.
 
 ## Alert contract and lifecycle
 

@@ -17,6 +17,7 @@ import requests
 
 from src.artifact_contract import validate_release, validate_source_health_artifact
 from src.asset_contract import validate_assets
+from src.creator_artifact import validate_creator_artifact
 from src.creator_release import validate_creator_release
 from src.production_acceptance import validate_production_bundle
 from src.release_manifest import verify_release_files
@@ -57,6 +58,21 @@ def _validate_creator_artifact(artifact: dict[str, Any], manifest: dict[str, Any
     return sorted(set(errors))
 
 
+def _validate_creator_public_artifact(artifact: dict[str, Any], manifest: dict[str, Any]) -> list[str]:
+    """Validate the bounded public Creator artifact without trusting its status."""
+    errors = validate_creator_artifact(artifact)
+    for artifact_field in ("parent_release_id", "market_snapshot_id", "research_snapshot_id", "event_snapshot_id"):
+        expected = manifest.get("release_id") if artifact_field == "parent_release_id" else manifest.get(artifact_field)
+        if str(artifact.get(artifact_field) or "") != str(expected or ""):
+            errors.append(f"creator public artifact {artifact_field} mismatch")
+    if manifest.get("creator_public_status") == "ready" and artifact.get("status") != "ready":
+        errors.append("manifest declares creator public artifact ready but artifact is not ready")
+    declared_id = manifest.get("creator_snapshot_id")
+    if declared_id and str(artifact.get("snapshot_id") or "") != str(declared_id):
+        errors.append("creator public artifact snapshot_id does not match manifest")
+    return sorted(set(errors))
+
+
 def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tuple[dict[str, dict[str, Any]], list[str]]:
     """Load and validate the contract artifacts referenced by a manifest."""
     paths = manifest.get("artifact_paths")
@@ -64,8 +80,8 @@ def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tup
         return {}, ["manifest artifact paths are missing"]
     loaded: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
-    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json", "creator-release.json"):
-        if name in {"source-health.json", "creator-release.json"} and name not in paths:
+    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json", "creator-release.json", "creator-insights.json"):
+        if name in {"source-health.json", "creator-release.json", "creator-insights.json"} and name not in paths:
             continue
         raw_path = paths.get(name)
         if not isinstance(raw_path, str):
@@ -84,6 +100,9 @@ def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tup
     creator = loaded.get("creator-release.json")
     if creator is not None:
         errors.extend(_validate_creator_artifact(creator, manifest))
+    creator_public = loaded.get("creator-insights.json")
+    if creator_public is not None and manifest.get("creator_public_status") == "ready":
+        errors.extend(_validate_creator_public_artifact(creator_public, manifest))
     return loaded, errors
 
 
@@ -114,8 +133,8 @@ def _fetch_public_release_artifacts(
     }
     loaded: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
-    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json", "creator-release.json"):
-        if name in {"source-health.json", "creator-release.json"} and name not in paths:
+    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json", "creator-release.json", "creator-insights.json"):
+        if name in {"source-health.json", "creator-release.json", "creator-insights.json"} and name not in paths:
             continue
         raw_path = paths.get(name)
         expected_hash = hashes.get(name)
@@ -153,6 +172,9 @@ def _fetch_public_release_artifacts(
     creator = loaded.get("creator-release.json")
     if creator is not None:
         errors.extend(_validate_creator_artifact(creator, manifest))
+    creator_public = loaded.get("creator-insights.json")
+    if creator_public is not None and manifest.get("creator_public_status") == "ready":
+        errors.extend(_validate_creator_public_artifact(creator_public, manifest))
     if errors:
         return loaded, errors
     if "source-health.json" in paths:

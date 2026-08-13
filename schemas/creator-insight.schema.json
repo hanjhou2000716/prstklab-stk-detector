@@ -20,8 +20,26 @@
     "key_takeaways": {"type": "array", "items": {"type": "string"}},
     "claims": {"type": "array", "items": {"type": "string"}},
     "opinions": {"type": "array", "items": {"type": "string"}},
+    "consensus_stance": {"enum": ["", "risk_on", "risk_off", "neutral"]},
     "verification_state": {"enum": ["verified", "partially_verified", "unverified", "contradicted", "not_applicable"]},
     "evidence_alignment": {"enum": ["aligned", "partially_aligned", "not_verifiable", "market_divergent"]},
+    "prstk_correlation": {
+      "type": "object",
+      "required": ["correlation_state", "reason", "matched_tickers", "matched_sectors", "is_investment_signal"],
+      "properties": {
+        "correlation_state": {"enum": ["not_comparable", "awaiting_market", "aligned", "divergent", "stale"]},
+        "reason": {"type": "string"},
+        "matched_tickers": {"type": "array", "items": {"type": "string"}},
+        "matched_sectors": {"type": "array", "items": {"type": "string"}},
+        "creator_topics": {"type": "array", "items": {"type": "string"}},
+        "market_snapshot_id": {"type": "string"},
+        "research_snapshot_id": {"type": "string"},
+        "as_of": {"type": "string", "format": "date-time"},
+        "evidence": {"type": "array", "items": {"type": "string"}},
+        "is_investment_signal": {"const": false}
+      },
+      "additionalProperties": false
+    },
     "summary_image_available": {"type": "boolean"},
     "summary_image_hash": {"type": "string"},
     "parse_status": {"type": "string", "minLength": 1},

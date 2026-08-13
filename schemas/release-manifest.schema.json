@@ -42,6 +42,10 @@
     "creator_status": {"enum": ["ready", "unavailable", "not_available"]},
     "creator_validation_errors": {"type": "array", "items": {"type": "string"}},
     "creator_artifact_hash": {"type": ["string", "null"], "pattern": "^[a-fA-F0-9]{64}$"},
+    "creator_public_status": {"enum": ["ready", "unavailable", "not_available"]},
+    "creator_public_validation_errors": {"type": "array", "items": {"type": "string"}},
+    "creator_snapshot_id": {"type": ["string", "null"], "minLength": 1},
+    "creator_public_artifact_hash": {"type": ["string", "null"], "pattern": "^[a-fA-F0-9]{64}$"},
     "status": {"enum": ["ready", "rolled_back", "invalid"]}
   },
   "$defs": {

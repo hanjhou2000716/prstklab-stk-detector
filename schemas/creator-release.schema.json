@@ -14,7 +14,20 @@
     "status": {"enum": ["ready", "unavailable"]},
     "artifact_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "release_id": {"type": "string", "minLength": 1},
-    "public_safe": {"const": true}
+    "public_safe": {"const": true},
+    "creator_consensus": {
+      "type": "object",
+      "required": ["consensus_state", "consensus_topics", "contributors", "confidence", "as_of", "is_investment_signal"],
+      "properties": {
+        "consensus_state": {"enum": ["insufficient_sources", "pending_verification", "aligned", "mixed"]},
+        "consensus_topics": {"type": "array", "items": {"type": "object"}},
+        "contributors": {"type": "array", "items": {"type": "string"}},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "as_of": {"type": ["string", "null"], "format": "date-time"},
+        "is_investment_signal": {"const": false}
+      },
+      "additionalProperties": false
+    }
   },
   "additionalProperties": false
 }

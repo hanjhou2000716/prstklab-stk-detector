@@ -23,6 +23,11 @@ def build_payload() -> dict[str, object]:
         for item in os.environ.get("FAILED_RECIPIENT_HASHES", "").split(",")
         if item.strip()
     ]
+    notification_keys = list(dict.fromkeys(
+        item.strip()
+        for item in os.environ.get("NOTIFICATION_KEYS", "").split(",")
+        if item.strip()
+    ))[:200]
     return {
         "receipt_origin": "github_actions",
         "trace_id": os.environ.get("TRACE_ID", "").strip(),
@@ -35,6 +40,7 @@ def build_payload() -> dict[str, object]:
         "delivered_count": int(os.environ.get("DELIVERED_COUNT", "0") or 0),
         "failed_count": int(os.environ.get("FAILED_COUNT", "0") or 0),
         "failed_recipient_hashes": hashes,
+        "notification_keys": notification_keys,
         "renderer_error_type": os.environ.get("RENDERER_ERROR_TYPE", "").strip() or None,
         "reported_at": datetime.now(UTC).isoformat(),
     }

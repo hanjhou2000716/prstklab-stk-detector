@@ -36,6 +36,15 @@ def test_scheduled_workflow_only_passes_explicit_external_creator_records():
     assert "--creator-records \"$CREATOR_RECORDS_PATH\"" in workflow
 
 
+def test_scheduled_workflow_creator_notification_is_opt_in_and_release_gated():
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
+    assert "CREATOR_NOTIFICATION_ENABLED" in workflow
+    assert "steps.release_gate.outputs.allowed == 'true' && env.CREATOR_NOTIFICATION_ENABLED == 'true'" in workflow
+    assert "python -m src.creator_dispatch" in workflow
+    assert ">> \"$GITHUB_OUTPUT\"" in workflow
+    assert "DELIVERY_RECEIPT_KIND: creator" in workflow
+
+
 def test_event_production_workflows_install_renderer_browser():
     root = Path(__file__).resolve().parents[1] / ".github" / "workflows"
     for name in ("official-event-monitor.yml", "emergency-alert.yml"):

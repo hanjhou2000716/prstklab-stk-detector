@@ -6,7 +6,9 @@ from typing import Any
 
 from src.advice_gate import build_explainability_card, evaluate_advice_gate
 from src.cross_asset_risk import detect_contagion
+from src.external_event_pipeline import build_external_event
 from src.external_event_risk import cluster_external_events, notification_decision, score_prstk_risk
+from src.financialjuice_contract import normalize_financialjuice
 from src.market_impact_graph import build_market_impact_graph
 from src.market_regime import classify_regime
 from src.stress_scenarios import run_stress_scenario
@@ -54,10 +56,21 @@ def build_intelligence_context(
     advice_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     observations_list = list(observations or [])
-    external_clusters = cluster_external_events(list(external_observations or []))
+    external_input = list(external_observations or [])
+    external_clusters = cluster_external_events(external_input)
     external_risk: dict[str, Any] = {"status": "not_available", "clusters": []}
     if external_clusters:
         first_cluster = external_clusters[0]
+        first_observation = (first_cluster.get("observations") or [{}])[0]
+        financialjuice = None
+        if str(first_observation.get("source") or first_observation.get("content_origin") or "").casefold() == "financialjuice":
+            financialjuice = normalize_financialjuice({
+                **first_observation,
+                "event_type": first_cluster.get("event_type"),
+                "cross_source_count": first_cluster.get("cross_source_count"),
+                "official_confirmed": event.get("official_confirmed"),
+                "market_sync_confirmed": event.get("market_sync_confirmed"),
+            })
         score = score_prstk_risk(
             first_cluster,
             official_confirmed=bool(event.get("official_confirmed")),
@@ -70,6 +83,24 @@ def build_intelligence_context(
             "score": score,
             "notification": notification_decision(score),
         }
+        if financialjuice is not None:
+            external_risk["financialjuice"] = financialjuice
+        unified_events = [
+            build_external_event(
+                item,
+                source_observations=[other for other in external_input if other is not item],
+                official_confirmed=bool(event.get("official_confirmed")),
+                market_sync_confirmed=bool(event.get("market_sync_confirmed")),
+            )
+            for item in external_input
+            if isinstance(item, dict)
+        ]
+        external_risk["unified_events"] = unified_events
+        external_risk["pending_reasons"] = sorted({
+            reason
+            for unified in unified_events
+            for reason in unified.get("pending_reasons", [])
+        })
     graph = build_market_impact_graph(event, observations_list)
     surprise: dict[str, Any]
     if macro is None:

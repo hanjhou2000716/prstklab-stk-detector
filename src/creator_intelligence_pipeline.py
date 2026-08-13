@@ -4,14 +4,22 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.creator_artifact import build_creator_artifact
+from src.creator_consensus import build_creator_consensus
+from src.creator_correlation import correlate_creator_insight
 from src.creator_release import build_creator_release
 from src.email_intelligence import normalize_creator_insight
+
+_PARSER_FAILURE_STATES = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
 
 
 def build_creator_intelligence_release(
     records: list[dict[str, Any]],
     *,
     parent_manifest: dict[str, Any],
+    history_store: Any | None = None,
+    market_snapshot: dict[str, Any] | None = None,
+    research_snapshot: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Normalize already-sanitized records and build one lineage-bound artifact.
 
@@ -26,7 +34,22 @@ def build_creator_intelligence_release(
         if any(record.get(field) for field in ("body", "raw_body", "local_path", "private_url", "attachments")):
             dropped.append(f"{index}:private_field")
             continue
+        parse_status = str(record.get("parse_status") or "normalized")
+        if parse_status in _PARSER_FAILURE_STATES:
+            dropped.append(f"{index}:{parse_status}")
+            continue
+        if record.get("source_adapter") and record.get("required_fields_present") is False:
+            dropped.append(f"{index}:adapter_required_fields_missing")
+            continue
         normalized = normalize_creator_insight(record)
+        normalized["prstk_correlation"] = correlate_creator_insight(
+            normalized,
+            market_snapshot=market_snapshot,
+            research_snapshot=research_snapshot,
+        )
+        if (record.get("parse_status") or record.get("source_adapter")) and not normalized["episode_title"]:
+            dropped.append(f"{index}:missing_episode_title")
+            continue
         if normalized["content_origin"] not in {"haojiao", "gooaye"}:
             dropped.append(f"{index}:unknown_creator_source")
             continue
@@ -36,13 +59,33 @@ def build_creator_intelligence_release(
             continue
         seen.add(key)
         insights.append(normalized)
-    artifact = build_creator_release(insights, parent_manifest=parent_manifest)
+    history_recorded_count = 0
+    if history_store is not None:
+        for insight in insights:
+            history_store.append(insight)
+            history_recorded_count += 1
+    artifact = build_creator_release(
+        insights,
+        parent_manifest=parent_manifest,
+        creator_consensus=build_creator_consensus(insights),
+    )
+    public_artifact = build_creator_artifact(
+        insights,
+        snapshot_id=artifact.get("release_id"),
+        generated_at=artifact.get("generated_at"),
+        parent_release_id=artifact.get("parent_release_id", ""),
+        market_snapshot_id=artifact.get("market_snapshot_id", ""),
+        research_snapshot_id=artifact.get("research_snapshot_id", "") or str((research_snapshot or {}).get("snapshot_id") or ""),
+        event_snapshot_id=artifact.get("event_snapshot_id", ""),
+    )
     return {
         "artifact": artifact,
+        "public_artifact": public_artifact,
         "accepted_count": len(insights),
         "dropped_count": len(dropped),
         "dropped_reasons": dropped,
         "source_state": "available" if insights else "no_creator_insights",
+        "history_recorded_count": history_recorded_count,
     }
 
 

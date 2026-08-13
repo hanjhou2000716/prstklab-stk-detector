@@ -43,13 +43,75 @@ def _load_creator_records() -> list[dict]:
         payload = payload.get("records")
     if not isinstance(payload, list):
         return []
-    return [item for item in payload if isinstance(item, dict)]
+    safe_records: list[dict] = []
+    blocked_states = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
+    private_fields = {"body", "raw_body", "local_path", "private_url", "attachments", "data"}
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        if any(item.get(field) not in (None, "", [], {}) for field in private_fields):
+            continue
+        if str(item.get("parse_status") or "").strip() in blocked_states:
+            continue
+        safe_records.append(item)
+    return safe_records
+
+
+def _creator_input_failures() -> dict[str, str]:
+    """Classify configured input failures without exposing paths or payloads."""
+    raw_path = os.getenv("CREATOR_RECORDS_PATH", "").strip()
+    if not raw_path or os.getenv("CREATOR_NOTIFICATION_ENABLED", "").strip().lower() != "true":
+        return {}
+    path = Path(raw_path).resolve()
+    public_root = (Path.cwd() / "site").resolve()
+    if path.is_relative_to(public_root) or not path.is_file():
+        return {"haojiao": "creator_records_unavailable", "gooaye": "creator_records_unavailable"}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return {"haojiao": "creator_records_parse_failed", "gooaye": "creator_records_parse_failed"}
+    if isinstance(payload, dict):
+        payload = payload.get("records")
+    if not isinstance(payload, list):
+        return {"haojiao": "creator_records_invalid_shape", "gooaye": "creator_records_invalid_shape"}
+    blocked_states = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
+    private_fields = {"body", "raw_body", "local_path", "private_url", "attachments", "data"}
+    failures: dict[str, str] = {}
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        provider = str(item.get("content_origin") or item.get("source") or "").strip().lower()
+        if provider not in {"haojiao", "gooaye"}:
+            continue
+        if str(item.get("parse_status") or "").strip().lower() in blocked_states:
+            failures[provider] = "creator_records_parse_failed"
+        elif any(item.get(field) not in (None, "", [], {}) for field in private_fields):
+            failures[provider] = "creator_records_private_fields"
+    return failures
 
 
 def prepare(slot: str, snapshot_path: Path) -> dict:
     """Create the exact snapshot that will later be deployed and delivered."""
     snapshot = build_market_snapshot()
     creator_records = _load_creator_records()
+    # Creator feeds are optional, but their operational state belongs in the
+    # same source-health contract as the published market snapshot.  Keep this
+    # merge after loading the external file so the market builder remains
+    # reusable for non-Creator refreshes.
+    if os.getenv("CREATOR_RECORDS_PATH", "").strip() or os.getenv("CREATOR_NOTIFICATION_ENABLED", "").strip():
+        from datetime import UTC, datetime
+
+        from src.creator_source_health import build_creator_source_health, merge_creator_sources
+
+        creator_rows = build_creator_source_health(
+            creator_records,
+            checked_at=datetime.now(UTC),
+            enabled=os.getenv("CREATOR_NOTIFICATION_ENABLED", "").strip().lower() == "true",
+            configured=bool(os.getenv("CREATOR_RECORDS_PATH", "").strip()),
+            failures=_creator_input_failures(),
+        )
+        snapshot["source_health"] = merge_creator_sources(snapshot.get("source_health") or {}, creator_rows)
+        snapshot["creator_source_health"] = creator_rows
     if creator_records:
         snapshot["creator_insights"] = creator_records
     snapshot["briefing"] = build_briefing_snapshot(snapshot, slot)

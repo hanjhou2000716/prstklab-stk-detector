@@ -17,6 +17,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from src.artifact_contract import validate_release
+from src.creator_artifact import validate_creator_artifact
 from src.creator_release import validate_creator_release
 from src.production_acceptance import (
     production_research_contract_errors,
@@ -295,6 +296,7 @@ def build_release_manifest(
     research_fallback_reason: str | None = None,
     max_research_age_hours: float = 24.0,
     creator_artifact: dict[str, Any] | None = None,
+    creator_public_artifact: dict[str, Any] | None = None,
     creator_records: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Build a manifest without fabricating readiness.
@@ -412,10 +414,13 @@ def build_release_manifest(
             parent_manifest={
                 "release_id": release_id,
                 "market_snapshot_id": market_id,
+                "research_snapshot_id": research_id,
                 "event_snapshot_id": event_id,
             },
+            research_snapshot={"snapshot_id": research_id},
         )
         creator_artifact = creator_result["artifact"]
+        creator_public_artifact = creator_result.get("public_artifact")
     creator_hash = hashlib.sha256(_canonical_json(creator_artifact)).hexdigest() if isinstance(creator_artifact, dict) else None
     creator_errors = (
         validate_creator_release(creator_artifact, parent_manifest={
@@ -437,6 +442,38 @@ def build_release_manifest(
             hashes["creator-release.json"] = sha256_file(creator_path)
         except OSError as exc:
             errors.append(f"cannot persist/hash artifact {creator_path.as_posix()}: {type(exc).__name__}")
+    creator_public_errors: list[str] = []
+    creator_public_hash: str | None = None
+    creator_public_status = "not_available"
+    if isinstance(creator_public_artifact, dict):
+        creator_public_errors.extend(validate_creator_artifact(creator_public_artifact))
+        expected_parent = {
+            "parent_release_id": release_id,
+            "market_snapshot_id": market_id,
+            "research_snapshot_id": research_id,
+            "event_snapshot_id": event_id,
+        }
+        for field, expected in expected_parent.items():
+            if str(creator_public_artifact.get(field) or "") != expected:
+                creator_public_errors.append(f"creator public artifact {field} mismatch")
+        creator_public_status = "ready" if not creator_public_errors and creator_public_artifact.get("status") == "ready" else "unavailable"
+        creator_public_path = root / "site" / "data" / "creator-insights.json"
+        try:
+            _write_normalized_artifact(creator_public_path, creator_public_artifact)
+            resolved["creator-insights.json"] = creator_public_path
+            loaded["creator-insights.json"] = creator_public_artifact
+            creator_public_hash = sha256_file(creator_public_path)
+            hashes["creator-insights.json"] = creator_public_hash
+        except OSError as exc:
+            # Creator Intelligence is an optional public lane.  A malformed
+            # or unavailable creator artifact must be represented in its own
+            # status fields and must not invalidate an otherwise complete
+            # market/research/event release.
+            creator_public_errors.append(
+                f"cannot persist/hash public creator artifact {creator_public_path.as_posix()}: {type(exc).__name__}"
+            )
+    # Do not add optional creator validation errors to the core release
+    # errors.  The creator lane is fail-closed independently at delivery time.
     public_paths = {
         name: (path.relative_to(root / "site").as_posix() if path.is_relative_to(root / "site") else path.as_posix())
         for name, path in resolved.items()
@@ -455,6 +492,7 @@ def build_release_manifest(
             "market": str(market.get("snapshot_schema_version") or "1.0"),
             "research": str(research.get("schema_version") or "1.0"),
             "events": str(events.get("schema_version") or "1.0"),
+            "creator_insights": "1.0" if isinstance(creator_public_artifact, dict) else None,
         },
         "artifact_hashes": hashes,
         # Paths are relative to the Pages root so the browser never needs to
@@ -469,6 +507,10 @@ def build_release_manifest(
         "creator_validation_errors": creator_errors,
         "creator_artifact_hash": creator_hash,
         "creator_input_hash": creator_input_hash,
+        "creator_public_status": creator_public_status,
+        "creator_public_validation_errors": sorted(set(creator_public_errors)),
+        "creator_snapshot_id": (creator_public_artifact or {}).get("snapshot_id") if isinstance(creator_public_artifact, dict) else None,
+        "creator_public_artifact_hash": creator_public_hash,
         "status": "invalid",
     }
     if fallback_applied:

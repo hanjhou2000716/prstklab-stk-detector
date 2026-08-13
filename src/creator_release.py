@@ -54,6 +54,10 @@ def validate_creator_release(
             errors.append("creator insight verification state invalid")
         if item.get("raw_body") or item.get("local_path") or item.get("private_url"):
             errors.append("creator insight contains private raw fields")
+        if item.get("parse_status") in {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}:
+            errors.append("creator insight parser failure cannot be published")
+        if item.get("source_adapter") and item.get("required_fields_present") is False:
+            errors.append("creator insight adapter required fields missing")
     return sorted(set(errors))
 
 
@@ -62,6 +66,7 @@ def build_creator_release(
     *,
     parent_manifest: dict[str, Any],
     generated_at: Any = None,
+    creator_consensus: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build an additive artifact; invalid creator data remains unavailable."""
     artifact: dict[str, Any] = {
@@ -72,6 +77,14 @@ def build_creator_release(
         "generated_at": _utc(generated_at) or datetime.now(UTC).isoformat(),
         "insights": list(insights),
         "public_safe": True,
+        "creator_consensus": creator_consensus or {
+            "consensus_state": "insufficient_sources",
+            "consensus_topics": [],
+            "contributors": [],
+            "confidence": 0.0,
+            "as_of": None,
+            "is_investment_signal": False,
+        },
     }
     errors = validate_creator_release(artifact, parent_manifest=parent_manifest)
     artifact["validation_errors"] = errors
