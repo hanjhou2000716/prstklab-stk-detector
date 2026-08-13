@@ -545,7 +545,7 @@ def build_release_manifest(
                 age_hours = max(0.0, (market_time - research_time).total_seconds() / 3600.0)
                 if age_hours > max(0.0, float(max_research_age_hours)):
                     errors.append("research snapshot is older than production freshness window")
-                    manifest["research_freshness"] = "stale"
+                    manifest["research_freshness"] = "stale_fallback"
                 else:
                     manifest["research_freshness"] = "fresh"
         elif research:
@@ -572,7 +572,7 @@ def build_release_manifest(
                 if 0 <= age_hours <= max(0.0, float(max_research_age_hours)):
                     manifest["research_freshness"] = "fresh"
                 else:
-                    manifest["research_freshness"] = "stale"
+                    manifest["research_freshness"] = "stale_fallback"
             else:
                 manifest["research_freshness"] = "unverified"
     manifest["validation_errors"] = sorted(set(errors))

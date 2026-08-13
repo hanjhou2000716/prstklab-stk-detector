@@ -109,45 +109,73 @@ jobs:
             arguments+=(--creator-records "$CREATOR_RECORDS_PATH")
           fi
           python -m src.release_manifest "${arguments[@]}"
-      - name: Publish snapshot and manifest
+      - name: Resolve release publication policy
         if: steps.prepare.outputs.prepared == 'true'
+        id: release_policy
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          manifest = json.loads(Path("${MANIFEST_PATH}").read_text(encoding="utf-8"))
+          publish = manifest.get("status") == "ready" and manifest.get("research_freshness") == "fresh"
+          print(f"publish={'true' if publish else 'false'}")
+          if not publish:
+              print("::warning::Release is not fresh and complete; preserving the previous immutable release.")
+          PY
+      - name: Publish snapshot and manifest
+        if: steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
         run: |
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
             --message "chore: refresh public market snapshot"
       - name: Build and validate cache-busted static assets
-        if: steps.prepare.outputs.prepared == 'true'
+        if: steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
           python -m src.asset_contract --root site
       - name: Configure GitHub Pages
-        if: steps.prepare.outputs.prepared == 'true'
+        if: steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
       - name: Upload Pages artifact
-        if: steps.prepare.outputs.prepared == 'true'
+        if: steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           path: site
       - name: Deploy Pages
-        if: steps.prepare.outputs.prepared == 'true'
+        if: steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
         id: deployment
         uses: ./.github/actions/deploy-pages-retry
+        with:
+          fallback_url: ${{ env.DASHBOARD_URL }}
+      - name: Resolve research delivery policy
+        if: steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
+        id: research_policy
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path("${MANIFEST_PATH}").read_text(encoding="utf-8"))
+          freshness = manifest.get("research_freshness")
+          allowed = freshness == "fresh"
+          print(f"research_freshness={freshness or 'unknown'}")
+          print(f"allow_telegram={'true' if allowed else 'false'}")
+          if not allowed:
+              print("::warning::Research is stale or unverified; Telegram delivery is skipped.")
+          PY
       - name: Verify deployed release before delivery
-        if: steps.prepare.outputs.prepared == 'true' && steps.deployment.outputs.available == 'true'
+        if: steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment.outputs.available == 'true'
         id: release_gate
         run: |
-          python -m src.release_gate \
-            --manifest "$MANIFEST_PATH" \
-            --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" \
-            --public-url "${{ steps.deployment.outputs.page_url }}" \
-            --public-attempts 12 \
-            --public-delay 5 \
-            --require-production-research \
-            >> "$GITHUB_OUTPUT"
+          arguments=(--manifest "$MANIFEST_PATH" --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --public-url "${{ steps.deployment.outputs.page_url }}" --public-attempts 12 --public-delay 5)
+          if [ "${{ steps.research_policy.outputs.allow_telegram }}" = "true" ]; then
+            arguments+=(--require-production-research)
+          fi
+          python -m src.release_gate "${arguments[@]}" >> "$GITHUB_OUTPUT"
       - name: Record delivery gate when Pages is unavailable
-        if: steps.prepare.outputs.prepared == 'true' && steps.deployment.outputs.available != 'true'
-        run: echo "Pages unavailable; Telegram delivery intentionally skipped (fail closed)."
+        if: steps.prepare.outputs.prepared == 'true' && (steps.release_policy.outputs.publish != 'true' || steps.deployment.outputs.available != 'true')
+        run: echo "Release is not fresh or Pages is unavailable; Telegram delivery intentionally skipped (fail closed)."
       - name: Send Telegram brief after successful publication
-        if: steps.release_gate.outputs.allowed == 'true'
+        if: steps.release_gate.outputs.allowed == 'true' && steps.research_policy.outputs.allow_telegram == 'true'
         id: send_brief
         run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --send-only --snapshot "$SNAPSHOT_PATH" --manifest "$MANIFEST_PATH" --public-url "${{ steps.deployment.outputs.page_url }}"
       - name: Persist scheduled-brief delivery receipt to Railway

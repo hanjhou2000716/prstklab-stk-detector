@@ -9,6 +9,10 @@ inputs:
     description: Seconds to wait before retrying a transient Pages deployment failure.
     required: false
     default: "30"
+  fallback_url:
+    description: Public dashboard URL to use when deploy-pages does not expose page_url.
+    required: false
+    default: ""
 outputs:
   page_url:
     description: URL returned by the successful Pages deployment.
@@ -53,9 +57,10 @@ runs:
         RETRY_URL: ${{ steps.retry_attempt.outputs.page_url }}
         FIRST_OUTCOME: ${{ steps.first.outcome }}
         RETRY_OUTCOME: ${{ steps.retry_attempt.outcome }}
+        FALLBACK_URL: ${{ inputs.fallback_url }}
       run: |
         set -euo pipefail
-        page_url="${RETRY_URL:-$FIRST_URL}"
+        page_url="${RETRY_URL:-${FIRST_URL:-$FALLBACK_URL}}"
         if [ -z "$page_url" ]; then
           reason="pages_deployment_unavailable"
           echo "::warning::Neither Pages deployment attempt returned a public URL; downstream delivery is gated."
