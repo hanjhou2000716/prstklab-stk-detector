@@ -1,7 +1,6 @@
 import re
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SHA_ACTION = re.compile(r"[^@]+@[0-9a-f]{40}")
 
@@ -44,4 +43,3 @@ def test_security_workflow_contains_supply_chain_and_analysis_jobs():
     workflow = (ROOT / ".github" / "workflows" / "security.yml").read_text(encoding="utf-8")
     for required in ("dependency-review:", "codeql:", "sbom:", "fallback_sbom.py"):
         assert required in workflow
-
