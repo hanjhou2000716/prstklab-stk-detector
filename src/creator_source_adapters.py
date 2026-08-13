@@ -113,9 +113,10 @@ def parse_creator_template(
             "source_adapter": "creator-template-v2",
             "template_fingerprint": _fingerprint(source, subject, body),
         }
+    provider_config = get_creator_provider(source)
     insight = normalize_creator_insight({
         "creator_id": source,
-        "creator_name": get_creator_provider(source).display_name if get_creator_provider(source) else source,
+        "creator_name": provider_config.display_name if provider_config else source,
         "episode_key": f"{source}:{message_id or title.casefold()}",
         "episode_id": message_id,
         "episode_title": title,
