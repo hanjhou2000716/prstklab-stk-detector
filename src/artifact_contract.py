@@ -7,6 +7,7 @@ candidate release before publishing it or sending a notification.
 from __future__ import annotations
 
 import json
+import ntpath
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -543,9 +544,21 @@ def validate_manifest(document: dict[str, Any]) -> list[str]:
         for name in required:
             path = str(paths.get(name) or "").strip()
             digest = str(hashes.get(name) or "").strip()
-            if path and Path(path).is_absolute():
+            # Release artifact paths are portable logical paths.  ``Path``
+            # follows the runner OS, so a Windows drive path would otherwise
+            # pass validation on Linux (and vice versa).  Validate both
+            # separators and drive/UNC prefixes explicitly.
+            portable_path = path.replace("\\", "/")
+            drive, _ = ntpath.splitdrive(path)
+            is_absolute = bool(
+                portable_path.startswith("/")
+                or portable_path.startswith("//")
+                or drive
+            )
+            path_parts = tuple(part for part in portable_path.split("/") if part)
+            if path and is_absolute:
                 errors.append(f"manifest artifact path must be relative: {name}")
-            if path and (".." in Path(path).parts or path.startswith("/")):
+            if path and ".." in path_parts:
                 errors.append(f"manifest artifact path escapes release root: {name}")
             if path and digest and len(digest) == 64:
                 continue
