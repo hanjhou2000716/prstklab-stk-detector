@@ -1094,12 +1094,15 @@ def test_seen_store_registers_creator_receipt_without_outbox(tmp_path):
         "delivered_count": 1,
         "failed_count": 0,
         "failed_recipient_hashes": [],
+        "notification_keys": ["creator-episode-1", "creator-episode-2"],
     })
     row = store.connection.execute(
         "SELECT source,event_id,category,status FROM delivery_outbox WHERE trace_id = ?",
         (trace_id,),
     ).fetchone()
     assert row == ("github_actions", "creator-release-creator", "creator_receipt", "delivered")
+    history = store.delivery_history(limit=5)
+    assert history[0]["notification_keys"] == ["creator-episode-1", "creator-episode-2"]
     assert store.connection.execute(
         "SELECT delivered_count,failed_count FROM delivery_receipts WHERE trace_id=? AND recipient_hash='__aggregate__'",
         (trace_id,),

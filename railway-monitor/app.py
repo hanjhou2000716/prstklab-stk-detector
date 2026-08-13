@@ -1004,6 +1004,20 @@ class SeenStore:
         ).fetchall()
         history: list[dict[str, Any]] = []
         for trace_id, source, event_id, category, outbox_status, attempts, last_error, updated_at in rows:
+            notification_keys: list[str] = []
+            payload_row = database.execute(
+                "SELECT payload_json FROM delivery_outbox WHERE trace_id=?", (trace_id,)
+            ).fetchone()
+            if payload_row:
+                try:
+                    stored_payload = json.loads(payload_row[0] or "{}")
+                except (TypeError, json.JSONDecodeError):
+                    stored_payload = {}
+                if isinstance(stored_payload, dict):
+                    notification_keys = [
+                        str(item)[:160] for item in (stored_payload.get("notification_keys") or [])
+                        if isinstance(item, str) and item.strip()
+                    ][:200]
             receipt = database.execute(
                 """SELECT status, delivered_count, failed_count, reported_at, error, updated_at
                    FROM delivery_receipts
@@ -1045,6 +1059,7 @@ class SeenStore:
                 "reported_at": reported_at,
                 "receipt_age_seconds": _age_seconds(receipt_updated_at),
                 "failed_recipient_hash_count": failed_hash_count,
+                "notification_keys": notification_keys,
             })
         return history
 
@@ -1232,6 +1247,10 @@ class SeenStore:
                     "snapshot_id": payload.get("snapshot_id"),
                     "alert_id": payload.get("alert_id"),
                     "delivery_mode": payload.get("delivery_mode"),
+                    "notification_keys": [
+                        str(item)[:160] for item in (payload.get("notification_keys") or [])
+                        if isinstance(item, str) and item.strip()
+                    ][:200],
                 }
                 db.execute(
                     """INSERT INTO delivery_outbox(
