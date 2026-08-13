@@ -19,7 +19,7 @@ evidence remains `NEEDS_REVERIFY`.
 | P0-10 vendor priority boundary | `src/financialjuice_contract.py` | 8/10 and 7/10 targeted policy tests | vendor priority cannot alter PRStK risk | PASS / LOCKED |
 | P0-11 event ledger and notification identity | ledger, budget, alert envelope | PR #569–#572 targeted + CI | cooldown/suppression lineage preserved | PASS / LOCKED |
 | P0-12 multilingual event matching | `src/event_classifier.py`, `config/event_keywords.json` | 41 targeted classifier/crosscheck/alert tests; multilingual, Unicode and explicit no-match contract passed; required CI 31717502438, security/CodeQL/SBOM passed | keyword match cannot bypass official or market-sync gates | PASS / LOCKED |
-| P0-13 official/source crosscheck | source catalog and crosscheck fields | Current evidence audit pending | fail closed without required evidence | NEEDS_REVERIFY |
+| P0-13 official/source crosscheck | `src/event_crosscheck.py`, `src/event_evidence.py` | 14 targeted crosscheck/evidence tests; official plus independent domain, same-domain and missing provenance cases passed; PR CI pending | fail closed without required evidence | NEEDS_REVERIFY |
 | P0-14 market synchronization evidence | market impact and sync gates | Current evidence audit pending | no fabricated direction/percentage | NEEDS_REVERIFY |
 | P0-15 release freshness and stale quote gate | freshness/release gate modules | Current evidence audit pending | stale data cannot alert | NEEDS_REVERIFY |
 | P0-16 Telegram delivery receipt | Telegram client and receipt schema | Existing dry-run; production evidence pending | recipient isolation and retry | NEEDS_REVERIFY |
