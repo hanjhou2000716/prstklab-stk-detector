@@ -177,6 +177,8 @@ def test_creator_input_failure_is_not_reported_as_no_event(tmp_path, monkeypatch
 
 
 def test_creator_filtered_records_are_reported_as_parse_failure(tmp_path, monkeypatch):
+    from src.scheduled_delivery import _creator_input_failures
+
     records = tmp_path / "creator-records.json"
     records.write_text(json.dumps({"records": [{
         "source": "haojiao",
