@@ -6,7 +6,7 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Any
 
-CREATOR_PROVIDERS = ("haojiao", "gooaye")
+from src.creator_provider_registry import CREATOR_PROVIDERS, get_creator_provider
 _FAILED_PARSE = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
 
 
@@ -41,7 +41,7 @@ def build_creator_source_health(
     for provider in CREATOR_PROVIDERS:
         base: dict[str, Any] = {
             "key": f"creator_{provider}",
-            "label": f"Creator {provider}",
+            "label": get_creator_provider(provider).display_name if get_creator_provider(provider) else f"Creator {provider}",
             "provider": provider,
             "role": "optional",
             "checked_at": now,

@@ -5,8 +5,9 @@ from __future__ import annotations
 import hashlib
 import re
 from typing import Any
+from src.creator_provider_registry import creator_ids, get_creator_provider
 
-KNOWN_SOURCES = {"financialjuice", "haojiao", "gooaye"}
+KNOWN_SOURCES = {"financialjuice", *creator_ids()}
 DLQ_STATES = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
 PARSER_VERSION = "railway-email-router-v1"
 
@@ -24,6 +25,20 @@ def template_fingerprint(subject: str, body: str, attachments: list[dict[str, An
 
 def route_source(*, sender: str, subject: str, body: str, attachments: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     haystack = " ".join((_text(sender), _text(subject), _text(body))).casefold()
+    registry_signals = {
+        provider: get_creator_provider(provider).markers
+        for provider in creator_ids()
+        if get_creator_provider(provider)
+    }
+    for provider, markers in registry_signals.items():
+        if any(marker in haystack for marker in markers):
+            return {
+                "source": provider,
+                "content_type": "creator_analysis",
+                "parse_status": "identified" if any(marker in haystack for marker in ("episode", "market view", "takeaway", "creator")) else "unsupported_template",
+                "failure_reason": None if any(marker in haystack for marker in ("episode", "market view", "takeaway", "creator")) else "known_source_template_not_matched",
+                "template_fingerprint": template_fingerprint(subject, body, attachments),
+            }
     signals = {
         "financialjuice": ("financialjuice", "financial juice", "breaking news"),
         "haojiao": ("haojiao", "財經皓角", "皓角"),

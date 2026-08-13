@@ -7,6 +7,8 @@ import re
 from datetime import UTC, datetime
 from typing import Any
 
+from src.creator_provider_registry import editorial_creator_ids
+
 SOURCE_TIERS = {
     "gmail": "transport",
     "financialjuice": "discovery",
@@ -18,10 +20,10 @@ SOURCE_TIERS = {
     "twse": "official",
     "sec": "official",
     "fed": "official",
-    "haojiao": "editorial",
-    "gooaye": "editorial",
 }
-EDITORIAL_SOURCES = {"haojiao", "gooaye"}
+for _creator_id in editorial_creator_ids():
+    SOURCE_TIERS[_creator_id] = "editorial"
+EDITORIAL_SOURCES = set(editorial_creator_ids())
 
 # Normalize common Traditional/Simplified Chinese and English aliases before
 # clustering.  This is deliberately a small deterministic lexicon: it helps

@@ -11,6 +11,7 @@ import re
 from typing import Any
 
 from src.creator_source_adapters import parse_creator_template
+from src.creator_provider_registry import is_known_creator
 from src.email_intelligence import normalize_creator_insight, route_email_source
 
 MAX_FIELD_CHARS = 600
@@ -83,7 +84,7 @@ def _parse_creator_email_legacy(*, sender: str, subject: str, body: str, source:
     """
     route = route_email_source(sender=sender, subject=subject, body=body)
     origin = source or route["source"]
-    if origin not in {"haojiao", "gooaye"}:
+    if not is_known_creator(origin):
         return {"parse_status": "invalid_source", "failure_reason": "source_not_creator", "message_id": message_id}
     title = _section(body, ("title", "標題", "主題")) or _clip(subject, 240)
     if not title:
@@ -120,7 +121,7 @@ def parse_creator_email(*, sender: str, subject: str, body: str, source: str | N
     """Parse a creator template with deterministic adapter and safe fallback."""
     route = route_email_source(sender=sender, subject=subject, body=body)
     origin = source or route["source"]
-    if origin not in {"haojiao", "gooaye"}:
+    if not is_known_creator(origin):
         return {"parse_status": "invalid_source", "failure_reason": "source_not_creator", "message_id": message_id}
     adapted = parse_creator_template(
         source=origin,
@@ -156,7 +157,7 @@ def parse_external_email(**kwargs: Any) -> dict[str, Any]:
     )
     if route["source"] == "financialjuice":
         return parse_financialjuice_email(**kwargs)
-    if route["source"] in {"haojiao", "gooaye"}:
+    if is_known_creator(route["source"]):
         return parse_creator_email(**kwargs, source=route["source"])
     return {"parse_status": "invalid_source", "failure_reason": "unknown_template", "message_id": kwargs.get("message_id", "")}
 

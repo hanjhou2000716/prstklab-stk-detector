@@ -24,6 +24,7 @@ from src.scheduled_brief import (
     write_event_lock_key,
 )
 from src.telegram_client import send_photo_briefs
+from src.creator_provider_registry import creator_ids
 
 _DEFAULT_CREATOR_RECORDS_PATH = Path("creator/public-records.json")
 
@@ -78,15 +79,15 @@ def _creator_input_failures() -> dict[str, str]:
         return {}
     path = _creator_records_path()
     if path is None:
-        return {"haojiao": "creator_records_unavailable", "gooaye": "creator_records_unavailable"}
+        return {provider: "creator_records_unavailable" for provider in creator_ids()}
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError):
-        return {"haojiao": "creator_records_parse_failed", "gooaye": "creator_records_parse_failed"}
+        return {provider: "creator_records_parse_failed" for provider in creator_ids()}
     if isinstance(payload, dict):
         payload = payload.get("records")
     if not isinstance(payload, list):
-        return {"haojiao": "creator_records_invalid_shape", "gooaye": "creator_records_invalid_shape"}
+        return {provider: "creator_records_invalid_shape" for provider in creator_ids()}
     blocked_states = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
     private_fields = {"body", "raw_body", "local_path", "private_url", "attachments", "data"}
     failures: dict[str, str] = {}
@@ -94,7 +95,7 @@ def _creator_input_failures() -> dict[str, str]:
         if not isinstance(item, dict):
             continue
         provider = str(item.get("content_origin") or item.get("source") or "").strip().lower()
-        if provider not in {"haojiao", "gooaye"}:
+        if provider not in creator_ids():
             continue
         if str(item.get("parse_status") or "").strip().lower() in blocked_states:
             failures[provider] = "creator_records_parse_failed"
