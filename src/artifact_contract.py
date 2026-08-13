@@ -167,7 +167,7 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
     hide a failed scan, and an empty-but-successful scan remains observable.
     """
     errors = _schema_errors(document, "source-health.schema.json")
-    allowed_status = {"healthy", "partial", "warming", "critical", "pending", "failed", "scan_failed", "no_event"}
+    allowed_status = {"healthy", "partial", "warming", "critical", "pending", "failed", "scan_failed", "no_event", "configuration_missing"}
     gap_states = {"fallback_active", "configuration_missing", "stale", "partial", "failed", "critical"}
     declared_missing = document.get("missing_source_count")
     if isinstance(declared_missing, int) and declared_missing >= 0:

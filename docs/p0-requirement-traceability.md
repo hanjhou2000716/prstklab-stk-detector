@@ -14,7 +14,7 @@ evidence remains `NEEDS_REVERIFY`.
 | P0-05 publish before notify | workflow contracts and `src/release_gate.py` | PR #576 targeted + CI 31714451717 | no delivery before public release | PASS / LOCKED |
 | P0-06 safe data publishing | `src/data_release.py`, data writer workflows | PR #577 targeted 23; CI 31714451717 | data stays off main; Pages restore | PASS / LOCKED |
 | P0-07 reproducible CI and security | `pyproject.toml`, `uv.lock`, quality/security workflows | PR #577 targeted 16; CI quality/security/CodeQL/SBOM | no mutable actions, locked dependencies | PASS / LOCKED |
-| P0-08 source health and data gaps | `src/source_health.py`, health schemas | Existing tests; current evidence audit pending | source failure vs no-event separation | NEEDS_REVERIFY |
+| P0-08 source health and data gaps | `src/source_health.py`, `src/artifact_contract.py`, health schemas | 50 targeted source-health/artifact tests; caught and fixed missing-label aggregation crash; compileall/diff checks passed; PR CI pending | source failure vs no-event separation; configuration gap remains distinct | NEEDS_REVERIFY |
 | P0-09 event source and intelligence fan-out | external parsers/pipeline/intelligence | FinancialJuice targeted suites and PR history | unresolved envelopes remain fail-closed | PASS / LOCKED |
 | P0-10 vendor priority boundary | `src/financialjuice_contract.py` | 8/10 and 7/10 targeted policy tests | vendor priority cannot alter PRStK risk | PASS / LOCKED |
 | P0-11 event ledger and notification identity | ledger, budget, alert envelope | PR #569–#572 targeted + CI | cooldown/suppression lineage preserved | PASS / LOCKED |

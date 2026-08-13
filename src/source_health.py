@@ -317,7 +317,13 @@ def build_source_health(
             if not isinstance(item, dict):
                 continue
             normalized = dict(item)
+            # Optional adapters may provide only a machine key and status.
+            # Keep the public envelope total so a degraded provider cannot
+            # crash source-health aggregation while building data_gaps.
+            normalized.setdefault("label", normalized.get("key") or "unknown source")
             normalized["state"] = _canonical_state(normalized)
+            if str(normalized.get("status") or "") in {"missing_api_key", "not_configured"}:
+                normalized["status"] = "configuration_missing"
             normalized["semantic_state"] = _semantic_state(normalized)
             normalized.setdefault("role", "optional")
             # The current refresh succeeded for healthy providers, so this is a

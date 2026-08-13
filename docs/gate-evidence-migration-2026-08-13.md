@@ -83,6 +83,7 @@ is authoritative for the Gate-Driven migration audit.
 |---|---|---|---|---|---|---|
 | REG-565-001 | registry import additions | CI Ruff import ordering failure | imports were added below local imports | reordered imports; CI rerun passed | run 31693131665 | CLOSED |
 | REG-565-002 | registry optional lookup | CI Mypy union-attr failure | provider lookup was called twice without narrowing | bound optional config before use; CI rerun passed | run 31693131665 | CLOSED |
+| REG-P0-08-001 | P0-08 source-health aggregation | An optional adapter record containing only `key` and `status` crashed while building `data_gaps` | Normalize a safe label and map missing credentials to the schema-level `configuration_missing` state before aggregation | 50 targeted source-health/artifact tests; PR CI pending | CLOSED |
 
 ## Completion-debt ledger
 
@@ -98,6 +99,7 @@ is authoritative for the Gate-Driven migration audit.
 ## Preservation contracts
 
 - PC-001: existing provider routing and fail-closed unknown-source behavior preserved by targeted tests — PASS.
+- PC-007: source-health `no_event`, `scan_failed`, and `configuration_missing` remain distinct; incomplete optional metadata cannot crash aggregation — targeted P0-08 tests PASS; PR CI pending.
 - PC-002: Creator content remains editorial and cannot become market-event evidence — PASS by registry policy/tests.
 - PC-003: release-gate and notification code paths remain unchanged except dynamic provider inputs — PASS by CI dry-run.
 
