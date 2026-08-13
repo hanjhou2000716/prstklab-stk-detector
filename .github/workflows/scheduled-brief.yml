@@ -61,6 +61,11 @@ jobs:
       # Keep it outside site/ so raw ingress material can never be uploaded
       # as part of the Pages artifact.
       CREATOR_RECORDS_PATH: ${{ vars.CREATOR_RECORDS_PATH }}
+      # Creator delivery is opt-in.  It is intentionally disabled until the
+      # operator configures a private media root and a scoped recipient list.
+      CREATOR_NOTIFICATION_ENABLED: ${{ vars.CREATOR_NOTIFICATION_ENABLED }}
+      CREATOR_MEDIA_ROOT: ${{ vars.CREATOR_MEDIA_ROOT }}
+      CREATOR_DELIVERY_RECEIPTS_PATH: /tmp/prstk-creator-delivery-receipts.json
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -159,6 +164,32 @@ jobs:
           FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count }}
           RENDERER_ERROR_TYPE: ${{ steps.send_brief.outputs.renderer_error_type }}
           FAILED_RECIPIENT_HASHES: ""
+        run: python -m src.delivery_callback
+      - name: Send release-gated Creator notifications
+        if: steps.release_gate.outputs.allowed == 'true' && env.CREATOR_NOTIFICATION_ENABLED == 'true'
+        id: creator_dispatch
+        run: |
+          python -m src.creator_dispatch \
+            --manifest "$MANIFEST_PATH" \
+            --public-url "${{ steps.deployment.outputs.page_url }}" \
+            >> "$GITHUB_OUTPUT"
+      - name: Persist Creator delivery receipt to Railway
+        if: always() && steps.creator_dispatch.outcome == 'success' && steps.creator_dispatch.outputs.creator_delivery_status != '' && steps.creator_dispatch.outputs.creator_sent != '0'
+        continue-on-error: true
+        env:
+          RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
+          RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET }}
+          DELIVERY_RECEIPT_KIND: creator
+          TRACE_ID: ${{ steps.creator_dispatch.outputs.creator_trace_id }}
+          RELEASE_ID: ${{ steps.creator_dispatch.outputs.creator_release_id }}
+          SNAPSHOT_ID: ${{ steps.creator_dispatch.outputs.creator_snapshot_id }}
+          ALERT_ID: ${{ steps.creator_dispatch.outputs.creator_alert_id }}
+          DELIVERY_MODE: ${{ steps.creator_dispatch.outputs.creator_delivery_mode }}
+          DELIVERY_STATUS: ${{ steps.creator_dispatch.outputs.creator_delivery_status }}
+          DELIVERED_COUNT: ${{ steps.creator_dispatch.outputs.creator_delivered_count }}
+          FAILED_COUNT: ${{ steps.creator_dispatch.outputs.creator_failed_count }}
+          FAILED_RECIPIENT_HASHES: ""
+          RENDERER_ERROR_TYPE: ""
         run: python -m src.delivery_callback
       - name: Save event delivery lock
         if: success() && steps.send_brief.outputs.event_key != ''

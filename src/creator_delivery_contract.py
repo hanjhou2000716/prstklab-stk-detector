@@ -36,7 +36,14 @@ def decide_creator_delivery(
     if not release_ready:
         reasons.append("release_gate_not_ready")
     key = creator_notification_key(episode, notification_type) if episode else ""
-    sent = any(str(row.get("notification_key") or "") == key and str(row.get("status") or "") in {"delivered", "partial"} for row in (delivery_history or []))
+    # Historical receipts used ``status`` while the durable delivery-receipt
+    # contract uses ``delivery_status``.  Read both names so a restart or a
+    # schema upgrade cannot resend an episode that was already delivered.
+    sent = any(
+        str(row.get("notification_key") or "") == key
+        and str(row.get("status") or row.get("delivery_status") or "") in {"delivered", "partial"}
+        for row in (delivery_history or [])
+    )
     if sent:
         reasons.append("already_delivered")
     return {

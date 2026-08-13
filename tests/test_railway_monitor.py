@@ -1079,6 +1079,33 @@ def test_seen_store_registers_signed_production_receipt_without_outbox(tmp_path)
     ).fetchone() == (4, 3)
 
 
+def test_seen_store_registers_creator_receipt_without_outbox(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    trace_id = "creator-release-test-1234"
+    assert store.record_delivery_status({
+        "trace_id": trace_id,
+        "receipt_kind": "creator",
+        "receipt_origin": "github_actions",
+        "release_id": "release-creator",
+        "snapshot_id": "snapshot-creator",
+        "alert_id": "creator-release-creator",
+        "delivery_mode": "text",
+        "delivery_status": "delivered",
+        "delivered_count": 1,
+        "failed_count": 0,
+        "failed_recipient_hashes": [],
+    })
+    row = store.connection.execute(
+        "SELECT source,event_id,category,status FROM delivery_outbox WHERE trace_id = ?",
+        (trace_id,),
+    ).fetchone()
+    assert row == ("github_actions", "creator-release-creator", "creator_receipt", "delivered")
+    assert store.connection.execute(
+        "SELECT delivered_count,failed_count FROM delivery_receipts WHERE trace_id=? AND recipient_hash='__aggregate__'",
+        (trace_id,),
+    ).fetchone() == (1, 0)
+
+
 def test_seen_store_rejects_unknown_production_receipt(tmp_path):
     store = monitor.SeenStore(tmp_path / "state.sqlite3")
     assert store.record_delivery_status({

@@ -1171,7 +1171,7 @@ class SeenStore:
         trace_id = str(payload.get("trace_id") or "").strip()
         receipt_kind = str(payload.get("receipt_kind") or "production").strip()
         status = str(payload.get("delivery_status") or "unknown").strip()
-        if receipt_kind not in {"production", "photo_smoke"}:
+        if receipt_kind not in {"production", "photo_smoke", "creator"}:
             raise ValueError("invalid delivery receipt kind")
         if not trace_id or status not in {"delivered", "partial", "failed"}:
             raise ValueError("invalid delivery receipt")
@@ -1206,6 +1206,14 @@ class SeenStore:
                     and payload.get("alert_id") == "photo-smoke-test"
                     and payload.get("delivery_mode") == "photo"
                 )
+                creator_receipt = (
+                    receipt_kind == "creator"
+                    and payload.get("receipt_origin") == "github_actions"
+                    and bool(payload.get("release_id"))
+                    and bool(payload.get("snapshot_id"))
+                    and bool(payload.get("alert_id"))
+                    and payload.get("delivery_mode") in {"photo", "text"}
+                )
                 production_receipt = (
                     receipt_kind == "production"
                     and payload.get("receipt_origin") == "github_actions"
@@ -1214,7 +1222,7 @@ class SeenStore:
                     and bool(payload.get("alert_id"))
                     and payload.get("delivery_mode") in {"text", "photo"}
                 )
-                if not (photo_smoke or production_receipt):
+                if not (photo_smoke or creator_receipt or production_receipt):
                     logging.warning("delivery receipt for unknown trace_id=%s", trace_id)
                     return False
                 smoke_payload = {
@@ -1239,7 +1247,7 @@ class SeenStore:
                         ),
                         "github_actions",
                         payload.get("alert_id") or "photo-smoke-test",
-                        "photo_smoke" if photo_smoke else "production_receipt",
+                        "photo_smoke" if photo_smoke else "creator_receipt" if creator_receipt else "production_receipt",
                         json.dumps(smoke_payload, ensure_ascii=False, sort_keys=True),
                         status,
                         now,
