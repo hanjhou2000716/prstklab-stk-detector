@@ -21,6 +21,7 @@
 | Event ledger decision provenance | PASS / LOCKED | PR #569; 25 targeted tests, Ruff, Mypy, compile and CI runs 31700567920/31700568021 passed |
 | Event ledger delivery integration | PASS / LOCKED | PR #569; official monitor regression 27 passed; CI run 31701134871 and security run 31701134916 passed |
 | Alert notification identity | PASS / LOCKED | PR #570; 34 targeted tests, Ruff, Mypy and CI run 31701759034/security run 31701759052 passed |
+| Alert envelope notification contract | IN_PROGRESS | Common AlertEnvelope/schema expose shared notification_id |
 | Existing P0 requirements from the continuation brief | NEEDS_REVERIFY | The brief enumerates P0-01 through P0-29; this branch only addresses provider-registry scope. Each remaining DoD needs a separate evidence row before being marked PASS. |
 
 ## Verification evidence
@@ -43,6 +44,7 @@
 | REQ-P0-11-LEDGER-DECISION | Event ledger preserves compound identity and notification blocking reasons | `src/event_ledger.py` | 25 targeted tests; Ruff, Mypy and compile pass | PR #569 + CI runs 31700567920/31700568021 | existing cooldown and delivery history preserved | PASS / LOCKED |
 | REQ-P0-11-LEDGER-INTEGRATION | Official delivery records gate/budget suppression reasons | `src/official_event_monitor.py` | 27 targeted tests; Ruff, Mypy and compile pass | PR #569 + CI runs 31701134871/31701134916 | existing safe no-send behaviour preserved | PASS / LOCKED |
 | REQ-P0-11-NOTIFICATION-ID | Budget, ledger and compound events share notification identity | `src/alert_budget.py`, `src/external_event_pipeline.py`, `src/event_ledger.py` | 34 targeted tests; Ruff, Mypy and diff checks pass | PR #570 + CI runs 31701759034/31701759052 | existing event key and cooldown preserved | PASS / LOCKED |
+| REQ-P0-11-ALERT-ENVELOPE | Alert schema carries shared notification identity | `src/alert_contract.py`, `schemas/alert.schema.json` | pending local verification | pending | existing alert provenance validation preserved | IN_PROGRESS |
 | P0-02..P0-29 | Existing continuation requirements | existing modules and prior PRs | evidence not yet reconciled against every DoD | no single current evidence artifact | open reconciliation | NEEDS_REVERIFY |
 
 ## Regression ledger
