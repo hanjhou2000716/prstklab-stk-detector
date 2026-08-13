@@ -9,12 +9,12 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/safe-data-publishing-contract` |
-| HEAD | `6581df4` (`docs(gates): record remote CI evidence at current head`) |
+| HEAD | `8df2b0f` (`docs(gates): include external ingress runbook`) |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current3` (pre-task) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
-| Local regression | `1139 passed, 1 skipped` at `a7c602c` (`.tmp-external-full`); evidence-only docs commit follows |
+| Local regression | `1139 passed, 1 skipped` at `a7c602c` (`.tmp-external-full`); subsequent commits are documentation-only |
 | Static checks | Ruff, Mypy and compileall passed at `a7c602c`; evidence-only docs changes do not alter runtime |
-| Remote PR | [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578), open; required quality/security checks pass for `301fb5b` |
+| Remote PR | [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578), open; required quality/security checks pass for `8df2b0f` |
 
 ## Current task reconciliation
 
@@ -73,7 +73,7 @@ present; it does not imply that an external production gate has passed.
 - Targeted release/news/Mini App/delivery-gate suite: `63 passed, 1 skipped`; full local regression: `1133 passed,
   1 skipped`; Ruff, Mypy, compile and `node --check` pass.
 - PR [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578)
-  required checks pass for `301fb5b` (test-and-dry-run, CodeQL, dependency review,
+  required checks pass for `8df2b0f` (test-and-dry-run, CodeQL, dependency review,
   SBOM and duplicate CodeQL check). Pages/Railway/Telegram production acceptance remains
   external and fail-closed.
 
