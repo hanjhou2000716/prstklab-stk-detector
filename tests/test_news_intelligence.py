@@ -57,3 +57,17 @@ def test_news_intelligence_schema_rejects_provider_domain_mismatch():
     assert validate_news_intelligence(artifact) == []
     artifact["stories"][0]["canonical_url"] = "https://evil.example/a"
     assert any("outside provider domains" in error for error in validate_news_intelligence(artifact))
+
+
+def test_news_intelligence_rejects_missing_provider_registry():
+    artifact = build_news_intelligence([])
+    artifact["provider_registry"] = None
+    assert any("provider_registry must be an array" in error for error in validate_news_intelligence(artifact))
+
+
+def test_news_intelligence_rejects_malformed_provider_entries():
+    artifact = build_news_intelligence([])
+    artifact["provider_registry"] = [None, {"provider_id": "dup", "domains": []}, {"provider_id": "dup", "domains": []}]
+    errors = validate_news_intelligence(artifact)
+    assert any("must be an object" in error for error in errors)
+    assert any("duplicates dup" in error for error in errors)
