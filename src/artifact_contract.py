@@ -190,7 +190,7 @@ def validate_news_release(document: dict[str, Any]) -> list[str]:
     markets = document.get("markets")
     if not isinstance(markets, dict):
         return validate_news_intelligence(document)
-    errors: list[str] = []
+    errors: list[str] = _schema_errors(document, "news-release.schema.json")
     for field in ("schema_version", "market_snapshot_id", "snapshot_id"):
         if not str(document.get(field) or ""):
             errors.append(f"news release {field} is missing")

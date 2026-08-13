@@ -87,6 +87,30 @@ def test_manifest_publishes_multi_market_news_release(tmp_path):
     assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 
+def test_multi_market_news_release_schema_rejects_missing_lineage(tmp_path):
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["news"] = {
+        "provider_registry": build_news_intelligence([])["provider_registry"],
+        "intelligence": {"taiwan": build_news_intelligence([], market="taiwan")},
+    }
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+    manifest = build_release_manifest(root=tmp_path)
+    news_path = tmp_path / "site" / "data" / "news.json"
+    news = json.loads(news_path.read_text(encoding="utf-8"))
+    news.pop("market_snapshot_id")
+    news_path.write_text(json.dumps(news), encoding="utf-8")
+    manifest["artifact_hashes"]["news.json"] = sha256_file(news_path)
+    assert verify_release_files(manifest, root=tmp_path / "site") == []
+    # The local release gate, unlike hash-only verification, rejects the
+    # malformed envelope before delivery.
+    from src.release_gate import _validate_news_artifact
+
+    errors = _validate_news_artifact(news, manifest)
+    assert any("market_snapshot_id" in error for error in errors)
+
+
 def test_manifest_publishes_release_bound_source_health_artifact(tmp_path):
     _artifacts(tmp_path)
     health_path = tmp_path / "site" / "data" / "source-health.json"
