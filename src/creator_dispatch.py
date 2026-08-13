@@ -18,7 +18,11 @@ from pathlib import Path
 from typing import Any, cast
 
 from src.config import get_settings
-from src.creator_delivery_store import append_creator_delivery_receipts, load_creator_delivery_history
+from src.creator_delivery_store import (
+    append_creator_delivery_receipts,
+    load_creator_delivery_history,
+    load_remote_creator_delivery_history,
+)
 from src.creator_notification import deliver_creator_episode
 from src.creator_release import validate_creator_release
 from src.release_manifest import verify_release_files
@@ -102,6 +106,10 @@ def dispatch(
     bot_token = token if token is not None else settings.telegram_bot_token
     recipients = chat_ids if chat_ids is not None else settings.telegram_chat_ids
     history = load_creator_delivery_history(receipt_path)
+    remote_history, remote_history_status = load_remote_creator_delivery_history(
+        os.getenv("RAILWAY_STATUS_URL"), os.getenv("RAILWAY_STATUS_SHARED_SECRET")
+    )
+    history.extend(remote_history)
     insights = cast(list[Any], creator.get("insights")) if isinstance(creator.get("insights"), list) else []
     receipts: list[dict[str, Any]] = []
     sent = blocked = 0
@@ -160,6 +168,7 @@ def dispatch(
         "creator_delivery_status": delivery_status,
         "creator_delivered_count": str(delivered_receipts),
         "creator_failed_count": str(failed_receipts),
+        "creator_remote_history_status": remote_history_status,
         "creator_notification_keys": ",".join(sorted({
             str(row.get("notification_key") or "").strip()
             for row in receipts

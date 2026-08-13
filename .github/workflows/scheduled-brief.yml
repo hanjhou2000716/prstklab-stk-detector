@@ -168,6 +168,9 @@ jobs:
       - name: Send release-gated Creator notifications
         if: steps.release_gate.outputs.allowed == 'true' && env.CREATOR_NOTIFICATION_ENABLED == 'true'
         id: creator_dispatch
+        env:
+          RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
+          RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET }}
         run: |
           python -m src.creator_dispatch \
             --manifest "$MANIFEST_PATH" \

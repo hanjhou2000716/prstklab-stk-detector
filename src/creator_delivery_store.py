@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import os
 import tempfile
 from pathlib import Path
 from typing import Any
+
+import requests
 
 MAX_RECEIPTS = 2000
 
@@ -60,4 +64,49 @@ def append_creator_delivery_receipts(
     return True
 
 
-__all__ = ["append_creator_delivery_receipts", "load_creator_delivery_history"]
+def load_remote_creator_delivery_history(
+    base_url: str | None,
+    shared_secret: str | None,
+    *,
+    timeout: float = 10,
+) -> tuple[list[dict[str, Any]], str]:
+    """Read bounded Creator notification keys from Railway.
+
+    A remote outage is explicitly fail-soft: the caller keeps local history
+    and records ``unavailable`` rather than treating the outage as proof that
+    no episode has previously been delivered.
+    """
+    url = str(base_url or "").strip().rstrip("/")
+    secret = str(shared_secret or "")
+    if not url:
+        return [], "not_configured"
+    if not secret:
+        return [], "secret_missing"
+    payload = {"receipt_kind": "creator", "limit": 200}
+    body = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    signature = "sha256=" + hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
+    try:
+        response = requests.post(
+            url + "/creator-delivery-history",
+            data=body,
+            headers={"Content-Type": "application/json", "X-PRSTK-Signature": signature},
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        result = response.json()
+    except (requests.RequestException, ValueError, TypeError):
+        return [], "unavailable"
+    keys = result.get("notification_keys") if isinstance(result, dict) else None
+    if not isinstance(keys, list):
+        return [], "invalid_response"
+    return [
+        {"notification_key": str(item)[:160], "delivery_status": "delivered", "source": "railway"}
+        for item in dict.fromkeys(str(item).strip() for item in keys if str(item).strip())
+    ][:MAX_RECEIPTS], "healthy"
+
+
+__all__ = [
+    "append_creator_delivery_receipts",
+    "load_creator_delivery_history",
+    "load_remote_creator_delivery_history",
+]

@@ -2140,7 +2140,47 @@ class HealthHandler(BaseHTTPRequestHandler):
                 code = 401 if type(error).__name__ in {"GmailIngressError"} else 400
                 self.send_error(code, "gmail push rejected")
                 return
-        if self.path != "/delivery-status":
+        if _health_request_path(self.path) == "/creator-delivery-history":
+            secret = os.environ.get("DELIVERY_STATUS_SHARED_SECRET", "")
+            if not secret:
+                self.send_error(503, "delivery callback is not configured")
+                return
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 16 * 1024)
+                body = self.rfile.read(length)
+                supplied = self.headers.get("X-PRSTK-Signature", "")
+                expected = "sha256=" + hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
+                if not hmac.compare_digest(supplied, expected):
+                    self.send_error(401)
+                    return
+                payload = json.loads(body.decode("utf-8"))
+                if str(payload.get("receipt_kind") or "") != "creator":
+                    self.send_error(400, "invalid receipt kind")
+                    return
+                limit = max(1, min(200, int(payload.get("limit", 200))))
+                history = DELIVERY_STORE.delivery_history(limit=limit) if DELIVERY_STORE is not None else []
+                keys = list(dict.fromkeys(
+                    str(item)[:160]
+                    for row in history
+                    if row.get("category") == "creator_receipt"
+                    for item in (row.get("notification_keys") or [])
+                    if isinstance(item, str) and item.strip()
+                ))[:200]
+                response = (json.dumps({"receipt_kind": "creator", "notification_keys": keys}, ensure_ascii=False) + "\n").encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(response)))
+                self.end_headers()
+                self.wfile.write(response)
+                return
+            except (ValueError, TypeError, json.JSONDecodeError):
+                self.send_error(400, "invalid delivery history request")
+                return
+            except Exception:
+                logging.exception("creator delivery history request failed")
+                self.send_error(500)
+                return
+        if _health_request_path(self.path) != "/delivery-status":
             self.send_error(404)
             return
         secret = os.environ.get("DELIVERY_STATUS_SHARED_SECRET", "")
