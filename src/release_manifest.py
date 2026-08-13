@@ -388,6 +388,30 @@ def build_release_manifest(
     market_id = content_snapshot_id(market, "market") if market else ""
     research_id = content_snapshot_id(research, "research") if research else ""
     event_id = content_snapshot_id(events, "event") if events else ""
+    # News is an additive, fail-soft artifact.  Keep it content-addressed to
+    # the same market snapshot so Pages cannot accidentally combine a new
+    # headline list with an older quote release.  Legacy market artifacts
+    # without the canonical intelligence payload remain valid and simply do
+    # not advertise a separate news artifact.
+    news_payload = market.get("news") if isinstance(market, dict) else None
+    news_artifact = news_payload.get("intelligence") if isinstance(news_payload, dict) else None
+    if isinstance(news_artifact, dict) and isinstance(news_artifact.get("stories"), list):
+        news_artifact = {
+            **news_artifact,
+            "market_snapshot_id": market_id,
+            "snapshot_id": content_snapshot_id(news_artifact, "news"),
+        }
+        news_path = root / "site" / "data" / "news.json"
+        try:
+            from src.artifact_contract import validate_news_intelligence
+
+            errors.extend(validate_news_intelligence(news_artifact))
+            _write_normalized_artifact(news_path, news_artifact)
+            resolved["news.json"] = news_path
+            loaded["news.json"] = news_artifact
+            hashes["news.json"] = sha256_file(news_path)
+        except OSError as exc:
+            errors.append(f"cannot persist/hash news artifact {news_path.as_posix()}: {type(exc).__name__}")
     creator_input_hash = _creator_identity_hash(creator_artifact, creator_records)
     policy = str(policy_version or os.getenv("POLICY_VERSION") or "2026.08")
     created_at = datetime.now(UTC).isoformat()
@@ -492,6 +516,7 @@ def build_release_manifest(
             "market": str(market.get("snapshot_schema_version") or "1.0"),
             "research": str(research.get("schema_version") or "1.0"),
             "events": str(events.get("schema_version") or "1.0"),
+            "news": "1.0" if "news.json" in loaded else None,
             "creator_insights": "1.0" if isinstance(creator_public_artifact, dict) else None,
         },
         "artifact_hashes": hashes,

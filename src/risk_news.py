@@ -14,6 +14,7 @@ from xml.etree import ElementTree
 
 import requests
 
+from src.news_intelligence import build_news_intelligence, provider_registry
 from src.taiwan_macro_fgi import calculate_taiwan_macro_fgi
 
 CNN_FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
@@ -549,6 +550,12 @@ def _filter_market_news(stories: list[dict[str, str]], market: str) -> list[dict
         if scope in {"taiwan", "us"} and scope != market:
             continue
         enriched.update(classification)
+        # Keep the legacy title/source/relevance fields for existing consumers,
+        # while attaching the canonical NewsStory contract used by release/UI.
+        canonical = build_news_intelligence([enriched], market=scope)["stories"]
+        if canonical:
+            enriched.update(canonical[0])
+            enriched["market"] = scope
         valid.append(enriched)
     return valid[:5]
 
@@ -684,5 +691,21 @@ def build_news_snapshot() -> dict[str, Any]:
                 health.update({"status": "failed", "item_count": 0,
                                "data_gap": health.get("data_gap") or "request_failed"})
                 result.setdefault("errors", []).append(f"{market} news unavailable")
+    # Produce one release-bound intelligence view per market.  This is additive
+    # to the legacy arrays so older Pages releases remain readable during a
+    # rolling deployment.  Unknown URLs remain visible as data-gap rows but are
+    # never linkable by the frontend or considered public-safe.
+    for market in ("taiwan", "us"):
+        stories = result.get(market) or []
+        result.setdefault("intelligence", {})[market] = build_news_intelligence(
+            stories,
+            market=market,
+            tracked_tickers=(),
+            tracked_sectors=(),
+            topics=(),
+            limit=5,
+        )
+    result["provider_registry"] = provider_registry()
+    result["schema_version"] = "1.0"
     _save_news_cache(cache)
     return result

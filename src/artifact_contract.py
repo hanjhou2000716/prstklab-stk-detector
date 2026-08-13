@@ -130,6 +130,46 @@ def validate_market(document: dict[str, Any]) -> list[str]:
     briefing = document.get("briefing")
     if isinstance(briefing, dict) and isinstance(briefing.get("intelligence"), dict):
         errors.extend(validate_intelligence(briefing["intelligence"]))
+    news = document.get("news")
+    if isinstance(news, dict) and isinstance(news.get("intelligence"), dict):
+        errors.extend(validate_news_intelligence(news["intelligence"]))
+    return errors
+
+
+def validate_news_intelligence(document: dict[str, Any]) -> list[str]:
+    """Validate the additive NewsStory/relevance contract in market releases."""
+    errors = _schema_errors(document, "news-intelligence.schema.json")
+    registry = document.get("provider_registry")
+    known: dict[str, dict[str, Any]] = {}
+    if not isinstance(registry, list):
+        return errors + ["news provider_registry must be an array"]
+    for index, provider in enumerate(registry):
+        if not isinstance(provider, dict):
+            errors.append(f"news.provider_registry[{index}] must be an object")
+            continue
+        provider_id = str(provider.get("provider_id") or "").strip()
+        domains = provider.get("domains")
+        if not provider_id or not isinstance(domains, list):
+            errors.append(f"news.provider_registry[{index}] requires provider_id/domains")
+            continue
+        if provider_id in known:
+            errors.append(f"news.provider_registry duplicates {provider_id}")
+        known[provider_id] = provider
+    for index, story in enumerate(document.get("stories", [])):
+        if not isinstance(story, dict):
+            continue
+        path = f"news.stories[{index}]"
+        provider = str(story.get("provider") or "")
+        if provider not in known:
+            errors.append(f"{path}: provider is not in provider_registry")
+            continue
+        url = str(story.get("canonical_url") or "")
+        host = (urlparse(url).hostname or "").lower().removeprefix("www.")
+        domains = [str(item).lower().removeprefix("www.") for item in known[provider].get("domains", [])]
+        if not url.startswith("https://") or not any(host == domain or host.endswith("." + domain) for domain in domains):
+            errors.append(f"{path}: canonical_url is outside provider domains")
+        if story.get("public_safe") is not True:
+            errors.append(f"{path}: public_safe must be true for published news")
     return errors
 
 
