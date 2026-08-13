@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from urllib.parse import urlsplit
+
 from src.news_feed_adapters import feed_catalog, fetch_official_market_news
 
 
@@ -34,7 +36,7 @@ def test_rss_adapter_normalizes_fed_atom_and_isolates_other_provider_failure():
     """
 
     def requester(url, **_kwargs):
-        if "sec.gov" in url:
+        if (urlsplit(url).hostname or "").lower().endswith("sec.gov"):
             raise TimeoutError("sec timeout")
         return Response(text=xml)
 
