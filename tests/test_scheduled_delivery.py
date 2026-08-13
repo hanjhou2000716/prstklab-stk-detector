@@ -179,3 +179,8 @@ def test_prepare_binds_creator_records_to_the_published_snapshot(tmp_path, monke
     scheduled_delivery.prepare("morning", snapshot_path)
     published = json.loads(snapshot_path.read_text(encoding="utf-8"))
     assert published["creator_insights"][0]["source"] == "gooaye"
+    assert published["source_health"]["sources"]
+    assert {row["key"] for row in published["source_health"]["sources"]} == {
+        "creator_haojiao",
+        "creator_gooaye",
+    }

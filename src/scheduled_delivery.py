@@ -61,6 +61,23 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
     """Create the exact snapshot that will later be deployed and delivered."""
     snapshot = build_market_snapshot()
     creator_records = _load_creator_records()
+    # Creator feeds are optional, but their operational state belongs in the
+    # same source-health contract as the published market snapshot.  Keep this
+    # merge after loading the external file so the market builder remains
+    # reusable for non-Creator refreshes.
+    if os.getenv("CREATOR_RECORDS_PATH", "").strip() or os.getenv("CREATOR_NOTIFICATION_ENABLED", "").strip():
+        from datetime import UTC, datetime
+
+        from src.creator_source_health import build_creator_source_health, merge_creator_sources
+
+        creator_rows = build_creator_source_health(
+            creator_records,
+            checked_at=datetime.now(UTC),
+            enabled=os.getenv("CREATOR_NOTIFICATION_ENABLED", "").strip().lower() == "true",
+            configured=bool(os.getenv("CREATOR_RECORDS_PATH", "").strip()),
+        )
+        snapshot["source_health"] = merge_creator_sources(snapshot.get("source_health") or {}, creator_rows)
+        snapshot["creator_source_health"] = creator_rows
     if creator_records:
         snapshot["creator_insights"] = creator_records
     snapshot["briefing"] = build_briefing_snapshot(snapshot, slot)
