@@ -74,7 +74,20 @@ def _creator_input_failures() -> dict[str, str]:
         payload = payload.get("records")
     if not isinstance(payload, list):
         return {"haojiao": "creator_records_invalid_shape", "gooaye": "creator_records_invalid_shape"}
-    return {}
+    blocked_states = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
+    private_fields = {"body", "raw_body", "local_path", "private_url", "attachments", "data"}
+    failures: dict[str, str] = {}
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        provider = str(item.get("content_origin") or item.get("source") or "").strip().lower()
+        if provider not in {"haojiao", "gooaye"}:
+            continue
+        if str(item.get("parse_status") or "").strip().lower() in blocked_states:
+            failures[provider] = "creator_records_parse_failed"
+        elif any(item.get(field) not in (None, "", [], {}) for field in private_fields):
+            failures[provider] = "creator_records_private_fields"
+    return failures
 
 
 def prepare(slot: str, snapshot_path: Path) -> dict:
