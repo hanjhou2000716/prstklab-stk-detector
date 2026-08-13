@@ -1,6 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
-from src.alert_budget import decide_alert_budget
+from src.alert_budget import decide_alert_budget, notification_identity
 
 NOW = datetime(2026, 8, 5, 2, 0, tzinfo=UTC)
 
@@ -30,6 +30,11 @@ def test_alert_budget_applies_hourly_cap():
     result = decide_alert_budget({"event_key": "new", "importance": "normal"}, history, now=NOW, max_hourly=8)
     assert result["allowed"] is False
     assert result["reason"] == "hourly_budget_exhausted"
+
+
+def test_notification_identity_prefers_explicit_alert_and_compound_ids():
+    assert notification_identity({"alert_id": "alert-1", "event_cluster_key": "cluster-1"}) == "alert-1"
+    assert notification_identity({"compound_item_id": "item-1", "event_cluster_key": "cluster-1"}) == "item-1"
 
 
 def test_alert_budget_normalizes_chinese_risk_labels_for_upgrade():

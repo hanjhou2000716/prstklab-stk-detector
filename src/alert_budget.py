@@ -9,6 +9,15 @@ from typing import Any
 LEVELS = {"normal": 0, "warning": 1, "high-risk": 2}
 
 
+def notification_identity(event: dict[str, Any]) -> str:
+    """Return the shared identity used by budget, ledger and delivery receipts."""
+    for key in ("notification_id", "alert_id", "compound_item_id", "event_cluster_key", "event_key", "source_url"):
+        value = str(event.get(key) or "").strip()
+        if value:
+            return value
+    return "unknown-notification"
+
+
 def _quality_block_reason(event: dict[str, Any]) -> str | None:
     """Fail closed when an event explicitly carries unsafe evidence flags.
 
@@ -63,13 +72,13 @@ def decide_alert_budget(
 ) -> dict[str, Any]:
     """Decide whether an event may be sent without hiding its reason."""
     current = now or datetime.now(UTC)
-    key = str(event.get("event_key") or event.get("event_cluster_key") or event.get("source_url") or "").strip()
+    key = notification_identity(event)
     quality_reason = _quality_block_reason(event)
     if quality_reason:
         return {"allowed": False, "reason": quality_reason, "upgraded": False, "event_key": key}
     level = _level(event.get("importance") or event.get("risk_level") or "normal")
     level_value = LEVELS.get(level, 0)
-    rows = [row for row in history if str(row.get("event_key") or row.get("event_cluster_key") or "") == key]
+    rows = [row for row in history if notification_identity(row) == key]
     recent = [_time(row.get("sent_at"), current) for row in history if current - _time(row.get("sent_at"), current) <= timedelta(hours=1)]
     previous_level = max((LEVELS.get(_level(row.get("importance") or row.get("risk_level") or "normal"), 0) for row in rows), default=-1)
     upgraded = level_value > previous_level and previous_level >= 0
@@ -81,5 +90,5 @@ def decide_alert_budget(
         latest = max(_time(row.get("sent_at"), current) for row in rows)
         if current - latest < timedelta(seconds=cooldown_seconds):
             return {"allowed": False, "reason": "cooldown", "upgraded": False, "event_key": key}
-    return {"allowed": True, "reason": "risk_upgrade" if upgraded else "budget_available", "upgraded": upgraded, "event_key": key}
+    return {"allowed": True, "reason": "risk_upgrade" if upgraded else "budget_available", "upgraded": upgraded, "event_key": key, "notification_id": key}
 

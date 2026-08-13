@@ -7,6 +7,7 @@ candidate release before publishing it or sending a notification.
 from __future__ import annotations
 
 import json
+import ntpath
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -101,7 +102,11 @@ def _quote_contract_errors(quote: dict[str, Any], path: str) -> list[str]:
     quote_date = _parse_time(quote.get("quote_date"))
     technical = quote.get("technical_context")
     technical_date = _parse_time(technical.get("as_of")) if isinstance(technical, dict) else None
-    if quote_date and technical_date and technical_date.date() < quote_date.date() and not quote.get("technical_context_stale"):
+    technical_stale = bool(
+        quote.get("technical_context_stale")
+        or (technical.get("technical_context_stale") if isinstance(technical, dict) else False)
+    )
+    if quote_date and technical_date and technical_date.date() < quote_date.date() and not technical_stale:
         errors.append(f"{path}: technical context predates quote without technical_context_stale=true")
     return errors
 
@@ -125,6 +130,46 @@ def validate_market(document: dict[str, Any]) -> list[str]:
     briefing = document.get("briefing")
     if isinstance(briefing, dict) and isinstance(briefing.get("intelligence"), dict):
         errors.extend(validate_intelligence(briefing["intelligence"]))
+    news = document.get("news")
+    if isinstance(news, dict) and isinstance(news.get("intelligence"), dict):
+        errors.extend(validate_news_intelligence(news["intelligence"]))
+    return errors
+
+
+def validate_news_intelligence(document: dict[str, Any]) -> list[str]:
+    """Validate the additive NewsStory/relevance contract in market releases."""
+    errors = _schema_errors(document, "news-intelligence.schema.json")
+    registry = document.get("provider_registry")
+    known: dict[str, dict[str, Any]] = {}
+    if not isinstance(registry, list):
+        return errors + ["news provider_registry must be an array"]
+    for index, provider in enumerate(registry):
+        if not isinstance(provider, dict):
+            errors.append(f"news.provider_registry[{index}] must be an object")
+            continue
+        provider_id = str(provider.get("provider_id") or "").strip()
+        domains = provider.get("domains")
+        if not provider_id or not isinstance(domains, list):
+            errors.append(f"news.provider_registry[{index}] requires provider_id/domains")
+            continue
+        if provider_id in known:
+            errors.append(f"news.provider_registry duplicates {provider_id}")
+        known[provider_id] = provider
+    for index, story in enumerate(document.get("stories", [])):
+        if not isinstance(story, dict):
+            continue
+        path = f"news.stories[{index}]"
+        provider = str(story.get("provider") or "")
+        if provider not in known:
+            errors.append(f"{path}: provider is not in provider_registry")
+            continue
+        url = str(story.get("canonical_url") or "")
+        host = (urlparse(url).hostname or "").lower().removeprefix("www.")
+        domains = [str(item).lower().removeprefix("www.") for item in known[provider].get("domains", [])]
+        if not url.startswith("https://") or not any(host == domain or host.endswith("." + domain) for domain in domains):
+            errors.append(f"{path}: canonical_url is outside provider domains")
+        if story.get("public_safe") is not True:
+            errors.append(f"{path}: public_safe must be true for published news")
     return errors
 
 
@@ -162,7 +207,7 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
     hide a failed scan, and an empty-but-successful scan remains observable.
     """
     errors = _schema_errors(document, "source-health.schema.json")
-    allowed_status = {"healthy", "partial", "warming", "critical", "pending", "failed", "scan_failed", "no_event"}
+    allowed_status = {"healthy", "partial", "warming", "critical", "pending", "failed", "scan_failed", "no_event", "configuration_missing"}
     gap_states = {"fallback_active", "configuration_missing", "stale", "partial", "failed", "critical"}
     declared_missing = document.get("missing_source_count")
     if isinstance(declared_missing, int) and declared_missing >= 0:
@@ -531,7 +576,37 @@ def validate_events(document: dict[str, Any]) -> list[str]:
 
 def validate_manifest(document: dict[str, Any]) -> list[str]:
     """Validate the release manifest envelope."""
-    return _schema_errors(document, "release-manifest.schema.json")
+    errors = _schema_errors(document, "release-manifest.schema.json")
+    paths = document.get("artifact_paths")
+    hashes = document.get("artifact_hashes")
+    if isinstance(paths, dict) and isinstance(hashes, dict):
+        required = ("market.json", "research-report.json", "event-ledger.json")
+        for name in required:
+            path = str(paths.get(name) or "").strip()
+            digest = str(hashes.get(name) or "").strip()
+            # Release artifact paths are portable logical paths.  ``Path``
+            # follows the runner OS, so a Windows drive path would otherwise
+            # pass validation on Linux (and vice versa).  Validate both
+            # separators and drive/UNC prefixes explicitly.
+            portable_path = path.replace("\\", "/")
+            drive, _ = ntpath.splitdrive(path)
+            is_absolute = bool(
+                portable_path.startswith("/")
+                or portable_path.startswith("//")
+                or drive
+            )
+            path_parts = tuple(part for part in portable_path.split("/") if part)
+            if path and is_absolute:
+                errors.append(f"manifest artifact path must be relative: {name}")
+            if path and ".." in path_parts:
+                errors.append(f"manifest artifact path escapes release root: {name}")
+            if path and digest and len(digest) == 64:
+                continue
+    if document.get("status") == "rolled_back" and not str(document.get("rollback_release_id") or "").strip():
+        errors.append("rolled_back manifest requires rollback_release_id")
+    if document.get("status") == "ready" and document.get("rollback_release_id"):
+        errors.append("ready manifest cannot declare rollback_release_id")
+    return sorted(set(errors))
 
 
 def validate_release(

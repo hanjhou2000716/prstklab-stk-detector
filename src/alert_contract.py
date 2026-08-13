@@ -21,6 +21,9 @@ class AlertEnvelope:
     release_id: str
     snapshot_id: str
     created_at: str
+    # Optional for legacy direct constructors; from_event always populates it
+    # and validate() still rejects an empty identity for valid envelopes.
+    notification_id: str = ""
     market: str = ""
     ticker: str | None = None
     trigger_reason: str = ""
@@ -31,13 +34,17 @@ class AlertEnvelope:
     policy_version: str = ""
     invalidation_condition: str = ""
 
+    def __post_init__(self) -> None:
+        if not self.notification_id:
+            self.notification_id = self.alert_id
+
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     def validate(self) -> None:
         if self.alert_type not in ALERT_TYPES or self.lifecycle_state not in LIFECYCLE_STATES or self.severity not in SEVERITIES:
             raise ValueError("invalid alert type, lifecycle state, or severity")
-        if not self.alert_id or not self.event_cluster_key or not self.title or not self.release_id or not self.snapshot_id:
+        if not self.alert_id or not self.notification_id or not self.event_cluster_key or not self.title or not self.release_id or not self.snapshot_id:
             raise ValueError("alert identity and release provenance are required")
         if len(self.short_caption) > 40:
             raise ValueError("short_caption exceeds 40 characters")
@@ -52,6 +59,7 @@ class AlertEnvelope:
         now = datetime.now(UTC).isoformat()
         item = cls(
             alert_id=str(event.get("alert_id") or event.get("event_key") or f"alert-{snapshot_id}"),
+            notification_id=str(event.get("notification_id") or event.get("alert_id") or event.get("event_cluster_key") or event.get("event_key") or f"notification-{snapshot_id}"),
             event_cluster_key=str(event.get("event_cluster_key") or event.get("event_key") or "unknown-event"),
             alert_type=str(event.get("alert_type") or event.get("kind") or "market_risk"),
             lifecycle_state=lifecycle_state,

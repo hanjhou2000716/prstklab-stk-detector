@@ -6,7 +6,7 @@ from typing import Any
 
 from src.advice_gate import build_explainability_card, evaluate_advice_gate
 from src.cross_asset_risk import detect_contagion
-from src.external_event_pipeline import build_external_event
+from src.external_event_pipeline import build_external_events
 from src.external_event_risk import cluster_external_events, notification_decision, score_prstk_risk
 from src.financialjuice_contract import normalize_financialjuice
 from src.market_impact_graph import build_market_impact_graph
@@ -56,7 +56,22 @@ def build_intelligence_context(
     advice_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     observations_list = list(observations or [])
-    external_input = list(external_observations or [])
+    external_input: list[dict[str, Any]] = []
+    for observation in external_observations or []:
+        if not isinstance(observation, dict):
+            continue
+        items = observation.get("items")
+        if isinstance(items, list) and items:
+            for item in items:
+                if isinstance(item, dict):
+                    external_input.append({
+                        **item,
+                        "source": observation.get("source") or observation.get("content_origin") or "financialjuice",
+                        "content_origin": observation.get("content_origin") or "financialjuice",
+                        "message_id": observation.get("message_id"),
+                    })
+        else:
+            external_input.append(observation)
     external_clusters = cluster_external_events(external_input)
     external_risk: dict[str, Any] = {"status": "not_available", "clusters": []}
     if external_clusters:
@@ -80,22 +95,33 @@ def build_intelligence_context(
         external_risk = {
             "status": "eligible" if score["notification_eligible"] else "pending",
             "cluster": first_cluster,
+            "clusters": external_clusters,
             "score": score,
             "notification": notification_decision(score),
         }
         if financialjuice is not None:
             external_risk["financialjuice"] = financialjuice
-        unified_events = [
-            build_external_event(
+        unified_events: list[dict[str, Any]] = []
+        for item in external_input:
+            if not isinstance(item, dict):
+                continue
+            unified_events.extend(build_external_events(
                 item,
                 source_observations=[other for other in external_input if other is not item],
                 official_confirmed=bool(event.get("official_confirmed")),
                 market_sync_confirmed=bool(event.get("market_sync_confirmed")),
-            )
-            for item in external_input
-            if isinstance(item, dict)
-        ]
+            ))
         external_risk["unified_events"] = unified_events
+        external_risk["financialjuice_items"] = [
+            {
+                "item_id": item.get("item_id"),
+                "event_cluster_key": item.get("event_cluster_key"),
+                "vendor_importance": item.get("vendor_importance"),
+                "headline": item.get("original_headline") or item.get("headline"),
+            }
+            for item in external_input
+            if str(item.get("source") or item.get("content_origin") or "").casefold() == "financialjuice"
+        ]
         external_risk["pending_reasons"] = sorted({
             reason
             for unified in unified_events

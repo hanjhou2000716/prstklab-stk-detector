@@ -6,7 +6,30 @@
     "market_sync_confirmed": {"type": "boolean"},
     "evidence_status": {"enum": ["confirmed", "insufficient_evidence", "not_available", "not_provided"]},
     "market_impact_graph": {"type": "object"},
-    "external_event_risk": {"type": "object"},
+    "external_event_risk": {
+      "type": "object",
+      "properties": {
+        "unified_events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "notification_id": {"type": ["string", "null"]},
+              "lifecycle_state": {"type": "string"},
+              "notification": {"type": "object"}
+            },
+            "required": ["lifecycle_state"],
+            "allOf": [{
+              "if": {"required": ["lifecycle_state"], "properties": {"lifecycle_state": {"const": "suppressed"}}},
+              "then": {},
+              "else": {"required": ["notification_id"]}
+            }],
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
     "market_regime": {"type": "object"},
     "contagion": {"type": "object"},
     "stress_scenarios": {"type": "array", "items": {"type": "object"}},

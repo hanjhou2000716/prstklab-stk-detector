@@ -44,3 +44,26 @@ def test_fj_contract_is_public_safe_and_time_normalized() -> None:
 def test_fj_observation_id_is_stable() -> None:
     record = {"original_headline": "headline", "published_at": "2026-08-13T01:00:00Z"}
     assert normalize_financialjuice(record)["observation_id"] == normalize_financialjuice(dict(record))["observation_id"]
+
+
+def test_vendor_8_is_priority_metadata_but_does_not_change_risk() -> None:
+    result = normalize_financialjuice({
+        "original_headline": "Policy update",
+        "importance": 8,
+        "event_type": "policy",
+    })
+    state = financialjuice_notification_state(result)
+    assert state["vendor_priority_notification"] is True
+    assert state["risk_level"] == "R2"
+    assert result["prstk_risk"]["notification_eligible"] is False
+
+
+def test_vendor_7_is_not_priority_notification() -> None:
+    result = normalize_financialjuice({
+        "original_headline": "Routine update",
+        "importance": 7,
+        "event_type": "policy",
+    })
+    state = financialjuice_notification_state(result)
+    assert state["vendor_priority_notification"] is False
+    assert state["vendor_priority_reason"] == "vendor_importance_below_8_or_missing"

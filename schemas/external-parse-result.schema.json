@@ -4,10 +4,10 @@
   "type": "object",
   "required": ["parse_status", "message_id"],
   "properties": {
-    "parse_status": {"enum": ["parsed", "parse_failed", "unsupported_template", "invalid_source", "duplicate"]},
+    "parse_status": {"enum": ["parsed", "parse_failed", "unsupported_template", "invalid_source", "duplicate", "compound_unresolved", "not_compound"]},
     "failure_reason": {"type": "string"},
     "message_id": {"type": "string"},
-    "content_origin": {"enum": ["financialjuice", "haojiao", "gooaye"]},
+    "content_origin": {"enum": ["financialjuice", "haojiao", "jenny", "gooaye"]},
     "content_type": {"enum": ["breaking_news", "creator_analysis"]},
     "vendor_importance": {"type": ["integer", "null"], "minimum": 0, "maximum": 10},
     "vendor_importance_present": {"type": "boolean"},

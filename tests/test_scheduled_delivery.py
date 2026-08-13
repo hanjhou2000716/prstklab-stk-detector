@@ -172,6 +172,7 @@ def test_creator_input_failure_is_not_reported_as_no_event(tmp_path, monkeypatch
     monkeypatch.setenv("CREATOR_RECORDS_PATH", str(tmp_path / "missing.json"))
     assert _creator_input_failures() == {
         "haojiao": "creator_records_unavailable",
+        "jenny": "creator_records_unavailable",
         "gooaye": "creator_records_unavailable",
     }
 
@@ -206,5 +207,6 @@ def test_prepare_binds_creator_records_to_the_published_snapshot(tmp_path, monke
     assert published["source_health"]["sources"]
     assert {row["key"] for row in published["source_health"]["sources"]} == {
         "creator_haojiao",
+        "creator_jenny",
         "creator_gooaye",
     }

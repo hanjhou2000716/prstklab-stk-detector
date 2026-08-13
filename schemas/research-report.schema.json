@@ -129,6 +129,20 @@
         "incomplete_record_count": {"type": ["integer", "null"], "minimum": 0},
         "candidates_definition": {"const": "visible_candidates"}
       },
+      "allOf": [
+        {
+          "if": {"required": ["candidate_state", "visible_candidates"], "properties": {"candidate_state": {"const": "no_candidates"}}},
+          "then": {"properties": {"visible_candidates": {"const": 0}}}
+        },
+        {
+          "if": {"required": ["candidate_state", "visible_candidates"], "properties": {"candidate_state": {"enum": ["available", "available_from_completed_records"]}}},
+          "then": {"properties": {"visible_candidates": {"type": "integer", "minimum": 1}}}
+        },
+        {
+          "if": {"required": ["scan_state", "candidate_state"], "properties": {"scan_state": {"const": "complete"}}},
+          "then": {"properties": {"candidate_state": {"enum": ["available", "no_candidates"]}}}
+        }
+      ],
       "additionalProperties": true
     }
   },

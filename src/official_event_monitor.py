@@ -265,12 +265,16 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             write_send_output(False, "missing_quote_provenance")
             print("Market signal has no snapshot/observation provenance; skipped safely.")
             return False
+    ledger = EventLedger()
     gate = verify_release_for_delivery(
         expected_snapshot_id=str(snapshot.get("snapshot_id") or ""),
         public_url=os.environ.get("PUBLIC_RELEASE_URL") or None,
         require_production_research=True,
     )
     if not gate.allowed:
+        if hasattr(ledger, "record_decision"):
+            ledger.record_decision(event, {"allowed": False, "status": "suppressed", "reason": "release_gate_blocked", "reasons": list(gate.errors)})
+            ledger.save()
         write_send_output(False, "release_gate_blocked")
         print("Release gate blocked official event delivery: " + "; ".join(gate.errors))
         return False
@@ -279,10 +283,12 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         write_send_output(False, "event_cooldown")
         print("Official event is inside the shared 30-minute cooldown; skipped safely.")
         return False
-    ledger = EventLedger()
     budget_event = {**event, "event_key": current_key}
     budget = decide_alert_budget(budget_event, ledger.delivery_history())
     if not budget.get("allowed", False):
+        if hasattr(ledger, "record_decision"):
+            ledger.record_decision(budget_event, {**budget, "status": "suppressed", "reasons": [str(budget.get("reason") or "suppressed")]})
+            ledger.save()
         write_send_output(False, f"alert_budget:{budget.get('reason', 'suppressed')}")
         print(f"Official event suppressed by alert budget: {budget.get('reason', 'suppressed')}")
         return False

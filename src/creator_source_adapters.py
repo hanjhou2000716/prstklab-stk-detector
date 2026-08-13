@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 from typing import Any
 
+from src.creator_provider_registry import get_creator_provider, is_known_creator
 from src.email_intelligence import normalize_creator_insight
 
 _MAX_FIELD_CHARS = 600
@@ -31,6 +32,10 @@ _LABELS: dict[str, dict[str, tuple[str, ...]]] = {
         "risk": ("risk", "risk view", "風險", "風險觀點"),
     },
 }
+# Jenny uses the same labelled public-safe sections in the first adapter
+# version; identity and future template changes remain controlled by the
+# registry rather than another source whitelist.
+_LABELS["jenny"] = dict(_LABELS["haojiao"])
 
 
 def _clip(value: str, limit: int = _MAX_FIELD_CHARS) -> str:
@@ -78,7 +83,7 @@ def parse_creator_template(
     labelled fact/opinion/takeaway.  This prevents a sender name alone from
     turning an arbitrary email into creator intelligence.
     """
-    if source not in _LABELS:
+    if not is_known_creator(source) or source not in _LABELS:
         return {
             "parse_status": "invalid_source",
             "failure_reason": "source_not_creator",
@@ -108,9 +113,10 @@ def parse_creator_template(
             "source_adapter": "creator-template-v2",
             "template_fingerprint": _fingerprint(source, subject, body),
         }
+    provider_config = get_creator_provider(source)
     insight = normalize_creator_insight({
         "creator_id": source,
-        "creator_name": source,
+        "creator_name": provider_config.display_name if provider_config else source,
         "episode_key": f"{source}:{message_id or title.casefold()}",
         "episode_id": message_id,
         "episode_title": title,

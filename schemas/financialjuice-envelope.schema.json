@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/financialjuice-envelope.schema.json",
+  "type": "object",
+  "required": ["parse_status", "message_id", "content_origin", "item_count", "items"],
+  "properties": {
+    "parse_status": {"enum": ["parsed", "compound_unresolved"]},
+    "parser_version": {"type": "string"},
+    "message_id": {"type": "string"},
+    "content_origin": {"const": "financialjuice"},
+    "content_type": {"const": "breaking_news"},
+    "compound": {"const": true},
+    "item_count": {"type": "integer", "minimum": 0},
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item_id", "content_hash", "event_cluster_key", "candidate_event_type", "original_headline"],
+        "properties": {
+          "item_id": {"type": "string", "minLength": 1},
+          "content_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "event_cluster_key": {"type": "string", "minLength": 1},
+          "candidate_event_type": {"type": "string"},
+          "original_headline": {"type": "string", "minLength": 1},
+          "vendor_importance": {"type": ["integer", "null"], "minimum": 0, "maximum": 10},
+          "public_safe": {"const": true}
+        },
+        "additionalProperties": true
+      }
+    },
+    "public_safe": {"const": true}
+  },
+  "additionalProperties": true
+}

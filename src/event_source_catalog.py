@@ -7,6 +7,8 @@ from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlparse
 
+from src.creator_provider_registry import creator_ids
+
 
 @dataclass(frozen=True)
 class EventSource:
@@ -33,8 +35,7 @@ EVENT_SOURCES: tuple[EventSource, ...] = (
     EventSource("reuters", "discovery", "https://www.reuters.com/", "discovery", 15, 45, False),
     EventSource("financialjuice", "discovery", "https://www.financialjuice.com/", "discovery", 5, 45, False),
     EventSource("gmail", "transport", "https://gmail.googleapis.com/", "transport", 5, 15, False),
-    EventSource("haojiao", "editorial", "https://www.youtube.com/", "editorial", 15, 180, False),
-    EventSource("gooaye", "editorial", "https://www.youtube.com/", "editorial", 15, 180, False),
+    *(EventSource(provider, "editorial", "https://www.youtube.com/", "editorial", 15, 180, False) for provider in creator_ids()),
 )
 
 _ALLOWED_TIERS = {"official", "public-market", "discovery", "transport", "editorial"}

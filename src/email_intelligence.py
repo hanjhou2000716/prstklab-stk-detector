@@ -11,7 +11,9 @@ import hashlib
 from datetime import UTC, datetime
 from typing import Any
 
-SOURCE_NAMES = ("financialjuice", "haojiao", "gooaye")
+from src.creator_provider_registry import creator_ids, get_creator_provider, is_known_creator
+
+SOURCE_NAMES = ("financialjuice", *creator_ids())
 CONTENT_TYPES = {"breaking_news", "creator_analysis", "unknown"}
 PARSE_STATES = {
     "received", "identified", "parsed", "normalized", "routed",
@@ -59,6 +61,12 @@ def creator_episode_key(record: dict[str, Any]) -> str:
 def route_email_source(*, sender: str = "", subject: str = "", body: str = "") -> dict[str, str]:
     """Route by deterministic sender/marker signals; unknown mail is DLQ-safe."""
     haystack = " ".join((_text(sender), _text(subject), _text(body))).casefold()
+    # Registry-driven providers are checked first so newly configured creators
+    # (including Jenny) do not require another hard-coded whitelist.
+    for provider in creator_ids():
+        metadata = get_creator_provider(provider)
+        if metadata and any(marker in haystack for marker in metadata.markers):
+            return {"source": provider, "content_type": "creator_analysis", "parse_status": "identified"}
     rules = (
         ("financialjuice", ("financial juice", "financialjuice", "financial-juice"), "breaking_news"),
         ("haojiao", ("號角", "hao jiao", "haojiao"), "creator_analysis"),
@@ -118,7 +126,7 @@ def normalize_creator_insight(record: dict[str, Any]) -> dict[str, Any]:
         return list(dict.fromkeys(_text(item) for item in value if _text(item)))
 
     source = _text(record.get("content_origin"))
-    if source not in {"haojiao", "gooaye"}:
+    if not is_known_creator(source):
         source = "unknown"
     verification = _text(record.get("verification_state")) or "unverified"
     if verification not in VERIFICATION_STATES:

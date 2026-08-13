@@ -120,6 +120,10 @@ def canonical_event_key(event: dict[str, Any] | None) -> str:
     else:
         facts = fact_fingerprint(event)
         source_url = normalize_source_url(event.get("source_url") or event.get("url"))
+        compound_cluster = str(event.get("compound_event_cluster_key") or "").strip()
+        if compound_cluster:
+            material = f"compound|{compound_cluster}"
+            return hashlib.sha256(material.encode("utf-8")).hexdigest()[:32]
         topic = str(event.get("topic_key") or event.get("source_key") or event.get("short_label") or event.get("event_type") or "official").casefold()
         # A source URL is a fallback identity only.  Topic + facts + release
         # bucket lets syndicated reports converge across different URLs.
@@ -208,6 +212,10 @@ class EventLedger:
                 "risk_rank": _risk_rank(risk_level),
                 "verified_sources": [source_url] if source_url else [],
                 "last_title": str(event.get("title") or event.get("summary") or ""),
+                "compound_item_id": str(event.get("compound_item_id") or "") or None,
+                "compound_event_cluster_key": str(event.get("compound_event_cluster_key") or "") or None,
+                "last_decision": None,
+                "decision_history": [],
                 "updated_at": now_iso,
             }
             self.records[key] = record
@@ -310,6 +318,42 @@ class EventLedger:
                 })
         return rows
 
+    def record_decision(
+        self,
+        event: dict[str, Any],
+        decision: dict[str, Any] | None = None,
+        *,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Persist a notification decision and its explicit blocking reason."""
+        current = now or datetime.now(UTC)
+        key = canonical_event_key(event)
+        self.observe(event, now=current)
+        record = self.records[key]
+        raw = decision if isinstance(decision, dict) else {}
+        nested: dict[str, Any] = {}
+        if isinstance(event.get("notification"), dict):
+            nested = event["notification"]
+        reasons = raw.get("reasons") or raw.get("pending_reasons") or event.get("pending_reasons") or []
+        if not isinstance(reasons, (list, tuple)):
+            reasons = [str(reasons)] if reasons else []
+        row = {
+            "recorded_at": current.isoformat(),
+            "allowed": bool(raw.get("allowed", nested.get("allowed", False))),
+            "status": str(raw.get("status") or nested.get("status") or "pending"),
+            "reason": str(raw.get("reason") or (reasons[0] if reasons else "")),
+            "reasons": [str(item) for item in reasons if str(item).strip()],
+        }
+        record["last_decision"] = row
+        history = record.setdefault("decision_history", [])
+        if not isinstance(history, list):
+            history = []
+            record["decision_history"] = history
+        history.append(row)
+        record["decision_history"] = history[-20:]
+        record["updated_at"] = current.isoformat()
+        return row
+
     def record_delivery(
         self,
         event: dict[str, Any],
@@ -332,6 +376,7 @@ class EventLedger:
             return history[-1] if history else {}
         row = {
             "event_key": key,
+            "notification_id": str(event.get("notification_id") or event.get("compound_item_id") or key),
             "sent_at": current.isoformat(),
             "importance": str(event.get("importance") or event.get("risk_level") or "normal"),
             "alert_type": str(event.get("alert_type") or event.get("event_type") or event.get("kind") or "market"),

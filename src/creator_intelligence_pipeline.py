@@ -7,6 +7,7 @@ from typing import Any
 from src.creator_artifact import build_creator_artifact
 from src.creator_consensus import build_creator_consensus
 from src.creator_correlation import correlate_creator_insight
+from src.creator_provider_registry import is_known_creator
 from src.creator_release import build_creator_release
 from src.email_intelligence import normalize_creator_insight
 
@@ -50,7 +51,7 @@ def build_creator_intelligence_release(
         if (record.get("parse_status") or record.get("source_adapter")) and not normalized["episode_title"]:
             dropped.append(f"{index}:missing_episode_title")
             continue
-        if normalized["content_origin"] not in {"haojiao", "gooaye"}:
+        if not is_known_creator(normalized["content_origin"]):
             dropped.append(f"{index}:unknown_creator_source")
             continue
         key = str(normalized["episode_key"])

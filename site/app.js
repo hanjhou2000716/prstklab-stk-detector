@@ -334,24 +334,25 @@ const renderRisk = (risk) => {
   }).join("");
 };
 
-const renderNewsList = (id, stories) => {
+const renderNewsList = (id, stories, providerRegistry = []) => {
   const container = document.getElementById(id);
   if (!container) return;
   if (!stories?.length) { container.innerHTML = '<li class="empty">目前沒有可顯示的公開新聞</li>'; return; }
   container.innerHTML = stories.slice(0, 5).map((story) => {
-    // Primary stories come from Anue; the market-specific RSS fallback uses
-    // Google News links.  Keep both public, read-only domains clickable while
-    // rejecting arbitrary URLs from the generated snapshot.
+    // URL safety is release-provided.  The UI never infers trust from a
+    // provider label or accepts an arbitrary URL from the payload.
     let url = "#";
     try {
       const parsed = new URL(story.url || "", window.location.href);
-      const allowed = ["news.cnyes.com", "news.google.com"];
-      if (parsed.protocol === "https:" && allowed.includes(parsed.hostname)) url = parsed.href;
+      const provider = providerRegistry.find((item) => item.provider_id === story.provider);
+      const domains = provider?.domains || [];
+      if (parsed.protocol === "https:" && domains.some((domain) => parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`)) && story.public_safe !== false) url = parsed.href;
     } catch (_) {
       url = "#";
     }
     const title = String(story.title || "").replace(/^\s*\d+\.\s*/, "");
-    return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><small>${escapeHtml(story.source)}</small></li>`;
+    const reasons = (story.relevance_reasons || []).slice(0, 2).map((reason) => `<em>${escapeHtml(reason)}</em>`).join(" ");
+    return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><small>${escapeHtml(story.source || story.provider_name || "公開來源")} ${reasons}</small></li>`;
   }).join("");
 };
 
@@ -873,8 +874,9 @@ const render = (snapshot) => {
   const creatorSource = snapshot.creator_release || snapshot.creator_public_artifact || snapshot.creator_intelligence;
   renderCreatorInsights(creatorSource);
   renderResearch(snapshot);
-  renderNewsList("taiwan-news", snapshot.news?.taiwan);
-  renderNewsList("us-news", snapshot.news?.us);
+  const newsRegistry = snapshot.news?.provider_registry || [];
+  renderNewsList("taiwan-news", snapshot.news?.intelligence?.taiwan?.stories || snapshot.news?.taiwan, newsRegistry);
+  renderNewsList("us-news", snapshot.news?.intelligence?.us?.stories || snapshot.news?.us, newsRegistry);
 };
 
 // Telegram buttons carry the release and alert identity.  Resolve that

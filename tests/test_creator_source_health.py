@@ -37,5 +37,5 @@ def test_merge_creator_sources_keeps_core_failure_and_optional_config_separate()
     rows = build_creator_source_health([], checked_at=datetime.now(UTC), enabled=False, configured=False)
     merged = merge_creator_sources(base, rows)
     assert merged["runtime_failure_count"] == 1
-    assert merged["configuration_missing_count"] == 2
+    assert merged["configuration_missing_count"] == 3
     assert merged["status"] == "critical"

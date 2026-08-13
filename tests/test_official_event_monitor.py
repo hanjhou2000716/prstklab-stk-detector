@@ -148,9 +148,17 @@ def test_official_monitor_suppresses_budgeted_event_before_renderer(monkeypatch,
     class FakeLedger:
         def __init__(self):
             self.records = {}
+            self.decisions = []
 
         def delivery_history(self):
             return [{"event_key": "iran-1", "importance": "警戒", "sent_at": (datetime.now(UTC) - timedelta(minutes=5)).isoformat()}]
+
+        def record_decision(self, event, decision):
+            self.decisions.append((event, decision))
+            return decision
+
+        def save(self):
+            return None
 
     monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
     monkeypatch.setattr(monitor, "send_photo_briefs", lambda **_kwargs: (_ for _ in ()).throw(AssertionError("renderer must not run")))

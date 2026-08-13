@@ -7,11 +7,15 @@ that could silently enter the alert pipeline.
 
 from __future__ import annotations
 
+import hashlib
 import re
 from typing import Any
 
+from src.creator_provider_registry import is_known_creator
 from src.creator_source_adapters import parse_creator_template
 from src.email_intelligence import normalize_creator_insight, route_email_source
+from src.event_classifier import classify_event_fields
+from src.financialjuice_contract import normalize_financialjuice_item
 
 MAX_FIELD_CHARS = 600
 DLQ_STATES = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
@@ -46,11 +50,141 @@ def _importance(body: str) -> int | None:
     return int(match.group(1)) if match else None
 
 
+_ITEM_MARKER = re.compile(r"(?im)^\s*(?:item|news\s+item|story)\s*#?\s*(\d+)\s*[:.)-]?\s*$")
+
+
+def _compound_blocks(body: str) -> list[str]:
+    """Split only explicit repeated-item sections; never guess from paragraphs."""
+    markers = list(_ITEM_MARKER.finditer(body))
+    if len(markers) < 2:
+        return []
+    blocks: list[str] = []
+    for index, marker in enumerate(markers):
+        end = markers[index + 1].start() if index + 1 < len(markers) else len(body)
+        block = body[marker.end():end].strip()
+        if block:
+            blocks.append(block)
+    return blocks
+
+
+def _item_record(block: str) -> dict[str, Any]:
+    def strict(labels: tuple[str, ...]) -> str:
+        for raw in block.splitlines():
+            line = raw.strip()
+            for label in labels:
+                match = re.match(rf"{re.escape(label)}\s*:\s*(.+)$", line, re.IGNORECASE)
+                if match:
+                    return _clip(match.group(1))
+        return ""
+
+    headline = strict(("original headline", "vendor original headline", "headline", "title"))
+    translation = strict(("translation", "chinese translation"))
+    analysis = strict(("ai commentary", "vendor analysis", "analysis"))
+    impact = strict(("possible impact", "vendor impact", "impact"))
+    published = strict(("published at", "published"))
+    source_url = strict(("source url", "url"))
+    tags = strict(("vendor tags", "tags"))
+    entities = [part.strip() for part in re.split(r"[,，;；]", strict(("entities",))) if part.strip()]
+    facts = {
+        "headline": headline,
+        "translation": translation,
+        "analysis": analysis,
+        "impact": impact,
+        "tags": tags,
+        "entities": entities,
+    }
+    classification = classify_event_fields(facts)
+    event_type = str(classification.get("category") or "unknown")
+    return {
+        "original_headline": headline,
+        "chinese_translation": translation,
+        "ai_commentary": analysis,
+        "possible_impact": impact,
+        "importance": _importance(block),
+        "published_at": published,
+        "source_url": source_url,
+        "vendor_tags": [part.strip() for part in re.split(r"[,，;；]", tags) if part.strip()],
+        "entities": entities,
+        "candidate_event_type": event_type,
+        "classification": classification,
+    }
+
+
+def _compound_cluster_key(item: dict[str, Any], normalized: dict[str, Any]) -> str:
+    """Keep item clusters independent when a vendor omits structured entities."""
+    material = "|".join(
+        str(item.get(key) or "") for key in ("candidate_event_type", "original_headline", "chinese_translation")
+    ) + "|" + str(normalized.get("content_hash") or "")
+    return "fj-cluster-" + hashlib.sha256(material.encode("utf-8")).hexdigest()[:24]
+
+
+def parse_financialjuice_compound_email(
+    *, sender: str, subject: str, body: str, message_id: str = "",
+) -> dict[str, Any]:
+    """Parse repeated FinancialJuice items with fail-closed compound semantics."""
+    blocks = _compound_blocks(body)
+    if not blocks:
+        return {"parse_status": "not_compound"}
+    records = [_item_record(block) for block in blocks]
+    if any(not record["original_headline"] for record in records):
+        return {
+            "parse_status": "compound_unresolved",
+            "failure_reason": "compound_item_missing_headline",
+            "parser_version": "financialjuice-compound-v1",
+            "message_id": message_id,
+            "content_origin": "financialjuice",
+            "content_type": "breaking_news",
+            "item_count": len(records),
+            "items": [],
+            "public_safe": True,
+        }
+    items: list[dict[str, Any]] = []
+    seen_clusters: set[str] = set()
+    for index, record in enumerate(records):
+        normalized = normalize_financialjuice_item(record, message_id=message_id, index=index)
+        normalized.update(
+            {
+                "headline": record["original_headline"],
+                "translation": record["chinese_translation"],
+                "vendor_tags": record["vendor_tags"],
+                "vendor_analysis": record["ai_commentary"],
+                "vendor_impact": record["possible_impact"],
+                "entities": record["entities"],
+                "candidate_event_type": record["candidate_event_type"],
+            }
+        )
+        cluster_key = _compound_cluster_key(record, normalized)
+        if cluster_key in seen_clusters:
+            cluster_key += "-" + str(index)
+        seen_clusters.add(cluster_key)
+        normalized["event_cluster_key"] = cluster_key
+        items.append(normalized)
+    return {
+        "parse_status": "parsed",
+        "parser_version": "financialjuice-compound-v1",
+        "message_id": message_id,
+        "content_origin": "financialjuice",
+        "content_type": "breaking_news",
+        "compound": True,
+        "item_count": len(items),
+        "items": items,
+        "attribution": "FinancialJuice",
+        "public_safe": True,
+    }
+
+
 def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_id: str = "") -> dict[str, Any]:
     """Parse a FinancialJuice relay into attributed, non-directional facts."""
     route = route_email_source(sender=sender, subject=subject, body=body)
     if route["source"] != "financialjuice":
         return {"parse_status": "invalid_source", "failure_reason": "source_not_financialjuice", "message_id": message_id}
+    compound = parse_financialjuice_compound_email(
+        sender=sender, subject=subject, body=body, message_id=message_id,
+    )
+    if compound.get("parse_status") == "parsed":
+        return compound
+    if compound.get("parse_status") == "compound_unresolved":
+        return compound
     importance = _importance(body)
     headline = _section(body, ("original headline", "原始標題", "headline")) or _first_line(body)
     translation = _section(body, ("translation", "中文翻譯", "翻譯"))
@@ -83,7 +217,7 @@ def _parse_creator_email_legacy(*, sender: str, subject: str, body: str, source:
     """
     route = route_email_source(sender=sender, subject=subject, body=body)
     origin = source or route["source"]
-    if origin not in {"haojiao", "gooaye"}:
+    if not is_known_creator(origin):
         return {"parse_status": "invalid_source", "failure_reason": "source_not_creator", "message_id": message_id}
     title = _section(body, ("title", "標題", "主題")) or _clip(subject, 240)
     if not title:
@@ -120,7 +254,7 @@ def parse_creator_email(*, sender: str, subject: str, body: str, source: str | N
     """Parse a creator template with deterministic adapter and safe fallback."""
     route = route_email_source(sender=sender, subject=subject, body=body)
     origin = source or route["source"]
-    if origin not in {"haojiao", "gooaye"}:
+    if not is_known_creator(origin):
         return {"parse_status": "invalid_source", "failure_reason": "source_not_creator", "message_id": message_id}
     adapted = parse_creator_template(
         source=origin,
@@ -156,9 +290,15 @@ def parse_external_email(**kwargs: Any) -> dict[str, Any]:
     )
     if route["source"] == "financialjuice":
         return parse_financialjuice_email(**kwargs)
-    if route["source"] in {"haojiao", "gooaye"}:
+    if is_known_creator(route["source"]):
         return parse_creator_email(**kwargs, source=route["source"])
     return {"parse_status": "invalid_source", "failure_reason": "unknown_template", "message_id": kwargs.get("message_id", "")}
 
 
-__all__ = ["DLQ_STATES", "parse_creator_email", "parse_external_email", "parse_financialjuice_email"]
+__all__ = [
+    "DLQ_STATES",
+    "parse_creator_email",
+    "parse_external_email",
+    "parse_financialjuice_compound_email",
+    "parse_financialjuice_email",
+]

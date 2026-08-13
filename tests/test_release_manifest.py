@@ -1,5 +1,6 @@
 import json
 
+from src.news_intelligence import build_news_intelligence
 from src.release_manifest import (
     _gap_count,
     _normalize_market,
@@ -33,6 +34,29 @@ def test_manifest_is_ready_and_hashes_are_verifiable(tmp_path):
     manifest = build_release_manifest(root=tmp_path)
     assert manifest["status"] == "ready"
     assert manifest["artifact_paths"]["market.json"] == "data/market.json"
+    assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
+def test_manifest_publishes_release_bound_news_intelligence(tmp_path):
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["news"] = {
+        "provider_registry": build_news_intelligence([])["provider_registry"],
+        "intelligence": build_news_intelligence(
+            [{"title": "Fed statement", "url": "https://www.federalreserve.gov/a"}],
+            market="us",
+        ),
+    }
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+
+    assert manifest["status"] == "ready"
+    assert manifest["artifact_paths"]["news.json"] == "data/news.json"
+    assert manifest["schema_versions"]["news"] == "1.0"
+    news = json.loads((tmp_path / "site" / "data" / "news.json").read_text(encoding="utf-8"))
+    assert news["market_snapshot_id"] == manifest["market_snapshot_id"]
     assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 
