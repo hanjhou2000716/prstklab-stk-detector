@@ -14,6 +14,11 @@ The states are deliberately separate:
 - `failed` / `parse_failed`: the provider or parser failed; the issue is
   visible in Mini App source health and cannot become market evidence.
 
+When Creator notification is enabled but the configured sanitized records file
+is missing, unreadable, or has the wrong shape, both known providers are marked
+`failed` with a bounded reason.  A valid empty records list remains `no_event`;
+the runtime never converts an input failure into a clean scan.
+
 The merge is performed during scheduled snapshot preparation, before release
 publication.  It preserves the core source-health rows and only updates the
 optional Creator rows, gap counts, and observability counters.  If Creator

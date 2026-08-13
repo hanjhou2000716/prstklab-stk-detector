@@ -165,6 +165,30 @@ def test_creator_records_with_private_body_or_parser_failure_are_rejected(tmp_pa
     assert _load_creator_records() == [{"source": "gooaye", "title": "safe", "parse_status": "parsed"}]
 
 
+def test_creator_input_failure_is_not_reported_as_no_event(tmp_path, monkeypatch):
+    from src.scheduled_delivery import _creator_input_failures
+
+    monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
+    monkeypatch.setenv("CREATOR_RECORDS_PATH", str(tmp_path / "missing.json"))
+    assert _creator_input_failures() == {
+        "haojiao": "creator_records_unavailable",
+        "gooaye": "creator_records_unavailable",
+    }
+
+
+def test_creator_filtered_records_are_reported_as_parse_failure(tmp_path, monkeypatch):
+    from src.scheduled_delivery import _creator_input_failures
+
+    records = tmp_path / "creator-records.json"
+    records.write_text(json.dumps({"records": [{
+        "source": "haojiao",
+        "parse_status": "unsupported_template",
+    }]}), encoding="utf-8")
+    monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
+    monkeypatch.setenv("CREATOR_RECORDS_PATH", str(records))
+    assert _creator_input_failures() == {"haojiao": "creator_records_parse_failed"}
+
+
 def test_prepare_binds_creator_records_to_the_published_snapshot(tmp_path, monkeypatch):
     records = tmp_path / "creator-records.json"
     records.write_text(json.dumps([{"source": "gooaye", "title": "public"}]), encoding="utf-8")

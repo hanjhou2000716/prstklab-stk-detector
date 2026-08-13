@@ -37,6 +37,8 @@ pipeline call and a tested consumer.
 | Creator/PRStK correlation | `src/creator_correlation.py`, `src/creator_intelligence_pipeline.py`, `src/briefing_cards.py` | yes | briefing creator binding | explicit entity matches + snapshot IDs | creator correlation state/reason | never a standalone signal | production |
 | Railway health contract | `src/railway_health_contract.py`, `railway-monitor/app.py` | yes | monitor health boundary | bounded status/retry/heartbeat | source health | observability only | partially_integrated |
 | Creator scheduled input | `src/scheduled_delivery.py`, `.github/workflows/scheduled-brief.yml` | yes | optional sanitized `CREATOR_RECORDS_PATH` | same market/creator release lineage | creator release | no raw creator media | production |
+| Creator source health runtime | `src/creator_source_health.py`, `src/scheduled_delivery.py`, `site/app.js` | yes | scheduled snapshot preparation | `source_health` + `creator_source_health` | optional source rows and no-event/failed distinction | observability only | production |
+| Creator delivery lineage | `src/creator_delivery_store.py`, `src/delivery_callback.py`, `railway-monitor/app.py` | yes | signed Creator callback + history read | private Railway receipt metadata | no raw receipt data | dedupe evidence | production |
 | Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | briefing contract + optional endpoint/local queue | yes | feedback controls | no | partially_integrated |
 
 ## Data state contract
@@ -138,6 +140,16 @@ The photo smoke receipt is intentionally a single-recipient diagnostic and
 uses a synthetic smoke alert identity.  It proves renderer, sendPhoto and
 receipt plumbing, not the content of a live event.  A release-gated production
 delivery must use the release identifiers above.
+
+### Creator delivery durability
+
+Creator dispatch first combines the bounded runner-local receipt file with the
+optional signed Railway `/creator-delivery-history` response.  Railway stores
+only notification keys, release/snapshot lineage, status and aggregate counts;
+it does not receive raw episode text, media, Telegram IDs or tokens.  A Railway
+outage is reported as `remote_history_status=unavailable` and is not treated as
+an empty history.  This keeps the dispatch fail-closed for release readiness
+while making the operational limitation explicit.
 
 ## Alert contract and lifecycle
 

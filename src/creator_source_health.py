@@ -152,6 +152,16 @@ def merge_creator_sources(health: dict[str, Any], rows: Iterable[dict[str, Any]]
         "no_event_count": sum(item.get("status") == "no_event" for item in sources),
     })
     merged["observability"] = observability
+    state_counts = dict(health.get("state_counts") or {})
+    source_roles = dict(health.get("source_roles") or {})
+    for row in creator_gaps + [item for item in sources if str(item.get("key") or "").startswith("creator_") and item not in creator_gaps]:
+        state = str(row.get("state") or "")
+        role = str(row.get("role") or "optional")
+        if state:
+            state_counts[state] = state_counts.get(state, 0) + 1
+        source_roles[role] = source_roles.get(role, 0) + 1
+    merged["state_counts"] = state_counts
+    merged["source_roles"] = source_roles
     return merged
 
 
