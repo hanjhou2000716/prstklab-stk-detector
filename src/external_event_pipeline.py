@@ -7,7 +7,7 @@ from typing import Any
 
 from src.event_classifier import classify_event_fields
 from src.external_event_risk import cluster_external_events, notification_decision, score_prstk_risk
-from src.financialjuice_contract import normalize_financialjuice
+from src.financialjuice_contract import financialjuice_notification_state, normalize_financialjuice
 
 PIPELINE_VERSION = "external-event-pipeline-v1"
 
@@ -31,6 +31,11 @@ def build_external_event(
     """
     source = str(record.get("source") or record.get("content_origin") or "unknown").casefold()
     normalized = normalize_financialjuice(record) if source == "financialjuice" else dict(record)
+    vendor_priority = (
+        financialjuice_notification_state(normalized)
+        if source == "financialjuice"
+        else None
+    )
     normalized.setdefault("source", source)
     normalized.setdefault("event_type", record.get("event_type") or record.get("category") or "unknown")
     normalized.setdefault("category", normalized.get("event_type"))
@@ -58,6 +63,7 @@ def build_external_event(
         "cluster": cluster,
         "risk": risk,
         "notification": decision,
+        "vendor_priority": vendor_priority,
         "lifecycle_state": lifecycle,
         "pending_reasons": list(decision.get("reasons") or normalized.get("pending_reasons") or []),
         "source_evidence": cluster.get("observations", []),
