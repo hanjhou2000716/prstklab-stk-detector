@@ -75,6 +75,25 @@ def test_market_rejects_stale_live_and_source_mismatch():
     assert any("source_domain" in error for error in errors)
 
 
+def test_market_schema_accepts_provenance_and_crosscheck_fields():
+    market = _market()
+    quote = market["indices"][0]
+    quote.update({
+        "quote_source": "TWSE MIS official close",
+        "source_domain": "mis.twse.com.tw",
+        "quote_time": "2026-08-04T09:59:00+08:00",
+        "crosscheck_sources": [{"provider": "TAIFEX", "source_url": "https://www.taifex.com.tw", "status": "observed"}],
+        "technical_context": {"as_of": "2026-08-04T00:00:00+08:00", "technical_context_stale": True},
+    })
+    assert validate_market(market) == []
+
+
+def test_market_schema_rejects_crosscheck_without_provider():
+    market = _market()
+    market["indices"][0]["crosscheck_sources"] = [{"status": "observed"}]
+    assert any("provider" in error for error in validate_market(market))
+
+
 def _source_health(**overrides):
     document = {
         "status": "partial",

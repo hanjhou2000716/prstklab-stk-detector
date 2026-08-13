@@ -101,7 +101,11 @@ def _quote_contract_errors(quote: dict[str, Any], path: str) -> list[str]:
     quote_date = _parse_time(quote.get("quote_date"))
     technical = quote.get("technical_context")
     technical_date = _parse_time(technical.get("as_of")) if isinstance(technical, dict) else None
-    if quote_date and technical_date and technical_date.date() < quote_date.date() and not quote.get("technical_context_stale"):
+    technical_stale = bool(
+        quote.get("technical_context_stale")
+        or (technical.get("technical_context_stale") if isinstance(technical, dict) else False)
+    )
+    if quote_date and technical_date and technical_date.date() < quote_date.date() and not technical_stale:
         errors.append(f"{path}: technical context predates quote without technical_context_stale=true")
     return errors
 

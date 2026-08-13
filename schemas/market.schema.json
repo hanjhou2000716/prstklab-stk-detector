@@ -53,12 +53,37 @@
         "price": {"type": ["number", "null"]},
         "quote_date": {"type": ["string", "null"]},
         "source_label": {"type": "string", "minLength": 1},
+        "quote_source": {"type": "string"},
         "source_url": {"type": "string"},
+        "source_domain": {"type": "string"},
+        "quote_time": {"type": ["string", "null"]},
         "fetched_at": {"type": ["string", "null"]},
         "published_at": {"type": ["string", "null"]},
         "freshness": {"type": "string"},
         "stale_used": {"type": "boolean"},
-        "quote_delayed": {"type": "boolean"}
+        "quote_delayed": {"type": "boolean"},
+        "crosscheck_sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["provider"],
+            "properties": {
+              "provider": {"type": "string", "minLength": 1},
+              "source_url": {"type": "string"},
+              "quote_date": {"type": ["string", "null"]},
+              "status": {"type": "string"}
+            },
+            "additionalProperties": true
+          }
+        },
+        "technical_context": {
+          "type": "object",
+          "properties": {
+            "as_of": {"type": ["string", "null"]},
+            "technical_context_stale": {"type": "boolean"}
+          },
+          "additionalProperties": true
+        }
       },
       "additionalProperties": true
     },
