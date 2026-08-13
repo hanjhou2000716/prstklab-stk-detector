@@ -9,7 +9,7 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/safe-data-publishing-contract` |
-| HEAD | `ce5e5ed` (latest verified News delivery-gate evidence) |
+| HEAD | `c3f43d7` (latest verified News delivery-gate evidence) |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current` |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1133 passed, 1 skipped` |
