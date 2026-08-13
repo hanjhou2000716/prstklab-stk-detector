@@ -110,6 +110,9 @@ def build_creator_source_health(
 def merge_creator_sources(health: dict[str, Any], rows: Iterable[dict[str, Any]]) -> dict[str, Any]:
     """Merge optional Creator rows while preserving core source-health fields."""
     merged = dict(health)
+    base_status = str(health.get("status") or "healthy")
+    base_runtime_failures = int(health.get("runtime_failure_count") or 0)
+    base_configuration = int(health.get("configuration_missing_count") or 0)
     sources = [dict(item) for item in (health.get("sources") or []) if isinstance(item, dict)]
     by_key = {str(item.get("key")): item for item in sources}
     for row in rows:
@@ -122,25 +125,30 @@ def merge_creator_sources(health: dict[str, Any], rows: Iterable[dict[str, Any]]
         if str(item.get("semantic_state") or item.get("state") or item.get("status") or "")
         in {"configuration_missing", "fallback_active", "stale", "partial", "failed", "critical"}
     ]
-    runtime_gaps = [item for item in gaps if item.get("semantic_state") != "configuration_missing"]
-    configuration = [item for item in gaps if item.get("semantic_state") == "configuration_missing"]
+    creator_gaps = [item for item in gaps if str(item.get("key") or "").startswith("creator_")]
+    runtime_gaps = [item for item in creator_gaps if item.get("semantic_state") != "configuration_missing"]
+    configuration = [item for item in creator_gaps if item.get("semantic_state") == "configuration_missing"]
     merged.update({
         "sources": sources,
         "data_gaps": [
             {"source": item.get("label", item.get("key", "")), "key": item.get("key", ""), "issues": item.get("issues", [])}
             for item in gaps
         ],
-        "missing_source_count": len(gaps),
-        "runtime_failure_count": len(runtime_gaps),
-        "configuration_missing_count": len(configuration),
+        "missing_source_count": int(health.get("missing_source_count") or 0) + len(creator_gaps),
+        "runtime_failure_count": base_runtime_failures + len(runtime_gaps),
+        "configuration_missing_count": base_configuration + len(configuration),
         "gap_source_keys": [str(item.get("key") or "") for item in gaps],
-        "status": "partial" if runtime_gaps else "healthy",
+        "status": (
+            "critical" if base_status == "critical" else
+            "partial" if base_status == "partial" or runtime_gaps else
+            base_status
+        ),
     })
     observability = dict(merged.get("observability") or {})
     observability.update({
         "observations": len(sources),
-        "configuration_missing_count": len(configuration),
-        "runtime_failure_count": len(runtime_gaps),
+        "configuration_missing_count": base_configuration + len(configuration),
+        "runtime_failure_count": base_runtime_failures + len(runtime_gaps),
         "no_event_count": sum(item.get("status") == "no_event" for item in sources),
     })
     merged["observability"] = observability
