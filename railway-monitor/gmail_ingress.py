@@ -5,7 +5,7 @@ from __future__ import annotations
 import base64
 import binascii
 import json
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from typing import Any
 
@@ -26,9 +26,16 @@ def _now() -> str:
 
 
 class GmailIngressService:
-    def __init__(self, store: EmailStore, config: GmailWatchConfig) -> None:
+    def __init__(
+        self,
+        store: EmailStore,
+        config: GmailWatchConfig,
+        *,
+        token_verifier: Callable[[str, str], bool] | None = None,
+    ) -> None:
         self.store = store
         self.config = config
+        self.token_verifier = token_verifier
 
     def _authenticate(self, headers: Mapping[str, str]) -> None:
         if self.config.missing:
@@ -38,6 +45,10 @@ class GmailIngressService:
         service_account = headers.get("x-goog-authenticated-user-email", "").removeprefix("accounts.google.com:")
         if not auth.casefold().startswith("bearer "):
             raise GmailIngressError("unauthenticated_pubsub_push")
+        token = auth.split(" ", 1)[1].strip()
+        if self.config.require_jwt_verification:
+            if self.token_verifier is None or not self.token_verifier(token, self.config.audience):
+                raise GmailIngressError("pubsub_jwt_verification_failed")
         if audience != self.config.audience:
             raise GmailIngressError("pubsub_audience_mismatch")
         if service_account != self.config.service_account:
@@ -96,6 +107,24 @@ class GmailIngressService:
 
     def health(self) -> dict[str, Any]:
         return {"watch": watch_health(self.config, self.store.cursor()), "store": self.store.health()}
+
+    def accept_push(self, body: bytes | str, headers: Mapping[str, str]) -> dict[str, Any]:
+        """Authenticate and durably record one bounded Gmail notification.
+
+        Pub/Sub notifications contain only a Gmail history cursor. Message
+        bodies are fetched separately by the worker and never enter this HTTP
+        handler or its logs.
+        """
+        notification = self.decode_push(body, headers)
+        history_id = str(notification.get("history_id") or "").strip()
+        if not history_id:
+            raise GmailIngressError("gmail_history_id_missing")
+        current = self.store.save_cursor(
+            last_history_id=history_id,
+            last_notification_at=_now(),
+            last_sync_at=_now(),
+        )
+        return {"accepted": True, "history_id": history_id, "cursor": current}
 
 
 __all__ = ["GmailIngressError", "GmailIngressService"]

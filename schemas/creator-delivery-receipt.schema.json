@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/creator-delivery-receipt.schema.json",
+  "type": "object",
+  "required": [
+    "notification_key",
+    "creator_episode_key",
+    "creator_snapshot_id",
+    "release_id",
+    "delivery_status",
+    "recipient_hash",
+    "media_mode",
+    "sent_at"
+  ],
+  "properties": {
+    "notification_key": {"type": "string", "minLength": 1},
+    "creator_episode_key": {"type": "string", "minLength": 1},
+    "creator_snapshot_id": {"type": "string"},
+    "release_id": {"type": "string", "minLength": 1},
+    "message_id": {"type": ["integer", "null"]},
+    "delivery_status": {"enum": ["delivered", "failed", "retryable", "blocked", "media_degraded"]},
+    "recipient_hash": {"type": "string", "pattern": "^[a-f0-9]{16}$"},
+    "media_mode": {"enum": ["photo", "text_only"]},
+    "media_hash": {"type": "string"},
+    "sent_at": {"type": "string", "format": "date-time"},
+    "error_class": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}

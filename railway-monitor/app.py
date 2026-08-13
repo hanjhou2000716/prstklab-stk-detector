@@ -339,8 +339,16 @@ HEALTH_STATE: dict[str, Any] = {
         "last_cycle_started_at": None,
         "last_cycle_completed_at": None,
     },
+    "gmail": {
+        "status": "not_configured",
+        "watch_status": "not_checked",
+        "last_notification_at": None,
+        "last_history_id": None,
+        "error": None,
+    },
 }
 DELIVERY_STORE: SeenStore | None = None
+EMAIL_INGRESS: Any | None = None
 
 
 def update_health(component: str, **values: Any) -> None:
@@ -996,6 +1004,20 @@ class SeenStore:
         ).fetchall()
         history: list[dict[str, Any]] = []
         for trace_id, source, event_id, category, outbox_status, attempts, last_error, updated_at in rows:
+            notification_keys: list[str] = []
+            payload_row = database.execute(
+                "SELECT payload_json FROM delivery_outbox WHERE trace_id=?", (trace_id,)
+            ).fetchone()
+            if payload_row:
+                try:
+                    stored_payload = json.loads(payload_row[0] or "{}")
+                except (TypeError, json.JSONDecodeError):
+                    stored_payload = {}
+                if isinstance(stored_payload, dict):
+                    notification_keys = [
+                        str(item)[:160] for item in (stored_payload.get("notification_keys") or [])
+                        if isinstance(item, str) and item.strip()
+                    ][:200]
             receipt = database.execute(
                 """SELECT status, delivered_count, failed_count, reported_at, error, updated_at
                    FROM delivery_receipts
@@ -1037,6 +1059,7 @@ class SeenStore:
                 "reported_at": reported_at,
                 "receipt_age_seconds": _age_seconds(receipt_updated_at),
                 "failed_recipient_hash_count": failed_hash_count,
+                "notification_keys": notification_keys,
             })
         return history
 
@@ -1163,7 +1186,7 @@ class SeenStore:
         trace_id = str(payload.get("trace_id") or "").strip()
         receipt_kind = str(payload.get("receipt_kind") or "production").strip()
         status = str(payload.get("delivery_status") or "unknown").strip()
-        if receipt_kind not in {"production", "photo_smoke"}:
+        if receipt_kind not in {"production", "photo_smoke", "creator"}:
             raise ValueError("invalid delivery receipt kind")
         if not trace_id or status not in {"delivered", "partial", "failed"}:
             raise ValueError("invalid delivery receipt")
@@ -1198,6 +1221,14 @@ class SeenStore:
                     and payload.get("alert_id") == "photo-smoke-test"
                     and payload.get("delivery_mode") == "photo"
                 )
+                creator_receipt = (
+                    receipt_kind == "creator"
+                    and payload.get("receipt_origin") == "github_actions"
+                    and bool(payload.get("release_id"))
+                    and bool(payload.get("snapshot_id"))
+                    and bool(payload.get("alert_id"))
+                    and payload.get("delivery_mode") in {"photo", "text"}
+                )
                 production_receipt = (
                     receipt_kind == "production"
                     and payload.get("receipt_origin") == "github_actions"
@@ -1206,7 +1237,7 @@ class SeenStore:
                     and bool(payload.get("alert_id"))
                     and payload.get("delivery_mode") in {"text", "photo"}
                 )
-                if not (photo_smoke or production_receipt):
+                if not (photo_smoke or creator_receipt or production_receipt):
                     logging.warning("delivery receipt for unknown trace_id=%s", trace_id)
                     return False
                 smoke_payload = {
@@ -1216,6 +1247,10 @@ class SeenStore:
                     "snapshot_id": payload.get("snapshot_id"),
                     "alert_id": payload.get("alert_id"),
                     "delivery_mode": payload.get("delivery_mode"),
+                    "notification_keys": [
+                        str(item)[:160] for item in (payload.get("notification_keys") or [])
+                        if isinstance(item, str) and item.strip()
+                    ][:200],
                 }
                 db.execute(
                     """INSERT INTO delivery_outbox(
@@ -1231,7 +1266,7 @@ class SeenStore:
                         ),
                         "github_actions",
                         payload.get("alert_id") or "photo-smoke-test",
-                        "photo_smoke" if photo_smoke else "production_receipt",
+                        "photo_smoke" if photo_smoke else "creator_receipt" if creator_receipt else "production_receipt",
                         json.dumps(smoke_payload, ensure_ascii=False, sort_keys=True),
                         status,
                         now,
@@ -2029,6 +2064,33 @@ def _health_request_path(request_target: str) -> str:
     return urlparse(request_target).path or "/"
 
 
+def configure_gmail_ingress() -> None:
+    """Attach the bounded Gmail Pub/Sub ingress when the Railway worker starts."""
+    global EMAIL_INGRESS
+    try:
+        from email_store import EmailStore
+        from gmail_ingress import GmailIngressService
+        from gmail_watch import GmailWatchConfig
+
+        config = GmailWatchConfig.from_env()
+        path = os.environ.get("GMAIL_STATE_PATH", "/data/gmail-ingress.sqlite3")
+        EMAIL_INGRESS = GmailIngressService(EmailStore(path), config)
+        diagnostics = EMAIL_INGRESS.health()
+        watch = diagnostics.get("watch") if isinstance(diagnostics, dict) else {}
+        store = diagnostics.get("store") if isinstance(diagnostics, dict) else {}
+        update_health(
+            "gmail",
+            status="configuration_missing" if config.missing else "ready",
+            watch_status=(watch or {}).get("status", "not_checked"),
+            last_notification_at=(store or {}).get("cursor", {}).get("last_notification_at"),
+            last_history_id=(store or {}).get("cursor", {}).get("last_history_id"),
+            error=None,
+        )
+    except Exception as error:  # pragma: no cover - defensive startup path
+        EMAIL_INGRESS = None
+        update_health("gmail", status="failed", error=type(error).__name__)
+
+
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         # Monitoring probes and browser cache-busting commonly append a
@@ -2046,7 +2108,79 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_POST(self) -> None:  # noqa: N802
-        if self.path != "/delivery-status":
+        if _health_request_path(self.path) == "/gmail/push":
+            if EMAIL_INGRESS is None:
+                self.send_error(503, "gmail ingress is unavailable")
+                return
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if length < 0 or length > 256 * 1024:
+                    self.send_error(413, "push body too large")
+                    return
+                body = self.rfile.read(length)
+                headers = {str(key).lower(): str(value) for key, value in self.headers.items()}
+                result = EMAIL_INGRESS.accept_push(body, headers)
+                cursor = result.get("cursor") if isinstance(result, dict) else {}
+                update_health(
+                    "gmail",
+                    status="healthy",
+                    watch_status="healthy",
+                    last_notification_at=(cursor or {}).get("last_notification_at"),
+                    last_history_id=(cursor or {}).get("last_history_id"),
+                    error=None,
+                )
+                response = b'{"accepted":true}\n'
+                self.send_response(204)
+                self.send_header("Content-Length", str(len(response)))
+                self.end_headers()
+                return
+            except Exception as error:
+                # Never echo bearer tokens, message IDs or request bodies.
+                update_health("gmail", status="failed", error=type(error).__name__)
+                code = 401 if type(error).__name__ in {"GmailIngressError"} else 400
+                self.send_error(code, "gmail push rejected")
+                return
+        if _health_request_path(self.path) == "/creator-delivery-history":
+            secret = os.environ.get("DELIVERY_STATUS_SHARED_SECRET", "")
+            if not secret:
+                self.send_error(503, "delivery callback is not configured")
+                return
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 16 * 1024)
+                body = self.rfile.read(length)
+                supplied = self.headers.get("X-PRSTK-Signature", "")
+                expected = "sha256=" + hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
+                if not hmac.compare_digest(supplied, expected):
+                    self.send_error(401)
+                    return
+                payload = json.loads(body.decode("utf-8"))
+                if str(payload.get("receipt_kind") or "") != "creator":
+                    self.send_error(400, "invalid receipt kind")
+                    return
+                limit = max(1, min(200, int(payload.get("limit", 200))))
+                history = DELIVERY_STORE.delivery_history(limit=limit) if DELIVERY_STORE is not None else []
+                keys = list(dict.fromkeys(
+                    str(item)[:160]
+                    for row in history
+                    if row.get("category") == "creator_receipt"
+                    for item in (row.get("notification_keys") or [])
+                    if isinstance(item, str) and item.strip()
+                ))[:200]
+                response = (json.dumps({"receipt_kind": "creator", "notification_keys": keys}, ensure_ascii=False) + "\n").encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(response)))
+                self.end_headers()
+                self.wfile.write(response)
+                return
+            except (ValueError, TypeError, json.JSONDecodeError):
+                self.send_error(400, "invalid delivery history request")
+                return
+            except Exception:
+                logging.exception("creator delivery history request failed")
+                self.send_error(500)
+                return
+        if _health_request_path(self.path) != "/delivery-status":
             self.send_error(404)
             return
         secret = os.environ.get("DELIVERY_STATUS_SHARED_SECRET", "")
@@ -2082,6 +2216,7 @@ class HealthHandler(BaseHTTPRequestHandler):
 
 
 def start_health_server() -> None:
+    configure_gmail_ingress()
     port = int(os.environ.get("PORT", "8080"))
     server = ThreadingHTTPServer(("0.0.0.0", port), HealthHandler)
     threading.Thread(target=server.serve_forever, daemon=True).start()

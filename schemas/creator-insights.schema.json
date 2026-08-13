@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/creator-insights.schema.json",
+  "type": "object",
+  "required": ["schema_version", "snapshot_id", "generated_at", "creators", "retention", "public_safe", "status"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "snapshot_id": {"type": "string", "minLength": 8},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "parent_release_id": {"type": "string"},
+    "market_snapshot_id": {"type": "string"},
+    "research_snapshot_id": {"type": "string"},
+    "event_snapshot_id": {"type": "string"},
+    "creators": {"type": "object", "additionalProperties": {"type": "object"}},
+    "creator_health": {"type": "object"},
+    "retention": {"type": "object", "required": ["public_per_creator", "compact_history_per_creator"]},
+    "correlation_metadata": {"type": "object"},
+    "invalid_records": {"type": "array", "items": {"type": "string"}},
+    "validation_errors": {"type": "array", "items": {"type": "string"}},
+    "public_safe": {"const": true},
+    "status": {"enum": ["ready", "unavailable"]}
+  },
+  "additionalProperties": false
+}
