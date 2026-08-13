@@ -42,3 +42,17 @@ evidence remains `NEEDS_REVERIFY`.
 Rows marked `NEEDS_REVERIFY` are open completion debt. They are not a product
 failure by themselves, but they block a final `COMPLETE` claim and the merge
 gate until the listed evidence is captured.
+
+## Current external-gate debt
+
+All P0 rows above have implementation and branch-level verification evidence.
+The final migration audit is nevertheless **INCOMPLETE** until these external
+gates are cleared:
+
+| Debt | Evidence | Status |
+|---|---|---|
+| Production release acceptance | Local `runtime_audit --require-production` correctly failed closed because the checked-out event snapshot and complete production research release are absent | BLOCKED: needs a real ready `data-release` publication |
+| Telegram/Railway delivery acceptance | Local `delivery_smoke_test` correctly refused to send because `TELEGRAM_CHAT_IDS` is not configured | BLOCKED: needs protected runtime configuration and a controlled single-recipient test |
+
+No production notification, secret access, or data fabrication was used to
+make these checks green.

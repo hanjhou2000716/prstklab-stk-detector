@@ -156,3 +156,29 @@ Review/merge PR #565 only after human review. Do not merge automatically. After 
 These entries are evidence-backed locks, not claims based solely on code
 existence. Main-branch post-merge verification and production acceptance
 remain separate gates and are not asserted here.
+
+## Migration audit snapshot (2026-08-14)
+
+- Branch: `feat/safe-data-publishing-contract`
+- HEAD: `e48bd66`
+- Working tree: tracked files clean; pre-existing untracked pytest/temp
+  artifacts preserved and not staged.
+- Full local regression: `1115 passed, 1 skipped`.
+- Compile and syntax: `python -m compileall -q src railway-monitor` and
+  `node --check site/app.js` passed.
+- Static quality: `uv run ruff check src tests` and `uv run mypy src` passed.
+- Latest PR CI after evidence lock: quality run `31725272658` / job
+  `94531978943` passed; CodeQL, dependency review and SBOM passed in run
+  `31725272661`.
+- Runtime audit (non-production mode): executable with warnings only; it
+  reports six market source gaps and one building research source.
+- Production acceptance: **BLOCKED / NEEDS_EXTERNAL_RELEASE**. The checked-out
+  artifacts do not contain a ready event snapshot and complete production
+  research release, so the fail-closed audit correctly refuses publication.
+- Delivery smoke: **BLOCKED / NEEDS_RUNTIME_CONFIGURATION**. No
+  `TELEGRAM_CHAT_IDS` are present in this local environment; no Telegram or
+  Railway side effect was attempted.
+
+These two blocks are environment evidence gaps, not reasons to weaken a gate
+or to synthesize data. They must be cleared by a real data-release workflow
+and protected runtime configuration after the PR is merged.
