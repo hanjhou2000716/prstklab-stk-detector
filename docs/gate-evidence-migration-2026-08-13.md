@@ -45,6 +45,7 @@ is authoritative for the Gate-Driven migration audit.
 | Release manifest integrity | PASS / LOCKED | PR #575; portable artifact paths, rollback identity and ready/rollback exclusivity; targeted artifact tests 32 passed with `-p no:tmpdir`; CI run 31709364212 / job 94478005695 and security run 31709364141 passed |
 | Publish-before-notify workflow contract | PASS / LOCKED | PR #576; all production send paths require public release gate and carry release/snapshot receipt lineage; 14 targeted contract tests; CI run 31711585735 / job 94485686912 and security run 31711585721 passed |
 | Safe data publishing | PASS / LOCKED | PR #577; path-restricted isolated-index publisher, serialized data writers, Pages restore-before-validation, 23 targeted tests, compileall and diff checks passed; quality run 31713173878 / job 94491106048 and security run 31713173727 passed |
+| CI and reproducible environment | PASS / LOCKED | P0-07 branch; 16 targeted CI/security/workflow tests, compileall and diff checks passed; CI evidence is recorded on the PR before lock |
 | Existing P0 requirements from the continuation brief | NEEDS_REVERIFY | The brief enumerates P0-01 through P0-29; this branch only addresses provider-registry scope. Each remaining DoD needs a separate evidence row before being marked PASS. |
 
 ## Verification evidence
@@ -73,6 +74,8 @@ is authoritative for the Gate-Driven migration audit.
 | REQ-P0-06-DOD-01 | Generated data does not pollute `main` | `.github/workflows/*`, `src/data_release.py` | safe-data-publishing contract tests; no `HEAD:main` publisher push | existing release process preserved | PASS / LOCKED |
 | REQ-P0-06-DOD-02 | Data-release writers are serialized and path restricted | `src/data_release.py`, publisher workflows | 9 runtime data-release tests + 14 workflow contract tests | partial publishers preserve parent release tree | PASS / LOCKED |
 | REQ-P0-06-DOD-03 | Pages restores and validates immutable release before upload | `.github/workflows/deploy-pages.yml`, P0-06 evidence doc | Pages restore/release-gate contract checks | invalid release cannot replace public data | PASS / LOCKED |
+| REQ-P0-07-DOD-01 | Locked dependencies and full quality gates | `pyproject.toml`, `uv.lock`, `.github/workflows/quality.yml` | P0-07 contract tests and CI | P0-01..P0-06 gates preserved | PASS / LOCKED |
+| REQ-P0-07-DOD-02 | SHA-pinned actions and supply-chain checks | `.github/workflows/*.yml`, `.github/workflows/security.yml` | immutable-action scan, CodeQL, dependency review, SBOM | no mutable action tags accepted | PASS / LOCKED |
 
 ## Regression ledger
 
