@@ -63,6 +63,10 @@ registry before merge. Any branch that adds another hard-coded provider list is
 superseded or must be retargeted to the registry. The expected integration
 order is registry/schema first, provider adapters second, then delivery and UI.
 
+The News Intelligence contract was added in PR #577's continuation branch;
+the branch-level CI gate passed. A Pages release and browser verification are
+still required before the two `NEEDS_REVERIFY` rows can be locked.
+
 ## Failure and rollback
 
 Malformed or missing registry configuration fails closed at import/load time;

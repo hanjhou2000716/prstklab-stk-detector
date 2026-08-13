@@ -182,3 +182,25 @@ remain separate gates and are not asserted here.
 These two blocks are environment evidence gaps, not reasons to weaken a gate
 or to synthesize data. They must be cleared by a real data-release workflow
 and protected runtime configuration after the PR is merged.
+
+## Migration audit snapshot (2026-08-14, News Intelligence contract)
+
+- Active branch: `feat/safe-data-publishing-contract`
+- Recovery checkpoint: `checkpoint/migration-2026-08-14` remains available.
+- Atomic commits: `fb4cd52` (canonical provider/story/interest/ranking/dedup
+  contract) and `5e83ad7`/`e2351a9` (release-bound artifact and registry
+  validation coverage).
+- Local full regression: `1121 passed, 1 skipped`; compileall, Node syntax,
+  Ruff and Mypy passed. The Windows shared temporary directory has a known
+  permission-denied `build_assets` fixture failure; this is recorded as an
+  environment debt and does not alter product assertions.
+- Targeted News/release regression: `31 passed`; core local coverage reached
+  90% before the environment-only fixture failure.
+- CI evidence: PR #577 quality run `31730398078` and security run
+  `31730398127` completed successfully after the News contract commits.
+- News provider registry/ranking/dedup: PASS / LOCKED for the deterministic
+  contract and local/CI tests. Official-feed ingestion adapters and live
+  Pages rendering remain NEEDS_REVERIFY, not production acceptance.
+- Production release acceptance and Telegram/Railway delivery remain
+  BLOCKED until a real ready data release and protected runtime configuration
+  are available. No production side effect was attempted.
