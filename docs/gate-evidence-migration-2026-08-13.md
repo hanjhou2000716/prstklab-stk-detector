@@ -85,7 +85,7 @@ is authoritative for the Gate-Driven migration audit.
 | REG-565-001 | registry import additions | CI Ruff import ordering failure | imports were added below local imports | reordered imports; CI rerun passed | run 31693131665 | CLOSED |
 | REG-565-002 | registry optional lookup | CI Mypy union-attr failure | provider lookup was called twice without narrowing | bound optional config before use; CI rerun passed | run 31693131665 | CLOSED |
 | REG-P0-08-001 | P0-08 source-health aggregation | An optional adapter record containing only `key` and `status` crashed while building `data_gaps` | Normalize a safe label and map missing credentials to the schema-level `configuration_missing` state before aggregation | 50 targeted source-health/artifact tests; required CI run 31716430943 | CLOSED |
-| REG-P0-12-001 | P0-12 multilingual classifier | Mixed-language event records could be evaluated inconsistently across title/body/market fields | Shared normalized haystack and explicit alias contract tests cover Traditional/Simplified Chinese, English, width and spacing | 41 targeted classifier/crosscheck/alert tests; PR CI pending | CLOSED |
+| REG-P0-12-001 | P0-12 multilingual classifier | Mixed-language event records could be evaluated inconsistently across title/body/market fields | Shared normalized haystack and explicit alias contract tests cover Traditional/Simplified Chinese, English, width and spacing | 41 targeted classifier/crosscheck/alert tests; required CI run 31717502438 | CLOSED |
 
 ## Completion-debt ledger
 
@@ -102,7 +102,7 @@ is authoritative for the Gate-Driven migration audit.
 
 - PC-001: existing provider routing and fail-closed unknown-source behavior preserved by targeted tests — PASS.
 - PC-007: source-health `no_event`, `scan_failed`, and `configuration_missing` remain distinct; incomplete optional metadata cannot crash aggregation — targeted P0-08 tests and required CI run 31716430943 PASS.
-- PC-008: existing event classification and strict evidence gates remain intact while multilingual aliases are audited — targeted P0-12 tests PASS; PR CI pending.
+- PC-008: existing event classification and strict evidence gates remain intact while multilingual aliases are audited — targeted P0-12 tests and required CI run 31717502438 PASS.
 - PC-002: Creator content remains editorial and cannot become market-event evidence — PASS by registry policy/tests.
 - PC-003: release-gate and notification code paths remain unchanged except dynamic provider inputs — PASS by CI dry-run.
 
