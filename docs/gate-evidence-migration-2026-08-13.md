@@ -12,6 +12,7 @@ is authoritative for the Gate-Driven migration audit.
 - Active HEAD: `b670051` (P0-08 source-health contract and CI lint repair).
 - P0-14 implementation checkpoint: `4d71e54` (targeted market-synchronization contract tests passed; CI evidence pending).
 - P0-14 gate evidence: quality run `31718964237` / job `94510770579`, security/CodeQL/SBOM passed; task is PASS / LOCKED.
+- P0-15 implementation checkpoint: `tests/test_p0_15_freshness_gate_contract.py`; isolated targeted/regression suite 72 passed; CI evidence pending.
 - Active PR: the P0-06 safe data publishing PR, stacked on PR [#576](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/576).
 - Previous active branch: `feat/publish-before-notify-contract` (PR [#576](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/576)), now LOCKED after targeted contract tests and CI.
 - Recovery checkpoint: `3c27fe6` (manifest integrity contract) and `0c1d71d`
