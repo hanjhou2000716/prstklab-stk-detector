@@ -9,10 +9,10 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/safe-data-publishing-contract` |
-| HEAD | `eb8e640` (latest verified News schema and Mini App contract evidence) |
+| HEAD | `ce5e5ed` (latest verified News delivery-gate evidence) |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current` |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
-| Local regression | `1132 passed, 1 skipped` |
+| Local regression | `1133 passed, 1 skipped` |
 | Static checks | Ruff, Mypy, compileall and `node --check site/app.js` passed |
 | Remote PR | [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578), open; required quality/security checks pass for the latest head |
 
@@ -60,7 +60,7 @@ required objective evidence is not available in this checkout.
 - The release gate validates each market payload and its shared provider
   registry. The Mini App verifies the News artifact hash, market snapshot and
   News snapshot before rendering either tab, including last-good fallback.
-- Targeted release/news/Mini App suite: `58 passed`; full local regression: `1132 passed,
+- Targeted release/news/Mini App/delivery-gate suite: `59 passed`; full local regression: `1133 passed,
   1 skipped`; Ruff, Mypy, compile and `node --check` pass.
 - PR [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578)
   required checks pass for the latest head. Pages/Railway/Telegram production acceptance remains
