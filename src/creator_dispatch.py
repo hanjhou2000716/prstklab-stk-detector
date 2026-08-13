@@ -160,6 +160,11 @@ def dispatch(
         "creator_delivery_status": delivery_status,
         "creator_delivered_count": str(delivered_receipts),
         "creator_failed_count": str(failed_receipts),
+        "creator_notification_keys": ",".join(sorted({
+            str(row.get("notification_key") or "").strip()
+            for row in receipts
+            if str(row.get("notification_key") or "").strip()
+        })[:200]),
     })
     return result
 

@@ -189,6 +189,7 @@ jobs:
           DELIVERED_COUNT: ${{ steps.creator_dispatch.outputs.creator_delivered_count }}
           FAILED_COUNT: ${{ steps.creator_dispatch.outputs.creator_failed_count }}
           FAILED_RECIPIENT_HASHES: ""
+          NOTIFICATION_KEYS: ${{ steps.creator_dispatch.outputs.creator_notification_keys }}
           RENDERER_ERROR_TYPE: ""
         run: python -m src.delivery_callback
       - name: Save event delivery lock
