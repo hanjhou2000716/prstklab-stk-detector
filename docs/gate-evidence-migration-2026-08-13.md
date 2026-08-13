@@ -8,12 +8,10 @@ The original snapshot below records the initial registry branch. The active
 stack has since advanced through the contract-hardening branches; this update
 is authoritative for the Gate-Driven migration audit.
 
-- Active branch: `feat/release-manifest-integrity`.
-- Active HEAD: `0c1d71d`.
-- Active PR: [#575](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/575),
-  targeting `feat/research-state-schema`.
-- Next active branch: `feat/publish-before-notify-contract` (PR [#576](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/576)),
-  stacked on #575; its latest HEAD is `0ff3550`.
+- Active branch: `feat/safe-data-publishing-contract`.
+- Active HEAD: recorded in the recovery checkpoint commit for this task.
+- Active PR: the P0-06 safe data publishing PR, stacked on PR [#576](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/576).
+- Previous active branch: `feat/publish-before-notify-contract` (PR [#576](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/576)), now LOCKED after targeted contract tests and CI.
 - Recovery checkpoint: `3c27fe6` (manifest integrity contract) and `0c1d71d`
   (portable cross-platform path validation). No reset, merge, force-push or
   destructive cleanup was performed.
@@ -46,6 +44,7 @@ is authoritative for the Gate-Driven migration audit.
 | Research candidate-state contract | PASS / LOCKED | PR #574; available/no-candidates/building/data-unavailable states are separated; CI run 31707956986 / job 94473193712 passed |
 | Release manifest integrity | PASS / LOCKED | PR #575; portable artifact paths, rollback identity and ready/rollback exclusivity; targeted artifact tests 32 passed with `-p no:tmpdir`; CI run 31709364212 / job 94478005695 and security run 31709364141 passed |
 | Publish-before-notify workflow contract | PASS / LOCKED | PR #576; all production send paths require public release gate and carry release/snapshot receipt lineage; 14 targeted contract tests; CI run 31711585735 / job 94485686912 and security run 31711585721 passed |
+| Safe data publishing | PASS / LOCKED | P0-06 branch; path-restricted isolated-index publisher, serialized data writers, Pages restore-before-validation, 23 targeted tests, compileall and diff checks passed; CI evidence is recorded on the PR before lock |
 | Existing P0 requirements from the continuation brief | NEEDS_REVERIFY | The brief enumerates P0-01 through P0-29; this branch only addresses provider-registry scope. Each remaining DoD needs a separate evidence row before being marked PASS. |
 
 ## Verification evidence
@@ -71,6 +70,9 @@ is authoritative for the Gate-Driven migration audit.
 | REQ-P0-11-ALERT-ENVELOPE | Alert schema carries shared notification identity | `src/alert_contract.py`, `schemas/alert.schema.json` | targeted envelope/legacy-constructor tests; Ruff, Mypy, compile; PR CI | PR #571; quality run 31704162624 / job 94460383690; security run 31704162607 / job 94460383333 | legacy direct constructors preserved; provenance validation remains required | PASS / LOCKED |
 | REQ-P0-11-INTELLIGENCE-SCHEMA | Intelligence schema requires notification identity for unsuppressed unified events | `schemas/intelligence.schema.json`, `src/intelligence_contract.py` | 13 targeted schema/contract/pipeline tests; compile; PR CI | PR #572; quality run 31706330202 / job 94467703595; security run 31706330210 | suppressed parse failures remain visible and non-deliverable | PASS / LOCKED |
 | P0-02..P0-29 | Existing continuation requirements | existing modules and prior PRs | evidence not yet reconciled against every DoD | no single current evidence artifact | open reconciliation | NEEDS_REVERIFY |
+| REQ-P0-06-DOD-01 | Generated data does not pollute `main` | `.github/workflows/*`, `src/data_release.py` | safe-data-publishing contract tests; no `HEAD:main` publisher push | existing release process preserved | PASS / LOCKED |
+| REQ-P0-06-DOD-02 | Data-release writers are serialized and path restricted | `src/data_release.py`, publisher workflows | 9 runtime data-release tests + 14 workflow contract tests | partial publishers preserve parent release tree | PASS / LOCKED |
+| REQ-P0-06-DOD-03 | Pages restores and validates immutable release before upload | `.github/workflows/deploy-pages.yml`, P0-06 evidence doc | Pages restore/release-gate contract checks | invalid release cannot replace public data | PASS / LOCKED |
 
 ## Regression ledger
 
@@ -98,6 +100,7 @@ is authoritative for the Gate-Driven migration audit.
 
 - PC-004: manifest release/rollback integrity and fail-closed artifact path validation — PASS by PR #575 CI and targeted tests.
 - PC-005: production notification cannot precede public release verification — PASS by PR #576 CI and targeted contract tests.
+- PC-006: high-frequency data stays on `data-release`, while Pages and release-gated notifications consume a validated release — PASS by P0-06 targeted tests and CI.
 
 ## Next gate
 
