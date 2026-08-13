@@ -60,6 +60,33 @@ def test_manifest_publishes_release_bound_news_intelligence(tmp_path):
     assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 
+def test_manifest_publishes_multi_market_news_release(tmp_path):
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    registry = build_news_intelligence([])["provider_registry"]
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["news"] = {
+        "provider_registry": registry,
+        "intelligence": {
+            "taiwan": build_news_intelligence(
+                [{"title": "TWSE filing", "url": "https://www.twse.com.tw/a"}],
+                market="taiwan",
+            ),
+            "us": build_news_intelligence(
+                [{"title": "Fed statement", "url": "https://www.federalreserve.gov/a"}],
+                market="us",
+            ),
+        },
+    }
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+    manifest = build_release_manifest(root=tmp_path)
+    assert manifest["status"] == "ready"
+    news = json.loads((tmp_path / "site" / "data" / "news.json").read_text(encoding="utf-8"))
+    assert set(news["markets"]) == {"taiwan", "us"}
+    assert news["market_snapshot_id"] == manifest["market_snapshot_id"]
+    assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
 def test_manifest_publishes_release_bound_source_health_artifact(tmp_path):
     _artifacts(tmp_path)
     health_path = tmp_path / "site" / "data" / "source-health.json"

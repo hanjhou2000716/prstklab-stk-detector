@@ -403,13 +403,28 @@ def build_release_manifest(
             "market_snapshot_id": market_id,
             "snapshot_id": content_snapshot_id(news_artifact, "news"),
         }
+    elif isinstance(news_artifact, dict) and any(isinstance(value, dict) for value in news_artifact.values()):
+        registry = news_payload.get("provider_registry", []) if isinstance(news_payload, dict) else []
+        news_markets = news_artifact
+        news_artifact = {
+            "schema_version": "1.0",
+            "market_snapshot_id": market_id,
+            "snapshot_id": content_snapshot_id({"markets": news_markets}, "news"),
+            "provider_registry": registry,
+            "markets": news_markets,
+            "status": "ready" if any(
+                isinstance(value, dict) and value.get("status") == "ready"
+                for value in news_markets.values()
+            ) else "no_event",
+        }
+    if isinstance(news_artifact, dict):
         news_snapshot_id = str(news_artifact["snapshot_id"])
         news_status = "ready" if news_artifact.get("status") in {"ready", "no_event"} else "unavailable"
         news_path = root / "site" / "data" / "news.json"
         try:
-            from src.artifact_contract import validate_news_intelligence
+            from src.artifact_contract import validate_news_release
 
-            errors.extend(validate_news_intelligence(news_artifact))
+            errors.extend(validate_news_release(news_artifact))
             _write_normalized_artifact(news_path, news_artifact)
             resolved["news.json"] = news_path
             loaded["news.json"] = news_artifact

@@ -15,7 +15,7 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import requests
 
-from src.artifact_contract import validate_news_intelligence, validate_release, validate_source_health_artifact
+from src.artifact_contract import validate_news_release, validate_release, validate_source_health_artifact
 from src.asset_contract import validate_assets
 from src.creator_artifact import validate_creator_artifact
 from src.creator_release import validate_creator_release
@@ -80,7 +80,7 @@ def _validate_news_artifact(artifact: dict[str, Any], manifest: dict[str, Any]) 
     ``news.json`` its lineage is no longer optional: the browser and notifier
     must never combine headlines from another market snapshot.
     """
-    errors = validate_news_intelligence(artifact)
+    errors = validate_news_release(artifact)
     expected_market = str(manifest.get("market_snapshot_id") or "")
     if expected_market and str(artifact.get("market_snapshot_id") or "") != expected_market:
         errors.append("news artifact market_snapshot_id does not match manifest")

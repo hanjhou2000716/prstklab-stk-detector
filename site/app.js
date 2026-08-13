@@ -875,8 +875,9 @@ const render = (snapshot) => {
   renderCreatorInsights(creatorSource);
   renderResearch(snapshot);
   const newsRegistry = snapshot.news?.provider_registry || [];
-  renderNewsList("taiwan-news", snapshot.news?.intelligence?.taiwan?.stories || snapshot.news?.taiwan, newsRegistry);
-  renderNewsList("us-news", snapshot.news?.intelligence?.us?.stories || snapshot.news?.us, newsRegistry);
+  const newsMarkets = snapshot.news?.markets || snapshot.news?.intelligence || snapshot.news;
+  renderNewsList("taiwan-news", newsMarkets?.taiwan?.stories || snapshot.news?.taiwan, newsRegistry);
+  renderNewsList("us-news", newsMarkets?.us?.stories || snapshot.news?.us, newsRegistry);
 };
 
 // Telegram buttons carry the release and alert identity.  Resolve that
@@ -999,6 +1000,13 @@ const readLastGoodRelease = async () => {
     const events = saved.artifactTexts["event-ledger.json"] ? JSON.parse(saved.artifactTexts["event-ledger.json"]) : null;
     if (saved.manifest.research_snapshot_id && String(research?.snapshot_id || "") !== String(saved.manifest.research_snapshot_id)) return null;
     if (saved.manifest.event_snapshot_id && String(events?.snapshot_id || "") !== String(saved.manifest.event_snapshot_id)) return null;
+    const newsText = saved.artifactTexts["news.json"];
+    if (newsText) {
+      const news = JSON.parse(newsText);
+      if (String(news.market_snapshot_id || "") !== String(saved.manifest.market_snapshot_id || "")) return null;
+      if (saved.manifest.news_snapshot_id && String(news.snapshot_id || "") !== String(saved.manifest.news_snapshot_id)) return null;
+      snapshot.news = news;
+    }
     const creatorText = saved.artifactTexts["creator-release.json"];
     if (creatorText) {
       const creator = JSON.parse(creatorText);
@@ -1061,6 +1069,17 @@ const loadPublishedRelease = async () => {
     if (String(events.snapshot_id || "") !== String(manifest.event_snapshot_id)) {
       throw new Error("event snapshot does not match release");
     }
+  }
+  const newsText = artifactTexts["news.json"];
+  if (newsText) {
+    const news = JSON.parse(newsText);
+    if (String(news.market_snapshot_id || "") !== String(manifest.market_snapshot_id || "")) {
+      throw new Error("news market snapshot does not match release");
+    }
+    if (manifest.news_snapshot_id && String(news.snapshot_id || "") !== String(manifest.news_snapshot_id)) {
+      throw new Error("news snapshot does not match release");
+    }
+    snapshot.news = news;
   }
   const creatorText = artifactTexts["creator-release.json"];
   if (creatorText) {
