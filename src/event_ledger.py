@@ -376,6 +376,7 @@ class EventLedger:
             return history[-1] if history else {}
         row = {
             "event_key": key,
+            "notification_id": str(event.get("notification_id") or event.get("compound_item_id") or key),
             "sent_at": current.isoformat(),
             "importance": str(event.get("importance") or event.get("risk_level") or "normal"),
             "alert_type": str(event.get("alert_type") or event.get("event_type") or event.get("kind") or "market"),

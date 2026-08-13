@@ -59,6 +59,7 @@ def build_external_event(
         "pipeline_version": PIPELINE_VERSION,
         "observation_id": normalized.get("observation_id") or normalized.get("gmail_message_id"),
         "event_cluster_key": cluster.get("event_cluster_key"),
+        "notification_id": str(record.get("notification_id") or record.get("compound_item_id") or cluster.get("event_cluster_key") or "").strip() or None,
         "classification": classification,
         "cluster": cluster,
         "risk": risk,
@@ -122,6 +123,7 @@ def build_external_events(
             )
             result["compound_item_id"] = item.get("item_id")
             result["compound_event_cluster_key"] = item.get("event_cluster_key")
+            result["notification_id"] = str(item.get("item_id") or item.get("event_cluster_key") or "").strip() or None
             results.append(result)
         return results
     return [build_external_event(

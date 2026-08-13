@@ -65,6 +65,7 @@ def test_compound_financialjuice_envelope_fans_out_into_shared_pipeline() -> Non
     }
     results = build_external_events(envelope)
     assert len(results) == 2
+    assert {row["notification_id"] for row in results} == {"item-1", "item-2"}
     assert len({result["observation_id"] for result in results}) == 2
     assert all(result["lifecycle_state"] == "pending_confirmation" for result in results)
 
