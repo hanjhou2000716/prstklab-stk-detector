@@ -36,7 +36,8 @@ def test_rss_adapter_normalizes_fed_atom_and_isolates_other_provider_failure():
     """
 
     def requester(url, **_kwargs):
-        if (urlsplit(url).hostname or "").lower().endswith("sec.gov"):
+        host = (urlsplit(url).hostname or "").lower()
+        if host == "www.sec.gov":
             raise TimeoutError("sec timeout")
         return Response(text=xml)
 
