@@ -133,9 +133,21 @@ jobs:
           import json
           import os
           from pathlib import Path
+          from src.production_acceptance import (
+              production_research_contract_errors,
+              production_strategy_matrix_errors,
+          )
           from src.research_fallback import mark_stale_research_fallback
           report = json.loads(Path("site/data/research-report.json").read_text(encoding="utf-8"))
-          eligible = report.get("production_eligible") is True and report.get("publish_eligible") is True
+          contract_errors = sorted(set(
+              production_research_contract_errors(report)
+              + production_strategy_matrix_errors(report)
+          ))
+          eligible = (
+              report.get("production_eligible") is True
+              and report.get("publish_eligible") is True
+              and not contract_errors
+          )
           Path("research-artifacts/research-report-latest.json").write_text(
               json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
           )
@@ -148,7 +160,7 @@ jobs:
               previous = Path("research-artifacts/research-report-previous.json")
               if previous.is_file():
                   previous_report = json.loads(previous.read_text(encoding="utf-8"))
-                  reason = report.get("blocking_reason") or "research scan is incomplete"
+              reason = report.get("blocking_reason") or (contract_errors[0] if contract_errors else "research scan is incomplete")
                   fallback = mark_stale_research_fallback(previous_report, reason)
                   Path("site/data/research-report.json").write_text(
                       json.dumps(fallback, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

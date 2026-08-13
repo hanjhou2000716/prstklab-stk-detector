@@ -28,6 +28,20 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunsplit
 
 import httpx
 
+
+def _delivery_shared_secret() -> str:
+    """Return the delivery HMAC secret using the canonical or legacy name.
+
+    GitHub Actions calls this value ``RAILWAY_STATUS_SHARED_SECRET`` while
+    Railway historically exposed ``DELIVERY_STATUS_SHARED_SECRET``.  Accept
+    both names during migration, preferring the Railway-specific setting, so
+    a naming mismatch cannot silently block otherwise valid receipts.
+    """
+    return (
+        os.environ.get("DELIVERY_STATUS_SHARED_SECRET", "").strip()
+        or os.environ.get("RAILWAY_STATUS_SHARED_SECRET", "").strip()
+    )
+
 # Railway is currently configured with ``/railway-monitor`` as its root
 # directory.  In that layout the repository-level ``src`` package is not
 # copied into the image, so importing the shared classifier would crash the
@@ -2141,7 +2155,7 @@ class HealthHandler(BaseHTTPRequestHandler):
                 self.send_error(code, "gmail push rejected")
                 return
         if _health_request_path(self.path) == "/creator-delivery-history":
-            secret = os.environ.get("DELIVERY_STATUS_SHARED_SECRET", "")
+            secret = _delivery_shared_secret()
             if not secret:
                 self.send_error(503, "delivery callback is not configured")
                 return
@@ -2183,7 +2197,7 @@ class HealthHandler(BaseHTTPRequestHandler):
         if _health_request_path(self.path) != "/delivery-status":
             self.send_error(404)
             return
-        secret = os.environ.get("DELIVERY_STATUS_SHARED_SECRET", "")
+        secret = _delivery_shared_secret()
         if not secret:
             self.send_error(503, "delivery callback is not configured")
             return

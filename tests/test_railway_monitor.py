@@ -16,6 +16,18 @@ sys.modules[SPEC.name] = monitor
 SPEC.loader.exec_module(monitor)
 
 
+def test_delivery_shared_secret_accepts_canonical_railway_name(monkeypatch):
+    monkeypatch.delenv("DELIVERY_STATUS_SHARED_SECRET", raising=False)
+    monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "canonical")
+    assert monitor._delivery_shared_secret() == "canonical"
+
+
+def test_delivery_shared_secret_prefers_railway_service_name(monkeypatch):
+    monkeypatch.setenv("DELIVERY_STATUS_SHARED_SECRET", "service")
+    monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "legacy")
+    assert monitor._delivery_shared_secret() == "service"
+
+
 def test_monitor_imports_from_railway_root_without_repository_src_package():
     """Railway's configured root directory must not crash on ``import app``."""
     environment = os.environ.copy()
