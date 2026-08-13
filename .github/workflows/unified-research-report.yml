@@ -158,9 +158,9 @@ jobs:
               print("Research scan is complete and eligible for publication.")
           else:
               previous = Path("research-artifacts/research-report-previous.json")
+              reason = report.get("blocking_reason") or (contract_errors[0] if contract_errors else "research scan is incomplete")
               if previous.is_file():
                   previous_report = json.loads(previous.read_text(encoding="utf-8"))
-              reason = report.get("blocking_reason") or (contract_errors[0] if contract_errors else "research scan is incomplete")
                   fallback = mark_stale_research_fallback(previous_report, reason)
                   Path("site/data/research-report.json").write_text(
                       json.dumps(fallback, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
