@@ -1,6 +1,6 @@
 from jsonschema import Draft202012Validator, FormatChecker
 
-from src.external_event_pipeline import build_external_event
+from src.external_event_pipeline import build_external_event, build_external_events
 
 
 def test_discovery_event_stays_pending_without_two_evidence_types():
@@ -40,3 +40,28 @@ def test_external_event_contract_is_schema_valid():
     result = build_external_event({"source": "reuters", "headline": "Central bank statement", "event_type": "macro"})
     errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(result))
     assert errors == []
+
+
+def test_compound_financialjuice_envelope_fans_out_into_shared_pipeline() -> None:
+    envelope = {
+        "parse_status": "parsed",
+        "message_id": "compound-pipeline-1",
+        "items": [
+            {"item_id": "item-1", "event_cluster_key": "fj-cluster-1", "candidate_event_type": "energy", "original_headline": "Oil supply"},
+            {"item_id": "item-2", "event_cluster_key": "fj-cluster-2", "candidate_event_type": "policy", "original_headline": "Export controls"},
+        ],
+    }
+    results = build_external_events(envelope)
+    assert len(results) == 2
+    assert len({result["observation_id"] for result in results}) == 2
+    assert all(result["lifecycle_state"] == "pending_confirmation" for result in results)
+
+
+def test_unresolved_compound_envelope_never_emits_partial_event() -> None:
+    result = build_external_events({
+        "parse_status": "compound_unresolved",
+        "message_id": "compound-pipeline-2",
+    })
+    assert len(result) == 1
+    assert result[0]["parse_status"] == "compound_unresolved"
+    assert result[0]["notification"]["allowed"] is False

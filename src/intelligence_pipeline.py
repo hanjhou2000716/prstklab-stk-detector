@@ -6,7 +6,7 @@ from typing import Any
 
 from src.advice_gate import build_explainability_card, evaluate_advice_gate
 from src.cross_asset_risk import detect_contagion
-from src.external_event_pipeline import build_external_event
+from src.external_event_pipeline import build_external_events
 from src.external_event_risk import cluster_external_events, notification_decision, score_prstk_risk
 from src.financialjuice_contract import normalize_financialjuice
 from src.market_impact_graph import build_market_impact_graph
@@ -85,16 +85,16 @@ def build_intelligence_context(
         }
         if financialjuice is not None:
             external_risk["financialjuice"] = financialjuice
-        unified_events = [
-            build_external_event(
+        unified_events: list[dict[str, Any]] = []
+        for item in external_input:
+            if not isinstance(item, dict):
+                continue
+            unified_events.extend(build_external_events(
                 item,
                 source_observations=[other for other in external_input if other is not item],
                 official_confirmed=bool(event.get("official_confirmed")),
                 market_sync_confirmed=bool(event.get("market_sync_confirmed")),
-            )
-            for item in external_input
-            if isinstance(item, dict)
-        ]
+            ))
         external_risk["unified_events"] = unified_events
         external_risk["pending_reasons"] = sorted({
             reason

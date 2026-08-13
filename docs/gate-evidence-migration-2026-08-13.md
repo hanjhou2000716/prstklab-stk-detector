@@ -15,6 +15,7 @@
 |---|---|---|
 | Canonical Creator Provider Registry | PASS / LOCKED | PR #565; targeted tests 37 passed; CI run 31693131665 passed; Ruff/Mypy/compile/release dry-runs passed |
 | FinancialJuice compound envelope | PASS / LOCKED | Branch `feat/financialjuice-compound-contract`; compound fan-out, fail-closed and schema tests passed locally |
+| FinancialJuice pipeline fan-out | PASS / LOCKED | Branch `feat/financialjuice-pipeline-fanout`; shared event pipeline emits one result per item and blocks unresolved envelopes |
 | Existing P0 requirements from the continuation brief | NEEDS_REVERIFY | The brief enumerates P0-01 through P0-29; this branch only addresses provider-registry scope. Each remaining DoD needs a separate evidence row before being marked PASS. |
 
 ## Verification evidence
@@ -31,6 +32,7 @@
 | REQ-P0-01-REGISTRY | Canonical provider registry | `config/creator_providers.json`, `src/creator_provider_registry.py`, `schemas/creator-providers.schema.json` | registry, parser, routing and health tests | PR #565 + CI run above | existing creator routing preserved | PASS / LOCKED |
 | REQ-P0-01-INTEGRATION | All creator consumers use registry | routing, parser, health, catalog, scheduled delivery, Railway router | 37 targeted tests + full CI | PR #565 diff | unknown provider remains fail-closed | PASS / LOCKED |
 | REQ-P0-09-COMPOUND | FinancialJuice compound envelope | `src/financialjuice_contract.py`, `src/external_source_parsers.py`, `schemas/financialjuice-envelope.schema.json` | 19 targeted tests; compound fixture produces 2 independent items; unresolved item is fail-closed | local test output on `feat/financialjuice-compound-contract` | existing single-item parser preserved | PASS / LOCKED |
+| REQ-P0-09-PIPELINE | Compound items reach canonical event pipeline | `src/external_event_pipeline.py`, `src/intelligence_pipeline.py` | 15 targeted tests; fan-out and unresolved-envelope regression pass | local test output on `feat/financialjuice-pipeline-fanout` | single-item external events preserved | PASS / LOCKED |
 | P0-02..P0-29 | Existing continuation requirements | existing modules and prior PRs | evidence not yet reconciled against every DoD | no single current evidence artifact | open reconciliation | NEEDS_REVERIFY |
 
 ## Regression ledger
