@@ -205,6 +205,9 @@ def validate_news_release(document: dict[str, Any]) -> list[str]:
         if not candidate.get("provider_registry") and isinstance(registry, list):
             candidate["provider_registry"] = registry
         errors.extend(f"markets[{market}]: {error}" for error in validate_news_intelligence(candidate))
+        for index, story in enumerate(candidate.get("stories", [])):
+            if isinstance(story, dict) and story.get("market") not in {market, "global", "cross_market"}:
+                errors.append(f"markets[{market}].stories[{index}]: market does not match envelope")
     return errors
 
 
