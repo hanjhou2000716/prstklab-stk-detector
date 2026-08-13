@@ -9,7 +9,7 @@ stack has since advanced through the contract-hardening branches; this update
 is authoritative for the Gate-Driven migration audit.
 
 - Active branch: `feat/safe-data-publishing-contract`.
-- Active HEAD: recorded in the recovery checkpoint commit for this task.
+- Active HEAD: `a20bf7f` (Ruff repair after the first CI run).
 - Active PR: the P0-06 safe data publishing PR, stacked on PR [#576](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/576).
 - Previous active branch: `feat/publish-before-notify-contract` (PR [#576](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/576)), now LOCKED after targeted contract tests and CI.
 - Recovery checkpoint: `3c27fe6` (manifest integrity contract) and `0c1d71d`
@@ -44,7 +44,7 @@ is authoritative for the Gate-Driven migration audit.
 | Research candidate-state contract | PASS / LOCKED | PR #574; available/no-candidates/building/data-unavailable states are separated; CI run 31707956986 / job 94473193712 passed |
 | Release manifest integrity | PASS / LOCKED | PR #575; portable artifact paths, rollback identity and ready/rollback exclusivity; targeted artifact tests 32 passed with `-p no:tmpdir`; CI run 31709364212 / job 94478005695 and security run 31709364141 passed |
 | Publish-before-notify workflow contract | PASS / LOCKED | PR #576; all production send paths require public release gate and carry release/snapshot receipt lineage; 14 targeted contract tests; CI run 31711585735 / job 94485686912 and security run 31711585721 passed |
-| Safe data publishing | PASS / LOCKED | P0-06 branch; path-restricted isolated-index publisher, serialized data writers, Pages restore-before-validation, 23 targeted tests, compileall and diff checks passed; CI evidence is recorded on the PR before lock |
+| Safe data publishing | PASS / LOCKED | PR #577; path-restricted isolated-index publisher, serialized data writers, Pages restore-before-validation, 23 targeted tests, compileall and diff checks passed; quality run 31713173878 / job 94491106048 and security run 31713173727 passed |
 | Existing P0 requirements from the continuation brief | NEEDS_REVERIFY | The brief enumerates P0-01 through P0-29; this branch only addresses provider-registry scope. Each remaining DoD needs a separate evidence row before being marked PASS. |
 
 ## Verification evidence
