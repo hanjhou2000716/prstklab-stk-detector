@@ -23,6 +23,8 @@ is authoritative for the Gate-Driven migration audit.
 - P0-18 locked after CI evidence: external alert trust boundary now has auditable signed payload, HTTPS provenance, independent-source checks, and fail-closed high-risk gating.
 - P0-19 verification gate: targeted Gmail ingress contract suite passed 20 tests; CI run `31722239089` / job `94521788534` passed with security/CodeQL/SBOM.
 - P0-19 locked: authenticated, bounded and cursor-only Gmail Pub/Sub ingress is replay-safe and keeps raw mail outside Railway storage.
+- P0-20 verification gate: targeted Railway health contract suite passed 7 tests with isolated basetemp; CI run `31722834875` / job `94523793185` passed with security/CodeQL/SBOM.
+- P0-20 locked: callback configuration errors do not trigger restart, transient failures have bounded retry hints, and stale heartbeat remains explicit.
 - Active PR: the P0-06 safe data publishing PR, stacked on PR [#576](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/576).
 - Previous active branch: `feat/publish-before-notify-contract` (PR [#576](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/576)), now LOCKED after targeted contract tests and CI.
 - Recovery checkpoint: `3c27fe6` (manifest integrity contract) and `0c1d71d`
