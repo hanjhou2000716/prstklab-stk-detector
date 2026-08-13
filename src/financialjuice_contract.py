@@ -15,7 +15,7 @@ from typing import Any
 from src.external_event_risk import score_prstk_risk
 
 VENDOR_IMPORTANCE_MAX = 10
-PARSER_VERSION = "financialjuice-contract-v1"
+PARSER_VERSION = "financialjuice-contract-v2"
 
 
 def _text(value: Any) -> str:
@@ -46,6 +46,25 @@ def _identity(record: dict[str, Any]) -> str:
         for key in ("original_headline", "headline", "source_url", "published_at")
     )
     return f"fj-{hashlib.sha256(material.encode('utf-8')).hexdigest()[:20]}"
+
+
+def financialjuice_content_hash(record: dict[str, Any]) -> str:
+    """Return a stable hash for one vendor item, excluding transport metadata."""
+    material = "|".join(
+        _text(record.get(key)).casefold()
+        for key in (
+            "original_headline", "headline", "chinese_translation", "vendor_translation",
+            "ai_commentary", "vendor_analysis", "possible_impact", "vendor_possible_impact",
+            "published_at", "source_url",
+        )
+    )
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()
+
+
+def financialjuice_item_id(message_id: str, index: int, content_hash: str) -> str:
+    """Identify a compound item without treating the whole email as one event."""
+    material = f"{message_id}|{index}|{content_hash}"
+    return f"fj-item-{hashlib.sha256(material.encode('utf-8')).hexdigest()[:20]}"
 
 
 def normalize_financialjuice(record: dict[str, Any]) -> dict[str, Any]:
@@ -92,6 +111,23 @@ def normalize_financialjuice(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def normalize_financialjuice_item(
+    record: dict[str, Any], *, message_id: str = "", index: int = 0,
+) -> dict[str, Any]:
+    """Normalize one item from a compound FinancialJuice message."""
+    normalized = normalize_financialjuice(record)
+    content_hash = financialjuice_content_hash(record)
+    normalized.update(
+        {
+            "item_id": financialjuice_item_id(message_id, index, content_hash),
+            "content_hash": content_hash,
+            "published_at": normalized["published_at"],
+            "source_url": normalized["source_url"],
+        }
+    )
+    return normalized
+
+
 def financialjuice_notification_state(record: dict[str, Any]) -> dict[str, Any]:
     """Expose why a relay item is or is not eligible for notification."""
     normalized = record if isinstance(record.get("prstk_risk"), dict) else normalize_financialjuice(record)
@@ -106,4 +142,10 @@ def financialjuice_notification_state(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-__all__ = ["financialjuice_notification_state", "normalize_financialjuice"]
+__all__ = [
+    "financialjuice_content_hash",
+    "financialjuice_item_id",
+    "financialjuice_notification_state",
+    "normalize_financialjuice",
+    "normalize_financialjuice_item",
+]
