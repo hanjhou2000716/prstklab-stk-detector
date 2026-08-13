@@ -115,3 +115,25 @@ def test_missing_scan_output_suppresses_stale_formal_counts(tmp_path):
     assert source["formal_candidates"] == 0
     assert source["observation_candidates"] == 0
     assert source["candidate_state"] == "data_gap"
+
+
+def test_completed_empty_value_scan_keeps_universe_counts_and_no_candidates_state(tmp_path):
+    scan = tmp_path / "scan.csv"
+    scan.write_text("", encoding="utf-8")
+    summary = tmp_path / "summary.json"
+    summary.write_text(
+        '{"requested": 150, "data_complete": 150, "failed": 0, '
+        '"scan_state": "complete", "candidate_state": "no_candidates"}',
+        encoding="utf-8",
+    )
+
+    report = build_research_report([{
+        "path": str(scan), "summary_path": str(summary),
+        "market": "taiwan", "strategy": "value",
+    }])
+
+    source = report["sources"][0]
+    assert source["requested_records"] == 150
+    assert source["complete_records"] == 150
+    assert source["candidate_state"] == "no_candidates"
+    assert source["candidates"] == 0

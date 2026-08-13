@@ -286,7 +286,9 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                 else "資料暫時無法取得"
             )
             scan_state = _normalize_scan_state(base, file_readable=False)
-            requested_records = _int_or_none(base.get("requested"))
+            requested_records = _int_or_none(base.get("requested_records"))
+            if requested_records is None:
+                requested_records = _int_or_none(base.get("requested"))
             failed_records = _int_or_none(base.get("failed"))
             complete_records = _int_or_none(base.get("complete_records"))
             if complete_records is None:
@@ -309,6 +311,7 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                 "history_pending_count": _int_or_none(base.get("history_pending")),
                 "source_failure_count": failed_records or 0,
                 "incomplete_record_count": max(0, (requested_records or 0) - (complete_records or 0)) if requested_records is not None else None,
+                "requested_records": requested_records,
                 "complete_records": complete_records,
                 "failed_records": failed_records,
                 "data_gap_counts": _gap_count(base.get("data_gap_counts")) or failed_records or 0,
@@ -321,7 +324,9 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
         complete_records = _int_or_none(base.get("complete_records"))
         if complete_records is None:
             complete_records = _int_or_none(base.get("data_complete"))
-        requested_records = _int_or_none(base.get("requested"))
+        requested_records = _int_or_none(base.get("requested_records"))
+        if requested_records is None:
+            requested_records = _int_or_none(base.get("requested"))
         data_gap_counts = _gap_count(base.get("data_gap_counts"))
         if data_gap_counts is None:
             data_gap_counts = failed_records
