@@ -28,4 +28,5 @@ def test_scheduled_brief_skips_telegram_for_stale_research_without_failing():
     assert "steps.research_policy.outputs.allow_telegram == 'true'" in workflow
     assert "Resolve release publication policy" in workflow
     assert "steps.release_policy.outputs.publish == 'true'" in workflow
+    assert "RELEASE_MANIFEST_PATH" in workflow
     assert "fallback_url: ${{ env.DASHBOARD_URL }}" in workflow
