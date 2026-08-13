@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 PUBLISH_MARKER = "python -m src.data_release --publish"
 WORKFLOW_ROOT = Path(__file__).resolve().parents[1] / ".github" / "workflows"
 
@@ -40,4 +39,3 @@ def test_data_release_is_path_restricted_and_uses_an_isolated_index():
     assert "refs/heads/{branch}" in source
     assert "site/data" in source
     assert "outside public data" in source
-
