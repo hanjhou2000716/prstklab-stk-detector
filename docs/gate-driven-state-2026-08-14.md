@@ -9,11 +9,11 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/safe-data-publishing-contract` |
-| HEAD | `a7c602c` (`feat(P0): bind sanitized external observations to scheduled release`) |
+| HEAD | `6581df4` (`docs(gates): record remote CI evidence at current head`) |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current3` (pre-task) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
-| Local regression | `1139 passed, 1 skipped` at `a7c602c` (`.tmp-external-full`) |
-| Static checks | Ruff, Mypy and compileall passed at `a7c602c`; Mini App syntax remains verified at prior head |
+| Local regression | `1139 passed, 1 skipped` at `a7c602c` (`.tmp-external-full`); evidence-only docs commit follows |
+| Static checks | Ruff, Mypy and compileall passed at `a7c602c`; evidence-only docs changes do not alter runtime |
 | Remote PR | [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578), open; required quality/security checks pass for `301fb5b` |
 
 ## Current task reconciliation
