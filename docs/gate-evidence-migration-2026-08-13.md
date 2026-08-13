@@ -18,6 +18,7 @@
 | FinancialJuice pipeline fan-out | PASS / LOCKED | Branch `feat/financialjuice-pipeline-fanout`; shared event pipeline emits one result per item and blocks unresolved envelopes |
 | FinancialJuice priority policy | PASS / LOCKED | Branch `feat/financialjuice-priority-policy`; 8/9/10 priority metadata is separated from PRStK risk and covered at 7/8 boundaries |
 | FinancialJuice intelligence fan-out | PASS / LOCKED | Branch `feat/financialjuice-intelligence-fanout`; all compound items remain visible in intelligence context and clusters |
+| Event ledger decision provenance | IN_PROGRESS | Persist blocked/pending reasons and compound item identity without changing delivery gates |
 | Existing P0 requirements from the continuation brief | NEEDS_REVERIFY | The brief enumerates P0-01 through P0-29; this branch only addresses provider-registry scope. Each remaining DoD needs a separate evidence row before being marked PASS. |
 
 ## Verification evidence
@@ -37,6 +38,7 @@
 | REQ-P0-09-PIPELINE | Compound items reach canonical event pipeline | `src/external_event_pipeline.py`, `src/intelligence_pipeline.py` | 15 targeted tests; fan-out and unresolved-envelope regression pass | local test output on `feat/financialjuice-pipeline-fanout` | single-item external events preserved | PASS / LOCKED |
 | REQ-P0-10-PRIORITY | FJ 8/10 vendor priority without risk override | `src/financialjuice_contract.py` | 14 targeted tests; 8 eligible metadata, 7 rejected, risk remains R2 | local test output on `feat/financialjuice-priority-policy` | official/market gates remain required | PASS / LOCKED |
 | REQ-P0-09-INTELLIGENCE | Compound items reach Mini App intelligence payload | `src/intelligence_pipeline.py` | 23 targeted tests; two items, two clusters and item identities preserved | local test output on `feat/financialjuice-intelligence-fanout` | single-item context preserved | PASS / LOCKED |
+| REQ-P0-11-LEDGER-DECISION | Event ledger preserves compound identity and notification blocking reasons | `src/event_ledger.py` | pending local verification | pending | existing cooldown and delivery history preserved | IN_PROGRESS |
 | P0-02..P0-29 | Existing continuation requirements | existing modules and prior PRs | evidence not yet reconciled against every DoD | no single current evidence artifact | open reconciliation | NEEDS_REVERIFY |
 
 ## Regression ledger

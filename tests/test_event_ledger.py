@@ -57,6 +57,30 @@ def test_delivery_history_records_each_material_send(tmp_path):
     assert all(row["event_key"] == canonical_event_key(event) for row in rows)
 
 
+def test_event_ledger_keeps_compound_identity_and_pending_reason(tmp_path):
+    path = tmp_path / "ledger.json"
+    event = {
+        "event_type": "energy",
+        "compound_item_id": "fj-item-2",
+        "compound_event_cluster_key": "fj-cluster-2",
+        "pending_reasons": ["market_sync_missing"],
+    }
+    ledger = EventLedger(path)
+    row = ledger.record_decision(event, {"allowed": False, "status": "pending", "reasons": ["market_sync_missing"]})
+    ledger.save()
+    record = EventLedger(path).records[canonical_event_key(event)]
+    assert row["allowed"] is False
+    assert row["reason"] == "market_sync_missing"
+    assert record["compound_item_id"] == "fj-item-2"
+    assert record["last_decision"]["reasons"] == ["market_sync_missing"]
+
+
+def test_distinct_compound_clusters_do_not_collapse():
+    first = {"compound_event_cluster_key": "fj-cluster-1", "event_type": "energy"}
+    second = {"compound_event_cluster_key": "fj-cluster-2", "event_type": "energy"}
+    assert canonical_event_key(first) != canonical_event_key(second)
+
+
 def test_save_merges_two_instances_loaded_before_either_save(tmp_path):
     path = tmp_path / "ledger.json"
     first = EventLedger(path)
