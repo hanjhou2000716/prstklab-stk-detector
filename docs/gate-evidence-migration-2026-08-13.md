@@ -18,7 +18,9 @@ is authoritative for the Gate-Driven migration audit.
 - P0-16 gate evidence: quality run `31720218621` / job `94515038872`, security/CodeQL/SBOM passed; task is PASS / LOCKED.
 - P0-17 implementation checkpoint: creator renderer/media failure contract tests added; CI evidence pending.
 - P0-17 gate evidence: quality run `31720774828` / job `94516916801`, security/CodeQL/SBOM passed; task is PASS / LOCKED.
-- P0-18 implementation checkpoint: external alert signature/provenance/high-risk contract tests added; CI evidence pending.
+- P0-18 implementation checkpoint: external alert signature/provenance/high-risk contract tests added; targeted 19 passed.
+- P0-18 verification gate: CI run `31721326422` / job `94518750439` passed; CodeQL, dependency review and SBOM also passed.
+- P0-18 locked after CI evidence: external alert trust boundary now has auditable signed payload, HTTPS provenance, independent-source checks, and fail-closed high-risk gating.
 - Active PR: the P0-06 safe data publishing PR, stacked on PR [#576](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/576).
 - Previous active branch: `feat/publish-before-notify-contract` (PR [#576](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/576)), now LOCKED after targeted contract tests and CI.
 - Recovery checkpoint: `3c27fe6` (manifest integrity contract) and `0c1d71d`
