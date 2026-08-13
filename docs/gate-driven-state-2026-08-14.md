@@ -14,7 +14,7 @@ claims inferred from branch names or previous comments.
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1139 passed, 1 skipped` at `a7c602c` (`.tmp-external-full`) |
 | Static checks | Ruff, Mypy and compileall passed at `a7c602c`; Mini App syntax remains verified at prior head |
-| Remote PR | [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578), open; required quality/security checks pass for `4b60f06` |
+| Remote PR | [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578), open; required quality/security checks pass for `301fb5b` |
 
 ## Current task reconciliation
 
@@ -73,7 +73,8 @@ present; it does not imply that an external production gate has passed.
 - Targeted release/news/Mini App/delivery-gate suite: `63 passed, 1 skipped`; full local regression: `1133 passed,
   1 skipped`; Ruff, Mypy, compile and `node --check` pass.
 - PR [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578)
-  required checks pass for the latest head. Pages/Railway/Telegram production acceptance remains
+  required checks pass for `301fb5b` (test-and-dry-run, CodeQL, dependency review,
+  SBOM and duplicate CodeQL check). Pages/Railway/Telegram production acceptance remains
   external and fail-closed.
 
 ### Migration audit update (2026-08-14, sanitized external ingress)
