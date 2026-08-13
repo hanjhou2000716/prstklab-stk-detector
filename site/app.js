@@ -822,7 +822,7 @@ const renderCreatorInsights = (creatorRelease) => {
   if (!creatorRelease || typeof creatorRelease !== "object") return;
   panel.hidden = false;
   if (creatorRelease.status !== "ready") {
-    content.innerHTML = '<p class="empty">Creator 來源目前不可用；不影響核心市場 release。</p>';
+    content.innerHTML = '<p class="empty">財經內容洞察來源目前不可用；不影響核心市場資料。</p>';
     return;
   }
   let insights = Array.isArray(creatorRelease.insights) ? creatorRelease.insights : [];
@@ -833,17 +833,26 @@ const renderCreatorInsights = (creatorRelease) => {
     });
   }
   if (!insights.length) {
-    content.innerHTML = '<p class="empty">本輪沒有可核對的 Creator Insight。</p>';
+    content.innerHTML = '<p class="empty">本輪沒有可公開顯示的內容洞察。</p>';
     return;
   }
   content.innerHTML = insights.slice(0, 5).map((item) => {
     const title = escapeHtml(item.episode_title || item.episode_key || "Creator Insight");
-    const verification = escapeHtml(item.verification_state || "unverified");
+    const verificationLabels = {
+      verified: "已核對", partially_verified: "部分核對", unverified: "待核對",
+      contradicted: "與已知證據不一致", not_applicable: "不適用",
+    };
+    const verification = escapeHtml(verificationLabels[item.verification_state] || "待核對");
     const claims = Array.isArray(item.claims) ? item.claims.filter(Boolean).slice(0, 3) : [];
     const opinions = Array.isArray(item.opinions) ? item.opinions.filter(Boolean).slice(0, 2) : [];
-    const facts = claims.map((value) => `<li>事實：${escapeHtml(value)}</li>`).join("");
-    const views = opinions.map((value) => `<li>觀點：${escapeHtml(value)}</li>`).join("");
-    return `<article class="creator-insight"><h4>${title}</h4><small>核對狀態：${verification}</small><ul>${facts}${views}</ul></article>`;
+    const claimsHtml = claims.map((value) => `<li>來源主張：${escapeHtml(value)}</li>`).join("");
+    const views = opinions.map((value) => `<li>作者觀點：${escapeHtml(value)}</li>`).join("");
+    const creator = escapeHtml(item.creator_name || "公開財經內容來源");
+    const sourceUrl = String(item.source_url || "").trim();
+    const sourceLink = /^https:\/\//.test(sourceUrl)
+      ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">開啟公開來源</a>`
+      : "";
+    return `<article class="creator-insight"><h4>${title}</h4><small>${creator}｜核對狀態：${verification}</small><ul>${claimsHtml}${views}</ul>${sourceLink}</article>`;
   }).join("");
 };
 

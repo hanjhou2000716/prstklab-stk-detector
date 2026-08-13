@@ -60,7 +60,7 @@ jobs:
       # Optional path to an already-sanitized Creator Insight records file.
       # Keep it outside site/ so raw ingress material can never be uploaded
       # as part of the Pages artifact.
-      CREATOR_RECORDS_PATH: ${{ vars.CREATOR_RECORDS_PATH }}
+      CREATOR_RECORDS_PATH: ${{ vars.CREATOR_RECORDS_PATH || 'creator/public-records.json' }}
       # Creator delivery is opt-in.  It is intentionally disabled until the
       # operator configures a private media root and a scoped recipient list.
       CREATOR_NOTIFICATION_ENABLED: ${{ vars.CREATOR_NOTIFICATION_ENABLED }}
