@@ -36,6 +36,12 @@ def test_scheduled_workflow_only_passes_explicit_external_creator_records():
     assert "--creator-records \"$CREATOR_RECORDS_PATH\"" in workflow
 
 
+def test_scheduled_workflow_exposes_only_sanitized_external_observations_path():
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
+    assert "EXTERNAL_OBSERVATIONS_PATH" in workflow
+    assert "sanitized" in workflow
+
+
 def test_scheduled_workflow_creator_notification_is_opt_in_and_release_gated():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
     assert "CREATOR_NOTIFICATION_ENABLED" in workflow
