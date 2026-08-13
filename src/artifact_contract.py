@@ -535,7 +535,25 @@ def validate_events(document: dict[str, Any]) -> list[str]:
 
 def validate_manifest(document: dict[str, Any]) -> list[str]:
     """Validate the release manifest envelope."""
-    return _schema_errors(document, "release-manifest.schema.json")
+    errors = _schema_errors(document, "release-manifest.schema.json")
+    paths = document.get("artifact_paths")
+    hashes = document.get("artifact_hashes")
+    if isinstance(paths, dict) and isinstance(hashes, dict):
+        required = ("market.json", "research-report.json", "event-ledger.json")
+        for name in required:
+            path = str(paths.get(name) or "").strip()
+            digest = str(hashes.get(name) or "").strip()
+            if path and Path(path).is_absolute():
+                errors.append(f"manifest artifact path must be relative: {name}")
+            if path and (".." in Path(path).parts or path.startswith("/")):
+                errors.append(f"manifest artifact path escapes release root: {name}")
+            if path and digest and len(digest) == 64:
+                continue
+    if document.get("status") == "rolled_back" and not str(document.get("rollback_release_id") or "").strip():
+        errors.append("rolled_back manifest requires rollback_release_id")
+    if document.get("status") == "ready" and document.get("rollback_release_id"):
+        errors.append("ready manifest cannot declare rollback_release_id")
+    return sorted(set(errors))
 
 
 def validate_release(

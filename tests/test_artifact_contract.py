@@ -57,9 +57,9 @@ def _research(**overrides):
     return {"schema_version": "2.0", "generated_at": "2026-08-04T10:00:00+08:00", "sources": [{"market": "taiwan", "strategy": "value", "scan_state": "complete", "status": "可用", "candidate_state": "available", "candidates": 5, "formal_candidates": 5}], "candidates": [], "health": {}, **overrides}
 
 
-def _manifest():
+def _manifest(**overrides):
     digest = "a" * 64
-    return {"release_id": "release-12345678", "created_at": "2026-08-04T10:00:00+08:00", "market_snapshot_id": "market-12345678", "research_snapshot_id": "research-12345678", "event_snapshot_id": "event-12345678", "policy_version": "1.0", "schema_versions": {"market": "1.0"}, "artifact_paths": {"market.json": "data/market.json", "research-report.json": "data/research-report.json", "event-ledger.json": "data/event-ledger.json"}, "artifact_hashes": {"market.json": digest, "research-report.json": digest, "event-ledger.json": digest}, "status": "ready"}
+    return {"release_id": "release-12345678", "created_at": "2026-08-04T10:00:00+08:00", "market_snapshot_id": "market-12345678", "research_snapshot_id": "research-12345678", "event_snapshot_id": "event-12345678", "policy_version": "1.0", "schema_versions": {"market": "1.0"}, "artifact_paths": {"market.json": "data/market.json", "research-report.json": "data/research-report.json", "event-ledger.json": "data/event-ledger.json"}, "artifact_hashes": {"market.json": digest, "research-report.json": digest, "event-ledger.json": digest}, "status": "ready", **overrides}
 
 
 def test_valid_release_passes_contract():
@@ -315,6 +315,22 @@ def test_manifest_schema_requires_core_artifact_lineage():
     })
     assert any("artifact_paths" in error for error in errors)
     assert any("research-report.json" in error for error in errors)
+
+
+def test_manifest_rejects_absolute_or_escaping_artifact_paths():
+    manifest = _manifest()
+    manifest["artifact_paths"]["market.json"] = "../market.json"
+    manifest["artifact_paths"]["research-report.json"] = "C:/outside/research.json"
+    errors = validate_manifest(manifest)
+    assert any("escapes release root" in error for error in errors)
+    assert any("must be relative" in error for error in errors)
+
+
+def test_manifest_rollback_requires_previous_release_identity():
+    manifest = _manifest(status="rolled_back")
+    assert any("rollback_release_id" in error for error in validate_manifest(manifest))
+    manifest["rollback_release_id"] = "release-previous"
+    assert validate_manifest(manifest) == []
 
 
 def test_market_audit_normalizes_naive_and_aware_timestamps():
