@@ -128,6 +128,8 @@ jobs:
         if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
         id: deployment
         uses: ./.github/actions/deploy-pages-retry
+        with:
+          fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Verify deployed release before emergency delivery
         if: (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true') && steps.deployment.outputs.available == 'true'
         id: release_gate

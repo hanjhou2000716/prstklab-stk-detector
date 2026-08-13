@@ -137,7 +137,7 @@ def test_routine_manifest_marks_old_production_research_stale(tmp_path):
     research_path.write_text(json.dumps(research), encoding="utf-8")
     manifest = build_release_manifest(root=tmp_path)
     assert manifest["status"] == "ready"
-    assert manifest["research_freshness"] == "stale"
+    assert manifest["research_freshness"] == "stale_fallback"
 
 
 def test_strict_manifest_marks_explicit_stale_fallback(tmp_path):

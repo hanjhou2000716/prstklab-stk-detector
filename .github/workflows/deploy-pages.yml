@@ -92,3 +92,5 @@ jobs:
       - name: 部署
         id: deployment
         uses: ./.github/actions/deploy-pages-retry
+        with:
+          fallback_url: ${{ vars.DASHBOARD_URL }}
