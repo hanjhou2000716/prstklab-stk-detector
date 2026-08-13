@@ -9,10 +9,10 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/safe-data-publishing-contract` |
-| HEAD | `8833627` (latest verified News release-lineage evidence) |
+| HEAD | `eb8e640` (latest verified News schema and Mini App contract evidence) |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current` |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
-| Local regression | `1130 passed, 1 skipped` |
+| Local regression | `1132 passed, 1 skipped` |
 | Static checks | Ruff, Mypy, compileall and `node --check site/app.js` passed |
 | Remote PR | [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578), open; required quality/security checks pass for the latest head |
 
@@ -22,9 +22,9 @@ claims inferred from branch names or previous comments.
 |---|---|---|
 | Canonical NewsStory/provider contract | LOCKED | `tests/test_news_intelligence.py`, full regression |
 | Official TWSE/MOPS/SEC/Fed adapters | PASS | `tests/test_news_feed_adapters.py`; failure and 429 isolation |
-| News release artifact production | PASS | `news_snapshot_id`/`news_status` and hash written by `release_manifest` |
+| News release artifact production | PASS | `news-release.schema.json`, `news_snapshot_id`/`news_status` and hash written by `release_manifest` |
 | News release-gate lineage | PASS | 51 targeted release/news gate tests; mismatched market snapshot fails closed |
-| News Mini App browser rendering | NEEDS_REVERIFY | contract loader is verified locally; real ready Pages browser evidence remains external |
+| News Mini App browser rendering | NEEDS_REVERIFY | static contract loader is verified locally; real ready Pages browser evidence remains external |
 | Railway/Telegram production acceptance | BLOCKED | protected runtime configuration and controlled recipient evidence are external prerequisites |
 
 `PASS` is not promoted to `LOCKED` for the two external rows because the
@@ -60,10 +60,10 @@ required objective evidence is not available in this checkout.
 - The release gate validates each market payload and its shared provider
   registry. The Mini App verifies the News artifact hash, market snapshot and
   News snapshot before rendering either tab, including last-good fallback.
-- Targeted release/news suite: `52 passed`; full local regression: `1130 passed,
+- Targeted release/news/Mini App suite: `58 passed`; full local regression: `1132 passed,
   1 skipped`; Ruff, Mypy, compile and `node --check` pass.
 - PR [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578)
-  required checks pass. Pages/Railway/Telegram production acceptance remains
+  required checks pass for the latest head. Pages/Railway/Telegram production acceptance remains
   external and fail-closed.
 | DEBT-NEWS-002 | Railway and Telegram delivery receipt evidence | protected runtime configuration; single-recipient dry-run | OPEN EXTERNAL |
 | DEBT-NEWS-003 | Historical untracked test/temp artifacts | separate workspace hygiene task; do not stage during feature work | OPEN NON-PRODUCTION |
