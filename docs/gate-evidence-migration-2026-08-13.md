@@ -9,7 +9,7 @@ stack has since advanced through the contract-hardening branches; this update
 is authoritative for the Gate-Driven migration audit.
 
 - Active branch: `feat/safe-data-publishing-contract`.
-- Active HEAD: `a20bf7f` (Ruff repair after the first CI run).
+- Active HEAD: `b670051` (P0-08 source-health contract and CI lint repair).
 - Active PR: the P0-06 safe data publishing PR, stacked on PR [#576](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/576).
 - Previous active branch: `feat/publish-before-notify-contract` (PR [#576](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/576)), now LOCKED after targeted contract tests and CI.
 - Recovery checkpoint: `3c27fe6` (manifest integrity contract) and `0c1d71d`
@@ -46,6 +46,7 @@ is authoritative for the Gate-Driven migration audit.
 | Publish-before-notify workflow contract | PASS / LOCKED | PR #576; all production send paths require public release gate and carry release/snapshot receipt lineage; 14 targeted contract tests; CI run 31711585735 / job 94485686912 and security run 31711585721 passed |
 | Safe data publishing | PASS / LOCKED | PR #577; path-restricted isolated-index publisher, serialized data writers, Pages restore-before-validation, 23 targeted tests, compileall and diff checks passed; quality run 31713173878 / job 94491106048 and security run 31713173727 passed |
 | CI and reproducible environment | PASS / LOCKED | PR #577; 16 targeted CI/security/workflow tests, compileall and diff checks passed; quality run 31714087713 / job 94494236762, security run 31714087668, CodeQL 94494504242 passed |
+| P0-08 source health and data gaps | PASS / LOCKED | PR #577; 50 targeted tests, compileall/diff checks, required CI run 31716430943 / job 94502215501, security/CodeQL/SBOM passed |
 | Existing P0 requirements from the continuation brief | NEEDS_REVERIFY | The brief enumerates P0-01 through P0-29; this branch only addresses provider-registry scope. Each remaining DoD needs a separate evidence row before being marked PASS. |
 
 ## Verification evidence
@@ -83,7 +84,7 @@ is authoritative for the Gate-Driven migration audit.
 |---|---|---|---|---|---|---|
 | REG-565-001 | registry import additions | CI Ruff import ordering failure | imports were added below local imports | reordered imports; CI rerun passed | run 31693131665 | CLOSED |
 | REG-565-002 | registry optional lookup | CI Mypy union-attr failure | provider lookup was called twice without narrowing | bound optional config before use; CI rerun passed | run 31693131665 | CLOSED |
-| REG-P0-08-001 | P0-08 source-health aggregation | An optional adapter record containing only `key` and `status` crashed while building `data_gaps` | Normalize a safe label and map missing credentials to the schema-level `configuration_missing` state before aggregation | 50 targeted source-health/artifact tests; PR CI pending | CLOSED |
+| REG-P0-08-001 | P0-08 source-health aggregation | An optional adapter record containing only `key` and `status` crashed while building `data_gaps` | Normalize a safe label and map missing credentials to the schema-level `configuration_missing` state before aggregation | 50 targeted source-health/artifact tests; required CI run 31716430943 | CLOSED |
 
 ## Completion-debt ledger
 
@@ -99,7 +100,7 @@ is authoritative for the Gate-Driven migration audit.
 ## Preservation contracts
 
 - PC-001: existing provider routing and fail-closed unknown-source behavior preserved by targeted tests — PASS.
-- PC-007: source-health `no_event`, `scan_failed`, and `configuration_missing` remain distinct; incomplete optional metadata cannot crash aggregation — targeted P0-08 tests PASS; PR CI pending.
+- PC-007: source-health `no_event`, `scan_failed`, and `configuration_missing` remain distinct; incomplete optional metadata cannot crash aggregation — targeted P0-08 tests and required CI run 31716430943 PASS.
 - PC-002: Creator content remains editorial and cannot become market-event evidence — PASS by registry policy/tests.
 - PC-003: release-gate and notification code paths remain unchanged except dynamic provider inputs — PASS by CI dry-run.
 
