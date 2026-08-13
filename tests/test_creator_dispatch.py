@@ -109,3 +109,17 @@ def test_creator_dispatch_sends_once_and_persists_receipt(tmp_path, monkeypatch)
     assert calls
     assert receipt_path.exists()
     assert "test-chat" not in receipt_path.read_text(encoding="utf-8")
+
+
+def test_creator_dispatch_fails_closed_when_configured_remote_history_is_unavailable(tmp_path, monkeypatch):
+    monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
+    monkeypatch.setenv("RAILWAY_STATUS_URL", "https://railway.example")
+    monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "secret")
+    manifest = _bundle(tmp_path)
+    monkeypatch.setattr(
+        "src.creator_dispatch.load_remote_creator_delivery_history",
+        lambda *_args, **_kwargs: ([], "unavailable"),
+    )
+    result = dispatch(manifest_path=manifest, public_url="https://example.test/app", token="token", chat_ids=("test-chat",))
+    assert result["status"] == "blocked"
+    assert result["reasons"] == ["creator_delivery_history_unavailable"]

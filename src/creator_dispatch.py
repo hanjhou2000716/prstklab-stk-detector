@@ -109,6 +109,25 @@ def dispatch(
     remote_history, remote_history_status = load_remote_creator_delivery_history(
         os.getenv("RAILWAY_STATUS_URL"), os.getenv("RAILWAY_STATUS_SHARED_SECRET")
     )
+    if os.getenv("RAILWAY_STATUS_URL", "").strip() and remote_history_status not in {"healthy", "not_configured"}:
+        reason = f"creator_delivery_history_{remote_history_status}"
+        _write_output({
+            "creator_enabled": "true",
+            "creator_status": "blocked",
+            "creator_sent": "0",
+            "creator_blocked": "1",
+            "creator_blocking_reason": reason,
+            "creator_remote_history_status": remote_history_status,
+        })
+        return {
+            "enabled": True,
+            "status": "blocked",
+            "sent": 0,
+            "blocked": 1,
+            "reasons": [reason],
+            "receipts": [],
+            "remote_history_status": remote_history_status,
+        }
     history.extend(remote_history)
     insights = cast(list[Any], creator.get("insights")) if isinstance(creator.get("insights"), list) else []
     receipts: list[dict[str, Any]] = []
