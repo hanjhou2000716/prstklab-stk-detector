@@ -204,3 +204,21 @@ and protected runtime configuration after the PR is merged.
 - Production release acceptance and Telegram/Railway delivery remain
   BLOCKED until a real ready data release and protected runtime configuration
   are available. No production side effect was attempted.
+
+## Migration audit update (2026-08-14, official news adapters)
+
+- Atomic commit `c0b3b7c` adds isolated TWSE/MOPS/SEC/Federal Reserve feed
+  adapters and wires the official-first path into `risk_news.fetch_market_news`.
+- Nasdaq remains explicitly disabled because no stable documented public feed
+  endpoint is configured; no undocumented endpoint is inferred.
+- Provider failures, XML/JSON parse errors and HTTP 429 are captured per
+  provider and do not prevent other providers or the Anue/Google fallback.
+- Targeted adapter/news/release tests: `54 passed`.
+- Full local regression after integration: `1128 passed, 1 skipped`.
+- Full static checks: Ruff, Mypy, compileall and Mini App JavaScript syntax
+  passed. Latest PR #577 quality and current security jobs passed; an older
+  external CodeQL status remains visible on the PR but is not associated with
+  the current commit.
+- Live official feed, Pages publication, Railway and Telegram delivery remain
+  `NEEDS_REVERIFY`/`BLOCKED` until a real ready release and protected runtime
+  configuration are available.
