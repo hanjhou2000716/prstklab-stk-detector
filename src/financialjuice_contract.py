@@ -16,6 +16,7 @@ from src.external_event_risk import score_prstk_risk
 
 VENDOR_IMPORTANCE_MAX = 10
 PARSER_VERSION = "financialjuice-contract-v2"
+VENDOR_PRIORITY_THRESHOLD = 8
 
 
 def _text(value: Any) -> str:
@@ -133,8 +134,16 @@ def financialjuice_notification_state(record: dict[str, Any]) -> dict[str, Any]:
     normalized = record if isinstance(record.get("prstk_risk"), dict) else normalize_financialjuice(record)
     risk = normalized["prstk_risk"]
     eligible = bool(risk.get("notification_eligible"))
+    vendor_importance = normalized.get("vendor_importance")
+    vendor_priority = isinstance(vendor_importance, int) and vendor_importance >= VENDOR_PRIORITY_THRESHOLD
     return {
         "status": "eligible" if eligible else "pending_confirmation",
+        "vendor_priority_notification": vendor_priority,
+        "vendor_priority_reason": (
+            "vendor_importance_at_or_above_8"
+            if vendor_priority
+            else "vendor_importance_below_8_or_missing"
+        ),
         "risk_level": risk["prstk_risk_level"],
         "reasons": list(normalized["pending_reasons"]),
         "official_confirmed": risk["official_confirmed"],
@@ -148,4 +157,5 @@ __all__ = [
     "financialjuice_notification_state",
     "normalize_financialjuice",
     "normalize_financialjuice_item",
+    "VENDOR_PRIORITY_THRESHOLD",
 ]
