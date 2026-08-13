@@ -12,6 +12,8 @@ is authoritative for the Gate-Driven migration audit.
 - Active HEAD: `0c1d71d`.
 - Active PR: [#575](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/575),
   targeting `feat/research-state-schema`.
+- Next active branch: `feat/publish-before-notify-contract` (PR [#576](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/576)),
+  stacked on #575; its latest HEAD is `0ff3550`.
 - Recovery checkpoint: `3c27fe6` (manifest integrity contract) and `0c1d71d`
   (portable cross-platform path validation). No reset, merge, force-push or
   destructive cleanup was performed.
@@ -43,6 +45,7 @@ is authoritative for the Gate-Driven migration audit.
 | Market provenance contract | PASS / LOCKED | PR #573; quote source/time, domain, crosscheck and technical-context freshness are schema checked; CI run 31707106925 / job 94470318661 passed |
 | Research candidate-state contract | PASS / LOCKED | PR #574; available/no-candidates/building/data-unavailable states are separated; CI run 31707956986 / job 94473193712 passed |
 | Release manifest integrity | PASS / LOCKED | PR #575; portable artifact paths, rollback identity and ready/rollback exclusivity; targeted artifact tests 32 passed with `-p no:tmpdir`; CI run 31709364212 / job 94478005695 and security run 31709364141 passed |
+| Publish-before-notify workflow contract | PASS / LOCKED | PR #576; all production send paths require public release gate and carry release/snapshot receipt lineage; 14 targeted contract tests; CI run 31711585735 / job 94485686912 and security run 31711585721 passed |
 | Existing P0 requirements from the continuation brief | NEEDS_REVERIFY | The brief enumerates P0-01 through P0-29; this branch only addresses provider-registry scope. Each remaining DoD needs a separate evidence row before being marked PASS. |
 
 ## Verification evidence
@@ -85,6 +88,8 @@ is authoritative for the Gate-Driven migration audit.
 
 | DEBT-575-001 | Full local suite cannot create pytest temporary directories because the shared Windows temp root contains permission-denied historical folders | CI Linux full suite passed 1046 tests; local targeted manifest suite used `-p no:tmpdir` and passed 32 tests | OPEN (environment-only; no product failure) |
 
+| DEBT-576-001 | Full local suite still cannot create pytest temporary directories under the inherited Windows temp root | CI full suite and delivery dry-run passed; 14 targeted workflow-contract tests passed locally | OPEN (environment-only; no product failure) |
+
 ## Preservation contracts
 
 - PC-001: existing provider routing and fail-closed unknown-source behavior preserved by targeted tests — PASS.
@@ -92,6 +97,7 @@ is authoritative for the Gate-Driven migration audit.
 - PC-003: release-gate and notification code paths remain unchanged except dynamic provider inputs — PASS by CI dry-run.
 
 - PC-004: manifest release/rollback integrity and fail-closed artifact path validation — PASS by PR #575 CI and targeted tests.
+- PC-005: production notification cannot precede public release verification — PASS by PR #576 CI and targeted contract tests.
 
 ## Next gate
 
