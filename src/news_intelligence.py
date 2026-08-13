@@ -15,13 +15,13 @@ from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 PROVIDER_REGISTRY: tuple[dict[str, Any], ...] = (
-    {"provider_id": "twse", "display_name": "TWSE", "authority_tier": "official", "markets": ("taiwan",), "domains": ("twse.com.tw",)},
-    {"provider_id": "mops", "display_name": "MOPS", "authority_tier": "official", "markets": ("taiwan",), "domains": ("mops.twse.com.tw",)},
-    {"provider_id": "sec", "display_name": "SEC EDGAR", "authority_tier": "official", "markets": ("us",), "domains": ("sec.gov",)},
-    {"provider_id": "fed", "display_name": "Federal Reserve", "authority_tier": "official", "markets": ("us",), "domains": ("federalreserve.gov",)},
-    {"provider_id": "nasdaq", "display_name": "Nasdaq", "authority_tier": "market", "markets": ("us",), "domains": ("nasdaq.com",)},
-    {"provider_id": "anue", "display_name": "Anue", "authority_tier": "market", "markets": ("taiwan", "us"), "domains": ("cnyes.com",)},
-    {"provider_id": "google_news", "display_name": "Google News", "authority_tier": "discovery", "markets": ("taiwan", "us"), "domains": ("news.google.com",)},
+    {"provider_id": "twse", "display_name": "TWSE", "authority_tier": "official", "markets": ("taiwan",), "domains": ("twse.com.tw",), "content_types": ("market_news", "company_notice"), "fetch_method": "json", "timeout_seconds": 8, "cache_ttl_seconds": 300, "enabled": True, "failure_isolation": True},
+    {"provider_id": "mops", "display_name": "MOPS", "authority_tier": "official", "markets": ("taiwan",), "domains": ("mops.twse.com.tw",), "content_types": ("company_notice",), "fetch_method": "json", "timeout_seconds": 8, "cache_ttl_seconds": 300, "enabled": True, "failure_isolation": True},
+    {"provider_id": "sec", "display_name": "SEC EDGAR", "authority_tier": "official", "markets": ("us",), "domains": ("sec.gov",), "content_types": ("company_filing", "market_news"), "fetch_method": "atom", "timeout_seconds": 8, "cache_ttl_seconds": 300, "enabled": True, "failure_isolation": True},
+    {"provider_id": "fed", "display_name": "Federal Reserve", "authority_tier": "official", "markets": ("us",), "domains": ("federalreserve.gov",), "content_types": ("macro_event", "market_news"), "fetch_method": "rss", "timeout_seconds": 8, "cache_ttl_seconds": 300, "enabled": True, "failure_isolation": True},
+    {"provider_id": "nasdaq", "display_name": "Nasdaq", "authority_tier": "market", "markets": ("us",), "domains": ("nasdaq.com",), "content_types": ("market_news",), "fetch_method": "configured_endpoint", "timeout_seconds": 8, "cache_ttl_seconds": 300, "enabled": False, "failure_isolation": True},
+    {"provider_id": "anue", "display_name": "Anue", "authority_tier": "market", "markets": ("taiwan", "us"), "domains": ("cnyes.com",), "content_types": ("market_news",), "fetch_method": "html", "timeout_seconds": 15, "cache_ttl_seconds": 300, "enabled": True, "failure_isolation": True},
+    {"provider_id": "google_news", "display_name": "Google News", "authority_tier": "discovery", "markets": ("taiwan", "us"), "domains": ("news.google.com",), "content_types": ("discovery",), "fetch_method": "rss", "timeout_seconds": 15, "cache_ttl_seconds": 900, "enabled": True, "failure_isolation": True},
 )
 
 _TRACKING_PARAMS = frozenset({"utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "oc"})

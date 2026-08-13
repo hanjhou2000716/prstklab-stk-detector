@@ -23,7 +23,7 @@ new parallel implementation.  The attachment requirements map as follows:
 | FinancialJuice compound parsing and vendor-priority boundary | `src/financialjuice_contract.py`, `src/external_source_parsers.py` | compound, 7/8/9/10 priority and replay tests | PASS / LOCKED |
 | FinancialJuice + news event unification | `src/external_event_pipeline.py`, `src/intelligence_pipeline.py` | event fan-out, evidence and lifecycle tests | PASS / LOCKED |
 | Market News provider registry and URL contract | `src/news_intelligence.py`, `schemas/news-story.schema.json`, `schemas/news-intelligence.schema.json` | provider/domain, unknown URL, schema and dedup tests | PASS / LOCKED |
-| Official news-feed adapters (TWSE/MOPS/SEC/Fed/Nasdaq) | registry metadata only; ingestion remains in existing source adapters | registry and URL-contract tests; live feed evidence pending | NEEDS_REVERIFY |
+| Official news-feed adapters (TWSE/MOPS/SEC/Fed/Nasdaq) | `src/news_feed_adapters.py`; isolated TWSE/MOPS/SEC/Fed adapters; Nasdaq remains explicitly disabled until a stable documented endpoint is configured | parser, timeout/429 isolation and catalog tests; live feed evidence pending | partially_integrated |
 | News interest graph, ranking and dedup | `src/news_intelligence.py`, `risk_news.build_news_snapshot` | ticker/sector reasons, authority ordering and supporting-source tests | PASS / LOCKED |
 | News Mini App rendering | `site/app.js` release-provided provider allowlist | Mini App asset and URL-safety tests | NEEDS_REVERIFY |
 | News artifact in release lineage | `src/release_manifest.py`, `src/artifact_contract.py` | manifest/hash and mixed-release tests | NEEDS_REVERIFY |

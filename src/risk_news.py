@@ -14,6 +14,7 @@ from xml.etree import ElementTree
 
 import requests
 
+from src.news_feed_adapters import fetch_official_market_news
 from src.news_intelligence import build_news_intelligence, provider_registry
 from src.taiwan_macro_fgi import calculate_taiwan_macro_fgi
 
@@ -52,6 +53,7 @@ NEWS_TERMS = {
 }
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; PRStKInvestmentSystem/1.0)"}
 NEWS_CACHE_MAX_AGE_MINUTES = int(os.getenv("NEWS_CACHE_MAX_AGE_MINUTES", "360"))
+_LAST_OFFICIAL_NEWS_HEALTH: dict[str, dict[str, Any]] = {}
 
 # A provider can return a valid HTTP response containing the wrong regional
 # feed.  These explicit Taiwan terms are used to keep the US news tab clean;
@@ -462,7 +464,15 @@ def _news_from_html(html: str, market: str, limit: int = 5) -> list[dict[str, st
 
 
 def fetch_market_news(market: str) -> list[dict[str, str]]:
-    """Fetch up to five relevant public Anue headlines for one market."""
+    """Fetch market news, preferring isolated official feeds over discovery."""
+    global _LAST_OFFICIAL_NEWS_HEALTH
+    official = fetch_official_market_news(market)
+    _LAST_OFFICIAL_NEWS_HEALTH[market] = {
+        "source_health": official.get("source_health", []),
+        "errors": official.get("errors", []),
+    }
+    if official["stories"]:
+        return official["stories"][:5]
     response = requests.get(ANUE_CATEGORY_URLS[market], headers=HEADERS, timeout=15)
     response.raise_for_status()
     return _news_from_html(response.text, market)
@@ -594,6 +604,19 @@ def _build_news_snapshot_primary() -> dict[str, Any]:
                 "status": "failed", "checked_at": checked_at,
                 "item_count": 0, "data_gap": "request_failed",
             })
+        official_state = _LAST_OFFICIAL_NEWS_HEALTH.get(market)
+        if official_state:
+            for provider in official_state.get("source_health", []):
+                result["source_health"].append({
+                    "key": f"official_news_{market}_{provider.get('provider', 'unknown')}",
+                    "label": f"{provider.get('provider', 'unknown')} official news",
+                    "source_tier": "official",
+                    "source_url": provider.get("source_url"),
+                    "status": provider.get("status", "failed"),
+                    "checked_at": checked_at,
+                    "item_count": provider.get("item_count", 0),
+                    "data_gap": None if provider.get("status") in {"healthy", "no_event", "disabled"} else provider.get("status"),
+                })
 
     # A transient CDN/cache response must never be presented as two different
     # markets.  If both lists are identical (or nearly identical), refresh both from
