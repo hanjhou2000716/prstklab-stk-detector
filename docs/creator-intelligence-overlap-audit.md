@@ -22,6 +22,7 @@ new parallel implementation.  The attachment requirements map as follows:
 | Creator normalization, public artifact and release lineage | `src/creator_intelligence_pipeline.py`, `src/creator_artifact.py`, `src/creator_release.py` | creator artifact/release and briefing tests | PASS / LOCKED |
 | FinancialJuice compound parsing and vendor-priority boundary | `src/financialjuice_contract.py`, `src/external_source_parsers.py` | compound, 7/8/9/10 priority and replay tests | PASS / LOCKED |
 | FinancialJuice sanitized scheduled ingress | `src/external_observation_input.py`, `src/scheduled_delivery.py`, `.github/workflows/scheduled-brief.yml` | privacy rejection, source-health and snapshot-binding tests | partially_integrated (Railway bundle evidence pending) |
+| FinancialJuice operational observability | `src/external_observation_input.py`, `schemas/source-health.schema.json`, `site/app.js` | receive/parse/error/importance/pending metrics and UI contract (`52 passed`) | NEEDS_REVERIFY (Railway + Pages evidence pending) |
 | FinancialJuice release lineage and Mini App panel | `src/release_manifest.py`, `src/release_gate.py`, `site/index.html`, `site/app.js` | count/hash/source mismatch fixtures; 78 targeted and 1144 full local regression | NEEDS_REVERIFY (Pages browser evidence pending) |
 | FinancialJuice + news event unification | `src/external_event_pipeline.py`, `src/intelligence_pipeline.py` | event fan-out, evidence and lifecycle tests | PASS / LOCKED |
 | Market News provider registry and URL contract | `src/news_intelligence.py`, `schemas/news-story.schema.json`, `schemas/news-intelligence.schema.json` | provider/domain, unknown URL, schema and dedup tests | PASS / LOCKED |
@@ -75,9 +76,20 @@ and whether official confirmation or market synchronization is still pending.
 This is a local contract lock only; Railway bundle and Telegram acceptance
 remain external gates.
 
+The source-health row now also carries privacy-safe operational observability
+for the sanitized ingress: last receive/parse timestamps, parser errors,
+vendor-importance >=8 count, pending cluster count and notification decision.
+It deliberately excludes observation IDs, mail transport identifiers, raw
+content and recipients. The Mini App renders this state without upgrading a
+pending item to a confirmed alert. A live Railway bundle and ready Pages
+release are still required before this row can be locked as production.
+
 ## Failure and rollback
 
 Malformed or missing registry configuration fails closed at import/load time;
 unknown creators are routed to the DLQ and never published. Rollback is the
 single revert of the registry integration PR; existing known-provider fixtures
 remain compatible.
+The P0-24 observability contract is implemented in stacked PR #580. Its
+remote quality/security checks pass, while Railway source-health evidence and
+a ready Pages release remain external verification gates.

@@ -8,13 +8,13 @@ claims inferred from branch names or previous comments.
 
 | Field | Evidence |
 |---|---|
-| Branch | `feat/safe-data-publishing-contract` |
-| HEAD | `9f6a6d1` (`feat(P0): bind external observations to release and Mini App`) |
+| Branch | `feat/external-observability-contract` |
+| HEAD | `d50344b` (`feat(P0-24): expose FinancialJuice observability contract`; documentation evidence commit follows) |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current3` (pre-task) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1144 passed, 1 skipped` at `9f6a6d1` using an isolated Windows temp directory; one OneDrive-only run was rejected by filesystem locks |
 | Static checks | Ruff, Mypy, compileall and `node --check site/app.js` passed at `9f6a6d1` |
-| Remote PR | [#579](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/579), open; test-and-dry-run, CodeQL, dependency-review and SBOM pass for `763c7c4` |
+| Remote PR | [#580](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/580), open and stacked on #579; test-and-dry-run, CodeQL, dependency-review and SBOM pass |
 
 ## Current task reconciliation
 
@@ -28,6 +28,7 @@ claims inferred from branch names or previous comments.
 | Railway/Telegram production acceptance | BLOCKED | protected runtime configuration and controlled recipient evidence are external prerequisites |
 | FinancialJuice sanitized scheduled ingress | partially_integrated | `src/external_observation_input.py` rejects raw/private transport data; Railway sanitized bundle and live release evidence remain external |
 | FinancialJuice release lineage and Mini App evidence | NEEDS_REVERIFY | `src/release_manifest.py`, `src/release_gate.py`, `site/app.js`; local contract and mismatch fixtures pass; ready Pages evidence remains external |
+| FinancialJuice operational observability | PASS (local) / NEEDS_REVERIFY (external) | `src/external_observation_input.py`, `schemas/source-health.schema.json`, `site/app.js` | 52 targeted tests; source-health schema accepts the observability contract; Railway delivery evidence remains external | no raw/private fields or transport IDs exposed; missing input remains failed, not no-event | NEEDS_REVERIFY |
 
 `PASS` is not promoted to `LOCKED` when the required objective evidence is not
 available in this checkout.  `LOCKED` is reserved for a task whose local
@@ -46,6 +47,8 @@ present; it does not imply that an external production gate has passed.
 | REQ-ADD-001-DOD-02 | FinancialJuice source health and snapshot lineage remain explicit | `src/external_observation_input.py`, `src/scheduled_delivery.py`, workflow | scheduled snapshot binding test; release gate remains required | missing/rejected input cannot become no-event | NEEDS_REVERIFY (external bundle) |
 | REQ-ADD-002-DOD-01 | External observation IDs, sources and status are release-bound | `src/release_manifest.py`, `schemas/release-manifest.schema.json`, `src/release_gate.py` | 78 targeted; 1144 full regression | count/hash/source mismatch blocks delivery; malformed count fails closed | LOCKED (local) |
 | REQ-ADD-002-DOD-02 | Mini App exposes the same release-bound external observations and pending reason | `site/index.html`, `site/app.js`, `tests/test_mini_app_assets.py` | static asset contract and full regression | no row is rendered as confirmed without official/market evidence | NEEDS_REVERIFY (Pages browser) |
+| REQ-P0-24-DOD-01 | FinancialJuice source health exposes privacy-safe receive/parse/error/qualification state | `src/external_observation_input.py`, `schemas/source-health.schema.json` | `tests/test_external_observation_input.py`, `tests/test_artifact_contract.py` (52 targeted passed) | metrics contain timestamps/counts only; no observation IDs, message IDs, raw content or recipients | missing/malformed input remains failed and cannot be treated as no-event | PASS (local) |
+| REQ-P0-24-DOD-02 | Mini App renders FinancialJuice observability and notification pending reason | `site/app.js`, `tests/test_mini_app_assets.py` | Mini App asset contract included in 52 targeted tests | UI shows received time, >=8 count, pending clusters and parser errors; production browser evidence pending | source-health state remains fail-closed | NEEDS_REVERIFY (Pages browser) |
 
 ## Regression ledger
 
@@ -55,6 +58,7 @@ present; it does not imply that an external production gate has passed.
 | REG-NEWS-002 | environment | Windows shared temp contains inaccessible historical pytest directories | inherited workspace hygiene | CI and isolated basetemp pass; no product assertion changed | ACCEPTED ENVIRONMENT DEBT |
 | REG-MIG-001 | migration overlay | prior state document pointed at `c3f43d7` after later evidence commits | state reconciliation lag | `4b60f06`; 63 targeted and 1133 full regression passed | CLOSED |
 | REG-MIG-002 | external observation lineage | malformed manifest count could raise before fail-closed result | defensive integer parsing in release gate | targeted release-gate suite and full isolated regression | CLOSED |
+| REG-MIG-003 | verification environment | first full run timed out near 87% with one transient failure | rerun with a fresh isolated basetemp; no product assertion was changed | second full run `1146 passed` in 81.33s | ACCEPTED ENVIRONMENT EVENT |
 
 ## Completion debt ledger
 
@@ -65,6 +69,7 @@ present; it does not imply that an external production gate has passed.
 | DEBT-NEWS-003 | Historical untracked test/temp artifacts | separate workspace hygiene task; do not stage during feature work | OPEN NON-PRODUCTION |
 | DEBT-MIG-001 | Re-run required verification at migration HEAD | `63 passed, 1 skipped`; `1133 passed, 1 skipped`; Ruff/Mypy/compile/node checks | CLOSED |
 | DEBT-FJ-001 | Railway has not yet supplied a live sanitized FinancialJuice bundle to the scheduled workflow | configure `EXTERNAL_OBSERVATIONS_PATH` with reviewed derived JSON; run release-gated workflow | OPEN EXTERNAL |
+| DEBT-FJ-002 | Railway/Gmail/FinancialJuice operational metrics have not been observed in a ready public release | run a controlled release after #579 and verify source-health row plus Mini App browser | OPEN EXTERNAL |
 
 ### Migration audit update (2026-08-14, multi-market News release binding)
 
@@ -122,6 +127,29 @@ present; it does not imply that an external production gate has passed.
   `TELEGRAM_CHAT_IDS` is not configured. No recipient or token was invented,
   and no production message was attempted. A controlled single-recipient test
   remains an external acceptance prerequisite.
+
+### Migration audit update (2026-08-14, FinancialJuice operational observability)
+
+- The optional FinancialJuice source-health row now exposes only privacy-safe
+  operational metrics: last received/parsed timestamps, parser error count,
+  count of vendor-importance >=8 items, pending event-cluster count and the
+  resulting notification decision. Delivery time is intentionally null until
+  a real receipt is recorded by the delivery pipeline.
+- The source-health schema explicitly validates this nested contract. The Mini
+  App renders the metrics beside the existing source status and keeps pending
+  confirmation distinct from no-event and scan failure.
+- Targeted observability/schema/Mini App suite: `52 passed`; Ruff and Mypy pass.
+  Railway bundle, ready Pages release and Telegram receipt remain external
+  evidence gates; no production side effect was attempted.
+- Fresh isolated full regression after the observability change: `1146 passed`.
+  `ruff check src tests`, `mypy src`, `compileall` and `node --check` pass.
+  `python -m src.runtime_audit` exits 0 with the existing data-readiness
+  warnings. The delivery smoke remains externally blocked because this
+  checkout has no `TELEGRAM_CHAT_IDS`; no message was sent.
+- PR [#580](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/580)
+  remote test-and-dry-run, CodeQL, dependency-review and SBOM checks all pass.
+  It remains open and must be merged after #579; this does not constitute
+  Railway, Pages or Telegram production acceptance.
 
 ## Gate decision
 

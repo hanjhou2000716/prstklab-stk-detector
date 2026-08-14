@@ -38,6 +38,8 @@ def test_mini_app_exposes_release_bound_external_intelligence():
     assert 'id="external-intelligence"' in page
     assert "renderExternalIntelligence(snapshot)" in app
     assert "等待官方核對／市場同步" in app
+    assert "qualifying_item_count" in app
+    assert "pending_cluster_count" in app
 
 
 def test_mini_app_renders_event_text_without_injecting_untrusted_links():

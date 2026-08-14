@@ -66,3 +66,32 @@ def test_external_health_merge_recomputes_gap_counts():
     assert merged["missing_source_count"] == 1
     assert merged["runtime_failure_count"] == 1
     assert merged["gap_source_keys"] == ["external_financialjuice"]
+
+
+def test_external_health_exposes_financialjuice_observability_without_private_fields(tmp_path):
+    (tmp_path / "external.json").write_text("[]", encoding="utf-8")
+    row = external_source_health(
+        path=tmp_path / "external.json",
+        accepted=[
+            {
+                "observation_id": "fj-1", "source": "financialjuice", "public_safe": True,
+                "vendor_importance": 8, "fetched_at": "2026-08-14T01:02:03Z",
+                "event_cluster_key": "cluster-1", "official_confirmed": False,
+                "market_sync_confirmed": False,
+            },
+            {
+                "observation_id": "fj-2", "source": "financialjuice", "public_safe": True,
+                "vendor_importance": 7, "fetched_at": "2026-08-14T01:03:03Z",
+            },
+        ],
+        rejected=2,
+        checked_at=datetime.now(UTC),
+    )
+    assert row is not None
+    metrics = row["observability"]
+    assert metrics["qualifying_item_count"] == 1
+    assert metrics["pending_cluster_count"] == 1
+    assert metrics["last_notification_decision"] == "pending_confirmation"
+    assert metrics["parser_error_count"] == 2
+    assert metrics["last_delivery_at"] is None
+    assert "observation_id" not in metrics

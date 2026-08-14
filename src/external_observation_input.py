@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -67,6 +67,57 @@ def _safe_record(record: dict[str, Any]) -> dict[str, Any] | None:
     return safe
 
 
+def _timestamp(record: dict[str, Any], *fields: str) -> tuple[datetime, str] | None:
+    """Return a validated timestamp without exposing transport metadata."""
+    for field in fields:
+        value = record.get(field)
+        if value in (None, ""):
+            continue
+        try:
+            parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            continue
+        parsed = parsed.replace(tzinfo=parsed.tzinfo or UTC).astimezone(UTC)
+        return parsed, parsed.isoformat()
+    return None
+
+
+def _importance(record: dict[str, Any]) -> float | None:
+    value = record.get("vendor_importance")
+    if value in (None, ""):
+        return None
+    try:
+        return float(str(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def _observability(accepted: list[dict[str, Any]], rejected: int) -> dict[str, Any]:
+    """Summarize FJ operational state without raw content or private IDs."""
+    received = [item for item in (_timestamp(row, "fetched_at", "published_at", "source_published_at") for row in accepted) if item]
+    parsed = [item for item in (_timestamp(row, "fetched_at") for row in accepted) if item]
+    qualifying = [row for row in accepted if (_importance(row) or 0) >= 8]
+    qualifying_times = [item for item in (_timestamp(row, "fetched_at", "published_at") for row in qualifying) if item]
+    pending_clusters = {
+        str(row.get("event_cluster_key") or row.get("observation_id") or "").strip()
+        for row in qualifying
+        if not (row.get("official_confirmed") is True and row.get("market_sync_confirmed") is True)
+    }
+    pending_clusters.discard("")
+    eligible = any(row.get("official_confirmed") is True and row.get("market_sync_confirmed") is True for row in qualifying)
+    decision = "eligible" if eligible else "pending_confirmation" if qualifying else "no_event"
+    return {
+        "last_received_at": max(received, default=(None, None))[1],
+        "last_parsed_at": max(parsed, default=(None, None))[1],
+        "parser_error_count": rejected,
+        "last_importance_ge8_at": max(qualifying_times, default=(None, None))[1],
+        "qualifying_item_count": len(qualifying),
+        "pending_cluster_count": len(pending_clusters),
+        "last_notification_decision": decision,
+        "last_delivery_at": None,
+    }
+
+
 def load_external_observations(path: Path | None = None) -> tuple[list[dict[str, Any]], int]:
     """Load derived records and return ``(accepted, rejected_count)``.
 
@@ -109,7 +160,8 @@ def external_source_health(*, path: Path | None, accepted: list[dict[str, Any]],
             "provider": "financialjuice", "role": "optional", "status": "failed",
             "state": "failed", "semantic_state": "failed", "provider_status": "unavailable",
             "source_tier": "discovery", "source_url": "https://financialjuice.com/",
-            "checked_at": checked_at.isoformat(), "issues": ["external_observations_unavailable"],
+            "checked_at": checked_at.isoformat(), "observability": _observability([], 1),
+            "issues": ["external_observations_unavailable"],
         }
     status = "partial" if rejected else "healthy" if accepted else "no_event"
     state = "partial" if rejected else "healthy" if accepted else "no_event"
@@ -120,6 +172,7 @@ def external_source_health(*, path: Path | None, accepted: list[dict[str, Any]],
         "source_tier": "discovery", "source_url": "https://financialjuice.com/",
         "checked_at": checked_at.isoformat(), "accepted_count": len(accepted),
         "rejected_count": rejected, "last_success_at": checked_at.isoformat(),
+        "observability": _observability(accepted, rejected),
         "issues": ["rejected_records"] if rejected else [],
     }
 

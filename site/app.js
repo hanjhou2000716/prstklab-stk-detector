@@ -515,7 +515,15 @@ const renderSourceHealth = (health, snapshot = {}) => {
       Number.isFinite(Number(source.consecutive_failures)) ? `連續失敗 ${Number(source.consecutive_failures)} 次` : "",
       Number.isFinite(Number(source.crosscheck_rate)) ? `核對率 ${Number(source.crosscheck_rate).toFixed(1)}%` : "",
     ].filter(Boolean).join("｜");
-    const detail = [issue, candidateNote, provenance, quality, freshness.join("｜")].filter(Boolean).join("｜");
+    const external = source.key === "external_financialjuice" && source.observability && typeof source.observability === "object"
+      ? [
+        source.observability.last_received_at ? `最近收到 ${traceTime(source.observability.last_received_at)}` : "",
+        Number.isFinite(Number(source.observability.qualifying_item_count)) ? `>=8 ${Number(source.observability.qualifying_item_count)} 筆` : "",
+        Number.isFinite(Number(source.observability.pending_cluster_count)) ? `待核對群組 ${Number(source.observability.pending_cluster_count)}` : "",
+        Number.isFinite(Number(source.observability.parser_error_count)) ? `解析失敗 ${Number(source.observability.parser_error_count)} 筆` : "",
+        source.observability.last_notification_decision === "eligible" ? "通知資格：已具備" : source.observability.last_notification_decision === "pending_confirmation" ? "通知資格：待核對" : "",
+      ].filter(Boolean).join("｜") : "";
+    const detail = [issue, candidateNote, provenance, quality, freshness.join("｜"), external].filter(Boolean).join("｜");
     return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${escapeHtml(state || "partial")}">${status}</em></li>`;
   }).join("");
   if (card) card.open = false;
