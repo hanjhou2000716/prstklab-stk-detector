@@ -521,6 +521,22 @@ passed `test-and-dry-run` (run `31800524345`, job `94767171838`), CodeQL,
 dependency-review and SBOM. Live Railway status and Pages freshness remain
 external acceptance gates.
 
+### Migration audit update (2026-08-14, REQ-ADD-023 GDELT health projection)
+
+- GDELT health now distinguishes a successful `no_event` scan from
+  `scan_failed`, while stale-cache fallback remains visible and non-live.
+- Targeted GDELT plus Railway regression suite: `116 passed`; changed-module
+  Ruff, compileall, and diff checks pass.
+
+Traceability: `REQ-ADD-023` -> `railway-monitor/gdelt_health.py`,
+`railway-monitor/app.py`, `tests/test_railway_gdelt_health.py` and
+`docs/req-add-023-gdelt-health-projection.md`.
+
+Remote evidence: PR [#600](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/600)
+passed `test-and-dry-run` (run `31801260242`, job `94769543886`), CodeQL,
+dependency-review and SBOM. Live Railway poll and Pages evidence remain
+external acceptance gates.
+
 Remote evidence: PR [#588](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/588)
 passed `test-and-dry-run` (run `31789498655`), CodeQL, dependency-review and
 SBOM. This confirms repository CI for the stacked boundary only; Railway

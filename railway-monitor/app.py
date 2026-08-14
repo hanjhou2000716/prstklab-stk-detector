@@ -318,6 +318,19 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     store_fetch_market_sync_observation = _market_sync_module.fetch_market_sync_observation
     store_fetch_market_sync_snapshot = _market_sync_module.fetch_market_sync_snapshot
 
+try:
+    from gdelt_health import project_gdelt_health as store_project_gdelt_health
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _gdelt_health_spec = spec_from_file_location(
+        "railway_gdelt_health",
+        Path(__file__).with_name("gdelt_health.py"),
+    )
+    if _gdelt_health_spec is None or _gdelt_health_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/gdelt_health.py") from None
+    _gdelt_health_module = module_from_spec(_gdelt_health_spec)
+    _gdelt_health_spec.loader.exec_module(_gdelt_health_module)
+    store_project_gdelt_health = _gdelt_health_module.project_gdelt_health
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -2447,16 +2460,20 @@ async def monitor_forever() -> None:
                     len(articles), dispatched, len(pending),
                 )
                 now_iso = datetime.now(timezone.utc).isoformat()
-                health_values: dict[str, Any] = {
-                    "status": "fallback_active" if stale_cache_used else "healthy",
-                    "article_count": len(articles),
-                    "alert_count": dispatched,
-                    "market_sync_status": "confirmed" if any(alert.market_sync_confirmed for alert in alerts) else "not_confirmed",
-                    "pending_count": len(pending),
-                    "pending_reasons": pending_reasons,
-                    "stale_cache_used": stale_cache_used,
-                    "error": _GDELT_LAST_FETCH_ERROR if stale_cache_used else None,
-                }
+                health_values = store_project_gdelt_health(
+                    fetch_state=_GDELT_LAST_FETCH_STATE,
+                    fetch_error=_GDELT_LAST_FETCH_ERROR,
+                    article_count=len(articles),
+                    alert_count=dispatched,
+                    pending_count=len(pending),
+                    pending_reasons=pending_reasons,
+                    market_sync_status=(
+                        "confirmed"
+                        if any(alert.market_sync_confirmed for alert in alerts)
+                        else "not_confirmed"
+                    ),
+                    stale_cache_used=stale_cache_used,
+                )
                 if stale_cache_used:
                     health_values["last_failure_at"] = now_iso
                 else:
