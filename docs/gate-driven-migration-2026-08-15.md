@@ -127,3 +127,26 @@ it removes the Railway export path while leaving prior release and Telegram
 gates intact.
 No merge, deploy, release publication, or production notification is part of
 this checkpoint.
+## Migration snapshot: 2026-08-15 continuation
+
+- Branch: `feat/REQ-ADD-039-gate-migration-audit`
+- HEAD: `d2097da`
+- `origin/main`: `587a27b155b92e9614fa5485d632fde28c087a64`
+- Working tree: clean before this evidence update.
+- Recovery checkpoint: the previous `d2097da` commit is the rollback point for this continuation; no reset or force-push is required.
+
+### Reconciled state
+
+| Area | Status | Evidence |
+|---|---|---|
+| Creator public artifact precedence | PASS | `site/app.js`, `tests/test_creator_insight_ui_contract.py`; 4 targeted tests and `node --check site/app.js` |
+| Public release manifest/hash binding | PASS | live Pages manifest `release-957714e850293f39`; six artifact SHA-256 checks matched |
+| Full local regression | PASS | `python -m pytest -q --basetemp=.pytest-final`: 1231 passed, 1 skipped |
+| Runtime audit | NEEDS_REVERIFY | `python -m src.runtime_audit` is structurally valid but reports local checked-in data gaps |
+| Railway/GDELT | NEEDS_REVERIFY | Railway health is running; GDELT is bounded at HTTP 429 and health callback is HTTP 403 |
+| Telegram photo delivery | NEEDS_REVERIFY | scoped one-recipient photo smoke previously delivered with matching receipt; no current broadcast was sent |
+| Gmail ingress | BLOCKED | Railway reports `configuration_missing`; OAuth/PubSub credentials are not available in this workspace |
+
+### Stale PR overlap
+
+PRs whose heads are already ancestors of `origin/main` are superseded, not additional production pipelines. They may be closed without deleting branches after posting the superseded explanation. PR #546 and #554 require file-level reconciliation because their heads are not local ancestors, but all their implementation paths are present on `origin/main` under later commits (`71c1441`, `f9b9683`, `87058ef`, `d7857c6`).
