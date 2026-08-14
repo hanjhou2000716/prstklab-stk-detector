@@ -2,7 +2,11 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
-from src.external_observation_input import external_source_health, load_external_observations, merge_external_source_health
+from src.external_observation_input import (
+    external_source_health,
+    load_external_observations,
+    merge_external_source_health,
+)
 
 
 def test_loader_rejects_private_and_unknown_rows(tmp_path: Path) -> None:

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import json
 import os
 from typing import Any
 from urllib.parse import urlparse, urlunparse
@@ -30,7 +29,7 @@ def _signature(url: str, secret: str) -> str:
         # Keep the exact query order used in the request; the Railway handler
         # signs the path and query verbatim.
         target += "?" + parsed.query
-    return "sha256=" + hmac.new(secret.encode("utf-8"), f"GET\n{target}".encode("utf-8"), hashlib.sha256).hexdigest()
+    return "sha256=" + hmac.new(secret.encode("utf-8"), f"GET\n{target}".encode(), hashlib.sha256).hexdigest()
 
 
 def load_railway_observations(

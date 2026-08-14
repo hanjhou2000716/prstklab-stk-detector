@@ -15,13 +15,13 @@ from src.briefing_cards import build_briefing_snapshot
 from src.config import get_settings
 from src.creator_provider_registry import creator_ids
 from src.event_ledger import EventLedger
-from src.market_data import build_market_snapshot
 from src.external_observation_input import (
     external_observations_path,
     external_source_health,
     load_external_observations,
     merge_external_source_health,
 )
+from src.market_data import build_market_snapshot
 from src.refresh_market_data import merge_published_metadata, write_snapshot
 from src.release_gate import verify_release_for_delivery
 from src.railway_observation_client import load_railway_observations
