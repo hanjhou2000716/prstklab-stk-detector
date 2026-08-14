@@ -90,3 +90,6 @@ Malformed or missing registry configuration fails closed at import/load time;
 unknown creators are routed to the DLQ and never published. Rollback is the
 single revert of the registry integration PR; existing known-provider fixtures
 remain compatible.
+The P0-24 observability contract is implemented in stacked PR #580. Its
+remote quality/security checks pass, while Railway source-health evidence and
+a ready Pages release remain external verification gates.

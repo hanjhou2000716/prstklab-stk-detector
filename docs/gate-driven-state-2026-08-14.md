@@ -14,7 +14,7 @@ claims inferred from branch names or previous comments.
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1144 passed, 1 skipped` at `9f6a6d1` using an isolated Windows temp directory; one OneDrive-only run was rejected by filesystem locks |
 | Static checks | Ruff, Mypy, compileall and `node --check site/app.js` passed at `9f6a6d1` |
-| Remote PR | [#579](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/579), open; test-and-dry-run, CodeQL, dependency-review and SBOM pass for `763c7c4` |
+| Remote PR | [#580](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/580), open and stacked on #579; test-and-dry-run, CodeQL, dependency-review and SBOM pass |
 
 ## Current task reconciliation
 
@@ -146,6 +146,10 @@ present; it does not imply that an external production gate has passed.
   `python -m src.runtime_audit` exits 0 with the existing data-readiness
   warnings. The delivery smoke remains externally blocked because this
   checkout has no `TELEGRAM_CHAT_IDS`; no message was sent.
+- PR [#580](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/580)
+  remote test-and-dry-run, CodeQL, dependency-review and SBOM checks all pass.
+  It remains open and must be merged after #579; this does not constitute
+  Railway, Pages or Telegram production acceptance.
 
 ## Gate decision
 
