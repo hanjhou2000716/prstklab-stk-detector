@@ -85,6 +85,7 @@ def _validate_creator_artifact(artifact: dict[str, Any], manifest: dict[str, Any
         parent_manifest={
             "release_id": manifest.get("release_id"),
             "market_snapshot_id": manifest.get("market_snapshot_id"),
+            "research_snapshot_id": manifest.get("research_snapshot_id"),
             "event_snapshot_id": manifest.get("event_snapshot_id"),
         },
     )

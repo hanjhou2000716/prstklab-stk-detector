@@ -21,3 +21,12 @@ def test_invalid_creator_artifact_is_unavailable_not_parent_failure():
 def test_parent_mismatch_is_explicit():
     errors = validate_creator_release({"schema_version": "1.0", "public_safe": True, "parent_release_id": "wrong", "market_snapshot_id": "market-1", "event_snapshot_id": "event-1", "insights": []}, parent_manifest=_parent())
     assert "creator artifact parent release mismatch" in errors
+
+
+def test_research_snapshot_lineage_is_bound_when_parent_declares_it():
+    parent = {**_parent(), "research_snapshot_id": "research-1"}
+    artifact = build_creator_release([], parent_manifest=parent)
+    assert artifact["research_snapshot_id"] == "research-1"
+    assert validate_creator_release(artifact, parent_manifest=parent) == []
+    artifact["research_snapshot_id"] = "research-other"
+    assert "creator artifact research_snapshot_id mismatch" in validate_creator_release(artifact, parent_manifest=parent)

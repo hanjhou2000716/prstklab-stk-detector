@@ -416,6 +416,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
             parent_manifest={
                 "release_id": snapshot.get("release_id"),
                 "market_snapshot_id": snapshot.get("market_snapshot_id"),
+                "research_snapshot_id": snapshot.get("research_snapshot_id"),
                 "event_snapshot_id": snapshot.get("event_snapshot_id"),
             },
             market_snapshot={
@@ -424,6 +425,11 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
                 "quotes": [*indices, *quotes, *macro_quotes],
             },
             research_snapshot=snapshot.get("research_report") if isinstance(snapshot.get("research_report"), dict) else None,
+            event_snapshot={
+                "snapshot_id": snapshot.get("event_snapshot_id"),
+                "as_of": snapshot.get("as_of") or snapshot.get("fetched_at") or snapshot.get("created_at"),
+                "events": [item for item in events if isinstance(item, dict)],
+            },
             batch_as_of=(snapshot.get("fetched_at") or snapshot.get("created_at")) if (slot or "").casefold() == "morning" else None,
         )
         creator_release = creator_result["artifact"]

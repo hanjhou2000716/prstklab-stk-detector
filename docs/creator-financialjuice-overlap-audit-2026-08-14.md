@@ -119,6 +119,16 @@ health 可用性保護；repository-shared classifier 才是 canonical。若 fal
 
 ## Canonical implementation decision
 
+### REQ-ADD-027 evidence alignment lock
+
+Creator correlation now consumes the existing market, research and event
+snapshots together. Snapshot IDs and explicit entity matches are retained in
+the Creator release; stale contexts are labelled `stale`, and no correlation
+result is an investment signal. Legacy Creator artifacts without a research
+lineage field remain readable, while newly generated artifacts bind the
+declared research snapshot. This closes the local evidence-lineage gap without
+creating a second classifier or delivery path.
+
 1. 保留既有 Creator、FJ、news、release、Telegram 模組，不重寫。
 2. 以本稽核文件作為後續 stacked PR 的入口；必要變更只新增到既有 canonical
    owner。
