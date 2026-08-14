@@ -1,3 +1,4 @@
+from src.creator_provider_registry import creator_ids
 from src.creator_source_adapters import parse_creator_template
 
 
@@ -38,3 +39,17 @@ def test_wrong_source_fails_closed() -> None:
         body="Title: x\nFact: y",
     )
     assert result["parse_status"] == "invalid_source"
+
+
+def test_all_registry_providers_use_shared_template_adapter() -> None:
+    """Registry additions must not require a second adapter allowlist."""
+    for provider_id in creator_ids():
+        result = parse_creator_template(
+            source=provider_id,
+            sender="digest@example.invalid",
+            subject="Episode 45",
+            body="Title: Shared template\nFact: Public filing is available.",
+            message_id=f"msg-{provider_id}",
+        )
+        assert result["parse_status"] == "parsed"
+        assert result["creator_id"] == provider_id
