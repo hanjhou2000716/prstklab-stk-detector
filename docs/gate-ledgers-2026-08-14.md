@@ -18,6 +18,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | REQ-ADD-019 | alert dispatch orchestration | `railway-monitor/alert_dispatch.py` | targeted 107; PR #596 CI green | exact-once build/sign/send order | PASS / LOCKED |
 | REQ-ADD-020 | market-sync reader | `railway-monitor/market_sync.py` | targeted 110; PR #597 CI green | missing/invalid snapshot fail-closed | PASS / LOCKED |
 | REQ-ADD-022 | market-sync health envelope | `railway-monitor/market_sync.py`, `railway-monitor/app.py` | targeted 113; PR #599 CI green | valid-empty vs configuration/http/parser failure states | PASS / LOCKED |
+| REQ-ADD-023 | GDELT source-health projection | `railway-monitor/gdelt_health.py`, `railway-monitor/app.py` | targeted contract suite; pending remote CI | no-event vs scan-failed vs stale-cache | IN_PROGRESS |
 
 ## Regression ledger
 
