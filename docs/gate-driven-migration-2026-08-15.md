@@ -324,6 +324,13 @@ contract repair only; live Gmail/Railway configuration, repository-shared
 classifier packaging, Pages release and Telegram receipt evidence remain open
 external gates.
 
+The adapter repair was rebased onto the post-merge `main` commit
+`c64a54b` and delivered as PR #619 (`feat/REQ-ADD-040-creator-adapter-contract`)
+because PR #618 had already merged before this continuation was pushed.
+PR #619 remote evidence: test-and-dry-run run `31851768583` / job
+`94928745542`, CodeQL run `94928878624`, security CodeQL job `94928745694`,
+dependency review job `94928745662`, and SBOM job `94928745833` all passed.
+
 Remote evidence for atomic commit `5a72d0b` on PR #618: the existing quality
 and security suites remain green after the push — `test-and-dry-run` run
 `31850654835` / job `94925667803`, CodeQL run `94925796640`, security CodeQL
