@@ -2078,6 +2078,25 @@ def _health_request_path(request_target: str) -> str:
     return urlparse(request_target).path or "/"
 
 
+def _gmail_health_fields(diagnostics: Any) -> dict[str, Any]:
+    """Project Gmail diagnostics into the public health contract safely.
+
+    Gmail history/message identifiers are private transport cursors.  The
+    public health endpoint receives only watch state and bounded operational
+    observability from ``gmail_watch.health``.
+    """
+    if not isinstance(diagnostics, dict):
+        return {"watch_status": "not_checked", "observability": {}}
+    watch = diagnostics.get("watch")
+    if not isinstance(watch, dict):
+        return {"watch_status": "not_checked", "observability": {}}
+    metrics = watch.get("observability")
+    return {
+        "watch_status": str(watch.get("status") or "not_checked"),
+        "observability": dict(metrics) if isinstance(metrics, dict) else {},
+    }
+
+
 def configure_gmail_ingress() -> None:
     """Attach the bounded Gmail Pub/Sub ingress when the Railway worker starts."""
     global EMAIL_INGRESS
@@ -2090,14 +2109,10 @@ def configure_gmail_ingress() -> None:
         path = os.environ.get("GMAIL_STATE_PATH", "/data/gmail-ingress.sqlite3")
         EMAIL_INGRESS = GmailIngressService(EmailStore(path), config)
         diagnostics = EMAIL_INGRESS.health()
-        watch = diagnostics.get("watch") if isinstance(diagnostics, dict) else {}
-        store = diagnostics.get("store") if isinstance(diagnostics, dict) else {}
         update_health(
             "gmail",
             status="configuration_missing" if config.missing else "ready",
-            watch_status=(watch or {}).get("status", "not_checked"),
-            last_notification_at=(store or {}).get("cursor", {}).get("last_notification_at"),
-            last_history_id=(store or {}).get("cursor", {}).get("last_history_id"),
+            **_gmail_health_fields(diagnostics),
             error=None,
         )
     except Exception as error:  # pragma: no cover - defensive startup path
@@ -2133,14 +2148,12 @@ class HealthHandler(BaseHTTPRequestHandler):
                     return
                 body = self.rfile.read(length)
                 headers = {str(key).lower(): str(value) for key, value in self.headers.items()}
-                result = EMAIL_INGRESS.accept_push(body, headers)
-                cursor = result.get("cursor") if isinstance(result, dict) else {}
+                EMAIL_INGRESS.accept_push(body, headers)
+                diagnostics = EMAIL_INGRESS.health()
                 update_health(
                     "gmail",
                     status="healthy",
-                    watch_status="healthy",
-                    last_notification_at=(cursor or {}).get("last_notification_at"),
-                    last_history_id=(cursor or {}).get("last_history_id"),
+                    **_gmail_health_fields(diagnostics),
                     error=None,
                 )
                 response = b'{"accepted":true}\n'

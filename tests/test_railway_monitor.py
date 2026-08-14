@@ -673,6 +673,25 @@ def test_health_snapshot_exposes_source_diagnostics_without_secrets():
     assert "GITHUB_DISPATCH_TOKEN" not in str(snapshot)
 
 
+def test_gmail_public_health_projects_observability_without_private_cursors():
+    diagnostics = {
+        "watch": {
+            "status": "healthy",
+            "observability": {
+                "last_received_at": "2026-08-14T00:00:00+00:00",
+                "parser_error_count": 0,
+                "state": "healthy",
+            },
+        },
+        "store": {"cursor": {"last_history_id": "private", "last_message_id": "private"}},
+    }
+    fields = monitor._gmail_health_fields(diagnostics)
+    assert fields["watch_status"] == "healthy"
+    assert fields["observability"]["state"] == "healthy"
+    assert "last_history_id" not in str(fields)
+    assert "last_message_id" not in str(fields)
+
+
 def test_gdelt_error_label_preserves_status_without_exposing_response_body():
     response = monitor.httpx.Response(429, request=monitor.httpx.Request("GET", "https://example.test"))
     error = monitor.httpx.HTTPStatusError("rate limited", request=response.request, response=response)
