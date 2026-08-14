@@ -22,9 +22,9 @@ from src.external_observation_input import (
     merge_external_source_health,
 )
 from src.market_data import build_market_snapshot
+from src.railway_observation_client import load_railway_observations
 from src.refresh_market_data import merge_published_metadata, write_snapshot
 from src.release_gate import verify_release_for_delivery
-from src.railway_observation_client import load_railway_observations
 from src.scheduled_brief import (
     _pick_event,
     _write_output,
