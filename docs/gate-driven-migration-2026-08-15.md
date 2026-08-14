@@ -323,3 +323,10 @@ State: **PASS locally / NEEDS_REVERIFY externally**. This is an adapter
 contract repair only; live Gmail/Railway configuration, repository-shared
 classifier packaging, Pages release and Telegram receipt evidence remain open
 external gates.
+
+Remote evidence for atomic commit `5a72d0b` on PR #618: the existing quality
+and security suites remain green after the push — `test-and-dry-run` run
+`31850654835` / job `94925667803`, CodeQL run `94925796640`, security CodeQL
+job `94925667563`, dependency review job `94925667502`, and SBOM job
+`94925667545`. These checks provide CI evidence for the adapter change; they
+do not substitute for live Railway, Pages, Mini App or Telegram acceptance.
