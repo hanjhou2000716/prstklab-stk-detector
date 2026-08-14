@@ -9,8 +9,9 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/railway-runtime-config-boundary` |
-| HEAD | `0c09a35` (`feat(REQ-ADD-007): extract Railway poll configuration`) |
-| Recovery checkpoint | `checkpoint/migration-2026-08-14-current16` (post-task snapshot) |
+| HEAD at last evidence capture | `5c6963c` (`docs: record migration gate evidence`) |
+| Recovery checkpoint | `checkpoint/migration-2026-08-14-current18` (post-task snapshot) |
+| Current overlap audit | `docs/creator-intelligence-overlap-audit.md` |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1171 passed, 1 skipped` at the REQ-ADD-007 working tree using `.tmp-migration-full-current15`; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
 | Static checks | Changed-file Ruff, Mypy, compileall and `node --check site/app.js` passed at `7228915`; full legacy Railway lint remains a separate debt |
