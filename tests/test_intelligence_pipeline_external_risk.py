@@ -59,3 +59,22 @@ def test_pipeline_keeps_all_financialjuice_items_and_clusters() -> None:
     assert len(context["external_event_risk"]["unified_events"]) == 2
     assert {row["item_id"] for row in context["external_event_risk"]["financialjuice_items"]} == {"fj-item-1", "fj-item-2"}
     assert len(context["external_event_risk"]["clusters"]) == 2
+
+
+def test_direct_compound_input_does_not_propagate_transport_or_raw_fields() -> None:
+    context = build_intelligence_context(
+        {"event_type": "energy"},
+        external_observations=[{
+            "parse_status": "parsed",
+            "content_origin": "financialjuice",
+            "message_id": "private-envelope-id",
+            "items": [{
+                "item_id": "fj-item-safe", "event_cluster_key": "fj-cluster-safe",
+                "candidate_event_type": "energy", "original_headline": "Oil supply risk",
+                "body": "private raw mail must not cross this boundary",
+            }],
+        }],
+    )
+    observations = context["external_event_risk"]["cluster"]["observations"]
+    assert observations
+    assert all("message_id" not in item and "body" not in item for item in observations)
