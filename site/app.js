@@ -523,7 +523,14 @@ const renderSourceHealth = (health, snapshot = {}) => {
         Number.isFinite(Number(source.observability.parser_error_count)) ? `解析失敗 ${Number(source.observability.parser_error_count)} 筆` : "",
         source.observability.last_notification_decision === "eligible" ? "通知資格：已具備" : source.observability.last_notification_decision === "pending_confirmation" ? "通知資格：待核對" : "",
       ].filter(Boolean).join("｜") : "";
-    const detail = [issue, candidateNote, provenance, quality, freshness.join("｜"), external].filter(Boolean).join("｜");
+    const creator = String(source.key || "").startsWith("creator_") && source.observability && typeof source.observability === "object"
+      ? [
+        Number.isFinite(Number(source.observability.observations)) ? `觀測 ${Number(source.observability.observations)} 筆` : "",
+        source.observability.last_parsed_at ? `最近解析 ${traceTime(source.observability.last_parsed_at)}` : "",
+        Number.isFinite(Number(source.observability.parser_error_count)) ? `解析失敗 ${Number(source.observability.parser_error_count)} 筆` : "",
+        source.observability.last_delivery_at ? `最近送達 ${traceTime(source.observability.last_delivery_at)}` : "",
+      ].filter(Boolean).join("｜") : "";
+    const detail = [issue, candidateNote, provenance, quality, freshness.join("｜"), external, creator].filter(Boolean).join("｜");
     return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${escapeHtml(state || "partial")}">${status}</em></li>`;
   }).join("");
   if (card) card.open = false;
