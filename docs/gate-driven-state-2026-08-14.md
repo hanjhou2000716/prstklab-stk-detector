@@ -8,8 +8,8 @@ claims inferred from branch names or previous comments.
 
 | Field | Evidence |
 |---|---|
-| Branch | `feat/external-observability-contract` |
-| HEAD | `d50344b` (`feat(P0-24): expose FinancialJuice observability contract`; documentation evidence commit follows) |
+| Branch | `feat/creator-observability-contract` |
+| HEAD | `712c7a7` (`feat(P0-24): expose Creator source observability`; documentation evidence commit follows) |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current3` (pre-task) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1144 passed, 1 skipped` at `9f6a6d1` using an isolated Windows temp directory; one OneDrive-only run was rejected by filesystem locks |
@@ -49,6 +49,8 @@ present; it does not imply that an external production gate has passed.
 | REQ-ADD-002-DOD-02 | Mini App exposes the same release-bound external observations and pending reason | `site/index.html`, `site/app.js`, `tests/test_mini_app_assets.py` | static asset contract and full regression | no row is rendered as confirmed without official/market evidence | NEEDS_REVERIFY (Pages browser) |
 | REQ-P0-24-DOD-01 | FinancialJuice source health exposes privacy-safe receive/parse/error/qualification state | `src/external_observation_input.py`, `schemas/source-health.schema.json` | `tests/test_external_observation_input.py`, `tests/test_artifact_contract.py` (52 targeted passed) | metrics contain timestamps/counts only; no observation IDs, message IDs, raw content or recipients | missing/malformed input remains failed and cannot be treated as no-event | PASS (local) |
 | REQ-P0-24-DOD-02 | Mini App renders FinancialJuice observability and notification pending reason | `site/app.js`, `tests/test_mini_app_assets.py` | Mini App asset contract included in 52 targeted tests | UI shows received time, >=8 count, pending clusters and parser errors; production browser evidence pending | source-health state remains fail-closed | NEEDS_REVERIFY (Pages browser) |
+| REQ-P0-24-DOD-03 | Creator source rows expose privacy-safe receive/parse/error/delivery state | `src/creator_source_health.py`, `schemas/source-health.schema.json` | Creator/source-health/artifact suite (91 targeted passed) | timestamps/counts only; Gmail transport IDs are not copied | configuration missing and parser failure remain distinct | PASS (local) |
+| REQ-P0-24-DOD-04 | Mini App renders Creator observability beside each optional provider | `site/app.js`, `tests/test_mini_app_assets.py` | asset contract plus 91 targeted tests | creator row remains optional and cannot become core market evidence | Pages browser evidence pending | NEEDS_REVERIFY (Pages browser) |
 
 ## Regression ledger
 
@@ -59,6 +61,7 @@ present; it does not imply that an external production gate has passed.
 | REG-MIG-001 | migration overlay | prior state document pointed at `c3f43d7` after later evidence commits | state reconciliation lag | `4b60f06`; 63 targeted and 1133 full regression passed | CLOSED |
 | REG-MIG-002 | external observation lineage | malformed manifest count could raise before fail-closed result | defensive integer parsing in release gate | targeted release-gate suite and full isolated regression | CLOSED |
 | REG-MIG-003 | verification environment | first full run timed out near 87% with one transient failure | rerun with a fresh isolated basetemp; no product assertion was changed | second full run `1146 passed` in 81.33s | ACCEPTED ENVIRONMENT EVENT |
+| REG-MIG-004 | verification environment | OneDrive basetemp produced an asset-test `PermissionError` | rerun in isolated Windows temp; no product assertion was changed | `1147 passed` in 64.74s | ACCEPTED ENVIRONMENT EVENT |
 
 ## Completion debt ledger
 
@@ -150,6 +153,18 @@ present; it does not imply that an external production gate has passed.
   remote test-and-dry-run, CodeQL, dependency-review and SBOM checks all pass.
   It remains open and must be merged after #579; this does not constitute
   Railway, Pages or Telegram production acceptance.
+
+### Migration audit update (2026-08-14, Creator operational observability)
+
+- Optional Creator provider rows now expose privacy-safe operational metrics:
+  observation count, receive/parse/delivery timestamps, parser error count and
+  explicit no-observations state. The implementation never copies Gmail
+  transport identifiers or raw content into the health contract.
+- The source-health schema and Mini App accept/render the Creator metrics while
+  keeping configuration missing, no-new-content and parser failure distinct.
+- Creator/source-health/schema/Mini App targeted suite: `91 passed`; isolated
+  full repository regression: `1147 passed`; Ruff, Mypy, compileall and node
+  syntax checks pass. Railway and Pages browser evidence remain external.
 
 ## Gate decision
 
