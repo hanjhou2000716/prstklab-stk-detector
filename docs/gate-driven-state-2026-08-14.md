@@ -165,6 +165,10 @@ present; it does not imply that an external production gate has passed.
 - Creator/source-health/schema/Mini App targeted suite: `91 passed`; isolated
   full repository regression: `1147 passed`; Ruff, Mypy, compileall and node
   syntax checks pass. Railway and Pages browser evidence remain external.
+- PR [#581](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/581)
+  remote test-and-dry-run, CodeQL, dependency-review and SBOM checks all pass.
+  It remains open and stacked on #580; this is not Railway or Pages
+  production acceptance.
 
 ## Gate decision
 
