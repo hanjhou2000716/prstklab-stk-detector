@@ -82,6 +82,28 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _external_observation_metadata(market: dict[str, Any]) -> dict[str, Any] | None:
+    """Return deterministic lineage for sanitized external observations."""
+    rows = market.get("external_observations")
+    if not isinstance(rows, list):
+        return None
+    identities: list[dict[str, str]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        observation_id = str(row.get("observation_id") or "").strip()
+        source = str(row.get("source") or row.get("content_origin") or "").strip().casefold()
+        if observation_id:
+            identities.append({"observation_id": observation_id, "source": source})
+    identities.sort(key=lambda item: (item["observation_id"], item["source"]))
+    return {
+        "count": len(identities),
+        "observation_ids_hash": hashlib.sha256(_canonical_json(identities)).hexdigest(),
+        "sources": sorted({item["source"] for item in identities if item["source"]}),
+        "status": "ready" if identities else "no_event",
+    }
+
+
 def _read_object(path: Path) -> tuple[dict[str, Any] | None, str | None]:
     if not path.is_file():
         return None, f"missing artifact: {path.as_posix()}"
@@ -388,6 +410,7 @@ def build_release_manifest(
     market_id = content_snapshot_id(market, "market") if market else ""
     research_id = content_snapshot_id(research, "research") if research else ""
     event_id = content_snapshot_id(events, "event") if events else ""
+    external_metadata = _external_observation_metadata(market)
     # News is an additive, fail-soft artifact.  Keep it content-addressed to
     # the same market snapshot so Pages cannot accidentally combine a new
     # headline list with an older quote release.  Legacy market artifacts
@@ -446,6 +469,8 @@ def build_release_manifest(
     }
     if creator_input_hash:
         release_material["creator_input_hash"] = creator_input_hash
+    if external_metadata is not None:
+        release_material["external_observation_ids_hash"] = external_metadata["observation_ids_hash"]
     release_id = f"release-{hashlib.sha256(_canonical_json(release_material)).hexdigest()[:16]}"
     if creator_artifact is None and creator_records is not None:
         # Records are expected to be sanitized at ingress. The pipeline still
@@ -557,6 +582,10 @@ def build_release_manifest(
         "creator_public_artifact_hash": creator_public_hash,
         "news_snapshot_id": news_snapshot_id,
         "news_status": news_status,
+        "external_observation_count": external_metadata["count"] if external_metadata is not None else None,
+        "external_observation_ids_hash": external_metadata["observation_ids_hash"] if external_metadata is not None else None,
+        "external_observation_sources": external_metadata["sources"] if external_metadata is not None else [],
+        "external_observation_status": external_metadata["status"] if external_metadata is not None else "not_available",
         "status": "invalid",
     }
     if fallback_applied:

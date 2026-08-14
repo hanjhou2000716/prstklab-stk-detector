@@ -92,6 +92,37 @@ def test_release_gate_accepts_ready_matching_snapshot(tmp_path):
     assert result.release_id == manifest["release_id"]
 
 
+def test_release_gate_rejects_external_observation_lineage_mismatch(tmp_path):
+    path, manifest = _ready_release(tmp_path)
+    market_path = path.parent / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["external_observations"] = [{"observation_id": "fj-1", "source": "financialjuice"}]
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+    manifest.update({
+        "external_observation_count": 0,
+        "external_observation_ids_hash": "0" * 64,
+        "external_observation_sources": [],
+    })
+    manifest["artifact_hashes"]["market.json"] = sha256_file(market_path)
+    write_release_manifest(manifest, path)
+    result = verify_release_for_delivery(manifest_path=path, expected_snapshot_id="market-12345678")
+    assert result.allowed is False
+    assert any("external observation" in error for error in result.errors)
+
+
+def test_release_gate_rejects_non_numeric_external_observation_count(tmp_path):
+    path, manifest = _ready_release(tmp_path)
+    manifest.update({
+        "external_observation_count": "unknown",
+        "external_observation_ids_hash": "0" * 64,
+        "external_observation_sources": [],
+    })
+    write_release_manifest(manifest, path)
+    result = verify_release_for_delivery(manifest_path=path, expected_snapshot_id="market-12345678")
+    assert result.allowed is False
+    assert any("count" in error for error in result.errors)
+
+
 def test_release_gate_validates_release_bound_news_artifact(tmp_path):
     path, manifest = _ready_release(tmp_path)
     data = path.parent

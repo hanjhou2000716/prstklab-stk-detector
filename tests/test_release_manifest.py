@@ -60,6 +60,25 @@ def test_manifest_publishes_release_bound_news_intelligence(tmp_path):
     assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 
+def test_manifest_records_external_observation_lineage(tmp_path):
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["external_observations"] = [
+        {"observation_id": "fj-2", "source": "FinancialJuice"},
+        {"observation_id": "fj-1", "source": "financialjuice"},
+    ]
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+
+    assert manifest["external_observation_count"] == 2
+    assert manifest["external_observation_sources"] == ["financialjuice"]
+    assert manifest["external_observation_status"] == "ready"
+    assert manifest["external_observation_ids_hash"]
+    assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
 def test_manifest_publishes_multi_market_news_release(tmp_path):
     _artifacts(tmp_path)
     market_path = tmp_path / "site" / "data" / "market.json"

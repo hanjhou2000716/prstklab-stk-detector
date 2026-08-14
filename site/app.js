@@ -617,6 +617,32 @@ const renderBriefing = (briefing, generatedAt) => {
   container.innerHTML = observations.map((item) => `<article class="briefing-observation"><h4>${escapeHtml(item.title || "公開市場觀察")}</h4><p><b>事件：</b>${escapeHtml(item.event || "公開資料更新中。")}</p><p><b>為何重要：</b>${escapeHtml(item.importance || "持續核對公開資料。")}</p><p><b>可能連動：</b>${escapeHtml(item.market_impact || "尚無足夠公開資料判定連動。")}</p><p><b>股市觀察：</b>${escapeHtml(item.watch || "觀察後續公開市場報價。")}</p>${item.source_note ? `<small class="briefing-source">${escapeHtml(item.source_note)}</small>` : ""}</article>`).join("");
 };
 
+const renderExternalIntelligence = (snapshot) => {
+  const panel = document.getElementById("external-intelligence");
+  const content = document.getElementById("external-intelligence-content");
+  if (!panel || !content) return;
+  const rows = Array.isArray(snapshot?.external_observations)
+    ? snapshot.external_observations
+    : Array.isArray(snapshot?.briefing?.external_observations)
+      ? snapshot.briefing.external_observations : [];
+  panel.hidden = false;
+  if (!rows.length) {
+    content.innerHTML = '<p class="empty">本輪沒有可公開顯示的外部快訊；來源無事件與掃描失敗分開記錄。</p>';
+    return;
+  }
+  content.innerHTML = rows.slice(0, 5).map((item) => {
+    const source = escapeHtml(item.source || item.content_origin || "外部來源");
+    const title = escapeHtml(item.title || item.headline || item.original_headline || "外部市場觀察");
+    const summary = escapeHtml(item.summary || item.ai_commentary || item.possible_impact || "公開內容已接收，等待進一步核對。");
+    const official = item.official_confirmed === true;
+    const synced = item.market_sync_confirmed === true;
+    const state = official && synced ? "已核對" : official ? "等待市場同步" : synced ? "等待官方核對" : "等待官方核對／市場同步";
+    const url = String(item.source_url || "").trim();
+    const link = /^https:\/\//.test(url) ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">公開來源</a>` : "";
+    return `<article class="external-insight"><h4>${title}</h4><small>${source}｜${state}</small><p>${summary}</p>${link}</article>`;
+  }).join("");
+};
+
 const renderLegacyResearchList = (id, items, empty) => {
   const container = document.getElementById(id);
   if (!container) return;
@@ -871,6 +897,7 @@ const render = (snapshot) => {
   renderEvents(snapshot.events);
   renderSourceHealth(snapshot.source_health, snapshot);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
+  renderExternalIntelligence(snapshot);
   const creatorSource = snapshot.creator_release || snapshot.creator_public_artifact || snapshot.creator_intelligence;
   renderCreatorInsights(creatorSource);
   renderResearch(snapshot);

@@ -31,6 +31,15 @@ def test_mini_app_has_visible_index_and_strategy_sections():
     assert "renderQuoteList" in app
 
 
+def test_mini_app_exposes_release_bound_external_intelligence():
+    root = Path(__file__).resolve().parents[1]
+    page = (root / "site" / "index.html").read_text(encoding="utf-8")
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+    assert 'id="external-intelligence"' in page
+    assert "renderExternalIntelligence(snapshot)" in app
+    assert "等待官方核對／市場同步" in app
+
+
 def test_mini_app_renders_event_text_without_injecting_untrusted_links():
     root = Path(__file__).resolve().parents[1]
     app = (root / "site" / "app.js").read_text(encoding="utf-8")

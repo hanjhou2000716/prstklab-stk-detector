@@ -23,6 +23,44 @@ from src.production_acceptance import validate_production_bundle
 from src.release_manifest import verify_release_files
 
 
+def _external_observation_lineage_errors(market: dict[str, Any], manifest: dict[str, Any]) -> list[str]:
+    """Ensure sanitized external observations belong to this market release."""
+    if "external_observation_count" not in manifest:
+        return []
+    rows = market.get("external_observations")
+    if not isinstance(rows, list):
+        rows = []
+    identities: list[dict[str, str]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        observation_id = str(row.get("observation_id") or "").strip()
+        source = str(row.get("source") or row.get("content_origin") or "").strip().casefold()
+        if observation_id:
+            identities.append({"observation_id": observation_id, "source": source})
+    identities.sort(key=lambda item: (item["observation_id"], item["source"]))
+    actual_hash = hashlib.sha256(json.dumps(identities, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    errors: list[str] = []
+    declared_count = manifest.get("external_observation_count")
+    try:
+        declared_count_value = int(declared_count) if declared_count is not None else 0
+    except (TypeError, ValueError):
+        errors = ["external observation count is not an integer"]
+        declared_count_value = -1
+    else:
+        errors = []
+    if declared_count_value != len(identities):
+        errors.append("external observation count does not match manifest")
+    declared_hash = str(manifest.get("external_observation_ids_hash") or "")
+    if declared_hash and declared_hash != actual_hash:
+        errors.append("external observation IDs hash does not match manifest")
+    declared_sources = sorted(str(item) for item in (manifest.get("external_observation_sources") or []))
+    actual_sources = sorted({item["source"] for item in identities if item["source"]})
+    if declared_sources != actual_sources:
+        errors.append("external observation sources do not match manifest")
+    return errors
+
+
 def _cache_busted_url(url: str, *, release_id: str, attempt: int) -> str:
     """Avoid a stale Pages/CDN response during propagation verification."""
     parts = urlsplit(url)
@@ -218,6 +256,7 @@ def _fetch_public_release_artifacts(
             manifest=manifest,
         )
     )
+    errors.extend(_external_observation_lineage_errors(loaded["market.json"], manifest))
     if require_production_research:
         acceptance = validate_production_bundle(
             manifest=manifest,
@@ -321,6 +360,7 @@ def verify_release_for_delivery(
                 manifest=manifest,
             )
         )
+        errors.extend(_external_observation_lineage_errors(artifacts["market.json"], manifest))
         if "source-health.json" in artifacts:
             health = artifacts["source-health.json"].get("source_health")
             if not isinstance(health, dict):

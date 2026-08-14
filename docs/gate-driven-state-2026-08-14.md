@@ -9,12 +9,12 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/safe-data-publishing-contract` |
-| HEAD | `8df2b0f` (`docs(gates): include external ingress runbook`) |
+| HEAD | `9f6a6d1` (`feat(P0): bind external observations to release and Mini App`) |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current3` (pre-task) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
-| Local regression | `1139 passed, 1 skipped` at `a7c602c` (`.tmp-external-full`); subsequent commits are documentation-only |
-| Static checks | Ruff, Mypy and compileall passed at `a7c602c`; evidence-only docs changes do not alter runtime |
-| Remote PR | [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578), open; required quality/security checks pass for `8df2b0f` |
+| Local regression | `1144 passed, 1 skipped` at `9f6a6d1` using an isolated Windows temp directory; one OneDrive-only run was rejected by filesystem locks |
+| Static checks | Ruff, Mypy, compileall and `node --check site/app.js` passed at `9f6a6d1` |
+| Remote PR | [#579](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/579), open; test-and-dry-run, CodeQL, dependency-review and SBOM pass for `763c7c4` |
 
 ## Current task reconciliation
 
@@ -27,6 +27,7 @@ claims inferred from branch names or previous comments.
 | News Mini App browser rendering | NEEDS_REVERIFY | static contract loader is verified locally; real ready Pages browser evidence remains external |
 | Railway/Telegram production acceptance | BLOCKED | protected runtime configuration and controlled recipient evidence are external prerequisites |
 | FinancialJuice sanitized scheduled ingress | partially_integrated | `src/external_observation_input.py` rejects raw/private transport data; Railway sanitized bundle and live release evidence remain external |
+| FinancialJuice release lineage and Mini App evidence | NEEDS_REVERIFY | `src/release_manifest.py`, `src/release_gate.py`, `site/app.js`; local contract and mismatch fixtures pass; ready Pages evidence remains external |
 
 `PASS` is not promoted to `LOCKED` when the required objective evidence is not
 available in this checkout.  `LOCKED` is reserved for a task whose local
@@ -43,6 +44,8 @@ present; it does not imply that an external production gate has passed.
 | REQ-P0-20-DOD-NEWS-04 | Public UI evidence | `site/app.js` | browser/Pages smoke | release mismatch fallback | NEEDS_REVERIFY |
 | REQ-ADD-001-DOD-01 | External intelligence enters canonical briefing only as sanitized observations | `src/external_observation_input.py`, `src/scheduled_delivery.py` | 24 targeted tests; 1139 full regression | raw/private/unknown records rejected; no Pages-path input | LOCKED (local) |
 | REQ-ADD-001-DOD-02 | FinancialJuice source health and snapshot lineage remain explicit | `src/external_observation_input.py`, `src/scheduled_delivery.py`, workflow | scheduled snapshot binding test; release gate remains required | missing/rejected input cannot become no-event | NEEDS_REVERIFY (external bundle) |
+| REQ-ADD-002-DOD-01 | External observation IDs, sources and status are release-bound | `src/release_manifest.py`, `schemas/release-manifest.schema.json`, `src/release_gate.py` | 78 targeted; 1144 full regression | count/hash/source mismatch blocks delivery; malformed count fails closed | LOCKED (local) |
+| REQ-ADD-002-DOD-02 | Mini App exposes the same release-bound external observations and pending reason | `site/index.html`, `site/app.js`, `tests/test_mini_app_assets.py` | static asset contract and full regression | no row is rendered as confirmed without official/market evidence | NEEDS_REVERIFY (Pages browser) |
 
 ## Regression ledger
 
@@ -51,6 +54,7 @@ present; it does not imply that an external production gate has passed.
 | REG-NEWS-001 | prior release path | News artifact could be hashed but not checked by delivery gate | gate loader enumerated only core/Creator artifacts | `7f1fd60`, 51 targeted tests | CLOSED |
 | REG-NEWS-002 | environment | Windows shared temp contains inaccessible historical pytest directories | inherited workspace hygiene | CI and isolated basetemp pass; no product assertion changed | ACCEPTED ENVIRONMENT DEBT |
 | REG-MIG-001 | migration overlay | prior state document pointed at `c3f43d7` after later evidence commits | state reconciliation lag | `4b60f06`; 63 targeted and 1133 full regression passed | CLOSED |
+| REG-MIG-002 | external observation lineage | malformed manifest count could raise before fail-closed result | defensive integer parsing in release gate | targeted release-gate suite and full isolated regression | CLOSED |
 
 ## Completion debt ledger
 
@@ -72,8 +76,8 @@ present; it does not imply that an external production gate has passed.
   News snapshot before rendering either tab, including last-good fallback.
 - Targeted release/news/Mini App/delivery-gate suite: `63 passed, 1 skipped`; full local regression: `1133 passed,
   1 skipped`; Ruff, Mypy, compile and `node --check` pass.
-- PR [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578)
-  required checks pass for `8df2b0f` (test-and-dry-run, CodeQL, dependency review,
+- PR [#579](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/579)
+  required checks pass for `763c7c4` (test-and-dry-run, CodeQL, dependency review,
   SBOM and duplicate CodeQL check). Pages/Railway/Telegram production acceptance remains
   external and fail-closed.
 
@@ -92,6 +96,32 @@ present; it does not imply that an external production gate has passed.
 - This closes the local canonical integration gap only. A Railway-provided
   sanitized bundle, ready release and controlled Telegram receipt are still
   external evidence gates and remain fail-closed.
+
+### Migration audit update (2026-08-14, external observation release lineage)
+
+- Sanitized FinancialJuice observations now contribute deterministic count,
+  source list and observation-ID hash metadata to the same release manifest as
+  market/research/event data. The release gate rejects count, source or hash
+  mismatches before delivery; legacy manifests without the optional fields
+  remain backward-compatible.
+- Mini App has a release-bound “外部財經快訊” panel. It distinguishes
+  `已核對`, `等待官方核對`, `等待市場同步` and the combined pending state;
+  links are accepted only when they are HTTPS URLs from the sanitized record.
+- Targeted release/lineage/Mini App suite: `78 passed`; isolated full local
+  regression: `1144 passed, 1 skipped`; Ruff, Mypy, compileall and frontend
+  syntax checks pass.
+- Pages browser, Railway sanitized bundle and controlled Telegram receipt are
+  still external gates. No production side effect was attempted.
+
+### Gate audit evidence (2026-08-14)
+
+- `python -m src.runtime_audit` exited 0 with `ok=true`; its warnings remain
+  visible (market source gaps, building research, and missing ready production
+  snapshots) and are not reclassified as “no risk”.
+- `python -m src.delivery_smoke_test` is `BLOCKED` in this checkout because
+  `TELEGRAM_CHAT_IDS` is not configured. No recipient or token was invented,
+  and no production message was attempted. A controlled single-recipient test
+  remains an external acceptance prerequisite.
 
 ## Gate decision
 
