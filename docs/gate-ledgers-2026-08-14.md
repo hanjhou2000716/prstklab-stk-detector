@@ -47,3 +47,18 @@ before the final production acceptance gate.
 Latest migration-head regression: `1207 passed` in `77.01s` at
 `76241c7872369be0ebfd0cb6f1adfadbb9e00b5e` using an isolated Windows temp
 directory. This evidence does not imply live Railway/Pages/Telegram acceptance.
+
+## Migration verification snapshot (2026-08-14)
+
+The post-PR-604 local gate was rerun against the stacked branch:
+
+- `python -m src.runtime_audit`: **PASS** (`ok=true`, no invariant issues).
+- `python -m compileall -q src`: **PASS**.
+- `node --check site/app.js`: **PASS**.
+- `python -m src.delivery_smoke_test`: **BLOCKED / EXTERNAL** because the
+  isolated local environment intentionally has no `TELEGRAM_CHAT_IDS`.
+
+The delivery smoke failure is not a code failure and must not be hidden by a
+test bypass. It remains covered by the controlled single-recipient production
+gate (DEBT-002), which requires the configured test recipient and a signed
+Railway receipt. No production notification was sent during this local check.
