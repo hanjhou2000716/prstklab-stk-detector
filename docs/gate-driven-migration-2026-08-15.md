@@ -150,3 +150,14 @@ this checkpoint.
 ### Stale PR overlap
 
 PRs whose heads are already ancestors of `origin/main` are superseded, not additional production pipelines. They may be closed without deleting branches after posting the superseded explanation. PR #546 and #554 require file-level reconciliation because their heads are not local ancestors, but all their implementation paths are present on `origin/main` under later commits (`71c1441`, `f9b9683`, `87058ef`, `d7857c6`).
+
+The overlap cleanup closed the verified stale set #545, #546, #549–#554 and
+#566–#576. Remaining older stacked PRs are intentionally not mass-closed by
+this checkpoint until each head is individually compared with `origin/main`.
+This avoids treating an unverified branch as superseded. The canonical active
+continuation remains PR #618.
+
+Post-checkpoint regression: `python -m pytest -q --basetemp=.pytest-final`
+returned `1231 passed, 1 skipped`; the temporary directory was removed and the
+working tree is clean. PR #618 CI is green (quality/dry-run, CodeQL,
+dependency-review and SBOM).
