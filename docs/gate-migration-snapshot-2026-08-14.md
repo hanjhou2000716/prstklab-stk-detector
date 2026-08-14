@@ -41,6 +41,11 @@ the audit snapshot and does not rewrite or reset them.
   verified the release contract, 1080x1350 photo contract, deep-link lineage,
   creator delivery contract, and one mocked recipient. It explicitly reported
   `mocked=true`; no Telegram API or Railway endpoint was contacted.
+- PR #603 records the Mini App projection of preflight health states. Its
+  targeted layout suite passed (`27 passed`), syntax validation passed, and
+  the repository/security CI checks are green. The browser contract remains a
+  CI-provisioned check; the local environment skipped it because Chromium is
+  not installed.
 
 ## Current implementation reconciliation
 

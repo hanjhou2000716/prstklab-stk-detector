@@ -20,7 +20,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | REQ-ADD-022 | market-sync health envelope | `railway-monitor/market_sync.py`, `railway-monitor/app.py` | targeted 113; PR #599 CI green | valid-empty vs configuration/http/parser failure states | PASS / LOCKED |
 | REQ-ADD-023 | GDELT source-health projection | `railway-monitor/gdelt_health.py`, `railway-monitor/app.py` | targeted 116; PR #600 CI green | no-event vs scan-failed vs stale-cache | PASS / LOCKED |
 | REQ-ADD-024 | health baseline state | `railway-monitor/app.py` | targeted 117; PR #601 CI green | first-cycle values remain not_checked | PASS / LOCKED |
-| REQ-ADD-025 | Mini App health baseline labels | `site/app.js`, `tests/test_mini_app_layout.py` | targeted 27; node syntax check; PR #603 CI pending | not_checked is not rendered as a data gap | IN_PROGRESS |
+| REQ-ADD-025 | Mini App health baseline labels | `site/app.js`, `tests/test_mini_app_layout.py` | targeted 27; node syntax check; PR #603 CI green (run `31803880498` / `31803880625`) | not_checked is not rendered as a data gap | PASS / LOCKED |
 
 ## Regression ledger
 
