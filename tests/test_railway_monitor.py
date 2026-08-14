@@ -28,6 +28,19 @@ def test_delivery_shared_secret_prefers_railway_service_name(monkeypatch):
     assert monitor._delivery_shared_secret() == "service"
 
 
+def test_health_snapshot_exposes_redacted_runtime_configuration(monkeypatch):
+    monkeypatch.delenv("DELIVERY_STATUS_SHARED_SECRET", raising=False)
+    monkeypatch.delenv("RAILWAY_STATUS_SHARED_SECRET", raising=False)
+    snapshot = monitor.health_snapshot()
+    assert snapshot["runtime_config"] == {
+        "status": "configuration_missing",
+        "delivery_secret_configured": False,
+        "canonical_name_present": False,
+        "legacy_name_present": False,
+        "secret_values_exposed": False,
+    }
+
+
 def test_monitor_imports_from_railway_root_without_repository_src_package():
     """Railway's configured root directory must not crash on ``import app``."""
     environment = os.environ.copy()
@@ -671,6 +684,25 @@ def test_health_snapshot_exposes_source_diagnostics_without_secrets():
     assert snapshot["gdelt"]["error"] == "HTTPStatusError"
     assert "JIN10_MCP_TOKEN" not in str(snapshot)
     assert "GITHUB_DISPATCH_TOKEN" not in str(snapshot)
+
+
+def test_gmail_public_health_projects_observability_without_private_cursors():
+    diagnostics = {
+        "watch": {
+            "status": "healthy",
+            "observability": {
+                "last_received_at": "2026-08-14T00:00:00+00:00",
+                "parser_error_count": 0,
+                "state": "healthy",
+            },
+        },
+        "store": {"cursor": {"last_history_id": "private", "last_message_id": "private"}},
+    }
+    fields = monitor._gmail_health_fields(diagnostics)
+    assert fields["watch_status"] == "healthy"
+    assert fields["observability"]["state"] == "healthy"
+    assert "last_history_id" not in str(fields)
+    assert "last_message_id" not in str(fields)
 
 
 def test_gdelt_error_label_preserves_status_without_exposing_response_body():

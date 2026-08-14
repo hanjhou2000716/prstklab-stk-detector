@@ -74,12 +74,60 @@ def renewal_due(expiration: str | None, *, now: datetime | None = None, margin_h
 
 
 def health(config: GmailWatchConfig, cursor: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a privacy-safe watch status and operational observability.
+
+    Cursor identifiers (history/message IDs) are deliberately not copied into
+    the public health payload.  Timestamps and bounded counters are sufficient
+    for the Mini App/source-health view and keep Gmail content private.
+    """
+    state = "healthy"
     if config.missing:
-        return {"status": "configuration_missing", "missing": list(config.missing), "watch_active": False}
+        state = "configuration_missing"
+        watch_active = False
+    else:
+        expiration = cursor.get("watch_expiration")
+        watch_active = not renewal_due(str(expiration) if expiration else None)
+        if not watch_active:
+            state = "stale"
+
+    def timestamp(*keys: str) -> str | None:
+        for key in keys:
+            value = cursor.get(key)
+            if not value:
+                continue
+            try:
+                parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+            except ValueError:
+                continue
+            return parsed.astimezone(UTC).isoformat()
+        return None
+
+    def count(*keys: str) -> int:
+        for key in keys:
+            if key not in cursor:
+                continue
+            try:
+                value = int(cursor.get(key) or 0)
+            except (TypeError, ValueError):
+                continue
+            return max(0, value)
+        return 0
+
     expiration = cursor.get("watch_expiration")
-    if renewal_due(str(expiration) if expiration else None):
-        return {"status": "stale", "watch_active": False, "watch_expiration": expiration}
-    return {"status": "healthy", "watch_active": True, "watch_expiration": expiration}
+    return {
+        "status": state,
+        "missing": list(config.missing),
+        "watch_active": watch_active,
+        "watch_expiration": expiration,
+        "observability": {
+            "observations": count("observation_count", "observations"),
+            "last_received_at": timestamp("last_notification_at", "received_at"),
+            "last_parsed_at": timestamp("last_parsed_at", "last_parse_at", "last_sync_at"),
+            "parser_error_count": count("parser_error_count", "dlq_count"),
+            "last_delivery_at": timestamp("last_delivery_at", "last_receipt_at"),
+            "state": state,
+        },
+    }
 
 
 __all__ = ["GmailWatchConfig", "health", "renewal_due"]
