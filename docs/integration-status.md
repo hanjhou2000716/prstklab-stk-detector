@@ -450,3 +450,13 @@ source merging, category cooldowns and retention. `SeenStore` delegates to it
 for compatibility. Status is **partially_integrated** pending stacked PR and
 live restart/volume continuity evidence; no release or notification policy is
 implemented in this store.
+
+## Railway source-cache persistence
+
+`railway-monitor/cache_store.py` is the canonical SQLite boundary for bounded
+source-cache reads and writes used by GDELT fallback. It rejects malformed JSON,
+non-list payloads and entries older than the caller's freshness window, while
+preserving UTF-8 content and atomic replacement semantics. `SeenStore` keeps
+the compatibility methods and delegates to this module. Status is
+**partially_integrated** until the stacked PR is merged and live restart/cache
+continuity is reverified.
