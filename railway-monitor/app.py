@@ -174,6 +174,31 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     store_record_delivery_status = _delivery_module.record_delivery_status
     store_record_outbox = _delivery_module.record_outbox
 
+try:
+    from ledger_store import (
+        category_may_dispatch as store_category_may_dispatch,
+        ledger_may_dispatch as store_ledger_may_dispatch,
+        mark_alert_reminded as store_mark_alert_reminded,
+        observe_alert as store_observe_alert,
+        prune_event_ledger as store_prune_event_ledger,
+        record_category_dispatch as store_record_category_dispatch,
+    )
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _ledger_spec = spec_from_file_location(
+        "railway_ledger_store",
+        Path(__file__).with_name("ledger_store.py"),
+    )
+    if _ledger_spec is None or _ledger_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/ledger_store.py") from None
+    _ledger_module = module_from_spec(_ledger_spec)
+    _ledger_spec.loader.exec_module(_ledger_module)
+    store_category_may_dispatch = _ledger_module.category_may_dispatch
+    store_ledger_may_dispatch = _ledger_module.ledger_may_dispatch
+    store_mark_alert_reminded = _ledger_module.mark_alert_reminded
+    store_observe_alert = _ledger_module.observe_alert
+    store_prune_event_ledger = _ledger_module.prune_event_ledger
+    store_record_category_dispatch = _ledger_module.record_category_dispatch
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -1274,6 +1299,13 @@ class SeenStore:
 
     def may_dispatch(self, alert: Alert, cooldown_seconds: int) -> bool:
         """Allow a category update after cooldown, or immediately on escalation."""
+        return store_category_may_dispatch(
+            self.connection,
+            category=alert.category,
+            summary=alert.summary,
+            cooldown_seconds=cooldown_seconds,
+            escalation_terms=ESCALATION_TERMS,
+        )
         row = self.connection.execute(
             "SELECT summary, dispatched_at FROM dispatched WHERE category = ? ORDER BY rowid DESC LIMIT 1",
             (alert.category,),
@@ -1292,6 +1324,12 @@ class SeenStore:
         return any(term.casefold() in current and term.casefold() not in previous for term in ESCALATION_TERMS)
 
     def record_dispatch(self, alert: Alert) -> None:
+        store_record_category_dispatch(
+            self.connection,
+            category=alert.category,
+            summary=alert.summary,
+        )
+        return
         self.connection.execute(
             "INSERT INTO dispatched(category, summary, dispatched_at) VALUES (?, ?, ?)",
             (alert.category, alert.summary, datetime.now(timezone.utc).isoformat()),
@@ -1300,6 +1338,15 @@ class SeenStore:
 
     def observe_alert(self, alert: Alert) -> dict[str, Any]:
         """Observe an alert in the durable ledger and return its identity."""
+        urls = sorted({normalize_source_url(item.url) for item in alert.evidence if normalize_source_url(item.url)})
+        return store_observe_alert(
+            self.connection,
+            canonical_key=alert_canonical_key(alert),
+            event_type=alert.category,
+            source_urls=urls,
+            fingerprints=alert_fact_fingerprints(alert.summary),
+            title=alert.summary,
+        )
         key = alert_canonical_key(alert)
         now = datetime.now(timezone.utc).isoformat()
         urls = sorted({normalize_source_url(item.url) for item in alert.evidence if normalize_source_url(item.url)})
@@ -1325,6 +1372,12 @@ class SeenStore:
         return {"canonical_key": key, "is_new": False, "last_reminded_at": row[1], "escalated": bool(row[2])}
 
     def mark_alert_reminded(self, alert: Alert, *, escalated: bool = False) -> None:
+        store_mark_alert_reminded(
+            self.connection,
+            canonical_key=alert_canonical_key(alert),
+            escalated=escalated,
+        )
+        return
         key = alert_canonical_key(alert)
         self.connection.execute(
             "UPDATE event_ledger SET last_reminded_at = ?, escalated = CASE WHEN ? THEN 1 ELSE escalated END, updated_at = ? WHERE canonical_key = ?",
@@ -1333,6 +1386,7 @@ class SeenStore:
         self.connection.commit()
 
     def ledger_may_dispatch(self, record: dict[str, Any], cooldown_seconds: int) -> bool:
+        return store_ledger_may_dispatch(record, cooldown_seconds=cooldown_seconds)
         if record.get("is_new") or record.get("escalated"):
             return True
         raw = record.get("last_reminded_at")
@@ -1344,6 +1398,8 @@ class SeenStore:
             return True
 
     def prune_event_ledger(self, retention_days: int = 30) -> None:
+        store_prune_event_ledger(self.connection, retention_days)
+        return
         cutoff = datetime.now(timezone.utc).timestamp() - max(30, retention_days) * 86400
         self.connection.execute(
             "DELETE FROM event_ledger WHERE strftime('%s', COALESCE(last_reminded_at, first_discovered_at)) < ?",

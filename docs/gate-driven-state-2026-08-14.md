@@ -375,3 +375,24 @@ passed `test-and-dry-run` (run `31789498655`), CodeQL, dependency-review and
 SBOM. This confirms repository CI for the stacked boundary only; Railway
 volume continuity, Pages propagation and controlled Telegram delivery remain
 external acceptance gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-012 Railway event ledger)
+
+- `railway-monitor/ledger_store.py` now owns canonical event-ledger writes,
+  verified-source merging, category cooldowns, escalation exceptions and
+  retention; `SeenStore` keeps the compatibility surface.
+- Ledger/delivery/classification/monitor targeted suite: `94 passed` in an
+  isolated workspace basetemp. Changed-module Ruff, `mypy src`, compileall and
+  frontend syntax checks pass.
+- The local boundary is ready for review, but live Railway restart continuity,
+  Pages release propagation and controlled Telegram receipt evidence remain
+  external `NEEDS_REVERIFY` gates.
+
+Traceability: `REQ-ADD-012` → `railway-monitor/ledger_store.py`,
+`railway-monitor/app.py`, `tests/test_railway_ledger_store.py` → targeted suite
+above; delivery and classification preservation tests remain in the same run.
+
+Remote evidence: PR [#589](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/589)
+passed `test-and-dry-run` (run `31790665824`), CodeQL, dependency-review and
+SBOM. This is repository CI evidence only; live Railway volume continuity,
+Pages propagation and Telegram delivery remain external acceptance gates.
