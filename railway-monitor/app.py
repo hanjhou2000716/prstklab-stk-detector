@@ -288,6 +288,19 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     _retry_spec.loader.exec_module(_retry_module)
     store_retry_due_outbox = _retry_module.retry_due_outbox
 
+try:
+    from alert_dispatch import dispatch_alert as store_dispatch_alert
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _alert_dispatch_spec = spec_from_file_location(
+        "railway_alert_dispatch",
+        Path(__file__).with_name("alert_dispatch.py"),
+    )
+    if _alert_dispatch_spec is None or _alert_dispatch_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/alert_dispatch.py") from None
+    _alert_dispatch_module = module_from_spec(_alert_dispatch_spec)
+    _alert_dispatch_spec.loader.exec_module(_alert_dispatch_module)
+    store_dispatch_alert = _alert_dispatch_module.dispatch_alert
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -1536,9 +1549,16 @@ async def dispatch_repository_payload(
 
 
 async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_secret: str) -> None:
-    trace_id = alert_trace_id(alert)
-    payload = sign_dispatch_payload(build_dispatch_payload(alert, trace_id), alert, shared_secret)
-    await dispatch_repository_payload(payload, token=token, repository=repository, trace_id=trace_id)
+    await store_dispatch_alert(
+        alert,
+        token=token,
+        repository=repository,
+        shared_secret=shared_secret,
+        trace_id=alert_trace_id,
+        build_payload=build_dispatch_payload,
+        sign_payload=sign_dispatch_payload,
+        dispatch=dispatch_repository_payload,
+    )
 
 
 async def retry_due_outbox(

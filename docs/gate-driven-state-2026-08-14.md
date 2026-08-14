@@ -461,6 +461,19 @@ passed (run `31796489859`, job `94754612110`). These are repository CI
 evidence only; live Railway restart continuity, signed callback delivery and
 production Telegram receipt remain external `NEEDS_REVERIFY` gates.
 
+### Migration audit update (2026-08-14, REQ-ADD-019 alert dispatch orchestration)
+
+- `railway-monitor/alert_dispatch.py` owns the deterministic trace/payload/
+  signature/dispatch sequence; `app.py` retains the public wrapper and injects
+  the existing canonical callbacks.
+- The targeted Railway suite now covers exact-once orchestration ordering and
+  preserves payload/signature/outbox regressions. Local evidence: `107 passed`.
+
+Traceability: `REQ-ADD-019` -> `railway-monitor/alert_dispatch.py`,
+`railway-monitor/app.py`, `tests/test_railway_alert_dispatch.py` -> targeted
+suite above. Live signed callback and Telegram receipt delivery remain
+external `NEEDS_REVERIFY` gates.
+
 Remote evidence: PR [#588](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/588)
 passed `test-and-dry-run` (run `31789498655`), CodeQL, dependency-review and
 SBOM. This confirms repository CI for the stacked boundary only; Railway
