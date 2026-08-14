@@ -9,12 +9,12 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/railway-runtime-config-boundary` |
-| HEAD | `5e8dae3` (`docs(REQ-ADD-003): align snapshot with final PR head`) |
-| Recovery checkpoint | `checkpoint/migration-2026-08-14-current4` (migration snapshot) |
+| HEAD | `b981454` (`feat(REQ-ADD-004): extract Railway health contract`) |
+| Recovery checkpoint | `checkpoint/migration-2026-08-14-current5` (post-task snapshot) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
-| Local regression | `1160 passed` at `e7364d1` using a fresh isolated Windows temp directory; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
+| Local regression | `1164 passed, 1 skipped` at `b981454` using `.tmp-migration-full-current4`; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
 | Static checks | Changed-file Ruff, Mypy, compileall and `node --check site/app.js` passed at `7228915`; full legacy Railway lint remains a separate debt |
-| Remote PR | [#584](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/584), open and stacked on #583; latest HEAD `5e8dae3` remote quality/security checks pass |
+| Remote PR | #584 remains open and stacked on #583; this local continuation is not yet pushed, so remote evidence is not claimed for `b981454` |
 
 ## Current task reconciliation
 
@@ -31,7 +31,7 @@ claims inferred from branch names or previous comments.
 | FinancialJuice operational observability | PASS (local) / NEEDS_REVERIFY (external) | `src/external_observation_input.py`, `schemas/source-health.schema.json`, `site/app.js` | 52 targeted tests; source-health schema accepts the observability contract; Railway delivery evidence remains external | no raw/private fields or transport IDs exposed; missing input remains failed, not no-event | NEEDS_REVERIFY |
 | Canonical failure semantics | PASS (local) | `src/failure_semantics.py`, `src/creator_health.py` | 8 targeted contract tests; Creator/source-health regression | `no_event` maps to `no_new_content`; parse/provider/configuration/release states remain distinct and fail-closed | PASS (local) |
 | REQ-ADD-003 Railway runtime configuration boundary | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/runtime_config.py`, `railway-monitor/app.py` | 87 Railway monitor/config tests; changed-file Ruff/Mypy/compile/node checks | canonical and legacy secret names remain compatible; missing/blank configuration is fail-closed and redacted | live Railway health evidence remains external | NEEDS_REVERIFY |
-| REQ-ADD-004 Railway health contract extraction | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/health_contract.py`, `railway-monitor/app.py` | standalone health contract + legacy monitor suite (93 passed); Ruff/Mypy/compile | heartbeat, route and Gmail projection are standalone and privacy-safe; app compatibility wrappers preserved | live Railway health evidence remains external | NEEDS_REVERIFY |
+| REQ-ADD-004 Railway health contract extraction | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/health_contract.py`, `railway-monitor/app.py` | standalone health contract + legacy monitor suite (93 passed); full isolated regression 1164 passed, 1 skipped; Ruff/Mypy/compile/node | heartbeat, route and Gmail projection are standalone and privacy-safe; app compatibility wrappers preserved | live Railway health evidence remains external | NEEDS_REVERIFY |
 
 `PASS` is not promoted to `LOCKED` when the required objective evidence is not
 available in this checkout.  `LOCKED` is reserved for a task whose local
@@ -97,6 +97,18 @@ present; it does not imply that an external production gate has passed.
   `31767950845`, CodeQL run `31767950886`, dependency review and SBOM in the
   same security run. This is branch-level evidence only; live Railway health,
   Pages and Telegram acceptance remain external gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-004 Railway health extraction)
+
+- `railway-monitor/health_contract.py` now owns provider-independent heartbeat,
+  timestamp/counter parsing, health-route normalization and privacy-safe Gmail
+  projection. `app.py` retains compatibility wrappers and does not introduce
+  a second classifier or provider registry.
+- Targeted Railway health and monitor suite: **93 passed**. Full isolated
+  repository regression at `b981454`: **1164 passed, 1 skipped**.
+- Changed-file Ruff, Mypy, `python -m compileall -q railway-monitor`, and
+  `node --check site/app.js` passed. The Railway live health endpoint and
+  delivery receipt remain external evidence gates.
 
 ### Migration audit update (2026-08-14, multi-market News release binding)
 
