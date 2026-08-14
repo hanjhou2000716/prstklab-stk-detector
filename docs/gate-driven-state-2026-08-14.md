@@ -9,7 +9,7 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/gmail-observability-contract` |
-| HEAD | `261c950` (`fix(P0-25): unify no-content and provider failure states`) |
+| HEAD | `976d1ed` (`docs(P0-25): record failure semantics evidence`) |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current3` (pre-task) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1155 passed` at `261c950` using a fresh isolated Windows temp directory; an earlier OneDrive/temporary run had filesystem-lock failures and was rerun without changing product assertions |
