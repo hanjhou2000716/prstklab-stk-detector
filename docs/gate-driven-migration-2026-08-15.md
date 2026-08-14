@@ -12,9 +12,14 @@ evidence.
 | Remote main at audit start | `587a27b155b92e9614fa5485d632fde28c087a64` |
 | Audit branch base | `main` (reconciled with merge commit `420e53f`) |
 | Current audit branch | `feat/REQ-ADD-039-gate-migration-audit` |
-| Current HEAD | `82f71c9b25cb0f1eb26e9fd82174c67e38fd53d9` (`docs(REQ-ADD-039): pin latest CI evidence`) |
+| Current HEAD | `1a45ded20c10889d969572c1171c395f7282bab9` (`docs(REQ-ADD-039): record final migration gate evidence`) |
 | Working tree | Clean at the snapshot; no uncommitted or untracked product changes. |
 | Historical stack observed | PRs #566–#617 are already ancestors of current `main`; they are historical context, not an outstanding merge queue. |
+
+Local full-regression evidence at this checkpoint: `python -m pytest -q
+--basetemp=.pytest-full` completed with **1231 passed, 1 skipped** in 50.55s.
+The workspace basetemp was removed after the run; no production data or
+notification was touched.
 
 ## Requirement traceability (migration scope)
 
