@@ -914,7 +914,10 @@ const render = (snapshot) => {
   renderSourceHealth(snapshot.source_health, snapshot);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
   renderExternalIntelligence(snapshot);
-  const creatorSource = snapshot.creator_release || snapshot.creator_public_artifact || snapshot.creator_intelligence;
+  // Prefer the bounded public artifact: it is the UI-facing projection and
+  // may contain sanitized insight episodes even when the internal release
+  // envelope only carries lineage/health metadata.
+  const creatorSource = snapshot.creator_public_artifact || snapshot.creator_release || snapshot.creator_intelligence;
   renderCreatorInsights(creatorSource);
   renderResearch(snapshot);
   const newsRegistry = snapshot.news?.provider_registry || [];
