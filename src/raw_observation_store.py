@@ -8,7 +8,6 @@ and provenance needed to replay parsers later.
 
 from __future__ import annotations
 
-import errno
 import hashlib
 import json
 import sqlite3
@@ -19,27 +18,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from src.atomic_file import replace_with_retry
+
 SCHEMA_VERSION = 1
-_FILE_RETRY_ATTEMPTS = 3
 _SQLITE_RETRY_ATTEMPTS = 3
-_RETRYABLE_FILE_ERRNOS = frozenset({errno.EACCES, errno.EBUSY, errno.EPERM, errno.ETXTBSY})
-
-
-def _replace_with_retry(temporary: Path, destination: Path) -> None:
-    """Atomically publish a raw payload through short-lived OS file locks.
-
-    OneDrive/Windows antivirus can briefly hold a newly-created file.  A
-    bounded retry keeps that transient condition from being reported as a
-    provider outage, while still surfacing non-retryable errors immediately.
-    """
-    for attempt in range(_FILE_RETRY_ATTEMPTS):
-        try:
-            temporary.replace(destination)
-            return
-        except OSError as exc:
-            if exc.errno not in _RETRYABLE_FILE_ERRNOS or attempt == _FILE_RETRY_ATTEMPTS - 1:
-                raise
-            time.sleep(0.05 * (2**attempt))
 
 
 def _sqlite_retryable(exc: sqlite3.OperationalError) -> bool:
@@ -150,7 +132,7 @@ class RawObservationStore:
             temporary = destination.with_name(f".{destination.name}.{observation_id}.tmp")
             temporary.write_bytes(payload_bytes)
             try:
-                _replace_with_retry(temporary, destination)
+                replace_with_retry(temporary, destination)
             finally:
                 if temporary.exists():
                     temporary.unlink()

@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 from datetime import UTC, datetime
 from pathlib import Path
 
+from src.atomic_file import replace_with_retry
 from src.market_data import build_market_snapshot
 from src.production_evidence import record_market_snapshot_observation
 
@@ -107,7 +107,7 @@ def write_snapshot(snapshot: dict, destination: Path | str | None = None) -> boo
     snapshot.update(payload)
     temporary = destination.with_name(f".{destination.name}.tmp")
     temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, destination)
+    replace_with_retry(temporary, destination)
     return True
 
 
@@ -134,7 +134,7 @@ def merge_published_metadata(
     temporary = destination.with_name(f".{destination.name}.meta.tmp")
     try:
         temporary.write_text(json.dumps(current, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        os.replace(temporary, destination)
+        replace_with_retry(temporary, destination)
     except OSError:
         try:
             temporary.unlink(missing_ok=True)
