@@ -288,3 +288,10 @@ tracked as existing completion debt and was not broadened into this atomic fix.
 State: **PASS locally / NEEDS_REVERIFY externally**. The live service must still
 prove repository-shared classifier packaging and post-merge release/Telegram
 acceptance; no production notification was sent by this task.
+
+Remote evidence for atomic commit `55ff046` on PR #618: quality
+`test-and-dry-run` run `31849906527` / job `94923605186` passed; security run
+`31849906489` passed CodeQL (`94923605412`), dependency review
+(`94923605301`) and SBOM (`94923605305`); the separate CodeQL check
+`94923736064` also passed. These checks verify the registry contract and test
+suite only; they do not replace external Railway or post-merge acceptance.
