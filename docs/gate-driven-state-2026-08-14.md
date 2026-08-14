@@ -9,12 +9,12 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/railway-runtime-config-boundary` |
-| HEAD | `d46ae4b` (`docs(REQ-ADD-004): lock latest remote checks`) |
-| Recovery checkpoint | `checkpoint/migration-2026-08-14-current10` (remote-gate snapshot) |
+| HEAD | `a8cf614` (`docs(REQ-ADD-005): record Gmail extraction evidence`) |
+| Recovery checkpoint | `checkpoint/migration-2026-08-14-current12` (post-task snapshot) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
-| Local regression | `1164 passed, 1 skipped` at `b981454` using `.tmp-migration-full-current4`; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
+| Local regression | `1167 passed, 1 skipped` at `df3ab1c` using `.tmp-migration-full-current5`; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
 | Static checks | Changed-file Ruff, Mypy, compileall and `node --check site/app.js` passed at `7228915`; full legacy Railway lint remains a separate debt |
-| Remote PR | #584 remains open and stacked on #583; this local continuation is not yet pushed, so remote evidence is not claimed for `b981454` |
+| Remote PR | #584 remains open and stacked on #583; the REQ-ADD-005 code commit is ready for the next remote gate |
 
 ## Current task reconciliation
 
