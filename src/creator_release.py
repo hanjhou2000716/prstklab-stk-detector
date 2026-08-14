@@ -67,6 +67,7 @@ def build_creator_release(
     parent_manifest: dict[str, Any],
     generated_at: Any = None,
     creator_consensus: dict[str, Any] | None = None,
+    morning_batch: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build an additive artifact; invalid creator data remains unavailable."""
     artifact: dict[str, Any] = {
@@ -86,6 +87,8 @@ def build_creator_release(
             "is_investment_signal": False,
         },
     }
+    if morning_batch is not None:
+        artifact["morning_batch"] = morning_batch
     errors = validate_creator_release(artifact, parent_manifest=parent_manifest)
     artifact["validation_errors"] = errors
     artifact["status"] = "ready" if not errors else "unavailable"

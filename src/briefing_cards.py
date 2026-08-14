@@ -424,6 +424,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
                 "quotes": [*indices, *quotes, *macro_quotes],
             },
             research_snapshot=snapshot.get("research_report") if isinstance(snapshot.get("research_report"), dict) else None,
+            batch_as_of=(snapshot.get("fetched_at") or snapshot.get("created_at")) if (slot or "").casefold() == "morning" else None,
         )
         creator_release = creator_result["artifact"]
     return {

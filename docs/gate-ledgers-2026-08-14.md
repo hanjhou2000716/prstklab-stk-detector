@@ -22,6 +22,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | REQ-ADD-024 | health baseline state | `railway-monitor/app.py` | targeted 117; PR #601 CI green | first-cycle values remain not_checked | PASS / LOCKED |
 | REQ-ADD-025 | Mini App health baseline labels | `site/app.js`, `tests/test_mini_app_layout.py` | targeted 27; node syntax check; PR #603 CI green (run `31804138036` / `31804138042`) | not_checked is not rendered as a data gap | PASS / LOCKED |
 | MIGRATION-001 | Gate-Driven recovery snapshot | `docs/gate-migration-snapshot-2026-08-14.md` | repository state, offline runtime audit, production E2E, PR #602 CI green | snapshot is documentation-only and preserves external debt | PASS / LOCKED |
+| REQ-ADD-026 | Creator 10:30 morning batch contract | `src/creator_morning_batch.py`, `src/creator_intelligence_pipeline.py`, `src/briefing_cards.py` | targeted Creator/briefing suite 163 passed; Ruff/Mypy pass | latest-per-creator, partial/no-content separation, late-arrival and idempotency behavior | PASS / LOCKED (local) |
 
 ## Regression ledger
 
