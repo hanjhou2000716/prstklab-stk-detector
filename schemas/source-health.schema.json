@@ -37,7 +37,12 @@
         "issues": {"type": "array", "items": {"type": "string"}},
         "no_event": {"type": "boolean"},
         "pending_count": {"type": "integer", "minimum": 0},
-        "observability": {"$ref": "#/$defs/externalObservability"}
+        "observability": {
+          "oneOf": [
+            {"$ref": "#/$defs/externalObservability"},
+            {"$ref": "#/$defs/creatorObservability"}
+          ]
+        }
       },
       "additionalProperties": true
     },
@@ -78,6 +83,19 @@
         "pending_cluster_count": {"type": "integer", "minimum": 0},
         "last_notification_decision": {"enum": ["eligible", "pending_confirmation", "no_event"]},
         "last_delivery_at": {"type": ["string", "null"], "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "creatorObservability": {
+      "type": "object",
+      "properties": {
+        "observations": {"type": "integer", "minimum": 0},
+        "last_received_at": {"type": ["string", "null"], "format": "date-time"},
+        "last_parsed_at": {"type": ["string", "null"], "format": "date-time"},
+        "parser_error_count": {"type": "integer", "minimum": 0},
+        "no_event_count": {"type": "integer", "minimum": 0},
+        "last_delivery_at": {"type": ["string", "null"], "format": "date-time"},
+        "state": {"enum": ["healthy", "no_observations", "parse_failed", "media_degraded", "failed"]}
       },
       "additionalProperties": false
     }
