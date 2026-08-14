@@ -306,3 +306,8 @@ canonical path and the full repository regression is **1237 passed, 1 skipped**.
 Changed-file Ruff and `python -m compileall -q src railway-monitor` pass. The
 task is **PASS locally / NEEDS_REVERIFY externally** because live Gmail/Railway
 configuration and receipt evidence remain outside the local repository gate.
+
+Remote evidence for `b97bc91` on PR #618: test-and-dry-run run
+`31850654835` / job `94925667803` passed; CodeQL run `31850654722` / job
+`94925667563`, dependency review job `94925667502`, SBOM job `94925667545`,
+and the separate CodeQL check `94925796640` all passed.
