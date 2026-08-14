@@ -477,3 +477,11 @@ construction and HMAC signing. The monitor keeps compatibility wrappers while
 injecting canonical-key, trace and source-normalization callbacks. Status is
 **partially_integrated** until the stacked PR is merged and a live signed
 dispatch receipt is reverified.
+
+## Jin10 source adapter
+
+`railway-monitor/jin10_source.py` owns the official MCP `list_flash` call and
+schema-aware argument negotiation. The monitor retains compatibility parsing
+into canonical `Flash` records; no HTML/feed scraping or alternate endpoint is
+introduced. Status is **partially_integrated** until the stacked PR is merged
+and live Jin10 source health is reverified.
