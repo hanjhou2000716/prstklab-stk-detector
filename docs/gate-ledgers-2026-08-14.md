@@ -22,6 +22,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | REQ-ADD-024 | health baseline state | `railway-monitor/app.py` | targeted 117; PR #601 CI green | first-cycle values remain not_checked | PASS / LOCKED |
 | REQ-ADD-025 | Mini App health baseline labels | `site/app.js`, `tests/test_mini_app_layout.py` | targeted 27; node syntax check; PR #603 CI green (run `31804138036` / `31804138042`) | not_checked is not rendered as a data gap | PASS / LOCKED |
 | MIGRATION-001 | Gate-Driven recovery snapshot | `docs/gate-migration-snapshot-2026-08-14.md` | repository state, offline runtime audit, production E2E, PR #602 CI green | snapshot is documentation-only and preserves external debt | PASS / LOCKED |
+| REQ-ADD-026 | Creator 10:30 morning batch contract and fan-out | `src/creator_morning_batch.py`, `src/creator_intelligence_pipeline.py`, `src/briefing_cards.py`, `src/creator_dispatch.py`, `src/creator_notification.py`, `src/creator_photo_delivery.py` | targeted batch/dispatch suite 20 passed; full isolated regression 1213 passed/1 skipped; Ruff/Mypy/compileall pass; PR #604 latest quality run `31811684845` and security run `31811684878` green | latest-per-creator, 2/2 episode+digest, partial/no-content separation, late-delta, restart idempotency | PASS / LOCKED (branch evidence) |
 
 ## Regression ledger
 
@@ -46,3 +47,18 @@ before the final production acceptance gate.
 Latest migration-head regression: `1207 passed` in `77.01s` at
 `76241c7872369be0ebfd0cb6f1adfadbb9e00b5e` using an isolated Windows temp
 directory. This evidence does not imply live Railway/Pages/Telegram acceptance.
+
+## Migration verification snapshot (2026-08-14)
+
+The post-PR-604 local gate was rerun against the stacked branch:
+
+- `python -m src.runtime_audit`: **PASS** (`ok=true`, no invariant issues).
+- `python -m compileall -q src`: **PASS**.
+- `node --check site/app.js`: **PASS**.
+- `python -m src.delivery_smoke_test`: **BLOCKED / EXTERNAL** because the
+  isolated local environment intentionally has no `TELEGRAM_CHAT_IDS`.
+
+The delivery smoke failure is not a code failure and must not be hidden by a
+test bypass. It remains covered by the controlled single-recipient production
+gate (DEBT-002), which requires the configured test recipient and a signed
+Railway receipt. No production notification was sent during this local check.

@@ -7,6 +7,7 @@ from typing import Any
 from src.creator_artifact import build_creator_artifact
 from src.creator_consensus import build_creator_consensus
 from src.creator_correlation import correlate_creator_insight
+from src.creator_morning_batch import build_creator_morning_batch
 from src.creator_provider_registry import is_known_creator
 from src.creator_release import build_creator_release
 from src.email_intelligence import normalize_creator_insight
@@ -21,6 +22,7 @@ def build_creator_intelligence_release(
     history_store: Any | None = None,
     market_snapshot: dict[str, Any] | None = None,
     research_snapshot: dict[str, Any] | None = None,
+    batch_as_of: Any | None = None,
 ) -> dict[str, Any]:
     """Normalize already-sanitized records and build one lineage-bound artifact.
 
@@ -65,10 +67,12 @@ def build_creator_intelligence_release(
         for insight in insights:
             history_store.append(insight)
             history_recorded_count += 1
+    morning_batch = build_creator_morning_batch(insights, as_of=batch_as_of) if batch_as_of is not None else None
     artifact = build_creator_release(
         insights,
         parent_manifest=parent_manifest,
         creator_consensus=build_creator_consensus(insights),
+        morning_batch=morning_batch,
     )
     public_artifact = build_creator_artifact(
         insights,

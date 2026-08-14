@@ -16,8 +16,10 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from src.creator_delivery_contract import creator_notification_key
 from src.creator_photo_delivery import (
     build_creator_receipt,
+    creator_deep_link,
     plan_creator_delivery,
 )
 from src.telegram_client import (
@@ -90,6 +92,107 @@ def _receipt_status(delivered: bool, *, blocked: bool = False) -> str:
     if delivered:
         return "delivered"
     return "blocked" if blocked else "failed"
+
+
+def creator_morning_digest_text(batch: dict[str, Any], *, late_only: bool = False) -> str:
+    """Build the bounded text message that closes one morning batch.
+
+    The digest is deliberately metadata-only.  Full Creator content remains
+    in the release-bound Mini App, while this message records the batch state
+    and the providers represented in this notification.
+    """
+    state = _clean(batch.get("state") or "partial")
+    received = int(batch.get("received_count") or 0)
+    expected = int(batch.get("expected_count") or 0)
+    if late_only:
+        providers = ",".join(_clean(item) for item in (batch.get("late_arrivals") or []) if _clean(item))
+        text = f"Creator late update {providers or 'available'}"
+    else:
+        text = f"Creator morning {received}/{expected} {state}"
+    return _bounded(text, MAX_CREATOR_TEXT_CAPTION)
+
+
+def deliver_creator_morning_digest(
+    batch: dict[str, Any],
+    *,
+    release_id: str,
+    creator_snapshot_id: str,
+    mini_app_url: str,
+    release_ready: bool,
+    token: str,
+    chat_ids: tuple[str, ...],
+    delivery_history: list[dict[str, Any]] | None = None,
+    text_sender: Callable[..., tuple[TelegramDelivery, ...]] | None = None,
+) -> dict[str, Any]:
+    """Send one idempotent digest for a Creator morning batch.
+
+    A batch with no current-day content is intentionally silent.  A late
+    arrival uses a distinct notification type so the original digest is not
+    resent.  Recipient failures are isolated by the shared Telegram client.
+    """
+    state = _clean(batch.get("state") or "")
+    if state == "no_new_content":
+        return {"status": "no_new_content", "receipts": [], "reasons": ["no_current_day_creator_content"]}
+    batch_key = _clean(batch.get("batch_key"))
+    if not batch_key:
+        return {"status": "blocked", "receipts": [], "reasons": ["morning_batch_key_missing"]}
+    if not release_ready:
+        return {"status": "blocked", "receipts": [], "reasons": ["release_gate_not_ready"]}
+    if not token or not chat_ids:
+        return {"status": "blocked", "receipts": [], "reasons": ["telegram_configuration_missing"]}
+    notification_type = "late_delta" if batch.get("late_arrivals") else "digest"
+    notification_key = creator_notification_key(batch_key, notification_type)
+    sent_before = any(
+        str(row.get("notification_key") or "") == notification_key
+        and str(row.get("status") or row.get("delivery_status") or "") in {"delivered", "partial"}
+        for row in (delivery_history or [])
+    )
+    if sent_before:
+        return {"status": "already_delivered", "receipts": [], "reasons": ["already_delivered"], "notification_key": notification_key}
+    text_sender = text_sender or send_briefs
+    text = creator_morning_digest_text(batch, late_only=notification_type == "late_delta")
+    target = creator_deep_link(
+        mini_app_url,
+        release_id=release_id,
+        creator="morning_batch",
+        episode_key=batch_key,
+        snapshot_id=creator_snapshot_id,
+    )
+    deliveries = text_sender(
+        token=token,
+        chat_ids=chat_ids,
+        text=text,
+        dashboard_url=mini_app_url,
+        target_url=target,
+    )
+    synthetic = {
+        "episode_key": batch_key,
+        "creator_id": "morning_batch",
+        "content_origin": "morning_batch",
+        "public_safe": True,
+    }
+    receipts = [
+        build_creator_receipt(
+            synthetic,
+            release_id=release_id,
+            creator_snapshot_id=creator_snapshot_id,
+            chat_id=chat_id,
+            status=_receipt_status(delivery.delivered),
+            message_id=delivery.result.message_id if delivery.result else None,
+            media_mode="text_only",
+            error_class=None if delivery.delivered else "digest_delivery_failed",
+            notification_type=notification_type,
+        )
+        for chat_id, delivery in zip(chat_ids, deliveries, strict=False)
+    ]
+    delivered = any(item.get("delivery_status") == "delivered" for item in receipts)
+    return {
+        "status": "delivered" if delivered else "failed",
+        "receipts": receipts,
+        "reasons": [] if delivered else ["digest_delivery_failed"],
+        "notification_key": notification_key,
+        "media_mode": "text_only",
+    }
 
 
 def deliver_creator_episode(
@@ -217,4 +320,10 @@ def deliver_creator_episode(
     }
 
 
-__all__ = ["creator_telegram_caption", "creator_text_caption", "deliver_creator_episode"]
+__all__ = [
+    "creator_morning_digest_text",
+    "creator_telegram_caption",
+    "creator_text_caption",
+    "deliver_creator_episode",
+    "deliver_creator_morning_digest",
+]
