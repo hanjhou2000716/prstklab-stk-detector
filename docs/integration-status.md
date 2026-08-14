@@ -442,3 +442,11 @@ and retention. `SeenStore` delegates to it for backward compatibility. The
 boundary is **partially_integrated** until the stacked PR is merged and live
 Railway volume/receipt continuity is reverified; local contract tests are
 green, while production acceptance remains an external gate.
+
+## Railway event-ledger persistence
+
+`railway-monitor/ledger_store.py` owns canonical event-ledger observations,
+source merging, category cooldowns and retention. `SeenStore` delegates to it
+for compatibility. Status is **partially_integrated** pending stacked PR and
+live restart/volume continuity evidence; no release or notification policy is
+implemented in this store.
