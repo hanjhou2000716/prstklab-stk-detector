@@ -12,7 +12,7 @@ evidence.
 | Remote main at audit start | `587a27b155b92e9614fa5485d632fde28c087a64` |
 | Audit branch base | `main` (origin/main `587a27b155b92e9614fa5485d632fde28c087a64`) |
 | Current audit branch | `feat/REQ-ADD-039-gate-migration-audit` |
-| Evidence code checkpoint | `37a1ef1` (`docs(REQ-ADD-039): finalize evidence snapshot`) |
+| Evidence code checkpoint | `2d523b8` (`docs: capture current Railway external gate status`) |
 | Working tree | Clean at the snapshot; no uncommitted or untracked product changes. |
 | Historical stack observed | PRs #566–#617 are already ancestors of current `main`; they are historical context, not an outstanding merge queue. |
 
@@ -28,7 +28,7 @@ notification was touched.
 | P0-09 / P0-12 | REQ-ADD-039-T01 | Railway Gmail parses a bounded public-safe observation projection | `tests/test_railway_gmail_gateway.py` | 17 targeted tests pass; no raw body/sender/transport IDs in projection | duplicate and DLQ tests pass | PASS |
 | P0-09 / P0-12 | REQ-ADD-039-T02 | Authenticated `/external-observations` export and client | `tests/test_railway_observation_client.py` | signature, status, schema and private-field rejection tests pass | missing config remains fail-closed | PASS |
 | P0-09 / P0-12 | REQ-ADD-039-T03 | Scheduled delivery merges Railway and reviewed local observations | `tests/test_scheduled_delivery.py` plus external-input tests | 27 targeted/regression tests pass | local reviewed input remains usable when Railway is unavailable | PASS |
-| P0-24 / P0-29 | REQ-ADD-039-T04 | Gate-driven evidence and debt ledgers | this document and canonical `docs/p0-requirement-traceability.md` | PR #618 at HEAD `37a1ef1`: quality run `31838479385` and security run `31838479413` passed (CodeQL, dependency review, SBOM, full test-and-dry-run) | no merge performed; scoped photo smoke is recorded below | PASS / LOCKED |
+| P0-24 / P0-29 | REQ-ADD-039-T04 | Gate-driven evidence and debt ledgers | this document and canonical `docs/p0-requirement-traceability.md` | PR #618 at HEAD `2d523b8`: quality run `31845113369` and security run `31845113354` passed (CodeQL, dependency review, SBOM, full test-and-dry-run) | no merge performed; scoped photo smoke is recorded below | PASS / LOCKED |
 
 `PASS` above is limited to the listed implementation and tests. It is not a
 claim that the entire product or all original P0 DoDs are complete.
@@ -83,7 +83,7 @@ explicitly scoped; it does not claim a complete production acceptance:
 
 ### Post-checkpoint reconciliation evidence
 
-- Overlap audit commit: `aa08965` on PR #618.
+- Overlap audit commits: `c94fcee`, `2d523b8` on PR #618.
 - Latest quality run: `31840194185` (success); latest security run:
   `31840194207` (success, including CodeQL, dependency review and SBOM).
 - Public Creator release remains `ready` with one sanitized insight; public
@@ -130,10 +130,10 @@ this checkpoint.
 ## Migration snapshot: 2026-08-15 continuation
 
 - Branch: `feat/REQ-ADD-039-gate-migration-audit`
-- HEAD: `d2097da`
+- HEAD: `2d523b8`
 - `origin/main`: `587a27b155b92e9614fa5485d632fde28c087a64`
 - Working tree: clean before this evidence update.
-- Recovery checkpoint: the previous `d2097da` commit is the rollback point for this continuation; no reset or force-push is required.
+- Recovery checkpoint: the previous `2d523b8` commit is the rollback point for this continuation; no reset or force-push is required.
 
 ### Reconciled state
 
@@ -185,3 +185,21 @@ Post-checkpoint regression: `python -m pytest -q --basetemp=.pytest-final`
 returned `1231 passed, 1 skipped`; the temporary directory was removed and the
 working tree is clean. PR #618 CI is green (quality/dry-run, CodeQL,
 dependency-review and SBOM).
+
+### Gate v3 continuation verification — 2026-08-15
+
+- Snapshot rechecked on HEAD `2d523b8`; working tree was clean before this
+  documentation update and `origin/main` remains `587a27b155b92e9614fa5485d632fde28c087a64`.
+- Full repository regression: `python -m pytest -q --basetemp=.pytest-migration`
+  returned **1231 passed, 1 skipped**; the temporary directory was removed.
+- JavaScript syntax: `node --check site/app.js` passed.
+- Runtime audit returned `ok=true` with explicit warnings for checked-in
+  market gaps, building research, and missing local event/research/ready
+  manifest artifacts. These warnings are not promoted to production PASS.
+- Delivery dry-run returned `ok=true`, one synthetic recipient, HTTPS dashboard,
+  configured callback, and no errors; no Telegram API was called.
+
+The only current open PR remains #618. This evidence update does not merge,
+deploy, publish, or send a production notification. Production acceptance is
+still **INCOMPLETE** until the external Railway permissions/configuration and
+post-merge Pages/Mini App checks are reverified.
