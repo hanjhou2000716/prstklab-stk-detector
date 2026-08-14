@@ -28,6 +28,19 @@ def test_delivery_shared_secret_prefers_railway_service_name(monkeypatch):
     assert monitor._delivery_shared_secret() == "service"
 
 
+def test_health_snapshot_exposes_redacted_runtime_configuration(monkeypatch):
+    monkeypatch.delenv("DELIVERY_STATUS_SHARED_SECRET", raising=False)
+    monkeypatch.delenv("RAILWAY_STATUS_SHARED_SECRET", raising=False)
+    snapshot = monitor.health_snapshot()
+    assert snapshot["runtime_config"] == {
+        "status": "configuration_missing",
+        "delivery_secret_configured": False,
+        "canonical_name_present": False,
+        "legacy_name_present": False,
+        "secret_values_exposed": False,
+    }
+
+
 def test_monitor_imports_from_railway_root_without_repository_src_package():
     """Railway's configured root directory must not crash on ``import app``."""
     environment = os.environ.copy()

@@ -16,17 +16,90 @@ import logging
 import os
 import re
 import sqlite3
+import sys
 import threading
 import time
 import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunsplit
 
 import httpx
+
+try:
+    from runtime_config import configuration_health, delivery_shared_secret
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _config_spec = spec_from_file_location(
+        "railway_runtime_config",
+        Path(__file__).with_name("runtime_config.py"),
+    )
+    if _config_spec is None or _config_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/runtime_config.py")
+    _config_module = module_from_spec(_config_spec)
+    _config_spec.loader.exec_module(_config_module)
+    configuration_health = _config_module.configuration_health
+    delivery_shared_secret = _config_module.delivery_shared_secret
+
+try:
+    from health_contract import age_seconds, gmail_health_fields, health_request_path, monitor_heartbeat, non_negative_int
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _health_spec = spec_from_file_location(
+        "railway_health_contract",
+        Path(__file__).with_name("health_contract.py"),
+    )
+    if _health_spec is None or _health_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/health_contract.py")
+    _health_module = module_from_spec(_health_spec)
+    _health_spec.loader.exec_module(_health_module)
+    age_seconds = _health_module.age_seconds
+    gmail_health_fields = _health_module.gmail_health_fields
+    health_request_path = _health_module.health_request_path
+    monitor_heartbeat = _health_module.monitor_heartbeat
+    non_negative_int = _health_module.non_negative_int
+
+try:
+    from gmail_runtime import configure_gmail_ingress as build_gmail_ingress
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _gmail_runtime_spec = spec_from_file_location(
+        "railway_gmail_runtime",
+        Path(__file__).with_name("gmail_runtime.py"),
+    )
+    if _gmail_runtime_spec is None or _gmail_runtime_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/gmail_runtime.py")
+    _gmail_runtime_module = module_from_spec(_gmail_runtime_spec)
+    _gmail_runtime_spec.loader.exec_module(_gmail_runtime_module)
+    build_gmail_ingress = _gmail_runtime_module.configure_gmail_ingress
+
+try:
+    from dispatch_transport import dispatch_repository_payload as send_repository_payload
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _dispatch_spec = spec_from_file_location(
+        "railway_dispatch_transport",
+        Path(__file__).with_name("dispatch_transport.py"),
+    )
+    if _dispatch_spec is None or _dispatch_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/dispatch_transport.py")
+    _dispatch_module = module_from_spec(_dispatch_spec)
+    _dispatch_spec.loader.exec_module(_dispatch_module)
+    send_repository_payload = _dispatch_module.dispatch_repository_payload
+
+try:
+    from poll_config import load_poll_settings
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _poll_config_spec = spec_from_file_location(
+        "railway_poll_config",
+        Path(__file__).with_name("poll_config.py"),
+    )
+    if _poll_config_spec is None or _poll_config_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/poll_config.py") from None
+    _poll_config_module = module_from_spec(_poll_config_spec)
+    sys.modules[_poll_config_spec.name] = _poll_config_module
+    _poll_config_spec.loader.exec_module(_poll_config_module)
+    load_poll_settings = _poll_config_module.load_poll_settings
 
 
 def _delivery_shared_secret() -> str:
@@ -37,10 +110,7 @@ def _delivery_shared_secret() -> str:
     both names during migration, preferring the Railway-specific setting, so
     a naming mismatch cannot silently block otherwise valid receipts.
     """
-    return (
-        os.environ.get("DELIVERY_STATUS_SHARED_SECRET", "").strip()
-        or os.environ.get("RAILWAY_STATUS_SHARED_SECRET", "").strip()
-    )
+    return delivery_shared_secret()
 
 # Railway is currently configured with ``/railway-monitor`` as its root
 # directory.  In that layout the repository-level ``src`` package is not
@@ -371,59 +441,13 @@ def update_health(component: str, **values: Any) -> None:
 
 
 def _non_negative_int(value: Any) -> int | None:
-    """Parse a delivery counter without accepting booleans or negatives."""
-    if isinstance(value, bool):
-        return None
-    try:
-        number = int(value)
-    except (TypeError, ValueError):
-        return None
-    return number if number >= 0 else None
+    """Compatibility wrapper for callers of the legacy app module."""
+    return non_negative_int(value)
 
 
 def _age_seconds(value: str | None, *, now: datetime | None = None) -> int | None:
-    """Return non-negative UTC age for an ISO timestamp, if parseable."""
-    if not value:
-        return None
-    try:
-        timestamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-        if timestamp.tzinfo is None:
-            timestamp = timestamp.replace(tzinfo=timezone.utc)
-        reference = now or datetime.now(timezone.utc)
-        if reference.tzinfo is None:
-            reference = reference.replace(tzinfo=timezone.utc)
-        return max(0, int((reference.astimezone(timezone.utc) - timestamp.astimezone(timezone.utc)).total_seconds()))
-    except (TypeError, ValueError, OverflowError):
-        return None
-
-
-def monitor_heartbeat(monitor: dict[str, Any], *, now: datetime | None = None) -> dict[str, Any]:
-    """Return a bounded heartbeat diagnostic for the long-running poll loop.
-
-    Railway can still reach ``/health`` when the asyncio worker is alive but
-    blocked in a provider request.  Comparing the last completed cycle with
-    a timeout derived from the configured poll interval makes that failure
-    visible without changing the platform-level liveness status.
-    """
-    reference = now or datetime.now(timezone.utc)
-    if reference.tzinfo is None:
-        reference = reference.replace(tzinfo=timezone.utc)
-    interval = _non_negative_int(monitor.get("poll_interval_seconds")) or 120
-    # Allow one missed cycle plus a small network/SQLite margin.  Keep a
-    # minimum so the startup window is not reported stale during deployment.
-    timeout = max(300, interval * 2 + 60)
-    completed_age = _age_seconds(monitor.get("last_cycle_completed_at"), now=reference)
-    started_age = _age_seconds(monitor.get("last_cycle_started_at"), now=reference)
-    if completed_age is None:
-        heartbeat_status = "starting" if started_age is None or started_age <= timeout else "stale"
-    else:
-        heartbeat_status = "healthy" if completed_age <= timeout else "stale"
-    return {
-        "heartbeat_status": heartbeat_status,
-        "heartbeat_timeout_seconds": timeout,
-        "last_cycle_age_seconds": completed_age,
-        "current_cycle_age_seconds": started_age,
-    }
+    """Compatibility wrapper for callers of the legacy app module."""
+    return age_seconds(value, now=now)
 
 
 def health_snapshot() -> dict[str, Any]:
@@ -432,6 +456,7 @@ def health_snapshot() -> dict[str, Any]:
     monitor = snapshot.get("monitor")
     if isinstance(monitor, dict):
         monitor.update(monitor_heartbeat(monitor))
+    snapshot["runtime_config"] = configuration_health()
     return snapshot
 
 
@@ -1531,35 +1556,13 @@ def sign_dispatch_payload(payload: dict[str, Any], alert: Alert, shared_secret: 
 async def dispatch_repository_payload(
     payload: dict[str, Any], *, token: str, repository: str, trace_id: str,
 ) -> None:
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {token}",
-        "X-GitHub-Api-Version": GITHUB_API_VERSION,
-    }
-    endpoint = f"https://api.github.com/repos/{repository}/dispatches"
-    async with httpx.AsyncClient(timeout=20) as client:
-        for attempt in range(3):
-            try:
-                response = await client.post(endpoint, headers=headers, json=payload)
-            except httpx.HTTPError as exc:
-                if attempt == 2:
-                    logging.error("dispatch failed trace_id=%s error=%s", trace_id, type(exc).__name__)
-                    raise
-                await asyncio.sleep(2**attempt)
-                continue
-            if response.status_code == 429 or response.status_code >= 500:
-                if attempt == 2:
-                    response.raise_for_status()
-                retry_after = 0
-                try:
-                    retry_after = int(response.json().get("parameters", {}).get("retry_after", 0))
-                except (TypeError, ValueError, AttributeError):
-                    pass
-                await asyncio.sleep(min(60, max(1, retry_after)) if retry_after else 2**attempt)
-                continue
-            response.raise_for_status()
-            logging.info("dispatch accepted trace_id=%s status=%s", trace_id, response.status_code)
-            return
+    await send_repository_payload(
+        payload,
+        token=token,
+        repository=repository,
+        trace_id=trace_id,
+        api_version=GITHUB_API_VERSION,
+    )
 
 
 async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_secret: str) -> None:
@@ -2074,50 +2077,20 @@ def cross_checked_gdelt_alerts(
 
 
 def _health_request_path(request_target: str) -> str:
-    """Extract the route path while ignoring probe cache-busting parameters."""
-    return urlparse(request_target).path or "/"
+    """Compatibility wrapper for the standalone health contract."""
+    return health_request_path(request_target)
 
 
 def _gmail_health_fields(diagnostics: Any) -> dict[str, Any]:
-    """Project Gmail diagnostics into the public health contract safely.
-
-    Gmail history/message identifiers are private transport cursors.  The
-    public health endpoint receives only watch state and bounded operational
-    observability from ``gmail_watch.health``.
-    """
-    if not isinstance(diagnostics, dict):
-        return {"watch_status": "not_checked", "observability": {}}
-    watch = diagnostics.get("watch")
-    if not isinstance(watch, dict):
-        return {"watch_status": "not_checked", "observability": {}}
-    metrics = watch.get("observability")
-    return {
-        "watch_status": str(watch.get("status") or "not_checked"),
-        "observability": dict(metrics) if isinstance(metrics, dict) else {},
-    }
+    """Compatibility wrapper for the standalone Gmail health projection."""
+    return gmail_health_fields(diagnostics)
 
 
 def configure_gmail_ingress() -> None:
     """Attach the bounded Gmail Pub/Sub ingress when the Railway worker starts."""
     global EMAIL_INGRESS
-    try:
-        from email_store import EmailStore
-        from gmail_ingress import GmailIngressService
-        from gmail_watch import GmailWatchConfig
-
-        config = GmailWatchConfig.from_env()
-        path = os.environ.get("GMAIL_STATE_PATH", "/data/gmail-ingress.sqlite3")
-        EMAIL_INGRESS = GmailIngressService(EmailStore(path), config)
-        diagnostics = EMAIL_INGRESS.health()
-        update_health(
-            "gmail",
-            status="configuration_missing" if config.missing else "ready",
-            **_gmail_health_fields(diagnostics),
-            error=None,
-        )
-    except Exception as error:  # pragma: no cover - defensive startup path
-        EMAIL_INGRESS = None
-        update_health("gmail", status="failed", error=type(error).__name__)
+    EMAIL_INGRESS, fields = build_gmail_ingress()
+    update_health("gmail", **fields)
 
 
 class HealthHandler(BaseHTTPRequestHandler):
@@ -2251,19 +2224,17 @@ def start_health_server() -> None:
 
 
 async def monitor_forever() -> None:
-    jin10_token = configured("JIN10_MCP_TOKEN")
-    github_token = configured("GITHUB_DISPATCH_TOKEN")
-    repository = configured("GITHUB_REPOSITORY")
-    shared_secret = configured("EXTERNAL_ALERT_SHARED_SECRET")
-    interval = max(60, int(os.environ.get("JIN10_POLL_SECONDS", "120")))
-    limit = min(100, max(1, int(os.environ.get("JIN10_FLASH_LIMIT", "30"))))
-    # One event cooldown is shared by Jin10, GDELT and the durable ledger.
-    # The legacy category-specific variable is intentionally ignored so an
-    # old Railway setting cannot silently restore a two-hour cooldown.
-    cooldown = EVENT_COOLDOWN_SECONDS
-    bootstrap = os.environ.get("JIN10_INITIAL_BACKFILL", "false").lower() == "true"
-    gdelt_interval = max(900, int(os.environ.get("GDELT_POLL_SECONDS", "900")))
-    gdelt_enabled = os.environ.get("GDELT_DISCOVERY_ENABLED", "true").lower() == "true"
+    settings = load_poll_settings(configured=configured, cooldown_seconds=EVENT_COOLDOWN_SECONDS)
+    jin10_token = settings.jin10_token
+    github_token = settings.github_token
+    repository = settings.repository
+    shared_secret = settings.shared_secret
+    interval = settings.interval
+    limit = settings.limit
+    cooldown = settings.cooldown
+    bootstrap = settings.bootstrap
+    gdelt_interval = settings.gdelt_interval
+    gdelt_enabled = settings.gdelt_enabled
     update_health("gdelt", enabled=gdelt_enabled, poll_seconds=gdelt_interval,
                   status="disabled" if not gdelt_enabled else "not_checked")
     store = SeenStore(Path(os.environ.get("MONITOR_STATE_PATH", "/data/jin10-monitor.sqlite3")))
