@@ -199,6 +199,20 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     store_prune_event_ledger = _ledger_module.prune_event_ledger
     store_record_category_dispatch = _ledger_module.record_category_dispatch
 
+try:
+    from cache_store import read_cache as store_read_cache, write_cache as store_write_cache
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _cache_spec = spec_from_file_location(
+        "railway_cache_store",
+        Path(__file__).with_name("cache_store.py"),
+    )
+    if _cache_spec is None or _cache_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/cache_store.py") from None
+    _cache_module = module_from_spec(_cache_spec)
+    _cache_spec.loader.exec_module(_cache_module)
+    store_read_cache = _cache_module.read_cache
+    store_write_cache = _cache_module.write_cache
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -1408,25 +1422,10 @@ class SeenStore:
         self.connection.commit()
 
     def read_cache(self, cache_key: str, max_age_seconds: int) -> list[dict[str, str]] | None:
-        row = self.connection.execute(
-            "SELECT payload, refreshed_at FROM cache WHERE cache_key = ?", (cache_key,)
-        ).fetchone()
-        if row is None:
-            return None
-        payload, refreshed_at = row
-        try:
-            age = (datetime.now(timezone.utc) - datetime.fromisoformat(refreshed_at)).total_seconds()
-            cached = json.loads(payload)
-        except (TypeError, ValueError, json.JSONDecodeError):
-            return None
-        return cached if age <= max_age_seconds and isinstance(cached, list) else None
+        return store_read_cache(self.connection, cache_key, max_age_seconds)
 
     def write_cache(self, cache_key: str, payload: list[dict[str, str]]) -> None:
-        self.connection.execute(
-            "INSERT OR REPLACE INTO cache(cache_key, payload, refreshed_at) VALUES (?, ?, ?)",
-            (cache_key, json.dumps(payload), datetime.now(timezone.utc).isoformat()),
-        )
-        self.connection.commit()
+        store_write_cache(self.connection, cache_key, payload)
 
 
 def sign(alert: Alert, shared_secret: str) -> str:

@@ -396,3 +396,25 @@ Remote evidence: PR [#589](https://github.com/hanjhou2000716/prstklab-stk-detect
 passed `test-and-dry-run` (run `31790665824`), CodeQL, dependency-review and
 SBOM. This is repository CI evidence only; live Railway volume continuity,
 Pages propagation and Telegram delivery remain external acceptance gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-013 Railway source-cache boundary)
+
+- `railway-monitor/cache_store.py` now owns bounded SQLite source-cache reads
+  and writes. Malformed JSON, non-list payloads and stale entries fail closed;
+  `SeenStore` preserves the existing API as a compatibility wrapper.
+- Cache/ledger/delivery/classification/monitor targeted suite: `97 passed`.
+  Changed-module Ruff, `mypy src`, compileall and frontend syntax checks pass.
+- The local boundary is ready for review. Live Railway restart/cache continuity,
+  Pages propagation and controlled Telegram receipt evidence remain external
+  `NEEDS_REVERIFY` gates.
+
+Traceability: `REQ-ADD-013` -> `railway-monitor/cache_store.py`,
+`railway-monitor/app.py`, `tests/test_railway_cache_store.py` -> targeted suite
+above. Existing GDELT stale-cache fallback and fail-closed dispatch behaviour
+remain covered by `tests/test_railway_monitor.py`.
+
+Remote evidence: PR [#590](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/590)
+passed `test-and-dry-run` (run `31791713251`), CodeQL, dependency-review and
+SBOM. This remains repository CI evidence only; Railway restart/cache
+continuity, Pages propagation and controlled Telegram delivery are external
+acceptance gates.
