@@ -7,9 +7,29 @@ import re
 from typing import Any
 from src.creator_provider_registry import creator_ids, get_creator_provider
 
+try:
+    # The Railway service normally runs from the repository root.  Keep the
+    # import optional so the standalone monitor image still starts safely when
+    # only the railway-monitor package is copied into the image.
+    from src.external_source_parsers import parse_external_email
+except ModuleNotFoundError:  # pragma: no cover - exercised by standalone image
+    parse_external_email = None  # type: ignore[assignment]
+
 KNOWN_SOURCES = {"financialjuice", *creator_ids()}
 DLQ_STATES = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
 PARSER_VERSION = "railway-email-router-v1"
+
+_PUBLIC_FIELDS = {
+    "content_origin", "content_type", "event_type", "category", "title",
+    "headline", "original_headline", "summary", "chinese_translation",
+    "vendor_translation", "ai_commentary", "possible_impact",
+    "vendor_analysis", "vendor_possible_impact", "vendor_importance",
+    "vendor_importance_present", "published_at", "source_published_at",
+    "source_url", "source_domain", "source_tier", "official_confirmed",
+    "market_sync_confirmed", "cross_source_count", "market_evidence",
+    "entities", "topics", "tickers", "candidate_event_type", "item_id",
+    "content_hash", "parser_version", "parse_status", "public_safe",
+}
 
 
 def _text(value: Any) -> str:
@@ -88,6 +108,36 @@ def parse_email(record: dict[str, Any]) -> dict[str, Any]:
     if status == "identified" and not result["required_fields_present"]:
         result["parse_status"] = "parse_failed"
         result["failure_reason"] = "required_fields_missing"
+    # The router previously stopped at source identification, so Railway
+    # retained only a cursor/hash and the scheduled publisher never received
+    # the reviewed FinancialJuice or Creator facts.  Parse into a bounded,
+    # public-safe projection now.  Raw body, sender and transport identifiers
+    # remain confined to this request and are never copied to the projection.
+    public_rows: list[dict[str, Any]] = []
+    if parse_external_email is not None and result["parse_status"] == "parsed":
+        try:
+            derived = parse_external_email(
+                sender=sender,
+                subject=subject,
+                body=body,
+                message_id=message_id,
+            )
+        except Exception:  # pragma: no cover - parser failures are DLQ-safe
+            derived = {"parse_status": "parse_failed", "failure_reason": "derived_parser_error"}
+        items = derived.get("items") if isinstance(derived, dict) else None
+        candidates = items if isinstance(items, list) else [derived]
+        for index, candidate in enumerate(candidates):
+            if not isinstance(candidate, dict) or candidate.get("parse_status") not in {"parsed", "normalized"}:
+                continue
+            row = {key: candidate[key] for key in _PUBLIC_FIELDS if key in candidate}
+            item_id = str(candidate.get("item_id") or "").strip()
+            row["observation_id"] = item_id or f"email-{result['template_fingerprint'][:20]}-{index}"
+            row["source"] = str(candidate.get("content_origin") or route["source"])
+            row["content_origin"] = row["source"]
+            row["public_safe"] = True
+            row["parse_status"] = "normalized"
+            public_rows.append(row)
+    result["public_observations"] = public_rows
     return result
 
 

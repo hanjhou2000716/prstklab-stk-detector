@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import tempfile
+from datetime import UTC, datetime
 from pathlib import Path
 
 from src.alert_budget import decide_alert_budget
@@ -15,8 +16,15 @@ from src.config import get_settings
 from src.creator_provider_registry import creator_ids
 from src.event_ledger import EventLedger
 from src.market_data import build_market_snapshot
+from src.external_observation_input import (
+    external_observations_path,
+    external_source_health,
+    load_external_observations,
+    merge_external_source_health,
+)
 from src.refresh_market_data import merge_published_metadata, write_snapshot
 from src.release_gate import verify_release_for_delivery
+from src.railway_observation_client import load_railway_observations
 from src.scheduled_brief import (
     _pick_event,
     _write_output,
@@ -107,14 +115,67 @@ def _creator_input_failures() -> dict[str, str]:
 def prepare(slot: str, snapshot_path: Path) -> dict:
     """Create the exact snapshot that will later be deployed and delivered."""
     snapshot = build_market_snapshot()
+    local_path = external_observations_path()
+    local_rows, rejected = load_external_observations(local_path)
+    railway_rows, railway_status = load_railway_observations()
+    merged_rows: list[dict] = []
+    seen_ids: set[str] = set()
+    for row in [*railway_rows, *local_rows]:
+        if not isinstance(row, dict):
+            continue
+        observation_id = str(row.get("observation_id") or "").strip()
+        if not observation_id or observation_id in seen_ids:
+            continue
+        seen_ids.add(observation_id)
+        merged_rows.append(row)
+    if merged_rows:
+        snapshot["external_observations"] = merged_rows
+    else:
+        snapshot["external_observations"] = []
+    external_health = external_source_health(
+        path=local_path,
+        accepted=merged_rows,
+        rejected=rejected,
+        checked_at=datetime.now(UTC),
+    )
+    overall_source_health = snapshot.get("source_health") or {}
+    railway_health: dict | None = None
+    if external_health:
+        overall_source_health = merge_external_source_health(overall_source_health, external_health)
+    if railway_status.get("status") not in {"configuration_missing", "no_event"}:
+        railway_health = {
+            "key": "external_railway_export",
+            "label": "Railway sanitized email export",
+            "provider": "railway",
+            "role": "optional",
+            "status": railway_status.get("status", "failed"),
+            "state": railway_status.get("status", "failed"),
+            "semantic_state": railway_status.get("status", "failed"),
+            "provider_status": "scan_complete" if railway_status.get("status") == "ready" else "unavailable",
+            "source_tier": "discovery",
+            "source_url": "https://railway.app/",
+            "checked_at": datetime.now(UTC).isoformat(),
+            "accepted_count": len(railway_rows),
+            "issues": [str(railway_status.get("reason"))] if railway_status.get("reason") else [],
+        }
+        overall_source_health = merge_external_source_health(overall_source_health, railway_health)
+    if external_health or railway_health:
+        snapshot["source_health"] = overall_source_health
+        snapshot["external_source_health"] = external_health or railway_health
+    snapshot["external_observation_ingress"] = {
+        "state": railway_status.get("status", "configuration_missing"),
+        "railway_count": len(railway_rows),
+        "local_count": len(local_rows),
+        "deduplicated_count": len(merged_rows),
+        "rejected_count": rejected,
+        "reason": railway_status.get("reason"),
+    }
     creator_records = _load_creator_records()
     # Creator feeds are optional, but their operational state belongs in the
     # same source-health contract as the published market snapshot.  Keep this
     # merge after loading the external file so the market builder remains
     # reusable for non-Creator refreshes.
     if _creator_records_path() is not None or os.getenv("CREATOR_NOTIFICATION_ENABLED", "").strip():
-        from datetime import UTC, datetime
-
         from src.creator_source_health import build_creator_source_health, merge_creator_sources
 
         creator_rows = build_creator_source_health(

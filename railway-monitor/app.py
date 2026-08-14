@@ -2111,6 +2111,47 @@ class HealthHandler(BaseHTTPRequestHandler):
         # query string.  Route by the URL path, not the raw request target, so
         # `/health?ts=...` remains the same public health endpoint.
         request_path = _health_request_path(self.path)
+        if request_path == "/external-observations":
+            # Actions fetches this bounded, sanitized projection before
+            # building a public release.  Authenticate the request without
+            # placing the shared secret in a query string or response.
+            secret = _delivery_shared_secret()
+            if EMAIL_INGRESS is None or not secret:
+                self.send_error(503, "external observation export is unavailable")
+                return
+            parsed_target = urlparse(self.path)
+            canonical_target = parsed_target.path
+            if parsed_target.query:
+                canonical_target += "?" + parsed_target.query
+            expected = "sha256=" + hmac.new(
+                secret.encode("utf-8"),
+                f"GET\n{canonical_target}".encode("utf-8"),
+                hashlib.sha256,
+            ).hexdigest()
+            supplied = self.headers.get("X-PRSTK-Signature", "")
+            if not hmac.compare_digest(supplied, expected):
+                self.send_error(401)
+                return
+            try:
+                values = dict(parse_qsl(parsed_target.query, keep_blank_values=True))
+                limit = max(1, min(500, int(values.get("limit", "100"))))
+                store = getattr(EMAIL_INGRESS, "store", None)
+                rows = store.public_observations(limit=limit) if store is not None else []
+                body = (json.dumps({
+                    "status": "ready" if rows else "no_event",
+                    "observations": rows,
+                    "count": len(rows),
+                }, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            except (TypeError, ValueError):
+                self.send_error(400, "invalid observation export request")
+                return
         if request_path not in {"/", "/health"}:
             self.send_error(404)
             return

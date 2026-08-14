@@ -49,6 +49,9 @@ jobs:
       TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
       DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
       RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
+      # Optional authenticated sanitized Gmail/FJ export.  When omitted,
+      # the client derives /external-observations from RAILWAY_STATUS_URL.
+      RAILWAY_OBSERVATIONS_URL: ${{ vars.RAILWAY_OBSERVATIONS_URL }}
       RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET }}
       SLOT: ${{ inputs.slot || github.event.client_payload.slot || 'auto' }}
       FORCE: ${{ inputs.force || github.event.client_payload.force || 'false' }}
