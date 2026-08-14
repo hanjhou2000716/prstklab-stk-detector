@@ -20,6 +20,14 @@ inferred from a green pull request.
 | Delivery smoke | fail-closed because local `TELEGRAM_CHAT_IDS` is intentionally absent |
 | Production release | not claimed; current checked-in manifest is invalid/old and must not be promoted |
 
+Post-PR-609 verification on this checkout: `runtime_audit` returned `ok=true`
+with no invariant issues; `compileall` and `node --check site/app.js` passed.
+`delivery_smoke_test` correctly returned `ok=false` with the explicit
+configuration error `TELEGRAM_CHAT_IDS is empty`; no production notification was
+sent. The runtime warnings (market source gaps, research building state, and
+missing/not-ready production snapshots) remain visible and are not relabeled as
+success.
+
 ## Requirement / evidence matrix
 
 `Local verdict` is the strongest evidence available in the repository. `External
