@@ -171,6 +171,16 @@ The only remaining open PR in the repository is the canonical continuation
 `#618`. This cleanup changed no source or release data and does not constitute
 mainline merge or production acceptance.
 
+### Latest Railway health capture
+
+The live `/health` endpoint remains reachable and the monitor heartbeat is
+healthy. It currently reports Jin10 healthy, delivery receipt consistency for
+the scoped photo smoke, GDELT `HTTP_429` with bounded fallback disabled for the
+current cycle, and the health callback `HTTP_403`. Gmail remains
+`configuration_missing`; no credentials or private payloads were read. These
+states remain external acceptance debt and are intentionally not promoted to
+PASS by a local test.
+
 Post-checkpoint regression: `python -m pytest -q --basetemp=.pytest-final`
 returned `1231 passed, 1 skipped`; the temporary directory was removed and the
 working tree is clean. PR #618 CI is green (quality/dry-run, CodeQL,
