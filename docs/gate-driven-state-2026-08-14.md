@@ -9,8 +9,8 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/railway-runtime-config-boundary` |
-| HEAD | `4b0786f` (`docs(REQ-ADD-004): record health extraction evidence`) |
-| Recovery checkpoint | `checkpoint/migration-2026-08-14-current6` (post-evidence snapshot) |
+| HEAD | `ffd904d` (`docs(REQ-ADD-004): record remote quality gate evidence`) |
+| Recovery checkpoint | `checkpoint/migration-2026-08-14-current8` (remote-gate snapshot) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1164 passed, 1 skipped` at `b981454` using `.tmp-migration-full-current4`; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
 | Static checks | Changed-file Ruff, Mypy, compileall and `node --check site/app.js` passed at `7228915`; full legacy Railway lint remains a separate debt |
