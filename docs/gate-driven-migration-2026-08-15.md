@@ -10,10 +10,10 @@ evidence.
 | Item | Evidence |
 |---|---|
 | Remote main at audit start | `587a27b155b92e9614fa5485d632fde28c087a64` |
-| Audit branch base | `feat/publish-before-notify-contract` (`477131ce911eae76544ed36323a738a68b89410f`) |
+| Audit branch base | `main` (reconciled with merge commit `420e53f`) |
 | Current audit branch | `feat/REQ-ADD-039-gate-migration-audit` |
 | Working tree policy | Only files listed in the migration PR are staged; pytest temp directories are ignored/untracked artifacts. |
-| Open stacked work observed | PRs #566–#576; all were green when inspected, but remain unmerged and must be verified again after rebasing/merging. |
+| Historical stack observed | PRs #566–#617 are already ancestors of current `main`; they are historical context, not an outstanding merge queue. |
 
 ## Requirement traceability (migration scope)
 
@@ -22,7 +22,7 @@ evidence.
 | P0-09 / P0-12 | REQ-ADD-039-T01 | Railway Gmail parses a bounded public-safe observation projection | `tests/test_railway_gmail_gateway.py` | 17 targeted tests pass; no raw body/sender/transport IDs in projection | duplicate and DLQ tests pass | PASS |
 | P0-09 / P0-12 | REQ-ADD-039-T02 | Authenticated `/external-observations` export and client | `tests/test_railway_observation_client.py` | signature, status, schema and private-field rejection tests pass | missing config remains fail-closed | PASS |
 | P0-09 / P0-12 | REQ-ADD-039-T03 | Scheduled delivery merges Railway and reviewed local observations | `tests/test_scheduled_delivery.py` plus external-input tests | 27 targeted/regression tests pass | local reviewed input remains usable when Railway is unavailable | PASS |
-| P0-24 / P0-29 | REQ-ADD-039-T04 | Gate-driven evidence and debt ledgers | this document and `docs/p0-traceability-2026-08-15.md` | PR #618 CI: CodeQL, dependency review, SBOM and test-and-dry-run all passed (run `31832840142` / `31832840218`) | no production release or broadcast performed | PASS / LOCKED |
+| P0-24 / P0-29 | REQ-ADD-039-T04 | Gate-driven evidence and debt ledgers | this document and `docs/p0-traceability-2026-08-15.md` | PR #618 after main reconciliation: CodeQL, dependency review, SBOM and test-and-dry-run all passed (run `31833490570` / `31833490568`) | no production release or broadcast performed | PASS / LOCKED |
 
 `PASS` above is limited to the listed implementation and tests. It is not a
 claim that the entire product or all original P0 DoDs are complete.
@@ -81,8 +81,9 @@ The full P0-01..P0-29 requirement index, with unique DoD IDs and explicit
 
 ## Recovery / rollback
 
-The branch is a recoverable checkpoint based on the existing stacked branch.
-Rollback is a PR revert (or branch deletion before merge); it removes the
-Railway export path while leaving prior release and Telegram gates intact.
+The branch is a recoverable checkpoint merged non-destructively with the latest
+`main` (`420e53f`). Rollback is a PR revert (or branch deletion before merge);
+it removes the Railway export path while leaving prior release and Telegram
+gates intact.
 No merge, deploy, release publication, or production notification is part of
 this checkpoint.
