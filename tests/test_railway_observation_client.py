@@ -35,4 +35,21 @@ def test_loader_keeps_only_public_safe_rows(monkeypatch) -> None:
     rows, health = client.load_railway_observations(url="https://railway.example/health", secret="secret")
     assert [row["observation_id"] for row in rows] == ["safe-1"]
     assert health["status"] == "ready"
+    assert health["rejected_count"] == 1
     assert seen["headers"]["X-PRSTK-Signature"].startswith("sha256=")
+
+
+def test_loader_rejects_unknown_source_and_private_transport_fields(monkeypatch) -> None:
+    class Response:
+        status_code = 200
+
+        def json(self):
+            return {"status": "ready", "observations": [
+                {"observation_id": "other", "source": "other", "public_safe": True},
+                {"observation_id": "private", "source": "financialjuice", "public_safe": True, "message_id": "private"},
+            ]}
+
+    monkeypatch.setattr(client.httpx, "get", lambda *_args, **_kwargs: Response())
+    rows, health = client.load_railway_observations(url="https://railway.example/health", secret="secret")
+    assert rows == []
+    assert health["rejected_count"] == 2

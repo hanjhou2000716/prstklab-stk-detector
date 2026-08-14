@@ -206,3 +206,27 @@ The only current open PR remains #618. This evidence update does not merge,
 deploy, publish, or send a production notification. Production acceptance is
 still **INCOMPLETE** until the external Railway permissions/configuration and
 post-merge Pages/Mini App checks are reverified.
+
+### Railway observation release wiring (continuation checkpoint)
+
+The scheduled prepare path now calls the canonical sanitized Railway export
+when `RAILWAY_OBSERVATIONS_URL`/`RAILWAY_STATUS_URL` and the shared secret are
+configured. Remote rows are merged by `observation_id` over the reviewed local
+fallback, and the resulting rows travel through the existing briefing,
+release-manifest and source-health paths. Unknown providers and private
+transport fields are rejected with a counted parser error; a failed remote
+export leaves a local reviewed row visible but marks the source `partial`.
+
+Evidence on this checkpoint:
+
+- targeted ingress/scheduled-delivery tests: **27 passed**;
+- full repository regression: **1235 passed, 1 skipped**;
+- `uv run --locked ruff check src tests`: **passed**;
+- `uv run --locked mypy src`: **passed**;
+- `node --check site/app.js`: **passed**;
+- runtime audit is structurally valid but still reports checked-in data gaps;
+- delivery smoke is dry-run only and made no Telegram API call.
+
+This fixes the local integration gap; it does not promote Railway's live GDELT
+429, callback 403, or missing Gmail configuration to PASS. Post-merge main,
+Pages/Mini App and production delivery evidence remain required.

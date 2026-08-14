@@ -10,6 +10,13 @@ from urllib.parse import urlparse, urlunparse
 
 import httpx
 
+_ALLOWED_SOURCES = {"financialjuice"}
+_BLOCKED_FIELDS = {
+    "body", "raw_body", "attachments", "data", "local_path", "private_url",
+    "gmail_message_id", "gmail_thread_id", "gmail_history_id", "message_id",
+    "thread_id", "sender", "recipient", "email_address",
+}
+
 
 def observation_export_url(configured_url: str | None = None) -> str:
     """Return a stable ``/external-observations`` endpoint for a Railway URL."""
@@ -48,7 +55,7 @@ def load_railway_observations(
     endpoint = observation_export_url(url)
     token = str(secret or os.getenv("RAILWAY_STATUS_SHARED_SECRET") or "").strip()
     if not endpoint or not token:
-        return [], {"status": "configuration_missing", "reason": "railway_observation_export_not_configured"}
+        return [], {"status": "configuration_missing", "reason": "railway_observation_export_not_configured", "rejected_count": 0}
     try:
         response = httpx.get(
             endpoint,
@@ -56,25 +63,36 @@ def load_railway_observations(
             timeout=max(1.0, min(30.0, float(timeout))),
         )
         if response.status_code != 200:
-            return [], {"status": "failed", "reason": f"http_{response.status_code}"}
+            return [], {"status": "failed", "reason": f"http_{response.status_code}", "rejected_count": 0}
         payload = response.json()
     except (httpx.HTTPError, ValueError, TypeError):
-        return [], {"status": "failed", "reason": "request_or_json_error"}
+        return [], {"status": "failed", "reason": "request_or_json_error", "rejected_count": 0}
     rows = payload.get("observations") if isinstance(payload, dict) else None
     if not isinstance(rows, list):
-        return [], {"status": "failed", "reason": "invalid_observation_shape"}
+        return [], {"status": "failed", "reason": "invalid_observation_shape", "rejected_count": 0}
     safe: list[dict[str, Any]] = []
+    rejected = 0
     for row in rows:
         if not isinstance(row, dict) or row.get("public_safe") is not True:
+            rejected += 1
             continue
         if not str(row.get("observation_id") or "").strip():
+            rejected += 1
             continue
-        if any(row.get(key) not in (None, "", [], {}) for key in ("body", "raw_body", "attachments", "gmail_message_id", "sender")):
+        source = str(row.get("source") or row.get("content_origin") or "").strip().casefold()
+        if source not in _ALLOWED_SOURCES:
+            rejected += 1
             continue
-        safe.append(dict(row))
+        if any(row.get(key) not in (None, "", [], {}) for key in _BLOCKED_FIELDS):
+            rejected += 1
+            continue
+        normalized = dict(row)
+        normalized["source"] = source
+        normalized["content_origin"] = source
+        safe.append(normalized)
     status_value = payload.get("status") or ("ready" if safe else "no_event")
     status = str(status_value)
-    return safe, {"status": status, "count": len(safe)}
+    return safe, {"status": status, "count": len(safe), "rejected_count": rejected}
 
 
 __all__ = ["load_railway_observations", "observation_export_url"]

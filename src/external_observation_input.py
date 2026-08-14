@@ -236,6 +236,59 @@ def external_source_health(*, path: Path | None, accepted: list[dict[str, Any]],
     }
 
 
+def external_source_health_from_remote(
+    remote_health: dict[str, Any],
+    *,
+    accepted: list[dict[str, Any]],
+    rejected: int,
+    checked_at: datetime,
+) -> dict[str, Any]:
+    """Translate Railway ingress status into the shared source-health contract.
+
+    The Railway endpoint is intentionally not exposed as a public source URL;
+    this row reports the public provider and the sanitized export's operational
+    state while retaining local fallback observations when available.
+    """
+    raw_status = str(remote_health.get("status") or "failed").strip().casefold()
+    provider_status = raw_status or "failed"
+    if raw_status in {"ready", "healthy"}:
+        state = "healthy" if accepted else "no_event"
+    elif raw_status == "no_event":
+        state = "no_event"
+    elif accepted:
+        state = "partial"
+    elif raw_status == "configuration_missing":
+        state = "configuration_missing"
+    else:
+        state = "failed"
+    issues: list[str] = []
+    reason = str(remote_health.get("reason") or "").strip()
+    if reason:
+        issues.append(reason)
+    if rejected:
+        issues.append("rejected_records")
+    row: dict[str, Any] = {
+        "key": "external_financialjuice",
+        "label": "FinancialJuice sanitized Railway ingress",
+        "provider": "financialjuice",
+        "role": "optional",
+        "status": state,
+        "state": state,
+        "semantic_state": state,
+        "provider_status": provider_status,
+        "source_tier": "discovery",
+        "source_url": "https://financialjuice.com/",
+        "checked_at": checked_at.isoformat(),
+        "accepted_count": len(accepted),
+        "rejected_count": rejected,
+        "observability": _observability(accepted, rejected),
+        "issues": list(dict.fromkeys(issues)),
+    }
+    if state in {"healthy", "no_event"} and raw_status in {"ready", "healthy", "no_event"}:
+        row["last_success_at"] = checked_at.isoformat()
+    return row
+
+
 def merge_external_source_health(health: dict[str, Any], row: dict[str, Any] | None) -> dict[str, Any]:
     """Merge the optional row while preserving source-health count invariants."""
     if not row:
@@ -266,4 +319,7 @@ def merge_external_source_health(health: dict[str, Any], row: dict[str, Any] | N
     return merged
 
 
-__all__ = ["external_observations_path", "load_external_observations", "external_source_health", "merge_external_source_health"]
+__all__ = [
+    "external_observations_path", "load_external_observations", "external_source_health",
+    "external_source_health_from_remote", "merge_external_source_health",
+]

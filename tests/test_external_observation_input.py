@@ -4,6 +4,7 @@ from pathlib import Path
 
 from src.external_observation_input import (
     external_source_health,
+    external_source_health_from_remote,
     load_external_observations,
     merge_external_source_health,
 )
@@ -164,3 +165,28 @@ def test_external_health_exposes_financialjuice_observability_without_private_fi
     assert metrics["parser_error_count"] == 2
     assert metrics["last_delivery_at"] is None
     assert "observation_id" not in metrics
+
+
+def test_remote_external_health_preserves_status_and_fallback() -> None:
+    checked_at = datetime.now(UTC)
+    accepted = [{
+        "observation_id": "fj-remote", "source": "financialjuice", "public_safe": True,
+        "vendor_importance": 8,
+    }]
+    ready = external_source_health_from_remote(
+        {"status": "ready", "count": 1, "rejected_count": 0},
+        accepted=accepted, rejected=0, checked_at=checked_at,
+    )
+    assert ready["semantic_state"] == "healthy"
+    assert ready["last_success_at"] == checked_at.isoformat()
+    failed = external_source_health_from_remote(
+        {"status": "failed", "reason": "http_503", "rejected_count": 0},
+        accepted=accepted, rejected=0, checked_at=checked_at,
+    )
+    assert failed["semantic_state"] == "partial"
+    assert failed["issues"] == ["http_503"]
+    missing = external_source_health_from_remote(
+        {"status": "configuration_missing", "reason": "not_configured", "rejected_count": 0},
+        accepted=[], rejected=0, checked_at=checked_at,
+    )
+    assert missing["semantic_state"] == "configuration_missing"
