@@ -401,6 +401,11 @@ Traceability: `REQ-ADD-017` -> `railway-monitor/creator_delivery.py`,
 `railway-monitor/app.py`, `tests/test_railway_creator_delivery.py` -> targeted
 suite above.
 
+Remote evidence: PR [#594](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/594)
+passed `test-and-dry-run` (run `31795224806`), CodeQL, dependency-review and
+SBOM. This confirms repository CI only; live creator receipt continuity and
+Telegram delivery remain external acceptance gates.
+
 Remote evidence: PR [#593](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/593)
 passed `test-and-dry-run` (run `31794436820`), CodeQL, dependency-review and
 SBOM. This confirms repository CI only; live Jin10 source health remains an
