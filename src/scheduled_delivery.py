@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import tempfile
+from datetime import UTC, datetime
 from pathlib import Path
 
 from src.alert_budget import decide_alert_budget
@@ -14,6 +15,12 @@ from src.briefing_cards import build_briefing_snapshot
 from src.config import get_settings
 from src.creator_provider_registry import creator_ids
 from src.event_ledger import EventLedger
+from src.external_observation_input import (
+    external_observations_path,
+    external_source_health,
+    load_external_observations,
+    merge_external_source_health,
+)
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import merge_published_metadata, write_snapshot
 from src.release_gate import verify_release_for_delivery
@@ -107,14 +114,29 @@ def _creator_input_failures() -> dict[str, str]:
 def prepare(slot: str, snapshot_path: Path) -> dict:
     """Create the exact snapshot that will later be deployed and delivered."""
     snapshot = build_market_snapshot()
+    external_path = external_observations_path()
+    external_observations, external_rejected = load_external_observations(external_path)
+    if external_observations:
+        snapshot["external_observations"] = external_observations
+    elif "external_observations" not in snapshot:
+        snapshot["external_observations"] = []
+    external_health = external_source_health(
+        path=external_path,
+        accepted=external_observations,
+        rejected=external_rejected,
+        checked_at=datetime.now(UTC),
+    )
+    if external_health:
+        snapshot["source_health"] = merge_external_source_health(
+            snapshot.get("source_health") or {}, external_health
+        )
+        snapshot["external_source_health"] = external_health
     creator_records = _load_creator_records()
     # Creator feeds are optional, but their operational state belongs in the
     # same source-health contract as the published market snapshot.  Keep this
     # merge after loading the external file so the market builder remains
     # reusable for non-Creator refreshes.
     if _creator_records_path() is not None or os.getenv("CREATOR_NOTIFICATION_ENABLED", "").strip():
-        from datetime import UTC, datetime
-
         from src.creator_source_health import build_creator_source_health, merge_creator_sources
 
         creator_rows = build_creator_source_health(

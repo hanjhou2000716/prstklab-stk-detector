@@ -132,7 +132,17 @@ def validate_market(document: dict[str, Any]) -> list[str]:
         errors.extend(validate_intelligence(briefing["intelligence"]))
     news = document.get("news")
     if isinstance(news, dict) and isinstance(news.get("intelligence"), dict):
-        errors.extend(validate_news_intelligence(news["intelligence"]))
+        intelligence = news["intelligence"]
+        if any(key in intelligence for key in ("taiwan", "us")):
+            for market, payload in intelligence.items():
+                if market not in {"taiwan", "us"} or not isinstance(payload, dict):
+                    continue
+                candidate = dict(payload)
+                if not candidate.get("provider_registry"):
+                    candidate["provider_registry"] = news.get("provider_registry", [])
+                errors.extend(f"news.intelligence[{market}]: {error}" for error in validate_news_intelligence(candidate))
+        else:
+            errors.extend(validate_news_intelligence(intelligence))
     return errors
 
 
@@ -170,6 +180,34 @@ def validate_news_intelligence(document: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: canonical_url is outside provider domains")
         if story.get("public_safe") is not True:
             errors.append(f"{path}: public_safe must be true for published news")
+    return errors
+
+
+def validate_news_release(document: dict[str, Any]) -> list[str]:
+    """Validate the release-bound multi-market News artifact."""
+    if not isinstance(document, dict):
+        return ["news release must be an object"]
+    markets = document.get("markets")
+    if not isinstance(markets, dict):
+        return validate_news_intelligence(document)
+    errors: list[str] = _schema_errors(document, "news-release.schema.json")
+    for field in ("schema_version", "market_snapshot_id", "snapshot_id"):
+        if not str(document.get(field) or ""):
+            errors.append(f"news release {field} is missing")
+    registry = document.get("provider_registry")
+    for market, payload in markets.items():
+        if market not in {"taiwan", "us"}:
+            errors.append(f"news release has unsupported market={market!r}")
+        if not isinstance(payload, dict):
+            errors.append(f"news release markets[{market}] must be an object")
+            continue
+        candidate = dict(payload)
+        if not candidate.get("provider_registry") and isinstance(registry, list):
+            candidate["provider_registry"] = registry
+        errors.extend(f"markets[{market}]: {error}" for error in validate_news_intelligence(candidate))
+        for index, story in enumerate(candidate.get("stories", [])):
+            if isinstance(story, dict) and story.get("market") not in {market, "global", "cross_market"}:
+                errors.append(f"markets[{market}].stories[{index}]: market does not match envelope")
     return errors
 
 

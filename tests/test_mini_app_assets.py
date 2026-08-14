@@ -102,10 +102,19 @@ def test_mini_app_integrates_the_alert_into_risk_and_splits_research_by_market()
 def test_mini_app_numbers_taiwan_and_us_news_independently():
     root = Path(__file__).resolve().parents[1]
     page = (root / "site" / "index.html").read_text(encoding="utf-8")
-    app = (root / "site" / "app.js").read_text(encoding="utf-8")
 
     assert 'id="taiwan-news" class="news-list numbered-list"' in page
     assert 'id="us-news" class="news-list numbered-list"' in page
+
+
+def test_mini_app_binds_news_artifact_to_release_before_rendering():
+    root = Path(__file__).resolve().parents[1]
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+    assert 'artifactTexts["news.json"]' in app
+    assert "news.market_snapshot_id" in app
+    assert "manifest.news_snapshot_id" in app
+    assert "snapshot.news = news" in app
+    assert "snapshot.news?.markets || snapshot.news?.intelligence" in app
     assert "stories.slice(0, 5)" in app
 
 

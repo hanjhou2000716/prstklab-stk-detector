@@ -128,6 +128,58 @@ def test_release_gate_validates_release_bound_news_artifact(tmp_path):
     assert any("news artifact market_snapshot_id" in error for error in result.errors)
 
 
+def test_release_gate_accepts_multi_market_news_release_envelope(tmp_path):
+    path, manifest = _ready_release(tmp_path)
+    data = path.parent
+    registry = [
+        {"provider_id": "sec", "domains": ["sec.gov"]},
+        {"provider_id": "twse", "domains": ["twse.com.tw"]},
+    ]
+    news = {
+        "schema_version": "1.0",
+        "snapshot_id": "news-multi-1234",
+        "market_snapshot_id": manifest["market_snapshot_id"],
+        "provider_registry": registry,
+        "markets": {
+            "taiwan": {
+                "schema_version": "1.0", "provider_registry": registry,
+                "stories": [{
+                    "story_id": "news-twse-1234", "provider": "twse",
+                    "source_tier": "official", "authority_tier": "official",
+                    "title": "TWSE notice", "canonical_url": "https://www.twse.com.tw/a",
+                    "market": "taiwan", "dedupe_key": "twsenotice", "public_safe": True,
+                }], "interest_graph": {}, "status": "ready",
+            },
+            "us": {
+                "schema_version": "1.0", "provider_registry": registry,
+                "stories": [{
+                    "story_id": "news-sec-1234", "provider": "sec",
+                    "source_tier": "official", "authority_tier": "official",
+                    "title": "SEC filing", "canonical_url": "https://www.sec.gov/a",
+                    "market": "us", "dedupe_key": "secfiling", "public_safe": True,
+                }], "interest_graph": {}, "status": "ready",
+            },
+        },
+        "status": "ready",
+    }
+    news_path = data / "news.json"
+    news_path.write_text(json.dumps(news), encoding="utf-8")
+    manifest["artifact_paths"]["news.json"] = "data/news.json"
+    manifest["artifact_hashes"]["news.json"] = sha256_file(news_path)
+    manifest["news_snapshot_id"] = news["snapshot_id"]
+    manifest["news_status"] = "ready"
+    write_release_manifest(manifest, path)
+    result = verify_release_for_delivery(manifest_path=path, expected_snapshot_id="market-12345678")
+    assert result.allowed is True
+
+    news["markets"]["us"]["stories"][0]["market"] = "taiwan"
+    news_path.write_text(json.dumps(news), encoding="utf-8")
+    manifest["artifact_hashes"]["news.json"] = sha256_file(news_path)
+    write_release_manifest(manifest, path)
+    result = verify_release_for_delivery(manifest_path=path, expected_snapshot_id="market-12345678")
+    assert result.allowed is False
+
+
 def test_release_gate_loads_and_validates_release_bound_source_health(tmp_path):
     data = tmp_path / "site" / "data"
     data.mkdir(parents=True)
