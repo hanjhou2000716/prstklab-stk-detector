@@ -24,6 +24,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | MIGRATION-001 | Gate-Driven recovery snapshot | `docs/gate-migration-snapshot-2026-08-14.md` | repository state, offline runtime audit, production E2E, PR #602 CI green | snapshot is documentation-only and preserves external debt | PASS / LOCKED |
 | REQ-ADD-026 | Creator 10:30 morning batch contract and fan-out | `src/creator_morning_batch.py`, `src/creator_intelligence_pipeline.py`, `src/briefing_cards.py`, `src/creator_dispatch.py`, `src/creator_notification.py`, `src/creator_photo_delivery.py` | targeted batch/dispatch suite 20 passed; full isolated regression 1213 passed/1 skipped; Ruff/Mypy/compileall pass; PR #604 latest quality run `31811684845` and security run `31811684878` green | latest-per-creator, 2/2 episode+digest, partial/no-content separation, late-delta, restart idempotency | PASS / LOCKED (branch evidence) |
 | REQ-ADD-027 | Creator evidence alignment across market/research/event snapshots | `src/creator_correlation.py`, `src/creator_intelligence_pipeline.py`, `src/creator_release.py`, `src/briefing_cards.py`, `src/release_manifest.py`, `src/release_gate.py`, `schemas/creator-release.schema.json` | targeted Creator lineage/correlation/manifest suite 25 passed; full regression 1216 passed/1 skipped; compileall, targeted Ruff and Mypy pass | explicit entity matching, stale evidence state, research lineage compatibility, no investment signal | PASS / LOCKED (branch evidence; production acceptance remains external) |
+| REQ-ADD-028 | FinancialJuice sanitized compound envelope runtime ingress | `src/external_observation_input.py`, `tests/test_external_observation_input.py`, `docs/req-add-028-financialjuice-runtime-envelope.md` | targeted compound ingress/event suite 19 passed; full regression 1221 passed; Ruff/Mypy/compileall/runtime audit pass | private transport ID never propagates; unresolved/count-mismatch/raw-field inputs fail closed; flat input preserved | PASS / LOCKED (branch evidence; production acceptance remains external) |
 
 ## Regression ledger
 
@@ -32,6 +33,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | REG-001 | REQ-ADD-013..020 | none observed in targeted suite | n/a | 110-test stacked Railway suite plus CI | CLOSED |
 | REG-002 | legacy runtime | live Railway restart/cache continuity not proven in local CI | external volume/runtime | controlled Railway acceptance required | OPEN / EXTERNAL |
 | REG-003 | legacy delivery | signed callback and Telegram receipt not proven in local CI | external credentials/recipient | single-recipient controlled E2E required | OPEN / EXTERNAL |
+| REG-004 | REQ-ADD-028 | compound FinancialJuice envelope was rejected by the scheduled observation loader | loader accepted only flat `observations` arrays | envelope flattening plus fail-closed item contract; 19 targeted and 1221 full tests | CLOSED |
 
 ## Completion debt ledger
 
@@ -40,6 +42,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | DEBT-001 | Run post-merge Railway restart/cache continuity check | production gate | execute against the merged main release | OPEN / EXTERNAL |
 | DEBT-002 | Capture signed callback and Telegram delivery receipt | production gate | use one approved test recipient only | OPEN / EXTERNAL |
 | DEBT-003 | Verify Pages release propagation and public market snapshot freshness | production gate | compare manifest/hash/snapshot IDs after deploy | OPEN / EXTERNAL |
+| DEBT-FJ-002 | FinancialJuice runtime bundle is not yet observed in Railway | production gate | configure reviewed sanitized bundle path and capture source-health/release evidence | OPEN / EXTERNAL |
 
 No implementation task in REQ-ADD-013..020 is marked PASS solely because a PR
 exists; each has local and remote evidence above. External debt must be closed

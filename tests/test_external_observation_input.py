@@ -29,6 +29,75 @@ def test_loads_only_public_safe_financialjuice_records(tmp_path):
     assert "body" not in accepted[0]
 
 
+def test_loads_public_safe_financialjuice_compound_envelope_without_transport_id(tmp_path):
+    path = tmp_path / "compound.json"
+    path.write_text(json.dumps({
+        "parse_status": "parsed",
+        "message_id": "private-mail-id-must-not-propagate",
+        "content_origin": "financialjuice",
+        "content_type": "breaking_news",
+        "compound": True,
+        "public_safe": True,
+        "item_count": 2,
+        "items": [
+            {
+                "item_id": "fj-item-1", "content_hash": "a" * 64,
+                "event_cluster_key": "fj-cluster-1", "candidate_event_type": "energy",
+                "original_headline": "Oil supply risk", "vendor_importance": 8,
+            },
+            {
+                "item_id": "fj-item-2", "content_hash": "b" * 64,
+                "event_cluster_key": "fj-cluster-2", "candidate_event_type": "policy",
+                "original_headline": "Export controls",
+            },
+        ],
+    }), encoding="utf-8")
+    accepted, rejected = load_external_observations(path)
+    assert [item["observation_id"] for item in accepted] == ["fj-item-1", "fj-item-2"]
+    assert rejected == 0
+    assert all(item["source"] == "financialjuice" for item in accepted)
+    assert all("message_id" not in item for item in accepted)
+
+
+def test_compound_envelope_count_mismatch_fails_closed(tmp_path):
+    path = tmp_path / "compound-invalid.json"
+    path.write_text(json.dumps({
+        "parse_status": "parsed", "content_origin": "financialjuice",
+        "public_safe": True, "item_count": 2, "items": [],
+    }), encoding="utf-8")
+    accepted, rejected = load_external_observations(path)
+    assert accepted == []
+    assert rejected == 1
+
+
+def test_unresolved_compound_envelope_does_not_emit_partial_observations(tmp_path):
+    path = tmp_path / "compound-unresolved.json"
+    path.write_text(json.dumps({
+        "parse_status": "compound_unresolved", "message_id": "private-id",
+        "content_origin": "financialjuice", "public_safe": True,
+        "item_count": 1, "items": [],
+    }), encoding="utf-8")
+    accepted, rejected = load_external_observations(path)
+    assert accepted == []
+    assert rejected == 1
+
+
+def test_compound_item_with_raw_private_field_is_rejected(tmp_path):
+    path = tmp_path / "compound-private.json"
+    path.write_text(json.dumps({
+        "parse_status": "parsed", "content_origin": "financialjuice",
+        "public_safe": True, "item_count": 1,
+        "items": [{
+            "item_id": "fj-item-private", "content_hash": "c" * 64,
+            "event_cluster_key": "fj-cluster-private", "candidate_event_type": "energy",
+            "original_headline": "Oil supply risk", "body": "raw private mail",
+        }],
+    }), encoding="utf-8")
+    accepted, rejected = load_external_observations(path)
+    assert accepted == []
+    assert rejected == 1
+
+
 def test_missing_or_malformed_input_is_explicitly_failed(tmp_path):
     missing = tmp_path / "missing.json"
     accepted, rejected = load_external_observations(missing)
