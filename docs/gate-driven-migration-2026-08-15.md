@@ -22,15 +22,15 @@ evidence.
 | P0-09 / P0-12 | REQ-ADD-039-T01 | Railway Gmail parses a bounded public-safe observation projection | `tests/test_railway_gmail_gateway.py` | 17 targeted tests pass; no raw body/sender/transport IDs in projection | duplicate and DLQ tests pass | PASS |
 | P0-09 / P0-12 | REQ-ADD-039-T02 | Authenticated `/external-observations` export and client | `tests/test_railway_observation_client.py` | signature, status, schema and private-field rejection tests pass | missing config remains fail-closed | PASS |
 | P0-09 / P0-12 | REQ-ADD-039-T03 | Scheduled delivery merges Railway and reviewed local observations | `tests/test_scheduled_delivery.py` plus external-input tests | 27 targeted/regression tests pass | local reviewed input remains usable when Railway is unavailable | PASS |
-| P0-24 / P0-29 | REQ-ADD-039-T04 | Gate-driven evidence and debt ledgers | this document and `docs/p0-traceability-2026-08-15.md` | PR #618 after main reconciliation: CodeQL, dependency review, SBOM and test-and-dry-run all passed (run `31833490570` / `31833490568`) | no production release or broadcast performed | PASS / LOCKED |
+| P0-24 / P0-29 | REQ-ADD-039-T04 | Gate-driven evidence and debt ledgers | this document and canonical `docs/p0-requirement-traceability.md` | PR #618 after main reconciliation: CodeQL, dependency review, SBOM and test-and-dry-run all passed (run `31833490570` / `31833490568`) | no production release or broadcast performed | PASS / LOCKED |
 
 `PASS` above is limited to the listed implementation and tests. It is not a
 claim that the entire product or all original P0 DoDs are complete.
 
-The full P0-01..P0-29 requirement index, with unique DoD IDs and explicit
-`NEEDS_REVERIFY` rows, is maintained in
-`docs/p0-traceability-2026-08-15.md` and covered by
-`tests/test_p0_traceability.py`.
+The full P0-01..P0-29 requirement index and its current external-gate debt are
+maintained in the canonical `docs/p0-requirement-traceability.md` registry and
+covered by `tests/test_p0_traceability_registry.py`; this checkpoint does not
+create a second registry.
 
 ## Integration matrix (current evidence)
 
