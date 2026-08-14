@@ -12,7 +12,7 @@ evidence.
 | Remote main at audit start | `587a27b155b92e9614fa5485d632fde28c087a64` |
 | Audit branch base | `main` (reconciled with merge commit `420e53f`) |
 | Current audit branch | `feat/REQ-ADD-039-gate-migration-audit` |
-| Current HEAD | `9bc16a3c19677687959350f01f1252e2640aaa82` (`test(REQ-ADD-039): record full regression evidence`) |
+| Current HEAD | `400dd62df87093d9a932f2fcd05bf99c22f636d8` (`docs(REQ-ADD-039): reconcile full regression checkpoint`) |
 | Working tree | Clean at the snapshot; no uncommitted or untracked product changes. |
 | Historical stack observed | PRs #566–#617 are already ancestors of current `main`; they are historical context, not an outstanding merge queue. |
 
@@ -28,7 +28,7 @@ notification was touched.
 | P0-09 / P0-12 | REQ-ADD-039-T01 | Railway Gmail parses a bounded public-safe observation projection | `tests/test_railway_gmail_gateway.py` | 17 targeted tests pass; no raw body/sender/transport IDs in projection | duplicate and DLQ tests pass | PASS |
 | P0-09 / P0-12 | REQ-ADD-039-T02 | Authenticated `/external-observations` export and client | `tests/test_railway_observation_client.py` | signature, status, schema and private-field rejection tests pass | missing config remains fail-closed | PASS |
 | P0-09 / P0-12 | REQ-ADD-039-T03 | Scheduled delivery merges Railway and reviewed local observations | `tests/test_scheduled_delivery.py` plus external-input tests | 27 targeted/regression tests pass | local reviewed input remains usable when Railway is unavailable | PASS |
-| P0-24 / P0-29 | REQ-ADD-039-T04 | Gate-driven evidence and debt ledgers | this document and canonical `docs/p0-requirement-traceability.md` | PR #618 at HEAD `9bc16a3`: quality run `31837821774` and security run `31837821805` passed (CodeQL, dependency review, SBOM, full test-and-dry-run) | no production release or broadcast performed | PASS / LOCKED |
+| P0-24 / P0-29 | REQ-ADD-039-T04 | Gate-driven evidence and debt ledgers | this document and canonical `docs/p0-requirement-traceability.md` | PR #618 at HEAD `400dd62`: quality run `31838154712` and security run `31838154684` passed (CodeQL, dependency review, SBOM, full test-and-dry-run) | no production release or broadcast performed | PASS / LOCKED |
 
 `PASS` above is limited to the listed implementation and tests. It is not a
 claim that the entire product or all original P0 DoDs are complete.
