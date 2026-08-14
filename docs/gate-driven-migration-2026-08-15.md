@@ -266,3 +266,8 @@ The migration overlay therefore leaves the overall project **INCOMPLETE**.
 `PASS` is only asserted for the scoped local task above; it is not a claim of
 full P0 completion or production acceptance. Any future change to a locked
 area must reopen its task, rerun its original tests and record new evidence.
+
+Post-push evidence for this reconciliation commit (`4dec871`): PR #618
+quality `test-and-dry-run` run `31848719631` and security run `31848719725`
+both passed (CodeQL, dependency review and SBOM). The PR remains open and
+unmerged; these checks do not substitute for post-merge production acceptance.
