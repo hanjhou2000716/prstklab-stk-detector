@@ -9,7 +9,7 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/gmail-observability-contract` |
-| HEAD | working tree for Gmail observability task; evidence commit follows |
+| HEAD | `9bd0915` (`feat(P0-24): expose Gmail watch observability`) |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current3` (pre-task) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1144 passed, 1 skipped` at `9f6a6d1` using an isolated Windows temp directory; one OneDrive-only run was rejected by filesystem locks |
@@ -197,6 +197,11 @@ present; it does not imply that an external production gate has passed.
   an inherited Windows `PermissionError`; no product assertion failed.
 - This is local contract evidence only. OAuth/PubSub configuration, Railway
   runtime health and controlled Telegram delivery remain external gates.
+
+Remote evidence: PR [#583](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/583)
+passed test-and-dry-run, CodeQL, dependency-review and SBOM checks for
+`9bd0915`. This does not promote the Gmail task to Railway production PASS;
+OAuth/PubSub and controlled delivery evidence are still external.
 
 ## Gate decision
 
