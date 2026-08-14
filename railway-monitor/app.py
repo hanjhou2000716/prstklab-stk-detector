@@ -1897,6 +1897,9 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
             _GDELT_BACKOFF_UNTIL = time.monotonic() + delay
             response.raise_for_status()
         response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, dict) or not isinstance(payload.get("articles"), list):
+            raise ValueError("invalid GDELT payload")
         _GDELT_FAILURE_COUNT = 0
         _GDELT_BACKOFF_UNTIL = 0.0
         _GDELT_LAST_FETCH_STATE = "live"
@@ -1913,7 +1916,7 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
         raise
     cutoff = datetime.now(timezone.utc).timestamp() - fresh_age_seconds
     articles: list[DiscoveryArticle] = []
-    for row in response.json().get("articles", []):
+    for row in payload["articles"]:
         title = str(row.get("title") or "").strip()
         # GDELT DOC commonly provides only a title, but some response modes and
         # cached adapters include a short description/snippet.  Preserve it so

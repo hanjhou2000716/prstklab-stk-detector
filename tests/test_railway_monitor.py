@@ -794,6 +794,49 @@ def test_gdelt_rate_limit_fallback_is_marked_stale_and_not_live(monkeypatch, tmp
     assert monitor._GDELT_LAST_FETCH_ERROR == "HTTP_429"
 
 
+def test_gdelt_invalid_json_uses_recent_cache_and_stays_failed(monkeypatch, tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    payload = [{
+        "title": "Iran talks",
+        "url": "https://www.reuters.com/a",
+        "domain": "reuters.com",
+        "seen_at": "2026-08-09T01:00:00+00:00",
+    }]
+    store.write_cache("gdelt-success", payload)
+    store.connection.execute(
+        "UPDATE cache SET refreshed_at=? WHERE cache_key=?",
+        ((monitor.datetime.now(monitor.timezone.utc) - monitor.timedelta(minutes=20)).isoformat(), "gdelt-success"),
+    )
+    store.connection.commit()
+
+    class Response:
+        status_code = 200
+        headers = {}
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            raise monitor.json.JSONDecodeError("invalid", "<html>", 0)
+
+    class Client:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def get(self, *_args, **_kwargs):
+            return Response()
+
+    monkeypatch.setattr(monitor.httpx, "AsyncClient", lambda **_kwargs: Client())
+    monitor._GDELT_BACKOFF_UNTIL = 0.0
+    articles = asyncio.run(monitor.fetch_gdelt_articles(store))
+    assert len(articles) == 1
+    assert monitor._GDELT_LAST_FETCH_STATE == "stale_cache"
+    assert monitor._GDELT_LAST_FETCH_ERROR == "invalid_json"
+
+
 def test_monitor_health_forbidden_is_degraded_but_nonfatal(monkeypatch):
     class Response:
         status_code = 403
