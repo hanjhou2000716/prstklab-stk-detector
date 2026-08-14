@@ -9,12 +9,12 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/railway-runtime-config-boundary` |
-| HEAD | `c503739` (`feat(REQ-ADD-006): extract Railway dispatch transport`) |
-| Recovery checkpoint | `checkpoint/migration-2026-08-14-current15` (post-task snapshot) |
+| HEAD | `0c09a35` (`feat(REQ-ADD-007): extract Railway poll configuration`) |
+| Recovery checkpoint | `checkpoint/migration-2026-08-14-current16` (post-task snapshot) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1171 passed, 1 skipped` at the REQ-ADD-007 working tree using `.tmp-migration-full-current15`; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
 | Static checks | Changed-file Ruff, Mypy, compileall and `node --check site/app.js` passed at `7228915`; full legacy Railway lint remains a separate debt |
-| Remote PR | #584 remains open and stacked on #583; REQ-ADD-006 commit `c503739` is pushed and has a passing remote gate; REQ-ADD-007 is locally verified and awaits its atomic commit/remote gate |
+| Remote PR | #584 remains open and stacked on #583; REQ-ADD-007 commit `0c09a35` is pushed and its required quality/security checks pass |
 
 ## Current task reconciliation
 
@@ -291,6 +291,12 @@ OAuth/PubSub and controlled delivery evidence are still external.
   front-end syntax checks pass for the extracted module and tests.
 - Railway restart, source polling, `/health` and delivery evidence remain
   external; local status is PASS / external NEEDS_REVERIFY.
+
+Remote evidence: PR [#584](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/584)
+at `0c09a35` passed test-and-dry-run (run `31772008639`), CodeQL/security
+(`31772008655`, analysis `94679829440`), dependency-review and SBOM. This is
+repository CI evidence only; Railway runtime and controlled delivery remain
+external gates.
 
 ## Gate decision
 
