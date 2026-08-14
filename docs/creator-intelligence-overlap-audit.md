@@ -22,6 +22,7 @@ new parallel implementation.  The attachment requirements map as follows:
 | Creator normalization, public artifact and release lineage | `src/creator_intelligence_pipeline.py`, `src/creator_artifact.py`, `src/creator_release.py` | creator artifact/release and briefing tests | PASS / LOCKED |
 | FinancialJuice compound parsing and vendor-priority boundary | `src/financialjuice_contract.py`, `src/external_source_parsers.py` | compound, 7/8/9/10 priority and replay tests | PASS / LOCKED |
 | FinancialJuice sanitized scheduled ingress | `src/external_observation_input.py`, `src/scheduled_delivery.py`, `.github/workflows/scheduled-brief.yml` | privacy rejection, source-health and snapshot-binding tests | partially_integrated (Railway bundle evidence pending) |
+| FinancialJuice release lineage and Mini App panel | `src/release_manifest.py`, `src/release_gate.py`, `site/index.html`, `site/app.js` | count/hash/source mismatch fixtures; 78 targeted and 1144 full local regression | NEEDS_REVERIFY (Pages browser evidence pending) |
 | FinancialJuice + news event unification | `src/external_event_pipeline.py`, `src/intelligence_pipeline.py` | event fan-out, evidence and lifecycle tests | PASS / LOCKED |
 | Market News provider registry and URL contract | `src/news_intelligence.py`, `schemas/news-story.schema.json`, `schemas/news-intelligence.schema.json` | provider/domain, unknown URL, schema and dedup tests | PASS / LOCKED |
 | Official news-feed adapters (TWSE/MOPS/SEC/Fed/Nasdaq) | `src/news_feed_adapters.py`; isolated TWSE/MOPS/SEC/Fed adapters; Nasdaq remains explicitly disabled until a stable documented endpoint is configured | parser, timeout/429 isolation and catalog tests; live feed evidence pending | partially_integrated |
@@ -67,6 +68,12 @@ order is registry/schema first, provider adapters second, then delivery and UI.
 The News Intelligence contract was added in PR #577's continuation branch;
 the branch-level CI gate passed. A Pages release and browser verification are
 still required before the two `NEEDS_REVERIFY` rows can be locked.
+
+Sanitized FinancialJuice observations are now bound to the same release
+manifest as market/research/event artifacts. The Mini App shows their source
+and whether official confirmation or market synchronization is still pending.
+This is a local contract lock only; Railway bundle and Telegram acceptance
+remain external gates.
 
 ## Failure and rollback
 
