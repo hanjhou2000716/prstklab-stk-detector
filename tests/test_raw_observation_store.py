@@ -1,8 +1,36 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from src.raw_observation_store import RawObservationStore, observation_metadata
+
+
+def test_raw_store_retries_transient_windows_file_lock(tmp_path, monkeypatch) -> None:
+    store = RawObservationStore(tmp_path / "raw")
+    original_replace = Path.replace
+    attempts = {"count": 0}
+
+    def flaky_replace(self: Path, target: Path):
+        attempts["count"] += 1
+        if attempts["count"] == 1:
+            raise PermissionError(13, "temporarily locked")
+        return original_replace(self, target)
+
+    monkeypatch.setattr(Path, "replace", flaky_replace)
+    row = store.record(
+        provider="twse",
+        endpoint="https://example.test/twse",
+        fetched_at="2026-08-05T09:00:00+08:00",
+        request_id="retry-1",
+        payload={"value": 1},
+        http_status=200,
+        parser_version="1",
+        parsing_status="parsed",
+    )
+
+    assert attempts["count"] == 2
+    assert store.get(row.observation_id) == row
 
 
 def test_raw_store_is_idempotent_and_content_addressed(tmp_path) -> None:

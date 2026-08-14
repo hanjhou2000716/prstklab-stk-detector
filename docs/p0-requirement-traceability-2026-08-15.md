@@ -15,7 +15,7 @@ inferred from a green pull request.
 | Migration base | `cea8cd62ace11e52cca9345828d92b818c0aaf48` (`fix: enforce external event privacy boundary`) |
 | Recovery checkpoint | tag `migration-checkpoint-20260814-8e1ad7f` |
 | Working tree | tracked files clean before this documentation change; `git diff --check` required before commit |
-| Local regression | 1,223 passed in an isolated system temp directory |
+| Local regression | 1,224 passed in an isolated system temp directory |
 | Runtime audit | `ok=true`, no invariant issues; production warnings remain explicit |
 | Delivery smoke | fail-closed because local `TELEGRAM_CHAT_IDS` is intentionally absent |
 | Production release | not claimed; current checked-in manifest is invalid/old and must not be promoted |
@@ -27,6 +27,13 @@ configuration error `TELEGRAM_CHAT_IDS is empty`; no production notification was
 sent. The runtime warnings (market source gaps, research building state, and
 missing/not-ready production snapshots) remain visible and are not relabeled as
 success.
+
+Post-REQ-ADD-032 verification: the raw-observation retry fixture passed alongside
+the production-evidence and market-refresh persistence tests (17 passed); Ruff,
+Mypy, compileall and the isolated full regression all passed (1,224 passed).
+The retry is bounded and only applies to transient Windows file locks and SQLite
+busy/locked errors; non-retryable failures still return the existing unavailable
+state and keep the alert/release gates fail-closed.
 
 ## Requirement / evidence matrix
 

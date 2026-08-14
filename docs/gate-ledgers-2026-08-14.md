@@ -28,6 +28,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | REQ-ADD-029 | Intelligence direct-input privacy boundary | `src/intelligence_pipeline.py`, `tests/test_intelligence_pipeline_external_risk.py`, `docs/req-add-029-intelligence-privacy-boundary.md` | targeted intelligence/contract suite 11 passed; full regression 1222 passed; Ruff/Mypy/compileall pass | direct compound input strips transport/raw fields; unresolved envelopes do not become events | PASS / LOCKED (branch evidence; production acceptance remains external) |
 | REQ-ADD-030 | External event pipeline privacy boundary | `src/external_event_pipeline.py`, `tests/test_external_event_pipeline.py`, `docs/req-add-030-external-event-privacy-boundary.md` | targeted external/privacy suite 21 passed; full isolated regression 1223 passed; Ruff/Mypy/compileall pass | unresolved compound IDs and generic Gmail transport IDs never enter output or evidence | PASS / LOCKED (branch evidence; production acceptance remains external) |
 | REQ-ADD-031 | Gate-Driven P0 requirement traceability matrix | `docs/p0-requirement-traceability-2026-08-15.md` | `git diff --check`; PR #609 quality/security CI green | documentation-only; no runtime or release artifact change | PASS / LOCKED (documentation evidence; production debt remains external) |
+| REQ-ADD-032 | raw observation persistence retries for transient Windows/SQLite locks | `src/raw_observation_store.py` | targeted 17 passed; Ruff/Mypy/compileall pass; full regression 1224 passed | no schema or release artifact change; non-retryable errors remain fail-closed | PASS / LOCKED (local evidence; production acceptance remains external) |
 
 ## Regression ledger
 
@@ -39,6 +40,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | REG-004 | REQ-ADD-028 | compound FinancialJuice envelope was rejected by the scheduled observation loader | loader accepted only flat `observations` arrays | envelope flattening plus fail-closed item contract; 19 targeted and 1221 full tests | CLOSED |
 | REG-005 | REQ-ADD-029 | direct intelligence callers could retain envelope transport IDs | compound flattening copied `message_id` into event observations | shared defensive sanitizer; 11 targeted tests | CLOSED |
 | REG-006 | REQ-ADD-030 | direct external-event callers could expose transport IDs in observation/evidence output | pipeline accepted raw records and used `gmail_message_id` as an observation fallback | recursive public-field sanitizer plus unresolved-ID suppression; 21 targeted and 1223 full tests | CLOSED |
+| REG-007 | REQ-ADD-032 | transient Windows/OneDrive file locks could turn raw observation writes into `unavailable` | atomic replace had no bounded retry; concurrent SQLite writers had no busy backoff | bounded file-lock retry, SQLite busy timeout/backoff; 17 targeted and 1224 full tests | CLOSED |
 
 ## Completion debt ledger
 
