@@ -52,3 +52,44 @@ def test_fetch_returns_public_dict_without_live_network():
 
 def test_fetch_fails_closed_when_url_is_missing():
     assert asyncio.run(market_sync.fetch_market_sync_snapshot(environ={})) == {}
+
+
+def test_observation_distinguishes_configuration_from_no_event():
+    observation = asyncio.run(market_sync.fetch_market_sync_observation(environ={}))
+    assert observation.status == "configuration_missing"
+    assert observation.snapshot == {}
+    assert observation.health()["error"] == "market_snapshot_url_missing"
+
+
+def test_observation_marks_valid_empty_snapshot_as_available():
+    observation = asyncio.run(
+        market_sync.fetch_market_sync_observation(
+            environ={"MARKET_SNAPSHOT_URL": "https://x.test/market.json"},
+            client_factory=Client,
+        )
+    )
+    assert observation.status == "available"
+    assert observation.error is None
+    assert observation.health()["record_count"] == 0
+
+
+class InvalidResponse(Response):
+    def json(self):
+        return ["not", "an", "object"]
+
+
+class InvalidClient(Client):
+    async def get(self, url):
+        self.url = url
+        return InvalidResponse()
+
+
+def test_observation_marks_non_object_payload_as_invalid():
+    observation = asyncio.run(
+        market_sync.fetch_market_sync_observation(
+            environ={"MARKET_SNAPSHOT_URL": "https://x.test/market.json"},
+            client_factory=InvalidClient,
+        )
+    )
+    assert observation.status == "invalid_payload"
+    assert observation.error == "payload_not_object"
