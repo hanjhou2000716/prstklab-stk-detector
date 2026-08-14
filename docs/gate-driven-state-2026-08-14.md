@@ -497,6 +497,12 @@ dependency-review and SBOM. This confirms repository CI only; live Pages
 propagation and market-source freshness remain external `NEEDS_REVERIFY`
 gates.
 
+Remote evidence: PR [#598](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/598)
+passed `test-and-dry-run` (run `31799529570`, job `94763972970`), CodeQL,
+dependency-review and SBOM. The ledger documentation is CI-verified; the
+explicitly listed external completion debt remains open until production
+acceptance evidence is captured.
+
 Remote evidence: PR [#588](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/588)
 passed `test-and-dry-run` (run `31789498655`), CodeQL, dependency-review and
 SBOM. This confirms repository CI for the stacked boundary only; Railway
