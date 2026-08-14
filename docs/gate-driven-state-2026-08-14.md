@@ -370,6 +370,11 @@ Traceability: `REQ-ADD-011` → `railway-monitor/delivery_store.py`,
 suite above. Preservation contracts for the existing `SeenStore` API remain
 covered by `tests/test_railway_monitor.py`.
 
+Remote evidence: PR [#591](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/591)
+passed `test-and-dry-run` (run `31792693278`), CodeQL, dependency-review and
+SBOM. This confirms repository CI only; live Railway callback permission and
+status remain external acceptance gates.
+
 Remote evidence: PR [#588](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/588)
 passed `test-and-dry-run` (run `31789498655`), CodeQL, dependency-review and
 SBOM. This confirms repository CI for the stacked boundary only; Railway
