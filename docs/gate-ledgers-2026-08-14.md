@@ -21,6 +21,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | REQ-ADD-023 | GDELT source-health projection | `railway-monitor/gdelt_health.py`, `railway-monitor/app.py` | targeted 116; PR #600 CI green | no-event vs scan-failed vs stale-cache | PASS / LOCKED |
 | REQ-ADD-024 | health baseline state | `railway-monitor/app.py` | targeted 117; PR #601 CI green | first-cycle values remain not_checked | PASS / LOCKED |
 | REQ-ADD-025 | Mini App health baseline labels | `site/app.js`, `tests/test_mini_app_layout.py` | targeted 27; node syntax check; PR #603 CI green (run `31804138036` / `31804138042`) | not_checked is not rendered as a data gap | PASS / LOCKED |
+| MIGRATION-001 | Gate-Driven recovery snapshot | `docs/gate-migration-snapshot-2026-08-14.md` | repository state, offline runtime audit, production E2E, PR #602 CI green | snapshot is documentation-only and preserves external debt | PASS / LOCKED |
 
 ## Regression ledger
 
