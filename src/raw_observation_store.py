@@ -11,13 +11,22 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+import time
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from src.atomic_file import replace_with_retry
+
 SCHEMA_VERSION = 1
+_SQLITE_RETRY_ATTEMPTS = 3
+
+
+def _sqlite_retryable(exc: sqlite3.OperationalError) -> bool:
+    message = str(exc).lower()
+    return "locked" in message or "busy" in message
 
 
 def _canonical_bytes(payload: Any) -> bytes:
@@ -58,8 +67,9 @@ class RawObservationStore:
         self._initialize()
 
     def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(self.db_path)
+        connection = sqlite3.connect(self.db_path, timeout=5.0)
         connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA busy_timeout=5000")
         connection.execute("PRAGMA journal_mode=WAL")
         connection.execute("PRAGMA foreign_keys=ON")
         return connection
@@ -122,37 +132,44 @@ class RawObservationStore:
             temporary = destination.with_name(f".{destination.name}.{observation_id}.tmp")
             temporary.write_bytes(payload_bytes)
             try:
-                temporary.replace(destination)
+                replace_with_retry(temporary, destination)
             finally:
                 if temporary.exists():
                     temporary.unlink()
         created_at = datetime.now(UTC).isoformat()
-        with self._connect() as connection:
-            connection.execute(
-                """
-                INSERT OR IGNORE INTO observations (
-                    observation_id, provider, endpoint, fetched_at, request_id,
-                    http_status, payload_hash, raw_payload_location,
-                    parser_version, parsing_status, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    observation_id,
-                    provider,
-                    endpoint,
-                    fetched_at,
-                    request_id,
-                    http_status,
-                    payload_hash,
-                    str(relative).replace("\\", "/"),
-                    parser_version,
-                    parsing_status,
-                    created_at,
-                ),
-            )
-            row = connection.execute(
-                "SELECT * FROM observations WHERE observation_id = ?", (observation_id,)
-            ).fetchone()
+        for attempt in range(_SQLITE_RETRY_ATTEMPTS):
+            try:
+                with self._connect() as connection:
+                    connection.execute(
+                        """
+                        INSERT OR IGNORE INTO observations (
+                            observation_id, provider, endpoint, fetched_at, request_id,
+                            http_status, payload_hash, raw_payload_location,
+                            parser_version, parsing_status, created_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            observation_id,
+                            provider,
+                            endpoint,
+                            fetched_at,
+                            request_id,
+                            http_status,
+                            payload_hash,
+                            str(relative).replace("\\", "/"),
+                            parser_version,
+                            parsing_status,
+                            created_at,
+                        ),
+                    )
+                    row = connection.execute(
+                        "SELECT * FROM observations WHERE observation_id = ?", (observation_id,)
+                    ).fetchone()
+                break
+            except sqlite3.OperationalError as exc:
+                if not _sqlite_retryable(exc) or attempt == _SQLITE_RETRY_ATTEMPTS - 1:
+                    raise
+                time.sleep(0.05 * (2**attempt))
         if row is None:  # pragma: no cover - defensive database failure
             raise RuntimeError("observation row was not created")
         return self._row(row)

@@ -16,6 +16,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from src.atomic_file import replace_with_retry
+
 ASSETS = ("app.js", "styles.css", "assets/hero-prism-cover.png")
 PLACEHOLDER = "__ASSET_VERSION__"
 
@@ -36,7 +38,7 @@ def _atomic_write(path: Path, content: str) -> None:
             handle.write(content)
             handle.flush()
             os.fsync(handle.fileno())
-        Path(name).replace(path)
+        replace_with_retry(Path(name), path)
     except Exception:
         Path(name).unlink(missing_ok=True)
         raise

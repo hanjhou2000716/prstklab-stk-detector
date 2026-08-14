@@ -3,9 +3,52 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
+from pathlib import Path
 from typing import Any
-from src.creator_provider_registry import creator_ids, get_creator_provider
+
+try:
+    from src.creator_provider_registry import creator_ids, get_creator_provider
+except ModuleNotFoundError as error:  # pragma: no cover - exercised in the Railway root image
+    if error.name not in {"src", "src.creator_provider_registry"}:
+        raise
+    # Railway's current root directory is ``railway-monitor`` and therefore
+    # does not contain the repository-level ``src`` package.  Load the
+    # build-time public registry bundle instead of crashing the Gmail ingress.
+    # This bundle contains provider metadata only; parsing and policy remain
+    # owned by the canonical repository modules when the full checkout exists.
+    _bundle_path = Path(__file__).with_name("creator_providers.json")
+    try:
+        _bundle = json.loads(_bundle_path.read_text(encoding="utf-8"))
+        _entries = _bundle.get("providers") if isinstance(_bundle, dict) else None
+        if not isinstance(_entries, list) or not _entries:
+            raise ValueError("creator provider bundle is empty")
+        _providers: dict[str, tuple[str, ...]] = {}
+        for _entry in _entries:
+            if not isinstance(_entry, dict):
+                raise ValueError("creator provider bundle entry is invalid")
+            _creator_id = str(_entry.get("creator_id") or "").strip().casefold()
+            _rules = _entry.get("email_identity_rules")
+            _markers = _rules.get("markers") if isinstance(_rules, dict) else None
+            if not _creator_id or not isinstance(_markers, list) or not _markers:
+                raise ValueError("creator provider bundle entry is incomplete")
+            _providers[_creator_id] = tuple(str(item).strip().casefold() for item in _markers if str(item).strip())
+        if len(_providers) != len(_entries):
+            raise ValueError("creator provider bundle contains duplicate ids")
+    except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
+        raise RuntimeError("creator provider bundle unavailable") from exc
+
+    class _BundledProvider:
+        def __init__(self, markers: tuple[str, ...]) -> None:
+            self.markers = markers
+
+    def creator_ids(*, enabled_only: bool = False) -> tuple[str, ...]:
+        del enabled_only
+        return tuple(_providers)
+
+    def get_creator_provider(creator_id: str) -> _BundledProvider | None:
+        return _BundledProvider(_providers[creator_id]) if creator_id in _providers else None
 
 KNOWN_SOURCES = {"financialjuice", *creator_ids()}
 DLQ_STATES = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}

@@ -17,6 +17,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from src.artifact_contract import validate_release
+from src.atomic_file import replace_with_retry
 from src.creator_artifact import validate_creator_artifact
 from src.creator_release import validate_creator_release
 from src.production_acceptance import (
@@ -304,7 +305,7 @@ def _normalize_artifacts(loaded: dict[str, dict[str, Any]]) -> list[str]:
 def _write_normalized_artifact(path: Path, value: dict[str, Any]) -> None:
     temporary = path.with_name(f".{path.name}.normalize.tmp")
     temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
+    replace_with_retry(temporary, path)
 
 
 def build_release_manifest(
@@ -672,7 +673,7 @@ def write_release_manifest(manifest: dict[str, Any], output: Path | str) -> None
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_name(f".{destination.name}.tmp")
     temporary.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, destination)
+    replace_with_retry(temporary, destination)
 
 
 def verify_release_files(manifest: dict[str, Any], *, root: Path | str = Path(".")) -> list[str]:
