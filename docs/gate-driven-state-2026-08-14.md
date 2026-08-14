@@ -8,8 +8,8 @@ claims inferred from branch names or previous comments.
 
 | Field | Evidence |
 |---|---|
-| Branch | `feat/creator-observability-contract` |
-| HEAD | `712c7a7` (`feat(P0-24): expose Creator source observability`; documentation evidence commit follows) |
+| Branch | `feat/news-observability-contract` |
+| HEAD | `5d31f79` (`feat(P0-24): expose official news adapter observability`; documentation evidence commit follows) |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current3` (pre-task) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1144 passed, 1 skipped` at `9f6a6d1` using an isolated Windows temp directory; one OneDrive-only run was rejected by filesystem locks |
@@ -51,6 +51,7 @@ present; it does not imply that an external production gate has passed.
 | REQ-P0-24-DOD-02 | Mini App renders FinancialJuice observability and notification pending reason | `site/app.js`, `tests/test_mini_app_assets.py` | Mini App asset contract included in 52 targeted tests | UI shows received time, >=8 count, pending clusters and parser errors; production browser evidence pending | source-health state remains fail-closed | NEEDS_REVERIFY (Pages browser) |
 | REQ-P0-24-DOD-03 | Creator source rows expose privacy-safe receive/parse/error/delivery state | `src/creator_source_health.py`, `schemas/source-health.schema.json` | Creator/source-health/artifact suite (91 targeted passed) | timestamps/counts only; Gmail transport IDs are not copied | configuration missing and parser failure remain distinct | PASS (local) |
 | REQ-P0-24-DOD-04 | Mini App renders Creator observability beside each optional provider | `site/app.js`, `tests/test_mini_app_assets.py` | asset contract plus 91 targeted tests | creator row remains optional and cannot become core market evidence | Pages browser evidence pending | NEEDS_REVERIFY (Pages browser) |
+| REQ-P0-24-DOD-05 | Official News adapters expose fetch/parse/error/latency state per provider | `src/news_feed_adapters.py` | `tests/test_news_feed_adapters.py`, News Intelligence regression (45 targeted passed) | each provider remains isolated; 429 is recorded without retry; no raw response is published | failed provider does not suppress other market stories | PASS (local) |
 
 ## Regression ledger
 
@@ -169,6 +170,16 @@ present; it does not imply that an external production gate has passed.
   remote test-and-dry-run, CodeQL, dependency-review and SBOM checks all pass.
   It remains open and stacked on #580; this is not Railway or Pages
   production acceptance.
+
+### Migration audit update (2026-08-14, official News adapter observability)
+
+- TWSE/MOPS/SEC/Fed adapter health rows now include privacy-safe checked and
+  parsed timestamps, parser-error count and bounded latency. HTTP 429 remains a
+  rate-limited provider result without retrying or aborting other providers.
+- Targeted News adapter/contract suite: `45 passed`; isolated full regression:
+  `1147 passed`; Ruff, Mypy, compileall and node syntax checks pass.
+- This is local adapter evidence only. Live provider freshness, Pages release
+  and Railway/Telegram production evidence remain external.
 
 ## Gate decision
 
