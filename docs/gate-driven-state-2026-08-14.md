@@ -370,6 +370,22 @@ Traceability: `REQ-ADD-011` → `railway-monitor/delivery_store.py`,
 suite above. Preservation contracts for the existing `SeenStore` API remain
 covered by `tests/test_railway_monitor.py`.
 
+### Migration audit update (2026-08-14, REQ-ADD-015 Railway dispatch-payload boundary)
+
+- `railway-monitor/dispatch_payload.py` now owns canonical repository-dispatch
+  payload construction and HMAC signing; the monitor retains compatibility
+  wrappers and injects canonical-key/source-normalization callbacks.
+- Dispatch-payload plus health/monitor suite: `88 passed`; changed-module Ruff
+  and compile checks pass. Existing trace, source and release-gate fields are
+  preserved.
+- Live signed dispatch receipt and Telegram delivery remain external
+  `NEEDS_REVERIFY` gates.
+
+Traceability: `REQ-ADD-015` -> `railway-monitor/dispatch_payload.py`,
+`railway-monitor/app.py`, `tests/test_railway_dispatch_payload.py` -> targeted
+suite above. Existing repository-dispatch and HMAC regressions remain covered
+by `tests/test_railway_monitor.py`.
+
 Remote evidence: PR [#591](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/591)
 passed `test-and-dry-run` (run `31792693278`), CodeQL, dependency-review and
 SBOM. This confirms repository CI only; live Railway callback permission and

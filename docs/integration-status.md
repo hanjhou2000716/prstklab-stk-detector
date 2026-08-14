@@ -469,3 +469,11 @@ keeps the public compatibility function and its bounded state, while the
 extracted boundary receives an explicit health updater and HTTP client factory
 for deterministic tests. Status is **partially_integrated** until the stacked
 PR is merged and live Railway callback behaviour is reverified.
+
+## Railway dispatch-payload boundary
+
+`railway-monitor/dispatch_payload.py` owns canonical repository-dispatch body
+construction and HMAC signing. The monitor keeps compatibility wrappers while
+injecting canonical-key, trace and source-normalization callbacks. Status is
+**partially_integrated** until the stacked PR is merged and a live signed
+dispatch receipt is reverified.
