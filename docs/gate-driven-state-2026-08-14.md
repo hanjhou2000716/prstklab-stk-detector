@@ -14,7 +14,7 @@ claims inferred from branch names or previous comments.
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1144 passed, 1 skipped` at `9f6a6d1` using an isolated Windows temp directory; one OneDrive-only run was rejected by filesystem locks |
 | Static checks | Ruff, Mypy, compileall and `node --check site/app.js` passed at `9f6a6d1` |
-| Remote PR | [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578), open; latest remote checks must be re-run for `9f6a6d1` |
+| Remote PR | [#579](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/579), open; test-and-dry-run, CodeQL, dependency-review and SBOM pass for `763c7c4` |
 
 ## Current task reconciliation
 
@@ -76,8 +76,8 @@ present; it does not imply that an external production gate has passed.
   News snapshot before rendering either tab, including last-good fallback.
 - Targeted release/news/Mini App/delivery-gate suite: `63 passed, 1 skipped`; full local regression: `1133 passed,
   1 skipped`; Ruff, Mypy, compile and `node --check` pass.
-- PR [#578](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/578)
-  required checks pass for `8df2b0f` (test-and-dry-run, CodeQL, dependency review,
+- PR [#579](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/579)
+  required checks pass for `763c7c4` (test-and-dry-run, CodeQL, dependency review,
   SBOM and duplicate CodeQL check). Pages/Railway/Telegram production acceptance remains
   external and fail-closed.
 
