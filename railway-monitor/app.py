@@ -16,6 +16,7 @@ import logging
 import os
 import re
 import sqlite3
+import sys
 import threading
 import time
 import unicodedata
@@ -85,6 +86,20 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     _dispatch_module = module_from_spec(_dispatch_spec)
     _dispatch_spec.loader.exec_module(_dispatch_module)
     send_repository_payload = _dispatch_module.dispatch_repository_payload
+
+try:
+    from poll_config import load_poll_settings
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _poll_config_spec = spec_from_file_location(
+        "railway_poll_config",
+        Path(__file__).with_name("poll_config.py"),
+    )
+    if _poll_config_spec is None or _poll_config_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/poll_config.py") from None
+    _poll_config_module = module_from_spec(_poll_config_spec)
+    sys.modules[_poll_config_spec.name] = _poll_config_module
+    _poll_config_spec.loader.exec_module(_poll_config_module)
+    load_poll_settings = _poll_config_module.load_poll_settings
 
 
 def _delivery_shared_secret() -> str:
@@ -2209,19 +2224,17 @@ def start_health_server() -> None:
 
 
 async def monitor_forever() -> None:
-    jin10_token = configured("JIN10_MCP_TOKEN")
-    github_token = configured("GITHUB_DISPATCH_TOKEN")
-    repository = configured("GITHUB_REPOSITORY")
-    shared_secret = configured("EXTERNAL_ALERT_SHARED_SECRET")
-    interval = max(60, int(os.environ.get("JIN10_POLL_SECONDS", "120")))
-    limit = min(100, max(1, int(os.environ.get("JIN10_FLASH_LIMIT", "30"))))
-    # One event cooldown is shared by Jin10, GDELT and the durable ledger.
-    # The legacy category-specific variable is intentionally ignored so an
-    # old Railway setting cannot silently restore a two-hour cooldown.
-    cooldown = EVENT_COOLDOWN_SECONDS
-    bootstrap = os.environ.get("JIN10_INITIAL_BACKFILL", "false").lower() == "true"
-    gdelt_interval = max(900, int(os.environ.get("GDELT_POLL_SECONDS", "900")))
-    gdelt_enabled = os.environ.get("GDELT_DISCOVERY_ENABLED", "true").lower() == "true"
+    settings = load_poll_settings(configured=configured, cooldown_seconds=EVENT_COOLDOWN_SECONDS)
+    jin10_token = settings.jin10_token
+    github_token = settings.github_token
+    repository = settings.repository
+    shared_secret = settings.shared_secret
+    interval = settings.interval
+    limit = settings.limit
+    cooldown = settings.cooldown
+    bootstrap = settings.bootstrap
+    gdelt_interval = settings.gdelt_interval
+    gdelt_enabled = settings.gdelt_enabled
     update_health("gdelt", enabled=gdelt_enabled, poll_seconds=gdelt_interval,
                   status="disabled" if not gdelt_enabled else "not_checked")
     store = SeenStore(Path(os.environ.get("MONITOR_STATE_PATH", "/data/jin10-monitor.sqlite3")))

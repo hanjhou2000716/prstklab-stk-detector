@@ -9,12 +9,12 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/railway-runtime-config-boundary` |
-| HEAD | `d6813ed` (`docs: align migration snapshot with Gmail extraction`) |
-| Recovery checkpoint | `checkpoint/migration-2026-08-14-current14` (post-task snapshot) |
+| HEAD | `c503739` (`feat(REQ-ADD-006): extract Railway dispatch transport`) |
+| Recovery checkpoint | `checkpoint/migration-2026-08-14-current15` (post-task snapshot) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
-| Local regression | `1169 passed, 1 skipped` at the REQ-ADD-006 working tree using `.tmp-migration-full-current14`; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
+| Local regression | `1171 passed, 1 skipped` at the REQ-ADD-007 working tree using `.tmp-migration-full-current15`; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
 | Static checks | Changed-file Ruff, Mypy, compileall and `node --check site/app.js` passed at `7228915`; full legacy Railway lint remains a separate debt |
-| Remote PR | #584 remains open and stacked on #583; the REQ-ADD-005 code commit `d6813ed` has passing quality/security checks; REQ-ADD-006 is locally verified and awaits its atomic commit/remote gate |
+| Remote PR | #584 remains open and stacked on #583; REQ-ADD-006 commit `c503739` is pushed and has a passing remote gate; REQ-ADD-007 is locally verified and awaits its atomic commit/remote gate |
 
 ## Current task reconciliation
 
@@ -34,6 +34,7 @@ claims inferred from branch names or previous comments.
 | REQ-ADD-004 Railway health contract extraction | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/health_contract.py`, `railway-monitor/app.py` | standalone health contract + legacy monitor suite (93 passed); full isolated regression 1164 passed, 1 skipped; Ruff/Mypy/compile/node | heartbeat, route and Gmail projection are standalone and privacy-safe; app compatibility wrappers preserved | live Railway health evidence remains external | NEEDS_REVERIFY |
 | REQ-ADD-005 Railway Gmail runtime wiring extraction | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/gmail_runtime.py`, `railway-monitor/app.py` | 92 targeted tests; standalone Ruff/Mypy/compile | existing Gmail ingress components are wired through one injectable boundary; missing/failure states remain redacted and fail-closed | live Gmail OAuth/PubSub and Railway health evidence remain external | NEEDS_REVERIFY |
 | REQ-ADD-006 Railway dispatch transport extraction | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/dispatch_transport.py`, `railway-monitor/app.py` | 86 targeted monitor/transport tests; 1169 full regression, 1 skipped; standalone Ruff/Mypy/compile/node checks | bounded repository-dispatch retries are standalone; signing, persistence and poll-loop ownership remain unchanged | live GitHub dispatch/Railway delivery evidence remains external | NEEDS_REVERIFY |
+| REQ-ADD-007 Railway poll configuration extraction | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/poll_config.py`, `railway-monitor/app.py` | 88 targeted config/transport/monitor tests; 1171 full regression, 1 skipped; standalone Ruff/Mypy/compile/node checks | Jin10/GDELT bounds and flags are projected once; required secrets still use the existing boundary | live Railway restart/poll evidence remains external | NEEDS_REVERIFY |
 
 `PASS` is not promoted to `LOCKED` when the required objective evidence is not
 available in this checkout.  `LOCKED` is reserved for a task whose local
@@ -89,6 +90,7 @@ present; it does not imply that an external production gate has passed.
 | DEBT-REQ-ADD-003-001 | Remaining Railway `app.py` extraction and live health acceptance are not covered by this incremental boundary task | continue with an isolated component extraction only after the current PR is reviewed; live Railway evidence requires protected runtime configuration | OPEN (SCOPED) |
 | DEBT-REQ-ADD-004-001 | Email routing, persistence, dispatch and poll-loop extraction remain in `railway-monitor/app.py` | continue with separate atomic extractions; do not duplicate provider or classifier logic | OPEN (SCOPED) |
 | DEBT-REQ-ADD-006-001 | Live GitHub dispatch and Railway delivery evidence are not available in local verification | use protected runtime configuration and a controlled single-recipient dry-run after PR review | OPEN EXTERNAL |
+| DEBT-REQ-ADD-007-001 | Live Railway poll-loop behavior is not available in local verification | inspect Deploy Logs and `/health` after the stacked PR is reviewed; do not infer runtime success from local tests | OPEN EXTERNAL |
 
 ### Migration audit update (2026-08-14, REQ-ADD-003 Railway runtime boundary)
 
@@ -278,6 +280,17 @@ OAuth/PubSub and controlled delivery evidence are still external.
   syntax checks pass for the extracted transport and its tests.
 - Live GitHub dispatch, Railway callback and Telegram delivery evidence remain
   external; this task is therefore local PASS / external NEEDS_REVERIFY.
+
+### Migration audit update (2026-08-14, REQ-ADD-007 poll configuration)
+
+- `railway-monitor/poll_config.py` now owns the bounded Jin10/GDELT poll
+  settings projection. The existing monitor remains the only poll loop and
+  required secrets still flow through `configured`.
+- Targeted config/transport/monitor suite: `88 passed`; isolated full
+  regression: `1171 passed, 1 skipped`. Standalone Ruff, Mypy, compileall and
+  front-end syntax checks pass for the extracted module and tests.
+- Railway restart, source polling, `/health` and delivery evidence remain
+  external; local status is PASS / external NEEDS_REVERIFY.
 
 ## Gate decision
 
