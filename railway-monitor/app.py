@@ -301,6 +301,19 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     _alert_dispatch_spec.loader.exec_module(_alert_dispatch_module)
     store_dispatch_alert = _alert_dispatch_module.dispatch_alert
 
+try:
+    from market_sync import fetch_market_sync_snapshot as store_fetch_market_sync_snapshot
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _market_sync_spec = spec_from_file_location(
+        "railway_market_sync",
+        Path(__file__).with_name("market_sync.py"),
+    )
+    if _market_sync_spec is None or _market_sync_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/market_sync.py") from None
+    _market_sync_module = module_from_spec(_market_sync_spec)
+    _market_sync_spec.loader.exec_module(_market_sync_module)
+    store_fetch_market_sync_snapshot = _market_sync_module.fetch_market_sync_snapshot
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -1909,22 +1922,7 @@ async def fetch_market_sync_snapshot() -> dict[str, Any]:
     configured dashboard URL is used.  A missing or stale snapshot is a
     deliberate *no-confirmation* result, never a reason to guess.
     """
-    base = os.environ.get("MARKET_SNAPSHOT_URL", "").strip()
-    if not base:
-        base = os.environ.get("DASHBOARD_URL", "").strip().rstrip("/")
-        if base:
-            base = f"{base}/data/market.json"
-    if not base:
-        return {}
-    try:
-        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
-            response = await client.get(base)
-        response.raise_for_status()
-        payload = response.json()
-        return payload if isinstance(payload, dict) else {}
-    except (httpx.HTTPError, ValueError, TypeError) as error:
-        logging.warning("market sync snapshot unavailable error=%s", type(error).__name__)
-        return {}
+    return await store_fetch_market_sync_snapshot(environ=dict(os.environ))
 
 
 def _market_sync_details(

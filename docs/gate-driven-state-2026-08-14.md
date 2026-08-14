@@ -479,6 +479,24 @@ passed `test-and-dry-run` (run `31797229080`, job `94756870467`), CodeQL,
 dependency-review and SBOM. This confirms repository CI only; live signed
 callback and Telegram receipt delivery remain external `NEEDS_REVERIFY` gates.
 
+### Migration audit update (2026-08-14, REQ-ADD-020 market-sync reader)
+
+- `railway-monitor/market_sync.py` now owns public snapshot URL selection and
+  read-only retrieval; missing or invalid data still returns no confirmation.
+- The app wrapper preserves the existing environment-based configuration and
+  event gate semantics. Tests inject the HTTP client and never contact Pages.
+
+Traceability: `REQ-ADD-020` -> `railway-monitor/market_sync.py`,
+`railway-monitor/app.py`, `tests/test_railway_market_sync.py` -> targeted suite.
+Live Pages propagation and market-source freshness remain external
+`NEEDS_REVERIFY` gates.
+
+Remote evidence: PR [#597](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/597)
+passed `test-and-dry-run` (run `31797915476`, job `94758987872`), CodeQL,
+dependency-review and SBOM. This confirms repository CI only; live Pages
+propagation and market-source freshness remain external `NEEDS_REVERIFY`
+gates.
+
 Remote evidence: PR [#588](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/588)
 passed `test-and-dry-run` (run `31789498655`), CodeQL, dependency-review and
 SBOM. This confirms repository CI for the stacked boundary only; Railway
