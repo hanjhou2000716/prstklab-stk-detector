@@ -350,3 +350,28 @@ The canonical News release-lineage task and this migration verification are
 from local evidence while PR checks are pending.  Pages browser and protected
 Railway/Telegram acceptance remain external gates; no production side effect
 is attempted by this checkpoint.
+
+### Migration audit update (2026-08-14, REQ-ADD-011 Railway delivery persistence)
+
+- `railway-monitor/delivery_store.py` now owns outbox writes, retry/backoff,
+  receipt registration, bounded history/diagnostics and terminal retention;
+  `SeenStore` retains the compatibility surface and callback-thread boundary.
+- Delivery extraction tests cover replay state, receipt origin validation,
+  recipient-hash failures, legacy receipt counts, retention and photo smoke.
+  Combined delivery/classification/monitor suite: `91 passed` in an isolated
+  workspace basetemp. Changed-module Ruff, `mypy src`, compileall and frontend
+  syntax checks pass.
+- This local evidence does not prove Railway volume continuity, Pages release
+  propagation or real Telegram receipt delivery. Those remain
+  `NEEDS_REVERIFY` after the stacked PR is merged.
+
+Traceability: `REQ-ADD-011` → `railway-monitor/delivery_store.py`,
+`railway-monitor/app.py`, `tests/test_railway_delivery_store.py` → targeted
+suite above. Preservation contracts for the existing `SeenStore` API remain
+covered by `tests/test_railway_monitor.py`.
+
+Remote evidence: PR [#588](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/588)
+passed `test-and-dry-run` (run `31789498655`), CodeQL, dependency-review and
+SBOM. This confirms repository CI for the stacked boundary only; Railway
+volume continuity, Pages propagation and controlled Telegram delivery remain
+external acceptance gates.
