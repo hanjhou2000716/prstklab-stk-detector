@@ -25,6 +25,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | REQ-ADD-026 | Creator 10:30 morning batch contract and fan-out | `src/creator_morning_batch.py`, `src/creator_intelligence_pipeline.py`, `src/briefing_cards.py`, `src/creator_dispatch.py`, `src/creator_notification.py`, `src/creator_photo_delivery.py` | targeted batch/dispatch suite 20 passed; full isolated regression 1213 passed/1 skipped; Ruff/Mypy/compileall pass; PR #604 latest quality run `31811684845` and security run `31811684878` green | latest-per-creator, 2/2 episode+digest, partial/no-content separation, late-delta, restart idempotency | PASS / LOCKED (branch evidence) |
 | REQ-ADD-027 | Creator evidence alignment across market/research/event snapshots | `src/creator_correlation.py`, `src/creator_intelligence_pipeline.py`, `src/creator_release.py`, `src/briefing_cards.py`, `src/release_manifest.py`, `src/release_gate.py`, `schemas/creator-release.schema.json` | targeted Creator lineage/correlation/manifest suite 25 passed; full regression 1216 passed/1 skipped; compileall, targeted Ruff and Mypy pass | explicit entity matching, stale evidence state, research lineage compatibility, no investment signal | PASS / LOCKED (branch evidence; production acceptance remains external) |
 | REQ-ADD-028 | FinancialJuice sanitized compound envelope runtime ingress | `src/external_observation_input.py`, `tests/test_external_observation_input.py`, `docs/req-add-028-financialjuice-runtime-envelope.md` | targeted compound ingress/event suite 19 passed; full regression 1221 passed; Ruff/Mypy/compileall/runtime audit pass | private transport ID never propagates; unresolved/count-mismatch/raw-field inputs fail closed; flat input preserved | PASS / LOCKED (branch evidence; production acceptance remains external) |
+| REQ-ADD-029 | Intelligence direct-input privacy boundary | `src/intelligence_pipeline.py`, `tests/test_intelligence_pipeline_external_risk.py`, `docs/req-add-029-intelligence-privacy-boundary.md` | targeted intelligence/contract suite 11 passed; targeted Ruff/Mypy pass | direct compound input strips transport/raw fields; unresolved envelopes do not become events | IN_PROGRESS |
 
 ## Regression ledger
 
@@ -34,6 +35,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | REG-002 | legacy runtime | live Railway restart/cache continuity not proven in local CI | external volume/runtime | controlled Railway acceptance required | OPEN / EXTERNAL |
 | REG-003 | legacy delivery | signed callback and Telegram receipt not proven in local CI | external credentials/recipient | single-recipient controlled E2E required | OPEN / EXTERNAL |
 | REG-004 | REQ-ADD-028 | compound FinancialJuice envelope was rejected by the scheduled observation loader | loader accepted only flat `observations` arrays | envelope flattening plus fail-closed item contract; 19 targeted and 1221 full tests | CLOSED |
+| REG-005 | REQ-ADD-029 | direct intelligence callers could retain envelope transport IDs | compound flattening copied `message_id` into event observations | shared defensive sanitizer; 11 targeted tests | CLOSED |
 
 ## Completion debt ledger
 
