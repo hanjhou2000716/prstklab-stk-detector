@@ -101,6 +101,19 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     _poll_config_spec.loader.exec_module(_poll_config_module)
     load_poll_settings = _poll_config_module.load_poll_settings
 
+try:
+    from state_store_schema import initialize_state_schema
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _schema_spec = spec_from_file_location(
+        "railway_state_store_schema",
+        Path(__file__).with_name("state_store_schema.py"),
+    )
+    if _schema_spec is None or _schema_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/state_store_schema.py") from None
+    _schema_module = module_from_spec(_schema_spec)
+    _schema_spec.loader.exec_module(_schema_module)
+    initialize_state_schema = _schema_module.initialize_state_schema
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -805,114 +818,7 @@ class SeenStore:
         self.connection = sqlite3.connect(path, timeout=5)
         self.connection.execute("PRAGMA busy_timeout=5000")
         self.connection.execute("PRAGMA journal_mode=WAL")
-        self.connection.execute(
-            "CREATE TABLE IF NOT EXISTS seen (event_id TEXT PRIMARY KEY, first_seen_at TEXT NOT NULL)"
-        )
-        # Older Railway volumes have a two-column ``seen`` table.  Keep those
-        # rows, but make them eligible for one post-deploy classification pass
-        # so a headline that was previously outside the keyword scope can be
-        # re-evaluated after a rule update.
-        columns = {row[1] for row in self.connection.execute("PRAGMA table_info(seen)").fetchall()}
-        if "classification" not in columns:
-            self.connection.execute(
-                "ALTER TABLE seen ADD COLUMN classification TEXT NOT NULL DEFAULT 'unclassified'"
-            )
-        if "classified_at" not in columns:
-            self.connection.execute("ALTER TABLE seen ADD COLUMN classified_at TEXT")
-        self.connection.execute(
-            "CREATE TABLE IF NOT EXISTS dispatched (category TEXT NOT NULL, summary TEXT NOT NULL, dispatched_at TEXT NOT NULL)"
-        )
-        self.connection.execute(
-            "CREATE TABLE IF NOT EXISTS cache (cache_key TEXT PRIMARY KEY, payload TEXT NOT NULL, refreshed_at TEXT NOT NULL)"
-        )
-        self.connection.execute(
-            """CREATE TABLE IF NOT EXISTS event_ledger (
-                canonical_key TEXT PRIMARY KEY,
-                event_type TEXT NOT NULL,
-                source_url TEXT,
-                person_fingerprint TEXT,
-                location_fingerprint TEXT,
-                action_fingerprint TEXT,
-                first_discovered_at TEXT NOT NULL,
-                last_reminded_at TEXT,
-                escalated INTEGER NOT NULL DEFAULT 0,
-                verified_sources_json TEXT NOT NULL DEFAULT '[]',
-                last_title TEXT,
-                updated_at TEXT NOT NULL
-            )"""
-        )
-        # Formal Railway outbox: dispatch attempts survive GitHub Actions
-        # cache eviction and can be retried/inspected without replaying every
-        # source event.
-        self.connection.execute(
-            """CREATE TABLE IF NOT EXISTS delivery_outbox (
-                trace_id TEXT PRIMARY KEY,
-                canonical_key TEXT NOT NULL,
-                source TEXT NOT NULL,
-                event_id TEXT NOT NULL,
-                category TEXT,
-                payload_json TEXT NOT NULL,
-                status TEXT NOT NULL DEFAULT 'pending',
-                attempts INTEGER NOT NULL DEFAULT 0,
-                last_error TEXT,
-                next_retry_at TEXT,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            )"""
-        )
-        outbox_columns = {
-            row[1] for row in self.connection.execute("PRAGMA table_info(delivery_outbox)").fetchall()
-        }
-        if "category" not in outbox_columns:
-            self.connection.execute("ALTER TABLE delivery_outbox ADD COLUMN category TEXT")
-        self.connection.execute(
-            """CREATE TABLE IF NOT EXISTS incoming_events (
-                event_id TEXT PRIMARY KEY,
-                source TEXT NOT NULL,
-                title TEXT,
-                content TEXT,
-                occurred_at TEXT,
-                classification TEXT NOT NULL DEFAULT 'unclassified',
-                classification_reason TEXT,
-                first_seen_at TEXT NOT NULL,
-                last_seen_at TEXT NOT NULL,
-                last_error TEXT
-            )"""
-        )
-        incoming_columns = {
-            row[1] for row in self.connection.execute("PRAGMA table_info(incoming_events)").fetchall()
-        }
-        if "classification_reason" not in incoming_columns:
-            self.connection.execute(
-                "ALTER TABLE incoming_events ADD COLUMN classification_reason TEXT"
-            )
-        self.connection.execute(
-            """CREATE TABLE IF NOT EXISTS delivery_receipts (
-                trace_id TEXT NOT NULL,
-                recipient_hash TEXT NOT NULL,
-                status TEXT NOT NULL,
-                error TEXT,
-                delivered_count INTEGER,
-                failed_count INTEGER,
-                reported_at TEXT,
-                updated_at TEXT NOT NULL,
-                PRIMARY KEY(trace_id, recipient_hash)
-            )"""
-        )
-        receipt_columns = {
-            row[1] for row in self.connection.execute("PRAGMA table_info(delivery_receipts)").fetchall()
-        }
-        # Keep the migration additive: Railway volumes may contain receipts
-        # written by an older monitor process.
-        for column, definition in (
-            ("delivered_count", "INTEGER"),
-            ("failed_count", "INTEGER"),
-            ("reported_at", "TEXT"),
-        ):
-            if column not in receipt_columns:
-                self.connection.execute(
-                    f"ALTER TABLE delivery_receipts ADD COLUMN {column} {definition}"
-                )
+        initialize_state_schema(self.connection)
         self.connection.commit()
 
     def record_incoming_flash(self, flash: Flash, classification_reason: str | None = None) -> None:
