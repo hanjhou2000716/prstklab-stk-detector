@@ -460,3 +460,12 @@ preserving UTF-8 content and atomic replacement semantics. `SeenStore` keeps
 the compatibility methods and delegates to this module. Status is
 **partially_integrated** until the stacked PR is merged and live restart/cache
 continuity is reverified.
+
+## Railway health-dispatch boundary
+
+`railway-monitor/health_dispatch.py` owns the non-fatal GitHub health callback
+payload, retry/backoff handling and 401/403/429/5xx classification. The monitor
+keeps the public compatibility function and its bounded state, while the
+extracted boundary receives an explicit health updater and HTTP client factory
+for deterministic tests. Status is **partially_integrated** until the stacked
+PR is merged and live Railway callback behaviour is reverified.

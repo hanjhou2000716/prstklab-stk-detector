@@ -418,3 +418,20 @@ passed `test-and-dry-run` (run `31791713251`), CodeQL, dependency-review and
 SBOM. This remains repository CI evidence only; Railway restart/cache
 continuity, Pages propagation and controlled Telegram delivery are external
 acceptance gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-014 Railway health-dispatch boundary)
+
+- `railway-monitor/health_dispatch.py` owns bounded health-callback payload
+  construction, retry/backoff and safe handling for configuration, permission,
+  rate-limit and upstream failures. The source monitor remains authoritative
+  when the observability callback is unavailable.
+- Health-dispatch plus monitor suite: `86 passed`; changed-module Ruff,
+  compileall and frontend syntax checks pass. The explicit client factory keeps
+  the boundary deterministic without contacting GitHub in tests.
+- Live Railway callback status and GitHub dispatch permission remain external
+  `NEEDS_REVERIFY` gates.
+
+Traceability: `REQ-ADD-014` -> `railway-monitor/health_dispatch.py`,
+`railway-monitor/app.py`, `tests/test_railway_health_dispatch.py` -> targeted
+suite above. Existing health endpoint and callback backoff regressions remain
+covered by `tests/test_railway_monitor.py`.

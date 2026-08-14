@@ -213,6 +213,19 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     store_read_cache = _cache_module.read_cache
     store_write_cache = _cache_module.write_cache
 
+try:
+    from health_dispatch import dispatch_monitor_health as store_dispatch_monitor_health
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _health_dispatch_spec = spec_from_file_location(
+        "railway_health_dispatch",
+        Path(__file__).with_name("health_dispatch.py"),
+    )
+    if _health_dispatch_spec is None or _health_dispatch_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/health_dispatch.py") from None
+    _health_dispatch_module = module_from_spec(_health_dispatch_spec)
+    _health_dispatch_spec.loader.exec_module(_health_dispatch_module)
+    store_dispatch_monitor_health = _health_dispatch_module.dispatch_monitor_health
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -1519,6 +1532,23 @@ async def dispatch_monitor_health(*, token: str, repository: str, gdelt: dict[st
     stay inside Railway's local audit store.
     """
     global _HEALTH_DISPATCH_BACKOFF_UNTIL, _HEALTH_DISPATCH_BACKOFF_STATUS, _HEALTH_DISPATCH_BACKOFF_ERROR, _HEALTH_DISPATCH_BACKOFF_NEXT_AT
+    state = await store_dispatch_monitor_health(
+        token=token,
+        repository=repository,
+        gdelt=gdelt,
+        backoff_until=_HEALTH_DISPATCH_BACKOFF_UNTIL,
+        backoff_status=_HEALTH_DISPATCH_BACKOFF_STATUS,
+        backoff_error=_HEALTH_DISPATCH_BACKOFF_ERROR,
+        backoff_next_at=_HEALTH_DISPATCH_BACKOFF_NEXT_AT,
+        update_health=update_health,
+        github_api_version=GITHUB_API_VERSION,
+        client_factory=httpx.AsyncClient,
+    )
+    _HEALTH_DISPATCH_BACKOFF_UNTIL = float(state["until"])
+    _HEALTH_DISPATCH_BACKOFF_STATUS = str(state["status"])
+    _HEALTH_DISPATCH_BACKOFF_ERROR = state["error"]
+    _HEALTH_DISPATCH_BACKOFF_NEXT_AT = state["next_at"]
+    return
     if not token or not repository:
         update_health(
             "gdelt",
