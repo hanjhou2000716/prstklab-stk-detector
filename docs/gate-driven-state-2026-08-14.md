@@ -412,3 +412,9 @@ Traceability: `REQ-ADD-013` -> `railway-monitor/cache_store.py`,
 `railway-monitor/app.py`, `tests/test_railway_cache_store.py` -> targeted suite
 above. Existing GDELT stale-cache fallback and fail-closed dispatch behaviour
 remain covered by `tests/test_railway_monitor.py`.
+
+Remote evidence: PR [#590](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/590)
+passed `test-and-dry-run` (run `31791713251`), CodeQL, dependency-review and
+SBOM. This remains repository CI evidence only; Railway restart/cache
+continuity, Pages propagation and controlled Telegram delivery are external
+acceptance gates.
