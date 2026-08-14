@@ -22,7 +22,7 @@ evidence.
 | P0-09 / P0-12 | REQ-ADD-039-T01 | Railway Gmail parses a bounded public-safe observation projection | `tests/test_railway_gmail_gateway.py` | 17 targeted tests pass; no raw body/sender/transport IDs in projection | duplicate and DLQ tests pass | PASS |
 | P0-09 / P0-12 | REQ-ADD-039-T02 | Authenticated `/external-observations` export and client | `tests/test_railway_observation_client.py` | signature, status, schema and private-field rejection tests pass | missing config remains fail-closed | PASS |
 | P0-09 / P0-12 | REQ-ADD-039-T03 | Scheduled delivery merges Railway and reviewed local observations | `tests/test_scheduled_delivery.py` plus external-input tests | 27 targeted/regression tests pass | local reviewed input remains usable when Railway is unavailable | PASS |
-| P0-24 / P0-29 | REQ-ADD-039-T04 | Gate-driven evidence and debt ledgers | this document | branch/diff/test output captured in PR | no production release or broadcast performed | NEEDS_REVERIFY |
+| P0-24 / P0-29 | REQ-ADD-039-T04 | Gate-driven evidence and debt ledgers | this document | PR #618 CI: CodeQL, dependency review, SBOM and test-and-dry-run all passed (run `31831249694` / `31831249665`) | no production release or broadcast performed | PASS / LOCKED |
 
 `PASS` above is limited to the listed implementation and tests. It is not a
 claim that the entire product or all original P0 DoDs are complete.
@@ -56,7 +56,7 @@ claim that the entire product or all original P0 DoDs are complete.
 
 | Debt ID | Description | Resolution / next gate | Status |
 |---|---|---|---|
-| DEBT-039-01 | Ruff is not installed in this local runtime | CI quality workflow must run the repository-pinned Ruff job | OPEN |
+| DEBT-039-01 | Ruff is not installed in this local runtime | Remote CI Ruff gate passed; local environment remains unable to reproduce it without network/cache access | CLOSED (CI evidence) |
 | DEBT-039-02 | Railway URL/secret and production deployment acceptance are external configuration | Configure through Railway/GitHub variables; run controlled single-recipient E2E | OPEN / external |
 | DEBT-039-03 | Full repository regression and all original P0 DoDs not rerun on this checkpoint | Run after the stacked PRs are reconciled on latest main | OPEN |
 | DEBT-039-04 | Existing older gate notes contain PASS claims predating this snapshot | Treat this document as current authority; reverify each mapped DoD | OPEN |
