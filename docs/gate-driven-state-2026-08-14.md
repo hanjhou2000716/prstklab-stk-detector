@@ -491,6 +491,12 @@ Traceability: `REQ-ADD-020` -> `railway-monitor/market_sync.py`,
 Live Pages propagation and market-source freshness remain external
 `NEEDS_REVERIFY` gates.
 
+Remote evidence: PR [#597](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/597)
+passed `test-and-dry-run` (run `31797915476`, job `94758987872`), CodeQL,
+dependency-review and SBOM. This confirms repository CI only; live Pages
+propagation and market-source freshness remain external `NEEDS_REVERIFY`
+gates.
+
 Remote evidence: PR [#588](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/588)
 passed `test-and-dry-run` (run `31789498655`), CodeQL, dependency-review and
 SBOM. This confirms repository CI for the stacked boundary only; Railway
