@@ -298,6 +298,17 @@ at `0c09a35` passed test-and-dry-run (run `31772008639`), CodeQL/security
 repository CI evidence only; Railway runtime and controlled delivery remain
 external gates.
 
+### Current gate evidence (2026-08-14)
+
+- `python -m src.runtime_audit` returned `ok=true` with explicit warnings for
+  missing event/research release artifacts and a building research source; no
+  invariant error was suppressed.
+- `python -m src.delivery_smoke_test` failed closed with `TELEGRAM_CHAT_IDS`
+  empty and no recipient configured. No message was sent and no production
+  secret was accessed.
+- These results keep production release and Telegram/Railway acceptance in
+  `BLOCKED`/`NEEDS_REVERIFY`; they are not converted into PASS by local CI.
+
 ## Gate decision
 
 The canonical News release-lineage task and this migration verification are
