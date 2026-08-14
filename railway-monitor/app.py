@@ -60,6 +60,19 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     monitor_heartbeat = _health_module.monitor_heartbeat
     non_negative_int = _health_module.non_negative_int
 
+try:
+    from gmail_runtime import configure_gmail_ingress as build_gmail_ingress
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _gmail_runtime_spec = spec_from_file_location(
+        "railway_gmail_runtime",
+        Path(__file__).with_name("gmail_runtime.py"),
+    )
+    if _gmail_runtime_spec is None or _gmail_runtime_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/gmail_runtime.py")
+    _gmail_runtime_module = module_from_spec(_gmail_runtime_spec)
+    _gmail_runtime_spec.loader.exec_module(_gmail_runtime_module)
+    build_gmail_ingress = _gmail_runtime_module.configure_gmail_ingress
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -2070,24 +2083,8 @@ def _gmail_health_fields(diagnostics: Any) -> dict[str, Any]:
 def configure_gmail_ingress() -> None:
     """Attach the bounded Gmail Pub/Sub ingress when the Railway worker starts."""
     global EMAIL_INGRESS
-    try:
-        from email_store import EmailStore
-        from gmail_ingress import GmailIngressService
-        from gmail_watch import GmailWatchConfig
-
-        config = GmailWatchConfig.from_env()
-        path = os.environ.get("GMAIL_STATE_PATH", "/data/gmail-ingress.sqlite3")
-        EMAIL_INGRESS = GmailIngressService(EmailStore(path), config)
-        diagnostics = EMAIL_INGRESS.health()
-        update_health(
-            "gmail",
-            status="configuration_missing" if config.missing else "ready",
-            **_gmail_health_fields(diagnostics),
-            error=None,
-        )
-    except Exception as error:  # pragma: no cover - defensive startup path
-        EMAIL_INGRESS = None
-        update_health("gmail", status="failed", error=type(error).__name__)
+    EMAIL_INGRESS, fields = build_gmail_ingress()
+    update_health("gmail", **fields)
 
 
 class HealthHandler(BaseHTTPRequestHandler):
