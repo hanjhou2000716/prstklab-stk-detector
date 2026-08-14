@@ -21,7 +21,7 @@ def test_loader_keeps_only_public_safe_rows(monkeypatch) -> None:
 
         def json(self):
             return {"status": "ready", "observations": [
-                {"observation_id": "safe-1", "source": "financialjuice", "public_safe": True},
+                {"observation_id": "safe-1", "source": "financialjuice", "public_safe": True, "unexpected": "drop"},
                 {"observation_id": "private-1", "source": "financialjuice", "public_safe": True, "body": "secret"},
             ]}
 
@@ -36,6 +36,7 @@ def test_loader_keeps_only_public_safe_rows(monkeypatch) -> None:
     assert [row["observation_id"] for row in rows] == ["safe-1"]
     assert health["status"] == "ready"
     assert health["rejected_count"] == 1
+    assert "unexpected" not in rows[0]
     assert seen["headers"]["X-PRSTK-Signature"].startswith("sha256=")
 
 

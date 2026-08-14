@@ -10,6 +10,8 @@ from urllib.parse import urlparse, urlunparse
 
 import httpx
 
+from src.external_observation_input import SAFE_FIELDS
+
 _ALLOWED_SOURCES = {"financialjuice"}
 _BLOCKED_FIELDS = {
     "body", "raw_body", "attachments", "data", "local_path", "private_url",
@@ -86,7 +88,7 @@ def load_railway_observations(
         if any(row.get(key) not in (None, "", [], {}) for key in _BLOCKED_FIELDS):
             rejected += 1
             continue
-        normalized = dict(row)
+        normalized = {key: row[key] for key in SAFE_FIELDS if key in row}
         normalized["source"] = source
         normalized["content_origin"] = source
         safe.append(normalized)
