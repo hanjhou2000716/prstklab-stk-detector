@@ -78,6 +78,16 @@ class EmailStore:
                 );
                 CREATE INDEX IF NOT EXISTS idx_email_dlq_message
                     ON email_dlq(gmail_message_id, created_at);
+                CREATE TABLE IF NOT EXISTS public_observations (
+                    observation_id TEXT PRIMARY KEY,
+                    content_origin TEXT NOT NULL,
+                    content_hash TEXT,
+                    published_at TEXT,
+                    created_at TEXT NOT NULL,
+                    payload_json TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_public_observations_created
+                    ON public_observations(created_at);
                 """
             )
 
@@ -161,17 +171,76 @@ class EmailStore:
                     str(message_id), str(parser_name), str(parser_version), str(template_fingerprint),
                     str(parse_status), str(failure_reason), _now(), json.dumps(safe, ensure_ascii=False, sort_keys=True),
                 ),
+                )
+
+    def save_public_observation(self, observation: dict[str, Any]) -> bool:
+        """Persist only the reviewed, public-safe observation projection.
+
+        The caller must provide ``public_safe=true``.  Transport identifiers,
+        sender addresses and raw content are intentionally rejected here as a
+        second privacy boundary even if an upstream parser regresses.
+        """
+        if observation.get("public_safe") is not True:
+            raise ValueError("public observation must be marked public_safe")
+        blocked = {"body", "raw_body", "attachments", "gmail_message_id", "gmail_thread_id", "sender", "recipient"}
+        if any(observation.get(key) not in (None, "", [], {}) for key in blocked):
+            raise ValueError("public observation contains private fields")
+        observation_id = str(observation.get("observation_id") or "").strip()
+        source = str(observation.get("content_origin") or observation.get("source") or "").strip().casefold()
+        if not observation_id or not source:
+            raise ValueError("public observation identity is required")
+        payload = {key: value for key, value in observation.items() if key not in blocked}
+        payload["observation_id"] = observation_id
+        payload["content_origin"] = source
+        payload["source"] = source
+        payload["public_safe"] = True
+        with self._connect() as connection:
+            before = connection.total_changes
+            connection.execute(
+                """INSERT OR IGNORE INTO public_observations(
+                   observation_id, content_origin, content_hash, published_at,
+                   created_at, payload_json) VALUES(?,?,?,?,?,?)""",
+                (
+                    observation_id,
+                    source,
+                    str(payload.get("content_hash") or "") or None,
+                    str(payload.get("published_at") or payload.get("source_published_at") or "") or None,
+                    _now(),
+                    json.dumps(payload, ensure_ascii=False, sort_keys=True),
+                ),
             )
+            return connection.total_changes > before
+
+    def public_observations(self, *, limit: int = 100) -> list[dict[str, Any]]:
+        """Return bounded sanitized observations for the scheduled publisher."""
+        bounded = max(1, min(500, int(limit)))
+        with self._connect() as connection:
+            rows = connection.execute(
+                """SELECT payload_json FROM public_observations
+                   ORDER BY created_at DESC, observation_id DESC LIMIT ?""",
+                (bounded,),
+            ).fetchall()
+        result: list[dict[str, Any]] = []
+        for row in rows:
+            try:
+                payload = json.loads(row[0])
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if isinstance(payload, dict) and payload.get("public_safe") is True:
+                result.append(payload)
+        return result
 
     def health(self) -> dict[str, Any]:
         with self._connect() as connection:
             observation_count = connection.execute("SELECT COUNT(*) FROM email_observations").fetchone()[0]
             dlq_count = connection.execute("SELECT COUNT(*) FROM email_dlq").fetchone()[0]
+            public_count = connection.execute("SELECT COUNT(*) FROM public_observations").fetchone()[0]
         cursor = self.cursor()
         return {
             "status": "healthy" if cursor["last_sync_at"] else "no_new_content",
             "observation_count": int(observation_count),
             "dlq_count": int(dlq_count),
+            "public_observation_count": int(public_count),
             "cursor": cursor,
             "raw_content_stored": False,
         }

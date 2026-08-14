@@ -51,8 +51,8 @@ gates are cleared:
 
 | Debt | Evidence | Status |
 |---|---|---|
-| Production release acceptance | Local `runtime_audit --require-production` correctly failed closed because the checked-out event snapshot and complete production research release are absent | BLOCKED: needs a real ready `data-release` publication |
-| Telegram/Railway delivery acceptance | Local `delivery_smoke_test` correctly refused to send because `TELEGRAM_CHAT_IDS` is not configured | BLOCKED: needs protected runtime configuration and a controlled single-recipient test |
+| Production release acceptance | Public Pages manifest `release-957714e850293f39` is `ready`; six declared public artifact hashes matched | NEEDS_REVERIFY on latest main; post-merge Mini App visual acceptance remains |
+| Telegram/Railway delivery acceptance | Actions photo smoke run `31839093636` / job `94891873503`; one scoped recipient; Railway receipt `delivered`, `receipt_matches=true` | NEEDS_REVERIFY on latest main; Railway GDELT `HTTP_429` and dispatch `HTTP_403` remain open runtime issues |
 
 No production notification, secret access, or data fabrication was used to
 make these checks green.

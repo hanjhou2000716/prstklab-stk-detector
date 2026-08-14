@@ -102,8 +102,23 @@ class GmailIngressService:
         if not claimed:
             observation["parse_status"] = "duplicate"
             return {"accepted": False, "status": "duplicate", "observation": observation}
+        public_rows = parsed.get("public_observations")
+        if isinstance(public_rows, list):
+            for row in public_rows:
+                if isinstance(row, dict):
+                    try:
+                        self.store.save_public_observation(row)
+                    except (TypeError, ValueError):
+                        # A malformed derived row must not turn an already
+                        # durably claimed Gmail message into a retry storm.
+                        continue
         self.store.save_cursor(last_message_id=message_id, last_notification_at=_now(), last_sync_at=_now())
-        return {"accepted": True, "status": parsed["parse_status"], "observation": observation}
+        return {
+            "accepted": True,
+            "status": parsed["parse_status"],
+            "observation": observation,
+            "public_observation_count": len(public_rows) if isinstance(public_rows, list) else 0,
+        }
 
     def health(self) -> dict[str, Any]:
         return {"watch": watch_health(self.config, self.store.cursor()), "store": self.store.health()}

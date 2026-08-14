@@ -8,6 +8,7 @@ import os
 import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from src.alert_budget import decide_alert_budget
 from src.alert_card_renderer import RendererError, render_alert_card
@@ -18,10 +19,12 @@ from src.event_ledger import EventLedger
 from src.external_observation_input import (
     external_observations_path,
     external_source_health,
+    external_source_health_from_remote,
     load_external_observations,
     merge_external_source_health,
 )
 from src.market_data import build_market_snapshot
+from src.railway_observation_client import load_railway_observations
 from src.refresh_market_data import merge_published_metadata, write_snapshot
 from src.release_gate import verify_release_for_delivery
 from src.scheduled_brief import (
@@ -34,6 +37,30 @@ from src.scheduled_brief import (
 from src.telegram_client import send_photo_briefs
 
 _DEFAULT_CREATOR_RECORDS_PATH = Path("creator/public-records.json")
+
+
+def _railway_observations_configured() -> bool:
+    """Return whether the optional sanitized Railway ingress is configured."""
+    return bool(
+        os.getenv("RAILWAY_OBSERVATIONS_URL", "").strip()
+        or os.getenv("RAILWAY_STATUS_URL", "").strip()
+        or os.getenv("RAILWAY_STATUS_SHARED_SECRET", "").strip()
+    )
+
+
+def _merge_external_observations(
+    local_rows: list[dict],
+    remote_rows: list[dict],
+) -> list[dict]:
+    """Merge remote reviewed rows over local fallback rows by observation ID."""
+    merged: dict[str, dict] = {}
+    for row in [*local_rows, *remote_rows]:
+        if not isinstance(row, dict):
+            continue
+        key = str(row.get("observation_id") or "").strip()
+        if key:
+            merged[key] = row
+    return list(merged.values())
 
 
 def _creator_records_path() -> Path | None:
@@ -115,17 +142,34 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
     """Create the exact snapshot that will later be deployed and delivered."""
     snapshot = build_market_snapshot()
     external_path = external_observations_path()
-    external_observations, external_rejected = load_external_observations(external_path)
+    local_observations, local_rejected = load_external_observations(external_path)
+    remote_observations: list[dict] = []
+    remote_health: dict[str, Any] = {}
+    if _railway_observations_configured():
+        remote_observations, remote_health = load_railway_observations()
+    external_observations = _merge_external_observations(local_observations, remote_observations)
+    remote_rejected = remote_health.get("rejected_count")
+    external_rejected = local_rejected + (int(remote_rejected) if isinstance(remote_rejected, (int, str, float)) else 0)
     if external_observations:
         snapshot["external_observations"] = external_observations
     elif "external_observations" not in snapshot:
         snapshot["external_observations"] = []
-    external_health = external_source_health(
-        path=external_path,
-        accepted=external_observations,
-        rejected=external_rejected,
-        checked_at=datetime.now(UTC),
-    )
+    checked_at = datetime.now(UTC)
+    external_health: dict[str, Any] | None
+    if _railway_observations_configured():
+        external_health = external_source_health_from_remote(
+            remote_health,
+            accepted=external_observations,
+            rejected=external_rejected,
+            checked_at=checked_at,
+        )
+    else:
+        external_health = external_source_health(
+            path=external_path,
+            accepted=external_observations,
+            rejected=external_rejected,
+            checked_at=checked_at,
+        )
     if external_health:
         snapshot["source_health"] = merge_external_source_health(
             snapshot.get("source_health") or {}, external_health

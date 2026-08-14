@@ -58,6 +58,16 @@ def test_email_router_imports_from_standalone_railway_root() -> None:
     assert "jenny" in result.stdout
 
 
+def test_standalone_creator_bundle_matches_canonical_registry() -> None:
+    canonical = json.loads(
+        (Path(__file__).parents[1] / "config" / "creator_providers.json").read_text(encoding="utf-8")
+    )
+    bundled = json.loads(
+        (RAILWAY_MODULES / "creator_providers.json").read_text(encoding="utf-8")
+    )
+    assert bundled == canonical
+
+
 def test_watch_renewal_is_due_without_expiration() -> None:
     assert renewal_due(None)
 
@@ -120,6 +130,23 @@ def test_ingress_accepts_replay_safe_observation_and_dedupes(tmp_path: Path) -> 
     assert first["accepted"] is True
     assert second["status"] == "duplicate"
     assert store.health()["raw_content_stored"] is False
+
+
+def test_ingress_persists_public_safe_derived_observation_only(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    service = GmailIngressService(store, _config())
+    result = service.accept_email({
+        "gmail_message_id": "m-public-1",
+        "sender": "alerts@financialjuice.com",
+        "subject": "FinancialJuice breaking news",
+        "body": "Original headline: Oil supply update\nImportance: 10/10\nPossible Impact: energy\nAI Commentary: watch",
+    })
+    assert result["accepted"] is True
+    assert result["public_observation_count"] >= 1
+    rows = store.public_observations()
+    assert rows and rows[0]["source"] == "financialjuice"
+    assert rows[0]["public_safe"] is True
+    assert not any(key in rows[0] for key in ("body", "sender", "gmail_message_id"))
 
 
 def test_push_advances_durable_cursor_without_storing_message_body(tmp_path: Path) -> None:
