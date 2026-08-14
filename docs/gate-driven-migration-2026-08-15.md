@@ -92,6 +92,11 @@ explicitly scoped; it does not claim a complete production acceptance:
 - The current live Railway projection still reports GDELT `HTTP_429` and
   dispatch callback `HTTP_403`; these are explicitly open external gates.
 
+- Mini App loader preference fix (`a09bb30`) now selects the bounded public
+  Creator insight projection before the internal envelope. Targeted UI and
+  fallback tests: `4 passed`; latest PR quality run `31841614424` and security
+  run `31841613208` passed.
+
 ## Completion-debt ledger
 
 | Debt ID | Description | Resolution / next gate | Status |

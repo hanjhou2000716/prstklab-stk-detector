@@ -133,6 +133,18 @@ content and recipients. The Mini App renders this state without upgrading a
 pending item to a confirmed alert. A live Railway bundle and ready Pages
 release are still required before this row can be locked as production.
 
+### Mini App public-artifact preference (2026-08-15)
+
+The Mini App now prefers the bounded `creator-insights.json` projection over
+the internal `creator-release.json` envelope when both are present. This keeps
+the UI from rendering an empty internal envelope while a valid public insight
+projection contains sanitized episodes. The loader still verifies release,
+market, research, event, creator release and creator snapshot bindings before
+rendering either artifact. Targeted UI/fallback verification: `4 passed`; the
+full repository regression remains `1231 passed, 1 skipped` at the prior
+checkpoint. The change is committed as `a09bb30` on PR #618; the latest quality
+and security checks are green.
+
 ### Railway runtime boundary reconciliation
 
 The open stacked Railway work is an extraction of runtime boundaries, not a
