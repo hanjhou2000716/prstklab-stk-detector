@@ -9,10 +9,10 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/gmail-observability-contract` |
-| HEAD | `976d1ed` (`docs(P0-25): record failure semantics evidence`) |
+| HEAD | `e7364d1` (`feat(REQ-ADD-003): expose redacted config health`) |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current3` (pre-task) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
-| Local regression | `1155 passed` at `261c950` using a fresh isolated Windows temp directory; an earlier OneDrive/temporary run had filesystem-lock failures and was rerun without changing product assertions |
+| Local regression | `1160 passed` at `e7364d1` using a fresh isolated Windows temp directory; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
 | Static checks | Changed-file Ruff, Mypy, compileall and `node --check site/app.js` passed at `7228915`; full legacy Railway lint remains a separate debt |
 | Remote PR | [#583](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/583), open and stacked on #582; remote checks for `261c950` are pending/requires refresh |
 
@@ -56,7 +56,7 @@ present; it does not imply that an external production gate has passed.
 | REQ-P0-24-DOD-05 | Official News adapters expose fetch/parse/error/latency state per provider | `src/news_feed_adapters.py` | `tests/test_news_feed_adapters.py`, News Intelligence regression (45 targeted passed) | each provider remains isolated; 429 is recorded without retry; no raw response is published | failed provider does not suppress other market stories | PASS (local) |
 | REQ-P0-24-DOD-06 | Gmail watch exposes privacy-safe receive/parse/error/delivery state without transport identifiers | `railway-monitor/gmail_watch.py` | `tests/test_railway_gmail_gateway.py` (12 targeted passed) | bounded timestamps/counters only; history/message IDs are excluded; configuration and stale watch remain fail-closed | invalid timestamps/counters do not leak cursor data or become a healthy state | PASS (local) |
 | REQ-P0-25-DOD-01 | Shared failure vocabulary distinguishes empty, stale, parse, provider and release failures | `src/failure_semantics.py`, `src/creator_health.py` | `tests/test_failure_semantics.py`, `tests/test_creator_health.py` (8 targeted passed) | legacy `no_event` no longer becomes a provider failure; unknown states fail closed | no content is never promoted to alert-eligible | PASS (local) |
-| REQ-ADD-003-DOD-01 | Railway runtime configuration has one standalone, redacted lookup boundary | `railway-monitor/runtime_config.py`, `railway-monitor/app.py` | `tests/test_railway_runtime_config.py`, `tests/test_railway_monitor.py` (87 passed); Ruff/Mypy/compile | both existing variable names remain supported; absent/blank secret produces `configuration_missing` without values | existing monitor secret lookup tests remain green | PASS (local) / NEEDS_REVERIFY (external) |
+| REQ-ADD-003-DOD-01 | Railway runtime configuration has one standalone, redacted lookup boundary | `railway-monitor/runtime_config.py`, `railway-monitor/app.py` | `tests/test_railway_runtime_config.py`, `tests/test_railway_monitor.py` (88 passed); full isolated regression 1160 passed; Ruff/Mypy/compile/node | both existing variable names remain supported; absent/blank secret produces `configuration_missing` without values; health snapshot exposes only redacted metadata | existing monitor secret lookup and full repository tests remain green | PASS (local) / NEEDS_REVERIFY (external) |
 
 ## Regression ledger
 
@@ -69,6 +69,7 @@ present; it does not imply that an external production gate has passed.
 | REG-MIG-003 | verification environment | first full run timed out near 87% with one transient failure | rerun with a fresh isolated basetemp; no product assertion was changed | second full run `1146 passed` in 81.33s | ACCEPTED ENVIRONMENT EVENT |
 | REG-MIG-004 | verification environment | OneDrive basetemp produced an asset-test `PermissionError` | rerun in isolated Windows temp; no product assertion was changed | `1147 passed` in 64.74s | ACCEPTED ENVIRONMENT EVENT |
 | REG-P0-25-001 | legacy Creator health mapping | `status=no_event` was treated as an unknown failure by the Creator aggregate | shared `classify_failure` maps empty scans to `no_new_content`; 24 targeted source/Creator tests pass | CLOSED |
+| REG-REQ-ADD-003-001 | first boundary draft reversed the existing Railway secret-name precedence | compatibility test caught `RAILWAY_STATUS_SHARED_SECRET` winning over the active service name | restored `DELIVERY_STATUS_SHARED_SECRET` first, added 88 targeted tests and 1160-test isolated regression | CLOSED |
 
 ## Completion debt ledger
 
