@@ -31,6 +31,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | REQ-ADD-032 | raw observation persistence retries for transient Windows/SQLite locks | `src/raw_observation_store.py` | targeted 17 passed; Ruff/Mypy/compileall pass; full regression 1224 passed | no schema or release artifact change; non-retryable errors remain fail-closed | PASS / LOCKED (local evidence; production acceptance remains external) |
 | REQ-ADD-033 | Railway Gmail registry bundle and shared publish-lock retry boundary | `railway-monitor/email_router.py`, `railway-monitor/creator_providers.json`, `src/atomic_file.py`, `src/build_assets.py`, `src/refresh_market_data.py`, `src/release_manifest.py` | standalone Railway import and atomic publish suites 54 passed; targeted Ruff/compileall pass; full regression 1226 passed | Railway health must confirm Gmail no longer reports `ModuleNotFoundError`; OAuth/PubSub and callback permissions remain external | canonical parser/delivery path preserved; non-retryable publish errors remain fail-closed | PASS / LOCKED (local evidence; production acceptance remains external) |
 | REQ-ADD-034 | GDELT invalid JSON cache fallback | `railway-monitor/app.py`, `tests/test_railway_monitor.py` | targeted monitor suite 86 passed; Ruff pass; full regression 1227 passed | Railway must observe `invalid_json` as stale-cache/failed (never live) when upstream returns non-JSON | GDELT remains discovery-only; no source failure becomes a high-risk event | PASS / LOCKED (local evidence; production acceptance remains external) |
+| REQ-ADD-035 | raw observation directory-race retry | `src/atomic_file.py`, `src/raw_observation_store.py`, `tests/test_raw_observation_store.py` | targeted persistence suite 29 passed; PR #614 CI green; post-merge main regression 1228 passed/1 skipped | OneDrive-rooted pytest run remains an environment warning; non-OneDrive evidence is authoritative | non-retryable persistence failures remain unavailable/fail-closed | PASS / LOCKED (main evidence; external volume acceptance remains separate) |
 
 ## Regression ledger
 
@@ -54,6 +55,8 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | DEBT-002 | Capture signed callback and Telegram delivery receipt | production gate | use one approved test recipient only | OPEN / EXTERNAL |
 | DEBT-003 | Verify Pages release propagation and public market snapshot freshness | production gate | public manifest/hash/snapshot IDs verified 2026-08-15; release age remains explicit | CLOSED (lineage); freshness observation remains external |
 | DEBT-FJ-002 | FinancialJuice runtime bundle is not yet observed in Railway | production gate | configure reviewed sanitized bundle path and capture source-health/release evidence | OPEN / EXTERNAL |
+| DEBT-004 | Railway Gmail watch and callback permissions remain unconfigured | post-merge Railway health 2026-08-14 | configure Gmail OAuth/PubSub and canonical callback secret; recheck health | OPEN / EXTERNAL |
+| DEBT-005 | Controlled Telegram delivery receipt and Mini App deep-link not captured | post-merge Railway health shows delivery `not_checked` | run one approved recipient test after release gate | OPEN / EXTERNAL |
 
 No implementation task in REQ-ADD-013..020 is marked PASS solely because a PR
 exists; each has local and remote evidence above. External debt must be closed
