@@ -22,6 +22,7 @@ def build_creator_intelligence_release(
     history_store: Any | None = None,
     market_snapshot: dict[str, Any] | None = None,
     research_snapshot: dict[str, Any] | None = None,
+    event_snapshot: dict[str, Any] | None = None,
     batch_as_of: Any | None = None,
 ) -> dict[str, Any]:
     """Normalize already-sanitized records and build one lineage-bound artifact.
@@ -49,6 +50,7 @@ def build_creator_intelligence_release(
             normalized,
             market_snapshot=market_snapshot,
             research_snapshot=research_snapshot,
+            event_snapshot=event_snapshot,
         )
         if (record.get("parse_status") or record.get("source_adapter")) and not normalized["episode_title"]:
             dropped.append(f"{index}:missing_episode_title")

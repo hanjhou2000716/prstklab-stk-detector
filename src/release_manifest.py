@@ -495,6 +495,7 @@ def build_release_manifest(
             "release_id": release_id,
             "market_snapshot_id": market_id,
             "event_snapshot_id": event_id,
+            "research_snapshot_id": research_id,
         })
         if isinstance(creator_artifact, dict)
         else []

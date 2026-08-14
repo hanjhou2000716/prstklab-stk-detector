@@ -55,3 +55,43 @@ def test_stale_market_snapshot_is_not_used_as_current_evidence():
     assert result["correlation_state"] == "stale"
     assert result["matched_tickers"] == ["2330"]
 
+
+def test_event_and_research_snapshots_are_retained_as_evidence_lineage():
+    result = correlate_creator_insight(
+        _insight(),
+        market_snapshot={
+            "snapshot_id": "m-3",
+            "as_of": "2026-08-13T04:00:00+00:00",
+            "quotes": [{"ticker": "2330"}],
+        },
+        research_snapshot={
+            "snapshot_id": "r-3",
+            "as_of": "2026-08-13T04:00:00+00:00",
+            "candidates": [{"ticker": "2330", "sector": "semiconductor"}],
+        },
+        event_snapshot={
+            "snapshot_id": "e-3",
+            "as_of": "2026-08-13T04:00:00+00:00",
+            "events": [{"affected_instruments": ["2330"]}],
+        },
+        as_of="2026-08-13T05:00:00+00:00",
+    )
+    assert result["evidence_alignment"] == "aligned"
+    assert result["snapshot_ids"] == {"market": "m-3", "research": "r-3", "event": "e-3"}
+    assert result["event_snapshot_id"] == "e-3"
+    assert result["matched_event_entities"] == ["2330"]
+
+
+def test_stale_event_snapshot_is_explicitly_marked():
+    result = correlate_creator_insight(
+        _insight(),
+        event_snapshot={
+            "snapshot_id": "e-old",
+            "as_of": "2026-08-10T04:00:00+00:00",
+            "events": [{"affected_instruments": ["2330"]}],
+        },
+        as_of="2026-08-13T05:00:00+00:00",
+    )
+    assert result["evidence_alignment"] == "stale"
+    assert result["stale_contexts"] == ["event"]
+

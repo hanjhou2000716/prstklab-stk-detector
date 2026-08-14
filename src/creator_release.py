@@ -41,7 +41,11 @@ def validate_creator_release(
     parent_release = str(creator_artifact.get("parent_release_id") or "")
     if parent_release != str(parent_manifest.get("release_id") or ""):
         errors.append("creator artifact parent release mismatch")
-    for field in ("market_snapshot_id", "event_snapshot_id"):
+    for field in ("market_snapshot_id", "event_snapshot_id", "research_snapshot_id"):
+        # Older parent manifests did not carry research lineage. Preserve
+        # backward compatibility while enforcing it whenever declared.
+        if field == "research_snapshot_id" and (not parent_manifest.get(field) or field not in creator_artifact):
+            continue
         if str(creator_artifact.get(field) or "") != str(parent_manifest.get(field) or ""):
             errors.append(f"creator artifact {field} mismatch")
     for item in creator_artifact.get("insights") or []:
@@ -75,6 +79,7 @@ def build_creator_release(
         "parent_release_id": str(parent_manifest.get("release_id") or ""),
         "market_snapshot_id": str(parent_manifest.get("market_snapshot_id") or ""),
         "event_snapshot_id": str(parent_manifest.get("event_snapshot_id") or ""),
+        "research_snapshot_id": str(parent_manifest.get("research_snapshot_id") or ""),
         "generated_at": _utc(generated_at) or datetime.now(UTC).isoformat(),
         "insights": list(insights),
         "public_safe": True,
