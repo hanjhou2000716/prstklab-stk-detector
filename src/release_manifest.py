@@ -17,6 +17,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from src.artifact_contract import validate_release
+from src.atomic_file import replace_with_retry
 from src.creator_artifact import validate_creator_artifact
 from src.creator_release import validate_creator_release
 from src.production_acceptance import (
@@ -80,6 +81,28 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _external_observation_metadata(market: dict[str, Any]) -> dict[str, Any] | None:
+    """Return deterministic lineage for sanitized external observations."""
+    rows = market.get("external_observations")
+    if not isinstance(rows, list):
+        return None
+    identities: list[dict[str, str]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        observation_id = str(row.get("observation_id") or "").strip()
+        source = str(row.get("source") or row.get("content_origin") or "").strip().casefold()
+        if observation_id:
+            identities.append({"observation_id": observation_id, "source": source})
+    identities.sort(key=lambda item: (item["observation_id"], item["source"]))
+    return {
+        "count": len(identities),
+        "observation_ids_hash": hashlib.sha256(_canonical_json(identities)).hexdigest(),
+        "sources": sorted({item["source"] for item in identities if item["source"]}),
+        "status": "ready" if identities else "no_event",
+    }
 
 
 def _read_object(path: Path) -> tuple[dict[str, Any] | None, str | None]:
@@ -282,7 +305,7 @@ def _normalize_artifacts(loaded: dict[str, dict[str, Any]]) -> list[str]:
 def _write_normalized_artifact(path: Path, value: dict[str, Any]) -> None:
     temporary = path.with_name(f".{path.name}.normalize.tmp")
     temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
+    replace_with_retry(temporary, path)
 
 
 def build_release_manifest(
@@ -388,6 +411,50 @@ def build_release_manifest(
     market_id = content_snapshot_id(market, "market") if market else ""
     research_id = content_snapshot_id(research, "research") if research else ""
     event_id = content_snapshot_id(events, "event") if events else ""
+    external_metadata = _external_observation_metadata(market)
+    # News is an additive, fail-soft artifact.  Keep it content-addressed to
+    # the same market snapshot so Pages cannot accidentally combine a new
+    # headline list with an older quote release.  Legacy market artifacts
+    # without the canonical intelligence payload remain valid and simply do
+    # not advertise a separate news artifact.
+    news_payload = market.get("news") if isinstance(market, dict) else None
+    news_artifact = news_payload.get("intelligence") if isinstance(news_payload, dict) else None
+    news_snapshot_id: str | None = None
+    news_status = "not_available"
+    if isinstance(news_artifact, dict) and isinstance(news_artifact.get("stories"), list):
+        news_artifact = {
+            **news_artifact,
+            "market_snapshot_id": market_id,
+            "snapshot_id": content_snapshot_id(news_artifact, "news"),
+        }
+    elif isinstance(news_artifact, dict) and any(isinstance(value, dict) for value in news_artifact.values()):
+        registry = news_payload.get("provider_registry", []) if isinstance(news_payload, dict) else []
+        news_markets = news_artifact
+        news_artifact = {
+            "schema_version": "1.0",
+            "market_snapshot_id": market_id,
+            "snapshot_id": content_snapshot_id({"markets": news_markets}, "news"),
+            "provider_registry": registry,
+            "markets": news_markets,
+            "status": "ready" if any(
+                isinstance(value, dict) and value.get("status") == "ready"
+                for value in news_markets.values()
+            ) else "no_event",
+        }
+    if isinstance(news_artifact, dict):
+        news_snapshot_id = str(news_artifact["snapshot_id"])
+        news_status = "ready" if news_artifact.get("status") in {"ready", "no_event"} else "unavailable"
+        news_path = root / "site" / "data" / "news.json"
+        try:
+            from src.artifact_contract import validate_news_release
+
+            errors.extend(validate_news_release(news_artifact))
+            _write_normalized_artifact(news_path, news_artifact)
+            resolved["news.json"] = news_path
+            loaded["news.json"] = news_artifact
+            hashes["news.json"] = sha256_file(news_path)
+        except OSError as exc:
+            errors.append(f"cannot persist/hash news artifact {news_path.as_posix()}: {type(exc).__name__}")
     creator_input_hash = _creator_identity_hash(creator_artifact, creator_records)
     policy = str(policy_version or os.getenv("POLICY_VERSION") or "2026.08")
     created_at = datetime.now(UTC).isoformat()
@@ -403,6 +470,8 @@ def build_release_manifest(
     }
     if creator_input_hash:
         release_material["creator_input_hash"] = creator_input_hash
+    if external_metadata is not None:
+        release_material["external_observation_ids_hash"] = external_metadata["observation_ids_hash"]
     release_id = f"release-{hashlib.sha256(_canonical_json(release_material)).hexdigest()[:16]}"
     if creator_artifact is None and creator_records is not None:
         # Records are expected to be sanitized at ingress. The pipeline still
@@ -427,6 +496,7 @@ def build_release_manifest(
             "release_id": release_id,
             "market_snapshot_id": market_id,
             "event_snapshot_id": event_id,
+            "research_snapshot_id": research_id,
         })
         if isinstance(creator_artifact, dict)
         else []
@@ -492,6 +562,7 @@ def build_release_manifest(
             "market": str(market.get("snapshot_schema_version") or "1.0"),
             "research": str(research.get("schema_version") or "1.0"),
             "events": str(events.get("schema_version") or "1.0"),
+            "news": "1.0" if "news.json" in loaded else None,
             "creator_insights": "1.0" if isinstance(creator_public_artifact, dict) else None,
         },
         "artifact_hashes": hashes,
@@ -511,6 +582,12 @@ def build_release_manifest(
         "creator_public_validation_errors": sorted(set(creator_public_errors)),
         "creator_snapshot_id": (creator_public_artifact or {}).get("snapshot_id") if isinstance(creator_public_artifact, dict) else None,
         "creator_public_artifact_hash": creator_public_hash,
+        "news_snapshot_id": news_snapshot_id,
+        "news_status": news_status,
+        "external_observation_count": external_metadata["count"] if external_metadata is not None else None,
+        "external_observation_ids_hash": external_metadata["observation_ids_hash"] if external_metadata is not None else None,
+        "external_observation_sources": external_metadata["sources"] if external_metadata is not None else [],
+        "external_observation_status": external_metadata["status"] if external_metadata is not None else "not_available",
         "status": "invalid",
     }
     if fallback_applied:
@@ -596,7 +673,7 @@ def write_release_manifest(manifest: dict[str, Any], output: Path | str) -> None
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_name(f".{destination.name}.tmp")
     temporary.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, destination)
+    replace_with_retry(temporary, destination)
 
 
 def verify_release_files(manifest: dict[str, Any], *, root: Path | str = Path(".")) -> list[str]:

@@ -1,0 +1,626 @@
+# Gate-Driven v3 state reconciliation (2026-08-14)
+
+This is a migration checkpoint for the existing stacked implementation.  It
+does not replace or reset earlier P0 work.  Statuses are evidence states, not
+claims inferred from branch names or previous comments.
+
+## Snapshot
+
+| Field | Evidence |
+|---|---|
+| Branch | `fix/railway-classifier-delivery-gate` |
+| HEAD at last evidence capture | `83c8083` (`feat(REQ-ADD-010): extract Railway classification state`) |
+| Recovery checkpoint | `checkpoint/migration-2026-08-14-current21` (post-task code snapshot) |
+| Current overlap audit | `docs/creator-intelligence-overlap-audit.md` |
+| Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
+| Local regression | `1177 passed` at REQ-ADD-010 using `.tmp-classification-store-full`; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
+| Static checks | `ruff check src tests`, `mypy src`, compileall, `node --check site/app.js` and `git diff --check` passed at `83c8083`; full legacy Railway lint remains a separate debt |
+| Remote PR | #586 remains open for REQ-ADD-009; REQ-ADD-010 is validated locally and awaits its own stacked PR |
+
+## Current task reconciliation
+
+| Task | State | Evidence / next gate |
+|---|---|---|
+| Canonical NewsStory/provider contract | LOCKED | `tests/test_news_intelligence.py`, full regression |
+| Official TWSE/MOPS/SEC/Fed adapters | NEEDS_REVERIFY | `tests/test_news_feed_adapters.py`; failure and 429 isolation; live feed evidence remains external |
+| News release artifact production | LOCKED | `schemas/news-release.schema.json`, `news_snapshot_id`/`news_status` and hash written by `release_manifest`; targeted suite passed |
+| News release-gate lineage | LOCKED | 59 targeted release/news/Mini App/delivery-gate tests; mismatched market snapshot fails closed |
+| News Mini App browser rendering | NEEDS_REVERIFY | static contract loader is verified locally; real ready Pages browser evidence remains external |
+| Railway/Telegram production acceptance | BLOCKED | protected runtime configuration and controlled recipient evidence are external prerequisites |
+| FinancialJuice sanitized scheduled ingress | partially_integrated | `src/external_observation_input.py` rejects raw/private transport data; Railway sanitized bundle and live release evidence remain external |
+| FinancialJuice release lineage and Mini App evidence | NEEDS_REVERIFY | `src/release_manifest.py`, `src/release_gate.py`, `site/app.js`; local contract and mismatch fixtures pass; ready Pages evidence remains external |
+| FinancialJuice operational observability | PASS (local) / NEEDS_REVERIFY (external) | `src/external_observation_input.py`, `schemas/source-health.schema.json`, `site/app.js` | 52 targeted tests; source-health schema accepts the observability contract; Railway delivery evidence remains external | no raw/private fields or transport IDs exposed; missing input remains failed, not no-event | NEEDS_REVERIFY |
+| Canonical failure semantics | PASS (local) | `src/failure_semantics.py`, `src/creator_health.py` | 8 targeted contract tests; Creator/source-health regression | `no_event` maps to `no_new_content`; parse/provider/configuration/release states remain distinct and fail-closed | PASS (local) |
+| REQ-ADD-003 Railway runtime configuration boundary | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/runtime_config.py`, `railway-monitor/app.py` | 87 Railway monitor/config tests; changed-file Ruff/Mypy/compile/node checks | canonical and legacy secret names remain compatible; missing/blank configuration is fail-closed and redacted | live Railway health evidence remains external | NEEDS_REVERIFY |
+| REQ-ADD-004 Railway health contract extraction | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/health_contract.py`, `railway-monitor/app.py` | standalone health contract + legacy monitor suite (93 passed); full isolated regression 1164 passed, 1 skipped; Ruff/Mypy/compile/node | heartbeat, route and Gmail projection are standalone and privacy-safe; app compatibility wrappers preserved | live Railway health evidence remains external | NEEDS_REVERIFY |
+| REQ-ADD-005 Railway Gmail runtime wiring extraction | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/gmail_runtime.py`, `railway-monitor/app.py` | 92 targeted tests; standalone Ruff/Mypy/compile | existing Gmail ingress components are wired through one injectable boundary; missing/failure states remain redacted and fail-closed | live Gmail OAuth/PubSub and Railway health evidence remain external | NEEDS_REVERIFY |
+| REQ-ADD-006 Railway dispatch transport extraction | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/dispatch_transport.py`, `railway-monitor/app.py` | 86 targeted monitor/transport tests; 1169 full regression, 1 skipped; standalone Ruff/Mypy/compile/node checks | bounded repository-dispatch retries are standalone; signing, persistence and poll-loop ownership remain unchanged | live GitHub dispatch/Railway delivery evidence remains external | NEEDS_REVERIFY |
+| REQ-ADD-007 Railway poll configuration extraction | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/poll_config.py`, `railway-monitor/app.py` | 88 targeted config/transport/monitor tests; 1171 full regression, 1 skipped; standalone Ruff/Mypy/compile/node checks | Jin10/GDELT bounds and flags are projected once; required secrets still use the existing boundary | live Railway restart/poll evidence remains external | NEEDS_REVERIFY |
+| REQ-ADD-008 Railway classifier delivery gate | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/app.py`, `src/event_classifier.py` | 84 Railway monitor tests; 1171 full regression, 1 skipped; Ruff/Mypy/compile/node checks; standalone import isolation proves fallback is diagnostics-only | non-canonical root-only classifier cannot create Jin10 dispatch; incoming item remains retryable for a correctly packaged deployment | Railway health must report repository-shared classifier before delivery | NEEDS_REVERIFY |
+| REQ-ADD-009 Railway state schema boundary | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/state_store_schema.py`, `railway-monitor/app.py` | schema contract + legacy migration tests; Railway monitor regression; full isolated regression and static checks | schema creation is idempotent; legacy volumes receive additive columns only; SeenStore startup remains compatible | live Railway volume migration and receipt persistence remain external | NEEDS_REVERIFY |
+| REQ-ADD-010 Railway classification state boundary | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/classification_store.py`, `railway-monitor/app.py`, `src/event_classifier.py` | classification-store contract + Railway monitor regression; full isolated regression and static checks | classification reasons, retryable state and diagnostics use one SQLite boundary; canonical classifier remains unchanged | live Railway retry/state-volume evidence remains external | NEEDS_REVERIFY |
+
+`PASS` is not promoted to `LOCKED` when the required objective evidence is not
+available in this checkout.  `LOCKED` is reserved for a task whose local
+implementation, required regression, and preservation evidence are all
+present; it does not imply that an external production gate has passed.
+
+## Affected requirement traceability
+
+| Requirement | Task | Implementation | Verification | Regression | Status |
+|---|---|---|---|---|---|
+| REQ-P0-04-DOD-NEWS-01 | Bind News to release | `src/release_manifest.py`, `schemas/release-manifest.schema.json` | 63 targeted; 1133 full regression | mixed-release fixture | LOCKED |
+| REQ-P0-05-DOD-NEWS-02 | Verify before notify | `src/release_gate.py` | 63 targeted; 1133 full regression | hash and snapshot mismatch | LOCKED |
+| REQ-P0-14-DOD-NEWS-03 | Official source isolation | `src/news_feed_adapters.py`, `src/risk_news.py` | adapter parser/429 tests | one provider failure does not drop others; live endpoint evidence pending | NEEDS_REVERIFY |
+| REQ-P0-20-DOD-NEWS-04 | Public UI evidence | `site/app.js` | browser/Pages smoke | release mismatch fallback | NEEDS_REVERIFY |
+| REQ-ADD-001-DOD-01 | External intelligence enters canonical briefing only as sanitized observations | `src/external_observation_input.py`, `src/scheduled_delivery.py` | 24 targeted tests; 1139 full regression | raw/private/unknown records rejected; no Pages-path input | LOCKED (local) |
+| REQ-ADD-001-DOD-02 | FinancialJuice source health and snapshot lineage remain explicit | `src/external_observation_input.py`, `src/scheduled_delivery.py`, workflow | scheduled snapshot binding test; release gate remains required | missing/rejected input cannot become no-event | NEEDS_REVERIFY (external bundle) |
+| REQ-ADD-002-DOD-01 | External observation IDs, sources and status are release-bound | `src/release_manifest.py`, `schemas/release-manifest.schema.json`, `src/release_gate.py` | 78 targeted; 1144 full regression | count/hash/source mismatch blocks delivery; malformed count fails closed | LOCKED (local) |
+| REQ-ADD-002-DOD-02 | Mini App exposes the same release-bound external observations and pending reason | `site/index.html`, `site/app.js`, `tests/test_mini_app_assets.py` | static asset contract and full regression | no row is rendered as confirmed without official/market evidence | NEEDS_REVERIFY (Pages browser) |
+| REQ-P0-24-DOD-01 | FinancialJuice source health exposes privacy-safe receive/parse/error/qualification state | `src/external_observation_input.py`, `schemas/source-health.schema.json` | `tests/test_external_observation_input.py`, `tests/test_artifact_contract.py` (52 targeted passed) | metrics contain timestamps/counts only; no observation IDs, message IDs, raw content or recipients | missing/malformed input remains failed and cannot be treated as no-event | PASS (local) |
+| REQ-P0-24-DOD-02 | Mini App renders FinancialJuice observability and notification pending reason | `site/app.js`, `tests/test_mini_app_assets.py` | Mini App asset contract included in 52 targeted tests | UI shows received time, >=8 count, pending clusters and parser errors; production browser evidence pending | source-health state remains fail-closed | NEEDS_REVERIFY (Pages browser) |
+| REQ-P0-24-DOD-03 | Creator source rows expose privacy-safe receive/parse/error/delivery state | `src/creator_source_health.py`, `schemas/source-health.schema.json` | Creator/source-health/artifact suite (91 targeted passed) | timestamps/counts only; Gmail transport IDs are not copied | configuration missing and parser failure remain distinct | PASS (local) |
+| REQ-P0-24-DOD-04 | Mini App renders Creator observability beside each optional provider | `site/app.js`, `tests/test_mini_app_assets.py` | asset contract plus 91 targeted tests | creator row remains optional and cannot become core market evidence | Pages browser evidence pending | NEEDS_REVERIFY (Pages browser) |
+| REQ-P0-24-DOD-05 | Official News adapters expose fetch/parse/error/latency state per provider | `src/news_feed_adapters.py` | `tests/test_news_feed_adapters.py`, News Intelligence regression (45 targeted passed) | each provider remains isolated; 429 is recorded without retry; no raw response is published | failed provider does not suppress other market stories | PASS (local) |
+| REQ-P0-24-DOD-06 | Gmail watch exposes privacy-safe receive/parse/error/delivery state without transport identifiers | `railway-monitor/gmail_watch.py` | `tests/test_railway_gmail_gateway.py` (12 targeted passed) | bounded timestamps/counters only; history/message IDs are excluded; configuration and stale watch remain fail-closed | invalid timestamps/counters do not leak cursor data or become a healthy state | PASS (local) |
+| REQ-P0-25-DOD-01 | Shared failure vocabulary distinguishes empty, stale, parse, provider and release failures | `src/failure_semantics.py`, `src/creator_health.py` | `tests/test_failure_semantics.py`, `tests/test_creator_health.py` (8 targeted passed) | legacy `no_event` no longer becomes a provider failure; unknown states fail closed | no content is never promoted to alert-eligible | PASS (local) |
+| REQ-ADD-003-DOD-01 | Railway runtime configuration has one standalone, redacted lookup boundary | `railway-monitor/runtime_config.py`, `railway-monitor/app.py` | `tests/test_railway_runtime_config.py`, `tests/test_railway_monitor.py` (88 passed); full isolated regression 1160 passed; Ruff/Mypy/compile/node | both existing variable names remain supported; absent/blank secret produces `configuration_missing` without values; health snapshot exposes only redacted metadata | existing monitor secret lookup and full repository tests remain green | PASS (local) / NEEDS_REVERIFY (external) |
+
+## Regression ledger
+
+| Regression ID | Introduced by | Symptom | Root cause | Fix / evidence | Status |
+|---|---|---|---|---|---|
+| REG-NEWS-001 | prior release path | News artifact could be hashed but not checked by delivery gate | gate loader enumerated only core/Creator artifacts | `7f1fd60`, 51 targeted tests | CLOSED |
+| REG-NEWS-002 | environment | Windows shared temp contains inaccessible historical pytest directories | inherited workspace hygiene | CI and isolated basetemp pass; no product assertion changed | ACCEPTED ENVIRONMENT DEBT |
+| REG-MIG-001 | migration overlay | prior state document pointed at `c3f43d7` after later evidence commits | state reconciliation lag | `4b60f06`; 63 targeted and 1133 full regression passed | CLOSED |
+| REG-MIG-002 | external observation lineage | malformed manifest count could raise before fail-closed result | defensive integer parsing in release gate | targeted release-gate suite and full isolated regression | CLOSED |
+| REG-MIG-003 | verification environment | first full run timed out near 87% with one transient failure | rerun with a fresh isolated basetemp; no product assertion was changed | second full run `1146 passed` in 81.33s | ACCEPTED ENVIRONMENT EVENT |
+| REG-MIG-004 | verification environment | OneDrive basetemp produced an asset-test `PermissionError` | rerun in isolated Windows temp; no product assertion was changed | `1147 passed` in 64.74s | ACCEPTED ENVIRONMENT EVENT |
+| REG-P0-25-001 | legacy Creator health mapping | `status=no_event` was treated as an unknown failure by the Creator aggregate | shared `classify_failure` maps empty scans to `no_new_content`; 24 targeted source/Creator tests pass | CLOSED |
+| REG-REQ-ADD-003-001 | first boundary draft reversed the existing Railway secret-name precedence | compatibility test caught `RAILWAY_STATUS_SHARED_SECRET` winning over the active service name | restored `DELIVERY_STATUS_SHARED_SECRET` first, added 88 targeted tests and 1160-test isolated regression | CLOSED |
+| REG-REQ-ADD-006-001 | first standalone transport fixtures lacked an attached HTTP request | `httpx.Response.raise_for_status()` requires request metadata in a synthetic response | fixtures now attach a request; 86 targeted monitor/transport tests pass | CLOSED |
+
+## Completion debt ledger
+
+| Debt ID | Description | Resolution / owner | Status |
+|---|---|---|---|
+| DEBT-NEWS-001 | Live official feed and Pages publication evidence | run controlled release after PR #578 is merged | OPEN EXTERNAL |
+| DEBT-NEWS-002 | Railway and Telegram delivery receipt evidence | protected runtime configuration; single-recipient dry-run | OPEN EXTERNAL |
+| DEBT-NEWS-003 | Historical untracked test/temp artifacts | separate workspace hygiene task; do not stage during feature work | OPEN NON-PRODUCTION |
+| DEBT-MIG-001 | Re-run required verification at migration HEAD | `63 passed, 1 skipped`; `1133 passed, 1 skipped`; Ruff/Mypy/compile/node checks | CLOSED |
+| DEBT-FJ-001 | Railway has not yet supplied a live sanitized FinancialJuice bundle to the scheduled workflow | configure `EXTERNAL_OBSERVATIONS_PATH` with reviewed derived JSON; run release-gated workflow | OPEN EXTERNAL |
+| DEBT-FJ-002 | Railway/Gmail/FinancialJuice operational metrics have not been observed in a ready public release | run a controlled release after #579 and verify source-health row plus Mini App browser | OPEN EXTERNAL |
+| DEBT-P0-25-001 | Full repository regression had transient Windows raw-observation permission failures in one isolated run | fresh isolated temp rerun: `1155 passed` in 112.04s; no product assertion changed | CLOSED |
+| DEBT-REQ-ADD-003-001 | Remaining Railway `app.py` extraction and live health acceptance are not covered by this incremental boundary task | continue with an isolated component extraction only after the current PR is reviewed; live Railway evidence requires protected runtime configuration | OPEN (SCOPED) |
+| DEBT-REQ-ADD-004-001 | Email routing, persistence, dispatch and poll-loop extraction remain in `railway-monitor/app.py` | continue with separate atomic extractions; do not duplicate provider or classifier logic | OPEN (SCOPED) |
+| DEBT-REQ-ADD-006-001 | Live GitHub dispatch and Railway delivery evidence are not available in local verification | use protected runtime configuration and a controlled single-recipient dry-run after PR review | OPEN EXTERNAL |
+| DEBT-REQ-ADD-007-001 | Live Railway poll-loop behavior is not available in local verification | inspect Deploy Logs and `/health` after the stacked PR is reviewed; do not infer runtime success from local tests | OPEN EXTERNAL |
+| DEBT-REQ-ADD-008-001 | Railway production has not proved repository-shared classifier mode | deploy the packaged shared classifier and verify `classifier_mode=repository-shared` before enabling delivery | OPEN EXTERNAL |
+| DEBT-REQ-ADD-009-001 | Railway production has not proved the extracted schema against its persistent volume | deploy the stacked branch, inspect `/health` and delivery receipt persistence, and retain the previous release for rollback | OPEN EXTERNAL |
+| DEBT-REQ-ADD-010-001 | Railway production has not proved classification-state retry continuity after deploy | deploy the stacked branch, confirm incoming event rows and `classification_reason` survive restart, and verify failed dispatch reopens safely | OPEN EXTERNAL |
+
+### Migration audit update (2026-08-14, REQ-ADD-003 Railway runtime boundary)
+
+- `tests/test_railway_runtime_config.py tests/test_railway_monitor.py`: **88 passed** with an isolated basetemp.
+- Full isolated repository regression at `9223acf`: **1160 passed** in 82.72s.
+- Changed-file Ruff, Mypy, `python -m compileall -q railway-monitor`, and
+  `node --check site/app.js` passed.
+- PR [#584](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/584)
+  remote quality/security checks for `5e8dae3` passed: test-and-dry-run run
+  `31767950845`, CodeQL run `31767950886`, dependency review and SBOM in the
+  same security run. This is branch-level evidence only; live Railway health,
+  Pages and Telegram acceptance remain external gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-004 Railway health extraction)
+
+- `railway-monitor/health_contract.py` now owns provider-independent heartbeat,
+  timestamp/counter parsing, health-route normalization and privacy-safe Gmail
+  projection. `app.py` retains compatibility wrappers and does not introduce
+  a second classifier or provider registry.
+- Targeted Railway health and monitor suite: **93 passed**. Full isolated
+  repository regression at `b981454`: **1164 passed, 1 skipped**.
+- Changed-file Ruff, Mypy, `python -m compileall -q railway-monitor`, and
+  `node --check site/app.js` passed. Remote PR #584 checks for `d592695`
+  passed: test-and-dry-run run `31769927747`, CodeQL/security run
+  `31769927756`, CodeQL analysis `94673663894`, dependency review and SBOM.
+  The Railway live health endpoint and delivery receipt remain external
+  evidence gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-005 Gmail runtime wiring)
+
+- `railway-monitor/gmail_runtime.py` now owns configuration-to-ingress
+  construction, while the existing Gmail parser, authenticator, router and
+  store remain canonical. `app.py` delegates through the boundary and keeps
+  its public startup entry point.
+- Targeted Gmail/health/monitor suite: **92 passed**. Full isolated repository
+  regression at `df3ab1c`: **1167 passed, 1 skipped**.
+- Changed-file Ruff, standalone Mypy, `python -m compileall -q
+  railway-monitor`, and `node --check site/app.js` passed. Live Gmail,
+  Railway and Telegram evidence remain external gates.
+
+### Migration audit update (2026-08-14, multi-market News release binding)
+
+- `news.json` now publishes one release-bound envelope containing Taiwan and US
+  News Intelligence views when both are present; legacy single-market payloads
+  remain readable.
+- The release gate validates each market payload and its shared provider
+  registry. The Mini App verifies the News artifact hash, market snapshot and
+  News snapshot before rendering either tab, including last-good fallback.
+- Targeted release/news/Mini App/delivery-gate suite: `63 passed, 1 skipped`; full local regression: `1133 passed,
+  1 skipped`; Ruff, Mypy, compile and `node --check` pass.
+- PR [#579](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/579)
+  required checks pass for `763c7c4` (test-and-dry-run, CodeQL, dependency review,
+  SBOM and duplicate CodeQL check). Pages/Railway/Telegram production acceptance remains
+  external and fail-closed.
+
+### Migration audit update (2026-08-14, sanitized external ingress)
+
+- `EXTERNAL_OBSERVATIONS_PATH` is now an opt-in scheduled-workflow input. The
+  loader accepts only `public_safe` FinancialJuice-derived records with stable
+  observation IDs, rejects raw mail/Gmail transport identifiers/private fields,
+  and never reads from the Pages tree.
+- Accepted rows are attached to the same market snapshot and briefing consumed
+  by the existing intelligence pipeline. Rejected/missing input is represented
+  by an optional source-health row; it cannot be interpreted as a clean scan or
+  independently trigger a high-risk alert.
+- Targeted ingress/scheduled/workflow suite: `24 passed`; full local regression:
+  `1139 passed, 1 skipped`; Ruff, Mypy and compileall pass.
+- This closes the local canonical integration gap only. A Railway-provided
+  sanitized bundle, ready release and controlled Telegram receipt are still
+  external evidence gates and remain fail-closed.
+
+### Migration audit update (2026-08-14, external observation release lineage)
+
+- Sanitized FinancialJuice observations now contribute deterministic count,
+  source list and observation-ID hash metadata to the same release manifest as
+  market/research/event data. The release gate rejects count, source or hash
+  mismatches before delivery; legacy manifests without the optional fields
+  remain backward-compatible.
+- Mini App has a release-bound “外部財經快訊” panel. It distinguishes
+  `已核對`, `等待官方核對`, `等待市場同步` and the combined pending state;
+  links are accepted only when they are HTTPS URLs from the sanitized record.
+- Targeted release/lineage/Mini App suite: `78 passed`; isolated full local
+  regression: `1144 passed, 1 skipped`; Ruff, Mypy, compileall and frontend
+  syntax checks pass.
+- Pages browser, Railway sanitized bundle and controlled Telegram receipt are
+  still external gates. No production side effect was attempted.
+
+### Gate audit evidence (2026-08-14)
+
+- `python -m src.runtime_audit` exited 0 with `ok=true`; its warnings remain
+  visible (market source gaps, building research, and missing ready production
+  snapshots) and are not reclassified as “no risk”.
+- `python -m src.delivery_smoke_test` is `BLOCKED` in this checkout because
+  `TELEGRAM_CHAT_IDS` is not configured. No recipient or token was invented,
+  and no production message was attempted. A controlled single-recipient test
+  remains an external acceptance prerequisite.
+
+### Migration audit update (2026-08-14, FinancialJuice operational observability)
+
+- The optional FinancialJuice source-health row now exposes only privacy-safe
+  operational metrics: last received/parsed timestamps, parser error count,
+  count of vendor-importance >=8 items, pending event-cluster count and the
+  resulting notification decision. Delivery time is intentionally null until
+  a real receipt is recorded by the delivery pipeline.
+- The source-health schema explicitly validates this nested contract. The Mini
+  App renders the metrics beside the existing source status and keeps pending
+  confirmation distinct from no-event and scan failure.
+- Targeted observability/schema/Mini App suite: `52 passed`; Ruff and Mypy pass.
+  Railway bundle, ready Pages release and Telegram receipt remain external
+  evidence gates; no production side effect was attempted.
+- Fresh isolated full regression after the observability change: `1146 passed`.
+  `ruff check src tests`, `mypy src`, `compileall` and `node --check` pass.
+  `python -m src.runtime_audit` exits 0 with the existing data-readiness
+  warnings. The delivery smoke remains externally blocked because this
+  checkout has no `TELEGRAM_CHAT_IDS`; no message was sent.
+- PR [#580](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/580)
+  remote test-and-dry-run, CodeQL, dependency-review and SBOM checks all pass.
+  It remains open and must be merged after #579; this does not constitute
+  Railway, Pages or Telegram production acceptance.
+
+### Migration audit update (2026-08-14, Creator operational observability)
+
+- Optional Creator provider rows now expose privacy-safe operational metrics:
+  observation count, receive/parse/delivery timestamps, parser error count and
+  explicit no-observations state. The implementation never copies Gmail
+  transport identifiers or raw content into the health contract.
+- The source-health schema and Mini App accept/render the Creator metrics while
+  keeping configuration missing, no-new-content and parser failure distinct.
+- Creator/source-health/schema/Mini App targeted suite: `91 passed`; isolated
+  full repository regression: `1147 passed`; Ruff, Mypy, compileall and node
+  syntax checks pass. Railway and Pages browser evidence remain external.
+- PR [#581](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/581)
+  remote test-and-dry-run, CodeQL, dependency-review and SBOM checks all pass.
+  It remains open and stacked on #580; this is not Railway or Pages
+  production acceptance.
+- PR [#582](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/582)
+  remote test-and-dry-run, CodeQL, dependency-review and SBOM checks all pass.
+  It remains open and stacked on #581; live feed freshness and production
+  acceptance remain external.
+
+### Migration audit update (2026-08-14, official News adapter observability)
+
+- TWSE/MOPS/SEC/Fed adapter health rows now include privacy-safe checked and
+  parsed timestamps, parser-error count and bounded latency. HTTP 429 remains a
+  rate-limited provider result without retrying or aborting other providers.
+- Targeted News adapter/contract suite: `45 passed`; isolated full regression:
+  `1147 passed`; Ruff, Mypy, compileall and node syntax checks pass.
+- This is local adapter evidence only. Live provider freshness, Pages release
+  and Railway/Telegram production evidence remain external.
+
+### Migration audit update (2026-08-14, Gmail watch observability)
+
+- Gmail watch health now exposes a privacy-safe observability envelope with
+  receive/parse/delivery timestamps, a bounded parser-error count and an
+  explicit configuration-missing or stale state. Gmail history IDs, message
+  IDs and raw mail are never copied into the health response.
+- Targeted Gmail gateway suite: `12 passed` in an isolated Windows temp
+  directory. The initial shared OneDrive/pytest temp attempt was rejected by
+  an inherited Windows `PermissionError`; no product assertion failed.
+- This is local contract evidence only. OAuth/PubSub configuration, Railway
+  runtime health and controlled Telegram delivery remain external gates.
+
+Remote evidence: PR [#583](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/583)
+passed test-and-dry-run, CodeQL, dependency-review and SBOM checks through
+the privacy-boundary commit `7228915`. This does not promote the Gmail task to
+Railway production PASS;
+OAuth/PubSub and controlled delivery evidence are still external.
+
+### Gmail public-health privacy boundary (2026-08-14)
+
+- Railway `/health` now projects only the Gmail watch observability envelope;
+  private Gmail history/message cursors are not exposed in the public health
+  snapshot or push-success path.
+- Targeted Gmail/monitor regression: `95 passed`; isolated full regression:
+  `1149 passed, 1 skipped`; changed-file Ruff/Mypy/compile checks passed.
+- PR #583 latest commit `7228915` passed the required remote test-and-dry-run,
+  CodeQL, dependency-review and SBOM checks. Production Railway health and
+  Telegram delivery still require protected external configuration.
+
+### Migration audit update (2026-08-14, REQ-ADD-006 dispatch transport)
+
+- `railway-monitor/dispatch_transport.py` now owns only the bounded GitHub
+  repository-dispatch HTTP retry policy. Signing, event construction, durable
+  outbox persistence and the poll loop remain in the existing monitor.
+- Targeted monitor/transport suite: `86 passed`; isolated full regression:
+  `1169 passed, 1 skipped`. Standalone Ruff, Mypy, compileall and front-end
+  syntax checks pass for the extracted transport and its tests.
+- Live GitHub dispatch, Railway callback and Telegram delivery evidence remain
+  external; this task is therefore local PASS / external NEEDS_REVERIFY.
+
+### Migration audit update (2026-08-14, REQ-ADD-007 poll configuration)
+
+- `railway-monitor/poll_config.py` now owns the bounded Jin10/GDELT poll
+  settings projection. The existing monitor remains the only poll loop and
+  required secrets still flow through `configured`.
+- Targeted config/transport/monitor suite: `88 passed`; isolated full
+  regression: `1171 passed, 1 skipped`. Standalone Ruff, Mypy, compileall and
+  front-end syntax checks pass for the extracted module and tests.
+- Railway restart, source polling, `/health` and delivery evidence remain
+  external; local status is PASS / external NEEDS_REVERIFY.
+
+Remote evidence: PR [#584](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/584)
+at `0c09a35` passed test-and-dry-run (run `31772008639`), CodeQL/security
+(`31772008655`, analysis `94679829440`), dependency-review and SBOM. This is
+repository CI evidence only; Railway runtime and controlled delivery remain
+external gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-009 Railway state schema boundary)
+
+- `railway-monitor/state_store_schema.py` now owns the SQLite table creation and
+  additive migrations used by `SeenStore`; `app.py` retains the existing
+  connection/WAL setup and calls the boundary once.
+- The standalone schema suite covers fresh initialization, idempotency and
+  legacy Railway layouts. The combined schema/monitor/health targeted suite
+  passed `91 tests`; the full isolated repository regression passed `1174
+  tests`. Ruff (`src tests`), Mypy (`src`), compileall, frontend syntax and
+  diff checks also passed; no table or row is deleted by the extraction.
+- Live Railway volume migration and receipt persistence are still external
+  evidence gates. The local task is therefore PASS / external NEEDS_REVERIFY,
+  not production acceptance.
+
+### Migration audit update (2026-08-14, REQ-ADD-010 Railway classification state boundary)
+
+- `railway-monitor/classification_store.py` now owns the SQLite transitions for
+  incoming events, classification reasons, retry reopening and redacted
+  diagnostics. `app.py` retains the public `SeenStore` methods as thin
+  compatibility wrappers.
+- The standalone classification suite plus schema, monitor and health suites
+  passed `94 tests`; the full isolated regression at this migration HEAD passed
+  `1177 tests`. Ruff (`src tests`), Mypy (`src`), compileall and frontend syntax
+  checks also passed.
+- `src/event_classifier.py` remains the only canonical matcher. Live Railway
+  restart continuity and receipt/state-volume evidence remain external gates.
+
+### Current gate evidence (2026-08-14)
+
+- `python -m src.runtime_audit` returned `ok=true` with explicit warnings for
+  missing event/research release artifacts and a building research source; no
+  invariant error was suppressed.
+- `python -m src.delivery_smoke_test` failed closed with `TELEGRAM_CHAT_IDS`
+  empty and no recipient configured. No message was sent and no production
+  secret was accessed.
+- These results keep production release and Telegram/Railway acceptance in
+  `BLOCKED`/`NEEDS_REVERIFY`; they are not converted into PASS by local CI.
+
+## Gate decision
+
+The canonical News release-lineage task and this migration verification are
+`LOCKED` on this branch.  Do not merge solely
+from local evidence while PR checks are pending.  Pages browser and protected
+Railway/Telegram acceptance remain external gates; no production side effect
+is attempted by this checkpoint.
+
+### Migration audit update (2026-08-14, REQ-ADD-011 Railway delivery persistence)
+
+- `railway-monitor/delivery_store.py` now owns outbox writes, retry/backoff,
+  receipt registration, bounded history/diagnostics and terminal retention;
+  `SeenStore` retains the compatibility surface and callback-thread boundary.
+- Delivery extraction tests cover replay state, receipt origin validation,
+  recipient-hash failures, legacy receipt counts, retention and photo smoke.
+  Combined delivery/classification/monitor suite: `91 passed` in an isolated
+  workspace basetemp. Changed-module Ruff, `mypy src`, compileall and frontend
+  syntax checks pass.
+- This local evidence does not prove Railway volume continuity, Pages release
+  propagation or real Telegram receipt delivery. Those remain
+  `NEEDS_REVERIFY` after the stacked PR is merged.
+
+Traceability: `REQ-ADD-011` → `railway-monitor/delivery_store.py`,
+`railway-monitor/app.py`, `tests/test_railway_delivery_store.py` → targeted
+suite above. Preservation contracts for the existing `SeenStore` API remain
+covered by `tests/test_railway_monitor.py`.
+
+### Migration audit update (2026-08-14, REQ-ADD-015 Railway dispatch-payload boundary)
+
+- `railway-monitor/dispatch_payload.py` now owns canonical repository-dispatch
+  payload construction and HMAC signing; the monitor retains compatibility
+  wrappers and injects canonical-key/source-normalization callbacks.
+- Dispatch-payload plus health/monitor suite: `88 passed`; changed-module Ruff
+  and compile checks pass. Existing trace, source and release-gate fields are
+  preserved.
+- Live signed dispatch receipt and Telegram delivery remain external
+  `NEEDS_REVERIFY` gates.
+
+Traceability: `REQ-ADD-015` -> `railway-monitor/dispatch_payload.py`,
+`railway-monitor/app.py`, `tests/test_railway_dispatch_payload.py` -> targeted
+suite above. Existing repository-dispatch and HMAC regressions remain covered
+by `tests/test_railway_monitor.py`.
+
+### Migration audit update (2026-08-14, REQ-ADD-017 creator receipt projection)
+
+- `railway-monitor/creator_delivery.py` owns the bounded creator notification
+  key projection used by `/creator-delivery-history`; message bodies,
+  recipient IDs and unrelated receipt categories are excluded.
+- Creator projection plus Jin10/dispatch/health/cache/ledger/delivery/
+  classification/monitor verification passes; changed-module Ruff and compile
+  checks pass.
+- Live creator receipt continuity and Telegram delivery remain external
+  `NEEDS_REVERIFY` gates.
+
+Traceability: `REQ-ADD-017` -> `railway-monitor/creator_delivery.py`,
+`railway-monitor/app.py`, `tests/test_railway_creator_delivery.py` -> targeted
+suite above.
+
+Remote evidence: PR [#594](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/594)
+passed `test-and-dry-run` (run `31795224806`), CodeQL, dependency-review and
+SBOM. This confirms repository CI only; live creator receipt continuity and
+Telegram delivery remain external acceptance gates.
+
+Remote evidence: PR [#593](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/593)
+passed `test-and-dry-run` (run `31794436820`), CodeQL, dependency-review and
+SBOM. This confirms repository CI only; live Jin10 source health remains an
+external acceptance gate.
+
+Remote evidence: PR [#592](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/592)
+passed `test-and-dry-run` (run `31793620545`), CodeQL, dependency-review and
+SBOM. This confirms repository CI only; live signed dispatch receipt and
+Telegram delivery remain external acceptance gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-016 Jin10 source adapter)
+
+- `railway-monitor/jin10_source.py` owns the official MCP `list_flash` source
+  call and advertised-schema argument negotiation. The monitor retains
+  canonical Flash parsing and no scraping fallback was added.
+- Jin10 adapter/monitor targeted verification passes; changed-module Ruff and
+  compile checks pass. Missing tool or rejected optional arguments remain
+  explicit source failures, not empty healthy results.
+- Live Jin10 credentials/source availability remains an external
+  `NEEDS_REVERIFY` gate.
+
+Traceability: `REQ-ADD-016` -> `railway-monitor/jin10_source.py`,
+`railway-monitor/app.py`, `tests/test_railway_jin10_source.py` -> targeted
+suite. Existing source-failure and classification regressions remain covered
+by `tests/test_railway_monitor.py`.
+
+Remote evidence: PR [#591](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/591)
+passed `test-and-dry-run` (run `31792693278`), CodeQL, dependency-review and
+SBOM. This confirms repository CI only; live Railway callback permission and
+status remain external acceptance gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-018 Railway delivery retry boundary)
+
+- `railway-monitor/delivery_retry.py` now owns bounded durable outbox replay;
+  `app.py` keeps the compatibility wrapper and injects the existing dispatch
+  transport and health projection.
+- Persisted signed dispatch payloads are reused byte-for-byte. A failed item is
+  marked with its error and backoff while later due items continue; health
+  diagnostics are emitted only when at least one item is delivered.
+- Retry/monitor/cache/ledger/delivery/classification/Jin10/creator targeted
+  suite: `106 passed`; changed-module Ruff, compileall and diff checks pass.
+
+Traceability: `REQ-ADD-018` -> `railway-monitor/delivery_retry.py`,
+`railway-monitor/app.py`, `tests/test_railway_delivery_retry.py` -> targeted
+suite above. Existing outbox and delivery-receipt regressions remain covered
+by `tests/test_railway_monitor.py`.
+
+Remote evidence: PR [#595](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/595)
+passed `test-and-dry-run` (run `31796511600`, job `94754675327`), CodeQL,
+dependency-review and SBOM. PR [#594](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/594)
+was revalidated after restoring its original head; its `test-and-dry-run`
+passed (run `31796489859`, job `94754612110`). These are repository CI
+evidence only; live Railway restart continuity, signed callback delivery and
+production Telegram receipt remain external `NEEDS_REVERIFY` gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-019 alert dispatch orchestration)
+
+- `railway-monitor/alert_dispatch.py` owns the deterministic trace/payload/
+  signature/dispatch sequence; `app.py` retains the public wrapper and injects
+  the existing canonical callbacks.
+- The targeted Railway suite now covers exact-once orchestration ordering and
+  preserves payload/signature/outbox regressions. Local evidence: `107 passed`.
+
+Traceability: `REQ-ADD-019` -> `railway-monitor/alert_dispatch.py`,
+`railway-monitor/app.py`, `tests/test_railway_alert_dispatch.py` -> targeted
+suite above. Live signed callback and Telegram receipt delivery remain
+external `NEEDS_REVERIFY` gates.
+
+Remote evidence: PR [#596](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/596)
+passed `test-and-dry-run` (run `31797229080`, job `94756870467`), CodeQL,
+dependency-review and SBOM. This confirms repository CI only; live signed
+callback and Telegram receipt delivery remain external `NEEDS_REVERIFY` gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-020 market-sync reader)
+
+- `railway-monitor/market_sync.py` now owns public snapshot URL selection and
+  read-only retrieval; missing or invalid data still returns no confirmation.
+- The app wrapper preserves the existing environment-based configuration and
+  event gate semantics. Tests inject the HTTP client and never contact Pages.
+
+Traceability: `REQ-ADD-020` -> `railway-monitor/market_sync.py`,
+`railway-monitor/app.py`, `tests/test_railway_market_sync.py` -> targeted suite.
+Live Pages propagation and market-source freshness remain external
+`NEEDS_REVERIFY` gates.
+
+Remote evidence: PR [#597](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/597)
+passed `test-and-dry-run` (run `31797915476`, job `94758987872`), CodeQL,
+dependency-review and SBOM. This confirms repository CI only; live Pages
+propagation and market-source freshness remain external `NEEDS_REVERIFY`
+gates.
+
+Remote evidence: PR [#598](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/598)
+passed `test-and-dry-run` (run `31799529570`, job `94763972970`), CodeQL,
+dependency-review and SBOM. The ledger documentation is CI-verified; the
+explicitly listed external completion debt remains open until production
+acceptance evidence is captured.
+
+### Migration audit update (2026-08-14, REQ-ADD-022 market-sync health)
+
+- The public market snapshot reader now exposes a bounded observation envelope
+  without changing the legacy raw-dictionary wrapper.
+- Railway health can distinguish a valid empty snapshot from missing
+  configuration, HTTP/429, invalid payload, and contained reader failure.
+- Targeted Railway regression suite: `113 passed`; changed-module Ruff,
+  compileall, and diff checks pass.
+
+Traceability: `REQ-ADD-022` -> `railway-monitor/market_sync.py`,
+`railway-monitor/app.py`, `tests/test_railway_market_sync.py` and
+`docs/req-add-022-market-sync-health.md`.
+
+Remote evidence: PR [#599](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/599)
+passed `test-and-dry-run` (run `31800524345`, job `94767171838`), CodeQL,
+dependency-review and SBOM. Live Railway status and Pages freshness remain
+external acceptance gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-023 GDELT health projection)
+
+- GDELT health now distinguishes a successful `no_event` scan from
+  `scan_failed`, while stale-cache fallback remains visible and non-live.
+- Targeted GDELT plus Railway regression suite: `116 passed`; changed-module
+  Ruff, compileall, and diff checks pass.
+
+Traceability: `REQ-ADD-023` -> `railway-monitor/gdelt_health.py`,
+`railway-monitor/app.py`, `tests/test_railway_gdelt_health.py` and
+`docs/req-add-023-gdelt-health-projection.md`.
+
+Remote evidence: PR [#600](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/600)
+passed `test-and-dry-run` (run `31801260242`, job `94769543886`), CodeQL,
+dependency-review and SBOM. Live Railway poll and Pages evidence remain
+external acceptance gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-024 health baseline)
+
+- The initial Railway health payload now declares GDELT and market-sync
+  components as `not_checked` before the first polling cycle.
+- Targeted Railway regression suite: `117 passed`; changed-test Ruff,
+  compileall and diff checks pass.
+
+Traceability: `REQ-ADD-024` -> `railway-monitor/app.py`,
+`tests/test_railway_monitor.py` and
+`docs/req-add-024-health-baseline-state.md`.
+
+Remote evidence: PR [#601](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/601)
+passed `test-and-dry-run` (run `31801909891`, job `94771620276`), CodeQL,
+dependency-review and SBOM. Live Railway `/health` evidence remains external.
+
+### Latest migration-head regression evidence
+
+- At migration HEAD `1415f900a55dd39be0afe1fca985d9c087eebbea`, an isolated
+  full repository run completed with `1207 passed` in `121.49s`.
+- This is local repository evidence only; it does not close the external
+  Railway, Pages, or controlled Telegram acceptance debts.
+
+Remote evidence: PR [#588](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/588)
+passed `test-and-dry-run` (run `31789498655`), CodeQL, dependency-review and
+SBOM. This confirms repository CI for the stacked boundary only; Railway
+volume continuity, Pages propagation and controlled Telegram delivery remain
+external acceptance gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-012 Railway event ledger)
+
+- `railway-monitor/ledger_store.py` now owns canonical event-ledger writes,
+  verified-source merging, category cooldowns, escalation exceptions and
+  retention; `SeenStore` keeps the compatibility surface.
+- Ledger/delivery/classification/monitor targeted suite: `94 passed` in an
+  isolated workspace basetemp. Changed-module Ruff, `mypy src`, compileall and
+  frontend syntax checks pass.
+- The local boundary is ready for review, but live Railway restart continuity,
+  Pages release propagation and controlled Telegram receipt evidence remain
+  external `NEEDS_REVERIFY` gates.
+
+Traceability: `REQ-ADD-012` → `railway-monitor/ledger_store.py`,
+`railway-monitor/app.py`, `tests/test_railway_ledger_store.py` → targeted suite
+above; delivery and classification preservation tests remain in the same run.
+
+Remote evidence: PR [#589](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/589)
+passed `test-and-dry-run` (run `31790665824`), CodeQL, dependency-review and
+SBOM. This is repository CI evidence only; live Railway volume continuity,
+Pages propagation and Telegram delivery remain external acceptance gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-013 Railway source-cache boundary)
+
+- `railway-monitor/cache_store.py` now owns bounded SQLite source-cache reads
+  and writes. Malformed JSON, non-list payloads and stale entries fail closed;
+  `SeenStore` preserves the existing API as a compatibility wrapper.
+- Cache/ledger/delivery/classification/monitor targeted suite: `97 passed`.
+  Changed-module Ruff, `mypy src`, compileall and frontend syntax checks pass.
+- The local boundary is ready for review. Live Railway restart/cache continuity,
+  Pages propagation and controlled Telegram receipt evidence remain external
+  `NEEDS_REVERIFY` gates.
+
+Traceability: `REQ-ADD-013` -> `railway-monitor/cache_store.py`,
+`railway-monitor/app.py`, `tests/test_railway_cache_store.py` -> targeted suite
+above. Existing GDELT stale-cache fallback and fail-closed dispatch behaviour
+remain covered by `tests/test_railway_monitor.py`.
+
+Remote evidence: PR [#590](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/590)
+passed `test-and-dry-run` (run `31791713251`), CodeQL, dependency-review and
+SBOM. This remains repository CI evidence only; Railway restart/cache
+continuity, Pages propagation and controlled Telegram delivery are external
+acceptance gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-014 Railway health-dispatch boundary)
+
+- `railway-monitor/health_dispatch.py` owns bounded health-callback payload
+  construction, retry/backoff and safe handling for configuration, permission,
+  rate-limit and upstream failures. The source monitor remains authoritative
+  when the observability callback is unavailable.
+- Health-dispatch plus monitor suite: `86 passed`; changed-module Ruff,
+  compileall and frontend syntax checks pass. The explicit client factory keeps
+  the boundary deterministic without contacting GitHub in tests.
+- Live Railway callback status and GitHub dispatch permission remain external
+  `NEEDS_REVERIFY` gates.
+
+Traceability: `REQ-ADD-014` -> `railway-monitor/health_dispatch.py`,
+`railway-monitor/app.py`, `tests/test_railway_health_dispatch.py` -> targeted
+suite above. Existing health endpoint and callback backoff regressions remain
+covered by `tests/test_railway_monitor.py`.

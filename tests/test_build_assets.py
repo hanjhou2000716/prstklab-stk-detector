@@ -47,3 +47,20 @@ def test_build_assets_requires_source_placeholder(tmp_path):
     (root / "index.html").write_text("<html></html>", encoding="utf-8")
     with pytest.raises(ValueError, match="placeholder"):
         build_assets(root)
+
+
+def test_build_assets_retries_transient_windows_replace_lock(tmp_path, monkeypatch):
+    root = _fixture(tmp_path)
+    original_replace = Path.replace
+    attempts = {"count": 0}
+
+    def flaky_replace(self: Path, target: Path):
+        if self.name.startswith(".index.html.") and attempts["count"] == 0:
+            attempts["count"] += 1
+            raise PermissionError(13, "temporarily locked")
+        return original_replace(self, target)
+
+    monkeypatch.setattr(Path, "replace", flaky_replace)
+    manifest = build_assets(root, build_sha="retry")
+    assert manifest["build_sha"] == "retry"
+    assert attempts["count"] == 1

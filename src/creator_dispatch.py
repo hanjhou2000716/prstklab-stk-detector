@@ -23,7 +23,7 @@ from src.creator_delivery_store import (
     load_creator_delivery_history,
     load_remote_creator_delivery_history,
 )
-from src.creator_notification import deliver_creator_episode
+from src.creator_notification import deliver_creator_episode, deliver_creator_morning_digest
 from src.creator_release import validate_creator_release
 from src.release_manifest import verify_release_files
 from src.scheduled_brief import _write_output
@@ -130,6 +130,34 @@ def dispatch(
         }
     history.extend(remote_history)
     insights = cast(list[Any], creator.get("insights")) if isinstance(creator.get("insights"), list) else []
+    morning_batch = creator.get("morning_batch") if isinstance(creator.get("morning_batch"), dict) else None
+    if morning_batch is not None:
+        # The release may contain historical Creator insights for the Mini App,
+        # but the 10:30 notification is limited to the current batch.  A late
+        # arrival is an additive delta: previously delivered episodes remain
+        # protected by their normal episode idempotency keys.
+        batch_records = morning_batch.get("records") if isinstance(morning_batch.get("records"), list) else []
+        batch_episode_keys = {
+            str(item.get("episode_key") or "").strip()
+            for item in batch_records
+            if isinstance(item, dict) and str(item.get("episode_key") or "").strip()
+        }
+        selected = [
+            item for item in insights
+            if isinstance(item, dict) and str(item.get("episode_key") or "").strip() in batch_episode_keys
+        ]
+        if morning_batch.get("late_arrivals"):
+            late_creators = {
+                str(item).strip().casefold()
+                for item in morning_batch.get("late_arrivals") or []
+                if str(item).strip()
+            }
+            selected = [
+                item for item in selected
+                if str(item.get("creator_id") or item.get("content_origin") or "").strip().casefold() in late_creators
+                or bool(item.get("batch_late_arrival"))
+            ]
+        insights = selected if morning_batch.get("state") != "no_new_content" else []
     receipts: list[dict[str, Any]] = []
     sent = blocked = 0
     for insight in insights:
@@ -154,7 +182,24 @@ def dispatch(
         receipts.extend(row for row in rows if isinstance(row, dict))
         if outcome.get("status") in {"delivered", "media_degraded"}:
             sent += 1
-        else:
+        elif "already_delivered" not in set(outcome.get("reasons") or []):
+            blocked += 1
+    if morning_batch is not None:
+        digest = deliver_creator_morning_digest(
+            morning_batch,
+            release_id=str(manifest.get("release_id") or ""),
+            creator_snapshot_id=str(manifest.get("creator_snapshot_id") or creator.get("snapshot_id") or ""),
+            mini_app_url=public_url,
+            release_ready=True,
+            token=bot_token or "",
+            chat_ids=recipients,
+            delivery_history=history,
+        )
+        digest_receipts = cast(list[Any], digest.get("receipts")) if isinstance(digest.get("receipts"), list) else []
+        receipts.extend(row for row in digest_receipts if isinstance(row, dict))
+        if digest.get("status") == "delivered":
+            sent += 1
+        elif digest.get("status") not in {"no_new_content", "already_delivered"}:
             blocked += 1
     if receipt_path and receipts:
         append_creator_delivery_receipts(receipt_path, receipts)

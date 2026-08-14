@@ -210,3 +210,32 @@ def test_prepare_binds_creator_records_to_the_published_snapshot(tmp_path, monke
         "creator_jenny",
         "creator_gooaye",
     }
+
+
+def test_prepare_binds_sanitized_external_observations_to_snapshot(tmp_path, monkeypatch):
+    records = tmp_path / "external.json"
+    records.write_text(json.dumps({"observations": [{
+        "observation_id": "fj-1", "source": "financialjuice",
+        "headline": "Public headline", "public_safe": True,
+    }]}), encoding="utf-8")
+    snapshot_path = tmp_path / "market.json"
+    monkeypatch.setenv("EXTERNAL_OBSERVATIONS_PATH", str(records))
+    monkeypatch.setattr(scheduled_delivery, "build_market_snapshot", lambda: {
+        "snapshot_id": "m-1", "quotes": [], "indices": [],
+        "source_health": {"status": "healthy", "sources": [], "data_gaps": [],
+                           "missing_source_count": 0, "runtime_failure_count": 0,
+                           "configuration_missing_count": 0, "state_counts": {},
+                           "observability": {}},
+    })
+    monkeypatch.setattr(scheduled_delivery, "build_briefing_snapshot", lambda snapshot, _slot: {
+        "external_observations": snapshot.get("external_observations"),
+    })
+    monkeypatch.setattr(scheduled_delivery, "write_snapshot", lambda snapshot, path: path.write_text(json.dumps(snapshot), encoding="utf-8") is None)
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: None)
+    monkeypatch.setattr(scheduled_delivery, "briefing_correlation", lambda *_args: {"trace_id": "t", "snapshot_id": "m-1", "observation_id": ""})
+    monkeypatch.setattr(scheduled_delivery, "merge_published_metadata", lambda *_args, **_kwargs: True)
+    scheduled_delivery.prepare("morning", snapshot_path)
+    published = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    assert published["external_observations"][0]["observation_id"] == "fj-1"
+    assert published["briefing"]["external_observations"][0]["source"] == "financialjuice"
+    assert published["external_source_health"]["status"] == "healthy"

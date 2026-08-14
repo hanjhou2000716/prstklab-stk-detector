@@ -46,6 +46,12 @@
     "creator_public_validation_errors": {"type": "array", "items": {"type": "string"}},
     "creator_snapshot_id": {"type": ["string", "null"], "minLength": 1},
     "creator_public_artifact_hash": {"type": ["string", "null"], "pattern": "^[a-fA-F0-9]{64}$"},
+    "news_snapshot_id": {"type": ["string", "null"], "minLength": 1},
+    "news_status": {"enum": ["ready", "unavailable", "not_available"]},
+    "external_observation_count": {"type": ["integer", "null"], "minimum": 0},
+    "external_observation_ids_hash": {"type": ["string", "null"], "pattern": "^[a-fA-F0-9]{64}$"},
+    "external_observation_sources": {"type": "array", "items": {"type": "string"}},
+    "external_observation_status": {"enum": ["ready", "no_event", "not_available"]},
     "rollback_release_id": {"type": "string", "minLength": 8},
     "status": {"enum": ["ready", "rolled_back", "invalid"]}
   },

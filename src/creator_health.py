@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-_STATES = {"healthy", "no_new_content", "stale", "parse_failed", "media_degraded", "configuration_missing", "failed"}
+from src.failure_semantics import classify_failure
+
+_STATES = {"healthy", "no_new_content", "stale", "parse_failed", "media_degraded", "configuration_missing", "failed", "provider_failed"}
 _SAFE_FIELDS = {
     "watch_expiration", "last_history_id", "last_notification_at", "last_parsed_at",
     "dlq_count", "last_release_at", "last_media_at", "last_receipt_at",
@@ -14,8 +16,15 @@ _SAFE_FIELDS = {
 def _status(component: dict[str, Any] | None) -> str:
     if not isinstance(component, dict):
         return "configuration_missing"
-    value = str(component.get("creator_health") or component.get("status") or "failed").strip()
-    return value if value in _STATES else "failed"
+    explicit = str(component.get("creator_health") or "").strip()
+    if explicit in _STATES:
+        return explicit
+    state = classify_failure(component)
+    # Creator media has a domain-specific degraded state, but all transport
+    # and parser failures still use the shared failure vocabulary.
+    if component.get("status") == "media_degraded":
+        return "media_degraded"
+    return state if state in _STATES else "failed"
 
 
 def build_creator_health(*, config: dict[str, Any] | None = None, watch: dict[str, Any] | None = None,
@@ -31,7 +40,7 @@ def build_creator_health(*, config: dict[str, Any] | None = None, watch: dict[st
         "delivery": delivery,
     }
     statuses = {name: _status(value) for name, value in components.items()}
-    if any(value == "failed" for value in statuses.values()):
+    if any(value in {"failed", "provider_failed"} for value in statuses.values()):
         overall = "failed"
     elif statuses["config"] == "configuration_missing":
         overall = "configuration_missing"

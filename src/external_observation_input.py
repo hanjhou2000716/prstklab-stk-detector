@@ -1,7 +1,9 @@
-"""Privacy-safe boundary for reviewed external observations.
+"""Privacy-safe ingress for already-normalized external intelligence.
 
-Only normalized, public-safe records may cross from Railway/Gmail into a
-published market snapshot.  Raw mail and transport identifiers are rejected.
+Railway/Gmail may parse private mail, but the scheduled publisher must only
+consume a reviewed, derived observation file.  This boundary deliberately
+rejects transport identifiers and raw content before anything can reach a
+market snapshot or the Pages tree.
 """
 
 from __future__ import annotations
@@ -9,7 +11,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -34,33 +36,55 @@ SAFE_FIELDS = {
 
 
 def external_observations_path() -> Path | None:
+    """Resolve the opt-in sanitized input and reject anything under ``site``."""
     configured = os.getenv("EXTERNAL_OBSERVATIONS_PATH", "").strip()
     if not configured:
         return None
     path = Path(configured).expanduser().resolve()
-    site = (Path.cwd() / "site").resolve()
-    return None if path == site or path.is_relative_to(site) else path
+    site_root = (Path.cwd() / "site").resolve()
+    if path == site_root or path.is_relative_to(site_root):
+        return None
+    return path
 
 
-def _safe(record: dict[str, Any]) -> dict[str, Any] | None:
-    if record.get("public_safe") is not True or any(record.get(k) not in (None, "", [], {}) for k in BLOCKED_FIELDS):
+def _safe_record(record: dict[str, Any]) -> dict[str, Any] | None:
+    if record.get("public_safe") is not True:
+        return None
+    if any(record.get(key) not in (None, "", [], {}) for key in BLOCKED_FIELDS):
         return None
     source = str(record.get("source") or record.get("content_origin") or "").strip().casefold()
+    if source not in ALLOWED_SOURCES:
+        return None
     observation_id = str(record.get("observation_id") or "").strip()
-    if source not in ALLOWED_SOURCES or not observation_id:
+    if not observation_id:
         return None
-    if str(record.get("parse_status") or "normalized").casefold() in PARSE_FAILURES:
+    status = str(record.get("parse_status") or "normalized").strip().casefold()
+    if status in PARSE_FAILURES:
         return None
-    result = {k: record[k] for k in SAFE_FIELDS if k in record}
-    result.update({"source": source, "content_origin": source, "observation_id": observation_id, "public_safe": True})
-    return result
+    safe = {key: record[key] for key in SAFE_FIELDS if key in record}
+    safe["source"] = source
+    safe["content_origin"] = source
+    safe["observation_id"] = observation_id
+    safe["public_safe"] = True
+    return safe
 
 
-def _compound(payload: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
-    if payload.get("content_origin", "").casefold() != "financialjuice" or payload.get("public_safe") is not True:
+def _compound_records(payload: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
+    """Flatten one parsed FinancialJuice envelope at the privacy boundary.
+
+    The envelope's transport ``message_id`` is intentionally never copied to
+    an observation.  Each public-safe item becomes an independent observation
+    keyed by its stable ``item_id`` so the shared event pipeline can cluster,
+    deduplicate, and trace it without retaining private mail identifiers.
+    """
+    if str(payload.get("content_origin") or "").strip().casefold() != "financialjuice":
+        return [], 1
+    if payload.get("public_safe") is not True:
+        return [], 1
+    if str(payload.get("parse_status") or "").strip().casefold() != "parsed":
         return [], 1
     items = payload.get("items")
-    if payload.get("parse_status") != "parsed" or not isinstance(items, list) or payload.get("item_count") != len(items):
+    if not isinstance(items, list) or payload.get("item_count") != len(items):
         return [], 1
     accepted: list[dict[str, Any]] = []
     rejected = 0
@@ -70,13 +94,28 @@ def _compound(payload: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
             rejected += 1
             continue
         item_id = str(item.get("item_id") or "").strip()
-        if (not item_id or item_id in seen or not item.get("event_cluster_key")
-                or not item.get("candidate_event_type") or not item.get("original_headline")
-                or not CONTENT_HASH_RE.fullmatch(str(item.get("content_hash") or ""))):
+        cluster_key = str(item.get("event_cluster_key") or "").strip()
+        candidate_type = str(item.get("candidate_event_type") or "").strip()
+        headline = str(item.get("original_headline") or "").strip()
+        content_hash = str(item.get("content_hash") or "").strip()
+        if (
+            not item_id or item_id in seen or not cluster_key or not candidate_type
+            or not headline or not CONTENT_HASH_RE.fullmatch(content_hash)
+            or item.get("public_safe") is False
+            or item.get("observation_id") not in (None, "", item_id)
+        ):
             rejected += 1
             continue
-        candidate = {**item, "observation_id": item_id, "source": "financialjuice", "content_origin": "financialjuice", "public_safe": True}
-        safe = _safe(candidate)
+        # Preserve only fields admitted by _safe_record; envelope metadata and
+        # any blocked/raw item fields are rejected before they can propagate.
+        candidate = dict(item)
+        candidate.update({
+            "observation_id": item_id,
+            "source": "financialjuice",
+            "content_origin": "financialjuice",
+            "public_safe": True,
+        })
+        safe = _safe_record(candidate)
         if safe is None:
             rejected += 1
             continue
@@ -85,19 +124,75 @@ def _compound(payload: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
     return accepted, rejected
 
 
+def _timestamp(record: dict[str, Any], *fields: str) -> tuple[datetime, str] | None:
+    """Return a validated timestamp without exposing transport metadata."""
+    for field in fields:
+        value = record.get(field)
+        if value in (None, ""):
+            continue
+        try:
+            parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            continue
+        parsed = parsed.replace(tzinfo=parsed.tzinfo or UTC).astimezone(UTC)
+        return parsed, parsed.isoformat()
+    return None
+
+
+def _importance(record: dict[str, Any]) -> float | None:
+    value = record.get("vendor_importance")
+    if value in (None, ""):
+        return None
+    try:
+        return float(str(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def _observability(accepted: list[dict[str, Any]], rejected: int) -> dict[str, Any]:
+    """Summarize FJ operational state without raw content or private IDs."""
+    received = [item for item in (_timestamp(row, "fetched_at", "published_at", "source_published_at") for row in accepted) if item]
+    parsed = [item for item in (_timestamp(row, "fetched_at") for row in accepted) if item]
+    qualifying = [row for row in accepted if (_importance(row) or 0) >= 8]
+    qualifying_times = [item for item in (_timestamp(row, "fetched_at", "published_at") for row in qualifying) if item]
+    pending_clusters = {
+        str(row.get("event_cluster_key") or row.get("observation_id") or "").strip()
+        for row in qualifying
+        if not (row.get("official_confirmed") is True and row.get("market_sync_confirmed") is True)
+    }
+    pending_clusters.discard("")
+    eligible = any(row.get("official_confirmed") is True and row.get("market_sync_confirmed") is True for row in qualifying)
+    decision = "eligible" if eligible else "pending_confirmation" if qualifying else "no_event"
+    return {
+        "last_received_at": max(received, default=(None, None))[1],
+        "last_parsed_at": max(parsed, default=(None, None))[1],
+        "parser_error_count": rejected,
+        "last_importance_ge8_at": max(qualifying_times, default=(None, None))[1],
+        "qualifying_item_count": len(qualifying),
+        "pending_cluster_count": len(pending_clusters),
+        "last_notification_decision": decision,
+        "last_delivery_at": None,
+    }
+
+
 def load_external_observations(path: Path | None = None) -> tuple[list[dict[str, Any]], int]:
+    """Load derived records and return ``(accepted, rejected_count)``.
+
+    A malformed or private record is rejected rather than partially copied.
+    The raw input is never returned, logged, or published.
+    """
     resolved = path if path is not None else external_observations_path()
     if resolved is None or not resolved.is_file():
         return [], 0
-    site = (Path.cwd() / "site").resolve()
-    if resolved.resolve() == site or resolved.resolve().is_relative_to(site):
+    site_root = (Path.cwd() / "site").resolve()
+    if resolved.resolve() == site_root or resolved.resolve().is_relative_to(site_root):
         return [], 1
     try:
         payload = json.loads(resolved.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError):
         return [], 1
     if isinstance(payload, dict) and "items" in payload:
-        return _compound(payload)
+        return _compound_records(payload)
     records = payload.get("observations") if isinstance(payload, dict) else payload
     if not isinstance(records, list):
         return [], 1
@@ -105,7 +200,7 @@ def load_external_observations(path: Path | None = None) -> tuple[list[dict[str,
     rejected = 0
     seen: set[str] = set()
     for record in records:
-        safe = _safe(record) if isinstance(record, dict) else None
+        safe = _safe_record(record) if isinstance(record, dict) else None
         if safe is None or safe["observation_id"] in seen:
             rejected += 1
             continue
@@ -114,37 +209,60 @@ def load_external_observations(path: Path | None = None) -> tuple[list[dict[str,
     return accepted, rejected
 
 
-def _observability(rows: list[dict[str, Any]], rejected: int) -> dict[str, Any]:
-    qualifying = [r for r in rows if float(r.get("vendor_importance") or 0) >= 8]
-    pending = {str(r.get("event_cluster_key") or r.get("observation_id")) for r in qualifying if not (r.get("official_confirmed") and r.get("market_sync_confirmed"))}
-    return {"qualifying_item_count": len(qualifying), "pending_cluster_count": len(pending), "parser_error_count": rejected, "last_notification_decision": "eligible" if any(r.get("official_confirmed") and r.get("market_sync_confirmed") for r in qualifying) else "pending_confirmation" if qualifying else "no_event", "last_delivery_at": None}
-
-
 def external_source_health(*, path: Path | None, accepted: list[dict[str, Any]], rejected: int, checked_at: datetime) -> dict[str, Any] | None:
+    """Return one optional-source health row; unset configuration stays hidden."""
     if path is None:
         return None
     if not path.is_file():
-        status = "failed"
-        issues = ["external_observations_unavailable"]
-    else:
-        status = "partial" if rejected else "healthy" if accepted else "no_event"
-        issues = ["rejected_records"] if rejected else []
-    return {"key": "external_financialjuice", "label": "FinancialJuice sanitized ingress", "provider": "financialjuice", "role": "optional", "status": status, "state": status, "semantic_state": status, "provider_status": "scan_complete" if status != "failed" else "unavailable", "source_tier": "discovery", "source_url": "https://financialjuice.com/", "checked_at": checked_at.isoformat(), "accepted_count": len(accepted), "rejected_count": rejected, "observability": _observability(accepted, rejected), "issues": issues}
+        return {
+            "key": "external_financialjuice", "label": "FinancialJuice sanitized ingress",
+            "provider": "financialjuice", "role": "optional", "status": "failed",
+            "state": "failed", "semantic_state": "failed", "provider_status": "unavailable",
+            "source_tier": "discovery", "source_url": "https://financialjuice.com/",
+            "checked_at": checked_at.isoformat(), "observability": _observability([], 1),
+            "issues": ["external_observations_unavailable"],
+        }
+    status = "partial" if rejected else "healthy" if accepted else "no_event"
+    state = "partial" if rejected else "healthy" if accepted else "no_event"
+    return {
+        "key": "external_financialjuice", "label": "FinancialJuice sanitized ingress",
+        "provider": "financialjuice", "role": "optional", "status": status,
+        "state": state, "semantic_state": state, "provider_status": "scan_complete",
+        "source_tier": "discovery", "source_url": "https://financialjuice.com/",
+        "checked_at": checked_at.isoformat(), "accepted_count": len(accepted),
+        "rejected_count": rejected, "last_success_at": checked_at.isoformat(),
+        "observability": _observability(accepted, rejected),
+        "issues": ["rejected_records"] if rejected else [],
+    }
 
 
 def merge_external_source_health(health: dict[str, Any], row: dict[str, Any] | None) -> dict[str, Any]:
+    """Merge the optional row while preserving source-health count invariants."""
     if not row:
         return health
     merged = dict(health)
-    sources = [dict(x) for x in health.get("sources", []) if isinstance(x, dict)]
-    by_key = {str(x.get("key")): x for x in sources}
+    sources = [dict(item) for item in (health.get("sources") or []) if isinstance(item, dict)]
+    by_key = {str(item.get("key")): item for item in sources}
     by_key[str(row["key"])] = dict(row)
     sources = list(by_key.values())
     gap_states = {"fallback_active", "configuration_missing", "stale", "partial", "failed", "critical"}
-    gaps = [x for x in sources if str(x.get("semantic_state") or x.get("status")) in gap_states]
-    runtime = [x for x in gaps if x.get("semantic_state") != "configuration_missing"]
-    merged.update({"sources": sources, "data_gaps": [{"source": x.get("label", x.get("key", "")), "key": x.get("key", ""), "issues": x.get("issues", [])} for x in gaps], "missing_source_count": len(gaps), "runtime_failure_count": len(runtime), "configuration_missing_count": len(gaps) - len(runtime), "gap_source_keys": [str(x.get("key")) for x in gaps]})
+    gaps = [item for item in sources if str(item.get("semantic_state") or item.get("status") or "") in gap_states]
+    runtime = [item for item in gaps if str(item.get("semantic_state")) != "configuration_missing"]
+    config = [item for item in gaps if str(item.get("semantic_state")) == "configuration_missing"]
+    merged["sources"] = sources
+    merged["data_gaps"] = [{"source": item.get("label", item.get("key", "")), "key": item.get("key", ""), "issues": item.get("issues", [])} for item in gaps]
+    merged["missing_source_count"] = len(gaps)
+    merged["runtime_failure_count"] = len(runtime)
+    merged["configuration_missing_count"] = len(config)
+    merged["gap_source_keys"] = [str(item.get("key") or "") for item in gaps]
     merged["status"] = "partial" if runtime and merged.get("status") != "critical" else merged.get("status", "healthy")
+    state_counts = {state: sum(str(item.get("state") or item.get("semantic_state") or "") == state for item in sources) for state in ("healthy", "no_event", "partial", "failed", "configuration_missing")}
+    merged["state_counts"] = {**dict(health.get("state_counts") or {}), **state_counts}
+    observability = dict(health.get("observability") or {})
+    observability["runtime_failure_count"] = len(runtime)
+    observability["configuration_missing_count"] = len(config)
+    observability["no_event_count"] = sum(str(item.get("status")) == "no_event" for item in sources)
+    merged["observability"] = observability
     return merged
 
 

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/news-story.schema.json",
+  "type": "object",
+  "required": ["story_id", "provider", "source_tier", "authority_tier", "title", "canonical_url", "market", "dedupe_key", "public_safe"],
+  "properties": {
+    "story_id": {"type": "string", "minLength": 8},
+    "provider": {"type": "string", "minLength": 1},
+    "provider_name": {"type": "string", "minLength": 1},
+    "source_tier": {"enum": ["official", "market", "discovery", "unknown"]},
+    "authority_tier": {"enum": ["official", "market", "discovery", "unknown"]},
+    "title": {"type": "string", "minLength": 1},
+    "canonical_url": {"type": "string", "pattern": "^https://"},
+    "url": {"type": "string", "pattern": "^https://"},
+    "published_at": {"type": ["string", "null"], "format": "date-time"},
+    "market": {"enum": ["taiwan", "us", "global", "cross_market"]},
+    "tickers": {"type": "array", "items": {"type": "string"}},
+    "sectors": {"type": "array", "items": {"type": "string"}},
+    "topics": {"type": "array", "items": {"type": "string"}},
+    "relevance_reasons": {"type": "array", "items": {"type": "string"}},
+    "freshness": {"type": "string", "minLength": 1},
+    "dedupe_key": {"type": "string", "minLength": 1},
+    "public_safe": {"type": "boolean"},
+    "supporting_sources": {"type": "array", "items": {"type": "object"}}
+  },
+  "additionalProperties": true
+}

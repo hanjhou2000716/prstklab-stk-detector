@@ -35,11 +35,30 @@ pipeline call and a tested consumer.
 | Creator media boundary | `src/creator_media.py`, `src/creator_photo_delivery.py` | yes | private attachment boundary + transport-neutral plan | hash + private availability only | no raw media | bounded photo/text plan; receipt contract | partially_integrated |
 | Creator release lineage | `src/creator_release.py`, `src/creator_intelligence_pipeline.py`, `src/release_manifest.py` | yes | scheduled input + optional manifest artifact | parent release/hash/status | release-bound creator drawer | no raw creator media | production |
 | Creator/PRStK correlation | `src/creator_correlation.py`, `src/creator_intelligence_pipeline.py`, `src/briefing_cards.py` | yes | briefing creator binding | explicit entity matches + snapshot IDs | creator correlation state/reason | never a standalone signal | production |
-| Railway health contract | `src/railway_health_contract.py`, `railway-monitor/app.py` | yes | monitor health boundary | bounded status/retry/heartbeat | source health | observability only | partially_integrated |
+| Railway health contract | `src/railway_health_contract.py`, `railway-monitor/app.py`, `railway-monitor/runtime_config.py`, `railway-monitor/health_contract.py` | yes | monitor health boundary + standalone heartbeat/Gmail projection + redacted runtime configuration | bounded status/retry/heartbeat/configuration state | source health | observability only | partially_integrated |
+| Railway Gmail runtime wiring | `railway-monitor/gmail_runtime.py`, `railway-monitor/gmail_ingress.py`, `railway-monitor/gmail_watch.py`, `railway-monitor/email_store.py` | yes | standalone configuration-to-ingress boundary | redacted Gmail watch health | source health | not directly | partially_integrated |
+| Railway dispatch transport | `railway-monitor/dispatch_transport.py`, `railway-monitor/app.py` | yes | bounded repository-dispatch HTTP transport with compatibility wrapper | no payload persistence | no | repository dispatch only; no Telegram path | partially_integrated |
+| Railway delivery retry orchestration | `railway-monitor/delivery_retry.py`, `railway-monitor/app.py` | yes | bounded durable outbox replay with injected transport and health projection | retry status remains in delivery outbox | source health delivery diagnostics | repository dispatch retry only; no direct Telegram path | partially_integrated |
+| Railway alert dispatch orchestration | `railway-monitor/alert_dispatch.py`, `railway-monitor/app.py` | yes | trace/payload/sign/dispatch seam with compatibility wrapper | signed repository-dispatch payload | no | repository dispatch only; no direct Telegram path | partially_integrated |
+| Railway market-sync reader | `railway-monitor/market_sync.py`, `railway-monitor/app.py` | yes | read-only public snapshot retrieval with fail-closed fallback and explicit health envelope | market snapshot + available/configuration/http/parser status | source evidence and market-sync health | no direct delivery | partially_integrated |
+| Railway GDELT health projection | `railway-monitor/gdelt_health.py`, `railway-monitor/app.py` | yes | source state projection distinguishes no-event, scan-failed and stale-cache fallback | GDELT health envelope | source health and pending reasons | no direct delivery | partially_integrated |
+| Railway health baseline | `railway-monitor/app.py` | yes | declares not-checked source states before first poll | stable health keys | prevents missing-field misclassification | no direct delivery | partially_integrated |
+| Mini App health baseline projection | `site/app.js`, `tests/test_mini_app_layout.py` | yes | release-provided health rows | explicit `尚未檢查` label | source-health panel | no direct delivery | partially_integrated |
+| Gate-driven traceability ledgers | `docs/gate-ledgers-2026-08-14.md`, `docs/gate-driven-state-2026-08-14.md` | yes | requirement, regression, and debt evidence | documentation only | no direct UI | no direct delivery | production |
+| Railway poll configuration | `railway-monitor/poll_config.py`, `railway-monitor/app.py` | yes | bounded Jin10/GDELT environment projection | redacted runtime settings only | source health indirectly | no direct delivery | partially_integrated |
+| Railway state schema/migrations | `railway-monitor/state_store_schema.py`, `railway-monitor/app.py` | yes | SeenStore startup boundary | SQLite tables, additive migrations and outbox/receipt lineage | source health indirectly | delivery receipt persistence | partially_integrated |
+| Railway classification state | `railway-monitor/classification_store.py`, `railway-monitor/app.py`, `src/event_classifier.py` | yes | incoming-event and retry state boundary | classification reason/count diagnostics | pending/blocked reason | dispatch gate input only | partially_integrated |
+| Railway classifier delivery gate | `railway-monitor/app.py`, `src/event_classifier.py` | yes | canonical classifier required for Jin10 dispatch; root-only fallback is diagnostics-only | classifier mode and blocked reason | source health | blocked until repository-shared mode | partially_integrated |
 | Creator scheduled input | `src/scheduled_delivery.py`, `.github/workflows/scheduled-brief.yml` | yes | optional sanitized `CREATOR_RECORDS_PATH` | same market/creator release lineage | creator release | no raw creator media | production |
+| Creator morning batch | `src/creator_morning_batch.py`, `src/creator_intelligence_pipeline.py`, `src/briefing_cards.py` | yes | morning briefing attaches deterministic 10:30 Asia/Taipei batch metadata | `morning_batch` in creator release | creator release lineage | no independent alert path | production |
+| FinancialJuice sanitized external input | `src/external_observation_input.py`, `src/scheduled_delivery.py`, `.github/workflows/scheduled-brief.yml` | yes | opt-in `EXTERNAL_OBSERVATIONS_PATH` | same market/event/briefing snapshot | external intelligence | raw Gmail rejected; Railway bundle still required | partially_integrated |
 | Creator delivery runtime | `src/creator_dispatch.py`, `src/creator_notification.py`, `src/creator_photo_delivery.py`, `src/creator_delivery_store.py`, `railway-monitor/app.py` | yes | release-gated scheduled dispatch + signed Railway history | private receipt lineage only | release-bound Creator view | one initial episode notification; duplicate-safe | production |
 | Creator provider health | `src/creator_source_health.py`, `src/creator_health.py`, `src/scheduled_delivery.py` | yes | scheduled source-health merge | provider state without raw content | healthy/no-content/stale/failure states | gate evidence only | production |
 | External event unification | `src/external_event_pipeline.py`, `src/financialjuice_contract.py`, `src/intelligence_pipeline.py` | yes | shared classification and evidence gate | event cluster/evidence state | pending reason and source evidence | only policy-eligible events | production |
+| News provider registry | `src/news_intelligence.py`, `schemas/news-story.schema.json` | yes | `risk_news.build_news_snapshot` | provider/domain contract | release-provided URL allowlist | no direct alert | production |
+| Official news feed adapters | `src/news_feed_adapters.py`, `src/risk_news.py` | yes | official-first, fail-soft fallback | provider health + NewsStory | provider/status badges | context only | partially_integrated |
+| News interest/ranking/dedup | `src/news_intelligence.py`, `src/risk_news.py` | yes | market snapshot | `news.intelligence` | badges/relevance reasons | context only | production |
+| News artifact/release binding | `src/release_manifest.py`, `src/artifact_contract.py`, `site/app.js` | yes | multi-market release envelope with lineage and browser verification | `data/news.json` | release-bound and loaded by manifest | release gate and Mini App | production |
 | Creator source health runtime | `src/creator_source_health.py`, `src/scheduled_delivery.py`, `site/app.js` | yes | scheduled snapshot preparation | `source_health` + `creator_source_health` | optional source rows and no-event/failed distinction | observability only | production |
 | Creator delivery lineage | `src/creator_delivery_store.py`, `src/delivery_callback.py`, `railway-monitor/app.py` | yes | signed Creator callback + history read | private Railway receipt metadata | no raw receipt data | dedupe evidence | production |
 | Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | briefing contract + optional endpoint/local queue | yes | feedback controls | no | partially_integrated |
@@ -422,3 +441,63 @@ runtime sources are healthy, `部分資料降級` when an optional/runtime sourc
 degraded, and `核心資料不足` when a core source is unavailable. The release
 contract validates both counts against `sources[].semantic_state`, so the Mini
 App cannot invent a divergent gap count.
+
+## Railway delivery persistence
+
+`railway-monitor/delivery_store.py` is the canonical SQLite boundary for
+delivery outbox rows, retry backoff, receipt registration, bounded diagnostics
+and retention. `SeenStore` delegates to it for backward compatibility. The
+boundary is **partially_integrated** until the stacked PR is merged and live
+Railway volume/receipt continuity is reverified; local contract tests are
+green, while production acceptance remains an external gate.
+
+## Railway event-ledger persistence
+
+`railway-monitor/ledger_store.py` owns canonical event-ledger observations,
+source merging, category cooldowns and retention. `SeenStore` delegates to it
+for compatibility. Status is **partially_integrated** pending stacked PR and
+live restart/volume continuity evidence; no release or notification policy is
+implemented in this store.
+
+## Railway source-cache persistence
+
+`railway-monitor/cache_store.py` is the canonical SQLite boundary for bounded
+source-cache reads and writes used by GDELT fallback. It rejects malformed JSON,
+non-list payloads and entries older than the caller's freshness window, while
+preserving UTF-8 content and atomic replacement semantics. `SeenStore` keeps
+the compatibility methods and delegates to this module. Status is
+**partially_integrated** until the stacked PR is merged and live restart/cache
+continuity is reverified.
+
+## Railway health-dispatch boundary
+
+`railway-monitor/health_dispatch.py` owns the non-fatal GitHub health callback
+payload, retry/backoff handling and 401/403/429/5xx classification. The monitor
+keeps the public compatibility function and its bounded state, while the
+extracted boundary receives an explicit health updater and HTTP client factory
+for deterministic tests. Status is **partially_integrated** until the stacked
+PR is merged and live Railway callback behaviour is reverified.
+
+## Railway dispatch-payload boundary
+
+`railway-monitor/dispatch_payload.py` owns canonical repository-dispatch body
+construction and HMAC signing. The monitor keeps compatibility wrappers while
+injecting canonical-key, trace and source-normalization callbacks. Status is
+**partially_integrated** until the stacked PR is merged and a live signed
+dispatch receipt is reverified.
+
+## Jin10 source adapter
+
+`railway-monitor/jin10_source.py` owns the official MCP `list_flash` call and
+schema-aware argument negotiation. The monitor retains compatibility parsing
+into canonical `Flash` records; no HTML/feed scraping or alternate endpoint is
+introduced. Status is **partially_integrated** until the stacked PR is merged
+and live Jin10 source health is reverified.
+
+## Creator delivery receipt projection
+
+`railway-monitor/creator_delivery.py` owns the bounded, non-secret projection
+of creator notification keys used by the creator-history endpoint. It filters
+receipt category, deduplicates and truncates keys without exposing message
+bodies or recipient identifiers. Status is **partially_integrated** pending
+stacked PR and live creator receipt verification.

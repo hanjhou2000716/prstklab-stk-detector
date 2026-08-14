@@ -130,6 +130,26 @@ def test_source_health_rejects_scan_failed_with_events():
     assert any("has_events=true" in error for error in errors)
 
 
+def test_source_health_accepts_external_observability_contract():
+    health = _source_health()
+    health["sources"].append({
+        "key": "external_financialjuice",
+        "status": "partial",
+        "semantic_state": "partial",
+        "observability": {
+            "last_received_at": "2026-08-14T01:02:03+00:00",
+            "last_parsed_at": "2026-08-14T01:02:03+00:00",
+            "parser_error_count": 1,
+            "last_importance_ge8_at": "2026-08-14T01:02:03+00:00",
+            "qualifying_item_count": 1,
+            "pending_cluster_count": 1,
+            "last_notification_decision": "pending_confirmation",
+            "last_delivery_at": None,
+        },
+    })
+    assert validate_source_health(health) == []
+
+
 def test_research_rejects_formal_candidates_exceeding_candidates():
     errors = validate_research(_research(sources=[{"market": "us", "strategy": "value", "scan_state": "complete", "status": "可用", "candidates": 0, "formal_candidates": 5}]))
     assert any("formal_candidates" in error for error in errors)

@@ -1,5 +1,6 @@
 import json
 
+from src.news_intelligence import build_news_intelligence
 from src.release_manifest import (
     _gap_count,
     _normalize_market,
@@ -34,6 +35,99 @@ def test_manifest_is_ready_and_hashes_are_verifiable(tmp_path):
     assert manifest["status"] == "ready"
     assert manifest["artifact_paths"]["market.json"] == "data/market.json"
     assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
+def test_manifest_publishes_release_bound_news_intelligence(tmp_path):
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["news"] = {
+        "provider_registry": build_news_intelligence([])["provider_registry"],
+        "intelligence": build_news_intelligence(
+            [{"title": "Fed statement", "url": "https://www.federalreserve.gov/a"}],
+            market="us",
+        ),
+    }
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+
+    assert manifest["status"] == "ready"
+    assert manifest["artifact_paths"]["news.json"] == "data/news.json"
+    assert manifest["schema_versions"]["news"] == "1.0"
+    news = json.loads((tmp_path / "site" / "data" / "news.json").read_text(encoding="utf-8"))
+    assert news["market_snapshot_id"] == manifest["market_snapshot_id"]
+    assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
+def test_manifest_records_external_observation_lineage(tmp_path):
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["external_observations"] = [
+        {"observation_id": "fj-2", "source": "FinancialJuice"},
+        {"observation_id": "fj-1", "source": "financialjuice"},
+    ]
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+
+    assert manifest["external_observation_count"] == 2
+    assert manifest["external_observation_sources"] == ["financialjuice"]
+    assert manifest["external_observation_status"] == "ready"
+    assert manifest["external_observation_ids_hash"]
+    assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
+def test_manifest_publishes_multi_market_news_release(tmp_path):
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    registry = build_news_intelligence([])["provider_registry"]
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["news"] = {
+        "provider_registry": registry,
+        "intelligence": {
+            "taiwan": build_news_intelligence(
+                [{"title": "TWSE filing", "url": "https://www.twse.com.tw/a"}],
+                market="taiwan",
+            ),
+            "us": build_news_intelligence(
+                [{"title": "Fed statement", "url": "https://www.federalreserve.gov/a"}],
+                market="us",
+            ),
+        },
+    }
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+    manifest = build_release_manifest(root=tmp_path)
+    assert manifest["status"] == "ready"
+    news = json.loads((tmp_path / "site" / "data" / "news.json").read_text(encoding="utf-8"))
+    assert set(news["markets"]) == {"taiwan", "us"}
+    assert news["market_snapshot_id"] == manifest["market_snapshot_id"]
+    assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
+def test_multi_market_news_release_schema_rejects_missing_lineage(tmp_path):
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["news"] = {
+        "provider_registry": build_news_intelligence([])["provider_registry"],
+        "intelligence": {"taiwan": build_news_intelligence([], market="taiwan")},
+    }
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+    manifest = build_release_manifest(root=tmp_path)
+    news_path = tmp_path / "site" / "data" / "news.json"
+    news = json.loads(news_path.read_text(encoding="utf-8"))
+    news.pop("market_snapshot_id")
+    news_path.write_text(json.dumps(news), encoding="utf-8")
+    manifest["artifact_hashes"]["news.json"] = sha256_file(news_path)
+    assert verify_release_files(manifest, root=tmp_path / "site") == []
+    # The local release gate, unlike hash-only verification, rejects the
+    # malformed envelope before delivery.
+    from src.release_gate import _validate_news_artifact
+
+    errors = _validate_news_artifact(news, manifest)
+    assert any("market_snapshot_id" in error for error in errors)
 
 
 def test_manifest_publishes_release_bound_source_health_artifact(tmp_path):

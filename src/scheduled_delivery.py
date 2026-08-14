@@ -22,7 +22,6 @@ from src.external_observation_input import (
     merge_external_source_health,
 )
 from src.market_data import build_market_snapshot
-from src.railway_observation_client import load_railway_observations
 from src.refresh_market_data import merge_published_metadata, write_snapshot
 from src.release_gate import verify_release_for_delivery
 from src.scheduled_brief import (
@@ -115,61 +114,23 @@ def _creator_input_failures() -> dict[str, str]:
 def prepare(slot: str, snapshot_path: Path) -> dict:
     """Create the exact snapshot that will later be deployed and delivered."""
     snapshot = build_market_snapshot()
-    local_path = external_observations_path()
-    local_rows, rejected = load_external_observations(local_path)
-    railway_rows, railway_status = load_railway_observations()
-    merged_rows: list[dict] = []
-    seen_ids: set[str] = set()
-    for row in [*railway_rows, *local_rows]:
-        if not isinstance(row, dict):
-            continue
-        observation_id = str(row.get("observation_id") or "").strip()
-        if not observation_id or observation_id in seen_ids:
-            continue
-        seen_ids.add(observation_id)
-        merged_rows.append(row)
-    if merged_rows:
-        snapshot["external_observations"] = merged_rows
-    else:
+    external_path = external_observations_path()
+    external_observations, external_rejected = load_external_observations(external_path)
+    if external_observations:
+        snapshot["external_observations"] = external_observations
+    elif "external_observations" not in snapshot:
         snapshot["external_observations"] = []
     external_health = external_source_health(
-        path=local_path,
-        accepted=merged_rows,
-        rejected=rejected,
+        path=external_path,
+        accepted=external_observations,
+        rejected=external_rejected,
         checked_at=datetime.now(UTC),
     )
-    overall_source_health = snapshot.get("source_health") or {}
-    railway_health: dict | None = None
     if external_health:
-        overall_source_health = merge_external_source_health(overall_source_health, external_health)
-    if railway_status.get("status") not in {"configuration_missing", "no_event"}:
-        railway_health = {
-            "key": "external_railway_export",
-            "label": "Railway sanitized email export",
-            "provider": "railway",
-            "role": "optional",
-            "status": railway_status.get("status", "failed"),
-            "state": railway_status.get("status", "failed"),
-            "semantic_state": railway_status.get("status", "failed"),
-            "provider_status": "scan_complete" if railway_status.get("status") == "ready" else "unavailable",
-            "source_tier": "discovery",
-            "source_url": "https://railway.app/",
-            "checked_at": datetime.now(UTC).isoformat(),
-            "accepted_count": len(railway_rows),
-            "issues": [str(railway_status.get("reason"))] if railway_status.get("reason") else [],
-        }
-        overall_source_health = merge_external_source_health(overall_source_health, railway_health)
-    if external_health or railway_health:
-        snapshot["source_health"] = overall_source_health
-        snapshot["external_source_health"] = external_health or railway_health
-    snapshot["external_observation_ingress"] = {
-        "state": railway_status.get("status", "configuration_missing"),
-        "railway_count": len(railway_rows),
-        "local_count": len(local_rows),
-        "deduplicated_count": len(merged_rows),
-        "rejected_count": rejected,
-        "reason": railway_status.get("reason"),
-    }
+        snapshot["source_health"] = merge_external_source_health(
+            snapshot.get("source_health") or {}, external_health
+        )
+        snapshot["external_source_health"] = external_health
     creator_records = _load_creator_records()
     # Creator feeds are optional, but their operational state belongs in the
     # same source-health contract as the published market snapshot.  Keep this

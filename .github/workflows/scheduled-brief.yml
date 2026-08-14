@@ -69,6 +69,10 @@ jobs:
       CREATOR_NOTIFICATION_ENABLED: ${{ vars.CREATOR_NOTIFICATION_ENABLED }}
       CREATOR_MEDIA_ROOT: ${{ vars.CREATOR_MEDIA_ROOT }}
       CREATOR_DELIVERY_RECEIPTS_PATH: /tmp/prstk-creator-delivery-receipts.json
+      # Railway/Gmail may publish only a reviewed, sanitized observation
+      # bundle. Raw mail and transport identifiers are rejected by the
+      # scheduled publisher and never enter site/data.
+      EXTERNAL_OBSERVATIONS_PATH: ${{ vars.EXTERNAL_OBSERVATIONS_PATH }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683

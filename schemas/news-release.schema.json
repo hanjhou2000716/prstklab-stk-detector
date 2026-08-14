@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/news-release.schema.json",
+  "type": "object",
+  "required": ["schema_version", "market_snapshot_id", "snapshot_id", "provider_registry", "markets", "status"],
+  "properties": {
+    "schema_version": {"type": "string", "minLength": 1},
+    "market_snapshot_id": {"type": "string", "minLength": 1},
+    "snapshot_id": {"type": "string", "minLength": 1},
+    "provider_registry": {"type": "array", "items": {"type": "object"}},
+    "markets": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"type": "object"}
+    },
+    "status": {"enum": ["ready", "no_event"]}
+  },
+  "additionalProperties": true
+}

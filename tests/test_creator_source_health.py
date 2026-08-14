@@ -25,6 +25,28 @@ def test_creator_health_reports_provider_records_and_parse_failure():
     by_provider = {row["provider"]: row for row in rows}
     assert by_provider["haojiao"]["status"] == "healthy"
     assert by_provider["gooaye"]["creator_health"] == "parse_failed"
+    assert by_provider["haojiao"]["observability"]["observations"] == 1
+    assert by_provider["gooaye"]["observability"]["parser_error_count"] == 1
+
+
+def test_creator_health_observability_keeps_timestamps_and_delivery_state_public_safe():
+    rows = build_creator_source_health(
+        [{
+            "content_origin": "haojiao",
+            "parse_status": "parsed",
+            "fetched_at": "2026-08-14T01:02:03Z",
+            "last_parsed_at": "2026-08-14T01:03:03Z",
+            "last_receipt_at": "2026-08-14T01:04:03Z",
+            "gmail_message_id": "must-not-be-published",
+        }],
+        checked_at=datetime(2026, 8, 14, tzinfo=UTC),
+        enabled=True,
+        configured=True,
+    )
+    metrics = next(row["observability"] for row in rows if row["provider"] == "haojiao")
+    assert metrics["last_parsed_at"] == "2026-08-14T01:03:03+00:00"
+    assert metrics["last_delivery_at"] == "2026-08-14T01:04:03+00:00"
+    assert "gmail_message_id" not in metrics
 
 
 def test_merge_creator_sources_keeps_core_failure_and_optional_config_separate():

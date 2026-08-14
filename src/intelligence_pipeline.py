@@ -14,6 +14,21 @@ from src.market_regime import classify_regime
 from src.stress_scenarios import run_stress_scenario
 from src.surprise_engine import calculate_surprise
 
+_PRIVATE_EXTERNAL_FIELDS = frozenset({
+    "body", "raw_body", "attachments", "data", "local_path", "private_url",
+    "gmail_message_id", "gmail_thread_id", "gmail_history_id", "message_id",
+    "thread_id", "sender", "recipient", "email_address",
+})
+
+
+def _sanitize_external_record(record: dict[str, Any], *, source: str | None = None) -> dict[str, Any]:
+    """Keep direct callers on the same privacy boundary as the file loader."""
+    safe = {key: value for key, value in record.items() if key not in _PRIVATE_EXTERNAL_FIELDS}
+    if source:
+        safe["source"] = source
+        safe["content_origin"] = source
+    return safe
+
 
 def _market_reaction(observations: Iterable[dict[str, Any]]) -> dict[str, Any]:
     """Expose the observed first reaction without inferring causality.
@@ -64,14 +79,16 @@ def build_intelligence_context(
         if isinstance(items, list) and items:
             for item in items:
                 if isinstance(item, dict):
-                    external_input.append({
-                        **item,
-                        "source": observation.get("source") or observation.get("content_origin") or "financialjuice",
-                        "content_origin": observation.get("content_origin") or "financialjuice",
-                        "message_id": observation.get("message_id"),
-                    })
+                    external_input.append(_sanitize_external_record(
+                        item,
+                        source=str(observation.get("source") or observation.get("content_origin") or "financialjuice"),
+                    ))
         else:
-            external_input.append(observation)
+            # An unresolved compound envelope contains only private transport
+            # metadata and must not become an event or leak its message ID.
+            if str(observation.get("parse_status") or "").casefold() == "compound_unresolved":
+                continue
+            external_input.append(_sanitize_external_record(observation))
     external_clusters = cluster_external_events(external_input)
     external_risk: dict[str, Any] = {"status": "not_available", "clusters": []}
     if external_clusters:

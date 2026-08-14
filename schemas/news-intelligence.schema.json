@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/news-intelligence.schema.json",
+  "type": "object",
+  "required": ["schema_version", "provider_registry", "stories", "interest_graph", "status"],
+  "properties": {
+    "schema_version": {"type": "string", "minLength": 1},
+    "provider_registry": {"type": "array", "items": {"type": "object"}},
+    "stories": {"type": "array", "items": {"$ref": "#/$defs/story"}},
+    "interest_graph": {"type": "object"},
+    "status": {"enum": ["ready", "no_event"]}
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "story": {
+      "type": "object",
+      "required": ["story_id", "provider", "source_tier", "authority_tier", "title", "canonical_url", "market", "dedupe_key", "public_safe"],
+      "properties": {
+        "story_id": {"type": "string", "minLength": 8},
+        "provider": {"type": "string", "minLength": 1},
+        "source_tier": {"type": "string", "minLength": 1},
+        "authority_tier": {"type": "string", "minLength": 1},
+        "title": {"type": "string", "minLength": 1},
+        "canonical_url": {"type": "string", "pattern": "^https://"},
+        "market": {"enum": ["taiwan", "us", "global", "cross_market"]},
+        "dedupe_key": {"type": "string", "minLength": 1},
+        "public_safe": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    }
+  }
+}

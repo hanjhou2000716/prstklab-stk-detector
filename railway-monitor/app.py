@@ -16,17 +16,320 @@ import logging
 import os
 import re
 import sqlite3
+import sys
 import threading
 import time
 import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunsplit
 
 import httpx
+
+try:
+    from runtime_config import configuration_health, delivery_shared_secret
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _config_spec = spec_from_file_location(
+        "railway_runtime_config",
+        Path(__file__).with_name("runtime_config.py"),
+    )
+    if _config_spec is None or _config_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/runtime_config.py")
+    _config_module = module_from_spec(_config_spec)
+    _config_spec.loader.exec_module(_config_module)
+    configuration_health = _config_module.configuration_health
+    delivery_shared_secret = _config_module.delivery_shared_secret
+
+try:
+    from health_contract import age_seconds, gmail_health_fields, health_request_path, monitor_heartbeat, non_negative_int
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _health_spec = spec_from_file_location(
+        "railway_health_contract",
+        Path(__file__).with_name("health_contract.py"),
+    )
+    if _health_spec is None or _health_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/health_contract.py")
+    _health_module = module_from_spec(_health_spec)
+    _health_spec.loader.exec_module(_health_module)
+    age_seconds = _health_module.age_seconds
+    gmail_health_fields = _health_module.gmail_health_fields
+    health_request_path = _health_module.health_request_path
+    monitor_heartbeat = _health_module.monitor_heartbeat
+    non_negative_int = _health_module.non_negative_int
+
+try:
+    from gmail_runtime import configure_gmail_ingress as build_gmail_ingress
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _gmail_runtime_spec = spec_from_file_location(
+        "railway_gmail_runtime",
+        Path(__file__).with_name("gmail_runtime.py"),
+    )
+    if _gmail_runtime_spec is None or _gmail_runtime_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/gmail_runtime.py")
+    _gmail_runtime_module = module_from_spec(_gmail_runtime_spec)
+    _gmail_runtime_spec.loader.exec_module(_gmail_runtime_module)
+    build_gmail_ingress = _gmail_runtime_module.configure_gmail_ingress
+
+try:
+    from dispatch_transport import dispatch_repository_payload as send_repository_payload
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _dispatch_spec = spec_from_file_location(
+        "railway_dispatch_transport",
+        Path(__file__).with_name("dispatch_transport.py"),
+    )
+    if _dispatch_spec is None or _dispatch_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/dispatch_transport.py")
+    _dispatch_module = module_from_spec(_dispatch_spec)
+    _dispatch_spec.loader.exec_module(_dispatch_module)
+    send_repository_payload = _dispatch_module.dispatch_repository_payload
+
+try:
+    from poll_config import load_poll_settings
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _poll_config_spec = spec_from_file_location(
+        "railway_poll_config",
+        Path(__file__).with_name("poll_config.py"),
+    )
+    if _poll_config_spec is None or _poll_config_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/poll_config.py") from None
+    _poll_config_module = module_from_spec(_poll_config_spec)
+    sys.modules[_poll_config_spec.name] = _poll_config_module
+    _poll_config_spec.loader.exec_module(_poll_config_module)
+    load_poll_settings = _poll_config_module.load_poll_settings
+
+try:
+    from state_store_schema import initialize_state_schema
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _schema_spec = spec_from_file_location(
+        "railway_state_store_schema",
+        Path(__file__).with_name("state_store_schema.py"),
+    )
+    if _schema_spec is None or _schema_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/state_store_schema.py") from None
+    _schema_module = module_from_spec(_schema_spec)
+    _schema_spec.loader.exec_module(_schema_module)
+    initialize_state_schema = _schema_module.initialize_state_schema
+
+try:
+    from classification_store import (
+        add_if_new as store_add_if_new,
+        classification_diagnostics as store_classification_diagnostics,
+        classification_for as store_classification_for,
+        classification_reason_counts as store_classification_reason_counts,
+        claim_classification as store_claim_classification,
+        record_incoming_flash as store_record_incoming_flash,
+        release_classification as store_release_classification,
+        set_classification as store_set_classification,
+        set_classification_reason as store_set_classification_reason,
+    )
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _classification_spec = spec_from_file_location(
+        "railway_classification_store",
+        Path(__file__).with_name("classification_store.py"),
+    )
+    if _classification_spec is None or _classification_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/classification_store.py") from None
+    _classification_module = module_from_spec(_classification_spec)
+    _classification_spec.loader.exec_module(_classification_module)
+    store_add_if_new = _classification_module.add_if_new
+    store_classification_diagnostics = _classification_module.classification_diagnostics
+    store_classification_for = _classification_module.classification_for
+    store_classification_reason_counts = _classification_module.classification_reason_counts
+    store_claim_classification = _classification_module.claim_classification
+    store_record_incoming_flash = _classification_module.record_incoming_flash
+    store_release_classification = _classification_module.release_classification
+    store_set_classification = _classification_module.set_classification
+    store_set_classification_reason = _classification_module.set_classification_reason
+
+try:
+    from delivery_store import (
+        delivery_diagnostics as store_delivery_diagnostics,
+        delivery_history as store_delivery_history,
+        due_outbox as store_due_outbox,
+        mark_outbox as store_mark_outbox,
+        outbox_state as store_outbox_state,
+        prune_delivery_history as store_prune_delivery_history,
+        record_delivery_status as store_record_delivery_status,
+        record_outbox as store_record_outbox,
+    )
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _delivery_spec = spec_from_file_location(
+        "railway_delivery_store",
+        Path(__file__).with_name("delivery_store.py"),
+    )
+    if _delivery_spec is None or _delivery_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/delivery_store.py") from None
+    _delivery_module = module_from_spec(_delivery_spec)
+    _delivery_spec.loader.exec_module(_delivery_module)
+    store_delivery_diagnostics = _delivery_module.delivery_diagnostics
+    store_delivery_history = _delivery_module.delivery_history
+    store_due_outbox = _delivery_module.due_outbox
+    store_mark_outbox = _delivery_module.mark_outbox
+    store_outbox_state = _delivery_module.outbox_state
+    store_prune_delivery_history = _delivery_module.prune_delivery_history
+    store_record_delivery_status = _delivery_module.record_delivery_status
+    store_record_outbox = _delivery_module.record_outbox
+
+try:
+    from ledger_store import (
+        category_may_dispatch as store_category_may_dispatch,
+        ledger_may_dispatch as store_ledger_may_dispatch,
+        mark_alert_reminded as store_mark_alert_reminded,
+        observe_alert as store_observe_alert,
+        prune_event_ledger as store_prune_event_ledger,
+        record_category_dispatch as store_record_category_dispatch,
+    )
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _ledger_spec = spec_from_file_location(
+        "railway_ledger_store",
+        Path(__file__).with_name("ledger_store.py"),
+    )
+    if _ledger_spec is None or _ledger_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/ledger_store.py") from None
+    _ledger_module = module_from_spec(_ledger_spec)
+    _ledger_spec.loader.exec_module(_ledger_module)
+    store_category_may_dispatch = _ledger_module.category_may_dispatch
+    store_ledger_may_dispatch = _ledger_module.ledger_may_dispatch
+    store_mark_alert_reminded = _ledger_module.mark_alert_reminded
+    store_observe_alert = _ledger_module.observe_alert
+    store_prune_event_ledger = _ledger_module.prune_event_ledger
+    store_record_category_dispatch = _ledger_module.record_category_dispatch
+
+try:
+    from cache_store import read_cache as store_read_cache, write_cache as store_write_cache
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _cache_spec = spec_from_file_location(
+        "railway_cache_store",
+        Path(__file__).with_name("cache_store.py"),
+    )
+    if _cache_spec is None or _cache_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/cache_store.py") from None
+    _cache_module = module_from_spec(_cache_spec)
+    _cache_spec.loader.exec_module(_cache_module)
+    store_read_cache = _cache_module.read_cache
+    store_write_cache = _cache_module.write_cache
+
+try:
+    from health_dispatch import dispatch_monitor_health as store_dispatch_monitor_health
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _health_dispatch_spec = spec_from_file_location(
+        "railway_health_dispatch",
+        Path(__file__).with_name("health_dispatch.py"),
+    )
+    if _health_dispatch_spec is None or _health_dispatch_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/health_dispatch.py") from None
+    _health_dispatch_module = module_from_spec(_health_dispatch_spec)
+    _health_dispatch_spec.loader.exec_module(_health_dispatch_module)
+    store_dispatch_monitor_health = _health_dispatch_module.dispatch_monitor_health
+
+try:
+    from dispatch_payload import (
+        build_dispatch_payload as store_build_dispatch_payload,
+        sign as store_sign,
+        sign_dispatch_payload as store_sign_dispatch_payload,
+    )
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _payload_spec = spec_from_file_location(
+        "railway_dispatch_payload",
+        Path(__file__).with_name("dispatch_payload.py"),
+    )
+    if _payload_spec is None or _payload_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/dispatch_payload.py") from None
+    _payload_module = module_from_spec(_payload_spec)
+    _payload_spec.loader.exec_module(_payload_module)
+    store_build_dispatch_payload = _payload_module.build_dispatch_payload
+    store_sign = _payload_module.sign
+    store_sign_dispatch_payload = _payload_module.sign_dispatch_payload
+
+try:
+    from jin10_source import (
+        default_flash_arguments as store_default_flash_arguments,
+        fetch_jin10_flashes as store_fetch_jin10_flashes,
+    )
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _jin10_spec = spec_from_file_location(
+        "railway_jin10_source",
+        Path(__file__).with_name("jin10_source.py"),
+    )
+    if _jin10_spec is None or _jin10_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/jin10_source.py") from None
+    _jin10_module = module_from_spec(_jin10_spec)
+    _jin10_spec.loader.exec_module(_jin10_module)
+    store_default_flash_arguments = _jin10_module.default_flash_arguments
+    store_fetch_jin10_flashes = _jin10_module.fetch_jin10_flashes
+
+try:
+    from creator_delivery import notification_keys as creator_notification_keys
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _creator_spec = spec_from_file_location(
+        "railway_creator_delivery",
+        Path(__file__).with_name("creator_delivery.py"),
+    )
+    if _creator_spec is None or _creator_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/creator_delivery.py") from None
+    _creator_module = module_from_spec(_creator_spec)
+    _creator_spec.loader.exec_module(_creator_module)
+    creator_notification_keys = _creator_module.notification_keys
+
+try:
+    from delivery_retry import retry_due_outbox as store_retry_due_outbox
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _retry_spec = spec_from_file_location(
+        "railway_delivery_retry",
+        Path(__file__).with_name("delivery_retry.py"),
+    )
+    if _retry_spec is None or _retry_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/delivery_retry.py") from None
+    _retry_module = module_from_spec(_retry_spec)
+    _retry_spec.loader.exec_module(_retry_module)
+    store_retry_due_outbox = _retry_module.retry_due_outbox
+
+try:
+    from alert_dispatch import dispatch_alert as store_dispatch_alert
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _alert_dispatch_spec = spec_from_file_location(
+        "railway_alert_dispatch",
+        Path(__file__).with_name("alert_dispatch.py"),
+    )
+    if _alert_dispatch_spec is None or _alert_dispatch_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/alert_dispatch.py") from None
+    _alert_dispatch_module = module_from_spec(_alert_dispatch_spec)
+    _alert_dispatch_spec.loader.exec_module(_alert_dispatch_module)
+    store_dispatch_alert = _alert_dispatch_module.dispatch_alert
+
+try:
+    from market_sync import (
+        fetch_market_sync_observation as store_fetch_market_sync_observation,
+        fetch_market_sync_snapshot as store_fetch_market_sync_snapshot,
+    )
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _market_sync_spec = spec_from_file_location(
+        "railway_market_sync",
+        Path(__file__).with_name("market_sync.py"),
+    )
+    if _market_sync_spec is None or _market_sync_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/market_sync.py") from None
+    _market_sync_module = module_from_spec(_market_sync_spec)
+    _market_sync_spec.loader.exec_module(_market_sync_module)
+    store_fetch_market_sync_observation = _market_sync_module.fetch_market_sync_observation
+    store_fetch_market_sync_snapshot = _market_sync_module.fetch_market_sync_snapshot
+
+try:
+    from gdelt_health import project_gdelt_health as store_project_gdelt_health
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _gdelt_health_spec = spec_from_file_location(
+        "railway_gdelt_health",
+        Path(__file__).with_name("gdelt_health.py"),
+    )
+    if _gdelt_health_spec is None or _gdelt_health_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/gdelt_health.py") from None
+    _gdelt_health_module = module_from_spec(_gdelt_health_spec)
+    _gdelt_health_spec.loader.exec_module(_gdelt_health_module)
+    store_project_gdelt_health = _gdelt_health_module.project_gdelt_health
 
 
 def _delivery_shared_secret() -> str:
@@ -37,10 +340,7 @@ def _delivery_shared_secret() -> str:
     both names during migration, preferring the Railway-specific setting, so
     a naming mismatch cannot silently block otherwise valid receipts.
     """
-    return (
-        os.environ.get("DELIVERY_STATUS_SHARED_SECRET", "").strip()
-        or os.environ.get("RAILWAY_STATUS_SHARED_SECRET", "").strip()
-    )
+    return delivery_shared_secret()
 
 # Railway is currently configured with ``/railway-monitor`` as its root
 # directory.  In that layout the repository-level ``src`` package is not
@@ -126,6 +426,17 @@ except ModuleNotFoundError as error:
                     return {"category": None, "reason": "energy_requires_material_context", "matched_terms": [hit], "text": haystack}
                 return {"category": category, "reason": f"{category}_keyword", "matched_terms": [hit], "text": haystack}
         return {"category": None, "reason": "keyword_no_match", "matched_terms": [], "text": haystack}
+
+
+def classifier_delivery_allowed() -> bool:
+    """Allow dispatch only when the canonical repository classifier is active.
+
+    The root-only Railway image keeps a compatibility classifier so its health
+    endpoint remains available during packaging mistakes. That fallback is
+    deliberately candidate-only: it must never create a repository dispatch
+    that could become a Telegram alert under a different policy version.
+    """
+    return not _USING_STANDALONE_CLASSIFIER
 
 
 JIN10_MCP_URL = "https://mcp.jin10.com/mcp"
@@ -330,7 +641,8 @@ HEALTH_STATE: dict[str, Any] = {
     "service": "prstk-jin10-monitor",
     "started_at": datetime.now(timezone.utc).isoformat(),
     "jin10": {"status": "not_checked", "last_success_at": None, "last_failure_at": None, "item_count": 0, "error": None},
-    "gdelt": {"enabled": True, "status": "not_checked", "last_success_at": None, "last_failure_at": None, "article_count": 0, "alert_count": 0, "pending_count": 0, "pending_reasons": {}, "error": None, "stale_cache_used": False, "health_dispatch_status": "not_checked", "health_dispatch_error": None, "health_dispatch_next_retry_at": None},
+    "gdelt": {"enabled": True, "status": "not_checked", "event_scan": "not_checked", "last_success_at": None, "last_failure_at": None, "article_count": 0, "alert_count": 0, "pending_count": 0, "pending_reasons": {}, "error": None, "stale_cache_used": False, "health_dispatch_status": "not_checked", "health_dispatch_error": None, "health_dispatch_next_retry_at": None},
+    "market_sync": {"status": "not_checked", "source_url": None, "fetched_at": None, "record_count": 0, "error": None},
     "classification": {
         "status": "not_checked",
         "updated_at": None,
@@ -371,59 +683,13 @@ def update_health(component: str, **values: Any) -> None:
 
 
 def _non_negative_int(value: Any) -> int | None:
-    """Parse a delivery counter without accepting booleans or negatives."""
-    if isinstance(value, bool):
-        return None
-    try:
-        number = int(value)
-    except (TypeError, ValueError):
-        return None
-    return number if number >= 0 else None
+    """Compatibility wrapper for callers of the legacy app module."""
+    return non_negative_int(value)
 
 
 def _age_seconds(value: str | None, *, now: datetime | None = None) -> int | None:
-    """Return non-negative UTC age for an ISO timestamp, if parseable."""
-    if not value:
-        return None
-    try:
-        timestamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-        if timestamp.tzinfo is None:
-            timestamp = timestamp.replace(tzinfo=timezone.utc)
-        reference = now or datetime.now(timezone.utc)
-        if reference.tzinfo is None:
-            reference = reference.replace(tzinfo=timezone.utc)
-        return max(0, int((reference.astimezone(timezone.utc) - timestamp.astimezone(timezone.utc)).total_seconds()))
-    except (TypeError, ValueError, OverflowError):
-        return None
-
-
-def monitor_heartbeat(monitor: dict[str, Any], *, now: datetime | None = None) -> dict[str, Any]:
-    """Return a bounded heartbeat diagnostic for the long-running poll loop.
-
-    Railway can still reach ``/health`` when the asyncio worker is alive but
-    blocked in a provider request.  Comparing the last completed cycle with
-    a timeout derived from the configured poll interval makes that failure
-    visible without changing the platform-level liveness status.
-    """
-    reference = now or datetime.now(timezone.utc)
-    if reference.tzinfo is None:
-        reference = reference.replace(tzinfo=timezone.utc)
-    interval = _non_negative_int(monitor.get("poll_interval_seconds")) or 120
-    # Allow one missed cycle plus a small network/SQLite margin.  Keep a
-    # minimum so the startup window is not reported stale during deployment.
-    timeout = max(300, interval * 2 + 60)
-    completed_age = _age_seconds(monitor.get("last_cycle_completed_at"), now=reference)
-    started_age = _age_seconds(monitor.get("last_cycle_started_at"), now=reference)
-    if completed_age is None:
-        heartbeat_status = "starting" if started_age is None or started_age <= timeout else "stale"
-    else:
-        heartbeat_status = "healthy" if completed_age <= timeout else "stale"
-    return {
-        "heartbeat_status": heartbeat_status,
-        "heartbeat_timeout_seconds": timeout,
-        "last_cycle_age_seconds": completed_age,
-        "current_cycle_age_seconds": started_age,
-    }
+    """Compatibility wrapper for callers of the legacy app module."""
+    return age_seconds(value, now=now)
 
 
 def health_snapshot() -> dict[str, Any]:
@@ -432,6 +698,7 @@ def health_snapshot() -> dict[str, Any]:
     monitor = snapshot.get("monitor")
     if isinstance(monitor, dict):
         monitor.update(monitor_heartbeat(monitor))
+    snapshot["runtime_config"] = configuration_health()
     return snapshot
 
 
@@ -769,195 +1036,45 @@ class SeenStore:
         self.connection = sqlite3.connect(path, timeout=5)
         self.connection.execute("PRAGMA busy_timeout=5000")
         self.connection.execute("PRAGMA journal_mode=WAL")
-        self.connection.execute(
-            "CREATE TABLE IF NOT EXISTS seen (event_id TEXT PRIMARY KEY, first_seen_at TEXT NOT NULL)"
-        )
-        # Older Railway volumes have a two-column ``seen`` table.  Keep those
-        # rows, but make them eligible for one post-deploy classification pass
-        # so a headline that was previously outside the keyword scope can be
-        # re-evaluated after a rule update.
-        columns = {row[1] for row in self.connection.execute("PRAGMA table_info(seen)").fetchall()}
-        if "classification" not in columns:
-            self.connection.execute(
-                "ALTER TABLE seen ADD COLUMN classification TEXT NOT NULL DEFAULT 'unclassified'"
-            )
-        if "classified_at" not in columns:
-            self.connection.execute("ALTER TABLE seen ADD COLUMN classified_at TEXT")
-        self.connection.execute(
-            "CREATE TABLE IF NOT EXISTS dispatched (category TEXT NOT NULL, summary TEXT NOT NULL, dispatched_at TEXT NOT NULL)"
-        )
-        self.connection.execute(
-            "CREATE TABLE IF NOT EXISTS cache (cache_key TEXT PRIMARY KEY, payload TEXT NOT NULL, refreshed_at TEXT NOT NULL)"
-        )
-        self.connection.execute(
-            """CREATE TABLE IF NOT EXISTS event_ledger (
-                canonical_key TEXT PRIMARY KEY,
-                event_type TEXT NOT NULL,
-                source_url TEXT,
-                person_fingerprint TEXT,
-                location_fingerprint TEXT,
-                action_fingerprint TEXT,
-                first_discovered_at TEXT NOT NULL,
-                last_reminded_at TEXT,
-                escalated INTEGER NOT NULL DEFAULT 0,
-                verified_sources_json TEXT NOT NULL DEFAULT '[]',
-                last_title TEXT,
-                updated_at TEXT NOT NULL
-            )"""
-        )
-        # Formal Railway outbox: dispatch attempts survive GitHub Actions
-        # cache eviction and can be retried/inspected without replaying every
-        # source event.
-        self.connection.execute(
-            """CREATE TABLE IF NOT EXISTS delivery_outbox (
-                trace_id TEXT PRIMARY KEY,
-                canonical_key TEXT NOT NULL,
-                source TEXT NOT NULL,
-                event_id TEXT NOT NULL,
-                category TEXT,
-                payload_json TEXT NOT NULL,
-                status TEXT NOT NULL DEFAULT 'pending',
-                attempts INTEGER NOT NULL DEFAULT 0,
-                last_error TEXT,
-                next_retry_at TEXT,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            )"""
-        )
-        outbox_columns = {
-            row[1] for row in self.connection.execute("PRAGMA table_info(delivery_outbox)").fetchall()
-        }
-        if "category" not in outbox_columns:
-            self.connection.execute("ALTER TABLE delivery_outbox ADD COLUMN category TEXT")
-        self.connection.execute(
-            """CREATE TABLE IF NOT EXISTS incoming_events (
-                event_id TEXT PRIMARY KEY,
-                source TEXT NOT NULL,
-                title TEXT,
-                content TEXT,
-                occurred_at TEXT,
-                classification TEXT NOT NULL DEFAULT 'unclassified',
-                classification_reason TEXT,
-                first_seen_at TEXT NOT NULL,
-                last_seen_at TEXT NOT NULL,
-                last_error TEXT
-            )"""
-        )
-        incoming_columns = {
-            row[1] for row in self.connection.execute("PRAGMA table_info(incoming_events)").fetchall()
-        }
-        if "classification_reason" not in incoming_columns:
-            self.connection.execute(
-                "ALTER TABLE incoming_events ADD COLUMN classification_reason TEXT"
-            )
-        self.connection.execute(
-            """CREATE TABLE IF NOT EXISTS delivery_receipts (
-                trace_id TEXT NOT NULL,
-                recipient_hash TEXT NOT NULL,
-                status TEXT NOT NULL,
-                error TEXT,
-                delivered_count INTEGER,
-                failed_count INTEGER,
-                reported_at TEXT,
-                updated_at TEXT NOT NULL,
-                PRIMARY KEY(trace_id, recipient_hash)
-            )"""
-        )
-        receipt_columns = {
-            row[1] for row in self.connection.execute("PRAGMA table_info(delivery_receipts)").fetchall()
-        }
-        # Keep the migration additive: Railway volumes may contain receipts
-        # written by an older monitor process.
-        for column, definition in (
-            ("delivered_count", "INTEGER"),
-            ("failed_count", "INTEGER"),
-            ("reported_at", "TEXT"),
-        ):
-            if column not in receipt_columns:
-                self.connection.execute(
-                    f"ALTER TABLE delivery_receipts ADD COLUMN {column} {definition}"
-                )
+        initialize_state_schema(self.connection)
         self.connection.commit()
 
     def record_incoming_flash(self, flash: Flash, classification_reason: str | None = None) -> None:
-        now = datetime.now(timezone.utc).isoformat()
-        self.connection.execute(
-            """INSERT INTO incoming_events(event_id,source,title,content,occurred_at,classification_reason,first_seen_at,last_seen_at)
-               VALUES(?,?,?,?,?,?,?,?)
-               ON CONFLICT(event_id) DO UPDATE SET title=excluded.title, content=excluded.content,
-                 occurred_at=excluded.occurred_at,
-                 classification_reason=CASE WHEN incoming_events.classification='unclassified'
-                   THEN COALESCE(excluded.classification_reason, incoming_events.classification_reason)
-                   ELSE incoming_events.classification_reason END,
-                 last_seen_at=excluded.last_seen_at""",
-            (flash.event_id, "jin10", flash.title, flash.content, flash.occurred_at, classification_reason, now, now),
+        store_record_incoming_flash(
+            self.connection,
+            event_id=flash.event_id,
+            title=flash.title,
+            content=flash.content,
+            occurred_at=flash.occurred_at,
+            classification_reason=classification_reason,
         )
-        self.connection.commit()
 
     def set_classification_reason(self, event_id: str, reason: str, error: str | None = None) -> None:
         """Persist the rule path even when an event is not dispatchable."""
-        now = datetime.now(timezone.utc).isoformat()
-        self.connection.execute(
-            "UPDATE incoming_events SET classification_reason=?, last_error=?, last_seen_at=? WHERE event_id=?",
-            (str(reason)[:200], error[:500] if error else None, now, event_id),
-        )
-        self.connection.commit()
+        store_set_classification_reason(self.connection, event_id, reason, error)
 
     def classification_reason_counts(self) -> dict[str, int]:
-        rows = self.connection.execute(
-            """SELECT COALESCE(classification_reason, 'unknown'), COUNT(*)
-               FROM incoming_events WHERE classification='unclassified'
-               GROUP BY COALESCE(classification_reason, 'unknown')"""
-        ).fetchall()
-        return {str(reason): int(count) for reason, count in rows}
+        return store_classification_reason_counts(self.connection)
 
     def classification_diagnostics(self) -> dict[str, Any]:
-        rows = self.connection.execute(
-            """SELECT COALESCE(classification, 'unknown'), COUNT(*)
-               FROM incoming_events GROUP BY COALESCE(classification, 'unknown')"""
-        ).fetchall()
-        reason_counts = self.classification_reason_counts()
-        return {
-            "classification_counts": {str(label): int(count) for label, count in rows},
-            "reason_counts": reason_counts,
-            "unclassified_count": sum(reason_counts.values()),
-        }
+        return store_classification_diagnostics(self.connection)
 
     def record_outbox(self, alert: Alert, payload: dict[str, Any]) -> str:
         trace_id = alert_trace_id(alert)
-        now = datetime.now(timezone.utc).isoformat()
-        self.connection.execute(
-            """INSERT INTO delivery_outbox(trace_id,canonical_key,source,event_id,category,payload_json,status,created_at,updated_at)
-               VALUES(?,?,?,?,?,?,'pending',?,?)
-               ON CONFLICT(trace_id) DO UPDATE SET category=excluded.category, payload_json=excluded.payload_json, updated_at=excluded.updated_at""",
-            (trace_id, alert_canonical_key(alert), alert.source, alert.event_id, alert.category, json.dumps(payload, ensure_ascii=False), now, now),
+        store_record_outbox(
+            self.connection,
+            trace_id=trace_id,
+            canonical_key=alert_canonical_key(alert),
+            source=alert.source,
+            event_id=alert.event_id,
+            category=alert.category,
+            payload=payload,
         )
-        self.connection.commit()
         update_health("delivery", **self.delivery_diagnostics())
         return trace_id
 
     def mark_outbox(self, trace_id: str, status: str, error: str | None = None) -> None:
-        if status not in {"pending", "sent", "partial", "failed"}:
-            raise ValueError(f"unsupported outbox status: {status}")
-        now = datetime.now(timezone.utc)
-        retry_at: str | None = None
-        if status == "failed":
-            row = self.connection.execute(
-                "SELECT attempts FROM delivery_outbox WHERE trace_id = ?", (trace_id,)
-            ).fetchone()
-            attempts = int(row[0]) if row else 0
-            # Retry quickly after a transient failure, then back off to at
-            # most 15 minutes.  The stable trace ID makes an accepted-but-
-            # unacknowledged request safe to replay downstream.
-            delay_seconds = min(15 * 60, 30 * (2 ** min(attempts, 5)))
-            retry_at = (now + timedelta(seconds=delay_seconds)).isoformat()
-        self.connection.execute(
-            """UPDATE delivery_outbox
-               SET status=?, attempts=attempts+1, last_error=?, next_retry_at=?, updated_at=?
-               WHERE trace_id=?""",
-            (status, error, retry_at, now.isoformat(), trace_id),
-        )
-        self.connection.commit()
+        store_mark_outbox(self.connection, trace_id, status, error)
         update_health("delivery", **self.delivery_diagnostics())
 
     def due_outbox(self, limit: int = 20) -> list[dict[str, Any]]:
@@ -967,49 +1084,15 @@ class SeenStore:
         those remain visible in diagnostics but are intentionally skipped
         because they cannot be reconstructed safely.
         """
-        now = datetime.now(timezone.utc).isoformat()
-        rows = self.connection.execute(
-            """SELECT trace_id, payload_json, status, attempts, updated_at
-               FROM delivery_outbox
-               WHERE status IN ('pending', 'failed')
-                 AND (next_retry_at IS NULL OR next_retry_at <= ?)
-               ORDER BY updated_at ASC LIMIT ?""",
-            (now, max(1, min(100, int(limit)))),
-        ).fetchall()
-        due: list[dict[str, Any]] = []
-        for trace_id, payload_json, status, attempts, updated_at in rows:
-            try:
-                payload = json.loads(payload_json)
-            except (TypeError, json.JSONDecodeError):
-                continue
-            dispatch_payload = payload.get("dispatch_payload") if isinstance(payload, dict) else None
-            if not isinstance(dispatch_payload, dict):
-                continue
-            due.append({
-                "trace_id": str(trace_id),
-                "dispatch_payload": dispatch_payload,
-                "status": str(status),
-                "attempts": int(attempts),
-                "updated_at": str(updated_at),
-            })
-        return due
+        return store_due_outbox(self.connection, limit)
 
     def outbox_state(self, trace_id: str) -> tuple[str, bool] | None:
         """Return status and whether a durable replay body is available."""
-        row = self.connection.execute(
-            "SELECT status, payload_json FROM delivery_outbox WHERE trace_id = ?", (trace_id,)
-        ).fetchone()
-        if row is None:
-            return None
-        try:
-            payload = json.loads(row[1])
-        except (TypeError, json.JSONDecodeError):
-            payload = None
-        has_payload = isinstance(payload, dict) and isinstance(payload.get("dispatch_payload"), dict)
-        return str(row[0]), has_payload
+        return store_outbox_state(self.connection, trace_id)
 
     def delivery_history(self, db: sqlite3.Connection | None = None, limit: int = 10) -> list[dict[str, Any]]:
         """Return a bounded, non-secret recent delivery history for health checks."""
+        return store_delivery_history(db or self.connection, limit=limit, age_seconds_fn=_age_seconds)
         database = db or self.connection
         rows = database.execute(
             """SELECT trace_id, source, event_id, category, status, attempts, last_error, updated_at
@@ -1079,6 +1162,7 @@ class SeenStore:
 
     def delivery_diagnostics(self, db: sqlite3.Connection | None = None) -> dict[str, Any]:
         """Return non-secret delivery state for Railway's health endpoint."""
+        return store_delivery_diagnostics(db or self.connection, age_seconds_fn=_age_seconds)
         database = db or self.connection
         rows = database.execute(
             "SELECT status, COUNT(*) FROM delivery_outbox GROUP BY status"
@@ -1171,6 +1255,7 @@ class SeenStore:
         deleted first because receipts have no foreign-key cascade on older
         Railway volumes.  The limit keeps a single monitor cycle inexpensive.
         """
+        return store_prune_delivery_history(self.connection, retention_days, limit)
         days = max(30, int(retention_days))
         batch_size = max(1, min(5000, int(limit)))
         cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
@@ -1197,6 +1282,16 @@ class SeenStore:
 
     def record_delivery_status(self, payload: dict[str, Any]) -> bool:
         """Persist an authenticated GitHub per-run delivery receipt."""
+        callback_connection = threading.get_ident() != self.owner_thread_id
+        db = sqlite3.connect(self.path, timeout=5) if callback_connection else self.connection
+        try:
+            db.execute("PRAGMA busy_timeout=5000")
+            accepted = store_record_delivery_status(db, payload)
+            update_health("delivery", **self.delivery_diagnostics(db))
+            return accepted
+        finally:
+            if callback_connection:
+                db.close()
         trace_id = str(payload.get("trace_id") or "").strip()
         receipt_kind = str(payload.get("receipt_kind") or "production").strip()
         status = str(payload.get("delivery_status") or "unknown").strip()
@@ -1311,25 +1406,11 @@ class SeenStore:
 
     def release_classification(self, event_id: str, error: str) -> None:
         """Return a failed dispatch to the retryable state."""
-        now = datetime.now(timezone.utc).isoformat()
-        self.connection.execute(
-            "UPDATE seen SET classification='unclassified', classified_at=NULL WHERE event_id=?",
-            (event_id,),
-        )
-        self.connection.execute(
-            "UPDATE incoming_events SET classification='unclassified', classification_reason=?, last_error=?, last_seen_at=? WHERE event_id=?",
-            (f"dispatch_failed:{error[:120]}" if error else "dispatch_failed", error[:500], now, event_id),
-        )
-        self.connection.commit()
+        store_release_classification(self.connection, event_id, error)
 
     def add_if_new(self, event_id: str) -> bool:
         """Backward-compatible insert helper for callers outside the poll loop."""
-        cursor = self.connection.execute(
-            "INSERT OR IGNORE INTO seen(event_id, first_seen_at, classification) VALUES (?, ?, 'unclassified')",
-            (event_id, datetime.now(timezone.utc).isoformat()),
-        )
-        self.connection.commit()
-        return cursor.rowcount == 1
+        return store_add_if_new(self.connection, event_id)
 
     def claim_classification(self, event_id: str, classification: str) -> bool:
         """Claim an event once, while allowing legacy unknown rows to retry.
@@ -1340,58 +1421,24 @@ class SeenStore:
         row in ``unclassified`` is deliberately re-claimable; once it becomes
         in-scope, out-of-scope, or baseline it is stable and will not loop.
         """
-        allowed = {"unclassified", "in_scope", "out_of_scope", "baseline"}
-        if classification not in allowed:
-            raise ValueError(f"unsupported event classification: {classification}")
-        now = datetime.now(timezone.utc).isoformat()
-        row = self.connection.execute(
-            "SELECT classification FROM seen WHERE event_id = ?", (event_id,)
-        ).fetchone()
-        if row is None:
-            self.connection.execute(
-                "INSERT INTO seen(event_id, first_seen_at, classification, classified_at) VALUES (?, ?, ?, ?)",
-                (event_id, now, classification, now if classification != "unclassified" else None),
-            )
-            self.connection.commit()
-            return classification != "unclassified"
-        previous = str(row[0] or "unclassified")
-        if previous != "unclassified":
-            return False
-        if classification == "unclassified":
-            return False
-        self.connection.execute(
-            "UPDATE seen SET classification = ?, classified_at = ? WHERE event_id = ? AND classification = 'unclassified'",
-            (classification, now, event_id),
-        )
-        self.connection.execute(
-            "UPDATE incoming_events SET classification = ?, last_seen_at = ? WHERE event_id = ?",
-            (classification, now, event_id),
-        )
-        self.connection.commit()
-        return True
+        return store_claim_classification(self.connection, event_id, classification)
 
     def classification_for(self, event_id: str) -> str | None:
-        row = self.connection.execute(
-            "SELECT classification FROM seen WHERE event_id = ?", (event_id,)
-        ).fetchone()
-        return str(row[0]) if row and row[0] else None
+        return store_classification_for(self.connection, event_id)
 
     def set_classification(self, event_id: str, classification: str) -> None:
         """Finalize a claimed event (used for first-cycle baseline rows)."""
-        if classification not in {"in_scope", "out_of_scope", "baseline"}:
-            raise ValueError(f"unsupported event classification: {classification}")
-        self.connection.execute(
-            "UPDATE seen SET classification = ?, classified_at = ? WHERE event_id = ?",
-            (classification, datetime.now(timezone.utc).isoformat(), event_id),
-        )
-        self.connection.execute(
-            "UPDATE incoming_events SET classification = ?, last_seen_at = ? WHERE event_id = ?",
-            (classification, datetime.now(timezone.utc).isoformat(), event_id),
-        )
-        self.connection.commit()
+        store_set_classification(self.connection, event_id, classification)
 
     def may_dispatch(self, alert: Alert, cooldown_seconds: int) -> bool:
         """Allow a category update after cooldown, or immediately on escalation."""
+        return store_category_may_dispatch(
+            self.connection,
+            category=alert.category,
+            summary=alert.summary,
+            cooldown_seconds=cooldown_seconds,
+            escalation_terms=ESCALATION_TERMS,
+        )
         row = self.connection.execute(
             "SELECT summary, dispatched_at FROM dispatched WHERE category = ? ORDER BY rowid DESC LIMIT 1",
             (alert.category,),
@@ -1410,6 +1457,12 @@ class SeenStore:
         return any(term.casefold() in current and term.casefold() not in previous for term in ESCALATION_TERMS)
 
     def record_dispatch(self, alert: Alert) -> None:
+        store_record_category_dispatch(
+            self.connection,
+            category=alert.category,
+            summary=alert.summary,
+        )
+        return
         self.connection.execute(
             "INSERT INTO dispatched(category, summary, dispatched_at) VALUES (?, ?, ?)",
             (alert.category, alert.summary, datetime.now(timezone.utc).isoformat()),
@@ -1418,6 +1471,15 @@ class SeenStore:
 
     def observe_alert(self, alert: Alert) -> dict[str, Any]:
         """Observe an alert in the durable ledger and return its identity."""
+        urls = sorted({normalize_source_url(item.url) for item in alert.evidence if normalize_source_url(item.url)})
+        return store_observe_alert(
+            self.connection,
+            canonical_key=alert_canonical_key(alert),
+            event_type=alert.category,
+            source_urls=urls,
+            fingerprints=alert_fact_fingerprints(alert.summary),
+            title=alert.summary,
+        )
         key = alert_canonical_key(alert)
         now = datetime.now(timezone.utc).isoformat()
         urls = sorted({normalize_source_url(item.url) for item in alert.evidence if normalize_source_url(item.url)})
@@ -1443,6 +1505,12 @@ class SeenStore:
         return {"canonical_key": key, "is_new": False, "last_reminded_at": row[1], "escalated": bool(row[2])}
 
     def mark_alert_reminded(self, alert: Alert, *, escalated: bool = False) -> None:
+        store_mark_alert_reminded(
+            self.connection,
+            canonical_key=alert_canonical_key(alert),
+            escalated=escalated,
+        )
+        return
         key = alert_canonical_key(alert)
         self.connection.execute(
             "UPDATE event_ledger SET last_reminded_at = ?, escalated = CASE WHEN ? THEN 1 ELSE escalated END, updated_at = ? WHERE canonical_key = ?",
@@ -1451,6 +1519,7 @@ class SeenStore:
         self.connection.commit()
 
     def ledger_may_dispatch(self, record: dict[str, Any], cooldown_seconds: int) -> bool:
+        return store_ledger_may_dispatch(record, cooldown_seconds=cooldown_seconds)
         if record.get("is_new") or record.get("escalated"):
             return True
         raw = record.get("last_reminded_at")
@@ -1462,6 +1531,8 @@ class SeenStore:
             return True
 
     def prune_event_ledger(self, retention_days: int = 30) -> None:
+        store_prune_event_ledger(self.connection, retention_days)
+        return
         cutoff = datetime.now(timezone.utc).timestamp() - max(30, retention_days) * 86400
         self.connection.execute(
             "DELETE FROM event_ledger WHERE strftime('%s', COALESCE(last_reminded_at, first_discovered_at)) < ?",
@@ -1470,129 +1541,69 @@ class SeenStore:
         self.connection.commit()
 
     def read_cache(self, cache_key: str, max_age_seconds: int) -> list[dict[str, str]] | None:
-        row = self.connection.execute(
-            "SELECT payload, refreshed_at FROM cache WHERE cache_key = ?", (cache_key,)
-        ).fetchone()
-        if row is None:
-            return None
-        payload, refreshed_at = row
-        try:
-            age = (datetime.now(timezone.utc) - datetime.fromisoformat(refreshed_at)).total_seconds()
-            cached = json.loads(payload)
-        except (TypeError, ValueError, json.JSONDecodeError):
-            return None
-        return cached if age <= max_age_seconds and isinstance(cached, list) else None
+        return store_read_cache(self.connection, cache_key, max_age_seconds)
 
     def write_cache(self, cache_key: str, payload: list[dict[str, str]]) -> None:
-        self.connection.execute(
-            "INSERT OR REPLACE INTO cache(cache_key, payload, refreshed_at) VALUES (?, ?, ?)",
-            (cache_key, json.dumps(payload), datetime.now(timezone.utc).isoformat()),
-        )
-        self.connection.commit()
+        store_write_cache(self.connection, cache_key, payload)
 
 
 def sign(alert: Alert, shared_secret: str) -> str:
-    digest = hmac.new(shared_secret.encode("utf-8"), alert.canonical.encode("utf-8"), hashlib.sha256).hexdigest()
-    return f"sha256={digest}"
+    return store_sign(alert, shared_secret)
 
 
 def build_dispatch_payload(alert: Alert, trace_id: str | None = None) -> dict[str, Any]:
     """Build the exact repository-dispatch body persisted in the outbox."""
-    stable_trace_id = trace_id or alert_trace_id(alert)
-    return {
-        "event_type": "external-market-alert",
-        "client_payload": {
-            "source": alert.source,
-            "event_id": alert.event_id,
-            "category": alert.category,
-            "summary": alert.summary,
-            "risk_level": alert.risk_level,
-            "official_confirmed": alert.official_confirmed,
-            "market_sync_confirmed": alert.market_sync_confirmed,
-            "market_sync": list(alert.market_sync),
-            "occurred_at": alert.occurred_at,
-            "evidence": alert.evidence_payload,
-            "canonical_key": alert_canonical_key(alert),
-            "source_url": normalize_source_url(alert.evidence_payload[0]["url"] if alert.evidence_payload else ""),
-            "verified_sources": [normalize_source_url(item["url"]) for item in alert.evidence_payload],
-            "event_ledger_retention_days": 30,
-            "trace_id": stable_trace_id,
-        },
-    }
+    return store_build_dispatch_payload(
+        alert,
+        trace_id,
+        alert_trace_id=alert_trace_id,
+        alert_canonical_key=alert_canonical_key,
+        normalize_source_url=normalize_source_url,
+    )
 
 
 def sign_dispatch_payload(payload: dict[str, Any], alert: Alert, shared_secret: str) -> dict[str, Any]:
     """Attach the HMAC after restoring a serialized outbox payload."""
-    client_payload = payload.setdefault("client_payload", {})
-    client_payload["signature"] = sign(alert, shared_secret)
-    return payload
+    return store_sign_dispatch_payload(payload, alert, shared_secret)
 
 
 async def dispatch_repository_payload(
     payload: dict[str, Any], *, token: str, repository: str, trace_id: str,
 ) -> None:
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {token}",
-        "X-GitHub-Api-Version": GITHUB_API_VERSION,
-    }
-    endpoint = f"https://api.github.com/repos/{repository}/dispatches"
-    async with httpx.AsyncClient(timeout=20) as client:
-        for attempt in range(3):
-            try:
-                response = await client.post(endpoint, headers=headers, json=payload)
-            except httpx.HTTPError as exc:
-                if attempt == 2:
-                    logging.error("dispatch failed trace_id=%s error=%s", trace_id, type(exc).__name__)
-                    raise
-                await asyncio.sleep(2**attempt)
-                continue
-            if response.status_code == 429 or response.status_code >= 500:
-                if attempt == 2:
-                    response.raise_for_status()
-                retry_after = 0
-                try:
-                    retry_after = int(response.json().get("parameters", {}).get("retry_after", 0))
-                except (TypeError, ValueError, AttributeError):
-                    pass
-                await asyncio.sleep(min(60, max(1, retry_after)) if retry_after else 2**attempt)
-                continue
-            response.raise_for_status()
-            logging.info("dispatch accepted trace_id=%s status=%s", trace_id, response.status_code)
-            return
+    await send_repository_payload(
+        payload,
+        token=token,
+        repository=repository,
+        trace_id=trace_id,
+        api_version=GITHUB_API_VERSION,
+    )
 
 
 async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_secret: str) -> None:
-    trace_id = alert_trace_id(alert)
-    payload = sign_dispatch_payload(build_dispatch_payload(alert, trace_id), alert, shared_secret)
-    await dispatch_repository_payload(payload, token=token, repository=repository, trace_id=trace_id)
+    await store_dispatch_alert(
+        alert,
+        token=token,
+        repository=repository,
+        shared_secret=shared_secret,
+        trace_id=alert_trace_id,
+        build_payload=build_dispatch_payload,
+        sign_payload=sign_dispatch_payload,
+        dispatch=dispatch_repository_payload,
+    )
 
 
 async def retry_due_outbox(
     store: SeenStore, *, token: str, repository: str, shared_secret: str,
 ) -> int:
     """Replay durable dispatches that survived a transient source/network failure."""
-    batch_size = max(1, min(100, int(os.environ.get("OUTBOX_RETRY_BATCH", "20"))))
-    retried = 0
-    for item in store.due_outbox(batch_size):
-        trace_id = item["trace_id"]
-        try:
-            await dispatch_repository_payload(
-                item["dispatch_payload"],
-                token=token,
-                repository=repository,
-                trace_id=trace_id,
-            )
-        except Exception as error:
-            store.mark_outbox(trace_id, "failed", type(error).__name__)
-            logging.exception("outbox retry failed trace_id=%s; backoff scheduled", trace_id)
-            continue
-        store.mark_outbox(trace_id, "sent")
-        retried += 1
-        logging.info("outbox retry delivered trace_id=%s", trace_id)
-    if retried:
-        update_health("delivery", **store.delivery_diagnostics())
-    return retried
+    return await store_retry_due_outbox(
+        store,
+        token=token,
+        repository=repository,
+        shared_secret=shared_secret,
+        dispatch=dispatch_repository_payload,
+        update_health=update_health,
+    )
 
 
 async def dispatch_monitor_health(*, token: str, repository: str, gdelt: dict[str, Any]) -> None:
@@ -1604,6 +1615,23 @@ async def dispatch_monitor_health(*, token: str, repository: str, gdelt: dict[st
     stay inside Railway's local audit store.
     """
     global _HEALTH_DISPATCH_BACKOFF_UNTIL, _HEALTH_DISPATCH_BACKOFF_STATUS, _HEALTH_DISPATCH_BACKOFF_ERROR, _HEALTH_DISPATCH_BACKOFF_NEXT_AT
+    state = await store_dispatch_monitor_health(
+        token=token,
+        repository=repository,
+        gdelt=gdelt,
+        backoff_until=_HEALTH_DISPATCH_BACKOFF_UNTIL,
+        backoff_status=_HEALTH_DISPATCH_BACKOFF_STATUS,
+        backoff_error=_HEALTH_DISPATCH_BACKOFF_ERROR,
+        backoff_next_at=_HEALTH_DISPATCH_BACKOFF_NEXT_AT,
+        update_health=update_health,
+        github_api_version=GITHUB_API_VERSION,
+        client_factory=httpx.AsyncClient,
+    )
+    _HEALTH_DISPATCH_BACKOFF_UNTIL = float(state["until"])
+    _HEALTH_DISPATCH_BACKOFF_STATUS = str(state["status"])
+    _HEALTH_DISPATCH_BACKOFF_ERROR = state["error"]
+    _HEALTH_DISPATCH_BACKOFF_NEXT_AT = state["next_at"]
+    return
     if not token or not repository:
         update_health(
             "gdelt",
@@ -1700,33 +1728,13 @@ async def dispatch_monitor_health(*, token: str, repository: str, gdelt: dict[st
 
 
 def default_flash_arguments(schema: dict[str, Any], requested_limit: int) -> dict[str, Any]:
-    properties = schema.get("properties", {}) if isinstance(schema, dict) else {}
-    return {"limit": requested_limit} if "limit" in properties else {}
+    return store_default_flash_arguments(schema, requested_limit)
 
 
 async def fetch_jin10_flashes(token: str, requested_limit: int) -> list[Flash]:
     """Call only the official MCP endpoint; no HTML or feed scraping occurs."""
-    from mcp import ClientSession
-    from mcp.client.streamable_http import streamable_http_client
-
-    headers = {"Authorization": f"Bearer {token}"}
-    async with httpx.AsyncClient(headers=headers, timeout=30, follow_redirects=True) as client:
-        async with streamable_http_client(JIN10_MCP_URL, http_client=client) as (read, write, _):
-            async with ClientSession(read, write) as session:
-                await session.initialize()
-                tools = await session.list_tools()
-                tool = next((item for item in tools.tools if item.name == "list_flash"), None)
-                if tool is None:
-                    raise RuntimeError("Jin10 MCP did not expose the list_flash tool")
-                arguments = default_flash_arguments(getattr(tool, "inputSchema", {}), requested_limit)
-                try:
-                    result = await session.call_tool("list_flash", arguments=arguments)
-                except Exception:
-                    if not arguments:
-                        raise
-                    logging.warning("list_flash rejected the optional limit; retrying without arguments")
-                    result = await session.call_tool("list_flash", arguments={})
-    return extract_flashes(result_payload(result))
+    content = await store_fetch_jin10_flashes(token, requested_limit, endpoint=JIN10_MCP_URL)
+    return extract_flashes(result_payload(type("Result", (), {"content": content})()))
 
 
 def _gdelt_seen_at(value: str) -> datetime | None:
@@ -1889,6 +1897,9 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
             _GDELT_BACKOFF_UNTIL = time.monotonic() + delay
             response.raise_for_status()
         response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, dict) or not isinstance(payload.get("articles"), list):
+            raise ValueError("invalid GDELT payload")
         _GDELT_FAILURE_COUNT = 0
         _GDELT_BACKOFF_UNTIL = 0.0
         _GDELT_LAST_FETCH_STATE = "live"
@@ -1905,7 +1916,7 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
         raise
     cutoff = datetime.now(timezone.utc).timestamp() - fresh_age_seconds
     articles: list[DiscoveryArticle] = []
-    for row in response.json().get("articles", []):
+    for row in payload["articles"]:
         title = str(row.get("title") or "").strip()
         # GDELT DOC commonly provides only a title, but some response modes and
         # cached adapters include a short description/snippet.  Preserve it so
@@ -1932,22 +1943,12 @@ async def fetch_market_sync_snapshot() -> dict[str, Any]:
     configured dashboard URL is used.  A missing or stale snapshot is a
     deliberate *no-confirmation* result, never a reason to guess.
     """
-    base = os.environ.get("MARKET_SNAPSHOT_URL", "").strip()
-    if not base:
-        base = os.environ.get("DASHBOARD_URL", "").strip().rstrip("/")
-        if base:
-            base = f"{base}/data/market.json"
-    if not base:
-        return {}
-    try:
-        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
-            response = await client.get(base)
-        response.raise_for_status()
-        payload = response.json()
-        return payload if isinstance(payload, dict) else {}
-    except (httpx.HTTPError, ValueError, TypeError) as error:
-        logging.warning("market sync snapshot unavailable error=%s", type(error).__name__)
-        return {}
+    return await store_fetch_market_sync_snapshot(environ=dict(os.environ))
+
+
+async def fetch_market_sync_observation() -> Any:
+    """Return the market snapshot plus explicit source-health semantics."""
+    return await store_fetch_market_sync_observation(environ=dict(os.environ))
 
 
 def _market_sync_details(
@@ -2074,35 +2075,20 @@ def cross_checked_gdelt_alerts(
 
 
 def _health_request_path(request_target: str) -> str:
-    """Extract the route path while ignoring probe cache-busting parameters."""
-    return urlparse(request_target).path or "/"
+    """Compatibility wrapper for the standalone health contract."""
+    return health_request_path(request_target)
+
+
+def _gmail_health_fields(diagnostics: Any) -> dict[str, Any]:
+    """Compatibility wrapper for the standalone Gmail health projection."""
+    return gmail_health_fields(diagnostics)
 
 
 def configure_gmail_ingress() -> None:
     """Attach the bounded Gmail Pub/Sub ingress when the Railway worker starts."""
     global EMAIL_INGRESS
-    try:
-        from email_store import EmailStore
-        from gmail_ingress import GmailIngressService
-        from gmail_watch import GmailWatchConfig
-
-        config = GmailWatchConfig.from_env()
-        path = os.environ.get("GMAIL_STATE_PATH", "/data/gmail-ingress.sqlite3")
-        EMAIL_INGRESS = GmailIngressService(EmailStore(path), config)
-        diagnostics = EMAIL_INGRESS.health()
-        watch = diagnostics.get("watch") if isinstance(diagnostics, dict) else {}
-        store = diagnostics.get("store") if isinstance(diagnostics, dict) else {}
-        update_health(
-            "gmail",
-            status="configuration_missing" if config.missing else "ready",
-            watch_status=(watch or {}).get("status", "not_checked"),
-            last_notification_at=(store or {}).get("cursor", {}).get("last_notification_at"),
-            last_history_id=(store or {}).get("cursor", {}).get("last_history_id"),
-            error=None,
-        )
-    except Exception as error:  # pragma: no cover - defensive startup path
-        EMAIL_INGRESS = None
-        update_health("gmail", status="failed", error=type(error).__name__)
+    EMAIL_INGRESS, fields = build_gmail_ingress()
+    update_health("gmail", **fields)
 
 
 class HealthHandler(BaseHTTPRequestHandler):
@@ -2174,14 +2160,12 @@ class HealthHandler(BaseHTTPRequestHandler):
                     return
                 body = self.rfile.read(length)
                 headers = {str(key).lower(): str(value) for key, value in self.headers.items()}
-                result = EMAIL_INGRESS.accept_push(body, headers)
-                cursor = result.get("cursor") if isinstance(result, dict) else {}
+                EMAIL_INGRESS.accept_push(body, headers)
+                diagnostics = EMAIL_INGRESS.health()
                 update_health(
                     "gmail",
                     status="healthy",
-                    watch_status="healthy",
-                    last_notification_at=(cursor or {}).get("last_notification_at"),
-                    last_history_id=(cursor or {}).get("last_history_id"),
+                    **_gmail_health_fields(diagnostics),
                     error=None,
                 )
                 response = b'{"accepted":true}\n'
@@ -2214,13 +2198,7 @@ class HealthHandler(BaseHTTPRequestHandler):
                     return
                 limit = max(1, min(200, int(payload.get("limit", 200))))
                 history = DELIVERY_STORE.delivery_history(limit=limit) if DELIVERY_STORE is not None else []
-                keys = list(dict.fromkeys(
-                    str(item)[:160]
-                    for row in history
-                    if row.get("category") == "creator_receipt"
-                    for item in (row.get("notification_keys") or [])
-                    if isinstance(item, str) and item.strip()
-                ))[:200]
+                keys = creator_notification_keys(history, limit=limit)
                 response = (json.dumps({"receipt_kind": "creator", "notification_keys": keys}, ensure_ascii=False) + "\n").encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -2279,19 +2257,17 @@ def start_health_server() -> None:
 
 
 async def monitor_forever() -> None:
-    jin10_token = configured("JIN10_MCP_TOKEN")
-    github_token = configured("GITHUB_DISPATCH_TOKEN")
-    repository = configured("GITHUB_REPOSITORY")
-    shared_secret = configured("EXTERNAL_ALERT_SHARED_SECRET")
-    interval = max(60, int(os.environ.get("JIN10_POLL_SECONDS", "120")))
-    limit = min(100, max(1, int(os.environ.get("JIN10_FLASH_LIMIT", "30"))))
-    # One event cooldown is shared by Jin10, GDELT and the durable ledger.
-    # The legacy category-specific variable is intentionally ignored so an
-    # old Railway setting cannot silently restore a two-hour cooldown.
-    cooldown = EVENT_COOLDOWN_SECONDS
-    bootstrap = os.environ.get("JIN10_INITIAL_BACKFILL", "false").lower() == "true"
-    gdelt_interval = max(900, int(os.environ.get("GDELT_POLL_SECONDS", "900")))
-    gdelt_enabled = os.environ.get("GDELT_DISCOVERY_ENABLED", "true").lower() == "true"
+    settings = load_poll_settings(configured=configured, cooldown_seconds=EVENT_COOLDOWN_SECONDS)
+    jin10_token = settings.jin10_token
+    github_token = settings.github_token
+    repository = settings.repository
+    shared_secret = settings.shared_secret
+    interval = settings.interval
+    limit = settings.limit
+    cooldown = settings.cooldown
+    bootstrap = settings.bootstrap
+    gdelt_interval = settings.gdelt_interval
+    gdelt_enabled = settings.gdelt_enabled
     update_health("gdelt", enabled=gdelt_enabled, poll_seconds=gdelt_interval,
                   status="disabled" if not gdelt_enabled else "not_checked")
     store = SeenStore(Path(os.environ.get("MONITOR_STATE_PATH", "/data/jin10-monitor.sqlite3")))
@@ -2379,6 +2355,12 @@ async def monitor_forever() -> None:
                 if alert is None:
                     # Keep unrecognised IDs retryable after a rule/source update.
                     continue
+                if not classifier_delivery_allowed():
+                    store.set_classification_reason(flash.event_id, "noncanonical_classifier")
+                    logging.warning(
+                        "Jin10 alert held: repository-shared event classifier is unavailable"
+                    )
+                    continue
                 # Brand-new rows are baselined on the first cycle.  A legacy
                 # ``unclassified`` row is intentionally not baselined: it is
                 # precisely the missed event that a rule update should recover.
@@ -2452,7 +2434,9 @@ async def monitor_forever() -> None:
                 # A discovery headline is not enough for a black-swan push.
                 # Refresh the public quote snapshot and require a material,
                 # time-aligned move before producing a warning-level alert.
-                market_sync = await fetch_market_sync_snapshot()
+                market_sync_observation = await fetch_market_sync_observation()
+                market_sync = market_sync_observation.snapshot
+                update_health("market_sync", **market_sync_observation.health())
                 pending = pending_gdelt_candidates(articles, market_sync)
                 # A stale cache can keep the discovery pane useful, but it is
                 # never eligible to create a new Telegram alert.  The source
@@ -2521,16 +2505,20 @@ async def monitor_forever() -> None:
                     len(articles), dispatched, len(pending),
                 )
                 now_iso = datetime.now(timezone.utc).isoformat()
-                health_values: dict[str, Any] = {
-                    "status": "fallback_active" if stale_cache_used else "healthy",
-                    "article_count": len(articles),
-                    "alert_count": dispatched,
-                    "market_sync_status": "confirmed" if any(alert.market_sync_confirmed for alert in alerts) else "not_confirmed",
-                    "pending_count": len(pending),
-                    "pending_reasons": pending_reasons,
-                    "stale_cache_used": stale_cache_used,
-                    "error": _GDELT_LAST_FETCH_ERROR if stale_cache_used else None,
-                }
+                health_values = store_project_gdelt_health(
+                    fetch_state=_GDELT_LAST_FETCH_STATE,
+                    fetch_error=_GDELT_LAST_FETCH_ERROR,
+                    article_count=len(articles),
+                    alert_count=dispatched,
+                    pending_count=len(pending),
+                    pending_reasons=pending_reasons,
+                    market_sync_status=(
+                        "confirmed"
+                        if any(alert.market_sync_confirmed for alert in alerts)
+                        else "not_confirmed"
+                    ),
+                    stale_cache_used=stale_cache_used,
+                )
                 if stale_cache_used:
                     health_values["last_failure_at"] = now_iso
                 else:
