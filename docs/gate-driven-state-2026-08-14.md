@@ -114,6 +114,18 @@ present; it does not imply that an external production gate has passed.
   The Railway live health endpoint and delivery receipt remain external
   evidence gates.
 
+### Migration audit update (2026-08-14, REQ-ADD-005 Gmail runtime wiring)
+
+- `railway-monitor/gmail_runtime.py` now owns configuration-to-ingress
+  construction, while the existing Gmail parser, authenticator, router and
+  store remain canonical. `app.py` delegates through the boundary and keeps
+  its public startup entry point.
+- Targeted Gmail/health/monitor suite: **92 passed**. Full isolated repository
+  regression at `df3ab1c`: **1167 passed, 1 skipped**.
+- Changed-file Ruff, standalone Mypy, `python -m compileall -q
+  railway-monitor`, and `node --check site/app.js` passed. Live Gmail,
+  Railway and Telegram evidence remain external gates.
+
 ### Migration audit update (2026-08-14, multi-market News release binding)
 
 - `news.json` now publishes one release-bound envelope containing Taiwan and US
