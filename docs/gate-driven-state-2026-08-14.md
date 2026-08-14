@@ -9,12 +9,12 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/gmail-observability-contract` |
-| HEAD | `9bd0915` (`feat(P0-24): expose Gmail watch observability`) |
+| HEAD | `7228915` (`docs(P0-24): record Gmail health privacy evidence`) |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current3` (pre-task) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
-| Local regression | `1144 passed, 1 skipped` at `9f6a6d1` using an isolated Windows temp directory; one OneDrive-only run was rejected by filesystem locks |
-| Static checks | Ruff, Mypy, compileall and `node --check site/app.js` passed at `9f6a6d1` |
-| Remote PR | [#580](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/580), open and stacked on #579; test-and-dry-run, CodeQL, dependency-review and SBOM pass |
+| Local regression | `1149 passed, 1 skipped` at `7228915` using an isolated Windows temp directory; one OneDrive-only run was rejected by filesystem locks |
+| Static checks | Changed-file Ruff, Mypy, compileall and `node --check site/app.js` passed at `7228915`; full legacy Railway lint remains a separate debt |
+| Remote PR | [#583](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/583), open and stacked on #582; latest required test-and-dry-run, CodeQL, dependency-review and SBOM checks pass |
 
 ## Current task reconciliation
 
@@ -199,8 +199,9 @@ present; it does not imply that an external production gate has passed.
   runtime health and controlled Telegram delivery remain external gates.
 
 Remote evidence: PR [#583](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/583)
-passed test-and-dry-run, CodeQL, dependency-review and SBOM checks for
-`9bd0915`. This does not promote the Gmail task to Railway production PASS;
+passed test-and-dry-run, CodeQL, dependency-review and SBOM checks through
+the privacy-boundary commit `7228915`. This does not promote the Gmail task to
+Railway production PASS;
 OAuth/PubSub and controlled delivery evidence are still external.
 
 ### Gmail public-health privacy boundary (2026-08-14)
@@ -210,7 +211,7 @@ OAuth/PubSub and controlled delivery evidence are still external.
   snapshot or push-success path.
 - Targeted Gmail/monitor regression: `95 passed`; isolated full regression:
   `1149 passed, 1 skipped`; changed-file Ruff/Mypy/compile checks passed.
-- PR #583 latest commit `645ace4` passed the required remote test-and-dry-run,
+- PR #583 latest commit `7228915` passed the required remote test-and-dry-run,
   CodeQL, dependency-review and SBOM checks. Production Railway health and
   Telegram delivery still require protected external configuration.
 
