@@ -30,6 +30,7 @@ claims inferred from branch names or previous comments.
 | FinancialJuice release lineage and Mini App evidence | NEEDS_REVERIFY | `src/release_manifest.py`, `src/release_gate.py`, `site/app.js`; local contract and mismatch fixtures pass; ready Pages evidence remains external |
 | FinancialJuice operational observability | PASS (local) / NEEDS_REVERIFY (external) | `src/external_observation_input.py`, `schemas/source-health.schema.json`, `site/app.js` | 52 targeted tests; source-health schema accepts the observability contract; Railway delivery evidence remains external | no raw/private fields or transport IDs exposed; missing input remains failed, not no-event | NEEDS_REVERIFY |
 | Canonical failure semantics | PASS (local) | `src/failure_semantics.py`, `src/creator_health.py` | 8 targeted contract tests; Creator/source-health regression | `no_event` maps to `no_new_content`; parse/provider/configuration/release states remain distinct and fail-closed | PASS (local) |
+| Railway runtime configuration boundary | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/runtime_config.py`, `railway-monitor/app.py` | 87 Railway monitor/config tests; changed-file Ruff/Mypy/compile/node checks | canonical and legacy secret names remain compatible; missing/blank configuration is fail-closed and redacted | live Railway health evidence remains external | NEEDS_REVERIFY |
 
 `PASS` is not promoted to `LOCKED` when the required objective evidence is not
 available in this checkout.  `LOCKED` is reserved for a task whose local
@@ -55,6 +56,7 @@ present; it does not imply that an external production gate has passed.
 | REQ-P0-24-DOD-05 | Official News adapters expose fetch/parse/error/latency state per provider | `src/news_feed_adapters.py` | `tests/test_news_feed_adapters.py`, News Intelligence regression (45 targeted passed) | each provider remains isolated; 429 is recorded without retry; no raw response is published | failed provider does not suppress other market stories | PASS (local) |
 | REQ-P0-24-DOD-06 | Gmail watch exposes privacy-safe receive/parse/error/delivery state without transport identifiers | `railway-monitor/gmail_watch.py` | `tests/test_railway_gmail_gateway.py` (12 targeted passed) | bounded timestamps/counters only; history/message IDs are excluded; configuration and stale watch remain fail-closed | invalid timestamps/counters do not leak cursor data or become a healthy state | PASS (local) |
 | REQ-P0-25-DOD-01 | Shared failure vocabulary distinguishes empty, stale, parse, provider and release failures | `src/failure_semantics.py`, `src/creator_health.py` | `tests/test_failure_semantics.py`, `tests/test_creator_health.py` (8 targeted passed) | legacy `no_event` no longer becomes a provider failure; unknown states fail closed | no content is never promoted to alert-eligible | PASS (local) |
+| REQ-P0-26-DOD-01 | Railway runtime configuration has one standalone, redacted lookup boundary | `railway-monitor/runtime_config.py`, `railway-monitor/app.py` | `tests/test_railway_runtime_config.py`, `tests/test_railway_monitor.py` (87 passed); Ruff/Mypy/compile | both existing variable names remain supported; absent/blank secret produces `configuration_missing` without values | existing monitor secret lookup tests remain green | PASS (local) / NEEDS_REVERIFY (external) |
 
 ## Regression ledger
 
@@ -79,6 +81,7 @@ present; it does not imply that an external production gate has passed.
 | DEBT-FJ-001 | Railway has not yet supplied a live sanitized FinancialJuice bundle to the scheduled workflow | configure `EXTERNAL_OBSERVATIONS_PATH` with reviewed derived JSON; run release-gated workflow | OPEN EXTERNAL |
 | DEBT-FJ-002 | Railway/Gmail/FinancialJuice operational metrics have not been observed in a ready public release | run a controlled release after #579 and verify source-health row plus Mini App browser | OPEN EXTERNAL |
 | DEBT-P0-25-001 | Full repository regression had transient Windows raw-observation permission failures in one isolated run | fresh isolated temp rerun: `1155 passed` in 112.04s; no product assertion changed | CLOSED |
+| DEBT-P0-26-001 | Remaining Railway `app.py` extraction and live health acceptance are not covered by this incremental boundary task | continue with an isolated component extraction only after the current PR is reviewed; live Railway evidence requires protected runtime configuration | OPEN (SCOPED) |
 
 ### Migration audit update (2026-08-14, multi-market News release binding)
 

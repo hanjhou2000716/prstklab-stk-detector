@@ -22,11 +22,25 @@ import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunsplit
 
 import httpx
+
+try:
+    from runtime_config import delivery_shared_secret
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _config_spec = spec_from_file_location(
+        "railway_runtime_config",
+        Path(__file__).with_name("runtime_config.py"),
+    )
+    if _config_spec is None or _config_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/runtime_config.py")
+    _config_module = module_from_spec(_config_spec)
+    _config_spec.loader.exec_module(_config_module)
+    delivery_shared_secret = _config_module.delivery_shared_secret
 
 
 def _delivery_shared_secret() -> str:
@@ -37,10 +51,7 @@ def _delivery_shared_secret() -> str:
     both names during migration, preferring the Railway-specific setting, so
     a naming mismatch cannot silently block otherwise valid receipts.
     """
-    return (
-        os.environ.get("DELIVERY_STATUS_SHARED_SECRET", "").strip()
-        or os.environ.get("RAILWAY_STATUS_SHARED_SECRET", "").strip()
-    )
+    return delivery_shared_secret()
 
 # Railway is currently configured with ``/railway-monitor`` as its root
 # directory.  In that layout the repository-level ``src`` package is not
