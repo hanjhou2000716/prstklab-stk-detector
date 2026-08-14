@@ -49,6 +49,10 @@ replace post-merge main verification or Mini App WebView visual confirmation.
   one test message; the Railway projection reports `last_outbox_status=delivered`,
   `last_receipt_status=delivered`, `receipt_matches_last_outbox=true`, one
   delivered, zero failed, and trace `photo-smoke-b09bb97240c54a9f`.
+- Runtime boundary regression suite: `97 passed` across GDELT fetch/backoff,
+  stale-cache projection, health callback 403/429 handling and repository
+  dispatch transport. The live 429/403 therefore represents external runtime
+  configuration/provider state, not an untested repository path.
 
 ## Gate-driven migration reconciliation (2026-08-14)
 
