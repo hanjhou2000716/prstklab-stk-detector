@@ -30,7 +30,7 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunsplit
 import httpx
 
 try:
-    from runtime_config import delivery_shared_secret
+    from runtime_config import configuration_health, delivery_shared_secret
 except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
     _config_spec = spec_from_file_location(
         "railway_runtime_config",
@@ -40,6 +40,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
         raise ImportError("cannot load railway-monitor/runtime_config.py")
     _config_module = module_from_spec(_config_spec)
     _config_spec.loader.exec_module(_config_module)
+    configuration_health = _config_module.configuration_health
     delivery_shared_secret = _config_module.delivery_shared_secret
 
 
@@ -443,6 +444,7 @@ def health_snapshot() -> dict[str, Any]:
     monitor = snapshot.get("monitor")
     if isinstance(monitor, dict):
         monitor.update(monitor_heartbeat(monitor))
+    snapshot["runtime_config"] = configuration_health()
     return snapshot
 
 
