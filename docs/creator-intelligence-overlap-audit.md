@@ -11,6 +11,21 @@ The three configured providers are `haojiao`, `jenny`, and `gooaye`. They are
 editorial enrichment only. They cannot independently become official event
 evidence, a market-synchronisation proof, or a high-risk alert.
 
+## Current checkpoint (2026-08-15)
+
+The overlap audit is being continued on PR [#618](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/618),
+which is based on `main` and wires the sanitized Railway observation export into
+the existing scheduled release. This is an integration continuation, not a
+second Creator or FinancialJuice pipeline.
+
+The focused Creator, FinancialJuice, shared-event, release-gate, news, and
+Telegram contract suite passes locally (`72 passed`) when run with an explicit
+workspace `--basetemp`; the default OneDrive pytest temp root is not reliable
+enough for evidence because it can retain locked directories. Remote quality
+and security checks for the checkpoint are green. Live Railway, Pages, and
+single-recipient Telegram acceptance remain external gates and are therefore
+not marked production-ready here.
+
 ## Gate-driven migration reconciliation (2026-08-14)
 
 The current branch is a continuation of the existing production stack, not a
