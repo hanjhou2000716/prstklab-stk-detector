@@ -275,6 +275,19 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     _creator_spec.loader.exec_module(_creator_module)
     creator_notification_keys = _creator_module.notification_keys
 
+try:
+    from delivery_retry import retry_due_outbox as store_retry_due_outbox
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _retry_spec = spec_from_file_location(
+        "railway_delivery_retry",
+        Path(__file__).with_name("delivery_retry.py"),
+    )
+    if _retry_spec is None or _retry_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/delivery_retry.py") from None
+    _retry_module = module_from_spec(_retry_spec)
+    _retry_spec.loader.exec_module(_retry_module)
+    store_retry_due_outbox = _retry_module.retry_due_outbox
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -1532,27 +1545,14 @@ async def retry_due_outbox(
     store: SeenStore, *, token: str, repository: str, shared_secret: str,
 ) -> int:
     """Replay durable dispatches that survived a transient source/network failure."""
-    batch_size = max(1, min(100, int(os.environ.get("OUTBOX_RETRY_BATCH", "20"))))
-    retried = 0
-    for item in store.due_outbox(batch_size):
-        trace_id = item["trace_id"]
-        try:
-            await dispatch_repository_payload(
-                item["dispatch_payload"],
-                token=token,
-                repository=repository,
-                trace_id=trace_id,
-            )
-        except Exception as error:
-            store.mark_outbox(trace_id, "failed", type(error).__name__)
-            logging.exception("outbox retry failed trace_id=%s; backoff scheduled", trace_id)
-            continue
-        store.mark_outbox(trace_id, "sent")
-        retried += 1
-        logging.info("outbox retry delivered trace_id=%s", trace_id)
-    if retried:
-        update_health("delivery", **store.delivery_diagnostics())
-    return retried
+    return await store_retry_due_outbox(
+        store,
+        token=token,
+        repository=repository,
+        shared_secret=shared_secret,
+        dispatch=dispatch_repository_payload,
+        update_health=update_health,
+    )
 
 
 async def dispatch_monitor_health(*, token: str, repository: str, gdelt: dict[str, Any]) -> None:

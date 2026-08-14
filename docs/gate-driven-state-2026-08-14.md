@@ -437,6 +437,30 @@ passed `test-and-dry-run` (run `31792693278`), CodeQL, dependency-review and
 SBOM. This confirms repository CI only; live Railway callback permission and
 status remain external acceptance gates.
 
+### Migration audit update (2026-08-14, REQ-ADD-018 Railway delivery retry boundary)
+
+- `railway-monitor/delivery_retry.py` now owns bounded durable outbox replay;
+  `app.py` keeps the compatibility wrapper and injects the existing dispatch
+  transport and health projection.
+- Persisted signed dispatch payloads are reused byte-for-byte. A failed item is
+  marked with its error and backoff while later due items continue; health
+  diagnostics are emitted only when at least one item is delivered.
+- Retry/monitor/cache/ledger/delivery/classification/Jin10/creator targeted
+  suite: `106 passed`; changed-module Ruff, compileall and diff checks pass.
+
+Traceability: `REQ-ADD-018` -> `railway-monitor/delivery_retry.py`,
+`railway-monitor/app.py`, `tests/test_railway_delivery_retry.py` -> targeted
+suite above. Existing outbox and delivery-receipt regressions remain covered
+by `tests/test_railway_monitor.py`.
+
+Remote evidence: PR [#595](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/595)
+passed `test-and-dry-run` (run `31796511600`, job `94754675327`), CodeQL,
+dependency-review and SBOM. PR [#594](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/594)
+was revalidated after restoring its original head; its `test-and-dry-run`
+passed (run `31796489859`, job `94754612110`). These are repository CI
+evidence only; live Railway restart continuity, signed callback delivery and
+production Telegram receipt remain external `NEEDS_REVERIFY` gates.
+
 Remote evidence: PR [#588](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/588)
 passed `test-and-dry-run` (run `31789498655`), CodeQL, dependency-review and
 SBOM. This confirms repository CI for the stacked boundary only; Railway
