@@ -1,5 +1,5 @@
-from pathlib import Path
 import re
+from pathlib import Path
 
 
 DOC = Path(__file__).parents[1] / "docs" / "p0-traceability-2026-08-15.md"
