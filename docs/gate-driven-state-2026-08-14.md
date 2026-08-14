@@ -14,7 +14,7 @@ claims inferred from branch names or previous comments.
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1160 passed` at `e7364d1` using a fresh isolated Windows temp directory; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
 | Static checks | Changed-file Ruff, Mypy, compileall and `node --check site/app.js` passed at `7228915`; full legacy Railway lint remains a separate debt |
-| Remote PR | [#583](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/583), open and stacked on #582; remote checks for `261c950` are pending/requires refresh |
+| Remote PR | [#584](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/584), open and stacked on #583; latest HEAD `9223acf` remote quality/security checks pass |
 
 ## Current task reconciliation
 
@@ -83,6 +83,18 @@ present; it does not imply that an external production gate has passed.
 | DEBT-FJ-002 | Railway/Gmail/FinancialJuice operational metrics have not been observed in a ready public release | run a controlled release after #579 and verify source-health row plus Mini App browser | OPEN EXTERNAL |
 | DEBT-P0-25-001 | Full repository regression had transient Windows raw-observation permission failures in one isolated run | fresh isolated temp rerun: `1155 passed` in 112.04s; no product assertion changed | CLOSED |
 | DEBT-REQ-ADD-003-001 | Remaining Railway `app.py` extraction and live health acceptance are not covered by this incremental boundary task | continue with an isolated component extraction only after the current PR is reviewed; live Railway evidence requires protected runtime configuration | OPEN (SCOPED) |
+
+### Migration audit update (2026-08-14, REQ-ADD-003 Railway runtime boundary)
+
+- `tests/test_railway_runtime_config.py tests/test_railway_monitor.py`: **88 passed** with an isolated basetemp.
+- Full isolated repository regression at `9223acf`: **1160 passed** in 82.72s.
+- Changed-file Ruff, Mypy, `python -m compileall -q railway-monitor`, and
+  `node --check site/app.js` passed.
+- PR [#584](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/584)
+  remote quality/security checks for `9223acf` passed: test-and-dry-run run
+  `31767532210`, CodeQL run `31767532219`, dependency review and SBOM in the
+  same security run. This is branch-level evidence only; live Railway health,
+  Pages and Telegram acceptance remain external gates.
 
 ### Migration audit update (2026-08-14, multi-market News release binding)
 
