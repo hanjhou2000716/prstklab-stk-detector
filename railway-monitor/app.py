@@ -262,6 +262,19 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     store_default_flash_arguments = _jin10_module.default_flash_arguments
     store_fetch_jin10_flashes = _jin10_module.fetch_jin10_flashes
 
+try:
+    from creator_delivery import notification_keys as creator_notification_keys
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _creator_spec = spec_from_file_location(
+        "railway_creator_delivery",
+        Path(__file__).with_name("creator_delivery.py"),
+    )
+    if _creator_spec is None or _creator_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/creator_delivery.py") from None
+    _creator_module = module_from_spec(_creator_spec)
+    _creator_spec.loader.exec_module(_creator_module)
+    creator_notification_keys = _creator_module.notification_keys
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -2100,13 +2113,7 @@ class HealthHandler(BaseHTTPRequestHandler):
                     return
                 limit = max(1, min(200, int(payload.get("limit", 200))))
                 history = DELIVERY_STORE.delivery_history(limit=limit) if DELIVERY_STORE is not None else []
-                keys = list(dict.fromkeys(
-                    str(item)[:160]
-                    for row in history
-                    if row.get("category") == "creator_receipt"
-                    for item in (row.get("notification_keys") or [])
-                    if isinstance(item, str) and item.strip()
-                ))[:200]
+                keys = creator_notification_keys(history, limit=limit)
                 response = (json.dumps({"receipt_kind": "creator", "notification_keys": keys}, ensure_ascii=False) + "\n").encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
