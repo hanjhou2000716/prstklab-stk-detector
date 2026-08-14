@@ -9,7 +9,26 @@ from pathlib import Path
 # Windows/OneDrive scanners can hold a just-written file for several seconds.
 # Keep the retry bounded while allowing the normal publication path to recover.
 FILE_RETRY_ATTEMPTS = 6
-RETRYABLE_FILE_ERRNOS = frozenset({errno.EACCES, errno.EBUSY, errno.EPERM, errno.ETXTBSY})
+RETRYABLE_FILE_ERRNOS = frozenset({errno.EACCES, errno.EBUSY, errno.EPERM, errno.ETXTBSY, errno.ENOENT})
+
+
+def write_bytes_with_retry(payload: bytes, temporary: Path) -> None:
+    """Write a temporary payload while tolerating transient sync-directory races.
+
+    OneDrive can briefly remove or rehydrate a newly-created directory while a
+    scanner is indexing it. Recreate the parent for each bounded attempt so a
+    transient ``ENOENT`` cannot turn an otherwise valid observation into a
+    false source failure.
+    """
+    for attempt in range(FILE_RETRY_ATTEMPTS):
+        try:
+            temporary.parent.mkdir(parents=True, exist_ok=True)
+            temporary.write_bytes(payload)
+            return
+        except OSError as exc:
+            if exc.errno not in RETRYABLE_FILE_ERRNOS or attempt == FILE_RETRY_ATTEMPTS - 1:
+                raise
+            time.sleep(0.1 * (2**attempt))
 
 
 def replace_with_retry(temporary: Path, destination: Path) -> None:

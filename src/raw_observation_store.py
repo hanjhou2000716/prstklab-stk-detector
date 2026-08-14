@@ -18,7 +18,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from src.atomic_file import replace_with_retry
+from src.atomic_file import replace_with_retry, write_bytes_with_retry
 
 SCHEMA_VERSION = 1
 _SQLITE_RETRY_ATTEMPTS = 3
@@ -130,8 +130,8 @@ class RawObservationStore:
         destination.parent.mkdir(parents=True, exist_ok=True)
         if not destination.exists():
             temporary = destination.with_name(f".{destination.name}.{observation_id}.tmp")
-            temporary.write_bytes(payload_bytes)
             try:
+                write_bytes_with_retry(payload_bytes, temporary)
                 replace_with_retry(temporary, destination)
             finally:
                 if temporary.exists():
