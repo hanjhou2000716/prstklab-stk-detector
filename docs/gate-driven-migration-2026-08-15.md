@@ -240,3 +240,29 @@ Pages/Mini App and production delivery evidence remain required.
 - The local Railway observation wiring is therefore covered by both targeted
   tests and the repository quality gate. This is implementation evidence, not
   live Railway or post-merge production acceptance.
+
+### Gate v3 migration overlay reconciliation (fc2aefe)
+
+The mid-flight migration overlay was applied to the current branch without a
+reset or merge. The recovery point is the latest atomic commit on this branch
+(`fc2aefe`, `fix: enforce Railway observation privacy allowlist`); the earlier
+Railway wiring commits (`f854cbd`, `a3a68d2`) remain its ancestors. No product
+files are left in an uncommitted state. The only local verification residue is
+an inaccessible, untracked pytest coverage directory created by a timed-out
+coverage run; it is not staged, published, or part of the release.
+
+Migration classification at this checkpoint:
+
+| Area | State | Evidence / next gate |
+|---|---|---|
+| Railway observation allowlist | LOCKED | 27 targeted ingress/scheduled tests; unknown providers and private transport fields are rejected with a counted failure |
+| Railway observations in scheduled release | PASS | remote rows merge by `observation_id`, local reviewed rows remain the fail-closed fallback, and source health marks remote failure as partial |
+| Repository-shared Railway classifier | NEEDS_REVERIFY | local root-only import isolation proves the fallback cannot dispatch; live deployment must report `classifier_mode=repository-shared` |
+| GDELT and health callback | NEEDS_REVERIFY | live Railway evidence remains `HTTP_429` / `HTTP_403`; no local test may promote these to healthy |
+| Pages / Mini App / Telegram production acceptance | NEEDS_REVERIFY | PR #618 is open; post-merge release, browser and single-recipient receipt evidence are still required |
+| Full local regression | PASS (local) | `1235 passed, 1 skipped`; Ruff, Mypy and JavaScript syntax checks passed |
+
+The migration overlay therefore leaves the overall project **INCOMPLETE**.
+`PASS` is only asserted for the scoped local task above; it is not a claim of
+full P0 completion or production acceptance. Any future change to a locked
+area must reopen its task, rerun its original tests and record new evidence.
