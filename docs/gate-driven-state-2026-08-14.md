@@ -8,8 +8,8 @@ claims inferred from branch names or previous comments.
 
 | Field | Evidence |
 |---|---|
-| Branch | `feat/news-observability-contract` |
-| HEAD | `5d31f79` (`feat(P0-24): expose official news adapter observability`; documentation evidence commit follows) |
+| Branch | `feat/gmail-observability-contract` |
+| HEAD | working tree for Gmail observability task; evidence commit follows |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current3` (pre-task) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1144 passed, 1 skipped` at `9f6a6d1` using an isolated Windows temp directory; one OneDrive-only run was rejected by filesystem locks |
@@ -52,6 +52,7 @@ present; it does not imply that an external production gate has passed.
 | REQ-P0-24-DOD-03 | Creator source rows expose privacy-safe receive/parse/error/delivery state | `src/creator_source_health.py`, `schemas/source-health.schema.json` | Creator/source-health/artifact suite (91 targeted passed) | timestamps/counts only; Gmail transport IDs are not copied | configuration missing and parser failure remain distinct | PASS (local) |
 | REQ-P0-24-DOD-04 | Mini App renders Creator observability beside each optional provider | `site/app.js`, `tests/test_mini_app_assets.py` | asset contract plus 91 targeted tests | creator row remains optional and cannot become core market evidence | Pages browser evidence pending | NEEDS_REVERIFY (Pages browser) |
 | REQ-P0-24-DOD-05 | Official News adapters expose fetch/parse/error/latency state per provider | `src/news_feed_adapters.py` | `tests/test_news_feed_adapters.py`, News Intelligence regression (45 targeted passed) | each provider remains isolated; 429 is recorded without retry; no raw response is published | failed provider does not suppress other market stories | PASS (local) |
+| REQ-P0-24-DOD-06 | Gmail watch exposes privacy-safe receive/parse/error/delivery state without transport identifiers | `railway-monitor/gmail_watch.py` | `tests/test_railway_gmail_gateway.py` (12 targeted passed) | bounded timestamps/counters only; history/message IDs are excluded; configuration and stale watch remain fail-closed | invalid timestamps/counters do not leak cursor data or become a healthy state | PASS (local) |
 
 ## Regression ledger
 
@@ -184,6 +185,18 @@ present; it does not imply that an external production gate has passed.
   `1147 passed`; Ruff, Mypy, compileall and node syntax checks pass.
 - This is local adapter evidence only. Live provider freshness, Pages release
   and Railway/Telegram production evidence remain external.
+
+### Migration audit update (2026-08-14, Gmail watch observability)
+
+- Gmail watch health now exposes a privacy-safe observability envelope with
+  receive/parse/delivery timestamps, a bounded parser-error count and an
+  explicit configuration-missing or stale state. Gmail history IDs, message
+  IDs and raw mail are never copied into the health response.
+- Targeted Gmail gateway suite: `12 passed` in an isolated Windows temp
+  directory. The initial shared OneDrive/pytest temp attempt was rejected by
+  an inherited Windows `PermissionError`; no product assertion failed.
+- This is local contract evidence only. OAuth/PubSub configuration, Railway
+  runtime health and controlled Telegram delivery remain external gates.
 
 ## Gate decision
 
