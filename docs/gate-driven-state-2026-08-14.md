@@ -203,6 +203,17 @@ passed test-and-dry-run, CodeQL, dependency-review and SBOM checks for
 `9bd0915`. This does not promote the Gmail task to Railway production PASS;
 OAuth/PubSub and controlled delivery evidence are still external.
 
+### Gmail public-health privacy boundary (2026-08-14)
+
+- Railway `/health` now projects only the Gmail watch observability envelope;
+  private Gmail history/message cursors are not exposed in the public health
+  snapshot or push-success path.
+- Targeted Gmail/monitor regression: `95 passed`; isolated full regression:
+  `1149 passed, 1 skipped`; changed-file Ruff/Mypy/compile checks passed.
+- PR #583 latest commit `645ace4` passed the required remote test-and-dry-run,
+  CodeQL, dependency-review and SBOM checks. Production Railway health and
+  Telegram delivery still require protected external configuration.
+
 ## Gate decision
 
 The canonical News release-lineage task and this migration verification are
