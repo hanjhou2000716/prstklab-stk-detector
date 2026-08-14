@@ -537,6 +537,28 @@ passed `test-and-dry-run` (run `31801260242`, job `94769543886`), CodeQL,
 dependency-review and SBOM. Live Railway poll and Pages evidence remain
 external acceptance gates.
 
+### Migration audit update (2026-08-14, REQ-ADD-024 health baseline)
+
+- The initial Railway health payload now declares GDELT and market-sync
+  components as `not_checked` before the first polling cycle.
+- Targeted Railway regression suite: `117 passed`; changed-test Ruff,
+  compileall and diff checks pass.
+
+Traceability: `REQ-ADD-024` -> `railway-monitor/app.py`,
+`tests/test_railway_monitor.py` and
+`docs/req-add-024-health-baseline-state.md`.
+
+Remote evidence: PR [#601](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/601)
+passed `test-and-dry-run` (run `31801909891`, job `94771620276`), CodeQL,
+dependency-review and SBOM. Live Railway `/health` evidence remains external.
+
+### Latest migration-head regression evidence
+
+- At migration HEAD `1415f900a55dd39be0afe1fca985d9c087eebbea`, an isolated
+  full repository run completed with `1207 passed` in `121.49s`.
+- This is local repository evidence only; it does not close the external
+  Railway, Pages, or controlled Telegram acceptance debts.
+
 Remote evidence: PR [#588](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/588)
 passed `test-and-dry-run` (run `31789498655`), CodeQL, dependency-review and
 SBOM. This confirms repository CI for the stacked boundary only; Railway

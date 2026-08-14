@@ -19,6 +19,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | REQ-ADD-020 | market-sync reader | `railway-monitor/market_sync.py` | targeted 110; PR #597 CI green | missing/invalid snapshot fail-closed | PASS / LOCKED |
 | REQ-ADD-022 | market-sync health envelope | `railway-monitor/market_sync.py`, `railway-monitor/app.py` | targeted 113; PR #599 CI green | valid-empty vs configuration/http/parser failure states | PASS / LOCKED |
 | REQ-ADD-023 | GDELT source-health projection | `railway-monitor/gdelt_health.py`, `railway-monitor/app.py` | targeted 116; PR #600 CI green | no-event vs scan-failed vs stale-cache | PASS / LOCKED |
+| REQ-ADD-024 | health baseline state | `railway-monitor/app.py` | targeted 117; PR #601 CI green | first-cycle values remain not_checked | PASS / LOCKED |
 
 ## Regression ledger
 
@@ -39,3 +40,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 No implementation task in REQ-ADD-013..020 is marked PASS solely because a PR
 exists; each has local and remote evidence above. External debt must be closed
 before the final production acceptance gate.
+
+Latest migration-head regression: `1207 passed` in `121.49s` at
+`1415f900a55dd39be0afe1fca985d9c087eebbea` using an isolated Windows temp
+directory. This evidence does not imply live Railway/Pages/Telegram acceptance.
