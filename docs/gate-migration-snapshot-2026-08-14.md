@@ -46,6 +46,9 @@ the audit snapshot and does not rewrite or reset them.
   the repository/security CI checks are green. The browser contract remains a
   CI-provisioned check; the local environment skipped it because Chromium is
   not installed.
+- At the current migration HEAD `76241c7872369be0ebfd0cb6f1adfadbb9e00b5e`,
+  the isolated full repository regression completed with `1207 passed` in
+  `77.01s`.
 
 ## Current implementation reconciliation
 

@@ -43,6 +43,6 @@ No implementation task in REQ-ADD-013..020 is marked PASS solely because a PR
 exists; each has local and remote evidence above. External debt must be closed
 before the final production acceptance gate.
 
-Latest migration-head regression: `1207 passed` in `121.49s` at
-`1415f900a55dd39be0afe1fca985d9c087eebbea` using an isolated Windows temp
+Latest migration-head regression: `1207 passed` in `77.01s` at
+`76241c7872369be0ebfd0cb6f1adfadbb9e00b5e` using an isolated Windows temp
 directory. This evidence does not imply live Railway/Pages/Telegram acceptance.
