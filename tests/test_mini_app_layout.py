@@ -141,6 +141,8 @@ def test_source_health_distinguishes_empty_scan_from_failure_and_exposes_slo_met
     assert "source.consecutive_failures" in app
     assert "source.crosscheck_rate" in app
     assert "const sourceHealthStateLabel" in app
+    assert '"not_checked", "not_scanned", "not_checked_yet"' in app
+    assert "尚未檢查" in app
     assert '"failure", "error"' in app
     assert '"empty", "none"' in app
     assert '"狀態待確認"' in app
