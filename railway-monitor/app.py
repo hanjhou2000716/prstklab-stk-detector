@@ -226,6 +226,25 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     _health_dispatch_spec.loader.exec_module(_health_dispatch_module)
     store_dispatch_monitor_health = _health_dispatch_module.dispatch_monitor_health
 
+try:
+    from dispatch_payload import (
+        build_dispatch_payload as store_build_dispatch_payload,
+        sign as store_sign,
+        sign_dispatch_payload as store_sign_dispatch_payload,
+    )
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _payload_spec = spec_from_file_location(
+        "railway_dispatch_payload",
+        Path(__file__).with_name("dispatch_payload.py"),
+    )
+    if _payload_spec is None or _payload_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/dispatch_payload.py") from None
+    _payload_module = module_from_spec(_payload_spec)
+    _payload_spec.loader.exec_module(_payload_module)
+    store_build_dispatch_payload = _payload_module.build_dispatch_payload
+    store_sign = _payload_module.sign
+    store_sign_dispatch_payload = _payload_module.sign_dispatch_payload
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -1442,40 +1461,23 @@ class SeenStore:
 
 
 def sign(alert: Alert, shared_secret: str) -> str:
-    digest = hmac.new(shared_secret.encode("utf-8"), alert.canonical.encode("utf-8"), hashlib.sha256).hexdigest()
-    return f"sha256={digest}"
+    return store_sign(alert, shared_secret)
 
 
 def build_dispatch_payload(alert: Alert, trace_id: str | None = None) -> dict[str, Any]:
     """Build the exact repository-dispatch body persisted in the outbox."""
-    stable_trace_id = trace_id or alert_trace_id(alert)
-    return {
-        "event_type": "external-market-alert",
-        "client_payload": {
-            "source": alert.source,
-            "event_id": alert.event_id,
-            "category": alert.category,
-            "summary": alert.summary,
-            "risk_level": alert.risk_level,
-            "official_confirmed": alert.official_confirmed,
-            "market_sync_confirmed": alert.market_sync_confirmed,
-            "market_sync": list(alert.market_sync),
-            "occurred_at": alert.occurred_at,
-            "evidence": alert.evidence_payload,
-            "canonical_key": alert_canonical_key(alert),
-            "source_url": normalize_source_url(alert.evidence_payload[0]["url"] if alert.evidence_payload else ""),
-            "verified_sources": [normalize_source_url(item["url"]) for item in alert.evidence_payload],
-            "event_ledger_retention_days": 30,
-            "trace_id": stable_trace_id,
-        },
-    }
+    return store_build_dispatch_payload(
+        alert,
+        trace_id,
+        alert_trace_id=alert_trace_id,
+        alert_canonical_key=alert_canonical_key,
+        normalize_source_url=normalize_source_url,
+    )
 
 
 def sign_dispatch_payload(payload: dict[str, Any], alert: Alert, shared_secret: str) -> dict[str, Any]:
     """Attach the HMAC after restoring a serialized outbox payload."""
-    client_payload = payload.setdefault("client_payload", {})
-    client_payload["signature"] = sign(alert, shared_secret)
-    return payload
+    return store_sign_dispatch_payload(payload, alert, shared_secret)
 
 
 async def dispatch_repository_payload(
