@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,7 @@ BLOCKED_FIELDS = {
     "thread_id", "sender", "recipient", "email_address",
 }
 PARSE_FAILURES = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
+CONTENT_HASH_RE = re.compile(r"^[0-9a-f]{64}$")
 SAFE_FIELDS = {
     "observation_id", "source", "content_origin", "content_type", "event_type", "category",
     "title", "headline", "original_headline", "summary", "chinese_translation",
@@ -65,6 +67,61 @@ def _safe_record(record: dict[str, Any]) -> dict[str, Any] | None:
     safe["observation_id"] = observation_id
     safe["public_safe"] = True
     return safe
+
+
+def _compound_records(payload: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
+    """Flatten one parsed FinancialJuice envelope at the privacy boundary.
+
+    The envelope's transport ``message_id`` is intentionally never copied to
+    an observation.  Each public-safe item becomes an independent observation
+    keyed by its stable ``item_id`` so the shared event pipeline can cluster,
+    deduplicate, and trace it without retaining private mail identifiers.
+    """
+    if str(payload.get("content_origin") or "").strip().casefold() != "financialjuice":
+        return [], 1
+    if payload.get("public_safe") is not True:
+        return [], 1
+    if str(payload.get("parse_status") or "").strip().casefold() != "parsed":
+        return [], 1
+    items = payload.get("items")
+    if not isinstance(items, list) or payload.get("item_count") != len(items):
+        return [], 1
+    accepted: list[dict[str, Any]] = []
+    rejected = 0
+    seen: set[str] = set()
+    for item in items:
+        if not isinstance(item, dict):
+            rejected += 1
+            continue
+        item_id = str(item.get("item_id") or "").strip()
+        cluster_key = str(item.get("event_cluster_key") or "").strip()
+        candidate_type = str(item.get("candidate_event_type") or "").strip()
+        headline = str(item.get("original_headline") or "").strip()
+        content_hash = str(item.get("content_hash") or "").strip()
+        if (
+            not item_id or item_id in seen or not cluster_key or not candidate_type
+            or not headline or not CONTENT_HASH_RE.fullmatch(content_hash)
+            or item.get("public_safe") is False
+            or item.get("observation_id") not in (None, "", item_id)
+        ):
+            rejected += 1
+            continue
+        # Preserve only fields admitted by _safe_record; envelope metadata and
+        # any blocked/raw item fields are rejected before they can propagate.
+        candidate = dict(item)
+        candidate.update({
+            "observation_id": item_id,
+            "source": "financialjuice",
+            "content_origin": "financialjuice",
+            "public_safe": True,
+        })
+        safe = _safe_record(candidate)
+        if safe is None:
+            rejected += 1
+            continue
+        seen.add(item_id)
+        accepted.append(safe)
+    return accepted, rejected
 
 
 def _timestamp(record: dict[str, Any], *fields: str) -> tuple[datetime, str] | None:
@@ -134,6 +191,8 @@ def load_external_observations(path: Path | None = None) -> tuple[list[dict[str,
         payload = json.loads(resolved.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError):
         return [], 1
+    if isinstance(payload, dict) and "items" in payload:
+        return _compound_records(payload)
     records = payload.get("observations") if isinstance(payload, dict) else payload
     if not isinstance(records, list):
         return [], 1
