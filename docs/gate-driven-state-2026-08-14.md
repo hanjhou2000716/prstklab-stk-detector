@@ -503,6 +503,24 @@ dependency-review and SBOM. The ledger documentation is CI-verified; the
 explicitly listed external completion debt remains open until production
 acceptance evidence is captured.
 
+### Migration audit update (2026-08-14, REQ-ADD-022 market-sync health)
+
+- The public market snapshot reader now exposes a bounded observation envelope
+  without changing the legacy raw-dictionary wrapper.
+- Railway health can distinguish a valid empty snapshot from missing
+  configuration, HTTP/429, invalid payload, and contained reader failure.
+- Targeted Railway regression suite: `113 passed`; changed-module Ruff,
+  compileall, and diff checks pass.
+
+Traceability: `REQ-ADD-022` -> `railway-monitor/market_sync.py`,
+`railway-monitor/app.py`, `tests/test_railway_market_sync.py` and
+`docs/req-add-022-market-sync-health.md`.
+
+Remote evidence: PR [#599](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/599)
+passed `test-and-dry-run` (run `31800524345`, job `94767171838`), CodeQL,
+dependency-review and SBOM. Live Railway status and Pages freshness remain
+external acceptance gates.
+
 Remote evidence: PR [#588](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/588)
 passed `test-and-dry-run` (run `31789498655`), CodeQL, dependency-review and
 SBOM. This confirms repository CI for the stacked boundary only; Railway
