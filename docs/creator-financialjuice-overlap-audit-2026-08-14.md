@@ -88,6 +88,21 @@ health 可用性保護；repository-shared classifier 才是 canonical。若 fal
   `1207 passed`，另有 CodeQL、dependency review、SBOM 通過；這些不等於 live
   Railway、Pages 或正式 Telegram 已驗證。
 
+### 2026-08-14 evidence capture
+
+- 隔離系統暫存目錄的本地完整回歸：`1206 passed, 1 skipped`。
+- 在 OneDrive 工作區直接使用 pytest 的 basetemp 時，raw observation 測試曾
+  出現 6 個 `FileNotFoundError`；改用獨立系統暫存目錄後全部通過。這是工作區
+  同步／暫存競態，不是產品 assertion，後續測試 SOP 必須指定獨立 basetemp。
+- PR #603 最新 CI：test-and-dry-run `31806315184`／job `94785982441`，
+  `1207 passed`、核心 coverage `90.08%`；Ruff、Mypy、runtime audit、offline
+  production acceptance 均在同一 workflow 通過。
+- PR #603 最新 security workflow `31806315241`：CodeQL、dependency review、
+  SBOM 全部通過。
+- 本機 `node --check site/app.js` 通過；本機 `src.production_e2e` 以
+  `renderer_available=false` 安全阻擋送圖，沒有發出任何 Telegram；CI 的固定
+  Chromium gate 才是 renderer 的客觀證據。
+
 ## Open regression／completion debt
 
 | ID | 類型 | 內容 | 解除條件 |
