@@ -88,3 +88,29 @@ To recover this exact repository checkpoint, check out
 `feat/migration-state-snapshot` at commit `a036596` and inspect the parent
 commits. Do not copy individual release artifacts between releases; rollback
 uses the previous successful release manifest.
+
+## Current reconciliation after REQ-ADD-026
+
+The migration checkpoint remains valid and the stacked branch has advanced
+without rewriting or resetting the earlier work:
+
+| Field | Value |
+|---|---|
+| Current branch | `feat/REQ-ADD-026-creator-morning-batch` |
+| Current HEAD | `04e4810f567f0b8943ea1f9bcee28199b1fdc753` |
+| Current PR | [#604](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/604) |
+| PR base | `feat/REQ-ADD-025-health-ui-baseline` |
+| PR state | open, non-draft, conflict-free |
+| Latest quality run | [31811124449](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31811124449) — success |
+| Latest security run | [31811124498](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31811124498) — success |
+
+REQ-ADD-026 now includes deterministic morning-batch fan-out: complete 2/2
+source notifications plus one digest, partial batches without invented
+content, late-arrival delta delivery, and restart-safe digest idempotency.
+The targeted suite passed 20 tests and the isolated full regression passed
+`1213 passed, 1 skipped`; these are repository evidence only.
+
+The external acceptance debts remain open and unchanged: Railway restart and
+signed callback continuity, public Pages release propagation, and a
+controlled single-recipient Telegram delivery receipt. No production
+notification was sent as part of this reconciliation.
