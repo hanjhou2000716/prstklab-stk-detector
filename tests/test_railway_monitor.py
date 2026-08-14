@@ -69,6 +69,7 @@ def test_monitor_imports_from_railway_root_without_repository_src_package():
         sys.executable,
         "-c",
         "import app; assert app._USING_STANDALONE_CLASSIFIER; "
+        "assert not app.classifier_delivery_allowed(); "
         "assert app.classify_event_fields({'title': 'WTI oil production update'})['category'] == 'energy'",
     ]
     result = subprocess.run(

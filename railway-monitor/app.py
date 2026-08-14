@@ -198,6 +198,17 @@ except ModuleNotFoundError as error:
         return {"category": None, "reason": "keyword_no_match", "matched_terms": [], "text": haystack}
 
 
+def classifier_delivery_allowed() -> bool:
+    """Allow dispatch only when the canonical repository classifier is active.
+
+    The root-only Railway image keeps a compatibility classifier so its health
+    endpoint remains available during packaging mistakes. That fallback is
+    deliberately candidate-only: it must never create a repository dispatch
+    that could become a Telegram alert under a different policy version.
+    """
+    return not _USING_STANDALONE_CLASSIFIER
+
+
 JIN10_MCP_URL = "https://mcp.jin10.com/mcp"
 GDELT_DOC_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
 DEFAULT_GDELT_QUERY = '(war OR invasion OR ceasefire OR sanctions OR Hormuz OR tariff OR "export controls" OR semiconductor OR earthquake OR tsunami OR cyberattack OR ransomware OR pandemic OR Bitcoin OR Ethereum OR Trump OR "cancel attack" OR "call off attack" OR Iran OR "White House")'
@@ -2321,6 +2332,12 @@ async def monitor_forever() -> None:
                     continue
                 if alert is None:
                     # Keep unrecognised IDs retryable after a rule/source update.
+                    continue
+                if not classifier_delivery_allowed():
+                    store.set_classification_reason(flash.event_id, "noncanonical_classifier")
+                    logging.warning(
+                        "Jin10 alert held: repository-shared event classifier is unavailable"
+                    )
                     continue
                 # Brand-new rows are baselined on the first cycle.  A legacy
                 # ``unclassified`` row is intentionally not baselined: it is
