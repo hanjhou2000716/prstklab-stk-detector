@@ -157,6 +157,20 @@ this checkpoint until each head is individually compared with `origin/main`.
 This avoids treating an unverified branch as superseded. The canonical active
 continuation remains PR #618.
 
+### Completed individual overlap audit
+
+The remaining stacked Creator, external-intelligence, source-health, strategy,
+news and release PRs were subsequently checked one by one. Their heads were
+ancestors of `origin/main`, or their exact behavior was present in later
+mainline commits; they were closed as superseded without deleting branches:
+
+`#479–#482`, `#486–#493`, `#496–#516`, `#520–#522`, `#527–#533`,
+`#543–#554`, and `#566–#576` (with gaps representing PRs that were not open).
+
+The only remaining open PR in the repository is the canonical continuation
+`#618`. This cleanup changed no source or release data and does not constitute
+mainline merge or production acceptance.
+
 Post-checkpoint regression: `python -m pytest -q --basetemp=.pytest-final`
 returned `1231 passed, 1 skipped`; the temporary directory was removed and the
 working tree is clean. PR #618 CI is green (quality/dry-run, CodeQL,
