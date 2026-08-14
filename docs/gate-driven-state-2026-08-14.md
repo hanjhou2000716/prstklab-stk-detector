@@ -9,7 +9,7 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `feat/gmail-observability-contract` |
-| HEAD | `e7364d1` (`feat(REQ-ADD-003): expose redacted config health`) |
+| HEAD | `5fbcffa` (`docs(REQ-ADD-003): record remote gate evidence`) |
 | Recovery checkpoint | `checkpoint/migration-2026-08-14-current3` (pre-task) |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
 | Local regression | `1160 passed` at `e7364d1` using a fresh isolated Windows temp directory; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
@@ -91,8 +91,8 @@ present; it does not imply that an external production gate has passed.
 - Changed-file Ruff, Mypy, `python -m compileall -q railway-monitor`, and
   `node --check site/app.js` passed.
 - PR [#584](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/584)
-  remote quality/security checks for `9223acf` passed: test-and-dry-run run
-  `31767532210`, CodeQL run `31767532219`, dependency review and SBOM in the
+  remote quality/security checks for `5fbcffa` passed: test-and-dry-run run
+  `31767778250`, CodeQL run `31767778192`, dependency review and SBOM in the
   same security run. This is branch-level evidence only; live Railway health,
   Pages and Telegram acceptance remain external gates.
 
