@@ -453,6 +453,14 @@ Traceability: `REQ-ADD-018` -> `railway-monitor/delivery_retry.py`,
 suite above. Existing outbox and delivery-receipt regressions remain covered
 by `tests/test_railway_monitor.py`.
 
+Remote evidence: PR [#595](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/595)
+passed `test-and-dry-run` (run `31796511600`, job `94754675327`), CodeQL,
+dependency-review and SBOM. PR [#594](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/594)
+was revalidated after restoring its original head; its `test-and-dry-run`
+passed (run `31796489859`, job `94754612110`). These are repository CI
+evidence only; live Railway restart continuity, signed callback delivery and
+production Telegram receipt remain external `NEEDS_REVERIFY` gates.
+
 Remote evidence: PR [#588](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/588)
 passed `test-and-dry-run` (run `31789498655`), CodeQL, dependency-review and
 SBOM. This confirms repository CI for the stacked boundary only; Railway
