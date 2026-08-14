@@ -198,6 +198,9 @@ dependency-review and SBOM).
   manifest artifacts. These warnings are not promoted to production PASS.
 - Delivery dry-run returned `ok=true`, one synthetic recipient, HTTPS dashboard,
   configured callback, and no errors; no Telegram API was called.
+- After pushing this checkpoint, PR #618 checks completed successfully:
+  quality/dry-run run `31845718851` and security/CodeQL/dependency-review/SBOM
+  run `31845718813`.
 
 The only current open PR remains #618. This evidence update does not merge,
 deploy, publish, or send a production notification. Production acceptance is
