@@ -81,6 +81,17 @@ explicitly scoped; it does not claim a complete production acceptance:
 - No broadcast, merge, or user-visual confirmation of the Mini App WebView
   was performed in this checkpoint.
 
+### Post-checkpoint reconciliation evidence
+
+- Overlap audit commit: `aa08965` on PR #618.
+- Latest quality run: `31840194185` (success); latest security run:
+  `31840194207` (success, including CodeQL, dependency review and SBOM).
+- Public Creator release remains `ready` with one sanitized insight; public
+  source-health exposes Creator provider rows. FinancialJuice remains optional
+  and has no public row until its sanitized Railway bundle is configured.
+- The current live Railway projection still reports GDELT `HTTP_429` and
+  dispatch callback `HTTP_403`; these are explicitly open external gates.
+
 ## Completion-debt ledger
 
 | Debt ID | Description | Resolution / next gate | Status |
