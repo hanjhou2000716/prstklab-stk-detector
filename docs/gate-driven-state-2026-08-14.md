@@ -58,6 +58,7 @@ present; it does not imply that an external production gate has passed.
 | REG-NEWS-002 | environment | Windows shared temp contains inaccessible historical pytest directories | inherited workspace hygiene | CI and isolated basetemp pass; no product assertion changed | ACCEPTED ENVIRONMENT DEBT |
 | REG-MIG-001 | migration overlay | prior state document pointed at `c3f43d7` after later evidence commits | state reconciliation lag | `4b60f06`; 63 targeted and 1133 full regression passed | CLOSED |
 | REG-MIG-002 | external observation lineage | malformed manifest count could raise before fail-closed result | defensive integer parsing in release gate | targeted release-gate suite and full isolated regression | CLOSED |
+| REG-MIG-003 | verification environment | first full run timed out near 87% with one transient failure | rerun with a fresh isolated basetemp; no product assertion was changed | second full run `1146 passed` in 81.33s | ACCEPTED ENVIRONMENT EVENT |
 
 ## Completion debt ledger
 
@@ -140,6 +141,11 @@ present; it does not imply that an external production gate has passed.
 - Targeted observability/schema/Mini App suite: `52 passed`; Ruff and Mypy pass.
   Railway bundle, ready Pages release and Telegram receipt remain external
   evidence gates; no production side effect was attempted.
+- Fresh isolated full regression after the observability change: `1146 passed`.
+  `ruff check src tests`, `mypy src`, `compileall` and `node --check` pass.
+  `python -m src.runtime_audit` exits 0 with the existing data-readiness
+  warnings. The delivery smoke remains externally blocked because this
+  checkout has no `TELEGRAM_CHAT_IDS`; no message was sent.
 
 ## Gate decision
 
