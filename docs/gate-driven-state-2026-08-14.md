@@ -170,6 +170,10 @@ present; it does not imply that an external production gate has passed.
   remote test-and-dry-run, CodeQL, dependency-review and SBOM checks all pass.
   It remains open and stacked on #580; this is not Railway or Pages
   production acceptance.
+- PR [#582](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/582)
+  remote test-and-dry-run, CodeQL, dependency-review and SBOM checks all pass.
+  It remains open and stacked on #581; live feed freshness and production
+  acceptance remain external.
 
 ### Migration audit update (2026-08-14, official News adapter observability)
 
