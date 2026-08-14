@@ -22,9 +22,9 @@ The focused Creator, FinancialJuice, shared-event, release-gate, news, and
 Telegram contract suite passes locally (`72 passed`) when run with an explicit
 workspace `--basetemp`; the default OneDrive pytest temp root is not reliable
 enough for evidence because it can retain locked directories. Remote quality
-and security checks for the checkpoint are green. Live Railway, Pages, and
-single-recipient Telegram acceptance remain external gates and are therefore
-not marked production-ready here.
+and security checks for the checkpoint are green. Pages artifact integrity and
+a scoped single-recipient Telegram receipt are now evidenced below; post-merge
+main acceptance and Mini App WebView visual confirmation remain open gates.
 
 ### Public Pages evidence captured
 
@@ -37,8 +37,18 @@ Read-only HTTP verification of the currently published Pages bundle found:
 - all six manifest-declared artifact SHA-256 hashes matched the downloaded
   public files
 
-This proves public artifact integrity at the captured release, but does not
-replace a post-merge browser, Railway, or Telegram acceptance test.
+This proves public artifact integrity at the captured release. It does not
+replace post-merge main verification or Mini App WebView visual confirmation.
+
+### Runtime and delivery evidence captured
+
+- Railway `/health` reports the monitor `running/healthy`.
+- GDELT is explicitly `HTTP_429` and the GitHub dispatch callback is explicitly
+  `HTTP_403`; neither failure is hidden or treated as a successful event scan.
+- Scoped photo smoke Actions run `31839093636` / job `94891873503` delivered
+  one test message; the Railway projection reports `last_outbox_status=delivered`,
+  `last_receipt_status=delivered`, `receipt_matches_last_outbox=true`, one
+  delivered, zero failed, and trace `photo-smoke-b09bb97240c54a9f`.
 
 ## Gate-driven migration reconciliation (2026-08-14)
 
@@ -55,14 +65,14 @@ new parallel implementation.  The attachment requirements map as follows:
 | Creator operational observability | `src/creator_source_health.py`, `schemas/source-health.schema.json`, `site/app.js` | receive/parse/error/delivery metrics and UI contract (`91 targeted`, `1147 full`) | NEEDS_REVERIFY (Railway + Pages evidence pending) |
 | Official News adapter observability | `src/news_feed_adapters.py`, `tests/test_news_feed_adapters.py` | per-provider checked/parsed/error/latency metrics (`45 targeted`, `1147 full`) | NEEDS_REVERIFY (live feed + Pages evidence pending) |
 | Gmail watch observability | `railway-monitor/gmail_watch.py`, `tests/test_railway_gmail_gateway.py` | receive/parse/error/delivery metrics with cursor privacy boundary (`12 targeted`) | NEEDS_REVERIFY (Railway OAuth/PubSub evidence pending) |
-| FinancialJuice release lineage and Mini App panel | `src/release_manifest.py`, `src/release_gate.py`, `site/index.html`, `site/app.js` | count/hash/source mismatch fixtures; 78 targeted and 1144 full local regression | NEEDS_REVERIFY (Pages browser evidence pending) |
+| FinancialJuice release lineage and Mini App panel | `src/release_manifest.py`, `src/release_gate.py`, `site/index.html`, `site/app.js` | count/hash/source mismatch fixtures; public ready release and six matching hashes | NEEDS_REVERIFY (post-merge WebView evidence pending) |
 | FinancialJuice + news event unification | `src/external_event_pipeline.py`, `src/intelligence_pipeline.py` | event fan-out, evidence and lifecycle tests | PASS / LOCKED |
 | Market News provider registry and URL contract | `src/news_intelligence.py`, `schemas/news-story.schema.json`, `schemas/news-intelligence.schema.json` | provider/domain, unknown URL, schema and dedup tests | PASS / LOCKED |
 | Official news-feed adapters (TWSE/MOPS/SEC/Fed/Nasdaq) | `src/news_feed_adapters.py`; isolated TWSE/MOPS/SEC/Fed adapters; Nasdaq remains explicitly disabled until a stable documented endpoint is configured | parser, timeout/429 isolation and catalog tests; live feed evidence pending | partially_integrated |
 | News interest graph, ranking and dedup | `src/news_intelligence.py`, `risk_news.build_news_snapshot` | ticker/sector reasons, authority ordering and supporting-source tests | PASS / LOCKED |
 | News Mini App rendering | `site/app.js` release-provided provider allowlist and `news.json` lineage loader | Mini App asset, URL-safety, and release-loader contract tests | NEEDS_REVERIFY |
 | News artifact in release lineage | `src/release_manifest.py`, `src/release_gate.py`, `src/artifact_contract.py`, `site/app.js` | manifest/hash, multi-market release, release-gate lineage and mixed-release tests (`52 passed` in targeted release/news gate suite) | PASS / LOCKED |
-| Production release and Telegram acceptance | `src/release_gate.py`, workflows, delivery receipts | local contracts pass; production credentials/release evidence required | BLOCKED (external) |
+| Production release and Telegram acceptance | `src/release_gate.py`, workflows, delivery receipts | public ready release plus scoped receipt evidenced; post-merge main acceptance pending | NEEDS_REVERIFY |
 
 The legacy Anue/Google arrays remain compatibility fields.  The canonical
 `news.intelligence` object is the only new consumer contract; it is additive
@@ -76,7 +86,8 @@ URL validation rather than a hard-coded domain list.
 tests are present on this branch.  The remaining `NEEDS_REVERIFY` row requires
 a full Pages release and browser verification after the next manifest is built;
 it is not claimed as production acceptance.  Production acceptance remains
-blocked when no ready release or Telegram delivery configuration is available.
+open until the same evidence is repeated from the merged `main` release and
+the Mini App WebView is visually confirmed.
 
 ## Rollback
 
@@ -98,15 +109,17 @@ registry before merge. Any branch that adds another hard-coded provider list is
 superseded or must be retargeted to the registry. The expected integration
 order is registry/schema first, provider adapters second, then delivery and UI.
 
-The News Intelligence contract was added in PR #577's continuation branch;
-the branch-level CI gate passed. A Pages release and browser verification are
-still required before the two `NEEDS_REVERIFY` rows can be locked.
+The News Intelligence contract was added in the earlier stack and is already
+an ancestor of `main`; PR #618 is the current continuation branch. A Pages
+release and scoped receipt are evidenced, while browser verification and
+post-merge main verification are still required before the remaining
+`NEEDS_REVERIFY` rows can be locked.
 
 Sanitized FinancialJuice observations are now bound to the same release
 manifest as market/research/event artifacts. The Mini App shows their source
 and whether official confirmation or market synchronization is still pending.
-This is a local contract lock only; Railway bundle and Telegram acceptance
-remain external gates.
+This is a release-bound contract; a live Railway source bundle remains an
+external configuration gate, while Telegram delivery has a scoped receipt.
 
 The source-health row now also carries privacy-safe operational observability
 for the sanitized ingress: last receive/parse timestamps, parser errors,
@@ -140,11 +153,13 @@ or Telegram policy is reimplemented in `railway-monitor/app.py`.
 
 ### Current stacked PR evidence
 
-PR #584 (`feat/railway-runtime-config-boundary`) is the current continuation
+Historical stack reference: PR #584 (`feat/railway-runtime-config-boundary`)
+was an earlier continuation. The current continuation is PR #618
+(`feat/REQ-ADD-039-gate-migration-audit`).
 of PRs #580–#583. Its local atomic extractions are covered by the migration
 state ledger; the remote quality/security checks are green. It must not be
-treated as production-ready until Railway health, a ready Pages release and a
-single-recipient Telegram delivery receipt are captured after merge.
+treated as fully accepted until Railway source configuration, post-merge main
+verification and the Mini App WebView gate are captured.
 
 ## Failure and rollback
 
@@ -152,6 +167,6 @@ Malformed or missing registry configuration fails closed at import/load time;
 unknown creators are routed to the DLQ and never published. Rollback is the
 single revert of the registry integration PR; existing known-provider fixtures
 remain compatible.
-The P0-24 observability contract is implemented in stacked PR #580. Its
-remote quality/security checks pass, while Railway source-health evidence and
-a ready Pages release remain external verification gates.
+The P0-24 observability contract is implemented in the merged stack and the
+remote quality/security checks pass; the remaining external gates are Railway
+source configuration and post-merge acceptance.
