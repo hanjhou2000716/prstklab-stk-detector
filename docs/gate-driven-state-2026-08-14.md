@@ -8,13 +8,14 @@ claims inferred from branch names or previous comments.
 
 | Field | Evidence |
 |---|---|
-| Branch | `feat/railway-runtime-config-boundary` |
-| HEAD | `0c09a35` (`feat(REQ-ADD-007): extract Railway poll configuration`) |
-| Recovery checkpoint | `checkpoint/migration-2026-08-14-current16` (post-task snapshot) |
+| Branch | `fix/railway-classifier-delivery-gate` |
+| HEAD at last evidence capture | `71ddbe6` (`feat(REQ-ADD-009): extract Railway state schema`) |
+| Recovery checkpoint | `checkpoint/migration-2026-08-14-current20` (post-task code snapshot) |
+| Current overlap audit | `docs/creator-intelligence-overlap-audit.md` |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
-| Local regression | `1171 passed, 1 skipped` at the REQ-ADD-007 working tree using `.tmp-migration-full-current15`; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
-| Static checks | Changed-file Ruff, Mypy, compileall and `node --check site/app.js` passed at `7228915`; full legacy Railway lint remains a separate debt |
-| Remote PR | #584 remains open and stacked on #583; REQ-ADD-007 commit `0c09a35` is pushed and its required quality/security checks pass |
+| Local regression | `1174 passed` at REQ-ADD-009 using `.tmp-state-schema-full`; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
+| Static checks | `ruff check src tests`, `mypy src`, compileall, `node --check site/app.js` and `git diff --check` passed at `71ddbe6`; full legacy Railway lint remains a separate debt |
+| Remote PR | #585 remains open for REQ-ADD-008; REQ-ADD-009 is validated locally and awaits its own stacked PR |
 
 ## Current task reconciliation
 
@@ -35,6 +36,8 @@ claims inferred from branch names or previous comments.
 | REQ-ADD-005 Railway Gmail runtime wiring extraction | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/gmail_runtime.py`, `railway-monitor/app.py` | 92 targeted tests; standalone Ruff/Mypy/compile | existing Gmail ingress components are wired through one injectable boundary; missing/failure states remain redacted and fail-closed | live Gmail OAuth/PubSub and Railway health evidence remain external | NEEDS_REVERIFY |
 | REQ-ADD-006 Railway dispatch transport extraction | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/dispatch_transport.py`, `railway-monitor/app.py` | 86 targeted monitor/transport tests; 1169 full regression, 1 skipped; standalone Ruff/Mypy/compile/node checks | bounded repository-dispatch retries are standalone; signing, persistence and poll-loop ownership remain unchanged | live GitHub dispatch/Railway delivery evidence remains external | NEEDS_REVERIFY |
 | REQ-ADD-007 Railway poll configuration extraction | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/poll_config.py`, `railway-monitor/app.py` | 88 targeted config/transport/monitor tests; 1171 full regression, 1 skipped; standalone Ruff/Mypy/compile/node checks | Jin10/GDELT bounds and flags are projected once; required secrets still use the existing boundary | live Railway restart/poll evidence remains external | NEEDS_REVERIFY |
+| REQ-ADD-008 Railway classifier delivery gate | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/app.py`, `src/event_classifier.py` | 84 Railway monitor tests; 1171 full regression, 1 skipped; Ruff/Mypy/compile/node checks; standalone import isolation proves fallback is diagnostics-only | non-canonical root-only classifier cannot create Jin10 dispatch; incoming item remains retryable for a correctly packaged deployment | Railway health must report repository-shared classifier before delivery | NEEDS_REVERIFY |
+| REQ-ADD-009 Railway state schema boundary | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/state_store_schema.py`, `railway-monitor/app.py` | schema contract + legacy migration tests; Railway monitor regression; full isolated regression and static checks | schema creation is idempotent; legacy volumes receive additive columns only; SeenStore startup remains compatible | live Railway volume migration and receipt persistence remain external | NEEDS_REVERIFY |
 
 `PASS` is not promoted to `LOCKED` when the required objective evidence is not
 available in this checkout.  `LOCKED` is reserved for a task whose local
@@ -91,6 +94,8 @@ present; it does not imply that an external production gate has passed.
 | DEBT-REQ-ADD-004-001 | Email routing, persistence, dispatch and poll-loop extraction remain in `railway-monitor/app.py` | continue with separate atomic extractions; do not duplicate provider or classifier logic | OPEN (SCOPED) |
 | DEBT-REQ-ADD-006-001 | Live GitHub dispatch and Railway delivery evidence are not available in local verification | use protected runtime configuration and a controlled single-recipient dry-run after PR review | OPEN EXTERNAL |
 | DEBT-REQ-ADD-007-001 | Live Railway poll-loop behavior is not available in local verification | inspect Deploy Logs and `/health` after the stacked PR is reviewed; do not infer runtime success from local tests | OPEN EXTERNAL |
+| DEBT-REQ-ADD-008-001 | Railway production has not proved repository-shared classifier mode | deploy the packaged shared classifier and verify `classifier_mode=repository-shared` before enabling delivery | OPEN EXTERNAL |
+| DEBT-REQ-ADD-009-001 | Railway production has not proved the extracted schema against its persistent volume | deploy the stacked branch, inspect `/health` and delivery receipt persistence, and retain the previous release for rollback | OPEN EXTERNAL |
 
 ### Migration audit update (2026-08-14, REQ-ADD-003 Railway runtime boundary)
 
@@ -297,6 +302,20 @@ at `0c09a35` passed test-and-dry-run (run `31772008639`), CodeQL/security
 (`31772008655`, analysis `94679829440`), dependency-review and SBOM. This is
 repository CI evidence only; Railway runtime and controlled delivery remain
 external gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-009 Railway state schema boundary)
+
+- `railway-monitor/state_store_schema.py` now owns the SQLite table creation and
+  additive migrations used by `SeenStore`; `app.py` retains the existing
+  connection/WAL setup and calls the boundary once.
+- The standalone schema suite covers fresh initialization, idempotency and
+  legacy Railway layouts. The combined schema/monitor/health targeted suite
+  passed `91 tests`; the full isolated repository regression passed `1174
+  tests`. Ruff (`src tests`), Mypy (`src`), compileall, frontend syntax and
+  diff checks also passed; no table or row is deleted by the extraction.
+- Live Railway volume migration and receipt persistence are still external
+  evidence gates. The local task is therefore PASS / external NEEDS_REVERIFY,
+  not production acceptance.
 
 ### Current gate evidence (2026-08-14)
 

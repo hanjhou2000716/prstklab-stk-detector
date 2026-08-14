@@ -87,6 +87,36 @@ content and recipients. The Mini App renders this state without upgrading a
 pending item to a confirmed alert. A live Railway bundle and ready Pages
 release are still required before this row can be locked as production.
 
+### Railway runtime boundary reconciliation
+
+The open stacked Railway work is an extraction of runtime boundaries, not a
+second Creator or FinancialJuice pipeline:
+
+| Runtime concern | Canonical owner | Compatibility owner | Duplicate risk | Gate state |
+|---|---|---|---|---|
+| Runtime secrets and feature flags | `railway-monitor/runtime_config.py` | `railway-monitor/app.py` lookup wrapper | legacy variable names only | local PASS / external NEEDS_REVERIFY |
+| Health projection and heartbeat | `railway-monitor/health_contract.py` | `railway-monitor/app.py` HTTP handler | no provider classifier | local PASS / external NEEDS_REVERIFY |
+| Gmail runtime construction | `railway-monitor/gmail_runtime.py` | `railway-monitor/app.py` factory alias | no parser duplication | local PASS / external NEEDS_REVERIFY |
+| Repository dispatch transport | `railway-monitor/dispatch_transport.py` | `railway-monitor/app.py` async wrapper | no event classification | local PASS / external NEEDS_REVERIFY |
+| Jin10/GDELT poll settings | `railway-monitor/poll_config.py` | `railway-monitor/app.py` loop | no source or alert policy | local PASS / external NEEDS_REVERIFY |
+| Event classification | `src/event_classifier.py` when repository package is present | bundled Railway fallback only when the root-only image cannot import `src` | **known compatibility risk**; fallback is health-visible and must not be treated as canonical | NEEDS_REVERIFY |
+
+The last row is intentionally not marked production: the root-only Railway
+image still has a compatibility classifier. The fallback is retained only to
+keep `/health` available during a misconfigured deployment; production
+acceptance must prove the repository-shared classifier is active (or the
+deployment packaging must be changed before high-risk delivery is enabled).
+No Creator provider list, FinancialJuice parser, event cluster, release gate,
+or Telegram policy is reimplemented in `railway-monitor/app.py`.
+
+### Current stacked PR evidence
+
+PR #584 (`feat/railway-runtime-config-boundary`) is the current continuation
+of PRs #580–#583. Its local atomic extractions are covered by the migration
+state ledger; the remote quality/security checks are green. It must not be
+treated as production-ready until Railway health, a ready Pages release and a
+single-recipient Telegram delivery receipt are captured after merge.
+
 ## Failure and rollback
 
 Malformed or missing registry configuration fails closed at import/load time;
