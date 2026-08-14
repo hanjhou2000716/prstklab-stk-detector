@@ -230,3 +230,13 @@ Evidence on this checkpoint:
 This fixes the local integration gap; it does not promote Railway's live GDELT
 429, callback 403, or missing Gmail configuration to PASS. Post-merge main,
 Pages/Mini App and production delivery evidence remain required.
+
+### Latest checkpoint evidence (f854cbd)
+
+- PR #618 remains open, non-draft and clean; no merge was performed.
+- GitHub Actions quality/dry-run, CodeQL, dependency review and SBOM checks
+  all passed for commit `f854cbd` (quality run `31847434368`, security run
+  `31847434404`).
+- The local Railway observation wiring is therefore covered by both targeted
+  tests and the repository quality gate. This is implementation evidence, not
+  live Railway or post-merge production acceptance.
