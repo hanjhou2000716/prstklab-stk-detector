@@ -198,3 +198,13 @@ remain compatible.
 The P0-24 observability contract is implemented in the merged stack and the
 remote quality/security checks pass; the remaining external gates are Railway
 source configuration and post-merge acceptance.
+
+### Canonical email routing continuation (2026-08-15)
+
+`src/email_intelligence.py` now routes Creator identities exclusively through
+`creator_provider_registry.py`; its fallback table contains only the
+FinancialJuice aliases. This removes the second source whitelist that could
+silently diverge from `config/creator_providers.json`. The routing regression
+also proves a canonical 財經皓角 marker still resolves to `haojiao`, while
+unknown sources remain DLQ-safe. This is local evidence and does not claim live
+Gmail/Railway delivery.

@@ -295,3 +295,14 @@ Remote evidence for atomic commit `55ff046` on PR #618: quality
 (`94923605301`) and SBOM (`94923605305`); the separate CodeQL check
 `94923736064` also passed. These checks verify the registry contract and test
 suite only; they do not replace external Railway or post-merge acceptance.
+
+### Creator routing whitelist deduplication (next atomic task)
+
+The repository-level email router had already checked the canonical Creator
+registry first, but retained a second hard-coded Creator fallback table. That
+table is now removed; only FinancialJuice aliases remain outside the registry.
+`test_creator_source_routing_uses_canonical_registry_markers` protects the
+canonical path and the full repository regression is **1237 passed, 1 skipped**.
+Changed-file Ruff and `python -m compileall -q src railway-monitor` pass. The
+task is **PASS locally / NEEDS_REVERIFY externally** because live Gmail/Railway
+configuration and receipt evidence remain outside the local repository gate.

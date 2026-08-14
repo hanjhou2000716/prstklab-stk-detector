@@ -67,10 +67,11 @@ def route_email_source(*, sender: str = "", subject: str = "", body: str = "") -
         metadata = get_creator_provider(provider)
         if metadata and any(marker in haystack for marker in metadata.markers):
             return {"source": provider, "content_type": "creator_analysis", "parse_status": "identified"}
+    # Creator identities are defined only by creator_providers.json above.
+    # Keep this fallback limited to FinancialJuice so a second Creator
+    # whitelist cannot drift from the canonical registry.
     rules = (
         ("financialjuice", ("financial juice", "financialjuice", "financial-juice"), "breaking_news"),
-        ("haojiao", ("號角", "hao jiao", "haojiao"), "creator_analysis"),
-        ("gooaye", ("gooaye", "go oaye", "股癌"), "creator_analysis"),
     )
     for source, markers, content_type in rules:
         if any(marker.casefold() in haystack for marker in markers):
