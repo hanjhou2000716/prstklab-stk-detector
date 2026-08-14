@@ -31,6 +31,7 @@ claims inferred from branch names or previous comments.
 | FinancialJuice operational observability | PASS (local) / NEEDS_REVERIFY (external) | `src/external_observation_input.py`, `schemas/source-health.schema.json`, `site/app.js` | 52 targeted tests; source-health schema accepts the observability contract; Railway delivery evidence remains external | no raw/private fields or transport IDs exposed; missing input remains failed, not no-event | NEEDS_REVERIFY |
 | Canonical failure semantics | PASS (local) | `src/failure_semantics.py`, `src/creator_health.py` | 8 targeted contract tests; Creator/source-health regression | `no_event` maps to `no_new_content`; parse/provider/configuration/release states remain distinct and fail-closed | PASS (local) |
 | REQ-ADD-003 Railway runtime configuration boundary | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/runtime_config.py`, `railway-monitor/app.py` | 87 Railway monitor/config tests; changed-file Ruff/Mypy/compile/node checks | canonical and legacy secret names remain compatible; missing/blank configuration is fail-closed and redacted | live Railway health evidence remains external | NEEDS_REVERIFY |
+| REQ-ADD-004 Railway health contract extraction | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/health_contract.py`, `railway-monitor/app.py` | standalone health contract + legacy monitor suite (93 passed); Ruff/Mypy/compile | heartbeat, route and Gmail projection are standalone and privacy-safe; app compatibility wrappers preserved | live Railway health evidence remains external | NEEDS_REVERIFY |
 
 `PASS` is not promoted to `LOCKED` when the required objective evidence is not
 available in this checkout.  `LOCKED` is reserved for a task whose local
@@ -83,6 +84,7 @@ present; it does not imply that an external production gate has passed.
 | DEBT-FJ-002 | Railway/Gmail/FinancialJuice operational metrics have not been observed in a ready public release | run a controlled release after #579 and verify source-health row plus Mini App browser | OPEN EXTERNAL |
 | DEBT-P0-25-001 | Full repository regression had transient Windows raw-observation permission failures in one isolated run | fresh isolated temp rerun: `1155 passed` in 112.04s; no product assertion changed | CLOSED |
 | DEBT-REQ-ADD-003-001 | Remaining Railway `app.py` extraction and live health acceptance are not covered by this incremental boundary task | continue with an isolated component extraction only after the current PR is reviewed; live Railway evidence requires protected runtime configuration | OPEN (SCOPED) |
+| DEBT-REQ-ADD-004-001 | Email routing, persistence, dispatch and poll-loop extraction remain in `railway-monitor/app.py` | continue with separate atomic extractions; do not duplicate provider or classifier logic | OPEN (SCOPED) |
 
 ### Migration audit update (2026-08-14, REQ-ADD-003 Railway runtime boundary)
 

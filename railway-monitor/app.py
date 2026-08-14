@@ -43,6 +43,23 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     configuration_health = _config_module.configuration_health
     delivery_shared_secret = _config_module.delivery_shared_secret
 
+try:
+    from health_contract import age_seconds, gmail_health_fields, health_request_path, monitor_heartbeat, non_negative_int
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _health_spec = spec_from_file_location(
+        "railway_health_contract",
+        Path(__file__).with_name("health_contract.py"),
+    )
+    if _health_spec is None or _health_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/health_contract.py")
+    _health_module = module_from_spec(_health_spec)
+    _health_spec.loader.exec_module(_health_module)
+    age_seconds = _health_module.age_seconds
+    gmail_health_fields = _health_module.gmail_health_fields
+    health_request_path = _health_module.health_request_path
+    monitor_heartbeat = _health_module.monitor_heartbeat
+    non_negative_int = _health_module.non_negative_int
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -383,59 +400,13 @@ def update_health(component: str, **values: Any) -> None:
 
 
 def _non_negative_int(value: Any) -> int | None:
-    """Parse a delivery counter without accepting booleans or negatives."""
-    if isinstance(value, bool):
-        return None
-    try:
-        number = int(value)
-    except (TypeError, ValueError):
-        return None
-    return number if number >= 0 else None
+    """Compatibility wrapper for callers of the legacy app module."""
+    return non_negative_int(value)
 
 
 def _age_seconds(value: str | None, *, now: datetime | None = None) -> int | None:
-    """Return non-negative UTC age for an ISO timestamp, if parseable."""
-    if not value:
-        return None
-    try:
-        timestamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-        if timestamp.tzinfo is None:
-            timestamp = timestamp.replace(tzinfo=timezone.utc)
-        reference = now or datetime.now(timezone.utc)
-        if reference.tzinfo is None:
-            reference = reference.replace(tzinfo=timezone.utc)
-        return max(0, int((reference.astimezone(timezone.utc) - timestamp.astimezone(timezone.utc)).total_seconds()))
-    except (TypeError, ValueError, OverflowError):
-        return None
-
-
-def monitor_heartbeat(monitor: dict[str, Any], *, now: datetime | None = None) -> dict[str, Any]:
-    """Return a bounded heartbeat diagnostic for the long-running poll loop.
-
-    Railway can still reach ``/health`` when the asyncio worker is alive but
-    blocked in a provider request.  Comparing the last completed cycle with
-    a timeout derived from the configured poll interval makes that failure
-    visible without changing the platform-level liveness status.
-    """
-    reference = now or datetime.now(timezone.utc)
-    if reference.tzinfo is None:
-        reference = reference.replace(tzinfo=timezone.utc)
-    interval = _non_negative_int(monitor.get("poll_interval_seconds")) or 120
-    # Allow one missed cycle plus a small network/SQLite margin.  Keep a
-    # minimum so the startup window is not reported stale during deployment.
-    timeout = max(300, interval * 2 + 60)
-    completed_age = _age_seconds(monitor.get("last_cycle_completed_at"), now=reference)
-    started_age = _age_seconds(monitor.get("last_cycle_started_at"), now=reference)
-    if completed_age is None:
-        heartbeat_status = "starting" if started_age is None or started_age <= timeout else "stale"
-    else:
-        heartbeat_status = "healthy" if completed_age <= timeout else "stale"
-    return {
-        "heartbeat_status": heartbeat_status,
-        "heartbeat_timeout_seconds": timeout,
-        "last_cycle_age_seconds": completed_age,
-        "current_cycle_age_seconds": started_age,
-    }
+    """Compatibility wrapper for callers of the legacy app module."""
+    return age_seconds(value, now=now)
 
 
 def health_snapshot() -> dict[str, Any]:
@@ -2087,27 +2058,13 @@ def cross_checked_gdelt_alerts(
 
 
 def _health_request_path(request_target: str) -> str:
-    """Extract the route path while ignoring probe cache-busting parameters."""
-    return urlparse(request_target).path or "/"
+    """Compatibility wrapper for the standalone health contract."""
+    return health_request_path(request_target)
 
 
 def _gmail_health_fields(diagnostics: Any) -> dict[str, Any]:
-    """Project Gmail diagnostics into the public health contract safely.
-
-    Gmail history/message identifiers are private transport cursors.  The
-    public health endpoint receives only watch state and bounded operational
-    observability from ``gmail_watch.health``.
-    """
-    if not isinstance(diagnostics, dict):
-        return {"watch_status": "not_checked", "observability": {}}
-    watch = diagnostics.get("watch")
-    if not isinstance(watch, dict):
-        return {"watch_status": "not_checked", "observability": {}}
-    metrics = watch.get("observability")
-    return {
-        "watch_status": str(watch.get("status") or "not_checked"),
-        "observability": dict(metrics) if isinstance(metrics, dict) else {},
-    }
+    """Compatibility wrapper for the standalone Gmail health projection."""
+    return gmail_health_fields(diagnostics)
 
 
 def configure_gmail_ingress() -> None:
