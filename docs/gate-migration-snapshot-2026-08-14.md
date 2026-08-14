@@ -31,6 +31,17 @@ the audit snapshot and does not rewrite or reset them.
 - No live Railway, Pages, or Telegram acceptance was inferred from local or CI
   evidence.
 
+### Offline release-gate evidence
+
+- `python -m src.runtime_audit` exited `0` with `ok=true` and no invariant
+  issues. Its warnings remain visible: six market source gaps, one building
+  research source, and missing event/research artifacts in the local audit
+  fixture. These warnings are not treated as a ready production release.
+- `python -m src.production_e2e` exited `0`. The deterministic offline gate
+  verified the release contract, 1080x1350 photo contract, deep-link lineage,
+  creator delivery contract, and one mocked recipient. It explicitly reported
+  `mocked=true`; no Telegram API or Railway endpoint was contacted.
+
 ## Current implementation reconciliation
 
 | Area | State | Evidence / next gate |
