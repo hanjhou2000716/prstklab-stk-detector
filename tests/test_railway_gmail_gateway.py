@@ -44,6 +44,20 @@ def test_watch_configuration_is_fail_closed() -> None:
     assert config.watch_request()["status"] == "configuration_missing"
 
 
+def test_email_router_imports_from_standalone_railway_root() -> None:
+    import subprocess
+
+    result = subprocess.run(
+        [sys.executable, "-c", "import email_router; print(sorted(email_router.KNOWN_SOURCES))"],
+        cwd=RAILWAY_MODULES,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "haojiao" in result.stdout
+    assert "jenny" in result.stdout
+
+
 def test_watch_renewal_is_due_without_expiration() -> None:
     assert renewal_due(None)
 
