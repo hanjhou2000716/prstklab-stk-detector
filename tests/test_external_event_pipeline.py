@@ -77,4 +77,34 @@ def test_unresolved_compound_envelope_never_emits_partial_event() -> None:
     })
     assert len(result) == 1
     assert result[0]["parse_status"] == "compound_unresolved"
+    assert result[0]["observation_id"] is None
+    assert "compound-pipeline-2" not in str(result[0])
     assert result[0]["notification"]["allowed"] is False
+
+
+def test_external_event_pipeline_does_not_publish_transport_or_private_fields() -> None:
+    result = build_external_event(
+        {
+            "source": "reuters",
+            "headline": "Central bank statement",
+            "event_type": "macro",
+            "message_id": "private-message-1",
+            "gmail_message_id": "private-gmail-1",
+            "body": "private body must not enter evidence",
+        },
+        source_observations=[
+            {
+                "source": "gdelt",
+                "headline": "Public corroboration",
+                "message_id": "private-source-message-1",
+                "body": "private source body",
+            }
+        ],
+    )
+    assert result["observation_id"] is None
+    rendered = str(result)
+    assert "private-message-1" not in rendered
+    assert "private-gmail-1" not in rendered
+    assert "private body must not enter evidence" not in rendered
+    assert "private-source-message-1" not in rendered
+    assert "private source body" not in rendered
