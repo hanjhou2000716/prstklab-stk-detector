@@ -28,6 +28,19 @@ def test_delivery_shared_secret_prefers_railway_service_name(monkeypatch):
     assert monitor._delivery_shared_secret() == "service"
 
 
+def test_health_snapshot_exposes_redacted_runtime_configuration(monkeypatch):
+    monkeypatch.delenv("DELIVERY_STATUS_SHARED_SECRET", raising=False)
+    monkeypatch.delenv("RAILWAY_STATUS_SHARED_SECRET", raising=False)
+    snapshot = monitor.health_snapshot()
+    assert snapshot["runtime_config"] == {
+        "status": "configuration_missing",
+        "delivery_secret_configured": False,
+        "canonical_name_present": False,
+        "legacy_name_present": False,
+        "secret_values_exposed": False,
+    }
+
+
 def test_monitor_imports_from_railway_root_without_repository_src_package():
     """Railway's configured root directory must not crash on ``import app``."""
     environment = os.environ.copy()
@@ -56,6 +69,7 @@ def test_monitor_imports_from_railway_root_without_repository_src_package():
         sys.executable,
         "-c",
         "import app; assert app._USING_STANDALONE_CLASSIFIER; "
+        "assert not app.classifier_delivery_allowed(); "
         "assert app.classify_event_fields({'title': 'WTI oil production update'})['category'] == 'energy'",
     ]
     result = subprocess.run(
@@ -673,6 +687,35 @@ def test_health_snapshot_exposes_source_diagnostics_without_secrets():
     assert "GITHUB_DISPATCH_TOKEN" not in str(snapshot)
 
 
+def test_health_snapshot_declares_preflight_source_states():
+    snapshot = monitor.health_snapshot()
+    assert snapshot["gdelt"]["event_scan"] in {"not_checked", "no_event", "has_events", "scan_failed"}
+    assert "market_sync" in snapshot
+    assert snapshot["market_sync"]["status"] in {
+        "not_checked", "available", "configuration_missing", "http_error",
+        "rate_limited", "invalid_payload", "failed",
+    }
+
+
+def test_gmail_public_health_projects_observability_without_private_cursors():
+    diagnostics = {
+        "watch": {
+            "status": "healthy",
+            "observability": {
+                "last_received_at": "2026-08-14T00:00:00+00:00",
+                "parser_error_count": 0,
+                "state": "healthy",
+            },
+        },
+        "store": {"cursor": {"last_history_id": "private", "last_message_id": "private"}},
+    }
+    fields = monitor._gmail_health_fields(diagnostics)
+    assert fields["watch_status"] == "healthy"
+    assert fields["observability"]["state"] == "healthy"
+    assert "last_history_id" not in str(fields)
+    assert "last_message_id" not in str(fields)
+
+
 def test_gdelt_error_label_preserves_status_without_exposing_response_body():
     response = monitor.httpx.Response(429, request=monitor.httpx.Request("GET", "https://example.test"))
     error = monitor.httpx.HTTPStatusError("rate limited", request=response.request, response=response)
@@ -749,6 +792,49 @@ def test_gdelt_rate_limit_fallback_is_marked_stale_and_not_live(monkeypatch, tmp
     assert len(articles) == 1
     assert monitor._GDELT_LAST_FETCH_STATE == "stale_cache"
     assert monitor._GDELT_LAST_FETCH_ERROR == "HTTP_429"
+
+
+def test_gdelt_invalid_json_uses_recent_cache_and_stays_failed(monkeypatch, tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    payload = [{
+        "title": "Iran talks",
+        "url": "https://www.reuters.com/a",
+        "domain": "reuters.com",
+        "seen_at": "2026-08-09T01:00:00+00:00",
+    }]
+    store.write_cache("gdelt-success", payload)
+    store.connection.execute(
+        "UPDATE cache SET refreshed_at=? WHERE cache_key=?",
+        ((monitor.datetime.now(monitor.timezone.utc) - monitor.timedelta(minutes=20)).isoformat(), "gdelt-success"),
+    )
+    store.connection.commit()
+
+    class Response:
+        status_code = 200
+        headers = {}
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            raise monitor.json.JSONDecodeError("invalid", "<html>", 0)
+
+    class Client:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def get(self, *_args, **_kwargs):
+            return Response()
+
+    monkeypatch.setattr(monitor.httpx, "AsyncClient", lambda **_kwargs: Client())
+    monitor._GDELT_BACKOFF_UNTIL = 0.0
+    articles = asyncio.run(monitor.fetch_gdelt_articles(store))
+    assert len(articles) == 1
+    assert monitor._GDELT_LAST_FETCH_STATE == "stale_cache"
+    assert monitor._GDELT_LAST_FETCH_ERROR == "invalid_json"
 
 
 def test_monitor_health_forbidden_is_degraded_but_nonfatal(monkeypatch):

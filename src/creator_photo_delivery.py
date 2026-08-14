@@ -106,6 +106,7 @@ def build_creator_receipt(
     media_hash: str = "",
     error_class: str | None = None,
     sent_at: str | None = None,
+    notification_type: str = "initial",
 ) -> dict[str, Any]:
     """Build a privacy-safe, replay-auditable Creator delivery receipt."""
     allowed_status = {"delivered", "failed", "retryable", "blocked", "media_degraded"}
@@ -118,7 +119,7 @@ def build_creator_receipt(
         raise ValueError("episode_key is required")
     timestamp = sent_at or datetime.now(UTC).isoformat()
     return {
-        "notification_key": creator_notification_key(episode_key),
+        "notification_key": creator_notification_key(episode_key, notification_type),
         "creator_episode_key": episode_key,
         "creator_snapshot_id": _compact(creator_snapshot_id),
         "release_id": _compact(release_id),

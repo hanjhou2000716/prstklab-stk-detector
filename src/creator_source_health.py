@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from src.creator_provider_registry import CREATOR_PROVIDERS, get_creator_provider
@@ -13,6 +13,35 @@ _FAILED_PARSE = {"parse_failed", "unsupported_template", "invalid_source", "dupl
 
 def _provider(record: dict[str, Any]) -> str:
     return str(record.get("content_origin") or record.get("source") or "").strip().lower()
+
+
+def _timestamp(record: dict[str, Any], *fields: str) -> tuple[datetime, str] | None:
+    for field in fields:
+        value = record.get(field)
+        if value in (None, ""):
+            continue
+        try:
+            parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            continue
+        parsed = parsed.replace(tzinfo=parsed.tzinfo or UTC).astimezone(UTC)
+        return parsed, parsed.isoformat()
+    return None
+
+
+def _observability(records: list[dict[str, Any]], *, parser_errors: int, state: str) -> dict[str, Any]:
+    received = [item for item in (_timestamp(row, "received_at", "fetched_at", "published_at") for row in records) if item]
+    parsed = [item for item in (_timestamp(row, "last_parsed_at", "parsed_at", "fetched_at") for row in records) if item]
+    delivered = [item for item in (_timestamp(row, "last_receipt_at", "delivery_at", "notified_at") for row in records) if item]
+    return {
+        "observations": len(records),
+        "last_received_at": max(received, default=(None, None))[1],
+        "last_parsed_at": max(parsed, default=(None, None))[1],
+        "parser_error_count": parser_errors,
+        "no_event_count": 1 if not records and state == "no_new_content" else 0,
+        "last_delivery_at": max(delivered, default=(None, None))[1],
+        "state": "no_observations" if state in {"configuration_missing", "no_new_content"} and not records else state,
+    }
 
 
 def build_creator_source_health(
@@ -41,6 +70,11 @@ def build_creator_source_health(
     rows: list[dict[str, Any]] = []
     for provider in CREATOR_PROVIDERS:
         provider_config = get_creator_provider(provider)
+        provider_records = grouped[provider]
+        parse_failures = sum(
+            str(item.get("parse_status") or "").strip().lower() in _FAILED_PARSE
+            for item in provider_records
+        )
         base: dict[str, Any] = {
             "key": f"creator_{provider}",
             "label": provider_config.display_name if provider_config else f"Creator {provider}",
@@ -69,11 +103,6 @@ def build_creator_source_health(
                 "issues": [str(errors[provider])[:160]],
             })
         else:
-            provider_records = grouped[provider]
-            parse_failures = sum(
-                str(item.get("parse_status") or "").strip().lower() in _FAILED_PARSE
-                for item in provider_records
-            )
             if parse_failures:
                 base.update({
                     "status": "failed",
@@ -105,6 +134,11 @@ def build_creator_source_health(
                     "last_success_at": now,
                     "issues": [],
                 })
+        base["observability"] = _observability(
+            provider_records,
+            parser_errors=parse_failures + (1 if provider in errors else 0),
+            state=str(base.get("creator_health") or base.get("status") or "failed"),
+        )
         rows.append(base)
     return rows
 

@@ -44,6 +44,20 @@ def test_watch_configuration_is_fail_closed() -> None:
     assert config.watch_request()["status"] == "configuration_missing"
 
 
+def test_email_router_imports_from_standalone_railway_root() -> None:
+    import subprocess
+
+    result = subprocess.run(
+        [sys.executable, "-c", "import email_router; print(sorted(email_router.KNOWN_SOURCES))"],
+        cwd=RAILWAY_MODULES,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "haojiao" in result.stdout
+    assert "jenny" in result.stdout
+
+
 def test_watch_renewal_is_due_without_expiration() -> None:
     assert renewal_due(None)
 
@@ -131,4 +145,44 @@ def test_known_source_template_failure_enters_dlq(tmp_path: Path) -> None:
 def test_health_reports_stale_watch(tmp_path: Path) -> None:
     store = EmailStore(tmp_path / "mail.sqlite3")
     store.save_cursor(watch_expiration="2020-01-01T00:00:00+00:00")
-    assert health(_config(), store.cursor())["status"] == "stale"
+    result = health(_config(), store.cursor())
+    assert result["status"] == "stale"
+    assert result["watch_active"] is False
+    assert result["observability"]["state"] == "stale"
+
+
+def test_health_exposes_privacy_safe_observability(tmp_path: Path) -> None:
+    result = health(
+        _config(),
+        {
+            "watch_expiration": "2099-01-01T00:00:00Z",
+            "last_history_id": "private-history-id",
+            "last_message_id": "private-message-id",
+            "last_notification_at": "2026-08-13T00:00:00Z",
+            "last_sync_at": "2026-08-13T00:01:00Z",
+            "dlq_count": 2,
+            "last_receipt_at": "2026-08-13T00:02:00Z",
+        },
+    )
+    assert result["status"] == "healthy"
+    assert result["observability"] == {
+        "observations": 0,
+        "last_received_at": "2026-08-13T00:00:00+00:00",
+        "last_parsed_at": "2026-08-13T00:01:00+00:00",
+        "parser_error_count": 2,
+        "last_delivery_at": "2026-08-13T00:02:00+00:00",
+        "state": "healthy",
+    }
+    assert "last_history_id" not in result
+    assert "last_message_id" not in result
+
+
+def test_health_invalid_timestamps_fail_closed_without_leaking_cursor(tmp_path: Path) -> None:
+    result = health(
+        GmailWatchConfig.from_env({}),
+        {"last_history_id": "private", "last_notification_at": "not-a-timestamp", "dlq_count": "bad"},
+    )
+    assert result["status"] == "configuration_missing"
+    assert result["observability"]["last_received_at"] is None
+    assert result["observability"]["parser_error_count"] == 0
+    assert "last_history_id" not in json.dumps(result)

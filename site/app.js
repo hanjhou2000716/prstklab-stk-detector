@@ -476,7 +476,8 @@ const renderSourceHealth = (health, snapshot = {}) => {
     const state = source.semantic_state || source.state || source.status;
     // Keep the legacy status spelling for older snapshots and source-health
     // fixtures (source.status === "warming" ? "建檔中").
-    const status = state === "healthy" ? "正常" : ["no_event", "no_events", "empty", "none"].includes(String(state || "").toLowerCase()) ? "無事件" : state === "warming" ? "建檔中" : state === "pending_confirmation" || state === "pending" ? "待核對" : state === "configuration_missing" || state === "configuration_required" ? "需設定" : state === "optional_degraded" ? "選配降級" : state === "degraded_with_fallback" || state === "fallback_active" ? "備援可用" : state === "secondary_unavailable" ? "第二來源不可用" : state === "stale" ? "使用快取" : ["failed", "scan_failed", "failure", "error"].includes(String(state || "").toLowerCase()) ? "掃描失敗" : "資料缺口";
+    const normalizedState = String(state || "").toLowerCase();
+    const status = state === "healthy" ? "正常" : ["no_event", "no_events", "empty", "none"].includes(normalizedState) ? "無事件" : ["not_checked", "not_scanned", "not_checked_yet"].includes(normalizedState) ? "尚未檢查" : state === "warming" ? "建檔中" : state === "pending_confirmation" || state === "pending" ? "待核對" : state === "configuration_missing" || state === "configuration_required" ? "需設定" : state === "optional_degraded" ? "選配降級" : state === "degraded_with_fallback" || state === "fallback_active" ? "備援可用" : state === "secondary_unavailable" ? "第二來源不可用" : state === "stale" ? "使用快取" : ["failed", "scan_failed", "failure", "error"].includes(normalizedState) ? "掃描失敗" : "資料缺口";
     const pendingReasons = source.status === "pending" && source.pending_reasons && typeof source.pending_reasons === "object"
       ? Object.entries(source.pending_reasons).filter(([, count]) => Number(count) > 0).map(([reason, count]) => {
         const labels = {
@@ -515,7 +516,22 @@ const renderSourceHealth = (health, snapshot = {}) => {
       Number.isFinite(Number(source.consecutive_failures)) ? `連續失敗 ${Number(source.consecutive_failures)} 次` : "",
       Number.isFinite(Number(source.crosscheck_rate)) ? `核對率 ${Number(source.crosscheck_rate).toFixed(1)}%` : "",
     ].filter(Boolean).join("｜");
-    const detail = [issue, candidateNote, provenance, quality, freshness.join("｜")].filter(Boolean).join("｜");
+    const external = source.key === "external_financialjuice" && source.observability && typeof source.observability === "object"
+      ? [
+        source.observability.last_received_at ? `最近收到 ${traceTime(source.observability.last_received_at)}` : "",
+        Number.isFinite(Number(source.observability.qualifying_item_count)) ? `>=8 ${Number(source.observability.qualifying_item_count)} 筆` : "",
+        Number.isFinite(Number(source.observability.pending_cluster_count)) ? `待核對群組 ${Number(source.observability.pending_cluster_count)}` : "",
+        Number.isFinite(Number(source.observability.parser_error_count)) ? `解析失敗 ${Number(source.observability.parser_error_count)} 筆` : "",
+        source.observability.last_notification_decision === "eligible" ? "通知資格：已具備" : source.observability.last_notification_decision === "pending_confirmation" ? "通知資格：待核對" : "",
+      ].filter(Boolean).join("｜") : "";
+    const creator = String(source.key || "").startsWith("creator_") && source.observability && typeof source.observability === "object"
+      ? [
+        Number.isFinite(Number(source.observability.observations)) ? `觀測 ${Number(source.observability.observations)} 筆` : "",
+        source.observability.last_parsed_at ? `最近解析 ${traceTime(source.observability.last_parsed_at)}` : "",
+        Number.isFinite(Number(source.observability.parser_error_count)) ? `解析失敗 ${Number(source.observability.parser_error_count)} 筆` : "",
+        source.observability.last_delivery_at ? `最近送達 ${traceTime(source.observability.last_delivery_at)}` : "",
+      ].filter(Boolean).join("｜") : "";
+    const detail = [issue, candidateNote, provenance, quality, freshness.join("｜"), external, creator].filter(Boolean).join("｜");
     return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${escapeHtml(state || "partial")}">${status}</em></li>`;
   }).join("");
   if (card) card.open = false;

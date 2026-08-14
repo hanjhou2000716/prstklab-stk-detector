@@ -6,7 +6,7 @@ from pathlib import Path
 from src.creator_dispatch import dispatch
 
 
-def _bundle(tmp_path: Path) -> Path:
+def _bundle(tmp_path: Path, *, include_morning_batch: bool = False) -> Path:
     site = tmp_path / "site" / "data"
     site.mkdir(parents=True)
     market = {"snapshot_id": "market-1"}
@@ -14,6 +14,23 @@ def _bundle(tmp_path: Path) -> Path:
     events = {"snapshot_id": "event-1"}
     for name, value in (("market.json", market), ("research-report.json", research), ("event-ledger.json", events)):
         (site / name).write_text(json.dumps(value), encoding="utf-8")
+    insights = [{
+            "episode_key": "haojiao:ep-1",
+            "content_origin": "haojiao",
+            "creator_id": "haojiao",
+            "episode_title": "Market note",
+            "public_safe": True,
+            "verification_state": "unverified",
+        }]
+    if include_morning_batch:
+        insights.append({
+            "episode_key": "jenny:ep-1",
+            "content_origin": "jenny",
+            "creator_id": "jenny",
+            "episode_title": "Second market note",
+            "public_safe": True,
+            "verification_state": "unverified",
+        })
     creator = {
         "schema_version": "1.0",
         "parent_release_id": "release-1",
@@ -22,14 +39,7 @@ def _bundle(tmp_path: Path) -> Path:
         "status": "ready",
         "public_safe": True,
         "creator_consensus": {"consensus_state": "insufficient_sources"},
-        "insights": [{
-            "episode_key": "haojiao:ep-1",
-            "content_origin": "haojiao",
-            "creator_id": "haojiao",
-            "episode_title": "Market note",
-            "public_safe": True,
-            "verification_state": "unverified",
-        }],
+        "insights": insights,
     }
     creator_path = site / "creator-release.json"
     creator_path.write_text(json.dumps(creator), encoding="utf-8")
@@ -58,6 +68,18 @@ def _bundle(tmp_path: Path) -> Path:
     # test intentionally exercises dispatch independently of a full market
     # artifact contract.  The verification root is the Pages directory.
     creator["release_id"] = "creator-1"
+    if include_morning_batch:
+        creator["morning_batch"] = {
+            "batch_key": "creator-morning:2026-08-14:batch-1",
+            "state": "complete",
+            "expected_count": 2,
+            "received_count": 2,
+            "late_arrivals": [],
+            "records": [
+                {"episode_key": "haojiao:ep-1", "creator_id": "haojiao"},
+                {"episode_key": "jenny:ep-1", "creator_id": "jenny"},
+            ],
+        }
     creator_path.write_text(json.dumps(creator), encoding="utf-8")
     manifest["artifact_hashes"]["creator-release.json"] = sha256_file(creator_path)
     path = site / "release-manifest.json"
@@ -123,3 +145,83 @@ def test_creator_dispatch_fails_closed_when_configured_remote_history_is_unavail
     result = dispatch(manifest_path=manifest, public_url="https://example.test/app", token="token", chat_ids=("test-chat",))
     assert result["status"] == "blocked"
     assert result["reasons"] == ["creator_delivery_history_unavailable"]
+
+
+def test_complete_morning_batch_sends_episode_notifications_and_one_digest(tmp_path, monkeypatch):
+    monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
+    manifest = _bundle(tmp_path, include_morning_batch=True)
+    calls: list[dict] = []
+
+    def fake_text_sender(**kwargs):
+        calls.append(kwargs)
+
+        class Result:
+            message_id = 17 + len(calls)
+
+        class Delivery:
+            chat_id = kwargs["chat_ids"][0]
+            result = Result()
+            error = None
+
+            @property
+            def delivered(self):
+                return True
+
+        return (Delivery(),)
+
+    monkeypatch.setattr("src.creator_notification.send_briefs", fake_text_sender)
+    result = dispatch(
+        manifest_path=manifest,
+        public_url="https://example.test/app",
+        token="token",
+        chat_ids=("test-chat",),
+    )
+    assert result["status"] == "delivered"
+    assert result["sent"] == 3
+    assert len(calls) == 3
+    assert calls[-1]["text"].startswith("Creator morning 2/2")
+    assert "target_url" in calls[-1]
+
+
+def test_morning_digest_is_idempotent_after_receipt_is_persisted(tmp_path, monkeypatch):
+    monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
+    manifest = _bundle(tmp_path, include_morning_batch=True)
+    receipt_path = tmp_path / "private" / "receipts.json"
+    calls: list[dict] = []
+
+    def fake_text_sender(**kwargs):
+        calls.append(kwargs)
+
+        class Result:
+            message_id = 42
+
+        class Delivery:
+            chat_id = kwargs["chat_ids"][0]
+            result = Result()
+            error = None
+
+            @property
+            def delivered(self):
+                return True
+
+        return (Delivery(),)
+
+    monkeypatch.setattr("src.creator_notification.send_briefs", fake_text_sender)
+    first = dispatch(
+        manifest_path=manifest,
+        public_url="https://example.test/app",
+        receipt_path=receipt_path,
+        token="token",
+        chat_ids=("test-chat",),
+    )
+    second = dispatch(
+        manifest_path=manifest,
+        public_url="https://example.test/app",
+        receipt_path=receipt_path,
+        token="token",
+        chat_ids=("test-chat",),
+    )
+    assert first["sent"] == 3
+    assert second["status"] == "no_new_content"
+    assert second["sent"] == 0
+    assert len(calls) == 3

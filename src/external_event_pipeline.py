@@ -11,6 +11,38 @@ from src.financialjuice_contract import financialjuice_notification_state, norma
 
 PIPELINE_VERSION = "external-event-pipeline-v1"
 
+_PRIVATE_EXTERNAL_FIELDS = frozenset(
+    {
+        "body",
+        "raw_body",
+        "attachments",
+        "data",
+        "local_path",
+        "private_url",
+        "gmail_message_id",
+        "gmail_thread_id",
+        "gmail_history_id",
+        "message_id",
+        "thread_id",
+        "sender",
+        "recipient",
+        "email",
+    }
+)
+
+
+def _sanitize_public_record(value: Any) -> Any:
+    """Remove transport/private fields before clustering or returning evidence."""
+    if isinstance(value, dict):
+        return {
+            key: _sanitize_public_record(item)
+            for key, item in value.items()
+            if str(key).casefold() not in _PRIVATE_EXTERNAL_FIELDS
+        }
+    if isinstance(value, list):
+        return [_sanitize_public_record(item) for item in value]
+    return value
+
 
 def _now() -> str:
     return datetime.now(UTC).isoformat()
@@ -29,8 +61,9 @@ def build_external_event(
     same fields. Missing official or market evidence remains pending; no
     fallback turns a discovery headline into an alert.
     """
-    source = str(record.get("source") or record.get("content_origin") or "unknown").casefold()
-    normalized = normalize_financialjuice(record) if source == "financialjuice" else dict(record)
+    safe_record = _sanitize_public_record(record)
+    source = str(safe_record.get("source") or safe_record.get("content_origin") or "unknown").casefold()
+    normalized = normalize_financialjuice(safe_record) if source == "financialjuice" else dict(safe_record)
     vendor_priority = (
         financialjuice_notification_state(normalized)
         if source == "financialjuice"
@@ -41,10 +74,10 @@ def build_external_event(
     normalized.setdefault("category", normalized.get("event_type"))
     normalized.setdefault("fetched_at", _now())
     normalized.setdefault("source_tier", "discovery")
-    normalized["official_confirmed"] = bool(official_confirmed or record.get("official_confirmed"))
-    normalized["market_sync_confirmed"] = bool(market_sync_confirmed or record.get("market_sync_confirmed"))
+    normalized["official_confirmed"] = bool(official_confirmed or safe_record.get("official_confirmed"))
+    normalized["market_sync_confirmed"] = bool(market_sync_confirmed or safe_record.get("market_sync_confirmed"))
     classification = classify_event_fields(normalized)
-    observations = [normalized, *(source_observations or [])]
+    observations = [normalized, *(_sanitize_public_record(source_observations or []))]
     clusters = cluster_external_events(observations)
     cluster = clusters[0] if clusters else {"event_type": classification.get("category") or "unknown", "cross_source_count": 0}
     risk = score_prstk_risk(
@@ -57,9 +90,9 @@ def build_external_event(
     lifecycle = "confirmed" if decision["allowed"] else "pending_confirmation"
     return {
         "pipeline_version": PIPELINE_VERSION,
-        "observation_id": normalized.get("observation_id") or normalized.get("gmail_message_id"),
+        "observation_id": normalized.get("observation_id"),
         "event_cluster_key": cluster.get("event_cluster_key"),
-        "notification_id": str(record.get("notification_id") or record.get("compound_item_id") or cluster.get("event_cluster_key") or "").strip() or None,
+        "notification_id": str(safe_record.get("notification_id") or safe_record.get("compound_item_id") or cluster.get("event_cluster_key") or "").strip() or None,
         "classification": classification,
         "cluster": cluster,
         "risk": risk,
@@ -68,7 +101,7 @@ def build_external_event(
         "lifecycle_state": lifecycle,
         "pending_reasons": list(decision.get("reasons") or normalized.get("pending_reasons") or []),
         "source_evidence": cluster.get("observations", []),
-        "market_evidence": record.get("market_evidence") or [],
+        "market_evidence": safe_record.get("market_evidence") or [],
         "created_at": _now(),
     }
 
@@ -90,7 +123,7 @@ def build_external_events(
     if str(record.get("parse_status") or "") == "compound_unresolved":
         return [{
             "pipeline_version": PIPELINE_VERSION,
-            "observation_id": record.get("message_id"),
+            "observation_id": None,
             "event_cluster_key": None,
             "lifecycle_state": "suppressed",
             "notification": {"allowed": False, "status": "pending", "reasons": ["compound_unresolved"]},

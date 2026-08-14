@@ -46,6 +46,10 @@ def test_rss_adapter_normalizes_fed_atom_and_isolates_other_provider_failure():
     assert result["stories"][0]["source_tier"] == "official"
     assert any(item["provider"] == "sec" and item["status"] == "failed" for item in result["source_health"])
     assert any(item["provider"] == "sec" for item in result["errors"])
+    failed = next(item for item in result["source_health"] if item["provider"] == "sec")
+    assert failed["parser_error_count"] == 1
+    assert failed["last_parsed_at"] is None
+    assert failed["latency_ms"] >= 0
 
 
 def test_json_adapter_normalizes_twse_rows_and_disabled_sources_do_not_call():
@@ -59,6 +63,7 @@ def test_json_adapter_normalizes_twse_rows_and_disabled_sources_do_not_call():
     assert result["stories"][0]["provider"] == "twse"
     assert result["stories"][0]["published_at"].endswith("+00:00")
     assert len(calls) == 2  # TWSE and MOPS; no US provider is requested.
+    assert all("checked_at" in item for item in result["source_health"])
 
 
 def test_http_429_is_recorded_without_retrying_or_aborting():

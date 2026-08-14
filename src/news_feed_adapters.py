@@ -13,6 +13,7 @@ import json
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
+from time import perf_counter
 from typing import Any
 from urllib.parse import urljoin
 from xml.etree import ElementTree
@@ -188,8 +189,10 @@ def fetch_official_market_news(
         provider_id = str(item["provider_id"])
         url = str(item.get("url") or "")
         if not item.get("enabled", True) or not url:
-            health.append({"provider": provider_id, "status": "disabled", "source_url": url or None, "reason": item.get("disabled_reason")})
+            health.append({"provider": provider_id, "status": "disabled", "source_url": url or None, "reason": item.get("disabled_reason"), "parser_error_count": 0})
             continue
+        started_at = datetime.now(UTC)
+        started_clock = perf_counter()
         try:
             response = requester(url, headers=_headers(provider_id), timeout=float(item.get("timeout_seconds", 8)))
             response.raise_for_status()
@@ -199,13 +202,26 @@ def fetch_official_market_news(
             else:
                 parsed = _rss_stories(str(getattr(response, "text", "")), provider_id, url, market)
             stories.extend(parsed)
-            health.append({"provider": provider_id, "status": "healthy" if parsed else "no_event", "source_url": url, "item_count": len(parsed)})
+            health.append({
+                "provider": provider_id, "status": "healthy" if parsed else "no_event", "source_url": url,
+                "item_count": len(parsed), "checked_at": started_at.isoformat(),
+                "last_parsed_at": started_at.isoformat(), "latency_ms": round((perf_counter() - started_clock) * 1000, 2),
+                "parser_error_count": 0,
+            })
         except requests.HTTPError as exc:
             status_code = getattr(getattr(exc, "response", None), "status_code", None)
             status = "rate_limited" if status_code == 429 else "failed"
-            health.append({"provider": provider_id, "status": status, "source_url": url, "item_count": 0})
+            health.append({
+                "provider": provider_id, "status": status, "source_url": url, "item_count": 0,
+                "checked_at": started_at.isoformat(), "last_parsed_at": None,
+                "latency_ms": round((perf_counter() - started_clock) * 1000, 2), "parser_error_count": 0,
+            })
             errors.append({"provider": provider_id, "error": status, "status_code": status_code})
         except (requests.RequestException, TimeoutError, ElementTree.ParseError, ValueError, TypeError, OSError) as exc:
-            health.append({"provider": provider_id, "status": "failed", "source_url": url, "item_count": 0})
+            health.append({
+                "provider": provider_id, "status": "failed", "source_url": url, "item_count": 0,
+                "checked_at": started_at.isoformat(), "last_parsed_at": None,
+                "latency_ms": round((perf_counter() - started_clock) * 1000, 2), "parser_error_count": 1,
+            })
             errors.append({"provider": provider_id, "error": type(exc).__name__})
     return {"stories": stories[: max(limit, 1) * 2], "source_health": health, "errors": errors, "market": market}
