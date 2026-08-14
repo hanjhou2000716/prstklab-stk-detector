@@ -73,6 +73,19 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     _gmail_runtime_spec.loader.exec_module(_gmail_runtime_module)
     build_gmail_ingress = _gmail_runtime_module.configure_gmail_ingress
 
+try:
+    from dispatch_transport import dispatch_repository_payload as send_repository_payload
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _dispatch_spec = spec_from_file_location(
+        "railway_dispatch_transport",
+        Path(__file__).with_name("dispatch_transport.py"),
+    )
+    if _dispatch_spec is None or _dispatch_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/dispatch_transport.py")
+    _dispatch_module = module_from_spec(_dispatch_spec)
+    _dispatch_spec.loader.exec_module(_dispatch_module)
+    send_repository_payload = _dispatch_module.dispatch_repository_payload
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -1528,35 +1541,13 @@ def sign_dispatch_payload(payload: dict[str, Any], alert: Alert, shared_secret: 
 async def dispatch_repository_payload(
     payload: dict[str, Any], *, token: str, repository: str, trace_id: str,
 ) -> None:
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {token}",
-        "X-GitHub-Api-Version": GITHUB_API_VERSION,
-    }
-    endpoint = f"https://api.github.com/repos/{repository}/dispatches"
-    async with httpx.AsyncClient(timeout=20) as client:
-        for attempt in range(3):
-            try:
-                response = await client.post(endpoint, headers=headers, json=payload)
-            except httpx.HTTPError as exc:
-                if attempt == 2:
-                    logging.error("dispatch failed trace_id=%s error=%s", trace_id, type(exc).__name__)
-                    raise
-                await asyncio.sleep(2**attempt)
-                continue
-            if response.status_code == 429 or response.status_code >= 500:
-                if attempt == 2:
-                    response.raise_for_status()
-                retry_after = 0
-                try:
-                    retry_after = int(response.json().get("parameters", {}).get("retry_after", 0))
-                except (TypeError, ValueError, AttributeError):
-                    pass
-                await asyncio.sleep(min(60, max(1, retry_after)) if retry_after else 2**attempt)
-                continue
-            response.raise_for_status()
-            logging.info("dispatch accepted trace_id=%s status=%s", trace_id, response.status_code)
-            return
+    await send_repository_payload(
+        payload,
+        token=token,
+        repository=repository,
+        trace_id=trace_id,
+        api_version=GITHUB_API_VERSION,
+    )
 
 
 async def dispatch_alert(alert: Alert, *, token: str, repository: str, shared_secret: str) -> None:
