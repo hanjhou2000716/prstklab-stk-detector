@@ -107,9 +107,9 @@ present; it does not imply that an external production gate has passed.
 - Targeted Railway health and monitor suite: **93 passed**. Full isolated
   repository regression at `b981454`: **1164 passed, 1 skipped**.
 - Changed-file Ruff, Mypy, `python -m compileall -q railway-monitor`, and
-  `node --check site/app.js` passed. Remote PR #584 checks for `296a115`
-  passed: test-and-dry-run run `31769689791`, CodeQL/security run
-  `31769689805`, CodeQL analysis `94673002866`, dependency review and SBOM.
+  `node --check site/app.js` passed. Remote PR #584 checks for `d592695`
+  passed: test-and-dry-run run `31769927747`, CodeQL/security run
+  `31769927756`, CodeQL analysis `94673663894`, dependency review and SBOM.
   The Railway live health endpoint and delivery receipt remain external
   evidence gates.
 
