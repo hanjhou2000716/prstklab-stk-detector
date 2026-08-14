@@ -48,7 +48,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 |---|---|---|---|---|
 | DEBT-001 | Run post-merge Railway restart/cache continuity check | production gate | execute against the merged main release | OPEN / EXTERNAL |
 | DEBT-002 | Capture signed callback and Telegram delivery receipt | production gate | use one approved test recipient only | OPEN / EXTERNAL |
-| DEBT-003 | Verify Pages release propagation and public market snapshot freshness | production gate | compare manifest/hash/snapshot IDs after deploy | OPEN / EXTERNAL |
+| DEBT-003 | Verify Pages release propagation and public market snapshot freshness | production gate | public manifest/hash/snapshot IDs verified 2026-08-15; release age remains explicit | CLOSED (lineage); freshness observation remains external |
 | DEBT-FJ-002 | FinancialJuice runtime bundle is not yet observed in Railway | production gate | configure reviewed sanitized bundle path and capture source-health/release evidence | OPEN / EXTERNAL |
 
 No implementation task in REQ-ADD-013..020 is marked PASS solely because a PR

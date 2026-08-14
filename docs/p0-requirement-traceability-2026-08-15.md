@@ -18,7 +18,7 @@ inferred from a green pull request.
 | Local regression | 1,224 passed in an isolated system temp directory |
 | Runtime audit | `ok=true`, no invariant issues; production warnings remain explicit |
 | Delivery smoke | fail-closed because local `TELEGRAM_CHAT_IDS` is intentionally absent |
-| Production release | not claimed; current checked-in manifest is invalid/old and must not be promoted |
+| Production release | public Pages manifest is `ready`; release/hash/lineage verified read-only on 2026-08-15 |
 
 Post-PR-609 verification on this checkout: `runtime_audit` returned `ok=true`
 with no invariant issues; `compileall` and `node --check site/app.js` passed.
@@ -35,6 +35,19 @@ The retry is bounded and only applies to transient Windows file locks and SQLite
 busy/locked errors; non-retryable failures still return the existing unavailable
 state and keep the alert/release gates fail-closed.
 
+Public Pages evidence captured on 2026-08-15 (read-only):
+
+- `https://hanjhou2000716.github.io/prstklab-stk-detector/` and `app.js` returned
+  HTTP 200; the app contains manifest loading, retry and fallback paths.
+- `data/release-manifest.json` returned `status=ready`, release
+  `release-957714e850293f39`, market snapshot `c7466b534b3d117e`, research
+  snapshot `research-8b8ec8f6e5ee51aa`, and event snapshot
+  `event-f67c25c9f5e6f24d`.
+- `market.json`, `research-report.json`, `event-ledger.json`, `source-health.json`,
+  `creator-release.json`, and `creator-insights.json` all returned HTTP 200 and
+  matched the manifest SHA-256 hashes. Their public snapshot identifiers matched
+  the manifest lineage; no private fields were accessed.
+
 ## Requirement / evidence matrix
 
 `Local verdict` is the strongest evidence available in the repository. `External
@@ -47,7 +60,7 @@ is pending.
 | P0-01 / `REQ-P0-01-DOD-01..03` | `src/artifact_contract.py`, `schemas/*.schema.json` | #575 | artifact and invariant suites | ready release manifest still needs live confirmation | release-gate compatibility | PASS |
 | P0-02 / `REQ-P0-02-DOD-01..03` | `src/market_data.py`, market provenance contract | #573 | provenance, stale, crosscheck tests | TWSE/TPEx live freshness pending | stale quotes remain visible but non-alertable | PASS |
 | P0-03 / `REQ-P0-03-DOD-01..03` | `src/research_state.py`, research schemas | #574 | candidate-state contract tests | current public research release must be rebuilt | building/no-candidates/data-unavailable remain distinct | PASS |
-| P0-04 / `REQ-P0-04-DOD-01..03` | `src/release_manifest.py`, release schema | #575 | hash, rollback, manifest tests | Pages must expose a ready matching manifest | invalid release cannot overwrite prior good release | PASS |
+| P0-04 / `REQ-P0-04-DOD-01..03` | `src/release_manifest.py`, release schema | #575 | hash, rollback, manifest tests | public Pages ready manifest, six artifact hashes and snapshot lineage verified 2026-08-15 | invalid release cannot overwrite prior good release | PASS |
 | P0-05 / `REQ-P0-05-DOD-01..03` | `src/release_gate.py`, publish workflows | #576 | publish-before-notify tests | public URL propagation evidence pending | notification remains blocked before gate | PASS |
 | P0-06 / `REQ-P0-06-DOD-01..03` | `src/data_release.py`, data-release workflows | #577 | branch/write-order tests | data-release deployment evidence pending | main is not used as high-frequency store | PASS |
 | P0-07 / `REQ-P0-07-DOD-01..03` | `pyproject.toml`, `uv.lock`, quality/security workflows | #577, #603 | locked CI, Ruff, type/compile checks | Actions rerun on merged main pending | no mutable action tags in required workflows | PASS |
@@ -95,7 +108,7 @@ breaks one reopens the affected task and must rerun its original evidence.
 | ID | Description | Required resolution | Status |
 |---|---|---|---|
 | REG-EXT-001 | Railway Creator/FJ ingress and delivery receipt not proven live | controlled Railway run with sanitized bundle | OPEN / EXTERNAL |
-| REG-EXT-002 | Pages ready release/hash/lineage not proven publicly | deploy and compare manifest/snapshot/hash | OPEN / EXTERNAL |
+| REG-EXT-002 | Pages ready release/hash/lineage not proven publicly | public manifest and six artifact hashes/lineage verified 2026-08-15 | CLOSED |
 | REG-EXT-003 | Telegram production photo/deep-link/receipt not proven | one approved test recipient only | OPEN / EXTERNAL |
 | DEBT-NEWS-001 | official feed freshness and market split live evidence | source-health capture for TWSE/MOPS/SEC/Fed | OPEN / EXTERNAL |
 | DEBT-FJ-001 | FinancialJuice sanitized runtime bundle not observed in Railway | configure reviewed bundle and capture release evidence | OPEN / EXTERNAL |
