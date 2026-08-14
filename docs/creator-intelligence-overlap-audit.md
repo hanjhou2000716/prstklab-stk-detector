@@ -208,3 +208,12 @@ silently diverge from `config/creator_providers.json`. The routing regression
 also proves a canonical 財經皓角 marker still resolves to `haojiao`, while
 unknown sources remain DLQ-safe. This is local evidence and does not claim live
 Gmail/Railway delivery.
+
+### Canonical template adapter continuation (2026-08-15)
+
+`src/creator_source_adapters.py` now derives its provider dispatch map from
+`creator_provider_registry.creator_ids()` and keeps only one shared labelled
+template vocabulary. A registry provider using `creator-template-v2` therefore
+cannot be silently rejected because a second parser whitelist was not updated.
+The parser remains fail-closed for unknown providers and unlabelled prose. The
+registry-wide adapter regression covers every currently enabled provider.

@@ -311,3 +311,16 @@ Remote evidence for `b97bc91` on PR #618: test-and-dry-run run
 `31850654835` / job `94925667803` passed; CodeQL run `31850654722` / job
 `94925667563`, dependency review job `94925667502`, SBOM job `94925667545`,
 and the separate CodeQL check `94925796640` all passed.
+
+### Shared Creator template adapter (current continuation)
+
+The Creator template parser previously had provider IDs duplicated in a local
+`_LABELS` map. It now builds that map from the canonical registry and uses a
+shared public-safe section vocabulary. Unknown identities still fail closed;
+adding a configured provider no longer requires editing a second identity
+allowlist. Targeted adapter/parser/registry tests pass (**21 passed**).
+
+State: **PASS locally / NEEDS_REVERIFY externally**. This is an adapter
+contract repair only; live Gmail/Railway configuration, repository-shared
+classifier packaging, Pages release and Telegram receipt evidence remain open
+external gates.

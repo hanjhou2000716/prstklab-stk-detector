@@ -1,9 +1,8 @@
 """Deterministic adapters for known creator newsletter templates.
 
-The adapters intentionally parse only labelled fields.  They never infer a
-fact, opinion, ticker, or market from free-form prose.  Unsupported templates
-are returned as an explicit DLQ-safe state so callers can retain the message
-for review without publishing guessed content.
+Provider identity is owned by :mod:`src.creator_provider_registry`.  This
+module owns only the shared, public-safe section vocabulary, so adding a
+provider to the registry does not require maintaining a second whitelist.
 """
 
 from __future__ import annotations
@@ -11,31 +10,26 @@ from __future__ import annotations
 import hashlib
 from typing import Any
 
-from src.creator_provider_registry import get_creator_provider, is_known_creator
+from src.creator_provider_registry import creator_ids, get_creator_provider, is_known_creator
 from src.email_intelligence import normalize_creator_insight
 
 _MAX_FIELD_CHARS = 600
 
-_LABELS: dict[str, dict[str, tuple[str, ...]]] = {
-    "haojiao": {
-        "title": ("title", "episode", "節目", "標題", "皓角"),
-        "fact": ("fact", "facts", "事實", "事實資料"),
-        "opinion": ("opinion", "view", "觀點", "市場觀點", "評論", "看法"),
-        "takeaway": ("takeaway", "key takeaway", "重點", "摘要", "結論"),
-        "risk": ("risk", "risk view", "風險", "風險觀點"),
-    },
-    "gooaye": {
-        "title": ("title", "episode", "集數", "標題", "股癌"),
-        "fact": ("fact", "facts", "事實", "事實資料"),
-        "opinion": ("opinion", "view", "觀點", "市場觀點", "評論", "看法"),
-        "takeaway": ("takeaway", "key takeaway", "重點", "摘要", "結論"),
-        "risk": ("risk", "risk view", "風險", "風險觀點"),
-    },
+# These labels describe the shared template contract, not provider identity.
+# Keep aliases conservative: unlabelled prose must remain unsupported.
+_BASE_LABELS: dict[str, tuple[str, ...]] = {
+    "title": ("title", "episode", "主題", "標題", "集數"),
+    "fact": ("fact", "facts", "事實", "資料", "發生什麼事"),
+    "opinion": ("opinion", "view", "觀點", "看法", "分析"),
+    "takeaway": ("takeaway", "key takeaway", "重點", "結論", "摘要"),
+    "risk": ("risk", "risk view", "風險", "風險觀察"),
 }
-# Jenny uses the same labelled public-safe sections in the first adapter
-# version; identity and future template changes remain controlled by the
-# registry rather than another source whitelist.
-_LABELS["jenny"] = dict(_LABELS["haojiao"])
+
+# The registry is the only provider allowlist.  A provider with the shared
+# parser receives the shared vocabulary automatically.
+_LABELS: dict[str, dict[str, tuple[str, ...]]] = {
+    provider_id: dict(_BASE_LABELS) for provider_id in creator_ids()
+}
 
 
 def _clip(value: str, limit: int = _MAX_FIELD_CHARS) -> str:
@@ -49,7 +43,7 @@ def _line_value(line: str, labels: tuple[str, ...]) -> str:
         marker = label.casefold()
         if not lowered.startswith(marker):
             continue
-        remainder = normalized[len(label):].lstrip(" :：|-\t")
+        remainder = normalized[len(label):].lstrip(" :：-\t")
         return _clip(remainder)
     return ""
 
@@ -77,13 +71,14 @@ def parse_creator_template(
     body: str,
     message_id: str = "",
 ) -> dict[str, Any]:
-    """Parse one known template, returning a public-safe derived record.
+    """Parse one known template and return a public-safe derived record.
 
     A template is accepted only when it has a labelled title and at least one
-    labelled fact/opinion/takeaway.  This prevents a sender name alone from
-    turning an arbitrary email into creator intelligence.
+    labelled fact/opinion/takeaway/risk.  This prevents a sender name alone
+    from turning arbitrary email into creator intelligence.
     """
-    if not is_known_creator(source) or source not in _LABELS:
+    normalized_source = str(source or "").strip().casefold()
+    if not is_known_creator(normalized_source):
         return {
             "parse_status": "invalid_source",
             "failure_reason": "source_not_creator",
@@ -91,7 +86,7 @@ def parse_creator_template(
             "source_adapter": "creator-template-v2",
         }
     lines = [line.strip() for line in body.splitlines() if line.strip()]
-    labels = _LABELS[source]
+    labels = _LABELS.get(normalized_source, _BASE_LABELS)
     title = _section(lines, labels["title"], limit_lines=1) or _clip(subject, 240)
     facts = _section(lines, labels["fact"])
     opinions = _section(lines, labels["opinion"])
@@ -103,7 +98,7 @@ def parse_creator_template(
             "failure_reason": "missing_episode_title",
             "message_id": message_id,
             "source_adapter": "creator-template-v2",
-            "template_fingerprint": _fingerprint(source, subject, body),
+            "template_fingerprint": _fingerprint(normalized_source, subject, body),
         }
     if not any((facts, opinions, takeaways, risk)):
         return {
@@ -111,17 +106,17 @@ def parse_creator_template(
             "failure_reason": "missing_fact_or_opinion_sections",
             "message_id": message_id,
             "source_adapter": "creator-template-v2",
-            "template_fingerprint": _fingerprint(source, subject, body),
+            "template_fingerprint": _fingerprint(normalized_source, subject, body),
         }
-    provider_config = get_creator_provider(source)
+    provider_config = get_creator_provider(normalized_source)
     insight = normalize_creator_insight({
-        "creator_id": source,
-        "creator_name": provider_config.display_name if provider_config else source,
-        "episode_key": f"{source}:{message_id or title.casefold()}",
+        "creator_id": normalized_source,
+        "creator_name": provider_config.display_name if provider_config else normalized_source,
+        "episode_key": f"{normalized_source}:{message_id or title.casefold()}",
         "episode_id": message_id,
         "episode_title": title,
         "source_message_id": message_id,
-        "content_origin": source,
+        "content_origin": normalized_source,
         "key_takeaways": [value for value in (takeaways, risk) if value],
         "claims": [facts] if facts else [],
         "opinions": [value for value in (opinions, risk) if value],
@@ -134,7 +129,7 @@ def parse_creator_template(
         "parse_status": "parsed",
         "parser_version": "creator-template-v2",
         "source_adapter": "creator-template-v2",
-        "template_fingerprint": _fingerprint(source, subject, body),
+        "template_fingerprint": _fingerprint(normalized_source, subject, body),
         "required_fields_present": True,
         "public_safe": True,
     })
