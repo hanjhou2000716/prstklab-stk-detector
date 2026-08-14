@@ -386,10 +386,31 @@ Traceability: `REQ-ADD-015` -> `railway-monitor/dispatch_payload.py`,
 suite above. Existing repository-dispatch and HMAC regressions remain covered
 by `tests/test_railway_monitor.py`.
 
+Remote evidence: PR [#593](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/593)
+passed `test-and-dry-run` (run `31794436820`), CodeQL, dependency-review and
+SBOM. This confirms repository CI only; live Jin10 source health remains an
+external acceptance gate.
+
 Remote evidence: PR [#592](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/592)
 passed `test-and-dry-run` (run `31793620545`), CodeQL, dependency-review and
 SBOM. This confirms repository CI only; live signed dispatch receipt and
 Telegram delivery remain external acceptance gates.
+
+### Migration audit update (2026-08-14, REQ-ADD-016 Jin10 source adapter)
+
+- `railway-monitor/jin10_source.py` owns the official MCP `list_flash` source
+  call and advertised-schema argument negotiation. The monitor retains
+  canonical Flash parsing and no scraping fallback was added.
+- Jin10 adapter/monitor targeted verification passes; changed-module Ruff and
+  compile checks pass. Missing tool or rejected optional arguments remain
+  explicit source failures, not empty healthy results.
+- Live Jin10 credentials/source availability remains an external
+  `NEEDS_REVERIFY` gate.
+
+Traceability: `REQ-ADD-016` -> `railway-monitor/jin10_source.py`,
+`railway-monitor/app.py`, `tests/test_railway_jin10_source.py` -> targeted
+suite. Existing source-failure and classification regressions remain covered
+by `tests/test_railway_monitor.py`.
 
 Remote evidence: PR [#591](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/591)
 passed `test-and-dry-run` (run `31792693278`), CodeQL, dependency-review and

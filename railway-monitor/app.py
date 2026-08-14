@@ -245,6 +245,23 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     store_sign = _payload_module.sign
     store_sign_dispatch_payload = _payload_module.sign_dispatch_payload
 
+try:
+    from jin10_source import (
+        default_flash_arguments as store_default_flash_arguments,
+        fetch_jin10_flashes as store_fetch_jin10_flashes,
+    )
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _jin10_spec = spec_from_file_location(
+        "railway_jin10_source",
+        Path(__file__).with_name("jin10_source.py"),
+    )
+    if _jin10_spec is None or _jin10_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/jin10_source.py") from None
+    _jin10_module = module_from_spec(_jin10_spec)
+    _jin10_spec.loader.exec_module(_jin10_module)
+    store_default_flash_arguments = _jin10_module.default_flash_arguments
+    store_fetch_jin10_flashes = _jin10_module.fetch_jin10_flashes
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -1647,33 +1664,13 @@ async def dispatch_monitor_health(*, token: str, repository: str, gdelt: dict[st
 
 
 def default_flash_arguments(schema: dict[str, Any], requested_limit: int) -> dict[str, Any]:
-    properties = schema.get("properties", {}) if isinstance(schema, dict) else {}
-    return {"limit": requested_limit} if "limit" in properties else {}
+    return store_default_flash_arguments(schema, requested_limit)
 
 
 async def fetch_jin10_flashes(token: str, requested_limit: int) -> list[Flash]:
     """Call only the official MCP endpoint; no HTML or feed scraping occurs."""
-    from mcp import ClientSession
-    from mcp.client.streamable_http import streamable_http_client
-
-    headers = {"Authorization": f"Bearer {token}"}
-    async with httpx.AsyncClient(headers=headers, timeout=30, follow_redirects=True) as client:
-        async with streamable_http_client(JIN10_MCP_URL, http_client=client) as (read, write, _):
-            async with ClientSession(read, write) as session:
-                await session.initialize()
-                tools = await session.list_tools()
-                tool = next((item for item in tools.tools if item.name == "list_flash"), None)
-                if tool is None:
-                    raise RuntimeError("Jin10 MCP did not expose the list_flash tool")
-                arguments = default_flash_arguments(getattr(tool, "inputSchema", {}), requested_limit)
-                try:
-                    result = await session.call_tool("list_flash", arguments=arguments)
-                except Exception:
-                    if not arguments:
-                        raise
-                    logging.warning("list_flash rejected the optional limit; retrying without arguments")
-                    result = await session.call_tool("list_flash", arguments={})
-    return extract_flashes(result_payload(result))
+    content = await store_fetch_jin10_flashes(token, requested_limit, endpoint=JIN10_MCP_URL)
+    return extract_flashes(result_payload(type("Result", (), {"content": content})()))
 
 
 def _gdelt_seen_at(value: str) -> datetime | None:
