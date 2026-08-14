@@ -58,6 +58,16 @@ def test_email_router_imports_from_standalone_railway_root() -> None:
     assert "jenny" in result.stdout
 
 
+def test_standalone_creator_bundle_matches_canonical_registry() -> None:
+    canonical = json.loads(
+        (Path(__file__).parents[1] / "config" / "creator_providers.json").read_text(encoding="utf-8")
+    )
+    bundled = json.loads(
+        (RAILWAY_MODULES / "creator_providers.json").read_text(encoding="utf-8")
+    )
+    assert bundled == canonical
+
+
 def test_watch_renewal_is_due_without_expiration() -> None:
     assert renewal_due(None)
 

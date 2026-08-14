@@ -271,3 +271,20 @@ Post-push evidence for this reconciliation commit (`4dec871`): PR #618
 quality `test-and-dry-run` run `31848719631` and security run `31848719725`
 both passed (CodeQL, dependency review and SBOM). The PR remains open and
 unmerged; these checks do not substitute for post-merge production acceptance.
+
+### P0-26 provider-registry drift repair (current continuation)
+
+The Railway standalone bundle was found to be a duplicate, mojibake-prone
+Creator registry and `email_router.py` also carried a second hard-coded Creator
+marker table. The duplicate table was removed from the active fallback path and
+`railway-monitor/creator_providers.json` was restored to the canonical
+`config/creator_providers.json` contract. The new regression test compares both
+decoded registries exactly. Targeted Railway/Gmail and monitor tests pass
+(`101 passed`); targeted Ruff for the changed router/test files and
+`python -m compileall -q railway-monitor` also pass. A full Railway-wide Ruff
+run still reports pre-existing lint debt in `railway-monitor/app.py`; it is
+tracked as existing completion debt and was not broadened into this atomic fix.
+
+State: **PASS locally / NEEDS_REVERIFY externally**. The live service must still
+prove repository-shared classifier packaging and post-merge release/Telegram
+acceptance; no production notification was sent by this task.

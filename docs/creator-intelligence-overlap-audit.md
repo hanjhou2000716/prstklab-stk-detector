@@ -133,6 +133,18 @@ content and recipients. The Mini App renders this state without upgrading a
 pending item to a confirmed alert. A live Railway bundle and ready Pages
 release are still required before this row can be locked as production.
 
+### Canonical Railway provider bundle (2026-08-15)
+
+The standalone Railway image now ships `railway-monitor/creator_providers.json`
+as an exact JSON-equivalent copy of `config/creator_providers.json`.
+`tests/test_railway_gmail_gateway.py::test_standalone_creator_bundle_matches_canonical_registry`
+fails if the bundle drifts. The Railway root fallback retains only
+FinancialJuice aliases; Creator identity matching continues to use the same
+registry as the repository runtime, so the monitor cannot silently reintroduce
+a second Creator whitelist. This is local integration evidence; live Railway
+packaging still must prove `classifier_mode=repository-shared` before a
+production lock.
+
 ### Mini App public-artifact preference (2026-08-15)
 
 The Mini App now prefers the bounded `creator-insights.json` projection over

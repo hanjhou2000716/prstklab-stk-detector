@@ -102,17 +102,14 @@ def route_source(*, sender: str, subject: str, body: str, attachments: list[dict
                 "failure_reason": None if any(marker in haystack for marker in ("episode", "market view", "takeaway", "creator")) else "known_source_template_not_matched",
                 "template_fingerprint": template_fingerprint(subject, body, attachments),
             }
-    signals = {
-        "financialjuice": ("financialjuice", "financial juice", "breaking news"),
-        "haojiao": ("haojiao", "財經皓角", "皓角"),
-        "gooaye": ("gooaye", "股癌", "goo aye"),
-    }
+    # Creator identities are owned by the canonical registry above.  The
+    # standalone fallback only needs the non-Creator FinancialJuice aliases;
+    # retaining another Creator marker table here would drift from config/.
+    signals = {"financialjuice": ("financialjuice", "financial juice", "breaking news")}
     candidates = [source for source, markers in signals.items() if any(marker.casefold() in haystack for marker in markers)]
     source = candidates[0] if candidates else "unknown"
     expected = {
         "financialjuice": ("original headline", "importance", "possible impact", "ai commentary"),
-        "haojiao": ("episode", "market view", "takeaway", "creator"),
-        "gooaye": ("episode", "market view", "takeaway", "creator"),
     }
     if source == "unknown":
         status, reason = "invalid_source", "source_not_recognized"
