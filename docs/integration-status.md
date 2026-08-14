@@ -485,3 +485,11 @@ schema-aware argument negotiation. The monitor retains compatibility parsing
 into canonical `Flash` records; no HTML/feed scraping or alternate endpoint is
 introduced. Status is **partially_integrated** until the stacked PR is merged
 and live Jin10 source health is reverified.
+
+## Creator delivery receipt projection
+
+`railway-monitor/creator_delivery.py` owns the bounded, non-secret projection
+of creator notification keys used by the creator-history endpoint. It filters
+receipt category, deduplicates and truncates keys without exposing message
+bodies or recipient identifiers. Status is **partially_integrated** pending
+stacked PR and live creator receipt verification.
