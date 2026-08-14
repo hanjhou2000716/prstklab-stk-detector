@@ -687,6 +687,16 @@ def test_health_snapshot_exposes_source_diagnostics_without_secrets():
     assert "GITHUB_DISPATCH_TOKEN" not in str(snapshot)
 
 
+def test_health_snapshot_declares_preflight_source_states():
+    snapshot = monitor.health_snapshot()
+    assert snapshot["gdelt"]["event_scan"] in {"not_checked", "no_event", "has_events", "scan_failed"}
+    assert "market_sync" in snapshot
+    assert snapshot["market_sync"]["status"] in {
+        "not_checked", "available", "configuration_missing", "http_error",
+        "rate_limited", "invalid_payload", "failed",
+    }
+
+
 def test_gmail_public_health_projects_observability_without_private_cursors():
     diagnostics = {
         "watch": {

@@ -641,7 +641,8 @@ HEALTH_STATE: dict[str, Any] = {
     "service": "prstk-jin10-monitor",
     "started_at": datetime.now(timezone.utc).isoformat(),
     "jin10": {"status": "not_checked", "last_success_at": None, "last_failure_at": None, "item_count": 0, "error": None},
-    "gdelt": {"enabled": True, "status": "not_checked", "last_success_at": None, "last_failure_at": None, "article_count": 0, "alert_count": 0, "pending_count": 0, "pending_reasons": {}, "error": None, "stale_cache_used": False, "health_dispatch_status": "not_checked", "health_dispatch_error": None, "health_dispatch_next_retry_at": None},
+    "gdelt": {"enabled": True, "status": "not_checked", "event_scan": "not_checked", "last_success_at": None, "last_failure_at": None, "article_count": 0, "alert_count": 0, "pending_count": 0, "pending_reasons": {}, "error": None, "stale_cache_used": False, "health_dispatch_status": "not_checked", "health_dispatch_error": None, "health_dispatch_next_retry_at": None},
+    "market_sync": {"status": "not_checked", "source_url": None, "fetched_at": None, "record_count": 0, "error": None},
     "classification": {
         "status": "not_checked",
         "updated_at": None,
