@@ -386,6 +386,11 @@ Traceability: `REQ-ADD-015` -> `railway-monitor/dispatch_payload.py`,
 suite above. Existing repository-dispatch and HMAC regressions remain covered
 by `tests/test_railway_monitor.py`.
 
+Remote evidence: PR [#593](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/593)
+passed `test-and-dry-run` (run `31794436820`), CodeQL, dependency-review and
+SBOM. This confirms repository CI only; live Jin10 source health remains an
+external acceptance gate.
+
 Remote evidence: PR [#592](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/592)
 passed `test-and-dry-run` (run `31793620545`), CodeQL, dependency-review and
 SBOM. This confirms repository CI only; live signed dispatch receipt and
