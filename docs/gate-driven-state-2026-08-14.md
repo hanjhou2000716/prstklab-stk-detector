@@ -113,6 +113,16 @@ present; it does not imply that an external production gate has passed.
 - Pages browser, Railway sanitized bundle and controlled Telegram receipt are
   still external gates. No production side effect was attempted.
 
+### Gate audit evidence (2026-08-14)
+
+- `python -m src.runtime_audit` exited 0 with `ok=true`; its warnings remain
+  visible (market source gaps, building research, and missing ready production
+  snapshots) and are not reclassified as “no risk”.
+- `python -m src.delivery_smoke_test` is `BLOCKED` in this checkout because
+  `TELEGRAM_CHAT_IDS` is not configured. No recipient or token was invented,
+  and no production message was attempted. A controlled single-recipient test
+  remains an external acceptance prerequisite.
+
 ## Gate decision
 
 The canonical News release-lineage task and this migration verification are
