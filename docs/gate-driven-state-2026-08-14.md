@@ -474,6 +474,11 @@ Traceability: `REQ-ADD-019` -> `railway-monitor/alert_dispatch.py`,
 suite above. Live signed callback and Telegram receipt delivery remain
 external `NEEDS_REVERIFY` gates.
 
+Remote evidence: PR [#596](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/596)
+passed `test-and-dry-run` (run `31797229080`, job `94756870467`), CodeQL,
+dependency-review and SBOM. This confirms repository CI only; live signed
+callback and Telegram receipt delivery remain external `NEEDS_REVERIFY` gates.
+
 Remote evidence: PR [#588](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/588)
 passed `test-and-dry-run` (run `31789498655`), CodeQL, dependency-review and
 SBOM. This confirms repository CI for the stacked boundary only; Railway
