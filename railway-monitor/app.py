@@ -145,6 +145,35 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     store_set_classification = _classification_module.set_classification
     store_set_classification_reason = _classification_module.set_classification_reason
 
+try:
+    from delivery_store import (
+        delivery_diagnostics as store_delivery_diagnostics,
+        delivery_history as store_delivery_history,
+        due_outbox as store_due_outbox,
+        mark_outbox as store_mark_outbox,
+        outbox_state as store_outbox_state,
+        prune_delivery_history as store_prune_delivery_history,
+        record_delivery_status as store_record_delivery_status,
+        record_outbox as store_record_outbox,
+    )
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _delivery_spec = spec_from_file_location(
+        "railway_delivery_store",
+        Path(__file__).with_name("delivery_store.py"),
+    )
+    if _delivery_spec is None or _delivery_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/delivery_store.py") from None
+    _delivery_module = module_from_spec(_delivery_spec)
+    _delivery_spec.loader.exec_module(_delivery_module)
+    store_delivery_diagnostics = _delivery_module.delivery_diagnostics
+    store_delivery_history = _delivery_module.delivery_history
+    store_due_outbox = _delivery_module.due_outbox
+    store_mark_outbox = _delivery_module.mark_outbox
+    store_outbox_state = _delivery_module.outbox_state
+    store_prune_delivery_history = _delivery_module.prune_delivery_history
+    store_record_delivery_status = _delivery_module.record_delivery_status
+    store_record_outbox = _delivery_module.record_outbox
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -874,39 +903,20 @@ class SeenStore:
 
     def record_outbox(self, alert: Alert, payload: dict[str, Any]) -> str:
         trace_id = alert_trace_id(alert)
-        now = datetime.now(timezone.utc).isoformat()
-        self.connection.execute(
-            """INSERT INTO delivery_outbox(trace_id,canonical_key,source,event_id,category,payload_json,status,created_at,updated_at)
-               VALUES(?,?,?,?,?,?,'pending',?,?)
-               ON CONFLICT(trace_id) DO UPDATE SET category=excluded.category, payload_json=excluded.payload_json, updated_at=excluded.updated_at""",
-            (trace_id, alert_canonical_key(alert), alert.source, alert.event_id, alert.category, json.dumps(payload, ensure_ascii=False), now, now),
+        store_record_outbox(
+            self.connection,
+            trace_id=trace_id,
+            canonical_key=alert_canonical_key(alert),
+            source=alert.source,
+            event_id=alert.event_id,
+            category=alert.category,
+            payload=payload,
         )
-        self.connection.commit()
         update_health("delivery", **self.delivery_diagnostics())
         return trace_id
 
     def mark_outbox(self, trace_id: str, status: str, error: str | None = None) -> None:
-        if status not in {"pending", "sent", "partial", "failed"}:
-            raise ValueError(f"unsupported outbox status: {status}")
-        now = datetime.now(timezone.utc)
-        retry_at: str | None = None
-        if status == "failed":
-            row = self.connection.execute(
-                "SELECT attempts FROM delivery_outbox WHERE trace_id = ?", (trace_id,)
-            ).fetchone()
-            attempts = int(row[0]) if row else 0
-            # Retry quickly after a transient failure, then back off to at
-            # most 15 minutes.  The stable trace ID makes an accepted-but-
-            # unacknowledged request safe to replay downstream.
-            delay_seconds = min(15 * 60, 30 * (2 ** min(attempts, 5)))
-            retry_at = (now + timedelta(seconds=delay_seconds)).isoformat()
-        self.connection.execute(
-            """UPDATE delivery_outbox
-               SET status=?, attempts=attempts+1, last_error=?, next_retry_at=?, updated_at=?
-               WHERE trace_id=?""",
-            (status, error, retry_at, now.isoformat(), trace_id),
-        )
-        self.connection.commit()
+        store_mark_outbox(self.connection, trace_id, status, error)
         update_health("delivery", **self.delivery_diagnostics())
 
     def due_outbox(self, limit: int = 20) -> list[dict[str, Any]]:
@@ -916,49 +926,15 @@ class SeenStore:
         those remain visible in diagnostics but are intentionally skipped
         because they cannot be reconstructed safely.
         """
-        now = datetime.now(timezone.utc).isoformat()
-        rows = self.connection.execute(
-            """SELECT trace_id, payload_json, status, attempts, updated_at
-               FROM delivery_outbox
-               WHERE status IN ('pending', 'failed')
-                 AND (next_retry_at IS NULL OR next_retry_at <= ?)
-               ORDER BY updated_at ASC LIMIT ?""",
-            (now, max(1, min(100, int(limit)))),
-        ).fetchall()
-        due: list[dict[str, Any]] = []
-        for trace_id, payload_json, status, attempts, updated_at in rows:
-            try:
-                payload = json.loads(payload_json)
-            except (TypeError, json.JSONDecodeError):
-                continue
-            dispatch_payload = payload.get("dispatch_payload") if isinstance(payload, dict) else None
-            if not isinstance(dispatch_payload, dict):
-                continue
-            due.append({
-                "trace_id": str(trace_id),
-                "dispatch_payload": dispatch_payload,
-                "status": str(status),
-                "attempts": int(attempts),
-                "updated_at": str(updated_at),
-            })
-        return due
+        return store_due_outbox(self.connection, limit)
 
     def outbox_state(self, trace_id: str) -> tuple[str, bool] | None:
         """Return status and whether a durable replay body is available."""
-        row = self.connection.execute(
-            "SELECT status, payload_json FROM delivery_outbox WHERE trace_id = ?", (trace_id,)
-        ).fetchone()
-        if row is None:
-            return None
-        try:
-            payload = json.loads(row[1])
-        except (TypeError, json.JSONDecodeError):
-            payload = None
-        has_payload = isinstance(payload, dict) and isinstance(payload.get("dispatch_payload"), dict)
-        return str(row[0]), has_payload
+        return store_outbox_state(self.connection, trace_id)
 
     def delivery_history(self, db: sqlite3.Connection | None = None, limit: int = 10) -> list[dict[str, Any]]:
         """Return a bounded, non-secret recent delivery history for health checks."""
+        return store_delivery_history(db or self.connection, limit=limit, age_seconds_fn=_age_seconds)
         database = db or self.connection
         rows = database.execute(
             """SELECT trace_id, source, event_id, category, status, attempts, last_error, updated_at
@@ -1028,6 +1004,7 @@ class SeenStore:
 
     def delivery_diagnostics(self, db: sqlite3.Connection | None = None) -> dict[str, Any]:
         """Return non-secret delivery state for Railway's health endpoint."""
+        return store_delivery_diagnostics(db or self.connection, age_seconds_fn=_age_seconds)
         database = db or self.connection
         rows = database.execute(
             "SELECT status, COUNT(*) FROM delivery_outbox GROUP BY status"
@@ -1120,6 +1097,7 @@ class SeenStore:
         deleted first because receipts have no foreign-key cascade on older
         Railway volumes.  The limit keeps a single monitor cycle inexpensive.
         """
+        return store_prune_delivery_history(self.connection, retention_days, limit)
         days = max(30, int(retention_days))
         batch_size = max(1, min(5000, int(limit)))
         cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
@@ -1146,6 +1124,16 @@ class SeenStore:
 
     def record_delivery_status(self, payload: dict[str, Any]) -> bool:
         """Persist an authenticated GitHub per-run delivery receipt."""
+        callback_connection = threading.get_ident() != self.owner_thread_id
+        db = sqlite3.connect(self.path, timeout=5) if callback_connection else self.connection
+        try:
+            db.execute("PRAGMA busy_timeout=5000")
+            accepted = store_record_delivery_status(db, payload)
+            update_health("delivery", **self.delivery_diagnostics(db))
+            return accepted
+        finally:
+            if callback_connection:
+                db.close()
         trace_id = str(payload.get("trace_id") or "").strip()
         receipt_kind = str(payload.get("receipt_kind") or "production").strip()
         status = str(payload.get("delivery_status") or "unknown").strip()

@@ -433,3 +433,12 @@ runtime sources are healthy, `部分資料降級` when an optional/runtime sourc
 degraded, and `核心資料不足` when a core source is unavailable. The release
 contract validates both counts against `sources[].semantic_state`, so the Mini
 App cannot invent a divergent gap count.
+
+## Railway delivery persistence
+
+`railway-monitor/delivery_store.py` is the canonical SQLite boundary for
+delivery outbox rows, retry backoff, receipt registration, bounded diagnostics
+and retention. `SeenStore` delegates to it for backward compatibility. The
+boundary is **partially_integrated** until the stacked PR is merged and live
+Railway volume/receipt continuity is reverified; local contract tests are
+green, while production acceptance remains an external gate.
