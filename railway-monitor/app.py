@@ -302,7 +302,10 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     store_dispatch_alert = _alert_dispatch_module.dispatch_alert
 
 try:
-    from market_sync import fetch_market_sync_snapshot as store_fetch_market_sync_snapshot
+    from market_sync import (
+        fetch_market_sync_observation as store_fetch_market_sync_observation,
+        fetch_market_sync_snapshot as store_fetch_market_sync_snapshot,
+    )
 except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
     _market_sync_spec = spec_from_file_location(
         "railway_market_sync",
@@ -312,6 +315,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
         raise ImportError("cannot load railway-monitor/market_sync.py") from None
     _market_sync_module = module_from_spec(_market_sync_spec)
     _market_sync_spec.loader.exec_module(_market_sync_module)
+    store_fetch_market_sync_observation = _market_sync_module.fetch_market_sync_observation
     store_fetch_market_sync_snapshot = _market_sync_module.fetch_market_sync_snapshot
 
 
@@ -1925,6 +1929,11 @@ async def fetch_market_sync_snapshot() -> dict[str, Any]:
     return await store_fetch_market_sync_snapshot(environ=dict(os.environ))
 
 
+async def fetch_market_sync_observation() -> Any:
+    """Return the market snapshot plus explicit source-health semantics."""
+    return await store_fetch_market_sync_observation(environ=dict(os.environ))
+
+
 def _market_sync_details(
     event_time: str, snapshot: dict[str, Any] | None,
 ) -> tuple[str, ...]:
@@ -2367,7 +2376,9 @@ async def monitor_forever() -> None:
                 # A discovery headline is not enough for a black-swan push.
                 # Refresh the public quote snapshot and require a material,
                 # time-aligned move before producing a warning-level alert.
-                market_sync = await fetch_market_sync_snapshot()
+                market_sync_observation = await fetch_market_sync_observation()
+                market_sync = market_sync_observation.snapshot
+                update_health("market_sync", **market_sync_observation.health())
                 pending = pending_gdelt_candidates(articles, market_sync)
                 # A stale cache can keep the discovery pane useful, but it is
                 # never eligible to create a new Telegram alert.  The source
