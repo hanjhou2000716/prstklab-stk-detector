@@ -114,6 +114,37 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     _schema_spec.loader.exec_module(_schema_module)
     initialize_state_schema = _schema_module.initialize_state_schema
 
+try:
+    from classification_store import (
+        add_if_new as store_add_if_new,
+        classification_diagnostics as store_classification_diagnostics,
+        classification_for as store_classification_for,
+        classification_reason_counts as store_classification_reason_counts,
+        claim_classification as store_claim_classification,
+        record_incoming_flash as store_record_incoming_flash,
+        release_classification as store_release_classification,
+        set_classification as store_set_classification,
+        set_classification_reason as store_set_classification_reason,
+    )
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _classification_spec = spec_from_file_location(
+        "railway_classification_store",
+        Path(__file__).with_name("classification_store.py"),
+    )
+    if _classification_spec is None or _classification_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/classification_store.py") from None
+    _classification_module = module_from_spec(_classification_spec)
+    _classification_spec.loader.exec_module(_classification_module)
+    store_add_if_new = _classification_module.add_if_new
+    store_classification_diagnostics = _classification_module.classification_diagnostics
+    store_classification_for = _classification_module.classification_for
+    store_classification_reason_counts = _classification_module.classification_reason_counts
+    store_claim_classification = _classification_module.claim_classification
+    store_record_incoming_flash = _classification_module.record_incoming_flash
+    store_release_classification = _classification_module.release_classification
+    store_set_classification = _classification_module.set_classification
+    store_set_classification_reason = _classification_module.set_classification_reason
+
 
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
@@ -822,48 +853,24 @@ class SeenStore:
         self.connection.commit()
 
     def record_incoming_flash(self, flash: Flash, classification_reason: str | None = None) -> None:
-        now = datetime.now(timezone.utc).isoformat()
-        self.connection.execute(
-            """INSERT INTO incoming_events(event_id,source,title,content,occurred_at,classification_reason,first_seen_at,last_seen_at)
-               VALUES(?,?,?,?,?,?,?,?)
-               ON CONFLICT(event_id) DO UPDATE SET title=excluded.title, content=excluded.content,
-                 occurred_at=excluded.occurred_at,
-                 classification_reason=CASE WHEN incoming_events.classification='unclassified'
-                   THEN COALESCE(excluded.classification_reason, incoming_events.classification_reason)
-                   ELSE incoming_events.classification_reason END,
-                 last_seen_at=excluded.last_seen_at""",
-            (flash.event_id, "jin10", flash.title, flash.content, flash.occurred_at, classification_reason, now, now),
+        store_record_incoming_flash(
+            self.connection,
+            event_id=flash.event_id,
+            title=flash.title,
+            content=flash.content,
+            occurred_at=flash.occurred_at,
+            classification_reason=classification_reason,
         )
-        self.connection.commit()
 
     def set_classification_reason(self, event_id: str, reason: str, error: str | None = None) -> None:
         """Persist the rule path even when an event is not dispatchable."""
-        now = datetime.now(timezone.utc).isoformat()
-        self.connection.execute(
-            "UPDATE incoming_events SET classification_reason=?, last_error=?, last_seen_at=? WHERE event_id=?",
-            (str(reason)[:200], error[:500] if error else None, now, event_id),
-        )
-        self.connection.commit()
+        store_set_classification_reason(self.connection, event_id, reason, error)
 
     def classification_reason_counts(self) -> dict[str, int]:
-        rows = self.connection.execute(
-            """SELECT COALESCE(classification_reason, 'unknown'), COUNT(*)
-               FROM incoming_events WHERE classification='unclassified'
-               GROUP BY COALESCE(classification_reason, 'unknown')"""
-        ).fetchall()
-        return {str(reason): int(count) for reason, count in rows}
+        return store_classification_reason_counts(self.connection)
 
     def classification_diagnostics(self) -> dict[str, Any]:
-        rows = self.connection.execute(
-            """SELECT COALESCE(classification, 'unknown'), COUNT(*)
-               FROM incoming_events GROUP BY COALESCE(classification, 'unknown')"""
-        ).fetchall()
-        reason_counts = self.classification_reason_counts()
-        return {
-            "classification_counts": {str(label): int(count) for label, count in rows},
-            "reason_counts": reason_counts,
-            "unclassified_count": sum(reason_counts.values()),
-        }
+        return store_classification_diagnostics(self.connection)
 
     def record_outbox(self, alert: Alert, payload: dict[str, Any]) -> str:
         trace_id = alert_trace_id(alert)
@@ -1253,25 +1260,11 @@ class SeenStore:
 
     def release_classification(self, event_id: str, error: str) -> None:
         """Return a failed dispatch to the retryable state."""
-        now = datetime.now(timezone.utc).isoformat()
-        self.connection.execute(
-            "UPDATE seen SET classification='unclassified', classified_at=NULL WHERE event_id=?",
-            (event_id,),
-        )
-        self.connection.execute(
-            "UPDATE incoming_events SET classification='unclassified', classification_reason=?, last_error=?, last_seen_at=? WHERE event_id=?",
-            (f"dispatch_failed:{error[:120]}" if error else "dispatch_failed", error[:500], now, event_id),
-        )
-        self.connection.commit()
+        store_release_classification(self.connection, event_id, error)
 
     def add_if_new(self, event_id: str) -> bool:
         """Backward-compatible insert helper for callers outside the poll loop."""
-        cursor = self.connection.execute(
-            "INSERT OR IGNORE INTO seen(event_id, first_seen_at, classification) VALUES (?, ?, 'unclassified')",
-            (event_id, datetime.now(timezone.utc).isoformat()),
-        )
-        self.connection.commit()
-        return cursor.rowcount == 1
+        return store_add_if_new(self.connection, event_id)
 
     def claim_classification(self, event_id: str, classification: str) -> bool:
         """Claim an event once, while allowing legacy unknown rows to retry.
@@ -1282,55 +1275,14 @@ class SeenStore:
         row in ``unclassified`` is deliberately re-claimable; once it becomes
         in-scope, out-of-scope, or baseline it is stable and will not loop.
         """
-        allowed = {"unclassified", "in_scope", "out_of_scope", "baseline"}
-        if classification not in allowed:
-            raise ValueError(f"unsupported event classification: {classification}")
-        now = datetime.now(timezone.utc).isoformat()
-        row = self.connection.execute(
-            "SELECT classification FROM seen WHERE event_id = ?", (event_id,)
-        ).fetchone()
-        if row is None:
-            self.connection.execute(
-                "INSERT INTO seen(event_id, first_seen_at, classification, classified_at) VALUES (?, ?, ?, ?)",
-                (event_id, now, classification, now if classification != "unclassified" else None),
-            )
-            self.connection.commit()
-            return classification != "unclassified"
-        previous = str(row[0] or "unclassified")
-        if previous != "unclassified":
-            return False
-        if classification == "unclassified":
-            return False
-        self.connection.execute(
-            "UPDATE seen SET classification = ?, classified_at = ? WHERE event_id = ? AND classification = 'unclassified'",
-            (classification, now, event_id),
-        )
-        self.connection.execute(
-            "UPDATE incoming_events SET classification = ?, last_seen_at = ? WHERE event_id = ?",
-            (classification, now, event_id),
-        )
-        self.connection.commit()
-        return True
+        return store_claim_classification(self.connection, event_id, classification)
 
     def classification_for(self, event_id: str) -> str | None:
-        row = self.connection.execute(
-            "SELECT classification FROM seen WHERE event_id = ?", (event_id,)
-        ).fetchone()
-        return str(row[0]) if row and row[0] else None
+        return store_classification_for(self.connection, event_id)
 
     def set_classification(self, event_id: str, classification: str) -> None:
         """Finalize a claimed event (used for first-cycle baseline rows)."""
-        if classification not in {"in_scope", "out_of_scope", "baseline"}:
-            raise ValueError(f"unsupported event classification: {classification}")
-        self.connection.execute(
-            "UPDATE seen SET classification = ?, classified_at = ? WHERE event_id = ?",
-            (classification, datetime.now(timezone.utc).isoformat(), event_id),
-        )
-        self.connection.execute(
-            "UPDATE incoming_events SET classification = ?, last_seen_at = ? WHERE event_id = ?",
-            (classification, datetime.now(timezone.utc).isoformat(), event_id),
-        )
-        self.connection.commit()
+        store_set_classification(self.connection, event_id, classification)
 
     def may_dispatch(self, alert: Alert, cooldown_seconds: int) -> bool:
         """Allow a category update after cooldown, or immediately on escalation."""

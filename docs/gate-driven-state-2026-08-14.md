@@ -9,13 +9,13 @@ claims inferred from branch names or previous comments.
 | Field | Evidence |
 |---|---|
 | Branch | `fix/railway-classifier-delivery-gate` |
-| HEAD at last evidence capture | `71ddbe6` (`feat(REQ-ADD-009): extract Railway state schema`) |
-| Recovery checkpoint | `checkpoint/migration-2026-08-14-current20` (post-task code snapshot) |
+| HEAD at last evidence capture | `83c8083` (`feat(REQ-ADD-010): extract Railway classification state`) |
+| Recovery checkpoint | `checkpoint/migration-2026-08-14-current21` (post-task code snapshot) |
 | Current overlap audit | `docs/creator-intelligence-overlap-audit.md` |
 | Tracked worktree | clean at checkpoint creation; historical untracked test artifacts are preserved and not staged |
-| Local regression | `1174 passed` at REQ-ADD-009 using `.tmp-state-schema-full`; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
-| Static checks | `ruff check src tests`, `mypy src`, compileall, `node --check site/app.js` and `git diff --check` passed at `71ddbe6`; full legacy Railway lint remains a separate debt |
-| Remote PR | #585 remains open for REQ-ADD-008; REQ-ADD-009 is validated locally and awaits its own stacked PR |
+| Local regression | `1177 passed` at REQ-ADD-010 using `.tmp-classification-store-full`; earlier OneDrive/temporary runs had filesystem-lock failures and were rerun without changing product assertions |
+| Static checks | `ruff check src tests`, `mypy src`, compileall, `node --check site/app.js` and `git diff --check` passed at `83c8083`; full legacy Railway lint remains a separate debt |
+| Remote PR | #586 remains open for REQ-ADD-009; REQ-ADD-010 is validated locally and awaits its own stacked PR |
 
 ## Current task reconciliation
 
@@ -38,6 +38,7 @@ claims inferred from branch names or previous comments.
 | REQ-ADD-007 Railway poll configuration extraction | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/poll_config.py`, `railway-monitor/app.py` | 88 targeted config/transport/monitor tests; 1171 full regression, 1 skipped; standalone Ruff/Mypy/compile/node checks | Jin10/GDELT bounds and flags are projected once; required secrets still use the existing boundary | live Railway restart/poll evidence remains external | NEEDS_REVERIFY |
 | REQ-ADD-008 Railway classifier delivery gate | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/app.py`, `src/event_classifier.py` | 84 Railway monitor tests; 1171 full regression, 1 skipped; Ruff/Mypy/compile/node checks; standalone import isolation proves fallback is diagnostics-only | non-canonical root-only classifier cannot create Jin10 dispatch; incoming item remains retryable for a correctly packaged deployment | Railway health must report repository-shared classifier before delivery | NEEDS_REVERIFY |
 | REQ-ADD-009 Railway state schema boundary | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/state_store_schema.py`, `railway-monitor/app.py` | schema contract + legacy migration tests; Railway monitor regression; full isolated regression and static checks | schema creation is idempotent; legacy volumes receive additive columns only; SeenStore startup remains compatible | live Railway volume migration and receipt persistence remain external | NEEDS_REVERIFY |
+| REQ-ADD-010 Railway classification state boundary | PASS (local) / NEEDS_REVERIFY (external) | `railway-monitor/classification_store.py`, `railway-monitor/app.py`, `src/event_classifier.py` | classification-store contract + Railway monitor regression; full isolated regression and static checks | classification reasons, retryable state and diagnostics use one SQLite boundary; canonical classifier remains unchanged | live Railway retry/state-volume evidence remains external | NEEDS_REVERIFY |
 
 `PASS` is not promoted to `LOCKED` when the required objective evidence is not
 available in this checkout.  `LOCKED` is reserved for a task whose local
@@ -96,6 +97,7 @@ present; it does not imply that an external production gate has passed.
 | DEBT-REQ-ADD-007-001 | Live Railway poll-loop behavior is not available in local verification | inspect Deploy Logs and `/health` after the stacked PR is reviewed; do not infer runtime success from local tests | OPEN EXTERNAL |
 | DEBT-REQ-ADD-008-001 | Railway production has not proved repository-shared classifier mode | deploy the packaged shared classifier and verify `classifier_mode=repository-shared` before enabling delivery | OPEN EXTERNAL |
 | DEBT-REQ-ADD-009-001 | Railway production has not proved the extracted schema against its persistent volume | deploy the stacked branch, inspect `/health` and delivery receipt persistence, and retain the previous release for rollback | OPEN EXTERNAL |
+| DEBT-REQ-ADD-010-001 | Railway production has not proved classification-state retry continuity after deploy | deploy the stacked branch, confirm incoming event rows and `classification_reason` survive restart, and verify failed dispatch reopens safely | OPEN EXTERNAL |
 
 ### Migration audit update (2026-08-14, REQ-ADD-003 Railway runtime boundary)
 
@@ -316,6 +318,19 @@ external gates.
 - Live Railway volume migration and receipt persistence are still external
   evidence gates. The local task is therefore PASS / external NEEDS_REVERIFY,
   not production acceptance.
+
+### Migration audit update (2026-08-14, REQ-ADD-010 Railway classification state boundary)
+
+- `railway-monitor/classification_store.py` now owns the SQLite transitions for
+  incoming events, classification reasons, retry reopening and redacted
+  diagnostics. `app.py` retains the public `SeenStore` methods as thin
+  compatibility wrappers.
+- The standalone classification suite plus schema, monitor and health suites
+  passed `94 tests`; the full isolated regression at this migration HEAD passed
+  `1177 tests`. Ruff (`src tests`), Mypy (`src`), compileall and frontend syntax
+  checks also passed.
+- `src/event_classifier.py` remains the only canonical matcher. Live Railway
+  restart continuity and receipt/state-volume evidence remain external gates.
 
 ### Current gate evidence (2026-08-14)
 
