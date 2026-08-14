@@ -26,6 +26,20 @@ and security checks for the checkpoint are green. Live Railway, Pages, and
 single-recipient Telegram acceptance remain external gates and are therefore
 not marked production-ready here.
 
+### Public Pages evidence captured
+
+Read-only HTTP verification of the currently published Pages bundle found:
+
+- release `release-957714e850293f39` with `status=ready`
+- Creator artifact `creator-86a5ed7f74464baa` with `status=ready`
+- Creator public artifact with one sanitized creator record
+- Source-health artifact schema `1.0`
+- all six manifest-declared artifact SHA-256 hashes matched the downloaded
+  public files
+
+This proves public artifact integrity at the captured release, but does not
+replace a post-merge browser, Railway, or Telegram acceptance test.
+
 ## Gate-driven migration reconciliation (2026-08-14)
 
 The current branch is a continuation of the existing production stack, not a
