@@ -552,6 +552,13 @@ Remote evidence: PR [#601](https://github.com/hanjhou2000716/prstklab-stk-detect
 passed `test-and-dry-run` (run `31801909891`, job `94771620276`), CodeQL,
 dependency-review and SBOM. Live Railway `/health` evidence remains external.
 
+### Latest migration-head regression evidence
+
+- At migration HEAD `1415f900a55dd39be0afe1fca985d9c087eebbea`, an isolated
+  full repository run completed with `1207 passed` in `121.49s`.
+- This is local repository evidence only; it does not close the external
+  Railway, Pages, or controlled Telegram acceptance debts.
+
 Remote evidence: PR [#588](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/588)
 passed `test-and-dry-run` (run `31789498655`), CodeQL, dependency-review and
 SBOM. This confirms repository CI for the stacked boundary only; Railway

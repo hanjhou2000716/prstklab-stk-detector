@@ -40,3 +40,7 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 No implementation task in REQ-ADD-013..020 is marked PASS solely because a PR
 exists; each has local and remote evidence above. External debt must be closed
 before the final production acceptance gate.
+
+Latest migration-head regression: `1207 passed` in `121.49s` at
+`1415f900a55dd39be0afe1fca985d9c087eebbea` using an isolated Windows temp
+directory. This evidence does not imply live Railway/Pages/Telegram acceptance.
