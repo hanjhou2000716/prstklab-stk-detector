@@ -32,16 +32,25 @@ monitor was running and Jin10 was healthy. Gmail now reports
 `configuration_missing` (the prior standalone `ModuleNotFoundError` is gone).
 GDELT is explicitly `failed` with `HTTP_429`, not live and not alertable; the
 health callback is `permission_denied`/`HTTP_403` and remains bounded. Delivery
-is `not_checked` because no production recipient test was executed.
+is now `delivered`. Controlled photo acceptance completed with the approved
+single recipient only: Actions run `31827926863` / job `94856425277` completed
+successfully. The log reports `photo_card_dimensions=1080x1350`,
+`photo_delivery_delivered=1`, and `photo_delivery_failed=0`; the Telegram
+button was built with alert, release and snapshot deep-link parameters.
+Railway receipt trace `photo-smoke-07dbd32ec6474fec` reports `delivered`,
+`recipient_count=1`, `receipt_matches_last_outbox=true`, and no failed
+recipients.
 
 ## Remaining external gates
 
 - Configure/authorize Railway Gmail watch and health callback permissions.
-- Capture one controlled Telegram recipient delivery receipt and deep-link.
+- Recipient UI visual confirmation is not represented by the API receipt; the
+  delivery contract and deep-link payload are verified by Actions and Railway.
 - Verify live source freshness after the next successful market/research
   release.
 
-No production Telegram message was sent during this verification.
+Exactly one controlled production Telegram photo was sent to the approved test
+recipient; no broadcast was performed.
 
 ## Rollback
 
