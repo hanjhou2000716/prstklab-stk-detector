@@ -27,6 +27,11 @@ def render(source: str) -> str:
         raise ValueError("canonical classifier keyword path changed; update bundle generator")
     digest = hashlib.sha256(source.encode("utf-8")).hexdigest()
     body = source.replace(MARKER, REPLACEMENT, 1)
+    body = body.replace(
+        "from __future__ import annotations\n",
+        f"from __future__ import annotations\n\nBUNDLE_SOURCE_SHA256 = \"{digest}\"\n",
+        1,
+    )
     header = (
         "# GENERATED FILE: do not edit manually.\n"
         "# Run scripts/sync_railway_shared_classifier.py to refresh it.\n"

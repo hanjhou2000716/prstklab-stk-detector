@@ -12,6 +12,8 @@ ignored by the classifier.
 
 from __future__ import annotations
 
+BUNDLE_SOURCE_SHA256 = "cc4499f1c6b185f3944efb4b4851046740e860d811c2a4d2300e4828619cb563"
+
 import json
 import re
 import unicodedata

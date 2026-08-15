@@ -63,6 +63,25 @@ After each deploy, inspect `/health` and require
 `runtime.classifier_mode=repository-shared`. `standalone-bundled` or
 `unavailable` is diagnostic-only and must remain fail-closed for dispatch.
 
+## Health callback configuration
+
+Use the canonical names below in the Railway service and in the GitHub Actions
+environment that publishes delivery health. Never place the values in Git,
+logs, artifacts, or public release data.
+
+| Variable | Where | Required behavior |
+| --- | --- | --- |
+| `RAILWAY_STATUS_URL` | Railway / Actions | The HTTPS `/health` or signed status callback endpoint for the deployed service |
+| `RAILWAY_STATUS_SHARED_SECRET` | Railway / Actions secret | One identical secret for HMAC verification; `canonical_name_present` must be true |
+| `DELIVERY_STATUS_SHARED_SECRET` | Railway compatibility only | Legacy name retained during migration; do not add new integrations with it |
+
+After changing either canonical variable, redeploy the Railway service and
+verify that `/health` reports `runtime_config.canonical_name_present=true`.
+An HTTP 403 from the callback means authentication or endpoint configuration
+has not been accepted; it is not a healthy delivery and must remain visible as
+`permission_denied` without restarting the monitor or sending a high-risk
+notification.
+
 The Railway monitor polls the public GDELT DOC endpoint every 15 minutes by default. A successful response is cached for 15 minutes. During a temporary failure or rate limit, the latest successful cache may be used for up to 120 minutes and is labelled with its original fetch time. Only discovery articles from the last 45 minutes are considered.
 
 Optional Railway variables:
