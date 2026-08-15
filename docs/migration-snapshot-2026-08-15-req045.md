@@ -40,6 +40,18 @@ force-push, production notification, or data deletion was performed.
 - PR #624 security: run `31856904104`, CodeQL/dependency-review/SBOM passed.
 - Separate CodeQL: run `94943405591`, passed.
 
+Post-checkpoint local gate rerun:
+
+- Traceability, Railway monitor, and classifier regression: **95 passed**.
+- `python -m src.runtime_audit`: `ok=true`; warnings remain for six market
+  source gaps, a building research source, and missing/not-ready production
+  event/research snapshots. These warnings are intentionally not relabeled as
+  success.
+- `python -m src.delivery_smoke_test`: fail-closed with
+  `TELEGRAM_CHAT_IDS is empty`; no production notification was sent.
+- `compileall` for `src`, `railway-monitor`, and `scripts`, plus
+  `node --check site/app.js`: passed.
+
 ## Requirement state summary
 
 The canonical P0 registry remains `docs/p0-requirement-traceability-2026-08-15.md`.
