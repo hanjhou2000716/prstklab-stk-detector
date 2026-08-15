@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-15T19:18:47.607769+08:00",
+  "generated_at": "2026-08-15T20:10:12.622322+08:00",
   "scan": {
-    "started_at": "2026-08-15T19:17:58.990969+08:00",
-    "completed_at": "2026-08-15T19:18:47.607769+08:00",
+    "started_at": "2026-08-15T20:09:29.727809+08:00",
+    "completed_at": "2026-08-15T20:10:12.622322+08:00",
     "scope": "公開市場定時掃描",
     "live_quote_count": 2,
     "close_quote_count": 18,
@@ -227,7 +227,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:01.056689+00:00",
+      "fetched_at": "2026-08-15T12:09:31.421907+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -255,9 +255,9 @@
         "crosscheck_missing",
         "adapter_policy_display_only"
       ],
-      "quality_checked_at": "2026-08-15T11:18:47.225239+00:00",
-      "observation_id": "316ad8ad8bf97084",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/d344c6518b76e93e691863b7c776dd0b65a44828b26ae6411f1c0c8a41f07e2e.json",
+      "quality_checked_at": "2026-08-15T12:10:12.260700+00:00",
+      "observation_id": "3ca5b28397041b5c",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/7c9897cd12ebffc0ec8d890a8b36c547b5764c55e7d53475e3d47f194731234c.json",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
       "adapter_contract_version": 1,
@@ -289,7 +289,103 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
+    },
+    {
+      "symbol": "^TWOII",
+      "ticker": "TPEx",
+      "name": "臺灣櫃買指數",
+      "market": "taiwan",
+      "currency": "點",
+      "price": 400.95,
+      "previous_close": 406.12,
+      "change": -5.17,
+      "change_percent": -1.27,
+      "quote_date": "2026-08-14",
+      "quote_time": null,
+      "quote_basis": "TPEx 官方最近收盤",
+      "quote_source": "TPEx OpenAPI official close",
+      "source_url": "https://www.tpex.org.tw/openapi/v1/tpex_index",
+      "technical_context": {
+        "window_days": 20,
+        "long_window_days": 45,
+        "low": 378.44,
+        "high": 453.5,
+        "long_low": 378.44,
+        "long_high": 453.5,
+        "position_pct": 0.0,
+        "zone": "接近20日支撐區",
+        "as_of": "2026-07-17",
+        "status": "ok"
+      },
+      "change_consistency": "consistent",
+      "direction_sign": -1,
+      "market_direction": "下跌",
+      "source_tier": "public-market",
+      "fetched_at": "2026-08-15T12:09:31.522818+00:00",
+      "published_at": "2026-07-17",
+      "source_domain": "tpex.org.tw",
+      "stale_used": false,
+      "source_label": "TPEx",
+      "quote_basis_label": "最近收盤",
+      "cross_checked": false,
+      "crosscheck_status": "未交叉核對",
+      "crosscheck_sources": [],
+      "expected_sources": [
+        "TPEx",
+        "TWSE MIS"
+      ],
+      "quote_delayed": false,
+      "freshness": "recent_close",
+      "data_status": "最近收盤",
+      "alert_eligible": false,
+      "instrument_id": "tpex:index",
+      "asset_type": "index",
+      "instrument_timezone": "Asia/Taipei",
+      "instrument_resolution": "resolved",
+      "instrument_master_id": "instrument-bea0b5cb7fac780a",
+      "instrument_master_version": 1,
+      "data_quality_score": 85.0,
+      "quality_freshness": "fresh",
+      "quality_reasons": [
+        "crosscheck_missing"
+      ],
+      "quality_checked_at": "2026-08-15T12:10:12.263605+00:00",
+      "observation_id": "5ac8fdf859c294d2",
+      "raw_payload_location": "tpex.org.tw/2026-08-15/e0bcc593c138f13598e5477f273096dd93f990c6fef544feb8f56593eb915ae5.json",
+      "adapter_contract_state": "declared",
+      "adapter_provider": "TPEx",
+      "adapter_contract_version": 1,
+      "adapter_alert_policy": "crosscheck_required",
+      "adapter_provenance_fields": [
+        "provider",
+        "source_tier",
+        "source_url",
+        "request_id",
+        "fetched_at",
+        "published_at",
+        "observation_id",
+        "payload_hash",
+        "parser_version",
+        "stale_used",
+        "freshness",
+        "data_quality_score",
+        "alert_eligible"
+      ],
+      "adapter_health_fields": [
+        "status",
+        "last_success_at",
+        "last_failure_at",
+        "consecutive_failures",
+        "error_class",
+        "freshness",
+        "data_quality_score",
+        "display_eligible",
+        "alert_eligible",
+        "quality_reasons"
+      ],
+      "snapshot_id": "87b41002eb87405b",
+      "technical_context_stale": true
     },
     {
       "symbol": "^GSPC",
@@ -322,7 +418,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:01.362304+00:00",
+      "fetched_at": "2026-08-15T12:09:31.634259+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -362,9 +458,9 @@
         "crosscheck_missing",
         "adapter_policy_display_only"
       ],
-      "quality_checked_at": "2026-08-15T11:18:47.227392+00:00",
-      "observation_id": "694b4fc93fb64244",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/94857f0bcdcd8f0ccc84f802a4e848362c67ea2040be4b8ea2c55cbb2b7de381.json",
+      "quality_checked_at": "2026-08-15T12:10:12.265278+00:00",
+      "observation_id": "83556798a2dc477d",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/fd0743313189541b98fac213ed43b3a9f2174c0da294621a13f066325507d1bb.json",
       "crosscheck_reason": "secondary_source_unavailable",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
@@ -397,7 +493,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "^IXIC",
@@ -430,7 +526,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:01.492516+00:00",
+      "fetched_at": "2026-08-15T12:09:31.747938+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -473,9 +569,9 @@
         "crosscheck_missing",
         "adapter_policy_display_only"
       ],
-      "quality_checked_at": "2026-08-15T11:18:47.228625+00:00",
-      "observation_id": "0826dfc5aae6d3be",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/38b4c596d8c0542d959b81ec8ab39f478c26b99c244a31ba7d010e39ca55acc0.json",
+      "quality_checked_at": "2026-08-15T12:10:12.266632+00:00",
+      "observation_id": "9b96e045b78f3b48",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/f89b113555619f0b152ebf3a534dc5c32d17d49516f0cb120393727bb6ca21d8.json",
       "crosscheck_reason": "price_or_time_mismatch",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
@@ -508,7 +604,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "^DJI",
@@ -530,7 +626,7 @@
         "long_window_days": 60,
         "low": 51594.14,
         "high": 54349.12,
-        "long_low": 49363.88,
+        "long_low": 49918.78,
         "long_high": 54349.12,
         "position_pct": 77.6,
         "zone": "接近20日壓力區",
@@ -541,7 +637,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:01.623433+00:00",
+      "fetched_at": "2026-08-15T12:09:31.827896+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -581,9 +677,9 @@
         "crosscheck_missing",
         "adapter_policy_display_only"
       ],
-      "quality_checked_at": "2026-08-15T11:18:47.229854+00:00",
-      "observation_id": "0a7a7bc364918b45",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/9dc88caf929476fc2e201d3c25d2cef15e5e1899f669b3d6f84818a84d03dffb.json",
+      "quality_checked_at": "2026-08-15T12:10:12.268111+00:00",
+      "observation_id": "7e92b483a01c6144",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/c9fdd35f68963f1b538fb949c95901768c99f0525a7e23bfe1eb76b173cf23a3.json",
       "crosscheck_reason": "secondary_source_unavailable",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
@@ -616,7 +712,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "^SOX",
@@ -649,7 +745,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:01.705849+00:00",
+      "fetched_at": "2026-08-15T12:09:31.956313+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -689,9 +785,9 @@
         "crosscheck_missing",
         "adapter_policy_display_only"
       ],
-      "quality_checked_at": "2026-08-15T11:18:47.231180+00:00",
-      "observation_id": "0a980bd4d267b543",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/c33449e27cd967b780c4e50ee6f38261283cb502a5386a06e48978f46c55ae78.json",
+      "quality_checked_at": "2026-08-15T12:10:12.269678+00:00",
+      "observation_id": "67d66dae1cd3b7d1",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/6d8cc0e5c5c0e05f43584da3834ba0fd89b1bcec4acc842927bb486dd242b979.json",
       "crosscheck_reason": "price_or_time_mismatch",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
@@ -724,7 +820,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "^N225",
@@ -757,7 +853,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:01.783764+00:00",
+      "fetched_at": "2026-08-15T12:09:32.041088+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -797,9 +893,9 @@
         "crosscheck_missing",
         "adapter_policy_display_only"
       ],
-      "quality_checked_at": "2026-08-15T11:18:47.232370+00:00",
-      "observation_id": "51b218b144e6aa10",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/ba9bbe726bb49cd41d772bf3d46c2b3382b1b017359d684d6c2046bc87faf463.json",
+      "quality_checked_at": "2026-08-15T12:10:12.271015+00:00",
+      "observation_id": "b1d7d29ced9b5894",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/f441499bc7dd4bd30a571ed490ae932ceacbf1bf1d329275868b7689249d8544.json",
       "crosscheck_reason": "secondary_source_unavailable",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
@@ -832,7 +928,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "^KS11",
@@ -865,7 +961,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:01.902999+00:00",
+      "fetched_at": "2026-08-15T12:09:32.124045+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -905,9 +1001,9 @@
         "crosscheck_missing",
         "adapter_policy_display_only"
       ],
-      "quality_checked_at": "2026-08-15T11:18:47.233586+00:00",
-      "observation_id": "3953f4dd9f3418b8",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/1f94923580b3705802573226c27ddee904650dca028fcb4fa682cf041d5b9530.json",
+      "quality_checked_at": "2026-08-15T12:10:12.272353+00:00",
+      "observation_id": "d0b35f7cfb4392a2",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/39754e7e166bd26555a140e550e7c03e99bf4c682090ebd2f37a315d44c61359.json",
       "crosscheck_reason": "secondary_source_unavailable",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
@@ -940,7 +1036,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "BZ=F",
@@ -973,7 +1069,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:02.399175+00:00",
+      "fetched_at": "2026-08-15T12:09:32.210120+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -1013,9 +1109,9 @@
         "crosscheck_missing",
         "adapter_policy_display_only"
       ],
-      "quality_checked_at": "2026-08-15T11:18:47.234859+00:00",
-      "observation_id": "a4b711c8cd86290b",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/af9bfdb7e6661bf9f222a122b68e681667756cba134ebe46c5504e3f02d1c64c.json",
+      "quality_checked_at": "2026-08-15T12:10:12.274433+00:00",
+      "observation_id": "3d2c56b98fa8e36e",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/31b029c9bb6392be044525d931788e43584aab81f87295f58fe0a156b467ffea.json",
       "crosscheck_reason": "secondary_source_unavailable",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
@@ -1048,7 +1144,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "CL=F",
@@ -1081,7 +1177,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:02.474484+00:00",
+      "fetched_at": "2026-08-15T12:09:32.297127+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -1121,9 +1217,9 @@
         "crosscheck_missing",
         "adapter_policy_display_only"
       ],
-      "quality_checked_at": "2026-08-15T11:18:47.235965+00:00",
-      "observation_id": "84383b5eafbcfab7",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/ccbb1ed8337e4845d450b142fb997c8ce50ea5084bc53332382fc904d8a910ce.json",
+      "quality_checked_at": "2026-08-15T12:10:12.276262+00:00",
+      "observation_id": "1988056756c0c9bd",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/180a7c12aa1a6e9739c42d0367aa4096d0a16555fbc3317d6a03ace911aef851.json",
       "crosscheck_reason": "secondary_source_unavailable",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
@@ -1156,7 +1252,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "GC=F",
@@ -1189,7 +1285,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:02.641400+00:00",
+      "fetched_at": "2026-08-15T12:09:32.383572+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -1229,9 +1325,9 @@
         "crosscheck_missing",
         "adapter_policy_display_only"
       ],
-      "quality_checked_at": "2026-08-15T11:18:47.237153+00:00",
-      "observation_id": "22375a8243003a82",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/356966391fbd0aac8fbaff148299f061ed4971ecb824c6eae74361027ad18a72.json",
+      "quality_checked_at": "2026-08-15T12:10:12.277971+00:00",
+      "observation_id": "ece59b587bef63db",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/51ed173aa89c9a88a7d71f6f427f0d7a75742fa4eaae1e3974e52c42dea8ebf2.json",
       "crosscheck_reason": "secondary_source_unavailable",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
@@ -1264,7 +1360,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "BTC-USD",
@@ -1272,12 +1368,12 @@
       "name": "比特幣",
       "market": "global",
       "currency": "USD",
-      "price": 63026.87,
+      "price": 63000.0,
       "previous_close": 62975.59,
-      "change": 51.28,
-      "change_percent": 0.08,
+      "change": 24.41,
+      "change_percent": 0.04,
       "quote_date": "2026-08-15",
-      "quote_time": "2026-08-15T11:18:33.143000+00:00",
+      "quote_time": "2026-08-15T12:10:01.048000+00:00",
       "quote_basis": "盤中",
       "quote_source": "Binance.US public spot quote",
       "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=BTCUSDT",
@@ -1288,7 +1384,7 @@
         "high": 64904.69,
         "long_low": 58558.86,
         "long_high": 66505.12,
-        "position_pct": 9.7,
+        "position_pct": 7.7,
         "zone": "接近20日支撐區",
         "as_of": "2026-08-15",
         "status": "ok"
@@ -1297,7 +1393,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:02.777876+00:00",
+      "fetched_at": "2026-08-15T12:09:32.499962+00:00",
       "published_at": "2026-08-15",
       "source_domain": "api.binance.us",
       "stale_used": false,
@@ -1311,14 +1407,14 @@
           "label": "Binance",
           "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=BTCUSDT",
           "url": "https://api.binance.us/api/v3/ticker/24hr?symbol=BTCUSDT",
-          "quote_time": "2026-08-15T11:18:33.143000+00:00"
+          "quote_time": "2026-08-15T12:10:01.048000+00:00"
         },
         {
           "provider": "CoinGecko",
           "label": "CoinGecko",
           "source_url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin",
           "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin",
-          "quote_time": "2026-08-15T11:16:30+00:00"
+          "quote_time": "2026-08-15T12:08:20+00:00"
         }
       ],
       "expected_sources": [
@@ -1339,9 +1435,9 @@
       "quality_reasons": [
         "adapter_policy_display_only"
       ],
-      "quality_checked_at": "2026-08-15T11:18:47.238254+00:00",
-      "observation_id": "e3ad1426fba1d01b",
-      "raw_payload_location": "api.binance.us/2026-08-15/4dfc9e1c5f937934505297a0c0e8f3065d3c1b3ddf20b028b9ad8e3aa475dcc3.json",
+      "quality_checked_at": "2026-08-15T12:10:12.279365+00:00",
+      "observation_id": "c4d0d69dcedb71cd",
+      "raw_payload_location": "api.binance.us/2026-08-15/724d9951758222ea5b8afc10d6ec6282464c75220253a16e2bd5552dccc8d0a3.json",
       "adapter_contract_state": "declared",
       "adapter_provider": "Binance",
       "adapter_contract_version": 1,
@@ -1373,9 +1469,9 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "raw_change": -3.88,
-      "raw_change_percent": 0.184,
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "raw_change": -46.7,
+      "raw_change_percent": 0.308,
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "ETH-USD",
@@ -1383,12 +1479,12 @@
       "name": "以太坊",
       "market": "global",
       "currency": "USD",
-      "price": 1881.12,
+      "price": 1878.72,
       "previous_close": 1880.65,
-      "change": 0.47,
-      "change_percent": 0.02,
+      "change": -1.93,
+      "change_percent": -0.1,
       "quote_date": "2026-08-15",
-      "quote_time": "2026-08-15T11:18:04.250000+00:00",
+      "quote_time": "2026-08-15T12:09:51.195000+00:00",
       "quote_basis": "盤中",
       "quote_source": "Binance.US public spot quote",
       "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=ETHUSDT",
@@ -1399,16 +1495,16 @@
         "high": 1919.95,
         "long_low": 1564.82,
         "long_high": 1953.41,
-        "position_pct": 46.3,
+        "position_pct": 44.1,
         "zone": "位於20日區間中段",
         "as_of": "2026-08-15",
         "status": "ok"
       },
       "change_consistency": "reconciled",
-      "direction_sign": 1,
-      "market_direction": "上漲",
+      "direction_sign": -1,
+      "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:02.890886+00:00",
+      "fetched_at": "2026-08-15T12:09:32.597875+00:00",
       "published_at": "2026-08-15",
       "source_domain": "api.binance.us",
       "stale_used": false,
@@ -1422,14 +1518,14 @@
           "label": "Binance",
           "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=ETHUSDT",
           "url": "https://api.binance.us/api/v3/ticker/24hr?symbol=ETHUSDT",
-          "quote_time": "2026-08-15T11:18:04.250000+00:00"
+          "quote_time": "2026-08-15T12:09:51.195000+00:00"
         },
         {
           "provider": "CoinGecko",
           "label": "CoinGecko",
           "source_url": "https://api.coingecko.com/api/v3/simple/price?ids=ethereum",
           "url": "https://api.coingecko.com/api/v3/simple/price?ids=ethereum",
-          "quote_time": "2026-08-15T11:16:20+00:00"
+          "quote_time": "2026-08-15T12:08:30+00:00"
         }
       ],
       "expected_sources": [
@@ -1450,9 +1546,9 @@
       "quality_reasons": [
         "adapter_policy_display_only"
       ],
-      "quality_checked_at": "2026-08-15T11:18:47.239509+00:00",
-      "observation_id": "805a947830a4907b",
-      "raw_payload_location": "api.binance.us/2026-08-15/e8460b7b1f4ca3a6c664ffd0556863fc35f83e058b2ba5dd5d1350bd442f07fa.json",
+      "quality_checked_at": "2026-08-15T12:10:12.280895+00:00",
+      "observation_id": "6dc8b33a70038257",
+      "raw_payload_location": "api.binance.us/2026-08-15/0caf8962bb74e373b34ae4c870bc615ce8a2b4bf5a968113f78bbf896a576fe9.json",
       "adapter_contract_state": "declared",
       "adapter_provider": "Binance",
       "adapter_contract_version": 1,
@@ -1484,92 +1580,9 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "raw_change": -1.8,
-      "raw_change_percent": 0.179,
-      "snapshot_id": "aa2c4d7e3b061b5e"
-    },
-    {
-      "symbol": "^TWOII",
-      "ticker": "TPEx",
-      "name": "臺灣櫃買指數",
-      "market": "taiwan",
-      "currency": "點",
-      "price": 400.95,
-      "previous_close": 406.12,
-      "change": -5.17,
-      "change_percent": -1.27,
-      "quote_date": "2026-08-14",
-      "quote_time": null,
-      "quote_source": "TPEx OpenAPI official close",
-      "source_label": "TPEx",
-      "source_url": "https://www.tpex.org.tw/openapi/v1/tpex_index",
-      "quote_basis": "TPEx 官方最近收盤",
-      "quote_delayed": false,
-      "freshness": "recent_close",
-      "data_status": "最近收盤",
-      "alert_eligible": false,
-      "change_consistency": "consistent",
-      "direction_sign": -1,
-      "market_direction": "下跌",
-      "source_tier": "official",
-      "fetched_at": "2026-08-15T11:18:05.752615+00:00",
-      "published_at": "2026-08-14",
-      "source_domain": "tpex.org.tw",
-      "stale_used": false,
-      "quote_basis_label": "最近收盤",
-      "cross_checked": false,
-      "crosscheck_status": "未交叉核對",
-      "crosscheck_sources": [],
-      "expected_sources": [
-        "TPEx",
-        "TWSE MIS"
-      ],
-      "instrument_id": "tpex:index",
-      "asset_type": "index",
-      "instrument_timezone": "Asia/Taipei",
-      "instrument_resolution": "resolved",
-      "instrument_master_id": "instrument-bea0b5cb7fac780a",
-      "instrument_master_version": 1,
-      "data_quality_score": 85.0,
-      "quality_freshness": "fresh",
-      "quality_reasons": [
-        "crosscheck_missing"
-      ],
-      "quality_checked_at": "2026-08-15T11:18:47.240690+00:00",
-      "observation_id": "d620d7abd74ed274",
-      "raw_payload_location": "tpex.org.tw/2026-08-15/9b0a674acb704a5cf74318ea84fa6210351ea57939ebd37e65c3a354582fbaea.json",
-      "adapter_contract_state": "declared",
-      "adapter_provider": "TPEx",
-      "adapter_contract_version": 1,
-      "adapter_alert_policy": "crosscheck_required",
-      "adapter_provenance_fields": [
-        "provider",
-        "source_tier",
-        "source_url",
-        "request_id",
-        "fetched_at",
-        "published_at",
-        "observation_id",
-        "payload_hash",
-        "parser_version",
-        "stale_used",
-        "freshness",
-        "data_quality_score",
-        "alert_eligible"
-      ],
-      "adapter_health_fields": [
-        "status",
-        "last_success_at",
-        "last_failure_at",
-        "consecutive_failures",
-        "error_class",
-        "freshness",
-        "data_quality_score",
-        "display_eligible",
-        "alert_eligible",
-        "quality_reasons"
-      ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "raw_change": -3.51,
+      "raw_change_percent": 0.142,
+      "snapshot_id": "87b41002eb87405b"
     }
   ],
   "quotes": [
@@ -1604,7 +1617,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:17:59.922138+00:00",
+      "fetched_at": "2026-08-15T12:09:30.527323+00:00",
       "published_at": "2026-08-13",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -1629,9 +1642,9 @@
         "crosscheck_missing",
         "quote_stale_or_missing"
       ],
-      "quality_checked_at": "2026-08-15T11:18:05.728269+00:00",
-      "observation_id": "9a25c537548cad84",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/b014dbba6946f326d8e87357737abbeff7a1f5d40332b36b75af9f89e46f17d0.json",
+      "quality_checked_at": "2026-08-15T12:09:34.962635+00:00",
+      "observation_id": "762f3b663881de05",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/36caa3e1549d30cf8bb66daadd089ba8715fe72958d68c6e83fa555df943b164.json",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
       "adapter_contract_version": 1,
@@ -1663,7 +1676,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "00685L.TW",
@@ -1696,7 +1709,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:00.023070+00:00",
+      "fetched_at": "2026-08-15T12:09:30.611758+00:00",
       "published_at": "2026-08-13",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -1721,9 +1734,9 @@
         "crosscheck_missing",
         "quote_stale_or_missing"
       ],
-      "quality_checked_at": "2026-08-15T11:18:05.729607+00:00",
-      "observation_id": "0f6bbe44627f5529",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/faea4fa9d6ddb88dbf744ba66794890794c8534e10b18aac25dfae2345494f14.json",
+      "quality_checked_at": "2026-08-15T12:09:34.964107+00:00",
+      "observation_id": "7cc7bf7a9bc5661f",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/b6f6e2e57b9a8e6b9cee1a132b04198d6db874d0ddd0921b2340d4a72a46ff28.json",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
       "adapter_contract_version": 1,
@@ -1755,7 +1768,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "2330.TW",
@@ -1788,7 +1801,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:00.179072+00:00",
+      "fetched_at": "2026-08-15T12:09:30.762823+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -1815,9 +1828,9 @@
       "quality_reasons": [
         "crosscheck_missing"
       ],
-      "quality_checked_at": "2026-08-15T11:18:05.730849+00:00",
-      "observation_id": "ff9459c01aa9873e",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/ebd1f1a551e9ceb8281f5d29a13271a282a5b098888b842ca3d108b8131a79a7.json",
+      "quality_checked_at": "2026-08-15T12:09:34.965511+00:00",
+      "observation_id": "ac4b97cc71a8d414",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/65f2495aea5948ddea76cf9e6a4a827d18acb48d919b2b4b1c47b84f08d41109.json",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
       "adapter_contract_version": 1,
@@ -1849,7 +1862,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "QQQM",
@@ -1882,7 +1895,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:00.329880+00:00",
+      "fetched_at": "2026-08-15T12:09:30.863805+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -1906,9 +1919,9 @@
       "quality_reasons": [
         "crosscheck_missing"
       ],
-      "quality_checked_at": "2026-08-15T11:18:05.732151+00:00",
-      "observation_id": "992308deb47e669c",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/e10874e1877a3bda2c85f7a08bd4d479f92481571a14633cde16105d744869d8.json",
+      "quality_checked_at": "2026-08-15T12:09:34.967060+00:00",
+      "observation_id": "a3395a7237bb3de9",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/d21c8ebac81ac816de9bc9aff4b4fbbfb059b3362493a2082e47f3c7808a8a58.json",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
       "adapter_contract_version": 1,
@@ -1940,7 +1953,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "QLD",
@@ -1973,7 +1986,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:00.471009+00:00",
+      "fetched_at": "2026-08-15T12:09:31.041768+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -1997,9 +2010,9 @@
       "quality_reasons": [
         "crosscheck_missing"
       ],
-      "quality_checked_at": "2026-08-15T11:18:05.733400+00:00",
-      "observation_id": "13b403daf2999d1d",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/904ec73bf6ae594aaff6350b942b3d153eab7ec507dfa6d370f393c02014b0a0.json",
+      "quality_checked_at": "2026-08-15T12:09:34.968305+00:00",
+      "observation_id": "bcaed706f12e213e",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/0504aa9293167795b2dac25583adf301e78d4d114d63598e6e3efd6185294b60.json",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
       "adapter_contract_version": 1,
@@ -2031,7 +2044,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "TSM",
@@ -2064,7 +2077,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:00.638935+00:00",
+      "fetched_at": "2026-08-15T12:09:31.194560+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -2091,9 +2104,9 @@
       "quality_reasons": [
         "crosscheck_missing"
       ],
-      "quality_checked_at": "2026-08-15T11:18:05.734538+00:00",
-      "observation_id": "338e9a1a67889955",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/e666d1aee875f5694809f4dcd5dbff531aa00a8f05c7fec9e31c667b0a06b04a.json",
+      "quality_checked_at": "2026-08-15T12:09:34.969677+00:00",
+      "observation_id": "423e03363f564bdd",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/73f9ecd56077f3b1c6ecda6152e86e44f449b0d25d568ae1e26ed25102f70ce1.json",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
       "adapter_contract_version": 1,
@@ -2125,7 +2138,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     },
     {
       "symbol": "NVDA",
@@ -2158,7 +2171,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:00.914840+00:00",
+      "fetched_at": "2026-08-15T12:09:31.329274+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -2185,9 +2198,9 @@
       "quality_reasons": [
         "crosscheck_missing"
       ],
-      "quality_checked_at": "2026-08-15T11:18:05.735683+00:00",
-      "observation_id": "a84bbb4e03a15731",
-      "raw_payload_location": "finance.yahoo.com/2026-08-15/9993f033ffaa4346f4747bb354377a99e9b5601f6dab43094264a489f9479a5c.json",
+      "quality_checked_at": "2026-08-15T12:09:34.971022+00:00",
+      "observation_id": "5fec32cf93edbba4",
+      "raw_payload_location": "finance.yahoo.com/2026-08-15/bc5bbcff8234204817fffab43000aa6e09fcc6af8c125771a187d441741629cc.json",
       "adapter_contract_state": "declared",
       "adapter_provider": "Yahoo",
       "adapter_contract_version": 1,
@@ -2219,7 +2232,7 @@
         "alert_eligible",
         "quality_reasons"
       ],
-      "snapshot_id": "aa2c4d7e3b061b5e"
+      "snapshot_id": "87b41002eb87405b"
     }
   ],
   "risk": {
@@ -2227,12 +2240,19 @@
     "taiwan": {
       "label": "台股",
       "sentiment": {
-        "score": null,
-        "label": "資料暫時無法取得",
+        "score": 31.8,
+        "label": "恐慌",
         "source_label": "TAIEX Macro FGI",
-        "date": null,
-        "index_level": null,
-        "sub_scores": {}
+        "date": "2026-08-14",
+        "index_level": 45811.01,
+        "sub_scores": {
+          "動能": 23.3,
+          "波動": 8.3,
+          "內資投機": 1.7,
+          "外資流向": 75.0,
+          "量能": 76.7
+        },
+        "method": "加權、櫃買、成交量、歷史波動率、美元兌台幣匯率的 120 日百分位模型"
       },
       "vix": {
         "value": 30.22,
@@ -2242,17 +2262,15 @@
         "stage": "極度恐慌",
         "source_label": "TAIFEX",
         "source_url": "https://mis.taifex.com.tw/futures/VolatilityQuotes/",
-        "fetched_at": "2026-08-15T11:18:07.834861+00:00",
+        "fetched_at": "2026-08-15T12:09:36.991056+00:00",
         "history_points": 0,
         "percentile_as_of": null,
         "percentile_status": "unavailable",
         "stage_basis": "absolute_level_fallback",
         "freshness_state": "intraday"
       },
-      "errors": [
-        "台股 Macro FGI 資料暫時無法取得"
-      ],
-      "summary": "情緒：資料暫時無法取得"
+      "errors": [],
+      "summary": "情緒：恐慌"
     },
     "us": {
       "label": "美股",
@@ -2270,7 +2288,7 @@
         "stage": "極度樂觀",
         "date": "2026-08-14",
         "source_label": "Yahoo Finance",
-        "fetched_at": "2026-08-15T11:18:06.359232+00:00",
+        "fetched_at": "2026-08-15T12:09:35.546787+00:00",
         "history_points": 250,
         "percentile_as_of": "2026-08-14",
         "percentile_status": "available",
@@ -2392,7 +2410,7 @@
         "ranking_score": 15
       },
       {
-        "title": "台股最強上半年！4家賺逾10個股本、這2家單季就超標 - 自由財經",
+        "title": "台股最強上半年！4家賺逾10個股本、這2家單季就超標 - ec.ltn.com.tw",
         "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE5rZlhYejh1anhYQTBNQklCQmZoTDdhX0R4dUx2TUhSamxYdVItbkhmUTVYOEg1Ti1jUndGRFpBeDlCcWNiMm5LemY5T2w3ZkdFNll4c01oTm5nc0M2TkVF",
         "source": "Google News｜台股線索",
         "relevance": "market",
@@ -2422,7 +2440,7 @@
           "matched_term_count": 1,
           "source_market_hint": null
         },
-        "story_id": "news-69417328d1366b5722e5",
+        "story_id": "news-99449c305ac7ee906d16",
         "provider": "google_news",
         "provider_name": "Google News",
         "source_tier": "discovery",
@@ -2437,12 +2455,12 @@
           "market:taiwan"
         ],
         "freshness": "unknown",
-        "dedupe_key": "台股最強上半年4家賺逾10個股本這2家單季就超標自由財經",
+        "dedupe_key": "台股最強上半年4家賺逾10個股本這2家單季就超標ecltncomtw",
         "public_safe": true,
         "ranking_score": 15
       },
       {
-        "title": "日本軟銀Q2削減台積電ADR逾7成部位 套現2.7億美元 - ETtoday財經雲",
+        "title": "日本軟銀Q2削減台積電ADR逾7成部位 套現2.7億美元 - finance.ettoday.net",
         "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTFBXeEZwWXZTWTZoY3BSYW50QW1LUWhiY1VuclJHV2hKYTBxMmJMR2twYXBzN05jLWJwMlJKMWdTRDRFSmVYQ2xFRFZpcHl1a2RxanfSAVBBVV95cUxNc0dVd09DM09TU2J6WkJfZS1wSDlESVBPWkZjU25BS3RhQTIxSjYzei0wN29CQnFKd3pxMEpJRnNaYUdUdU1BaVE1N2J5Smgteg",
         "source": "Google News｜台股線索",
         "relevance": "market",
@@ -2474,7 +2492,7 @@
           "matched_term_count": 2,
           "source_market_hint": null
         },
-        "story_id": "news-416aceb1e5c045f328aa",
+        "story_id": "news-bd658836f16c0a14361c",
         "provider": "google_news",
         "provider_name": "Google News",
         "source_tier": "discovery",
@@ -2489,13 +2507,13 @@
           "market:taiwan"
         ],
         "freshness": "unknown",
-        "dedupe_key": "日本軟銀q2削減台積電adr逾7成部位套現27億美元ettoday財經雲",
+        "dedupe_key": "日本軟銀q2削減台積電adr逾7成部位套現27億美元financeettodaynet",
         "public_safe": true,
         "ranking_score": 15
       },
       {
-        "title": "台積電、矽品、鴻海等供應鏈加持，輝達宣布 Spectrum-X 以太網路矽光子交換機量產 - cmoney.tw",
-        "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE1vR0FlOVZBNU5GdjlBQUpBMHZaTUxnRGd5VTNBcllZOWFFVlBfb2Myc2ZRUmtUSWZpQ3RQclhBMzNDT1NXeUhmZHVIZjlhRkVXR1JHMHhxMVM",
+        "title": "台積電、矽品、鴻海等供應鏈加持，輝達宣布 Spectrum-X 以太網路矽光子交換機量產 - TechNews 科技新報",
+        "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxQOGRxdjJXcGZHTkdYWEx4SnZCOWNrQ3JzejNtTTROWkVfMC1VdFJkWnNhQkY2MWtCb1pKdUxZOXNXMTRITHRyU2hOc2lxWUJLLU9OekRoaXJ2eVBnOWktem8tenE1MWtJODdYeDhHWk9tNkxPYzFyZHBBS2Z2blVRbW9XeGJiVXd6VGFGUnNaZS1WMkRZU2lyOTZpbkFCOHNTTncyRFpYZXRmU0pNbkoydUF0NFdzVTFkZ3RNNFNuSQ",
         "source": "Google News｜台股線索",
         "relevance": "market",
         "market_classification": {
@@ -2526,12 +2544,12 @@
           "matched_term_count": 2,
           "source_market_hint": null
         },
-        "story_id": "news-ff7119c41b21abdae05b",
+        "story_id": "news-b615b759cfd04425ac11",
         "provider": "google_news",
         "provider_name": "Google News",
         "source_tier": "discovery",
         "authority_tier": "discovery",
-        "canonical_url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE1vR0FlOVZBNU5GdjlBQUpBMHZaTUxnRGd5VTNBcllZOWFFVlBfb2Myc2ZRUmtUSWZpQ3RQclhBMzNDT1NXeUhmZHVIZjlhRkVXR1JHMHhxMVM",
+        "canonical_url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxQOGRxdjJXcGZHTkdYWEx4SnZCOWNrQ3JzejNtTTROWkVfMC1VdFJkWnNhQkY2MWtCb1pKdUxZOXNXMTRITHRyU2hOc2lxWUJLLU9OekRoaXJ2eVBnOWktem8tenE1MWtJODdYeDhHWk9tNkxPYzFyZHBBS2Z2blVRbW9XeGJiVXd6VGFGUnNaZS1WMkRZU2lyOTZpbkFCOHNTTncyRFpYZXRmU0pNbkoydUF0NFdzVTFkZ3RNNFNuSQ",
         "published_at": null,
         "market": "taiwan",
         "tickers": [],
@@ -2541,7 +2559,7 @@
           "market:taiwan"
         ],
         "freshness": "unknown",
-        "dedupe_key": "台積電矽品鴻海等供應鏈加持輝達宣布spectrumx以太網路矽光子交換機量產cmoneytw",
+        "dedupe_key": "台積電矽品鴻海等供應鏈加持輝達宣布spectrumx以太網路矽光子交換機量產technews科技新報",
         "public_safe": true,
         "ranking_score": 15
       }
@@ -2807,7 +2825,7 @@
         "source_tier": "discovery",
         "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:07.835766+00:00",
+        "checked_at": "2026-08-15T12:09:36.991876+00:00",
         "item_count": 5,
         "data_gap": null,
         "fallback_used": true
@@ -2818,7 +2836,7 @@
         "source_tier": "official",
         "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
         "status": "no_event",
-        "checked_at": "2026-08-15T11:18:07.835766+00:00",
+        "checked_at": "2026-08-15T12:09:36.991876+00:00",
         "item_count": 0,
         "data_gap": null
       },
@@ -2828,7 +2846,7 @@
         "source_tier": "official",
         "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
         "status": "no_event",
-        "checked_at": "2026-08-15T11:18:07.835766+00:00",
+        "checked_at": "2026-08-15T12:09:36.991876+00:00",
         "item_count": 0,
         "data_gap": null
       },
@@ -2838,7 +2856,7 @@
         "source_tier": "discovery",
         "source_url": "https://news.cnyes.com/news/cat/us_stock",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:07.835766+00:00",
+        "checked_at": "2026-08-15T12:09:36.991876+00:00",
         "item_count": 5,
         "data_gap": null
       },
@@ -2848,7 +2866,7 @@
         "source_tier": "official",
         "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:07.835766+00:00",
+        "checked_at": "2026-08-15T12:09:36.991876+00:00",
         "item_count": 10,
         "data_gap": null
       },
@@ -2858,7 +2876,7 @@
         "source_tier": "official",
         "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
         "status": "failed",
-        "checked_at": "2026-08-15T11:18:07.835766+00:00",
+        "checked_at": "2026-08-15T12:09:36.991876+00:00",
         "item_count": 0,
         "data_gap": "failed"
       },
@@ -2868,7 +2886,7 @@
         "source_tier": "official",
         "source_url": null,
         "status": "disabled",
-        "checked_at": "2026-08-15T11:18:07.835766+00:00",
+        "checked_at": "2026-08-15T12:09:36.991876+00:00",
         "item_count": 0,
         "data_gap": null
       }
@@ -3053,14 +3071,14 @@
             "ranking_score": 20
           },
           {
-            "story_id": "news-416aceb1e5c045f328aa",
+            "story_id": "news-99449c305ac7ee906d16",
             "provider": "google_news",
             "provider_name": "Google News",
             "source_tier": "discovery",
             "authority_tier": "discovery",
-            "title": "日本軟銀Q2削減台積電ADR逾7成部位 套現2.7億美元 - ETtoday財經雲",
-            "canonical_url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTFBXeEZwWXZTWTZoY3BSYW50QW1LUWhiY1VuclJHV2hKYTBxMmJMR2twYXBzN05jLWJwMlJKMWdTRDRFSmVYQ2xFRFZpcHl1a2RxanfSAVBBVV95cUxNc0dVd09DM09TU2J6WkJfZS1wSDlESVBPWkZjU25BS3RhQTIxSjYzei0wN29CQnFKd3pxMEpJRnNaYUdUdU1BaVE1N2J5Smgteg",
-            "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTFBXeEZwWXZTWTZoY3BSYW50QW1LUWhiY1VuclJHV2hKYTBxMmJMR2twYXBzN05jLWJwMlJKMWdTRDRFSmVYQ2xFRFZpcHl1a2RxanfSAVBBVV95cUxNc0dVd09DM09TU2J6WkJfZS1wSDlESVBPWkZjU25BS3RhQTIxSjYzei0wN29CQnFKd3pxMEpJRnNaYUdUdU1BaVE1N2J5Smgteg",
+            "title": "台股最強上半年！4家賺逾10個股本、這2家單季就超標 - ec.ltn.com.tw",
+            "canonical_url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE5rZlhYejh1anhYQTBNQklCQmZoTDdhX0R4dUx2TUhSamxYdVItbkhmUTVYOEg1Ti1jUndGRFpBeDlCcWNiMm5LemY5T2w3ZkdFNll4c01oTm5nc0M2TkVF",
+            "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE5rZlhYejh1anhYQTBNQklCQmZoTDdhX0R4dUx2TUhSamxYdVItbkhmUTVYOEg1Ti1jUndGRFpBeDlCcWNiMm5LemY5T2w3ZkdFNll4c01oTm5nc0M2TkVF",
             "published_at": null,
             "market": "taiwan",
             "tickers": [],
@@ -3070,7 +3088,7 @@
               "market:taiwan"
             ],
             "freshness": "unknown",
-            "dedupe_key": "日本軟銀q2削減台積電adr逾7成部位套現27億美元ettoday財經雲",
+            "dedupe_key": "台股最強上半年4家賺逾10個股本這2家單季就超標ecltncomtw",
             "public_safe": true,
             "source": "Google News｜台股線索",
             "ranking_score": 15
@@ -3457,38 +3475,38 @@
     "message": "已核對的重要市場事件與價格訊號；請查看完整脈絡。",
     "items": [
       {
-        "title": "USGS M6.9 地震：7 km NNW of Pematangsiantar, Indonesia",
-        "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tkyk",
-        "source": "USGS｜官方即時地震資料",
-        "short_label": "黑天鵝／地緣",
+        "title": "GDACS Red earthquake alert",
+        "url": "https://www.gdacs.org/report.aspx?eventtype=EQ&eventid=1558363",
+        "brief_summary": "GDACS 紅色earthquake災害警示",
+        "source": "GDACS｜公開災害警示",
+        "short_label": "黑天鵝／重大災害",
         "relevance": "official",
         "source_tier": "official",
-        "released_at": "2026-08-15T10:54:52.753000+00:00",
-        "brief_summary": "USGS M6.9 地震：7 km NNW of Pematangsiantar, Indonesia",
-        "source_key": "usgs",
-        "topic_key": "usgs",
+        "released_at": "2026-08-15T11:14:59+00:00",
+        "source_key": "gdacs",
+        "topic_key": "gdacs",
         "importance": "high-risk",
-        "fetched_at": "2026-08-15T11:18:11.856970+00:00",
-        "published_at": "2026-08-15T10:54:52.753000+00:00",
-        "traditional_chinese_summary": "USGS M6.9 地震：7 km NNW of Pematangsiantar, Indonesia",
+        "fetched_at": "2026-08-15T12:09:40.651357+00:00",
+        "published_at": "2026-08-15T11:14:59+00:00",
+        "traditional_chinese_summary": "GDACS 紅色earthquake災害警示",
         "event_type": "disaster",
         "market_transmission": [],
-        "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tkyk",
-        "source_domain": "earthquake.usgs.gov",
+        "source_url": "https://www.gdacs.org/report.aspx?eventtype=EQ&eventid=1558363",
+        "source_domain": "gdacs.org",
         "cross_checked": false,
         "data_gap": null,
         "stale_used": false,
         "kind": "major_event",
         "pattern": "重要事件",
         "risk_level": "持續觀察",
-        "brief_title": "黑天鵝／地緣｜重要事件｜警戒",
-        "summary": "USGS M6.9 地震：7 km NNW of Pematangsiantar, Indonesia",
-        "trigger": "事件：USGS M6.9 地震：7 km NNW of Pematangsiantar, Indonesia。核對來源：USGS｜官方即時地震資料。",
+        "brief_title": "黑天鵝／重大災害｜重要事件｜警戒",
+        "summary": "GDACS 紅色earthquake災害警示",
+        "trigger": "事件：GDACS 紅色earthquake災害警示。核對來源：GDACS｜公開災害警示。",
         "why_important": "重大災害可能改變區域供應、航運、能源或避險需求；實際影響須由官方資訊與公開市場資料共同確認。",
         "market_context": "市場傳導：尚未出現足夠的相關公開價格確認；本輪連動觀察為 NASDAQ、SOX。",
         "stock_observation": "後續觀察：官方災情與基建／航運資訊、能源與避險資產，以及主要股市是否持續同步波動。",
         "friendly_reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
-        "event": "USGS M6.9 地震：7 km NNW of Pematangsiantar, Indonesia",
+        "event": "GDACS Red earthquake alert",
         "importance_detail": "重大災害可能改變區域供應、航運、能源或避險需求；實際影響須由官方資訊與公開市場資料共同確認。",
         "market_impact": "市場傳導：尚未出現足夠的相關公開價格確認；本輪連動觀察為 NASDAQ、SOX。",
         "watch": "後續觀察：官方災情與基建／航運資訊、能源與避險資產，以及主要股市是否持續同步波動。",
@@ -3526,7 +3544,7 @@
             "direction_sign": -1,
             "market_direction": "下跌",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-15T11:18:01.492516+00:00",
+            "fetched_at": "2026-08-15T12:09:31.747938+00:00",
             "published_at": "2026-08-14",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -3569,9 +3587,9 @@
               "crosscheck_missing",
               "adapter_policy_display_only"
             ],
-            "quality_checked_at": "2026-08-15T11:18:47.228625+00:00",
-            "observation_id": "0826dfc5aae6d3be",
-            "raw_payload_location": "finance.yahoo.com/2026-08-15/38b4c596d8c0542d959b81ec8ab39f478c26b99c244a31ba7d010e39ca55acc0.json",
+            "quality_checked_at": "2026-08-15T12:10:12.266632+00:00",
+            "observation_id": "9b96e045b78f3b48",
+            "raw_payload_location": "finance.yahoo.com/2026-08-15/f89b113555619f0b152ebf3a534dc5c32d17d49516f0cb120393727bb6ca21d8.json",
             "crosscheck_reason": "price_or_time_mismatch",
             "adapter_contract_state": "declared",
             "adapter_provider": "Yahoo",
@@ -3604,7 +3622,7 @@
               "alert_eligible",
               "quality_reasons"
             ],
-            "snapshot_id": "aa2c4d7e3b061b5e"
+            "snapshot_id": "87b41002eb87405b"
           },
           {
             "symbol": "^SOX",
@@ -3637,7 +3655,7 @@
             "direction_sign": -1,
             "market_direction": "下跌",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-15T11:18:01.705849+00:00",
+            "fetched_at": "2026-08-15T12:09:31.956313+00:00",
             "published_at": "2026-08-14",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -3677,9 +3695,9 @@
               "crosscheck_missing",
               "adapter_policy_display_only"
             ],
-            "quality_checked_at": "2026-08-15T11:18:47.231180+00:00",
-            "observation_id": "0a980bd4d267b543",
-            "raw_payload_location": "finance.yahoo.com/2026-08-15/c33449e27cd967b780c4e50ee6f38261283cb502a5386a06e48978f46c55ae78.json",
+            "quality_checked_at": "2026-08-15T12:10:12.269678+00:00",
+            "observation_id": "67d66dae1cd3b7d1",
+            "raw_payload_location": "finance.yahoo.com/2026-08-15/6d8cc0e5c5c0e05f43584da3834ba0fd89b1bcec4acc842927bb486dd242b979.json",
             "crosscheck_reason": "price_or_time_mismatch",
             "adapter_contract_state": "declared",
             "adapter_provider": "Yahoo",
@@ -3712,7 +3730,7 @@
               "alert_eligible",
               "quality_reasons"
             ],
-            "snapshot_id": "aa2c4d7e3b061b5e"
+            "snapshot_id": "87b41002eb87405b"
           }
         ],
         "impact_confirmation": {
@@ -3723,24 +3741,24 @@
         },
         "source_trace": {
           "verification": "一手官方來源",
-          "source_label": "USGS｜官方即時地震資料",
-          "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tkyk",
-          "source_domain": "earthquake.usgs.gov",
-          "event_time": "2026-08-15T10:54:52.753000+00:00",
-          "checked_at": "2026-08-15T11:18:11.856970+00:00",
+          "source_label": "GDACS｜公開災害警示",
+          "source_url": "https://www.gdacs.org/report.aspx?eventtype=EQ&eventid=1558363",
+          "source_domain": "gdacs.org",
+          "event_time": "2026-08-15T11:14:59+00:00",
+          "checked_at": "2026-08-15T12:09:40.651357+00:00",
           "verified_domains": [
-            "earthquake.usgs.gov"
+            "gdacs.org"
           ],
           "crosscheck_status": "unverified",
-          "event_cluster_key": "evt-4d11bc7664678a0dbbce2a02",
+          "event_cluster_key": "evt-d8b4aeb348948b65460f98ec",
           "crosscheck_domains": [
-            "earthquake.usgs.gov"
+            "gdacs.org"
           ],
           "crosscheck_sources": [
-            "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tkyk"
+            "https://www.gdacs.org/report.aspx?eventtype=EQ&eventid=1558363"
           ],
-          "snapshot_id": "aa2c4d7e3b061b5e",
-          "observation_id": "6064165040c74d3a"
+          "snapshot_id": "87b41002eb87405b",
+          "observation_id": "48d7f203c2e2e4fe"
         },
         "official_confirmed": true,
         "high_risk_eligible": false,
@@ -3758,26 +3776,30 @@
         "verification_plan": [],
         "crosscheck_status": "unverified",
         "crosscheck_sources": [
-          "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tkyk"
+          "https://www.gdacs.org/report.aspx?eventtype=EQ&eventid=1558363"
         ],
         "crosscheck_domains": [
-          "earthquake.usgs.gov"
+          "gdacs.org"
         ],
         "crosscheck_reason": "unverified",
-        "event_cluster_key": "evt-4d11bc7664678a0dbbce2a02",
+        "event_cluster_key": "evt-d8b4aeb348948b65460f98ec",
         "evidence_state": "single_source",
         "evidence_reason": "等待市場同步",
         "evidence_domains": [
-          "earthquake.usgs.gov"
+          "gdacs.org"
         ],
         "evidence_sufficient": false,
-        "snapshot_id": "aa2c4d7e3b061b5e",
-        "observation_id": "6064165040c74d3a"
+        "snapshot_id": "87b41002eb87405b",
+        "observation_id": "48d7f203c2e2e4fe"
       }
     ],
     "suppressed_signals": [
       {
         "ticker": "TAIEX",
+        "reason": "crosscheck_missing"
+      },
+      {
+        "ticker": "TPEX",
         "reason": "crosscheck_missing"
       },
       {
@@ -3811,47 +3833,43 @@
       {
         "ticker": "ETH",
         "reason": "adapter_policy_display_only"
-      },
-      {
-        "ticker": "TPEX",
-        "reason": "crosscheck_missing"
       }
     ]
   },
   "official_events": {
     "items": [
       {
-        "title": "USGS M6.9 地震：7 km NNW of Pematangsiantar, Indonesia",
-        "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tkyk",
-        "source": "USGS｜官方即時地震資料",
-        "short_label": "黑天鵝／地緣",
+        "title": "GDACS Red earthquake alert",
+        "url": "https://www.gdacs.org/report.aspx?eventtype=EQ&eventid=1558363",
+        "brief_summary": "GDACS 紅色earthquake災害警示",
+        "source": "GDACS｜公開災害警示",
+        "short_label": "黑天鵝／重大災害",
         "relevance": "official",
         "source_tier": "official",
-        "released_at": "2026-08-15T10:54:52.753000+00:00",
-        "brief_summary": "USGS M6.9 地震：7 km NNW of Pematangsiantar, Indonesia",
-        "source_key": "usgs",
-        "topic_key": "usgs",
+        "released_at": "2026-08-15T11:14:59+00:00",
+        "source_key": "gdacs",
+        "topic_key": "gdacs",
         "importance": "high-risk",
-        "fetched_at": "2026-08-15T11:18:11.856970+00:00",
-        "published_at": "2026-08-15T10:54:52.753000+00:00",
-        "traditional_chinese_summary": "USGS M6.9 地震：7 km NNW of Pematangsiantar, Indonesia",
+        "fetched_at": "2026-08-15T12:09:40.651357+00:00",
+        "published_at": "2026-08-15T11:14:59+00:00",
+        "traditional_chinese_summary": "GDACS 紅色earthquake災害警示",
         "event_type": "disaster",
         "market_transmission": [],
-        "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000tkyk",
-        "source_domain": "earthquake.usgs.gov",
+        "source_url": "https://www.gdacs.org/report.aspx?eventtype=EQ&eventid=1558363",
+        "source_domain": "gdacs.org",
         "cross_checked": false,
         "data_gap": null,
         "stale_used": false,
-        "snapshot_id": "aa2c4d7e3b061b5e",
-        "observation_id": "4e56e27db9d3f206",
+        "snapshot_id": "87b41002eb87405b",
+        "observation_id": "21c1e05053bb6ae8",
         "source_trace": {
-          "snapshot_id": "aa2c4d7e3b061b5e",
-          "observation_id": "4e56e27db9d3f206"
+          "snapshot_id": "87b41002eb87405b",
+          "observation_id": "21c1e05053bb6ae8"
         }
       }
     ],
     "errors": [],
-    "checked_at": "2026-08-15T11:18:11.856970+00:00",
+    "checked_at": "2026-08-15T12:09:40.651357+00:00",
     "source_health": [
       {
         "key": "fed",
@@ -3859,7 +3877,7 @@
         "source_tier": "official",
         "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -3870,7 +3888,7 @@
         "source_tier": "official",
         "source_url": "https://www.bls.gov/feed/empsit.rss",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -3881,7 +3899,7 @@
         "source_tier": "official",
         "source_url": "https://www.bls.gov/feed/cpi.rss",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -3892,7 +3910,7 @@
         "source_tier": "official",
         "source_url": "https://www.bls.gov/feed/ppi.rss",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -3903,7 +3921,7 @@
         "source_tier": "official",
         "source_url": "https://www.eia.gov/rss/press_rss.xml",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -3914,7 +3932,7 @@
         "source_tier": "official",
         "source_url": "https://apps.bea.gov/rss/rss.xml",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -3925,7 +3943,7 @@
         "source_tier": "official",
         "source_url": "https://www.taifex.com.tw/cht/11/pressRelease",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -3936,7 +3954,7 @@
         "source_tier": "official",
         "source_url": "https://www.cbc.gov.tw/tw/lp-302-1-391-20.html",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -3947,7 +3965,7 @@
         "source_tier": "official",
         "source_url": "https://www.fsc.gov.tw/ch/home.jsp?id=640&parentpath=0,7,478,638",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -3958,7 +3976,7 @@
         "source_tier": "official",
         "source_url": "https://www.stat.gov.tw/",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -3969,7 +3987,7 @@
         "source_tier": "official",
         "source_url": "https://mnscdn.moea.gov.tw/Mns/dos/bulletin/BulletinQuery.aspx?menu_id=13034",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -3980,7 +3998,7 @@
         "source_tier": "official",
         "source_url": "https://www.ecb.europa.eu/rss/press.html",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -3991,7 +4009,7 @@
         "source_tier": "official",
         "source_url": "https://www.whitehouse.gov/news/",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -4002,7 +4020,7 @@
         "source_tier": "official",
         "source_url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -4013,7 +4031,7 @@
         "source_tier": "official",
         "source_url": "https://www.who.int/rss-feeds/news-english.xml",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -4024,7 +4042,7 @@
         "source_tier": "official",
         "source_url": "",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -4035,7 +4053,7 @@
         "source_tier": "official",
         "source_url": "",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -4046,7 +4064,7 @@
         "source_tier": "official",
         "source_url": "",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -4057,9 +4075,9 @@
         "source_tier": "official",
         "source_url": "",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
-        "item_count": 0,
-        "latest_published_at": null,
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
+        "item_count": 1,
+        "latest_published_at": "2026-08-15T11:14:59+00:00",
         "data_gap": null
       },
       {
@@ -4068,7 +4086,7 @@
         "source_tier": "official",
         "source_url": "",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 0,
         "latest_published_at": null,
         "data_gap": null
@@ -4079,9 +4097,9 @@
         "source_tier": "official",
         "source_url": "",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
-        "item_count": 1,
-        "latest_published_at": "2026-08-15T10:54:52.753000+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
+        "item_count": 0,
+        "latest_published_at": null,
         "data_gap": null
       }
     ]
@@ -4099,7 +4117,7 @@
         "state": "optional_degraded",
         "role": "optional",
         "provider_status": "partial",
-        "checked_at": "2026-08-15T11:18:32.208065+00:00"
+        "checked_at": "2026-08-15T12:10:00.262378+00:00"
       }
     },
     "crypto_macd": {
@@ -4107,49 +4125,49 @@
       "data": {
         "BTCUSDT": {
           "1w": {
-            "macd": -4921.222816,
-            "signal": -5355.265057,
+            "macd": -4923.366292,
+            "signal": -5355.693752,
             "bearish_cross": false,
             "near_bearish_cross": false,
             "label": "未見死叉",
             "interval": "1w",
             "source_url": "https://api.binance.us/api/v3/klines",
-            "fetched_at": "2026-08-15T11:18:33.605188+00:00",
+            "fetched_at": "2026-08-15T12:10:01.742796+00:00",
             "fallback_used": true
           },
           "1M": {
-            "macd": -1035.652226,
-            "signal": 4738.486122,
+            "macd": -1037.795702,
+            "signal": 4738.057427,
             "bearish_cross": false,
             "near_bearish_cross": false,
             "label": "未見死叉",
             "interval": "1M",
             "source_url": "https://api.binance.us/api/v3/klines",
-            "fetched_at": "2026-08-15T11:18:33.605188+00:00",
+            "fetched_at": "2026-08-15T12:10:01.742796+00:00",
             "fallback_used": true
           }
         },
         "ETHUSDT": {
           "1w": {
-            "macd": -183.884854,
-            "signal": -228.41504,
+            "macd": -184.076307,
+            "signal": -228.453331,
             "bearish_cross": false,
             "near_bearish_cross": false,
             "label": "未見死叉",
             "interval": "1w",
             "source_url": "https://api.binance.us/api/v3/klines",
-            "fetched_at": "2026-08-15T11:18:33.605188+00:00",
+            "fetched_at": "2026-08-15T12:10:01.742796+00:00",
             "fallback_used": true
           },
           "1M": {
-            "macd": -215.286803,
-            "signal": -49.268077,
+            "macd": -215.478256,
+            "signal": -49.306368,
             "bearish_cross": false,
             "near_bearish_cross": false,
             "label": "未見死叉",
             "interval": "1M",
             "source_url": "https://api.binance.us/api/v3/klines",
-            "fetched_at": "2026-08-15T11:18:33.605188+00:00",
+            "fetched_at": "2026-08-15T12:10:01.742796+00:00",
             "fallback_used": true
           }
         }
@@ -4157,7 +4175,7 @@
       "errors": [],
       "error_details": [],
       "fallback_used": true,
-      "fetched_at": "2026-08-15T11:18:33.605188+00:00",
+      "fetched_at": "2026-08-15T12:10:01.742796+00:00",
       "health": {
         "key": "crypto_macd",
         "label": "BTC／ETH MACD",
@@ -4167,7 +4185,7 @@
         "state": "healthy",
         "role": "optional",
         "provider_status": "healthy",
-        "checked_at": "2026-08-15T11:18:33.605188+00:00",
+        "checked_at": "2026-08-15T12:10:01.742796+00:00",
         "item_count": 4,
         "data_gap": null
       }
@@ -4177,9 +4195,9 @@
       "primary": {
         "BTC": {
           "ticker": "BTC",
-          "price": 63026.87,
-          "change_percent": 0.184,
-          "quote_time": "2026-08-15T11:18:33.143000+00:00",
+          "price": 63000.0,
+          "change_percent": 0.308,
+          "quote_time": "2026-08-15T12:10:01.048000+00:00",
           "quote_basis": "盤中",
           "quote_source": "Binance.US public spot quote",
           "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=BTCUSDT",
@@ -4187,9 +4205,9 @@
         },
         "ETH": {
           "ticker": "ETH",
-          "price": 1881.12,
-          "change_percent": 0.179,
-          "quote_time": "2026-08-15T11:18:04.250000+00:00",
+          "price": 1878.72,
+          "change_percent": 0.142,
+          "quote_time": "2026-08-15T12:09:51.195000+00:00",
           "quote_basis": "盤中",
           "quote_source": "Binance.US public spot quote",
           "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=ETHUSDT",
@@ -4199,9 +4217,9 @@
       "secondary": {
         "BTC": {
           "ticker": "BTC",
-          "price": 62968.0,
-          "change_percent": 0.2486672067174268,
-          "quote_time": "2026-08-15T11:16:30+00:00",
+          "price": 62941.0,
+          "change_percent": 0.3024957275458891,
+          "quote_time": "2026-08-15T12:08:20+00:00",
           "quote_basis": "盤中",
           "quote_source": "CoinGecko public spot quote",
           "source_url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin",
@@ -4209,9 +4227,9 @@
         },
         "ETH": {
           "ticker": "ETH",
-          "price": 1878.74,
-          "change_percent": 0.17694888524025937,
-          "quote_time": "2026-08-15T11:16:20+00:00",
+          "price": 1877.44,
+          "change_percent": 0.14798684684486724,
+          "quote_time": "2026-08-15T12:08:30+00:00",
           "quote_basis": "盤中",
           "quote_source": "CoinGecko public spot quote",
           "source_url": "https://api.coingecko.com/api/v3/simple/price?ids=ethereum",
@@ -4221,7 +4239,7 @@
       "errors": [],
       "error_details": [],
       "fallback_used": true,
-      "fetched_at": "2026-08-15T11:18:34.571857+00:00",
+      "fetched_at": "2026-08-15T12:10:02.360910+00:00",
       "health": {
         "key": "crypto_spot",
         "source_key": "crypto_spot",
@@ -4229,7 +4247,7 @@
         "source_tier": "public-market",
         "source_url": "https://api.coingecko.com/api/v3/simple/price",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:34.571857+00:00",
+        "checked_at": "2026-08-15T12:10:02.360910+00:00",
         "item_count": 4,
         "data_gap": null,
         "error_details": null,
@@ -4325,7 +4343,7 @@
         }
       ],
       "fallback_used": true,
-      "fetched_at": "2026-08-15T11:18:35.202510+00:00",
+      "fetched_at": "2026-08-15T12:10:02.780563+00:00",
       "health": {
         "key": "public_market_secondary",
         "label": "Stooq 海外／商品第二行情來源",
@@ -4333,7 +4351,7 @@
         "source_url": "https://stooq.com/q/l/",
         "status": "partial",
         "provider_status": "partial",
-        "checked_at": "2026-08-15T11:18:35.202510+00:00",
+        "checked_at": "2026-08-15T12:10:02.780563+00:00",
         "item_count": 2,
         "data_gap": [
           "S&P 500:http_4xx",
@@ -4410,7 +4428,7 @@
         "state": "configuration_required",
         "role": "optional",
         "provider_status": "missing_api_key",
-        "checked_at": "2026-08-15T11:18:46.455627+00:00",
+        "checked_at": "2026-08-15T12:10:11.422900+00:00",
         "item_count": 0,
         "data_gap": "FRED_API_KEY 未設定"
       }
@@ -4427,7 +4445,7 @@
         "state": "configuration_required",
         "role": "optional",
         "provider_status": "missing_api_key",
-        "checked_at": "2026-08-15T11:18:46.455675+00:00",
+        "checked_at": "2026-08-15T12:10:11.422931+00:00",
         "item_count": 0,
         "data_gap": "EIA_API_KEY 未設定"
       }
@@ -4442,7 +4460,7 @@
         "state": "optional_degraded",
         "role": "optional",
         "provider_status": "partial",
-        "checked_at": "2026-08-15T11:18:32.208065+00:00"
+        "checked_at": "2026-08-15T12:10:00.262378+00:00"
       },
       {
         "key": "crypto_macd",
@@ -4453,7 +4471,7 @@
         "state": "healthy",
         "role": "optional",
         "provider_status": "healthy",
-        "checked_at": "2026-08-15T11:18:33.605188+00:00",
+        "checked_at": "2026-08-15T12:10:01.742796+00:00",
         "item_count": 4,
         "data_gap": null
       },
@@ -4464,7 +4482,7 @@
         "source_tier": "public-market",
         "source_url": "https://api.coingecko.com/api/v3/simple/price",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:34.571857+00:00",
+        "checked_at": "2026-08-15T12:10:02.360910+00:00",
         "item_count": 4,
         "data_gap": null,
         "error_details": null,
@@ -4477,7 +4495,7 @@
         "source_url": "https://stooq.com/q/l/",
         "status": "partial",
         "provider_status": "partial",
-        "checked_at": "2026-08-15T11:18:35.202510+00:00",
+        "checked_at": "2026-08-15T12:10:02.780563+00:00",
         "item_count": 2,
         "data_gap": [
           "S&P 500:http_4xx",
@@ -4550,7 +4568,7 @@
         "state": "configuration_required",
         "role": "optional",
         "provider_status": "missing_api_key",
-        "checked_at": "2026-08-15T11:18:46.455627+00:00",
+        "checked_at": "2026-08-15T12:10:11.422900+00:00",
         "item_count": 0,
         "data_gap": "FRED_API_KEY 未設定"
       },
@@ -4563,7 +4581,7 @@
         "state": "configuration_required",
         "role": "optional",
         "provider_status": "missing_api_key",
-        "checked_at": "2026-08-15T11:18:46.455675+00:00",
+        "checked_at": "2026-08-15T12:10:11.422931+00:00",
         "item_count": 0,
         "data_gap": "EIA_API_KEY 未設定"
       }
@@ -4574,11 +4592,11 @@
     "items": [
       {
         "label": "事件",
-        "text": "黑天鵝／地緣：USGS M6.9 地震：7 km NNW of Pematangsiantar, Indonesia"
+        "text": "黑天鵝／重大災害：GDACS Red earthquake alert"
       },
       {
         "label": "風險",
-        "text": "台股：情緒：資料暫時無法取得"
+        "text": "台股：情緒：恐慌"
       },
       {
         "label": "風險",
@@ -4625,7 +4643,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:05.833445+00:00",
+      "fetched_at": "2026-08-15T12:09:35.087727+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -4670,8 +4688,8 @@
         "quality_reasons"
       ],
       "alert_eligible": false,
-      "snapshot_id": "aa2c4d7e3b061b5e",
-      "observation_id": "10b68f115a4e21ce"
+      "snapshot_id": "87b41002eb87405b",
+      "observation_id": "166ac1b86b41a32d"
     },
     {
       "symbol": "^TNX",
@@ -4689,14 +4707,14 @@
       "quote_source": "Yahoo Finance public daily quote",
       "source_url": "https://finance.yahoo.com/quote/^TNX",
       "technical_context": {
-        "window_days": 16,
-        "long_window_days": 16,
+        "window_days": 20,
+        "long_window_days": 60,
         "low": 4.6,
-        "high": 4.7,
-        "long_low": 4.6,
-        "long_high": 4.7,
-        "position_pct": 92.9,
-        "zone": "接近20日壓力區",
+        "high": 4.74,
+        "long_low": 4.37,
+        "long_high": 4.74,
+        "position_pct": 66.7,
+        "zone": "位於20日區間中段",
         "as_of": "2026-08-14",
         "status": "ok"
       },
@@ -4706,7 +4724,7 @@
       "direction_sign": 1,
       "market_direction": "上漲",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:05.964959+00:00",
+      "fetched_at": "2026-08-15T12:09:35.177210+00:00",
       "published_at": "2026-08-14",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -4751,8 +4769,8 @@
         "quality_reasons"
       ],
       "alert_eligible": false,
-      "snapshot_id": "aa2c4d7e3b061b5e",
-      "observation_id": "a6d623df9407dea4"
+      "snapshot_id": "87b41002eb87405b",
+      "observation_id": "20e285616db16f6e"
     },
     {
       "symbol": "TWD=X",
@@ -4785,7 +4803,7 @@
       "direction_sign": -1,
       "market_direction": "下跌",
       "source_tier": "public-market",
-      "fetched_at": "2026-08-15T11:18:06.051866+00:00",
+      "fetched_at": "2026-08-15T12:09:35.305289+00:00",
       "published_at": "2026-08-15",
       "source_domain": "finance.yahoo.com",
       "stale_used": false,
@@ -4830,14 +4848,14 @@
         "quality_reasons"
       ],
       "alert_eligible": false,
-      "snapshot_id": "aa2c4d7e3b061b5e",
-      "observation_id": "8140f6fb989fa8ed"
+      "snapshot_id": "87b41002eb87405b",
+      "observation_id": "17bf85f5d2b201a9"
     }
   ],
   "briefing": {
     "slot": "live",
     "title": "即時市場儀表板",
-    "overview": "黑天鵝／地緣｜重要事件｜警戒｜USGS M6.9 地震：7 km NNW of Pematangsiantar, Indonesia 市場傳導：尚未出現足夠的相關公開價格確認；本輪連動觀察為 NASDAQ、SOX。",
+    "overview": "黑天鵝／重大災害｜重要事件｜警戒｜GDACS 紅色earthquake災害警示 市場傳導：尚未出現足夠的相關公開價格確認；本輪連動觀察為 NASDAQ、SOX。",
     "markets": [
       {
         "symbol": "^TWII",
@@ -4870,7 +4888,7 @@
         "direction_sign": -1,
         "market_direction": "下跌",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-15T11:18:01.056689+00:00",
+        "fetched_at": "2026-08-15T12:09:31.421907+00:00",
         "published_at": "2026-08-14",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -4898,9 +4916,9 @@
           "crosscheck_missing",
           "adapter_policy_display_only"
         ],
-        "quality_checked_at": "2026-08-15T11:18:47.225239+00:00",
-        "observation_id": "316ad8ad8bf97084",
-        "raw_payload_location": "finance.yahoo.com/2026-08-15/d344c6518b76e93e691863b7c776dd0b65a44828b26ae6411f1c0c8a41f07e2e.json",
+        "quality_checked_at": "2026-08-15T12:10:12.260700+00:00",
+        "observation_id": "3ca5b28397041b5c",
+        "raw_payload_location": "finance.yahoo.com/2026-08-15/7c9897cd12ebffc0ec8d890a8b36c547b5764c55e7d53475e3d47f194731234c.json",
         "adapter_contract_state": "declared",
         "adapter_provider": "Yahoo",
         "adapter_contract_version": 1,
@@ -4932,7 +4950,7 @@
           "alert_eligible",
           "quality_reasons"
         ],
-        "snapshot_id": "aa2c4d7e3b061b5e"
+        "snapshot_id": "87b41002eb87405b"
       },
       {
         "symbol": "2330.TW",
@@ -4965,7 +4983,7 @@
         "direction_sign": -1,
         "market_direction": "下跌",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-15T11:18:00.179072+00:00",
+        "fetched_at": "2026-08-15T12:09:30.762823+00:00",
         "published_at": "2026-08-14",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -4992,9 +5010,9 @@
         "quality_reasons": [
           "crosscheck_missing"
         ],
-        "quality_checked_at": "2026-08-15T11:18:05.730849+00:00",
-        "observation_id": "ff9459c01aa9873e",
-        "raw_payload_location": "finance.yahoo.com/2026-08-15/ebd1f1a551e9ceb8281f5d29a13271a282a5b098888b842ca3d108b8131a79a7.json",
+        "quality_checked_at": "2026-08-15T12:09:34.965511+00:00",
+        "observation_id": "ac4b97cc71a8d414",
+        "raw_payload_location": "finance.yahoo.com/2026-08-15/65f2495aea5948ddea76cf9e6a4a827d18acb48d919b2b4b1c47b84f08d41109.json",
         "adapter_contract_state": "declared",
         "adapter_provider": "Yahoo",
         "adapter_contract_version": 1,
@@ -5026,7 +5044,7 @@
           "alert_eligible",
           "quality_reasons"
         ],
-        "snapshot_id": "aa2c4d7e3b061b5e"
+        "snapshot_id": "87b41002eb87405b"
       },
       {
         "symbol": "^N225",
@@ -5059,7 +5077,7 @@
         "direction_sign": 1,
         "market_direction": "上漲",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-15T11:18:01.783764+00:00",
+        "fetched_at": "2026-08-15T12:09:32.041088+00:00",
         "published_at": "2026-08-14",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -5099,9 +5117,9 @@
           "crosscheck_missing",
           "adapter_policy_display_only"
         ],
-        "quality_checked_at": "2026-08-15T11:18:47.232370+00:00",
-        "observation_id": "51b218b144e6aa10",
-        "raw_payload_location": "finance.yahoo.com/2026-08-15/ba9bbe726bb49cd41d772bf3d46c2b3382b1b017359d684d6c2046bc87faf463.json",
+        "quality_checked_at": "2026-08-15T12:10:12.271015+00:00",
+        "observation_id": "b1d7d29ced9b5894",
+        "raw_payload_location": "finance.yahoo.com/2026-08-15/f441499bc7dd4bd30a571ed490ae932ceacbf1bf1d329275868b7689249d8544.json",
         "crosscheck_reason": "secondary_source_unavailable",
         "adapter_contract_state": "declared",
         "adapter_provider": "Yahoo",
@@ -5134,7 +5152,7 @@
           "alert_eligible",
           "quality_reasons"
         ],
-        "snapshot_id": "aa2c4d7e3b061b5e"
+        "snapshot_id": "87b41002eb87405b"
       },
       {
         "symbol": "^KS11",
@@ -5167,7 +5185,7 @@
         "direction_sign": 1,
         "market_direction": "上漲",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-15T11:18:01.902999+00:00",
+        "fetched_at": "2026-08-15T12:09:32.124045+00:00",
         "published_at": "2026-08-14",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -5207,9 +5225,9 @@
           "crosscheck_missing",
           "adapter_policy_display_only"
         ],
-        "quality_checked_at": "2026-08-15T11:18:47.233586+00:00",
-        "observation_id": "3953f4dd9f3418b8",
-        "raw_payload_location": "finance.yahoo.com/2026-08-15/1f94923580b3705802573226c27ddee904650dca028fcb4fa682cf041d5b9530.json",
+        "quality_checked_at": "2026-08-15T12:10:12.272353+00:00",
+        "observation_id": "d0b35f7cfb4392a2",
+        "raw_payload_location": "finance.yahoo.com/2026-08-15/39754e7e166bd26555a140e550e7c03e99bf4c682090ebd2f37a315d44c61359.json",
         "crosscheck_reason": "secondary_source_unavailable",
         "adapter_contract_state": "declared",
         "adapter_provider": "Yahoo",
@@ -5242,7 +5260,7 @@
           "alert_eligible",
           "quality_reasons"
         ],
-        "snapshot_id": "aa2c4d7e3b061b5e"
+        "snapshot_id": "87b41002eb87405b"
       },
       {
         "symbol": "^IXIC",
@@ -5275,7 +5293,7 @@
         "direction_sign": -1,
         "market_direction": "下跌",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-15T11:18:01.492516+00:00",
+        "fetched_at": "2026-08-15T12:09:31.747938+00:00",
         "published_at": "2026-08-14",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -5318,9 +5336,9 @@
           "crosscheck_missing",
           "adapter_policy_display_only"
         ],
-        "quality_checked_at": "2026-08-15T11:18:47.228625+00:00",
-        "observation_id": "0826dfc5aae6d3be",
-        "raw_payload_location": "finance.yahoo.com/2026-08-15/38b4c596d8c0542d959b81ec8ab39f478c26b99c244a31ba7d010e39ca55acc0.json",
+        "quality_checked_at": "2026-08-15T12:10:12.266632+00:00",
+        "observation_id": "9b96e045b78f3b48",
+        "raw_payload_location": "finance.yahoo.com/2026-08-15/f89b113555619f0b152ebf3a534dc5c32d17d49516f0cb120393727bb6ca21d8.json",
         "crosscheck_reason": "price_or_time_mismatch",
         "adapter_contract_state": "declared",
         "adapter_provider": "Yahoo",
@@ -5353,7 +5371,7 @@
           "alert_eligible",
           "quality_reasons"
         ],
-        "snapshot_id": "aa2c4d7e3b061b5e"
+        "snapshot_id": "87b41002eb87405b"
       },
       {
         "symbol": "^SOX",
@@ -5386,7 +5404,7 @@
         "direction_sign": -1,
         "market_direction": "下跌",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-15T11:18:01.705849+00:00",
+        "fetched_at": "2026-08-15T12:09:31.956313+00:00",
         "published_at": "2026-08-14",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -5426,9 +5444,9 @@
           "crosscheck_missing",
           "adapter_policy_display_only"
         ],
-        "quality_checked_at": "2026-08-15T11:18:47.231180+00:00",
-        "observation_id": "0a980bd4d267b543",
-        "raw_payload_location": "finance.yahoo.com/2026-08-15/c33449e27cd967b780c4e50ee6f38261283cb502a5386a06e48978f46c55ae78.json",
+        "quality_checked_at": "2026-08-15T12:10:12.269678+00:00",
+        "observation_id": "67d66dae1cd3b7d1",
+        "raw_payload_location": "finance.yahoo.com/2026-08-15/6d8cc0e5c5c0e05f43584da3834ba0fd89b1bcec4acc842927bb486dd242b979.json",
         "crosscheck_reason": "price_or_time_mismatch",
         "adapter_contract_state": "declared",
         "adapter_provider": "Yahoo",
@@ -5461,7 +5479,7 @@
           "alert_eligible",
           "quality_reasons"
         ],
-        "snapshot_id": "aa2c4d7e3b061b5e"
+        "snapshot_id": "87b41002eb87405b"
       },
       {
         "symbol": "BZ=F",
@@ -5494,7 +5512,7 @@
         "direction_sign": 1,
         "market_direction": "上漲",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-15T11:18:02.399175+00:00",
+        "fetched_at": "2026-08-15T12:09:32.210120+00:00",
         "published_at": "2026-08-14",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -5534,9 +5552,9 @@
           "crosscheck_missing",
           "adapter_policy_display_only"
         ],
-        "quality_checked_at": "2026-08-15T11:18:47.234859+00:00",
-        "observation_id": "a4b711c8cd86290b",
-        "raw_payload_location": "finance.yahoo.com/2026-08-15/af9bfdb7e6661bf9f222a122b68e681667756cba134ebe46c5504e3f02d1c64c.json",
+        "quality_checked_at": "2026-08-15T12:10:12.274433+00:00",
+        "observation_id": "3d2c56b98fa8e36e",
+        "raw_payload_location": "finance.yahoo.com/2026-08-15/31b029c9bb6392be044525d931788e43584aab81f87295f58fe0a156b467ffea.json",
         "crosscheck_reason": "secondary_source_unavailable",
         "adapter_contract_state": "declared",
         "adapter_provider": "Yahoo",
@@ -5569,7 +5587,7 @@
           "alert_eligible",
           "quality_reasons"
         ],
-        "snapshot_id": "aa2c4d7e3b061b5e"
+        "snapshot_id": "87b41002eb87405b"
       },
       {
         "symbol": "CL=F",
@@ -5602,7 +5620,7 @@
         "direction_sign": 1,
         "market_direction": "上漲",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-15T11:18:02.474484+00:00",
+        "fetched_at": "2026-08-15T12:09:32.297127+00:00",
         "published_at": "2026-08-14",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -5642,9 +5660,9 @@
           "crosscheck_missing",
           "adapter_policy_display_only"
         ],
-        "quality_checked_at": "2026-08-15T11:18:47.235965+00:00",
-        "observation_id": "84383b5eafbcfab7",
-        "raw_payload_location": "finance.yahoo.com/2026-08-15/ccbb1ed8337e4845d450b142fb997c8ce50ea5084bc53332382fc904d8a910ce.json",
+        "quality_checked_at": "2026-08-15T12:10:12.276262+00:00",
+        "observation_id": "1988056756c0c9bd",
+        "raw_payload_location": "finance.yahoo.com/2026-08-15/180a7c12aa1a6e9739c42d0367aa4096d0a16555fbc3317d6a03ace911aef851.json",
         "crosscheck_reason": "secondary_source_unavailable",
         "adapter_contract_state": "declared",
         "adapter_provider": "Yahoo",
@@ -5677,7 +5695,7 @@
           "alert_eligible",
           "quality_reasons"
         ],
-        "snapshot_id": "aa2c4d7e3b061b5e"
+        "snapshot_id": "87b41002eb87405b"
       },
       {
         "symbol": "GC=F",
@@ -5710,7 +5728,7 @@
         "direction_sign": 1,
         "market_direction": "上漲",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-15T11:18:02.641400+00:00",
+        "fetched_at": "2026-08-15T12:09:32.383572+00:00",
         "published_at": "2026-08-14",
         "source_domain": "finance.yahoo.com",
         "stale_used": false,
@@ -5750,9 +5768,9 @@
           "crosscheck_missing",
           "adapter_policy_display_only"
         ],
-        "quality_checked_at": "2026-08-15T11:18:47.237153+00:00",
-        "observation_id": "22375a8243003a82",
-        "raw_payload_location": "finance.yahoo.com/2026-08-15/356966391fbd0aac8fbaff148299f061ed4971ecb824c6eae74361027ad18a72.json",
+        "quality_checked_at": "2026-08-15T12:10:12.277971+00:00",
+        "observation_id": "ece59b587bef63db",
+        "raw_payload_location": "finance.yahoo.com/2026-08-15/51ed173aa89c9a88a7d71f6f427f0d7a75742fa4eaae1e3974e52c42dea8ebf2.json",
         "crosscheck_reason": "secondary_source_unavailable",
         "adapter_contract_state": "declared",
         "adapter_provider": "Yahoo",
@@ -5785,7 +5803,7 @@
           "alert_eligible",
           "quality_reasons"
         ],
-        "snapshot_id": "aa2c4d7e3b061b5e"
+        "snapshot_id": "87b41002eb87405b"
       },
       {
         "symbol": "BTC-USD",
@@ -5793,12 +5811,12 @@
         "name": "比特幣",
         "market": "global",
         "currency": "USD",
-        "price": 63026.87,
+        "price": 63000.0,
         "previous_close": 62975.59,
-        "change": 51.28,
-        "change_percent": 0.08,
+        "change": 24.41,
+        "change_percent": 0.04,
         "quote_date": "2026-08-15",
-        "quote_time": "2026-08-15T11:18:33.143000+00:00",
+        "quote_time": "2026-08-15T12:10:01.048000+00:00",
         "quote_basis": "盤中",
         "quote_source": "Binance.US public spot quote",
         "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=BTCUSDT",
@@ -5809,7 +5827,7 @@
           "high": 64904.69,
           "long_low": 58558.86,
           "long_high": 66505.12,
-          "position_pct": 9.7,
+          "position_pct": 7.7,
           "zone": "接近20日支撐區",
           "as_of": "2026-08-15",
           "status": "ok"
@@ -5818,7 +5836,7 @@
         "direction_sign": 1,
         "market_direction": "上漲",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-15T11:18:02.777876+00:00",
+        "fetched_at": "2026-08-15T12:09:32.499962+00:00",
         "published_at": "2026-08-15",
         "source_domain": "api.binance.us",
         "stale_used": false,
@@ -5832,14 +5850,14 @@
             "label": "Binance",
             "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=BTCUSDT",
             "url": "https://api.binance.us/api/v3/ticker/24hr?symbol=BTCUSDT",
-            "quote_time": "2026-08-15T11:18:33.143000+00:00"
+            "quote_time": "2026-08-15T12:10:01.048000+00:00"
           },
           {
             "provider": "CoinGecko",
             "label": "CoinGecko",
             "source_url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin",
             "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin",
-            "quote_time": "2026-08-15T11:16:30+00:00"
+            "quote_time": "2026-08-15T12:08:20+00:00"
           }
         ],
         "expected_sources": [
@@ -5860,9 +5878,9 @@
         "quality_reasons": [
           "adapter_policy_display_only"
         ],
-        "quality_checked_at": "2026-08-15T11:18:47.238254+00:00",
-        "observation_id": "e3ad1426fba1d01b",
-        "raw_payload_location": "api.binance.us/2026-08-15/4dfc9e1c5f937934505297a0c0e8f3065d3c1b3ddf20b028b9ad8e3aa475dcc3.json",
+        "quality_checked_at": "2026-08-15T12:10:12.279365+00:00",
+        "observation_id": "c4d0d69dcedb71cd",
+        "raw_payload_location": "api.binance.us/2026-08-15/724d9951758222ea5b8afc10d6ec6282464c75220253a16e2bd5552dccc8d0a3.json",
         "adapter_contract_state": "declared",
         "adapter_provider": "Binance",
         "adapter_contract_version": 1,
@@ -5894,9 +5912,9 @@
           "alert_eligible",
           "quality_reasons"
         ],
-        "raw_change": -3.88,
-        "raw_change_percent": 0.184,
-        "snapshot_id": "aa2c4d7e3b061b5e"
+        "raw_change": -46.7,
+        "raw_change_percent": 0.308,
+        "snapshot_id": "87b41002eb87405b"
       },
       {
         "symbol": "ETH-USD",
@@ -5904,12 +5922,12 @@
         "name": "以太坊",
         "market": "global",
         "currency": "USD",
-        "price": 1881.12,
+        "price": 1878.72,
         "previous_close": 1880.65,
-        "change": 0.47,
-        "change_percent": 0.02,
+        "change": -1.93,
+        "change_percent": -0.1,
         "quote_date": "2026-08-15",
-        "quote_time": "2026-08-15T11:18:04.250000+00:00",
+        "quote_time": "2026-08-15T12:09:51.195000+00:00",
         "quote_basis": "盤中",
         "quote_source": "Binance.US public spot quote",
         "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=ETHUSDT",
@@ -5920,16 +5938,16 @@
           "high": 1919.95,
           "long_low": 1564.82,
           "long_high": 1953.41,
-          "position_pct": 46.3,
+          "position_pct": 44.1,
           "zone": "位於20日區間中段",
           "as_of": "2026-08-15",
           "status": "ok"
         },
         "change_consistency": "reconciled",
-        "direction_sign": 1,
-        "market_direction": "上漲",
+        "direction_sign": -1,
+        "market_direction": "下跌",
         "source_tier": "public-market",
-        "fetched_at": "2026-08-15T11:18:02.890886+00:00",
+        "fetched_at": "2026-08-15T12:09:32.597875+00:00",
         "published_at": "2026-08-15",
         "source_domain": "api.binance.us",
         "stale_used": false,
@@ -5943,14 +5961,14 @@
             "label": "Binance",
             "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=ETHUSDT",
             "url": "https://api.binance.us/api/v3/ticker/24hr?symbol=ETHUSDT",
-            "quote_time": "2026-08-15T11:18:04.250000+00:00"
+            "quote_time": "2026-08-15T12:09:51.195000+00:00"
           },
           {
             "provider": "CoinGecko",
             "label": "CoinGecko",
             "source_url": "https://api.coingecko.com/api/v3/simple/price?ids=ethereum",
             "url": "https://api.coingecko.com/api/v3/simple/price?ids=ethereum",
-            "quote_time": "2026-08-15T11:16:20+00:00"
+            "quote_time": "2026-08-15T12:08:30+00:00"
           }
         ],
         "expected_sources": [
@@ -5971,9 +5989,9 @@
         "quality_reasons": [
           "adapter_policy_display_only"
         ],
-        "quality_checked_at": "2026-08-15T11:18:47.239509+00:00",
-        "observation_id": "805a947830a4907b",
-        "raw_payload_location": "api.binance.us/2026-08-15/e8460b7b1f4ca3a6c664ffd0556863fc35f83e058b2ba5dd5d1350bd442f07fa.json",
+        "quality_checked_at": "2026-08-15T12:10:12.280895+00:00",
+        "observation_id": "6dc8b33a70038257",
+        "raw_payload_location": "api.binance.us/2026-08-15/0caf8962bb74e373b34ae4c870bc615ce8a2b4bf5a968113f78bbf896a576fe9.json",
         "adapter_contract_state": "declared",
         "adapter_provider": "Binance",
         "adapter_contract_version": 1,
@@ -6005,9 +6023,9 @@
           "alert_eligible",
           "quality_reasons"
         ],
-        "raw_change": -1.8,
-        "raw_change_percent": 0.179,
-        "snapshot_id": "aa2c4d7e3b061b5e"
+        "raw_change": -3.51,
+        "raw_change_percent": 0.142,
+        "snapshot_id": "87b41002eb87405b"
       }
     ],
     "market_topics": [
@@ -6045,7 +6063,7 @@
             "direction_sign": -1,
             "market_direction": "下跌",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-15T11:18:01.056689+00:00",
+            "fetched_at": "2026-08-15T12:09:31.421907+00:00",
             "published_at": "2026-08-14",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -6073,9 +6091,9 @@
               "crosscheck_missing",
               "adapter_policy_display_only"
             ],
-            "quality_checked_at": "2026-08-15T11:18:47.225239+00:00",
-            "observation_id": "316ad8ad8bf97084",
-            "raw_payload_location": "finance.yahoo.com/2026-08-15/d344c6518b76e93e691863b7c776dd0b65a44828b26ae6411f1c0c8a41f07e2e.json",
+            "quality_checked_at": "2026-08-15T12:10:12.260700+00:00",
+            "observation_id": "3ca5b28397041b5c",
+            "raw_payload_location": "finance.yahoo.com/2026-08-15/7c9897cd12ebffc0ec8d890a8b36c547b5764c55e7d53475e3d47f194731234c.json",
             "adapter_contract_state": "declared",
             "adapter_provider": "Yahoo",
             "adapter_contract_version": 1,
@@ -6107,7 +6125,7 @@
               "alert_eligible",
               "quality_reasons"
             ],
-            "snapshot_id": "aa2c4d7e3b061b5e"
+            "snapshot_id": "87b41002eb87405b"
           },
           {
             "ticker": "TXF",
@@ -6154,7 +6172,7 @@
             "direction_sign": -1,
             "market_direction": "下跌",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-15T11:18:00.179072+00:00",
+            "fetched_at": "2026-08-15T12:09:30.762823+00:00",
             "published_at": "2026-08-14",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -6181,9 +6199,9 @@
             "quality_reasons": [
               "crosscheck_missing"
             ],
-            "quality_checked_at": "2026-08-15T11:18:05.730849+00:00",
-            "observation_id": "ff9459c01aa9873e",
-            "raw_payload_location": "finance.yahoo.com/2026-08-15/ebd1f1a551e9ceb8281f5d29a13271a282a5b098888b842ca3d108b8131a79a7.json",
+            "quality_checked_at": "2026-08-15T12:09:34.965511+00:00",
+            "observation_id": "ac4b97cc71a8d414",
+            "raw_payload_location": "finance.yahoo.com/2026-08-15/65f2495aea5948ddea76cf9e6a4a827d18acb48d919b2b4b1c47b84f08d41109.json",
             "adapter_contract_state": "declared",
             "adapter_provider": "Yahoo",
             "adapter_contract_version": 1,
@@ -6215,7 +6233,7 @@
               "alert_eligible",
               "quality_reasons"
             ],
-            "snapshot_id": "aa2c4d7e3b061b5e"
+            "snapshot_id": "87b41002eb87405b"
           },
           {
             "symbol": "NVDA",
@@ -6248,7 +6266,7 @@
             "direction_sign": -1,
             "market_direction": "下跌",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-15T11:18:00.914840+00:00",
+            "fetched_at": "2026-08-15T12:09:31.329274+00:00",
             "published_at": "2026-08-14",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -6275,9 +6293,9 @@
             "quality_reasons": [
               "crosscheck_missing"
             ],
-            "quality_checked_at": "2026-08-15T11:18:05.735683+00:00",
-            "observation_id": "a84bbb4e03a15731",
-            "raw_payload_location": "finance.yahoo.com/2026-08-15/9993f033ffaa4346f4747bb354377a99e9b5601f6dab43094264a489f9479a5c.json",
+            "quality_checked_at": "2026-08-15T12:09:34.971022+00:00",
+            "observation_id": "5fec32cf93edbba4",
+            "raw_payload_location": "finance.yahoo.com/2026-08-15/bc5bbcff8234204817fffab43000aa6e09fcc6af8c125771a187d441741629cc.json",
             "adapter_contract_state": "declared",
             "adapter_provider": "Yahoo",
             "adapter_contract_version": 1,
@@ -6309,7 +6327,7 @@
               "alert_eligible",
               "quality_reasons"
             ],
-            "snapshot_id": "aa2c4d7e3b061b5e"
+            "snapshot_id": "87b41002eb87405b"
           }
         ]
       },
@@ -6347,7 +6365,7 @@
             "direction_sign": 1,
             "market_direction": "上漲",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-15T11:18:01.783764+00:00",
+            "fetched_at": "2026-08-15T12:09:32.041088+00:00",
             "published_at": "2026-08-14",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -6387,9 +6405,9 @@
               "crosscheck_missing",
               "adapter_policy_display_only"
             ],
-            "quality_checked_at": "2026-08-15T11:18:47.232370+00:00",
-            "observation_id": "51b218b144e6aa10",
-            "raw_payload_location": "finance.yahoo.com/2026-08-15/ba9bbe726bb49cd41d772bf3d46c2b3382b1b017359d684d6c2046bc87faf463.json",
+            "quality_checked_at": "2026-08-15T12:10:12.271015+00:00",
+            "observation_id": "b1d7d29ced9b5894",
+            "raw_payload_location": "finance.yahoo.com/2026-08-15/f441499bc7dd4bd30a571ed490ae932ceacbf1bf1d329275868b7689249d8544.json",
             "crosscheck_reason": "secondary_source_unavailable",
             "adapter_contract_state": "declared",
             "adapter_provider": "Yahoo",
@@ -6422,7 +6440,7 @@
               "alert_eligible",
               "quality_reasons"
             ],
-            "snapshot_id": "aa2c4d7e3b061b5e"
+            "snapshot_id": "87b41002eb87405b"
           },
           {
             "symbol": "^KS11",
@@ -6455,7 +6473,7 @@
             "direction_sign": 1,
             "market_direction": "上漲",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-15T11:18:01.902999+00:00",
+            "fetched_at": "2026-08-15T12:09:32.124045+00:00",
             "published_at": "2026-08-14",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -6495,9 +6513,9 @@
               "crosscheck_missing",
               "adapter_policy_display_only"
             ],
-            "quality_checked_at": "2026-08-15T11:18:47.233586+00:00",
-            "observation_id": "3953f4dd9f3418b8",
-            "raw_payload_location": "finance.yahoo.com/2026-08-15/1f94923580b3705802573226c27ddee904650dca028fcb4fa682cf041d5b9530.json",
+            "quality_checked_at": "2026-08-15T12:10:12.272353+00:00",
+            "observation_id": "d0b35f7cfb4392a2",
+            "raw_payload_location": "finance.yahoo.com/2026-08-15/39754e7e166bd26555a140e550e7c03e99bf4c682090ebd2f37a315d44c61359.json",
             "crosscheck_reason": "secondary_source_unavailable",
             "adapter_contract_state": "declared",
             "adapter_provider": "Yahoo",
@@ -6530,7 +6548,7 @@
               "alert_eligible",
               "quality_reasons"
             ],
-            "snapshot_id": "aa2c4d7e3b061b5e"
+            "snapshot_id": "87b41002eb87405b"
           }
         ]
       },
@@ -6568,7 +6586,7 @@
             "direction_sign": -1,
             "market_direction": "下跌",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-15T11:18:01.492516+00:00",
+            "fetched_at": "2026-08-15T12:09:31.747938+00:00",
             "published_at": "2026-08-14",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -6611,9 +6629,9 @@
               "crosscheck_missing",
               "adapter_policy_display_only"
             ],
-            "quality_checked_at": "2026-08-15T11:18:47.228625+00:00",
-            "observation_id": "0826dfc5aae6d3be",
-            "raw_payload_location": "finance.yahoo.com/2026-08-15/38b4c596d8c0542d959b81ec8ab39f478c26b99c244a31ba7d010e39ca55acc0.json",
+            "quality_checked_at": "2026-08-15T12:10:12.266632+00:00",
+            "observation_id": "9b96e045b78f3b48",
+            "raw_payload_location": "finance.yahoo.com/2026-08-15/f89b113555619f0b152ebf3a534dc5c32d17d49516f0cb120393727bb6ca21d8.json",
             "crosscheck_reason": "price_or_time_mismatch",
             "adapter_contract_state": "declared",
             "adapter_provider": "Yahoo",
@@ -6646,7 +6664,7 @@
               "alert_eligible",
               "quality_reasons"
             ],
-            "snapshot_id": "aa2c4d7e3b061b5e"
+            "snapshot_id": "87b41002eb87405b"
           },
           {
             "symbol": "^SOX",
@@ -6679,7 +6697,7 @@
             "direction_sign": -1,
             "market_direction": "下跌",
             "source_tier": "public-market",
-            "fetched_at": "2026-08-15T11:18:01.705849+00:00",
+            "fetched_at": "2026-08-15T12:09:31.956313+00:00",
             "published_at": "2026-08-14",
             "source_domain": "finance.yahoo.com",
             "stale_used": false,
@@ -6719,9 +6737,9 @@
               "crosscheck_missing",
               "adapter_policy_display_only"
             ],
-            "quality_checked_at": "2026-08-15T11:18:47.231180+00:00",
-            "observation_id": "0a980bd4d267b543",
-            "raw_payload_location": "finance.yahoo.com/2026-08-15/c33449e27cd967b780c4e50ee6f38261283cb502a5386a06e48978f46c55ae78.json",
+            "quality_checked_at": "2026-08-15T12:10:12.269678+00:00",
+            "observation_id": "67d66dae1cd3b7d1",
+            "raw_payload_location": "finance.yahoo.com/2026-08-15/6d8cc0e5c5c0e05f43584da3834ba0fd89b1bcec4acc842927bb486dd242b979.json",
             "crosscheck_reason": "price_or_time_mismatch",
             "adapter_contract_state": "declared",
             "adapter_provider": "Yahoo",
@@ -6754,344 +6772,19 @@
               "alert_eligible",
               "quality_reasons"
             ],
-            "snapshot_id": "aa2c4d7e3b061b5e"
+            "snapshot_id": "87b41002eb87405b"
           }
         ]
       }
     ],
-    "dynamic_markets": [
-      {
-        "symbol": "CL=F",
-        "ticker": "WTI",
-        "name": "WTI 原油",
-        "market": "global",
-        "currency": "USD",
-        "price": 82.4,
-        "previous_close": 81.25,
-        "change": 1.15,
-        "change_percent": 1.42,
-        "quote_date": "2026-08-14",
-        "quote_time": null,
-        "quote_basis": "日線收盤",
-        "quote_source": "Yahoo Finance public daily quote",
-        "source_url": "https://finance.yahoo.com/quote/CL=F",
-        "technical_context": {
-          "window_days": 20,
-          "long_window_days": 60,
-          "low": 75.22,
-          "high": 92.19,
-          "long_low": 68.55,
-          "long_high": 98.26,
-          "position_pct": 42.3,
-          "zone": "位於20日區間中段",
-          "as_of": "2026-08-14",
-          "status": "ok"
-        },
-        "change_consistency": "consistent",
-        "direction_sign": 1,
-        "market_direction": "上漲",
-        "source_tier": "public-market",
-        "fetched_at": "2026-08-15T11:18:02.474484+00:00",
-        "published_at": "2026-08-14",
-        "source_domain": "finance.yahoo.com",
-        "stale_used": false,
-        "source_label": "Yahoo",
-        "quote_basis_label": "最近收盤",
-        "cross_checked": false,
-        "crosscheck_status": "secondary_unavailable",
-        "crosscheck_sources": [
-          {
-            "provider": "Yahoo",
-            "label": "Yahoo",
-            "source_url": "https://finance.yahoo.com/quote/CL=F",
-            "url": "https://finance.yahoo.com/quote/CL=F",
-            "quote_time": "2026-08-14"
-          },
-          {
-            "provider": "EIA",
-            "label": "EIA",
-            "source_url": "",
-            "url": "",
-            "quote_time": ""
-          }
-        ],
-        "expected_sources": [
-          "Yahoo",
-          "EIA"
-        ],
-        "freshness": "recent_close",
-        "data_status": "最近收盤",
-        "alert_eligible": false,
-        "instrument_resolution": "unknown",
-        "instrument_master_id": "instrument-bea0b5cb7fac780a",
-        "instrument_master_version": 1,
-        "data_quality_score": 85.0,
-        "quality_freshness": "fresh",
-        "quality_reasons": [
-          "crosscheck_missing",
-          "adapter_policy_display_only"
-        ],
-        "quality_checked_at": "2026-08-15T11:18:47.235965+00:00",
-        "observation_id": "0ab4c60ab6b15d0922c88268b2c1ad1e",
-        "raw_payload_location": "finance.yahoo.com/2026-08-15/ccbb1ed8337e4845d450b142fb997c8ce50ea5084bc53332382fc904d8a910ce.json",
-        "crosscheck_reason": "secondary_source_unavailable",
-        "adapter_contract_state": "declared",
-        "adapter_provider": "Yahoo",
-        "adapter_contract_version": 1,
-        "adapter_alert_policy": "display_only",
-        "adapter_provenance_fields": [
-          "provider",
-          "source_tier",
-          "source_url",
-          "request_id",
-          "fetched_at",
-          "published_at",
-          "observation_id",
-          "payload_hash",
-          "parser_version",
-          "stale_used",
-          "freshness",
-          "data_quality_score",
-          "alert_eligible"
-        ],
-        "adapter_health_fields": [
-          "status",
-          "last_success_at",
-          "last_failure_at",
-          "consecutive_failures",
-          "error_class",
-          "freshness",
-          "data_quality_score",
-          "display_eligible",
-          "alert_eligible",
-          "quality_reasons"
-        ],
-        "topic": "事件相關"
-      },
-      {
-        "symbol": "BZ=F",
-        "ticker": "BRENT",
-        "name": "Brent 原油",
-        "market": "global",
-        "currency": "USD",
-        "price": 88.52,
-        "previous_close": 87.07,
-        "change": 1.45,
-        "change_percent": 1.67,
-        "quote_date": "2026-08-14",
-        "quote_time": null,
-        "quote_basis": "日線收盤",
-        "quote_source": "Yahoo Finance public daily quote",
-        "source_url": "https://finance.yahoo.com/quote/BZ=F",
-        "technical_context": {
-          "window_days": 20,
-          "long_window_days": 60,
-          "low": 79.36,
-          "high": 100.69,
-          "long_low": 71.57,
-          "long_high": 105.02,
-          "position_pct": 42.9,
-          "zone": "位於20日區間中段",
-          "as_of": "2026-08-14",
-          "status": "ok"
-        },
-        "change_consistency": "consistent",
-        "direction_sign": 1,
-        "market_direction": "上漲",
-        "source_tier": "public-market",
-        "fetched_at": "2026-08-15T11:18:02.399175+00:00",
-        "published_at": "2026-08-14",
-        "source_domain": "finance.yahoo.com",
-        "stale_used": false,
-        "source_label": "Yahoo",
-        "quote_basis_label": "最近收盤",
-        "cross_checked": false,
-        "crosscheck_status": "secondary_unavailable",
-        "crosscheck_sources": [
-          {
-            "provider": "Yahoo",
-            "label": "Yahoo",
-            "source_url": "https://finance.yahoo.com/quote/BZ=F",
-            "url": "https://finance.yahoo.com/quote/BZ=F",
-            "quote_time": "2026-08-14"
-          },
-          {
-            "provider": "public-market-secondary",
-            "label": "public-market-secondary",
-            "source_url": "",
-            "url": "",
-            "quote_time": ""
-          }
-        ],
-        "expected_sources": [
-          "Yahoo",
-          "public-market-secondary"
-        ],
-        "freshness": "recent_close",
-        "data_status": "最近收盤",
-        "alert_eligible": false,
-        "instrument_resolution": "unknown",
-        "instrument_master_id": "instrument-bea0b5cb7fac780a",
-        "instrument_master_version": 1,
-        "data_quality_score": 85.0,
-        "quality_freshness": "fresh",
-        "quality_reasons": [
-          "crosscheck_missing",
-          "adapter_policy_display_only"
-        ],
-        "quality_checked_at": "2026-08-15T11:18:47.234859+00:00",
-        "observation_id": "7c479f5eb992b6883c4865ddfd6d0e95",
-        "raw_payload_location": "finance.yahoo.com/2026-08-15/af9bfdb7e6661bf9f222a122b68e681667756cba134ebe46c5504e3f02d1c64c.json",
-        "crosscheck_reason": "secondary_source_unavailable",
-        "adapter_contract_state": "declared",
-        "adapter_provider": "Yahoo",
-        "adapter_contract_version": 1,
-        "adapter_alert_policy": "display_only",
-        "adapter_provenance_fields": [
-          "provider",
-          "source_tier",
-          "source_url",
-          "request_id",
-          "fetched_at",
-          "published_at",
-          "observation_id",
-          "payload_hash",
-          "parser_version",
-          "stale_used",
-          "freshness",
-          "data_quality_score",
-          "alert_eligible"
-        ],
-        "adapter_health_fields": [
-          "status",
-          "last_success_at",
-          "last_failure_at",
-          "consecutive_failures",
-          "error_class",
-          "freshness",
-          "data_quality_score",
-          "display_eligible",
-          "alert_eligible",
-          "quality_reasons"
-        ],
-        "topic": "事件相關"
-      },
-      {
-        "symbol": "GC=F",
-        "ticker": "GOLD",
-        "name": "黃金期貨",
-        "market": "global",
-        "currency": "USD",
-        "price": 4380.4,
-        "previous_close": 4363.6,
-        "change": 16.8,
-        "change_percent": 0.39,
-        "quote_date": "2026-08-14",
-        "quote_time": null,
-        "quote_basis": "日線收盤",
-        "quote_source": "Yahoo Finance public daily quote",
-        "source_url": "https://finance.yahoo.com/quote/GC=F",
-        "technical_context": {
-          "window_days": 20,
-          "long_window_days": 60,
-          "low": 4010.3,
-          "high": 4408.9,
-          "long_low": 3985.6,
-          "long_high": 4560.5,
-          "position_pct": 92.8,
-          "zone": "接近20日壓力區",
-          "as_of": "2026-08-14",
-          "status": "ok"
-        },
-        "change_consistency": "consistent",
-        "direction_sign": 1,
-        "market_direction": "上漲",
-        "source_tier": "public-market",
-        "fetched_at": "2026-08-15T11:18:02.641400+00:00",
-        "published_at": "2026-08-14",
-        "source_domain": "finance.yahoo.com",
-        "stale_used": false,
-        "source_label": "Yahoo",
-        "quote_basis_label": "最近收盤",
-        "cross_checked": false,
-        "crosscheck_status": "secondary_unavailable",
-        "crosscheck_sources": [
-          {
-            "provider": "Yahoo",
-            "label": "Yahoo",
-            "source_url": "https://finance.yahoo.com/quote/GC=F",
-            "url": "https://finance.yahoo.com/quote/GC=F",
-            "quote_time": "2026-08-14"
-          },
-          {
-            "provider": "public-market-secondary",
-            "label": "public-market-secondary",
-            "source_url": "",
-            "url": "",
-            "quote_time": ""
-          }
-        ],
-        "expected_sources": [
-          "Yahoo",
-          "public-market-secondary"
-        ],
-        "freshness": "recent_close",
-        "data_status": "最近收盤",
-        "alert_eligible": false,
-        "instrument_resolution": "unknown",
-        "instrument_master_id": "instrument-bea0b5cb7fac780a",
-        "instrument_master_version": 1,
-        "data_quality_score": 85.0,
-        "quality_freshness": "fresh",
-        "quality_reasons": [
-          "crosscheck_missing",
-          "adapter_policy_display_only"
-        ],
-        "quality_checked_at": "2026-08-15T11:18:47.237153+00:00",
-        "observation_id": "dc81661a70c004bbe61a1f0ddda3005c",
-        "raw_payload_location": "finance.yahoo.com/2026-08-15/356966391fbd0aac8fbaff148299f061ed4971ecb824c6eae74361027ad18a72.json",
-        "crosscheck_reason": "secondary_source_unavailable",
-        "adapter_contract_state": "declared",
-        "adapter_provider": "Yahoo",
-        "adapter_contract_version": 1,
-        "adapter_alert_policy": "display_only",
-        "adapter_provenance_fields": [
-          "provider",
-          "source_tier",
-          "source_url",
-          "request_id",
-          "fetched_at",
-          "published_at",
-          "observation_id",
-          "payload_hash",
-          "parser_version",
-          "stale_used",
-          "freshness",
-          "data_quality_score",
-          "alert_eligible"
-        ],
-        "adapter_health_fields": [
-          "status",
-          "last_success_at",
-          "last_failure_at",
-          "consecutive_failures",
-          "error_class",
-          "freshness",
-          "data_quality_score",
-          "display_eligible",
-          "alert_eligible",
-          "quality_reasons"
-        ],
-        "topic": "事件相關"
-      }
-    ],
+    "dynamic_markets": [],
     "observations": [
       {
         "title": "台股總經",
-        "event": "台指 45,811.01 點（-0.46%）；櫃買指數 400.95 點（-1.27%）。台股風險：資料暫時無法取得；VIX 30.22（-2.80%）。",
+        "event": "台指 45,811.01 點（-0.46%）；櫃買指數 400.95 點（-1.27%）。台股風險：恐慌 31.8；VIX 30.22（-2.80%）。",
         "importance": "加權指數代表大型權值股，櫃買指數較反映中小型股；同步代表盤面廣度較一致，分歧則要保留產業結構差異。",
         "market_impact": "加權指數與櫃買指數同為下跌，可作為同向價格確認。",
-        "watch": "技術觀察：加權指數近20日區間 39,933.30–46,021.48；近60日 39,933.30–47,741.51，目前接近20日壓力區（區間位置 96%），資料截至 2026-08-14。 櫃買指數近20日區間資料不足，暫不判定支撐／壓力位置。 後續核對台指期是否與現貨收斂、成交量是否放大。",
+        "watch": "技術觀察：加權指數近20日區間 39,933.30–46,021.48；近60日 39,933.30–47,741.51，目前接近20日壓力區（區間位置 96%），資料截至 2026-08-14。 櫃買指數近20日區間 378.44–453.50；近45日 378.44–453.50，目前接近20日支撐區（區間位置 0%），資料截至 2026-07-17。 後續核對台指期是否與現貨收斂、成交量是否放大。",
         "source_note": "資料來源：Yahoo | 2026-08-14；TPEx | 2026-08-14"
       },
       {
@@ -7120,25 +6813,25 @@
       },
       {
         "title": "加密市場",
-        "event": "BTC 63,026.87 USD（+0.08%）；ETH 1,881.12 USD（+0.02%）。",
+        "event": "BTC 63,000.00 USD（+0.04%）；ETH 1,878.72 USD（-0.10%）。",
         "importance": "BTC／ETH 是高波動風險偏好的補充觀察；需搭配 Nasdaq、美元與流動性資料，不把單一幣價變動當成股市方向。",
-        "market_impact": "BTC與ETH同為上漲，可作為同向價格確認。",
-        "watch": "技術觀察：BTC近20日區間 62,763.32–64,904.69；近60日 58,558.86–66,505.12，目前接近20日支撐區（區間位置 10%），資料截至 2026-08-15。 ETH近20日區間 1,843.42–1,919.95；近60日 1,564.82–1,953.41，目前位於20日區間中段（區間位置 46%），資料截至 2026-08-15。 後續核對兩者是否同步、波動是否放大，以及科技股是否同向。",
-        "source_note": "資料來源：Binance | 2026-08-15 11:18"
+        "market_impact": "BTC上漲、ETH下跌，呈現分歧，暫不推論跨市場因果。",
+        "watch": "技術觀察：BTC近20日區間 62,763.32–64,904.69；近60日 58,558.86–66,505.12，目前接近20日支撐區（區間位置 8%），資料截至 2026-08-15。 ETH近20日區間 1,843.42–1,919.95；近60日 1,564.82–1,953.41，目前位於20日區間中段（區間位置 44%），資料截至 2026-08-15。 後續核對兩者是否同步、波動是否放大，以及科技股是否同向。",
+        "source_note": "資料來源：Binance | 2026-08-15 12:10；Binance | 2026-08-15 12:09"
       },
       {
         "title": "風險提醒",
-        "event": "本次焦點：黑天鵝／地緣｜重要事件｜警戒。USGS M6.9 地震：7 km NNW of Pematangsiantar, Indonesia 美股風險：貪婪 65.0；VIX 14.25（-2.60%）。",
+        "event": "本次焦點：黑天鵝／重大災害｜重要事件｜警戒。GDACS 紅色earthquake災害警示 美股風險：貪婪 65.0；VIX 14.25（-2.60%）。",
         "importance": "重大災害可能改變區域供應、航運、能源或避險需求；實際影響須由官方資訊與公開市場資料共同確認。",
         "market_impact": "市場傳導：尚未出現足夠的相關公開價格確認；本輪連動觀察為 NASDAQ、SOX。",
         "watch": "後續觀察：官方災情與基建／航運資訊、能源與避險資產，以及主要股市是否持續同步波動。",
-        "source_note": "資料來源：earthquake.usgs.gov"
+        "source_note": "資料來源：gdacs.org"
       }
     ],
     "intelligence": {
       "market_impact_graph": {
         "graph_version": "p2-05.v1",
-        "event_key": "evt-4d11bc7664678a0dbbce2a02",
+        "event_key": "evt-d8b4aeb348948b65460f98ec",
         "paths": []
       },
       "external_event_risk": {
@@ -7157,6 +6850,12 @@
               "change_percent": -0.46,
               "freshness": "recent_close",
               "source_url": "https://finance.yahoo.com/quote/^TWII"
+            },
+            {
+              "ticker": "TPEx",
+              "change_percent": -1.27,
+              "freshness": "recent_close",
+              "source_url": "https://www.tpex.org.tw/openapi/v1/tpex_index"
             },
             {
               "ticker": "S&P 500",
@@ -7214,21 +6913,15 @@
             },
             {
               "ticker": "BTC",
-              "change_percent": 0.08,
+              "change_percent": 0.04,
               "freshness": "live",
               "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=BTCUSDT"
             },
             {
               "ticker": "ETH",
-              "change_percent": 0.02,
+              "change_percent": -0.1,
               "freshness": "live",
               "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=ETHUSDT"
-            },
-            {
-              "ticker": "TPEx",
-              "change_percent": -1.27,
-              "freshness": "recent_close",
-              "source_url": "https://www.tpex.org.tw/openapi/v1/tpex_index"
             },
             {
               "ticker": "006208",
@@ -7354,7 +7047,7 @@
               "direction_sign": -1,
               "market_direction": "下跌",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:01.056689+00:00",
+              "fetched_at": "2026-08-15T12:09:31.421907+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -7382,9 +7075,9 @@
                 "crosscheck_missing",
                 "adapter_policy_display_only"
               ],
-              "quality_checked_at": "2026-08-15T11:18:47.225239+00:00",
-              "observation_id": "316ad8ad8bf97084",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/d344c6518b76e93e691863b7c776dd0b65a44828b26ae6411f1c0c8a41f07e2e.json",
+              "quality_checked_at": "2026-08-15T12:10:12.260700+00:00",
+              "observation_id": "3ca5b28397041b5c",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/7c9897cd12ebffc0ec8d890a8b36c547b5764c55e7d53475e3d47f194731234c.json",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
               "adapter_contract_version": 1,
@@ -7416,7 +7109,102 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
+            },
+            {
+              "symbol": "^TWOII",
+              "ticker": "TPEx",
+              "name": "臺灣櫃買指數",
+              "market": "taiwan",
+              "currency": "點",
+              "price": 400.95,
+              "previous_close": 406.12,
+              "change": -5.17,
+              "change_percent": -1.27,
+              "quote_date": "2026-08-14",
+              "quote_time": null,
+              "quote_basis": "TPEx 官方最近收盤",
+              "quote_source": "TPEx OpenAPI official close",
+              "source_url": "https://www.tpex.org.tw/openapi/v1/tpex_index",
+              "technical_context": {
+                "window_days": 20,
+                "long_window_days": 45,
+                "low": 378.44,
+                "high": 453.5,
+                "long_low": 378.44,
+                "long_high": 453.5,
+                "position_pct": 0.0,
+                "zone": "接近20日支撐區",
+                "as_of": "2026-07-17",
+                "status": "ok"
+              },
+              "change_consistency": "consistent",
+              "direction_sign": -1,
+              "market_direction": "下跌",
+              "source_tier": "public-market",
+              "fetched_at": "2026-08-15T12:09:31.522818+00:00",
+              "published_at": "2026-07-17",
+              "source_domain": "tpex.org.tw",
+              "stale_used": false,
+              "source_label": "TPEx",
+              "quote_basis_label": "最近收盤",
+              "cross_checked": false,
+              "crosscheck_status": "未交叉核對",
+              "crosscheck_sources": [],
+              "expected_sources": [
+                "TPEx",
+                "TWSE MIS"
+              ],
+              "quote_delayed": false,
+              "freshness": "recent_close",
+              "data_status": "最近收盤",
+              "alert_eligible": false,
+              "instrument_id": "tpex:index",
+              "asset_type": "index",
+              "instrument_timezone": "Asia/Taipei",
+              "instrument_resolution": "resolved",
+              "instrument_master_id": "instrument-bea0b5cb7fac780a",
+              "instrument_master_version": 1,
+              "data_quality_score": 85.0,
+              "quality_freshness": "fresh",
+              "quality_reasons": [
+                "crosscheck_missing"
+              ],
+              "quality_checked_at": "2026-08-15T12:10:12.263605+00:00",
+              "observation_id": "5ac8fdf859c294d2",
+              "raw_payload_location": "tpex.org.tw/2026-08-15/e0bcc593c138f13598e5477f273096dd93f990c6fef544feb8f56593eb915ae5.json",
+              "adapter_contract_state": "declared",
+              "adapter_provider": "TPEx",
+              "adapter_contract_version": 1,
+              "adapter_alert_policy": "crosscheck_required",
+              "adapter_provenance_fields": [
+                "provider",
+                "source_tier",
+                "source_url",
+                "request_id",
+                "fetched_at",
+                "published_at",
+                "observation_id",
+                "payload_hash",
+                "parser_version",
+                "stale_used",
+                "freshness",
+                "data_quality_score",
+                "alert_eligible"
+              ],
+              "adapter_health_fields": [
+                "status",
+                "last_success_at",
+                "last_failure_at",
+                "consecutive_failures",
+                "error_class",
+                "freshness",
+                "data_quality_score",
+                "display_eligible",
+                "alert_eligible",
+                "quality_reasons"
+              ],
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "^GSPC",
@@ -7449,7 +7237,7 @@
               "direction_sign": -1,
               "market_direction": "下跌",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:01.362304+00:00",
+              "fetched_at": "2026-08-15T12:09:31.634259+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -7489,9 +7277,9 @@
                 "crosscheck_missing",
                 "adapter_policy_display_only"
               ],
-              "quality_checked_at": "2026-08-15T11:18:47.227392+00:00",
-              "observation_id": "694b4fc93fb64244",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/94857f0bcdcd8f0ccc84f802a4e848362c67ea2040be4b8ea2c55cbb2b7de381.json",
+              "quality_checked_at": "2026-08-15T12:10:12.265278+00:00",
+              "observation_id": "83556798a2dc477d",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/fd0743313189541b98fac213ed43b3a9f2174c0da294621a13f066325507d1bb.json",
               "crosscheck_reason": "secondary_source_unavailable",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
@@ -7524,7 +7312,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "^IXIC",
@@ -7557,7 +7345,7 @@
               "direction_sign": -1,
               "market_direction": "下跌",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:01.492516+00:00",
+              "fetched_at": "2026-08-15T12:09:31.747938+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -7600,9 +7388,9 @@
                 "crosscheck_missing",
                 "adapter_policy_display_only"
               ],
-              "quality_checked_at": "2026-08-15T11:18:47.228625+00:00",
-              "observation_id": "0826dfc5aae6d3be",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/38b4c596d8c0542d959b81ec8ab39f478c26b99c244a31ba7d010e39ca55acc0.json",
+              "quality_checked_at": "2026-08-15T12:10:12.266632+00:00",
+              "observation_id": "9b96e045b78f3b48",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/f89b113555619f0b152ebf3a534dc5c32d17d49516f0cb120393727bb6ca21d8.json",
               "crosscheck_reason": "price_or_time_mismatch",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
@@ -7635,7 +7423,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "^DJI",
@@ -7657,7 +7445,7 @@
                 "long_window_days": 60,
                 "low": 51594.14,
                 "high": 54349.12,
-                "long_low": 49363.88,
+                "long_low": 49918.78,
                 "long_high": 54349.12,
                 "position_pct": 77.6,
                 "zone": "接近20日壓力區",
@@ -7668,7 +7456,7 @@
               "direction_sign": -1,
               "market_direction": "下跌",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:01.623433+00:00",
+              "fetched_at": "2026-08-15T12:09:31.827896+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -7708,9 +7496,9 @@
                 "crosscheck_missing",
                 "adapter_policy_display_only"
               ],
-              "quality_checked_at": "2026-08-15T11:18:47.229854+00:00",
-              "observation_id": "0a7a7bc364918b45",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/9dc88caf929476fc2e201d3c25d2cef15e5e1899f669b3d6f84818a84d03dffb.json",
+              "quality_checked_at": "2026-08-15T12:10:12.268111+00:00",
+              "observation_id": "7e92b483a01c6144",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/c9fdd35f68963f1b538fb949c95901768c99f0525a7e23bfe1eb76b173cf23a3.json",
               "crosscheck_reason": "secondary_source_unavailable",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
@@ -7743,7 +7531,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "^SOX",
@@ -7776,7 +7564,7 @@
               "direction_sign": -1,
               "market_direction": "下跌",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:01.705849+00:00",
+              "fetched_at": "2026-08-15T12:09:31.956313+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -7816,9 +7604,9 @@
                 "crosscheck_missing",
                 "adapter_policy_display_only"
               ],
-              "quality_checked_at": "2026-08-15T11:18:47.231180+00:00",
-              "observation_id": "0a980bd4d267b543",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/c33449e27cd967b780c4e50ee6f38261283cb502a5386a06e48978f46c55ae78.json",
+              "quality_checked_at": "2026-08-15T12:10:12.269678+00:00",
+              "observation_id": "67d66dae1cd3b7d1",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/6d8cc0e5c5c0e05f43584da3834ba0fd89b1bcec4acc842927bb486dd242b979.json",
               "crosscheck_reason": "price_or_time_mismatch",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
@@ -7851,7 +7639,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "^N225",
@@ -7884,7 +7672,7 @@
               "direction_sign": 1,
               "market_direction": "上漲",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:01.783764+00:00",
+              "fetched_at": "2026-08-15T12:09:32.041088+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -7924,9 +7712,9 @@
                 "crosscheck_missing",
                 "adapter_policy_display_only"
               ],
-              "quality_checked_at": "2026-08-15T11:18:47.232370+00:00",
-              "observation_id": "51b218b144e6aa10",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/ba9bbe726bb49cd41d772bf3d46c2b3382b1b017359d684d6c2046bc87faf463.json",
+              "quality_checked_at": "2026-08-15T12:10:12.271015+00:00",
+              "observation_id": "b1d7d29ced9b5894",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/f441499bc7dd4bd30a571ed490ae932ceacbf1bf1d329275868b7689249d8544.json",
               "crosscheck_reason": "secondary_source_unavailable",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
@@ -7959,7 +7747,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "^KS11",
@@ -7992,7 +7780,7 @@
               "direction_sign": 1,
               "market_direction": "上漲",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:01.902999+00:00",
+              "fetched_at": "2026-08-15T12:09:32.124045+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -8032,9 +7820,9 @@
                 "crosscheck_missing",
                 "adapter_policy_display_only"
               ],
-              "quality_checked_at": "2026-08-15T11:18:47.233586+00:00",
-              "observation_id": "3953f4dd9f3418b8",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/1f94923580b3705802573226c27ddee904650dca028fcb4fa682cf041d5b9530.json",
+              "quality_checked_at": "2026-08-15T12:10:12.272353+00:00",
+              "observation_id": "d0b35f7cfb4392a2",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/39754e7e166bd26555a140e550e7c03e99bf4c682090ebd2f37a315d44c61359.json",
               "crosscheck_reason": "secondary_source_unavailable",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
@@ -8067,7 +7855,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "BZ=F",
@@ -8100,7 +7888,7 @@
               "direction_sign": 1,
               "market_direction": "上漲",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:02.399175+00:00",
+              "fetched_at": "2026-08-15T12:09:32.210120+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -8140,9 +7928,9 @@
                 "crosscheck_missing",
                 "adapter_policy_display_only"
               ],
-              "quality_checked_at": "2026-08-15T11:18:47.234859+00:00",
-              "observation_id": "a4b711c8cd86290b",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/af9bfdb7e6661bf9f222a122b68e681667756cba134ebe46c5504e3f02d1c64c.json",
+              "quality_checked_at": "2026-08-15T12:10:12.274433+00:00",
+              "observation_id": "3d2c56b98fa8e36e",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/31b029c9bb6392be044525d931788e43584aab81f87295f58fe0a156b467ffea.json",
               "crosscheck_reason": "secondary_source_unavailable",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
@@ -8175,7 +7963,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "CL=F",
@@ -8208,7 +7996,7 @@
               "direction_sign": 1,
               "market_direction": "上漲",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:02.474484+00:00",
+              "fetched_at": "2026-08-15T12:09:32.297127+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -8248,9 +8036,9 @@
                 "crosscheck_missing",
                 "adapter_policy_display_only"
               ],
-              "quality_checked_at": "2026-08-15T11:18:47.235965+00:00",
-              "observation_id": "84383b5eafbcfab7",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/ccbb1ed8337e4845d450b142fb997c8ce50ea5084bc53332382fc904d8a910ce.json",
+              "quality_checked_at": "2026-08-15T12:10:12.276262+00:00",
+              "observation_id": "1988056756c0c9bd",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/180a7c12aa1a6e9739c42d0367aa4096d0a16555fbc3317d6a03ace911aef851.json",
               "crosscheck_reason": "secondary_source_unavailable",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
@@ -8283,7 +8071,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "GC=F",
@@ -8316,7 +8104,7 @@
               "direction_sign": 1,
               "market_direction": "上漲",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:02.641400+00:00",
+              "fetched_at": "2026-08-15T12:09:32.383572+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -8356,9 +8144,9 @@
                 "crosscheck_missing",
                 "adapter_policy_display_only"
               ],
-              "quality_checked_at": "2026-08-15T11:18:47.237153+00:00",
-              "observation_id": "22375a8243003a82",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/356966391fbd0aac8fbaff148299f061ed4971ecb824c6eae74361027ad18a72.json",
+              "quality_checked_at": "2026-08-15T12:10:12.277971+00:00",
+              "observation_id": "ece59b587bef63db",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/51ed173aa89c9a88a7d71f6f427f0d7a75742fa4eaae1e3974e52c42dea8ebf2.json",
               "crosscheck_reason": "secondary_source_unavailable",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
@@ -8391,7 +8179,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "BTC-USD",
@@ -8399,12 +8187,12 @@
               "name": "比特幣",
               "market": "global",
               "currency": "USD",
-              "price": 63026.87,
+              "price": 63000.0,
               "previous_close": 62975.59,
-              "change": 51.28,
-              "change_percent": 0.08,
+              "change": 24.41,
+              "change_percent": 0.04,
               "quote_date": "2026-08-15",
-              "quote_time": "2026-08-15T11:18:33.143000+00:00",
+              "quote_time": "2026-08-15T12:10:01.048000+00:00",
               "quote_basis": "盤中",
               "quote_source": "Binance.US public spot quote",
               "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=BTCUSDT",
@@ -8415,7 +8203,7 @@
                 "high": 64904.69,
                 "long_low": 58558.86,
                 "long_high": 66505.12,
-                "position_pct": 9.7,
+                "position_pct": 7.7,
                 "zone": "接近20日支撐區",
                 "as_of": "2026-08-15",
                 "status": "ok"
@@ -8424,7 +8212,7 @@
               "direction_sign": 1,
               "market_direction": "上漲",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:02.777876+00:00",
+              "fetched_at": "2026-08-15T12:09:32.499962+00:00",
               "published_at": "2026-08-15",
               "source_domain": "api.binance.us",
               "stale_used": false,
@@ -8438,14 +8226,14 @@
                   "label": "Binance",
                   "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=BTCUSDT",
                   "url": "https://api.binance.us/api/v3/ticker/24hr?symbol=BTCUSDT",
-                  "quote_time": "2026-08-15T11:18:33.143000+00:00"
+                  "quote_time": "2026-08-15T12:10:01.048000+00:00"
                 },
                 {
                   "provider": "CoinGecko",
                   "label": "CoinGecko",
                   "source_url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin",
                   "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin",
-                  "quote_time": "2026-08-15T11:16:30+00:00"
+                  "quote_time": "2026-08-15T12:08:20+00:00"
                 }
               ],
               "expected_sources": [
@@ -8466,9 +8254,9 @@
               "quality_reasons": [
                 "adapter_policy_display_only"
               ],
-              "quality_checked_at": "2026-08-15T11:18:47.238254+00:00",
-              "observation_id": "e3ad1426fba1d01b",
-              "raw_payload_location": "api.binance.us/2026-08-15/4dfc9e1c5f937934505297a0c0e8f3065d3c1b3ddf20b028b9ad8e3aa475dcc3.json",
+              "quality_checked_at": "2026-08-15T12:10:12.279365+00:00",
+              "observation_id": "c4d0d69dcedb71cd",
+              "raw_payload_location": "api.binance.us/2026-08-15/724d9951758222ea5b8afc10d6ec6282464c75220253a16e2bd5552dccc8d0a3.json",
               "adapter_contract_state": "declared",
               "adapter_provider": "Binance",
               "adapter_contract_version": 1,
@@ -8500,9 +8288,9 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "raw_change": -3.88,
-              "raw_change_percent": 0.184,
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "raw_change": -46.7,
+              "raw_change_percent": 0.308,
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "ETH-USD",
@@ -8510,12 +8298,12 @@
               "name": "以太坊",
               "market": "global",
               "currency": "USD",
-              "price": 1881.12,
+              "price": 1878.72,
               "previous_close": 1880.65,
-              "change": 0.47,
-              "change_percent": 0.02,
+              "change": -1.93,
+              "change_percent": -0.1,
               "quote_date": "2026-08-15",
-              "quote_time": "2026-08-15T11:18:04.250000+00:00",
+              "quote_time": "2026-08-15T12:09:51.195000+00:00",
               "quote_basis": "盤中",
               "quote_source": "Binance.US public spot quote",
               "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=ETHUSDT",
@@ -8526,16 +8314,16 @@
                 "high": 1919.95,
                 "long_low": 1564.82,
                 "long_high": 1953.41,
-                "position_pct": 46.3,
+                "position_pct": 44.1,
                 "zone": "位於20日區間中段",
                 "as_of": "2026-08-15",
                 "status": "ok"
               },
               "change_consistency": "reconciled",
-              "direction_sign": 1,
-              "market_direction": "上漲",
+              "direction_sign": -1,
+              "market_direction": "下跌",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:02.890886+00:00",
+              "fetched_at": "2026-08-15T12:09:32.597875+00:00",
               "published_at": "2026-08-15",
               "source_domain": "api.binance.us",
               "stale_used": false,
@@ -8549,14 +8337,14 @@
                   "label": "Binance",
                   "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=ETHUSDT",
                   "url": "https://api.binance.us/api/v3/ticker/24hr?symbol=ETHUSDT",
-                  "quote_time": "2026-08-15T11:18:04.250000+00:00"
+                  "quote_time": "2026-08-15T12:09:51.195000+00:00"
                 },
                 {
                   "provider": "CoinGecko",
                   "label": "CoinGecko",
                   "source_url": "https://api.coingecko.com/api/v3/simple/price?ids=ethereum",
                   "url": "https://api.coingecko.com/api/v3/simple/price?ids=ethereum",
-                  "quote_time": "2026-08-15T11:16:20+00:00"
+                  "quote_time": "2026-08-15T12:08:30+00:00"
                 }
               ],
               "expected_sources": [
@@ -8577,9 +8365,9 @@
               "quality_reasons": [
                 "adapter_policy_display_only"
               ],
-              "quality_checked_at": "2026-08-15T11:18:47.239509+00:00",
-              "observation_id": "805a947830a4907b",
-              "raw_payload_location": "api.binance.us/2026-08-15/e8460b7b1f4ca3a6c664ffd0556863fc35f83e058b2ba5dd5d1350bd442f07fa.json",
+              "quality_checked_at": "2026-08-15T12:10:12.280895+00:00",
+              "observation_id": "6dc8b33a70038257",
+              "raw_payload_location": "api.binance.us/2026-08-15/0caf8962bb74e373b34ae4c870bc615ce8a2b4bf5a968113f78bbf896a576fe9.json",
               "adapter_contract_state": "declared",
               "adapter_provider": "Binance",
               "adapter_contract_version": 1,
@@ -8611,92 +8399,9 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "raw_change": -1.8,
-              "raw_change_percent": 0.179,
-              "snapshot_id": "aa2c4d7e3b061b5e"
-            },
-            {
-              "symbol": "^TWOII",
-              "ticker": "TPEx",
-              "name": "臺灣櫃買指數",
-              "market": "taiwan",
-              "currency": "點",
-              "price": 400.95,
-              "previous_close": 406.12,
-              "change": -5.17,
-              "change_percent": -1.27,
-              "quote_date": "2026-08-14",
-              "quote_time": null,
-              "quote_source": "TPEx OpenAPI official close",
-              "source_label": "TPEx",
-              "source_url": "https://www.tpex.org.tw/openapi/v1/tpex_index",
-              "quote_basis": "TPEx 官方最近收盤",
-              "quote_delayed": false,
-              "freshness": "recent_close",
-              "data_status": "最近收盤",
-              "alert_eligible": false,
-              "change_consistency": "consistent",
-              "direction_sign": -1,
-              "market_direction": "下跌",
-              "source_tier": "official",
-              "fetched_at": "2026-08-15T11:18:05.752615+00:00",
-              "published_at": "2026-08-14",
-              "source_domain": "tpex.org.tw",
-              "stale_used": false,
-              "quote_basis_label": "最近收盤",
-              "cross_checked": false,
-              "crosscheck_status": "未交叉核對",
-              "crosscheck_sources": [],
-              "expected_sources": [
-                "TPEx",
-                "TWSE MIS"
-              ],
-              "instrument_id": "tpex:index",
-              "asset_type": "index",
-              "instrument_timezone": "Asia/Taipei",
-              "instrument_resolution": "resolved",
-              "instrument_master_id": "instrument-bea0b5cb7fac780a",
-              "instrument_master_version": 1,
-              "data_quality_score": 85.0,
-              "quality_freshness": "fresh",
-              "quality_reasons": [
-                "crosscheck_missing"
-              ],
-              "quality_checked_at": "2026-08-15T11:18:47.240690+00:00",
-              "observation_id": "d620d7abd74ed274",
-              "raw_payload_location": "tpex.org.tw/2026-08-15/9b0a674acb704a5cf74318ea84fa6210351ea57939ebd37e65c3a354582fbaea.json",
-              "adapter_contract_state": "declared",
-              "adapter_provider": "TPEx",
-              "adapter_contract_version": 1,
-              "adapter_alert_policy": "crosscheck_required",
-              "adapter_provenance_fields": [
-                "provider",
-                "source_tier",
-                "source_url",
-                "request_id",
-                "fetched_at",
-                "published_at",
-                "observation_id",
-                "payload_hash",
-                "parser_version",
-                "stale_used",
-                "freshness",
-                "data_quality_score",
-                "alert_eligible"
-              ],
-              "adapter_health_fields": [
-                "status",
-                "last_success_at",
-                "last_failure_at",
-                "consecutive_failures",
-                "error_class",
-                "freshness",
-                "data_quality_score",
-                "display_eligible",
-                "alert_eligible",
-                "quality_reasons"
-              ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "raw_change": -3.51,
+              "raw_change_percent": 0.142,
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "006208.TW",
@@ -8729,7 +8434,7 @@
               "direction_sign": 1,
               "market_direction": "上漲",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:17:59.922138+00:00",
+              "fetched_at": "2026-08-15T12:09:30.527323+00:00",
               "published_at": "2026-08-13",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -8754,9 +8459,9 @@
                 "crosscheck_missing",
                 "quote_stale_or_missing"
               ],
-              "quality_checked_at": "2026-08-15T11:18:05.728269+00:00",
-              "observation_id": "9a25c537548cad84",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/b014dbba6946f326d8e87357737abbeff7a1f5d40332b36b75af9f89e46f17d0.json",
+              "quality_checked_at": "2026-08-15T12:09:34.962635+00:00",
+              "observation_id": "762f3b663881de05",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/36caa3e1549d30cf8bb66daadd089ba8715fe72958d68c6e83fa555df943b164.json",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
               "adapter_contract_version": 1,
@@ -8788,7 +8493,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "00685L.TW",
@@ -8821,7 +8526,7 @@
               "direction_sign": 1,
               "market_direction": "上漲",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:00.023070+00:00",
+              "fetched_at": "2026-08-15T12:09:30.611758+00:00",
               "published_at": "2026-08-13",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -8846,9 +8551,9 @@
                 "crosscheck_missing",
                 "quote_stale_or_missing"
               ],
-              "quality_checked_at": "2026-08-15T11:18:05.729607+00:00",
-              "observation_id": "0f6bbe44627f5529",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/faea4fa9d6ddb88dbf744ba66794890794c8534e10b18aac25dfae2345494f14.json",
+              "quality_checked_at": "2026-08-15T12:09:34.964107+00:00",
+              "observation_id": "7cc7bf7a9bc5661f",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/b6f6e2e57b9a8e6b9cee1a132b04198d6db874d0ddd0921b2340d4a72a46ff28.json",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
               "adapter_contract_version": 1,
@@ -8880,7 +8585,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "2330.TW",
@@ -8913,7 +8618,7 @@
               "direction_sign": -1,
               "market_direction": "下跌",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:00.179072+00:00",
+              "fetched_at": "2026-08-15T12:09:30.762823+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -8940,9 +8645,9 @@
               "quality_reasons": [
                 "crosscheck_missing"
               ],
-              "quality_checked_at": "2026-08-15T11:18:05.730849+00:00",
-              "observation_id": "ff9459c01aa9873e",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/ebd1f1a551e9ceb8281f5d29a13271a282a5b098888b842ca3d108b8131a79a7.json",
+              "quality_checked_at": "2026-08-15T12:09:34.965511+00:00",
+              "observation_id": "ac4b97cc71a8d414",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/65f2495aea5948ddea76cf9e6a4a827d18acb48d919b2b4b1c47b84f08d41109.json",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
               "adapter_contract_version": 1,
@@ -8974,7 +8679,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "QQQM",
@@ -9007,7 +8712,7 @@
               "direction_sign": -1,
               "market_direction": "下跌",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:00.329880+00:00",
+              "fetched_at": "2026-08-15T12:09:30.863805+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -9031,9 +8736,9 @@
               "quality_reasons": [
                 "crosscheck_missing"
               ],
-              "quality_checked_at": "2026-08-15T11:18:05.732151+00:00",
-              "observation_id": "992308deb47e669c",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/e10874e1877a3bda2c85f7a08bd4d479f92481571a14633cde16105d744869d8.json",
+              "quality_checked_at": "2026-08-15T12:09:34.967060+00:00",
+              "observation_id": "a3395a7237bb3de9",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/d21c8ebac81ac816de9bc9aff4b4fbbfb059b3362493a2082e47f3c7808a8a58.json",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
               "adapter_contract_version": 1,
@@ -9065,7 +8770,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "QLD",
@@ -9098,7 +8803,7 @@
               "direction_sign": -1,
               "market_direction": "下跌",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:00.471009+00:00",
+              "fetched_at": "2026-08-15T12:09:31.041768+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -9122,9 +8827,9 @@
               "quality_reasons": [
                 "crosscheck_missing"
               ],
-              "quality_checked_at": "2026-08-15T11:18:05.733400+00:00",
-              "observation_id": "13b403daf2999d1d",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/904ec73bf6ae594aaff6350b942b3d153eab7ec507dfa6d370f393c02014b0a0.json",
+              "quality_checked_at": "2026-08-15T12:09:34.968305+00:00",
+              "observation_id": "bcaed706f12e213e",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/0504aa9293167795b2dac25583adf301e78d4d114d63598e6e3efd6185294b60.json",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
               "adapter_contract_version": 1,
@@ -9156,7 +8861,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "TSM",
@@ -9189,7 +8894,7 @@
               "direction_sign": -1,
               "market_direction": "下跌",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:00.638935+00:00",
+              "fetched_at": "2026-08-15T12:09:31.194560+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -9216,9 +8921,9 @@
               "quality_reasons": [
                 "crosscheck_missing"
               ],
-              "quality_checked_at": "2026-08-15T11:18:05.734538+00:00",
-              "observation_id": "338e9a1a67889955",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/e666d1aee875f5694809f4dcd5dbff531aa00a8f05c7fec9e31c667b0a06b04a.json",
+              "quality_checked_at": "2026-08-15T12:09:34.969677+00:00",
+              "observation_id": "423e03363f564bdd",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/73f9ecd56077f3b1c6ecda6152e86e44f449b0d25d568ae1e26ed25102f70ce1.json",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
               "adapter_contract_version": 1,
@@ -9250,7 +8955,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "NVDA",
@@ -9283,7 +8988,7 @@
               "direction_sign": -1,
               "market_direction": "下跌",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:00.914840+00:00",
+              "fetched_at": "2026-08-15T12:09:31.329274+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -9310,9 +9015,9 @@
               "quality_reasons": [
                 "crosscheck_missing"
               ],
-              "quality_checked_at": "2026-08-15T11:18:05.735683+00:00",
-              "observation_id": "a84bbb4e03a15731",
-              "raw_payload_location": "finance.yahoo.com/2026-08-15/9993f033ffaa4346f4747bb354377a99e9b5601f6dab43094264a489f9479a5c.json",
+              "quality_checked_at": "2026-08-15T12:09:34.971022+00:00",
+              "observation_id": "5fec32cf93edbba4",
+              "raw_payload_location": "finance.yahoo.com/2026-08-15/bc5bbcff8234204817fffab43000aa6e09fcc6af8c125771a187d441741629cc.json",
               "adapter_contract_state": "declared",
               "adapter_provider": "Yahoo",
               "adapter_contract_version": 1,
@@ -9344,7 +9049,7 @@
                 "alert_eligible",
                 "quality_reasons"
               ],
-              "snapshot_id": "aa2c4d7e3b061b5e"
+              "snapshot_id": "87b41002eb87405b"
             },
             {
               "symbol": "DX-Y.NYB",
@@ -9377,7 +9082,7 @@
               "direction_sign": -1,
               "market_direction": "下跌",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:05.833445+00:00",
+              "fetched_at": "2026-08-15T12:09:35.087727+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -9422,8 +9127,8 @@
                 "quality_reasons"
               ],
               "alert_eligible": false,
-              "snapshot_id": "aa2c4d7e3b061b5e",
-              "observation_id": "10b68f115a4e21ce"
+              "snapshot_id": "87b41002eb87405b",
+              "observation_id": "166ac1b86b41a32d"
             },
             {
               "symbol": "^TNX",
@@ -9441,14 +9146,14 @@
               "quote_source": "Yahoo Finance public daily quote",
               "source_url": "https://finance.yahoo.com/quote/^TNX",
               "technical_context": {
-                "window_days": 16,
-                "long_window_days": 16,
+                "window_days": 20,
+                "long_window_days": 60,
                 "low": 4.6,
-                "high": 4.7,
-                "long_low": 4.6,
-                "long_high": 4.7,
-                "position_pct": 92.9,
-                "zone": "接近20日壓力區",
+                "high": 4.74,
+                "long_low": 4.37,
+                "long_high": 4.74,
+                "position_pct": 66.7,
+                "zone": "位於20日區間中段",
                 "as_of": "2026-08-14",
                 "status": "ok"
               },
@@ -9458,7 +9163,7 @@
               "direction_sign": 1,
               "market_direction": "上漲",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:05.964959+00:00",
+              "fetched_at": "2026-08-15T12:09:35.177210+00:00",
               "published_at": "2026-08-14",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -9503,8 +9208,8 @@
                 "quality_reasons"
               ],
               "alert_eligible": false,
-              "snapshot_id": "aa2c4d7e3b061b5e",
-              "observation_id": "a6d623df9407dea4"
+              "snapshot_id": "87b41002eb87405b",
+              "observation_id": "20e285616db16f6e"
             },
             {
               "symbol": "TWD=X",
@@ -9537,7 +9242,7 @@
               "direction_sign": -1,
               "market_direction": "下跌",
               "source_tier": "public-market",
-              "fetched_at": "2026-08-15T11:18:06.051866+00:00",
+              "fetched_at": "2026-08-15T12:09:35.305289+00:00",
               "published_at": "2026-08-15",
               "source_domain": "finance.yahoo.com",
               "stale_used": false,
@@ -9582,8 +9287,8 @@
                 "quality_reasons"
               ],
               "alert_eligible": false,
-              "snapshot_id": "aa2c4d7e3b061b5e",
-              "observation_id": "8140f6fb989fa8ed"
+              "snapshot_id": "87b41002eb87405b",
+              "observation_id": "17bf85f5d2b201a9"
             }
           ],
           "alternative_scenario": "證據改變時，結論需重新評估。",
@@ -9594,7 +9299,7 @@
       },
       "market_regime": {
         "regime": "Stress",
-        "score": -1.544,
+        "score": -1.584,
         "factor_contributions": {
           "trend": 0.196,
           "breadth": -0.4,
@@ -9603,7 +9308,7 @@
           "usd": 0.29,
           "gold": -0.195,
           "oil": -0.71,
-          "crypto": 0.025
+          "crypto": -0.015
         },
         "missing_factors": [
           "credit"
@@ -9809,7 +9514,7 @@
           "review_required": true,
           "policy_update_allowed": false,
           "pii_included": false,
-          "event_key": "evt-4d11bc7664678a0dbbce2a02",
+          "event_key": "evt-d8b4aeb348948b65460f98ec",
           "event_type": "disaster"
         }
       ],
@@ -10118,30 +9823,30 @@
       "partial_sources": 0,
       "warming_sources": 0,
       "empty_sources": 0,
-      "age_minutes": 2977.0,
-      "checked_at": "2026-08-15T19:18:47.607538+08:00",
+      "age_minutes": 3028.4,
+      "checked_at": "2026-08-15T20:10:12.622130+08:00",
       "max_age_minutes": 1800,
       "is_expired": true
     },
     "availability": "expired"
   },
   "source_health": {
-    "checked_at": "2026-08-15T19:18:47.607769+08:00",
+    "checked_at": "2026-08-15T20:10:12.622322+08:00",
     "status": "critical",
-    "summary": "7 個來源有資料缺口",
+    "summary": "6 個來源有資料缺口",
     "investor_status": "核心資料不足",
     "observability": {
       "observations": 11,
-      "success_rate": 36.36,
-      "failure_count": 5,
+      "success_rate": 45.45,
+      "failure_count": 4,
       "configuration_missing_count": 2,
       "no_event_count": 0,
       "stale_count": 0,
-      "degraded_count": 5,
+      "degraded_count": 4,
       "crosscheck_rate": 0.0,
       "parser_error_count": 0,
       "state": "partial",
-      "runtime_failure_count": 5
+      "runtime_failure_count": 4
     },
     "event_scan": {
       "status": "event_detected",
@@ -10156,7 +9861,7 @@
         "status": "partial",
         "state": "failed",
         "role": "required_for_core",
-        "checked_at": "2026-08-15T19:18:47.607769+08:00",
+        "checked_at": "2026-08-15T20:10:12.622322+08:00",
         "issues": [
           "006208 報價已逾三日，已標示為過期資料",
           "00685L 報價已逾三日，已標示為過期資料"
@@ -10185,7 +9890,7 @@
         "status": "healthy",
         "state": "no_event",
         "role": "required_for_core",
-        "checked_at": "2026-08-15T11:18:11.856970+00:00",
+        "checked_at": "2026-08-15T12:09:40.651357+00:00",
         "issues": [],
         "semantic_state": "no_event",
         "source_details": [
@@ -10195,7 +9900,7 @@
             "source_tier": "official",
             "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10206,7 +9911,7 @@
             "source_tier": "official",
             "source_url": "https://www.bls.gov/feed/empsit.rss",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10217,7 +9922,7 @@
             "source_tier": "official",
             "source_url": "https://www.bls.gov/feed/cpi.rss",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10228,7 +9933,7 @@
             "source_tier": "official",
             "source_url": "https://www.bls.gov/feed/ppi.rss",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10239,7 +9944,7 @@
             "source_tier": "official",
             "source_url": "https://www.eia.gov/rss/press_rss.xml",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10250,7 +9955,7 @@
             "source_tier": "official",
             "source_url": "https://apps.bea.gov/rss/rss.xml",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10261,7 +9966,7 @@
             "source_tier": "official",
             "source_url": "https://www.taifex.com.tw/cht/11/pressRelease",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10272,7 +9977,7 @@
             "source_tier": "official",
             "source_url": "https://www.cbc.gov.tw/tw/lp-302-1-391-20.html",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10283,7 +9988,7 @@
             "source_tier": "official",
             "source_url": "https://www.fsc.gov.tw/ch/home.jsp?id=640&parentpath=0,7,478,638",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10294,7 +9999,7 @@
             "source_tier": "official",
             "source_url": "https://www.stat.gov.tw/",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10305,7 +10010,7 @@
             "source_tier": "official",
             "source_url": "https://mnscdn.moea.gov.tw/Mns/dos/bulletin/BulletinQuery.aspx?menu_id=13034",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10316,7 +10021,7 @@
             "source_tier": "official",
             "source_url": "https://www.ecb.europa.eu/rss/press.html",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10327,7 +10032,7 @@
             "source_tier": "official",
             "source_url": "https://www.whitehouse.gov/news/",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10338,7 +10043,7 @@
             "source_tier": "official",
             "source_url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10349,7 +10054,7 @@
             "source_tier": "official",
             "source_url": "https://www.who.int/rss-feeds/news-english.xml",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10360,7 +10065,7 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10371,7 +10076,7 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10382,7 +10087,7 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10393,9 +10098,9 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
-            "item_count": 0,
-            "latest_published_at": null,
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
+            "item_count": 1,
+            "latest_published_at": "2026-08-15T11:14:59+00:00",
             "data_gap": null
           },
           {
@@ -10404,7 +10109,7 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -10415,13 +10120,13 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:11.856970+00:00",
-            "item_count": 1,
-            "latest_published_at": "2026-08-15T10:54:52.753000+00:00",
+            "checked_at": "2026-08-15T12:09:40.651357+00:00",
+            "item_count": 0,
+            "latest_published_at": null,
             "data_gap": null
           }
         ],
-        "last_success_at": "2026-08-15T11:18:11.856970+00:00",
+        "last_success_at": "2026-08-15T12:09:40.651357+00:00",
         "item_count": 1,
         "source_urls": [
           "https://apps.bea.gov/rss/rss.xml",
@@ -10449,7 +10154,7 @@
         "status": "healthy",
         "state": "no_event",
         "role": "required_for_alert",
-        "checked_at": "2026-08-15T11:18:07.835766+00:00",
+        "checked_at": "2026-08-15T12:09:36.991876+00:00",
         "issues": [],
         "semantic_state": "no_event",
         "source_details": [
@@ -10459,7 +10164,7 @@
             "source_tier": "discovery",
             "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:07.835766+00:00",
+            "checked_at": "2026-08-15T12:09:36.991876+00:00",
             "item_count": 5,
             "data_gap": null,
             "fallback_used": true
@@ -10470,7 +10175,7 @@
             "source_tier": "official",
             "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
             "status": "no_event",
-            "checked_at": "2026-08-15T11:18:07.835766+00:00",
+            "checked_at": "2026-08-15T12:09:36.991876+00:00",
             "item_count": 0,
             "data_gap": null
           },
@@ -10480,7 +10185,7 @@
             "source_tier": "official",
             "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
             "status": "no_event",
-            "checked_at": "2026-08-15T11:18:07.835766+00:00",
+            "checked_at": "2026-08-15T12:09:36.991876+00:00",
             "item_count": 0,
             "data_gap": null
           },
@@ -10490,7 +10195,7 @@
             "source_tier": "discovery",
             "source_url": "https://news.cnyes.com/news/cat/us_stock",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:07.835766+00:00",
+            "checked_at": "2026-08-15T12:09:36.991876+00:00",
             "item_count": 5,
             "data_gap": null
           },
@@ -10500,7 +10205,7 @@
             "source_tier": "official",
             "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
             "status": "healthy",
-            "checked_at": "2026-08-15T11:18:07.835766+00:00",
+            "checked_at": "2026-08-15T12:09:36.991876+00:00",
             "item_count": 10,
             "data_gap": null
           },
@@ -10510,7 +10215,7 @@
             "source_tier": "official",
             "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
             "status": "failed",
-            "checked_at": "2026-08-15T11:18:07.835766+00:00",
+            "checked_at": "2026-08-15T12:09:36.991876+00:00",
             "item_count": 0,
             "data_gap": "failed"
           },
@@ -10520,12 +10225,12 @@
             "source_tier": "official",
             "source_url": null,
             "status": "disabled",
-            "checked_at": "2026-08-15T11:18:07.835766+00:00",
+            "checked_at": "2026-08-15T12:09:36.991876+00:00",
             "item_count": 0,
             "data_gap": null
           }
         ],
-        "last_success_at": "2026-08-15T11:18:07.835766+00:00",
+        "last_success_at": "2026-08-15T12:09:36.991876+00:00",
         "item_count": 20,
         "source_urls": [
           "https://mops.twse.com.tw/mops/api/t05st02",
@@ -10544,7 +10249,7 @@
             "source_tier": "official",
             "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
             "status": "failed",
-            "checked_at": "2026-08-15T11:18:07.835766+00:00",
+            "checked_at": "2026-08-15T12:09:36.991876+00:00",
             "item_count": 0,
             "data_gap": "failed"
           },
@@ -10554,7 +10259,7 @@
             "source_tier": "official",
             "source_url": null,
             "status": "disabled",
-            "checked_at": "2026-08-15T11:18:07.835766+00:00",
+            "checked_at": "2026-08-15T12:09:36.991876+00:00",
             "item_count": 0,
             "data_gap": null
           }
@@ -10563,14 +10268,12 @@
       {
         "key": "risk",
         "label": "情緒／波動",
-        "status": "partial",
-        "state": "failed",
+        "status": "healthy",
+        "state": "no_event",
         "role": "required_for_alert",
-        "checked_at": "2026-08-15T19:18:47.607769+08:00",
-        "issues": [
-          "台股 Macro FGI 資料暫時無法取得"
-        ],
-        "semantic_state": "failed"
+        "checked_at": "2026-08-15T20:10:12.622322+08:00",
+        "issues": [],
+        "semantic_state": "no_event"
       },
       {
         "key": "kofia_margin",
@@ -10581,7 +10284,7 @@
         "state": "optional_degraded",
         "role": "optional",
         "provider_status": "partial",
-        "checked_at": "2026-08-15T11:18:32.208065+00:00",
+        "checked_at": "2026-08-15T12:10:00.262378+00:00",
         "semantic_state": "partial"
       },
       {
@@ -10593,11 +10296,11 @@
         "state": "healthy",
         "role": "optional",
         "provider_status": "healthy",
-        "checked_at": "2026-08-15T11:18:33.605188+00:00",
+        "checked_at": "2026-08-15T12:10:01.742796+00:00",
         "item_count": 4,
         "data_gap": null,
         "semantic_state": "healthy",
-        "last_success_at": "2026-08-15T11:18:33.605188+00:00"
+        "last_success_at": "2026-08-15T12:10:01.742796+00:00"
       },
       {
         "key": "crypto_spot",
@@ -10606,7 +10309,7 @@
         "source_tier": "public-market",
         "source_url": "https://api.coingecko.com/api/v3/simple/price",
         "status": "healthy",
-        "checked_at": "2026-08-15T11:18:34.571857+00:00",
+        "checked_at": "2026-08-15T12:10:02.360910+00:00",
         "item_count": 4,
         "data_gap": null,
         "error_details": null,
@@ -10614,7 +10317,7 @@
         "state": "healthy",
         "semantic_state": "healthy",
         "role": "optional",
-        "last_success_at": "2026-08-15T11:18:34.571857+00:00"
+        "last_success_at": "2026-08-15T12:10:02.360910+00:00"
       },
       {
         "key": "public_market_secondary",
@@ -10623,7 +10326,7 @@
         "source_url": "https://stooq.com/q/l/",
         "status": "partial",
         "provider_status": "partial",
-        "checked_at": "2026-08-15T11:18:35.202510+00:00",
+        "checked_at": "2026-08-15T12:10:02.780563+00:00",
         "item_count": 2,
         "data_gap": [
           "S&P 500:http_4xx",
@@ -10699,7 +10402,7 @@
         "state": "configuration_required",
         "role": "optional",
         "provider_status": "missing_api_key",
-        "checked_at": "2026-08-15T11:18:46.455627+00:00",
+        "checked_at": "2026-08-15T12:10:11.422900+00:00",
         "item_count": 0,
         "data_gap": "FRED_API_KEY 未設定",
         "semantic_state": "configuration_missing"
@@ -10713,7 +10416,7 @@
         "state": "configuration_required",
         "role": "optional",
         "provider_status": "missing_api_key",
-        "checked_at": "2026-08-15T11:18:46.455675+00:00",
+        "checked_at": "2026-08-15T12:10:11.422931+00:00",
         "item_count": 0,
         "data_gap": "EIA_API_KEY 未設定",
         "semantic_state": "configuration_missing"
@@ -10723,7 +10426,7 @@
         "label": "量化研究",
         "status": "partial",
         "semantic_state": "stale",
-        "checked_at": "2026-08-15T19:18:47.607769+08:00",
+        "checked_at": "2026-08-15T20:10:12.622322+08:00",
         "issues": [
           "研究資料已逾時，候選清單已隱藏"
         ]
@@ -10736,13 +10439,6 @@
         "issues": [
           "006208 報價已逾三日，已標示為過期資料",
           "00685L 報價已逾三日，已標示為過期資料"
-        ]
-      },
-      {
-        "source": "情緒／波動",
-        "key": "risk",
-        "issues": [
-          "台股 Macro FGI 資料暫時無法取得"
         ]
       },
       {
@@ -10773,12 +10469,11 @@
         ]
       }
     ],
-    "missing_source_count": 7,
-    "runtime_failure_count": 5,
+    "missing_source_count": 6,
+    "runtime_failure_count": 4,
     "configuration_missing_count": 2,
     "gap_source_keys": [
       "market_quotes",
-      "risk",
       "kofia_margin",
       "public_market_secondary",
       "fred",
@@ -10789,9 +10484,9 @@
       "configuration_required": 2,
       "critical_gap": 1,
       "degraded_with_fallback": 1,
-      "failed": 2,
+      "failed": 1,
       "healthy": 2,
-      "no_event": 2,
+      "no_event": 3,
       "optional_degraded": 1,
       "pending_confirmation": 0,
       "warming": 0
@@ -11397,7 +11092,7 @@
     "state": "unavailable",
     "schema_version": 1,
     "observation_count": 33,
-    "latest_fetched_at": "2026-08-15T11:18:05.752615+00:00",
+    "latest_fetched_at": "2026-08-15T12:09:32.597875+00:00",
     "error": null,
     "recorded": false,
     "reason": "snapshot_id_missing"
@@ -11412,21 +11107,16 @@
       "ticker": "00685L",
       "message": "00685L 報價已逾三日，已標示為過期資料",
       "scope": ""
-    },
-    {
-      "ticker": "台股風險指標",
-      "message": "台股 Macro FGI 資料暫時無法取得",
-      "scope": "risk"
     }
   ],
   "snapshot_schema_version": "3.0",
-  "snapshot_id": "aa2c4d7e3b061b5e",
-  "snapshot_published_at": "2026-08-15T11:18:47.645049+00:00",
+  "snapshot_id": "87b41002eb87405b",
+  "snapshot_published_at": "2026-08-15T12:10:12.658465+00:00",
   "raw_observation": {
     "enabled": true,
     "required": true,
     "recorded": true,
     "state": "recorded",
-    "observation_id": "83e42aae27a70fedcbadc12f070b2d0e"
+    "observation_id": "82831511bf25e6cf24286b18cb395113"
   }
 }
