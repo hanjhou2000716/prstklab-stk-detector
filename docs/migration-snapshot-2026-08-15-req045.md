@@ -89,3 +89,14 @@ separate from live acceptance. PR #624 may be reviewed/merged by the user only
 after the stacked dependency order is confirmed. Live Railway, Pages, Mini App,
 Telegram, and Gmail checks remain `NEEDS_REVERIFY`; no production result is
 inferred from these local and CI passes.
+
+## Migration gate rerun after overlap matrix checkpoint
+
+- Atomic audit commit: `57b76b9` (`docs: reconcile canonical intelligence ownership`).
+- Canonical Creator/FJ/news/release/Telegram overlap suite: **253 passed**.
+- Full repository regression: **1246 passed, 1 skipped**.
+- `ruff check src tests`: **PASS**; `mypy src`: **PASS**; compile check: **PASS**.
+- Runtime audit remains `ok=true` with only the previously documented source,
+  research-building and production-artifact warnings.
+- Delivery smoke remains intentionally fail-closed (`TELEGRAM_CHAT_IDS` is
+  empty), so no real recipient was contacted.

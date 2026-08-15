@@ -69,3 +69,15 @@ current PR stack is reviewed/merged, run the external gates in this order:
 
 Until those checks are captured, the overall migration remains `INCOMPLETE`
 with no open code regression but with external completion debt.
+
+## Current evidence
+
+- Targeted canonical-overlap suite: **253 passed**.
+- Full repository regression: **1246 passed, 1 skipped**.
+- `ruff check src tests`: **PASS**.
+- `mypy src`: **PASS**.
+- Python compile check: **PASS**.
+- Runtime audit: `ok=true`; warnings are limited to known market/research/
+  production-artifact availability gaps.
+- Delivery smoke: **fail-closed** because this local environment has no
+  `TELEGRAM_CHAT_IDS`; no production notification was attempted.
