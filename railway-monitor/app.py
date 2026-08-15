@@ -354,13 +354,24 @@ _RUNTIME_ACTIVE_BLACK_SWAN_CONTEXT_TERMS = (
     "invasion", "attack", "strike", "escalation", "major disaster",
 )
 _USING_STANDALONE_CLASSIFIER = False
+_CLASSIFIER_MODE = "unavailable"
 
 try:
     from src.event_classifier import classify_event_fields, has_active_black_swan_context
+    _CLASSIFIER_MODE = "repository-shared"
 except ModuleNotFoundError as error:
     if error.name not in {"src", "src.event_classifier"}:
         raise
-    _USING_STANDALONE_CLASSIFIER = True
+    try:
+        # The root-only Railway image receives this generated copy from the
+        # canonical ``src`` module.  It is kept in sync by CI and uses the
+        # bundled canonical keyword database beside app.py.
+        from shared_event_classifier import classify_event_fields, has_active_black_swan_context
+        _CLASSIFIER_MODE = "repository-shared"
+    except ModuleNotFoundError as bundle_error:
+        if bundle_error.name != "shared_event_classifier":
+            raise
+        _USING_STANDALONE_CLASSIFIER = True
 
     def _runtime_haystack(record: Any) -> str:
         values: list[str] = []
@@ -2566,7 +2577,7 @@ def validate_runtime_layout() -> None:
         probe_category = probe.get("category") if isinstance(probe, dict) else None
         if not probe_category:
             raise RuntimeError("classifier_probe_no_category")
-        mode = "standalone-bundled" if _USING_STANDALONE_CLASSIFIER else "repository-shared"
+        mode = "standalone-bundled" if _USING_STANDALONE_CLASSIFIER else _CLASSIFIER_MODE
         update_health(
             "runtime",
             status="healthy",

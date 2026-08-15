@@ -249,3 +249,13 @@ fallback. `tests/test_railway_monitor.py` compares the parsed bundle structure
 with the canonical payload. Dispatch remains fail-closed when the shared classifier is
 not packaged, and live Railway `classifier_mode=repository-shared` evidence is
 still required before production acceptance.
+
+### Repository-shared classifier packaging (REQ-ADD-044)
+
+The standalone image now includes a generated copy of the canonical event
+classifier. `scripts/sync_railway_shared_classifier.py` is the only producer;
+CI fails when the tracked bundle differs from `src/event_classifier.py`.
+Root-only import isolation therefore exercises the same multilingual policy
+and keyword bundle as the repository pipeline. This is local/CI evidence only;
+the Railway `/health` mode and a controlled delivery receipt remain external
+`NEEDS_REVERIFY` gates.

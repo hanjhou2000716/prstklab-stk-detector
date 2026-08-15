@@ -53,6 +53,16 @@ GitHub 端會再次驗證簽章、去重、更新 Mini App，再送出 Telegram 
 - 只轉發 Fed、宏觀數據、政策／關稅、戰爭衝突、半導體巨頭、極端市場事件，以及具地緣／供應／大幅變動背景的能源快訊。例行油價評論不轉發；所有內容維持公開市場教育與風險提醒，不構成投資建議。
 ## Phase 3 GDELT discovery settings
 
+## Classifier packaging gate
+
+Keep the Railway service Root Directory set to `railway-monitor`. The directory
+contains `shared_event_classifier.py`, a generated copy of the canonical
+`src/event_classifier.py`; CI runs
+`python scripts/sync_railway_shared_classifier.py --check` to block drift.
+After each deploy, inspect `/health` and require
+`runtime.classifier_mode=repository-shared`. `standalone-bundled` or
+`unavailable` is diagnostic-only and must remain fail-closed for dispatch.
+
 The Railway monitor polls the public GDELT DOC endpoint every 15 minutes by default. A successful response is cached for 15 minutes. During a temporary failure or rate limit, the latest successful cache may be used for up to 120 minutes and is labelled with its original fetch time. Only discovery articles from the last 45 minutes are considered.
 
 Optional Railway variables:
