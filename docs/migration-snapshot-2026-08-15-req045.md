@@ -122,6 +122,16 @@ inferred from these local and CI passes.
 
 These observations update the external debt ledger; they do not close it.
 
+## Current PR review gate evidence (2026-08-15)
+
+Read-only GitHub verification after the latest push confirms PRs #620--#624
+are all open, non-draft, mergeable (`CLEAN`), and have an empty
+`reviewDecision` (no reviewer decision is currently required). Each PR has
+passing CodeQL, dependency-review, SBOM, and `test-and-dry-run` checks. The
+checks were re-read from GitHub rather than inferred from local test results.
+No PR was merged by the agent; the user must merge the sequence in
+`docs/merge-order.md` with **Create a merge commit**.
+
 The post-evidence PR checks are also green: quality/dry-run run
 `31859330412`, security run `31859330400`, and separate CodeQL check
 `94949854964`.
