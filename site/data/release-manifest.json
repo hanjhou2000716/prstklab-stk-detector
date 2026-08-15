@@ -1,54 +1,205 @@
 {
-  "release_id": "release-957714e850293f39",
-  "created_at": "2026-08-13T13:02:29.418420+00:00",
-  "market_snapshot_id": "c7466b534b3d117e",
+  "release_id": "release-8faf8f2a2c7ef221",
+  "created_at": "2026-08-15T07:39:25.932950+00:00",
+  "market_snapshot_id": "b7146dc5d7d94a6f",
   "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
   "event_snapshot_id": "event-f67c25c9f5e6f24d",
   "backtest_release": null,
   "backtest_publication_state": "unavailable",
-  "strategy_registry": [],
+  "strategy_registry": [
+    {
+      "provider_id": "twse",
+      "display_name": "TWSE",
+      "authority_tier": "official",
+      "markets": [
+        "taiwan"
+      ],
+      "domains": [
+        "twse.com.tw"
+      ],
+      "content_types": [
+        "market_news",
+        "company_notice"
+      ],
+      "fetch_method": "json",
+      "feed_url": "https://openapi.twse.com.tw/v1/news/newsList",
+      "feed_kind": "json",
+      "timeout_seconds": 8,
+      "cache_ttl_seconds": 300,
+      "enabled": true,
+      "failure_isolation": true
+    },
+    {
+      "provider_id": "mops",
+      "display_name": "MOPS",
+      "authority_tier": "official",
+      "markets": [
+        "taiwan"
+      ],
+      "domains": [
+        "mops.twse.com.tw"
+      ],
+      "content_types": [
+        "company_notice"
+      ],
+      "fetch_method": "json",
+      "feed_url": "https://mops.twse.com.tw/mops/api/t05st02",
+      "feed_kind": "json",
+      "timeout_seconds": 8,
+      "cache_ttl_seconds": 300,
+      "enabled": true,
+      "failure_isolation": true
+    },
+    {
+      "provider_id": "sec",
+      "display_name": "SEC EDGAR",
+      "authority_tier": "official",
+      "markets": [
+        "us"
+      ],
+      "domains": [
+        "sec.gov"
+      ],
+      "content_types": [
+        "company_filing",
+        "market_news"
+      ],
+      "fetch_method": "atom",
+      "feed_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
+      "feed_kind": "rss",
+      "timeout_seconds": 8,
+      "cache_ttl_seconds": 300,
+      "enabled": true,
+      "failure_isolation": true
+    },
+    {
+      "provider_id": "fed",
+      "display_name": "Federal Reserve",
+      "authority_tier": "official",
+      "markets": [
+        "us"
+      ],
+      "domains": [
+        "federalreserve.gov"
+      ],
+      "content_types": [
+        "macro_event",
+        "market_news"
+      ],
+      "fetch_method": "rss",
+      "feed_url": "https://www.federalreserve.gov/feeds/press_all.xml",
+      "feed_kind": "rss",
+      "timeout_seconds": 8,
+      "cache_ttl_seconds": 300,
+      "enabled": true,
+      "failure_isolation": true
+    },
+    {
+      "provider_id": "nasdaq",
+      "display_name": "Nasdaq",
+      "authority_tier": "market",
+      "markets": [
+        "us"
+      ],
+      "domains": [
+        "nasdaq.com"
+      ],
+      "content_types": [
+        "market_news"
+      ],
+      "fetch_method": "configured_endpoint",
+      "feed_url": "",
+      "feed_kind": "rss",
+      "timeout_seconds": 8,
+      "cache_ttl_seconds": 300,
+      "enabled": false,
+      "disabled_reason": "no stable documented public feed endpoint",
+      "failure_isolation": true
+    },
+    {
+      "provider_id": "anue",
+      "display_name": "Anue",
+      "authority_tier": "market",
+      "markets": [
+        "taiwan",
+        "us"
+      ],
+      "domains": [
+        "cnyes.com"
+      ],
+      "content_types": [
+        "market_news"
+      ],
+      "fetch_method": "html",
+      "timeout_seconds": 15,
+      "cache_ttl_seconds": 300,
+      "enabled": true,
+      "failure_isolation": true
+    },
+    {
+      "provider_id": "google_news",
+      "display_name": "Google News",
+      "authority_tier": "discovery",
+      "markets": [
+        "taiwan",
+        "us"
+      ],
+      "domains": [
+        "news.google.com"
+      ],
+      "content_types": [
+        "discovery"
+      ],
+      "fetch_method": "rss",
+      "timeout_seconds": 15,
+      "cache_ttl_seconds": 900,
+      "enabled": true,
+      "failure_isolation": true
+    }
+  ],
   "policy_version": "2026.08",
   "schema_versions": {
     "market": "3.0",
     "research": "2.0",
     "events": "1",
-    "creator_insights": "1.0"
+    "news": "1.0",
+    "creator_insights": null
   },
   "artifact_hashes": {
-    "market.json": "2ca3a08e572e742f93389a7ebb4adefbcdc67540955c854e418c47e76cc19b5a",
+    "market.json": "1f68da1945d13460c615eae0144caf0e0de968e3283a68fd8374b6fa38fa1566",
     "research-report.json": "1961992e8cee354fd6c6760acde8b6ab3d9e013cd26645439a9c48d2e5b3f15f",
     "event-ledger.json": "5f133e7e7b2bb9f489589b00c571b98390c8b547a672d3931290b444b6e30c40",
-    "source-health.json": "0b9fed258b52607071e2ea8f8ac5c5b356c1d7c15c6560192bf0447a444037cf",
-    "creator-release.json": "eea21825ac504f02e17ab26c9b96f66f14ff060ced92b83ccf4c5008465713e2",
-    "creator-insights.json": "ff308b271837c77a8805024e5eed6a0bd12a0b37e99483af557faa325066e95f"
+    "source-health.json": "05c66637eb8a3f5f801964d26bb6fd470b288e2e913697e6519d428f9c9dabb5",
+    "news.json": "92e6a51cadb0a84d1588c9943fd25031b9e9081d645624e2e59f5bb5a8af97d3"
   },
   "artifact_paths": {
     "market.json": "data/market.json",
     "research-report.json": "data/research-report.json",
     "event-ledger.json": "data/event-ledger.json",
     "source-health.json": "data/source-health.json",
-    "creator-release.json": "data/creator-release.json",
-    "creator-insights.json": "data/creator-insights.json"
+    "news.json": "data/news.json"
   },
   "normalization_notes": [
-    "market: indices[1].technical_context_stale=true",
-    "market: quotes[3].technical_context_stale=true",
-    "market: quotes[4].technical_context_stale=true",
-    "market: quotes[5].technical_context_stale=true",
-    "market: quotes[6].technical_context_stale=true"
+    "market: indices[1].technical_context_stale=true"
   ],
-  "research_freshness": "fresh",
+  "research_freshness": "stale_fallback",
   "research_fallback_used": false,
   "research_fallback_reason": null,
-  "creator_release_id": "creator-86a5ed7f74464baa",
-  "creator_status": "ready",
+  "creator_release_id": null,
+  "creator_status": "not_available",
   "creator_validation_errors": [],
-  "creator_artifact_hash": "a23c046fe530112031028d48089bd0da32e92ef72fa2cffe6a019f2c1811446e",
-  "creator_input_hash": "7207f7913baa01c1fc7fa6ed7bcd04679546a62b30801d3098aeb528253613b1",
-  "creator_public_status": "ready",
+  "creator_artifact_hash": null,
+  "creator_input_hash": null,
+  "creator_public_status": "not_available",
   "creator_public_validation_errors": [],
-  "creator_snapshot_id": "creator-86a5ed7f74464baa",
-  "creator_public_artifact_hash": "ff308b271837c77a8805024e5eed6a0bd12a0b37e99483af557faa325066e95f",
+  "creator_snapshot_id": null,
+  "creator_public_artifact_hash": null,
+  "news_snapshot_id": "news-e8cda581928bd421",
+  "news_status": "ready",
+  "external_observation_count": null,
+  "external_observation_ids_hash": null,
+  "external_observation_sources": [],
+  "external_observation_status": "not_available",
   "status": "ready",
   "validation_errors": []
 }
