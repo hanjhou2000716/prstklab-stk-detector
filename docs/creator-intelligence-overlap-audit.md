@@ -222,3 +222,15 @@ The adapter validates the registry `parser` field before parsing. An unknown
 or future parser version returns `unsupported_parser` rather than silently
 using the v2 template, keeping parser configuration and runtime behavior
 aligned without weakening the DLQ boundary.
+
+### Canonical news feed adapter contract (follow-up)
+
+`src/news_feed_adapters.py` now derives its official feed catalog from the
+canonical `src.news_intelligence.PROVIDER_REGISTRY`. Endpoint URL, parser kind,
+market, authority tier, timeout and disabled-source reason therefore have one
+owner. Discovery sources such as Google News and Anue cannot enter the
+official-evidence fetch path merely because they appear in the public provider
+registry. Adapter tests verify the registry projection and preserve
+per-provider failure isolation, rate-limit classification and no-event versus
+failed semantics. This is local/CI evidence; live source freshness remains an
+external acceptance gate.
