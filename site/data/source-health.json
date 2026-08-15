@@ -1,25 +1,25 @@
 {
   "schema_version": "1.0",
-  "snapshot_id": "b7146dc5d7d94a6f-health",
-  "market_snapshot_id": "b7146dc5d7d94a6f",
-  "generated_at": "2026-08-15T15:39:25.704502+08:00",
+  "snapshot_id": "0ac2b923d31f0b5a-health",
+  "market_snapshot_id": "0ac2b923d31f0b5a",
+  "generated_at": "2026-08-15T16:50:47.047443+08:00",
   "source_health": {
-    "checked_at": "2026-08-15T15:39:25.704502+08:00",
+    "checked_at": "2026-08-15T16:50:47.047443+08:00",
     "status": "critical",
-    "summary": "8 個來源有資料缺口",
+    "summary": "6 個來源有資料缺口",
     "investor_status": "核心資料不足",
     "observability": {
       "observations": 11,
-      "success_rate": 27.27,
-      "failure_count": 6,
+      "success_rate": 45.45,
+      "failure_count": 4,
       "configuration_missing_count": 2,
       "no_event_count": 0,
       "stale_count": 0,
-      "degraded_count": 6,
+      "degraded_count": 4,
       "crosscheck_rate": 0.0,
       "parser_error_count": 0,
       "state": "partial",
-      "runtime_failure_count": 6
+      "runtime_failure_count": 4
     },
     "event_scan": {
       "status": "event_detected",
@@ -34,7 +34,7 @@
         "status": "partial",
         "state": "failed",
         "role": "required_for_core",
-        "checked_at": "2026-08-15T15:39:25.704502+08:00",
+        "checked_at": "2026-08-15T16:50:47.047443+08:00",
         "issues": [
           "006208 報價已逾三日，已標示為過期資料",
           "00685L 報價已逾三日，已標示為過期資料"
@@ -60,14 +60,12 @@
       {
         "key": "official_events",
         "label": "官方重大事件",
-        "status": "partial",
-        "state": "failed",
+        "status": "healthy",
+        "state": "no_event",
         "role": "required_for_core",
-        "checked_at": "2026-08-15T07:38:54.214203+00:00",
-        "issues": [
-          "TAIFEX official source temporarily unavailable"
-        ],
-        "semantic_state": "failed",
+        "checked_at": "2026-08-15T08:50:14.608692+00:00",
+        "issues": [],
+        "semantic_state": "no_event",
         "source_details": [
           {
             "key": "fed",
@@ -75,7 +73,7 @@
             "source_tier": "official",
             "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -86,7 +84,7 @@
             "source_tier": "official",
             "source_url": "https://www.bls.gov/feed/empsit.rss",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -97,7 +95,7 @@
             "source_tier": "official",
             "source_url": "https://www.bls.gov/feed/cpi.rss",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -108,7 +106,7 @@
             "source_tier": "official",
             "source_url": "https://www.bls.gov/feed/ppi.rss",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -119,7 +117,7 @@
             "source_tier": "official",
             "source_url": "https://www.eia.gov/rss/press_rss.xml",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -130,7 +128,7 @@
             "source_tier": "official",
             "source_url": "https://apps.bea.gov/rss/rss.xml",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -140,11 +138,11 @@
             "label": "臺灣期貨交易所公告",
             "source_tier": "official",
             "source_url": "https://www.taifex.com.tw/cht/11/pressRelease",
-            "status": "failed",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "status": "healthy",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
-            "data_gap": "RuntimeError"
+            "data_gap": null
           },
           {
             "key": "cbc",
@@ -152,7 +150,7 @@
             "source_tier": "official",
             "source_url": "https://www.cbc.gov.tw/tw/lp-302-1-391-20.html",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -163,7 +161,7 @@
             "source_tier": "official",
             "source_url": "https://www.fsc.gov.tw/ch/home.jsp?id=640&parentpath=0,7,478,638",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -174,7 +172,7 @@
             "source_tier": "official",
             "source_url": "https://www.stat.gov.tw/",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -185,7 +183,7 @@
             "source_tier": "official",
             "source_url": "https://mnscdn.moea.gov.tw/Mns/dos/bulletin/BulletinQuery.aspx?menu_id=13034",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -196,7 +194,7 @@
             "source_tier": "official",
             "source_url": "https://www.ecb.europa.eu/rss/press.html",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -207,7 +205,7 @@
             "source_tier": "official",
             "source_url": "https://www.whitehouse.gov/news/",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -218,7 +216,7 @@
             "source_tier": "official",
             "source_url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -229,7 +227,7 @@
             "source_tier": "official",
             "source_url": "https://www.who.int/rss-feeds/news-english.xml",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -240,7 +238,7 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -251,7 +249,7 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -262,7 +260,7 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -273,9 +271,9 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
-            "item_count": 1,
-            "latest_published_at": "2026-08-15T06:36:53+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
+            "item_count": 0,
+            "latest_published_at": null,
             "data_gap": null
           },
           {
@@ -284,7 +282,7 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
@@ -295,14 +293,14 @@
             "source_tier": "official",
             "source_url": "",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
+            "checked_at": "2026-08-15T08:50:14.608692+00:00",
             "item_count": 0,
             "latest_published_at": null,
             "data_gap": null
           }
         ],
-        "last_success_at": "2026-08-15T07:38:54.214203+00:00",
-        "item_count": 1,
+        "last_success_at": "2026-08-15T08:50:14.608692+00:00",
+        "item_count": 0,
         "source_urls": [
           "https://apps.bea.gov/rss/rss.xml",
           "https://mnscdn.moea.gov.tw/Mns/dos/bulletin/BulletinQuery.aspx?menu_id=13034",
@@ -321,19 +319,7 @@
           "https://www.who.int/rss-feeds/news-english.xml"
         ],
         "source_url": "https://apps.bea.gov/rss/rss.xml",
-        "data_gaps": [
-          {
-            "key": "taifex",
-            "label": "臺灣期貨交易所公告",
-            "source_tier": "official",
-            "source_url": "https://www.taifex.com.tw/cht/11/pressRelease",
-            "status": "failed",
-            "checked_at": "2026-08-15T07:38:54.214203+00:00",
-            "item_count": 0,
-            "latest_published_at": null,
-            "data_gap": "RuntimeError"
-          }
-        ]
+        "data_gaps": []
       },
       {
         "key": "market_news",
@@ -341,7 +327,7 @@
         "status": "healthy",
         "state": "no_event",
         "role": "required_for_alert",
-        "checked_at": "2026-08-15T07:38:50.646767+00:00",
+        "checked_at": "2026-08-15T08:50:11.117977+00:00",
         "issues": [],
         "semantic_state": "no_event",
         "source_details": [
@@ -351,7 +337,7 @@
             "source_tier": "discovery",
             "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:50.646767+00:00",
+            "checked_at": "2026-08-15T08:50:11.117977+00:00",
             "item_count": 5,
             "data_gap": null,
             "fallback_used": true
@@ -362,7 +348,7 @@
             "source_tier": "official",
             "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
             "status": "no_event",
-            "checked_at": "2026-08-15T07:38:50.646767+00:00",
+            "checked_at": "2026-08-15T08:50:11.117977+00:00",
             "item_count": 0,
             "data_gap": null
           },
@@ -372,7 +358,7 @@
             "source_tier": "official",
             "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
             "status": "no_event",
-            "checked_at": "2026-08-15T07:38:50.646767+00:00",
+            "checked_at": "2026-08-15T08:50:11.117977+00:00",
             "item_count": 0,
             "data_gap": null
           },
@@ -382,7 +368,7 @@
             "source_tier": "discovery",
             "source_url": "https://news.cnyes.com/news/cat/us_stock",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:50.646767+00:00",
+            "checked_at": "2026-08-15T08:50:11.117977+00:00",
             "item_count": 5,
             "data_gap": null
           },
@@ -392,7 +378,7 @@
             "source_tier": "official",
             "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
             "status": "healthy",
-            "checked_at": "2026-08-15T07:38:50.646767+00:00",
+            "checked_at": "2026-08-15T08:50:11.117977+00:00",
             "item_count": 10,
             "data_gap": null
           },
@@ -402,7 +388,7 @@
             "source_tier": "official",
             "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
             "status": "failed",
-            "checked_at": "2026-08-15T07:38:50.646767+00:00",
+            "checked_at": "2026-08-15T08:50:11.117977+00:00",
             "item_count": 0,
             "data_gap": "failed"
           },
@@ -412,12 +398,12 @@
             "source_tier": "official",
             "source_url": null,
             "status": "disabled",
-            "checked_at": "2026-08-15T07:38:50.646767+00:00",
+            "checked_at": "2026-08-15T08:50:11.117977+00:00",
             "item_count": 0,
             "data_gap": null
           }
         ],
-        "last_success_at": "2026-08-15T07:38:50.646767+00:00",
+        "last_success_at": "2026-08-15T08:50:11.117977+00:00",
         "item_count": 20,
         "source_urls": [
           "https://mops.twse.com.tw/mops/api/t05st02",
@@ -436,7 +422,7 @@
             "source_tier": "official",
             "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
             "status": "failed",
-            "checked_at": "2026-08-15T07:38:50.646767+00:00",
+            "checked_at": "2026-08-15T08:50:11.117977+00:00",
             "item_count": 0,
             "data_gap": "failed"
           },
@@ -446,7 +432,7 @@
             "source_tier": "official",
             "source_url": null,
             "status": "disabled",
-            "checked_at": "2026-08-15T07:38:50.646767+00:00",
+            "checked_at": "2026-08-15T08:50:11.117977+00:00",
             "item_count": 0,
             "data_gap": null
           }
@@ -455,15 +441,12 @@
       {
         "key": "risk",
         "label": "情緒／波動",
-        "status": "partial",
-        "state": "failed",
+        "status": "healthy",
+        "state": "no_event",
         "role": "required_for_alert",
-        "checked_at": "2026-08-15T15:39:25.704502+08:00",
-        "issues": [
-          "波動率資料暫時無法取得",
-          "台股 Macro FGI 資料暫時無法取得"
-        ],
-        "semantic_state": "failed"
+        "checked_at": "2026-08-15T16:50:47.047443+08:00",
+        "issues": [],
+        "semantic_state": "no_event"
       },
       {
         "key": "kofia_margin",
@@ -474,7 +457,7 @@
         "state": "optional_degraded",
         "role": "optional",
         "provider_status": "partial",
-        "checked_at": "2026-08-15T07:39:13.414830+00:00",
+        "checked_at": "2026-08-15T08:50:33.958635+00:00",
         "semantic_state": "partial"
       },
       {
@@ -486,11 +469,11 @@
         "state": "healthy",
         "role": "optional",
         "provider_status": "healthy",
-        "checked_at": "2026-08-15T07:39:14.738615+00:00",
+        "checked_at": "2026-08-15T08:50:35.074793+00:00",
         "item_count": 4,
         "data_gap": null,
         "semantic_state": "healthy",
-        "last_success_at": "2026-08-15T07:39:14.738615+00:00"
+        "last_success_at": "2026-08-15T08:50:35.074793+00:00"
       },
       {
         "key": "crypto_spot",
@@ -499,7 +482,7 @@
         "source_tier": "public-market",
         "source_url": "https://api.coingecko.com/api/v3/simple/price",
         "status": "healthy",
-        "checked_at": "2026-08-15T07:39:15.700823+00:00",
+        "checked_at": "2026-08-15T08:50:35.664282+00:00",
         "item_count": 4,
         "data_gap": null,
         "error_details": null,
@@ -507,7 +490,7 @@
         "state": "healthy",
         "semantic_state": "healthy",
         "role": "optional",
-        "last_success_at": "2026-08-15T07:39:15.700823+00:00"
+        "last_success_at": "2026-08-15T08:50:35.664282+00:00"
       },
       {
         "key": "public_market_secondary",
@@ -516,7 +499,7 @@
         "source_url": "https://stooq.com/q/l/",
         "status": "partial",
         "provider_status": "partial",
-        "checked_at": "2026-08-15T07:39:16.270000+00:00",
+        "checked_at": "2026-08-15T08:50:36.025360+00:00",
         "item_count": 2,
         "data_gap": [
           "S&P 500:http_4xx",
@@ -592,7 +575,7 @@
         "state": "configuration_required",
         "role": "optional",
         "provider_status": "missing_api_key",
-        "checked_at": "2026-08-15T07:39:24.265051+00:00",
+        "checked_at": "2026-08-15T08:50:45.505591+00:00",
         "item_count": 0,
         "data_gap": "FRED_API_KEY 未設定",
         "semantic_state": "configuration_missing"
@@ -606,7 +589,7 @@
         "state": "configuration_required",
         "role": "optional",
         "provider_status": "missing_api_key",
-        "checked_at": "2026-08-15T07:39:24.265088+00:00",
+        "checked_at": "2026-08-15T08:50:45.505627+00:00",
         "item_count": 0,
         "data_gap": "EIA_API_KEY 未設定",
         "semantic_state": "configuration_missing"
@@ -616,7 +599,7 @@
         "label": "量化研究",
         "status": "partial",
         "semantic_state": "stale",
-        "checked_at": "2026-08-15T15:39:25.704502+08:00",
+        "checked_at": "2026-08-15T16:50:47.047443+08:00",
         "issues": [
           "研究資料已逾時，候選清單已隱藏"
         ]
@@ -629,21 +612,6 @@
         "issues": [
           "006208 報價已逾三日，已標示為過期資料",
           "00685L 報價已逾三日，已標示為過期資料"
-        ]
-      },
-      {
-        "source": "官方重大事件",
-        "key": "official_events",
-        "issues": [
-          "TAIFEX official source temporarily unavailable"
-        ]
-      },
-      {
-        "source": "情緒／波動",
-        "key": "risk",
-        "issues": [
-          "波動率資料暫時無法取得",
-          "台股 Macro FGI 資料暫時無法取得"
         ]
       },
       {
@@ -674,13 +642,11 @@
         ]
       }
     ],
-    "missing_source_count": 8,
-    "runtime_failure_count": 6,
+    "missing_source_count": 6,
+    "runtime_failure_count": 4,
     "configuration_missing_count": 2,
     "gap_source_keys": [
       "market_quotes",
-      "official_events",
-      "risk",
       "kofia_margin",
       "public_market_secondary",
       "fred",
@@ -691,9 +657,9 @@
       "configuration_required": 2,
       "critical_gap": 1,
       "degraded_with_fallback": 1,
-      "failed": 3,
+      "failed": 1,
       "healthy": 2,
-      "no_event": 1,
+      "no_event": 3,
       "optional_degraded": 1,
       "pending_confirmation": 0,
       "warming": 0
