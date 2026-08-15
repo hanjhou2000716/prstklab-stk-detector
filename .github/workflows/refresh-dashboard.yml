@@ -41,9 +41,18 @@ jobs:
         run: python -m src.refresh_market_data
       - name: Build and publish immutable data release
         run: |
-          python -m src.release_manifest \
+          arguments=(
             --allow-stale-research \
             --research-fallback-reason "research scan incomplete; preserving last-known-good research snapshot"
+          )
+          # Feed the same reviewed, privacy-safe Creator record boundary used
+          # by scheduled-brief into the canonical release builder.  Missing or
+          # invalid input remains fail-soft; it must never block the market
+          # release or invent a current-day episode.
+          if [ -f "creator/public-records.json" ]; then
+            arguments+=(--creator-records "creator/public-records.json")
+          fi
+          python -m src.release_manifest "${arguments[@]}"
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations \
             --message "chore: refresh public market snapshot"
       - name: Build and validate cache-busted static assets
