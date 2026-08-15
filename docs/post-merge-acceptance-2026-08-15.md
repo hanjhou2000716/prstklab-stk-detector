@@ -63,9 +63,11 @@ recipient list or Gmail ingress is configured.
 
 1. Configure the canonical Railway secret variable without exposing its value.
 2. Configure and verify Gmail/Pub/Sub ingress for the approved Creator sources.
-3. Run one controlled, single-recipient delivery test and retain its receipt.
-4. Re-run the release-gate, Mini App deep-link, Telegram, and Railway checks.
-5. Record the resulting release, snapshot, observation, and receipt IDs.
+3. Merge the cross-check provenance fix PR #626, then refresh `data-release`.
+4. Re-run the Pages release-gate and public Mini App smoke check after the
+   refreshed artifacts are published.
+5. Run any additional controlled delivery test only after the new release is
+   ready, and retain its receipt IDs.
 
 Rollback is to the previous successful Pages release and the prior Railway
 deployment; no production data or secret is changed by this evidence commit.
