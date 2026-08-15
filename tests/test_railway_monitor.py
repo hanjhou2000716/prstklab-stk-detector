@@ -22,10 +22,10 @@ def test_delivery_shared_secret_accepts_canonical_railway_name(monkeypatch):
     assert monitor._delivery_shared_secret() == "canonical"
 
 
-def test_delivery_shared_secret_prefers_railway_service_name(monkeypatch):
+def test_delivery_shared_secret_prefers_canonical_name(monkeypatch):
     monkeypatch.setenv("DELIVERY_STATUS_SHARED_SECRET", "service")
     monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "legacy")
-    assert monitor._delivery_shared_secret() == "service"
+    assert monitor._delivery_shared_secret() == "legacy"
 
 
 def test_health_snapshot_exposes_redacted_runtime_configuration(monkeypatch):
@@ -37,6 +37,8 @@ def test_health_snapshot_exposes_redacted_runtime_configuration(monkeypatch):
         "delivery_secret_configured": False,
         "canonical_name_present": False,
         "legacy_name_present": False,
+        "active_name": None,
+        "migration_required": False,
         "secret_values_exposed": False,
     }
 
