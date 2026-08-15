@@ -62,6 +62,20 @@ The same response still reported independent external conditions: GDELT
 the canonical Railway delivery-secret migration flag.  Those are not hidden
 by this successful Telegram test and remain open production follow-ups.
 
+## Public Mini App browser evidence
+
+The release-bound URL was opened in the signed-in in-app browser:
+
+`https://hanjhou2000716.github.io/prstklab-stk-detector/?release=release-6a168d17f803d4aa&view=briefing`
+
+After the public data fetch completed, the DOM showed the release timestamp and
+rendered all primary sections: risk alert, scheduled report, market evidence,
+Creator/content insight, market pulse, strategy list, and Taiwan news.  The
+application correctly surfaced `部分缺漏` for four source gaps and marked the
+research snapshot as timed out rather than silently treating it as live.  This
+is browser evidence that the current ready release is loadable; it is not a
+claim that the optional sources or research snapshot are fresh.
+
 ## Gate interpretation
 
 This closes the controlled single-recipient photo delivery evidence for the
@@ -69,7 +83,8 @@ current main release.  It does **not** close:
 
 1. Railway restart/volume continuity after a process restart;
 2. Gmail OAuth/PubSub configuration and live Creator/FinancialJuice ingress;
-3. a human visual confirmation inside Telegram or the Mini App WebView;
+3. a human visual confirmation inside the Telegram WebView (the public Mini App
+   browser load is verified above);
 4. formal point-in-time backtest availability.
 
 The release gate remains fail-closed for stale, unverified, or renderer-failed
