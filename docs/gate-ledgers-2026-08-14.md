@@ -63,6 +63,25 @@ No implementation task in REQ-ADD-013..020 is marked PASS solely because a PR
 exists; each has local and remote evidence above. External debt must be closed
 before the final production acceptance gate.
 
+## Latest controlled production evidence (2026-08-15)
+
+The current-main photo smoke was rerun after the public refresh release:
+
+- Actions run [31888691399](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31888691399)
+  installed Chromium and produced a non-empty `1080x1350` card.
+- The scoped sender reported `photo_delivery_delivered=1` and
+  `photo_delivery_failed=0`.
+- Railway accepted trace `photo-smoke-7fe532a75d8a441f`; `/health` then showed
+  `last_receipt_status=delivered`, `last_failed_count=0`,
+  `retryable_count=0`, and `receipt_matches_last_outbox=true`.
+- Public Pages manifest returned HTTP 200 with `status=ready` and release
+  `release-12ff05f51e4ea353`; the exact lineage is recorded in
+  `docs/production-acceptance-2026-08-15.md`.
+
+This evidence closes only the controlled single-recipient photo smoke.  It
+does not silently close Railway restart continuity, Gmail/FinancialJuice
+configuration, or human visual confirmation of the Telegram/Mini App view.
+
 Latest migration-head regression: `1207 passed` in `77.01s` at
 `76241c7872369be0ebfd0cb6f1adfadbb9e00b5e` using an isolated Windows temp
 directory. This evidence does not imply live Railway/Pages/Telegram acceptance.
