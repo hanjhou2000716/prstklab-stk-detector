@@ -11,11 +11,11 @@ inferred from a green pull request.
 
 | Item | Evidence |
 |---|---|
-| Repository checkout | `current-main`, branch `feat/REQ-ADD-031-p0-traceability-matrix` |
-| Migration base | `cea8cd62ace11e52cca9345828d92b818c0aaf48` (`fix: enforce external event privacy boundary`) |
+| Repository checkout | `current-main`, branch `feat/REQ-ADD-045-classifier-health-provenance` |
+| Migration base | `57eabb0d7369b42c519d3c6e6371fec1e8ff85a4` (`main` at migration start) |
 | Recovery checkpoint | tag `migration-checkpoint-20260814-8e1ad7f` |
 | Working tree | tracked files clean before this documentation change; `git diff --check` required before commit |
-| Local regression | 1,224 passed in an isolated system temp directory |
+| Local regression | 1,246 passed, 1 skipped in an isolated system temp directory |
 | Runtime audit | `ok=true`, no invariant issues; production warnings remain explicit |
 | Delivery smoke | fail-closed because local `TELEGRAM_CHAT_IDS` is intentionally absent |
 | Production release | public Pages manifest is `ready`; release/hash/lineage verified read-only on 2026-08-15 |
@@ -47,6 +47,16 @@ Public Pages evidence captured on 2026-08-15 (read-only):
   `creator-release.json`, and `creator-insights.json` all returned HTTP 200 and
   matched the manifest SHA-256 hashes. Their public snapshot identifiers matched
   the manifest lineage; no private fields were accessed.
+
+Railway read-only health evidence captured on 2026-08-15:
+
+- `/health` returned HTTP 200 with a running monitor and healthy Jin10 poller.
+- The live deployment still reported `classifier_mode=standalone-bundled` and
+  was based on the earlier PR #619 deployment; canonical classifier provenance
+  remains pending deployment of PR #624.
+- GDELT reported `HTTP_429`; the health callback reported `HTTP_403`.
+- Delivery was `not_checked` with no receipt trace, and Gmail/Creator ingress
+  was `configuration_missing`. No production recipient was contacted.
 
 ## Requirement / evidence matrix
 
