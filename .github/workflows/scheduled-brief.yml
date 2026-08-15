@@ -115,6 +115,9 @@ jobs:
           if [ -n "${CREATOR_RECORDS_PATH:-}" ] && [ -f "$CREATOR_RECORDS_PATH" ]; then
             arguments+=(--creator-records "$CREATOR_RECORDS_PATH")
           fi
+          if [ "${{ steps.window.outputs.slot }}" = "morning" ]; then
+            arguments+=(--creator-morning-batch)
+          fi
           python -m src.release_manifest "${arguments[@]}"
       - name: Resolve release publication policy
         if: steps.prepare.outputs.prepared == 'true'
