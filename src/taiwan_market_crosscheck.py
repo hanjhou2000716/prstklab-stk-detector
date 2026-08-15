@@ -136,7 +136,9 @@ def crosscheck_taiex_quote(
     """
     source_observations = [
         {
+            "provider": "TWSE",
             "label": "TWSE",
+            "source_url": TWSE_MIS_TAIEX_URL,
             "url": TWSE_MIS_TAIEX_URL,
             "quote_time": (twse or {}).get("quote_time") or "",
             "quote_date": (twse or {}).get("quote_date"),
@@ -145,7 +147,9 @@ def crosscheck_taiex_quote(
             "available": bool(twse),
         },
         {
+            "provider": "TAIFEX",
             "label": "TAIFEX",
+            "source_url": TAIFEX_QUOTE_URL,
             "url": TAIFEX_QUOTE_URL,
             "quote_time": (taifex or {}).get("quote_time") or "",
             "quote_date": (taifex or {}).get("quote_date"),
