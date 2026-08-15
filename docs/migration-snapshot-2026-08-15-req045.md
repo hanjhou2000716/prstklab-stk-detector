@@ -24,14 +24,15 @@ force-push, production notification, or data deletion was performed.
 
 | Task | Scope | Status | Evidence |
 |---|---|---|---|
-| REQ-ADD-044 | package the canonical classifier for root-only Railway images | PASS / LOCKED | targeted 103 passed; full 1245 passed, 1 skipped; PR #623 CI passed |
-| REQ-ADD-045 | expose classifier and keyword-bundle provenance in Railway health | PASS / LOCKED | targeted 104 passed; full 1246 passed, 1 skipped; Ruff, Mypy, compileall, generator drift check passed; PR #624 CI passed |
+| REQ-ADD-044 | package the canonical classifier for root-only Railway images | PASS / LOCKED | targeted 103 passed; full regression rerun 1247 passed; PR #623 CI passed |
+| REQ-ADD-045 | expose classifier and keyword-bundle provenance in Railway health | PASS / LOCKED | targeted 104 passed; full regression rerun 1247 passed; Ruff, Mypy, compileall, generator drift check passed; PR #624 CI passed |
 | Migration audit | reconcile current state and external gates | IN_PROGRESS | this snapshot; external acceptance remains separate below |
 
 ## Verification evidence
 
 - Targeted Railway/classifier/Gmail suite: **104 passed**.
-- Repository regression: **1246 passed, 1 skipped**.
+- Repository regression: **1247 passed** with explicit workspace-writable
+  pytest basetemp.
 - `uv run ruff check src tests`: passed.
 - `uv run mypy src`: passed (`167` source files).
 - Python compilation and generated Railway bundle `--check`: passed.
@@ -94,7 +95,7 @@ inferred from these local and CI passes.
 
 - Atomic audit commit: `57b76b9` (`docs: reconcile canonical intelligence ownership`).
 - Canonical Creator/FJ/news/release/Telegram overlap suite: **253 passed**.
-- Full repository regression: **1246 passed, 1 skipped**.
+- Full repository regression rerun: **1247 passed**.
 - `ruff check src tests`: **PASS**; `mypy src`: **PASS**; compile check: **PASS**.
 - Runtime audit remains `ok=true` with only the previously documented source,
   research-building and production-artifact warnings.

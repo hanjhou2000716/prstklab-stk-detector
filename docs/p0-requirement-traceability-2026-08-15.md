@@ -15,7 +15,7 @@ inferred from a green pull request.
 | Migration base | `57eabb0d7369b42c519d3c6e6371fec1e8ff85a4` (`main` at migration start) |
 | Recovery checkpoint | tag `migration-checkpoint-20260814-8e1ad7f` |
 | Working tree | tracked files clean before this documentation change; `git diff --check` required before commit |
-| Local regression | 1,246 passed, 1 skipped in an isolated system temp directory |
+| Local regression | 1,247 passed with an explicit workspace-writable pytest basetemp |
 | Runtime audit | `ok=true`, no invariant issues; production warnings remain explicit |
 | Delivery smoke | fail-closed because local `TELEGRAM_CHAT_IDS` is intentionally absent |
 | Production release | public Pages manifest is `ready`; release/hash/lineage verified read-only on 2026-08-15 |

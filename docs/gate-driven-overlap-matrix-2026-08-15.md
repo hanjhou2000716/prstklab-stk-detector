@@ -73,7 +73,8 @@ with no open code regression but with external completion debt.
 ## Current evidence
 
 - Targeted canonical-overlap suite: **253 passed**.
-- Full repository regression: **1246 passed, 1 skipped**.
+- Full repository regression: **1247 passed** (rerun with an explicit
+  workspace-writable pytest basetemp).
 - `ruff check src tests`: **PASS**.
 - `mypy src`: **PASS**.
 - Python compile check: **PASS**.
