@@ -391,6 +391,16 @@ live Railway health and delivery remain
 PR #623 remote evidence: quality run `31856149233` and security run
 `31856149334` completed successfully.
 
+### REQ-ADD-045: Railway classifier provenance health
+
+The monitor health projection now exposes redacted SHA-256 fingerprints for
+the canonical classifier source and the active keyword bundle alongside
+`classifier_mode`. This lets a post-deploy audit prove that the root-only
+image is running the generated repository-shared policy without exposing code
+contents or secrets. Local evidence: targeted **104 passed** and repository
+regression **1246 passed, 1 skipped**; Railway `/health` capture remains an
+external `NEEDS_REVERIFY` gate.
+
 Verification evidence for this continuation: targeted Railway/classifier/Gmail
 suite **106 passed**; repository regression **1244 passed, 1 skipped**;
 `uv run ruff check src tests`, `uv run mypy src`, and Python compilation passed.
