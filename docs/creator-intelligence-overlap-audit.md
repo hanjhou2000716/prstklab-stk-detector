@@ -13,10 +13,9 @@ evidence, a market-synchronisation proof, or a high-risk alert.
 
 ## Current checkpoint (2026-08-15)
 
-The overlap audit is being continued on PR [#618](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/618),
-which is based on `main` and wires the sanitized Railway observation export into
-the existing scheduled release. This is an integration continuation, not a
-second Creator or FinancialJuice pipeline.
+The overlap audit is now evaluated against main after PR #636. The sanitized
+Railway observation export remains on the existing scheduled release path; no
+second Creator or FinancialJuice pipeline was introduced.
 
 The focused Creator, FinancialJuice, shared-event, release-gate, news, and
 Telegram contract suite passes locally (`72 passed`) when run with an explicit
@@ -30,22 +29,22 @@ main acceptance and Mini App WebView visual confirmation remain open gates.
 
 Read-only HTTP verification of the currently published Pages bundle found:
 
-- release `release-957714e850293f39` with `status=ready`
-- Creator artifact `creator-86a5ed7f74464baa` with `status=ready`
+- release `release-12ff05f51e4ea353` with `status=ready`
+- Creator artifact `creator-e0c589f4b010dac5` with `status=ready`
 - Creator public artifact with one sanitized creator record
 - Source-health artifact schema `1.0`
 - all six manifest-declared artifact SHA-256 hashes matched the downloaded
   public files
 
 This proves public artifact integrity at the captured release. It does not
-replace post-merge main verification or Mini App WebView visual confirmation.
+replace Mini App WebView visual confirmation or live Railway Gmail evidence.
 
 ### Runtime and delivery evidence captured
 
 - Railway `/health` reports the monitor `running/healthy`.
 - GDELT is explicitly `HTTP_429` and the GitHub dispatch callback is explicitly
   `HTTP_403`; neither failure is hidden or treated as a successful event scan.
-- Scoped photo smoke Actions run `31839093636` / job `94891873503` delivered
+- Scoped photo smoke Actions run `31882734841` delivered
   one test message; the Railway projection reports `last_outbox_status=delivered`,
   `last_receipt_status=delivered`, `receipt_matches_last_outbox=true`, one
   delivered, zero failed, and trace `photo-smoke-b09bb97240c54a9f`.
@@ -53,6 +52,16 @@ replace post-merge main verification or Mini App WebView visual confirmation.
   stale-cache projection, health callback 403/429 handling and repository
   dispatch transport. The live 429/403 therefore represents external runtime
   configuration/provider state, not an untested repository path.
+
+### Post-merge refresh verification (PR #636)
+
+Actions run [31886831364](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31886831364)
+completed successfully from main commit `46f0fae`. The public manifest returned
+`status=ready` with release `release-12ff05f51e4ea353`, market snapshot
+`92dcb8d32908d715`, research snapshot `research-8b8ec8f6e5ee51aa`, event
+snapshot `event-f67c25c9f5e6f24d`, and Creator snapshot
+`creator-e0c589f4b010dac5`. This refresh updates public market data and Pages;
+it intentionally does not constitute a Telegram delivery receipt.
 
 ## Gate-driven migration reconciliation (2026-08-14)
 
