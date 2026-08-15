@@ -42,13 +42,22 @@ The public `/health` endpoint returned HTTP 200 after main deployment:
 - classifier mode: `repository-shared`
 - classifier source and keyword bundle hashes: present
 - GDELT: `failed` with `invalid_json` (source failure is visible and isolated)
-- delivery: `not_checked` with no receipt trace
+- delivery: `delivered`, with one scoped photo receipt and matching trace
 - Gmail: `configuration_missing`
 - runtime config: legacy delivery secret present, canonical
   `RAILWAY_STATUS_SHARED_SECRET` name not yet present
 
-The last three items remain external acceptance debt. They must not be
-relabelled as successful Telegram/Gmail production delivery.
+The Gmail and GDELT items remain external acceptance debt. The controlled
+single-recipient Telegram photo test completed successfully:
+
+- Actions run: `31869223299`
+- trace: `photo-smoke-e813b36c301d4d39`
+- delivery: `delivered` (1 delivered, 0 failed)
+- renderer: `1080x1350`, non-empty card
+- Railway receipt: accepted; `receipt_matches_last_outbox=true`
+
+This is scoped acceptance evidence, not a claim that the entire broadcast
+recipient list or Gmail ingress is configured.
 
 ## Required next acceptance actions
 
