@@ -335,10 +335,10 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
 
-    GitHub Actions calls this value ``RAILWAY_STATUS_SHARED_SECRET`` while
-    Railway historically exposed ``DELIVERY_STATUS_SHARED_SECRET``.  Accept
-    both names during migration, preferring the Railway-specific setting, so
-    a naming mismatch cannot silently block otherwise valid receipts.
+    ``RAILWAY_STATUS_SHARED_SECRET`` is canonical; the old
+    ``DELIVERY_STATUS_SHARED_SECRET`` name is accepted only as a compatibility
+    fallback.  Canonical precedence prevents two configured values from
+    producing different HMAC verification behavior across Actions and Railway.
     """
     return delivery_shared_secret()
 
