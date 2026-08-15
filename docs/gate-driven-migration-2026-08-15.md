@@ -400,6 +400,8 @@ image is running the generated repository-shared policy without exposing code
 contents or secrets. Local evidence: targeted **104 passed** and repository
 regression **1246 passed, 1 skipped**; Railway `/health` capture remains an
 external `NEEDS_REVERIFY` gate.
+PR #624 remote evidence: quality run `31856740264` and security run
+`31856740305` completed successfully.
 
 Verification evidence for this continuation: targeted Railway/classifier/Gmail
 suite **106 passed**; repository regression **1244 passed, 1 skipped**;
