@@ -122,7 +122,29 @@ def cluster_external_events(events: list[dict[str, Any]]) -> list[dict[str, Any]
         for field in ("source_domains", "evidence_sources", "editorial_sources"):
             cluster[field] = sorted(set(cluster[field]))
         cluster["cross_source_count"] = len(cluster["evidence_sources"])
+        # Preserve the strongest freshness failure at cluster level so every
+        # downstream scorer sees the same fail-closed evidence state.
+        cluster["freshness_blocked"] = any(_observation_freshness_blocked(item) for item in cluster["observations"])
     return list(clusters.values())
+
+
+def _observation_freshness_blocked(observation: dict[str, Any]) -> bool:
+    """Return whether an observation is explicitly unusable for alerting.
+
+    A provider may still publish a stale item for historical context, but a
+    stale/delayed quote or event must never be promoted to a high-risk alert.
+    This intentionally relies on explicit producer quality markers rather
+    than guessing age from an arbitrary wall clock in the classifier.
+    """
+    if observation.get("stale_used") is True or observation.get("quote_delayed") is True:
+        return True
+    freshness = str(
+        observation.get("freshness")
+        or observation.get("data_status")
+        or observation.get("quality_state")
+        or ""
+    ).strip().casefold()
+    return freshness in {"stale", "expired", "delayed", "unavailable", "degraded"}
 
 
 def score_prstk_risk(
@@ -136,8 +158,15 @@ def score_prstk_risk(
     category = str(cluster.get("event_type") or "unknown").casefold()
     evidence_count = int(cluster.get("cross_source_count") or 0)
     editorial_only = evidence_count == 0 and bool(cluster.get("editorial_sources"))
+    freshness_blocked = bool(cluster.get("freshness_blocked")) or any(
+        _observation_freshness_blocked(item)
+        for item in cluster.get("observations", [])
+        if isinstance(item, dict)
+    )
     material = category in {"conflict", "black_swan", "policy", "macro", "energy", "market", "disaster"}
-    if not material:
+    if freshness_blocked:
+        level, reason = "R2", "stale_or_delayed_evidence_blocked"
+    elif not material:
         level, reason = "R0", "non_material_or_unclassified"
     elif official_confirmed and market_sync_confirmed:
         level, reason = "R4", "official_and_market_sync_confirmed"
@@ -155,6 +184,8 @@ def score_prstk_risk(
         "vendor_importance": vendor_importance,
         "official_confirmed": bool(official_confirmed),
         "market_sync_confirmed": bool(market_sync_confirmed),
+        "freshness_blocked": freshness_blocked,
+        "freshness_reason": "stale_or_delayed_evidence" if freshness_blocked else None,
         "notification_eligible": level in {"R3", "R4"},
         "high_priority": level == "R4",
     }
@@ -170,6 +201,8 @@ def notification_decision(score: dict[str, Any]) -> dict[str, Any]:
         reasons.append("official_confirmation_missing")
     if level == "R4" and score.get("market_sync_confirmed") is not True:
         reasons.append("market_sync_missing")
+    if score.get("freshness_blocked") is True:
+        reasons.append("stale_or_delayed_evidence_blocked")
     return {"allowed": not reasons, "status": "eligible" if not reasons else "pending", "reasons": reasons}
 
 
