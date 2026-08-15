@@ -183,6 +183,17 @@ are configuration/provider follow-ups, not reasons to mark the successful
 release or controlled delivery as failed.  No high-risk alert may be
 generated from the failed GDELT path.
 
+As a bounded read-only mailbox check, the connected Gmail account contained a
+newer 2026-08-14 游庭皓的財經皓角 message, while the public Creator artifact
+still contained the 2026-08-13 episode.  This confirms the remaining freshness
+gap is an unconfigured Railway Gmail watch/ingress path, not a parser claim of
+"no email".  The message body and attachment remain private; only the
+source-date comparison is recorded here.  Until the OAuth/PubSub variables
+listed in `docs/gmail-runtime-ingress.md` are configured and a signed Railway
+delivery is observed, the public artifact must remain explicitly
+`unverified`/`awaiting_official_crosscheck` and must not become a high-risk
+alert source.
+
 ### Creator delivery durability
 
 Creator dispatch first combines the bounded runner-local receipt file with the
