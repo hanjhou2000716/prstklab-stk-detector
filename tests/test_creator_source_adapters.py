@@ -1,4 +1,4 @@
-from src.creator_provider_registry import creator_ids
+from src.creator_provider_registry import CreatorProvider, creator_ids
 from src.creator_source_adapters import parse_creator_template
 
 
@@ -53,3 +53,28 @@ def test_all_registry_providers_use_shared_template_adapter() -> None:
         )
         assert result["parse_status"] == "parsed"
         assert result["creator_id"] == provider_id
+
+
+def test_registry_parser_mismatch_fails_closed(monkeypatch) -> None:
+    configured = CreatorProvider(
+        creator_id="haojiao",
+        display_name="Haojiao",
+        source_type="editorial",
+        email_identity_rules={"markers": ("haojiao",), "domains": ()},
+        gmail_label="PRStK/Creator/Haojiao",
+        parser="future-template-v3",
+        consensus_eligible=True,
+        notification_policy="optional_reviewed_only",
+        media_policy="summary_image_if_reviewed",
+        display_order=1,
+        enabled=True,
+    )
+    monkeypatch.setattr("src.creator_source_adapters.get_creator_provider", lambda _source: configured)
+    result = parse_creator_template(
+        source="haojiao",
+        sender="digest@example.invalid",
+        subject="Episode 46",
+        body="Title: Future template\nFact: Public filing is available.",
+    )
+    assert result["parse_status"] == "unsupported_parser"
+    assert result["failure_reason"] == "creator_parser_not_supported"

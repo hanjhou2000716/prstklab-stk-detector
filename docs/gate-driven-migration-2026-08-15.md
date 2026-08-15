@@ -337,3 +337,13 @@ and security suites remain green after the push — `test-and-dry-run` run
 job `94925667563`, dependency review job `94925667502`, and SBOM job
 `94925667545`. These checks provide CI evidence for the adapter change; they
 do not substitute for live Railway, Pages, Mini App or Telegram acceptance.
+
+### Creator parser contract hardening (follow-up)
+
+The shared adapter now validates the registry `parser` field before parsing.
+An unknown or future parser version returns `unsupported_parser` and remains
+DLQ-safe; it cannot silently fall through to the v2 template. The registry
+provider loop and parser-mismatch regression now pass alongside the full suite:
+**1239 passed, 1 skipped**. Changed-file Ruff also passes. This follow-up is
+part of PR #619 and remains local/CI evidence only until live Gmail/Railway
+acceptance is captured.

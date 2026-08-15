@@ -217,3 +217,8 @@ template vocabulary. A registry provider using `creator-template-v2` therefore
 cannot be silently rejected because a second parser whitelist was not updated.
 The parser remains fail-closed for unknown providers and unlabelled prose. The
 registry-wide adapter regression covers every currently enabled provider.
+
+The adapter validates the registry `parser` field before parsing. An unknown
+or future parser version returns `unsupported_parser` rather than silently
+using the v2 template, keeping parser configuration and runtime behavior
+aligned without weakening the DLQ boundary.

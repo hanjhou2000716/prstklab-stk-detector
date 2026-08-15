@@ -14,6 +14,7 @@ from src.creator_provider_registry import creator_ids, get_creator_provider, is_
 from src.email_intelligence import normalize_creator_insight
 
 _MAX_FIELD_CHARS = 600
+_SUPPORTED_PARSER = "creator-template-v2"
 
 # These labels describe the shared template contract, not provider identity.
 # Keep aliases conservative: unlabelled prose must remain unsupported.
@@ -85,6 +86,15 @@ def parse_creator_template(
             "message_id": message_id,
             "source_adapter": "creator-template-v2",
         }
+    provider_config = get_creator_provider(normalized_source)
+    if provider_config is None or provider_config.parser != _SUPPORTED_PARSER:
+        return {
+            "parse_status": "unsupported_parser",
+            "failure_reason": "creator_parser_not_supported",
+            "message_id": message_id,
+            "source_adapter": _SUPPORTED_PARSER,
+            "parser_version": provider_config.parser if provider_config else None,
+        }
     lines = [line.strip() for line in body.splitlines() if line.strip()]
     labels = _LABELS.get(normalized_source, _BASE_LABELS)
     title = _section(lines, labels["title"], limit_lines=1) or _clip(subject, 240)
@@ -108,7 +118,6 @@ def parse_creator_template(
             "source_adapter": "creator-template-v2",
             "template_fingerprint": _fingerprint(normalized_source, subject, body),
         }
-    provider_config = get_creator_provider(normalized_source)
     insight = normalize_creator_insight({
         "creator_id": normalized_source,
         "creator_name": provider_config.display_name if provider_config else normalized_source,
