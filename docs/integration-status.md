@@ -35,6 +35,7 @@ pipeline call and a tested consumer.
 | Creator media boundary | `src/creator_media.py`, `src/creator_photo_delivery.py` | yes | private attachment boundary + transport-neutral plan | hash + private availability only | no raw media | bounded photo/text plan; receipt contract | partially_integrated |
 | Creator release lineage | `src/creator_release.py`, `src/creator_intelligence_pipeline.py`, `src/release_manifest.py` | yes | scheduled input + optional manifest artifact | parent release/hash/status | release-bound creator drawer | no raw creator media | production |
 | Creator/PRStK correlation | `src/creator_correlation.py`, `src/creator_intelligence_pipeline.py`, `src/briefing_cards.py` | yes | briefing creator binding | explicit entity matches + snapshot IDs | creator correlation state/reason | never a standalone signal | production |
+| Creator consensus V2 | `src/creator_consensus.py`, `src/creator_artifact.py`, `src/creator_intelligence_pipeline.py` | yes | canonical creator release producer | topic/directional/risk consensus with coverage and divergence | 多來源內容共識卡 | never an investment signal | production |
 | Railway health contract | `src/railway_health_contract.py`, `railway-monitor/app.py`, `railway-monitor/runtime_config.py`, `railway-monitor/health_contract.py` | yes | monitor health boundary + standalone heartbeat/Gmail projection + redacted runtime configuration | bounded status/retry/heartbeat/configuration state | source health | observability only | partially_integrated |
 | Railway Gmail runtime wiring | `railway-monitor/gmail_runtime.py`, `railway-monitor/gmail_ingress.py`, `railway-monitor/gmail_watch.py`, `railway-monitor/email_store.py` | yes | standalone configuration-to-ingress boundary | redacted Gmail watch health | source health | not directly | partially_integrated |
 | Railway dispatch transport | `railway-monitor/dispatch_transport.py`, `railway-monitor/app.py` | yes | bounded repository-dispatch HTTP transport with compatibility wrapper | no payload persistence | no | repository dispatch only; no Telegram path | partially_integrated |
@@ -136,14 +137,15 @@ This section is updated only from the public manifest and the latest successful
 main-branch workflows. It is evidence of the deployed release, not a claim
 that every optional provider or historical backtest is available.
 
-- Main commit: `6b3efac8b666ebcfb87337fec68e6b7536e65c37`
-- Pages deployment: [31567941161](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31567941161)
-- Quality/delivery workflow: [31567941144](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31567941144)
-- Official macro/price workflow: [31567991408](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31567991408)
-- Release: `release-9f742bf9a0c579e4`
-- Market snapshot: `e5a30f1e6aee3c23`
-- Research snapshot: `research-acddbf45ffd6e4db`
-- Event snapshot: `event-1c1c81d0f4e30a41`
+- Main commit: `f3c106f5ddd99632d98c246c4469b2b4f88ff4c1`
+- Pages deployment: [31880204159](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31880204159)
+- Public release smoke: [31880336304](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31880336304)
+- Quality/delivery workflow: [31879876331](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31879876331)
+- Release: `release-50ba17632a64ac66`
+- Market snapshot: `048eafe1b4ea43df`
+- Research snapshot: `research-8b8ec8f6e5ee51aa`
+- Event snapshot: `event-f67c25c9f5e6f24d`
+- Creator snapshot: `creator-f2a965a7ae11ad20`
 - Manifest status: `ready`; research mode/scope: `production` / `full`
 - Source health is now also emitted as a release-bound `data/source-health.json`
   artifact when the producer has the canonical health envelope. The legacy
