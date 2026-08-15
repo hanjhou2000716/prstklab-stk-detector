@@ -388,6 +388,8 @@ changes cannot silently leave a stale Railway artifact. Local evidence is
 targeted **103 passed** and repository regression **1245 passed, 1 skipped**;
 live Railway health and delivery remain
 **NEEDS_REVERIFY** until `/health` reports the shared mode.
+PR #623 remote evidence: quality run `31856149233` and security run
+`31856149334` completed successfully.
 
 Verification evidence for this continuation: targeted Railway/classifier/Gmail
 suite **106 passed**; repository regression **1244 passed, 1 skipped**;
