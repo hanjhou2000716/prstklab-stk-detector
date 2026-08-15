@@ -381,3 +381,9 @@ suite **106 passed**; repository regression **1244 passed, 1 skipped**;
 Runtime audit and offline system dry-run passed; delivery smoke remains
 configuration-failed locally because production Telegram recipients are not
 loaded, which is an intentional external gate rather than a test bypass.
+
+PR #622 remote evidence: quality run `31855118955` / job `94938300129`,
+CodeQL run `94938400149`, security CodeQL job `94938300133`, dependency review
+`94938300102`, and SBOM `94938300165` passed. This proves the bundle parity
+contract in CI; it does not replace live Railway classifier or Telegram
+acceptance.
