@@ -274,6 +274,14 @@ def test_shared_classifier_bundle_is_generated_from_canonical_source():
     assert result.returncode == 0, result.stdout + result.stderr
 
 
+def test_runtime_self_check_exposes_classifier_provenance():
+    monitor.validate_runtime_layout()
+    runtime = monitor.health_snapshot()["runtime"]
+    assert runtime["classifier_mode"] == "repository-shared"
+    assert len(runtime["classifier_source_sha256"]) == 64
+    assert len(runtime["keyword_bundle_sha256"]) == 64
+
+
 def test_fuzzy_matching_does_not_confuse_warning_or_escalation_with_other_terms():
     # ``war`` is a substring of ``warning`` and ``deescalation`` is close to
     # ``escalation``.  Neither should silently change the event category.

@@ -355,10 +355,14 @@ _RUNTIME_ACTIVE_BLACK_SWAN_CONTEXT_TERMS = (
 )
 _USING_STANDALONE_CLASSIFIER = False
 _CLASSIFIER_MODE = "unavailable"
+_CLASSIFIER_SOURCE_SHA256 = ""
 
 try:
-    from src.event_classifier import classify_event_fields, has_active_black_swan_context
+    from src import event_classifier as _classifier_module
+    classify_event_fields = _classifier_module.classify_event_fields
+    has_active_black_swan_context = _classifier_module.has_active_black_swan_context
     _CLASSIFIER_MODE = "repository-shared"
+    _CLASSIFIER_SOURCE_SHA256 = hashlib.sha256(Path(_classifier_module.__file__).read_bytes()).hexdigest()
 except ModuleNotFoundError as error:
     if error.name not in {"src", "src.event_classifier"}:
         raise
@@ -366,8 +370,11 @@ except ModuleNotFoundError as error:
         # The root-only Railway image receives this generated copy from the
         # canonical ``src`` module.  It is kept in sync by CI and uses the
         # bundled canonical keyword database beside app.py.
-        from shared_event_classifier import classify_event_fields, has_active_black_swan_context
+        import shared_event_classifier as _classifier_module
+        classify_event_fields = _classifier_module.classify_event_fields
+        has_active_black_swan_context = _classifier_module.has_active_black_swan_context
         _CLASSIFIER_MODE = "repository-shared"
+        _CLASSIFIER_SOURCE_SHA256 = str(getattr(_classifier_module, "BUNDLE_SOURCE_SHA256", ""))
     except ModuleNotFoundError as bundle_error:
         if bundle_error.name != "shared_event_classifier":
             raise
@@ -2578,10 +2585,22 @@ def validate_runtime_layout() -> None:
         if not probe_category:
             raise RuntimeError("classifier_probe_no_category")
         mode = "standalone-bundled" if _USING_STANDALONE_CLASSIFIER else _CLASSIFIER_MODE
+        keyword_digest = ""
+        for keyword_path in (
+            Path(__file__).resolve().parents[1] / "config" / "event_keywords.json",
+            Path(__file__).resolve().with_name("event_keywords.json"),
+        ):
+            try:
+                keyword_digest = hashlib.sha256(keyword_path.read_bytes()).hexdigest()
+                break
+            except OSError:
+                continue
         update_health(
             "runtime",
             status="healthy",
             classifier_mode=mode,
+            classifier_source_sha256=_CLASSIFIER_SOURCE_SHA256,
+            keyword_bundle_sha256=keyword_digest,
             keyword_categories=len(CATEGORY_KEYWORDS),
             updated_at=datetime.now(timezone.utc).isoformat(),
             error=None,
