@@ -358,3 +358,9 @@ source-health reporting. Discovery providers without a feed endpoint remain
 excluded from the official evidence path. Targeted news adapter, intelligence
 and routing tests pass locally; live TWSE/MOPS/SEC/Fed freshness evidence is
 still `NEEDS_REVERIFY` under the external gates above.
+
+PR #621 remote evidence: `test-and-dry-run` run `31853786392` / job
+`94934561198` passed; CodeQL run `94934682932` and security CodeQL job
+`94934561115`, dependency review `94934561091`, and SBOM `94934561084` all
+passed. These checks verify the canonical projection and regression suite;
+they do not replace live source-freshness or post-merge acceptance evidence.
