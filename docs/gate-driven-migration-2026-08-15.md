@@ -306,3 +306,34 @@ canonical path and the full repository regression is **1237 passed, 1 skipped**.
 Changed-file Ruff and `python -m compileall -q src railway-monitor` pass. The
 task is **PASS locally / NEEDS_REVERIFY externally** because live Gmail/Railway
 configuration and receipt evidence remain outside the local repository gate.
+Remote evidence for `b97bc91` on PR #618: test-and-dry-run run
+`31850654835` / job `94925667803` passed; CodeQL run `31850654722` / job
+`94925667563`, dependency review job `94925667502`, SBOM job `94925667545`,
+and the separate CodeQL check `94925796640` all passed.
+
+### Shared Creator template adapter (current continuation)
+
+The Creator template parser previously had provider IDs duplicated in a local
+`_LABELS` map. It now builds that map from the canonical registry and uses a
+shared public-safe section vocabulary. Unknown identities still fail closed;
+adding a configured provider no longer requires editing a second identity
+allowlist. Targeted adapter/parser/registry tests pass (**21 passed**).
+
+State: **PASS locally / NEEDS_REVERIFY externally**. This is an adapter
+contract repair only; live Gmail/Railway configuration, repository-shared
+classifier packaging, Pages release and Telegram receipt evidence remain open
+external gates.
+
+The adapter repair was rebased onto the post-merge `main` commit
+`c64a54b` and delivered as PR #619 (`feat/REQ-ADD-040-creator-adapter-contract`)
+because PR #618 had already merged before this continuation was pushed.
+PR #619 remote evidence: test-and-dry-run run `31851768583` / job
+`94928745542`, CodeQL run `94928878624`, security CodeQL job `94928745694`,
+dependency review job `94928745662`, and SBOM job `94928745833` all passed.
+
+Remote evidence for atomic commit `5a72d0b` on PR #618: the existing quality
+and security suites remain green after the push — `test-and-dry-run` run
+`31850654835` / job `94925667803`, CodeQL run `94925796640`, security CodeQL
+job `94925667563`, dependency review job `94925667502`, and SBOM job
+`94925667545`. These checks provide CI evidence for the adapter change; they
+do not substitute for live Railway, Pages, Mini App or Telegram acceptance.
