@@ -84,6 +84,33 @@ def test_manifest_can_build_creator_artifact_from_sanitized_records(tmp_path):
     assert loaded["creator-release.json"]["status"] == "ready"
 
 
+def test_manifest_binds_morning_batch_to_market_snapshot_when_requested(tmp_path):
+    artifacts = _artifacts(tmp_path)
+    result = build_release_manifest(
+        root=tmp_path,
+        artifacts=artifacts,
+        creator_records=[{
+            "creator_id": "haojiao",
+            "content_origin": "haojiao",
+            "episode_key": "episode-morning",
+            "episode_title": "Morning public creator observation",
+            "published_at": "2026-08-04T10:07:00+08:00",
+            "claims": ["safe claim"],
+            "verification_state": "unverified",
+            "public_safe": True,
+        }],
+        creator_morning_batch=True,
+    )
+    creator = json.loads((tmp_path / "site" / "data" / "creator-release.json").read_text(encoding="utf-8"))
+    batch = creator.get("morning_batch")
+    assert result["creator_status"] == "ready"
+    assert isinstance(batch, dict)
+    assert batch["batch_date"] == "2026-08-04"
+    assert batch["as_of"].endswith("02:00:00+00:00")
+    assert batch["received_count"] == 1
+    assert batch["records"][0]["episode_key"] == "episode-morning"
+
+
 def test_manifest_also_publishes_bounded_creator_insights_artifact(tmp_path):
     result = build_release_manifest(
         root=tmp_path,
