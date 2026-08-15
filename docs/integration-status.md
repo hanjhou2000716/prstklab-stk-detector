@@ -137,15 +137,15 @@ This section is updated only from the public manifest and the latest successful
 main-branch workflows. It is evidence of the deployed release, not a claim
 that every optional provider or historical backtest is available.
 
-- Main commit: `35b4a0d54124646ba25f41bab9d58fec8408cd4a`
-- Pages deployment / market refresh: [31883869066](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31883869066)
+- Main commit: `46f0fae2cac7a87e80da91b7a05e4a8d16ed9ee0` (includes merged PR #636)
+- Pages deployment / market refresh: [31886831364](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31886831364)
 - Public release smoke: [31883967681](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31883967681)
 - Quality/delivery photo smoke: [31882734841](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31882734841)
-- Release: `release-18e44bd16889fb7e`
-- Market snapshot: `87b41002eb87405b`
+- Release: `release-12ff05f51e4ea353`
+- Market snapshot: `92dcb8d32908d715`
 - Research snapshot: `research-8b8ec8f6e5ee51aa`
 - Event snapshot: `event-f67c25c9f5e6f24d`
-- Creator snapshot: `creator-41502dd3815b1eae`
+- Creator snapshot: `creator-e0c589f4b010dac5`
 - Manifest status: `ready`; research mode/scope: `production` / `full`
 - Source health is now also emitted as a release-bound `data/source-health.json`
   artifact when the producer has the canonical health envelope. The legacy
@@ -167,8 +167,11 @@ delivery, zero failures, and a matching Railway receipt with trace
 plumbing, not the content of a live event.  A release-gated production
 delivery must use the release identifiers above.
 
-The later refresh run `31883869066` published the release above and the
-read-only public smoke `31883967681` confirmed that exact market snapshot.
+The later refresh run `31886831364` published the release above. Its public
+manifest is `ready` and carries the same release, market, research, event and
+creator snapshot lineage. The refresh intentionally did not send Telegram; the
+photo receipt above therefore remains the latest controlled delivery evidence
+and is not silently relabelled as evidence for the newer release.
 That refresh intentionally did not send Telegram; the photo receipt above
 therefore remains the latest controlled delivery evidence and is not silently
 relabelled as evidence for the newer release.
@@ -183,11 +186,12 @@ prove that every production recipient is reachable.
 
 The same snapshot keeps external gaps explicit: Gmail is
 `configuration_missing`; GDELT is fail-closed on HTTP 429 and its health
-callback is HTTP 403; the Railway runtime reports only the legacy delivery
-secret variable name while GitHub Actions holds the canonical name.  These
-are configuration/provider follow-ups, not reasons to mark the successful
-release or controlled delivery as failed.  No high-risk alert may be
-generated from the failed GDELT path.
+callback is HTTP 403; Railway still needs an operator to create the canonical
+`RAILWAY_STATUS_SHARED_SECRET` variable when only the legacy name exists (the
+runtime now reports `migration_required` without exposing the value). These are
+configuration/provider follow-ups, not reasons to mark the successful release
+or controlled delivery as failed. No high-risk alert may be generated from
+the failed GDELT path.
 
 As a bounded read-only mailbox check, the connected Gmail account contained a
 newer 2026-08-14 游庭皓的財經皓角 message, while the public Creator artifact
