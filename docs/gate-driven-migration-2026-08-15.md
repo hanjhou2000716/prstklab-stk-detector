@@ -374,3 +374,10 @@ reduced alias set. The new regression compares both parsed JSON documents;
 dispatch remains blocked unless the repository-shared classifier is active.
 Local live-mode evidence is **PASS**; Railway `classifier_mode=repository-shared`
 and production delivery remain **NEEDS_REVERIFY** external gates.
+
+Verification evidence for this continuation: targeted Railway/classifier/Gmail
+suite **106 passed**; repository regression **1244 passed, 1 skipped**;
+`uv run ruff check src tests`, `uv run mypy src`, and Python compilation passed.
+Runtime audit and offline system dry-run passed; delivery smoke remains
+configuration-failed locally because production Telegram recipients are not
+loaded, which is an intentional external gate rather than a test bypass.
