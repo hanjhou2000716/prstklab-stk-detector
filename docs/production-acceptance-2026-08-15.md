@@ -25,16 +25,22 @@ chat ID, or private Telegram response is recorded here.
 
 ## Pages release evidence
 
+The user-approved refresh-dashboard workflow
+[31889221737](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31889221737)
+completed successfully in 1m19s.  It refreshed market data, rebuilt the
+immutable release, validated cache-busted assets, and deployed Pages.  The
+public manifest was then fetched with a cache-busting query.
+
 The public manifest was fetched after the smoke run and returned HTTP 200 with
 `status=ready`:
 
 | Field | Observed value |
 |---|---|
-| `release_id` | `release-12ff05f51e4ea353` |
-| market snapshot | `92dcb8d32908d715` |
+| `release_id` | `release-6a168d17f803d4aa` |
+| market snapshot | `ddc440bf9ccee7b5` |
 | research snapshot | `research-8b8ec8f6e5ee51aa` |
 | event snapshot | `event-f67c25c9f5e6f24d` |
-| created at | `2026-08-15T21:19:05+08:00` |
+| created at | `2026-08-15T22:12:24+08:00` |
 
 This confirms manifest availability and lineage only; it does not claim that
 all market observations are live or that formal backtest data is available.

@@ -74,8 +74,10 @@ The current-main photo smoke was rerun after the public refresh release:
 - Railway accepted trace `photo-smoke-7fe532a75d8a441f`; `/health` then showed
   `last_receipt_status=delivered`, `last_failed_count=0`,
   `retryable_count=0`, and `receipt_matches_last_outbox=true`.
-- Public Pages manifest returned HTTP 200 with `status=ready` and release
-  `release-12ff05f51e4ea353`; the exact lineage is recorded in
+- The user-approved refresh-dashboard run
+  [31889221737](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31889221737)
+  completed in 1m19s; its public Pages manifest returned HTTP 200 with
+  `status=ready` and release `release-6a168d17f803d4aa`; the exact lineage is recorded in
   `docs/production-acceptance-2026-08-15.md`.
 
 This evidence closes only the controlled single-recipient photo smoke.  It
