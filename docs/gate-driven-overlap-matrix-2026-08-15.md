@@ -81,8 +81,9 @@ with no open code regression but with external completion debt.
   production-artifact availability gaps.
 - Delivery smoke: **fail-closed** because this local environment has no
   `TELEGRAM_CHAT_IDS`; no production notification was attempted.
-- PR #624 post-checkpoint CI: quality/dry-run run `31858069045` and security
-  run `31858069057` both **PASS** (CodeQL, dependency review and SBOM included).
+- PR #624 post-checkpoint CI: quality/dry-run run `31859116559` and security
+  run `31859116535` both **PASS** (CodeQL, dependency review and SBOM included);
+  the separate CodeQL check `94949254768` also passed.
 
 ## External read-only evidence (2026-08-15)
 

@@ -10,8 +10,8 @@ Railway, Pages, Telegram, or Gmail acceptance.
 |---|---|
 | Branch | `feat/REQ-ADD-045-classifier-health-provenance` |
 | Base | `main` |
-| HEAD | `a6045fa30a7a2842219166f776f0ce607f6d7aba` |
-| Recovery point | `a6045fa docs(P0-14): record classifier health CI evidence` |
+| HEAD | `ac70eefc07c81219810d990e03c4e79a0fb6cf84` |
+| Recovery point | `ac70eef docs: record Railway and Pages external gate evidence` |
 | PR | [#624](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/624) |
 | PR state | open, non-draft, mergeable; not merged by this task |
 | Tracked working tree | clean |
@@ -120,3 +120,7 @@ inferred from these local and CI passes.
   `NEEDS_REVERIFY`.
 
 These observations update the external debt ledger; they do not close it.
+
+The post-evidence PR checks are also green: quality/dry-run run
+`31859116559`, security run `31859116535`, and separate CodeQL check
+`94949254768`.
