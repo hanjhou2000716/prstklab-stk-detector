@@ -364,3 +364,26 @@ PR #621 remote evidence: `test-and-dry-run` run `31853786392` / job
 `94934561115`, dependency review `94934561091`, and SBOM `94934561084` all
 passed. These checks verify the canonical projection and regression suite;
 they do not replace live source-freshness or post-merge acceptance evidence.
+
+### REQ-ADD-043: Railway keyword bundle parity
+
+The standalone Railway keyword bundle is now structurally identical to the
+canonical `config/event_keywords.json`. This closes a policy-drift path where
+the root-only image could classify the same Jin10/GDELT headline with a
+reduced alias set. The new regression compares both parsed JSON documents;
+dispatch remains blocked unless the repository-shared classifier is active.
+Local live-mode evidence is **PASS**; Railway `classifier_mode=repository-shared`
+and production delivery remain **NEEDS_REVERIFY** external gates.
+
+Verification evidence for this continuation: targeted Railway/classifier/Gmail
+suite **106 passed**; repository regression **1244 passed, 1 skipped**;
+`uv run ruff check src tests`, `uv run mypy src`, and Python compilation passed.
+Runtime audit and offline system dry-run passed; delivery smoke remains
+configuration-failed locally because production Telegram recipients are not
+loaded, which is an intentional external gate rather than a test bypass.
+
+PR #622 remote evidence: quality run `31855118955` / job `94938300129`,
+CodeQL run `94938400149`, security CodeQL job `94938300133`, dependency review
+`94938300102`, and SBOM `94938300165` passed. This proves the bundle parity
+contract in CI; it does not replace live Railway classifier or Telegram
+acceptance.

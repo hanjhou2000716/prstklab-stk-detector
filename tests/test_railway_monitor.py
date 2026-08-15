@@ -246,6 +246,21 @@ def test_keyword_database_matches_simplified_chinese_and_english_typo():
     assert monitor.classify_flash(typo) == "fed"
 
 
+def test_standalone_keyword_bundle_matches_canonical_database():
+    """The root-only Railway image must not silently use a reduced policy."""
+    import json
+    from pathlib import Path
+
+    repository = Path(__file__).parents[1]
+    canonical = json.loads(
+        (repository / "config" / "event_keywords.json").read_text(encoding="utf-8")
+    )
+    bundled = json.loads(
+        (repository / "railway-monitor" / "event_keywords.json").read_text(encoding="utf-8")
+    )
+    assert bundled == canonical
+
+
 def test_fuzzy_matching_does_not_confuse_warning_or_escalation_with_other_terms():
     # ``war`` is a substring of ``warning`` and ``deescalation`` is close to
     # ``escalation``.  Neither should silently change the event category.

@@ -238,3 +238,14 @@ external acceptance gate.
 The release validator also checks optional feed metadata: configured endpoints
 must be HTTPS and remain inside the provider's canonical domain, while a
 disabled provider may explicitly retain an empty endpoint for diagnostics.
+
+### Railway keyword bundle contract (REQ-ADD-043)
+
+The standalone Railway image now carries the exact canonical
+`config/event_keywords.json` payload. A reduced or separately edited keyword
+table could classify the same Jin10/GDELT item differently from the
+repository-shared classifier; this is a policy drift defect, not an allowed
+fallback. `tests/test_railway_monitor.py` compares the parsed bundle structure
+with the canonical payload. Dispatch remains fail-closed when the shared classifier is
+not packaged, and live Railway `classifier_mode=repository-shared` evidence is
+still required before production acceptance.
