@@ -364,3 +364,13 @@ PR #621 remote evidence: `test-and-dry-run` run `31853786392` / job
 `94934561115`, dependency review `94934561091`, and SBOM `94934561084` all
 passed. These checks verify the canonical projection and regression suite;
 they do not replace live source-freshness or post-merge acceptance evidence.
+
+### REQ-ADD-043: Railway keyword bundle parity
+
+The standalone Railway keyword bundle is now structurally identical to the
+canonical `config/event_keywords.json`. This closes a policy-drift path where
+the root-only image could classify the same Jin10/GDELT headline with a
+reduced alias set. The new regression compares both parsed JSON documents;
+dispatch remains blocked unless the repository-shared classifier is active.
+Local live-mode evidence is **PASS**; Railway `classifier_mode=repository-shared`
+and production delivery remain **NEEDS_REVERIFY** external gates.
