@@ -41,8 +41,8 @@ def test_health_snapshot_exposes_redacted_runtime_configuration(monkeypatch):
     }
 
 
-def test_monitor_imports_from_railway_root_without_repository_src_package():
-    """Railway's configured root directory must not crash on ``import app``."""
+def test_monitor_imports_shared_classifier_from_railway_root_without_repository_src_package():
+    """The root-only Railway image must use the generated canonical bundle."""
     environment = os.environ.copy()
     environment.pop("PYTHONPATH", None)
     # pytest-cov exports COVERAGE_PROCESS_START so subprocesses can emit
@@ -68,8 +68,9 @@ def test_monitor_imports_from_railway_root_without_repository_src_package():
     command = [
         sys.executable,
         "-c",
-        "import app; assert app._USING_STANDALONE_CLASSIFIER; "
-        "assert not app.classifier_delivery_allowed(); "
+        "import app; assert app._CLASSIFIER_MODE == 'repository-shared'; "
+        "assert not app._USING_STANDALONE_CLASSIFIER; "
+        "assert app.classifier_delivery_allowed(); "
         "assert app.classify_event_fields({'title': 'WTI oil production update'})['category'] == 'energy'",
     ]
     result = subprocess.run(
@@ -259,6 +260,18 @@ def test_standalone_keyword_bundle_matches_canonical_database():
         (repository / "railway-monitor" / "event_keywords.json").read_text(encoding="utf-8")
     )
     assert bundled == canonical
+
+
+def test_shared_classifier_bundle_is_generated_from_canonical_source():
+    script = Path(__file__).parents[1] / "scripts" / "sync_railway_shared_classifier.py"
+    result = subprocess.run(
+        [sys.executable, str(script), "--check"],
+        cwd=script.parents[1],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_fuzzy_matching_does_not_confuse_warning_or_escalation_with_other_terms():

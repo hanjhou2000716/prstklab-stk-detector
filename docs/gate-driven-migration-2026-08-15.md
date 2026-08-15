@@ -375,6 +375,22 @@ dispatch remains blocked unless the repository-shared classifier is active.
 Local live-mode evidence is **PASS**; Railway `classifier_mode=repository-shared`
 and production delivery remain **NEEDS_REVERIFY** external gates.
 
+### REQ-ADD-044: Railway repository-shared classifier package
+
+The root-only Railway image now carries a generated
+`railway-monitor/shared_event_classifier.py` produced from the canonical
+`src/event_classifier.py`. The generator rewrites only the keyword-file path
+to the sibling bundle; it does not introduce a second policy implementation.
+`tests/test_railway_monitor.py` verifies isolated root imports use
+`classifier_mode=repository-shared` and that the generated bundle is current.
+The quality workflow runs the generator in `--check` mode, so classifier source
+changes cannot silently leave a stale Railway artifact. Local evidence is
+targeted **103 passed** and repository regression **1245 passed, 1 skipped**;
+live Railway health and delivery remain
+**NEEDS_REVERIFY** until `/health` reports the shared mode.
+PR #623 remote evidence: quality run `31856149233` and security run
+`31856149334` completed successfully.
+
 Verification evidence for this continuation: targeted Railway/classifier/Gmail
 suite **106 passed**; repository regression **1244 passed, 1 skipped**;
 `uv run ruff check src tests`, `uv run mypy src`, and Python compilation passed.
