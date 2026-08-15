@@ -347,3 +347,20 @@ provider loop and parser-mismatch regression now pass alongside the full suite:
 **1239 passed, 1 skipped**. Changed-file Ruff also passes. This follow-up is
 part of PR #619 and remains local/CI evidence only until live Gmail/Railway
 acceptance is captured.
+
+### REQ-ADD-042: canonical news feed projection
+
+The official news adapter no longer owns a second provider identity catalog.
+`news_intelligence.PROVIDER_REGISTRY` is the source of truth for official feed
+URL, parser kind, market, timeout, authority tier and disabled-source state;
+`news_feed_adapters.feed_catalog()` is a projection used for fetching and
+source-health reporting. Discovery providers without a feed endpoint remain
+excluded from the official evidence path. Targeted news adapter, intelligence
+and routing tests pass locally; live TWSE/MOPS/SEC/Fed freshness evidence is
+still `NEEDS_REVERIFY` under the external gates above.
+
+PR #621 remote evidence: `test-and-dry-run` run `31853786392` / job
+`94934561198` passed; CodeQL run `94934682932` and security CodeQL job
+`94934561115`, dependency review `94934561091`, and SBOM `94934561084` all
+passed. These checks verify the canonical projection and regression suite;
+they do not replace live source-freshness or post-merge acceptance evidence.

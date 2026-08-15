@@ -71,3 +71,17 @@ def test_news_intelligence_rejects_malformed_provider_entries():
     errors = validate_news_intelligence(artifact)
     assert any("must be an object" in error for error in errors)
     assert any("duplicates dup" in error for error in errors)
+
+
+def test_news_intelligence_rejects_feed_endpoint_outside_provider_domain():
+    artifact = build_news_intelligence([])
+    artifact["provider_registry"][0]["feed_url"] = "https://evil.example/news"
+    assert any("feed_url is outside provider domains" in error for error in validate_news_intelligence(artifact))
+
+
+def test_news_intelligence_allows_explicit_disabled_provider_without_endpoint():
+    artifact = build_news_intelligence([])
+    nasdaq = next(item for item in artifact["provider_registry"] if item["provider_id"] == "nasdaq")
+    nasdaq["feed_url"] = ""
+    nasdaq["enabled"] = False
+    assert not any("feed_url" in error for error in validate_news_intelligence(artifact))

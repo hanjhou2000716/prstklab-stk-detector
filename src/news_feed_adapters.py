@@ -20,61 +20,33 @@ from xml.etree import ElementTree
 
 import requests
 
+from src.news_intelligence import provider_registry
 from src.value_fundamentals import SEC_USER_AGENT
 
 RequestFn = Callable[..., Any]
 
-FEED_CATALOG: tuple[dict[str, Any], ...] = (
-    {
-        "provider_id": "twse",
-        "market": "taiwan",
-        "kind": "json",
-        "url": "https://openapi.twse.com.tw/v1/news/newsList",
-        "timeout_seconds": 8,
-        "enabled": True,
-    },
-    {
-        "provider_id": "mops",
-        "market": "taiwan",
-        "kind": "json",
-        "url": "https://mops.twse.com.tw/mops/api/t05st02",
-        "timeout_seconds": 8,
-        "enabled": True,
-    },
-    {
-        "provider_id": "sec",
-        "market": "us",
-        "kind": "rss",
-        "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
-        "timeout_seconds": 8,
-        "enabled": True,
-    },
-    {
-        "provider_id": "fed",
-        "market": "us",
-        "kind": "rss",
-        "url": "https://www.federalreserve.gov/feeds/press_all.xml",
-        "timeout_seconds": 8,
-        "enabled": True,
-    },
-    # Nasdaq's public site does not expose one stable, documented RSS URL.
-    # Keep it in the registry for provenance and enable it when a supported
-    # endpoint is configured explicitly by deployment settings.
-    {
-        "provider_id": "nasdaq",
-        "market": "us",
-        "kind": "rss",
-        "url": "",
-        "timeout_seconds": 8,
-        "enabled": False,
-        "disabled_reason": "no stable documented public feed endpoint",
-    },
-)
-
-
 def feed_catalog() -> list[dict[str, Any]]:
-    """Return a serialisable copy suitable for source-health diagnostics."""
-    return [dict(item) for item in FEED_CATALOG]
+    """Build the official feed catalog from the canonical provider registry.
+
+    Discovery providers (for example Google News) intentionally do not have
+    ``feed_url`` and therefore never become official evidence by accident.
+    Disabled providers remain visible for source-health diagnostics.
+    """
+    catalog: list[dict[str, Any]] = []
+    for provider in provider_registry():
+        if "feed_url" not in provider and provider["provider_id"] != "nasdaq":
+            continue
+        catalog.append({
+            "provider_id": provider["provider_id"],
+            "market": provider["markets"][0] if provider["markets"] else "global",
+            "kind": provider.get("feed_kind") or provider.get("fetch_method") or "rss",
+            "url": provider.get("feed_url") or "",
+            "timeout_seconds": provider.get("timeout_seconds", 8),
+            "enabled": provider.get("enabled", True),
+            "disabled_reason": provider.get("disabled_reason"),
+            "source_tier": provider.get("authority_tier", "unknown"),
+        })
+    return catalog
 
 
 def _headers(provider_id: str) -> dict[str, str]:
@@ -183,7 +155,7 @@ def fetch_official_market_news(
     stories: list[dict[str, Any]] = []
     health: list[dict[str, Any]] = []
     errors: list[dict[str, Any]] = []
-    for item in catalog or list(FEED_CATALOG):
+    for item in catalog or feed_catalog():
         if item.get("market") != market:
             continue
         provider_id = str(item["provider_id"])
