@@ -137,15 +137,15 @@ This section is updated only from the public manifest and the latest successful
 main-branch workflows. It is evidence of the deployed release, not a claim
 that every optional provider or historical backtest is available.
 
-- Main commit: `b45136c615f0c8bf66095bf98d6fe9e6427ad785`
-- Pages deployment / market refresh: [31881672796](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31881672796)
-- Public release smoke: [31883096113](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31883096113)
+- Main commit: `35b4a0d54124646ba25f41bab9d58fec8408cd4a`
+- Pages deployment / market refresh: [31883869066](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31883869066)
+- Public release smoke: [31883967681](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31883967681)
 - Quality/delivery photo smoke: [31882734841](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31882734841)
-- Release: `release-a7a3cfae4ea23761`
-- Market snapshot: `aa2c4d7e3b061b5e`
+- Release: `release-18e44bd16889fb7e`
+- Market snapshot: `87b41002eb87405b`
 - Research snapshot: `research-8b8ec8f6e5ee51aa`
 - Event snapshot: `event-f67c25c9f5e6f24d`
-- Creator snapshot: `creator-7189164448c691a0`
+- Creator snapshot: `creator-41502dd3815b1eae`
 - Manifest status: `ready`; research mode/scope: `production` / `full`
 - Source health is now also emitted as a release-bound `data/source-health.json`
   artifact when the producer has the canonical health envelope. The legacy
@@ -166,6 +166,12 @@ delivery, zero failures, and a matching Railway receipt with trace
 `photo-smoke-be85506dce214f5c`.  It proves renderer, sendPhoto and receipt
 plumbing, not the content of a live event.  A release-gated production
 delivery must use the release identifiers above.
+
+The later refresh run `31883869066` published the release above and the
+read-only public smoke `31883967681` confirmed that exact market snapshot.
+That refresh intentionally did not send Telegram; the photo receipt above
+therefore remains the latest controlled delivery evidence and is not silently
+relabelled as evidence for the newer release.
 
 ### External runtime evidence (2026-08-15)
 
