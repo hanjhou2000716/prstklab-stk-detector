@@ -11,6 +11,28 @@
     "market_snapshot_id": {"type": "string"},
     "research_snapshot_id": {"type": "string"},
     "event_snapshot_id": {"type": "string"},
+    "creator_consensus": {
+      "type": "object",
+      "required": ["consensus_state", "directional_consensus", "topic_consensus", "contributors", "coverage", "evidence_alignment", "is_investment_signal"],
+      "properties": {
+        "consensus_state": {"enum": ["aligned", "mixed", "insufficient_sources", "pending_verification", "stale"]},
+        "directional_consensus": {"type": "string"},
+        "risk_consensus": {"type": "string"},
+        "topic_consensus": {"type": "array", "items": {"type": "object"}},
+        "consensus_topics": {"type": "array", "items": {"type": "object"}},
+        "contributors": {"type": "array", "items": {"type": "string"}},
+        "coverage": {"type": "string"},
+        "source_count": {"type": "integer", "minimum": 0},
+        "aligned_views": {"type": "array", "items": {"type": "object"}},
+        "divergent_views": {"type": "array", "items": {"type": "object"}},
+        "common_risks": {"type": "array", "items": {"type": "string"}},
+        "evidence_alignment": {"type": "string"},
+        "freshness_state": {"type": "string"},
+        "as_of": {"type": ["string", "null"], "format": "date-time"},
+        "is_investment_signal": {"const": false}
+      },
+      "additionalProperties": false
+    },
     "creators": {"type": "object", "additionalProperties": {"type": "object"}},
     "creator_health": {"type": "object"},
     "retention": {"type": "object", "required": ["public_per_creator", "compact_history_per_creator"]},

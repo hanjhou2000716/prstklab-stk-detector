@@ -37,6 +37,8 @@ def test_public_artifact_limits_retention_and_compacts_history() -> None:
     assert episodes[0]["display_mode"] == "full"
     assert all(item["display_mode"] == "compact" for item in episodes[1:])
     assert artifact["retention"]["public_per_creator"] == 10
+    assert artifact["creator_consensus"]["is_investment_signal"] is False
+    assert artifact["creator_consensus"]["coverage"] == "1/1"
 
 
 def test_private_fields_and_duplicate_episode_fail_closed() -> None:
@@ -53,3 +55,9 @@ def test_public_artifact_schema_and_no_image_url() -> None:
     artifact = build_creator_artifact([_insight(1, image_url="https://private.test/x.png")], snapshot_id="creator-snapshot-1")
     jsonschema.validate(artifact, schema)
     assert "image_url" not in artifact["creators"]["gooaye"]["episodes"][0]
+
+
+def test_public_artifact_rejects_creator_consensus_as_investment_signal() -> None:
+    artifact = build_creator_artifact([_insight(1)])
+    artifact["creator_consensus"]["is_investment_signal"] = True
+    assert "creator_consensus_is_investment_signal" in validate_creator_artifact(artifact)

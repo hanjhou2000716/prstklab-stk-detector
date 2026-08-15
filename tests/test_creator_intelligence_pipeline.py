@@ -15,6 +15,7 @@ def test_pipeline_accepts_sanitized_creator_insight_and_dedupes_episode():
     assert result["dropped_reasons"] == ["1:duplicate_episode"]
     assert result["artifact"]["status"] == "ready"
     assert result["artifact"]["creator_consensus"]["consensus_state"] == "insufficient_sources"
+    assert result["public_artifact"]["creator_consensus"]["consensus_state"] == "insufficient_sources"
 
 
 def test_pipeline_drops_private_or_unknown_records_fail_closed():

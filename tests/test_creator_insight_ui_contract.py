@@ -12,6 +12,10 @@ def test_creator_insight_panel_is_safe_and_optional():
     assert "來源主張：" in app
     assert "作者觀點：" in app
     assert "開啟公開來源" in app
+    assert "多來源內容共識" in app
+    assert "creator-consensus" in app
+    assert "不是投資訊號" in app
+    assert "confidence" not in app[app.index("const renderCreatorInsights"):app.index("const render =")]
     assert "raw_body" not in app
 
 

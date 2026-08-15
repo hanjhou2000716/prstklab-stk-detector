@@ -48,6 +48,10 @@ def validate_creator_release(
             continue
         if str(creator_artifact.get(field) or "") != str(parent_manifest.get(field) or ""):
             errors.append(f"creator artifact {field} mismatch")
+    consensus = creator_artifact.get("creator_consensus")
+    if consensus is not None:
+        if not isinstance(consensus, dict) or ("is_investment_signal" in consensus and consensus.get("is_investment_signal") is not False):
+            errors.append("creator consensus cannot be an investment signal")
     for item in creator_artifact.get("insights") or []:
         if not isinstance(item, dict):
             errors.append("creator insight must be an object")
@@ -85,9 +89,18 @@ def build_creator_release(
         "public_safe": True,
         "creator_consensus": creator_consensus or {
             "consensus_state": "insufficient_sources",
+            "directional_consensus": "insufficient_sources",
+            "risk_consensus": "insufficient_evidence",
+            "topic_consensus": [],
             "consensus_topics": [],
             "contributors": [],
-            "confidence": 0.0,
+            "coverage": "0/0",
+            "source_count": 0,
+            "aligned_views": [],
+            "divergent_views": [],
+            "common_risks": [],
+            "evidence_alignment": "insufficient_evidence",
+            "freshness_state": "unknown",
             "as_of": None,
             "is_investment_signal": False,
         },
