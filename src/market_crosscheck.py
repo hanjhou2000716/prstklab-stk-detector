@@ -114,7 +114,9 @@ def quote_provenance(quote: dict[str, Any]) -> dict[str, Any]:
         for provider, observation in raw_sources.items():
             if isinstance(observation, dict):
                 crosscheck_sources.append({
+                    "provider": str(provider).upper() if provider else source_label,
                     "label": str(provider).upper() if provider else source_label,
+                    "source_url": observation.get("source_url") or observation.get("url") or "",
                     "url": observation.get("source_url") or observation.get("url") or "",
                     "quote_time": observation.get("quote_time") or observation.get("quote_date") or "",
                     "quote_date": observation.get("quote_date"),

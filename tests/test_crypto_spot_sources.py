@@ -132,3 +132,4 @@ def test_crypto_spot_crosscheck_marks_aligned_prices_confirmed():
     assert cards[0]["quote_source"] == "Binance public spot quote"
     assert cards[0]["crosscheck_status"] == "已交叉核對"
     assert {item["label"] for item in cards[0]["crosscheck_sources"]} == {"Binance", "CoinGecko"}
+    assert {item["provider"] for item in cards[0]["crosscheck_sources"]} == {"Binance", "CoinGecko"}
