@@ -122,5 +122,5 @@ inferred from these local and CI passes.
 These observations update the external debt ledger; they do not close it.
 
 The post-evidence PR checks are also green: quality/dry-run run
-`31859116559`, security run `31859116535`, and separate CodeQL check
-`94949254768`.
+`31859330412`, security run `31859330400`, and separate CodeQL check
+`94949854964`.
