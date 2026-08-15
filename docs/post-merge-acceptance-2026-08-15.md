@@ -41,7 +41,7 @@ The public `/health` endpoint returned HTTP 200 after main deployment:
 - Jin10: `healthy`
 - classifier mode: `repository-shared`
 - classifier source and keyword bundle hashes: present
-- GDELT: `failed` with `invalid_json` (source failure is visible and isolated)
+- GDELT: `failed` with `HTTP_429` (source failure and bounded retry are visible and isolated)
 - delivery: `delivered`, with one scoped photo receipt and matching trace
 - Gmail: `configuration_missing`
 - runtime config: legacy delivery secret present, canonical
