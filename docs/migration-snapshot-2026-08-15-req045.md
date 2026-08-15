@@ -100,3 +100,23 @@ inferred from these local and CI passes.
   research-building and production-artifact warnings.
 - Delivery smoke remains intentionally fail-closed (`TELEGRAM_CHAT_IDS` is
   empty), so no real recipient was contacted.
+
+## External gate capture (read-only, 2026-08-15)
+
+- Railway `/health` returned HTTP 200 with a running monitor and healthy Jin10
+  poller. The live deployment was still based on PR #619 and reported
+  `classifier_mode=standalone-bundled`; PR #624 has not been promoted to that
+  service yet.
+- The same response reported GDELT `HTTP_429` and health callback
+  `HTTP_403`, with bounded retry metadata. These remain external configuration
+  or rate-limit debts and are not relabeled as source success.
+- Railway delivery was `not_checked` with no receipt trace. Gmail/Creator
+  ingress was `configuration_missing`; no production Telegram delivery was
+  attempted.
+- Public Pages manifest was readable and `status=ready` for release
+  `release-957714e850293f39` (created 2026-08-13). All six declared artifacts
+  matched their manifest SHA-256 hashes. This is an integrity PASS for that
+  release, while freshness and post-merge publication remain
+  `NEEDS_REVERIFY`.
+
+These observations update the external debt ledger; they do not close it.

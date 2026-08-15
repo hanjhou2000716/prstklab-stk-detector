@@ -83,3 +83,35 @@ with no open code regression but with external completion debt.
   `TELEGRAM_CHAT_IDS`; no production notification was attempted.
 - PR #624 post-checkpoint CI: quality/dry-run run `31858069045` and security
   run `31858069057` both **PASS** (CodeQL, dependency review and SBOM included).
+
+## External read-only evidence (2026-08-15)
+
+The following observations were captured without changing Railway, Pages,
+Secrets, or Telegram configuration:
+
+- Railway service `loving-happiness` `/health` returned HTTP 200 and
+  `status=ok`; the monitor heartbeat and Jin10 source were healthy at the
+  time of capture.
+- The live deployment was still the PR #619 deployment, before PR #624. Its
+  runtime reported `classifier_mode=standalone-bundled`, while the canonical
+  Railway status secret was absent and only the legacy secret name was
+  present. This keeps the live classifier provenance gate at
+  `NEEDS_REVERIFY` until the dependency stack is deployed.
+- Railway reported GDELT `HTTP_429` with bounded retry metadata and a health
+  callback `HTTP_403`. This is an external rate-limit/credential configuration
+  debt, not evidence that the source is healthy; the existing bounded-cache
+  fail-closed behavior is preserved.
+- Railway reported `delivery.status=not_checked` and no receipt trace, and
+  Gmail/Creator ingress was `configuration_missing`. No production recipient
+  was contacted during this capture.
+- Public Pages `data/release-manifest.json` returned HTTP 200 with
+  `status=ready`, release `release-957714e850293f39`, created
+  `2026-08-13T13:02:29.418420+00:00`. All six declared artifacts returned
+  HTTP 200 and their SHA-256 values matched the manifest. This proves
+  integrity of that public release, not freshness relative to the current
+  main branch.
+
+The external gates therefore remain `NEEDS_REVERIFY`: deployment of the
+canonical classifier stack, a reviewed Railway health callback configuration,
+sanitized ingress, and one explicitly controlled Telegram recipient are still
+required before production acceptance.
