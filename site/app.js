@@ -868,6 +868,34 @@ const renderCreatorInsights = (creatorRelease) => {
     content.innerHTML = '<p class="empty">財經內容洞察來源目前不可用；不影響核心市場資料。</p>';
     return;
   }
+  const consensus = creatorRelease.creator_consensus;
+  if (consensus && typeof consensus === "object") {
+    const stateLabels = {
+      aligned: "多來源方向一致（僅描述觀點）",
+      mixed: "多來源觀點分歧",
+      insufficient_sources: "來源不足，暫不形成共識",
+      pending_verification: "有內容但缺少可比的明確立場",
+      stale: "內容過期，暫不作為目前觀察",
+    };
+    const evidenceLabels = {
+      aligned: "市場資料可比對",
+      partially_aligned: "部分市場資料可比對",
+      stale: "市場資料過期",
+      insufficient_evidence: "市場證據不足",
+    };
+    const topicStateLabels = {
+      aligned: "一致",
+      mixed: "分歧",
+      insufficient_sources: "來源不足",
+      pending_verification: "待核對",
+    };
+    const topics = Array.isArray(consensus.topic_consensus) ? consensus.topic_consensus.slice(0, 6) : [];
+    const topicText = topics.map((item) => `${escapeHtml(item.topic || "未命名主題")}：${escapeHtml(topicStateLabels[item.consensus_state] || "待核對")}`).join("、");
+    const divergent = Array.isArray(consensus.divergent_views) ? consensus.divergent_views : [];
+    const risks = Array.isArray(consensus.common_risks) ? consensus.common_risks : [];
+    const asOf = consensus.as_of ? new Date(consensus.as_of).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚無時間資料";
+    content.insertAdjacentHTML("beforeend", `<article class="creator-consensus"><h4>多來源內容共識</h4><p><b>狀態：</b>${escapeHtml(stateLabels[consensus.consensus_state] || "待核對")}</p><p><b>涵蓋：</b>${escapeHtml(consensus.coverage || "0/0")}｜<b>主題：</b>${topicText || "尚無可比主題"}</p><p><b>觀點分歧：</b>${divergent.length ? divergent.map((item) => escapeHtml(item.topic || "未命名主題")).join("、") : "未發現明確分歧"}</p><p><b>共同風險：</b>${risks.length ? risks.map(escapeHtml).join("、") : "尚無可交集風險標籤"}</p><small>市場證據：${escapeHtml(evidenceLabels[consensus.evidence_alignment] || "尚未核對")}｜資料時間：${escapeHtml(asOf)}</small><small>此區為公開內容觀點整理，不是事件核對，也不是投資訊號。</small></article>`);
+  }
   let insights = Array.isArray(creatorRelease.insights) ? creatorRelease.insights : [];
   if (!insights.length && creatorRelease.creators && typeof creatorRelease.creators === "object") {
     insights = Object.values(creatorRelease.creators).flatMap((creator) => {
