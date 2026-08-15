@@ -165,6 +165,22 @@ def validate_news_intelligence(document: dict[str, Any]) -> list[str]:
         if provider_id in known:
             errors.append(f"news.provider_registry duplicates {provider_id}")
         known[provider_id] = provider
+        # Feed metadata is optional for compatibility with older artifacts,
+        # but when present it is part of the canonical adapter contract.
+        feed_kind = provider.get("feed_kind")
+        if feed_kind is not None and feed_kind not in {"json", "rss", "atom", "html"}:
+            errors.append(f"news.provider_registry[{index}] has unsupported feed_kind={feed_kind!r}")
+        if "feed_url" in provider:
+            feed_url = str(provider.get("feed_url") or "")
+            if feed_url:
+                parsed_feed = urlparse(feed_url)
+                feed_host = (parsed_feed.hostname or "").lower().removeprefix("www.")
+                if parsed_feed.scheme != "https" or not feed_host:
+                    errors.append(f"news.provider_registry[{index}] feed_url must be an absolute HTTPS URL")
+                elif not any(feed_host == domain or feed_host.endswith("." + domain) for domain in (str(item).lower().removeprefix("www.") for item in domains)):
+                    errors.append(f"news.provider_registry[{index}] feed_url is outside provider domains")
+            elif provider.get("enabled") is True:
+                errors.append(f"news.provider_registry[{index}] enabled feed requires feed_url")
     for index, story in enumerate(document.get("stories", [])):
         if not isinstance(story, dict):
             continue

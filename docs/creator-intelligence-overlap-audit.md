@@ -234,3 +234,7 @@ registry. Adapter tests verify the registry projection and preserve
 per-provider failure isolation, rate-limit classification and no-event versus
 failed semantics. This is local/CI evidence; live source freshness remains an
 external acceptance gate.
+
+The release validator also checks optional feed metadata: configured endpoints
+must be HTTPS and remain inside the provider's canonical domain, while a
+disabled provider may explicitly retain an empty endpoint for diagnostics.
