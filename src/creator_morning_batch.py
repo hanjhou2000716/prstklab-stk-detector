@@ -99,6 +99,13 @@ def build_creator_morning_batch(
         if published.astimezone(_TAIPEI).date() != day:
             rejected += 1
             continue
+        # Point-in-time guard: a batch must never include an episode that was
+        # published or received after the snapshot's ``as_of`` boundary.
+        # Without this check a delayed export containing future rows could be
+        # attached to an earlier release and look like a morning observation.
+        if published > now or received > now:
+            rejected += 1
+            continue
         # A publication after the scheduled cutoff is not a morning item yet,
         # unless it arrived during the bounded late-arrival grace window.
         if published > late_end or received > late_end:
