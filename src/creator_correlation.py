@@ -38,7 +38,16 @@ def _snapshot_id(snapshot: dict[str, Any] | None, preferred: str | None = None) 
 def _snapshot_time(snapshot: dict[str, Any] | None) -> datetime | None:
     if not isinstance(snapshot, dict):
         return None
-    return _time(snapshot.get("as_of") or snapshot.get("fetched_at") or snapshot.get("created_at"))
+    # Release artifacts use ``generated_at`` as their immutable observation
+    # timestamp, while the runtime briefing envelope may expose ``as_of``.
+    # Accept both forms so release-time correlation does not incorrectly mark
+    # a valid snapshot as missing its observation time.
+    return _time(
+        snapshot.get("as_of")
+        or snapshot.get("fetched_at")
+        or snapshot.get("created_at")
+        or snapshot.get("generated_at")
+    )
 
 
 def _is_stale(snapshot: dict[str, Any] | None, *, now: datetime, max_age_hours: int) -> bool:
