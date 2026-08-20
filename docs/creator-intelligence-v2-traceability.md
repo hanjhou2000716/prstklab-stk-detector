@@ -32,6 +32,9 @@
   time, parser version, hashed observation identity, item/cluster keys, release
   and snapshot IDs, delivery status and notification reason.  Raw Gmail
   transport identifiers remain blocked at ingress.
+- PR #661 CI evidence: quality/delivery dry-run, CodeQL, dependency review and
+  SBOM all passed in the same workflow window (run `32401957171` and security
+  run `32401957312`).
 - Local targeted News／release／UI regression: `108 passed`; full CI is the
   authoritative gate.  Gmail／Railway／Pages／Telegram production acceptance
   remains `NEEDS_REVERIFY` until an external receipt is captured.
