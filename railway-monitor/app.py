@@ -690,6 +690,37 @@ HEALTH_STATE: dict[str, Any] = {
         "last_history_id": None,
         "error": None,
     },
+    # These projections are intentionally separate from the Gmail transport
+    # health.  A healthy Pub/Sub watch does not prove that a Creator or
+    # FinancialJuice message was parsed, released, or delivered.  News is
+    # produced by the Actions plane, so Railway reports it as not_checked
+    # until a release health snapshot is supplied.
+    "creator": {
+        "status": "not_checked", "received_count": 0, "parsed_count": 0,
+        "failed_count": 0, "duplicate_count": 0,
+        "public_observation_count": 0, "last_received_at": None,
+        "last_parsed_at": None, "last_failure_at": None,
+        "today_count": 0, "latest_count": 0,
+        "morning_batch_count": 0, "coverage_status": "not_checked",
+        "consensus_status": "not_checked", "last_release_id": None,
+        "last_telegram_delivery_at": None,
+    },
+    "financialjuice": {
+        "status": "not_checked", "received_count": 0, "parsed_count": 0,
+        "failed_count": 0, "duplicate_count": 0,
+        "public_observation_count": 0, "importance_gte_8_count": 0,
+        "pending_cluster_count": 0, "last_received_at": None,
+        "last_parsed_at": None, "last_failure_at": None,
+        "decision": "not_checked", "last_release_id": None,
+        "last_telegram_delivery_at": None,
+    },
+    "news": {
+        "status": "not_checked", "execution_plane": "github_actions",
+        "reason": "news_health_is_published_with_release_snapshot",
+        "last_success_at": None, "last_failure_at": None,
+        "provider_status": {}, "stories_ingested": 0,
+        "stories_deduped": 0, "stories_ranked": 0, "relevance_rejected": 0,
+    },
 }
 DELIVERY_STORE: SeenStore | None = None
 EMAIL_INGRESS: Any | None = None
@@ -698,6 +729,26 @@ EMAIL_INGRESS: Any | None = None
 def update_health(component: str, **values: Any) -> None:
     with HEALTH_LOCK:
         HEALTH_STATE.setdefault(component, {}).update(values)
+
+
+def sync_external_source_health(diagnostics: Any) -> None:
+    """Project private Gmail-derived source counters into public health.
+
+    Only bounded counters, timestamps and state labels are copied.  Raw mail,
+    Gmail IDs, sender addresses and message bodies remain inside Railway's
+    private store.  Missing diagnostics are represented as ``not_checked``
+    rather than silently reported as healthy.
+    """
+    if not isinstance(diagnostics, dict):
+        return
+    store = diagnostics.get("store")
+    values = store.get("source_health") if isinstance(store, dict) else None
+    if not isinstance(values, dict):
+        return
+    for component in ("creator", "financialjuice"):
+        source = values.get(component)
+        if isinstance(source, dict):
+            update_health(component, **source)
 
 
 def _non_negative_int(value: Any) -> int | None:
@@ -711,6 +762,12 @@ def _age_seconds(value: str | None, *, now: datetime | None = None) -> int | Non
 
 
 def health_snapshot() -> dict[str, Any]:
+    if EMAIL_INGRESS is not None:
+        try:
+            sync_external_source_health(EMAIL_INGRESS.health())
+        except Exception:  # pragma: no cover - health must never crash probes
+            update_health("creator", status="failed", error="health_projection_failed")
+            update_health("financialjuice", status="failed", error="health_projection_failed")
     with HEALTH_LOCK:
         snapshot = json.loads(json.dumps(HEALTH_STATE))
     monitor = snapshot.get("monitor")
@@ -2107,6 +2164,12 @@ def configure_gmail_ingress() -> None:
     global EMAIL_INGRESS
     EMAIL_INGRESS, fields = build_gmail_ingress()
     update_health("gmail", **fields)
+    if EMAIL_INGRESS is not None:
+        try:
+            sync_external_source_health(EMAIL_INGRESS.health())
+        except Exception:  # pragma: no cover - defensive startup boundary
+            update_health("creator", status="failed", error="health_projection_failed")
+            update_health("financialjuice", status="failed", error="health_projection_failed")
 
 
 class HealthHandler(BaseHTTPRequestHandler):
@@ -2186,6 +2249,7 @@ class HealthHandler(BaseHTTPRequestHandler):
                     **_gmail_health_fields(diagnostics),
                     error=None,
                 )
+                sync_external_source_health(diagnostics)
                 response = b'{"accepted":true}\n'
                 self.send_response(204)
                 self.send_header("Content-Length", str(len(response)))
