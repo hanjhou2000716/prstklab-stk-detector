@@ -357,3 +357,26 @@ Railway receipt projection matched the outbox:
 This is a controlled single-recipient acceptance, not a broadcast or proof of
 every subscriber's delivery. The remaining external gates are Gmail OAuth /
 Pub/Sub ingress and a qualifying live FinancialJuice receipt.
+
+### Latest approved refresh rerun (2026-08-21 Asia/Taipei)
+
+The approved `refresh-dashboard` dispatch from the merged `main` commit
+`d279a9b24f325913567a55d4706bfc65158b867c` completed successfully in Actions
+run [32389687042](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32389687042).
+The public manifest was re-read after Pages deployment and returned
+`status=ready`; its release-bound artifact set is:
+
+| Artifact | ID |
+|---|---|
+| Release | `release-24bbf60f03850ca5` |
+| Market snapshot | `40f6d61f5886c7c8` |
+| Research snapshot | `research-8b8ec8f6e5ee51aa` |
+| Event snapshot | `event-ed531dee05c7de49` |
+| Creator snapshot | `creator-c11ad4250540693f` |
+| News snapshot | `news-ae8520aae4d776ae` |
+
+The manifest declares `creator_public_status=ready`, `news_status=ready`,
+zero validation errors and matching artifact hashes. Research remains
+explicitly `stale_fallback` as a data-freshness state; it is not relabelled as
+live merely because the market refresh succeeded. No Telegram notification was
+emitted because this refresh produced no qualifying alert.
