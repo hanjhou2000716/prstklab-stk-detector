@@ -4,6 +4,16 @@ This record captures the approved `refresh-dashboard` run and the read-only
 post-run checks.  It records observations only; a successful refresh does not
 mean that every optional provider or delivery boundary is healthy.
 
+## Follow-up observation — 2026-08-21
+
+The subsequent `refresh-dashboard` dispatch (`32399919833`) also completed
+successfully and published a `ready` manifest (`release-bc85f95f9fd88245`).
+The latest Railway health read remains fail-closed: Jin10 and the monitor are
+healthy, while Gmail is `configuration_missing`, GDELT is `HTTP_429`, and the
+health callback is `HTTP_403`.  Delivery evidence is still the earlier scoped
+photo smoke receipt, not a new FinancialJuice/Creator production receipt.
+Therefore this observation does not change the acceptance state below.
+
 ## Refresh-dashboard
 
 - Workflow: [32340655743](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32340655743)
