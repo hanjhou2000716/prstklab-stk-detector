@@ -1,5 +1,6 @@
 import base64
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -56,6 +57,39 @@ def test_email_router_imports_from_standalone_railway_root() -> None:
     )
     assert "haojiao" in result.stdout
     assert "jenny" in result.stdout
+
+
+def test_standalone_known_email_fails_closed_when_canonical_parser_is_unavailable() -> None:
+    """A root-only image must not silently drop a routed message."""
+    import os
+
+    environment = os.environ.copy()
+    environment.pop("PYTHONPATH", None)
+    command = [
+        sys.executable,
+        "-c",
+        (
+            "import json, email_router; "
+            "print(json.dumps(email_router.parse_email({"
+            "'gmail_message_id':'standalone-1',"
+            "'sender':'alerts@financialjuice.com',"
+            "'subject':'FinancialJuice breaking news',"
+            "'body':'Original headline: oil supply update\\nImportance: 10/10'"
+            "})))"
+        ),
+    ]
+    result = subprocess.run(
+        command,
+        cwd=RAILWAY_MODULES,
+        env=environment,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    parsed = json.loads(result.stdout)
+    assert parsed["parse_status"] == "parser_unavailable"
+    assert parsed["failure_reason"] == "canonical_external_parser_unavailable"
+    assert parsed["public_observations"] == []
 
 
 def test_standalone_creator_bundle_matches_canonical_registry() -> None:
