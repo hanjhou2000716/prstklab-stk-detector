@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -36,7 +37,11 @@ def _write_output(values: dict[str, object]) -> None:
     intentionally short; correlation belongs in Actions, Railway and the
     Mini App snapshot rather than in the 30-character watch message.
     """
-    lines = [f"{key}={str(value or '')}" for key, value in values.items()]
+    lines = []
+    for key, value in values.items():
+        if isinstance(value, (dict, list)):
+            value = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        lines.append(f"{key}={str(value or '')}")
     destination = os.getenv("GITHUB_OUTPUT")
     if destination:
         with open(destination, "a", encoding="utf-8") as handle:

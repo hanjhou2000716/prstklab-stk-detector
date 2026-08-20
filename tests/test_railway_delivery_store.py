@@ -86,6 +86,40 @@ def test_delivery_receipt_requires_explicit_origin_and_keeps_recipient_failures(
     assert delivery.record_delivery_status(connection, rejected) is False
 
 
+def test_delivery_receipt_persists_financialjuice_trace_without_raw_identity():
+    connection = _connection()
+    payload = {
+        "trace_id": "trace-fj",
+        "receipt_kind": "production",
+        "receipt_origin": "github_actions",
+        "release_id": "release-fj",
+        "snapshot_id": "snapshot-fj",
+        "alert_id": "cluster-fj",
+        "delivery_mode": "photo",
+        "delivery_status": "delivered",
+        "delivered_count": 1,
+        "failed_count": 0,
+        "financialjuice_delivery_trace": {
+            "observation_id_hash": "a" * 64,
+            "item_id": "fj-item-1",
+            "event_cluster_key": "cluster-fj",
+            "vendor_importance": 8,
+            "prstk_risk": {"prstk_risk_level": "R2"},
+            "notification_reason": "vendor_priority_importance_ge_8",
+            "release_id": "release-fj",
+            "snapshot_id": "snapshot-fj",
+            "delivery_status": "delivered",
+        },
+    }
+    assert delivery.record_delivery_status(connection, payload) is True
+    stored = connection.execute(
+        "SELECT payload_json FROM delivery_outbox WHERE trace_id='trace-fj'"
+    ).fetchone()[0]
+    assert "financialjuice_delivery_trace" in stored
+    assert "observation_id_hash" in stored
+    assert "gmail_message_id" not in stored
+
+
 def test_legacy_receipt_counts_are_read_and_terminal_history_is_pruned():
     connection = _connection()
     old = (datetime.now(UTC) - timedelta(days=31)).isoformat()

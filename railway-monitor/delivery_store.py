@@ -79,6 +79,26 @@ def mark_outbox(
     connection.commit()
 
 
+def _safe_financialjuice_trace(payload: dict[str, Any]) -> dict[str, Any] | None:
+    """Keep the FJ release trace while excluding transport/private identifiers."""
+    value = payload.get("financialjuice_delivery_trace")
+    if not isinstance(value, dict):
+        return None
+    allowed = {
+        "observation_id_hash", "item_id", "event_cluster_key", "vendor_importance",
+        "prstk_risk", "notification_reason", "release_id", "snapshot_id", "delivery_status",
+    }
+    trace = {key: value[key] for key in allowed if key in value}
+    digest = str(trace.get("observation_id_hash") or "")
+    if digest and (len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest.lower())):
+        raise ValueError("invalid FinancialJuice observation hash")
+    if trace and str(trace.get("release_id") or "") != str(payload.get("release_id") or ""):
+        raise ValueError("FinancialJuice release trace does not match receipt")
+    if trace and str(trace.get("snapshot_id") or "") != str(payload.get("snapshot_id") or ""):
+        raise ValueError("FinancialJuice snapshot trace does not match receipt")
+    return trace or None
+
+
 def due_outbox(connection: sqlite3.Connection, limit: int = 20) -> list[dict[str, Any]]:
     now = datetime.now(UTC).isoformat()
     rows = connection.execute(
@@ -360,6 +380,9 @@ def record_delivery_status(connection: sqlite3.Connection, payload: dict[str, An
                 if isinstance(item, str) and item.strip()
             ][:200],
         }
+        financialjuice_trace = _safe_financialjuice_trace(payload)
+        if financialjuice_trace is not None:
+            smoke_payload["financialjuice_delivery_trace"] = financialjuice_trace
         connection.execute(
             """INSERT INTO delivery_outbox(
                 trace_id,canonical_key,source,event_id,category,payload_json,
