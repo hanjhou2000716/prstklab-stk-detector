@@ -99,6 +99,71 @@ def test_scheduled_delivery_uses_photo_delivery_after_release_gate(tmp_path, mon
     assert "delivery_mode=photo" in text
 
 
+def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / "market.json"
+    manifest_path = tmp_path / "release-manifest.json"
+    snapshot_path.write_text(
+        json.dumps({"snapshot_id": "market-12345678", "quotes": [], "indices": [], "briefing": {}}),
+        encoding="utf-8",
+    )
+    manifest_path.write_text("{}", encoding="utf-8")
+    output = tmp_path / "output"
+    _patch_ready(monkeypatch, output)
+    event = {
+        "source_key": "financialjuice",
+        "event_cluster_key": "cluster-1",
+        "observation_id": "fj-observation-1",
+        "observation_id_hash": "a" * 64,
+        "item_id": "item-1",
+        "title": "Oil supply risk",
+        "vendor_importance": 8,
+        "prstk_risk": {"prstk_risk_level": "R2"},
+        "notification_reason": "vendor_priority_importance_ge_8",
+        "parser_version": "financialjuice-compound-v1",
+        "received_at": "2026-08-21T01:01:00+00:00",
+        "alert_eligible": True,
+    }
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: event)
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "decide_alert_budget",
+        lambda *_args: {"allowed": True, "reason": "material_change", "event_key": "cluster-1"},
+    )
+    photo = tmp_path / "alert.png"
+    photo.write_bytes(b"png")
+    monkeypatch.setattr(scheduled_delivery, "render_alert_card", lambda *_args, **_kwargs: photo)
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "send_photo_briefs",
+        lambda **_kwargs: (type("Delivery", (), {"status": "delivered", "chat_id_hash": "hash"})(),),
+    )
+    monkeypatch.setattr(scheduled_delivery, "write_event_lock_key", lambda *_args: None)
+    recorded: dict = {}
+
+    class FakeLedger:
+        def delivery_history(self):
+            return []
+
+        def record_delivery(self, payload, **_kwargs):
+            recorded.update(payload)
+            return payload
+
+        def save(self):
+            return None
+
+    monkeypatch.setattr(scheduled_delivery, "EventLedger", FakeLedger)
+    scheduled_delivery.send(snapshot_path, "morning", manifest_path)
+    text = output.read_text(encoding="utf-8")
+    assert "financialjuice_delivery_trace=" in text
+    assert "release-1" in text
+    assert "market-12345678" in text
+    assert "delivery_status=delivered" in text
+    assert recorded["release_id"] == "release-1"
+    assert recorded["snapshot_id"] == "market-12345678"
+    assert recorded["delivery_status"] == "delivered"
+    assert recorded["observation_id_hash"] == "a" * 64
+
+
 def test_scheduled_delivery_blocks_photo_when_renderer_fails(tmp_path, monkeypatch):
     snapshot_path = tmp_path / "market.json"
     manifest_path = tmp_path / "release-manifest.json"
