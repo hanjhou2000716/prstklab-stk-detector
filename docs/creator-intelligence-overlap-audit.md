@@ -380,3 +380,24 @@ zero validation errors and matching artifact hashes. Research remains
 explicitly `stale_fallback` as a data-freshness state; it is not relabelled as
 live merely because the market refresh succeeded. No Telegram notification was
 emitted because this refresh produced no qualifying alert.
+
+### Latest read-only Railway health (2026-08-21 00:08 Asia/Taipei)
+
+The post-refresh health read returned `status=ok`. The monitor completed its
+latest cycle with `heartbeat_status=healthy`, and the deployed classifier was
+`repository-shared`. The delivery projection still reports the prior
+controlled photo smoke as `delivered` with
+`receipt_matches_last_outbox=true`; no new broadcast was created by the
+dashboard refresh.
+
+The same response keeps the external gates explicit and fail-closed:
+
+- Gmail is `configuration_missing`; only the missing variable names are
+  exposed (`GMAIL_WATCH_TOPIC`, `GMAIL_WATCH_LABEL_IDS`, `GMAIL_OAUTH_STATE`,
+  `GMAIL_PUBSUB_AUDIENCE`, `GMAIL_PUBSUB_SERVICE_ACCOUNT`).
+- GDELT is `HTTP_429`, with no stale cache promoted to live evidence.
+- The non-fatal health callback is `HTTP_403` and is scheduled for bounded
+  retry; it does not change the local Railway health result.
+
+This read is operational evidence only. It does not claim live Gmail ingress,
+a successful GDELT poll, or a new FinancialJuice qualifying receipt.
