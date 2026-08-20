@@ -650,10 +650,35 @@ const renderExternalIntelligence = (snapshot) => {
   const panel = document.getElementById("external-intelligence");
   const content = document.getElementById("external-intelligence-content");
   if (!panel || !content) return;
-  const rows = Array.isArray(snapshot?.external_observations)
+  const observations = Array.isArray(snapshot?.external_observations)
     ? snapshot.external_observations
     : Array.isArray(snapshot?.briefing?.external_observations)
       ? snapshot.briefing.external_observations : [];
+  const decisions = Array.isArray(snapshot?.financialjuice_priority_decisions)
+    ? snapshot.financialjuice_priority_decisions : [];
+  const priorityEvents = Array.isArray(snapshot?.financialjuice_priority_events)
+    ? snapshot.financialjuice_priority_events : [];
+  const rowKey = (item) => String(item?.observation_id || item?.item_id || item?.notification_id || "").trim();
+  const decisionByKey = new Map(decisions.map((item) => [rowKey(item), item]).filter(([key]) => key));
+  const priorityLabels = {
+    eligible: "供應商優先：可通知",
+    not_eligible: "供應商優先：未達 8/10",
+    already_cluster_notified: "供應商優先：同事件已通知",
+  };
+  const rows = observations.map((item) => ({
+    ...item,
+    _priorityDecision: decisionByKey.get(rowKey(item)) || null,
+  }));
+  const seen = new Set(rows.map(rowKey).filter(Boolean));
+  // Keep release-projected eligible events visible even when the raw source
+  // observation was compacted out of the public snapshot.  This is still the
+  // same canonical event lane, not a second notification pipeline.
+  for (const event of priorityEvents) {
+    const key = rowKey(event);
+    if (!key || seen.has(key)) continue;
+    rows.push({ ...event, _priorityDecision: { notification_status: "eligible" } });
+    seen.add(key);
+  }
   panel.hidden = false;
   if (!rows.length) {
     content.innerHTML = '<p class="empty">本輪沒有可公開顯示的外部快訊；來源無事件與掃描失敗分開記錄。</p>';
@@ -666,9 +691,14 @@ const renderExternalIntelligence = (snapshot) => {
     const official = item.official_confirmed === true;
     const synced = item.market_sync_confirmed === true;
     const state = official && synced ? "已核對" : official ? "等待市場同步" : synced ? "等待官方核對" : "等待官方核對／市場同步";
+    const priority = item._priorityDecision;
+    const priorityStatus = String(priority?.notification_status || "").trim();
+    const priorityText = priorityStatus
+      ? `${priorityLabels[priorityStatus] || "供應商優先：待核對"}${priority?.notification_reason ? `｜${escapeHtml(priority.notification_reason)}` : ""}`
+      : "供應商優先：尚未產生決策";
     const url = String(item.source_url || "").trim();
     const link = /^https:\/\//.test(url) ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">公開來源</a>` : "";
-    return `<article class="external-insight"><h4>${title}</h4><small>${source}｜${state}</small><p>${summary}</p>${link}</article>`;
+    return `<article class="external-insight"><h4>${title}</h4><small>${source}｜${state}</small><small>${priorityText}</small><p>${summary}</p>${link}</article>`;
   }).join("");
 };
 

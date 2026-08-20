@@ -445,3 +445,13 @@ Targeted regression evidence: `21 passed` across release-manifest Creator
 artifact, correlation and intelligence-pipeline tests.  The test proves an
 explicit `2330.TW` match carries the release market/event snapshot IDs and
 returns `aligned` when the bound market snapshot is fresh.
+
+### FinancialJuice priority visibility (2026-08-21)
+
+The existing `外部財經快訊` panel now renders release-bound
+`financialjuice_priority_decisions` beside each sanitized observation. It
+shows whether an item is eligible for vendor-priority handling, below the
+8/10 threshold, or already covered by the same event cluster. This is display
+and audit metadata only: FinancialJuice remains discovery-only, does not
+upgrade PRStK risk, and does not bypass official confirmation, market-sync,
+Alert Budget, or the release gate.
