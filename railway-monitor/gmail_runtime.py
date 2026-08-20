@@ -55,6 +55,9 @@ def configure_gmail_ingress(
         return ingress, {
             "status": "configuration_missing" if config.missing else "ready",
             **gmail_health_fields(diagnostics),
+            # Keep the configuration contract authoritative even when the
+            # ingress health payload predates the public ``missing`` field.
+            "missing": list(config.missing),
             "error": None,
         }
     except Exception as error:  # pragma: no cover - defensive startup boundary
