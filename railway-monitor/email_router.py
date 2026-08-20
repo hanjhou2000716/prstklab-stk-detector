@@ -59,7 +59,14 @@ except ModuleNotFoundError:  # pragma: no cover - exercised by standalone image
     parse_external_email = None  # type: ignore[assignment]
 
 KNOWN_SOURCES = {"financialjuice", *creator_ids()}
-DLQ_STATES = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
+# A standalone Railway image must never acknowledge a known message after
+# silently skipping the canonical parser.  Keep this explicit state in the
+# same DLQ contract as template/parse failures so the cursor is not advanced
+# and the health projection can report the missing parser dependency.
+DLQ_STATES = {
+    "parse_failed", "unsupported_template", "invalid_source", "duplicate",
+    "parser_unavailable",
+}
 PARSER_VERSION = "railway-email-router-v1"
 
 _PUBLIC_FIELDS = {
@@ -148,6 +155,15 @@ def parse_email(record: dict[str, Any]) -> dict[str, Any]:
     if status == "identified" and not result["required_fields_present"]:
         result["parse_status"] = "parse_failed"
         result["failure_reason"] = "required_fields_missing"
+    if result["parse_status"] == "parsed" and parse_external_email is None:
+        # The Railway root image intentionally does not contain the repository
+        # ``src`` package.  It may still route by the public provider bundle,
+        # but it cannot derive Creator/FinancialJuice facts.  Previously this
+        # path returned an apparently parsed message with zero observations,
+        # advanced the Gmail cursor, and lost the content.  Fail closed and
+        # leave a redacted DLQ record until the canonical parser is packaged.
+        result["parse_status"] = "parser_unavailable"
+        result["failure_reason"] = "canonical_external_parser_unavailable"
     # The router previously stopped at source identification, so Railway
     # retained only a cursor/hash and the scheduled publisher never received
     # the reviewed FinancialJuice or Creator facts.  Parse into a bounded,
