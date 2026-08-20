@@ -23,9 +23,14 @@ def _source(row: dict[str, Any]) -> str:
     return str(row.get("source") or row.get("content_origin") or "").strip().casefold()
 
 
+def _mapping(value: Any) -> dict[str, Any]:
+    """Return a concrete mapping for mypy and defensive producer boundaries."""
+    return value if isinstance(value, dict) else {}
+
+
 def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, reasons: list[str]) -> dict[str, Any]:
-    risk = result.get("risk") if isinstance(result.get("risk"), dict) else {}
-    cluster = result.get("cluster") if isinstance(result.get("cluster"), dict) else {}
+    risk = _mapping(result.get("risk"))
+    cluster = _mapping(result.get("cluster"))
     headline = str(
         row.get("original_headline") or row.get("headline") or row.get("title") or "FinancialJuice 公開快訊"
     ).strip()
@@ -105,7 +110,7 @@ def project_financialjuice_priority(
         if not isinstance(row, dict) or _source(row) != "financialjuice":
             continue
         for result in build_external_events(row):
-            vendor = result.get("vendor_priority") if isinstance(result.get("vendor_priority"), dict) else {}
+            vendor = _mapping(result.get("vendor_priority"))
             qualifying = bool(vendor.get("vendor_priority_notification"))
             # A reviewed provider item may carry a canonical cluster assigned
             # by the upstream ledger.  Preserve it over the locally derived
