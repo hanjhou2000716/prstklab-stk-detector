@@ -38,7 +38,8 @@ jobs:
           python-version: "3.11"
       - name: Install release-gate dependencies
         run: python -m pip install -r requirements-production.txt
-      - name: Restore latest immutable data release
+      - name: Restore newest valid immutable data release
+        id: release
         run: |
           # Explicitly refresh the remote-tracking ref and restore the data
           # tree from that ref.  The checkout action can retain a stale
@@ -48,49 +49,49 @@ jobs:
           git fetch --no-tags origin refs/heads/data-release:refs/remotes/origin/data-release
           python -m src.data_release --restore --branch data-release --include site/data
           git restore --source=origin/data-release --worktree -- site/data/
-          # The data branch may contain a manifest produced by a market/event
-          # publisher before the latest research snapshot was available.  Do
-          # not trust that copied metadata: rebuild it from the restored,
-          # hash-addressed artifacts so freshness and lineage are evaluated at
-          # the Pages boundary itself.
-          python -m src.release_manifest --require-production-research
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          manifest = json.loads(Path("site/data/release-manifest.json").read_text(encoding="utf-8"))
-          print(json.dumps({
-              "release_id": manifest.get("release_id"),
-              "status": manifest.get("status"),
-              "market_snapshot_id": manifest.get("market_snapshot_id"),
-              "research_snapshot_id": manifest.get("research_snapshot_id"),
-          }, ensure_ascii=False, sort_keys=True))
-          if manifest.get("status") != "ready":
-              raise SystemExit("data-release manifest is not ready")
+          # The data branch may contain a market/event snapshot before the
+          # matching production research scan. Walk immutable history and
+          # select the newest valid release; if none is valid, keep the
+          # currently published Pages release instead of failing/emailing.
+          # The previous inline guard (manifest.get("status") != "ready") is
+          # now enforced for every candidate by src.pages_release.
+          python -m src.pages_release --branch data-release --max-commits 100 --require-production-research
+      - name: Report preserved Pages release
+        if: steps.release.outputs.publish != 'true'
+        run: |
+          echo "::warning::no_valid_production_release; preserving the currently published Pages release"
+          echo "pages_publish=skipped"
       - name: Build cache-busted static assets
+        if: steps.release.outputs.publish == 'true'
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
       - name: Validate static asset contract
+        if: steps.release.outputs.publish == 'true'
         run: |
           python -m src.asset_contract --root site
       - name: Validate release before Pages upload
+        if: steps.release.outputs.publish == 'true'
         run: |
           # GITHUB_OUTPUT makes release_gate intentionally quiet; unset it in
           # this diagnostic step so a failed gate leaves actionable errors in
           # the Actions log while retaining fail-closed behaviour.
           env -u GITHUB_OUTPUT python -m src.release_gate --manifest site/data/release-manifest.json --require-production-research
       - name: Audit production artifacts before Pages upload
+        if: steps.release.outputs.publish == 'true'
         run: python -m src.runtime_audit --require-production
       - name: 設定 GitHub Pages
+        if: steps.release.outputs.publish == 'true'
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
         with:
           enablement: true
       - name: 上傳儀表板
+        if: steps.release.outputs.publish == 'true'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           path: site
       - name: 部署
         id: deployment
+        if: steps.release.outputs.publish == 'true'
         uses: ./.github/actions/deploy-pages-retry
         with:
           fallback_url: ${{ vars.DASHBOARD_URL }}
