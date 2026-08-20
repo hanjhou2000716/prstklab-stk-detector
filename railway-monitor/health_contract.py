@@ -81,7 +81,13 @@ def gmail_health_fields(diagnostics: Any) -> dict[str, Any]:
     if not isinstance(watch, dict):
         return {"watch_status": "not_checked", "observability": {}}
     metrics = watch.get("observability")
+    missing = watch.get("missing")
     return {
         "watch_status": str(watch.get("status") or "not_checked"),
+        # Configuration names are safe to expose and make a production
+        # configuration_missing state actionable without exposing OAuth,
+        # Pub/Sub credentials, mailbox identifiers, or message cursors.
+        "missing": [str(item) for item in missing if str(item).strip()]
+        if isinstance(missing, (list, tuple)) else [],
         "observability": dict(metrics) if isinstance(metrics, dict) else {},
     }

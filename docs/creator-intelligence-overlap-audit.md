@@ -286,3 +286,12 @@ Root-only import isolation therefore exercises the same multilingual policy
 and keyword bundle as the repository pipeline. This is local/CI evidence only;
 the Railway `/health` mode and a controlled delivery receipt remain external
 `NEEDS_REVERIFY` gates.
+
+### Actionable Gmail configuration diagnostics (2026-08-20)
+
+The Railway Gmail health projection now exposes only the names of missing
+configuration keys when the watch is `configuration_missing`. It deliberately
+does not expose OAuth values, Pub/Sub credentials, mailbox identifiers, or
+message cursors. This makes the operator action explicit while preserving the
+privacy boundary. Live Gmail watch delivery remains `NEEDS_REVERIFY` until the
+Railway environment is configured and a controlled receipt is captured.

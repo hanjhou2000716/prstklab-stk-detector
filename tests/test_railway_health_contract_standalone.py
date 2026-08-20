@@ -50,12 +50,23 @@ def test_gmail_projection_excludes_transport_cursor():
             "watch": {
                 "status": "healthy",
                 "history_id": "private-history",
+                "missing": [],
                 "observability": {"last_received_at": "2026-08-14T11:59:00Z", "parser_error_count": 0},
             }
         }
     )
     assert result == {
         "watch_status": "healthy",
+        "missing": [],
         "observability": {"last_received_at": "2026-08-14T11:59:00Z", "parser_error_count": 0},
     }
     assert "history_id" not in result
+
+
+def test_gmail_projection_exposes_only_missing_configuration_names():
+    result = health.gmail_health_fields(
+        {"watch": {"status": "configuration_missing", "missing": ["GMAIL_WATCH_TOPIC", "", 7], "history_id": "private"}}
+    )
+    assert result["watch_status"] == "configuration_missing"
+    assert result["missing"] == ["GMAIL_WATCH_TOPIC", "7"]
+    assert "private" not in str(result)

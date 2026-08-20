@@ -34,6 +34,7 @@ def test_configured_runtime_returns_ingress_and_redacted_health():
     assert health == {
         "status": "ready",
         "watch_status": "healthy",
+        "missing": [],
         "observability": {"parser_error_count": 0},
         "error": None,
     }
@@ -48,6 +49,7 @@ def test_missing_configuration_is_visible_without_private_values():
     )
     assert isinstance(ingress, Ingress)
     assert health["status"] == "configuration_missing"
+    assert health["missing"] == ["GMAIL_WATCH_TOPIC"]
     assert health["error"] is None
 
 
