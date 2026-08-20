@@ -487,7 +487,15 @@ def build_release_manifest(
                 "research_snapshot_id": research_id,
                 "event_snapshot_id": event_id,
             },
-            research_snapshot={"snapshot_id": research_id},
+            # Pass the actual release-bound snapshots into the canonical
+            # correlation stage.  Passing IDs alone made the public Creator
+            # artifact look lineage-bound while every episode correlation
+            # reported ``market_snapshot_missing`` and could not compare
+            # explicit tickers/sectors.  The source artifacts are already
+            # sanitized and are the same objects used by the release gate.
+            market_snapshot=market,
+            research_snapshot=research,
+            event_snapshot=events,
             # The scheduled morning lane must bind its deterministic 10:30
             # cutoff to the exact market snapshot being released.  Other
             # refreshes intentionally omit the batch so historical reviewed

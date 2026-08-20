@@ -84,6 +84,45 @@ def test_manifest_can_build_creator_artifact_from_sanitized_records(tmp_path):
     assert loaded["creator-release.json"]["status"] == "ready"
 
 
+def test_manifest_creator_correlation_uses_release_bound_snapshots(tmp_path):
+    artifacts = _artifacts(tmp_path)
+    market_path = artifacts["market.json"]
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market.update(
+        {
+            "generated_at": "2026-08-21T04:00:00+00:00",
+            "quotes": [{"ticker": "2330.TW", "symbol": "2330.TW"}],
+        }
+    )
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+    result = build_release_manifest(
+        root=tmp_path,
+        artifacts=artifacts,
+        creator_records=[
+            {
+                "content_origin": "haojiao",
+                "episode_key": "episode-correlated",
+                "episode_title": "Public market observation",
+                "published_at": "2026-08-21T03:00:00+00:00",
+                "tickers": ["2330.TW"],
+                "claims": ["safe claim"],
+                "verification_state": "unverified",
+                "public_safe": True,
+            }
+        ],
+    )
+    public = json.loads(
+        (tmp_path / "site" / "data" / "creator-insights.json").read_text(encoding="utf-8")
+    )
+    episode = public["creators"]["haojiao"]["episodes"][0]
+    correlation = episode["prstk_correlation"]
+    assert correlation["market_snapshot_id"] == result["market_snapshot_id"]
+    assert correlation["market_snapshot_id"]
+    assert correlation["correlation_state"] == "aligned"
+    assert correlation["matched_tickers"] == ["2330.tw"]
+    assert correlation["event_snapshot_id"] == result["event_snapshot_id"]
+
+
 def test_manifest_binds_morning_batch_to_market_snapshot_when_requested(tmp_path):
     artifacts = _artifacts(tmp_path)
     result = build_release_manifest(

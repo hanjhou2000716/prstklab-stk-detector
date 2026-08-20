@@ -429,3 +429,19 @@ refresh therefore updated the public market/creator/news release but did not
 pretend that the research scan was current and did not emit a Telegram alert.
 This is the expected fail-closed behavior while the incremental MOPS cache is
 being filled by the bounded research workflow.
+
+### Canonical release correlation repair (2026-08-21)
+
+The release-manifest producer now passes the actual release-bound market,
+research and event artifacts into the existing Creator correlation function.
+Previously the manifest path passed only snapshot IDs, so the public episode
+could be lineage-labelled while reporting `market_snapshot_missing` and could
+not match an explicit ticker or sector.  The correlation time parser also
+accepts the immutable artifact field `generated_at` in addition to runtime
+`as_of`/`fetched_at` timestamps.  This is a producer wiring correction, not a
+new classifier or a second pipeline.
+
+Targeted regression evidence: `21 passed` across release-manifest Creator
+artifact, correlation and intelligence-pipeline tests.  The test proves an
+explicit `2330.TW` match carries the release market/event snapshot IDs and
+returns `aligned` when the bound market snapshot is fresh.
