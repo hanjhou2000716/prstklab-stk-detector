@@ -117,8 +117,8 @@ def main() -> None:
     parser.add_argument("--market", choices=("taiwan", "us"), required=True)
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--batch-size", type=int, default=50)
-    parser.add_argument("--mops-max-refresh", type=int, default=8,
-                        help="Taiwan MOPS records per run; 0 verifies the complete pool")
+    parser.add_argument("--mops-max-refresh", type=int, default=50,
+                        help="Taiwan MOPS records per run; 0 verifies the complete pool (manual audit only)")
     args = parser.parse_args()
     data_dir = Path(args.data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)

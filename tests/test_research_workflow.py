@@ -50,7 +50,9 @@ def test_research_gate_reuses_production_acceptance_before_manifest_publish():
 def test_incomplete_research_cannot_publish_data_release_after_market_refresh():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "unified-research-report.yml").read_text(encoding="utf-8")
 
-    publish_marker = "python -m src.data_release --publish --branch \"$DATA_RELEASE_BRANCH\""
+    # There is now a cache-only publish path for incomplete runs.  Locate the
+    # actual public site/data release rather than the preceding cache commit.
+    publish_marker = "python -m src.data_release --publish --branch \"$DATA_RELEASE_BRANCH\" --include site/data"
     publish_index = workflow.index(publish_marker)
     before_publish = workflow[max(0, publish_index - 260):publish_index]
     assert "steps.research_gate.outputs.publish == 'true'" in before_publish
