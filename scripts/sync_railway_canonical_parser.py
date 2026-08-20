@@ -16,7 +16,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_ROOT = ROOT / "src"
-TARGET_ROOT = ROOT / "railway-monitor" / "src"
+RAILWAY_ROOT = ROOT / "railway-monitor"
+TARGET_ROOT = RAILWAY_ROOT / "src"
 CONFIG_FILES = ("creator_providers.json", "event_keywords.json")
 ENTRYPOINT = "external_source_parsers.py"
 HEADER = "# GENERATED FILE: do not edit manually.\n# Run scripts/sync_railway_canonical_parser.py to refresh it.\n"
@@ -59,11 +60,18 @@ def _expected() -> dict[Path, str]:
     for relative in _module_closure():
         expected[TARGET_ROOT / relative] = _render_module(relative)
     config_root = ROOT / "config"
-    target_config = ROOT / "railway-monitor" / "config"
+    target_config = RAILWAY_ROOT / "config"
     for name in CONFIG_FILES:
         source = config_root / name
-        payload = json.loads(source.read_text(encoding="utf-8"))
-        expected[target_config / name] = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+        raw = source.read_text(encoding="utf-8")
+        payload = json.loads(raw)
+        serialized = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+        expected[target_config / name] = serialized
+        # The root-only Railway image has a compatibility import path when the
+        # generated ``src`` package cannot be imported.  Keep those fallback
+        # files generated from the exact same canonical payload instead of
+        # leaving an unmanaged second provider/keyword table.
+        expected[RAILWAY_ROOT / name] = raw if raw.endswith("\n") else raw + "\n"
     return expected
 
 
@@ -72,8 +80,9 @@ def main() -> int:
     parser.add_argument("--check", action="store_true", help="fail when the generated bundle is stale")
     args = parser.parse_args()
     expected = _expected()
-    actual_paths = set(TARGET_ROOT.rglob("*.py")) if TARGET_ROOT.exists() else set()
-    actual_paths |= set((ROOT / "railway-monitor" / "config").glob("*.json"))
+    actual_paths = {path for path in TARGET_ROOT.rglob("*.py") if path.is_file()} if TARGET_ROOT.exists() else set()
+    actual_paths |= {path for path in (RAILWAY_ROOT / "config").glob("*.json") if path.is_file()}
+    actual_paths |= {RAILWAY_ROOT / name for name in CONFIG_FILES if (RAILWAY_ROOT / name).is_file()}
     if args.check:
         if any(not path.is_file() or path.read_text(encoding="utf-8") != content for path, content in expected.items()):
             print("railway canonical parser bundle is stale")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -31,3 +32,15 @@ def test_bundle_contains_only_canonical_parser_dependencies() -> None:
     }
     actual = {path.name for path in (ROOT / "railway-monitor" / "src").glob("*.py")}
     assert actual == expected
+
+
+def test_standalone_fallback_configs_match_canonical_payloads() -> None:
+    """Root-only compatibility imports must not create a second policy table."""
+    for name in ("creator_providers.json", "event_keywords.json"):
+        canonical = json.loads((ROOT / "config" / name).read_text(encoding="utf-8"))
+        root_bundle = json.loads((ROOT / "railway-monitor" / name).read_text(encoding="utf-8"))
+        packaged_bundle = json.loads(
+            (ROOT / "railway-monitor" / "config" / name).read_text(encoding="utf-8")
+        )
+        assert root_bundle == canonical
+        assert packaged_bundle == canonical
