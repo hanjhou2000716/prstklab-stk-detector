@@ -13,6 +13,7 @@
 | 10:30 morning batch | `src/creator_morning_batch.py` | cutoff、late-arrival、idempotency tests | creator morning test suite | PASS |
 | Creator consensus V2 | `src/creator_consensus.py`、`src/creator_correlation.py` | multi-source and divergence tests | creator consensus test suite | PASS |
 | Release-gated creator dispatch | `src/creator_dispatch.py`、`scheduled-brief.yml` | release mismatch／receipt tests | creator dispatch test suite | PASS |
+| Reviewed Creator Railway ingress | `src/railway_observation_client.py`、`src/scheduled_delivery.py`、`scheduled-brief.yml` | sanitized Creator projection and release binding tests | 51 targeted tests | PASS |
 | FinancialJuice compound parser | `src/external_source_parsers.py`、`src/financialjuice_contract.py` | compound／importance／cluster tests | FinancialJuice test suite | PASS |
 | FinancialJuice live Gmail ingress | Gmail watch + Railway configuration | health endpoint and delivery receipt | live health currently reports missing Gmail variables | NEEDS_REVERIFY |
 | Official news provider adapters | `src/news_feed_adapters.py`、`src/news_intelligence.py` | provider/domain/dedupe tests | news test suite | PASS |

@@ -10,9 +10,10 @@ from urllib.parse import urlparse, urlunparse
 
 import httpx
 
+from src.creator_provider_registry import creator_ids
 from src.external_observation_input import SAFE_FIELDS
 
-_ALLOWED_SOURCES = {"financialjuice"}
+_ALLOWED_SOURCES = {"financialjuice", *creator_ids()}
 _BLOCKED_FIELDS = {
     "body", "raw_body", "attachments", "data", "local_path", "private_url",
     "gmail_message_id", "gmail_thread_id", "gmail_history_id", "message_id",
