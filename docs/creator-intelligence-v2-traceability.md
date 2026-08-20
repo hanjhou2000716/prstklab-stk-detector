@@ -28,6 +28,10 @@
   reason; it never changes the PRStK risk level or bypasses the release gate.
 - PR #660 adds the FinancialJuice evidence rows to the existing 市場風險快訊
   card: source importance, PRStK Risk and second-source evidence remain separate.
+- PR #661 carries reviewed ingress and delivery provenance end to end: received
+  time, parser version, hashed observation identity, item/cluster keys, release
+  and snapshot IDs, delivery status and notification reason.  Raw Gmail
+  transport identifiers remain blocked at ingress.
 - Local targeted News／release／UI regression: `108 passed`; full CI is the
   authoritative gate.  Gmail／Railway／Pages／Telegram production acceptance
   remains `NEEDS_REVERIFY` until an external receipt is captured.
