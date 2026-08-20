@@ -21,6 +21,24 @@
 | Canonical Railway bundle | `scripts/sync_railway_canonical_parser.py` | `--check` and overlap audit | CI #656 | PASS |
 | Railway health secret migration | canonical `RAILWAY_STATUS_SHARED_SECRET` | live health callback | live service still reports legacy secret name | NEEDS_REVERIFY |
 
+### Current stacked verification additions (2026-08-20)
+
+- PR #659 adds the FinancialJuice priority projection to the existing scheduled
+  release lane.  `vendor_importance >= 8` is auditable as a separate notification
+  reason; it never changes the PRStK risk level or bypasses the release gate.
+- PR #660 adds the FinancialJuice evidence rows to the existing 市場風險快訊
+  card: source importance, PRStK Risk and second-source evidence remain separate.
+- PR #661 carries reviewed ingress and delivery provenance end to end: received
+  time, parser version, hashed observation identity, item/cluster keys, release
+  and snapshot IDs, delivery status and notification reason.  Raw Gmail
+  transport identifiers remain blocked at ingress.
+- PR #661 CI evidence: quality/delivery dry-run, CodeQL, dependency review and
+  SBOM all passed in the same workflow window (run `32401957171` and security
+  run `32401957312`).
+- Local targeted News／release／UI regression: `108 passed`; full CI is the
+  authoritative gate.  Gmail／Railway／Pages／Telegram production acceptance
+  remains `NEEDS_REVERIFY` until an external receipt is captured.
+
 ## Fail-closed rules
 
 - 未通過 provider parser、私有欄位或無法驗證的附件不得進入公開 Creator release。
