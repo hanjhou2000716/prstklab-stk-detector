@@ -316,6 +316,13 @@ permission/encoding warning; it is not a repository test failure.
 | Research snapshot | `research-8b8ec8f6e5ee51aa` |
 | Event snapshot | `event-ed531dee05c7de49` |
 
+The same public manifest's Creator and news artifacts are also present and
+release-bound: Creator release `creator-9d88617b6fd60ed6` reports
+`status=ready`, `public_safe=true`, coverage `1/1` (Haojiao) and zero
+validation errors; news snapshot `news-cc4794ea205628ee` reports
+`status=ready`. The single-creator coverage is explicit and is not presented
+as a two-source consensus.
+
 The public manifest reports `status=ready` and those IDs are mutually
 consistent. No Telegram notification was emitted by this refresh because the
 run produced no qualifying alert.
