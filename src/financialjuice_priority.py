@@ -9,6 +9,7 @@ is auditable instead of silently disappearing.
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from typing import Any
 
@@ -28,6 +29,12 @@ def _mapping(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
+def _observation_id_hash(value: Any) -> str | None:
+    """Hash the reviewed observation key before it enters delivery evidence."""
+    text = str(value or "").strip()
+    return hashlib.sha256(text.encode("utf-8")).hexdigest() if text else None
+
+
 def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, reasons: list[str]) -> dict[str, Any]:
     risk = _mapping(result.get("risk"))
     cluster = _mapping(result.get("cluster"))
@@ -37,7 +44,15 @@ def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, r
     importance = row.get("vendor_importance", row.get("importance"))
     source_url = str(row.get("source_url") or row.get("url") or "").strip()
     observation_id = str(result.get("observation_id") or row.get("observation_id") or "").strip() or None
+    item_id = str(
+        row.get("item_id") or result.get("compound_item_id") or result.get("notification_id") or ""
+    ).strip() or None
     cluster_key = str(result.get("event_cluster_key") or row.get("event_cluster_key") or "").strip() or None
+    observation_hash = _observation_id_hash(observation_id or item_id)
+    parser_version = str(
+        row.get("parser_version") or result.get("parser_version") or result.get("pipeline_version") or ""
+    ).strip() or None
+    received_at = row.get("received_at") or row.get("fetched_at") or row.get("published_at") or _now()
     pending = list(dict.fromkeys(str(item) for item in (result.get("pending_reasons") or []) if str(item).strip()))
     return {
         "kind": "external_event",
@@ -52,6 +67,10 @@ def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, r
         "classification": str(cluster.get("event_type") or row.get("event_type") or "unknown"),
         "event_cluster_key": cluster_key,
         "observation_id": observation_id,
+        "observation_id_hash": observation_hash,
+        "item_id": item_id,
+        "received_at": received_at,
+        "parser_version": parser_version,
         "notification_id": result.get("notification_id") or row.get("item_id") or observation_id,
         "lifecycle_state": result.get("lifecycle_state") or "pending_confirmation",
         "risk_level": risk.get("prstk_risk_level") or "R2",
@@ -76,8 +95,11 @@ def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, r
             "official_confirmed": bool(risk.get("official_confirmed")),
             "market_sync_confirmed": bool(risk.get("market_sync_confirmed")),
             "observation_id": observation_id,
-            "item_id": row.get("item_id"),
+            "observation_id_hash": observation_hash,
+            "item_id": item_id,
             "event_cluster_key": cluster_key,
+            "received_at": received_at,
+            "parser_version": parser_version,
         },
         "source_evidence": result.get("source_evidence") or [],
         "market_evidence": result.get("market_evidence") or [],

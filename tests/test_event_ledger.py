@@ -57,6 +57,35 @@ def test_delivery_history_records_each_material_send(tmp_path):
     assert all(row["event_key"] == canonical_event_key(event) for row in rows)
 
 
+def test_delivery_history_preserves_release_bound_financialjuice_trace(tmp_path):
+    path = tmp_path / "ledger.json"
+    ledger = EventLedger(path)
+    event = {
+        "source_key": "financialjuice",
+        "event_type": "energy",
+        "title": "Oil supply risk",
+        "event_cluster_key": "cluster-1",
+        "observation_id_hash": "a" * 64,
+        "item_id": "item-1",
+        "vendor_importance": 8,
+        "prstk_risk": {"prstk_risk_level": "R2"},
+        "notification_reason": "vendor_priority_importance_ge_8",
+        "parser_version": "financialjuice-compound-v1",
+        "received_at": "2026-08-21T01:01:00+00:00",
+        "release_id": "release-1",
+        "snapshot_id": "snapshot-1",
+        "delivery_status": "delivered",
+    }
+    ledger.record_delivery(event, trace_id="trace-fj", reason="scheduled_delivery")
+    ledger.save()
+    row = EventLedger(path).delivery_history()[0]
+    assert row["release_id"] == "release-1"
+    assert row["snapshot_id"] == "snapshot-1"
+    assert row["delivery_status"] == "delivered"
+    assert row["observation_id_hash"] == "a" * 64
+    assert row["item_id"] == "item-1"
+
+
 def test_event_ledger_keeps_compound_identity_and_pending_reason(tmp_path):
     path = tmp_path / "ledger.json"
     event = {

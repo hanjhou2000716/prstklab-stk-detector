@@ -367,27 +367,47 @@ def send(
         return
     delivered = sum(delivery.status == "delivered" for delivery in deliveries)
     failed = len(deliveries) - delivered
+    delivery_status = "delivered" if not failed else "partial" if delivered else "failed"
     failed_recipient_hashes = [delivery.chat_id_hash for delivery in deliveries if delivery.status != "delivered"]
-    _write_output({
+    output: dict[str, Any] = {
         "sent": "true",
         "reason": "sent_partial" if failed else "sent",
         "release_id": gate.release_id,
         "trace_id": trace_id,
         "snapshot_id": snapshot_id,
         "observation_id": observation_id,
-        "delivery_status": "delivered" if not failed else "partial" if delivered else "failed",
+        "delivery_status": delivery_status,
         "delivered_count": delivered,
         "failed_count": failed,
         "delivery_mode": "photo",
         "alert_id": alert_id,
         "alert_budget": budget,
         "failed_recipient_hashes": failed_recipient_hashes,
-    })
+    }
+    if isinstance(event, dict) and str(event.get("source_key") or "").strip().casefold() == "financialjuice":
+        output["financialjuice_delivery_trace"] = {
+            "observation_id_hash": event.get("observation_id_hash"),
+            "item_id": event.get("item_id"),
+            "event_cluster_key": event.get("event_cluster_key"),
+            "vendor_importance": event.get("vendor_importance"),
+            "prstk_risk": event.get("prstk_risk"),
+            "notification_reason": event.get("notification_reason"),
+            "release_id": gate.release_id,
+            "snapshot_id": snapshot_id,
+            "delivery_status": delivery_status,
+        }
+    _write_output(output)
     if event:
         write_event_lock_key(event)
         ledger = EventLedger()
         ledger.record_delivery(
-            {**event, "trace_id": trace_id},
+            {
+                **event,
+                "trace_id": trace_id,
+                "release_id": gate.release_id,
+                "snapshot_id": snapshot_id,
+                "delivery_status": delivery_status,
+            },
             trace_id=trace_id,
             reason="scheduled_delivery",
         )
