@@ -112,7 +112,24 @@ jobs:
             --allow-stale-research
             --research-fallback-reason "research scan incomplete; preserving last-known-good research snapshot"
           )
-          if [ -n "${CREATOR_RECORDS_PATH:-}" ] && [ -f "$CREATOR_RECORDS_PATH" ]; then
+          # Prefer the sanitized Creator projection bound into the prepared
+          # snapshot.  This lets reviewed Railway/Gmail Creator rows reach the
+          # same release gate as the checked-in fallback without copying raw
+          # mail or private transport identifiers into Pages.
+          creator_records_path="/tmp/prstk-creator-records.json"
+          python - "$SNAPSHOT_PATH" "$creator_records_path" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          snapshot = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          rows = snapshot.get("creator_insights") if isinstance(snapshot, dict) else None
+          if not isinstance(rows, list):
+              rows = []
+          Path(sys.argv[2]).write_text(json.dumps({"records": rows}, ensure_ascii=False), encoding="utf-8")
+          PY
+          if [ -s "$creator_records_path" ]; then
+            arguments+=(--creator-records "$creator_records_path")
+          elif [ -n "${CREATOR_RECORDS_PATH:-}" ] && [ -f "$CREATOR_RECORDS_PATH" ]; then
             arguments+=(--creator-records "$CREATOR_RECORDS_PATH")
           fi
           if [ "${{ steps.window.outputs.slot }}" = "morning" ]; then

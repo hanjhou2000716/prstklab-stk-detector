@@ -79,31 +79,60 @@ def _creator_records_path() -> Path | None:
     return path
 
 
-def _load_creator_records() -> list[dict]:
+def _creator_records_from_observations(rows: list[dict]) -> list[dict]:
+    """Project Railway's reviewed Creator observations into release records."""
+    records: list[dict] = []
+    seen: set[str] = set()
+    for row in rows:
+        if not isinstance(row, dict) or not row.get("public_safe"):
+            continue
+        provider = str(row.get("content_origin") or row.get("source") or "").strip().casefold()
+        if provider not in creator_ids():
+            continue
+        key = str(row.get("episode_key") or row.get("observation_id") or "").strip()
+        if not key or key in seen or str(row.get("parse_status") or "normalized").casefold() in {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}:
+            continue
+        record = dict(row)
+        record.setdefault("creator_id", provider)
+        record.setdefault("content_origin", provider)
+        record.setdefault("episode_key", key)
+        record["public_safe"] = True
+        seen.add(key)
+        records.append(record)
+    return records
+
+
+def _load_creator_records(extra_rows: list[dict] | None = None) -> list[dict]:
     """Load only the optional sanitized creator input outside the Pages tree."""
     path = _creator_records_path()
-    if path is None:
-        return []
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError):
-        return []
-    if isinstance(payload, dict):
-        payload = payload.get("records")
-    if not isinstance(payload, list):
-        return []
     safe_records: list[dict] = []
     blocked_states = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
     private_fields = {"body", "raw_body", "local_path", "private_url", "attachments", "data"}
-    for item in payload:
-        if not isinstance(item, dict):
-            continue
-        if any(item.get(field) not in (None, "", [], {}) for field in private_fields):
-            continue
-        if str(item.get("parse_status") or "").strip() in blocked_states:
-            continue
-        safe_records.append(item)
-    return safe_records
+    if path is not None:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            payload = []
+        if isinstance(payload, dict):
+            payload = payload.get("records")
+        if isinstance(payload, list):
+            for item in payload:
+                if not isinstance(item, dict):
+                    continue
+                if any(item.get(field) not in (None, "", [], {}) for field in private_fields):
+                    continue
+                if str(item.get("parse_status") or "").strip() in blocked_states:
+                    continue
+                safe_records.append(item)
+    combined = [*safe_records, *(_creator_records_from_observations(extra_rows or []))]
+    deduped: dict[str, dict] = {}
+    for index, item in enumerate(combined):
+        key = str(item.get("episode_key") or item.get("observation_id") or "").strip()
+        # Historical sanitized fixtures predate episode_key.  Preserve them
+        # for backward compatibility while still making duplicate merging
+        # deterministic within one refresh.
+        deduped[key or f"legacy:{index}"] = item
+    return list(deduped.values())
 
 
 def _creator_input_failures() -> dict[str, str]:
@@ -147,7 +176,15 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
     remote_health: dict[str, Any] = {}
     if _railway_observations_configured():
         remote_observations, remote_health = load_railway_observations()
-    external_observations = _merge_external_observations(local_observations, remote_observations)
+    all_external_observations = _merge_external_observations(local_observations, remote_observations)
+    # FinancialJuice observations feed the event pipeline; Creator rows use
+    # the separate attributed-content lane and must not be counted as FJ
+    # market evidence or shown under the FJ source-health label.
+    creator_records = _load_creator_records(all_external_observations)
+    external_observations = [
+        row for row in all_external_observations
+        if str(row.get("content_origin") or row.get("source") or "").strip().casefold() == "financialjuice"
+    ]
     remote_rejected = remote_health.get("rejected_count")
     external_rejected = local_rejected + (int(remote_rejected) if isinstance(remote_rejected, (int, str, float)) else 0)
     if external_observations:
@@ -175,7 +212,6 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
             snapshot.get("source_health") or {}, external_health
         )
         snapshot["external_source_health"] = external_health
-    creator_records = _load_creator_records()
     # Creator feeds are optional, but their operational state belongs in the
     # same source-health contract as the published market snapshot.  Keep this
     # merge after loading the external file so the market builder remains
