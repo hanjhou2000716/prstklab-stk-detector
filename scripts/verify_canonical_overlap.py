@@ -23,7 +23,9 @@ _GENERATED_RE = re.compile(
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    # Match the generators' text-mode hashing.  This keeps the audit stable
+    # across Windows CRLF checkouts and Linux CI workspaces.
+    return hashlib.sha256(path.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
 
 
 def check_generated_pair(root: Path, target: Path) -> dict[str, Any]:
@@ -31,23 +33,32 @@ def check_generated_pair(root: Path, target: Path) -> dict[str, Any]:
     relative_target = target.relative_to(root).as_posix()
     if not target.is_file():
         return {"check": relative_target, "ok": False, "reason": "missing_target"}
-    match = _GENERATED_RE.search(target.read_text(encoding="utf-8"))
-    if not match:
+    text = target.read_text(encoding="utf-8")
+    match = _GENERATED_RE.search(text)
+    source_ref: str | None = match.group("source") if match else None
+    digest_ref: str | None = match.group("digest") if match else None
+    if match is None and target.name == "shared_event_classifier.py":
+        source_match = re.search(r'BUNDLE_SOURCE = "(?P<source>src/[^\"]+\.py)"', text)
+        digest_match = re.search(r'BUNDLE_SOURCE_SHA256 = "(?P<digest>[0-9a-f]{64})"', text)
+        if source_match and digest_match:
+            source_ref = source_match.group("source")
+            digest_ref = digest_match.group("digest")
+    if not source_ref or not digest_ref:
         return {"check": relative_target, "ok": False, "reason": "missing_source_marker"}
-    source = root / match.group("source")
+    source = root / source_ref
     if not source.is_file():
         return {
             "check": relative_target,
             "ok": False,
             "reason": "missing_canonical_source",
-            "source": match.group("source"),
+            "source": source_ref,
         }
     actual = _sha256(source)
     return {
         "check": relative_target,
-        "ok": actual == match.group("digest"),
-        "reason": None if actual == match.group("digest") else "source_hash_drift",
-        "source": match.group("source"),
+        "ok": actual == digest_ref,
+        "reason": None if actual == digest_ref else "source_hash_drift",
+        "source": source_ref,
     }
 
 
