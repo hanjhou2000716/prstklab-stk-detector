@@ -11,6 +11,31 @@ The three configured providers are `haojiao`, `jenny`, and `gooaye`. They are
 editorial enrichment only. They cannot independently become official event
 evidence, a market-synchronisation proof, or a high-risk alert.
 
+## Latest production evidence (2026-08-21)
+
+The post-refresh acceptance evidence supersedes the older checkpoint notes
+below.  Main is now at `657c3e3` (PR #668).  The latest successful refresh
+(`32417964673`) published release `release-e43a55e29d580bc1` with market
+snapshot `389b72b2fb5ff27`, research snapshot `research-8b8ec8f6e5ee51aa`,
+and event snapshot `event-a889bf10a4141a3b`.  The manifest is `ready`, Creator
+and News are `ready`, research is explicitly `stale_fallback`, and all seven
+manifest artifacts passed the public SHA-256 audit.  The preceding Pages
+fallback run (`32417839816`) found no valid production release and preserved
+the currently published version without notifying anyone.
+
+The public Mini App was then checked from the published bundle: the Creator
+Intelligence panel and Taiwan/US News panel were both present, release-bound,
+and rendered at a 390px viewport without horizontal overflow.  A scoped photo
+smoke (`32418325859`) to test recipient `8869592162` produced a 1080x1350
+card, delivered one message, and recorded a matching Railway receipt with
+trace `photo-smoke-34fc671f8bc341f5`.
+
+These checks lock Pages release integrity, Creator/News public rendering, and
+the single-recipient delivery path.  They do not claim that external sources
+are healthy: Railway still reports GDELT `HTTP_429` and Gmail
+`configuration_missing`, and the research artifact remains an explicitly
+labelled stale fallback.
+
 ## Current checkpoint (2026-08-15)
 
 The overlap audit is now evaluated against main after PR #636. The sanitized
@@ -25,7 +50,7 @@ and security checks for the checkpoint are green. Pages artifact integrity and
 a scoped single-recipient Telegram receipt are now evidenced below; post-merge
 main acceptance and Mini App WebView visual confirmation remain open gates.
 
-### Public Pages evidence captured
+### Public Pages evidence captured (superseded by the latest evidence above)
 
 Read-only HTTP verification of the currently published Pages bundle found:
 
@@ -93,17 +118,17 @@ new parallel implementation.  The attachment requirements map as follows:
 | FinancialJuice compound parsing and vendor-priority boundary | `src/financialjuice_contract.py`, `src/external_source_parsers.py` | compound, 7/8/9/10 priority and replay tests | PASS / LOCKED |
 | FinancialJuice sanitized scheduled ingress | `src/external_observation_input.py`, `src/railway_observation_client.py`, `src/scheduled_delivery.py`, `.github/workflows/scheduled-brief.yml` | privacy rejection, remote/local fallback, source-health and snapshot-binding tests | NEEDS_REVERIFY (live Railway bundle evidence pending) |
 | FinancialJuice operational observability | `src/external_observation_input.py`, `schemas/source-health.schema.json`, `site/app.js` | receive/parse/error/importance/pending metrics and UI contract (`52 passed`) | NEEDS_REVERIFY (Railway + Pages evidence pending) |
-| Creator operational observability | `src/creator_source_health.py`, `schemas/source-health.schema.json`, `site/app.js` | receive/parse/error/delivery metrics and UI contract (`91 targeted`, `1147 full`) | NEEDS_REVERIFY (Railway + Pages evidence pending) |
+| Creator operational observability | `src/creator_source_health.py`, `schemas/source-health.schema.json`, `site/app.js` | receive/parse/error/delivery metrics and UI contract (`91 targeted`, `1147 full`), plus public Creator panel evidence | NEEDS_REVERIFY (live Railway ingress remains external) |
 | Official News adapter observability | `src/news_feed_adapters.py`, `tests/test_news_feed_adapters.py` | per-provider checked/parsed/error/latency metrics (`45 targeted`, `1147 full`) | NEEDS_REVERIFY (live feed + Pages evidence pending) |
 | Gmail watch observability | `railway-monitor/gmail_watch.py`, `tests/test_railway_gmail_gateway.py` | receive/parse/error/delivery metrics with cursor privacy boundary (`12 targeted`) | NEEDS_REVERIFY (Railway OAuth/PubSub evidence pending) |
-| FinancialJuice release lineage and Mini App panel | `src/release_manifest.py`, `src/release_gate.py`, `site/index.html`, `site/app.js` | count/hash/source mismatch fixtures; public ready release and six matching hashes | NEEDS_REVERIFY (post-merge WebView evidence pending) |
-| FinancialJuice + news event unification | `src/external_event_pipeline.py`, `src/intelligence_pipeline.py` | event fan-out, evidence and lifecycle tests | PASS / LOCKED |
+| FinancialJuice release lineage and Mini App panel | `src/release_manifest.py`, `src/release_gate.py`, `site/index.html`, `site/app.js` | count/hash/source mismatch fixtures; public ready release, seven matching hashes, and browser DOM evidence | NEEDS_REVERIFY (Railway FinancialJuice source remains external) |
+| FinancialJuice + news event unification | `src/external_event_pipeline.py`, `src/intelligence_pipeline.py` | event fan-out, evidence and lifecycle tests; public News/Creator projections present | PASS / LOCKED |
 | Market News provider registry and URL contract | `src/news_intelligence.py`, `schemas/news-story.schema.json`, `schemas/news-intelligence.schema.json` | provider/domain, unknown URL, schema and dedup tests | PASS / LOCKED |
 | Official news-feed adapters (TWSE/MOPS/SEC/Fed/Nasdaq) | `src/news_feed_adapters.py`; isolated TWSE/MOPS/SEC/Fed adapters; Nasdaq remains explicitly disabled until a stable documented endpoint is configured | parser, timeout/429 isolation and catalog tests; live feed evidence pending | partially_integrated |
 | News interest graph, ranking and dedup | `src/news_intelligence.py`, `risk_news.build_news_snapshot` | ticker/sector reasons, authority ordering and supporting-source tests | PASS / LOCKED |
-| News Mini App rendering | `site/app.js` release-provided provider allowlist and `news.json` lineage loader | Mini App asset, URL-safety, and release-loader contract tests | NEEDS_REVERIFY |
+| News Mini App rendering | `site/app.js` release-provided provider allowlist and `news.json` lineage loader | Mini App asset, URL-safety, release-loader contract tests, and public browser evidence | PASS / LOCKED |
 | News artifact in release lineage | `src/release_manifest.py`, `src/release_gate.py`, `src/artifact_contract.py`, `site/app.js` | manifest/hash, multi-market release, release-gate lineage and mixed-release tests (`52 passed` in targeted release/news gate suite) | PASS / LOCKED |
-| Production release and Telegram acceptance | `src/release_gate.py`, workflows, delivery receipts | public ready release plus scoped receipt evidenced; post-merge main acceptance pending | NEEDS_REVERIFY |
+| Production release and Telegram acceptance | `src/release_gate.py`, workflows, delivery receipts | public ready release, 7/7 hash audit, Pages fallback, and scoped single-recipient receipt from main | PASS for scoped acceptance; broad production remains NEEDS_REVERIFY |
 
 The legacy Anue/Google arrays remain compatibility fields.  The canonical
 `news.intelligence` object is the only new consumer contract; it is additive
