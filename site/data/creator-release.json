@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
-  "parent_release_id": "release-f9c4dba0b0ede6c5",
-  "market_snapshot_id": "b6353a161a9bc86a",
+  "parent_release_id": "release-b97850898b5c2678",
+  "market_snapshot_id": "204593a8c51bca69",
   "event_snapshot_id": "event-a889bf10a4141a3b",
   "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
-  "generated_at": "2026-08-20T20:09:02.522756+00:00",
+  "generated_at": "2026-08-20T20:43:03.954308+00:00",
   "insights": [
     {
       "creator_id": "haojiao",
@@ -50,7 +50,7 @@
       "evidence_alignment": "awaiting_official_crosscheck",
       "prstk_correlation": {
         "correlation_state": "awaiting_market",
-        "reason": "market_snapshot_missing",
+        "reason": "no_explicit_entity_match",
         "matched_tickers": [],
         "matched_sectors": [],
         "creator_topics": [
@@ -60,22 +60,27 @@
           "能源風險",
           "臺灣物價"
         ],
-        "market_snapshot_id": "",
+        "market_snapshot_id": "204593a8c51bca69",
         "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
-        "event_snapshot_id": "",
+        "event_snapshot_id": "event-a889bf10a4141a3b",
         "snapshot_ids": {
-          "market": "",
+          "market": "204593a8c51bca69",
           "research": "research-8b8ec8f6e5ee51aa",
-          "event": ""
+          "event": "event-a889bf10a4141a3b"
         },
-        "evidence_alignment": "insufficient_evidence",
+        "evidence_alignment": "stale",
         "evidence_sources": [
-          "research"
+          "market",
+          "research",
+          "event"
         ],
         "matched_event_entities": [],
-        "stale_contexts": [],
-        "as_of": "2026-08-20T20:09:02.522434+00:00",
+        "stale_contexts": [
+          "research"
+        ],
+        "as_of": "2026-08-20T20:43:03.953738+00:00",
         "evidence": [
+          "market_snapshot",
           "research_snapshot"
         ],
         "is_investment_signal": false
@@ -90,8 +95,8 @@
       "required_fields_present": false,
       "parse_status": "normalized",
       "parser_version": "public-source-curation-v1",
-      "created_at": "2026-08-20T20:09:02.522429+00:00",
-      "updated_at": "2026-08-20T20:09:02.522431+00:00",
+      "created_at": "2026-08-20T20:43:03.953733+00:00",
+      "updated_at": "2026-08-20T20:43:03.953735+00:00",
       "public_safe": true
     }
   ],
@@ -232,13 +237,13 @@
     "aligned_views": [],
     "divergent_views": [],
     "common_risks": [],
-    "evidence_alignment": "insufficient_evidence",
+    "evidence_alignment": "stale",
     "freshness_state": "unknown",
-    "as_of": "2026-08-20T20:09:02.522431+00:00",
+    "as_of": "2026-08-20T20:43:03.953735+00:00",
     "is_investment_signal": false
   },
   "validation_errors": [],
   "status": "ready",
-  "artifact_hash": "c1a6ab872c820f3df306f07b4740d2bc1d4d2d1ec970e5ca8f4156345b0a32a6",
-  "release_id": "creator-c1a6ab872c820f3d"
+  "artifact_hash": "2bfff3648f7c03c3f32a16658b356be9dc41c4d49d1c07c9fe266f9a195a9369",
+  "release_id": "creator-2bfff3648f7c03c3"
 }
