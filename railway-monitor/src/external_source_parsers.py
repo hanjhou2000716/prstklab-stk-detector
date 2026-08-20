@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/external_source_parsers.py
-# Canonical source SHA256: 074bd9f1d1f7f1b0c24574a551fa3dd2f514384087806777b92288605ff45db0
+# Canonical source SHA256: 5c356bcfdf2af42fe07879caa56b6dc763d1c76c0f162af46907df37a279b597
 
 """Deterministic parsers for sanitized external intelligence mail.
 
@@ -16,6 +16,8 @@ import hashlib
 import re
 from typing import Any
 
+from bs4 import BeautifulSoup
+
 from src.creator_provider_registry import is_known_creator
 from src.creator_source_adapters import parse_creator_template
 from src.email_intelligence import normalize_creator_insight, route_email_source
@@ -28,6 +30,26 @@ DLQ_STATES = {"parse_failed", "unsupported_template", "invalid_source", "duplica
 
 def _clip(value: str, limit: int = MAX_FIELD_CHARS) -> str:
     return " ".join(value.split())[:limit].strip()
+
+
+def _plain_text(body: str) -> str:
+    """Normalize Gmail HTML relays before applying the text parser.
+
+    FinancialJuice relays are HTML-only in the live Gmail source.  Parsing
+    markup directly can make the first ``<!DOCTYPE ...>`` line look like a
+    headline and can hide labels whose value is rendered in a sibling tag.
+    Keep this conversion in the canonical parser so every ingress (Railway,
+    fixture and replay) receives the same deterministic input.  Plain text is
+    returned unchanged apart from normalising line endings.
+    """
+    raw = str(body or "")
+    if not re.search(r"<\s*(?:html|body|div|p|section|h[1-6]|br)\b", raw, re.IGNORECASE):
+        return raw.replace("\r\n", "\n").replace("\r", "\n")
+    soup = BeautifulSoup(raw, "html.parser")
+    for node in soup.find_all(("script", "style", "noscript")):
+        node.decompose()
+    text = soup.get_text("\n", strip=True)
+    return text.replace("\r\n", "\n").replace("\r", "\n")
 
 
 def _section(body: str, labels: tuple[str, ...]) -> str:
@@ -51,7 +73,12 @@ def _first_line(body: str) -> str:
 
 
 def _importance(body: str) -> int | None:
-    match = re.search(r"(?:importance|重要性|重要度)\s*[:：]?\s*(10|[0-9])\s*(?:/\s*10)?", body, re.IGNORECASE)
+    match = re.search(
+        r"(?:importance|重要性評分|重要性|重要度)\s*[:：]?\s*(?:[^\d\n]{0,8})?"
+        r"(10|[0-9])\s*(?:/\s*10)?",
+        body,
+        re.IGNORECASE,
+    )
     return int(match.group(1)) if match else None
 
 
@@ -127,6 +154,7 @@ def parse_financialjuice_compound_email(
     *, sender: str, subject: str, body: str, message_id: str = "",
 ) -> dict[str, Any]:
     """Parse repeated FinancialJuice items with fail-closed compound semantics."""
+    body = _plain_text(body)
     blocks = _compound_blocks(body)
     if not blocks:
         return {"parse_status": "not_compound"}
@@ -180,6 +208,7 @@ def parse_financialjuice_compound_email(
 
 def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_id: str = "") -> dict[str, Any]:
     """Parse a FinancialJuice relay into attributed, non-directional facts."""
+    body = _plain_text(body)
     route = route_email_source(sender=sender, subject=subject, body=body)
     if route["source"] != "financialjuice":
         return {"parse_status": "invalid_source", "failure_reason": "source_not_financialjuice", "message_id": message_id}
@@ -191,9 +220,10 @@ def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_
     if compound.get("parse_status") == "compound_unresolved":
         return compound
     importance = _importance(body)
-    headline = _section(body, ("original headline", "原始標題", "headline")) or _first_line(body)
-    translation = _section(body, ("translation", "中文翻譯", "翻譯"))
-    analysis = _section(body, ("ai commentary", "AI分析", "AI commentary", "分析"))
+    headline = _section(body, ("original headline", "原始標題", "headline"))
+    translation = _section(body, ("translation", "繁體中文翻譯", "中文翻譯", "翻譯"))
+    headline = headline or translation or _first_line(body)
+    analysis = _section(body, ("ai commentary", "AI分析", "AI commentary", "AI 評論", "分析"))
     impact = _section(body, ("possible impact", "可能影響", "市場影響", "impact"))
     if not headline:
         return {"parse_status": "parse_failed", "failure_reason": "missing_headline", "message_id": message_id}
