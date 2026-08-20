@@ -137,15 +137,15 @@ This section is updated only from the public manifest and the latest successful
 main-branch workflows. It is evidence of the deployed release, not a claim
 that every optional provider or historical backtest is available.
 
-- Main commit: `46f0fae2cac7a87e80da91b7a05e4a8d16ed9ee0` (includes merged PR #636)
-- Pages deployment / market refresh: [31886831364](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31886831364)
-- Public release smoke: [31883967681](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31883967681)
-- Quality/delivery photo smoke: [31882734841](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31882734841)
-- Release: `release-12ff05f51e4ea353`
-- Market snapshot: `92dcb8d32908d715`
+- Main commit: `4ed3a8b22f09ae32d4b31f6ac419f37869e5bee4` (includes merged PR #646)
+- Pages deployment / market refresh: [32369914536](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32369914536)
+- Quality/delivery photo smoke: [32366252888](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32366252888)
+- Main quality/delivery checks: [32371156982](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32371156982)
+- Release: `release-e5334a0f2e497e86`
+- Market snapshot: `592fcbc2838814cf`
 - Research snapshot: `research-8b8ec8f6e5ee51aa`
-- Event snapshot: `event-f67c25c9f5e6f24d`
-- Creator snapshot: `creator-e0c589f4b010dac5`
+- Event snapshot: `event-ed531dee05c7de49`
+- Creator snapshot: `creator-99d5cec6f7053f34`
 - Manifest status: `ready`; research mode/scope: `production` / `full`
 - Source health is now also emitted as a release-bound `data/source-health.json`
   artifact when the producer has the canonical health envelope. The legacy
@@ -161,34 +161,33 @@ hashes take precedence and this document must be corrected before claiming a
 new production verification.
 
 The photo smoke receipt is intentionally a single-recipient diagnostic and
-uses a synthetic smoke alert identity.  The 2026-08-15 run reported one
-delivery, zero failures, and a matching Railway receipt with trace
-`photo-smoke-be85506dce214f5c`.  It proves renderer, sendPhoto and receipt
-plumbing, not the content of a live event.  A release-gated production
-delivery must use the release identifiers above.
+uses a synthetic smoke alert identity.  The 2026-08-20 run reported one
+delivery, zero failures, `1080x1350` dimensions, and a matching Railway
+receipt with trace `photo-smoke-90c34b7733fc4eaf`.  It proves renderer,
+sendPhoto and receipt plumbing, not the content of a live event.  A
+release-gated production delivery must use the release identifiers above.
 
-The later refresh run `31886831364` published the release above. Its public
+The latest refresh run `32369914536` published the release above. Its public
 manifest is `ready` and carries the same release, market, research, event and
 creator snapshot lineage. The refresh intentionally did not send Telegram; the
-photo receipt above therefore remains the latest controlled delivery evidence
-and is not silently relabelled as evidence for the newer release.
-That refresh intentionally did not send Telegram; the photo receipt above
-therefore remains the latest controlled delivery evidence and is not silently
-relabelled as evidence for the newer release.
+photo receipt above therefore remains controlled delivery evidence for the
+renderer/receipt path and is not silently relabelled as evidence for a live
+event.
+### External runtime evidence (2026-08-20)
 
-### External runtime evidence (2026-08-15)
-
-The signed Railway health snapshot after the photo smoke shows Jin10 healthy,
-delivery `delivered` with `last_recipient_count=1`, `last_failed_count=0`,
-`receipt_matches_last_outbox=true`, and a zero-age receipt.  This is the
-strongest available evidence for the controlled delivery path; it does not
-prove that every production recipient is reachable.
+The current Railway health snapshot shows Jin10 `healthy`, runtime
+`repository-shared`, and classification `healthy`. Delivery is currently
+`not_checked` because no new dispatch has been run after the refresh; the
+latest controlled delivery evidence remains the single-recipient photo smoke
+above (`delivered`, one recipient, zero failures, matching receipt). This does
+not prove that every production recipient is reachable.
 
 The same snapshot keeps external gaps explicit: Gmail is
 `configuration_missing`; GDELT is fail-closed on HTTP 429 and its health
-callback is HTTP 403; Railway still needs an operator to create the canonical
-`RAILWAY_STATUS_SHARED_SECRET` variable when only the legacy name exists (the
-runtime now reports `migration_required` without exposing the value). These are
+callback is HTTP 403; market sync is `not_checked` until the next poll. The
+Railway's canonical `RAILWAY_STATUS_SHARED_SECRET` remains an operator-managed
+configuration item when only the legacy name exists; the runtime reports
+`migration_required` without exposing the value. These are
 configuration/provider follow-ups, not reasons to mark the successful release
 or controlled delivery as failed. No high-risk alert may be generated from
 the failed GDELT path.
