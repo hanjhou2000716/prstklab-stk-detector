@@ -59,24 +59,27 @@ def test_email_router_imports_from_standalone_railway_root() -> None:
     assert "jenny" in result.stdout
 
 
-def test_standalone_known_email_fails_closed_when_canonical_parser_is_unavailable() -> None:
-    """A root-only image must not silently drop a routed message."""
+def test_standalone_known_email_uses_generated_canonical_parser_bundle() -> None:
+    """The root-only image must run the generated canonical parser."""
     import os
 
     environment = os.environ.copy()
     environment.pop("PYTHONPATH", None)
+    payload = {
+        "gmail_message_id": "standalone-1",
+        "sender": "alerts@financialjuice.com",
+        "subject": "FinancialJuice breaking news",
+        "body": (
+            "Original headline: oil supply update\n"
+            "Importance: 10/10\n"
+            "Possible impact: monitor crude and rates\n"
+            "AI commentary: source facts only"
+        ),
+    }
     command = [
         sys.executable,
         "-c",
-        (
-            "import json, email_router; "
-            "print(json.dumps(email_router.parse_email({"
-            "'gmail_message_id':'standalone-1',"
-            "'sender':'alerts@financialjuice.com',"
-            "'subject':'FinancialJuice breaking news',"
-            "'body':'Original headline: oil supply update\\nImportance: 10/10'"
-            "})))"
-        ),
+        f"import json, email_router; print(json.dumps(email_router.parse_email({payload!r})))",
     ]
     result = subprocess.run(
         command,
@@ -87,9 +90,10 @@ def test_standalone_known_email_fails_closed_when_canonical_parser_is_unavailabl
         text=True,
     )
     parsed = json.loads(result.stdout)
-    assert parsed["parse_status"] == "parser_unavailable"
-    assert parsed["failure_reason"] == "canonical_external_parser_unavailable"
-    assert parsed["public_observations"] == []
+    assert parsed["parse_status"] == "parsed"
+    assert parsed["failure_reason"] is None
+    assert len(parsed["public_observations"]) == 1
+    assert parsed["public_observations"][0]["source"] == "financialjuice"
 
 
 def test_standalone_creator_bundle_matches_canonical_registry() -> None:
