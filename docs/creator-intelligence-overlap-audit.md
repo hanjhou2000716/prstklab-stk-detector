@@ -39,6 +39,24 @@ Read-only HTTP verification of the currently published Pages bundle found:
 This proves public artifact integrity at the captured release. It does not
 replace Mini App WebView visual confirmation or live Railway Gmail evidence.
 
+### FinancialJuice Gmail HTML replay (2026-08-20)
+
+A read-only Gmail inspection of a current FinancialJuice relay confirmed that
+the transport is an HTML-only message: the vendor importance score and the
+Traditional-Chinese translation are rendered in sibling HTML elements rather
+than plain `Label: value` lines.  The canonical parser now converts that HTML
+to bounded text before classification, recognizes `重要性評分`,
+`繁體中文翻譯` and `AI 評論`, and uses the translation as a headline fallback
+when the relay does not expose a separate original-headline field.  The
+derived projection remains public-safe; no Gmail message IDs, raw body,
+recipients or transport headers are persisted.
+
+Sanitized regression evidence: the parser, shared external-event path,
+privacy boundary and Railway Gmail gateway passed 41 tests; the relevant
+source/contract/release suite passed 147 tests.  The live Railway source is
+still `configuration_missing`, so this proves parser compatibility and not
+live Gmail watch delivery.
+
 ### Runtime and delivery evidence captured
 
 - Railway `/health` reports the monitor `running/healthy`.
