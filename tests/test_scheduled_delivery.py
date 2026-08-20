@@ -18,6 +18,15 @@ def test_creator_observations_are_projected_into_release_records() -> None:
     assert rows[0]["episode_key"] == "jenny-1"
 
 
+def test_scheduled_brief_prioritises_eligible_financialjuice_event() -> None:
+    event = {"source_key": "financialjuice", "notification_status": "eligible", "title": "FJ"}
+    snapshot = {
+        "financialjuice_priority_events": [event],
+        "events": {"items": [{"kind": "market_signal", "title": "TAIEX"}]},
+    }
+    assert scheduled_delivery._pick_event(snapshot, "morning") == event
+
+
 def _settings():
     return type(
         "Settings",
@@ -252,6 +261,39 @@ def test_prepare_binds_sanitized_external_observations_to_snapshot(tmp_path, mon
     assert published["external_observations"][0]["observation_id"] == "fj-1"
     assert published["briefing"]["external_observations"][0]["source"] == "financialjuice"
     assert published["external_source_health"]["status"] == "healthy"
+
+
+def test_prepare_projects_qualifying_financialjuice_into_release_event_lane(tmp_path, monkeypatch):
+    records = tmp_path / "external.json"
+    records.write_text(json.dumps({"observations": [{
+        "observation_id": "fj-8", "item_id": "item-8", "source": "financialjuice",
+        "original_headline": "Oil supply risk", "event_type": "energy", "vendor_importance": 8,
+        "source_url": "https://financialjuice.com/item/8", "public_safe": True,
+    }]}), encoding="utf-8")
+    snapshot_path = tmp_path / "market.json"
+    monkeypatch.setenv("EXTERNAL_OBSERVATIONS_PATH", str(records))
+    monkeypatch.setattr(scheduled_delivery, "build_market_snapshot", lambda: {
+        "snapshot_id": "m-1", "quotes": [], "indices": [], "events": {"items": []},
+        "source_health": {"status": "healthy", "sources": [], "data_gaps": [],
+                           "missing_source_count": 0, "runtime_failure_count": 0,
+                           "configuration_missing_count": 0, "state_counts": {},
+                           "observability": {}},
+    })
+    monkeypatch.setattr(scheduled_delivery, "build_briefing_snapshot", lambda snapshot, _slot: {
+        "external_event_notifications": snapshot.get("financialjuice_priority_decisions"),
+    })
+    def write_snapshot(snapshot, path):
+        path.write_text(json.dumps(snapshot), encoding="utf-8")
+        return True
+    monkeypatch.setattr(scheduled_delivery, "write_snapshot", write_snapshot)
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: None)
+    monkeypatch.setattr(scheduled_delivery, "briefing_correlation", lambda *_args: {"trace_id": "t", "snapshot_id": "m-1", "observation_id": ""})
+    monkeypatch.setattr(scheduled_delivery, "merge_published_metadata", lambda *_args, **_kwargs: True)
+    scheduled_delivery.prepare("morning", snapshot_path)
+    published = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    assert published["financialjuice_priority_decisions"][0]["vendor_priority_notification"] is True
+    assert published["financialjuice_priority_events"][0]["notification_status"] == "eligible"
+    assert published["events"]["items"][0]["source_key"] == "financialjuice"
 
 
 def test_prepare_fetches_sanitized_railway_observations_into_release(tmp_path, monkeypatch):

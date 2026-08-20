@@ -1,0 +1,143 @@
+"""Project qualifying FinancialJuice observations into the release event lane.
+
+FinancialJuice is a discovery source.  Its vendor importance score can make an
+item eligible for a vendor-priority notification, but it never upgrades the
+PRStK risk level and never bypasses the release gate.  This projection keeps
+the decision visible in the public snapshot so a skipped or deduplicated item
+is auditable instead of silently disappearing.
+"""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from typing import Any
+
+from src.external_event_pipeline import build_external_events
+
+
+def _now() -> str:
+    return datetime.now(UTC).isoformat()
+
+
+def _source(row: dict[str, Any]) -> str:
+    return str(row.get("source") or row.get("content_origin") or "").strip().casefold()
+
+
+def _mapping(value: Any) -> dict[str, Any]:
+    """Return a concrete mapping for mypy and defensive producer boundaries."""
+    return value if isinstance(value, dict) else {}
+
+
+def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, reasons: list[str]) -> dict[str, Any]:
+    risk = _mapping(result.get("risk"))
+    cluster = _mapping(result.get("cluster"))
+    headline = str(
+        row.get("original_headline") or row.get("headline") or row.get("title") or "FinancialJuice 公開快訊"
+    ).strip()
+    importance = row.get("vendor_importance", row.get("importance"))
+    source_url = str(row.get("source_url") or row.get("url") or "").strip()
+    observation_id = str(result.get("observation_id") or row.get("observation_id") or "").strip() or None
+    cluster_key = str(result.get("event_cluster_key") or row.get("event_cluster_key") or "").strip() or None
+    pending = list(dict.fromkeys(str(item) for item in (result.get("pending_reasons") or []) if str(item).strip()))
+    return {
+        "kind": "external_event",
+        "source": "FinancialJuice",
+        "source_key": "financialjuice",
+        "source_tier": "discovery",
+        "title": headline,
+        "brief_title": f"FinancialJuice｜{headline}｜{'重要度 ' + str(importance) + '/10' if importance is not None else '待核對'}",
+        "brief_summary": str(row.get("chinese_translation") or row.get("summary") or headline).strip(),
+        "summary": str(row.get("possible_impact") or row.get("ai_commentary") or row.get("summary") or headline).strip(),
+        "event_type": str(row.get("event_type") or row.get("category") or "unknown"),
+        "classification": str(cluster.get("event_type") or row.get("event_type") or "unknown"),
+        "event_cluster_key": cluster_key,
+        "observation_id": observation_id,
+        "notification_id": result.get("notification_id") or row.get("item_id") or observation_id,
+        "lifecycle_state": result.get("lifecycle_state") or "pending_confirmation",
+        "risk_level": risk.get("prstk_risk_level") or "R2",
+        "prstk_risk": risk,
+        "vendor_importance": importance,
+        "vendor_priority_notification": bool(
+            isinstance(result.get("vendor_priority"), dict)
+            and result["vendor_priority"].get("vendor_priority_notification")
+        ),
+        "notification_status": status,
+        "notification_reasons": list(dict.fromkeys([*reasons, *pending])),
+        "notification_reason": "、".join(dict.fromkeys([*reasons, *pending])),
+        "source_url": source_url,
+        "published_at": row.get("published_at") or row.get("source_published_at"),
+        "fetched_at": row.get("fetched_at") or _now(),
+        "source_trace": {
+            "source_label": "FinancialJuice",
+            "source_url": source_url,
+            "source_domain": str(row.get("source_domain") or "financialjuice.com"),
+            "vendor_importance": importance,
+            "vendor_importance_is_not_risk": True,
+            "official_confirmed": bool(risk.get("official_confirmed")),
+            "market_sync_confirmed": bool(risk.get("market_sync_confirmed")),
+            "observation_id": observation_id,
+            "item_id": row.get("item_id"),
+            "event_cluster_key": cluster_key,
+        },
+        "source_evidence": result.get("source_evidence") or [],
+        "market_evidence": result.get("market_evidence") or [],
+        "market_direction": None,
+        "market_move": None,
+        "alert_eligible": status == "eligible",
+        "public_safe": True,
+    }
+
+
+def project_financialjuice_priority(
+    observations: list[dict[str, Any]],
+    *,
+    existing_events: list[dict[str, Any]] | None = None,
+) -> dict[str, list[dict[str, Any]]]:
+    """Return public event rows and auditable vendor-priority decisions.
+
+    Items below 8/10 remain visible as ``not_eligible``.  Qualifying items
+    sharing a cluster with an already delivered event become
+    ``already_cluster_notified`` rather than creating a duplicate alert.
+    """
+    existing_keys = {
+        str(item.get("event_cluster_key") or "").strip()
+        for item in (existing_events or [])
+        if isinstance(item, dict) and item.get("event_cluster_key")
+    }
+    events: list[dict[str, Any]] = []
+    decisions: list[dict[str, Any]] = []
+    for row in observations:
+        if not isinstance(row, dict) or _source(row) != "financialjuice":
+            continue
+        for result in build_external_events(row):
+            vendor = _mapping(result.get("vendor_priority"))
+            qualifying = bool(vendor.get("vendor_priority_notification"))
+            # A reviewed provider item may carry a canonical cluster assigned
+            # by the upstream ledger.  Preserve it over the locally derived
+            # fallback so cross-provider deduplication remains stable.
+            cluster_key = str(row.get("event_cluster_key") or result.get("event_cluster_key") or "").strip()
+            if cluster_key:
+                result["event_cluster_key"] = cluster_key
+            if not qualifying:
+                status, reasons = "not_eligible", ["vendor_importance_below_8_or_missing"]
+            elif cluster_key and cluster_key in existing_keys:
+                status, reasons = "already_cluster_notified", ["already_cluster_notified"]
+            else:
+                status, reasons = "eligible", ["vendor_priority_importance_ge_8"]
+            event = _event_record(result, row, status=status, reasons=reasons)
+            events.append(event)
+            decisions.append({
+                "observation_id": event["observation_id"],
+                "item_id": row.get("item_id"),
+                "event_cluster_key": cluster_key or None,
+                "vendor_importance": event.get("vendor_importance"),
+                "vendor_priority_notification": qualifying,
+                "notification_status": status,
+                "notification_reason": event["notification_reason"],
+                "prstk_risk": event.get("prstk_risk"),
+                "release_trace_required": True,
+            })
+    return {"events": events, "decisions": decisions}
+
+
+__all__ = ["project_financialjuice_priority"]
