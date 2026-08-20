@@ -17,6 +17,33 @@ from datetime import UTC, datetime
 import requests
 
 
+def _financialjuice_trace() -> dict[str, object] | None:
+    """Return only the release-bound FJ trace fields safe for Railway storage."""
+    raw = os.environ.get("FINANCIALJUICE_TRACE", "").strip()
+    if not raw:
+        return None
+    try:
+        value = json.loads(raw)
+    except json.JSONDecodeError as err:
+        raise ValueError("invalid FinancialJuice delivery trace") from err
+    if not isinstance(value, dict):
+        raise ValueError("invalid FinancialJuice delivery trace")
+    allowed = {
+        "observation_id_hash", "item_id", "event_cluster_key", "vendor_importance",
+        "prstk_risk", "notification_reason", "release_id", "snapshot_id", "delivery_status",
+    }
+    trace = {key: value[key] for key in allowed if key in value}
+    digest = str(trace.get("observation_id_hash") or "")
+    if digest and (len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest.lower())):
+        raise ValueError("invalid FinancialJuice observation hash")
+    for field in ("release_id", "snapshot_id", "delivery_status"):
+        if field in trace and not str(trace[field]).strip():
+            raise ValueError(f"invalid FinancialJuice {field}")
+    if not trace:
+        raise ValueError("empty FinancialJuice delivery trace")
+    return trace
+
+
 def build_payload() -> dict[str, object]:
     hashes = [
         item.strip()
@@ -28,7 +55,7 @@ def build_payload() -> dict[str, object]:
         for item in os.environ.get("NOTIFICATION_KEYS", "").split(",")
         if item.strip()
     ))[:200]
-    return {
+    payload: dict[str, object] = {
         "receipt_origin": "github_actions",
         "trace_id": os.environ.get("TRACE_ID", "").strip(),
         "receipt_kind": os.environ.get("DELIVERY_RECEIPT_KIND", "production").strip() or "production",
@@ -44,6 +71,20 @@ def build_payload() -> dict[str, object]:
         "renderer_error_type": os.environ.get("RENDERER_ERROR_TYPE", "").strip() or None,
         "reported_at": datetime.now(UTC).isoformat(),
     }
+    trace = _financialjuice_trace()
+    if trace is not None:
+        # A delivery callback is the final durable link in the FJ chain.  The
+        # trace is allow-listed and contains only hashed observation identity;
+        # raw Gmail/message identifiers never cross the runner boundary.
+        if str(trace.get("release_id") or "") not in {"", str(payload["release_id"])}:
+            raise ValueError("FinancialJuice release_id does not match receipt")
+        if str(trace.get("snapshot_id") or "") not in {"", str(payload["snapshot_id"])}:
+            raise ValueError("FinancialJuice snapshot_id does not match receipt")
+        trace["release_id"] = payload["release_id"]
+        trace["snapshot_id"] = payload["snapshot_id"]
+        trace["delivery_status"] = payload["delivery_status"]
+        payload["financialjuice_delivery_trace"] = trace
+    return payload
 
 
 def send_callback() -> bool:
