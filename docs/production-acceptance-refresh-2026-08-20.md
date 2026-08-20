@@ -1,5 +1,11 @@
 # Production acceptance checkpoint — refresh dashboard (2026-08-20)
 
+> **Superseded checkpoint:** the later merged-main refresh is documented in
+> `docs/creator-intelligence-overlap-audit.md` under “Post-merge release and
+> Railway evidence (2026-08-20)” and “Controlled Telegram photo acceptance”.
+> The IDs below are retained as historical evidence and must not be treated
+> as the current public release selector.
+
 This is an evidence checkpoint for the canonical `main` pipeline after the
 approved `refresh-dashboard` dispatch. It does not replace the release gate,
 the source-health contract, or the Creator/FinancialJuice trust boundaries.

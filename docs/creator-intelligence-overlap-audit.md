@@ -295,3 +295,109 @@ does not expose OAuth values, Pub/Sub credentials, mailbox identifiers, or
 message cursors. This makes the operator action explicit while preserving the
 privacy boundary. Live Gmail watch delivery remains `NEEDS_REVERIFY` until the
 Railway environment is configured and a controlled receipt is captured.
+
+### Post-merge release and Railway evidence (2026-08-20)
+
+The Gmail diagnostics change is now on `main` at `d279a9b` (merge of PR
+#653). Main-branch quality and security workflows completed successfully,
+and the targeted Railway health-contract/runtime regression suite passed
+(`98 passed`). The approved `refresh-dashboard` run `32385839035` then
+published the following coherent Pages release:
+
+The full repository regression also passed (`1266 passed, 1 skipped`) when
+run with an ASCII temporary directory. The default workspace-local temp path
+is under a non-ASCII OneDrive directory and produced only a local Windows
+permission/encoding warning; it is not a repository test failure.
+
+| Artifact | ID |
+|---|---|
+| Release | `release-d7831aa2cce8bd35` |
+| Market snapshot | `d2ea6264dc43aad2` |
+| Research snapshot | `research-8b8ec8f6e5ee51aa` |
+| Event snapshot | `event-ed531dee05c7de49` |
+
+The same public manifest's Creator and news artifacts are also present and
+release-bound: Creator release `creator-9d88617b6fd60ed6` reports
+`status=ready`, `public_safe=true`, coverage `1/1` (Haojiao) and zero
+validation errors; news snapshot `news-cc4794ea205628ee` reports
+`status=ready`. The single-creator coverage is explicit and is not presented
+as a two-source consensus.
+
+The public manifest reports `status=ready` and those IDs are mutually
+consistent. No Telegram notification was emitted by this refresh because the
+run produced no qualifying alert.
+
+The Railway monitor has since rolled to the merged diagnostics build. Its
+read-only health response reports `status=ok`, a running/healthy monitor and
+the Gmail projection now includes the redacted missing-key list. Gmail is
+still intentionally `configuration_missing` (OAuth/Pub/Sub variables are not
+configured), so this is deployment evidence—not evidence of live Gmail watch
+delivery. GDELT remains fail-closed after `invalid_json`, and the health
+callback remains permission-denied (`HTTP_403`); neither condition is treated
+as a successful event or as a reason to publish a high-risk alert.
+
+The remaining production gates are explicit: configure and verify Gmail
+OAuth/Pub/Sub, restore a successful GDELT response or bounded cache, and
+capture one controlled Telegram delivery receipt linked to a ready release.
+Until those observations exist, the related rows remain `NEEDS_REVERIFY`.
+
+### Controlled Telegram photo acceptance (2026-08-20)
+
+The scoped `PRStK Notification` workflow run `32388111469` completed
+successfully with `photo_test=true` and one explicitly supplied recipient.
+The renderer installed Chromium, the photo smoke step succeeded, and the
+Railway receipt projection matched the outbox:
+
+- trace: `photo-smoke-09b44a04039f482c`
+- outbox: `delivered`
+- receipt: `delivered`
+- delivered / failed / recipients: `1 / 0 / 1`
+- `receipt_matches_last_outbox=true`
+
+This is a controlled single-recipient acceptance, not a broadcast or proof of
+every subscriber's delivery. The remaining external gates are Gmail OAuth /
+Pub/Sub ingress and a qualifying live FinancialJuice receipt.
+
+### Latest approved refresh rerun (2026-08-21 Asia/Taipei)
+
+The approved `refresh-dashboard` dispatch from the merged `main` commit
+`d279a9b24f325913567a55d4706bfc65158b867c` completed successfully in Actions
+run [32389687042](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32389687042).
+The public manifest was re-read after Pages deployment and returned
+`status=ready`; its release-bound artifact set is:
+
+| Artifact | ID |
+|---|---|
+| Release | `release-24bbf60f03850ca5` |
+| Market snapshot | `40f6d61f5886c7c8` |
+| Research snapshot | `research-8b8ec8f6e5ee51aa` |
+| Event snapshot | `event-ed531dee05c7de49` |
+| Creator snapshot | `creator-c11ad4250540693f` |
+| News snapshot | `news-ae8520aae4d776ae` |
+
+The manifest declares `creator_public_status=ready`, `news_status=ready`,
+zero validation errors and matching artifact hashes. Research remains
+explicitly `stale_fallback` as a data-freshness state; it is not relabelled as
+live merely because the market refresh succeeded. No Telegram notification was
+emitted because this refresh produced no qualifying alert.
+
+### Latest read-only Railway health (2026-08-21 00:08 Asia/Taipei)
+
+The post-refresh health read returned `status=ok`. The monitor completed its
+latest cycle with `heartbeat_status=healthy`, and the deployed classifier was
+`repository-shared`. The delivery projection still reports the prior
+controlled photo smoke as `delivered` with
+`receipt_matches_last_outbox=true`; no new broadcast was created by the
+dashboard refresh.
+
+The same response keeps the external gates explicit and fail-closed:
+
+- Gmail is `configuration_missing`; only the missing variable names are
+  exposed (`GMAIL_WATCH_TOPIC`, `GMAIL_WATCH_LABEL_IDS`, `GMAIL_OAUTH_STATE`,
+  `GMAIL_PUBSUB_AUDIENCE`, `GMAIL_PUBSUB_SERVICE_ACCOUNT`).
+- GDELT is `HTTP_429`, with no stale cache promoted to live evidence.
+- The non-fatal health callback is `HTTP_403` and is scheduled for bounded
+  retry; it does not change the local Railway health result.
+
+This read is operational evidence only. It does not claim live Gmail ingress,
+a successful GDELT poll, or a new FinancialJuice qualifying receipt.
