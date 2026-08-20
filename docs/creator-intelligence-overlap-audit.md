@@ -401,3 +401,31 @@ The same response keeps the external gates explicit and fail-closed:
 
 This read is operational evidence only. It does not claim live Gmail ingress,
 a successful GDELT poll, or a new FinancialJuice qualifying receipt.
+
+### Approved refresh-dashboard run (2026-08-21 12:09 Asia/Taipei)
+
+The user-approved `refresh-dashboard` dispatch from `main` commit
+`6a8849676fbd859447ece0b725d7a363d80ef361` completed successfully in Actions
+run [32412415883](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32412415883).
+The run completed market refresh, immutable data-release publication, asset
+build, Pages deployment and public artifact upload without bypassing the
+release gate.
+
+The public manifest was re-read after deployment and returned `status=ready`:
+
+| Artifact | ID |
+|---|---|
+| Release | `release-f9c4dba0b0ede6c5` |
+| Market snapshot | `b6353a161a9bc86a` |
+| Research snapshot | `research-8b8ec8f6e5ee51aa` |
+| Event snapshot | `event-a889bf10a4141a3b` |
+| Creator snapshot | `creator-c1a6ab872c820f3d` |
+| News snapshot | `news-f8623518ad0441d9` |
+
+All manifest-declared artifact hashes matched the public downloads at the
+time of capture; Creator and News artifacts were `ready`. Research remained
+`stale_fallback` because the bounded MOPS research gate was not complete. The
+refresh therefore updated the public market/creator/news release but did not
+pretend that the research scan was current and did not emit a Telegram alert.
+This is the expected fail-closed behavior while the incremental MOPS cache is
+being filled by the bounded research workflow.
