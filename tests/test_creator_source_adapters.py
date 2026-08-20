@@ -78,3 +78,43 @@ def test_registry_parser_mismatch_fails_closed(monkeypatch) -> None:
     )
     assert result["parse_status"] == "unsupported_parser"
     assert result["failure_reason"] == "creator_parser_not_supported"
+
+
+def test_jenny_html_template_extracts_structured_fields_and_hash() -> None:
+    result = parse_creator_template(
+        source="jenny",
+        sender="digest@example.invalid",
+        subject="財女珍妮｜本週市場觀察",
+        body="""
+        <html><body>
+          <h1>Title: AI infrastructure watch</h1>
+          <p>Fact: Public filings describe cloud-capex plans.</p>
+          <p>Opinion: The market may remain selective.</p>
+          <p>CSCO: network demand remains a watch item</p>
+          <p>COHR: optical components require official confirmation</p>
+        </body></html>
+        """,
+        message_id="jenny-20260820-01",
+    )
+    assert result["parse_status"] == "parsed"
+    assert result["source_adapter"] == "jenny-template-v1"
+    assert result["provider_fields"] == {
+        "CSCO": "network demand remains a watch item",
+        "COHR": "optical components require official confirmation",
+    }
+    assert result["provider_fields_missing"] == ["NBIS", "CBRS"]
+    assert len(result["content_hash"]) == 64
+    assert result["public_safe"] is True
+    assert "body" not in result
+
+
+def test_jenny_template_without_labelled_sections_fails_closed() -> None:
+    result = parse_creator_template(
+        source="jenny",
+        sender="digest@example.invalid",
+        subject="市場觀察",
+        body="<p>一段沒有可核對欄位的自由文字。</p>",
+        message_id="jenny-unsupported",
+    )
+    assert result["parse_status"] == "unsupported_template"
+    assert result["failure_reason"] == "missing_fact_or_opinion_sections"

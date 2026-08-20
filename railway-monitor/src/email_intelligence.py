@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/email_intelligence.py
-# Canonical source SHA256: bc74d6b92ed88f414322ea15f701822cc3bafdbcf03a3e6e0a57326f39f9783e
+# Canonical source SHA256: 483693167596a4265930ca0628a992a1f212f71ab56afbc00e417e94baaa8a74
 
 """Privacy-preserving email and creator-intelligence contracts.
 
@@ -175,6 +175,15 @@ def normalize_creator_insight(record: dict[str, Any]) -> dict[str, Any]:
         },
         "summary_image_available": bool(record.get("summary_image_available")),
         "summary_image_hash": _text(record.get("summary_image_hash")),
+        # Provider-specific fields are already sanitized by the adapter.  Keep
+        # them under one namespaced object so downstream UI/release code can
+        # display evidence without reintroducing raw email content.
+        "source_adapter": _text(record.get("source_adapter")),
+        "template_fingerprint": _text(record.get("template_fingerprint")),
+        "content_hash": _text(record.get("content_hash")),
+        "provider_fields": record.get("provider_fields") if isinstance(record.get("provider_fields"), dict) else {},
+        "provider_fields_missing": strings("provider_fields_missing"),
+        "required_fields_present": bool(record.get("required_fields_present")),
         "parse_status": _text(record.get("parse_status")) or "normalized",
         "parser_version": _text(record.get("parser_version")) or "creator-normalizer-v1",
         "created_at": _utc(record.get("created_at")) or datetime.now(UTC).isoformat(),
