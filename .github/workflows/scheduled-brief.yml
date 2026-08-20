@@ -125,13 +125,14 @@ jobs:
         env:
           RELEASE_MANIFEST_PATH: ${{ env.MANIFEST_PATH }}
         run: |
-          python - <<'PY' >> "$GITHUB_OUTPUT"
+          python - <<'PY'
           import json
           import os
           from pathlib import Path
           manifest = json.loads(Path(os.environ["RELEASE_MANIFEST_PATH"]).read_text(encoding="utf-8"))
           publish = manifest.get("status") == "ready" and manifest.get("research_freshness") == "fresh"
-          print(f"publish={'true' if publish else 'false'}")
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"publish={'true' if publish else 'false'}\n")
           if not publish:
               print("::warning::Release is not fresh and complete; preserving the previous immutable release.")
           PY
