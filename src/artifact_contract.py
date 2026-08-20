@@ -315,6 +315,9 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
             if isinstance(source, dict) and (
                 source.get("status") in {"failed", "scan_failed", "critical"}
                 or source.get("semantic_state") in {"failed", "critical"}
+            ) and (
+                str(source.get("role") or "") == "required_for_core"
+                or str(source.get("key") or "") in {"market_quotes", "official_events"}
             )
         ]
         if failed:

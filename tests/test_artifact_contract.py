@@ -122,6 +122,18 @@ def test_source_health_rejects_no_event_when_core_scan_failed():
     assert any("cannot coexist" in error for error in errors)
 
 
+def test_source_health_allows_no_event_when_only_optional_source_failed():
+    health = _source_health(
+        event_scan={"status": "no_event", "has_events": False},
+        sources=[
+            {"key": "official_events", "role": "required_for_core", "status": "healthy", "semantic_state": "healthy"},
+            {"key": "external_financialjuice", "role": "optional", "status": "failed", "semantic_state": "failed"},
+        ],
+    )
+    errors = validate_source_health(health)
+    assert not any("cannot coexist" in error for error in errors)
+
+
 def test_source_health_rejects_scan_failed_with_events():
     health = _source_health(
         event_scan={"status": "scan_failed", "has_events": True},
