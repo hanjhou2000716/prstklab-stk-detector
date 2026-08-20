@@ -128,6 +128,19 @@ const renderAlertTrace = (event) => {
     facts.push(`市場影響核對：${event.impact_confirmation.method}${markets ? `（${markets}）` : ""}`);
   }
   if (trace?.source_label) facts.push(`來源：${trace.source_label}`);
+  // FinancialJuice is an attributed discovery source.  Keep its vendor
+  // priority visibly separate from the PRStK risk decision so the risk card
+  // cannot be read as a vendor score being promoted to system risk.
+  const isFinancialJuice = String(event?.source_key || event?.source || "").toLowerCase() === "financialjuice";
+  if (isFinancialJuice) {
+    const importance = event?.vendor_importance ?? trace?.vendor_importance;
+    facts.push(`來源重要度：${importance === null || importance === undefined || importance === "" ? "待核對" : `${importance} / 10`}`);
+    const riskLevel = event?.prstk_risk?.prstk_risk_level || event?.risk_level || "R2";
+    facts.push(`PRStK Risk：${riskLevel}`);
+    const hasCrosscheck = Boolean(event?.crosscheck_status && event.crosscheck_status !== "unverified")
+      || Boolean(trace?.crosscheck_status && trace.crosscheck_status !== "unverified");
+    facts.push(`Evidence：${hasCrosscheck ? "已完成來源核對" : "等待第二來源"}`);
+  }
   const domains = Array.isArray(trace?.verified_domains) ? trace.verified_domains.filter(Boolean) : [];
   if (domains.length) facts.push(`核對網域：${domains.join("、")}`);
   const crosscheckStatus = String(event?.crosscheck_status || trace?.crosscheck_status || "").trim();
