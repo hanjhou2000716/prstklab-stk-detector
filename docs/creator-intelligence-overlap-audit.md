@@ -333,3 +333,20 @@ The remaining production gates are explicit: configure and verify Gmail
 OAuth/Pub/Sub, restore a successful GDELT response or bounded cache, and
 capture one controlled Telegram delivery receipt linked to a ready release.
 Until those observations exist, the related rows remain `NEEDS_REVERIFY`.
+
+### Controlled Telegram photo acceptance (2026-08-20)
+
+The scoped `PRStK Notification` workflow run `32388111469` completed
+successfully with `photo_test=true` and one explicitly supplied recipient.
+The renderer installed Chromium, the photo smoke step succeeded, and the
+Railway receipt projection matched the outbox:
+
+- trace: `photo-smoke-09b44a04039f482c`
+- outbox: `delivered`
+- receipt: `delivered`
+- delivered / failed / recipients: `1 / 0 / 1`
+- `receipt_matches_last_outbox=true`
+
+This is a controlled single-recipient acceptance, not a broadcast or proof of
+every subscriber's delivery. The remaining external gates are Gmail OAuth /
+Pub/Sub ingress and a qualifying live FinancialJuice receipt.
