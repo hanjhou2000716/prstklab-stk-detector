@@ -295,3 +295,36 @@ does not expose OAuth values, Pub/Sub credentials, mailbox identifiers, or
 message cursors. This makes the operator action explicit while preserving the
 privacy boundary. Live Gmail watch delivery remains `NEEDS_REVERIFY` until the
 Railway environment is configured and a controlled receipt is captured.
+
+### Post-merge release and Railway evidence (2026-08-20)
+
+The Gmail diagnostics change is now on `main` at `d279a9b` (merge of PR
+#653). Main-branch quality and security workflows completed successfully,
+and the targeted Railway health-contract/runtime regression suite passed
+(`98 passed`). The approved `refresh-dashboard` run `32385839035` then
+published the following coherent Pages release:
+
+| Artifact | ID |
+|---|---|
+| Release | `release-d7831aa2cce8bd35` |
+| Market snapshot | `d2ea6264dc43aad2` |
+| Research snapshot | `research-8b8ec8f6e5ee51aa` |
+| Event snapshot | `event-ed531dee05c7de49` |
+
+The public manifest reports `status=ready` and those IDs are mutually
+consistent. No Telegram notification was emitted by this refresh because the
+run produced no qualifying alert.
+
+The Railway monitor has since rolled to the merged diagnostics build. Its
+read-only health response reports `status=ok`, a running/healthy monitor and
+the Gmail projection now includes the redacted missing-key list. Gmail is
+still intentionally `configuration_missing` (OAuth/Pub/Sub variables are not
+configured), so this is deployment evidence—not evidence of live Gmail watch
+delivery. GDELT remains fail-closed after `invalid_json`, and the health
+callback remains permission-denied (`HTTP_403`); neither condition is treated
+as a successful event or as a reason to publish a high-risk alert.
+
+The remaining production gates are explicit: configure and verify Gmail
+OAuth/Pub/Sub, restore a successful GDELT response or bounded cache, and
+capture one controlled Telegram delivery receipt linked to a ready release.
+Until those observations exist, the related rows remain `NEEDS_REVERIFY`.
