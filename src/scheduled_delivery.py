@@ -185,6 +185,21 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
         row for row in all_external_observations
         if str(row.get("content_origin") or row.get("source") or "").strip().casefold() == "financialjuice"
     ]
+    # Project FinancialJuice into the same release-bound event lane as other
+    # public events.  The vendor score is kept separate from PRStK risk and
+    # every non-send decision remains visible to Mini App/audit consumers.
+    from src.financialjuice_priority import project_financialjuice_priority
+
+    existing_events = ((snapshot.get("events") or {}).get("items") or []) if isinstance(snapshot.get("events"), dict) else []
+    fj_projection = project_financialjuice_priority(external_observations, existing_events=existing_events)
+    if fj_projection["events"]:
+        if not isinstance(snapshot.get("events"), dict):
+            snapshot["events"] = {"items": []}
+        snapshot["events"].setdefault("items", []).extend(fj_projection["events"])
+    snapshot["financialjuice_priority_decisions"] = fj_projection["decisions"]
+    snapshot["financialjuice_priority_events"] = [
+        event for event in fj_projection["events"] if event.get("notification_status") == "eligible"
+    ]
     remote_rejected = remote_health.get("rejected_count")
     external_rejected = local_rejected + (int(remote_rejected) if isinstance(remote_rejected, (int, str, float)) else 0)
     if external_observations:
