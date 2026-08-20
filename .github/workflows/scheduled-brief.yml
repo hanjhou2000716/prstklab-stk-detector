@@ -166,7 +166,7 @@ jobs:
         env:
           RELEASE_MANIFEST_PATH: ${{ env.MANIFEST_PATH }}
         run: |
-          python - <<'PY' >> "$GITHUB_OUTPUT"
+          python - <<'PY'
           import json
           import os
           from pathlib import Path
@@ -174,8 +174,9 @@ jobs:
           manifest = json.loads(Path(os.environ["RELEASE_MANIFEST_PATH"]).read_text(encoding="utf-8"))
           freshness = manifest.get("research_freshness")
           allowed = freshness == "fresh"
-          print(f"research_freshness={freshness or 'unknown'}")
-          print(f"allow_telegram={'true' if allowed else 'false'}")
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"research_freshness={freshness or 'unknown'}\n")
+              output.write(f"allow_telegram={'true' if allowed else 'false'}\n")
           if not allowed:
               print("::warning::Research is stale or unverified; Telegram delivery is skipped.")
           PY

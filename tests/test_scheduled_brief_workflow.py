@@ -22,3 +22,16 @@ def test_release_policy_writes_outputs_without_corrupting_github_output():
     assert 'Path(os.environ["GITHUB_OUTPUT"]).open("a"' in policy
     assert 'print("::warning::Release is not fresh and complete; preserving the previous immutable release.")' in policy
     assert 'run: |\n          python - <<\'PY\' >> "$GITHUB_OUTPUT"' not in policy
+
+
+def test_research_policy_writes_outputs_without_corrupting_github_output():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
+    ).read_text(encoding="utf-8")
+    policy = workflow.split("- name: Resolve research delivery policy", 1)[1].split(
+        "- name: Verify deployed release before delivery", 1
+    )[0]
+
+    assert 'Path(os.environ["GITHUB_OUTPUT"]).open("a"' in policy
+    assert 'print("::warning::Research is stale or unverified; Telegram delivery is skipped.")' in policy
+    assert 'run: |\n          python - <<\'PY\' >> "$GITHUB_OUTPUT"' not in policy
