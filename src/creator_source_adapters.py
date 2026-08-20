@@ -8,13 +8,18 @@ provider to the registry does not require maintaining a second whitelist.
 from __future__ import annotations
 
 import hashlib
+import re
 from typing import Any
+
+from bs4 import BeautifulSoup
 
 from src.creator_provider_registry import creator_ids, get_creator_provider, is_known_creator
 from src.email_intelligence import normalize_creator_insight
 
 _MAX_FIELD_CHARS = 600
 _SUPPORTED_PARSER = "creator-template-v2"
+_JENNY_PARSER = "jenny-template-v1"
+_JENNY_FIELDS = ("CSCO", "NBIS", "COHR", "CBRS")
 
 # These labels describe the shared template contract, not provider identity.
 # Keep aliases conservative: unlabelled prose must remain unsupported.
@@ -64,6 +69,94 @@ def _fingerprint(source: str, subject: str, body: str) -> str:
     return hashlib.sha256(material.encode("utf-8")).hexdigest()[:20]
 
 
+def _plain_text(value: str) -> str:
+    """Convert sanitized Jenny HTML to deterministic text without retaining markup."""
+    raw = str(value or "")
+    if not re.search(r"<\s*(?:html|body|div|p|section|h[1-6]|br)\b", raw, re.IGNORECASE):
+        return raw.replace("\r\n", "\n").replace("\r", "\n")
+    soup = BeautifulSoup(raw, "html.parser")
+    for node in soup.find_all(("script", "style", "noscript")):
+        node.decompose()
+    return soup.get_text("\n", strip=True).replace("\r\n", "\n").replace("\r", "\n")
+
+
+def _jenny_fields(body: str) -> dict[str, str]:
+    """Extract the fixed Jenny ticker fields when the email contains them."""
+    result: dict[str, str] = {}
+    for line in body.splitlines():
+        normalized = " ".join(line.split())
+        for ticker in _JENNY_FIELDS:
+            match = re.match(rf"^{ticker}\s*[:：-]\s*(.+)$", normalized, re.IGNORECASE)
+            if match:
+                result[ticker] = _clip(match.group(1), 240)
+    return result
+
+
+def _parse_jenny_template(
+    *, sender: str, subject: str, body: str, message_id: str, provider_config: Any,
+) -> dict[str, Any]:
+    """Parse Jenny's structured/sanitized template with fail-closed semantics.
+
+    The body may be HTML or plain text, but only labelled sections are accepted.
+    The ticker fields are optional because individual editions can omit a name;
+    when present they are preserved as evidence fields rather than converted into
+    an investment signal.
+    """
+    text = _plain_text(body)
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    labels = _LABELS["jenny"]
+    title = _section(lines, labels["title"], limit_lines=1) or _clip(subject, 240)
+    facts = _section(lines, labels["fact"])
+    opinions = _section(lines, labels["opinion"])
+    takeaways = _section(lines, labels["takeaway"])
+    risk = _section(lines, labels["risk"])
+    if not title:
+        return {
+            "parse_status": "unsupported_template",
+            "failure_reason": "missing_episode_title",
+            "message_id": message_id,
+            "source_adapter": _JENNY_PARSER,
+            "template_fingerprint": _fingerprint("jenny", subject, text),
+        }
+    if not any((facts, opinions, takeaways, risk)):
+        return {
+            "parse_status": "unsupported_template",
+            "failure_reason": "missing_fact_or_opinion_sections",
+            "message_id": message_id,
+            "source_adapter": _JENNY_PARSER,
+            "template_fingerprint": _fingerprint("jenny", subject, text),
+        }
+    provider_fields = _jenny_fields(text)
+    insight = normalize_creator_insight({
+        "creator_id": "jenny",
+        "creator_name": provider_config.display_name,
+        "episode_key": f"jenny:{message_id or title.casefold()}",
+        "episode_id": message_id,
+        "episode_title": title,
+        "source_message_id": message_id,
+        "content_origin": "jenny",
+        "key_takeaways": [value for value in (takeaways, risk) if value],
+        "claims": [facts] if facts else [],
+        "opinions": [value for value in (opinions, risk) if value],
+        "verification_state": "unverified",
+        "evidence_alignment": "not_verifiable",
+        "parse_status": "parsed",
+        "parser_version": _JENNY_PARSER,
+    })
+    insight.update({
+        "parse_status": "parsed",
+        "parser_version": _JENNY_PARSER,
+        "source_adapter": _JENNY_PARSER,
+        "template_fingerprint": _fingerprint("jenny", subject, text),
+        "content_hash": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        "provider_fields": provider_fields,
+        "provider_fields_missing": [ticker for ticker in _JENNY_FIELDS if ticker not in provider_fields],
+        "required_fields_present": True,
+        "public_safe": True,
+    })
+    return insight
+
+
 def parse_creator_template(
     *,
     source: str,
@@ -95,6 +188,14 @@ def parse_creator_template(
             "source_adapter": _SUPPORTED_PARSER,
             "parser_version": provider_config.parser if provider_config else None,
         }
+    if normalized_source == "jenny":
+        return _parse_jenny_template(
+            sender=sender,
+            subject=subject,
+            body=body,
+            message_id=message_id,
+            provider_config=provider_config,
+        )
     lines = [line.strip() for line in body.splitlines() if line.strip()]
     labels = _LABELS.get(normalized_source, _BASE_LABELS)
     title = _section(lines, labels["title"], limit_lines=1) or _clip(subject, 240)
