@@ -29,7 +29,7 @@ SAFE_FIELDS = {
     "observation_id", "source", "content_origin", "content_type", "event_type", "category",
     "title", "headline", "original_headline", "summary", "chinese_translation",
     "ai_commentary", "possible_impact", "vendor_analysis", "vendor_impact",
-    "vendor_importance", "vendor_importance_present", "published_at", "source_published_at",
+    "vendor_importance", "vendor_importance_present", "published_at", "source_published_at", "received_at",
     "fetched_at", "source_url", "source_domain", "source_tier", "official_confirmed",
     "market_sync_confirmed", "cross_source_count", "market_evidence", "entities", "topics",
     "tickers", "parse_status", "parser_version", "event_cluster_key", "item_id", "content_hash",

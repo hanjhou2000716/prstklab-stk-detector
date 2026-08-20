@@ -1,3 +1,5 @@
+import hashlib
+
 from src.financialjuice_priority import project_financialjuice_priority
 
 
@@ -11,6 +13,8 @@ def _row(importance=8):
         "importance": importance,
         "source_url": "https://financialjuice.com/item/1",
         "published_at": "2026-08-21T01:00:00Z",
+        "received_at": "2026-08-21T01:01:00Z",
+        "parser_version": "financialjuice-compound-v1",
         "public_safe": True,
     }
 
@@ -23,6 +27,11 @@ def test_qualifying_fj_item_becomes_release_bound_vendor_priority_event():
     assert event["risk_level"] == "R2"
     assert event["market_direction"] is None
     assert event["source_trace"]["vendor_importance_is_not_risk"] is True
+    assert event["received_at"] == "2026-08-21T01:01:00Z"
+    assert event["parser_version"] == "financialjuice-compound-v1"
+    assert event["observation_id_hash"] == hashlib.sha256(b"fj-observation-1").hexdigest()
+    assert event["source_trace"]["observation_id_hash"] == event["observation_id_hash"]
+    assert "fj-observation-1" not in event["source_trace"]["observation_id_hash"]
 
 
 def test_fj_below_threshold_is_visible_but_not_eligible():
