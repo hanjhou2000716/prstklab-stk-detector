@@ -243,7 +243,123 @@ class EmailStore:
             "public_observation_count": int(public_count),
             "cursor": cursor,
             "raw_content_stored": False,
+            "source_health": self.source_health(),
         }
+
+    def source_health(self) -> dict[str, dict[str, Any]]:
+        """Return bounded, privacy-safe source counters for the health API.
+
+        The monitor must distinguish a quiet source from a parser failure.  We
+        derive the projection from sanitized metadata only; message bodies,
+        transport IDs and sender addresses never leave the private store.
+        """
+        sources = {
+            "creator": {
+                "status": "not_checked", "received_count": 0,
+                "parsed_count": 0, "failed_count": 0, "duplicate_count": 0,
+                "public_observation_count": 0, "last_received_at": None,
+                "last_parsed_at": None, "last_failure_at": None,
+                "today_count": 0, "latest_count": 0,
+                "morning_batch_count": 0, "coverage_status": "not_checked",
+                "consensus_status": "not_checked", "last_release_id": None,
+                "last_telegram_delivery_at": None,
+            },
+            "financialjuice": {
+                "status": "not_checked", "received_count": 0,
+                "parsed_count": 0, "failed_count": 0, "duplicate_count": 0,
+                "public_observation_count": 0, "importance_gte_8_count": 0,
+                "pending_cluster_count": 0, "last_received_at": None,
+                "last_parsed_at": None, "last_failure_at": None,
+                "decision": "not_checked", "last_release_id": None,
+                "last_telegram_delivery_at": None,
+            },
+        }
+
+        def bucket(source: Any) -> str | None:
+            value = str(source or "").strip().casefold()
+            if value == "financialjuice":
+                return "financialjuice"
+            if value and value not in {"unknown", "none"}:
+                return "creator"
+            return None
+
+        def note(bucket_name: str, key: str, timestamp: Any) -> None:
+            current = sources[bucket_name].get(key)
+            candidate = str(timestamp or "") or None
+            if candidate and (current is None or candidate > str(current)):
+                sources[bucket_name][key] = candidate
+
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT metadata_json, parse_status, received_at, inserted_at FROM email_observations"
+            ).fetchall()
+            dlq_rows = connection.execute(
+                "SELECT metadata_json, created_at FROM email_dlq"
+            ).fetchall()
+            public_rows = connection.execute(
+                "SELECT content_origin, payload_json, created_at FROM public_observations"
+            ).fetchall()
+
+        for row in rows:
+            try:
+                metadata = json.loads(row[0]) if row[0] else {}
+            except (TypeError, json.JSONDecodeError):
+                metadata = {}
+            source_name = bucket(metadata.get("content_origin"))
+            if source_name is None:
+                continue
+            item = sources[source_name]
+            item["received_count"] += 1
+            status = str(row[1] or "")
+            if status == "duplicate":
+                item["duplicate_count"] += 1
+            elif status in {"parsed", "normalized", "identified"}:
+                item["parsed_count"] += 1
+                note(source_name, "last_parsed_at", row[3] or row[2])
+            note(source_name, "last_received_at", row[2] or row[3])
+
+        for row in dlq_rows:
+            try:
+                metadata = json.loads(row[0]) if row[0] else {}
+            except (TypeError, json.JSONDecodeError):
+                metadata = {}
+            source_name = bucket(metadata.get("content_origin"))
+            if source_name is None:
+                continue
+            sources[source_name]["failed_count"] += 1
+            note(source_name, "last_failure_at", row[1])
+
+        for row in public_rows:
+            source_name = bucket(row[0])
+            if source_name is None:
+                continue
+            item = sources[source_name]
+            item["public_observation_count"] += 1
+            try:
+                payload = json.loads(row[1]) if row[1] else {}
+            except (TypeError, json.JSONDecodeError):
+                payload = {}
+            if source_name == "financialjuice" and isinstance(payload, dict):
+                try:
+                    if float(payload.get("vendor_importance")) >= 8:
+                        item["importance_gte_8_count"] += 1
+                except (TypeError, ValueError):
+                    pass
+                cluster = str(payload.get("event_cluster_key") or "").strip()
+                if cluster and not bool(payload.get("official_confirmed")):
+                    item["pending_cluster_count"] += 1
+
+        for item in sources.values():
+            if item["failed_count"] and not item["parsed_count"]:
+                item["status"] = "failed"
+            elif item["received_count"] or item["public_observation_count"]:
+                item["status"] = "healthy" if item["failed_count"] == 0 else "degraded"
+            else:
+                item["status"] = "no_new_content"
+        fj = sources["financialjuice"]
+        if fj["public_observation_count"]:
+            fj["decision"] = "awaiting_confirmation" if fj["pending_cluster_count"] else "ready_for_release_review"
+        return sources
 
 
 __all__ = ["EmailStore"]

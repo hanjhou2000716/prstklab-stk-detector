@@ -187,6 +187,46 @@ def test_ingress_persists_public_safe_derived_observation_only(tmp_path: Path) -
     assert not any(key in rows[0] for key in ("body", "sender", "gmail_message_id"))
 
 
+def test_store_health_separates_creator_and_financialjuice_sources(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    service = GmailIngressService(store, _config())
+    creator = service.accept_email({
+        "gmail_message_id": "creator-health-1",
+        "sender": "財經皓角",
+        "subject": "財經皓角 market view episode",
+        "body": "Episode market view takeaway creator",
+    })
+    assert creator["accepted"] is True
+    service.accept_email({
+        "gmail_message_id": "fj-health-1",
+        "sender": "alerts@financialjuice.com",
+        "subject": "FinancialJuice breaking news",
+        "body": "Original headline: Oil supply update\nImportance: 10/10\nPossible Impact: energy\nAI Commentary: watch",
+    })
+    health = store.health()["source_health"]
+    assert health["creator"]["received_count"] == 1
+    assert health["creator"]["parsed_count"] == 1
+    assert health["financialjuice"]["public_observation_count"] >= 1
+    assert health["financialjuice"]["importance_gte_8_count"] >= 1
+    assert "gmail_message_id" not in json.dumps(health)
+
+
+def test_store_health_distinguishes_parse_failure_from_no_new_content(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    service = GmailIngressService(store, _config())
+    result = service.accept_email({
+        "gmail_message_id": "fj-health-failed",
+        "sender": "alerts@financialjuice.com",
+        "subject": "hello",
+        "body": "unknown",
+    })
+    assert result["status"] == "unsupported_template"
+    health = store.health()["source_health"]["financialjuice"]
+    assert health["status"] == "failed"
+    assert health["failed_count"] == 1
+    assert health["decision"] == "not_checked"
+
+
 def test_push_advances_durable_cursor_without_storing_message_body(tmp_path: Path) -> None:
     store = EmailStore(tmp_path / "mail.sqlite3")
     service = GmailIngressService(store, _config())
