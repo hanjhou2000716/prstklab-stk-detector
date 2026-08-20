@@ -137,15 +137,17 @@ This section is updated only from the public manifest and the latest successful
 main-branch workflows. It is evidence of the deployed release, not a claim
 that every optional provider or historical backtest is available.
 
-- Main commit: `4ed3a8b22f09ae32d4b31f6ac419f37869e5bee4` (includes merged PR #646)
-- Pages deployment / market refresh: [32369914536](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32369914536)
+- Main commit: `693c5c6b2fc659268c0e11d7eab5bb121dfcc4f3` (includes merged PR #649)
+- Pages deployment / market refresh: [32375505231](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32375505231)
 - Quality/delivery photo smoke: [32366252888](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32366252888)
-- Main quality/delivery checks: [32371156982](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32371156982)
-- Release: `release-e5334a0f2e497e86`
-- Market snapshot: `592fcbc2838814cf`
+- Main quality/delivery checks: [32375165694](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32375165694)
+- Security checks: [32375165741](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32375165741)
+- Release: `release-a827932758192253`
+- Market snapshot: `effd1fedf203f5c9`
 - Research snapshot: `research-8b8ec8f6e5ee51aa`
 - Event snapshot: `event-ed531dee05c7de49`
-- Creator snapshot: `creator-99d5cec6f7053f34`
+- Creator snapshot: `creator-61a92c99ac15a8fc`
+- News snapshot: `news-85248ea4f9602cea`
 - Manifest status: `ready`; research mode/scope: `production` / `full`
 - Source health is now also emitted as a release-bound `data/source-health.json`
   artifact when the producer has the canonical health envelope. The legacy
@@ -167,12 +169,14 @@ receipt with trace `photo-smoke-90c34b7733fc4eaf`.  It proves renderer,
 sendPhoto and receipt plumbing, not the content of a live event.  A
 release-gated production delivery must use the release identifiers above.
 
-The latest refresh run `32369914536` published the release above. Its public
+The latest refresh run `32375505231` published the release above. Its public
 manifest is `ready` and carries the same release, market, research, event and
 creator snapshot lineage. The refresh intentionally did not send Telegram; the
 photo receipt above therefore remains controlled delivery evidence for the
 renderer/receipt path and is not silently relabelled as evidence for a live
-event.
+event. PR #649 also fixes the scheduled research-policy output writer so a
+fail-closed warning cannot corrupt `GITHUB_OUTPUT` and fail the job before the
+release gate.
 ### External runtime evidence (2026-08-20)
 
 The current Railway health snapshot shows Jin10 `healthy`, runtime
