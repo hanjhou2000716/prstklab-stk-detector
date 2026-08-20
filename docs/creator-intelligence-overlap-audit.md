@@ -304,6 +304,11 @@ and the targeted Railway health-contract/runtime regression suite passed
 (`98 passed`). The approved `refresh-dashboard` run `32385839035` then
 published the following coherent Pages release:
 
+The full repository regression also passed (`1266 passed, 1 skipped`) when
+run with an ASCII temporary directory. The default workspace-local temp path
+is under a non-ASCII OneDrive directory and produced only a local Windows
+permission/encoding warning; it is not a repository test failure.
+
 | Artifact | ID |
 |---|---|
 | Release | `release-d7831aa2cce8bd35` |
