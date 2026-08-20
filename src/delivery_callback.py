@@ -24,8 +24,8 @@ def _financialjuice_trace() -> dict[str, object] | None:
         return None
     try:
         value = json.loads(raw)
-    except json.JSONDecodeError:
-        raise ValueError("invalid FinancialJuice delivery trace")
+    except json.JSONDecodeError as err:
+        raise ValueError("invalid FinancialJuice delivery trace") from err
     if not isinstance(value, dict):
         raise ValueError("invalid FinancialJuice delivery trace")
     allowed = {
