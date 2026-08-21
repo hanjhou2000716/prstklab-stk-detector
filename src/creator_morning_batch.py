@@ -14,13 +14,18 @@ import json
 from collections.abc import Iterable
 from datetime import UTC, datetime, time, timedelta
 from typing import Any
-from zoneinfo import ZoneInfo
 
 from src.creator_provider_registry import creator_providers
+from src.schedule_contract import (
+    CREATOR_MORNING_BATCH_TIME,
+    CREATOR_MORNING_LATE_GRACE_MINUTES,
+    TAIPEI,
+    creator_batch_cutoff,
+    creator_batch_late_end,
+)
 
-_TAIPEI = ZoneInfo("Asia/Taipei")
 _FAILED = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
-_DEFAULT_BATCH_TIME = time(10, 30)
+_DEFAULT_BATCH_TIME = CREATOR_MORNING_BATCH_TIME
 
 
 def _parse_time(value: Any) -> datetime | None:
@@ -75,11 +80,11 @@ def build_creator_morning_batch(
     if now is None:
         raise ValueError("as_of must be an ISO timestamp or datetime")
     now = now.replace(tzinfo=now.tzinfo or UTC).astimezone(UTC)
-    local_now = now.astimezone(_TAIPEI)
+    local_now = now.astimezone(TAIPEI)
     day = local_now.date()
-    cutoff_local = datetime.combine(day, batch_time, tzinfo=_TAIPEI)
+    cutoff_local = creator_batch_cutoff(day) if batch_time == _DEFAULT_BATCH_TIME else datetime.combine(day, batch_time, tzinfo=TAIPEI)
     cutoff = cutoff_local.astimezone(UTC)
-    late_end = cutoff + timedelta(minutes=max(0, int(late_grace_minutes)))
+    late_end = creator_batch_late_end(day) if late_grace_minutes == CREATOR_MORNING_LATE_GRACE_MINUTES else cutoff + timedelta(minutes=max(0, int(late_grace_minutes)))
     expected = _expected_creators(expected_creators)
     candidates: list[tuple[datetime, datetime, dict[str, Any], bool]] = []
     rejected = 0
@@ -96,7 +101,7 @@ def build_creator_morning_batch(
         if str(raw.get("parse_status") or "").strip().casefold() in _FAILED or raw.get("public_safe") is False:
             rejected += 1
             continue
-        if published.astimezone(_TAIPEI).date() != day:
+        if published.astimezone(TAIPEI).date() != day:
             rejected += 1
             continue
         # Point-in-time guard: a batch must never include an episode that was

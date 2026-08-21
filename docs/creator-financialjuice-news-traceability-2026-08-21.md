@@ -45,3 +45,8 @@ These are not silently promoted to `PASS`:
 ## Regression note
 
 The Creator morning batch now rejects rows whose `published_at` or `received_at` is later than the release snapshot `as_of`. This prevents future rows from contaminating an earlier release and preserves point-in-time semantics.
+
+The 10:30 Asia/Taipei Creator batch is now backed by `src/schedule_contract.py`.
+GitHub Actions uses a dedicated 02:30 UTC run, with 03:45 and 05:15 UTC
+rechecks for bounded late arrivals. The ordinary 06:00 market briefing remains
+separate; Creator delivery remains release-gated and opt-in.
