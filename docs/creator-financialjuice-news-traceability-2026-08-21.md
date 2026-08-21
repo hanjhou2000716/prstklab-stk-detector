@@ -50,3 +50,15 @@ The 10:30 Asia/Taipei Creator batch is now backed by `src/schedule_contract.py`.
 GitHub Actions uses a dedicated 02:30 UTC run, with 03:45 and 05:15 UTC
 rechecks for bounded late arrivals. The ordinary 06:00 market briefing remains
 separate; Creator delivery remains release-gated and opt-in.
+
+### Railway health projection extraction (PR #675)
+
+The public Railway health projection is now isolated in
+`railway-monitor/source_health_projection.py`. The adapter uses an explicit
+allow-list for Creator and FinancialJuice counters and timestamps; raw mail
+bodies, Gmail message IDs, sender metadata and future private transport fields
+cannot cross into `/health`. Missing or malformed diagnostics still fail soft
+to an empty projection. Targeted Railway monitor, Gmail gateway and projection
+tests passed (`109 passed`), and the standalone monitor compiled successfully.
+This remains `partially_integrated` until the PR is merged and a post-merge
+Railway health response is captured.

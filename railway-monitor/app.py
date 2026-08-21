@@ -102,6 +102,19 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     load_poll_settings = _poll_config_module.load_poll_settings
 
 try:
+    from source_health_projection import project_source_health
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _source_health_spec = spec_from_file_location(
+        "railway_source_health_projection",
+        Path(__file__).with_name("source_health_projection.py"),
+    )
+    if _source_health_spec is None or _source_health_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/source_health_projection.py") from None
+    _source_health_module = module_from_spec(_source_health_spec)
+    _source_health_spec.loader.exec_module(_source_health_module)
+    project_source_health = _source_health_module.project_source_health
+
+try:
     from state_store_schema import initialize_state_schema
 except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
     _schema_spec = spec_from_file_location(
@@ -739,16 +752,8 @@ def sync_external_source_health(diagnostics: Any) -> None:
     private store.  Missing diagnostics are represented as ``not_checked``
     rather than silently reported as healthy.
     """
-    if not isinstance(diagnostics, dict):
-        return
-    store = diagnostics.get("store")
-    values = store.get("source_health") if isinstance(store, dict) else None
-    if not isinstance(values, dict):
-        return
-    for component in ("creator", "financialjuice"):
-        source = values.get(component)
-        if isinstance(source, dict):
-            update_health(component, **source)
+    for component, source in project_source_health(diagnostics).items():
+        update_health(component, **source)
 
 
 def _non_negative_int(value: Any) -> int | None:
