@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 from src.creator_provider_registry import CreatorProvider, creator_ids
 from src.creator_source_adapters import parse_creator_template
 
@@ -16,6 +19,27 @@ def test_known_template_splits_fact_and_opinion_without_guessing() -> None:
     assert result["verification_state"] == "unverified"
     assert result["public_safe"] is True
     assert "body" not in result
+
+
+def test_sanitized_haojiao_fixture_replays_public_safe_morning_issue() -> None:
+    fixture = json.loads(
+        (Path(__file__).parent / "fixtures" / "haojiao-20260821-sanitized.json")
+        .read_text(encoding="utf-8")
+    )
+    result = parse_creator_template(
+        source=fixture["source"],
+        sender="",
+        subject=fixture["subject"],
+        body=fixture["body"],
+        message_id="",
+    )
+    assert result["parse_status"] == "parsed"
+    assert result["creator_id"] == "haojiao"
+    assert result["episode_title"] == "巨頭搶錢與美債承接"
+    assert result["verification_state"] == "unverified"
+    assert result["public_safe"] is True
+    assert "fixture_note" not in result
+    assert not {"sender", "body", "raw_body", "message_id", "attachments"} & set(result)
 
 
 def test_unknown_template_is_explicit_and_not_guessed() -> None:
