@@ -6,6 +6,7 @@ from src.news_intelligence import (
     deduplicate_and_rank,
     normalize_news_story,
     provider_for_url,
+    provider_supports_market,
 )
 
 
@@ -14,6 +15,26 @@ def test_provider_contract_and_url_normalization_are_canonical():
     assert canonicalize_url(url) == "https://www.sec.gov/Archives/edgar/data/1/8-k"
     assert provider_for_url(url)["provider_id"] == "sec"
     assert normalize_news_story({"title": "Filing", "url": url}, "us")["public_safe"] is True
+
+
+def test_provider_scope_prevents_us_official_news_from_entering_taiwan_feed():
+    fed = provider_for_url("https://www.federalreserve.gov/newsevents/pressreleases/a.htm")
+    assert provider_supports_market(fed, "us") is True
+    assert provider_supports_market(fed, "taiwan") is False
+    payload = build_news_intelligence(
+        [{"title": "Fed policy update", "url": "https://www.federalreserve.gov/newsevents/pressreleases/a.htm"}],
+        market="taiwan",
+    )
+    assert payload["stories"] == []
+    assert payload["status"] == "no_event"
+    assert payload["excluded_count"] == 1
+    assert payload["exclusion_reasons"] == {"market_scope_mismatch": 1}
+
+
+def test_cross_market_provider_remains_available_in_each_market_feed():
+    google = provider_for_url("https://news.google.com/rss/articles/abc")
+    assert provider_supports_market(google, "taiwan") is True
+    assert provider_supports_market(google, "us") is True
 
 
 def test_unknown_domain_is_not_public_safe():

@@ -71,6 +71,20 @@ def provider_for_url(url: str) -> dict[str, Any]:
     return {"provider_id": "unknown", "display_name": "未知來源", "authority_tier": "unknown", "markets": (), "domains": ()}
 
 
+def provider_supports_market(provider: dict[str, Any], market: str | None) -> bool:
+    """Return whether a provider is allowed in a market-scoped news feed.
+
+    Provider identity is evidence about coverage, not merely a display label.
+    A US-only provider (for example Federal Reserve) must not leak into the
+    Taiwan tab just because a caller supplied ``market="taiwan"``.  Global
+    and cross-market stories remain valid in either scoped feed.
+    """
+    if market in (None, "global", "cross_market"):
+        return True
+    markets = {str(item).strip().lower() for item in (provider.get("markets") or ())}
+    return market in markets or "global" in markets or "cross_market" in markets
+
+
 def canonicalize_url(url: str) -> str:
     """Remove tracking-only query parameters while preserving the public URL."""
     parsed = urlsplit(str(url).strip())
@@ -151,6 +165,7 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
     tier = str(raw.get("source_tier") or provider["authority_tier"])
     authority = str(raw.get("authority_tier") or provider["authority_tier"])
     safe = bool(url and provider["provider_id"] != "unknown")
+    market_compatible = provider_supports_market(provider, chosen_market)
     raw_tickers = sorted({str(item).upper() for item in (raw.get("tickers") or []) if str(item).strip()})
     raw_topics = sorted({str(item) for item in (raw.get("topics") or []) if str(item).strip()})
     entities = sorted(_matched_tickers(title, raw_tickers))
@@ -166,6 +181,7 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         "url": url,
         "published_at": published,
         "market": chosen_market,
+        "market_compatible": market_compatible,
         "tickers": raw_tickers,
         "entities": entities,
         "sectors": sorted({str(item) for item in (raw.get("sectors") or []) if str(item).strip()}),
@@ -217,7 +233,7 @@ def deduplicate_and_rank(stories: Iterable[dict[str, Any]], *, limit: int = 5, m
         # Unknown or non-HTTPS sources may remain in the legacy compatibility
         # arrays for diagnostics, but can never enter the canonical public
         # intelligence contract or ranking output.
-        if not item["title"] or not item["canonical_url"] or not item["public_safe"]:
+        if not item["title"] or not item["canonical_url"] or not item["public_safe"] or not item["market_compatible"]:
             continue
         key = item["dedupe_key"] or item["canonical_url"]
         current = next((candidate for candidate in groups if candidate.get("dedupe_key") == key or (
@@ -251,5 +267,14 @@ def build_news_intelligence(stories: Iterable[dict[str, Any]], *, market: str | 
     normalized = [normalize_news_story(story, market or story.get("market")) for story in stories]
     graph = build_interest_graph(normalized, tracked_tickers=tracked_tickers, tracked_sectors=tracked_sectors, topics=topics)
     ranked = deduplicate_and_rank(normalized, limit=limit)
-    return {"schema_version": "1.0", "provider_registry": provider_registry(), "stories": ranked, "interest_graph": graph, "status": "ready" if ranked else "no_event"}
+    excluded = [item for item in normalized if item.get("market_compatible") is False]
+    return {
+        "schema_version": "1.0",
+        "provider_registry": provider_registry(),
+        "stories": ranked,
+        "interest_graph": graph,
+        "excluded_count": len(excluded),
+        "exclusion_reasons": {"market_scope_mismatch": len(excluded)} if excluded else {},
+        "status": "ready" if ranked else "no_event",
+    }
 
