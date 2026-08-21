@@ -2,7 +2,7 @@
 
 Date: 2026-08-21 (Asia/Taipei)
 
-This checkpoint is based on the post-merge `main` HEAD `38f787a86b82573498f85b9d7c5d44b60d8244a6` and the public refresh run `32423165426`. It is an evidence ledger, not a claim that every external connector is configured.
+This checkpoint is based on the latest verified `main` HEAD `d6caaa9` and the public refresh run `32435052135`. PR #683 (`d0ddc84`) is a pending, independently verified candidate that binds the current official event scan into the release news interest graph; it is not represented as merged here. This is an evidence ledger, not a claim that every external connector is configured.
 
 ## Canonical data path
 
@@ -27,9 +27,9 @@ The producer is the source of truth. Release-time normalization is migration-onl
 
 ## Objective evidence
 
-- Public manifest returned HTTP 200 with `status=ready`, release `release-b9feab1a16b46430`, market snapshot `d32d641f0c17474a`, research snapshot `research-8b8ec8f6e5ee51aa`, event snapshot `event-a889bf10a4141a3b`.
+- Public manifest returned HTTP 200 with `status=ready`, release `release-faaa5b86acfc0db3`, market snapshot `d244146e6209880c`, research snapshot `research-8b8ec8f6e5ee51aa`, event snapshot `event-a889bf10a4141a3b`.
 - All seven manifest-bound public artifacts returned HTTP 200 and matched their manifest SHA-256 hashes.
-- Post-merge main regression: `1293 passed, 1 skipped`.
+- Post-merge main regression evidence remains `1293 passed, 1 skipped`; the pending #683 candidate adds 34 targeted passing tests, and its GitHub Actions run `32446375446` completed the full unit-test, coverage, lint, type, release and delivery dry-run gates successfully.
 - `python -m src.runtime_audit` returned exit code 0. Its warnings remain explicit: local checked-in artifacts are not the public ready release, and local source gaps are not evidence of no risk.
 - Railway `/health` returned HTTP 200 with privacy-safe `creator`, `financialjuice`, and `news` source-health sections.
 
