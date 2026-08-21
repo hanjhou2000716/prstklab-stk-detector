@@ -137,12 +137,11 @@ This section is updated only from the public manifest and the latest successful
 main-branch workflows. It is evidence of the deployed release, not a claim
 that every optional provider or historical backtest is available.
 
-- Main commit: `08df807db1d91bc6963080670db2983c5f118643` (includes merged PR #670)
-- Pages fallback verification: [32417839816](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32417839816)
-- Pages refresh / release publication: [32423165426](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32423165426)
+- Main commit: `7d294269ffc09bc6ac1a2b52f9020360a64283f8` (current `origin/main`)
+- Pages refresh / release publication: [32435052135](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32435052135)
 - Single-recipient photo smoke: [32418325859](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32418325859)
-- Release: `release-b9feab1a16b46430`
-- Market snapshot: `d32d641f0c17474a`
+- Release: `release-faaa5b86acfc0db3`
+- Market snapshot: `d244146e6209880c`
 - Research snapshot: `research-8b8ec8f6e5ee51aa`
 - Event snapshot: `event-a889bf10a4141a3b`
 - Creator status: `ready`; News status: `ready`
@@ -169,7 +168,7 @@ receipt with trace `photo-smoke-34fcf6718bc341f5`.  It proves renderer,
 sendPhoto and receipt plumbing, not the content of a live event.  A
 release-gated production delivery must use the release identifiers above.
 
-The latest refresh run `32423165426` published the release above. Its public
+The latest refresh run `32435052135` published the release above. Its public
 manifest is `ready` and carries the same market, research and event lineage;
 the research artifact is explicitly marked `stale_fallback`, so it remains
 observation-only and cannot qualify a high-risk alert. The preceding Pages
