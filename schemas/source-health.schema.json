@@ -82,7 +82,15 @@
         "qualifying_item_count": {"type": "integer", "minimum": 0},
         "pending_cluster_count": {"type": "integer", "minimum": 0},
         "last_notification_decision": {"enum": ["eligible", "pending_confirmation", "no_event"]},
-        "last_delivery_at": {"type": ["string", "null"], "format": "date-time"}
+        "last_delivery_at": {"type": ["string", "null"], "format": "date-time"},
+        "last_importance_gte_8_at": {"type": ["string", "null"], "format": "date-time"},
+        "decision": {"type": "string"},
+        "last_release_id": {"type": ["string", "null"]},
+        "last_snapshot_id": {"type": ["string", "null"]},
+        "last_observation_id": {"type": ["string", "null"]},
+        "last_telegram_delivery_at": {"type": ["string", "null"], "format": "date-time"},
+        "last_telegram_delivery_status": {"type": "string"},
+        "importance_gte_8_count": {"type": "integer", "minimum": 0}
       },
       "additionalProperties": false
     },
@@ -95,6 +103,17 @@
         "parser_error_count": {"type": "integer", "minimum": 0},
         "no_event_count": {"type": "integer", "minimum": 0},
         "last_delivery_at": {"type": ["string", "null"], "format": "date-time"},
+        "morning_batch_count": {"type": "integer", "minimum": 0},
+        "daily_coverage_count": {"type": "integer", "minimum": 0},
+        "coverage_status": {"type": "string"},
+        "morning_batch_state": {"type": "string"},
+        "morning_batch_key": {"type": ["string", "null"]},
+        "consensus_status": {"type": "string"},
+        "last_release_id": {"type": ["string", "null"]},
+        "last_snapshot_id": {"type": ["string", "null"]},
+        "last_observation_id": {"type": ["string", "null"]},
+        "last_telegram_delivery_at": {"type": ["string", "null"], "format": "date-time"},
+        "last_telegram_delivery_status": {"type": "string"},
         "state": {"enum": ["healthy", "no_observations", "parse_failed", "media_degraded", "failed"]}
       },
       "additionalProperties": false
