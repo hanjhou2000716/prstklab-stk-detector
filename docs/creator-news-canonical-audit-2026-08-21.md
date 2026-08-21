@@ -70,6 +70,13 @@ equivalent to a failed release and must not be silently promoted to `production`
   event snapshot IDs and artifact hashes; a consumer must reject mixed releases.
 - The open follow-up PRs #683, #684, #685 and #686 are each green and
   mergeable, but are not treated as present in `main` until merged.
+- Offline production E2E on this checkout passed all gates: release contract,
+  Creator release/delivery contract, `1080x1350` photo contract, renderer
+  availability and mocked single-recipient Telegram boundary.
+- `python -m src.runtime_audit` returned `ok=true` with explicit warnings for
+  the checked-in diagnostic artifacts (missing event/research release fields and
+  six local market gaps). Those warnings are not converted into a public
+  `status=ready` claim; the public manifest remains the authoritative evidence.
 
 ## External acceptance gates still open
 
