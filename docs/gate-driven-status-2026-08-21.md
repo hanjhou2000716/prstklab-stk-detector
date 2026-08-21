@@ -4,17 +4,17 @@
 
 ## 目前基線
 
-- Main HEAD：`be9cb80a9e52d8ca196668b5be848506fe041926`（合併 PR #696；PR #695 的程式修復已在祖先 commit）
+- Main HEAD：`42ee0e5035c22fb4c36dd80afb6a1aa4cbb2da4b`（合併 PR #697；PR #695 的程式修復與 PR #696 的證據更新已在祖先 commit）
 - 公開 Pages release：`release-faaa5b86acfc0db3`，manifest `ready`
 - 公開 Creator／News artifact：`ready`
 - Railway `/health`：HTTP 200、monitor `running`、Jin10 `healthy`
 - Railway GDELT：`HTTP_429`，bounded backoff；健康回呼 `HTTP_403`
 - Railway Gmail/Creator ingress：`configuration_missing`
-- 最新針對性測試：Haojiao sanitized fixture 8 passed
+- 最新針對性測試：Haojiao sanitized fixture 8 passed；正式 renderer 離線 E2E 亦已通過
 - 合併後主線完整回歸：1329 passed（另有 pytest cache 權限警告，不影響結果）
 - 回歸 fixture：`tests/fixtures/haojiao-20260821-sanitized.json`；只含公開摘要，解析結果維持 `unverified`
-- 最新 main quality gate：PR #696 的 `Quality and delivery dry-run` 通過；目前仍有一個
-  `Official macro and price monitor` 執行中，未將未完成 workflow 當成通過證據。
+- 最新 main quality gate：PR #697 的 `Quality and delivery dry-run` 通過；目前
+  `Official macro and price monitor`（[32481112950](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32481112950)）也已成功完成，未將未完成 workflow 當成通過證據。
 
 ## P0 traceability matrix
 
@@ -48,7 +48,7 @@
 | P0-26 Railway Architecture Cleanup | bounded adapters, health dispatch and runtime config; duplicate unreachable app.py implementations removed in PR #695 | 96 targeted Railway tests; post-merge full regression; live callback 403 remains visible | PASS locally / NEEDS_REVERIFY externally |
 | P0-27 Release Contract | manifest hashes, snapshot lineage, publish-before-notify | Pages manifest `ready`, public artifact lineage | PASS / LOCKED |
 | P0-28 Security / Privacy | redaction, no raw mail/private IDs, secret boundary | privacy/security suites and CodeQL | PASS / LOCKED |
-| P0-29 Tests | unit, contract, offline E2E and CI gates | 109 targeted; 1328 full baseline | PASS / LOCKED |
+| P0-29 Tests | unit, contract, offline E2E and CI gates | 109 targeted; 1329 full baseline; `uv run python -m src.production_e2e` passed with 1080x1350 renderer | PASS / LOCKED |
 
 ## Regression ledger
 
@@ -95,3 +95,8 @@
   Pages workflow 建置 SHA 為 `38f787a86b82573498f85b9d7c5d44b60d8244a6`，
   不等於目前 main。下一次成功刷新前，這個差異必須保持明示，不能宣稱
   `be9cb80` 已部署到 Pages。
+- PR #697 merge commit：`42ee0e5035c22fb4c36dd80afb6a1aa4cbb2da4b`；主線回歸
+  `1329 passed`、Ruff、Mypy、compileall、`node --check` 均通過。使用正式
+  `uv` runtime 執行 `src.production_e2e` 時，release、renderer、photo
+  contract、Mini App deep-link 與 mock 單收件者均通過；`delivery_smoke_test`
+  仍因本機未設定 `TELEGRAM_CHAT_IDS` 而 fail-closed，沒有發送正式訊息。
