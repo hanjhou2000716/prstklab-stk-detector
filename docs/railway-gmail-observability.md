@@ -11,6 +11,8 @@ Public fields include:
 - observation count, last ingress/sync timestamps, and parser error count;
 - `queue_pending_count` and `dead_letter_count`;
 - `history_cursor_present` (a boolean, never the Gmail history ID).
+- `history_cursor_hash` (a 16-character one-way fingerprint, allowing cursor
+  progress checks without exposing the Gmail history ID).
 
 The endpoint never exposes Gmail message/history IDs, sender addresses, mail
 bodies, OAuth values, Pub/Sub tokens, or attachment content. A quiet inbox is

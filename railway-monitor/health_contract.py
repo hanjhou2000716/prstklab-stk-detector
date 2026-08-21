@@ -94,6 +94,7 @@ def gmail_health_fields(diagnostics: Any) -> dict[str, Any]:
         "last_ingress_at": "timestamp",
         "last_sync_at": "timestamp",
         "history_cursor_present": "bool",
+        "history_cursor_hash": "hash",
     }
 
     def metric_value(value: Any, kind: str) -> Any:
@@ -103,6 +104,8 @@ def gmail_health_fields(diagnostics: Any) -> dict[str, Any]:
             return non_negative_int(value)
         if kind == "timestamp":
             return str(value) if isinstance(value, str) and value else None
+        if kind == "hash":
+            return value if isinstance(value, str) and len(value) == 16 and all(char in "0123456789abcdef" for char in value) else None
         return str(value) if isinstance(value, str) and value else None
 
     safe_metrics: dict[str, Any] = {}

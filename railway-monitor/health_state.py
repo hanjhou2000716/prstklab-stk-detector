@@ -28,7 +28,7 @@ HEALTH_STATE: dict[str, Any] = {
         "observability": {
             "observations": 0, "parser_error_count": 0,
             "queue_pending_count": 0, "dead_letter_count": 0,
-            "history_cursor_present": False, "state": "not_checked",
+            "history_cursor_present": False, "history_cursor_hash": None, "state": "not_checked",
         },
         "error": None,
     },
