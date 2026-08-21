@@ -11,10 +11,17 @@ def aggregate_source_health(records: Iterable[dict[str, Any]]) -> dict[str, Any]
     total = len(rows)
     def semantic(row: dict[str, Any]) -> str:
         return str(row.get("semantic_state") or row.get("state") or row.get("status", "")).lower()
-    successful = sum(semantic(row) in {"ok", "healthy", "success", "no_event"} for row in rows)
+    successful = sum(
+        semantic(row) in {"ok", "healthy", "success", "no_event", "no_new_content"}
+        for row in rows
+    )
     # ``state= no_event`` is an internal compatibility field on legacy rows;
     # the investor count is based on an explicit provider status only.
-    no_events = sum(str(row.get("status", "")).lower() in {"no_event", "no_events"} for row in rows)
+    no_events = sum(
+        str(row.get("status", "")).lower()
+        in {"no_event", "no_events", "no_new_content"}
+        for row in rows
+    )
     configuration_missing = sum(semantic(row) in {"configuration_missing", "configuration_required"} for row in rows)
     stale = sum(bool(row.get("stale_used") or row.get("freshness") == "stale") for row in rows)
     crosschecked = sum(bool(row.get("cross_checked")) for row in rows)

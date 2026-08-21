@@ -311,7 +311,26 @@ def build_source_health(
         news = next(item for item in sources if item["key"] == "market_news")
         news["source_details"] = news_sources
         _attach_detail_summary(news, news_sources)
-        news["data_gaps"] = [item for item in news_sources if item.get("status") not in {"healthy", "no_event"}]
+        news["data_gaps"] = [
+            item for item in news_sources
+            if item.get("status") not in {"healthy", "no_event", "no_new_content"}
+        ]
+        # A successful provider returning no stories is not a failure. Keep
+        # this state explicit so the Mini App can say "本輪無新內容" instead
+        # of implying that the feed was unavailable.
+        provider_states = {
+            str(item.get("status") or "").strip().lower()
+            for item in news_sources
+            if isinstance(item, dict)
+        }
+        if provider_states and provider_states <= {"no_event", "no_new_content"}:
+            news["status"] = "no_new_content"
+            news["state"] = "no_new_content"
+            news["semantic_state"] = "no_event"
+            news["data_gaps"] = []
+            news["issues"] = ["本輪來源已完成掃描，沒有新的市場新聞"]
+        elif provider_states and "no_new_content" in provider_states and news["status"] == "healthy":
+            news["issues"] = ["部分來源本輪沒有新內容"]
     if additional_sources:
         for item in additional_sources:
             if not isinstance(item, dict):
@@ -360,7 +379,8 @@ def build_source_health(
 
     event_dependencies = {"market_quotes", "official_events", "market_news"}
     dependency_failed = any(
-        source["key"] in event_dependencies and source["status"] not in {"healthy", "no_event"}
+        source["key"] in event_dependencies
+        and source["status"] not in {"healthy", "no_event", "no_new_content"}
         for source in sources
     )
     if events.get("is_major"):
