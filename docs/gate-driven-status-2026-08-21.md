@@ -4,7 +4,7 @@
 
 ## 目前基線
 
-- Main HEAD：`72bfcc9989a8fb5d65065a6f38277ed0c901831e`（合併 PR #693）
+- Main HEAD：`4315fb365ece1ab7066607a5a6e2c540020f1131`（合併 PR #695）
 - 公開 Pages release：`release-faaa5b86acfc0db3`，manifest `ready`
 - 公開 Creator／News artifact：`ready`
 - Railway `/health`：HTTP 200、monitor `running`、Jin10 `healthy`
@@ -43,7 +43,7 @@
 | P0-23 Gooaye Daily Behavior | provider registry and behavior policy | no live Gooaye ingress evidence | NEEDS_REVERIFY |
 | P0-24 Observability | source health, creator/FJ counters and receipts | local contract + public health; live ingress absent | NEEDS_REVERIFY |
 | P0-25 Failure Semantics | empty vs source failure, fail-closed alert gate | release/source-health tests | PASS / LOCKED |
-| P0-26 Railway Architecture Cleanup | bounded adapters, health dispatch and runtime config | Railway monitor regression; live callback 403 remains visible | NEEDS_REVERIFY |
+| P0-26 Railway Architecture Cleanup | bounded adapters, health dispatch and runtime config; duplicate unreachable app.py implementations removed in PR #695 | 96 targeted Railway tests; post-merge full regression; live callback 403 remains visible | PASS locally / NEEDS_REVERIFY externally |
 | P0-27 Release Contract | manifest hashes, snapshot lineage, publish-before-notify | Pages manifest `ready`, public artifact lineage | PASS / LOCKED |
 | P0-28 Security / Privacy | redaction, no raw mail/private IDs, secret boundary | privacy/security suites and CodeQL | PASS / LOCKED |
 | P0-29 Tests | unit, contract, offline E2E and CI gates | 109 targeted; 1328 full baseline | PASS / LOCKED |
@@ -73,3 +73,16 @@
 
 - PC-001 market refresh、PC-002 risk/event gate、PC-003 research release、PC-004 Pages manifest、PC-005 Telegram dedup、PC-006 Railway heartbeat、PC-007 privacy boundary 均由目前主線測試與公開 release 驗證保護。
 - 本文件只增加可追溯性，不修改執行路徑；回滾方式為撤回本文件。
+
+## Post-merge evidence — PR #695
+
+- Merge commit：`4315fb365ece1ab7066607a5a6e2c540020f1131`。
+- Main regression after merge：`1329 passed`；Ruff、Mypy、compileall 與
+  `node --check site/app.js` 通過。
+- Public manifest：HTTP 200、`status=ready`、release
+  `release-faaa5b86acfc0db3`；market／research／event／creator／news snapshot
+  IDs 與 artifact hashes 均由 manifest 提供。
+- Railway `/health`：HTTP 200、monitor heartbeat healthy、Jin10 healthy、
+  classifier `repository-shared`。GDELT `HTTP_429` 與 health callback
+  `HTTP_403` 仍維持 bounded fail-closed；Gmail/PubSub 仍為
+  `configuration_missing`，因此 Creator/FJ live receipt 尚未宣稱完成。
