@@ -263,3 +263,28 @@ def test_empty_news_scan_is_distinguished_from_provider_failure(monkeypatch, tmp
     assert snapshot["taiwan"] == []
     assert snapshot["us"] == []
     assert all(item["status"] == "no_event" for item in snapshot["source_health"])
+
+
+def test_news_snapshot_binds_explicit_interest_context(monkeypatch, tmp_path):
+    monkeypatch.setenv("NEWS_CACHE_PATH", str(tmp_path / "news-cache.json"))
+    monkeypatch.setattr(
+        "src.risk_news.fetch_market_news",
+        lambda market: [{
+            "title": "NVIDIA semiconductor outlook",
+            "url": "https://www.nasdaq.com/articles/nvda",
+        }],
+    )
+    monkeypatch.setattr("src.risk_news.fetch_market_news_fallback", lambda market: [])
+
+    snapshot = build_news_snapshot(
+        tracked_tickers=["NVDA"],
+        research_tickers=["NVDA"],
+        tracked_sectors=["semiconductor"],
+        active_event_topics=["NVIDIA"],
+        creator_mentions=["NVIDIA"],
+    )
+
+    graph = snapshot["intelligence"]["us"]["interest_graph"]
+    assert graph["source_interest"]["research_candidate"] == {"NVDA": 1}
+    assert graph["source_interest"]["tracked_sector"] == {"semiconductor": 1}
+    assert snapshot["interest_context"]["creator_mentions"] == ["NVIDIA"]

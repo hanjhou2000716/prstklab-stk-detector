@@ -6,6 +6,7 @@ import json
 import os
 import re
 import unicodedata
+from collections.abc import Iterable
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -649,8 +650,72 @@ def _build_news_snapshot_primary() -> dict[str, Any]:
     return result
 
 
-def build_news_snapshot() -> dict[str, Any]:
-    """Add durable, bounded fallback without ever reusing another market's news."""
+def _default_news_interest_context() -> dict[str, list[str]]:
+    """Collect safe public context for the release-bound interest graph."""
+    context: dict[str, list[str]] = {
+        "tracked_tickers": [],
+        "research_tickers": [],
+        "tracked_sectors": [],
+        "active_event_topics": [],
+        "creator_mentions": [],
+    }
+    try:
+        from src.market_data import WATCHLIST
+
+        context["tracked_tickers"] = [str(item.get("ticker")) for item in WATCHLIST if item.get("ticker")]
+    except (ImportError, AttributeError):
+        pass
+    try:
+        from src.research_cards import load_research_cards
+
+        report = load_research_cards()
+        context["research_tickers"] = [
+            str(item.get("ticker"))
+            for item in report.get("candidates", [])
+            if isinstance(item, dict) and item.get("ticker")
+        ]
+        context["tracked_sectors"] = [
+            str(item.get("sector"))
+            for item in report.get("candidates", [])
+            if isinstance(item, dict) and item.get("sector")
+        ]
+    except (ImportError, OSError, ValueError, TypeError):
+        pass
+    # The event ledger is local release context only.  It contributes matched
+    # topic terms to the interest graph; it never elevates risk or bypasses the
+    # official-source and market-sync gates.
+    try:
+        ledger_path = Path("site/data/event-ledger.json")
+        ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+        for event in (ledger.get("events") or {}).values():
+            if not isinstance(event, dict):
+                continue
+            title = str(event.get("last_title") or "").casefold()
+            context["active_event_topics"].extend(
+                term for term in _GLOBAL_EVENT_TERMS if term.casefold() in title
+            )
+    except (OSError, ValueError, TypeError):
+        pass
+    return {key: list(dict.fromkeys(value)) for key, value in context.items()}
+
+
+def build_news_snapshot(
+    *,
+    tracked_tickers: Iterable[str] | None = None,
+    research_tickers: Iterable[str] | None = None,
+    tracked_sectors: Iterable[str] | None = None,
+    active_event_topics: Iterable[str] | None = None,
+    creator_mentions: Iterable[str] | None = None,
+) -> dict[str, Any]:
+    """Add durable fallback and bind news to public release interest context."""
+    defaults = _default_news_interest_context()
+    interest_context = {
+        "tracked_tickers": list(tracked_tickers) if tracked_tickers is not None else defaults["tracked_tickers"],
+        "research_tickers": list(research_tickers) if research_tickers is not None else defaults["research_tickers"],
+        "tracked_sectors": list(tracked_sectors) if tracked_sectors is not None else defaults["tracked_sectors"],
+        "active_event_topics": list(active_event_topics) if active_event_topics is not None else defaults["active_event_topics"],
+        "creator_mentions": list(creator_mentions) if creator_mentions is not None else defaults["creator_mentions"],
+    }
     checked_at = datetime.now().astimezone().isoformat()
     result = _build_news_snapshot_primary()
     cache = _load_news_cache()
@@ -723,12 +788,16 @@ def build_news_snapshot() -> dict[str, Any]:
         result.setdefault("intelligence", {})[market] = build_news_intelligence(
             stories,
             market=market,
-            tracked_tickers=(),
-            tracked_sectors=(),
+            tracked_tickers=interest_context["tracked_tickers"],
+            research_tickers=interest_context["research_tickers"],
+            tracked_sectors=interest_context["tracked_sectors"],
             topics=(),
+            active_event_topics=interest_context["active_event_topics"],
+            creator_mentions=interest_context["creator_mentions"],
             limit=5,
         )
     result["provider_registry"] = provider_registry()
+    result["interest_context"] = interest_context
     result["schema_version"] = "1.0"
     _save_news_cache(cache)
     return result

@@ -30,13 +30,14 @@ PROVIDER_REGISTRY: tuple[dict[str, Any], ...] = (
 _TRACKING_PARAMS = frozenset({"utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "oc"})
 _WORD_RE = re.compile(r"[^\w\u3400-\u9fff]+", re.UNICODE)
 
-# Bounded aliases are used only to build a deterministic event identity. They
-# do not classify severity and cannot qualify a notification by themselves.
+# Bounded aliases are used only to build deterministic identity and relevance.
+# They do not classify severity and cannot qualify a notification by themselves.
 _TICKER_ALIASES: dict[str, tuple[str, ...]] = {
     "NVDA": ("nvda", "nvidia", "輝達", "英偉達"),
     "TSM": ("tsm", "tsmc", "台積電", "臺積電"),
     "AMD": ("amd", "超微"),
     "AVGO": ("avgo", "broadcom", "博通"),
+    "2330": ("2330", "台積電", "臺積電"),
     "TAIEX": ("taiex", "twii", "台股", "加權指數"),
     "NASDAQ": ("nasdaq", "那斯達克"),
     "SOX": ("sox", "費半", "費城半導體"),
@@ -196,31 +197,108 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
     }
 
 
-def build_interest_graph(stories: Iterable[dict[str, Any]], *, tracked_tickers: Iterable[str] = (), tracked_sectors: Iterable[str] = (), topics: Iterable[str] = ()) -> dict[str, Any]:
-    """Attach explicit reasons for why a story is relevant to this release."""
-    ticker_set = {str(item).upper() for item in tracked_tickers}
-    sector_set = {str(item).casefold() for item in tracked_sectors}
-    topic_set = {str(item).casefold() for item in topics}
-    graph: dict[str, Any] = {"ticker_interest": {}, "sector_interest": {}, "topic_interest": {}, "market_interest": {}}
+def build_interest_graph(
+    stories: Iterable[dict[str, Any]],
+    *,
+    tracked_tickers: Iterable[str] = (),
+    tracked_sectors: Iterable[str] = (),
+    topics: Iterable[str] = (),
+    research_tickers: Iterable[str] = (),
+    active_event_topics: Iterable[str] = (),
+    creator_mentions: Iterable[str] = (),
+) -> dict[str, Any]:
+    """Attach auditable reasons for why a story is relevant to this release.
+
+    Context is supplied by the producer rather than inferred by the frontend.
+    Ticker/topic matching intentionally scans the normalized title and
+    summary as well as structured fields so RSS stories without entity tags
+    can still be linked to a tracked candidate.  The source buckets are
+    additive and never change market routing or risk severity.
+    """
+    ticker_set = {str(item).upper() for item in tracked_tickers if str(item).strip()}
+    research_set = {str(item).upper() for item in research_tickers if str(item).strip()}
+    sector_set = {str(item).casefold() for item in tracked_sectors if str(item).strip()}
+    topic_set = {str(item).casefold() for item in topics if str(item).strip()}
+    event_set = {str(item).casefold() for item in active_event_topics if str(item).strip()}
+    creator_set = {str(item).casefold() for item in creator_mentions if str(item).strip()}
+    graph: dict[str, Any] = {
+        "ticker_interest": {},
+        "sector_interest": {},
+        "topic_interest": {},
+        "market_interest": {},
+        "context": {
+            "tracked_tickers": sorted(ticker_set),
+            "research_tickers": sorted(research_set),
+            "tracked_sectors": sorted(sector_set),
+            "active_event_topics": sorted(event_set),
+            "creator_mentions": sorted(creator_set),
+        },
+        "source_interest": {
+            "tracked_ticker": {},
+            "research_candidate": {},
+            "tracked_sector": {},
+            "active_event": {},
+            "creator_mentioned": {},
+        },
+    }
     for story in stories:
         reasons = list(story.get("relevance_reasons") or [])
-        hit_tickers = sorted(ticker_set.intersection(story.get("tickers") or []))
-        hit_sectors = sorted(item for item in story.get("sectors") or [] if item.casefold() in sector_set)
-        hit_topics = sorted(item for item in story.get("topics") or [] if item.casefold() in topic_set)
+        text = " ".join(
+            str(story.get(field) or "")
+            for field in ("title", "summary", "description")
+        ).casefold()
+        story_tickers = {str(item).upper() for item in story.get("tickers") or []}
+        def ticker_hit(ticker: str, haystack: str = text, tagged: set[str] = story_tickers) -> bool:
+            aliases = _TICKER_ALIASES.get(ticker, (ticker,))
+            return ticker in tagged or any(alias.casefold() in haystack for alias in aliases)
+
+        hit_tickers = sorted(ticker for ticker in ticker_set if ticker_hit(ticker))
+        hit_research = sorted(ticker for ticker in research_set if ticker_hit(ticker))
+        hit_sectors = sorted(
+            item for item in sector_set
+            if item in {str(value).casefold() for value in story.get("sectors") or []}
+            or item in text
+        )
+        hit_topics = sorted(
+            item for item in topic_set
+            if item in {str(value).casefold() for value in story.get("topics") or []}
+            or item in text
+        )
+        hit_events = sorted(item for item in event_set if item in text)
+        hit_creators = sorted(item for item in creator_set if item in text)
         if hit_tickers:
             reasons.extend(f"tracked_ticker:{item}" for item in hit_tickers)
+        if hit_research:
+            reasons.extend(f"research_candidate:{item}" for item in hit_research)
         if hit_sectors:
             reasons.extend(f"tracked_sector:{item}" for item in hit_sectors)
         if hit_topics:
             reasons.extend(f"active_topic:{item}" for item in hit_topics)
+        if hit_events:
+            reasons.extend(f"active_event:{item}" for item in hit_events)
+        if hit_creators:
+            reasons.extend(f"creator_mentioned:{item}" for item in hit_creators)
         if story.get("market"):
             reasons.append(f"market:{story['market']}")
             graph["market_interest"].setdefault(story["market"], 0)
             graph["market_interest"][story["market"]] += 1
         story["relevance_reasons"] = list(dict.fromkeys(reasons))
-        for key, values in (("ticker_interest", hit_tickers), ("sector_interest", hit_sectors), ("topic_interest", hit_topics)):
+        for key, values in (
+            ("ticker_interest", sorted(set(hit_tickers) | set(hit_research))),
+            ("sector_interest", hit_sectors),
+            ("topic_interest", sorted(set(hit_topics) | set(hit_events))),
+        ):
             for value in values:
                 graph[key][value] = graph[key].get(value, 0) + 1
+        for bucket, values in (
+            ("tracked_ticker", hit_tickers),
+            ("research_candidate", hit_research),
+            ("tracked_sector", hit_sectors),
+            ("active_event", hit_events),
+            ("creator_mentioned", hit_creators),
+        ):
+            for value in values:
+                graph["source_interest"][bucket][value] = graph["source_interest"][bucket].get(value, 0) + 1
     return graph
 
 
@@ -263,9 +341,28 @@ def deduplicate_and_rank(stories: Iterable[dict[str, Any]], *, limit: int = 5, m
     return result
 
 
-def build_news_intelligence(stories: Iterable[dict[str, Any]], *, market: str | None = None, tracked_tickers: Iterable[str] = (), tracked_sectors: Iterable[str] = (), topics: Iterable[str] = (), limit: int = 5) -> dict[str, Any]:
+def build_news_intelligence(
+    stories: Iterable[dict[str, Any]],
+    *,
+    market: str | None = None,
+    tracked_tickers: Iterable[str] = (),
+    tracked_sectors: Iterable[str] = (),
+    topics: Iterable[str] = (),
+    research_tickers: Iterable[str] = (),
+    active_event_topics: Iterable[str] = (),
+    creator_mentions: Iterable[str] = (),
+    limit: int = 5,
+) -> dict[str, Any]:
     normalized = [normalize_news_story(story, market or story.get("market")) for story in stories]
-    graph = build_interest_graph(normalized, tracked_tickers=tracked_tickers, tracked_sectors=tracked_sectors, topics=topics)
+    graph = build_interest_graph(
+        normalized,
+        tracked_tickers=tracked_tickers,
+        tracked_sectors=tracked_sectors,
+        topics=topics,
+        research_tickers=research_tickers,
+        active_event_topics=active_event_topics,
+        creator_mentions=creator_mentions,
+    )
     ranked = deduplicate_and_rank(normalized, limit=limit)
     excluded = [item for item in normalized if item.get("market_compatible") is False]
     return {
