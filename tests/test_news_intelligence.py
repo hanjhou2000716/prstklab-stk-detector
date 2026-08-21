@@ -41,6 +41,46 @@ def test_interest_graph_explains_tracked_ticker_and_market():
     assert "tracked_ticker:NVDA" in story["relevance_reasons"]
 
 
+def test_interest_graph_matches_release_context_in_title_without_entity_tags():
+    story = normalize_news_story(
+        {
+            "title": "Federal Reserve policy lifts NVIDIA semiconductor outlook",
+            "url": "https://www.federalreserve.gov/newsevents/pressreleases/a.htm",
+        },
+        "us",
+    )
+    graph = build_interest_graph(
+        [story],
+        tracked_tickers=["NVDA"],
+        research_tickers=["NVDA"],
+        tracked_sectors=["semiconductor"],
+        active_event_topics=["Federal Reserve"],
+        creator_mentions=["NVIDIA"],
+    )
+    assert "tracked_ticker:NVDA" in story["relevance_reasons"]
+    assert "research_candidate:NVDA" in story["relevance_reasons"]
+    assert "tracked_sector:semiconductor" in story["relevance_reasons"]
+    assert "active_event:federal reserve" in story["relevance_reasons"]
+    assert "creator_mentioned:nvidia" in story["relevance_reasons"]
+    assert graph["source_interest"]["research_candidate"] == {"NVDA": 1}
+    assert graph["source_interest"]["creator_mentioned"] == {"nvidia": 1}
+
+
+def test_news_intelligence_exposes_release_interest_context():
+    artifact = build_news_intelligence(
+        [{"title": "NVIDIA outlook", "url": "https://www.nasdaq.com/articles/nvda"}],
+        market="us",
+        tracked_tickers=["NVDA"],
+        research_tickers=["NVDA"],
+    )
+    assert artifact["interest_graph"]["context"]["research_tickers"] == ["NVDA"]
+    assert artifact["stories"][0]["relevance_reasons"] == [
+        "tracked_ticker:NVDA",
+        "research_candidate:NVDA",
+        "market:us",
+    ]
+
+
 def test_dedup_prefers_official_and_retains_supporting_source():
     stories = [
         {"title": "Fed rates unchanged", "url": "https://news.google.com/rss/articles/1"},
