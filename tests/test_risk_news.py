@@ -288,3 +288,28 @@ def test_news_snapshot_binds_explicit_interest_context(monkeypatch, tmp_path):
     assert graph["source_interest"]["research_candidate"] == {"NVDA": 1}
     assert graph["source_interest"]["tracked_sector"] == {"semiconductor": 1}
     assert snapshot["interest_context"]["creator_mentions"] == ["NVIDIA"]
+
+
+def test_news_snapshot_binds_current_official_event_context(monkeypatch, tmp_path):
+    monkeypatch.setenv("NEWS_CACHE_PATH", str(tmp_path / "news-cache.json"))
+    def fetch_news(market):
+        if market == "us":
+            return [{
+                "title": "Iran talks move oil markets",
+                "url": "https://www.federalreserve.gov/newsevents/pressreleases/a.htm",
+            }]
+        return [{
+            "title": "Taiwan market closes",
+            "url": "https://www.twse.com.tw/news/taiwan-close",
+        }]
+
+    monkeypatch.setattr("src.risk_news.fetch_market_news", fetch_news)
+    monkeypatch.setattr("src.risk_news.fetch_market_news_fallback", lambda market: [])
+
+    snapshot = build_news_snapshot(official_events={
+        "items": [{"title": "Iran ceasefire update", "topic_key": "white-house"}],
+    })
+
+    assert "iran" in snapshot["interest_context"]["active_event_topics"]
+    graph = snapshot["intelligence"]["us"]["interest_graph"]
+    assert graph["source_interest"]["active_event"] == {"iran": 1}
