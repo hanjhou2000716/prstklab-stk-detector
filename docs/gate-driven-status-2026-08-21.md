@@ -4,7 +4,8 @@
 
 ## 目前基線
 
-- Main HEAD：`42ee0e5035c22fb4c36dd80afb6a1aa4cbb2da4b`（合併 PR #697；PR #695 的程式修復與 PR #696 的證據更新已在祖先 commit）
+- 程式驗證基線：`42ee0e5035c22fb4c36dd80afb6a1aa4cbb2da4b`（PR #697 之前的 runtime code）
+- 證據文件合併：PR #698，merge commit `cd5eb3ed0a2a829db0abedf40a488a3b563a9c22`；該合併不改變 runtime。
 - 公開 Pages release：`release-faaa5b86acfc0db3`，manifest `ready`
 - 公開 Creator／News artifact：`ready`
 - Railway `/health`：HTTP 200、monitor `running`、Jin10 `healthy`
@@ -94,9 +95,12 @@
 - Pages release `release-faaa5b86acfc0db3` 仍是最後一個成功公開版本；其
   Pages workflow 建置 SHA 為 `38f787a86b82573498f85b9d7c5d44b60d8244a6`，
   不等於目前 main。下一次成功刷新前，這個差異必須保持明示，不能宣稱
-  `be9cb80` 已部署到 Pages。
+  runtime baseline 尚未被該 Pages run 建置；下一次成功刷新前不得宣稱已部署。
 - PR #697 merge commit：`42ee0e5035c22fb4c36dd80afb6a1aa4cbb2da4b`；主線回歸
   `1329 passed`、Ruff、Mypy、compileall、`node --check` 均通過。使用正式
   `uv` runtime 執行 `src.production_e2e` 時，release、renderer、photo
   contract、Mini App deep-link 與 mock 單收件者均通過；`delivery_smoke_test`
   仍因本機未設定 `TELEGRAM_CHAT_IDS` 而 fail-closed，沒有發送正式訊息。
+- 目前 repository `main` 可由 GitHub HEAD 直接核對；本表的 SHA 是「已完成測試的
+  runtime baseline」，不把文件-only merge 說成新的程式行為。若後續程式碼再變更，
+  必須重新執行同一組回歸並更新 baseline。
