@@ -24,6 +24,9 @@
         "canonical_url": {"type": "string", "pattern": "^https://"},
         "market": {"enum": ["taiwan", "us", "global", "cross_market"]},
         "dedupe_key": {"type": "string", "minLength": 1},
+        "event_cluster_key": {"type": "string"},
+        "published_time_bucket": {"type": ["string", "null"]},
+        "entities": {"type": "array", "items": {"type": "string"}},
         "public_safe": {"type": "boolean"}
       },
       "additionalProperties": true
