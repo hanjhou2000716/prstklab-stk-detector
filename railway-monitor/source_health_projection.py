@@ -5,22 +5,84 @@ from __future__ import annotations
 from typing import Any
 
 
-_PUBLIC_FIELDS: dict[str, frozenset[str]] = {
-    "creator": frozenset({
-        "status", "received_count", "parsed_count", "failed_count",
-        "duplicate_count", "public_observation_count", "last_received_at",
-        "last_parsed_at", "last_failure_at", "today_count", "latest_count",
-        "morning_batch_count", "coverage_status", "consensus_status",
-        "last_release_id", "last_telegram_delivery_at",
-    }),
-    "financialjuice": frozenset({
-        "status", "received_count", "parsed_count", "failed_count",
-        "duplicate_count", "public_observation_count",
-        "importance_gte_8_count", "pending_cluster_count", "last_received_at",
-        "last_parsed_at", "last_failure_at", "decision", "last_release_id",
-        "last_telegram_delivery_at",
-    }),
+_MAX_TEXT_LENGTH = 160
+_PUBLIC_FIELD_TYPES: dict[str, dict[str, str]] = {
+    "creator": {
+        "status": "text",
+        "received_count": "counter",
+        "parsed_count": "counter",
+        "failed_count": "counter",
+        "duplicate_count": "counter",
+        "public_observation_count": "counter",
+        "today_count": "counter",
+        "latest_count": "counter",
+        "morning_batch_count": "counter",
+        "daily_coverage_count": "counter",
+        "coverage_status": "text",
+        "morning_batch_state": "text",
+        "morning_batch_key": "text",
+        "consensus_status": "text",
+        "last_release_id": "text",
+        "last_snapshot_id": "text",
+        "last_observation_id": "text",
+        "last_received_at": "timestamp",
+        "last_parsed_at": "timestamp",
+        "last_failure_at": "timestamp",
+        "last_telegram_delivery_at": "timestamp",
+        "last_telegram_delivery_status": "text",
+    },
+    "financialjuice": {
+        "status": "text",
+        "received_count": "counter",
+        "parsed_count": "counter",
+        "failed_count": "counter",
+        "duplicate_count": "counter",
+        "public_observation_count": "counter",
+        "importance_gte_8_count": "counter",
+        "pending_cluster_count": "counter",
+        "last_received_at": "timestamp",
+        "last_parsed_at": "timestamp",
+        "last_failure_at": "timestamp",
+        "last_importance_gte_8_at": "timestamp",
+        "decision": "text",
+        "last_release_id": "text",
+        "last_snapshot_id": "text",
+        "last_observation_id": "text",
+        "last_telegram_delivery_at": "timestamp",
+        "last_telegram_delivery_status": "text",
+    },
 }
+
+
+def _bounded_text(value: Any) -> str | None:
+    """Return a bounded scalar string; never serialize nested/private data."""
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    if not text or len(text) > _MAX_TEXT_LENGTH:
+        return None
+    return text
+
+
+def _counter(value: Any) -> int | None:
+    """Accept only non-negative, reasonably bounded integer counters."""
+    if isinstance(value, bool):
+        return None
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return parsed if 0 <= parsed <= 1_000_000_000 else None
+
+
+def _project_value(value: Any, kind: str) -> Any:
+    if kind == "counter":
+        return _counter(value)
+    # Timestamps are intentionally treated as bounded text here.  The health
+    # endpoint is diagnostic, while timestamp semantics are validated by the
+    # producer and release contracts; keeping this adapter dependency-free is
+    # required for the standalone Railway bundle.
+    return _bounded_text(value)
 
 
 def project_source_health(diagnostics: Any) -> dict[str, dict[str, Any]]:
@@ -42,11 +104,14 @@ def project_source_health(diagnostics: Any) -> dict[str, dict[str, Any]]:
         if isinstance(source, dict):
             # Explicit allow-list: diagnostics may contain private transport
             # metadata in future versions and must never leak it to /health.
-            result[component] = {
-                key: source[key]
-                for key in _PUBLIC_FIELDS[component]
-                if key in source
-            }
+            projected: dict[str, Any] = {}
+            for key, kind in _PUBLIC_FIELD_TYPES[component].items():
+                if key not in source:
+                    continue
+                value = _project_value(source[key], kind)
+                if value is not None:
+                    projected[key] = value
+            result[component] = projected
     return result
 
 

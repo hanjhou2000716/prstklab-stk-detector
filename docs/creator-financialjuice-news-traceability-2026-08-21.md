@@ -72,3 +72,14 @@ copy, so concurrent probes cannot mutate runtime state and the long-running
 server no longer owns the health-state implementation. The health-state
 regression suite covers detached snapshots, default fail-soft status and
 thread-safe updates (`111 passed` across the Railway targeted suite).
+
+### Railway health contract projection (next stacked PR)
+
+The public Creator and FinancialJuice health sections now use a typed,
+bounded allow-list. Counters accept only non-negative values, identifiers and
+statuses are scalar strings with a fixed length limit, and nested values are
+discarded. The projection also exposes safe lineage and delivery fields needed
+to determine whether a morning batch and its Telegram receipt belong to the
+same release/snapshot, without exposing Gmail IDs, raw mail, recipients or
+tokens. This is additive; missing diagnostics remain fail-soft and do not
+block the market release.

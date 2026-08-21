@@ -20,6 +20,9 @@ def test_source_health_projection_keeps_only_public_creator_and_fj_fields() -> N
                 "creator": {
                     "status": "healthy",
                     "last_received_at": "2026-08-21T00:00:00Z",
+                    "daily_coverage_count": 2,
+                    "last_snapshot_id": "creator-snapshot-1",
+                    "last_telegram_delivery_status": "delivered",
                     "raw_body": "never expose",
                     "gmail_message_id": "private-id",
                 },
@@ -32,9 +35,35 @@ def test_source_health_projection_keeps_only_public_creator_and_fj_fields() -> N
     result = project_source_health(diagnostics)
     assert set(result) == {"creator", "financialjuice"}
     assert result["creator"]["status"] == "healthy"
+    assert result["creator"]["daily_coverage_count"] == 2
+    assert result["creator"]["last_snapshot_id"] == "creator-snapshot-1"
+    assert result["creator"]["last_telegram_delivery_status"] == "delivered"
     assert "raw_body" not in result
     assert "gmail_message_id" not in result["creator"]
 
 
 def test_source_health_projection_fails_soft_for_missing_diagnostics() -> None:
     assert project_source_health(None) == {}
+
+
+def test_source_health_projection_rejects_nested_or_unbounded_values() -> None:
+    diagnostics = {
+        "store": {
+            "source_health": {
+                "creator": {
+                    "status": {"private": "value"},
+                    "received_count": -1,
+                    "last_release_id": "x" * 161,
+                    "daily_coverage_count": True,
+                },
+                "financialjuice": {
+                    "importance_gte_8_count": "3",
+                    "last_importance_gte_8_at": "2026-08-21T00:00:00Z",
+                },
+            }
+        }
+    }
+    result = project_source_health(diagnostics)
+    assert result["creator"] == {}
+    assert result["financialjuice"]["importance_gte_8_count"] == 3
+    assert result["financialjuice"]["last_importance_gte_8_at"].endswith("Z")
