@@ -73,7 +73,7 @@ server no longer owns the health-state implementation. The health-state
 regression suite covers detached snapshots, default fail-soft status and
 thread-safe updates (`111 passed` across the Railway targeted suite).
 
-### Railway health contract projection (next stacked PR)
+### Railway health contract projection (PR #677, latest local commit 798fb77)
 
 The public Creator and FinancialJuice health sections now use a typed,
 bounded allow-list. Counters accept only non-negative values, identifiers and
@@ -83,3 +83,12 @@ to determine whether a morning batch and its Telegram receipt belong to the
 same release/snapshot, without exposing Gmail IDs, raw mail, recipients or
 tokens. This is additive; missing diagnostics remain fail-soft and do not
 block the market release.
+
+The same contract now includes Gmail ingress operational counters: watch
+expiration, last ingress/sync timestamps, pending parser queue, dead-letter
+count, and a boolean indicating whether a history cursor exists. These fields
+are allow-listed and bounded; Gmail history/message IDs, OAuth values, sender
+addresses and message bodies remain private. Targeted Railway/Gmail/health
+verification is `117 passed`, plus standalone compilation and Mini App/source
+health regression checks. Live Gmail OAuth/Pub/Sub configuration is still an
+external acceptance gate and is not claimed by this PR.
