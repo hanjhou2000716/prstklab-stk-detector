@@ -93,6 +93,15 @@ _GLOBAL_EVENT_TERMS = (
     "earthquake", "\u5730\u9707", "tsunami", "\u9ed1\u5929\u9d5d", "\u91cd\u5927\u707d\u5bb3",
 )
 
+# These terms are deliberately bounded to public event vocabulary.  They are
+# used only to explain why a headline is relevant to this release; they never
+# change market routing, event severity, or the official-source gates.
+_OFFICIAL_EVENT_CONTEXT_TERMS = _GLOBAL_EVENT_TERMS + (
+    "fed", "fomc", "cpi", "pce", "ecb", "eia", "sec", "tariff",
+    "export control", "semiconductor", "ai", "taiex", "tpex", "twse",
+    "taifex", "mops", "聯準會", "聯準會", "關稅", "出口管制", "半導體",
+)
+
 
 def _news_text(story: dict[str, str]) -> str:
     """Build a normalized haystack for deterministic market classification."""
@@ -699,6 +708,31 @@ def _default_news_interest_context() -> dict[str, list[str]]:
     return {key: list(dict.fromkeys(value)) for key, value in context.items()}
 
 
+def _official_event_interest_topics(official_events: dict[str, Any] | None) -> list[str]:
+    """Extract bounded active-event terms from the *current* official scan.
+
+    The news interest graph must not rely solely on the previous release's
+    event ledger.  This helper receives the same official snapshot that will
+    be published with the market release and returns only fixed vocabulary
+    matches, so arbitrary provider text cannot become a ranking rule.
+    """
+    if not isinstance(official_events, dict):
+        return []
+    topics: list[str] = []
+    for event in official_events.get("items") or []:
+        if not isinstance(event, dict):
+            continue
+        text = " ".join(
+            str(event.get(field) or "")
+            for field in ("title", "brief_summary", "summary", "event_type", "category", "short_label", "topic_key")
+        ).casefold()
+        topics.extend(
+            term for term in _OFFICIAL_EVENT_CONTEXT_TERMS
+            if term.casefold() in text
+        )
+    return list(dict.fromkeys(topics))[:32]
+
+
 def build_news_snapshot(
     *,
     tracked_tickers: Iterable[str] | None = None,
@@ -706,14 +740,18 @@ def build_news_snapshot(
     tracked_sectors: Iterable[str] | None = None,
     active_event_topics: Iterable[str] | None = None,
     creator_mentions: Iterable[str] | None = None,
+    official_events: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Add durable fallback and bind news to public release interest context."""
     defaults = _default_news_interest_context()
+    current_event_topics = _official_event_interest_topics(official_events)
     interest_context = {
         "tracked_tickers": list(tracked_tickers) if tracked_tickers is not None else defaults["tracked_tickers"],
         "research_tickers": list(research_tickers) if research_tickers is not None else defaults["research_tickers"],
         "tracked_sectors": list(tracked_sectors) if tracked_sectors is not None else defaults["tracked_sectors"],
-        "active_event_topics": list(active_event_topics) if active_event_topics is not None else defaults["active_event_topics"],
+        "active_event_topics": list(active_event_topics) if active_event_topics is not None else list(dict.fromkeys([
+            *defaults["active_event_topics"], *current_event_topics,
+        ])),
         "creator_mentions": list(creator_mentions) if creator_mentions is not None else defaults["creator_mentions"],
     }
     checked_at = datetime.now().astimezone().isoformat()
