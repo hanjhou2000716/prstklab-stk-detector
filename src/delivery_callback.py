@@ -16,6 +16,8 @@ from datetime import UTC, datetime
 
 import requests
 
+from src.railway_secret import delivery_shared_secret
+
 
 def _financialjuice_trace() -> dict[str, object] | None:
     """Return only the release-bound FJ trace fields safe for Railway storage."""
@@ -92,10 +94,10 @@ def send_callback() -> bool:
     if not url:
         print("Railway delivery callback skipped: RAILWAY_STATUS_URL is not configured")
         return False
-    secret = os.environ.get("RAILWAY_STATUS_SHARED_SECRET", "")
+    secret = delivery_shared_secret()
     payload = build_payload()
     if not payload["trace_id"] or not secret:
-        raise RuntimeError("TRACE_ID and RAILWAY_STATUS_SHARED_SECRET are required for the callback")
+        raise RuntimeError("TRACE_ID and Railway delivery secret are required for the callback")
     body = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
     signature = "sha256=" + hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
     response = requests.post(

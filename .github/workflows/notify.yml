@@ -72,7 +72,7 @@ jobs:
         if: always() && inputs.photo_test == true && steps.photo_smoke.outputs.sent == 'true'
         env:
           RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
-          RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET }}
+          RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           DELIVERY_RECEIPT_KIND: photo_smoke
           TRACE_ID: ${{ steps.photo_smoke.outputs.trace_id }}
           ALERT_ID: ${{ steps.photo_smoke.outputs.alert_id }}

@@ -12,6 +12,7 @@ import httpx
 
 from src.creator_provider_registry import creator_ids
 from src.external_observation_input import SAFE_FIELDS
+from src.railway_secret import delivery_shared_secret
 
 _ALLOWED_SOURCES = {"financialjuice", *creator_ids()}
 _BLOCKED_FIELDS = {
@@ -56,7 +57,7 @@ def load_railway_observations(
     events.
     """
     endpoint = observation_export_url(url)
-    token = str(secret or os.getenv("RAILWAY_STATUS_SHARED_SECRET") or "").strip()
+    token = str(secret or delivery_shared_secret()).strip()
     if not endpoint or not token:
         return [], {"status": "configuration_missing", "reason": "railway_observation_export_not_configured", "rejected_count": 0}
     try:
