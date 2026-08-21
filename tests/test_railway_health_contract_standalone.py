@@ -94,3 +94,14 @@ def test_gmail_projection_keeps_operational_counters_without_transport_ids():
     assert result["observability"]["dead_letter_count"] == 2
     assert result["observability"]["history_cursor_present"] is True
     assert "must-not-leak" not in str(result)
+
+
+def test_gmail_projection_accepts_only_safe_cursor_fingerprint():
+    result = health.gmail_health_fields(
+        {"watch": {"status": "healthy", "observability": {"history_cursor_hash": "0123456789abcdef"}}}
+    )
+    assert result["observability"]["history_cursor_hash"] == "0123456789abcdef"
+    rejected = health.gmail_health_fields(
+        {"watch": {"status": "healthy", "observability": {"history_cursor_hash": "raw-history-id"}}}
+    )
+    assert "history_cursor_hash" not in rejected["observability"]

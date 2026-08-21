@@ -7,6 +7,7 @@ Pub/Sub audience and a dedicated label are configured.
 
 from __future__ import annotations
 
+import hashlib
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -144,6 +145,10 @@ def health(
         "last_ingress_at": timestamp("last_notification_at"),
         "last_sync_at": timestamp("last_sync_at"),
         "history_cursor_present": bool(str(cursor.get("last_history_id") or "").strip()),
+        "history_cursor_hash": (
+            hashlib.sha256(str(cursor["last_history_id"]).encode("utf-8")).hexdigest()[:16]
+            if str(cursor.get("last_history_id") or "").strip() else None
+        ),
     }
     return {
         "status": state,
