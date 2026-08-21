@@ -62,3 +62,13 @@ to an empty projection. Targeted Railway monitor, Gmail gateway and projection
 tests passed (`109 passed`), and the standalone monitor compiled successfully.
 This remains `partially_integrated` until the PR is merged and a post-merge
 Railway health response is captured.
+
+### Railway health-state boundary (PR #676)
+
+The monitor's mutable health dictionary and lock now live in
+`railway-monitor/health_state.py`; `app.py` retains a compatibility import and
+the same endpoint contract. `snapshot_health()` returns a detached JSON-safe
+copy, so concurrent probes cannot mutate runtime state and the long-running
+server no longer owns the health-state implementation. The health-state
+regression suite covers detached snapshots, default fail-soft status and
+thread-safe updates (`111 passed` across the Railway targeted suite).
