@@ -51,6 +51,21 @@ def test_news_no_event_is_not_counted_as_a_missing_source():
     assert health["status"] == "healthy"
 
 
+def test_news_no_new_content_is_explicit_and_not_a_provider_failure():
+    health = build_source_health(
+        errors=[], events={"is_major": False}, research_report={"sources": []}, checked_at=NOW,
+        news_sources=[
+            {"key": "twse", "status": "no_new_content", "item_count": 0},
+            {"key": "mops", "status": "no_event", "item_count": 0},
+        ],
+    )
+    news = next(item for item in health["sources"] if item["key"] == "market_news")
+    assert news["status"] == "no_new_content"
+    assert news["semantic_state"] == "no_event"
+    assert news["data_gaps"] == []
+    assert health["event_scan"]["status"] == "no_event"
+
+
 def test_pristine_history_warming_is_not_reported_as_a_missing_source():
     health = build_source_health(
         errors=[], events={"is_major": False}, research_report={"sources": [{"market": "taiwan", "strategy": "value", "status": "建檔中", "history_cached": 20, "history_expected": 100}]}, checked_at=NOW,

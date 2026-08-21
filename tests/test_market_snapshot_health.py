@@ -18,8 +18,16 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
         "taiwan": {"label": "台股", "errors": ["台指波動率資料暫時無法取得"]},
         "us": {"label": "美股", "errors": []},
     })
-    monkeypatch.setattr("src.risk_news.build_news_snapshot", lambda: {"errors": [], "taiwan": [], "us": []})
-    monkeypatch.setattr("src.official_events.fetch_official_events", lambda: {"items": [], "errors": []})
+    captured_news: dict[str, object] = {}
+
+    def fake_news_snapshot(**kwargs):
+        captured_news.update(kwargs)
+        return {"errors": [], "taiwan": [], "us": []}
+
+    monkeypatch.setattr("src.risk_news.build_news_snapshot", fake_news_snapshot)
+    monkeypatch.setattr("src.official_events.fetch_official_events", lambda: {
+        "items": [{"title": "Fed FOMC statement", "topic_key": "fed"}], "errors": []
+    })
     monkeypatch.setattr("src.event_alerts.build_event_snapshot", lambda news, quotes, official=None, indices=None: {})
     monkeypatch.setattr("src.macro_summary.build_macro_summary", lambda events, risk, program=None: {})
     monkeypatch.setattr("src.macro_program_feed.fetch_yutinghao_latest_program", lambda: None)
@@ -42,6 +50,8 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
     })
 
     snapshot = build_market_snapshot()
+
+    assert captured_news["official_events"]["items"][0]["topic_key"] == "fed"
 
     # Optional quote providers can still leave a visible unavailable card;
     # the aggregate must disclose that degraded state instead of claiming all

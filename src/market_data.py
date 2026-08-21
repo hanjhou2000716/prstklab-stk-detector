@@ -720,9 +720,12 @@ def build_market_snapshot() -> dict[str, Any]:
         except Exception as exc:
             errors.append({"ticker": item["ticker"], "message": str(exc), "scope": "macro_quote"})
     macro_quotes = [normalize_quote_record(item) for item in macro_quotes]
-    risk = build_risk_snapshot()
-    news = build_news_snapshot()
     official_events = fetch_official_events()
+    risk = build_risk_snapshot()
+    # Bind the current official event scan into news ranking before the
+    # snapshot is built.  Otherwise the graph could only see the previous
+    # release's ledger and miss a newly published Fed/MOPS/geopolitical item.
+    news = build_news_snapshot(official_events=official_events)
     phase_two = build_phase_two_snapshot()
     # Phase 5: crypto spot prices are independently checked after the regular
     # Yahoo/index pass. Re-annotate freshness because Binance is intraday.
