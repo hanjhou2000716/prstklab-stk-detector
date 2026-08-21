@@ -137,7 +137,8 @@ This section is updated only from the public manifest and the latest successful
 main-branch workflows. It is evidence of the deployed release, not a claim
 that every optional provider or historical backtest is available.
 
-- Main commit: `42ee0e5035c22fb4c36dd80afb6a1aa4cbb2da4b` (current `origin/main`, PR #697)
+- Runtime evidence baseline: `42ee0e5035c22fb4c36dd80afb6a1aa4cbb2da4b` (PR #697 parent)
+- Documentation merge carrying this evidence: PR #698 (`cd5eb3ed0a2a829db0abedf40a488a3b563a9c22`)
 - Pages refresh / release publication: [32435052135](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32435052135)
 - Latest main quality gate: [32480688754](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32480688754)
 - Latest main official monitor: [32481112950](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32481112950)
@@ -157,13 +158,15 @@ that every optional provider or historical backtest is available.
 - Research universe: `7772 / 7772` completed; 40 visible candidates
 - Formal backtest: `unavailable`; Advice Gate therefore remains observation-only
 
-The current main commit is newer than the last successful Pages publication:
+The runtime evidence baseline is newer than the last successful Pages publication:
 the Pages run above was built from `38f787a86b82573498f85b9d7c5d44a6`.
 Therefore the public release identifiers below remain the last verified
-release, rather than being presented as proof that `be9cb80` is already
-deployed.  The next successful refresh must publish or explicitly preserve
-this release under the release gate; a failed or in-progress refresh must not
-replace it.
+release, rather than being presented as proof that the evidence baseline is
+already deployed. The next successful refresh must publish or explicitly
+preserve this release under the release gate; a failed or in-progress refresh
+must not replace it. The repository's current `main` HEAD is authoritative for
+code; this document intentionally records the tested runtime baseline instead
+of claiming that a documentation merge changed runtime behavior.
 
 The public source of truth is
 [`release-manifest.json`](https://hanjhou2000716.github.io/prstklab-stk-detector/data/release-manifest.json).
