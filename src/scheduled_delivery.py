@@ -25,6 +25,7 @@ from src.external_observation_input import (
 )
 from src.market_data import build_market_snapshot
 from src.railway_observation_client import load_railway_observations
+from src.railway_secret import delivery_shared_secret
 from src.refresh_market_data import merge_published_metadata, write_snapshot
 from src.release_gate import verify_release_for_delivery
 from src.scheduled_brief import (
@@ -44,7 +45,7 @@ def _railway_observations_configured() -> bool:
     return bool(
         os.getenv("RAILWAY_OBSERVATIONS_URL", "").strip()
         or os.getenv("RAILWAY_STATUS_URL", "").strip()
-        or os.getenv("RAILWAY_STATUS_SHARED_SECRET", "").strip()
+        or delivery_shared_secret()
     )
 
 
