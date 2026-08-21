@@ -40,6 +40,20 @@ def test_source_health_accepts_canonical_degraded_aggregate_states():
         assert validate_source_health(value) == [], state
 
 
+def test_source_health_accepts_canonical_failure_semantics_states():
+    for state in (
+        "no_new_content", "configuration_required", "optional_degraded",
+        "degraded_with_fallback", "parse_failed", "provider_failed",
+        "pending_confirmation", "release_blocked",
+    ):
+        value = _health(
+            status=state,
+            sources=[{"key": "market_quotes", "status": state, "semantic_state": state}],
+            event_scan={"status": "incomplete", "has_events": False},
+        )
+        assert validate_source_health(value) == [], state
+
+
 def test_source_health_rejects_failed_source_hidden_as_no_event():
     value = _health(
         sources=[{

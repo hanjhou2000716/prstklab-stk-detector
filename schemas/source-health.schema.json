@@ -5,7 +5,7 @@
   "required": ["status", "sources", "event_scan"],
   "properties": {
     "checked_at": {"type": ["string", "null"], "format": "date-time"},
-    "status": {"enum": ["healthy", "no_event", "fallback_active", "secondary_unavailable", "configuration_missing", "warming", "stale", "partial", "failed", "critical", "pending"]},
+    "status": {"enum": ["healthy", "no_event", "no_new_content", "fallback_active", "degraded_with_fallback", "secondary_unavailable", "configuration_missing", "configuration_required", "warming", "stale", "partial", "optional_degraded", "parse_failed", "provider_failed", "failed", "scan_failed", "critical", "pending", "pending_confirmation", "release_blocked"]},
     "summary": {"type": "string"},
     "investor_status": {"enum": ["資料正常", "部分資料降級", "核心資料不足"]},
     "missing_source_count": {"type": "integer", "minimum": 0},
