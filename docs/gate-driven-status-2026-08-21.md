@@ -4,7 +4,7 @@
 
 ## 目前基線
 
-- Main HEAD：`4315fb365ece1ab7066607a5a6e2c540020f1131`（合併 PR #695）
+- Main HEAD：`be9cb80a9e52d8ca196668b5be848506fe041926`（合併 PR #696；PR #695 的程式修復已在祖先 commit）
 - 公開 Pages release：`release-faaa5b86acfc0db3`，manifest `ready`
 - 公開 Creator／News artifact：`ready`
 - Railway `/health`：HTTP 200、monitor `running`、Jin10 `healthy`
@@ -13,6 +13,8 @@
 - 最新針對性測試：Haojiao sanitized fixture 8 passed
 - 合併後主線完整回歸：1329 passed（另有 pytest cache 權限警告，不影響結果）
 - 回歸 fixture：`tests/fixtures/haojiao-20260821-sanitized.json`；只含公開摘要，解析結果維持 `unverified`
+- 最新 main quality gate：PR #696 的 `Quality and delivery dry-run` 通過；目前仍有一個
+  `Official macro and price monitor` 執行中，未將未完成 workflow 當成通過證據。
 
 ## P0 traceability matrix
 
@@ -74,7 +76,7 @@
 - PC-001 market refresh、PC-002 risk/event gate、PC-003 research release、PC-004 Pages manifest、PC-005 Telegram dedup、PC-006 Railway heartbeat、PC-007 privacy boundary 均由目前主線測試與公開 release 驗證保護。
 - 本文件只增加可追溯性，不修改執行路徑；回滾方式為撤回本文件。
 
-## Post-merge evidence — PR #695
+## Post-merge evidence — PR #695 / #696
 
 - Merge commit：`4315fb365ece1ab7066607a5a6e2c540020f1131`。
 - Main regression after merge：`1329 passed`；Ruff、Mypy、compileall 與
@@ -86,3 +88,10 @@
   classifier `repository-shared`。GDELT `HTTP_429` 與 health callback
   `HTTP_403` 仍維持 bounded fail-closed；Gmail/PubSub 仍為
   `configuration_missing`，因此 Creator/FJ live receipt 尚未宣稱完成。
+- PR #696 merge commit：`be9cb80a9e52d8ca196668b5be848506fe041926`；此 PR
+  只更新 gate 證據，未改變 runtime 行為。其後的主線 quality gate 為
+  [32480688754](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32480688754)。
+- Pages release `release-faaa5b86acfc0db3` 仍是最後一個成功公開版本；其
+  Pages workflow 建置 SHA 為 `38f787a86b82573498f85b9d7c5d44b60d8244a6`，
+  不等於目前 main。下一次成功刷新前，這個差異必須保持明示，不能宣稱
+  `be9cb80` 已部署到 Pages。
