@@ -137,9 +137,10 @@ This section is updated only from the public manifest and the latest successful
 main-branch workflows. It is evidence of the deployed release, not a claim
 that every optional provider or historical backtest is available.
 
-- Main commit: `be9cb80a9e52d8ca196668b5be848506fe041926` (current `origin/main`, PR #696)
+- Main commit: `42ee0e5035c22fb4c36dd80afb6a1aa4cbb2da4b` (current `origin/main`, PR #697)
 - Pages refresh / release publication: [32435052135](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32435052135)
 - Latest main quality gate: [32480688754](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32480688754)
+- Latest main official monitor: [32481112950](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32481112950)
 - Single-recipient photo smoke: [32418325859](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32418325859)
 - Release: `release-faaa5b86acfc0db3`
 - Market snapshot: `d244146e6209880c`
@@ -157,7 +158,7 @@ that every optional provider or historical backtest is available.
 - Formal backtest: `unavailable`; Advice Gate therefore remains observation-only
 
 The current main commit is newer than the last successful Pages publication:
-the Pages run above was built from `38f787a86b82573498f85b9d7c5d44b60d8244a6`.
+the Pages run above was built from `38f787a86b82573498f85b9d7c5d44a6`.
 Therefore the public release identifiers below remain the last verified
 release, rather than being presented as proof that `be9cb80` is already
 deployed.  The next successful refresh must publish or explicitly preserve
