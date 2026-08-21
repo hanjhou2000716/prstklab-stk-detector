@@ -22,7 +22,16 @@ HEALTH_STATE: dict[str, Any] = {
     "classification": {"status": "not_checked", "updated_at": None, "classification_counts": {}, "unclassified_count": 0, "reason_counts": {}},
     "delivery": {"status": "not_checked", "last_trace_id": None, "last_outbox_status": None, "last_receipt_status": None, "counts": {}, "last_updated_at": None, "last_error": None},
     "monitor": {"status": "starting", "poll_interval_seconds": None, "last_cycle_started_at": None, "last_cycle_completed_at": None},
-    "gmail": {"status": "not_configured", "watch_status": "not_checked", "last_notification_at": None, "last_history_id": None, "error": None},
+    "gmail": {
+        "status": "not_configured", "watch_status": "not_checked",
+        "watch_expiration": None, "missing": [],
+        "observability": {
+            "observations": 0, "parser_error_count": 0,
+            "queue_pending_count": 0, "dead_letter_count": 0,
+            "history_cursor_present": False, "state": "not_checked",
+        },
+        "error": None,
+    },
     "creator": {
         "status": "not_checked", "received_count": 0, "parsed_count": 0,
         "failed_count": 0, "duplicate_count": 0,

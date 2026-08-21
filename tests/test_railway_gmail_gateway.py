@@ -277,6 +277,11 @@ def test_health_exposes_privacy_safe_observability(tmp_path: Path) -> None:
         "parser_error_count": 2,
         "last_delivery_at": "2026-08-13T00:02:00+00:00",
         "state": "healthy",
+        "queue_pending_count": 0,
+        "dead_letter_count": 2,
+        "last_ingress_at": "2026-08-13T00:00:00+00:00",
+        "last_sync_at": "2026-08-13T00:01:00+00:00",
+        "history_cursor_present": True,
     }
     assert "last_history_id" not in result
     assert "last_message_id" not in result

@@ -70,3 +70,27 @@ def test_gmail_projection_exposes_only_missing_configuration_names():
     assert result["watch_status"] == "configuration_missing"
     assert result["missing"] == ["GMAIL_WATCH_TOPIC", "7"]
     assert "private" not in str(result)
+
+
+def test_gmail_projection_keeps_operational_counters_without_transport_ids():
+    result = health.gmail_health_fields(
+        {
+            "watch": {
+                "status": "healthy",
+                "watch_expiration": "2099-01-01T00:00:00+00:00",
+                "observability": {
+                    "queue_pending_count": 3,
+                    "dead_letter_count": 2,
+                    "history_cursor_present": True,
+                    "last_ingress_at": "2026-08-14T11:59:00Z",
+                    "last_sync_at": "2026-08-14T12:00:00Z",
+                    "gmail_message_id": "must-not-leak",
+                },
+            }
+        }
+    )
+    assert result["watch_expiration"] == "2099-01-01T00:00:00+00:00"
+    assert result["observability"]["queue_pending_count"] == 3
+    assert result["observability"]["dead_letter_count"] == 2
+    assert result["observability"]["history_cursor_present"] is True
+    assert "must-not-leak" not in str(result)

@@ -121,7 +121,11 @@ class GmailIngressService:
         }
 
     def health(self) -> dict[str, Any]:
-        return {"watch": watch_health(self.config, self.store.cursor()), "store": self.store.health()}
+        store_health = self.store.health()
+        return {
+            "watch": watch_health(self.config, store_health.get("cursor", {}), store_health=store_health),
+            "store": store_health,
+        }
 
     def accept_push(self, body: bytes | str, headers: Mapping[str, str]) -> dict[str, Any]:
         """Authenticate and durably record one bounded Gmail notification.
