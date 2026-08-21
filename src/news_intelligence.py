@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import re
 from collections.abc import Iterable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -29,6 +29,29 @@ PROVIDER_REGISTRY: tuple[dict[str, Any], ...] = (
 
 _TRACKING_PARAMS = frozenset({"utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "oc"})
 _WORD_RE = re.compile(r"[^\w\u3400-\u9fff]+", re.UNICODE)
+
+# Bounded aliases are used only to build a deterministic event identity. They
+# do not classify severity and cannot qualify a notification by themselves.
+_TICKER_ALIASES: dict[str, tuple[str, ...]] = {
+    "NVDA": ("nvda", "nvidia", "輝達", "英偉達"),
+    "TSM": ("tsm", "tsmc", "台積電", "臺積電"),
+    "AMD": ("amd", "超微"),
+    "AVGO": ("avgo", "broadcom", "博通"),
+    "TAIEX": ("taiex", "twii", "台股", "加權指數"),
+    "NASDAQ": ("nasdaq", "那斯達克"),
+    "SOX": ("sox", "費半", "費城半導體"),
+}
+_EVENT_TOPIC_ALIASES: dict[str, tuple[str, ...]] = {
+    "earnings": ("earnings", "revenue", "quarterly", "財報", "獲利", "營收"),
+    "guidance": ("guidance", "財測", "展望"),
+    "rates": ("fed", "fomc", "rate", "利率", "央行"),
+    "tariff": ("tariff", "關稅"),
+    "sanctions": ("sanction", "制裁", "出口管制"),
+    "energy": ("oil", "crude", "原油", "石油", "能源"),
+    "conflict": ("war", "conflict", "strike", "戰爭", "衝突", "攻擊"),
+    "semiconductor": ("semiconductor", "chip", "半導體", "晶片"),
+    "ai": ("ai", "artificial intelligence", "人工智慧", "生成式"),
+}
 
 
 def provider_registry() -> list[dict[str, Any]]:
@@ -85,6 +108,46 @@ def _headline_key(title: str) -> str:
     return _WORD_RE.sub("", str(title).casefold())
 
 
+def _matched_tickers(title: str, tickers: Iterable[str]) -> set[str]:
+    text = str(title).casefold()
+    matched = {str(item).upper() for item in tickers if str(item).strip()}
+    for ticker, aliases in _TICKER_ALIASES.items():
+        if any(alias in text for alias in aliases):
+            matched.add(ticker)
+    return matched
+
+
+def _matched_topics(title: str, topics: Iterable[str]) -> set[str]:
+    text = str(title).casefold()
+    matched = {str(item).casefold() for item in topics if str(item).strip()}
+    for topic, aliases in _EVENT_TOPIC_ALIASES.items():
+        if any(alias in text for alias in aliases):
+            matched.add(topic)
+    return matched
+
+
+def _time_bucket(value: str | None, *, minutes: int = 120) -> str | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    parsed = parsed.replace(tzinfo=parsed.tzinfo or UTC).astimezone(UTC)
+    bucket = parsed - timedelta(minutes=parsed.minute % minutes, seconds=parsed.second, microseconds=parsed.microsecond)
+    return bucket.isoformat()
+
+
+def _event_cluster_key(*, entities: Iterable[str], topics: Iterable[str], published_at: str | None) -> str:
+    entities_key = ",".join(sorted({str(item).upper() for item in entities if str(item).strip()}))
+    topics_key = ",".join(sorted({str(item).casefold() for item in topics if str(item).strip()}))
+    # A lone generic ticker is not enough to merge different same-day stories.
+    if not topics_key and "," not in entities_key:
+        return ""
+    material = "|".join((entities_key, topics_key, _time_bucket(published_at) or "unknown"))
+    return f"event-{hashlib.sha256(material.encode()).hexdigest()[:20]}"
+
+
 def _story_id(provider: str, canonical_url: str, title: str) -> str:
     material = f"{provider}|{canonical_url}|{_headline_key(title)}".encode()
     return f"news-{hashlib.sha256(material).hexdigest()[:20]}"
@@ -103,6 +166,10 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
     authority = str(raw.get("authority_tier") or provider["authority_tier"])
     safe = bool(url and provider["provider_id"] != "unknown")
     market_compatible = provider_supports_market(provider, chosen_market)
+    raw_tickers = sorted({str(item).upper() for item in (raw.get("tickers") or []) if str(item).strip()})
+    raw_topics = sorted({str(item) for item in (raw.get("topics") or []) if str(item).strip()})
+    entities = sorted(_matched_tickers(title, raw_tickers))
+    topics_normalized = sorted(_matched_topics(title, raw_topics))
     return {
         "story_id": _story_id(provider["provider_id"], url, title),
         "provider": provider["provider_id"],
@@ -115,12 +182,15 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         "published_at": published,
         "market": chosen_market,
         "market_compatible": market_compatible,
-        "tickers": sorted({str(item).upper() for item in (raw.get("tickers") or []) if str(item).strip()}),
+        "tickers": raw_tickers,
+        "entities": entities,
         "sectors": sorted({str(item) for item in (raw.get("sectors") or []) if str(item).strip()}),
-        "topics": sorted({str(item) for item in (raw.get("topics") or []) if str(item).strip()}),
+        "topics": topics_normalized,
         "relevance_reasons": list(dict.fromkeys(str(item) for item in (raw.get("relevance_reasons") or []) if str(item).strip())),
         "freshness": str(raw.get("freshness") or ("published" if published else "unknown")),
         "dedupe_key": _headline_key(title),
+        "event_cluster_key": _event_cluster_key(entities=entities, topics=topics_normalized, published_at=published),
+        "published_time_bucket": _time_bucket(published),
         "public_safe": safe,
         "source": str(raw.get("source") or provider["display_name"]),
     }
@@ -157,7 +227,7 @@ def build_interest_graph(stories: Iterable[dict[str, Any]], *, tracked_tickers: 
 def deduplicate_and_rank(stories: Iterable[dict[str, Any]], *, limit: int = 5, max_per_provider: int = 2) -> list[dict[str, Any]]:
     """Prefer authoritative/fresh stories and retain supporting source IDs."""
     weights = {"official": 40, "market": 25, "discovery": 10, "unknown": 0}
-    groups: dict[str, dict[str, Any]] = {}
+    groups: list[dict[str, Any]] = []
     for story in stories:
         item = normalize_news_story(story, story.get("market"))
         # Unknown or non-HTTPS sources may remain in the legacy compatibility
@@ -166,16 +236,20 @@ def deduplicate_and_rank(stories: Iterable[dict[str, Any]], *, limit: int = 5, m
         if not item["title"] or not item["canonical_url"] or not item["public_safe"] or not item["market_compatible"]:
             continue
         key = item["dedupe_key"] or item["canonical_url"]
-        current = groups.get(key)
+        current = next((candidate for candidate in groups if candidate.get("dedupe_key") == key or (
+            item.get("event_cluster_key") and candidate.get("event_cluster_key") == item.get("event_cluster_key")
+        )), None)
         score = weights.get(item["authority_tier"], 0) + min(20, len(item["relevance_reasons"]) * 5) + (5 if item["published_at"] else 0)
         item["ranking_score"] = score
         if current is None or score > current["ranking_score"]:
             if current is not None:
                 item["supporting_sources"] = [{"provider": current["provider"], "url": current["canonical_url"]}, *(current.get("supporting_sources") or [])]
-            groups[key] = item
+                groups[groups.index(current)] = item
+            else:
+                groups.append(item)
         else:
             current.setdefault("supporting_sources", []).append({"provider": item["provider"], "url": item["canonical_url"]})
-    ordered = sorted(groups.values(), key=lambda item: (-item["ranking_score"], item["story_id"]))
+    ordered = sorted(groups, key=lambda item: (-item["ranking_score"], item["story_id"]))
     result: list[dict[str, Any]] = []
     counts: dict[str, int] = {}
     for story in ordered:

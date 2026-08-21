@@ -357,6 +357,26 @@ const newsEmptyState = (health) => {
   return { title: "目前沒有可顯示的公開新聞", detail: "等待下一次市場掃描" };
 };
 
+const newsBadgeLabels = (story) => {
+  const reasons = Array.isArray(story?.relevance_reasons) ? story.relevance_reasons.map((item) => String(item)) : [];
+  const reasonText = reasons.join(" ").toLowerCase();
+  const topics = Array.isArray(story?.topics) ? story.topics.map((item) => String(item)) : [];
+  const topicText = topics.join(" ").toLowerCase();
+  const badges = [];
+  const add = (key, label, matched) => {
+    if (matched && !badges.some((item) => item.key === key)) badges.push({ key, label });
+  };
+  const sourceTier = String(story?.source_tier || story?.authority_tier || "").toLowerCase();
+  add("official", "官方", sourceTier === "official" || reasons.some((item) => /^official(?::|$)/i.test(item)));
+  add("research", "研究標的", reasons.some((item) => /^research_candidate:/i.test(item)) || (story?.research_tickers || []).length > 0);
+  add("tracked", "追蹤標的", reasons.some((item) => /^tracked_ticker:/i.test(item)) || (story?.ticker_interest || []).length > 0);
+  add("creator", "Creator 提及", reasons.some((item) => /^creator_mentioned:/i.test(item)) || (story?.creator_mentions || []).length > 0);
+  add("sector", "產業", reasons.some((item) => /^tracked_sector:/i.test(item)) || (story?.sector_interest || []).length > 0);
+  add("macro", "總經", reasons.some((item) => /^active_topic:/i.test(item)) || /macro|econom|rate|fed|inflation|cpi|pce|gdp|央行|利率|通膨|總經/.test(`${reasonText} ${topicText}`));
+  if (!badges.length) add("source", "公開來源", true);
+  return badges;
+};
+
 const renderNewsList = (id, stories, providerRegistry = [], health = null) => {
   const container = document.getElementById(id);
   if (!container) return;
@@ -378,8 +398,11 @@ const renderNewsList = (id, stories, providerRegistry = [], health = null) => {
       url = "#";
     }
     const title = String(story.title || "").replace(/^\s*\d+\.\s*/, "");
-    const reasons = (story.relevance_reasons || []).slice(0, 2).map((reason) => `<em>${escapeHtml(reason)}</em>`).join(" ");
-    return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><small>${escapeHtml(story.source || story.provider_name || "公開來源")} ${reasons}</small></li>`;
+    const badges = newsBadgeLabels(story).map((badge) => `<span class="news-badge news-badge-${badge.key}">${escapeHtml(badge.label)}</span>`).join("");
+    const reasonDetails = (story.relevance_reasons || []).slice(0, 2).map((reason) => escapeHtml(reason)).join("、");
+    const source = escapeHtml(story.source || story.provider_name || "公開來源");
+    const detail = reasonDetails ? `<span class="news-reason-detail">${reasonDetails}</span>` : "";
+    return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><div class="news-badges" aria-label="這則新聞的關聯理由">${badges}</div><small>${source}${detail}</small></li>`;
   }).join("");
 };
 
