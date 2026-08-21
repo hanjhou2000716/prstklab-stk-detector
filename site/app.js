@@ -467,7 +467,7 @@ const renderSourceHealth = (health, snapshot = {}) => {
   const sourceHealthStateLabel = (state) => {
     const normalized = String(state || "").trim().toLowerCase();
     if (["scan_failed", "failed", "failure", "error"].includes(normalized)) return "掃描失敗";
-    if (["no_events", "no_event", "empty", "none"].includes(normalized)) return "本輪無事件";
+    if (["no_events", "no_event", "no_new_content", "empty", "none"].includes(normalized)) return "本輪無事件";
     if (["scanning", "running", "in_progress"].includes(normalized)) return "掃描中";
     if (["healthy", "ok", "complete", "completed"].includes(normalized)) return "本輪已掃描";
     return "狀態待確認";
@@ -490,7 +490,7 @@ const renderSourceHealth = (health, snapshot = {}) => {
     // Keep the legacy status spelling for older snapshots and source-health
     // fixtures (source.status === "warming" ? "建檔中").
     const normalizedState = String(state || "").toLowerCase();
-    const status = state === "healthy" ? "正常" : ["no_event", "no_events", "empty", "none"].includes(normalizedState) ? "無事件" : ["not_checked", "not_scanned", "not_checked_yet"].includes(normalizedState) ? "尚未檢查" : state === "warming" ? "建檔中" : state === "pending_confirmation" || state === "pending" ? "待核對" : state === "configuration_missing" || state === "configuration_required" ? "需設定" : state === "optional_degraded" ? "選配降級" : state === "degraded_with_fallback" || state === "fallback_active" ? "備援可用" : state === "secondary_unavailable" ? "第二來源不可用" : state === "stale" ? "使用快取" : ["failed", "scan_failed", "failure", "error"].includes(normalizedState) ? "掃描失敗" : "資料缺口";
+    const status = state === "healthy" ? "正常" : ["no_event", "no_events", "no_new_content", "empty", "none"].includes(normalizedState) ? "無事件" : ["not_checked", "not_scanned", "not_checked_yet"].includes(normalizedState) ? "尚未檢查" : state === "warming" ? "建檔中" : state === "pending_confirmation" || state === "pending" ? "待核對" : state === "configuration_missing" || state === "configuration_required" ? "需設定" : state === "optional_degraded" ? "選配降級" : state === "degraded_with_fallback" || state === "fallback_active" ? "備援可用" : state === "secondary_unavailable" ? "第二來源不可用" : state === "stale" ? "使用快取" : ["failed", "scan_failed", "failure", "error", "provider_failed", "parse_failed"].includes(normalizedState) ? "掃描失敗" : "資料缺口";
     const pendingReasons = source.status === "pending" && source.pending_reasons && typeof source.pending_reasons === "object"
       ? Object.entries(source.pending_reasons).filter(([, count]) => Number(count) > 0).map(([reason, count]) => {
         const labels = {
