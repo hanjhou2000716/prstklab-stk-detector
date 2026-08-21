@@ -347,10 +347,24 @@ const renderRisk = (risk) => {
   }).join("");
 };
 
-const renderNewsList = (id, stories, providerRegistry = []) => {
+const newsEmptyState = (health) => {
+  const status = String(health?.status || "").toLowerCase();
+  const checkedAt = traceTime(health?.checked_at || health?.fetched_at);
+  if (status === "failed") return { title: "新聞來源暫時失敗", detail: "本輪未採用不完整來源，等待下一次重試" };
+  if (status === "stale") return { title: "目前使用最近成功快取", detail: checkedAt ? `最後成功 ${checkedAt}` : "等待來源恢復後更新" };
+  if (status === "pending") return { title: "新聞來源檢查中", detail: "等待本輪市場掃描完成" };
+  if (status === "no_event") return { title: "本輪沒有符合條件的公開新聞", detail: "來源掃描完成，沒有可列出的市場事件" };
+  return { title: "目前沒有可顯示的公開新聞", detail: "等待下一次市場掃描" };
+};
+
+const renderNewsList = (id, stories, providerRegistry = [], health = null) => {
   const container = document.getElementById(id);
   if (!container) return;
-  if (!stories?.length) { container.innerHTML = '<li class="empty">目前沒有可顯示的公開新聞</li>'; return; }
+  if (!stories?.length) {
+    const state = newsEmptyState(health);
+    container.innerHTML = `<li class="empty news-empty-state"><strong>${escapeHtml(state.title)}</strong><small>${escapeHtml(state.detail)}</small></li>`;
+    return;
+  }
   container.innerHTML = stories.slice(0, 5).map((story) => {
     // URL safety is release-provided.  The UI never infers trust from a
     // provider label or accepts an arbitrary URL from the payload.
@@ -1003,8 +1017,10 @@ const render = (snapshot) => {
   renderResearch(snapshot);
   const newsRegistry = snapshot.news?.provider_registry || [];
   const newsMarkets = snapshot.news?.markets || snapshot.news?.intelligence || snapshot.news;
-  renderNewsList("taiwan-news", newsMarkets?.taiwan?.stories || snapshot.news?.taiwan, newsRegistry);
-  renderNewsList("us-news", newsMarkets?.us?.stories || snapshot.news?.us, newsRegistry);
+  const newsHealth = Array.isArray(snapshot.news?.source_health) ? snapshot.news.source_health : [];
+  const newsHealthFor = (market) => newsHealth.find((item) => item?.key === `news_${market}`) || null;
+  renderNewsList("taiwan-news", newsMarkets?.taiwan?.stories || snapshot.news?.taiwan, newsRegistry, newsHealthFor("taiwan"));
+  renderNewsList("us-news", newsMarkets?.us?.stories || snapshot.news?.us, newsRegistry, newsHealthFor("us"));
 };
 
 // Telegram buttons carry the release and alert identity.  Resolve that
