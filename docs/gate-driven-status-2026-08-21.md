@@ -4,14 +4,15 @@
 
 ## 目前基線
 
-- Main HEAD：`60a2f0dc365cb19ae34ae6a689a5cfea4415154c`
+- Main HEAD：`72bfcc9989a8fb5d65065a6f38277ed0c901831e`（合併 PR #693）
 - 公開 Pages release：`release-faaa5b86acfc0db3`，manifest `ready`
 - 公開 Creator／News artifact：`ready`
 - Railway `/health`：HTTP 200、monitor `running`、Jin10 `healthy`
 - Railway GDELT：`HTTP_429`，bounded backoff；健康回呼 `HTTP_403`
 - Railway Gmail/Creator ingress：`configuration_missing`
-- 最新針對性測試：109 passed
-- 既有主線完整回歸：1328 passed（合併前基線；文件變更後未改動程式碼）
+- 最新針對性測試：Haojiao sanitized fixture 8 passed
+- 合併後主線完整回歸：1329 passed（另有 pytest cache 權限警告，不影響結果）
+- 回歸 fixture：`tests/fixtures/haojiao-20260821-sanitized.json`；只含公開摘要，解析結果維持 `unverified`
 
 ## P0 traceability matrix
 
