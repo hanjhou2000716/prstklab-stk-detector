@@ -224,6 +224,17 @@ def test_source_health_rows_use_the_same_canonical_state_as_the_aggregate():
     assert "const state = source.semantic_state || source.state || source.status;" in app
 
 
+def test_source_health_rows_render_creator_and_financialjuice_lineage():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "source.observability.morning_batch_state" in app
+    assert "source.observability.morning_batch_key" in app
+    assert "source.observability.daily_coverage_count" in app
+    assert "source.observability.last_snapshot_id" in app
+    assert "source.observability.last_observation_id" in app
+    assert "source.observability.last_telegram_delivery_status" in app
+    assert "source.observability.last_importance_gte_8_at" in app
+
+
 def test_source_health_investor_summary_uses_runtime_failure_count_when_present():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert "const declaredRuntimeFailure = Number(health.runtime_failure_count);" in app

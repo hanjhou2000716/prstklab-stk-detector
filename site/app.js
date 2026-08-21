@@ -544,7 +544,17 @@ const renderSourceHealth = (health, snapshot = {}) => {
         Number.isFinite(Number(source.observability.parser_error_count)) ? `解析失敗 ${Number(source.observability.parser_error_count)} 筆` : "",
         source.observability.last_delivery_at ? `最近送達 ${traceTime(source.observability.last_delivery_at)}` : "",
       ].filter(Boolean).join("｜") : "";
-    const detail = [issue, candidateNote, provenance, quality, freshness.join("｜"), external, creator].filter(Boolean).join("｜");
+    const lineage = source.observability && typeof source.observability === "object"
+      ? [
+        source.observability.morning_batch_state ? `晨批 ${source.observability.morning_batch_state}` : "",
+        source.observability.morning_batch_key ? `批次 ${source.observability.morning_batch_key}` : "",
+        Number.isFinite(Number(source.observability.daily_coverage_count)) ? `日覆蓋 ${Number(source.observability.daily_coverage_count)} 筆` : "",
+        source.observability.last_snapshot_id ? `快照 ${source.observability.last_snapshot_id}` : "",
+        source.observability.last_observation_id ? `觀測 ${source.observability.last_observation_id}` : "",
+        source.observability.last_telegram_delivery_status ? `Telegram ${source.observability.last_telegram_delivery_status}` : "",
+        source.observability.last_importance_gte_8_at ? `>=8 最近 ${traceTime(source.observability.last_importance_gte_8_at)}` : "",
+      ].filter(Boolean).join("｜") : "";
+    const detail = [issue, candidateNote, provenance, quality, freshness.join("｜"), external, creator, lineage].filter(Boolean).join("｜");
     return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${escapeHtml(state || "partial")}">${status}</em></li>`;
   }).join("");
   if (card) card.open = false;
