@@ -92,3 +92,34 @@ addresses and message bodies remain private. Targeted Railway/Gmail/health
 verification is `117 passed`, plus standalone compilation and Mini App/source
 health regression checks. Live Gmail OAuth/Pub/Sub configuration is still an
 external acceptance gate and is not claimed by this PR.
+
+## Post-merge evidence: Railway secret boundary and delivery acceptance
+
+Validated against main HEAD `6cc0a99ed3b41e2f0d1fda344bfe06b9ced030fe` after
+PR #689 (`fix: unify Railway delivery secret boundary`). The repository now
+uses one redacted secret resolver across Railway observation export, Creator
+delivery history, delivery callback, smoke validation and scheduled workflows.
+`RAILWAY_STATUS_SHARED_SECRET` takes precedence; the historical
+`DELIVERY_STATUS_SHARED_SECRET` remains a migration fallback until Railway
+reports `canonical_name_present=true`.
+
+Evidence captured on 2026-08-21 (Asia/Taipei):
+
+- Main full regression: `1328 passed`.
+- Renderer/Mini App/photo contract suite with local Chromium: `20 passed`;
+  `uv run python -m src.system_dry_run` reported `renderer_available=true`,
+  `card_dimensions=1080x1350`, and mocked delivery `delivered`.
+- Public Pages release smoke: `ok=true`, release
+  `release-faaa5b86acfc0db3`, market snapshot `d244146e6209880c`, all seven
+  manifest-bound artifacts downloaded and hash-verified.
+- Scoped Telegram photo workflow `32462571678` on main: `photo_card_dimensions=1080x1350`,
+  `photo_delivery_delivered=1`, `photo_delivery_failed=0`; Railway callback
+  returned `accepted` for the masked trace.
+- Railway `/health` then reported `delivery_status=delivered`, delivered `1`,
+  failed `0`, `receipt_matches=true`, and a recent receipt age. No recipient
+  identifiers or secret values were stored in this document.
+
+Remaining external gates are intentionally still visible: Railway Gmail
+OAuth/Pub/Sub configuration is missing, GDELT is bounded at HTTP 429 with no
+stale promotion, and Railway still reports the legacy secret name until the
+operator completes the canonical variable migration.
