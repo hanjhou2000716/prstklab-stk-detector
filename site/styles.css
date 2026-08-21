@@ -109,6 +109,16 @@
   min-height: 54px;
   padding: 13px 0;
 }
+.news-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-height: 64px;
+  text-align: center;
+}
+.news-empty-state strong { color: var(--accent); font-size: .82rem; }
+.news-empty-state small { margin-top: 0; color: var(--muted); }
 
 /* Shared summary contract: title, note/time and toggle always occupy the
    same three columns on every collapsible card. */
