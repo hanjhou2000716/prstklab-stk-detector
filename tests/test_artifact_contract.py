@@ -162,6 +162,46 @@ def test_source_health_accepts_external_observability_contract():
     assert validate_source_health(health) == []
 
 
+def test_source_health_accepts_railway_creator_and_financialjuice_lineage_fields():
+    health = _source_health()
+    health["sources"] = [
+        {
+            "key": "creator_public",
+            "status": "partial",
+            "semantic_state": "partial",
+            "observability": {
+                "morning_batch_count": 1,
+                "daily_coverage_count": 2,
+                "coverage_status": "partial",
+                "morning_batch_state": "ready",
+                "morning_batch_key": "creator-20260821-1030",
+                "consensus_status": "ready",
+                "last_release_id": "release-1",
+                "last_snapshot_id": "creator-snapshot-1",
+                "last_observation_id": "creator-observation-1",
+                "last_telegram_delivery_at": "2026-08-21T01:02:03+00:00",
+                "last_telegram_delivery_status": "delivered",
+            },
+        },
+        {
+            "key": "external_financialjuice",
+            "status": "partial",
+            "semantic_state": "partial",
+            "observability": {
+                "importance_gte_8_count": 1,
+                "last_importance_gte_8_at": "2026-08-21T01:02:03+00:00",
+                "decision": "pending_confirmation",
+                "last_release_id": "release-1",
+                "last_snapshot_id": "fj-snapshot-1",
+                "last_observation_id": "fj-observation-1",
+                "last_telegram_delivery_at": None,
+                "last_telegram_delivery_status": "not_checked",
+            },
+        },
+    ]
+    assert validate_source_health(health) == []
+
+
 def test_research_rejects_formal_candidates_exceeding_candidates():
     errors = validate_research(_research(sources=[{"market": "us", "strategy": "value", "scan_state": "complete", "status": "可用", "candidates": 0, "formal_candidates": 5}]))
     assert any("formal_candidates" in error for error in errors)

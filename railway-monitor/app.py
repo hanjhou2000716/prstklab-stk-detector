@@ -102,6 +102,35 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     load_poll_settings = _poll_config_module.load_poll_settings
 
 try:
+    from source_health_projection import project_source_health
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _source_health_spec = spec_from_file_location(
+        "railway_source_health_projection",
+        Path(__file__).with_name("source_health_projection.py"),
+    )
+    if _source_health_spec is None or _source_health_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/source_health_projection.py") from None
+    _source_health_module = module_from_spec(_source_health_spec)
+    _source_health_spec.loader.exec_module(_source_health_module)
+    project_source_health = _source_health_module.project_source_health
+
+try:
+    from health_state import HEALTH_LOCK, HEALTH_STATE, snapshot_health, update_health
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _health_state_spec = spec_from_file_location(
+        "railway_health_state",
+        Path(__file__).with_name("health_state.py"),
+    )
+    if _health_state_spec is None or _health_state_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/health_state.py") from None
+    _health_state_module = module_from_spec(_health_state_spec)
+    _health_state_spec.loader.exec_module(_health_state_module)
+    HEALTH_LOCK = _health_state_module.HEALTH_LOCK
+    HEALTH_STATE = _health_state_module.HEALTH_STATE
+    snapshot_health = _health_state_module.snapshot_health
+    update_health = _health_state_module.update_health
+
+try:
     from state_store_schema import initialize_state_schema
 except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
     _schema_spec = spec_from_file_location(
@@ -650,85 +679,8 @@ DISCOVERY_ACTION_ALIAS_GROUPS["energy_supply"] = ENERGY_DISCOVERY_ACTIONS
 DISCOVERY_ENTITIES = tuple(dict.fromkeys((*DISCOVERY_ENTITIES, "kuwait", "kuwaiti", "bahrain", "qatar", "saudi arabia", "uae", "oman", "科威特", "科威特國", "科威特国")))
 DISCOVERY_ACTIONS["energy"] = tuple(dict.fromkeys((*DISCOVERY_ACTIONS.get("energy", ()), *ENERGY_DISCOVERY_ACTIONS)))
 
-# Public, non-secret runtime diagnostics for Railway's /health endpoint.  This
-# deliberately contains timestamps, counts and error classes only; credentials
-# and response bodies never enter the health payload.
-HEALTH_LOCK = threading.Lock()
-HEALTH_STATE: dict[str, Any] = {
-    "status": "ok",
-    "service": "prstk-jin10-monitor",
-    "started_at": datetime.now(timezone.utc).isoformat(),
-    "jin10": {"status": "not_checked", "last_success_at": None, "last_failure_at": None, "item_count": 0, "error": None},
-    "gdelt": {"enabled": True, "status": "not_checked", "event_scan": "not_checked", "last_success_at": None, "last_failure_at": None, "article_count": 0, "alert_count": 0, "pending_count": 0, "pending_reasons": {}, "error": None, "stale_cache_used": False, "health_dispatch_status": "not_checked", "health_dispatch_error": None, "health_dispatch_next_retry_at": None},
-    "market_sync": {"status": "not_checked", "source_url": None, "fetched_at": None, "record_count": 0, "error": None},
-    "classification": {
-        "status": "not_checked",
-        "updated_at": None,
-        "classification_counts": {},
-        "unclassified_count": 0,
-        "reason_counts": {},
-    },
-    "delivery": {
-        "status": "not_checked",
-        "last_trace_id": None,
-        "last_outbox_status": None,
-        "last_receipt_status": None,
-        "counts": {},
-        "last_updated_at": None,
-        "last_error": None,
-    },
-    "monitor": {
-        "status": "starting",
-        "poll_interval_seconds": None,
-        "last_cycle_started_at": None,
-        "last_cycle_completed_at": None,
-    },
-    "gmail": {
-        "status": "not_configured",
-        "watch_status": "not_checked",
-        "last_notification_at": None,
-        "last_history_id": None,
-        "error": None,
-    },
-    # These projections are intentionally separate from the Gmail transport
-    # health.  A healthy Pub/Sub watch does not prove that a Creator or
-    # FinancialJuice message was parsed, released, or delivered.  News is
-    # produced by the Actions plane, so Railway reports it as not_checked
-    # until a release health snapshot is supplied.
-    "creator": {
-        "status": "not_checked", "received_count": 0, "parsed_count": 0,
-        "failed_count": 0, "duplicate_count": 0,
-        "public_observation_count": 0, "last_received_at": None,
-        "last_parsed_at": None, "last_failure_at": None,
-        "today_count": 0, "latest_count": 0,
-        "morning_batch_count": 0, "coverage_status": "not_checked",
-        "consensus_status": "not_checked", "last_release_id": None,
-        "last_telegram_delivery_at": None,
-    },
-    "financialjuice": {
-        "status": "not_checked", "received_count": 0, "parsed_count": 0,
-        "failed_count": 0, "duplicate_count": 0,
-        "public_observation_count": 0, "importance_gte_8_count": 0,
-        "pending_cluster_count": 0, "last_received_at": None,
-        "last_parsed_at": None, "last_failure_at": None,
-        "decision": "not_checked", "last_release_id": None,
-        "last_telegram_delivery_at": None,
-    },
-    "news": {
-        "status": "not_checked", "execution_plane": "github_actions",
-        "reason": "news_health_is_published_with_release_snapshot",
-        "last_success_at": None, "last_failure_at": None,
-        "provider_status": {}, "stories_ingested": 0,
-        "stories_deduped": 0, "stories_ranked": 0, "relevance_rejected": 0,
-    },
-}
 DELIVERY_STORE: SeenStore | None = None
 EMAIL_INGRESS: Any | None = None
-
-
-def update_health(component: str, **values: Any) -> None:
-    with HEALTH_LOCK:
-        HEALTH_STATE.setdefault(component, {}).update(values)
 
 
 def sync_external_source_health(diagnostics: Any) -> None:
@@ -739,16 +691,8 @@ def sync_external_source_health(diagnostics: Any) -> None:
     private store.  Missing diagnostics are represented as ``not_checked``
     rather than silently reported as healthy.
     """
-    if not isinstance(diagnostics, dict):
-        return
-    store = diagnostics.get("store")
-    values = store.get("source_health") if isinstance(store, dict) else None
-    if not isinstance(values, dict):
-        return
-    for component in ("creator", "financialjuice"):
-        source = values.get(component)
-        if isinstance(source, dict):
-            update_health(component, **source)
+    for component, source in project_source_health(diagnostics).items():
+        update_health(component, **source)
 
 
 def _non_negative_int(value: Any) -> int | None:
@@ -768,8 +712,7 @@ def health_snapshot() -> dict[str, Any]:
         except Exception:  # pragma: no cover - health must never crash probes
             update_health("creator", status="failed", error="health_projection_failed")
             update_health("financialjuice", status="failed", error="health_projection_failed")
-    with HEALTH_LOCK:
-        snapshot = json.loads(json.dumps(HEALTH_STATE))
+    snapshot = snapshot_health()
     monitor = snapshot.get("monitor")
     if isinstance(monitor, dict):
         monitor.update(monitor_heartbeat(monitor))

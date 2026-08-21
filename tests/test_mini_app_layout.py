@@ -148,6 +148,12 @@ def test_source_health_distinguishes_empty_scan_from_failure_and_exposes_slo_met
     assert '"狀態待確認"' in app
 
 
+def test_source_health_maps_canonical_no_new_content_and_provider_failures():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert '"no_events", "no_event", "no_new_content", "empty", "none"' in app
+    assert '"failed", "scan_failed", "failure", "error", "provider_failed", "parse_failed"' in app
+
+
 def test_research_candidates_have_optional_explainability_without_advice_language():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
@@ -222,6 +228,17 @@ def test_source_health_rows_use_the_same_canonical_state_as_the_aggregate():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert "const sourceState = (source) => source.semantic_state || source.state || source.status;" in app
     assert "const state = source.semantic_state || source.state || source.status;" in app
+
+
+def test_source_health_rows_render_creator_and_financialjuice_lineage():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "source.observability.morning_batch_state" in app
+    assert "source.observability.morning_batch_key" in app
+    assert "source.observability.daily_coverage_count" in app
+    assert "source.observability.last_snapshot_id" in app
+    assert "source.observability.last_observation_id" in app
+    assert "source.observability.last_telegram_delivery_status" in app
+    assert "source.observability.last_importance_gte_8_at" in app
 
 
 def test_source_health_investor_summary_uses_runtime_failure_count_when_present():

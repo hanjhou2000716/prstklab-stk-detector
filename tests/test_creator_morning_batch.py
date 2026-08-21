@@ -70,6 +70,17 @@ def test_no_content_is_distinct_from_parse_failure() -> None:
     assert result["rejected_count"] == 1
 
 
+def test_morning_batch_rejects_future_rows_relative_to_snapshot_boundary() -> None:
+    result = build_creator_morning_batch(
+        [_record("haojiao", "future", "2026-08-14T04:00:00Z")],
+        as_of=AS_OF,
+        expected_creators=("haojiao",),
+    )
+    assert result["state"] == "no_new_content"
+    assert result["missing_creators"] == ["haojiao"]
+    assert result["rejected_count"] == 1
+
+
 def test_morning_batch_is_bound_into_creator_release_hash() -> None:
     parent = {
         "release_id": "release-parent",

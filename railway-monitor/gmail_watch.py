@@ -73,7 +73,12 @@ def renewal_due(expiration: str | None, *, now: datetime | None = None, margin_h
     return parsed.astimezone(UTC) <= current + timedelta(hours=max(1, margin_hours))
 
 
-def health(config: GmailWatchConfig, cursor: Mapping[str, Any]) -> dict[str, Any]:
+def health(
+    config: GmailWatchConfig,
+    cursor: Mapping[str, Any],
+    *,
+    store_health: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     """Return a privacy-safe watch status and operational observability.
 
     Cursor identifiers (history/message IDs) are deliberately not copied into
@@ -114,19 +119,38 @@ def health(config: GmailWatchConfig, cursor: Mapping[str, Any]) -> dict[str, Any
         return 0
 
     expiration = cursor.get("watch_expiration")
+    store = store_health if isinstance(store_health, Mapping) else {}
+    def store_count(key: str, fallback: str | None = None) -> int:
+        value = store.get(key)
+        if value is None and fallback:
+            value = store.get(fallback)
+        try:
+            parsed = int(value or 0)
+        except (TypeError, ValueError, OverflowError):
+            return 0
+        return max(0, parsed)
+
+    observability = {
+        "observations": count("observation_count", "observations"),
+        "last_received_at": timestamp("last_notification_at", "received_at"),
+        "last_parsed_at": timestamp("last_parsed_at", "last_parse_at", "last_sync_at"),
+        "parser_error_count": count("parser_error_count", "dlq_count"),
+        "last_delivery_at": timestamp("last_delivery_at", "last_receipt_at"),
+        "state": state,
+        # These are counts/timestamps only.  History/message IDs and OAuth
+        # transport identifiers never cross this boundary.
+        "queue_pending_count": store_count("queue_pending_count") or count("queue_pending_count", "pending_count"),
+        "dead_letter_count": store_count("dead_letter_count", "dlq_count") or count("dead_letter_count", "dlq_count"),
+        "last_ingress_at": timestamp("last_notification_at"),
+        "last_sync_at": timestamp("last_sync_at"),
+        "history_cursor_present": bool(str(cursor.get("last_history_id") or "").strip()),
+    }
     return {
         "status": state,
         "missing": list(config.missing),
         "watch_active": watch_active,
         "watch_expiration": expiration,
-        "observability": {
-            "observations": count("observation_count", "observations"),
-            "last_received_at": timestamp("last_notification_at", "received_at"),
-            "last_parsed_at": timestamp("last_parsed_at", "last_parse_at", "last_sync_at"),
-            "parser_error_count": count("parser_error_count", "dlq_count"),
-            "last_delivery_at": timestamp("last_delivery_at", "last_receipt_at"),
-            "state": state,
-        },
+        "observability": observability,
     }
 
 

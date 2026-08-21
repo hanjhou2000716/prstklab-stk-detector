@@ -235,11 +235,21 @@ class EmailStore:
             observation_count = connection.execute("SELECT COUNT(*) FROM email_observations").fetchone()[0]
             dlq_count = connection.execute("SELECT COUNT(*) FROM email_dlq").fetchone()[0]
             public_count = connection.execute("SELECT COUNT(*) FROM public_observations").fetchone()[0]
+            # A message is pending only while it has been durably received
+            # but has not reached a terminal parser state.  Keep this count
+            # bounded to the private store; only the number is projected to
+            # the public health endpoint.
+            pending_count = connection.execute(
+                "SELECT COUNT(*) FROM email_observations "
+                "WHERE parse_status IN ('received', 'queued', 'pending')"
+            ).fetchone()[0]
         cursor = self.cursor()
         return {
             "status": "healthy" if cursor["last_sync_at"] else "no_new_content",
             "observation_count": int(observation_count),
             "dlq_count": int(dlq_count),
+            "queue_pending_count": int(pending_count),
+            "dead_letter_count": int(dlq_count),
             "public_observation_count": int(public_count),
             "cursor": cursor,
             "raw_content_stored": False,

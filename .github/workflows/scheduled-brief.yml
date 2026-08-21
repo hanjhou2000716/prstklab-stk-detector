@@ -20,6 +20,7 @@ on:
     - cron: "0 22 * * 0-4"
     - cron: "45 0 * * 1-5"
     - cron: "0 2 * * 1-5"
+    - cron: "30 2 * * 1-5"
     - cron: "45 3 * * 1-5"
     - cron: "15 5 * * 1-5"
     - cron: "45 6 * * 1-5"
@@ -132,7 +133,11 @@ jobs:
           elif [ -n "${CREATOR_RECORDS_PATH:-}" ] && [ -f "$CREATOR_RECORDS_PATH" ]; then
             arguments+=(--creator-records "$CREATOR_RECORDS_PATH")
           fi
-          if [ "${{ steps.window.outputs.slot }}" = "morning" ]; then
+          creator_schedule="${{ github.event.schedule }}"
+          if [ "${{ steps.window.outputs.slot }}" = "morning" ] || \
+             [ "$creator_schedule" = "30 2 * * 1-5" ] || \
+             [ "$creator_schedule" = "45 3 * * 1-5" ] || \
+             [ "$creator_schedule" = "15 5 * * 1-5" ]; then
             arguments+=(--creator-morning-batch)
           fi
           python -m src.release_manifest "${arguments[@]}"

@@ -133,7 +133,10 @@ def test_manifest_binds_morning_batch_to_market_snapshot_when_requested(tmp_path
             "content_origin": "haojiao",
             "episode_key": "episode-morning",
             "episode_title": "Morning public creator observation",
-            "published_at": "2026-08-04T10:07:00+08:00",
+            # The release snapshot is 10:00 Taipei (02:00 UTC); keep the
+            # fixture point-in-time valid by publishing before that boundary
+            # rather than allowing a future row into the batch.
+            "published_at": "2026-08-04T09:30:00+08:00",
             "claims": ["safe claim"],
             "verification_state": "unverified",
             "public_safe": True,
