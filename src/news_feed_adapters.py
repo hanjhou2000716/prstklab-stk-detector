@@ -38,7 +38,10 @@ def feed_catalog() -> list[dict[str, Any]]:
             continue
         catalog.append({
             "provider_id": provider["provider_id"],
+            # Preserve the full registry coverage set.  Using only the first
+            # market would skip a valid multi-market source in the US tab.
             "market": provider["markets"][0] if provider["markets"] else "global",
+            "markets": list(provider.get("markets") or ()),
             "kind": provider.get("feed_kind") or provider.get("fetch_method") or "rss",
             "url": provider.get("feed_url") or "",
             "timeout_seconds": provider.get("timeout_seconds", 8),
@@ -156,7 +159,10 @@ def fetch_official_market_news(
     health: list[dict[str, Any]] = []
     errors: list[dict[str, Any]] = []
     for item in catalog or feed_catalog():
-        if item.get("market") != market:
+        supported_markets = item.get("markets")
+        if not isinstance(supported_markets, list):
+            supported_markets = [item.get("market")]
+        if market not in supported_markets and "global" not in supported_markets and "cross_market" not in supported_markets:
             continue
         provider_id = str(item["provider_id"])
         url = str(item.get("url") or "")

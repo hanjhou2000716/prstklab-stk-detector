@@ -38,6 +38,7 @@ def test_catalog_uses_the_canonical_provider_registry_without_identity_drift():
         assert item["url"] == canonical.get("feed_url", "")
         assert item["source_tier"] == canonical["authority_tier"]
         assert item["enabled"] == canonical["enabled"]
+        assert item["markets"] == canonical["markets"]
 
 
 def test_discovery_providers_never_enter_official_feed_catalog():
@@ -95,3 +96,23 @@ def test_http_429_is_recorded_without_retrying_or_aborting():
     assert result["stories"] == []
     assert len(calls) == 2  # SEC and Fed each attempted once.
     assert all(item["status"] == "rate_limited" for item in result["source_health"] if item["provider"] in {"sec", "fed"})
+
+
+def test_custom_multimarket_source_is_fetched_for_the_requested_market():
+    result = fetch_official_market_news(
+        "us",
+        requester=lambda *_args, **_kwargs: Response(text="""
+            <rss><channel><item>
+              <title>US market breadth</title>
+              <link>https://www.cnyes.com/news/1</link>
+              <pubDate>Tue, 18 Aug 2026 12:00:00 GMT</pubDate>
+            </item></channel></rss>
+        """),
+        catalog=[{
+            "provider_id": "anue", "market": "taiwan", "markets": ["taiwan", "us"],
+            "kind": "rss", "url": "https://www.cnyes.com/rss", "enabled": True,
+            "source_tier": "market", "timeout_seconds": 8,
+        }],
+    )
+    assert result["market"] == "us"
+    assert result["stories"][0]["market"] == "us"
