@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "captured_at": "2026-08-22T09:05:00+08:00",
+  "kind": "raw-observation-windows-path-regression",
+  "commit": "5676d2f",
+  "targeted_command": "uv run pytest -q tests/test_raw_observation_store.py tests/test_production_evidence.py::test_market_snapshot_observation_persists_normalized_snapshot tests/test_refresh_market_data.py::test_write_snapshot_records_normalized_artifact_when_store_configured",
+  "targeted_result": {
+    "passed": 7,
+    "failed": 0
+  },
+  "full_regression_command": "uv run pytest -q --basetemp .pytest-full-20260822",
+  "full_regression_result": {
+    "passed": 1331,
+    "failed": 0,
+    "warnings": 0
+  },
+  "root_cause": "Windows legacy path handling rejected the raw observation temporary or destination file when RAW_OBSERVATION_ROOT was nested below a long OneDrive/pytest path.",
+  "fix": "Use a 24-character observation-id prefix for the immutable raw filename and a compact 12-character staging prefix; retain the full payload hash in SQLite metadata.",
+  "secrets_exposed": false,
+  "production_side_effects": false
+}
