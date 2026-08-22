@@ -13,6 +13,7 @@ from collections.abc import Callable
 from typing import Any
 
 from src.creator_delivery_contract import decide_creator_delivery
+from src.creator_intelligence_e2e import run_creator_intelligence_e2e
 from src.creator_intelligence_pipeline import build_creator_intelligence_release
 from src.creator_morning_batch import build_creator_morning_batch
 from src.creator_notification_e2e import run_creator_notification_e2e
@@ -249,6 +250,7 @@ def run_offline_e2e(
     financialjuice_lane = _financialjuice_offline_lane()
     creator_morning_lane = _creator_morning_offline_lane()
     creator_notification_lane = run_creator_notification_e2e()
+    creator_intelligence_lane = run_creator_intelligence_e2e()
     creator_delivery = decide_creator_delivery(
         {
             "episode_key": "production-e2e-creator-episode",
@@ -289,6 +291,7 @@ def run_offline_e2e(
         "financialjuice_compound_lane": financialjuice_lane["ok"] is True,
         "creator_morning_batch_lane": creator_morning_lane["ok"] is True,
         "creator_notification_e2e": creator_notification_lane["ok"] is True,
+        "creator_intelligence_e2e": creator_intelligence_lane["ok"] is True,
     }
     return {
         "ok": all(checks.values()),
@@ -316,6 +319,7 @@ def run_offline_e2e(
         "financialjuice_lane": financialjuice_lane,
         "creator_morning_batch": creator_morning_lane,
         "creator_notification_e2e": creator_notification_lane,
+        "creator_intelligence_e2e": creator_intelligence_lane,
     }
 
 
