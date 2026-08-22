@@ -77,12 +77,14 @@ the additional Windows long-path raw-observation fallback is deterministic and
 does not change the public observation schema.
 
 The latest read-only external capture is
-`docs/evidence/external-acceptance-2026-08-22T1626.json`. Pages serves a ready
-release and all seven declared public artifact hashes and market/research/event
-snapshot identities match. Railway remains `NEEDS_REVERIFY` for GDELT HTTP 429,
-health callback HTTP 403, missing Gmail watch configuration, and the pending
-canonical delivery-secret migration; no production Telegram delivery is
-inferred from this evidence.
+`docs/evidence/external-acceptance-2026-08-22T1403.json` (captured at
+`2026-08-22T14:04:32Z`). Pages serves a ready release and all seven declared
+public artifact hashes and market/research/event snapshot identities match.
+Railway is running, Jin10 is healthy, and the canonical delivery-secret
+migration is now verified (`migration_required=false`). Acceptance remains
+`NEEDS_REVERIFY` for GDELT HTTP 429, the HTTP 403 health callback, and missing
+Gmail watch configuration. No production Telegram delivery is inferred from
+this evidence.
 
 ## Fail-closed rules
 
