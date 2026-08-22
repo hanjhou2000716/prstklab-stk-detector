@@ -125,11 +125,26 @@ class RawObservationStore:
         payload_bytes = _canonical_bytes(payload)
         payload_hash = hashlib.sha256(payload_bytes).hexdigest()
         observation_id = self._observation_id(provider, endpoint, request_id, payload_hash)
-        relative = Path(provider) / fetched_at[:10] / f"{payload_hash}.json"
+        # The observation id is derived from provider, endpoint, request id
+        # and the full payload hash, so it is a stable content-addressed file
+        # name.  Using a 24-character prefix instead of the 64-character
+        # payload hash keeps the complete raw path usable on Windows/OneDrive
+        # roots near MAX_PATH; the full payload hash remains in immutable
+        # SQLite metadata.
+        relative = Path(provider) / fetched_at[:10] / f"{observation_id[:24]}.json"
         destination = self.root / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         if not destination.exists():
-            temporary = destination.with_name(f".{destination.name}.{observation_id}.tmp")
+            # Keep the staging name compact.  Including both the 64-character
+            # payload hash and the 32-character observation id here made the
+            # temporary path exceed Windows' legacy path limit when the store
+            # root lived below a long OneDrive/pytest directory.  The
+            # observation id is already content-addressed and unique for this
+            # destination.  A 12-character prefix keeps the staging path
+            # below Windows' legacy limit even for long OneDrive roots while
+            # retaining ample collision resistance within one date/provider
+            # directory.
+            temporary = destination.with_name(f".obs-{observation_id[:12]}.tmp")
             try:
                 write_bytes_with_retry(payload_bytes, temporary)
                 replace_with_retry(temporary, destination)
