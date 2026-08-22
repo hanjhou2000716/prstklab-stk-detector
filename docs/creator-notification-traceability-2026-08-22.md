@@ -21,7 +21,7 @@ configured or that a production recipient received a message.
 | FinancialJuice live Gmail ingress | Railway Gmail watch/PubSub configuration | read-only Railway health snapshot; controlled receipt still pending | `external-acceptance-2026-08-22T1115.json` (configuration-missing) | no fabricated event | NEEDS_REVERIFY |
 | Official-first news registry, routing, ranking and dedupe | `src/news_intelligence.py`, `src/news_feed_adapters.py`, `src/risk_news.py`, `src/creator_intelligence_e2e.py` | provider/domain/dedupe tests plus Taiwan/US scoped offline lane | `creator-intelligence-offline-e2e-2026-08-22.json` | Taiwan and US feeds exclude incompatible official sources; source failure remains visible | PASS |
 | Publish-before-notify and release binding | `src/release_gate.py`, `src/creator_dispatch.py`, `src/production_e2e.py` | release and offline E2E | production E2E report | invalid release blocks delivery | PASS |
-| Railway/GDELT external acceptance | `railway-monitor/`, `src/gdelt_client.py`, `src/external_acceptance.py` | read-only health/Pages capture and callback | `external-acceptance-2026-08-22T1215.json` | current Railway monitor is healthy, but Gmail is configuration-missing and GDELT is HTTP 429 with callback HTTP 403; no production promotion | NEEDS_REVERIFY |
+| Railway/GDELT external acceptance | `railway-monitor/`, `src/gdelt_client.py`, `src/external_acceptance.py` | read-only health/Pages capture and callback | `external-acceptance-2026-08-22T1230.json` (latest; prior `1215` retained) | Railway monitor remains healthy; Gmail is configuration-missing, GDELT returned invalid JSON, and the health callback is HTTP 403; no production promotion | NEEDS_REVERIFY |
 
 ## Verification commands
 
@@ -50,6 +50,6 @@ On branch `feat/external-acceptance-evidence`, the full repository regression
 completed with `1350 passed` on 2026-08-22.  The same checkpoint also passed
 full-source Ruff, Mypy (177 source files), Python compilation, JavaScript
 syntax validation and `git diff --check`.  Actions quality run `32551306014`
-and the corresponding security run `32551306004` are green for PR #707.
+and the corresponding security run `32551905218` are green for PR #707.
 These checks prove repository consistency only; they do not override the
 external `NEEDS_REVERIFY` rows above.
