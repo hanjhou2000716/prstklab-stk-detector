@@ -24,7 +24,8 @@ News, or Telegram pipeline. The latest local checkpoint is:
 - PR #707 quality and security checks: passed after commit `e5a6a90`.
 
 The latest redacted read-only external capture is
-`docs/evidence/external-acceptance-2026-08-22T1230.json`. Pages serves a
+`docs/evidence/external-acceptance-2026-08-22T1300.json` (the earlier
+`1215` and `1230` captures remain retained). Pages serves a
 `ready` manifest and Railway is running, but Gmail remains
 `configuration_missing`, GDELT returned `invalid_json`, and the health
 callback is `HTTP_403`. These are intentionally recorded as
