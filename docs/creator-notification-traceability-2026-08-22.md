@@ -43,3 +43,13 @@ The offline lane uses injected senders and synthetic recipient labels only. It
 does not contact Telegram, Gmail, Railway or market providers. Production
 acceptance remains a separate gate and must not be promoted from this local
 evidence.
+
+## Latest branch verification checkpoint
+
+On branch `feat/external-acceptance-evidence`, the full repository regression
+completed with `1350 passed` on 2026-08-22.  The same checkpoint also passed
+full-source Ruff, Mypy (177 source files), Python compilation, JavaScript
+syntax validation and `git diff --check`.  Actions quality run `32551306014`
+and the corresponding security run `32551306004` are green for PR #707.
+These checks prove repository consistency only; they do not override the
+external `NEEDS_REVERIFY` rows above.
