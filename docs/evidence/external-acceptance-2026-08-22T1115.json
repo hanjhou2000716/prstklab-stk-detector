@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "captured_at": "2026-08-22T11:15:21+08:00",
+  "kind": "external-acceptance-readonly",
+  "status": "NEEDS_REVERIFY",
+  "pages": {
+    "status": "ready",
+    "release_id": "release-2480a96338126a02",
+    "market_snapshot_id": "ba40fcac7f86291b",
+    "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
+    "event_snapshot_id": "event-a889bf10a4141a3b",
+    "manifest_validation_errors": []
+  },
+  "railway": {
+    "status": "ok",
+    "monitor": "running",
+    "heartbeat_status": "healthy",
+    "jin10": "healthy",
+    "gdelt": "failed",
+    "gdelt_error": "HTTP_429",
+    "health_dispatch_status": "permission_denied",
+    "health_dispatch_error": "HTTP_403",
+    "gmail": "configuration_missing",
+    "gmail_missing": [
+      "GMAIL_WATCH_TOPIC",
+      "GMAIL_WATCH_LABEL_IDS",
+      "GMAIL_OAUTH_STATE",
+      "GMAIL_PUBSUB_AUDIENCE",
+      "GMAIL_PUBSUB_SERVICE_ACCOUNT"
+    ],
+    "financialjuice": "no_new_content",
+    "creator": "no_new_content",
+    "delivery": "not_checked"
+  },
+  "safety": {
+    "read_only": true,
+    "secrets_read": false,
+    "telegram_sent": false,
+    "production_side_effects": false
+  },
+  "next_required": [
+    "configure_and_verify Gmail watch/PubSub settings",
+    "obtain a successful GDELT poll or bounded stale-cache evidence",
+    "verify Railway health callback permission",
+    "run a controlled single-recipient Telegram receipt test"
+  ]
+}
