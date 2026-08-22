@@ -72,9 +72,17 @@ validated 1080x1350 card, and the mocked Telegram boundary reported delivered.
 This remains offline evidence only; it does not replace a real single-recipient
 production receipt.
 
-The current local checkpoint has `1352 passed` in the full pytest regression;
+The current local checkpoint has `1353 passed` in the full pytest regression;
 the additional Windows long-path raw-observation fallback is deterministic and
 does not change the public observation schema.
+
+The latest read-only external capture is
+`docs/evidence/external-acceptance-2026-08-22T1626.json`. Pages serves a ready
+release and all seven declared public artifact hashes and market/research/event
+snapshot identities match. Railway remains `NEEDS_REVERIFY` for GDELT HTTP 429,
+health callback HTTP 403, missing Gmail watch configuration, and the pending
+canonical delivery-secret migration; no production Telegram delivery is
+inferred from this evidence.
 
 ## Fail-closed rules
 

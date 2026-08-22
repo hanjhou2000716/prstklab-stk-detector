@@ -17,7 +17,7 @@ The active continuation branch is `feat/external-acceptance-evidence`, stacked
 after PRs #703–#709. It does not introduce a second Creator, FinancialJuice,
 News, or Telegram pipeline. The latest local checkpoint is:
 
-- full repository regression: `1352 passed`;
+- full repository regression: `1353 passed`;
 - full Ruff, Mypy (177 source files), Python compilation and Mini App syntax
   checks: passed;
 - offline production E2E with the pinned Chromium runtime: passed, including
@@ -26,8 +26,8 @@ News, or Telegram pipeline. The latest local checkpoint is:
 - PR #707 quality and security checks: passed after commit `e5a6a90`.
 
 The latest redacted read-only external capture is
-`docs/evidence/external-acceptance-2026-08-22T1330.json` (the earlier
-`1006` through `1300` captures remain retained). Pages serves a
+`docs/evidence/external-acceptance-2026-08-22T1626.json` (earlier captures
+remain retained). Pages serves a
 `ready` manifest and Railway is running, but Gmail remains
 `configuration_missing`, GDELT returned `HTTP_429`, the health callback is
 `HTTP_403`, and the Railway runtime still requires migration from the legacy
