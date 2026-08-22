@@ -11,6 +11,12 @@ these states separate:
   monitored source is failed/configuration-missing. This is not a successful
   production acceptance.
 
+When a manifest is `ready`, the capture also downloads each manifest-declared
+public artifact and verifies its SHA-256 against `artifact_hashes`. The audit
+is fail-closed on missing paths, invalid hashes, unavailable files, or a
+mismatch. Artifact bytes are hashed in memory and never written to the report
+or retained by this read-only collector.
+
 Run locally with public URLs only:
 
 ```text

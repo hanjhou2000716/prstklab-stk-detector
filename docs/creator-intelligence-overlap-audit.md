@@ -14,10 +14,10 @@ evidence, a market-synchronisation proof, or a high-risk alert.
 ## Current canonical checkpoint (2026-08-22)
 
 The active continuation branch is `feat/external-acceptance-evidence`, stacked
-after PRs #703–#706. It does not introduce a second Creator, FinancialJuice,
+after PRs #703–#709. It does not introduce a second Creator, FinancialJuice,
 News, or Telegram pipeline. The latest local checkpoint is:
 
-- full repository regression: `1350 passed`;
+- full repository regression: `1352 passed`;
 - full Ruff, Mypy (177 source files), Python compilation and Mini App syntax
   checks: passed;
 - offline production E2E with the pinned Chromium runtime: passed, including
@@ -38,6 +38,10 @@ ready acceptance. These conditions are intentionally recorded as
 `NEEDS_REVERIFY`; they are not converted to `no_new_content`, healthy, or a
 production Telegram acceptance. No external write or production broadcast
 was performed by this checkpoint.
+
+The acceptance collector now verifies every manifest-declared public artifact
+by SHA-256 in memory. It fails closed on a missing path, invalid hash,
+unavailable artifact, or mismatch and never stores the downloaded bytes.
 
 ## Latest production evidence (2026-08-21)
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 
 import pytest
@@ -9,9 +10,10 @@ from src.external_acceptance import capture
 
 
 class _Response:
-    def __init__(self, status: int, value):
+    def __init__(self, status: int, value, content: bytes | None = None):
         self.status_code = status
         self._value = value
+        self.content = content
 
     def raise_for_status(self):
         if self.status_code >= 400:
@@ -42,21 +44,26 @@ def _health():
 
 
 def _manifest():
+    artifact = b'{"market":"ok"}\n'
     return {
         "status": "ready",
         "release_id": "release-1",
         "market_snapshot_id": "market-1",
         "research_snapshot_id": "research-1",
         "event_snapshot_id": "event-1",
-        "artifact_hashes": {"market.json": "a" * 64},
+        "artifact_hashes": {"market.json": hashlib.sha256(artifact).hexdigest()},
+        "artifact_paths": {"market.json": "data/market.json"},
+        "_artifact_fixture": artifact,
     }
 
 
 def test_capture_is_read_only_and_redacts_health_payload() -> None:
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
     report = capture(
         railway_url="https://railway.example/",
         public_url="https://pages.example/app/",
-        session=_Session([_Response(200, _health()), _Response(200, _manifest())]),
+        session=_Session([_Response(200, _health()), _Response(200, manifest), _Response(200, None, artifact)]),
     )
     assert report["status"] == "NEEDS_REVERIFY"
     assert "railway_gmail:configuration_missing" in report["blocking_reasons"]
@@ -66,14 +73,17 @@ def test_capture_is_read_only_and_redacts_health_payload() -> None:
     assert "private_token" not in encoded
     assert report["side_effects"] == {"telegram": False, "railway_write": False, "configuration_changed": False}
     assert report["pages"]["artifact_hash_count"] == 1
+    assert report["pages"]["artifact_hash_audit"]["verified_count"] == 1
 
 
 def test_capture_passes_when_health_and_manifest_are_ready() -> None:
     health = {"status": "ok", "service": "monitor", "gmail": {"status": "no_new_content"}, "gdelt": {"status": "no_event"}, "delivery": {"status": "not_checked"}}
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
     report = capture(
         railway_url="https://railway.example/",
         public_url="https://pages.example/",
-        session=_Session([_Response(200, health), _Response(200, _manifest())]),
+        session=_Session([_Response(200, health), _Response(200, manifest), _Response(200, None, artifact)]),
     )
     assert report["status"] == "PASS"
     assert report["blocking_reasons"] == []
@@ -94,14 +104,33 @@ def test_capture_fails_closed_when_legacy_delivery_secret_requires_migration() -
             "secret_values_exposed": False,
         },
     }
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
     report = capture(
         railway_url="https://railway.example/",
         public_url="https://pages.example/",
-        session=_Session([_Response(200, health), _Response(200, _manifest())]),
+        session=_Session([_Response(200, health), _Response(200, manifest), _Response(200, None, artifact)]),
     )
     assert report["status"] == "NEEDS_REVERIFY"
     assert report["blocking_reasons"] == ["railway_runtime_config:secret_migration_required"]
     assert report["railway"]["health"]["runtime_config"]["secret_values_exposed"] is False
+
+
+def test_capture_fails_closed_when_public_artifact_hash_mismatches() -> None:
+    manifest = _manifest()
+    manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([
+            _Response(200, {"gmail": {"status": "no_new_content"}, "gdelt": {"status": "no_event"}, "delivery": {"status": "not_checked"}}),
+            _Response(200, manifest),
+            _Response(200, None, b'{"market":"tampered"}\n'),
+        ]),
+    )
+    assert report["status"] == "NEEDS_REVERIFY"
+    assert report["pages"]["artifact_hash_audit"]["mismatch_count"] == 1
+    assert report["blocking_reasons"] == ["pages_artifact_hash_mismatch:market.json"]
 
 
 def test_capture_rejects_non_https_urls() -> None:

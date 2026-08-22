@@ -41,7 +41,7 @@
 
 ### Current continuation stack (2026-08-22)
 
-The canonical continuation is represented by PRs #703–#707:
+The canonical continuation is represented by PRs #703–#709:
 
 - #703 closes the offline Creator notification E2E lane.
 - #704 exposes release-bound FinancialJuice evidence in the Mini App.
@@ -50,6 +50,10 @@ The canonical continuation is represented by PRs #703–#707:
 - #707 records redacted Railway/Pages external evidence, fails closed when the
   Railway delivery-secret migration flag is live, and includes the safe
   operator runbook without changing production configuration.
+- #709 makes the read-only Pages acceptance evidence verify the SHA-256 of
+  every manifest-declared public artifact, rather than checking only the
+  manifest status and artifact count. Missing, invalid, unavailable, or
+  mismatched artifacts remain `NEEDS_REVERIFY`.
 
 All five PRs remain stacked and must be reviewed in order. The local branch
 checkpoint is green (`1350 passed` before the latest acceptance-contract test;
@@ -66,6 +70,10 @@ runtime installed: all contract checks passed, the renderer produced a
 validated 1080x1350 card, and the mocked Telegram boundary reported delivered.
 This remains offline evidence only; it does not replace a real single-recipient
 production receipt.
+
+The current local checkpoint has `1352 passed` in the full pytest regression;
+the additional Windows long-path raw-observation fallback is deterministic and
+does not change the public observation schema.
 
 ## Fail-closed rules
 

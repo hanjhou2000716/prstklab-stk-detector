@@ -10,7 +10,9 @@ production acceptance.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -92,6 +94,102 @@ def _fetch_json(url: str, *, timeout: float, session: requests.Session) -> tuple
     return status, value, None
 
 
+def _fetch_bytes(url: str, *, timeout: float, session: requests.Session) -> tuple[int | None, bytes | None, str | None]:
+    """Fetch one public artifact without retaining its payload in evidence.
+
+    Artifact verification is intentionally separate from ``_fetch_json``: a
+    release may contain JSON, images, or another public-safe binary.  Only the
+    status, byte hash and bounded error label leave this function.
+    """
+    try:
+        response = session.get(
+            url,
+            timeout=timeout,
+            headers={"Accept": "*/*", "Cache-Control": "no-cache", "User-Agent": "PRStK-external-acceptance"},
+        )
+        status = response.status_code
+        response.raise_for_status()
+        content = getattr(response, "content", None)
+        if not isinstance(content, (bytes, bytearray)):
+            return status, None, "missing_bytes"
+        return status, bytes(content), None
+    except requests.RequestException as exc:
+        return locals().get("status"), None, type(exc).__name__
+    except (TypeError, ValueError, OSError):
+        return locals().get("status"), None, "invalid_payload"
+
+
+_SHA256 = re.compile(r"^[0-9a-fA-F]{64}$")
+
+
+def _artifact_hash_audit(
+    manifest: dict[str, Any],
+    *,
+    public_root: str,
+    timeout: float,
+    session: requests.Session,
+) -> tuple[dict[str, Any], list[str]]:
+    """Verify every manifest-declared public artifact, fail-closed.
+
+    The report contains names and hashes only; it never stores artifact bytes
+    or response bodies.  Paths are constrained to relative public paths so a
+    malformed manifest cannot make the acceptance probe fetch an arbitrary
+    external URL.
+    """
+    hashes = manifest.get("artifact_hashes")
+    paths = manifest.get("artifact_paths")
+    audit: dict[str, Any] = {
+        "declared_count": len(hashes) if isinstance(hashes, dict) else 0,
+        "verified_count": 0,
+        "missing_count": 0,
+        "mismatch_count": 0,
+        "error_count": 0,
+        "mismatches": [],
+        "errors": [],
+    }
+    reasons: list[str] = []
+    if not isinstance(hashes, dict) or not hashes:
+        return audit, ["pages_artifact_hashes_missing"]
+    if not isinstance(paths, dict):
+        return audit, ["pages_artifact_paths_missing"]
+    for name, expected in hashes.items():
+        artifact_name = str(name)
+        expected_hash = str(expected or "").lower()
+        relative = paths.get(name)
+        if not _SHA256.fullmatch(expected_hash):
+            audit["error_count"] += 1
+            audit["errors"].append(artifact_name)
+            reasons.append(f"pages_artifact_hash_invalid:{artifact_name}")
+            continue
+        if not isinstance(relative, str) or not relative.strip() or relative.startswith(("/", "\\")):
+            audit["missing_count"] += 1
+            reasons.append(f"pages_artifact_path_missing:{artifact_name}")
+            continue
+        normalized = relative.replace("\\", "/")
+        if any(part in {"", ".", ".."} for part in normalized.split("/")):
+            audit["error_count"] += 1
+            audit["errors"].append(artifact_name)
+            reasons.append(f"pages_artifact_path_invalid:{artifact_name}")
+            continue
+        artifact_url = urljoin(public_root, normalized)
+        status, content, error = _fetch_bytes(artifact_url, timeout=timeout, session=session)
+        if content is None:
+            audit["error_count"] += 1
+            audit["errors"].append(artifact_name)
+            reasons.append(f"pages_artifact_unavailable:{artifact_name}:{error or status}")
+            continue
+        actual_hash = hashlib.sha256(content).hexdigest()
+        if actual_hash != expected_hash:
+            audit["mismatch_count"] += 1
+            audit["mismatches"].append(artifact_name)
+            reasons.append(f"pages_artifact_hash_mismatch:{artifact_name}")
+            continue
+        audit["verified_count"] += 1
+    audit["mismatches"] = sorted(set(audit["mismatches"]))
+    audit["errors"] = sorted(set(audit["errors"]))
+    return audit, reasons
+
+
 def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session: requests.Session | None = None) -> dict[str, Any]:
     """Fetch public health/manifest endpoints and return safe evidence."""
     railway = _require_https(railway_url, "Railway health URL")
@@ -114,16 +212,34 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
             # fail-closed until the operator migrates the variable; never
             # persist or expose its value here.
             reasons.append("railway_runtime_config:secret_migration_required")
+    artifact_audit: dict[str, Any] = {
+        "declared_count": 0,
+        "verified_count": 0,
+        "missing_count": 0,
+        "mismatch_count": 0,
+        "error_count": 0,
+        "mismatches": [],
+        "errors": [],
+    }
     if manifest_status != 200 or manifest is None:
         reasons.append(f"pages_manifest_unavailable:{manifest_error or manifest_status}")
     elif manifest.get("status") != "ready":
         reasons.append(f"pages_manifest_status:{manifest.get('status')}")
+    else:
+        artifact_audit, artifact_reasons = _artifact_hash_audit(
+            manifest,
+            public_root=public,
+            timeout=timeout,
+            session=client,
+        )
+        reasons.extend(artifact_reasons)
     pages: dict[str, Any] = {"http_status": manifest_status, "error": manifest_error}
     if manifest is not None:
         pages.update({key: manifest.get(key) for key in ("status", "release_id", "market_snapshot_id", "research_snapshot_id", "event_snapshot_id", "artifact_hashes")})
         hashes = manifest.get("artifact_hashes")
         pages["artifact_hash_count"] = len(hashes) if isinstance(hashes, dict) else 0
         pages.pop("artifact_hashes", None)
+    pages["artifact_hash_audit"] = artifact_audit
     return {
         "kind": "external-acceptance-readonly",
         "captured_at": datetime.now(UTC).isoformat(),
