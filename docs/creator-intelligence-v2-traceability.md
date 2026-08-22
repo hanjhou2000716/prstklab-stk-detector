@@ -39,6 +39,51 @@
   authoritative gate.  Gmail／Railway／Pages／Telegram production acceptance
   remains `NEEDS_REVERIFY` until an external receipt is captured.
 
+### Current continuation stack (2026-08-22)
+
+The canonical continuation is represented by PRs #703–#709:
+
+- #703 closes the offline Creator notification E2E lane.
+- #704 exposes release-bound FinancialJuice evidence in the Mini App.
+- #705 verifies the FinancialJuice panel through the browser contract.
+- #706 adds the release-gated, single-recipient photo acceptance lane.
+- #707 records redacted Railway/Pages external evidence, fails closed when the
+  Railway delivery-secret migration flag is live, and includes the safe
+  operator runbook without changing production configuration.
+- #709 makes the read-only Pages acceptance evidence verify the SHA-256 of
+  every manifest-declared public artifact, rather than checking only the
+  manifest status and artifact count. It also verifies the snapshot lineage of
+  the market, research and event JSON artifacts. Missing, invalid, unavailable,
+  mismatched, or cross-release artifacts remain `NEEDS_REVERIFY`.
+
+All five PRs remain stacked and must be reviewed in order. The local branch
+checkpoint is green (`1350 passed` before the latest acceptance-contract test;
+the targeted acceptance suite is green and full regression is rerun on this
+branch), but the external acceptance state is still `NEEDS_REVERIFY` because
+the live Railway service lacks Gmail watch configuration, GDELT is rate
+limited, the health callback returns HTTP 403, and the runtime reports a
+legacy delivery-secret migration requirement. This is deliberate fail-closed
+behavior; it is not evidence that there was no new Creator or FinancialJuice
+content.
+
+The offline production E2E gate was rerun with the pinned Playwright Chromium
+runtime installed: all contract checks passed, the renderer produced a
+validated 1080x1350 card, and the mocked Telegram boundary reported delivered.
+This remains offline evidence only; it does not replace a real single-recipient
+production receipt.
+
+The current local checkpoint has `1353 passed` in the full pytest regression;
+the additional Windows long-path raw-observation fallback is deterministic and
+does not change the public observation schema.
+
+The latest read-only external capture is
+`docs/evidence/external-acceptance-2026-08-22T1626.json`. Pages serves a ready
+release and all seven declared public artifact hashes and market/research/event
+snapshot identities match. Railway remains `NEEDS_REVERIFY` for GDELT HTTP 429,
+health callback HTTP 403, missing Gmail watch configuration, and the pending
+canonical delivery-secret migration; no production Telegram delivery is
+inferred from this evidence.
+
 ## Fail-closed rules
 
 - 未通過 provider parser、私有欄位或無法驗證的附件不得進入公開 Creator release。

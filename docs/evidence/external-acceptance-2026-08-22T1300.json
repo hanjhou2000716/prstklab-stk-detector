@@ -1,0 +1,153 @@
+{
+  "kind": "external-acceptance-readonly",
+  "captured_at": "2026-08-22T04:47:55.614963+00:00",
+  "status": "NEEDS_REVERIFY",
+  "blocking_reasons": [
+    "railway_gdelt:failed",
+    "railway_gmail:configuration_missing"
+  ],
+  "railway": {
+    "url": "https://loving-happiness-production-b1a9.up.railway.app/",
+    "http_status": 200,
+    "error": null,
+    "health": {
+      "jin10": {
+        "status": "healthy",
+        "last_success_at": "2026-08-22T04:45:49.849230+00:00",
+        "last_failure_at": null,
+        "item_count": 0,
+        "error": null
+      },
+      "gdelt": {
+        "status": "failed",
+        "event_scan": "not_checked",
+        "last_success_at": null,
+        "last_failure_at": "2026-08-22T04:43:45.798400+00:00",
+        "article_count": 0,
+        "alert_count": 0,
+        "pending_count": 0,
+        "pending_reasons": {},
+        "error": "invalid_json",
+        "stale_cache_used": false,
+        "health_dispatch_status": "permission_denied",
+        "health_dispatch_error": "HTTP_403",
+        "health_dispatch_next_retry_at": "2026-08-22T04:58:46.160457+00:00",
+        "poll_seconds": 900
+      },
+      "market_sync": {
+        "status": "not_checked",
+        "source_url": null,
+        "fetched_at": null,
+        "record_count": 0,
+        "error": null
+      },
+      "monitor": {
+        "status": "running",
+        "last_cycle_started_at": "2026-08-22T04:47:49.948351+00:00",
+        "last_cycle_completed_at": "2026-08-22T04:45:49.849256+00:00",
+        "heartbeat_status": "healthy",
+        "heartbeat_timeout_seconds": 300,
+        "last_cycle_age_seconds": 122,
+        "current_cycle_age_seconds": 2
+      },
+      "gmail": {
+        "status": "configuration_missing",
+        "watch_status": "configuration_missing",
+        "watch_expiration": null,
+        "missing": [
+          "GMAIL_WATCH_TOPIC",
+          "GMAIL_WATCH_LABEL_IDS",
+          "GMAIL_OAUTH_STATE",
+          "GMAIL_PUBSUB_AUDIENCE",
+          "GMAIL_PUBSUB_SERVICE_ACCOUNT"
+        ],
+        "error": null
+      },
+      "creator": {
+        "status": "no_new_content",
+        "received_count": 0,
+        "parsed_count": 0,
+        "failed_count": 0,
+        "duplicate_count": 0,
+        "public_observation_count": 0,
+        "last_failure_at": null,
+        "coverage_status": "not_checked",
+        "morning_batch_state": "not_checked",
+        "consensus_status": "not_checked",
+        "last_release_id": null,
+        "last_snapshot_id": null,
+        "last_observation_id": null,
+        "last_telegram_delivery_status": "not_checked"
+      },
+      "financialjuice": {
+        "status": "no_new_content",
+        "received_count": 0,
+        "parsed_count": 0,
+        "failed_count": 0,
+        "duplicate_count": 0,
+        "public_observation_count": 0,
+        "importance_gte_8_count": 0,
+        "pending_cluster_count": 0,
+        "last_failure_at": null,
+        "decision": "not_checked",
+        "last_release_id": null,
+        "last_snapshot_id": null,
+        "last_observation_id": null,
+        "last_telegram_delivery_status": "not_checked"
+      },
+      "news": {
+        "status": "not_checked",
+        "last_success_at": null,
+        "last_failure_at": null
+      },
+      "runtime": {
+        "status": "healthy",
+        "classifier_mode": "repository-shared",
+        "classifier_source_sha256": "35b558894135d96cd7ba0fce07091081e6e165aa6fbe1c5662919b16709bb458",
+        "keyword_bundle_sha256": "0ffdbe4a9b3106832e380cefcd37cffc023c64e8f9a27f672c65c012ffeab698",
+        "keyword_categories": 7,
+        "updated_at": "2026-08-22T01:21:46.415996+00:00",
+        "error": null
+      },
+      "runtime_config": {
+        "status": "healthy",
+        "delivery_secret_configured": true,
+        "canonical_name_present": false,
+        "legacy_name_present": true,
+        "active_name": "DELIVERY_STATUS_SHARED_SECRET",
+        "migration_required": true,
+        "secret_values_exposed": false
+      },
+      "delivery": {
+        "status": "not_checked",
+        "last_trace_id": null,
+        "last_receipt_status": null,
+        "receipt_matches_last_outbox": null,
+        "retryable_count": 0,
+        "due_retry_count": 0,
+        "last_delivered_count": null,
+        "last_failed_count": null,
+        "last_recipient_count": null,
+        "retention_days": 30
+      },
+      "status": "ok",
+      "service": "prstk-jin10-monitor",
+      "started_at": "2026-08-22T01:21:46.406235+00:00"
+    }
+  },
+  "pages": {
+    "http_status": 200,
+    "error": null,
+    "status": "ready",
+    "release_id": "release-2480a96338126a02",
+    "market_snapshot_id": "ba40fcac7f86291b",
+    "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
+    "event_snapshot_id": "event-a889bf10a4141a3b",
+    "artifact_hash_count": 7
+  },
+  "side_effects": {
+    "telegram": false,
+    "railway_write": false,
+    "configuration_changed": false
+  }
+}
