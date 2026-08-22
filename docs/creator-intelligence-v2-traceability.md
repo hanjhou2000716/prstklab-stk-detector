@@ -47,16 +47,19 @@ The canonical continuation is represented by PRs #703–#707:
 - #704 exposes release-bound FinancialJuice evidence in the Mini App.
 - #705 verifies the FinancialJuice panel through the browser contract.
 - #706 adds the release-gated, single-recipient photo acceptance lane.
-- #707 records redacted Railway/Pages external evidence and the safe operator
-  runbook without changing production configuration.
+- #707 records redacted Railway/Pages external evidence, fails closed when the
+  Railway delivery-secret migration flag is live, and includes the safe
+  operator runbook without changing production configuration.
 
 All five PRs remain stacked and must be reviewed in order. The local branch
-checkpoint is green (`1350 passed`; full Ruff/Mypy/compile checks passed), but
-the external acceptance state is still `NEEDS_REVERIFY` because the live
-Railway service lacks Gmail watch configuration, GDELT is failing with an
-invalid response, and the health callback returns HTTP 403. This is deliberate
-fail-closed behavior; it is not evidence that there was no new Creator or
-FinancialJuice content.
+checkpoint is green (`1350 passed` before the latest acceptance-contract test;
+the targeted acceptance suite is green and full regression is rerun on this
+branch), but the external acceptance state is still `NEEDS_REVERIFY` because
+the live Railway service lacks Gmail watch configuration, GDELT is rate
+limited, the health callback returns HTTP 403, and the runtime reports a
+legacy delivery-secret migration requirement. This is deliberate fail-closed
+behavior; it is not evidence that there was no new Creator or FinancialJuice
+content.
 
 ## Fail-closed rules
 

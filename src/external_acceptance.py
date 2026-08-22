@@ -107,6 +107,13 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
             state = health.get(section)
             if isinstance(state, dict) and str(state.get("status") or "") not in {"healthy", "no_new_content", "no_event", "not_checked"}:
                 reasons.append(f"railway_{section}:{state.get('status')}")
+        runtime_config = health.get("runtime_config")
+        if isinstance(runtime_config, dict) and runtime_config.get("migration_required") is True:
+            # A legacy delivery secret may keep the callback reachable, but it
+            # is not the canonical production contract.  Keep acceptance
+            # fail-closed until the operator migrates the variable; never
+            # persist or expose its value here.
+            reasons.append("railway_runtime_config:secret_migration_required")
     if manifest_status != 200 or manifest is None:
         reasons.append(f"pages_manifest_unavailable:{manifest_error or manifest_status}")
     elif manifest.get("status") != "ready":
