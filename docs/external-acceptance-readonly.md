@@ -39,9 +39,11 @@ The report deliberately includes configuration variable *names* (for example,
 which Gmail watch setting is missing) but never values, raw email content,
 recipient IDs, tokens, cookies or full upstream response bodies.
 
-The post-refresh capture at
-`docs/evidence/external-acceptance-2026-08-22T0810.json` confirms that the
-new Pages release is ready and all seven public artifact hashes and snapshot
-identities match. It remains `NEEDS_REVERIFY` for external-only blockers:
-GDELT HTTP 429, a health callback HTTP 403, missing Gmail watch configuration,
-and the pending Railway delivery-secret migration.
+The latest post-refresh capture at
+`docs/evidence/external-acceptance-2026-08-22T1626.json` confirms that the
+current Pages release is ready and all seven public artifact hashes and
+snapshot identities match. It remains `NEEDS_REVERIFY` for external-only
+blockers: GDELT HTTP 429, a health callback HTTP 403, missing Gmail watch
+configuration, and the pending Railway delivery-secret migration. These
+conditions remain fail-closed; no production promotion or Telegram delivery
+is inferred from this read-only capture.
