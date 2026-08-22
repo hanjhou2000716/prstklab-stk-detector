@@ -18,6 +18,7 @@ from src.creator_intelligence_pipeline import build_creator_intelligence_release
 from src.creator_morning_batch import build_creator_morning_batch
 from src.creator_notification_e2e import run_creator_notification_e2e
 from src.external_source_parsers import parse_financialjuice_email
+from src.financialjuice_notification_e2e import run_financialjuice_notification_e2e
 from src.financialjuice_priority import project_financialjuice_priority
 from src.production_acceptance import validate_production_bundle
 from src.system_dry_run import run_dry_run
@@ -251,6 +252,7 @@ def run_offline_e2e(
     creator_morning_lane = _creator_morning_offline_lane()
     creator_notification_lane = run_creator_notification_e2e()
     creator_intelligence_lane = run_creator_intelligence_e2e()
+    financialjuice_notification_lane = run_financialjuice_notification_e2e()
     creator_delivery = decide_creator_delivery(
         {
             "episode_key": "production-e2e-creator-episode",
@@ -289,6 +291,7 @@ def run_offline_e2e(
         "creator_release_contract": creator_release["status"] == "ready"
         and creator_release["parent_release_id"] == bundle["manifest"]["release_id"],
         "financialjuice_compound_lane": financialjuice_lane["ok"] is True,
+        "financialjuice_notification_e2e": financialjuice_notification_lane["ok"] is True,
         "creator_morning_batch_lane": creator_morning_lane["ok"] is True,
         "creator_notification_e2e": creator_notification_lane["ok"] is True,
         "creator_intelligence_e2e": creator_intelligence_lane["ok"] is True,
@@ -317,6 +320,7 @@ def run_offline_e2e(
             "insight_count": len(creator_release.get("insights") or []),
         },
         "financialjuice_lane": financialjuice_lane,
+        "financialjuice_notification_e2e": financialjuice_notification_lane,
         "creator_morning_batch": creator_morning_lane,
         "creator_notification_e2e": creator_notification_lane,
         "creator_intelligence_e2e": creator_intelligence_lane,
