@@ -133,6 +133,15 @@ class RawObservationStore:
         # SQLite metadata.
         relative = Path(provider) / fetched_at[:10] / f"{observation_id[:24]}.json"
         destination = self.root / relative
+        # Keep the human-readable provider/date layout whenever it fits.  A
+        # pytest/OneDrive root can already be close to Windows' legacy
+        # MAX_PATH, however, and even the compact filename then cannot be
+        # atomically published.  Fall back to a deterministic content-
+        # addressed object path; the full provenance remains in SQLite and
+        # callers only use the relative location recorded below.
+        if len(str(destination)) >= 240:
+            relative = Path("o") / f"{observation_id}.json"
+            destination = self.root / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         if not destination.exists():
             # Keep the staging name compact.  Including both the 64-character
