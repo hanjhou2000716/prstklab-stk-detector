@@ -1,0 +1,22 @@
+{
+  "evidence_id": "EVID-MINIAPP-BROWSER-20260821",
+  "captured_at": "2026-08-21T14:00:00+08:00",
+  "commit": "5a591ba5fe09d1f59bbeda7ba6fbdabb845d83fb",
+  "test_command": "uv run pytest -q tests/test_mini_app_browser_contract.py tests/test_creator_insight_ui_contract.py",
+  "result": "pass",
+  "passed": 3,
+  "failed": 0,
+  "scope": [
+    "local HTTP server with checked-in Mini App",
+    "Playwright Chromium DOM shell",
+    "creator insight panel contract",
+    "UTF-8 document and no horizontal overflow",
+    "collapsible technical drawer interaction"
+  ],
+  "not_proven": [
+    "Telegram native WebView interaction",
+    "live creator ingress",
+    "live Telegram delivery receipt"
+  ],
+  "status": "needs_external_reverify"
+}

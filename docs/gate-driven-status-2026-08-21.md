@@ -6,12 +6,12 @@
 
 - 程式驗證基線：`42ee0e5035c22fb4c36dd80afb6a1aa4cbb2da4b`（PR #697 之前的 runtime code）
 - 證據文件合併：PR #698，merge commit `cd5eb3ed0a2a829db0abedf40a488a3b563a9c22`；該合併不改變 runtime。
-- 公開 Pages release：`release-faaa5b86acfc0db3`，manifest `ready`
+- 公開 Pages release：`release-2480a96338126a02`，manifest `ready`（refresh-dashboard [32485118287](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32485118287)）
 - 公開 Creator／News artifact：`ready`
 - Railway `/health`：HTTP 200、monitor `running`、Jin10 `healthy`
 - Railway GDELT：`HTTP_429`，bounded backoff；健康回呼 `HTTP_403`
 - Railway Gmail/Creator ingress：`configuration_missing`
-- 最新針對性測試：Haojiao sanitized fixture 8 passed；正式 renderer 離線 E2E 亦已通過
+- 最新針對性測試：Haojiao sanitized fixture 8 passed；正式 renderer 離線 E2E 亦已通過；Mini App Playwright 瀏覽器契約 3 passed（360/390/desktop shell、UTF-8、無水平溢位）
 - 合併後主線完整回歸：1329 passed（另有 pytest cache 權限警告，不影響結果）
 - 回歸 fixture：`tests/fixtures/haojiao-20260821-sanitized.json`；只含公開摘要，解析結果維持 `unverified`
 - 最新 main quality gate：PR #697 的 `Quality and delivery dry-run` 通過；目前
