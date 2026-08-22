@@ -11,6 +11,28 @@ The three configured providers are `haojiao`, `jenny`, and `gooaye`. They are
 editorial enrichment only. They cannot independently become official event
 evidence, a market-synchronisation proof, or a high-risk alert.
 
+## Current canonical checkpoint (2026-08-22)
+
+The active continuation branch is `feat/external-acceptance-evidence`, stacked
+after PRs #703–#706. It does not introduce a second Creator, FinancialJuice,
+News, or Telegram pipeline. The latest local checkpoint is:
+
+- full repository regression: `1350 passed`;
+- full Ruff, Mypy (177 source files), Python compilation and Mini App syntax
+  checks: passed;
+- canonical overlap and generated-bundle provenance audit: passed;
+- PR #707 quality and security checks: passed after commit `e5a6a90`.
+
+The latest redacted read-only external capture is
+`docs/evidence/external-acceptance-2026-08-22T1300.json` (the earlier
+`1215` and `1230` captures remain retained). Pages serves a
+`ready` manifest and Railway is running, but Gmail remains
+`configuration_missing`, GDELT returned `invalid_json`, and the health
+callback is `HTTP_403`. These are intentionally recorded as
+`NEEDS_REVERIFY`; they are not converted to `no_new_content`, healthy, or a
+production Telegram acceptance. No external write or production broadcast
+was performed by this checkpoint.
+
 ## Latest production evidence (2026-08-21)
 
 The post-refresh acceptance evidence supersedes the older checkpoint notes
