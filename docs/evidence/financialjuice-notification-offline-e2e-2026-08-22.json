@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "captured_at": "2026-08-22T00:00:00Z",
+  "kind": "financialjuice-notification-offline-e2e",
+  "command": "uv run pytest -q tests/test_financialjuice_notification_e2e.py",
+  "status": "PASS",
+  "checks": {
+    "compound_item_is_eligible": true,
+    "vendor_threshold_preserved": true,
+    "vendor_score_does_not_change_risk": true,
+    "caption_bounded": true,
+    "release_bound_deep_link": true,
+    "partial_delivery_isolated": true,
+    "retry_only_failed_recipient": true,
+    "replay_suppressed": true,
+    "receipt_lineage": true,
+    "recipient_ids_hashed": true
+  },
+  "delivery": {
+    "first_status": "partial",
+    "second_status": "delivered",
+    "replay_status": "already_delivered",
+    "receipt_count": 3
+  },
+  "safety": {
+    "network_used": false,
+    "secrets_used": false,
+    "production_side_effects": false
+  },
+  "external_acceptance": "NEEDS_REVERIFY"
+}

@@ -1,0 +1,40 @@
+{
+  "evidence_type": "offline_creator_intelligence_e2e",
+  "captured_at": "2026-08-22T03:00:00Z",
+  "mode": "SIMULATED",
+  "ok": true,
+  "checks": {
+    "latest_per_creator": true,
+    "aligned_consensus_is_not_signal": true,
+    "divergence_visible": true,
+    "creator_market_correlation": true,
+    "taiwan_news_is_scoped": true,
+    "us_news_is_scoped": true,
+    "news_dedupe_is_bounded": true
+  },
+  "consensus": {
+    "state": "aligned",
+    "contributors": ["haojiao", "jenny"],
+    "topic_count": 2,
+    "is_investment_signal": false
+  },
+  "divergent_consensus": {
+    "state": "mixed",
+    "divergence_visible": true
+  },
+  "correlation": {
+    "state": "aligned",
+    "evidence_alignment": "aligned",
+    "matched_entities": ["tsm"]
+  },
+  "news": {
+    "taiwan_count": 2,
+    "taiwan_excluded": 1,
+    "us_count": 2,
+    "us_providers": ["anue", "fed"]
+  },
+  "network_used": false,
+  "secrets_used": false,
+  "production_side_effects": false,
+  "external_acceptance": "separate_gate; Gmail, GDELT and Railway delivery require live credentials/health evidence"
+}
