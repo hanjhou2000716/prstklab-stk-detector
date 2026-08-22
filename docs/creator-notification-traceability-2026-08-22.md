@@ -14,10 +14,10 @@ configured or that a production recipient received a message.
 | Per-recipient isolation and privacy-safe receipt | `src/creator_notification.py`, `src/creator_photo_delivery.py` | two-recipient injected sender | offline E2E receipt statuses | raw chat IDs excluded | PASS |
 | Morning digest and late-delta deduplication | `src/creator_notification.py` | digest/replay/late-delta lane | offline E2E | repeated key suppressed | PASS |
 | FinancialJuice compound parsing and priority | `src/external_source_parsers.py`, `src/financialjuice_priority.py` | compound fixture | `financialjuice_compound_lane` | vendor importance cannot change PRStK risk | PASS |
-| FinancialJuice live Gmail ingress | Railway Gmail watch/PubSub configuration | live health and one controlled receipt | external health currently configuration-missing | no fabricated event | NEEDS_REVERIFY |
+| FinancialJuice live Gmail ingress | Railway Gmail watch/PubSub configuration | live health and one controlled receipt | `external-acceptance-2026-08-22T1006.json` (configuration-missing) | no fabricated event | NEEDS_REVERIFY |
 | Official-first news registry, routing, ranking and dedupe | `src/news_intelligence.py`, `src/news_feed_adapters.py`, `src/risk_news.py` | provider/domain/dedupe tests | canonical overlap audit | source failure remains visible | PASS |
 | Publish-before-notify and release binding | `src/release_gate.py`, `src/creator_dispatch.py`, `src/production_e2e.py` | release and offline E2E | production E2E report | invalid release blocks delivery | PASS |
-| Railway/GDELT external acceptance | `railway-monitor/`, `src/gdelt_client.py` | health endpoint and callback | public acceptance evidence | bounded 429/403 handling | NEEDS_REVERIFY |
+| Railway/GDELT external acceptance | `railway-monitor/`, `src/gdelt_client.py` | health endpoint and callback | `external-acceptance-2026-08-22T1006.json` | bounded 429/403 handling | NEEDS_REVERIFY |
 
 ## Verification commands
 
