@@ -137,11 +137,19 @@ def test_mini_app_renders_financialjuice_evidence_from_release_fixture() -> None
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
             page = browser.new_page()
+            manifest_failed = False
 
             def fulfill_release(route) -> None:  # type: ignore[no-untyped-def]
                 url = route.request.url
                 if "/data/release-manifest.json" in url:
-                    route.fulfill(status=200, content_type="application/json", body=manifest_text)
+                    if manifest_failed:
+                        route.fulfill(
+                            status=200,
+                            content_type="application/json",
+                            body=json.dumps({"status": "invalid", "validation_errors": ["fixture failure"]}),
+                        )
+                    else:
+                        route.fulfill(status=200, content_type="application/json", body=manifest_text)
                 elif "/data/market.json" in url:
                     route.fulfill(status=200, content_type="application/json", body=market_text)
                 else:
@@ -171,6 +179,16 @@ def test_mini_app_renders_financialjuice_evidence_from_release_fixture() -> None
             ):
                 assert expected in rendered
             assert page.locator("#external-intelligence").get_attribute("hidden") is None
+
+            # A later invalid publication must keep the same validated release
+            # instead of leaving the app in a permanent loading/error state.
+            manifest_failed = True
+            page.reload(wait_until="domcontentloaded")
+            page.wait_for_selector("#external-intelligence-content .external-insight", state="attached")
+            assert page.locator("#data-status").text_content() == "資料降級"
+            assert "目前沿用上一個成功版本" in (page.locator("#market-focus").text_content() or "")
+            assert "資料降級" in (page.locator("#release-health").text_content() or "")
+            assert "公開外部事件（測試）" in (page.locator("#external-intelligence-content").text_content() or "")
             browser.close()
     except Exception as exc:
         if "Executable doesn't exist" in str(exc) or "executable doesn't exist" in str(exc):
