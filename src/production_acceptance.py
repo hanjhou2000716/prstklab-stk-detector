@@ -7,8 +7,11 @@ deliverable.
 
 from __future__ import annotations
 
+import argparse
+import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 REQUIRED_RESEARCH_STRATEGIES = frozenset({
@@ -27,6 +30,50 @@ REQUIRED_RESEARCH_STRATEGIES = frozenset({
 class AcceptanceResult:
     allowed: bool
     errors: tuple[str, ...] = field(default_factory=tuple)
+
+
+def _read_json_object(path: Path) -> dict[str, Any]:
+    """Read one JSON object for the acceptance CLI without crossing its root."""
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError(f"JSON artifact must be an object: {path.name}")
+    return value
+
+
+def load_acceptance_bundle(*, manifest_path: Path, site_root: Path | None = None) -> dict[str, dict[str, Any]]:
+    """Load the three required release artifacts referenced by a manifest.
+
+    This is intentionally separate from the Pages network gate: it gives CI,
+    operators and incident responders a deterministic local command that uses
+    the exact manifest paths while rejecting path traversal and missing files.
+    """
+    manifest_path = manifest_path.resolve()
+    root = (site_root or manifest_path.parent.parent).resolve()
+    try:
+        manifest_path.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("manifest must be inside site_root") from exc
+    manifest = _read_json_object(manifest_path)
+    paths = manifest.get("artifact_paths")
+    if not isinstance(paths, dict):
+        raise ValueError("manifest artifact_paths is missing")
+    artifacts: dict[str, dict[str, Any]] = {"manifest": manifest}
+    artifact_keys = {
+        "market.json": "market",
+        "research-report.json": "research",
+        "event-ledger.json": "event-ledger",
+    }
+    for name, key in artifact_keys.items():
+        raw_path = paths.get(name)
+        if not isinstance(raw_path, str) or not raw_path.strip():
+            raise ValueError(f"manifest path missing: {name}")
+        target = (root / raw_path).resolve()
+        try:
+            target.relative_to(root)
+        except ValueError as exc:
+            raise ValueError(f"artifact path leaves site_root: {name}") from exc
+        artifacts[key] = _read_json_object(target)
+    return artifacts
 
 
 def _count(value: Any) -> int:
@@ -241,4 +288,52 @@ def validate_production_bundle(
         if str(event.get("severity") or "") in {"high-risk", "critical"} and not event.get("source_evidence"):
             errors.append("high-risk event is missing source evidence")
     return AcceptanceResult(not errors, tuple(sorted(set(errors))))
+
+
+def _build_cli_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Validate a local PRStK release bundle.")
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        required=True,
+        help="Path to release-manifest.json (normally site/data/release-manifest.json).",
+    )
+    parser.add_argument(
+        "--site-root",
+        type=Path,
+        help="Root containing the manifest's artifact paths; defaults to the manifest's site root.",
+    )
+    parser.add_argument(
+        "--require-production-research",
+        action="store_true",
+        help="Require a complete production research matrix instead of allowing a legacy snapshot.",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Run a fail-closed local acceptance check and emit machine-readable JSON."""
+    args = _build_cli_parser().parse_args(argv)
+    try:
+        bundle = load_acceptance_bundle(manifest_path=args.manifest, site_root=args.site_root)
+        result = validate_production_bundle(
+            manifest=bundle["manifest"],
+            market=bundle["market"],
+            research=bundle["research"],
+            events=bundle["event-ledger"],
+            require_production_research=args.require_production_research,
+        )
+        payload = {
+            "allowed": result.allowed,
+            "release_id": bundle["manifest"].get("release_id"),
+            "errors": list(result.errors),
+        }
+    except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
+        payload = {"allowed": False, "release_id": None, "errors": [str(exc)]}
+    print(json.dumps(payload, ensure_ascii=False, sort_keys=True))
+    return 0 if payload["allowed"] else 1
+
+
+if __name__ == "__main__":  # pragma: no cover - exercised through the CLI smoke test
+    raise SystemExit(main())
 
