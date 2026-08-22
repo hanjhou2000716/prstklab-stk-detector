@@ -1,0 +1,24 @@
+{
+  "evidence_type": "financialjuice_mini_app_browser_e2e",
+  "captured_at": "2026-08-22T03:00:00+00:00",
+  "status": "PASS",
+  "test_command": "uv run pytest -q tests/test_mini_app_browser_contract.py tests/test_financialjuice_mini_app_contract.py tests/test_financialjuice_notification_e2e.py tests/test_creator_intelligence_e2e.py tests/test_production_e2e.py",
+  "checks": {
+    "hash_bound_ready_release_fixture": true,
+    "financialjuice_row_rendered": true,
+    "vendor_priority_separate_from_prstk_risk": true,
+    "waiting_official_and_market_evidence_visible": true,
+    "release_snapshot_observation_lineage_visible": true,
+    "https_source_link_visible": true,
+    "creator_and_financialjuice_regression": true,
+    "tests_passed": 14
+  },
+  "side_effects": {
+    "network": false,
+    "secrets_read": false,
+    "telegram_sent": false,
+    "railway_written": false,
+    "production_data_written": false
+  },
+  "external_acceptance": "separate gate; Railway Gmail/GDELT and real Telegram receipt remain NEEDS_REVERIFY"
+}
