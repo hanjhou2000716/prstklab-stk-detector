@@ -40,8 +40,10 @@ production Telegram acceptance. No external write or production broadcast
 was performed by this checkpoint.
 
 The acceptance collector now verifies every manifest-declared public artifact
-by SHA-256 in memory. It fails closed on a missing path, invalid hash,
-unavailable artifact, or mismatch and never stores the downloaded bytes.
+by SHA-256 in memory and checks the snapshot identity of the market, research
+and event JSON artifacts against the manifest. It fails closed on a missing
+path, invalid hash, unavailable artifact, mismatch, or cross-release snapshot
+and never stores the downloaded bytes.
 
 ## Latest production evidence (2026-08-21)
 

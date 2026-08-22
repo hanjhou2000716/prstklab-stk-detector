@@ -52,8 +52,9 @@ The canonical continuation is represented by PRs #703–#709:
   operator runbook without changing production configuration.
 - #709 makes the read-only Pages acceptance evidence verify the SHA-256 of
   every manifest-declared public artifact, rather than checking only the
-  manifest status and artifact count. Missing, invalid, unavailable, or
-  mismatched artifacts remain `NEEDS_REVERIFY`.
+  manifest status and artifact count. It also verifies the snapshot lineage of
+  the market, research and event JSON artifacts. Missing, invalid, unavailable,
+  mismatched, or cross-release artifacts remain `NEEDS_REVERIFY`.
 
 All five PRs remain stacked and must be reviewed in order. The local branch
 checkpoint is green (`1350 passed` before the latest acceptance-contract test;

@@ -15,7 +15,9 @@ When a manifest is `ready`, the capture also downloads each manifest-declared
 public artifact and verifies its SHA-256 against `artifact_hashes`. The audit
 is fail-closed on missing paths, invalid hashes, unavailable files, or a
 mismatch. Artifact bytes are hashed in memory and never written to the report
-or retained by this read-only collector.
+or retained by this read-only collector. For the primary market, research and
+event JSON artifacts it also compares each artifact's `snapshot_id` with the
+corresponding snapshot ID in the manifest; a lineage mismatch is fail-closed.
 
 Run locally with public URLs only:
 

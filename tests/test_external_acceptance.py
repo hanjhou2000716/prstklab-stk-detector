@@ -44,7 +44,7 @@ def _health():
 
 
 def _manifest():
-    artifact = b'{"market":"ok"}\n'
+    artifact = b'{"market":"ok","snapshot_id":"market-1"}\n'
     return {
         "status": "ready",
         "release_id": "release-1",
@@ -131,6 +131,25 @@ def test_capture_fails_closed_when_public_artifact_hash_mismatches() -> None:
     assert report["status"] == "NEEDS_REVERIFY"
     assert report["pages"]["artifact_hash_audit"]["mismatch_count"] == 1
     assert report["blocking_reasons"] == ["pages_artifact_hash_mismatch:market.json"]
+
+
+def test_capture_fails_closed_when_public_snapshot_identity_mismatches() -> None:
+    manifest = _manifest()
+    artifact = b'{"market":"ok","snapshot_id":"market-other"}\n'
+    manifest["artifact_hashes"]["market.json"] = hashlib.sha256(artifact).hexdigest()
+    manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([
+            _Response(200, {"gmail": {"status": "no_new_content"}, "gdelt": {"status": "no_event"}, "delivery": {"status": "not_checked"}}),
+            _Response(200, manifest),
+            _Response(200, None, artifact),
+        ]),
+    )
+    assert report["status"] == "NEEDS_REVERIFY"
+    assert report["pages"]["artifact_hash_audit"]["snapshot_mismatch_count"] == 1
+    assert report["blocking_reasons"] == ["pages_artifact_snapshot_mismatch:market.json"]
 
 
 def test_capture_rejects_non_https_urls() -> None:

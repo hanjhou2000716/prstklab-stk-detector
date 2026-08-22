@@ -144,8 +144,10 @@ def _artifact_hash_audit(
         "missing_count": 0,
         "mismatch_count": 0,
         "error_count": 0,
+        "snapshot_mismatch_count": 0,
         "mismatches": [],
         "errors": [],
+        "snapshot_errors": [],
     }
     reasons: list[str] = []
     if not isinstance(hashes, dict) or not hashes:
@@ -184,9 +186,43 @@ def _artifact_hash_audit(
             audit["mismatches"].append(artifact_name)
             reasons.append(f"pages_artifact_hash_mismatch:{artifact_name}")
             continue
+        if artifact_name in {
+            "market.json", "research-report.json", "event-ledger.json"
+        }:
+            try:
+                decoded = json.loads(content.decode("utf-8"))
+            except (UnicodeError, json.JSONDecodeError):
+                decoded = None
+            expected_snapshot_key = {
+                "market.json": "market_snapshot_id",
+                "research-report.json": "research_snapshot_id",
+                "event-ledger.json": "event_snapshot_id",
+            }[artifact_name]
+            expected_snapshot = str(manifest.get(expected_snapshot_key) or "").strip()
+            actual_snapshot = (
+                str(decoded.get("snapshot_id") or "").strip()
+                if isinstance(decoded, dict)
+                else ""
+            )
+            if not isinstance(decoded, dict):
+                audit["error_count"] += 1
+                audit["errors"].append(artifact_name)
+                reasons.append(f"pages_artifact_json_invalid:{artifact_name}")
+                continue
+            if not expected_snapshot:
+                audit["snapshot_mismatch_count"] += 1
+                audit["snapshot_errors"].append(artifact_name)
+                reasons.append(f"pages_manifest_snapshot_missing:{artifact_name}")
+                continue
+            if actual_snapshot != expected_snapshot:
+                audit["snapshot_mismatch_count"] += 1
+                audit["snapshot_errors"].append(artifact_name)
+                reasons.append(f"pages_artifact_snapshot_mismatch:{artifact_name}")
+                continue
         audit["verified_count"] += 1
     audit["mismatches"] = sorted(set(audit["mismatches"]))
     audit["errors"] = sorted(set(audit["errors"]))
+    audit["snapshot_errors"] = sorted(set(audit["snapshot_errors"]))
     return audit, reasons
 
 
@@ -218,8 +254,10 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
         "missing_count": 0,
         "mismatch_count": 0,
         "error_count": 0,
+        "snapshot_mismatch_count": 0,
         "mismatches": [],
         "errors": [],
+        "snapshot_errors": [],
     }
     if manifest_status != 200 or manifest is None:
         reasons.append(f"pages_manifest_unavailable:{manifest_error or manifest_status}")
