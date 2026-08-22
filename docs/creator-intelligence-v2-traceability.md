@@ -39,6 +39,25 @@
   authoritative gate.  Gmail／Railway／Pages／Telegram production acceptance
   remains `NEEDS_REVERIFY` until an external receipt is captured.
 
+### Current continuation stack (2026-08-22)
+
+The canonical continuation is represented by PRs #703–#707:
+
+- #703 closes the offline Creator notification E2E lane.
+- #704 exposes release-bound FinancialJuice evidence in the Mini App.
+- #705 verifies the FinancialJuice panel through the browser contract.
+- #706 adds the release-gated, single-recipient photo acceptance lane.
+- #707 records redacted Railway/Pages external evidence and the safe operator
+  runbook without changing production configuration.
+
+All five PRs remain stacked and must be reviewed in order. The local branch
+checkpoint is green (`1350 passed`; full Ruff/Mypy/compile checks passed), but
+the external acceptance state is still `NEEDS_REVERIFY` because the live
+Railway service lacks Gmail watch configuration, GDELT is failing with an
+invalid response, and the health callback returns HTTP 403. This is deliberate
+fail-closed behavior; it is not evidence that there was no new Creator or
+FinancialJuice content.
+
 ## Fail-closed rules
 
 - 未通過 provider parser、私有欄位或無法驗證的附件不得進入公開 Creator release。
