@@ -24,11 +24,15 @@ News, or Telegram pipeline. The latest local checkpoint is:
 - PR #707 quality and security checks: passed after commit `e5a6a90`.
 
 The latest redacted read-only external capture is
-`docs/evidence/external-acceptance-2026-08-22T1300.json` (the earlier
-`1215` and `1230` captures remain retained). Pages serves a
+`docs/evidence/external-acceptance-2026-08-22T1330.json` (the earlier
+`1006` through `1300` captures remain retained). Pages serves a
 `ready` manifest and Railway is running, but Gmail remains
-`configuration_missing`, GDELT returned `invalid_json`, and the health
-callback is `HTTP_403`. These are intentionally recorded as
+`configuration_missing`, GDELT returned `HTTP_429`, the health callback is
+`HTTP_403`, and the Railway runtime still requires migration from the legacy
+`DELIVERY_STATUS_SHARED_SECRET` name to canonical
+`RAILWAY_STATUS_SHARED_SECRET`. The external acceptance collector now treats
+that migration flag as a separate fail-closed blocker rather than reporting a
+ready acceptance. These conditions are intentionally recorded as
 `NEEDS_REVERIFY`; they are not converted to `no_new_content`, healthy, or a
 production Telegram acceptance. No external write or production broadcast
 was performed by this checkpoint.

@@ -79,6 +79,31 @@ def test_capture_passes_when_health_and_manifest_are_ready() -> None:
     assert report["blocking_reasons"] == []
 
 
+def test_capture_fails_closed_when_legacy_delivery_secret_requires_migration() -> None:
+    health = {
+        "status": "ok",
+        "service": "monitor",
+        "gmail": {"status": "no_new_content"},
+        "gdelt": {"status": "no_event"},
+        "delivery": {"status": "not_checked"},
+        "runtime_config": {
+            "canonical_name_present": False,
+            "legacy_name_present": True,
+            "active_name": "DELIVERY_STATUS_SHARED_SECRET",
+            "migration_required": True,
+            "secret_values_exposed": False,
+        },
+    }
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([_Response(200, health), _Response(200, _manifest())]),
+    )
+    assert report["status"] == "NEEDS_REVERIFY"
+    assert report["blocking_reasons"] == ["railway_runtime_config:secret_migration_required"]
+    assert report["railway"]["health"]["runtime_config"]["secret_values_exposed"] is False
+
+
 def test_capture_rejects_non_https_urls() -> None:
     with pytest.raises(ValueError, match="HTTPS"):
         capture(railway_url="http://railway.example/", public_url="https://pages.example/")
