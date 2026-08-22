@@ -20,6 +20,8 @@ News, or Telegram pipeline. The latest local checkpoint is:
 - full repository regression: `1350 passed`;
 - full Ruff, Mypy (177 source files), Python compilation and Mini App syntax
   checks: passed;
+- offline production E2E with the pinned Chromium runtime: passed, including
+  validated 1080x1350 rendering and mocked Telegram delivery;
 - canonical overlap and generated-bundle provenance audit: passed;
 - PR #707 quality and security checks: passed after commit `e5a6a90`.
 

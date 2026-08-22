@@ -61,6 +61,12 @@ legacy delivery-secret migration requirement. This is deliberate fail-closed
 behavior; it is not evidence that there was no new Creator or FinancialJuice
 content.
 
+The offline production E2E gate was rerun with the pinned Playwright Chromium
+runtime installed: all contract checks passed, the renderer produced a
+validated 1080x1350 card, and the mocked Telegram boundary reported delivered.
+This remains offline evidence only; it does not replace a real single-recipient
+production receipt.
+
 ## Fail-closed rules
 
 - 未通過 provider parser、私有欄位或無法驗證的附件不得進入公開 Creator release。
