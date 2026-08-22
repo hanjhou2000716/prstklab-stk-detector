@@ -14,18 +14,21 @@ evidence, a market-synchronisation proof, or a high-risk alert.
 ## Current canonical checkpoint (2026-08-22)
 
 The active continuation branch is `feat/external-acceptance-evidence`, stacked
-after PRs #703–#706. It does not introduce a second Creator, FinancialJuice,
+after PRs #703–#709. It does not introduce a second Creator, FinancialJuice,
 News, or Telegram pipeline. The latest local checkpoint is:
 
-- full repository regression: `1350 passed`;
+- full repository regression: `1353 passed`;
 - full Ruff, Mypy (177 source files), Python compilation and Mini App syntax
   checks: passed;
+- offline production E2E with the pinned Chromium runtime: passed, including
+  validated 1080x1350 rendering and mocked Telegram delivery;
 - canonical overlap and generated-bundle provenance audit: passed;
-- PR #707 quality and security checks: passed after commit `e5a6a90`.
+- PR #709 quality and security checks: passed after commit `d735e17`
+  (test-and-dry-run run `32562788045`; security run `32562787987`).
 
 The latest redacted read-only external capture is
-`docs/evidence/external-acceptance-2026-08-22T1330.json` (the earlier
-`1006` through `1300` captures remain retained). Pages serves a
+`docs/evidence/external-acceptance-2026-08-22T1626.json` (earlier captures
+remain retained). Pages serves a
 `ready` manifest and Railway is running, but Gmail remains
 `configuration_missing`, GDELT returned `HTTP_429`, the health callback is
 `HTTP_403`, and the Railway runtime still requires migration from the legacy
@@ -36,6 +39,12 @@ ready acceptance. These conditions are intentionally recorded as
 `NEEDS_REVERIFY`; they are not converted to `no_new_content`, healthy, or a
 production Telegram acceptance. No external write or production broadcast
 was performed by this checkpoint.
+
+The acceptance collector now verifies every manifest-declared public artifact
+by SHA-256 in memory and checks the snapshot identity of the market, research
+and event JSON artifacts against the manifest. It fails closed on a missing
+path, invalid hash, unavailable artifact, mismatch, or cross-release snapshot
+and never stores the downloaded bytes.
 
 ## Latest production evidence (2026-08-21)
 
