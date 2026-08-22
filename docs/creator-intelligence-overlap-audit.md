@@ -23,7 +23,8 @@ News, or Telegram pipeline. The latest local checkpoint is:
 - offline production E2E with the pinned Chromium runtime: passed, including
   validated 1080x1350 rendering and mocked Telegram delivery;
 - canonical overlap and generated-bundle provenance audit: passed;
-- PR #707 quality and security checks: passed after commit `e5a6a90`.
+- PR #709 quality and security checks: passed after commit `d735e17`
+  (test-and-dry-run run `32562788045`; security run `32562787987`).
 
 The latest redacted read-only external capture is
 `docs/evidence/external-acceptance-2026-08-22T1626.json` (earlier captures
