@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "captured_at": "2026-08-22T00:00:00Z",
+  "kind": "creator-notification-offline-e2e",
+  "command": "uv run python -m src.production_e2e",
+  "status": "PASS",
+  "full_regression": {
+    "command": "uv run pytest -q --basetemp .pytest-cov-20260822 --cov=src --cov-fail-under=80",
+    "passed": 1334,
+    "failed": 0,
+    "coverage_percent": 81.30,
+    "duration_seconds": 132.36
+  },
+  "checks": {
+    "photo_branch_used": true,
+    "photo_per_recipient_isolated": true,
+    "photo_lineage_bound": true,
+    "photo_deep_link_bound": true,
+    "receipt_privacy": true,
+    "morning_batch_complete_with_late": true,
+    "digest_sent_once": true,
+    "digest_deep_link_bound": true,
+    "late_delta_reachable": true
+  },
+  "delivery": {
+    "recipient_count": 2,
+    "receipt_count": 2,
+    "receipt_statuses": ["delivered", "failed"],
+    "replay_status": "already_delivered",
+    "late_delta_status": "delivered"
+  },
+  "safety": {
+    "network_used": false,
+    "secrets_used": false,
+    "production_side_effects": false,
+    "raw_recipient_ids_persisted": false
+  },
+  "external_acceptance": "NEEDS_REVERIFY",
+  "external_blockers": [
+    "Gmail ingress is not configured on Railway",
+    "GDELT health path currently reports a failed response and HTTP_403 callback"
+  ]
+}
