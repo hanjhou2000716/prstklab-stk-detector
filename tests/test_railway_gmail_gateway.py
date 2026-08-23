@@ -175,6 +175,25 @@ def test_ingress_strict_mode_uses_injected_jwt_verifier(tmp_path: Path) -> None:
     assert service.decode_push(_push(), _headers())["history_id"] == "123"
 
 
+def test_ingress_strict_mode_uses_verified_jwt_email_when_proxy_header_is_absent(tmp_path: Path) -> None:
+    strict = GmailWatchConfig(
+        topic_name="projects/p/topics/t",
+        label_ids=("Label_1",),
+        oauth_state="configured",
+        audience="https://railway.example/gmail/push",
+        service_account="push@example.iam.gserviceaccount.com",
+        require_jwt_verification=True,
+    )
+    headers = _headers()
+    headers.pop("x-goog-authenticated-user-email")
+    service = GmailIngressService(
+        EmailStore(tmp_path / "mail.sqlite3"),
+        strict,
+        token_verifier=lambda _token, _audience: {"email": strict.service_account, "email_verified": True},
+    )
+    assert service.decode_push(_push(), headers)["history_id"] == "123"
+
+
 def test_ingress_accepts_pubsub_oidc_without_nonstandard_audience_header(tmp_path: Path) -> None:
     headers = _headers()
     headers.pop("x-goog-authenticated-audience")

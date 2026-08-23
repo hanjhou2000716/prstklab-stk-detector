@@ -57,7 +57,7 @@ class GmailIngressService:
         store: EmailStore,
         config: GmailWatchConfig,
         *,
-        token_verifier: Callable[[str, str], bool] | None = None,
+        token_verifier: Callable[[str, str], bool | Mapping[str, Any]] | None = None,
     ) -> None:
         self.store = store
         self.config = config
@@ -77,19 +77,30 @@ class GmailIngressService:
             raise GmailIngressError("gmail_gateway_configuration_missing")
         auth = headers.get("authorization", "")
         audience = headers.get("x-goog-authenticated-audience", "")
-        service_account = _normalize_service_account(headers.get("x-goog-authenticated-user-email", ""))
+        header_identity = _normalize_service_account(headers.get("x-goog-authenticated-user-email", ""))
+        verified_identity = ""
         if not auth.casefold().startswith("bearer "):
             raise GmailIngressError("unauthenticated_pubsub_push")
         token = auth.split(" ", 1)[1].strip()
         if self.config.require_jwt_verification:
-            if self.token_verifier is None or not self.token_verifier(token, self.config.audience):
+            if self.token_verifier is None:
                 raise GmailIngressError("pubsub_jwt_verification_failed")
+            verification = self.token_verifier(token, self.config.audience)
+            if not verification:
+                raise GmailIngressError("pubsub_jwt_verification_failed")
+            if isinstance(verification, Mapping):
+                verified_identity = _normalize_service_account(str(verification.get("email") or ""))
+                if not verified_identity:
+                    raise GmailIngressError("pubsub_jwt_identity_missing")
         # Pub/Sub authenticated push requests carry the configured audience
         # in the OIDC JWT ``aud`` claim. The optional frontend header is not
         # guaranteed, so validate it only when the sender supplies it.
         # Strict JWT mode still validates the claim through token_verifier.
         if audience and audience != self.config.audience:
             raise GmailIngressError("pubsub_audience_mismatch")
+        service_account = verified_identity or header_identity
+        if verified_identity and header_identity and header_identity != verified_identity:
+            raise GmailIngressError("pubsub_service_account_mismatch")
         if service_account != self.config.service_account:
             raise GmailIngressError("pubsub_service_account_mismatch")
 

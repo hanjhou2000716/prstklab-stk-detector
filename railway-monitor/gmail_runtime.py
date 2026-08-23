@@ -39,6 +39,7 @@ def configure_gmail_ingress(
     """
     env = environ or os.environ
     try:
+        default_ingress = ingress_factory is None
         if config_factory is None or store_factory is None or ingress_factory is None:
             from email_store import EmailStore
             from gmail_watch import GmailWatchConfig
@@ -50,7 +51,11 @@ def configure_gmail_ingress(
             ingress_factory = ingress_factory or GmailIngressService
         config = config_factory(env)
         path = env.get("GMAIL_STATE_PATH", "/data/gmail-ingress.sqlite3")
-        ingress = ingress_factory(store_factory(path), config)
+        if default_ingress:
+            verifier = _google_oidc_verifier if getattr(config, "require_jwt_verification", False) else None
+            ingress = ingress_factory(store_factory(path), config, token_verifier=verifier)
+        else:
+            ingress = ingress_factory(store_factory(path), config)
         # The lease is independent from Pub/Sub HTTP availability.  Attempt
         # renewal once at startup; the manager persists a bounded failure so
         # health probes can report it while the worker remains alive.
@@ -73,3 +78,11 @@ def configure_gmail_ingress(
             "observability": {},
             "error": type(error).__name__,
         }
+
+
+def _google_oidc_verifier(token: str, audience: str) -> Mapping[str, Any]:
+    """Verify a Pub/Sub OIDC token and return its signed claims."""
+    from google.auth.transport.requests import Request
+    from google.oauth2 import id_token
+
+    return id_token.verify_oauth2_token(token, Request(), audience=audience)
