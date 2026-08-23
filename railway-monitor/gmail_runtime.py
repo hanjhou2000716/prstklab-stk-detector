@@ -82,7 +82,13 @@ def configure_gmail_ingress(
 
 def _google_oidc_verifier(token: str, audience: str) -> Mapping[str, Any]:
     """Verify a Pub/Sub OIDC token and return its signed claims."""
-    from google.auth.transport.requests import Request
-    from google.oauth2 import id_token
+    try:
+        from google.auth.transport.requests import Request
+        from google.oauth2 import id_token
+        return id_token.verify_oauth2_token(token, Request(), audience=audience)
+    except ImportError:
+        # Keep the failure fail-closed but expose a bounded diagnostic instead
+        # of the opaque built-in ImportError name in public health.
+        from gmail_ingress import GmailIngressError
 
-    return id_token.verify_oauth2_token(token, Request(), audience=audience)
+        raise GmailIngressError("pubsub_jwt_dependency_missing") from None
