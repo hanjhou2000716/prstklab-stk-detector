@@ -25,6 +25,32 @@ def _now() -> str:
     return datetime.now(UTC).isoformat()
 
 
+def _normalize_service_account(value: str) -> str:
+    """Normalize documented Pub/Sub identity header variants.
+
+    Pub/Sub push delivery can expose the authenticated principal as either
+    ``accounts.google.com:<email>`` or ``accounts.google.com:serviceAccount:<email>``
+    depending on the push-auth path.  Remove only these documented prefixes;
+    the caller still performs an exact match against the configured account.
+    """
+    normalized = value.strip()
+    prefixes = (
+        "https://accounts.google.com:",
+        "accounts.google.com:",
+        "serviceAccount:",
+        "serviceaccount:",
+    )
+    changed = True
+    while changed:
+        changed = False
+        for prefix in prefixes:
+            if normalized.casefold().startswith(prefix.casefold()):
+                normalized = normalized[len(prefix):].strip()
+                changed = True
+                break
+    return normalized
+
+
 class GmailIngressService:
     def __init__(
         self,
@@ -51,7 +77,7 @@ class GmailIngressService:
             raise GmailIngressError("gmail_gateway_configuration_missing")
         auth = headers.get("authorization", "")
         audience = headers.get("x-goog-authenticated-audience", "")
-        service_account = headers.get("x-goog-authenticated-user-email", "").removeprefix("accounts.google.com:")
+        service_account = _normalize_service_account(headers.get("x-goog-authenticated-user-email", ""))
         if not auth.casefold().startswith("bearer "):
             raise GmailIngressError("unauthenticated_pubsub_push")
         token = auth.split(" ", 1)[1].strip()
