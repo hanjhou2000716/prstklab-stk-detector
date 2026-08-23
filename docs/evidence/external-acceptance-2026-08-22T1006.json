@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "captured_at": "2026-08-22T10:06:00+08:00",
+  "kind": "external-acceptance-readonly",
+  "status": "PARTIAL",
+  "pages": {
+    "manifest_status": "ready",
+    "release_id": "release-2480a96338126a02",
+    "verified": true
+  },
+  "railway": {
+    "health_status": "ok",
+    "monitor_status": "running",
+    "jin10_status": "healthy",
+    "delivery_status": "not_checked",
+    "receipt_status": "not_checked",
+    "runtime_config": "migration_required",
+    "legacy_secret_name_present": true,
+    "secret_values_exposed": false,
+    "gdelt_status": "failed",
+    "gdelt_error": "HTTP_429",
+    "gdelt_health_dispatch_status": "permission_denied",
+    "gdelt_health_dispatch_error": "HTTP_403",
+    "gmail_status": "configuration_missing",
+    "gmail_missing_count": 5
+  },
+  "safety": {
+    "network_scope": "read_only_public_endpoints",
+    "telegram_sent": false,
+    "secrets_exposed": false
+  },
+  "remaining_gates": [
+    "capture a new Railway delivery receipt after the next controlled single-recipient send",
+    "configure Gmail watch/PubSub variables before FinancialJuice/Creator live acceptance",
+    "resolve GDELT 429 and health callback 403 without bypassing rate limits",
+    "migrate Railway runtime to canonical delivery secret name"
+  ]
+}
