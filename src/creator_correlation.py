@@ -44,9 +44,9 @@ def _snapshot_time(snapshot: dict[str, Any] | None) -> datetime | None:
     # a valid snapshot as missing its observation time.
     return _time(
         snapshot.get("as_of")
+        or snapshot.get("generated_at")
         or snapshot.get("fetched_at")
         or snapshot.get("created_at")
-        or snapshot.get("generated_at")
     )
 
 
