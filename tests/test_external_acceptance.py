@@ -89,6 +89,29 @@ def test_capture_passes_when_health_and_manifest_are_ready() -> None:
     assert report["blocking_reasons"] == []
 
 
+def test_capture_accepts_a_successful_delivery_receipt() -> None:
+    health = {
+        "status": "ok",
+        "service": "monitor",
+        "gmail": {"status": "healthy", "watch_status": "healthy"},
+        "gdelt": {"status": "no_event"},
+        "delivery": {
+            "status": "delivered",
+            "last_delivered_count": 1,
+            "last_failed_count": 0,
+        },
+    }
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([_Response(200, health), _Response(200, manifest), _Response(200, None, artifact)]),
+    )
+    assert report["status"] == "PASS"
+    assert report["blocking_reasons"] == []
+
+
 def test_capture_distinguishes_configured_gmail_from_failed_watch() -> None:
     health = {
         "status": "ok",

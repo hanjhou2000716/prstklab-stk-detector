@@ -252,6 +252,23 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
                 if watch_status not in {"healthy", "active", "no_new_content", "no_event", "not_checked"}:
                     reasons.append(f"railway_gmail_watch:{watch_status}")
                 continue
+            # Delivery health is a receipt state, not a provider availability
+            # state.  A successful single-recipient acceptance therefore
+            # reports ``delivered`` (and older Railway runtimes may report
+            # ``sent``); treating those values as failures made a verified
+            # receipt incorrectly downgrade the whole external acceptance.
+            if section == "delivery":
+                allowed_delivery = {
+                    "healthy",
+                    "delivered",
+                    "sent",
+                    "no_new_content",
+                    "no_event",
+                    "not_checked",
+                }
+                if status not in allowed_delivery:
+                    reasons.append(f"railway_delivery:{status}")
+                continue
             if status not in {"healthy", "no_new_content", "no_event", "not_checked"}:
                 reasons.append(f"railway_{section}:{status}")
         runtime_config = health.get("runtime_config")
