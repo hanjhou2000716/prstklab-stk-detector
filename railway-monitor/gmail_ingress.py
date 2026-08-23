@@ -116,8 +116,11 @@ class GmailIngressService:
 
     def health(self) -> dict[str, Any]:
         store_health = self.store.health()
+        cursor = store_health.get("cursor")
+        if not isinstance(cursor, Mapping):
+            cursor = self.store.cursor()
         return {
-            "watch": watch_health(self.config, self.store.cursor(), store_health=store_health),
+            "watch": watch_health(self.config, cursor, store_health=store_health),
             "store": store_health,
         }
 

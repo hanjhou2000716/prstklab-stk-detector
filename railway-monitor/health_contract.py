@@ -81,7 +81,50 @@ def gmail_health_fields(diagnostics: Any) -> dict[str, Any]:
     if not isinstance(watch, dict):
         return {"watch_status": "not_checked", "observability": {}}
     metrics = watch.get("observability")
-    return {
-        "watch_status": str(watch.get("status") or "not_checked"),
-        "observability": dict(metrics) if isinstance(metrics, dict) else {},
+    missing = watch.get("missing")
+    allowed_metrics = {
+        "observations": "counter",
+        "last_received_at": "timestamp",
+        "last_parsed_at": "timestamp",
+        "parser_error_count": "counter",
+        "last_delivery_at": "timestamp",
+        "state": "text",
+        "queue_pending_count": "counter",
+        "dead_letter_count": "counter",
+        "last_ingress_at": "timestamp",
+        "last_sync_at": "timestamp",
+        "history_cursor_present": "bool",
+        "history_cursor_hash": "hash",
     }
+
+    def metric_value(value: Any, kind: str) -> Any:
+        if kind == "bool":
+            return value if isinstance(value, bool) else None
+        if kind == "counter":
+            return non_negative_int(value)
+        if kind == "timestamp":
+            return str(value) if isinstance(value, str) and value else None
+        if kind == "hash":
+            return value if isinstance(value, str) and len(value) == 16 and all(char in "0123456789abcdef" for char in value) else None
+        return str(value) if isinstance(value, str) and value else None
+
+    safe_metrics: dict[str, Any] = {}
+    if isinstance(metrics, dict):
+        for key, kind in allowed_metrics.items():
+            if key in metrics:
+                value = metric_value(metrics[key], kind)
+                if value is not None:
+                    safe_metrics[key] = value
+    result = {
+        "watch_status": str(watch.get("status") or "not_checked"),
+        # Configuration names are safe to expose and make a production
+        # configuration_missing state actionable without exposing OAuth,
+        # Pub/Sub credentials, mailbox identifiers, or message cursors.
+        "missing": [str(item) for item in missing if str(item).strip()]
+        if isinstance(missing, (list, tuple)) else [],
+        "observability": safe_metrics,
+    }
+    expiration = watch.get("watch_expiration")
+    if isinstance(expiration, str) and expiration:
+        result["watch_expiration"] = expiration
+    return result

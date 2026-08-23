@@ -26,6 +26,16 @@ jobs:
           python-version: "3.11"
       - name: Install release-gate dependencies
         run: pip install -r requirements.txt
+      - name: Restore immutable data release for local gate
+        run: |
+          # The workflow checks the exact release that is publicly served.  A
+          # checkout of main only contains a placeholder site/data tree, so
+          # seed the local gate from the same immutable data-release branch
+          # used by the Pages publisher.  This step is read-only with respect
+          # to GitHub and never has Telegram credentials or delivery steps.
+          git fetch --no-tags origin refs/heads/data-release:refs/remotes/origin/data-release
+          python -m src.data_release --restore --branch data-release --include site/data
+          git restore --source=origin/data-release --worktree -- site/data/
       - name: Verify public release (no delivery)
         run: >-
           python -m src.public_release_smoke

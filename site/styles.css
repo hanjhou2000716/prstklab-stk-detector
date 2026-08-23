@@ -109,6 +109,16 @@
   min-height: 54px;
   padding: 13px 0;
 }
+.news-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-height: 64px;
+  text-align: center;
+}
+.news-empty-state strong { color: var(--accent); font-size: .82rem; }
+.news-empty-state small { margin-top: 0; color: var(--muted); }
 
 /* Shared summary contract: title, note/time and toggle always occupy the
    same three columns on every collapsible card. */
@@ -165,6 +175,32 @@
 .news-panel .news-list small {
   margin-top: 5px;
 }
+.news-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+.news-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 7px;
+  border: 1px solid #cfd8df;
+  border-radius: 999px;
+  background: #f3f6f8;
+  color: #465b68;
+  font-size: .65rem;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.news-badge-official { border-color: #b9d6c5; background: #eaf6ee; color: #21653c; }
+.news-badge-research, .news-badge-tracked { border-color: #c5d4ee; background: #edf3fd; color: #2b5689; }
+.news-badge-creator { border-color: #d8c9ed; background: #f4eefb; color: #654487; }
+.news-badge-sector { border-color: #efd1ad; background: #fff4e8; color: #8b5128; }
+.news-badge-macro { border-color: #e3c3a4; background: #fff1e4; color: #8d4d1c; }
+.news-reason-detail { margin-left: 6px; color: var(--muted); }
 
 /* Taiwan market convention: gains red, losses green. */
 .quote-value.market-up b, .quote-value.market-up small { color: var(--negative); }
@@ -368,6 +404,10 @@ h1 { font-size: clamp(1.1rem, 5.2vw, 1.55rem); }
 .creator-insight h4 { margin: 0 0 .25rem; }
 .creator-insight small { color: #5b6870; }
 .creator-insight ul { margin: .45rem 0 0; padding-left: 1.1rem; }
+.creator-consensus { margin: .65rem 0; padding: .75rem; border-radius: .75rem; background: #fff8ed; border: 1px solid #ead7bd; }
+.creator-consensus h4 { margin: 0 0 .35rem; color: var(--accent); }
+.creator-consensus p { margin: .25rem 0; }
+.creator-consensus small { display: block; color: #5b6870; margin-top: .3rem; }
 .release-health { margin: 12px 0 0; padding: 9px 11px; border-radius: 10px; background: rgba(255,255,255,.12); color: #e4edf1; font-size: .72rem; line-height: 1.45; overflow-wrap: anywhere; }
 .release-health[data-state="degraded"] { background: #665020; color: #fff4d0; }
 .release-health[data-state="error"] { background: #6b2d2a; color: #ffe7e4; }

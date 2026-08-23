@@ -122,6 +122,18 @@ def test_source_health_rejects_no_event_when_core_scan_failed():
     assert any("cannot coexist" in error for error in errors)
 
 
+def test_source_health_allows_no_event_when_only_optional_source_failed():
+    health = _source_health(
+        event_scan={"status": "no_event", "has_events": False},
+        sources=[
+            {"key": "official_events", "role": "required_for_core", "status": "healthy", "semantic_state": "healthy"},
+            {"key": "external_financialjuice", "role": "optional", "status": "failed", "semantic_state": "failed"},
+        ],
+    )
+    errors = validate_source_health(health)
+    assert not any("cannot coexist" in error for error in errors)
+
+
 def test_source_health_rejects_scan_failed_with_events():
     health = _source_health(
         event_scan={"status": "scan_failed", "has_events": True},
@@ -147,6 +159,46 @@ def test_source_health_accepts_external_observability_contract():
             "last_delivery_at": None,
         },
     })
+    assert validate_source_health(health) == []
+
+
+def test_source_health_accepts_railway_creator_and_financialjuice_lineage_fields():
+    health = _source_health()
+    health["sources"] = [
+        {
+            "key": "creator_public",
+            "status": "partial",
+            "semantic_state": "partial",
+            "observability": {
+                "morning_batch_count": 1,
+                "daily_coverage_count": 2,
+                "coverage_status": "partial",
+                "morning_batch_state": "ready",
+                "morning_batch_key": "creator-20260821-1030",
+                "consensus_status": "ready",
+                "last_release_id": "release-1",
+                "last_snapshot_id": "creator-snapshot-1",
+                "last_observation_id": "creator-observation-1",
+                "last_telegram_delivery_at": "2026-08-21T01:02:03+00:00",
+                "last_telegram_delivery_status": "delivered",
+            },
+        },
+        {
+            "key": "external_financialjuice",
+            "status": "partial",
+            "semantic_state": "partial",
+            "observability": {
+                "importance_gte_8_count": 1,
+                "last_importance_gte_8_at": "2026-08-21T01:02:03+00:00",
+                "decision": "pending_confirmation",
+                "last_release_id": "release-1",
+                "last_snapshot_id": "fj-snapshot-1",
+                "last_observation_id": "fj-observation-1",
+                "last_telegram_delivery_at": None,
+                "last_telegram_delivery_status": "not_checked",
+            },
+        },
+    ]
     assert validate_source_health(health) == []
 
 

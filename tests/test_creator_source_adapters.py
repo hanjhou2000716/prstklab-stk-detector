@@ -1,3 +1,7 @@
+import json
+from pathlib import Path
+
+from src.creator_provider_registry import CreatorProvider, creator_ids
 from src.creator_source_adapters import parse_creator_template
 
 
@@ -15,6 +19,27 @@ def test_known_template_splits_fact_and_opinion_without_guessing() -> None:
     assert result["verification_state"] == "unverified"
     assert result["public_safe"] is True
     assert "body" not in result
+
+
+def test_sanitized_haojiao_fixture_replays_public_safe_morning_issue() -> None:
+    fixture = json.loads(
+        (Path(__file__).parent / "fixtures" / "haojiao-20260821-sanitized.json")
+        .read_text(encoding="utf-8")
+    )
+    result = parse_creator_template(
+        source=fixture["source"],
+        sender="",
+        subject=fixture["subject"],
+        body=fixture["body"],
+        message_id="",
+    )
+    assert result["parse_status"] == "parsed"
+    assert result["creator_id"] == "haojiao"
+    assert result["episode_title"] == "巨頭搶錢與美債承接"
+    assert result["verification_state"] == "unverified"
+    assert result["public_safe"] is True
+    assert "fixture_note" not in result
+    assert not {"sender", "body", "raw_body", "message_id", "attachments"} & set(result)
 
 
 def test_unknown_template_is_explicit_and_not_guessed() -> None:
@@ -38,3 +63,82 @@ def test_wrong_source_fails_closed() -> None:
         body="Title: x\nFact: y",
     )
     assert result["parse_status"] == "invalid_source"
+
+
+def test_all_registry_providers_use_shared_template_adapter() -> None:
+    """Registry additions must not require a second adapter allowlist."""
+    for provider_id in creator_ids():
+        result = parse_creator_template(
+            source=provider_id,
+            sender="digest@example.invalid",
+            subject="Episode 45",
+            body="Title: Shared template\nFact: Public filing is available.",
+            message_id=f"msg-{provider_id}",
+        )
+        assert result["parse_status"] == "parsed"
+        assert result["creator_id"] == provider_id
+
+
+def test_registry_parser_mismatch_fails_closed(monkeypatch) -> None:
+    configured = CreatorProvider(
+        creator_id="haojiao",
+        display_name="Haojiao",
+        source_type="editorial",
+        email_identity_rules={"markers": ("haojiao",), "domains": ()},
+        gmail_label="PRStK/Creator/Haojiao",
+        parser="future-template-v3",
+        consensus_eligible=True,
+        notification_policy="optional_reviewed_only",
+        media_policy="summary_image_if_reviewed",
+        display_order=1,
+        enabled=True,
+    )
+    monkeypatch.setattr("src.creator_source_adapters.get_creator_provider", lambda _source: configured)
+    result = parse_creator_template(
+        source="haojiao",
+        sender="digest@example.invalid",
+        subject="Episode 46",
+        body="Title: Future template\nFact: Public filing is available.",
+    )
+    assert result["parse_status"] == "unsupported_parser"
+    assert result["failure_reason"] == "creator_parser_not_supported"
+
+
+def test_jenny_html_template_extracts_structured_fields_and_hash() -> None:
+    result = parse_creator_template(
+        source="jenny",
+        sender="digest@example.invalid",
+        subject="財女珍妮｜本週市場觀察",
+        body="""
+        <html><body>
+          <h1>Title: AI infrastructure watch</h1>
+          <p>Fact: Public filings describe cloud-capex plans.</p>
+          <p>Opinion: The market may remain selective.</p>
+          <p>CSCO: network demand remains a watch item</p>
+          <p>COHR: optical components require official confirmation</p>
+        </body></html>
+        """,
+        message_id="jenny-20260820-01",
+    )
+    assert result["parse_status"] == "parsed"
+    assert result["source_adapter"] == "jenny-template-v1"
+    assert result["provider_fields"] == {
+        "CSCO": "network demand remains a watch item",
+        "COHR": "optical components require official confirmation",
+    }
+    assert result["provider_fields_missing"] == ["NBIS", "CBRS"]
+    assert len(result["content_hash"]) == 64
+    assert result["public_safe"] is True
+    assert "body" not in result
+
+
+def test_jenny_template_without_labelled_sections_fails_closed() -> None:
+    result = parse_creator_template(
+        source="jenny",
+        sender="digest@example.invalid",
+        subject="市場觀察",
+        body="<p>一段沒有可核對欄位的自由文字。</p>",
+        message_id="jenny-unsupported",
+    )
+    assert result["parse_status"] == "unsupported_template"
+    assert result["failure_reason"] == "missing_fact_or_opinion_sections"

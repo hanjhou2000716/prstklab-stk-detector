@@ -35,6 +35,7 @@ pipeline call and a tested consumer.
 | Creator media boundary | `src/creator_media.py`, `src/creator_photo_delivery.py` | yes | private attachment boundary + transport-neutral plan | hash + private availability only | no raw media | bounded photo/text plan; receipt contract | partially_integrated |
 | Creator release lineage | `src/creator_release.py`, `src/creator_intelligence_pipeline.py`, `src/release_manifest.py` | yes | scheduled input + optional manifest artifact | parent release/hash/status | release-bound creator drawer | no raw creator media | production |
 | Creator/PRStK correlation | `src/creator_correlation.py`, `src/creator_intelligence_pipeline.py`, `src/briefing_cards.py` | yes | briefing creator binding | explicit entity matches + snapshot IDs | creator correlation state/reason | never a standalone signal | production |
+| Creator consensus V2 | `src/creator_consensus.py`, `src/creator_artifact.py`, `src/creator_intelligence_pipeline.py` | yes | canonical creator release producer | topic/directional/risk consensus with coverage and divergence | 多來源內容共識卡 | never an investment signal | production |
 | Railway health contract | `src/railway_health_contract.py`, `railway-monitor/app.py`, `railway-monitor/runtime_config.py`, `railway-monitor/health_contract.py` | yes | monitor health boundary + standalone heartbeat/Gmail projection + redacted runtime configuration | bounded status/retry/heartbeat/configuration state | source health | observability only | partially_integrated |
 | Railway Gmail runtime wiring | `railway-monitor/gmail_runtime.py`, `railway-monitor/gmail_ingress.py`, `railway-monitor/gmail_watch.py`, `railway-monitor/email_store.py` | yes | standalone configuration-to-ingress boundary | redacted Gmail watch health | source health | not directly | partially_integrated |
 | Railway dispatch transport | `railway-monitor/dispatch_transport.py`, `railway-monitor/app.py` | yes | bounded repository-dispatch HTTP transport with compatibility wrapper | no payload persistence | no | repository dispatch only; no Telegram path | partially_integrated |
@@ -136,21 +137,36 @@ This section is updated only from the public manifest and the latest successful
 main-branch workflows. It is evidence of the deployed release, not a claim
 that every optional provider or historical backtest is available.
 
-- Main commit: `6b3efac8b666ebcfb87337fec68e6b7536e65c37`
-- Pages deployment: [31567941161](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31567941161)
-- Quality/delivery workflow: [31567941144](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31567941144)
-- Official macro/price workflow: [31567991408](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31567991408)
-- Release: `release-9f742bf9a0c579e4`
-- Market snapshot: `e5a30f1e6aee3c23`
-- Research snapshot: `research-acddbf45ffd6e4db`
-- Event snapshot: `event-1c1c81d0f4e30a41`
-- Manifest status: `ready`; research mode/scope: `production` / `full`
+- Runtime evidence baseline: `42ee0e5035c22fb4c36dd80afb6a1aa4cbb2da4b` (PR #697 parent)
+- Documentation merge carrying this evidence: PR #698 (`cd5eb3ed0a2a829db0abedf40a488a3b563a9c22`)
+- Pages refresh / release publication: [32435052135](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32435052135)
+- Latest main quality gate: [32480688754](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32480688754)
+- Latest main official monitor: [32481112950](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32481112950)
+- Single-recipient photo smoke: [32418325859](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32418325859)
+- Release: `release-faaa5b86acfc0db3`
+- Market snapshot: `d244146e6209880c`
+- Research snapshot: `research-8b8ec8f6e5ee51aa`
+- Event snapshot: `event-a889bf10a4141a3b`
+- Creator status: `ready`; News status: `ready`
+- Manifest status: `ready`; research freshness: `stale_fallback`
+- Public artifact hash audit: 7/7 manifest artifacts matched their public
+  SHA-256 values; no mixed-release artifact was observed.
 - Source health is now also emitted as a release-bound `data/source-health.json`
   artifact when the producer has the canonical health envelope. The legacy
   embedded `market.source_health` remains for compatibility; older releases
   without the optional artifact remain readable.
 - Research universe: `7772 / 7772` completed; 40 visible candidates
 - Formal backtest: `unavailable`; Advice Gate therefore remains observation-only
+
+The runtime evidence baseline is newer than the last successful Pages publication:
+the Pages run above was built from `38f787a86b82573498f85b9d7c5d44a6`.
+Therefore the public release identifiers below remain the last verified
+release, rather than being presented as proof that the evidence baseline is
+already deployed. The next successful refresh must publish or explicitly
+preserve this release under the release gate; a failed or in-progress refresh
+must not replace it. The repository's current `main` HEAD is authoritative for
+code; this document intentionally records the tested runtime baseline instead
+of claiming that a documentation merge changed runtime behavior.
 
 The public source of truth is
 [`release-manifest.json`](https://hanjhou2000716.github.io/prstklab-stk-detector/data/release-manifest.json).
@@ -159,9 +175,49 @@ hashes take precedence and this document must be corrected before claiming a
 new production verification.
 
 The photo smoke receipt is intentionally a single-recipient diagnostic and
-uses a synthetic smoke alert identity.  It proves renderer, sendPhoto and
-receipt plumbing, not the content of a live event.  A release-gated production
-delivery must use the release identifiers above.
+uses a synthetic smoke alert identity.  The 2026-08-21 run reported one
+delivery, zero failures, `1080x1350` dimensions, and a matching Railway
+receipt with trace `photo-smoke-34fcf6718bc341f5`.  It proves renderer,
+sendPhoto and receipt plumbing, not the content of a live event.  A
+release-gated production delivery must use the release identifiers above.
+
+The latest refresh run `32435052135` published the release above. Its public
+manifest is `ready` and carries the same market, research and event lineage;
+the research artifact is explicitly marked `stale_fallback`, so it remains
+observation-only and cannot qualify a high-risk alert. The preceding Pages
+run `32417839816` found no valid new production release and safely preserved
+the last public release instead of deploying an invalid manifest. This is the
+required fail-closed behavior.
+### External runtime evidence (2026-08-20)
+
+The post-refresh Railway health snapshot shows Jin10 `healthy`, runtime
+`repository-shared`, and classification `healthy`. The controlled
+single-recipient photo smoke is `delivered` with one recipient, zero failures,
+and `receipt_matches_last_outbox=true`; trace
+`photo-smoke-34fcf6718bc341f5` is retained for correlation. This proves the
+renderer/sendPhoto/receipt path only and does not prove that every production
+recipient is reachable.
+
+The same snapshot keeps external gaps explicit: Gmail is
+`configuration_missing`; GDELT is fail-closed on HTTP 429 and its health
+callback is HTTP 403; market sync is `not_checked` until the next poll. The
+Railway's canonical `RAILWAY_STATUS_SHARED_SECRET` remains an operator-managed
+configuration item when only the legacy name exists; the runtime reports
+`migration_required` without exposing the value. These are
+configuration/provider follow-ups, not reasons to mark the successful release
+or controlled delivery as failed. No high-risk alert may be generated from
+the failed GDELT path.
+
+As a bounded read-only mailbox check, the connected Gmail account contained a
+newer 2026-08-14 游庭皓的財經皓角 message, while the public Creator artifact
+still contained the 2026-08-13 episode.  This confirms the remaining freshness
+gap is an unconfigured Railway Gmail watch/ingress path, not a parser claim of
+"no email".  The message body and attachment remain private; only the
+source-date comparison is recorded here.  Until the OAuth/PubSub variables
+listed in `docs/gmail-runtime-ingress.md` are configured and a signed Railway
+delivery is observed, the public artifact must remain explicitly
+`unverified`/`awaiting_official_crosscheck` and must not become a high-risk
+alert source.
 
 ### Creator delivery durability
 

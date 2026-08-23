@@ -14,8 +14,130 @@ from typing import Any
 
 from src.creator_delivery_contract import decide_creator_delivery
 from src.creator_intelligence_pipeline import build_creator_intelligence_release
+from src.creator_morning_batch import build_creator_morning_batch
+from src.external_source_parsers import parse_financialjuice_email
+from src.financialjuice_priority import project_financialjuice_priority
 from src.production_acceptance import validate_production_bundle
 from src.system_dry_run import run_dry_run
+
+_FINANCIALJUICE_COMPOUND_FIXTURE = (
+    "Item 1\nImportance: 9/10\nOriginal headline: Oil supply disruption\n"
+    "Translation: Public oil supply update\nEntities: Iran, oil\n"
+    "AI commentary: Supply risk remains under observation.\n"
+    "Possible impact: Oil volatility.\n"
+    "Item 2\nImportance: 7/10\nOriginal headline: Semiconductor export control\n"
+    "Translation: Public semiconductor policy update\nEntities: China, semiconductor\n"
+    "AI commentary: Chip access changes require confirmation.\n"
+    "Possible impact: Technology volatility."
+)
+
+
+def _financialjuice_offline_lane() -> dict[str, Any]:
+    """Exercise sanitized FJ ingress through parsing and release projection.
+
+    This is intentionally a SIMULATED lane: it never contacts Gmail, Railway,
+    FinancialJuice, Pages, or Telegram. Keeping it in the same offline E2E
+    command prevents the parser and vendor-priority policy from becoming a
+    unit-tested island while preserving the production release gate.
+    """
+    parsed = parse_financialjuice_email(
+        sender="alerts@financialjuice.com",
+        subject="compound alert",
+        body=_FINANCIALJUICE_COMPOUND_FIXTURE,
+        message_id="production-e2e-fj-message",
+    )
+    raw_items = parsed.get("items")
+    items: list[dict[str, Any]] = (
+        [item for item in raw_items if isinstance(item, dict)]
+        if isinstance(raw_items, list)
+        else []
+    )
+    projection = project_financialjuice_priority(items)
+    decisions = projection.get("decisions") or []
+    events = projection.get("events") or []
+    cluster_keys = {
+        str(item.get("event_cluster_key") or "").strip()
+        for item in items
+        if isinstance(item, dict)
+    }
+    statuses = {
+        str(item.get("notification_status") or "").strip()
+        for item in decisions
+        if isinstance(item, dict)
+    }
+    eligible = [item for item in decisions if isinstance(item, dict) and item.get("notification_status") == "eligible"]
+    below_threshold = [item for item in decisions if isinstance(item, dict) and item.get("notification_status") == "not_eligible"]
+    separation_ok = all(
+        isinstance(event, dict)
+        and event.get("source_trace", {}).get("vendor_importance_is_not_risk") is True
+        and event.get("market_direction") is None
+        for event in events
+    )
+    return {
+        "mode": "SIMULATED",
+        "ok": (
+            parsed.get("parse_status") == "parsed"
+            and parsed.get("compound") is True
+            and parsed.get("item_count") == 2
+            and len(items) == 2
+            and len(cluster_keys) == 2
+            and statuses == {"eligible", "not_eligible"}
+            and len(eligible) == 1
+            and len(below_threshold) == 1
+            and separation_ok
+        ),
+        "parse_status": parsed.get("parse_status"),
+        "item_count": len(items),
+        "independent_cluster_count": len(cluster_keys),
+        "eligible_importances": [item.get("vendor_importance") for item in eligible],
+        "below_threshold_importances": [item.get("vendor_importance") for item in below_threshold],
+        "vendor_risk_separation": separation_ok,
+        "network_used": False,
+        "secrets_used": False,
+    }
+
+
+def _creator_morning_offline_lane() -> dict[str, Any]:
+    """Exercise the 10:30 Asia/Taipei two-provider batch contract offline."""
+    records = [
+        {
+            "creator_id": "haojiao",
+            "episode_key": "e2e-haojiao-20260821",
+            "published_at": "2026-08-21T01:55:00+00:00",
+            "received_at": "2026-08-21T02:00:00+00:00",
+            "public_safe": True,
+            "parse_status": "parsed",
+        },
+        {
+            "creator_id": "jenny",
+            "episode_key": "e2e-jenny-20260821",
+            "published_at": "2026-08-21T02:00:00+00:00",
+            "received_at": "2026-08-21T02:05:00+00:00",
+            "public_safe": True,
+            "parse_status": "parsed",
+        },
+    ]
+    batch = build_creator_morning_batch(
+        records,
+        as_of="2026-08-21T03:00:00+00:00",
+        expected_creators=("haojiao", "jenny"),
+    )
+    return {
+        "mode": "SIMULATED",
+        "ok": (
+            batch.get("state") == "complete"
+            and batch.get("expected_count") == 2
+            and batch.get("received_count") == 2
+            and batch.get("missing_creators") == []
+            and len(batch.get("records") or []) == 2
+        ),
+        "state": batch.get("state"),
+        "expected_count": batch.get("expected_count"),
+        "received_count": batch.get("received_count"),
+        "batch_key": batch.get("batch_key"),
+        "network_used": False,
+        "secrets_used": False,
+    }
 
 
 def _ready_bundle() -> dict[str, dict[str, Any]]:
@@ -123,6 +245,8 @@ def run_offline_e2e(
     release = validate_production_bundle(**bundle, require_production_research=True)
     telegram = delivery_check(send=False)
     pipeline = dry_run()
+    financialjuice_lane = _financialjuice_offline_lane()
+    creator_morning_lane = _creator_morning_offline_lane()
     creator_delivery = decide_creator_delivery(
         {
             "episode_key": "production-e2e-creator-episode",
@@ -160,6 +284,8 @@ def run_offline_e2e(
         "creator_delivery_contract": creator_delivery["allowed"] is True,
         "creator_release_contract": creator_release["status"] == "ready"
         and creator_release["parent_release_id"] == bundle["manifest"]["release_id"],
+        "financialjuice_compound_lane": financialjuice_lane["ok"] is True,
+        "creator_morning_batch_lane": creator_morning_lane["ok"] is True,
     }
     return {
         "ok": all(checks.values()),
@@ -184,6 +310,8 @@ def run_offline_e2e(
             "parent_release_id": creator_release["parent_release_id"],
             "insight_count": len(creator_release.get("insights") or []),
         },
+        "financialjuice_lane": financialjuice_lane,
+        "creator_morning_batch": creator_morning_lane,
     }
 
 

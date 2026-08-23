@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -36,7 +37,11 @@ def _write_output(values: dict[str, object]) -> None:
     intentionally short; correlation belongs in Actions, Railway and the
     Mini App snapshot rather than in the 30-character watch message.
     """
-    lines = [f"{key}={str(value or '')}" for key, value in values.items()]
+    lines = []
+    for key, value in values.items():
+        if isinstance(value, (dict, list)):
+            value = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        lines.append(f"{key}={str(value or '')}")
     destination = os.getenv("GITHUB_OUTPUT")
     if destination:
         with open(destination, "a", encoding="utf-8") as handle:
@@ -128,6 +133,14 @@ def _pick_quote(snapshot: dict, slot: str) -> dict | None:
 
 def _pick_event(snapshot: dict, slot: str) -> dict | None:
     """Prioritise the market currently relevant to the timed watch brief."""
+    # A qualifying FinancialJuice item has its own vendor-priority lane.  It
+    # may lead the single scheduled photo when no prior cluster notification
+    # has consumed it; risk still stays in the conservative PRStK state.
+    priority_events = snapshot.get("financialjuice_priority_events") or []
+    if isinstance(priority_events, list):
+        first_priority = next((item for item in priority_events if isinstance(item, dict)), None)
+        if first_priority:
+            return first_priority
     events = (snapshot.get("events") or {}).get("items", [])
     preferred: tuple[str, ...]
     if slot in TAIWAN_SESSION_SLOTS:

@@ -559,8 +559,8 @@ def apply_crypto_spot_crosscheck(
             merged["cross_checked"] = bool(result.get("cross_checked"))
             merged["crosscheck_status"] = "已交叉核對" if result.get("cross_checked") else str(result.get("status") or "未交叉核對")
             merged["crosscheck_sources"] = [
-                {"label": "Binance", "url": primary.get("source_url", ""), "quote_time": primary.get("quote_time", "")},
-                {"label": "CoinGecko", "url": (secondary or {}).get("source_url", ""), "quote_time": (secondary or {}).get("quote_time", "")},
+                {"provider": "Binance", "label": "Binance", "source_url": primary.get("source_url", ""), "url": primary.get("source_url", ""), "quote_time": primary.get("quote_time", "")},
+                {"provider": "CoinGecko", "label": "CoinGecko", "source_url": (secondary or {}).get("source_url", ""), "url": (secondary or {}).get("source_url", ""), "quote_time": (secondary or {}).get("quote_time", "")},
             ]
             checked.append(merged)
         else:
@@ -569,8 +569,8 @@ def apply_crypto_spot_crosscheck(
                 "cross_checked": False,
                 "crosscheck_status": "primary_unavailable",
                 "crosscheck_sources": [
-                    {"label": "Binance", "url": ""},
-                    {"label": "CoinGecko", "url": (secondary or {}).get("source_url", "")},
+                    {"provider": "Binance", "label": "Binance", "source_url": "", "url": ""},
+                    {"provider": "CoinGecko", "label": "CoinGecko", "source_url": (secondary or {}).get("source_url", ""), "url": (secondary or {}).get("source_url", "")},
                 ],
             })
     return checked
@@ -604,11 +604,13 @@ def apply_public_market_secondary_crosscheck(
                 merged["expected_sources"] = list(expected)
                 merged["crosscheck_sources"] = [
                     {
+                        "provider": expected[0],
                         "label": expected[0],
+                        "source_url": item.get("source_url", ""),
                         "url": item.get("source_url", ""),
                         "quote_time": item.get("quote_time") or item.get("quote_date", ""),
                     },
-                    {"label": expected[1], "url": "", "quote_time": ""},
+                    {"provider": expected[1], "label": expected[1], "source_url": "", "url": "", "quote_time": ""},
                 ]
                 checked.append(merged)
             else:
@@ -623,12 +625,16 @@ def apply_public_market_secondary_crosscheck(
         merged["crosscheck_status"] = "已交叉核對" if result.get("cross_checked") else str(result.get("status") or "未交叉核對")
         merged["crosscheck_sources"] = [
             {
+                "provider": "Yahoo",
                 "label": "Yahoo",
+                "source_url": item.get("source_url", ""),
                 "url": item.get("source_url", ""),
                 "quote_time": item.get("quote_time") or item.get("quote_date", ""),
             },
             {
+                "provider": "Nasdaq" if secondary.get("source_domain") == "api.nasdaq.com" else "Stooq",
                 "label": "Nasdaq" if secondary.get("source_domain") == "api.nasdaq.com" else "Stooq",
+                "source_url": secondary.get("source_url", ""),
                 "url": secondary.get("source_url", ""),
                 "quote_time": secondary.get("quote_time") or secondary.get("quote_date", ""),
             },
@@ -714,9 +720,12 @@ def build_market_snapshot() -> dict[str, Any]:
         except Exception as exc:
             errors.append({"ticker": item["ticker"], "message": str(exc), "scope": "macro_quote"})
     macro_quotes = [normalize_quote_record(item) for item in macro_quotes]
-    risk = build_risk_snapshot()
-    news = build_news_snapshot()
     official_events = fetch_official_events()
+    risk = build_risk_snapshot()
+    # Bind the current official event scan into news ranking before the
+    # snapshot is built.  Otherwise the graph could only see the previous
+    # release's ledger and miss a newly published Fed/MOPS/geopolitical item.
+    news = build_news_snapshot(official_events=official_events)
     phase_two = build_phase_two_snapshot()
     # Phase 5: crypto spot prices are independently checked after the regular
     # Yahoo/index pass. Re-annotate freshness because Binance is intraday.

@@ -15,7 +15,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-ALLOWED_SOURCES = {"financialjuice"}
+from src.creator_provider_registry import creator_ids
+
+ALLOWED_SOURCES = {"financialjuice", *creator_ids()}
 BLOCKED_FIELDS = {
     "body", "raw_body", "attachments", "data", "local_path", "private_url",
     "gmail_message_id", "gmail_thread_id", "gmail_history_id", "message_id",
@@ -27,11 +29,16 @@ SAFE_FIELDS = {
     "observation_id", "source", "content_origin", "content_type", "event_type", "category",
     "title", "headline", "original_headline", "summary", "chinese_translation",
     "ai_commentary", "possible_impact", "vendor_analysis", "vendor_impact",
-    "vendor_importance", "vendor_importance_present", "published_at", "source_published_at",
+    "vendor_importance", "vendor_importance_present", "published_at", "source_published_at", "received_at",
     "fetched_at", "source_url", "source_domain", "source_tier", "official_confirmed",
     "market_sync_confirmed", "cross_source_count", "market_evidence", "entities", "topics",
     "tickers", "parse_status", "parser_version", "event_cluster_key", "item_id", "content_hash",
     "candidate_event_type", "public_safe",
+    "creator_id", "creator_name", "episode_key", "episode_id", "episode_title",
+    "key_takeaways", "creator_market_view", "creator_strategy_view", "creator_risk_view",
+    "verification_state", "evidence_alignment", "prstk_correlation", "summary_image_available",
+    "summary_image_hash", "source_adapter", "template_fingerprint", "provider_fields",
+    "provider_fields_missing", "required_fields_present", "claims", "opinions",
 }
 
 
@@ -236,6 +243,59 @@ def external_source_health(*, path: Path | None, accepted: list[dict[str, Any]],
     }
 
 
+def external_source_health_from_remote(
+    remote_health: dict[str, Any],
+    *,
+    accepted: list[dict[str, Any]],
+    rejected: int,
+    checked_at: datetime,
+) -> dict[str, Any]:
+    """Translate Railway ingress status into the shared source-health contract.
+
+    The Railway endpoint is intentionally not exposed as a public source URL;
+    this row reports the public provider and the sanitized export's operational
+    state while retaining local fallback observations when available.
+    """
+    raw_status = str(remote_health.get("status") or "failed").strip().casefold()
+    provider_status = raw_status or "failed"
+    if raw_status in {"ready", "healthy"}:
+        state = "healthy" if accepted else "no_event"
+    elif raw_status == "no_event":
+        state = "no_event"
+    elif accepted:
+        state = "partial"
+    elif raw_status == "configuration_missing":
+        state = "configuration_missing"
+    else:
+        state = "failed"
+    issues: list[str] = []
+    reason = str(remote_health.get("reason") or "").strip()
+    if reason:
+        issues.append(reason)
+    if rejected:
+        issues.append("rejected_records")
+    row: dict[str, Any] = {
+        "key": "external_financialjuice",
+        "label": "FinancialJuice sanitized Railway ingress",
+        "provider": "financialjuice",
+        "role": "optional",
+        "status": state,
+        "state": state,
+        "semantic_state": state,
+        "provider_status": provider_status,
+        "source_tier": "discovery",
+        "source_url": "https://financialjuice.com/",
+        "checked_at": checked_at.isoformat(),
+        "accepted_count": len(accepted),
+        "rejected_count": rejected,
+        "observability": _observability(accepted, rejected),
+        "issues": list(dict.fromkeys(issues)),
+    }
+    if state in {"healthy", "no_event"} and raw_status in {"ready", "healthy", "no_event"}:
+        row["last_success_at"] = checked_at.isoformat()
+    return row
+
+
 def merge_external_source_health(health: dict[str, Any], row: dict[str, Any] | None) -> dict[str, Any]:
     """Merge the optional row while preserving source-health count invariants."""
     if not row:
@@ -266,4 +326,7 @@ def merge_external_source_health(health: dict[str, Any], row: dict[str, Any] | N
     return merged
 
 
-__all__ = ["external_observations_path", "load_external_observations", "external_source_health", "merge_external_source_health"]
+__all__ = [
+    "external_observations_path", "load_external_observations", "external_source_health",
+    "external_source_health_from_remote", "merge_external_source_health",
+]

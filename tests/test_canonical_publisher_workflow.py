@@ -20,6 +20,18 @@ def test_research_publisher_restores_before_writing():
     assert "data_release --publish" in workflow
 
 
+def test_public_release_smoke_restores_immutable_data_before_verifying():
+    workflow = Path(".github/workflows/public-release-smoke.yml").read_text(encoding="utf-8")
+    assert "Restore immutable data release for local gate" in workflow
+    assert "refs/heads/data-release:refs/remotes/origin/data-release" in workflow
+    assert "python -m src.data_release --restore --branch data-release --include site/data" in workflow
+    assert "git restore --source=origin/data-release --worktree -- site/data/" in workflow
+    assert "Verify public release (no delivery)" in workflow
+    assert "TELEGRAM_BOT_TOKEN" not in workflow
+    assert "TELEGRAM_CHAT_IDS" not in workflow
+    assert "sendPhoto" not in workflow
+
+
 def test_scheduled_brief_skips_telegram_for_stale_research_without_failing():
     workflow = Path(".github/workflows/scheduled-brief.yml").read_text(encoding="utf-8")
     assert "Resolve research delivery policy" in workflow

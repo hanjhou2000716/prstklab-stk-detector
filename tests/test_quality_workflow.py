@@ -36,6 +36,20 @@ def test_scheduled_workflow_only_passes_explicit_external_creator_records():
     assert "--creator-records \"$CREATOR_RECORDS_PATH\"" in workflow
 
 
+def test_scheduled_morning_slot_binds_creator_batch_to_release_manifest():
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
+    assert 'steps.window.outputs.slot' in workflow
+    assert 'arguments+=(--creator-morning-batch)' in workflow
+
+
+def test_creator_batch_has_dedicated_1030_and_late_recheck_crons():
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
+    assert 'cron: "30 2 * * 1-5"' in workflow
+    assert 'creator_schedule="${{ github.event.schedule }}"' in workflow
+    assert '[ "$creator_schedule" = "45 3 * * 1-5" ]' in workflow
+    assert '[ "$creator_schedule" = "15 5 * * 1-5" ]' in workflow
+
+
 def test_scheduled_workflow_exposes_only_sanitized_external_observations_path():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
     assert "EXTERNAL_OBSERVATIONS_PATH" in workflow

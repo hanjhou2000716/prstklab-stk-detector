@@ -13,6 +13,7 @@ import os
 from typing import Any
 
 from src.config import get_settings
+from src.railway_secret import delivery_shared_secret
 from src.telegram_client import mini_app_button, send_briefs, summarize_deliveries, validate_brief
 
 SMOKE_TEXT = "測試｜派送鏈路驗證"
@@ -35,7 +36,7 @@ def validate_delivery_configuration() -> dict[str, Any]:
         errors.append(str(error))
 
     callback_url = os.environ.get("RAILWAY_STATUS_URL", "").strip()
-    callback_secret = bool(os.environ.get("RAILWAY_STATUS_SHARED_SECRET", "").strip())
+    callback_secret = bool(delivery_shared_secret())
     if bool(callback_url) != callback_secret:
         errors.append("RAILWAY_STATUS_URL and RAILWAY_STATUS_SHARED_SECRET must be configured together")
     if callback_url and not callback_url.startswith("https://"):

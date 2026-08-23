@@ -8,6 +8,7 @@ import os
 import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from src.alert_budget import decide_alert_budget
 from src.alert_card_renderer import RendererError, render_alert_card
@@ -18,10 +19,13 @@ from src.event_ledger import EventLedger
 from src.external_observation_input import (
     external_observations_path,
     external_source_health,
+    external_source_health_from_remote,
     load_external_observations,
     merge_external_source_health,
 )
 from src.market_data import build_market_snapshot
+from src.railway_observation_client import load_railway_observations
+from src.railway_secret import delivery_shared_secret
 from src.refresh_market_data import merge_published_metadata, write_snapshot
 from src.release_gate import verify_release_for_delivery
 from src.scheduled_brief import (
@@ -34,6 +38,30 @@ from src.scheduled_brief import (
 from src.telegram_client import send_photo_briefs
 
 _DEFAULT_CREATOR_RECORDS_PATH = Path("creator/public-records.json")
+
+
+def _railway_observations_configured() -> bool:
+    """Return whether the optional sanitized Railway ingress is configured."""
+    return bool(
+        os.getenv("RAILWAY_OBSERVATIONS_URL", "").strip()
+        or os.getenv("RAILWAY_STATUS_URL", "").strip()
+        or delivery_shared_secret()
+    )
+
+
+def _merge_external_observations(
+    local_rows: list[dict],
+    remote_rows: list[dict],
+) -> list[dict]:
+    """Merge remote reviewed rows over local fallback rows by observation ID."""
+    merged: dict[str, dict] = {}
+    for row in [*local_rows, *remote_rows]:
+        if not isinstance(row, dict):
+            continue
+        key = str(row.get("observation_id") or "").strip()
+        if key:
+            merged[key] = row
+    return list(merged.values())
 
 
 def _creator_records_path() -> Path | None:
@@ -52,31 +80,60 @@ def _creator_records_path() -> Path | None:
     return path
 
 
-def _load_creator_records() -> list[dict]:
+def _creator_records_from_observations(rows: list[dict]) -> list[dict]:
+    """Project Railway's reviewed Creator observations into release records."""
+    records: list[dict] = []
+    seen: set[str] = set()
+    for row in rows:
+        if not isinstance(row, dict) or not row.get("public_safe"):
+            continue
+        provider = str(row.get("content_origin") or row.get("source") or "").strip().casefold()
+        if provider not in creator_ids():
+            continue
+        key = str(row.get("episode_key") or row.get("observation_id") or "").strip()
+        if not key or key in seen or str(row.get("parse_status") or "normalized").casefold() in {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}:
+            continue
+        record = dict(row)
+        record.setdefault("creator_id", provider)
+        record.setdefault("content_origin", provider)
+        record.setdefault("episode_key", key)
+        record["public_safe"] = True
+        seen.add(key)
+        records.append(record)
+    return records
+
+
+def _load_creator_records(extra_rows: list[dict] | None = None) -> list[dict]:
     """Load only the optional sanitized creator input outside the Pages tree."""
     path = _creator_records_path()
-    if path is None:
-        return []
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError):
-        return []
-    if isinstance(payload, dict):
-        payload = payload.get("records")
-    if not isinstance(payload, list):
-        return []
     safe_records: list[dict] = []
     blocked_states = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
     private_fields = {"body", "raw_body", "local_path", "private_url", "attachments", "data"}
-    for item in payload:
-        if not isinstance(item, dict):
-            continue
-        if any(item.get(field) not in (None, "", [], {}) for field in private_fields):
-            continue
-        if str(item.get("parse_status") or "").strip() in blocked_states:
-            continue
-        safe_records.append(item)
-    return safe_records
+    if path is not None:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            payload = []
+        if isinstance(payload, dict):
+            payload = payload.get("records")
+        if isinstance(payload, list):
+            for item in payload:
+                if not isinstance(item, dict):
+                    continue
+                if any(item.get(field) not in (None, "", [], {}) for field in private_fields):
+                    continue
+                if str(item.get("parse_status") or "").strip() in blocked_states:
+                    continue
+                safe_records.append(item)
+    combined = [*safe_records, *(_creator_records_from_observations(extra_rows or []))]
+    deduped: dict[str, dict] = {}
+    for index, item in enumerate(combined):
+        key = str(item.get("episode_key") or item.get("observation_id") or "").strip()
+        # Historical sanitized fixtures predate episode_key.  Preserve them
+        # for backward compatibility while still making duplicate merging
+        # deterministic within one refresh.
+        deduped[key or f"legacy:{index}"] = item
+    return list(deduped.values())
 
 
 def _creator_input_failures() -> dict[str, str]:
@@ -115,23 +172,62 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
     """Create the exact snapshot that will later be deployed and delivered."""
     snapshot = build_market_snapshot()
     external_path = external_observations_path()
-    external_observations, external_rejected = load_external_observations(external_path)
+    local_observations, local_rejected = load_external_observations(external_path)
+    remote_observations: list[dict] = []
+    remote_health: dict[str, Any] = {}
+    if _railway_observations_configured():
+        remote_observations, remote_health = load_railway_observations()
+    all_external_observations = _merge_external_observations(local_observations, remote_observations)
+    # FinancialJuice observations feed the event pipeline; Creator rows use
+    # the separate attributed-content lane and must not be counted as FJ
+    # market evidence or shown under the FJ source-health label.
+    creator_records = _load_creator_records(all_external_observations)
+    external_observations = [
+        row for row in all_external_observations
+        if str(row.get("content_origin") or row.get("source") or "").strip().casefold() == "financialjuice"
+    ]
+    # Project FinancialJuice into the same release-bound event lane as other
+    # public events.  The vendor score is kept separate from PRStK risk and
+    # every non-send decision remains visible to Mini App/audit consumers.
+    from src.financialjuice_priority import project_financialjuice_priority
+
+    existing_events = ((snapshot.get("events") or {}).get("items") or []) if isinstance(snapshot.get("events"), dict) else []
+    fj_projection = project_financialjuice_priority(external_observations, existing_events=existing_events)
+    if fj_projection["events"]:
+        if not isinstance(snapshot.get("events"), dict):
+            snapshot["events"] = {"items": []}
+        snapshot["events"].setdefault("items", []).extend(fj_projection["events"])
+    snapshot["financialjuice_priority_decisions"] = fj_projection["decisions"]
+    snapshot["financialjuice_priority_events"] = [
+        event for event in fj_projection["events"] if event.get("notification_status") == "eligible"
+    ]
+    remote_rejected = remote_health.get("rejected_count")
+    external_rejected = local_rejected + (int(remote_rejected) if isinstance(remote_rejected, (int, str, float)) else 0)
     if external_observations:
         snapshot["external_observations"] = external_observations
     elif "external_observations" not in snapshot:
         snapshot["external_observations"] = []
-    external_health = external_source_health(
-        path=external_path,
-        accepted=external_observations,
-        rejected=external_rejected,
-        checked_at=datetime.now(UTC),
-    )
+    checked_at = datetime.now(UTC)
+    external_health: dict[str, Any] | None
+    if _railway_observations_configured():
+        external_health = external_source_health_from_remote(
+            remote_health,
+            accepted=external_observations,
+            rejected=external_rejected,
+            checked_at=checked_at,
+        )
+    else:
+        external_health = external_source_health(
+            path=external_path,
+            accepted=external_observations,
+            rejected=external_rejected,
+            checked_at=checked_at,
+        )
     if external_health:
         snapshot["source_health"] = merge_external_source_health(
             snapshot.get("source_health") or {}, external_health
         )
         snapshot["external_source_health"] = external_health
-    creator_records = _load_creator_records()
     # Creator feeds are optional, but their operational state belongs in the
     # same source-health contract as the published market snapshot.  Keep this
     # merge after loading the external file so the market builder remains
@@ -272,27 +368,47 @@ def send(
         return
     delivered = sum(delivery.status == "delivered" for delivery in deliveries)
     failed = len(deliveries) - delivered
+    delivery_status = "delivered" if not failed else "partial" if delivered else "failed"
     failed_recipient_hashes = [delivery.chat_id_hash for delivery in deliveries if delivery.status != "delivered"]
-    _write_output({
+    output: dict[str, Any] = {
         "sent": "true",
         "reason": "sent_partial" if failed else "sent",
         "release_id": gate.release_id,
         "trace_id": trace_id,
         "snapshot_id": snapshot_id,
         "observation_id": observation_id,
-        "delivery_status": "delivered" if not failed else "partial" if delivered else "failed",
+        "delivery_status": delivery_status,
         "delivered_count": delivered,
         "failed_count": failed,
         "delivery_mode": "photo",
         "alert_id": alert_id,
         "alert_budget": budget,
         "failed_recipient_hashes": failed_recipient_hashes,
-    })
+    }
+    if isinstance(event, dict) and str(event.get("source_key") or "").strip().casefold() == "financialjuice":
+        output["financialjuice_delivery_trace"] = {
+            "observation_id_hash": event.get("observation_id_hash"),
+            "item_id": event.get("item_id"),
+            "event_cluster_key": event.get("event_cluster_key"),
+            "vendor_importance": event.get("vendor_importance"),
+            "prstk_risk": event.get("prstk_risk"),
+            "notification_reason": event.get("notification_reason"),
+            "release_id": gate.release_id,
+            "snapshot_id": snapshot_id,
+            "delivery_status": delivery_status,
+        }
+    _write_output(output)
     if event:
         write_event_lock_key(event)
         ledger = EventLedger()
         ledger.record_delivery(
-            {**event, "trace_id": trace_id},
+            {
+                **event,
+                "trace_id": trace_id,
+                "release_id": gate.release_id,
+                "snapshot_id": snapshot_id,
+                "delivery_status": delivery_status,
+            },
             trace_id=trace_id,
             reason="scheduled_delivery",
         )

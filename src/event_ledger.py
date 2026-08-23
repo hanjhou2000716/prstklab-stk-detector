@@ -337,7 +337,7 @@ class EventLedger:
         reasons = raw.get("reasons") or raw.get("pending_reasons") or event.get("pending_reasons") or []
         if not isinstance(reasons, (list, tuple)):
             reasons = [str(reasons)] if reasons else []
-        row = {
+        row: dict[str, Any] = {
             "recorded_at": current.isoformat(),
             "allowed": bool(raw.get("allowed", nested.get("allowed", False))),
             "status": str(raw.get("status") or nested.get("status") or "pending"),
@@ -374,7 +374,7 @@ class EventLedger:
         trace = str(trace_id or event.get("trace_id") or "").strip()
         if trace and any(str(item.get("trace_id") or "") == trace for item in history if isinstance(item, dict)):
             return history[-1] if history else {}
-        row = {
+        row: dict[str, Any] = {
             "event_key": key,
             "notification_id": str(event.get("notification_id") or event.get("compound_item_id") or key),
             "sent_at": current.isoformat(),
@@ -383,6 +383,17 @@ class EventLedger:
             "lifecycle_state": str(event.get("lifecycle_state") or "confirmed"),
             "reason": reason,
         }
+        # Preserve release-bound provenance needed to reconcile a FinancialJuice
+        # observation from ingress through delivery. Legacy events simply omit
+        # these optional fields.
+        for field in (
+            "release_id", "snapshot_id", "delivery_status", "observation_id_hash",
+            "item_id", "event_cluster_key", "vendor_importance", "prstk_risk",
+            "notification_reason", "parser_version", "received_at",
+        ):
+            value = event.get(field)
+            if value not in (None, "", [], {}):
+                row[field] = value
         if trace:
             row["trace_id"] = trace
         history.append(row)

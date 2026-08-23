@@ -25,6 +25,7 @@ from src.creator_delivery_store import (
 )
 from src.creator_notification import deliver_creator_episode, deliver_creator_morning_digest
 from src.creator_release import validate_creator_release
+from src.railway_secret import delivery_shared_secret
 from src.release_manifest import verify_release_files
 from src.scheduled_brief import _write_output
 
@@ -107,7 +108,7 @@ def dispatch(
     recipients = chat_ids if chat_ids is not None else settings.telegram_chat_ids
     history = load_creator_delivery_history(receipt_path)
     remote_history, remote_history_status = load_remote_creator_delivery_history(
-        os.getenv("RAILWAY_STATUS_URL"), os.getenv("RAILWAY_STATUS_SHARED_SECRET")
+        os.getenv("RAILWAY_STATUS_URL"), delivery_shared_secret()
     )
     if os.getenv("RAILWAY_STATUS_URL", "").strip() and remote_history_status not in {"healthy", "not_configured"}:
         reason = f"creator_delivery_history_{remote_history_status}"

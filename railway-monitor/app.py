@@ -102,6 +102,35 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     load_poll_settings = _poll_config_module.load_poll_settings
 
 try:
+    from source_health_projection import project_source_health
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _source_health_spec = spec_from_file_location(
+        "railway_source_health_projection",
+        Path(__file__).with_name("source_health_projection.py"),
+    )
+    if _source_health_spec is None or _source_health_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/source_health_projection.py") from None
+    _source_health_module = module_from_spec(_source_health_spec)
+    _source_health_spec.loader.exec_module(_source_health_module)
+    project_source_health = _source_health_module.project_source_health
+
+try:
+    from health_state import HEALTH_LOCK, HEALTH_STATE, snapshot_health, update_health
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _health_state_spec = spec_from_file_location(
+        "railway_health_state",
+        Path(__file__).with_name("health_state.py"),
+    )
+    if _health_state_spec is None or _health_state_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/health_state.py") from None
+    _health_state_module = module_from_spec(_health_state_spec)
+    _health_state_spec.loader.exec_module(_health_state_module)
+    HEALTH_LOCK = _health_state_module.HEALTH_LOCK
+    HEALTH_STATE = _health_state_module.HEALTH_STATE
+    snapshot_health = _health_state_module.snapshot_health
+    update_health = _health_state_module.update_health
+
+try:
     from state_store_schema import initialize_state_schema
 except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
     _schema_spec = spec_from_file_location(
@@ -335,10 +364,10 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
 def _delivery_shared_secret() -> str:
     """Return the delivery HMAC secret using the canonical or legacy name.
 
-    GitHub Actions calls this value ``RAILWAY_STATUS_SHARED_SECRET`` while
-    Railway historically exposed ``DELIVERY_STATUS_SHARED_SECRET``.  Accept
-    both names during migration, preferring the Railway-specific setting, so
-    a naming mismatch cannot silently block otherwise valid receipts.
+    ``RAILWAY_STATUS_SHARED_SECRET`` is canonical; the old
+    ``DELIVERY_STATUS_SHARED_SECRET`` name is accepted only as a compatibility
+    fallback.  Canonical precedence prevents two configured values from
+    producing different HMAC verification behavior across Actions and Railway.
     """
     return delivery_shared_secret()
 
@@ -354,13 +383,31 @@ _RUNTIME_ACTIVE_BLACK_SWAN_CONTEXT_TERMS = (
     "invasion", "attack", "strike", "escalation", "major disaster",
 )
 _USING_STANDALONE_CLASSIFIER = False
+_CLASSIFIER_MODE = "unavailable"
+_CLASSIFIER_SOURCE_SHA256 = ""
 
 try:
-    from src.event_classifier import classify_event_fields, has_active_black_swan_context
+    from src import event_classifier as _classifier_module
+    classify_event_fields = _classifier_module.classify_event_fields
+    has_active_black_swan_context = _classifier_module.has_active_black_swan_context
+    _CLASSIFIER_MODE = "repository-shared"
+    _CLASSIFIER_SOURCE_SHA256 = hashlib.sha256(Path(_classifier_module.__file__).read_bytes()).hexdigest()
 except ModuleNotFoundError as error:
     if error.name not in {"src", "src.event_classifier"}:
         raise
-    _USING_STANDALONE_CLASSIFIER = True
+    try:
+        # The root-only Railway image receives this generated copy from the
+        # canonical ``src`` module.  It is kept in sync by CI and uses the
+        # bundled canonical keyword database beside app.py.
+        import shared_event_classifier as _classifier_module
+        classify_event_fields = _classifier_module.classify_event_fields
+        has_active_black_swan_context = _classifier_module.has_active_black_swan_context
+        _CLASSIFIER_MODE = "repository-shared"
+        _CLASSIFIER_SOURCE_SHA256 = str(getattr(_classifier_module, "BUNDLE_SOURCE_SHA256", ""))
+    except ModuleNotFoundError as bundle_error:
+        if bundle_error.name != "shared_event_classifier":
+            raise
+        _USING_STANDALONE_CLASSIFIER = True
 
     def _runtime_haystack(record: Any) -> str:
         values: list[str] = []
@@ -632,54 +679,20 @@ DISCOVERY_ACTION_ALIAS_GROUPS["energy_supply"] = ENERGY_DISCOVERY_ACTIONS
 DISCOVERY_ENTITIES = tuple(dict.fromkeys((*DISCOVERY_ENTITIES, "kuwait", "kuwaiti", "bahrain", "qatar", "saudi arabia", "uae", "oman", "科威特", "科威特國", "科威特国")))
 DISCOVERY_ACTIONS["energy"] = tuple(dict.fromkeys((*DISCOVERY_ACTIONS.get("energy", ()), *ENERGY_DISCOVERY_ACTIONS)))
 
-# Public, non-secret runtime diagnostics for Railway's /health endpoint.  This
-# deliberately contains timestamps, counts and error classes only; credentials
-# and response bodies never enter the health payload.
-HEALTH_LOCK = threading.Lock()
-HEALTH_STATE: dict[str, Any] = {
-    "status": "ok",
-    "service": "prstk-jin10-monitor",
-    "started_at": datetime.now(timezone.utc).isoformat(),
-    "jin10": {"status": "not_checked", "last_success_at": None, "last_failure_at": None, "item_count": 0, "error": None},
-    "gdelt": {"enabled": True, "status": "not_checked", "event_scan": "not_checked", "last_success_at": None, "last_failure_at": None, "article_count": 0, "alert_count": 0, "pending_count": 0, "pending_reasons": {}, "error": None, "stale_cache_used": False, "health_dispatch_status": "not_checked", "health_dispatch_error": None, "health_dispatch_next_retry_at": None},
-    "market_sync": {"status": "not_checked", "source_url": None, "fetched_at": None, "record_count": 0, "error": None},
-    "classification": {
-        "status": "not_checked",
-        "updated_at": None,
-        "classification_counts": {},
-        "unclassified_count": 0,
-        "reason_counts": {},
-    },
-    "delivery": {
-        "status": "not_checked",
-        "last_trace_id": None,
-        "last_outbox_status": None,
-        "last_receipt_status": None,
-        "counts": {},
-        "last_updated_at": None,
-        "last_error": None,
-    },
-    "monitor": {
-        "status": "starting",
-        "poll_interval_seconds": None,
-        "last_cycle_started_at": None,
-        "last_cycle_completed_at": None,
-    },
-    "gmail": {
-        "status": "not_configured",
-        "watch_status": "not_checked",
-        "last_notification_at": None,
-        "last_history_id": None,
-        "error": None,
-    },
-}
 DELIVERY_STORE: SeenStore | None = None
 EMAIL_INGRESS: Any | None = None
 
 
-def update_health(component: str, **values: Any) -> None:
-    with HEALTH_LOCK:
-        HEALTH_STATE.setdefault(component, {}).update(values)
+def sync_external_source_health(diagnostics: Any) -> None:
+    """Project private Gmail-derived source counters into public health.
+
+    Only bounded counters, timestamps and state labels are copied.  Raw mail,
+    Gmail IDs, sender addresses and message bodies remain inside Railway's
+    private store.  Missing diagnostics are represented as ``not_checked``
+    rather than silently reported as healthy.
+    """
+    for component, source in project_source_health(diagnostics).items():
+        update_health(component, **source)
 
 
 def _non_negative_int(value: Any) -> int | None:
@@ -693,8 +706,13 @@ def _age_seconds(value: str | None, *, now: datetime | None = None) -> int | Non
 
 
 def health_snapshot() -> dict[str, Any]:
-    with HEALTH_LOCK:
-        snapshot = json.loads(json.dumps(HEALTH_STATE))
+    if EMAIL_INGRESS is not None:
+        try:
+            sync_external_source_health(EMAIL_INGRESS.health())
+        except Exception:  # pragma: no cover - health must never crash probes
+            update_health("creator", status="failed", error="health_projection_failed")
+            update_health("financialjuice", status="failed", error="health_projection_failed")
+    snapshot = snapshot_health()
     monitor = snapshot.get("monitor")
     if isinstance(monitor, dict):
         monitor.update(monitor_heartbeat(monitor))
@@ -1093,158 +1111,10 @@ class SeenStore:
     def delivery_history(self, db: sqlite3.Connection | None = None, limit: int = 10) -> list[dict[str, Any]]:
         """Return a bounded, non-secret recent delivery history for health checks."""
         return store_delivery_history(db or self.connection, limit=limit, age_seconds_fn=_age_seconds)
-        database = db or self.connection
-        rows = database.execute(
-            """SELECT trace_id, source, event_id, category, status, attempts, last_error, updated_at
-               FROM delivery_outbox ORDER BY updated_at DESC LIMIT ?""",
-            (max(1, min(20, int(limit))),),
-        ).fetchall()
-        history: list[dict[str, Any]] = []
-        for trace_id, source, event_id, category, outbox_status, attempts, last_error, updated_at in rows:
-            notification_keys: list[str] = []
-            payload_row = database.execute(
-                "SELECT payload_json FROM delivery_outbox WHERE trace_id=?", (trace_id,)
-            ).fetchone()
-            if payload_row:
-                try:
-                    stored_payload = json.loads(payload_row[0] or "{}")
-                except (TypeError, json.JSONDecodeError):
-                    stored_payload = {}
-                if isinstance(stored_payload, dict):
-                    notification_keys = [
-                        str(item)[:160] for item in (stored_payload.get("notification_keys") or [])
-                        if isinstance(item, str) and item.strip()
-                    ][:200]
-            receipt = database.execute(
-                """SELECT status, delivered_count, failed_count, reported_at, error, updated_at
-                   FROM delivery_receipts
-                   WHERE trace_id=? AND recipient_hash='__aggregate__'
-                   ORDER BY updated_at DESC LIMIT 1""",
-                (trace_id,),
-            ).fetchone()
-            delivered_count = int(receipt[1]) if receipt and receipt[1] is not None else None
-            failed_count = int(receipt[2]) if receipt and receipt[2] is not None else None
-            reported_at = str(receipt[3]) if receipt and receipt[3] else None
-            receipt_updated_at = str(receipt[5]) if receipt else None
-            if receipt and (delivered_count is None or failed_count is None):
-                try:
-                    legacy_counts = json.loads(receipt[4] or "{}")
-                except (TypeError, json.JSONDecodeError):
-                    legacy_counts = {}
-                if isinstance(legacy_counts, dict):
-                    delivered_count = delivered_count if delivered_count is not None else _non_negative_int(legacy_counts.get("delivered_count"))
-                    failed_count = failed_count if failed_count is not None else _non_negative_int(legacy_counts.get("failed_count"))
-                    reported_at = reported_at or (str(legacy_counts.get("reported_at")) if legacy_counts.get("reported_at") else None)
-            failed_hash_count = int(database.execute(
-                """SELECT COUNT(*) FROM delivery_receipts
-                   WHERE trace_id=? AND recipient_hash <> '__aggregate__' AND status='failed'""",
-                (trace_id,),
-            ).fetchone()[0])
-            history.append({
-                "trace_id": str(trace_id),
-                "source": str(source),
-                "event_id": str(event_id),
-                "category": str(category) if category else None,
-                "outbox_status": str(outbox_status),
-                "attempts": int(attempts),
-                "last_error": str(last_error) if last_error else None,
-                "updated_at": str(updated_at),
-                "receipt_status": str(receipt[0]) if receipt else None,
-                "delivered_count": delivered_count,
-                "failed_count": failed_count,
-                "recipient_count": (delivered_count + failed_count) if delivered_count is not None and failed_count is not None else None,
-                "reported_at": reported_at,
-                "receipt_age_seconds": _age_seconds(receipt_updated_at),
-                "failed_recipient_hash_count": failed_hash_count,
-                "notification_keys": notification_keys,
-            })
-        return history
 
     def delivery_diagnostics(self, db: sqlite3.Connection | None = None) -> dict[str, Any]:
         """Return non-secret delivery state for Railway's health endpoint."""
         return store_delivery_diagnostics(db or self.connection, age_seconds_fn=_age_seconds)
-        database = db or self.connection
-        rows = database.execute(
-            "SELECT status, COUNT(*) FROM delivery_outbox GROUP BY status"
-        ).fetchall()
-        counts = {str(status): int(count) for status, count in rows}
-        now = datetime.now(timezone.utc).isoformat()
-        retryable_count = 0
-        due_retry_count = 0
-        retry_rows = database.execute(
-            """SELECT payload_json, next_retry_at FROM delivery_outbox
-               WHERE status IN ('pending', 'failed')"""
-        ).fetchall()
-        for payload_json, next_retry_at in retry_rows:
-            try:
-                stored_payload = json.loads(payload_json)
-            except (TypeError, json.JSONDecodeError):
-                continue
-            if not isinstance(stored_payload, dict) or not isinstance(stored_payload.get("dispatch_payload"), dict):
-                continue
-            retryable_count += 1
-            if not next_retry_at or str(next_retry_at) <= now:
-                due_retry_count += 1
-        latest = database.execute(
-            """SELECT trace_id, status, last_error, updated_at
-               FROM delivery_outbox ORDER BY updated_at DESC LIMIT 1"""
-        ).fetchone()
-        latest_receipt = database.execute(
-            """SELECT trace_id, status, delivered_count, failed_count, reported_at, error, updated_at
-               FROM delivery_receipts
-               WHERE recipient_hash='__aggregate__' ORDER BY updated_at DESC LIMIT 1"""
-        ).fetchone()
-        receipt = database.execute(
-            """SELECT trace_id, status, delivered_count, failed_count, reported_at, error, updated_at
-               FROM delivery_receipts
-               WHERE recipient_hash='__aggregate__' AND trace_id=?
-               ORDER BY updated_at DESC LIMIT 1""",
-            (latest[0],),
-        ).fetchone() if latest else latest_receipt
-        recent = self.delivery_history(database, 10)
-        outbox_status = str(latest[1]) if latest else None
-        receipt_trace_id = str(receipt[0]) if receipt else None
-        receipt_status = str(receipt[1]) if receipt else None
-        delivered_count = int(receipt[2]) if receipt and receipt[2] is not None else None
-        failed_count = int(receipt[3]) if receipt and receipt[3] is not None else None
-        reported_at = str(receipt[4]) if receipt and receipt[4] else None
-        receipt_updated_at = str(receipt[6]) if receipt else None
-        # Older rows encoded these fields in ``error``.  Read them once for
-        # compatibility; new rows use dedicated columns for reliable queries.
-        if receipt and (delivered_count is None or failed_count is None):
-            try:
-                legacy_counts = json.loads(receipt[5] or "{}")
-            except (TypeError, json.JSONDecodeError):
-                legacy_counts = {}
-            if isinstance(legacy_counts, dict):
-                delivered_count = delivered_count if delivered_count is not None else _non_negative_int(legacy_counts.get("delivered_count"))
-                failed_count = failed_count if failed_count is not None else _non_negative_int(legacy_counts.get("failed_count"))
-                reported_at = reported_at or (str(legacy_counts.get("reported_at")) if legacy_counts.get("reported_at") else None)
-        return {
-            "status": receipt_status or outbox_status or "not_checked",
-            "last_trace_id": str(latest[0]) if latest else None,
-            "last_outbox_status": outbox_status,
-            "last_receipt_status": receipt_status,
-            "last_receipt_trace_id": receipt_trace_id,
-            "receipt_matches_last_outbox": (receipt_trace_id == str(latest[0])) if latest and receipt_trace_id else (False if latest else None),
-            "stale_receipt_status": str(latest_receipt[1]) if latest_receipt and receipt_trace_id != str(latest_receipt[0]) else None,
-            "counts": counts,
-            "retryable_count": retryable_count,
-            "due_retry_count": due_retry_count,
-            "last_updated_at": receipt_updated_at if receipt else (latest[3] if latest else None),
-            "last_error": str(latest[2]) if latest and latest[2] else None,
-            "last_delivered_count": delivered_count,
-            "last_failed_count": failed_count,
-            "last_recipient_count": (delivered_count + failed_count) if delivered_count is not None and failed_count is not None else None,
-            "last_reported_at": reported_at,
-            "last_receipt_age_seconds": _age_seconds(receipt_updated_at),
-            "last_failed_recipient_hash_count": int(database.execute(
-                """SELECT COUNT(*) FROM delivery_receipts
-                   WHERE trace_id=? AND recipient_hash <> '__aggregate__' AND status='failed'""",
-                (receipt_trace_id,),
-            ).fetchone()[0]) if receipt_trace_id else 0,
-            "recent": recent,
-        }
 
     def prune_delivery_history(self, retention_days: int = 30, limit: int = 500) -> int:
         """Remove bounded, terminal delivery history after the retention window.
@@ -1256,29 +1126,6 @@ class SeenStore:
         Railway volumes.  The limit keeps a single monitor cycle inexpensive.
         """
         return store_prune_delivery_history(self.connection, retention_days, limit)
-        days = max(30, int(retention_days))
-        batch_size = max(1, min(5000, int(limit)))
-        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-        rows = self.connection.execute(
-            """SELECT trace_id FROM delivery_outbox
-               WHERE status IN ('sent', 'partial') AND updated_at < ?
-               ORDER BY updated_at ASC LIMIT ?""",
-            (cutoff, batch_size),
-        ).fetchall()
-        trace_ids = [str(row[0]) for row in rows]
-        if not trace_ids:
-            return 0
-        placeholders = ",".join("?" for _ in trace_ids)
-        self.connection.execute(
-            f"DELETE FROM delivery_receipts WHERE trace_id IN ({placeholders})",
-            trace_ids,
-        )
-        self.connection.execute(
-            f"DELETE FROM delivery_outbox WHERE trace_id IN ({placeholders})",
-            trace_ids,
-        )
-        self.connection.commit()
-        return len(trace_ids)
 
     def record_delivery_status(self, payload: dict[str, Any]) -> bool:
         """Persist an authenticated GitHub per-run delivery receipt."""
@@ -1439,22 +1286,6 @@ class SeenStore:
             cooldown_seconds=cooldown_seconds,
             escalation_terms=ESCALATION_TERMS,
         )
-        row = self.connection.execute(
-            "SELECT summary, dispatched_at FROM dispatched WHERE category = ? ORDER BY rowid DESC LIMIT 1",
-            (alert.category,),
-        ).fetchone()
-        if row is None:
-            return True
-        previous_summary, previous_time = row
-        try:
-            elapsed = (datetime.now(timezone.utc) - datetime.fromisoformat(previous_time)).total_seconds()
-        except ValueError:
-            return True
-        if elapsed >= cooldown_seconds:
-            return True
-        current = alert.summary.casefold()
-        previous = str(previous_summary).casefold()
-        return any(term.casefold() in current and term.casefold() not in previous for term in ESCALATION_TERMS)
 
     def record_dispatch(self, alert: Alert) -> None:
         store_record_category_dispatch(
@@ -1463,11 +1294,6 @@ class SeenStore:
             summary=alert.summary,
         )
         return
-        self.connection.execute(
-            "INSERT INTO dispatched(category, summary, dispatched_at) VALUES (?, ?, ?)",
-            (alert.category, alert.summary, datetime.now(timezone.utc).isoformat()),
-        )
-        self.connection.commit()
 
     def observe_alert(self, alert: Alert) -> dict[str, Any]:
         """Observe an alert in the durable ledger and return its identity."""
@@ -1480,29 +1306,6 @@ class SeenStore:
             fingerprints=alert_fact_fingerprints(alert.summary),
             title=alert.summary,
         )
-        key = alert_canonical_key(alert)
-        now = datetime.now(timezone.utc).isoformat()
-        urls = sorted({normalize_source_url(item.url) for item in alert.evidence if normalize_source_url(item.url)})
-        fingerprints = alert_fact_fingerprints(alert.summary)
-        row = self.connection.execute(
-            "SELECT first_discovered_at, last_reminded_at, escalated, verified_sources_json FROM event_ledger WHERE canonical_key = ?",
-            (key,),
-        ).fetchone()
-        if row is None:
-            self.connection.execute(
-                "INSERT INTO event_ledger(canonical_key,event_type,source_url,person_fingerprint,location_fingerprint,action_fingerprint,first_discovered_at,last_reminded_at,escalated,verified_sources_json,last_title,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
-                (key, alert.category, urls[0] if urls else "", fingerprints["person"], fingerprints["location"], fingerprints["action"], now, None, 0, json.dumps(urls), alert.summary, now),
-            )
-            self.connection.commit()
-            return {"canonical_key": key, "is_new": True, "last_reminded_at": None, "escalated": False}
-        previous_sources = json.loads(row[3] or "[]") if row[3] else []
-        merged_sources = sorted(set(previous_sources) | set(urls))
-        self.connection.execute(
-            "UPDATE event_ledger SET verified_sources_json = ?, updated_at = ? WHERE canonical_key = ?",
-            (json.dumps(merged_sources), now, key),
-        )
-        self.connection.commit()
-        return {"canonical_key": key, "is_new": False, "last_reminded_at": row[1], "escalated": bool(row[2])}
 
     def mark_alert_reminded(self, alert: Alert, *, escalated: bool = False) -> None:
         store_mark_alert_reminded(
@@ -1511,34 +1314,13 @@ class SeenStore:
             escalated=escalated,
         )
         return
-        key = alert_canonical_key(alert)
-        self.connection.execute(
-            "UPDATE event_ledger SET last_reminded_at = ?, escalated = CASE WHEN ? THEN 1 ELSE escalated END, updated_at = ? WHERE canonical_key = ?",
-            (datetime.now(timezone.utc).isoformat(), int(escalated), datetime.now(timezone.utc).isoformat(), key),
-        )
-        self.connection.commit()
 
     def ledger_may_dispatch(self, record: dict[str, Any], cooldown_seconds: int) -> bool:
         return store_ledger_may_dispatch(record, cooldown_seconds=cooldown_seconds)
-        if record.get("is_new") or record.get("escalated"):
-            return True
-        raw = record.get("last_reminded_at")
-        if not raw:
-            return True
-        try:
-            return (datetime.now(timezone.utc) - datetime.fromisoformat(str(raw))).total_seconds() >= cooldown_seconds
-        except ValueError:
-            return True
 
     def prune_event_ledger(self, retention_days: int = 30) -> None:
         store_prune_event_ledger(self.connection, retention_days)
         return
-        cutoff = datetime.now(timezone.utc).timestamp() - max(30, retention_days) * 86400
-        self.connection.execute(
-            "DELETE FROM event_ledger WHERE strftime('%s', COALESCE(last_reminded_at, first_discovered_at)) < ?",
-            (str(int(cutoff)),),
-        )
-        self.connection.commit()
 
     def read_cache(self, cache_key: str, max_age_seconds: int) -> list[dict[str, str]] | None:
         return store_read_cache(self.connection, cache_key, max_age_seconds)
@@ -1632,99 +1414,6 @@ async def dispatch_monitor_health(*, token: str, repository: str, gdelt: dict[st
     _HEALTH_DISPATCH_BACKOFF_ERROR = state["error"]
     _HEALTH_DISPATCH_BACKOFF_NEXT_AT = state["next_at"]
     return
-    if not token or not repository:
-        update_health(
-            "gdelt",
-            health_dispatch_status="configuration_missing",
-            health_dispatch_error="missing_github_dispatch_configuration",
-            health_dispatch_next_retry_at=None,
-        )
-        logging.warning("monitor health dispatch skipped: GitHub credentials are not configured")
-        return
-    if time.monotonic() < _HEALTH_DISPATCH_BACKOFF_UNTIL:
-        update_health(
-            "gdelt",
-            health_dispatch_status=_HEALTH_DISPATCH_BACKOFF_STATUS,
-            health_dispatch_error=_HEALTH_DISPATCH_BACKOFF_ERROR,
-            health_dispatch_next_retry_at=_HEALTH_DISPATCH_BACKOFF_NEXT_AT,
-        )
-        logging.info("monitor health dispatch backoff active status=%s", _HEALTH_DISPATCH_BACKOFF_STATUS)
-        return
-    payload = {
-        "event_type": "monitor-health",
-        "client_payload": {
-            "component": "gdelt",
-            "status": str(gdelt.get("status") or "unknown"),
-            "checked_at": gdelt.get("last_success_at") or gdelt.get("last_failure_at"),
-            "pending_count": int(gdelt.get("pending_count") or 0),
-            "pending_reasons": {
-                str(key): int(value or 0)
-                for key, value in (gdelt.get("pending_reasons") or {}).items()
-            },
-            "market_sync_status": str(gdelt.get("market_sync_status") or "not_confirmed"),
-            "error": str(gdelt.get("error") or "") or None,
-        },
-    }
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {token}",
-        "X-GitHub-Api-Version": GITHUB_API_VERSION,
-    }
-    endpoint = f"https://api.github.com/repos/{repository}/dispatches"
-    async with httpx.AsyncClient(timeout=20) as client:
-        for attempt in range(3):
-            try:
-                response = await client.post(endpoint, headers=headers, json=payload)
-            except httpx.HTTPError as exc:
-                if attempt == 2:
-                    _HEALTH_DISPATCH_BACKOFF_UNTIL = time.monotonic() + 60
-                    _HEALTH_DISPATCH_BACKOFF_STATUS = "degraded"
-                    _HEALTH_DISPATCH_BACKOFF_ERROR = type(exc).__name__
-                    _HEALTH_DISPATCH_BACKOFF_NEXT_AT = (datetime.now(timezone.utc) + timedelta(seconds=60)).isoformat()
-                    update_health("gdelt", health_dispatch_status="degraded", health_dispatch_error=type(exc).__name__, health_dispatch_next_retry_at=_HEALTH_DISPATCH_BACKOFF_NEXT_AT)
-                    logging.warning("monitor health dispatch unavailable error=%s", type(exc).__name__)
-                    return
-                await asyncio.sleep(2**attempt)
-                continue
-            if response.status_code in {401, 403}:
-                # This callback is observability only.  A repository token
-                # without dispatch permission must not crash or spin the
-                # source monitor; local Railway health remains authoritative.
-                _HEALTH_DISPATCH_BACKOFF_UNTIL = time.monotonic() + 900
-                _HEALTH_DISPATCH_BACKOFF_STATUS = "configuration_missing" if response.status_code == 401 else "permission_denied"
-                _HEALTH_DISPATCH_BACKOFF_ERROR = f"HTTP_{response.status_code}"
-                _HEALTH_DISPATCH_BACKOFF_NEXT_AT = (datetime.now(timezone.utc) + timedelta(seconds=900)).isoformat()
-                update_health(
-                    "gdelt", health_dispatch_status=_HEALTH_DISPATCH_BACKOFF_STATUS,
-                    health_dispatch_error=_HEALTH_DISPATCH_BACKOFF_ERROR,
-                    health_dispatch_next_retry_at=_HEALTH_DISPATCH_BACKOFF_NEXT_AT,
-                )
-                logging.warning("monitor health dispatch rejected status=%s; local health retained", response.status_code)
-                return
-            if response.status_code == 429 or response.status_code >= 500:
-                if attempt == 2:
-                    _HEALTH_DISPATCH_BACKOFF_UNTIL = time.monotonic() + 300
-                    _HEALTH_DISPATCH_BACKOFF_STATUS = "degraded"
-                    _HEALTH_DISPATCH_BACKOFF_ERROR = f"HTTP_{response.status_code}"
-                    _HEALTH_DISPATCH_BACKOFF_NEXT_AT = (datetime.now(timezone.utc) + timedelta(seconds=300)).isoformat()
-                    update_health("gdelt", health_dispatch_status="degraded", health_dispatch_error=_HEALTH_DISPATCH_BACKOFF_ERROR, health_dispatch_next_retry_at=_HEALTH_DISPATCH_BACKOFF_NEXT_AT)
-                    logging.warning("monitor health dispatch rate-limited/unavailable status=%s", response.status_code)
-                    return
-                retry_after = 0
-                try:
-                    retry_after = int(response.headers.get("Retry-After", "0"))
-                except (TypeError, ValueError):
-                    retry_after = 0
-                await asyncio.sleep(min(60, max(1, retry_after)) if retry_after else 2**attempt)
-                continue
-            response.raise_for_status()
-            _HEALTH_DISPATCH_BACKOFF_UNTIL = 0.0
-            _HEALTH_DISPATCH_BACKOFF_STATUS = "not_checked"
-            _HEALTH_DISPATCH_BACKOFF_ERROR = None
-            _HEALTH_DISPATCH_BACKOFF_NEXT_AT = None
-            update_health("gdelt", health_dispatch_status="healthy", health_dispatch_error=None, health_dispatch_next_retry_at=None)
-            logging.info("monitor health dispatch accepted status=%s", response.status_code)
-            return
 
 
 def default_flash_arguments(schema: dict[str, Any], requested_limit: int) -> dict[str, Any]:
@@ -2089,6 +1778,12 @@ def configure_gmail_ingress() -> None:
     global EMAIL_INGRESS
     EMAIL_INGRESS, fields = build_gmail_ingress()
     update_health("gmail", **fields)
+    if EMAIL_INGRESS is not None:
+        try:
+            sync_external_source_health(EMAIL_INGRESS.health())
+        except Exception:  # pragma: no cover - defensive startup boundary
+            update_health("creator", status="failed", error="health_projection_failed")
+            update_health("financialjuice", status="failed", error="health_projection_failed")
 
 
 class HealthHandler(BaseHTTPRequestHandler):
@@ -2097,6 +1792,47 @@ class HealthHandler(BaseHTTPRequestHandler):
         # query string.  Route by the URL path, not the raw request target, so
         # `/health?ts=...` remains the same public health endpoint.
         request_path = _health_request_path(self.path)
+        if request_path == "/external-observations":
+            # Actions fetches this bounded, sanitized projection before
+            # building a public release.  Authenticate the request without
+            # placing the shared secret in a query string or response.
+            secret = _delivery_shared_secret()
+            if EMAIL_INGRESS is None or not secret:
+                self.send_error(503, "external observation export is unavailable")
+                return
+            parsed_target = urlparse(self.path)
+            canonical_target = parsed_target.path
+            if parsed_target.query:
+                canonical_target += "?" + parsed_target.query
+            expected = "sha256=" + hmac.new(
+                secret.encode("utf-8"),
+                f"GET\n{canonical_target}".encode("utf-8"),
+                hashlib.sha256,
+            ).hexdigest()
+            supplied = self.headers.get("X-PRSTK-Signature", "")
+            if not hmac.compare_digest(supplied, expected):
+                self.send_error(401)
+                return
+            try:
+                values = dict(parse_qsl(parsed_target.query, keep_blank_values=True))
+                limit = max(1, min(500, int(values.get("limit", "100"))))
+                store = getattr(EMAIL_INGRESS, "store", None)
+                rows = store.public_observations(limit=limit) if store is not None else []
+                body = (json.dumps({
+                    "status": "ready" if rows else "no_event",
+                    "observations": rows,
+                    "count": len(rows),
+                }, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            except (TypeError, ValueError):
+                self.send_error(400, "invalid observation export request")
+                return
         if request_path not in {"/", "/health"}:
             self.send_error(404)
             return
@@ -2127,6 +1863,7 @@ class HealthHandler(BaseHTTPRequestHandler):
                     **_gmail_health_fields(diagnostics),
                     error=None,
                 )
+                sync_external_source_health(diagnostics)
                 response = b'{"accepted":true}\n'
                 self.send_response(204)
                 self.send_header("Content-Length", str(len(response)))
@@ -2542,11 +2279,23 @@ def validate_runtime_layout() -> None:
         probe_category = probe.get("category") if isinstance(probe, dict) else None
         if not probe_category:
             raise RuntimeError("classifier_probe_no_category")
-        mode = "standalone-bundled" if _USING_STANDALONE_CLASSIFIER else "repository-shared"
+        mode = "standalone-bundled" if _USING_STANDALONE_CLASSIFIER else _CLASSIFIER_MODE
+        keyword_digest = ""
+        for keyword_path in (
+            Path(__file__).resolve().parents[1] / "config" / "event_keywords.json",
+            Path(__file__).resolve().with_name("event_keywords.json"),
+        ):
+            try:
+                keyword_digest = hashlib.sha256(keyword_path.read_bytes()).hexdigest()
+                break
+            except OSError:
+                continue
         update_health(
             "runtime",
             status="healthy",
             classifier_mode=mode,
+            classifier_source_sha256=_CLASSIFIER_SOURCE_SHA256,
+            keyword_bundle_sha256=keyword_digest,
             keyword_categories=len(CATEGORY_KEYWORDS),
             updated_at=datetime.now(timezone.utc).isoformat(),
             error=None,

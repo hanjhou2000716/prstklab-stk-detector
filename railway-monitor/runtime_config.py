@@ -16,15 +16,15 @@ from typing import Any
 def delivery_shared_secret(environ: Mapping[str, str] | None = None) -> str:
     """Return the delivery HMAC secret without exposing its value.
 
-    ``DELIVERY_STATUS_SHARED_SECRET`` remains the active Railway service name
-    during migration. ``RAILWAY_STATUS_SHARED_SECRET`` is the Actions-facing
-    fallback; this precedence preserves the existing deployment contract.
+    ``RAILWAY_STATUS_SHARED_SECRET`` is the canonical name.  The historical
+    ``DELIVERY_STATUS_SHARED_SECRET`` name remains a compatibility fallback
+    while Railway is migrated, but it must never win when both are present.
     """
 
     values = environ if environ is not None else os.environ
     return (
-        str(values.get("DELIVERY_STATUS_SHARED_SECRET", "")).strip()
-        or str(values.get("RAILWAY_STATUS_SHARED_SECRET", "")).strip()
+        str(values.get("RAILWAY_STATUS_SHARED_SECRET", "")).strip()
+        or str(values.get("DELIVERY_STATUS_SHARED_SECRET", "")).strip()
     )
 
 
@@ -33,11 +33,15 @@ def configuration_health(environ: Mapping[str, str] | None = None) -> dict[str, 
 
     values = environ if environ is not None else os.environ
     secret = delivery_shared_secret(values)
+    canonical_present = bool(str(values.get("RAILWAY_STATUS_SHARED_SECRET", "")).strip())
+    legacy_present = bool(str(values.get("DELIVERY_STATUS_SHARED_SECRET", "")).strip())
     return {
         "status": "healthy" if secret else "configuration_missing",
         "delivery_secret_configured": bool(secret),
-        "canonical_name_present": bool(str(values.get("RAILWAY_STATUS_SHARED_SECRET", "")).strip()),
-        "legacy_name_present": bool(str(values.get("DELIVERY_STATUS_SHARED_SECRET", "")).strip()),
+        "canonical_name_present": canonical_present,
+        "legacy_name_present": legacy_present,
+        "active_name": "RAILWAY_STATUS_SHARED_SECRET" if canonical_present else "DELIVERY_STATUS_SHARED_SECRET" if legacy_present else None,
+        "migration_required": legacy_present and not canonical_present,
         "secret_values_exposed": False,
     }
 

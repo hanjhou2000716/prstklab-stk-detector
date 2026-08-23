@@ -70,10 +70,11 @@ def build_creator_intelligence_release(
             history_store.append(insight)
             history_recorded_count += 1
     morning_batch = build_creator_morning_batch(insights, as_of=batch_as_of) if batch_as_of is not None else None
+    consensus = build_creator_consensus(insights)
     artifact = build_creator_release(
         insights,
         parent_manifest=parent_manifest,
-        creator_consensus=build_creator_consensus(insights),
+        creator_consensus=consensus,
         morning_batch=morning_batch,
     )
     public_artifact = build_creator_artifact(
@@ -84,6 +85,7 @@ def build_creator_intelligence_release(
         market_snapshot_id=artifact.get("market_snapshot_id", ""),
         research_snapshot_id=artifact.get("research_snapshot_id", "") or str((research_snapshot or {}).get("snapshot_id") or ""),
         event_snapshot_id=artifact.get("event_snapshot_id", ""),
+        creator_consensus=consensus,
     )
     return {
         "artifact": artifact,

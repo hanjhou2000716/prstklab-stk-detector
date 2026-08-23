@@ -321,6 +321,7 @@ def build_release_manifest(
     creator_artifact: dict[str, Any] | None = None,
     creator_public_artifact: dict[str, Any] | None = None,
     creator_records: list[dict[str, Any]] | None = None,
+    creator_morning_batch: bool = False,
 ) -> dict[str, Any]:
     """Build a manifest without fabricating readiness.
 
@@ -486,7 +487,20 @@ def build_release_manifest(
                 "research_snapshot_id": research_id,
                 "event_snapshot_id": event_id,
             },
-            research_snapshot={"snapshot_id": research_id},
+            # Pass the actual release-bound snapshots into the canonical
+            # correlation stage.  Passing IDs alone made the public Creator
+            # artifact look lineage-bound while every episode correlation
+            # reported ``market_snapshot_missing`` and could not compare
+            # explicit tickers/sectors.  The source artifacts are already
+            # sanitized and are the same objects used by the release gate.
+            market_snapshot=market,
+            research_snapshot=research,
+            event_snapshot=events,
+            # The scheduled morning lane must bind its deterministic 10:30
+            # cutoff to the exact market snapshot being released.  Other
+            # refreshes intentionally omit the batch so historical reviewed
+            # records cannot be presented as a current morning digest.
+            batch_as_of=market.get("generated_at") if creator_morning_batch and isinstance(market, dict) else None,
         )
         creator_artifact = creator_result["artifact"]
         creator_public_artifact = creator_result.get("public_artifact")
@@ -730,6 +744,11 @@ def main() -> int:
         default=None,
         help="optional JSON array of sanitized public Creator Insight records",
     )
+    parser.add_argument(
+        "--creator-morning-batch",
+        action="store_true",
+        help="bind the Creator 10:30 Asia/Taipei batch to the market snapshot timestamp",
+    )
     args = parser.parse_args()
     creator_records: list[dict[str, Any]] | None = None
     if args.creator_records is not None:
@@ -755,6 +774,7 @@ def main() -> int:
         research_fallback_reason=args.research_fallback_reason,
         max_research_age_hours=args.max_research_age_hours,
         creator_records=creator_records,
+        creator_morning_batch=args.creator_morning_batch,
     )
     write_release_manifest(manifest, args.output)
     print(json.dumps({"status": manifest["status"], "release_id": manifest["release_id"], "validation_errors": manifest["validation_errors"]}, ensure_ascii=False))

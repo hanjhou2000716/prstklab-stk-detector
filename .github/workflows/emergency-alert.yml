@@ -163,7 +163,7 @@ jobs:
         continue-on-error: true
         env:
           RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
-          RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET }}
+          RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           TRACE_ID: ${{ steps.send.outputs.trace_id }}
           RELEASE_ID: ${{ steps.send.outputs.release_id || steps.release_gate.outputs.release_id }}
           SNAPSHOT_ID: ${{ steps.send.outputs.snapshot_id || steps.release_gate.outputs.snapshot_id }}

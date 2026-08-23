@@ -75,3 +75,28 @@ def test_offline_e2e_exposes_creator_delivery_contract():
     assert report["creator_delivery"]["notification_key"].startswith("creator:production-e2e-creator-episode:")
     assert report["checks"]["creator_release_contract"] is True
     assert report["creator_release"]["insight_count"] == 1
+
+
+def test_offline_e2e_exercises_compound_financialjuice_and_morning_batch_lanes():
+    report = run_offline_e2e(
+        dry_run=lambda: {
+            "ok": True,
+            "renderer_available": True,
+            "card_dimensions": {"width": 1080, "height": 1350},
+            "photo_contract": {
+                "dimensions_valid": True,
+                "deep_link_valid": True,
+                "observation_id": "obs-e2e",
+                "delivery_status": "delivered",
+            },
+        },
+        delivery_check=lambda **_: {"ok": True, "recipient_count": 1, "errors": []},
+    )
+    assert report["checks"]["financialjuice_compound_lane"] is True
+    assert report["checks"]["creator_morning_batch_lane"] is True
+    assert report["financialjuice_lane"]["item_count"] == 2
+    assert report["financialjuice_lane"]["independent_cluster_count"] == 2
+    assert report["financialjuice_lane"]["eligible_importances"] == [9]
+    assert report["financialjuice_lane"]["below_threshold_importances"] == [7]
+    assert report["financialjuice_lane"]["vendor_risk_separation"] is True
+    assert report["creator_morning_batch"]["received_count"] == 2

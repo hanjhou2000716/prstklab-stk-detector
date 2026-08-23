@@ -40,6 +40,38 @@ def test_r4_requires_official_and_market_sync() -> None:
     assert notification_decision(critical)["allowed"] is True
 
 
+def test_stale_evidence_cannot_escalate_even_with_confirmation_flags() -> None:
+    cluster = {
+        "event_type": "black_swan",
+        "cross_source_count": 2,
+        "editorial_sources": [],
+        "evidence_sources": ["official", "reuters"],
+        "observations": [{"freshness": "stale"}],
+    }
+    score = score_prstk_risk(cluster, official_confirmed=True, market_sync_confirmed=True)
+    assert score["freshness_blocked"] is True
+    assert score["prstk_risk_level"] == "R2"
+    decision = notification_decision(score)
+    assert decision["allowed"] is False
+    assert "stale_or_delayed_evidence_blocked" in decision["reasons"]
+
+
+def test_quote_delayed_marker_is_inherited_by_cluster() -> None:
+    clusters = cluster_external_events([
+        {
+            "source": "official",
+            "event_type": "energy",
+            "actor": "supply",
+            "action": "disruption",
+            "location": "Hormuz",
+            "quote_delayed": True,
+        }
+    ])
+    assert clusters[0]["freshness_blocked"] is True
+    score = score_prstk_risk(clusters[0], official_confirmed=True, market_sync_confirmed=True)
+    assert score["notification_eligible"] is False
+
+
 def test_cluster_key_is_stable() -> None:
     event = {"event_type": "policy", "actor": "Trump", "action": "tariff", "location": "US", "published_at": "2026-08-12T01:00:00Z"}
     assert event_cluster_key(event) == event_cluster_key(dict(event))

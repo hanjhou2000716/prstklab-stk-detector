@@ -55,6 +55,12 @@ jobs:
           --cov-fail-under=90
       - name: Ruff full source and test gate
         run: uv run ruff check src tests
+      - name: Verify Railway shared classifier bundle
+        run: python scripts/sync_railway_shared_classifier.py --check
+      - name: Verify Railway canonical external-parser bundle
+        run: python scripts/sync_railway_canonical_parser.py --check
+      - name: Verify canonical overlap and generated bundle provenance
+        run: python scripts/verify_canonical_overlap.py
       - name: Mypy full source gate
         run: uv run mypy src
       - name: Compile Python modules

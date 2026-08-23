@@ -6,6 +6,7 @@ from src.news_intelligence import (
     deduplicate_and_rank,
     normalize_news_story,
     provider_for_url,
+    provider_supports_market,
 )
 
 
@@ -14,6 +15,26 @@ def test_provider_contract_and_url_normalization_are_canonical():
     assert canonicalize_url(url) == "https://www.sec.gov/Archives/edgar/data/1/8-k"
     assert provider_for_url(url)["provider_id"] == "sec"
     assert normalize_news_story({"title": "Filing", "url": url}, "us")["public_safe"] is True
+
+
+def test_provider_scope_prevents_us_official_news_from_entering_taiwan_feed():
+    fed = provider_for_url("https://www.federalreserve.gov/newsevents/pressreleases/a.htm")
+    assert provider_supports_market(fed, "us") is True
+    assert provider_supports_market(fed, "taiwan") is False
+    payload = build_news_intelligence(
+        [{"title": "Fed policy update", "url": "https://www.federalreserve.gov/newsevents/pressreleases/a.htm"}],
+        market="taiwan",
+    )
+    assert payload["stories"] == []
+    assert payload["status"] == "no_event"
+    assert payload["excluded_count"] == 1
+    assert payload["exclusion_reasons"] == {"market_scope_mismatch": 1}
+
+
+def test_cross_market_provider_remains_available_in_each_market_feed():
+    google = provider_for_url("https://news.google.com/rss/articles/abc")
+    assert provider_supports_market(google, "taiwan") is True
+    assert provider_supports_market(google, "us") is True
 
 
 def test_unknown_domain_is_not_public_safe():
@@ -41,6 +62,46 @@ def test_interest_graph_explains_tracked_ticker_and_market():
     assert "tracked_ticker:NVDA" in story["relevance_reasons"]
 
 
+def test_interest_graph_matches_release_context_in_title_without_entity_tags():
+    story = normalize_news_story(
+        {
+            "title": "Federal Reserve policy lifts NVIDIA semiconductor outlook",
+            "url": "https://www.federalreserve.gov/newsevents/pressreleases/a.htm",
+        },
+        "us",
+    )
+    graph = build_interest_graph(
+        [story],
+        tracked_tickers=["NVDA"],
+        research_tickers=["NVDA"],
+        tracked_sectors=["semiconductor"],
+        active_event_topics=["Federal Reserve"],
+        creator_mentions=["NVIDIA"],
+    )
+    assert "tracked_ticker:NVDA" in story["relevance_reasons"]
+    assert "research_candidate:NVDA" in story["relevance_reasons"]
+    assert "tracked_sector:semiconductor" in story["relevance_reasons"]
+    assert "active_event:federal reserve" in story["relevance_reasons"]
+    assert "creator_mentioned:nvidia" in story["relevance_reasons"]
+    assert graph["source_interest"]["research_candidate"] == {"NVDA": 1}
+    assert graph["source_interest"]["creator_mentioned"] == {"nvidia": 1}
+
+
+def test_news_intelligence_exposes_release_interest_context():
+    artifact = build_news_intelligence(
+        [{"title": "NVIDIA outlook", "url": "https://www.nasdaq.com/articles/nvda"}],
+        market="us",
+        tracked_tickers=["NVDA"],
+        research_tickers=["NVDA"],
+    )
+    assert artifact["interest_graph"]["context"]["research_tickers"] == ["NVDA"]
+    assert artifact["stories"][0]["relevance_reasons"] == [
+        "tracked_ticker:NVDA",
+        "research_candidate:NVDA",
+        "market:us",
+    ]
+
+
 def test_dedup_prefers_official_and_retains_supporting_source():
     stories = [
         {"title": "Fed rates unchanged", "url": "https://news.google.com/rss/articles/1"},
@@ -50,6 +111,53 @@ def test_dedup_prefers_official_and_retains_supporting_source():
     assert len(ranked) == 1
     assert ranked[0]["provider"] == "fed"
     assert ranked[0]["supporting_sources"][0]["provider"] == "google_news"
+
+
+def test_dedup_merges_cross_provider_event_with_different_headlines():
+    ranked = deduplicate_and_rank([
+        {
+            "title": "NVIDIA earnings beat estimates",
+            "url": "https://news.google.com/rss/articles/nvda-1",
+            "published_at": "2026-08-21T02:10:00+00:00",
+        },
+        {
+            "title": "Nvidia reports stronger quarterly revenue",
+            "url": "https://www.sec.gov/Archives/edgar/data/nvda-8k",
+            "published_at": "2026-08-21T02:35:00+00:00",
+        },
+    ])
+    assert len(ranked) == 1
+    assert ranked[0]["provider"] == "sec"
+    assert ranked[0]["event_cluster_key"].startswith("event-")
+    assert ranked[0]["supporting_sources"] == [{"provider": "google_news", "url": "https://news.google.com/rss/articles/nvda-1"}]
+
+
+def test_dedup_keeps_same_ticker_different_topic_separate():
+    ranked = deduplicate_and_rank([
+        {
+            "title": "NVIDIA earnings beat estimates",
+            "url": "https://news.google.com/rss/articles/nvda-earnings",
+            "published_at": "2026-08-21T02:10:00+00:00",
+        },
+        {
+            "title": "NVIDIA faces new export control review",
+            "url": "https://www.sec.gov/Archives/edgar/data/nvda-review",
+            "published_at": "2026-08-21T02:35:00+00:00",
+        },
+    ])
+    assert len(ranked) == 2
+
+
+def test_normalized_story_exposes_bounded_event_identity():
+    story = normalize_news_story({
+        "title": "聯準會利率決策影響 Nasdaq",
+        "url": "https://www.federalreserve.gov/newsevents/pressreleases/a.htm",
+        "published_at": "2026-08-21T04:01:00+00:00",
+    }, "us")
+    assert "NASDAQ" in story["entities"]
+    assert "rates" in story["topics"]
+    assert story["published_time_bucket"] == "2026-08-21T04:00:00+00:00"
+    assert story["event_cluster_key"].startswith("event-")
 
 
 def test_news_intelligence_schema_rejects_provider_domain_mismatch():
@@ -71,3 +179,17 @@ def test_news_intelligence_rejects_malformed_provider_entries():
     errors = validate_news_intelligence(artifact)
     assert any("must be an object" in error for error in errors)
     assert any("duplicates dup" in error for error in errors)
+
+
+def test_news_intelligence_rejects_feed_endpoint_outside_provider_domain():
+    artifact = build_news_intelligence([])
+    artifact["provider_registry"][0]["feed_url"] = "https://evil.example/news"
+    assert any("feed_url is outside provider domains" in error for error in validate_news_intelligence(artifact))
+
+
+def test_news_intelligence_allows_explicit_disabled_provider_without_endpoint():
+    artifact = build_news_intelligence([])
+    nasdaq = next(item for item in artifact["provider_registry"] if item["provider_id"] == "nasdaq")
+    nasdaq["feed_url"] = ""
+    nasdaq["enabled"] = False
+    assert not any("feed_url" in error for error in validate_news_intelligence(artifact))

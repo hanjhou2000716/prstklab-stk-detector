@@ -81,6 +81,16 @@ class EmailStore:
                 );
                 CREATE INDEX IF NOT EXISTS idx_email_dlq_message
                     ON email_dlq(gmail_message_id, created_at);
+                CREATE TABLE IF NOT EXISTS public_observations (
+                    observation_id TEXT PRIMARY KEY,
+                    content_origin TEXT NOT NULL,
+                    content_hash TEXT,
+                    published_at TEXT,
+                    created_at TEXT NOT NULL,
+                    payload_json TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_public_observations_created
+                    ON public_observations(created_at);
                 """
             )
             # Existing Railway volumes predate the watch lease observability
@@ -178,20 +188,205 @@ class EmailStore:
                     str(message_id), str(parser_name), str(parser_version), str(template_fingerprint),
                     str(parse_status), str(failure_reason), _now(), json.dumps(safe, ensure_ascii=False, sort_keys=True),
                 ),
+                )
+
+    def save_public_observation(self, observation: dict[str, Any]) -> bool:
+        """Persist only the reviewed, public-safe observation projection.
+
+        The caller must provide ``public_safe=true``.  Transport identifiers,
+        sender addresses and raw content are intentionally rejected here as a
+        second privacy boundary even if an upstream parser regresses.
+        """
+        if observation.get("public_safe") is not True:
+            raise ValueError("public observation must be marked public_safe")
+        blocked = {"body", "raw_body", "attachments", "gmail_message_id", "gmail_thread_id", "sender", "recipient"}
+        if any(observation.get(key) not in (None, "", [], {}) for key in blocked):
+            raise ValueError("public observation contains private fields")
+        observation_id = str(observation.get("observation_id") or "").strip()
+        source = str(observation.get("content_origin") or observation.get("source") or "").strip().casefold()
+        if not observation_id or not source:
+            raise ValueError("public observation identity is required")
+        payload = {key: value for key, value in observation.items() if key not in blocked}
+        payload["observation_id"] = observation_id
+        payload["content_origin"] = source
+        payload["source"] = source
+        payload["public_safe"] = True
+        with self._connect() as connection:
+            before = connection.total_changes
+            connection.execute(
+                """INSERT OR IGNORE INTO public_observations(
+                   observation_id, content_origin, content_hash, published_at,
+                   created_at, payload_json) VALUES(?,?,?,?,?,?)""",
+                (
+                    observation_id,
+                    source,
+                    str(payload.get("content_hash") or "") or None,
+                    str(payload.get("published_at") or payload.get("source_published_at") or "") or None,
+                    _now(),
+                    json.dumps(payload, ensure_ascii=False, sort_keys=True),
+                ),
             )
+            return connection.total_changes > before
+
+    def public_observations(self, *, limit: int = 100) -> list[dict[str, Any]]:
+        """Return bounded sanitized observations for the scheduled publisher."""
+        bounded = max(1, min(500, int(limit)))
+        with self._connect() as connection:
+            rows = connection.execute(
+                """SELECT payload_json FROM public_observations
+                   ORDER BY created_at DESC, observation_id DESC LIMIT ?""",
+                (bounded,),
+            ).fetchall()
+        result: list[dict[str, Any]] = []
+        for row in rows:
+            try:
+                payload = json.loads(row[0])
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if isinstance(payload, dict) and payload.get("public_safe") is True:
+                result.append(payload)
+        return result
 
     def health(self) -> dict[str, Any]:
         with self._connect() as connection:
             observation_count = connection.execute("SELECT COUNT(*) FROM email_observations").fetchone()[0]
             dlq_count = connection.execute("SELECT COUNT(*) FROM email_dlq").fetchone()[0]
+            public_count = connection.execute("SELECT COUNT(*) FROM public_observations").fetchone()[0]
+            # A message is pending only while it has been durably received
+            # but has not reached a terminal parser state.  Keep this count
+            # bounded to the private store; only the number is projected to
+            # the public health endpoint.
+            pending_count = connection.execute(
+                "SELECT COUNT(*) FROM email_observations "
+                "WHERE parse_status IN ('received', 'queued', 'pending')"
+            ).fetchone()[0]
         cursor = self.cursor()
         return {
             "status": "healthy" if cursor["last_sync_at"] else "no_new_content",
             "observation_count": int(observation_count),
             "dlq_count": int(dlq_count),
+            "queue_pending_count": int(pending_count),
+            "dead_letter_count": int(dlq_count),
+            "public_observation_count": int(public_count),
             "cursor": cursor,
             "raw_content_stored": False,
+            "source_health": self.source_health(),
         }
+
+    def source_health(self) -> dict[str, dict[str, Any]]:
+        """Return bounded, privacy-safe source counters for the health API.
+
+        The monitor must distinguish a quiet source from a parser failure.  We
+        derive the projection from sanitized metadata only; message bodies,
+        transport IDs and sender addresses never leave the private store.
+        """
+        sources = {
+            "creator": {
+                "status": "not_checked", "received_count": 0,
+                "parsed_count": 0, "failed_count": 0, "duplicate_count": 0,
+                "public_observation_count": 0, "last_received_at": None,
+                "last_parsed_at": None, "last_failure_at": None,
+                "today_count": 0, "latest_count": 0,
+                "morning_batch_count": 0, "coverage_status": "not_checked",
+                "consensus_status": "not_checked", "last_release_id": None,
+                "last_telegram_delivery_at": None,
+            },
+            "financialjuice": {
+                "status": "not_checked", "received_count": 0,
+                "parsed_count": 0, "failed_count": 0, "duplicate_count": 0,
+                "public_observation_count": 0, "importance_gte_8_count": 0,
+                "pending_cluster_count": 0, "last_received_at": None,
+                "last_parsed_at": None, "last_failure_at": None,
+                "decision": "not_checked", "last_release_id": None,
+                "last_telegram_delivery_at": None,
+            },
+        }
+
+        def bucket(source: Any) -> str | None:
+            value = str(source or "").strip().casefold()
+            if value == "financialjuice":
+                return "financialjuice"
+            if value and value not in {"unknown", "none"}:
+                return "creator"
+            return None
+
+        def note(bucket_name: str, key: str, timestamp: Any) -> None:
+            current = sources[bucket_name].get(key)
+            candidate = str(timestamp or "") or None
+            if candidate and (current is None or candidate > str(current)):
+                sources[bucket_name][key] = candidate
+
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT metadata_json, parse_status, received_at, inserted_at FROM email_observations"
+            ).fetchall()
+            dlq_rows = connection.execute(
+                "SELECT metadata_json, created_at FROM email_dlq"
+            ).fetchall()
+            public_rows = connection.execute(
+                "SELECT content_origin, payload_json, created_at FROM public_observations"
+            ).fetchall()
+
+        for row in rows:
+            try:
+                metadata = json.loads(row[0]) if row[0] else {}
+            except (TypeError, json.JSONDecodeError):
+                metadata = {}
+            source_name = bucket(metadata.get("content_origin"))
+            if source_name is None:
+                continue
+            item = sources[source_name]
+            item["received_count"] += 1
+            status = str(row[1] or "")
+            if status == "duplicate":
+                item["duplicate_count"] += 1
+            elif status in {"parsed", "normalized", "identified"}:
+                item["parsed_count"] += 1
+                note(source_name, "last_parsed_at", row[3] or row[2])
+            note(source_name, "last_received_at", row[2] or row[3])
+
+        for row in dlq_rows:
+            try:
+                metadata = json.loads(row[0]) if row[0] else {}
+            except (TypeError, json.JSONDecodeError):
+                metadata = {}
+            source_name = bucket(metadata.get("content_origin"))
+            if source_name is None:
+                continue
+            sources[source_name]["failed_count"] += 1
+            note(source_name, "last_failure_at", row[1])
+
+        for row in public_rows:
+            source_name = bucket(row[0])
+            if source_name is None:
+                continue
+            item = sources[source_name]
+            item["public_observation_count"] += 1
+            try:
+                payload = json.loads(row[1]) if row[1] else {}
+            except (TypeError, json.JSONDecodeError):
+                payload = {}
+            if source_name == "financialjuice" and isinstance(payload, dict):
+                try:
+                    if float(payload.get("vendor_importance")) >= 8:
+                        item["importance_gte_8_count"] += 1
+                except (TypeError, ValueError):
+                    pass
+                cluster = str(payload.get("event_cluster_key") or "").strip()
+                if cluster and not bool(payload.get("official_confirmed")):
+                    item["pending_cluster_count"] += 1
+
+        for item in sources.values():
+            if item["failed_count"] and not item["parsed_count"]:
+                item["status"] = "failed"
+            elif item["received_count"] or item["public_observation_count"]:
+                item["status"] = "healthy" if item["failed_count"] == 0 else "degraded"
+            else:
+                item["status"] = "no_new_content"
+        fj = sources["financialjuice"]
+        if fj["public_observation_count"]:
+            fj["decision"] = "awaiting_confirmation" if fj["pending_cluster_count"] else "ready_for_release_review"
+        return sources
 
 
 __all__ = ["EmailStore"]

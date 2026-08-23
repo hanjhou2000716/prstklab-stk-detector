@@ -2,7 +2,29 @@ import json
 
 from src import scheduled_delivery
 from src.release_gate import ReleaseGateResult
-from src.scheduled_delivery import _load_creator_records
+from src.scheduled_delivery import _creator_records_from_observations, _load_creator_records
+
+
+def test_creator_observations_are_projected_into_release_records() -> None:
+    rows = _creator_records_from_observations([{
+        "observation_id": "jenny-1", "source": "jenny", "content_origin": "jenny",
+        "episode_title": "Public episode", "public_safe": True, "parse_status": "normalized",
+    }, {
+        "observation_id": "private", "source": "jenny", "content_origin": "jenny",
+        "public_safe": False,
+    }])
+    assert len(rows) == 1
+    assert rows[0]["creator_id"] == "jenny"
+    assert rows[0]["episode_key"] == "jenny-1"
+
+
+def test_scheduled_brief_prioritises_eligible_financialjuice_event() -> None:
+    event = {"source_key": "financialjuice", "notification_status": "eligible", "title": "FJ"}
+    snapshot = {
+        "financialjuice_priority_events": [event],
+        "events": {"items": [{"kind": "market_signal", "title": "TAIEX"}]},
+    }
+    assert scheduled_delivery._pick_event(snapshot, "morning") == event
 
 
 def _settings():
@@ -75,6 +97,71 @@ def test_scheduled_delivery_uses_photo_delivery_after_release_gate(tmp_path, mon
     text = output.read_text(encoding="utf-8")
     assert "sent=true" in text
     assert "delivery_mode=photo" in text
+
+
+def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / "market.json"
+    manifest_path = tmp_path / "release-manifest.json"
+    snapshot_path.write_text(
+        json.dumps({"snapshot_id": "market-12345678", "quotes": [], "indices": [], "briefing": {}}),
+        encoding="utf-8",
+    )
+    manifest_path.write_text("{}", encoding="utf-8")
+    output = tmp_path / "output"
+    _patch_ready(monkeypatch, output)
+    event = {
+        "source_key": "financialjuice",
+        "event_cluster_key": "cluster-1",
+        "observation_id": "fj-observation-1",
+        "observation_id_hash": "a" * 64,
+        "item_id": "item-1",
+        "title": "Oil supply risk",
+        "vendor_importance": 8,
+        "prstk_risk": {"prstk_risk_level": "R2"},
+        "notification_reason": "vendor_priority_importance_ge_8",
+        "parser_version": "financialjuice-compound-v1",
+        "received_at": "2026-08-21T01:01:00+00:00",
+        "alert_eligible": True,
+    }
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: event)
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "decide_alert_budget",
+        lambda *_args: {"allowed": True, "reason": "material_change", "event_key": "cluster-1"},
+    )
+    photo = tmp_path / "alert.png"
+    photo.write_bytes(b"png")
+    monkeypatch.setattr(scheduled_delivery, "render_alert_card", lambda *_args, **_kwargs: photo)
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "send_photo_briefs",
+        lambda **_kwargs: (type("Delivery", (), {"status": "delivered", "chat_id_hash": "hash"})(),),
+    )
+    monkeypatch.setattr(scheduled_delivery, "write_event_lock_key", lambda *_args: None)
+    recorded: dict = {}
+
+    class FakeLedger:
+        def delivery_history(self):
+            return []
+
+        def record_delivery(self, payload, **_kwargs):
+            recorded.update(payload)
+            return payload
+
+        def save(self):
+            return None
+
+    monkeypatch.setattr(scheduled_delivery, "EventLedger", FakeLedger)
+    scheduled_delivery.send(snapshot_path, "morning", manifest_path)
+    text = output.read_text(encoding="utf-8")
+    assert "financialjuice_delivery_trace=" in text
+    assert "release-1" in text
+    assert "market-12345678" in text
+    assert "delivery_status=delivered" in text
+    assert recorded["release_id"] == "release-1"
+    assert recorded["snapshot_id"] == "market-12345678"
+    assert recorded["delivery_status"] == "delivered"
+    assert recorded["observation_id_hash"] == "a" * 64
 
 
 def test_scheduled_delivery_blocks_photo_when_renderer_fails(tmp_path, monkeypatch):
@@ -197,7 +284,7 @@ def test_prepare_binds_creator_records_to_the_published_snapshot(tmp_path, monke
     monkeypatch.setenv("CREATOR_RECORDS_PATH", str(records))
     monkeypatch.setattr(scheduled_delivery, "build_market_snapshot", lambda: {"snapshot_id": "m-1", "quotes": [], "indices": []})
     monkeypatch.setattr(scheduled_delivery, "build_briefing_snapshot", lambda snapshot, _slot: {"creator_release": snapshot.get("creator_insights")})
-    monkeypatch.setattr(scheduled_delivery, "write_snapshot", lambda snapshot, path: path.write_text(json.dumps(snapshot), encoding="utf-8") is None)
+    monkeypatch.setattr(scheduled_delivery, "write_snapshot", lambda snapshot, path: (path.write_text(json.dumps(snapshot), encoding="utf-8"), True)[1])
     monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: None)
     monkeypatch.setattr(scheduled_delivery, "briefing_correlation", lambda *_args: {"trace_id": "t", "snapshot_id": "m-1", "observation_id": ""})
     monkeypatch.setattr(scheduled_delivery, "merge_published_metadata", lambda *_args, **_kwargs: True)
@@ -239,3 +326,97 @@ def test_prepare_binds_sanitized_external_observations_to_snapshot(tmp_path, mon
     assert published["external_observations"][0]["observation_id"] == "fj-1"
     assert published["briefing"]["external_observations"][0]["source"] == "financialjuice"
     assert published["external_source_health"]["status"] == "healthy"
+
+
+def test_prepare_projects_qualifying_financialjuice_into_release_event_lane(tmp_path, monkeypatch):
+    records = tmp_path / "external.json"
+    records.write_text(json.dumps({"observations": [{
+        "observation_id": "fj-8", "item_id": "item-8", "source": "financialjuice",
+        "original_headline": "Oil supply risk", "event_type": "energy", "vendor_importance": 8,
+        "source_url": "https://financialjuice.com/item/8", "public_safe": True,
+    }]}), encoding="utf-8")
+    snapshot_path = tmp_path / "market.json"
+    monkeypatch.setenv("EXTERNAL_OBSERVATIONS_PATH", str(records))
+    monkeypatch.setattr(scheduled_delivery, "build_market_snapshot", lambda: {
+        "snapshot_id": "m-1", "quotes": [], "indices": [], "events": {"items": []},
+        "source_health": {"status": "healthy", "sources": [], "data_gaps": [],
+                           "missing_source_count": 0, "runtime_failure_count": 0,
+                           "configuration_missing_count": 0, "state_counts": {},
+                           "observability": {}},
+    })
+    monkeypatch.setattr(scheduled_delivery, "build_briefing_snapshot", lambda snapshot, _slot: {
+        "external_event_notifications": snapshot.get("financialjuice_priority_decisions"),
+    })
+    def write_snapshot(snapshot, path):
+        path.write_text(json.dumps(snapshot), encoding="utf-8")
+        return True
+    monkeypatch.setattr(scheduled_delivery, "write_snapshot", write_snapshot)
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: None)
+    monkeypatch.setattr(scheduled_delivery, "briefing_correlation", lambda *_args: {"trace_id": "t", "snapshot_id": "m-1", "observation_id": ""})
+    monkeypatch.setattr(scheduled_delivery, "merge_published_metadata", lambda *_args, **_kwargs: True)
+    scheduled_delivery.prepare("morning", snapshot_path)
+    published = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    assert published["financialjuice_priority_decisions"][0]["vendor_priority_notification"] is True
+    assert published["financialjuice_priority_events"][0]["notification_status"] == "eligible"
+    assert published["events"]["items"][0]["source_key"] == "financialjuice"
+
+
+def test_prepare_fetches_sanitized_railway_observations_into_release(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / "market.json"
+    monkeypatch.delenv("EXTERNAL_OBSERVATIONS_PATH", raising=False)
+    monkeypatch.setenv("RAILWAY_STATUS_URL", "https://railway.example/status")
+    monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "test-secret")
+    monkeypatch.setattr(scheduled_delivery, "load_railway_observations", lambda: ([{
+        "observation_id": "fj-remote", "source": "financialjuice", "content_origin": "financialjuice",
+        "headline": "Public remote headline", "public_safe": True,
+    }], {"status": "ready", "count": 1, "rejected_count": 0}))
+    monkeypatch.setattr(scheduled_delivery, "build_market_snapshot", lambda: {
+        "snapshot_id": "m-1", "quotes": [], "indices": [],
+        "source_health": {"status": "healthy", "sources": [], "data_gaps": [],
+                           "missing_source_count": 0, "runtime_failure_count": 0,
+                           "configuration_missing_count": 0, "state_counts": {},
+                           "observability": {}},
+    })
+    monkeypatch.setattr(scheduled_delivery, "build_briefing_snapshot", lambda snapshot, _slot: {
+        "external_observations": snapshot.get("external_observations"),
+    })
+    monkeypatch.setattr(scheduled_delivery, "write_snapshot", lambda snapshot, path: path.write_text(json.dumps(snapshot), encoding="utf-8") is None)
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: None)
+    monkeypatch.setattr(scheduled_delivery, "briefing_correlation", lambda *_args: {"trace_id": "t", "snapshot_id": "m-1", "observation_id": ""})
+    monkeypatch.setattr(scheduled_delivery, "merge_published_metadata", lambda *_args, **_kwargs: True)
+    scheduled_delivery.prepare("morning", snapshot_path)
+    published = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    assert published["external_observations"][0]["observation_id"] == "fj-remote"
+    assert published["external_source_health"]["provider_status"] == "ready"
+    assert published["external_source_health"]["status"] == "healthy"
+
+
+def test_prepare_keeps_local_fallback_when_railway_export_fails(tmp_path, monkeypatch):
+    records = tmp_path / "external.json"
+    records.write_text(json.dumps({"observations": [{
+        "observation_id": "fj-local", "source": "financialjuice", "public_safe": True,
+    }]}), encoding="utf-8")
+    snapshot_path = tmp_path / "market.json"
+    monkeypatch.setenv("EXTERNAL_OBSERVATIONS_PATH", str(records))
+    monkeypatch.setenv("RAILWAY_STATUS_URL", "https://railway.example/status")
+    monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "test-secret")
+    monkeypatch.setattr(scheduled_delivery, "load_railway_observations", lambda: ([], {"status": "failed", "reason": "http_503", "rejected_count": 0}))
+    monkeypatch.setattr(scheduled_delivery, "build_market_snapshot", lambda: {
+        "snapshot_id": "m-1", "quotes": [], "indices": [],
+        "source_health": {"status": "healthy", "sources": [], "data_gaps": [],
+                           "missing_source_count": 0, "runtime_failure_count": 0,
+                           "configuration_missing_count": 0, "state_counts": {},
+                           "observability": {}},
+    })
+    monkeypatch.setattr(scheduled_delivery, "build_briefing_snapshot", lambda snapshot, _slot: {
+        "external_observations": snapshot.get("external_observations"),
+    })
+    monkeypatch.setattr(scheduled_delivery, "write_snapshot", lambda snapshot, path: path.write_text(json.dumps(snapshot), encoding="utf-8") is None)
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: None)
+    monkeypatch.setattr(scheduled_delivery, "briefing_correlation", lambda *_args: {"trace_id": "t", "snapshot_id": "m-1", "observation_id": ""})
+    monkeypatch.setattr(scheduled_delivery, "merge_published_metadata", lambda *_args, **_kwargs: True)
+    scheduled_delivery.prepare("morning", snapshot_path)
+    published = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    assert published["external_observations"][0]["observation_id"] == "fj-local"
+    assert published["external_source_health"]["status"] == "partial"
+    assert published["external_source_health"]["issues"] == ["http_503"]

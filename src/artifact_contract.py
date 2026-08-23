@@ -165,6 +165,22 @@ def validate_news_intelligence(document: dict[str, Any]) -> list[str]:
         if provider_id in known:
             errors.append(f"news.provider_registry duplicates {provider_id}")
         known[provider_id] = provider
+        # Feed metadata is optional for compatibility with older artifacts,
+        # but when present it is part of the canonical adapter contract.
+        feed_kind = provider.get("feed_kind")
+        if feed_kind is not None and feed_kind not in {"json", "rss", "atom", "html"}:
+            errors.append(f"news.provider_registry[{index}] has unsupported feed_kind={feed_kind!r}")
+        if "feed_url" in provider:
+            feed_url = str(provider.get("feed_url") or "")
+            if feed_url:
+                parsed_feed = urlparse(feed_url)
+                feed_host = (parsed_feed.hostname or "").lower().removeprefix("www.")
+                if parsed_feed.scheme != "https" or not feed_host:
+                    errors.append(f"news.provider_registry[{index}] feed_url must be an absolute HTTPS URL")
+                elif not any(feed_host == domain or feed_host.endswith("." + domain) for domain in (str(item).lower().removeprefix("www.") for item in domains)):
+                    errors.append(f"news.provider_registry[{index}] feed_url is outside provider domains")
+            elif provider.get("enabled") is True:
+                errors.append(f"news.provider_registry[{index}] enabled feed requires feed_url")
     for index, story in enumerate(document.get("stories", [])):
         if not isinstance(story, dict):
             continue
@@ -245,8 +261,22 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
     hide a failed scan, and an empty-but-successful scan remains observable.
     """
     errors = _schema_errors(document, "source-health.schema.json")
-    allowed_status = {"healthy", "partial", "warming", "critical", "pending", "failed", "scan_failed", "no_event", "configuration_missing"}
-    gap_states = {"fallback_active", "configuration_missing", "stale", "partial", "failed", "critical"}
+    # Keep this vocabulary aligned with src.failure_semantics so a producer
+    # cannot emit a canonical state that the release validator silently treats
+    # as an unknown status or a missing source.
+    allowed_status = {
+        "healthy", "no_event", "no_new_content", "fallback_active",
+        "degraded_with_fallback", "secondary_unavailable", "configuration_missing",
+        "configuration_required", "warming", "stale", "partial", "optional_degraded",
+        "parse_failed", "provider_failed", "failed", "scan_failed", "critical",
+        "pending", "pending_confirmation", "release_blocked",
+    }
+    gap_states = {
+        "fallback_active", "degraded_with_fallback", "secondary_unavailable",
+        "configuration_missing", "configuration_required", "stale", "partial",
+        "optional_degraded", "parse_failed", "provider_failed", "failed",
+        "scan_failed", "critical", "pending_confirmation", "release_blocked",
+    }
     declared_missing = document.get("missing_source_count")
     if isinstance(declared_missing, int) and declared_missing >= 0:
         actual_missing = 0
@@ -286,19 +316,22 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
         semantic = str(source.get("semantic_state") or "")
         if status and status not in allowed_status:
             errors.append(f"{path}: unknown status={status!r}")
-        if status in {"healthy", "no_event"} and semantic in gap_states:
+        if status in {"healthy", "no_event", "no_new_content"} and semantic in gap_states:
             errors.append(f"{path}: healthy/no_event status conflicts with semantic_state={semantic}")
-        if semantic in {"healthy", "no_event"} and status in {"failed", "scan_failed", "partial", "critical"}:
+        if semantic in {"healthy", "no_event", "no_new_content"} and status in gap_states:
             errors.append(f"{path}: failed status conflicts with semantic_state={semantic}")
-        if source.get("no_event") is True and status in {"failed", "scan_failed", "partial", "critical"}:
+        if source.get("no_event") is True and status in gap_states:
             errors.append(f"{path}: no_event cannot be a failed source")
     event_scan = document.get("event_scan")
     if isinstance(event_scan, dict) and event_scan.get("status") in {"no_event", "no_events"}:
         failed = [
             source for source in document.get("sources", [])
             if isinstance(source, dict) and (
-                source.get("status") in {"failed", "scan_failed", "critical"}
-                or source.get("semantic_state") in {"failed", "critical"}
+                source.get("status") in gap_states
+                or source.get("semantic_state") in gap_states
+            ) and (
+                str(source.get("role") or "") == "required_for_core"
+                or str(source.get("key") or "") in {"market_quotes", "official_events"}
             )
         ]
         if failed:

@@ -41,6 +41,10 @@ def test_mini_app_exposes_release_bound_external_intelligence():
     assert "qualifying_item_count" in app
     assert "pending_cluster_count" in app
     assert "最近解析" in app
+    assert "financialjuice_priority_decisions" in app
+    assert "供應商優先：未達 8/10" in app
+    assert "供應商優先：同事件已通知" in app
+    assert "供應商優先：可通知" in app
 
 
 def test_mini_app_renders_event_text_without_injecting_untrusted_links():

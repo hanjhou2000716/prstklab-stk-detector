@@ -1,9 +1,62 @@
+import json
+
 from src.production_acceptance import (
     _parse_time,
+    load_acceptance_bundle,
+    main,
     production_research_contract_errors,
     production_strategy_matrix_errors,
     validate_production_bundle,
 )
+
+
+def test_acceptance_cli_loads_manifest_bound_artifacts(tmp_path, capsys):
+    site = tmp_path / "site"
+    data = site / "data"
+    data.mkdir(parents=True)
+    manifest = {
+        "status": "ready",
+        "release_id": "release-cli",
+        "market_snapshot_id": "market-cli",
+        "research_snapshot_id": "research-cli",
+        "event_snapshot_id": "event-cli",
+        "artifact_paths": {
+            "market.json": "data/market.json",
+            "research-report.json": "data/research-report.json",
+            "event-ledger.json": "data/event-ledger.json",
+        },
+    }
+    (data / "release-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    (data / "market.json").write_text(json.dumps({"snapshot_id": "market-cli"}), encoding="utf-8")
+    (data / "research-report.json").write_text(json.dumps({"snapshot_id": "research-cli", "sources": []}), encoding="utf-8")
+    (data / "event-ledger.json").write_text(json.dumps({"snapshot_id": "event-cli", "events": []}), encoding="utf-8")
+
+    assert main(["--manifest", str(data / "release-manifest.json")]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload == {"allowed": True, "errors": [], "release_id": "release-cli"}
+    bundle = load_acceptance_bundle(manifest_path=data / "release-manifest.json")
+    assert bundle["research"]["snapshot_id"] == "research-cli"
+
+
+def test_acceptance_cli_rejects_artifact_path_escape(tmp_path, capsys):
+    site = tmp_path / "site"
+    data = site / "data"
+    data.mkdir(parents=True)
+    manifest = {
+        "status": "ready",
+        "release_id": "release-escape",
+        "artifact_paths": {
+            "market.json": "../market.json",
+            "research-report.json": "data/research-report.json",
+            "event-ledger.json": "data/event-ledger.json",
+        },
+    }
+    manifest_path = data / "release-manifest.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    assert main(["--manifest", str(manifest_path)]) == 1
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["allowed"] is False
+    assert "leaves site_root" in payload["errors"][0]
 
 
 def _bundle():

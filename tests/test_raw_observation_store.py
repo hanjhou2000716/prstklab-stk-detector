@@ -33,6 +33,34 @@ def test_raw_store_retries_transient_windows_file_lock(tmp_path, monkeypatch) ->
     assert store.get(row.observation_id) == row
 
 
+def test_raw_store_recreates_directory_after_transient_sync_race(tmp_path, monkeypatch) -> None:
+    store = RawObservationStore(tmp_path / "raw")
+    original_write = Path.write_bytes
+    attempts = {"count": 0}
+
+    def flaky_write(self: Path, payload: bytes):
+        attempts["count"] += 1
+        if attempts["count"] == 1:
+            self.parent.rmdir()
+            raise FileNotFoundError(2, "directory temporarily unavailable")
+        return original_write(self, payload)
+
+    monkeypatch.setattr(Path, "write_bytes", flaky_write)
+    row = store.record(
+        provider="twse",
+        endpoint="https://example.test/twse",
+        fetched_at="2026-08-05T09:00:00+08:00",
+        request_id="directory-race-1",
+        payload={"value": 1},
+        http_status=200,
+        parser_version="1",
+        parsing_status="parsed",
+    )
+
+    assert attempts["count"] == 2
+    assert store.get(row.observation_id) == row
+
+
 def test_raw_store_is_idempotent_and_content_addressed(tmp_path) -> None:
     store = RawObservationStore(tmp_path / "raw")
     kwargs = {
@@ -74,3 +102,22 @@ def test_raw_store_keeps_distinct_payloads_and_safe_metadata(tmp_path) -> None:
     metadata = observation_metadata(rows)
     assert {item["request_id"] for item in metadata} == {"one", "two"}
     assert all("payload_hash" in item for item in metadata)
+
+
+def test_raw_store_uses_compact_staging_name_for_long_windows_roots(tmp_path) -> None:
+    """A long OneDrive/pytest root must not make the atomic temp path fail."""
+    root = tmp_path / ("r" * 35) / ("s" * 35) / "raw"
+    store = RawObservationStore(root)
+    row = store.record(
+        provider="prstk-pipeline",
+        endpoint="market_snapshot",
+        fetched_at="2026-08-09T00:00:00+00:00",
+        request_id="long-root-1",
+        payload={"snapshot_id": "snap-long-root", "value": 1},
+        http_status=200,
+        parser_version="market_snapshot-v1",
+        parsing_status="normalized",
+    )
+
+    assert store.get(row.observation_id) == row
+    assert (root / row.raw_payload_location).is_file()

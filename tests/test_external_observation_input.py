@@ -4,6 +4,7 @@ from pathlib import Path
 
 from src.external_observation_input import (
     external_source_health,
+    external_source_health_from_remote,
     load_external_observations,
     merge_external_source_health,
 )
@@ -27,6 +28,19 @@ def test_loads_only_public_safe_financialjuice_records(tmp_path):
     assert [item["observation_id"] for item in accepted] == ["fj-1"]
     assert rejected == 2
     assert "body" not in accepted[0]
+
+
+def test_loads_public_safe_creator_rows_without_treating_them_as_financialjuice(tmp_path):
+    path = tmp_path / "creator.json"
+    path.write_text(json.dumps({"observations": [{
+        "observation_id": "jenny-1", "source": "jenny", "content_origin": "jenny",
+        "episode_key": "jenny:episode-1", "episode_title": "Public episode",
+        "claims": ["A public claim"], "public_safe": True,
+    }]}), encoding="utf-8")
+    accepted, rejected = load_external_observations(path)
+    assert rejected == 0
+    assert accepted[0]["content_origin"] == "jenny"
+    assert accepted[0]["episode_key"] == "jenny:episode-1"
 
 
 def test_loads_public_safe_financialjuice_compound_envelope_without_transport_id(tmp_path):
@@ -164,3 +178,28 @@ def test_external_health_exposes_financialjuice_observability_without_private_fi
     assert metrics["parser_error_count"] == 2
     assert metrics["last_delivery_at"] is None
     assert "observation_id" not in metrics
+
+
+def test_remote_external_health_preserves_status_and_fallback() -> None:
+    checked_at = datetime.now(UTC)
+    accepted = [{
+        "observation_id": "fj-remote", "source": "financialjuice", "public_safe": True,
+        "vendor_importance": 8,
+    }]
+    ready = external_source_health_from_remote(
+        {"status": "ready", "count": 1, "rejected_count": 0},
+        accepted=accepted, rejected=0, checked_at=checked_at,
+    )
+    assert ready["semantic_state"] == "healthy"
+    assert ready["last_success_at"] == checked_at.isoformat()
+    failed = external_source_health_from_remote(
+        {"status": "failed", "reason": "http_503", "rejected_count": 0},
+        accepted=accepted, rejected=0, checked_at=checked_at,
+    )
+    assert failed["semantic_state"] == "partial"
+    assert failed["issues"] == ["http_503"]
+    missing = external_source_health_from_remote(
+        {"status": "configuration_missing", "reason": "not_configured", "rejected_count": 0},
+        accepted=[], rejected=0, checked_at=checked_at,
+    )
+    assert missing["semantic_state"] == "configuration_missing"

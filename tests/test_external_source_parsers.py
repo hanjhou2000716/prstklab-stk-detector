@@ -18,6 +18,32 @@ def test_financialjuice_parser_keeps_vendor_importance_separate() -> None:
     assert "body" not in result
 
 
+def test_financialjuice_html_relay_extracts_public_fields_without_markup() -> None:
+    """The live Gmail relay is HTML-only; tags must never become an event title."""
+    result = parse_financialjuice_email(
+        sender="jetmaie.fintech@gmail.com",
+        subject="📰 FinancialJuice 新聞 (08-20 07:08)",
+        body="""
+        <!DOCTYPE html><html><head><style>.x { color: red; }</style></head><body>
+        <h1>📰 FinancialJuice 新聞通知</h1>
+        <span>即時新聞</span><span>財經資訊</span><span>⚠️ 高重要性</span>
+        <div><strong>重要性評分:</strong><span>8/10</span></div>
+        <div><strong>📝 繁體中文翻譯:</strong><p>川普：這將是前所未有的經濟衝突與孤立。</p></div>
+        <div><strong>💡 AI 評論:</strong><p>言論升高中東緊張，但尚未成為具體行動。</p></div>
+        <div><strong>⚠️ 可能影響:</strong><p>留意是否轉為實際制裁或封鎖。</p></div>
+        </body></html>
+        """,
+        message_id="sanitized-fj-html-1",
+    )
+    assert result["parse_status"] == "parsed"
+    assert result["vendor_importance"] == 8
+    assert result["vendor_translation"].startswith("川普：")
+    assert result["vendor_original_headline"].startswith("川普：")
+    assert "<" not in result["vendor_original_headline"]
+    assert "AI 評論" not in result["vendor_analysis"]
+    assert result["public_safe"] is True
+
+
 def test_creator_parser_defaults_claims_to_unverified() -> None:
     result = parse_creator_email(
         sender="news@gooaye.example", subject="EP 1",

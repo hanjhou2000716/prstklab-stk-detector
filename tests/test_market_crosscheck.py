@@ -28,6 +28,7 @@ def test_quote_provenance_normalizes_legacy_provider_map_to_array():
     })
     assert isinstance(result["crosscheck_sources"], list)
     assert {item["label"] for item in result["crosscheck_sources"]} == {"TWSE", "TAIFEX"}
+    assert {item["provider"] for item in result["crosscheck_sources"]} == {"TWSE", "TAIFEX"}
 
 
 def test_daily_close_dates_can_be_cross_checked():

@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "captured_at": "2026-08-21T22:00:00+08:00",
+  "kind": "external-intelligence-offline-e2e",
+  "mode": "SIMULATED",
+  "commit": "d5e3816",
+  "command": "uv run --project ../main-latest python -m src.production_e2e",
+  "checks": {
+    "financialjuice_compound_lane": true,
+    "creator_morning_batch_lane": true,
+    "release_contract": true,
+    "telegram_mock": true,
+    "photo_contract": true,
+    "renderer_1080x1350": true
+  },
+  "network_used": false,
+  "secrets_used": false,
+  "production_side_effects": false,
+  "external_acceptance": {
+    "status": "NEEDS_REVERIFY",
+    "blockers": [
+      "Railway Gmail ingress is configuration_missing",
+      "No current single-recipient Telegram delivery receipt",
+      "Railway GDELT health dispatch remains HTTP_403 after bounded HTTP_429 retry"
+    ]
+  }
+}

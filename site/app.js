@@ -128,6 +128,19 @@ const renderAlertTrace = (event) => {
     facts.push(`市場影響核對：${event.impact_confirmation.method}${markets ? `（${markets}）` : ""}`);
   }
   if (trace?.source_label) facts.push(`來源：${trace.source_label}`);
+  // FinancialJuice is an attributed discovery source.  Keep its vendor
+  // priority visibly separate from the PRStK risk decision so the risk card
+  // cannot be read as a vendor score being promoted to system risk.
+  const isFinancialJuice = String(event?.source_key || event?.source || "").toLowerCase() === "financialjuice";
+  if (isFinancialJuice) {
+    const importance = event?.vendor_importance ?? trace?.vendor_importance;
+    facts.push(`來源重要度：${importance === null || importance === undefined || importance === "" ? "待核對" : `${importance} / 10`}`);
+    const riskLevel = event?.prstk_risk?.prstk_risk_level || event?.risk_level || "R2";
+    facts.push(`PRStK Risk：${riskLevel}`);
+    const hasCrosscheck = Boolean(event?.crosscheck_status && event.crosscheck_status !== "unverified")
+      || Boolean(trace?.crosscheck_status && trace.crosscheck_status !== "unverified");
+    facts.push(`Evidence：${hasCrosscheck ? "已完成來源核對" : "等待第二來源"}`);
+  }
   const domains = Array.isArray(trace?.verified_domains) ? trace.verified_domains.filter(Boolean) : [];
   if (domains.length) facts.push(`核對網域：${domains.join("、")}`);
   const crosscheckStatus = String(event?.crosscheck_status || trace?.crosscheck_status || "").trim();
@@ -334,10 +347,44 @@ const renderRisk = (risk) => {
   }).join("");
 };
 
-const renderNewsList = (id, stories, providerRegistry = []) => {
+const newsEmptyState = (health) => {
+  const status = String(health?.status || "").toLowerCase();
+  const checkedAt = traceTime(health?.checked_at || health?.fetched_at);
+  if (status === "failed") return { title: "新聞來源暫時失敗", detail: "本輪未採用不完整來源，等待下一次重試" };
+  if (status === "stale") return { title: "目前使用最近成功快取", detail: checkedAt ? `最後成功 ${checkedAt}` : "等待來源恢復後更新" };
+  if (status === "pending") return { title: "新聞來源檢查中", detail: "等待本輪市場掃描完成" };
+  if (status === "no_event") return { title: "本輪沒有符合條件的公開新聞", detail: "來源掃描完成，沒有可列出的市場事件" };
+  return { title: "目前沒有可顯示的公開新聞", detail: "等待下一次市場掃描" };
+};
+
+const newsBadgeLabels = (story) => {
+  const reasons = Array.isArray(story?.relevance_reasons) ? story.relevance_reasons.map((item) => String(item)) : [];
+  const reasonText = reasons.join(" ").toLowerCase();
+  const topics = Array.isArray(story?.topics) ? story.topics.map((item) => String(item)) : [];
+  const topicText = topics.join(" ").toLowerCase();
+  const badges = [];
+  const add = (key, label, matched) => {
+    if (matched && !badges.some((item) => item.key === key)) badges.push({ key, label });
+  };
+  const sourceTier = String(story?.source_tier || story?.authority_tier || "").toLowerCase();
+  add("official", "官方", sourceTier === "official" || reasons.some((item) => /^official(?::|$)/i.test(item)));
+  add("research", "研究標的", reasons.some((item) => /^research_candidate:/i.test(item)) || (story?.research_tickers || []).length > 0);
+  add("tracked", "追蹤標的", reasons.some((item) => /^tracked_ticker:/i.test(item)) || (story?.ticker_interest || []).length > 0);
+  add("creator", "Creator 提及", reasons.some((item) => /^creator_mentioned:/i.test(item)) || (story?.creator_mentions || []).length > 0);
+  add("sector", "產業", reasons.some((item) => /^tracked_sector:/i.test(item)) || (story?.sector_interest || []).length > 0);
+  add("macro", "總經", reasons.some((item) => /^active_topic:/i.test(item)) || /macro|econom|rate|fed|inflation|cpi|pce|gdp|央行|利率|通膨|總經/.test(`${reasonText} ${topicText}`));
+  if (!badges.length) add("source", "公開來源", true);
+  return badges;
+};
+
+const renderNewsList = (id, stories, providerRegistry = [], health = null) => {
   const container = document.getElementById(id);
   if (!container) return;
-  if (!stories?.length) { container.innerHTML = '<li class="empty">目前沒有可顯示的公開新聞</li>'; return; }
+  if (!stories?.length) {
+    const state = newsEmptyState(health);
+    container.innerHTML = `<li class="empty news-empty-state"><strong>${escapeHtml(state.title)}</strong><small>${escapeHtml(state.detail)}</small></li>`;
+    return;
+  }
   container.innerHTML = stories.slice(0, 5).map((story) => {
     // URL safety is release-provided.  The UI never infers trust from a
     // provider label or accepts an arbitrary URL from the payload.
@@ -351,8 +398,11 @@ const renderNewsList = (id, stories, providerRegistry = []) => {
       url = "#";
     }
     const title = String(story.title || "").replace(/^\s*\d+\.\s*/, "");
-    const reasons = (story.relevance_reasons || []).slice(0, 2).map((reason) => `<em>${escapeHtml(reason)}</em>`).join(" ");
-    return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><small>${escapeHtml(story.source || story.provider_name || "公開來源")} ${reasons}</small></li>`;
+    const badges = newsBadgeLabels(story).map((badge) => `<span class="news-badge news-badge-${badge.key}">${escapeHtml(badge.label)}</span>`).join("");
+    const reasonDetails = (story.relevance_reasons || []).slice(0, 2).map((reason) => escapeHtml(reason)).join("、");
+    const source = escapeHtml(story.source || story.provider_name || "公開來源");
+    const detail = reasonDetails ? `<span class="news-reason-detail">${reasonDetails}</span>` : "";
+    return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><div class="news-badges" aria-label="這則新聞的關聯理由">${badges}</div><small>${source}${detail}</small></li>`;
   }).join("");
 };
 
@@ -454,7 +504,7 @@ const renderSourceHealth = (health, snapshot = {}) => {
   const sourceHealthStateLabel = (state) => {
     const normalized = String(state || "").trim().toLowerCase();
     if (["scan_failed", "failed", "failure", "error"].includes(normalized)) return "掃描失敗";
-    if (["no_events", "no_event", "empty", "none"].includes(normalized)) return "本輪無事件";
+    if (["no_events", "no_event", "no_new_content", "empty", "none"].includes(normalized)) return "本輪無事件";
     if (["scanning", "running", "in_progress"].includes(normalized)) return "掃描中";
     if (["healthy", "ok", "complete", "completed"].includes(normalized)) return "本輪已掃描";
     return "狀態待確認";
@@ -477,7 +527,7 @@ const renderSourceHealth = (health, snapshot = {}) => {
     // Keep the legacy status spelling for older snapshots and source-health
     // fixtures (source.status === "warming" ? "建檔中").
     const normalizedState = String(state || "").toLowerCase();
-    const status = state === "healthy" ? "正常" : ["no_event", "no_events", "empty", "none"].includes(normalizedState) ? "無事件" : ["not_checked", "not_scanned", "not_checked_yet"].includes(normalizedState) ? "尚未檢查" : state === "warming" ? "建檔中" : state === "pending_confirmation" || state === "pending" ? "待核對" : state === "configuration_missing" || state === "configuration_required" ? "需設定" : state === "optional_degraded" ? "選配降級" : state === "degraded_with_fallback" || state === "fallback_active" ? "備援可用" : state === "secondary_unavailable" ? "第二來源不可用" : state === "stale" ? "使用快取" : ["failed", "scan_failed", "failure", "error"].includes(normalizedState) ? "掃描失敗" : "資料缺口";
+    const status = state === "healthy" ? "正常" : ["no_event", "no_events", "no_new_content", "empty", "none"].includes(normalizedState) ? "無事件" : ["not_checked", "not_scanned", "not_checked_yet"].includes(normalizedState) ? "尚未檢查" : state === "warming" ? "建檔中" : state === "pending_confirmation" || state === "pending" ? "待核對" : state === "configuration_missing" || state === "configuration_required" ? "需設定" : state === "optional_degraded" ? "選配降級" : state === "degraded_with_fallback" || state === "fallback_active" ? "備援可用" : state === "secondary_unavailable" ? "第二來源不可用" : state === "stale" ? "使用快取" : ["failed", "scan_failed", "failure", "error", "provider_failed", "parse_failed"].includes(normalizedState) ? "掃描失敗" : "資料缺口";
     const pendingReasons = source.status === "pending" && source.pending_reasons && typeof source.pending_reasons === "object"
       ? Object.entries(source.pending_reasons).filter(([, count]) => Number(count) > 0).map(([reason, count]) => {
         const labels = {
@@ -531,7 +581,17 @@ const renderSourceHealth = (health, snapshot = {}) => {
         Number.isFinite(Number(source.observability.parser_error_count)) ? `解析失敗 ${Number(source.observability.parser_error_count)} 筆` : "",
         source.observability.last_delivery_at ? `最近送達 ${traceTime(source.observability.last_delivery_at)}` : "",
       ].filter(Boolean).join("｜") : "";
-    const detail = [issue, candidateNote, provenance, quality, freshness.join("｜"), external, creator].filter(Boolean).join("｜");
+    const lineage = source.observability && typeof source.observability === "object"
+      ? [
+        source.observability.morning_batch_state ? `晨批 ${source.observability.morning_batch_state}` : "",
+        source.observability.morning_batch_key ? `批次 ${source.observability.morning_batch_key}` : "",
+        Number.isFinite(Number(source.observability.daily_coverage_count)) ? `日覆蓋 ${Number(source.observability.daily_coverage_count)} 筆` : "",
+        source.observability.last_snapshot_id ? `快照 ${source.observability.last_snapshot_id}` : "",
+        source.observability.last_observation_id ? `觀測 ${source.observability.last_observation_id}` : "",
+        source.observability.last_telegram_delivery_status ? `Telegram ${source.observability.last_telegram_delivery_status}` : "",
+        source.observability.last_importance_gte_8_at ? `>=8 最近 ${traceTime(source.observability.last_importance_gte_8_at)}` : "",
+      ].filter(Boolean).join("｜") : "";
+    const detail = [issue, candidateNote, provenance, quality, freshness.join("｜"), external, creator, lineage].filter(Boolean).join("｜");
     return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${escapeHtml(state || "partial")}">${status}</em></li>`;
   }).join("");
   if (card) card.open = false;
@@ -637,10 +697,35 @@ const renderExternalIntelligence = (snapshot) => {
   const panel = document.getElementById("external-intelligence");
   const content = document.getElementById("external-intelligence-content");
   if (!panel || !content) return;
-  const rows = Array.isArray(snapshot?.external_observations)
+  const observations = Array.isArray(snapshot?.external_observations)
     ? snapshot.external_observations
     : Array.isArray(snapshot?.briefing?.external_observations)
       ? snapshot.briefing.external_observations : [];
+  const decisions = Array.isArray(snapshot?.financialjuice_priority_decisions)
+    ? snapshot.financialjuice_priority_decisions : [];
+  const priorityEvents = Array.isArray(snapshot?.financialjuice_priority_events)
+    ? snapshot.financialjuice_priority_events : [];
+  const rowKey = (item) => String(item?.observation_id || item?.item_id || item?.notification_id || "").trim();
+  const decisionByKey = new Map(decisions.map((item) => [rowKey(item), item]).filter(([key]) => key));
+  const priorityLabels = {
+    eligible: "供應商優先：可通知",
+    not_eligible: "供應商優先：未達 8/10",
+    already_cluster_notified: "供應商優先：同事件已通知",
+  };
+  const rows = observations.map((item) => ({
+    ...item,
+    _priorityDecision: decisionByKey.get(rowKey(item)) || null,
+  }));
+  const seen = new Set(rows.map(rowKey).filter(Boolean));
+  // Keep release-projected eligible events visible even when the raw source
+  // observation was compacted out of the public snapshot.  This is still the
+  // same canonical event lane, not a second notification pipeline.
+  for (const event of priorityEvents) {
+    const key = rowKey(event);
+    if (!key || seen.has(key)) continue;
+    rows.push({ ...event, _priorityDecision: { notification_status: "eligible" } });
+    seen.add(key);
+  }
   panel.hidden = false;
   if (!rows.length) {
     content.innerHTML = '<p class="empty">本輪沒有可公開顯示的外部快訊；來源無事件與掃描失敗分開記錄。</p>';
@@ -653,9 +738,14 @@ const renderExternalIntelligence = (snapshot) => {
     const official = item.official_confirmed === true;
     const synced = item.market_sync_confirmed === true;
     const state = official && synced ? "已核對" : official ? "等待市場同步" : synced ? "等待官方核對" : "等待官方核對／市場同步";
+    const priority = item._priorityDecision;
+    const priorityStatus = String(priority?.notification_status || "").trim();
+    const priorityText = priorityStatus
+      ? `${priorityLabels[priorityStatus] || "供應商優先：待核對"}${priority?.notification_reason ? `｜${escapeHtml(priority.notification_reason)}` : ""}`
+      : "供應商優先：尚未產生決策";
     const url = String(item.source_url || "").trim();
     const link = /^https:\/\//.test(url) ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">公開來源</a>` : "";
-    return `<article class="external-insight"><h4>${title}</h4><small>${source}｜${state}</small><p>${summary}</p>${link}</article>`;
+    return `<article class="external-insight"><h4>${title}</h4><small>${source}｜${state}</small><small>${priorityText}</small><p>${summary}</p>${link}</article>`;
   }).join("");
 };
 
@@ -868,6 +958,34 @@ const renderCreatorInsights = (creatorRelease) => {
     content.innerHTML = '<p class="empty">財經內容洞察來源目前不可用；不影響核心市場資料。</p>';
     return;
   }
+  const consensus = creatorRelease.creator_consensus;
+  if (consensus && typeof consensus === "object") {
+    const stateLabels = {
+      aligned: "多來源方向一致（僅描述觀點）",
+      mixed: "多來源觀點分歧",
+      insufficient_sources: "來源不足，暫不形成共識",
+      pending_verification: "有內容但缺少可比的明確立場",
+      stale: "內容過期，暫不作為目前觀察",
+    };
+    const evidenceLabels = {
+      aligned: "市場資料可比對",
+      partially_aligned: "部分市場資料可比對",
+      stale: "市場資料過期",
+      insufficient_evidence: "市場證據不足",
+    };
+    const topicStateLabels = {
+      aligned: "一致",
+      mixed: "分歧",
+      insufficient_sources: "來源不足",
+      pending_verification: "待核對",
+    };
+    const topics = Array.isArray(consensus.topic_consensus) ? consensus.topic_consensus.slice(0, 6) : [];
+    const topicText = topics.map((item) => `${escapeHtml(item.topic || "未命名主題")}：${escapeHtml(topicStateLabels[item.consensus_state] || "待核對")}`).join("、");
+    const divergent = Array.isArray(consensus.divergent_views) ? consensus.divergent_views : [];
+    const risks = Array.isArray(consensus.common_risks) ? consensus.common_risks : [];
+    const asOf = consensus.as_of ? new Date(consensus.as_of).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚無時間資料";
+    content.insertAdjacentHTML("beforeend", `<article class="creator-consensus"><h4>多來源內容共識</h4><p><b>狀態：</b>${escapeHtml(stateLabels[consensus.consensus_state] || "待核對")}</p><p><b>涵蓋：</b>${escapeHtml(consensus.coverage || "0/0")}｜<b>主題：</b>${topicText || "尚無可比主題"}</p><p><b>觀點分歧：</b>${divergent.length ? divergent.map((item) => escapeHtml(item.topic || "未命名主題")).join("、") : "未發現明確分歧"}</p><p><b>共同風險：</b>${risks.length ? risks.map(escapeHtml).join("、") : "尚無可交集風險標籤"}</p><small>市場證據：${escapeHtml(evidenceLabels[consensus.evidence_alignment] || "尚未核對")}｜資料時間：${escapeHtml(asOf)}</small><small>此區為公開內容觀點整理，不是事件核對，也不是投資訊號。</small></article>`);
+  }
   let insights = Array.isArray(creatorRelease.insights) ? creatorRelease.insights : [];
   if (!insights.length && creatorRelease.creators && typeof creatorRelease.creators === "object") {
     insights = Object.values(creatorRelease.creators).flatMap((creator) => {
@@ -914,13 +1032,18 @@ const render = (snapshot) => {
   renderSourceHealth(snapshot.source_health, snapshot);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
   renderExternalIntelligence(snapshot);
-  const creatorSource = snapshot.creator_release || snapshot.creator_public_artifact || snapshot.creator_intelligence;
+  // Prefer the bounded public artifact: it is the UI-facing projection and
+  // may contain sanitized insight episodes even when the internal release
+  // envelope only carries lineage/health metadata.
+  const creatorSource = snapshot.creator_public_artifact || snapshot.creator_release || snapshot.creator_intelligence;
   renderCreatorInsights(creatorSource);
   renderResearch(snapshot);
   const newsRegistry = snapshot.news?.provider_registry || [];
   const newsMarkets = snapshot.news?.markets || snapshot.news?.intelligence || snapshot.news;
-  renderNewsList("taiwan-news", newsMarkets?.taiwan?.stories || snapshot.news?.taiwan, newsRegistry);
-  renderNewsList("us-news", newsMarkets?.us?.stories || snapshot.news?.us, newsRegistry);
+  const newsHealth = Array.isArray(snapshot.news?.source_health) ? snapshot.news.source_health : [];
+  const newsHealthFor = (market) => newsHealth.find((item) => item?.key === `news_${market}`) || null;
+  renderNewsList("taiwan-news", newsMarkets?.taiwan?.stories || snapshot.news?.taiwan, newsRegistry, newsHealthFor("taiwan"));
+  renderNewsList("us-news", newsMarkets?.us?.stories || snapshot.news?.us, newsRegistry, newsHealthFor("us"));
 };
 
 // Telegram buttons carry the release and alert identity.  Resolve that

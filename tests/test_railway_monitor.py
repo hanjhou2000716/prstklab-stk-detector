@@ -22,10 +22,10 @@ def test_delivery_shared_secret_accepts_canonical_railway_name(monkeypatch):
     assert monitor._delivery_shared_secret() == "canonical"
 
 
-def test_delivery_shared_secret_prefers_railway_service_name(monkeypatch):
+def test_delivery_shared_secret_prefers_canonical_name(monkeypatch):
     monkeypatch.setenv("DELIVERY_STATUS_SHARED_SECRET", "service")
     monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "legacy")
-    assert monitor._delivery_shared_secret() == "service"
+    assert monitor._delivery_shared_secret() == "legacy"
 
 
 def test_health_snapshot_exposes_redacted_runtime_configuration(monkeypatch):
@@ -37,12 +37,14 @@ def test_health_snapshot_exposes_redacted_runtime_configuration(monkeypatch):
         "delivery_secret_configured": False,
         "canonical_name_present": False,
         "legacy_name_present": False,
+        "active_name": None,
+        "migration_required": False,
         "secret_values_exposed": False,
     }
 
 
-def test_monitor_imports_from_railway_root_without_repository_src_package():
-    """Railway's configured root directory must not crash on ``import app``."""
+def test_monitor_imports_shared_classifier_from_railway_root_without_repository_src_package():
+    """The root-only Railway image must use the generated canonical bundle."""
     environment = os.environ.copy()
     environment.pop("PYTHONPATH", None)
     # pytest-cov exports COVERAGE_PROCESS_START so subprocesses can emit
@@ -68,8 +70,9 @@ def test_monitor_imports_from_railway_root_without_repository_src_package():
     command = [
         sys.executable,
         "-c",
-        "import app; assert app._USING_STANDALONE_CLASSIFIER; "
-        "assert not app.classifier_delivery_allowed(); "
+        "import app; assert app._CLASSIFIER_MODE == 'repository-shared'; "
+        "assert not app._USING_STANDALONE_CLASSIFIER; "
+        "assert app.classifier_delivery_allowed(); "
         "assert app.classify_event_fields({'title': 'WTI oil production update'})['category'] == 'energy'",
     ]
     result = subprocess.run(
@@ -244,6 +247,41 @@ def test_keyword_database_matches_simplified_chinese_and_english_typo():
     assert monitor.classify_flash(simplified) == "policy"
     typo = monitor.Flash("typo-fomc", "FOMC statement from the Federal Reserv", "", "2026-08-02T10:06:55+08:00")
     assert monitor.classify_flash(typo) == "fed"
+
+
+def test_standalone_keyword_bundle_matches_canonical_database():
+    """The root-only Railway image must not silently use a reduced policy."""
+    import json
+    from pathlib import Path
+
+    repository = Path(__file__).parents[1]
+    canonical = json.loads(
+        (repository / "config" / "event_keywords.json").read_text(encoding="utf-8")
+    )
+    bundled = json.loads(
+        (repository / "railway-monitor" / "event_keywords.json").read_text(encoding="utf-8")
+    )
+    assert bundled == canonical
+
+
+def test_shared_classifier_bundle_is_generated_from_canonical_source():
+    script = Path(__file__).parents[1] / "scripts" / "sync_railway_shared_classifier.py"
+    result = subprocess.run(
+        [sys.executable, str(script), "--check"],
+        cwd=script.parents[1],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_runtime_self_check_exposes_classifier_provenance():
+    monitor.validate_runtime_layout()
+    runtime = monitor.health_snapshot()["runtime"]
+    assert runtime["classifier_mode"] == "repository-shared"
+    assert len(runtime["classifier_source_sha256"]) == 64
+    assert len(runtime["keyword_bundle_sha256"]) == 64
 
 
 def test_fuzzy_matching_does_not_confuse_warning_or_escalation_with_other_terms():

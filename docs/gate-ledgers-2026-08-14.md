@@ -31,6 +31,8 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | REQ-ADD-032 | raw observation persistence retries for transient Windows/SQLite locks | `src/raw_observation_store.py` | targeted 17 passed; Ruff/Mypy/compileall pass; full regression 1224 passed | no schema or release artifact change; non-retryable errors remain fail-closed | PASS / LOCKED (local evidence; production acceptance remains external) |
 | REQ-ADD-033 | Railway Gmail registry bundle and shared publish-lock retry boundary | `railway-monitor/email_router.py`, `railway-monitor/creator_providers.json`, `src/atomic_file.py`, `src/build_assets.py`, `src/refresh_market_data.py`, `src/release_manifest.py` | standalone Railway import and atomic publish suites 54 passed; targeted Ruff/compileall pass; full regression 1226 passed | Railway health must confirm Gmail no longer reports `ModuleNotFoundError`; OAuth/PubSub and callback permissions remain external | canonical parser/delivery path preserved; non-retryable publish errors remain fail-closed | PASS / LOCKED (local evidence; production acceptance remains external) |
 | REQ-ADD-034 | GDELT invalid JSON cache fallback | `railway-monitor/app.py`, `tests/test_railway_monitor.py` | targeted monitor suite 86 passed; Ruff pass; full regression 1227 passed | Railway must observe `invalid_json` as stale-cache/failed (never live) when upstream returns non-JSON | GDELT remains discovery-only; no source failure becomes a high-risk event | PASS / LOCKED (local evidence; production acceptance remains external) |
+| REQ-ADD-035 | raw observation directory-race retry | `src/atomic_file.py`, `src/raw_observation_store.py`, `tests/test_raw_observation_store.py` | targeted persistence suite 29 passed; PR #614 CI green; post-merge main regression 1228 passed/1 skipped | OneDrive-rooted pytest run remains an environment warning; non-OneDrive evidence is authoritative | non-retryable persistence failures remain unavailable/fail-closed | PASS / LOCKED (main evidence; external volume acceptance remains separate) |
+| REQ-ADD-037 | photo smoke Chromium installation boundary | `.github/workflows/notify.yml`, `docs/req-add-037-photo-smoke-chromium-install.md` | PR #616 CI green; run 31827926863 completed in 35s; Chromium install, renderer and receipt steps passed | renderer failure remains fail-closed; no photo is sent when install times out | PASS / LOCKED |
 
 ## Regression ledger
 
@@ -51,13 +53,36 @@ remain `NEEDS_REVERIFY` until the controlled post-merge run is captured.
 | Debt ID | Description | Source | Resolution | Status |
 |---|---|---|---|---|
 | DEBT-001 | Run post-merge Railway restart/cache continuity check | production gate | execute against the merged main release | OPEN / EXTERNAL |
-| DEBT-002 | Capture signed callback and Telegram delivery receipt | production gate | use one approved test recipient only | OPEN / EXTERNAL |
+| DEBT-002 | Capture signed callback and Telegram delivery receipt | production gate | run 31827926863 sent one photo to the approved test recipient; Railway receipt trace `photo-smoke-07dbd32ec6474fec`, delivered=1, failed=0 | CLOSED (controlled production acceptance) |
 | DEBT-003 | Verify Pages release propagation and public market snapshot freshness | production gate | public manifest/hash/snapshot IDs verified 2026-08-15; release age remains explicit | CLOSED (lineage); freshness observation remains external |
 | DEBT-FJ-002 | FinancialJuice runtime bundle is not yet observed in Railway | production gate | configure reviewed sanitized bundle path and capture source-health/release evidence | OPEN / EXTERNAL |
+| DEBT-004 | Railway Gmail watch and callback permissions remain unconfigured | post-merge Railway health 2026-08-14 | configure Gmail OAuth/PubSub and canonical callback secret; recheck health | OPEN / EXTERNAL |
+| DEBT-005 | Controlled Telegram delivery receipt and Mini App deep-link not captured | post-merge Railway health showed delivery `not_checked`; photo smoke run 31826716530 stalled at Chromium install | PR #616 merged; run 31827926863 verified 1080x1350 card, deep-link parameters, delivered=1/1 and Railway receipt match | CLOSED (controlled production acceptance; recipient UI visual confirmation remains outside API evidence) |
 
 No implementation task in REQ-ADD-013..020 is marked PASS solely because a PR
 exists; each has local and remote evidence above. External debt must be closed
 before the final production acceptance gate.
+
+## Latest controlled production evidence (2026-08-15)
+
+The current-main photo smoke was rerun after the public refresh release:
+
+- Actions run [31888691399](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31888691399)
+  installed Chromium and produced a non-empty `1080x1350` card.
+- The scoped sender reported `photo_delivery_delivered=1` and
+  `photo_delivery_failed=0`.
+- Railway accepted trace `photo-smoke-7fe532a75d8a441f`; `/health` then showed
+  `last_receipt_status=delivered`, `last_failed_count=0`,
+  `retryable_count=0`, and `receipt_matches_last_outbox=true`.
+- The user-approved refresh-dashboard run
+  [31889221737](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/31889221737)
+  completed in 1m19s; its public Pages manifest returned HTTP 200 with
+  `status=ready` and release `release-6a168d17f803d4aa`; the exact lineage is recorded in
+  `docs/production-acceptance-2026-08-15.md`.
+
+This evidence closes only the controlled single-recipient photo smoke.  It
+does not silently close Railway restart continuity, Gmail/FinancialJuice
+configuration, or human visual confirmation of the Telegram/Mini App view.
 
 Latest migration-head regression: `1207 passed` in `77.01s` at
 `76241c7872369be0ebfd0cb6f1adfadbb9e00b5e` using an isolated Windows temp

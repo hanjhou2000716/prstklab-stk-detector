@@ -250,6 +250,17 @@ def test_health_exposes_privacy_safe_observability(tmp_path: Path) -> None:
     assert "last_message_id" not in result
 
 
+def test_gmail_watch_health_exposes_cursor_fingerprint_only(tmp_path: Path) -> None:
+    result = health(
+        _config(),
+        {"watch_expiration": "2099-01-01T00:00:00+00:00", "last_history_id": "123"},
+    )
+    fingerprint = result["observability"]["history_cursor_hash"]
+    assert len(fingerprint) == 16
+    assert all(char in "0123456789abcdef" for char in fingerprint)
+    assert "123" not in str(result)
+
+
 def test_health_invalid_timestamps_fail_closed_without_leaking_cursor(tmp_path: Path) -> None:
     result = health(
         GmailWatchConfig.from_env({}),

@@ -16,6 +16,11 @@ def test_router_separates_transport_from_content_origin() -> None:
     assert result == {"source": "financialjuice", "content_type": "breaking_news", "parse_status": "identified"}
 
 
+def test_creator_source_routing_uses_canonical_registry_markers() -> None:
+    result = route_email_source(sender="newsletter@example.com", subject="財經皓角市場觀察")
+    assert result == {"source": "haojiao", "content_type": "creator_analysis", "parse_status": "identified"}
+
+
 def test_unknown_email_is_explicit_invalid_source() -> None:
     result = normalize_email_observation({"message_id": "m-1", "sender": "unknown@example.com", "body": "hello"})
     assert result["content_origin"] == "unknown"

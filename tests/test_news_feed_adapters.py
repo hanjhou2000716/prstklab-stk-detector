@@ -3,6 +3,7 @@ from __future__ import annotations
 from urllib.parse import urlsplit
 
 from src.news_feed_adapters import feed_catalog, fetch_official_market_news
+from src.news_intelligence import provider_registry
 
 
 class Response:
@@ -26,6 +27,24 @@ def test_catalog_keeps_disabled_nasdaq_endpoint_explicit():
     nasdaq = next(item for item in feed_catalog() if item["provider_id"] == "nasdaq")
     assert nasdaq["enabled"] is False
     assert "documented" in nasdaq["disabled_reason"]
+
+
+def test_catalog_uses_the_canonical_provider_registry_without_identity_drift():
+    registry = {item["provider_id"]: item for item in provider_registry()}
+    catalog = {item["provider_id"]: item for item in feed_catalog()}
+    assert set(catalog) == {"twse", "mops", "sec", "fed", "nasdaq"}
+    for provider_id, item in catalog.items():
+        canonical = registry[provider_id]
+        assert item["url"] == canonical.get("feed_url", "")
+        assert item["source_tier"] == canonical["authority_tier"]
+        assert item["enabled"] == canonical["enabled"]
+        assert item["markets"] == canonical["markets"]
+
+
+def test_discovery_providers_never_enter_official_feed_catalog():
+    provider_ids = {item["provider_id"] for item in feed_catalog()}
+    assert "google_news" not in provider_ids
+    assert "anue" not in provider_ids
 
 
 def test_rss_adapter_normalizes_fed_atom_and_isolates_other_provider_failure():
@@ -77,3 +96,23 @@ def test_http_429_is_recorded_without_retrying_or_aborting():
     assert result["stories"] == []
     assert len(calls) == 2  # SEC and Fed each attempted once.
     assert all(item["status"] == "rate_limited" for item in result["source_health"] if item["provider"] in {"sec", "fed"})
+
+
+def test_custom_multimarket_source_is_fetched_for_the_requested_market():
+    result = fetch_official_market_news(
+        "us",
+        requester=lambda *_args, **_kwargs: Response(text="""
+            <rss><channel><item>
+              <title>US market breadth</title>
+              <link>https://www.cnyes.com/news/1</link>
+              <pubDate>Tue, 18 Aug 2026 12:00:00 GMT</pubDate>
+            </item></channel></rss>
+        """),
+        catalog=[{
+            "provider_id": "anue", "market": "taiwan", "markets": ["taiwan", "us"],
+            "kind": "rss", "url": "https://www.cnyes.com/rss", "enabled": True,
+            "source_tier": "market", "timeout_seconds": 8,
+        }],
+    )
+    assert result["market"] == "us"
+    assert result["stories"][0]["market"] == "us"

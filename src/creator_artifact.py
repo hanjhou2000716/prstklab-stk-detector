@@ -13,6 +13,8 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
+from src.creator_consensus import build_creator_consensus
+
 PUBLIC_EPISODE_LIMIT = 10
 COMPACT_HISTORY_LIMIT = 5
 SCHEMA_VERSION = "1.0"
@@ -61,6 +63,20 @@ def validate_creator_artifact(artifact: dict[str, Any]) -> list[str]:
         errors.append("unsupported_schema_version")
     if artifact.get("public_safe") is not True:
         errors.append("artifact_not_public_safe")
+    consensus = artifact.get("creator_consensus")
+    if consensus is not None:
+        if not isinstance(consensus, dict):
+            errors.append("creator_consensus_not_object")
+        else:
+            if "is_investment_signal" in consensus and consensus.get("is_investment_signal") is not False:
+                errors.append("creator_consensus_is_investment_signal")
+            if consensus.get("consensus_state") not in {"aligned", "mixed", "insufficient_sources", "pending_verification", "stale"}:
+                if "consensus_state" in consensus:
+                    errors.append("creator_consensus_state_invalid")
+            if "contributors" in consensus and not isinstance(consensus.get("contributors"), list):
+                errors.append("creator_consensus_contributors_missing")
+            if "topic_consensus" in consensus and not isinstance(consensus.get("topic_consensus"), list):
+                errors.append("creator_consensus_topics_missing")
     if any(field in artifact for field in _PRIVATE_FIELDS):
         errors.append("artifact_contains_private_fields")
     retention = artifact.get("retention")
@@ -100,6 +116,7 @@ def build_creator_artifact(
     market_snapshot_id: str = "",
     research_snapshot_id: str = "",
     event_snapshot_id: str = "",
+    creator_consensus: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a bounded public artifact from already sanitized insights."""
     grouped: dict[str, list[dict[str, Any]]] = {}
@@ -132,6 +149,7 @@ def build_creator_artifact(
             "public_episode_count": len(episodes),
         }
     timestamp = _time(generated_at) or datetime.now(UTC).isoformat()
+    consensus = creator_consensus if isinstance(creator_consensus, dict) else build_creator_consensus(insights)
     material = {
         "schema_version": SCHEMA_VERSION,
         "generated_at": timestamp,
@@ -140,6 +158,7 @@ def build_creator_artifact(
         "research_snapshot_id": _text(research_snapshot_id),
         "event_snapshot_id": _text(event_snapshot_id),
         "creators": creators,
+        "creator_consensus": consensus,
         "invalid_records": invalid,
     }
     artifact: dict[str, Any] = {

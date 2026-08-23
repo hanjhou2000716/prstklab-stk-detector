@@ -79,6 +79,7 @@ def test_public_secondary_crosscheck_does_not_replace_primary_price():
     assert cards[0]["cross_checked"] is True
     assert cards[0]["crosscheck_status"] == "已交叉核對"
     assert [source["label"] for source in cards[0]["crosscheck_sources"]] == ["Yahoo", "Stooq"]
+    assert [source["provider"] for source in cards[0]["crosscheck_sources"]] == ["Yahoo", "Stooq"]
 
 
 def test_public_secondary_crosscheck_labels_nasdaq_fallback():
