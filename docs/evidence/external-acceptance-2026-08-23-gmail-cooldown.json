@@ -1,0 +1,47 @@
+{
+  "kind": "external-acceptance-readonly",
+  "captured_at": "2026-08-23T12:48:38.655895+00:00",
+  "workflow_run": "32640444478",
+  "main_head": "6127c7375f9dd8d7e7605cd277745db92472f77e",
+  "status": "NEEDS_REVERIFY",
+  "blocking_reasons": [
+    "railway_gdelt:failed",
+    "railway_gmail_watch:failed"
+  ],
+  "railway": {
+    "http_status": 200,
+    "monitor_status": "running",
+    "heartbeat_status": "healthy",
+    "jin10_status": "healthy",
+    "gdelt_status": "failed",
+    "gdelt_error": "HTTP_429",
+    "gdelt_stale_cache_used": false,
+    "gmail_status": "ready",
+    "gmail_watch_status": "failed",
+    "gmail_watch_error": "http_403",
+    "gmail_retry_suppression_deployed": true,
+    "runtime_status": "healthy",
+    "runtime_config_status": "healthy",
+    "secret_values_exposed": false,
+    "pages_hash_audit": {
+      "declared": 7,
+      "verified": 7,
+      "missing": 0,
+      "mismatch": 0,
+      "snapshot_mismatch": 0
+    }
+  },
+  "pages": {
+    "http_status": 200,
+    "status": "ready",
+    "release_id": "release-cc480033cc9643e5",
+    "market_snapshot_id": "f35d813b9309c83d",
+    "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
+    "event_snapshot_id": "event-a889bf10a4141a3b"
+  },
+  "side_effects": {
+    "telegram": false,
+    "railway_write": false,
+    "configuration_changed": false
+  }
+}
