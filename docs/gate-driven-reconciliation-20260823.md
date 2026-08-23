@@ -91,6 +91,12 @@ Observed results:
 
 ## External gates that remain open
 
+The post-merge read-only capture is recorded in
+[`docs/evidence/external-acceptance-2026-08-23.json`](evidence/external-acceptance-2026-08-23.json)
+from Actions run `32639107890` at main `029ea3b87599afffb349f3909c1ac406ec7ba28e`.
+It confirms Railway/Pages reachability and hash integrity without any write or
+Telegram side effect, while retaining the two provider failures below.
+
 These are intentionally not inferred from local tests:
 
 | Gate | Latest observed state | Safe policy |
