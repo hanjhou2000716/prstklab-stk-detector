@@ -152,11 +152,16 @@ jobs:
           import os
           from pathlib import Path
           manifest = json.loads(Path(os.environ["RELEASE_MANIFEST_PATH"]).read_text(encoding="utf-8"))
-          publish = manifest.get("status") == "ready" and manifest.get("research_freshness") == "fresh"
+          # Publication and research delivery are separate gates.  A ready
+          # release may safely publish fresh market/event/creator artifacts
+          # while carrying an explicitly marked stale research fallback.  The
+          # research policy below still blocks Telegram research delivery
+          # unless the research artifact is fresh.
+          publish = manifest.get("status") == "ready"
           with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
               output.write(f"publish={'true' if publish else 'false'}\n")
           if not publish:
-              print("::warning::Release is not fresh and complete; preserving the previous immutable release.")
+              print("::warning::Release manifest is not ready; preserving the previous immutable release.")
           PY
       - name: Publish snapshot and manifest
         if: steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
