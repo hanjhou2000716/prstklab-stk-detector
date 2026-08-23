@@ -1,0 +1,56 @@
+{
+  "captured_at": "2026-08-23T13:00:00+00:00",
+  "repository": "hanjhou2000716/prstklab-stk-detector",
+  "main_sha": "d40b5357eaf3511387fbfb46a34a03bb80a83810",
+  "local_checks": {
+    "canonical_overlap": {
+      "command": "python scripts/verify_canonical_overlap.py",
+      "status": "pass",
+      "failed_count": 0
+    },
+    "railway_canonical_sync": {
+      "command": "python scripts/sync_railway_canonical_parser.py --check",
+      "status": "pass",
+      "drift_count": 0
+    },
+    "python_compile": {
+      "command": "python -m compileall -q src railway-monitor",
+      "status": "pass"
+    },
+    "javascript_syntax": {
+      "command": "node --check site/app.js",
+      "status": "pass"
+    },
+    "full_regression": {
+      "command": "python -m pytest -q --basetemp=.audit-pytest",
+      "status": "pass",
+      "passed": 1360,
+      "duration_seconds": 132.43
+    },
+    "offline_system_dry_run": {
+      "command": "python -m src.system_dry_run",
+      "status": "pass",
+      "release_id": "dry-release",
+      "snapshot_id": "dry-snapshot",
+      "observation_id": "dry-observation",
+      "card_dimensions": "1080x1350",
+      "delivery": "mocked"
+    }
+  },
+  "external_acceptance": {
+    "workflow_run": "32640920543",
+    "workflow_status": "success",
+    "acceptance_status": "NEEDS_REVERIFY",
+    "railway_http_status": 200,
+    "gdelt": "HTTP_429",
+    "gmail_watch": "http_403",
+    "pages_manifest": "ready",
+    "pages_artifacts_verified": "7/7",
+    "side_effects": false
+  },
+  "safety": {
+    "production_notification_sent": false,
+    "secret_values_captured": false,
+    "stale_or_unverified_high_risk_alert_allowed": false
+  }
+}

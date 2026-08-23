@@ -2,16 +2,17 @@
 
 This checkpoint is the evidence boundary for the Creator Intelligence V2,
 FinancialJuice and news-integration work. It is evaluated from `main` at
-`00ce6c79` (the merge commit for PR #711) and must not be confused with an
+`d40b5357eaf3511387fbfb46a34a03bb80a83810` (the latest main HEAD after the
+post-cooldown acceptance evidence merge) and must not be confused with an
 older historical audit note.
 
 ## Evidence captured from the repository
 
 | Gate | Evidence | Result |
 |---|---|---|
-| Canonical provider/parser overlap | `python scripts/verify_canonical_overlap.py` and `python scripts/sync_railway_canonical_parser.py --check` | PASS — zero drift and all generated source hashes match |
-| Python/JavaScript syntax | `python -m compileall -q src railway-monitor`; `node --check site/app.js` | PASS |
-| Full local regression | `python -m pytest -q --basetemp=<isolated temp>` | PASS — 1330 passed, 1 skipped |
+| Canonical provider/parser overlap | `python scripts/verify_canonical_overlap.py` and `python scripts/sync_railway_canonical_parser.py --check` | PASS — zero drift and all generated source hashes match on `d40b535` |
+| Python/JavaScript syntax | `python -m compileall -q src railway-monitor`; `node --check site/app.js` | PASS — executed on `d40b535` |
+| Full local regression | `python -m pytest -q --basetemp=.audit-pytest` | PASS — 1360 passed in 132.43s |
 | Offline system dry-run | `python -m src.system_dry_run` | PASS — traceable release/snapshot/observation, 1080×1350 contract, deep link and fail-closed lifecycle |
 | Latest immutable data release | `origin/data-release` at `8113589` | PASS — manifest `release-b97850898b5c2678`, status `ready`; production acceptance with the complete research matrix passed |
 | Checked-in `main/site/data` | `python -m src.production_acceptance --manifest site/data/release-manifest.json --site-root site` | FAIL CLOSED — missing event/research snapshots and invalid status; it must not be used as a public release |
@@ -19,6 +20,11 @@ older historical audit note.
 The immutable `data-release` result is the only local release candidate. The
 checked-in `main/site/data` result is intentionally not promoted; the scheduled
 workflow must restore the immutable branch before Pages publication.
+
+The latest local audit is recorded in
+`docs/evidence/main-audit-2026-08-23.json`. It is deliberately separate from
+external acceptance: local implementation and regression evidence cannot prove
+that Railway, Gmail, GDELT or Telegram have succeeded in production.
 
 ## Canonical implementation status
 
@@ -49,11 +55,11 @@ controlled, non-broadcast production check records objective evidence:
 
 | Item | Required evidence | Safe state before evidence |
 |---|---|---|
-| Railway Gmail Watch | `/health` shows configured watch, renewal timestamp and a signed Pub/Sub cursor | `configuration_missing`/`stale`; never interpret as no email |
-| FinancialJuice ingress | Sanitized Railway observation bundle reaches a release snapshot with parser and priority counters | source unavailable; no high-risk promotion |
+| Railway Gmail Watch | `/health` shows configured watch, renewal timestamp and a signed Pub/Sub cursor | latest read-only run still reports `http_403`; cooldown is active and the state is never interpreted as no email |
+| FinancialJuice ingress | Sanitized Railway observation bundle reaches a release snapshot with parser and priority counters | latest run has no new content; no high-risk promotion |
 | Official news refresh | TWSE/MOPS/SEC/Fed provider health and freshness in a ready public release | provider-specific failure; other providers continue |
 | Pages/Mini App | Public manifest/hash/snapshot IDs match one ready release; no mixed artifacts | preserve previous successful release |
-| Telegram | One explicitly scoped test recipient receives one release-gated photo and matching receipt | dry-run only; no broadcast |
+| Telegram | One explicitly scoped test recipient receives one release-gated photo and matching receipt for the current release | prior receipt evidence is retained, but current-main re-verification is still required; no broadcast |
 | Railway restart/volume | Receipt, watch cursor and classification state survive a restart | retryable/unverified; do not claim continuity |
 
 The absence of any of these observations must never be converted to `no_event`,
