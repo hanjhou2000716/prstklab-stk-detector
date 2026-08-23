@@ -16,7 +16,7 @@
 |---|---|
 | Baseline main | `5f5e18c502492bedc2273d486704949cb734621c` |
 | Current branch | `fix/railway-gmail-gdelt-runtime-resilience` |
-| Current HEAD | `1ea51d9` |
+| Current HEAD | `fed3318` |
 | Open stack | #729 → #730 → #731 |
 | Working tree | clean after commit |
 | Full local regression | `1370 passed in 80.08s` |
