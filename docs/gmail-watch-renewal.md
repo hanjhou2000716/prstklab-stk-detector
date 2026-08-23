@@ -47,3 +47,28 @@ python -m pytest -q --basetemp=.tmp-gmail-watch-tests \
 ```
 
 測試使用假的 transport，不會呼叫 Gmail，也不會對正式信箱發送郵件。
+
+## HTTP 403 權限排查
+
+`http_403` 不是「本輪沒有郵件」，而是 Gmail `users.watch` 尚未取得必要
+的 Pub/Sub 授權。請在與 `GMAIL_WATCH_TOPIC` 相同的 Google Cloud project
+中確認：
+
+1. Gmail API 已啟用，且 Topic 存在。
+2. 將 Gmail API service agent
+   `service-${PROJECT_NUMBER}@gcp-sa-gmail.iam.gserviceaccount.com` 對該
+   Topic 授予 `roles/pubsub.publisher`（只授予 Topic 層級，不要擴大到整個
+   project）。
+3. `GMAIL_WATCH_TOPIC` 使用完整資源名稱
+   `projects/<project-id>/topics/<topic-id>`。
+4. OAuth refresh token 所屬帳戶與 Watch 目標信箱一致，且 OAuth scope 包含
+   `https://www.googleapis.com/auth/gmail.readonly` 或更高權限的 Gmail scope。
+5. 重新執行一次受控的 `force` renewal，確認 `/health` 顯示
+   `watch_status=healthy`、新的 expiration 與 history cursor；不要把 token、
+   message ID 或郵件內容寫入 log。
+
+若權限尚未完成，維持 `watch_status=failed` 並停止重複重試；Railway 仍可繼續
+執行其他來源輪詢。只有看到一次成功 renewal 與一次已驗證的 Pub/Sub cursor
+後，才可把 Gmail ingress 標記為 production／允許進入 Creator 或
+FinancialJuice 發布鏈。`roles/pubsub.publisher` 的授予屬於操作員管理的 IAM
+變更，不由程式自動申請或繞過核准。
