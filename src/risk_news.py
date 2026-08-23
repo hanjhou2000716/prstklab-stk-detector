@@ -7,7 +7,8 @@ import os
 import re
 import unicodedata
 from collections.abc import Iterable
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
@@ -512,10 +513,27 @@ def _market_news_rss_url(market: str) -> str:
     return "https://news.google.com/rss/search?" + urlencode(params)
 
 
-def _news_from_rss(xml: str, market: str, limit: int = 5) -> list[dict[str, str]]:
+def _rss_published_at(value: Any) -> str | None:
+    """Normalize RSS publication timestamps for fallback-news freshness gates."""
+    if value in (None, ""):
+        return None
+    text = str(value).strip()
+    try:
+        parsed = parsedate_to_datetime(text)
+    except (TypeError, ValueError, IndexError):
+        try:
+            parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC).isoformat()
+
+
+def _news_from_rss(xml: str, market: str, limit: int = 5) -> list[dict[str, Any]]:
     """Extract a bounded list of market-specific Google News RSS stories."""
     root = ElementTree.fromstring(xml)
-    stories: list[dict[str, str]] = []
+    stories: list[dict[str, Any]] = []
     seen: set[str] = set()
     for item in root.findall(".//item"):
         title = (item.findtext("title") or "").strip()
@@ -523,25 +541,32 @@ def _news_from_rss(xml: str, market: str, limit: int = 5) -> list[dict[str, str]
         if not title or not url or url in seen:
             continue
         seen.add(url)
+        published_at = _rss_published_at(
+            item.findtext("pubDate")
+            or item.findtext("{http://purl.org/dc/elements/1.1/}date")
+            or item.findtext("{*}published")
+            or item.findtext("{*}updated")
+        )
         stories.append({
             "title": title,
             "url": url,
             "source": "Google News｜台股線索" if market == "taiwan" else "Google News｜美股線索",
             "relevance": "market",
+            "published_at": published_at,
         })
         if len(stories) >= limit:
             break
     return stories
 
 
-def fetch_market_news_fallback(market: str) -> list[dict[str, str]]:
+def fetch_market_news_fallback(market: str) -> list[dict[str, Any]]:
     """Fetch a category-specific discovery fallback when the primary feeds collide."""
     response = requests.get(_market_news_rss_url(market), headers=HEADERS, timeout=15)
     response.raise_for_status()
     return _news_from_rss(response.text, market)
 
 
-def _filter_market_news(stories: list[dict[str, str]], market: str) -> list[dict[str, str]]:
+def _filter_market_news(stories: list[dict[str, Any]], market: str) -> list[dict[str, Any]]:
     """Reject cross-market headlines before they reach the cache or UI.
 
     URL collision detection cannot catch two different URLs copied from the

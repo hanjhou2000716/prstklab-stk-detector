@@ -125,13 +125,28 @@ def test_taifex_quote_fallback_uses_official_mis_endpoint(monkeypatch):
 def test_market_news_rss_parser_keeps_market_specific_links():
     xml = """
     <rss><channel>
-      <item><title>US Nasdaq outlook</title><link>https://news.google.com/rss/articles/us1</link></item>
+      <item><title>US Nasdaq outlook</title><link>https://news.google.com/rss/articles/us1</link><pubDate>Mon, 24 Aug 2026 01:30:00 GMT</pubDate></item>
       <item><title>Taiwan semiconductor outlook</title><link>https://news.google.com/rss/articles/tw1</link></item>
     </channel></rss>
     """
     stories = _news_from_rss(xml, "us")
     assert stories[0]["url"].endswith("/us1")
     assert stories[0]["source"] == "Google News｜美股線索"
+    assert stories[0]["published_at"] == "2026-08-24T01:30:00+00:00"
+
+
+def test_market_news_rss_parser_accepts_atom_timestamp_and_marks_invalid_as_unknown():
+    xml = """
+    <rss xmlns:atom="http://www.w3.org/2005/Atom"><channel>
+      <item><title>Nasdaq outlook</title><link>https://news.google.com/rss/articles/us2</link>
+        <atom:updated>2026-08-24T02:00:00+02:00</atom:updated></item>
+      <item><title>Federal Reserve outlook</title><link>https://news.google.com/rss/articles/us3</link>
+        <pubDate>not-a-date</pubDate></item>
+    </channel></rss>
+    """
+    stories = _news_from_rss(xml, "us")
+    assert stories[0]["published_at"] == "2026-08-24T00:00:00+00:00"
+    assert stories[1]["published_at"] is None
 
 
 def test_duplicate_market_payload_uses_separate_fallback_feeds(monkeypatch):
