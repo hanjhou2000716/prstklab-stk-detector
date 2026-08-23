@@ -2,18 +2,18 @@
 
 This checkpoint is the evidence boundary for the Creator Intelligence V2,
 FinancialJuice and news-integration work. It is evaluated from `main` at
-`d40b5357eaf3511387fbfb46a34a03bb80a83810` (the latest main HEAD after the
-post-cooldown acceptance evidence merge) and must not be confused with an
-older historical audit note.
+`f830a428d2dbcba5a07e36541b9700eae8527817` (the latest main HEAD after the
+gate-evidence documentation merge) and must not be confused with an older
+historical audit note.
 
 ## Evidence captured from the repository
 
 | Gate | Evidence | Result |
 |---|---|---|
-| Canonical provider/parser overlap | `python scripts/verify_canonical_overlap.py` and `python scripts/sync_railway_canonical_parser.py --check` | PASS — zero drift and all generated source hashes match on `d40b535` |
-| Python/JavaScript syntax | `python -m compileall -q src railway-monitor`; `node --check site/app.js` | PASS — executed on `d40b535` |
-| Full local regression | `python -m pytest -q --basetemp=.audit-pytest` | PASS — 1360 passed in 132.43s |
-| Offline system dry-run | `python -m src.system_dry_run` | PASS — traceable release/snapshot/observation, 1080×1350 contract, deep link and fail-closed lifecycle |
+| Canonical provider/parser overlap | `python scripts/verify_canonical_overlap.py` and `python scripts/sync_railway_canonical_parser.py --check` | PASS — zero drift and all generated source hashes match on `f830a42` |
+| Python/JavaScript syntax | `python -m compileall -q src railway-monitor`; `node --check site/app.js` | PASS — executed on `f830a42` |
+| Full local regression | `python -m pytest -q --basetemp=.audit-pytest` | PASS — 1360 passed after PR #723 merge |
+| Offline system dry-run | `python -m src.system_dry_run` | PASS — traceable release/snapshot/observation, 1080×1350 contract, deep link and fail-closed lifecycle after PR #723 merge |
 | Latest immutable data release | `origin/data-release` at `8113589` | PASS — manifest `release-b97850898b5c2678`, status `ready`; production acceptance with the complete research matrix passed |
 | Checked-in `main/site/data` | `python -m src.production_acceptance --manifest site/data/release-manifest.json --site-root site` | FAIL CLOSED — missing event/research snapshots and invalid status; it must not be used as a public release |
 
@@ -22,9 +22,12 @@ checked-in `main/site/data` result is intentionally not promoted; the scheduled
 workflow must restore the immutable branch before Pages publication.
 
 The latest local audit is recorded in
-`docs/evidence/main-audit-2026-08-23.json`. It is deliberately separate from
-external acceptance: local implementation and regression evidence cannot prove
-that Railway, Gmail, GDELT or Telegram have succeeded in production.
+`docs/evidence/main-audit-2026-08-23.json`; the post-merge external read-only
+capture is recorded in
+`docs/evidence/external-acceptance-2026-08-23-post723.json`. These are
+deliberately separate from one another: local implementation and regression
+evidence cannot prove that Railway, Gmail, GDELT or Telegram have succeeded
+in production.
 
 ## Canonical implementation status
 

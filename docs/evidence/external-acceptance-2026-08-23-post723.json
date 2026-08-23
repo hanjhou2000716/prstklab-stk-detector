@@ -1,0 +1,39 @@
+{
+  "kind": "external-acceptance-readonly",
+  "captured_at": "2026-08-23T13:31:02.875213+00:00",
+  "repository_main_sha": "f830a428d2dbcba5a07e36541b9700eae8527817",
+  "status": "NEEDS_REVERIFY",
+  "blocking_reasons": ["railway_gdelt:failed", "railway_gmail_watch:failed"],
+  "railway": {
+    "http_status": 200,
+    "monitor_status": "running",
+    "heartbeat_status": "healthy",
+    "jin10_status": "healthy",
+    "gdelt_status": "failed",
+    "gdelt_error": "HTTP_429",
+    "gdelt_stale_cache_used": false,
+    "gmail_status": "ready",
+    "gmail_watch_status": "failed",
+    "gmail_watch_error": "http_403",
+    "runtime_status": "healthy",
+    "runtime_config_status": "healthy",
+    "delivery_status": "not_checked"
+  },
+  "pages": {
+    "http_status": 200,
+    "status": "ready",
+    "release_id": "release-cc480033cc9643e5",
+    "market_snapshot_id": "f35d813b9309c83d",
+    "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
+    "event_snapshot_id": "event-a889bf10a4141a3b",
+    "artifact_hashes_verified": 7,
+    "artifact_hash_mismatches": 0
+  },
+  "side_effects": {"telegram": false, "railway_write": false, "configuration_changed": false},
+  "interpretation": {
+    "railway_and_pages_reachable": true,
+    "high_risk_promotion_allowed": false,
+    "gmail_403_requires_operator_managed_pubsub_iam": true,
+    "gdelt_429_requires_bounded_backoff_and_cache": true
+  }
+}
