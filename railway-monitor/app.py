@@ -1186,9 +1186,19 @@ class SeenStore:
                 # complete release/snapshot/alert tuple and explicit origin.
                 photo_smoke = (
                     receipt_kind == "photo_smoke"
-                    and payload.get("release_id") == "photo-smoke-test"
-                    and payload.get("snapshot_id") == "photo-smoke-test"
-                    and payload.get("alert_id") == "photo-smoke-test"
+                    and (
+                        (
+                            payload.get("release_id") == "photo-smoke-test"
+                            and payload.get("snapshot_id") == "photo-smoke-test"
+                            and payload.get("alert_id") == "photo-smoke-test"
+                        )
+                        or (
+                            payload.get("receipt_origin") == "github_actions"
+                            and bool(payload.get("release_id"))
+                            and bool(payload.get("snapshot_id"))
+                            and bool(payload.get("alert_id"))
+                        )
+                    )
                     and payload.get("delivery_mode") == "photo"
                 )
                 creator_receipt = (

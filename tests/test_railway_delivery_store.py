@@ -157,3 +157,21 @@ def test_photo_smoke_receipt_can_register_without_prior_outbox():
     }
     assert delivery.record_delivery_status(connection, payload) is True
     assert delivery.outbox_state(connection, "photo-trace") == ("delivered", False)
+
+
+def test_release_bound_photo_smoke_receipt_can_register_without_prior_outbox():
+    connection = _connection()
+    payload = {
+        "trace_id": "release-photo-trace",
+        "receipt_kind": "photo_smoke",
+        "receipt_origin": "github_actions",
+        "release_id": "release-123",
+        "snapshot_id": "snapshot-123",
+        "alert_id": "production-photo-smoke-release-123",
+        "delivery_mode": "photo",
+        "delivery_status": "delivered",
+        "delivered_count": 1,
+        "failed_count": 0,
+    }
+    assert delivery.record_delivery_status(connection, payload) is True
+    assert delivery.outbox_state(connection, "release-photo-trace") == ("delivered", False)

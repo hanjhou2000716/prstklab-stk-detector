@@ -1188,6 +1188,28 @@ def test_seen_store_accepts_scoped_photo_smoke_receipt_without_outbox(tmp_path):
     ).fetchone() == ("delivered", 1, 0)
 
 
+def test_seen_store_accepts_release_bound_photo_smoke_receipt_without_outbox(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    trace_id = "release-photo-smoke-1234"
+    assert store.record_delivery_status({
+        "trace_id": trace_id,
+        "receipt_kind": "photo_smoke",
+        "receipt_origin": "github_actions",
+        "release_id": "release-abc",
+        "snapshot_id": "snapshot-abc",
+        "alert_id": "production-photo-smoke-release-abc",
+        "delivery_mode": "photo",
+        "delivery_status": "delivered",
+        "delivered_count": 1,
+        "failed_count": 0,
+        "failed_recipient_hashes": [],
+    })
+    assert store.connection.execute(
+        "SELECT status,delivered_count,failed_count FROM delivery_receipts WHERE trace_id=? AND recipient_hash='__aggregate__'",
+        (trace_id,),
+    ).fetchone() == ("delivered", 1, 0)
+
+
 def test_seen_store_registers_signed_production_receipt_without_outbox(tmp_path):
     store = monitor.SeenStore(tmp_path / "state.sqlite3")
     trace_id = "brief-production-test-1234"
