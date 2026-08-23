@@ -41,8 +41,35 @@ def test_failed_monitor_is_visible_as_a_partial_source():
     health = updated["source_health"]
     gdelt = next(item for item in health["sources"] if item["key"] == "gdelt_crosscheck")
     assert gdelt["status"] == "partial"
+    assert gdelt["semantic_state"] == "partial"
     assert "Timeout" in gdelt["issues"][0]
     assert health["missing_source_count"] == 1
+    assert health["runtime_failure_count"] == 1
+    assert health["configuration_missing_count"] == 0
+
+
+def test_failed_monitor_recomputes_counts_without_erasing_configuration_gaps():
+    snapshot = {"source_health": {
+        "status": "partial",
+        "sources": [{
+            "key": "fred",
+            "status": "configuration_missing",
+            "semantic_state": "configuration_missing",
+        }],
+        "missing_source_count": 1,
+        "runtime_failure_count": 0,
+        "configuration_missing_count": 1,
+    }}
+    updated = apply_monitor_health(snapshot, {
+        "component": "gdelt",
+        "status": "failed",
+        "checked_at": "2026-08-03T02:00:00+00:00",
+        "error": "HTTP_429",
+    })
+    health = updated["source_health"]
+    assert health["missing_source_count"] == 2
+    assert health["runtime_failure_count"] == 1
+    assert health["configuration_missing_count"] == 1
 
 
 def test_pending_monitor_without_reason_gets_market_sync_fallback():
