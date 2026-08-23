@@ -832,6 +832,58 @@ def test_gdelt_rate_limit_fallback_is_marked_stale_and_not_live(monkeypatch, tmp
     assert monitor._GDELT_LAST_FETCH_ERROR == "HTTP_429"
 
 
+def test_gdelt_rate_limit_cooldown_survives_process_restart(monkeypatch, tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    payload = [{
+        "title": "Iran conflict",
+        "url": "https://www.reuters.com/a",
+        "domain": "reuters.com",
+        "seen_at": "2026-08-09T01:00:00+00:00",
+    }]
+    store.write_cache("gdelt-success", payload)
+    store.connection.execute(
+        "UPDATE cache SET refreshed_at=? WHERE cache_key=?",
+        ((monitor.datetime.now(monitor.timezone.utc) - monitor.timedelta(minutes=20)).isoformat(), "gdelt-success"),
+    )
+    store.connection.commit()
+    request = monitor.httpx.Request("GET", "https://api.gdeltproject.org/api/v2/doc/doc")
+    response = monitor.httpx.Response(429, request=request, headers={"Retry-After": "300"})
+
+    class RateLimitedClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def get(self, *_args, **_kwargs):
+            return response
+
+    monkeypatch.setattr(monitor.httpx, "AsyncClient", lambda **_kwargs: RateLimitedClient())
+    monitor._GDELT_BACKOFF_UNTIL = 0.0
+    assert len(asyncio.run(monitor.fetch_gdelt_articles(store))) == 1
+    assert store.read_cache("gdelt-rate-limit", 7200)
+
+    # A restart loses module globals; the durable cache must still suppress
+    # the immediate retry and use the bounded stale success.
+    monitor._GDELT_BACKOFF_UNTIL = 0.0
+
+    class NoRequestClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def get(self, *_args, **_kwargs):
+            raise AssertionError("rate-limit cooldown should prevent a request")
+
+    monkeypatch.setattr(monitor.httpx, "AsyncClient", lambda **_kwargs: NoRequestClient())
+    assert len(asyncio.run(monitor.fetch_gdelt_articles(store))) == 1
+    assert monitor._GDELT_LAST_FETCH_STATE == "stale_cache"
+    assert monitor._GDELT_LAST_FETCH_ERROR == "HTTP_429"
+
+
 def test_gdelt_invalid_json_uses_recent_cache_and_stays_failed(monkeypatch, tmp_path):
     store = monitor.SeenStore(tmp_path / "state.sqlite3")
     payload = [{
