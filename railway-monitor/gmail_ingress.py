@@ -58,7 +58,11 @@ class GmailIngressService:
         if self.config.require_jwt_verification:
             if self.token_verifier is None or not self.token_verifier(token, self.config.audience):
                 raise GmailIngressError("pubsub_jwt_verification_failed")
-        if audience != self.config.audience:
+        # Pub/Sub authenticated push requests carry the configured audience
+        # in the OIDC JWT ``aud`` claim. The optional frontend header is not
+        # guaranteed, so validate it only when the sender supplies it.
+        # Strict JWT mode still validates the claim through token_verifier.
+        if audience and audience != self.config.audience:
             raise GmailIngressError("pubsub_audience_mismatch")
         if service_account != self.config.service_account:
             raise GmailIngressError("pubsub_service_account_mismatch")

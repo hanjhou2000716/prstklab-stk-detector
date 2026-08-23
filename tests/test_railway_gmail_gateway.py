@@ -175,6 +175,13 @@ def test_ingress_strict_mode_uses_injected_jwt_verifier(tmp_path: Path) -> None:
     assert service.decode_push(_push(), _headers())["history_id"] == "123"
 
 
+def test_ingress_accepts_pubsub_oidc_without_nonstandard_audience_header(tmp_path: Path) -> None:
+    headers = _headers()
+    headers.pop("x-goog-authenticated-audience")
+    service = GmailIngressService(EmailStore(tmp_path / "mail.sqlite3"), _config())
+    assert service.decode_push(_push(), headers)["history_id"] == "123"
+
+
 def test_ingress_accepts_replay_safe_observation_and_dedupes(tmp_path: Path) -> None:
     store = EmailStore(tmp_path / "mail.sqlite3")
     service = GmailIngressService(store, _config())

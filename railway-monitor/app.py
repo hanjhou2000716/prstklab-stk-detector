@@ -1546,6 +1546,7 @@ _GDELT_BACKOFF_UNTIL = 0.0
 _GDELT_FAILURE_COUNT = 0
 _GDELT_LAST_FETCH_STATE = "unknown"
 _GDELT_LAST_FETCH_ERROR: str | None = None
+_GDELT_RATE_LIMIT_CACHE_KEY = "gdelt-rate-limit"
 _HEALTH_DISPATCH_BACKOFF_UNTIL = 0.0
 _HEALTH_DISPATCH_BACKOFF_STATUS = "not_checked"
 _HEALTH_DISPATCH_BACKOFF_ERROR: str | None = None
@@ -1569,12 +1570,55 @@ def gdelt_error_label(error: BaseException) -> str:
     return type(error).__name__
 
 
+def _gmail_error_label(error: BaseException) -> str:
+    """Return a bounded Gmail ingress label without exposing request data."""
+    if type(error).__name__ == "GmailIngressError":
+        value = str(error).strip()
+        if value and re.fullmatch(r"[a-z0-9_]{1,80}", value):
+            return value
+    return type(error).__name__
+
+
+def _restore_gdelt_backoff(store: SeenStore | None) -> None:
+    """Restore a rate-limit cooldown after a Railway process restart."""
+    global _GDELT_BACKOFF_UNTIL, _GDELT_FAILURE_COUNT
+    if store is None or time.monotonic() < _GDELT_BACKOFF_UNTIL:
+        return
+    rows = store.read_cache(_GDELT_RATE_LIMIT_CACHE_KEY, 2 * 60 * 60)
+    if not rows or not isinstance(rows[0], dict):
+        return
+    row = rows[0]
+    try:
+        until = datetime.fromisoformat(str(row.get("backoff_until")).replace("Z", "+00:00"))
+        remaining = (until.astimezone(timezone.utc) - datetime.now(timezone.utc)).total_seconds()
+        failures = max(1, int(str(row.get("failure_count") or "1")))
+    except (TypeError, ValueError, OverflowError):
+        return
+    if remaining > 0:
+        _GDELT_BACKOFF_UNTIL = time.monotonic() + remaining
+        _GDELT_FAILURE_COUNT = min(failures, 6)
+
+
+def _record_gdelt_backoff(store: SeenStore | None, retry_after: int = 0) -> None:
+    """Persist a bounded cooldown for rate limits and malformed responses."""
+    global _GDELT_BACKOFF_UNTIL, _GDELT_FAILURE_COUNT
+    _GDELT_FAILURE_COUNT = min(_GDELT_FAILURE_COUNT + 1, 6)
+    delay = min(900, max(60, retry_after or 60 * (2 ** (_GDELT_FAILURE_COUNT - 1))))
+    _GDELT_BACKOFF_UNTIL = time.monotonic() + delay
+    if store:
+        store.write_cache(_GDELT_RATE_LIMIT_CACHE_KEY, [{
+            "backoff_until": (datetime.now(timezone.utc) + timedelta(seconds=delay)).isoformat(),
+            "failure_count": str(_GDELT_FAILURE_COUNT),
+        }])
+
+
 async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[DiscoveryArticle]:
     """Fetch discovery headlines with a 15-minute cache and 120-minute fallback."""
     global _GDELT_BACKOFF_UNTIL, _GDELT_FAILURE_COUNT, _GDELT_LAST_FETCH_STATE, _GDELT_LAST_FETCH_ERROR
     fresh_cache_seconds = max(60, int(os.environ.get("GDELT_CACHE_MINUTES", "15")) * 60)
     stale_cache_seconds = max(fresh_cache_seconds, int(os.environ.get("GDELT_STALE_CACHE_MINUTES", "120")) * 60)
     fresh_age_seconds = max(60, int(os.environ.get("GDELT_MAX_FRESH_AGE_MINUTES", "45")) * 60)
+    _restore_gdelt_backoff(store)
     if store:
         cached = store.read_cache("gdelt-success", fresh_cache_seconds)
         if cached is not None:
@@ -1590,7 +1634,7 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
                 _GDELT_LAST_FETCH_STATE = "stale_cache"
                 return _decode_discovery_articles(stale)
         _GDELT_LAST_FETCH_STATE = "failed"
-        _GDELT_LAST_FETCH_ERROR = "rate_limited"
+        _GDELT_LAST_FETCH_ERROR = "HTTP_429"
         raise RuntimeError("GDELT backoff active after rate limit")
     params = {"query": os.environ.get("GDELT_QUERY", GDELT_QUERY), "mode": "artlist", "format": "json", "sort": "datedesc", "maxrecords": 75}
     try:
@@ -1605,9 +1649,7 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
                 retry_after = int(response.headers.get("Retry-After", "0"))
             except (TypeError, ValueError):
                 retry_after = 0
-            _GDELT_FAILURE_COUNT = min(_GDELT_FAILURE_COUNT + 1, 6)
-            delay = min(900, max(60, retry_after or 60 * (2 ** (_GDELT_FAILURE_COUNT - 1))))
-            _GDELT_BACKOFF_UNTIL = time.monotonic() + delay
+            _record_gdelt_backoff(store, retry_after)
             response.raise_for_status()
         response.raise_for_status()
         payload = response.json()
@@ -1615,10 +1657,19 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
             raise ValueError("invalid GDELT payload")
         _GDELT_FAILURE_COUNT = 0
         _GDELT_BACKOFF_UNTIL = 0.0
+        if store:
+            store.write_cache(_GDELT_RATE_LIMIT_CACHE_KEY, [])
         _GDELT_LAST_FETCH_STATE = "live"
         _GDELT_LAST_FETCH_ERROR = None
     except Exception as error:
         _GDELT_LAST_FETCH_ERROR = gdelt_error_label(error)
+        # GDELT occasionally returns an HTML/rate-limit body with HTTP 200.
+        # Treat malformed payloads and timeouts as transient provider failures:
+        # persist a bounded cooldown so a Railway restart cannot create a
+        # tight retry loop.  The source remains failed/uncertain and can never
+        # qualify an alert while this state is active.
+        if _GDELT_LAST_FETCH_ERROR in {"invalid_json", "invalid_payload", "timeout"}:
+            _record_gdelt_backoff(store)
         if store:
             stale = store.read_cache("gdelt-success", stale_cache_seconds)
             if stale is not None:
@@ -1909,7 +1960,7 @@ class HealthHandler(BaseHTTPRequestHandler):
                 return
             except Exception as error:
                 # Never echo bearer tokens, message IDs or request bodies.
-                update_health("gmail", status="failed", error=type(error).__name__)
+                update_health("gmail", status="failed", error=_gmail_error_label(error))
                 code = 401 if type(error).__name__ in {"GmailIngressError"} else 400
                 self.send_error(code, "gmail push rejected")
                 return
