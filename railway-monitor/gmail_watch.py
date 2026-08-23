@@ -23,6 +23,11 @@ class GmailWatchConfig:
     audience: str
     service_account: str
     require_jwt_verification: bool = False
+    # OAuth values stay in Railway's private environment. They are optional
+    # for the authenticated push contract and required only by renewal.
+    oauth_client_id: str = ""
+    oauth_client_secret: str = ""
+    refresh_token: str = ""
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> GmailWatchConfig:
@@ -35,6 +40,9 @@ class GmailWatchConfig:
             audience=source.get("GMAIL_PUBSUB_AUDIENCE", "").strip(),
             service_account=source.get("GMAIL_PUBSUB_SERVICE_ACCOUNT", "").strip(),
             require_jwt_verification=source.get("GMAIL_PUBSUB_REQUIRE_JWT", "false").strip().casefold() == "true",
+            oauth_client_id=source.get("GMAIL_OAUTH_CLIENT_ID", "").strip(),
+            oauth_client_secret=source.get("GMAIL_OAUTH_CLIENT_SECRET", "").strip(),
+            refresh_token=source.get("GMAIL_REFRESH_TOKEN", "").strip(),
         )
 
     @property
@@ -51,6 +59,16 @@ class GmailWatchConfig:
     @property
     def status(self) -> str:
         return "configuration_missing" if self.missing else "configured"
+
+    @property
+    def oauth_missing(self) -> tuple[str, ...]:
+        """Return names missing for automatic ``users.watch`` renewal."""
+        values = {
+            "GMAIL_OAUTH_CLIENT_ID": self.oauth_client_id,
+            "GMAIL_OAUTH_CLIENT_SECRET": self.oauth_client_secret,
+            "GMAIL_REFRESH_TOKEN": self.refresh_token,
+        }
+        return tuple(key for key, value in values.items() if not value)
 
     def watch_request(self) -> dict[str, Any]:
         if self.missing:

@@ -16,10 +16,18 @@ watch, cursor timestamp, and error-class state. `configuration_missing` and
 
 Required variables are `GMAIL_WATCH_TOPIC`, `GMAIL_WATCH_LABEL_IDS`,
 `GMAIL_OAUTH_STATE`, `GMAIL_PUBSUB_AUDIENCE`, and
-`GMAIL_PUBSUB_SERVICE_ACCOUNT`. Set `GMAIL_STATE_PATH` to a persistent Railway
+`GMAIL_PUBSUB_SERVICE_ACCOUNT`. Automatic watch renewal additionally requires
+`GMAIL_OAUTH_CLIENT_ID`, `GMAIL_OAUTH_CLIENT_SECRET`, and
+`GMAIL_REFRESH_TOKEN`. Set `GMAIL_STATE_PATH` to a persistent Railway
 volume path (default `/data/gmail-ingress.sqlite3`). Raw Gmail content remains
 outside this store and is parsed by the bounded source adapters before it can
 enter the event or Creator pipelines.
+
+The Railway monitor renews (or creates) the watch when the durable lease is
+missing or near expiry. It persists only the expiration/history cursor and
+never logs tokens or provider response bodies. A provider permission failure
+is reported as `watch_status=failed` and remains fail-closed without stopping
+the other source loops.
 
 Rollback: remove the ingress route/configuration and redeploy the previous
 release. The existing Jin10/GDELT polling and delivery receipt paths are
