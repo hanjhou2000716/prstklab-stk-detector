@@ -182,6 +182,24 @@ def test_ingress_accepts_pubsub_oidc_without_nonstandard_audience_header(tmp_pat
     assert service.decode_push(_push(), headers)["history_id"] == "123"
 
 
+@pytest.mark.parametrize(
+    "identity",
+    [
+        "accounts.google.com:serviceAccount:push@example.iam.gserviceaccount.com",
+        "serviceAccount:push@example.iam.gserviceaccount.com",
+        "https://accounts.google.com:push@example.iam.gserviceaccount.com",
+    ],
+)
+def test_ingress_normalizes_pubsub_service_account_identity_prefixes(
+    tmp_path: Path,
+    identity: str,
+) -> None:
+    headers = _headers()
+    headers["x-goog-authenticated-user-email"] = identity
+    service = GmailIngressService(EmailStore(tmp_path / "mail.sqlite3"), _config())
+    assert service.decode_push(_push(), headers)["history_id"] == "123"
+
+
 def test_ingress_accepts_replay_safe_observation_and_dedupes(tmp_path: Path) -> None:
     store = EmailStore(tmp_path / "mail.sqlite3")
     service = GmailIngressService(store, _config())
