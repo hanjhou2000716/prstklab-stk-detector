@@ -1,8 +1,8 @@
 import base64
 import json
 import sys
-from urllib.parse import parse_qs
 from pathlib import Path
+from urllib.parse import parse_qs
 
 import pytest
 
