@@ -69,6 +69,12 @@ def apply_monitor_health(snapshot: dict[str, Any], payload: dict[str, Any]) -> d
         "key": "gdelt_crosscheck",
         "label": "GDELT 事件交叉核對",
         "status": source_status,
+        # ``status`` is the presentation state while ``semantic_state`` is
+        # the release-contract authority.  Keep both explicit so a failed
+        # monitor scan cannot be counted as healthy simply because an older
+        # snapshot omitted the semantic field.
+        "semantic_state": source_status,
+        "role": "optional",
         "checked_at": payload.get("checked_at"),
         "source_url": "https://api.gdeltproject.org/api/v2/doc/doc",
         "issues": issues,
@@ -90,17 +96,35 @@ def apply_monitor_health(snapshot: dict[str, Any], payload: dict[str, Any]) -> d
         "pending_count": pending_count,
         "pending_reasons": entry["pending_reasons"],
     }
-    partial = sum(
+    gap_states = {
+        "fallback_active", "degraded_with_fallback", "secondary_unavailable",
+        "configuration_missing", "configuration_required", "stale", "partial",
+        "optional_degraded", "parse_failed", "provider_failed", "failed",
+        "scan_failed", "critical", "pending_confirmation", "release_blocked",
+    }
+    configuration_states = {"configuration_missing", "configuration_required"}
+
+    def _semantic(item: Any) -> str:
+        if not isinstance(item, dict):
+            return ""
+        return str(item.get("semantic_state") or item.get("status") or "")
+
+    partial = sum(1 for item in sources if _semantic(item) in gap_states)
+    configuration_missing = sum(1 for item in sources if _semantic(item) in configuration_states)
+    runtime_failures = sum(
         1 for item in sources
-        if isinstance(item, dict) and item.get("status") in {"partial", "failed", "missing_api_key", "data_gap"}
+        if _semantic(item) in gap_states and _semantic(item) not in configuration_states
     )
     pending = sum(
         _as_count(item.get("pending_count"))
         for item in sources if isinstance(item, dict) and item.get("status") == "pending"
     )
     health["missing_source_count"] = partial
+    health["runtime_failure_count"] = runtime_failures
+    health["configuration_missing_count"] = configuration_missing
     health["pending_event_count"] = pending
     health["status"] = "partial" if partial else "healthy"
+    health["investor_status"] = "部分資料降級" if runtime_failures else "資料正常"
     health["summary"] = (
         f"{partial} 個來源有資料缺口" if partial else "所有資料來源目前可用"
     ) + (f"｜{pending} 個事件待核對" if pending else "")
