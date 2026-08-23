@@ -89,6 +89,38 @@ def test_http_403_is_reported_without_leaking_response(tmp_path: Path) -> None:
     client = _Client([_Response(200, {"access_token": "token"}), _Response(403, {"error": "private"})])
     result = _run(renew_watch_if_due(_config(), store, force=True, client_factory=lambda **_kwargs: client))
     assert result == {"status": "failed", "watch_status": "failed", "attempted": True, "error": "http_403"}
+    assert store.cursor()["watch_error"] == "http_403"
+
+
+def test_recent_failure_suppresses_repeated_watch_call(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(watch_error="http_403", watch_error_at=datetime.now(UTC).isoformat())
+    called = False
+
+    def factory(**_kwargs: object) -> _Client:
+        nonlocal called
+        called = True
+        return _Client([])
+
+    result = _run(renew_watch_if_due(_config(), store, client_factory=factory))
+    assert result["watch_status"] == "failed"
+    assert result["attempted"] is False
+    assert result["retry_suppressed"] is True
+    assert result["retry_after_seconds"] > 0
+    assert called is False
+
+
+def test_success_clears_previous_watch_failure(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(watch_error="http_403", watch_error_at=datetime.now(UTC).isoformat())
+    client = _Client([
+        _Response(200, {"access_token": "token"}),
+        _Response(200, {"expiration": "1780000000000", "historyId": "history-3"}),
+    ])
+    result = _run(renew_watch_if_due(_config(), store, force=True, client_factory=lambda **_kwargs: client))
+    assert result["watch_status"] == "active"
+    assert store.cursor()["watch_error"] is None
+    assert store.cursor()["watch_error_at"] is None
 
 
 def test_missing_oauth_is_fail_closed(tmp_path: Path) -> None:

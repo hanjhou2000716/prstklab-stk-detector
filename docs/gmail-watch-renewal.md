@@ -20,6 +20,7 @@ Railway 啟動時會檢查持久化的 Gmail Watch 租約。若沒有租約，�
 可選設定：
 
 - `GMAIL_WATCH_RENEWAL_MARGIN_HOURS`（預設 `6`）
+- `GMAIL_WATCH_RETRY_COOLDOWN_MINUTES`（預設 `60`）
 - `GMAIL_WATCH_TIMEOUT_SECONDS`（預設 `15`）
 
 OAuth client secret、refresh token 與 access token 絕不寫入 log、公開資料或
@@ -27,6 +28,12 @@ health payload。health 只回報 `healthy`、`stale`、`failed` 或
 `configuration_missing`，以及脫敏錯誤類別。續期失敗不會讓 Railway worker
 停止；服務會保持可探測，下一次啟動會再次嘗試。失敗期間不得把 Gmail
 事件視為已接收，並應在來源健康頁顯示 Watch 未就緒。
+
+若 Gmail 回傳權限或設定錯誤（例如 HTTP 403），系統會把脫敏錯誤與時間寫入
+持久化 cursor，並在 cooldown 期間停止重複呼叫 `users.watch`；健康頁仍維持
+`watch_status=failed`，所以不會把失敗誤判成「沒有郵件」。可用
+`GMAIL_WATCH_RETRY_COOLDOWN_MINUTES` 調整重試間隔，手動 `force` 驗證仍可立即
+重試。成功建立 Watch 後會清除上一個錯誤狀態。
 
 Railway volume 必須掛載到 `GMAIL_STATE_PATH`（正式環境預設
 `/data/gmail-ingress.sqlite3`），否則每次重啟都會遺失租約並重新建立 Watch。
