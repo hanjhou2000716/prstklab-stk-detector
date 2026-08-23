@@ -1,0 +1,43 @@
+{
+  "kind": "external-acceptance-readonly",
+  "captured_at": "2026-08-23T12:20:46.387419+00:00",
+  "workflow_run": "32639107890",
+  "head_sha": "029ea3b87599afffb349f3909c1ac406ec7ba28e",
+  "status": "NEEDS_REVERIFY",
+  "blocking_reasons": ["railway_gdelt:failed", "railway_gmail_watch:failed"],
+  "railway": {
+    "url": "https://loving-happiness-production-b1a9.up.railway.app/",
+    "http_status": 200,
+    "monitor_status": "running",
+    "heartbeat_status": "healthy",
+    "jin10_status": "healthy",
+    "gdelt_status": "failed",
+    "gdelt_error": "HTTP_429",
+    "gmail_status": "ready",
+    "gmail_watch_status": "failed",
+    "gmail_watch_error": "http_403",
+    "runtime_status": "healthy",
+    "classifier_mode": "repository-shared",
+    "secret_values_exposed": false
+  },
+  "pages": {
+    "http_status": 200,
+    "status": "ready",
+    "release_id": "release-cc480033cc9643e5",
+    "market_snapshot_id": "f35d813b9309c83d",
+    "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
+    "event_snapshot_id": "event-a889bf10a4141a3b",
+    "artifact_hash_audit": {
+      "declared_count": 7,
+      "verified_count": 7,
+      "missing_count": 0,
+      "mismatch_count": 0,
+      "snapshot_mismatch_count": 0
+    }
+  },
+  "side_effects": {
+    "telegram": false,
+    "railway_write": false,
+    "configuration_changed": false
+  }
+}
