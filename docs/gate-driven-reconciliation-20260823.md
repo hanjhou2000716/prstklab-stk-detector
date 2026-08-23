@@ -100,6 +100,15 @@ from Actions run `32639557621` at main
 reachability and hash integrity without any write or Telegram side effect,
 while retaining the two provider failures below.
 
+After the Gmail Watch retry-cooldown merge, Actions run `32640444478` was
+captured in
+[`docs/evidence/external-acceptance-2026-08-23-gmail-cooldown.json`](evidence/external-acceptance-2026-08-23-gmail-cooldown.json)
+against main `6127c7375f9dd8d7e7605cd277745db92472f77e`. Railway and Pages
+remained reachable, all seven public artifact hashes verified, and the new
+cooldown behavior was deployed. The external Gmail Watch permission is still
+HTTP 403 and GDELT is still rate-limited with HTTP 429; no notification or
+configuration side effect was performed.
+
 These are intentionally not inferred from local tests:
 
 | Gate | Latest observed state | Safe policy |
