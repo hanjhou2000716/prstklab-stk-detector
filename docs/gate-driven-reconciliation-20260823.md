@@ -91,18 +91,21 @@ Observed results:
 
 ## External gates that remain open
 
-The post-merge read-only capture is recorded in
-[`docs/evidence/external-acceptance-2026-08-23.json`](evidence/external-acceptance-2026-08-23.json)
-from Actions run `32639107890` at main `029ea3b87599afffb349f3909c1ac406ec7ba28e`.
-It confirms Railway/Pages reachability and hash integrity without any write or
-Telegram side effect, while retaining the two provider failures below.
+The first post-merge read-only capture is recorded in
+[`docs/evidence/external-acceptance-2026-08-23.json`](evidence/external-acceptance-2026-08-23.json).
+The latest-main rerun is recorded in
+[`docs/evidence/external-acceptance-2026-08-23-latest.json`](evidence/external-acceptance-2026-08-23-latest.json)
+from Actions run `32639557621` at main
+`3dd090dd17b48560cb7a9a5196212ea34d446780`. It confirms Railway/Pages
+reachability and hash integrity without any write or Telegram side effect,
+while retaining the two provider failures below.
 
 These are intentionally not inferred from local tests:
 
 | Gate | Latest observed state | Safe policy |
 |---|---|---|
 | Gmail Watch / Pub/Sub | OAuth/watch path previously returned HTTP 403 | report configuration/authorization failure; never treat it as no mail |
-| GDELT discovery | upstream returned HTTP 429 | bounded backoff/cache; discovery-only; no high-risk promotion |
+| GDELT discovery | latest upstream response was invalid JSON (prior run was HTTP 429) | bounded backoff/cache; discovery-only; no high-risk promotion |
 | FinancialJuice Railway ingress | requires a fresh sanitized observation bundle in a ready release | keep source unavailable/pending until lineage is observed |
 | Railway restart continuity | not proven by local tests | keep receipt/watch/classification continuity as NEEDS_REVERIFY |
 | Formal backtest | current production release reports unavailable | Advice Gate remains observation-only |
