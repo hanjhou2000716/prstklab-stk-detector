@@ -14,11 +14,17 @@ from the Google Cloud Pub/Sub and Gmail OAuth setup:
 - `GMAIL_OAUTH_STATE`
 - `GMAIL_PUBSUB_AUDIENCE`
 - `GMAIL_PUBSUB_SERVICE_ACCOUNT`
+- `GMAIL_OAUTH_CLIENT_ID`
+- `GMAIL_OAUTH_CLIENT_SECRET`
+- `GMAIL_REFRESH_TOKEN`
 - `GMAIL_STATE_PATH` (a persistent volume path, normally `/data/gmail-ingress.sqlite3`)
 
 After the service restarts, `/health` must report `gmail.status=healthy` or
-`watch_status=active`. `configuration_missing` is not equivalent to
-`no_new_content` and must remain visible until the watch is actually active.
+`watch_status=active`. The monitor renews the watch automatically when its
+lease is near expiry. `configuration_missing` is not equivalent to
+`no_new_content` and must remain visible until the watch is actually active;
+`watch_status=failed` records a provider/configuration failure without
+stopping the other polling loops.
 
 ## 2. Delivery callback secret migration
 

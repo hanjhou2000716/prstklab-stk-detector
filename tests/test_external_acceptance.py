@@ -89,6 +89,25 @@ def test_capture_passes_when_health_and_manifest_are_ready() -> None:
     assert report["blocking_reasons"] == []
 
 
+def test_capture_distinguishes_configured_gmail_from_failed_watch() -> None:
+    health = {
+        "status": "ok",
+        "service": "monitor",
+        "gmail": {"status": "ready", "watch_status": "failed"},
+        "gdelt": {"status": "no_event"},
+        "delivery": {"status": "not_checked"},
+    }
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([_Response(200, health), _Response(200, manifest), _Response(200, None, artifact)]),
+    )
+    assert report["status"] == "NEEDS_REVERIFY"
+    assert report["blocking_reasons"] == ["railway_gmail_watch:failed"]
+
+
 def test_capture_fails_closed_when_legacy_delivery_secret_requires_migration() -> None:
     health = {
         "status": "ok",

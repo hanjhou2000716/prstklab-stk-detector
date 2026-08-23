@@ -239,8 +239,21 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
     else:
         for section in ("gmail", "gdelt", "delivery"):
             state = health.get(section)
-            if isinstance(state, dict) and str(state.get("status") or "") not in {"healthy", "no_new_content", "no_event", "not_checked"}:
-                reasons.append(f"railway_{section}:{state.get('status')}")
+            if not isinstance(state, dict):
+                continue
+            status = str(state.get("status") or "")
+            if section == "gmail":
+                # ``status=ready`` only means the ingress is configured.  A
+                # failed/stale users.watch lease is a separate operational
+                # gate and must not be mistaken for a healthy mailbox.
+                if status not in {"healthy", "no_new_content", "no_event", "not_checked", "ready"}:
+                    reasons.append(f"railway_gmail:{status}")
+                watch_status = str(state.get("watch_status") or "not_checked")
+                if watch_status not in {"healthy", "active", "no_new_content", "no_event", "not_checked"}:
+                    reasons.append(f"railway_gmail_watch:{watch_status}")
+                continue
+            if status not in {"healthy", "no_new_content", "no_event", "not_checked"}:
+                reasons.append(f"railway_{section}:{status}")
         runtime_config = health.get("runtime_config")
         if isinstance(runtime_config, dict) and runtime_config.get("migration_required") is True:
             # A legacy delivery secret may keep the callback reachable, but it
