@@ -2279,6 +2279,23 @@ async def monitor_forever() -> None:
         except Exception:
             # Maintenance must never stop a fresh source poll or a retry pass.
             logging.exception("Delivery history retention cleanup failed; continuing monitor cycle")
+        # Gmail Watch leases are finite.  The manager performs a cheap
+        # persisted-expiration check on every cycle and only calls Google when
+        # the lease is missing or inside the renewal window.  A transient
+        # renewal failure is health-visible but never stops market polling.
+        if EMAIL_INGRESS is not None:
+            try:
+                renewal = EMAIL_INGRESS.ensure_watch()
+                diagnostics = EMAIL_INGRESS.health()
+                update_health(
+                    "gmail",
+                    status="ready",
+                    **_gmail_health_fields(diagnostics),
+                    error=renewal.get("error") if isinstance(renewal, dict) else None,
+                )
+            except Exception as error:
+                update_health("gmail", status="ready", error=type(error).__name__)
+                logging.exception("Gmail Watch renewal failed; continuing monitor cycle")
         try:
             retried = await retry_due_outbox(
                 store,

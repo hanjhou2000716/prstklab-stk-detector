@@ -1,6 +1,7 @@
 import base64
 import json
 import sys
+from urllib.parse import parse_qs
 from pathlib import Path
 
 import pytest
@@ -9,7 +10,7 @@ RAILWAY_MODULES = Path(__file__).parents[1] / "railway-monitor"
 sys.path.insert(0, str(RAILWAY_MODULES))
 
 from email_store import EmailStore  # noqa: E402
-from gmail_watch import GmailWatchConfig, health, renewal_due  # noqa: E402
+from gmail_watch import GmailWatchConfig, GmailWatchManager, health, renewal_due  # noqa: E402
 
 from gmail_ingress import GmailIngressError, GmailIngressService  # noqa: E402
 
@@ -54,12 +55,81 @@ def test_email_router_imports_from_standalone_railway_root() -> None:
         capture_output=True,
         text=True,
     )
+
+
+def _oauth_config() -> GmailWatchConfig:
+    return GmailWatchConfig(
+        topic_name="projects/p/topics/t",
+        label_ids=("INBOX",),
+        oauth_state="configured",
+        audience="https://railway.example/gmail/push",
+        service_account="push@example.iam.gserviceaccount.com",
+        oauth_client_id="client-id",
+        oauth_client_secret="client-secret",
+        refresh_token="refresh-token",
+    )
     assert "haojiao" in result.stdout
     assert "jenny" in result.stdout
 
 
 def test_watch_renewal_is_due_without_expiration() -> None:
     assert renewal_due(None)
+
+
+def test_watch_manager_refreshes_oauth_and_persists_lease(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    calls: list[tuple[str, dict, dict]] = []
+
+    def transport(url: str, body: bytes, headers: dict[str, str], _timeout: float) -> tuple[int, bytes]:
+        payload = parse_qs(body.decode()) if url.endswith("/token") else json.loads(body.decode())
+        calls.append((url, payload, headers))
+        if url.endswith("/token"):
+            assert headers["Content-Type"] == "application/x-www-form-urlencoded"
+            assert payload["grant_type"] == ["refresh_token"]
+            return 200, json.dumps({"access_token": "access-token"}).encode()
+        assert headers["Authorization"] == "Bearer access-token"
+        assert payload == {
+            "topicName": "projects/p/topics/t",
+            "labelIds": ["INBOX"],
+            "labelFilterAction": "include",
+        }
+        return 200, json.dumps({"historyId": "history-1", "expiration": "1780000000000"}).encode()
+
+    result = GmailWatchManager(_oauth_config(), store, transport=transport).ensure_watch()
+    assert result["status"] == "healthy"
+    assert result["renewed"] is True
+    cursor = store.cursor()
+    assert cursor["last_history_id"] == "history-1"
+    assert cursor["watch_expiration"]
+    assert cursor["watch_last_renewed_at"]
+    assert cursor["watch_error"] is None
+    assert len(calls) == 2
+
+
+def test_watch_manager_does_not_renew_active_lease(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(watch_expiration="2099-01-01T00:00:00+00:00")
+    calls: list[str] = []
+    result = GmailWatchManager(
+        _oauth_config(), store,
+        transport=lambda url, *_args: (calls.append(url) or (500, b"{}")),
+    ).ensure_watch()
+    assert result == {"status": "healthy", "renewed": False, "watch_expiration": "2099-01-01T00:00:00+00:00"}
+    assert calls == []
+
+
+def test_watch_manager_failure_is_bounded_and_redacted(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+
+    def transport(_url: str, _body: bytes, _headers: dict[str, str], _timeout: float) -> tuple[int, bytes]:
+        return 403, b'{"error":"forbidden"}'
+
+    result = GmailWatchManager(_oauth_config(), store, transport=transport).ensure_watch()
+    assert result == {"status": "failed", "renewed": False, "error": "http_403"}
+    assert "refresh-token" not in json.dumps(result)
+    cursor = store.cursor()
+    assert cursor["watch_error"] == "http_403"
+    assert cursor["watch_error_at"]
 
 
 def test_ingress_rejects_invalid_identity(tmp_path: Path) -> None:
@@ -165,14 +235,17 @@ def test_health_exposes_privacy_safe_observability(tmp_path: Path) -> None:
         },
     )
     assert result["status"] == "healthy"
-    assert result["observability"] == {
-        "observations": 0,
-        "last_received_at": "2026-08-13T00:00:00+00:00",
-        "last_parsed_at": "2026-08-13T00:01:00+00:00",
-        "parser_error_count": 2,
-        "last_delivery_at": "2026-08-13T00:02:00+00:00",
-        "state": "healthy",
-    }
+    observability = result["observability"]
+    assert observability["observations"] == 0
+    assert observability["last_received_at"] == "2026-08-13T00:00:00+00:00"
+    assert observability["last_parsed_at"] == "2026-08-13T00:01:00+00:00"
+    assert observability["parser_error_count"] == 2
+    assert observability["last_delivery_at"] == "2026-08-13T00:02:00+00:00"
+    assert observability["state"] == "healthy"
+    assert observability["history_cursor_present"] is True
+    assert len(observability["history_cursor_hash"]) == 16
+    assert observability["queue_pending_count"] == 0
+    assert observability["dead_letter_count"] == 2
     assert "last_history_id" not in result
     assert "last_message_id" not in result
 

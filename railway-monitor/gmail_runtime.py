@@ -51,6 +51,12 @@ def configure_gmail_ingress(
         config = config_factory(env)
         path = env.get("GMAIL_STATE_PATH", "/data/gmail-ingress.sqlite3")
         ingress = ingress_factory(store_factory(path), config)
+        # The lease is independent from Pub/Sub HTTP availability.  Attempt
+        # renewal once at startup; the manager persists a bounded failure so
+        # health probes can report it while the worker remains alive.
+        ensure_watch = getattr(ingress, "ensure_watch", None)
+        if callable(ensure_watch):
+            ensure_watch()
         diagnostics = ingress.health()
         return ingress, {
             "status": "configuration_missing" if config.missing else "ready",

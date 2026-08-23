@@ -11,7 +11,7 @@ from typing import Any
 
 from email_router import DLQ_STATES, parse_email
 from email_store import EmailStore
-from gmail_watch import GmailWatchConfig
+from gmail_watch import GmailWatchConfig, GmailWatchManager
 from gmail_watch import health as watch_health
 
 MAX_BODY_BYTES = 256 * 1024
@@ -36,6 +36,15 @@ class GmailIngressService:
         self.store = store
         self.config = config
         self.token_verifier = token_verifier
+
+    def ensure_watch(self) -> dict[str, Any]:
+        """Create or renew the Gmail lease when it is missing or near expiry.
+
+        Renewal errors are returned as a bounded diagnostic and persisted by
+        the manager; they must not prevent the Pub/Sub health server from
+        starting or accepting a later retry.
+        """
+        return GmailWatchManager(self.config, self.store).ensure_watch()
 
     def _authenticate(self, headers: Mapping[str, str]) -> None:
         if self.config.missing:
@@ -106,7 +115,11 @@ class GmailIngressService:
         return {"accepted": True, "status": parsed["parse_status"], "observation": observation}
 
     def health(self) -> dict[str, Any]:
-        return {"watch": watch_health(self.config, self.store.cursor()), "store": self.store.health()}
+        store_health = self.store.health()
+        return {
+            "watch": watch_health(self.config, self.store.cursor(), store_health=store_health),
+            "store": store_health,
+        }
 
     def accept_push(self, body: bytes | str, headers: Mapping[str, str]) -> dict[str, Any]:
         """Authenticate and durably record one bounded Gmail notification.

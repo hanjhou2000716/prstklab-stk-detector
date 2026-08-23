@@ -43,6 +43,9 @@ class EmailStore:
                 CREATE TABLE IF NOT EXISTS gmail_cursor (
                     id INTEGER PRIMARY KEY CHECK (id = 1),
                     watch_expiration TEXT,
+                    watch_last_renewed_at TEXT,
+                    watch_error TEXT,
+                    watch_error_at TEXT,
                     last_history_id TEXT,
                     last_notification_at TEXT,
                     last_sync_at TEXT,
@@ -80,6 +83,12 @@ class EmailStore:
                     ON email_dlq(gmail_message_id, created_at);
                 """
             )
+            # Existing Railway volumes predate the watch lease observability
+            # columns.  Migrate in place without dropping the durable cursor.
+            columns = {str(row[1]) for row in connection.execute("PRAGMA table_info(gmail_cursor)")}
+            for name in ("watch_last_renewed_at", "watch_error", "watch_error_at"):
+                if name not in columns:
+                    connection.execute(f"ALTER TABLE gmail_cursor ADD COLUMN {name} TEXT")
 
     def cursor(self) -> dict[str, Any]:
         with self._connect() as connection:
@@ -87,6 +96,9 @@ class EmailStore:
         if row is None:
             return {
                 "watch_expiration": None,
+                "watch_last_renewed_at": None,
+                "watch_error": None,
+                "watch_error_at": None,
                 "last_history_id": None,
                 "last_notification_at": None,
                 "last_sync_at": None,
@@ -100,11 +112,15 @@ class EmailStore:
         current.update({key: value for key, value in values.items() if key in current})
         with self._connect() as connection:
             connection.execute(
-                """INSERT INTO gmail_cursor(id, watch_expiration, last_history_id,
+                """INSERT INTO gmail_cursor(id, watch_expiration, watch_last_renewed_at,
+                   watch_error, watch_error_at, last_history_id,
                    last_notification_at, last_sync_at, last_full_sync_at,
                    last_message_id, updated_at)
-                   VALUES(1, ?, ?, ?, ?, ?, ?, ?)
+                   VALUES(1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                    ON CONFLICT(id) DO UPDATE SET watch_expiration=excluded.watch_expiration,
+                   watch_last_renewed_at=excluded.watch_last_renewed_at,
+                   watch_error=excluded.watch_error,
+                   watch_error_at=excluded.watch_error_at,
                    last_history_id=excluded.last_history_id,
                    last_notification_at=excluded.last_notification_at,
                    last_sync_at=excluded.last_sync_at,
@@ -112,7 +128,8 @@ class EmailStore:
                    last_message_id=excluded.last_message_id,
                    updated_at=excluded.updated_at""",
                 (
-                    current["watch_expiration"], current["last_history_id"],
+                    current["watch_expiration"], current["watch_last_renewed_at"],
+                    current["watch_error"], current["watch_error_at"], current["last_history_id"],
                     current["last_notification_at"], current["last_sync_at"],
                     current["last_full_sync_at"], current["last_message_id"], _now(),
                 ),
