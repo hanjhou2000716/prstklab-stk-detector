@@ -33,6 +33,20 @@ def test_morning_batch_selects_latest_per_creator_and_is_idempotent() -> None:
     assert first["batch_key"] == second["batch_key"]
 
 
+def test_default_morning_lane_excludes_optional_creator() -> None:
+    result = build_creator_morning_batch(
+        [
+            _record("haojiao", "h-1", "2026-08-14T02:00:00Z"),
+            _record("jenny", "j-1", "2026-08-14T02:05:00Z"),
+            _record("gooaye", "g-1", "2026-08-14T02:10:00Z"),
+        ],
+        as_of=AS_OF,
+    )
+    assert result["state"] == "complete"
+    assert result["expected_count"] == 2
+    assert {item["creator_id"] for item in result["records"]} == {"haojiao", "jenny"}
+
+
 def test_partial_batch_exposes_missing_creator_without_inventing_content() -> None:
     result = build_creator_morning_batch(
         [_record("haojiao", "h-1", "2026-08-14T02:00:00Z")],

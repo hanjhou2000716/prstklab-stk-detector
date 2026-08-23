@@ -15,7 +15,10 @@ from src.creator_provider_registry import (
 def test_registry_contains_ordered_editorial_providers():
     assert creator_ids() == ("haojiao", "jenny", "gooaye")
     assert editorial_creator_ids() == creator_ids()
-    assert get_creator_provider("JENNY").display_name == "財經珍妮"
+    assert get_creator_provider("JENNY").display_name == "財女珍妮"
+    assert get_creator_provider("haojiao").morning_required is True
+    assert get_creator_provider("jenny").morning_required is True
+    assert get_creator_provider("gooaye").morning_required is False
     assert is_known_creator("jenny")
     assert not is_known_creator("unknown")
 

@@ -30,7 +30,8 @@ class CreatorProvider:
     notification_policy: str
     media_policy: str
     display_order: int
-    enabled: bool
+    morning_required: bool = False
+    enabled: bool = True
 
     @property
     def markers(self) -> tuple[str, ...]:
@@ -111,6 +112,7 @@ def load_creator_registry(path: str | Path | None = None) -> tuple[CreatorProvid
             notification_policy=notification_policy,
             media_policy=media_policy,
             display_order=order,
+            morning_required=bool(entry.get("morning_required", False)),
             enabled=bool(entry.get("enabled", True)),
         ))
     return tuple(sorted(providers, key=lambda item: item.display_order))

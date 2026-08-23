@@ -9,6 +9,7 @@ market-synchronisation proof.  This module keeps those concepts separate so a
 from __future__ import annotations
 
 import hashlib
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
@@ -17,6 +18,48 @@ from src.external_event_risk import score_prstk_risk
 VENDOR_IMPORTANCE_MAX = 10
 PARSER_VERSION = "financialjuice-contract-v2"
 VENDOR_PRIORITY_THRESHOLD = 8
+
+
+@dataclass(frozen=True)
+class FinancialJuiceEnvelope:
+    """Public-safe envelope for a compound vendor email.
+
+    Each item remains an independent event.  ``compound_unresolved`` is
+    retained when the parser cannot prove item boundaries; callers must not
+    silently turn the whole email into one high-risk alert.
+    """
+
+    message_id: str
+    items: tuple[dict[str, Any], ...]
+    parse_status: str
+    compound_unresolved: bool = False
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "message_id": self.message_id,
+            "items": [dict(item) for item in self.items],
+            "item_count": len(self.items),
+            "parse_status": self.parse_status,
+            "compound_unresolved": self.compound_unresolved,
+            "public_safe": True,
+        }
+
+
+def build_financialjuice_envelope(
+    items: list[dict[str, Any]] | tuple[dict[str, Any], ...],
+    *,
+    message_id: str = "",
+    compound_unresolved: bool = False,
+) -> FinancialJuiceEnvelope:
+    """Wrap already-normalized independent items without changing their facts."""
+    safe_items = tuple(dict(item) for item in items if isinstance(item, dict))
+    status = "compound_unresolved" if compound_unresolved else "parsed" if safe_items else "empty"
+    return FinancialJuiceEnvelope(
+        message_id=_text(message_id),
+        items=safe_items,
+        parse_status=status,
+        compound_unresolved=bool(compound_unresolved),
+    )
 
 
 def _text(value: Any) -> str:
@@ -152,6 +195,8 @@ def financialjuice_notification_state(record: dict[str, Any]) -> dict[str, Any]:
 
 
 __all__ = [
+    "FinancialJuiceEnvelope",
+    "build_financialjuice_envelope",
     "financialjuice_content_hash",
     "financialjuice_item_id",
     "financialjuice_notification_state",
