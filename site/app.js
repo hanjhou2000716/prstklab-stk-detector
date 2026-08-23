@@ -971,13 +971,22 @@ document.querySelectorAll(".news-tab").forEach((tab) => tab.addEventListener("cl
 const renderCreatorInsights = (creatorRelease) => {
   const panel = document.getElementById("creator-intelligence");
   const content = document.getElementById("creator-intelligence-content");
+  const status = document.getElementById("creator-status");
   if (!panel || !content) return;
-  panel.hidden = true;
-  content.replaceChildren();
-  if (!creatorRelease || typeof creatorRelease !== "object") return;
   panel.hidden = false;
+  content.replaceChildren();
+  if (status) status.textContent = "資料可用";
+  if (!creatorRelease || typeof creatorRelease !== "object") {
+    if (status) status.textContent = "尚未發布";
+    content.innerHTML = '<p class="empty">本輪尚未發布財經內容洞察；不代表沒有內容，請等待下一個已核對版本。</p>';
+    return;
+  }
   if (creatorRelease.status !== "ready") {
-    content.innerHTML = '<p class="empty">財經內容洞察來源目前不可用；不影響核心市場資料。</p>';
+    if (status) status.textContent = "來源待核對";
+    const reason = Array.isArray(creatorRelease.validation_errors) && creatorRelease.validation_errors.length
+      ? creatorRelease.validation_errors.slice(0, 3).join("、")
+      : "本輪來源未完成驗證";
+    content.innerHTML = `<p class="empty">財經內容洞察目前不可用：${escapeHtml(reason)}。不影響核心市場資料。</p>`;
     return;
   }
   const consensus = creatorRelease.creator_consensus;

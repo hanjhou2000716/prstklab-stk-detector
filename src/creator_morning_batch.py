@@ -58,7 +58,13 @@ def _stable_key(value: Any) -> str:
 def _expected_creators(expected: Iterable[str] | None) -> tuple[str, ...]:
     if expected is not None:
         return tuple(dict.fromkeys(str(item).strip().casefold() for item in expected if str(item).strip()))
-    return tuple(item.creator_id for item in creator_providers(enabled_only=True) if item.consensus_eligible)
+    # The 10:30 publication is intentionally the two-provider morning lane.
+    # Optional providers (for example Gooaye) are consumed by the later daily
+    # intelligence lane and must not make a valid morning batch look partial.
+    return tuple(
+        item.creator_id for item in creator_providers(enabled_only=True)
+        if item.consensus_eligible and item.morning_required
+    )
 
 
 def build_creator_morning_batch(

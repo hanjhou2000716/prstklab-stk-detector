@@ -18,7 +18,7 @@ from src.email_intelligence import normalize_creator_insight
 
 _MAX_FIELD_CHARS = 600
 _SUPPORTED_PARSER = "creator-template-v2"
-_JENNY_PARSER = "jenny-template-v1"
+_JENNY_PARSER = "jenny-template-v2"
 _JENNY_FIELDS = ("CSCO", "NBIS", "COHR", "CBRS")
 
 # These labels describe the shared template contract, not provider identity.
@@ -29,6 +29,17 @@ _BASE_LABELS: dict[str, tuple[str, ...]] = {
     "opinion": ("opinion", "view", "觀點", "看法", "分析"),
     "takeaway": ("takeaway", "key takeaway", "重點", "結論", "摘要"),
     "risk": ("risk", "risk view", "風險", "風險觀察"),
+}
+
+_JENNY_STRUCTURED_LABELS: dict[str, tuple[str, ...]] = {
+    "topics": ("topics", "topic", "主題", "主題標籤"),
+    "markets": ("markets", "market", "市場", "市場範圍"),
+    "sectors": ("sectors", "sector", "產業", "產業別"),
+    "tickers": ("tickers", "ticker", "標的", "股票代號", "代號"),
+    "key_numbers": ("key numbers", "numbers", "關鍵數字", "重要數字"),
+    "market_view": ("market view", "市場觀點", "大盤觀點"),
+    "strategy_view": ("strategy view", "策略觀點", "策略重點"),
+    "risk_view": ("risk view", "風險觀點", "風險提醒"),
 }
 
 # The registry is the only provider allowlist.  A provider with the shared
@@ -92,8 +103,44 @@ def _jenny_fields(body: str) -> dict[str, str]:
     return result
 
 
+def _labeled_list(lines: list[str], labels: tuple[str, ...]) -> list[str]:
+    """Read explicitly labelled comma/space separated values only.
+
+    We intentionally do not infer a market or ticker from arbitrary prose:
+    creator commentary is evidence, not an automated trading signal.
+    """
+    value = _section(lines, labels, limit_lines=1)
+    if not value:
+        return []
+    parts = re.split(r"[,，、;；|/\s]+", value)
+    return list(dict.fromkeys(item.strip() for item in parts if item.strip()))[:20]
+
+
+def _key_numbers(lines: list[str]) -> list[dict[str, str]]:
+    value = _section(lines, _JENNY_STRUCTURED_LABELS["key_numbers"], limit_lines=2)
+    if not value:
+        return []
+    numbers: list[dict[str, str]] = []
+    for token in re.split(r"[,，、;；|]+", value):
+        token = _clip(token, 120)
+        match = re.match(r"(?P<label>[^:=：]+)\s*[:=：]\s*(?P<value>.+)", token)
+        if match:
+            numbers.append({"label": _clip(match.group("label"), 48), "value": _clip(match.group("value"), 64)})
+    return numbers[:20]
+
+
+def _explicit_tickers(text: str, provider_fields: dict[str, str]) -> list[str]:
+    # Only known Jenny fields and conventional uppercase symbols are accepted.
+    # This prevents ordinary English words from becoming fake tickers.
+    values = list(provider_fields)
+    values.extend(re.findall(r"(?<![A-Za-z0-9])\$?([A-Z]{2,5})(?![A-Za-z0-9])", text))
+    ignored = {"AI", "HTML", "HTTP", "USD", "EPS", "THE", "AND", "FOR", "WITH"}
+    return list(dict.fromkeys(value.upper() for value in values if value.upper() not in ignored))[:20]
+
+
 def _parse_jenny_template(
     *, sender: str, subject: str, body: str, message_id: str, provider_config: Any,
+    media_summary: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Parse Jenny's structured/sanitized template with fail-closed semantics.
 
@@ -127,6 +174,8 @@ def _parse_jenny_template(
             "template_fingerprint": _fingerprint("jenny", subject, text),
         }
     provider_fields = _jenny_fields(text)
+    tickers = _explicit_tickers(text, provider_fields)
+    media = media_summary if isinstance(media_summary, dict) and media_summary.get("public_safe") else {}
     insight = normalize_creator_insight({
         "creator_id": "jenny",
         "creator_name": provider_config.display_name,
@@ -135,13 +184,23 @@ def _parse_jenny_template(
         "episode_title": title,
         "source_message_id": message_id,
         "content_origin": "jenny",
+        "topics": _labeled_list(lines, _JENNY_STRUCTURED_LABELS["topics"]),
+        "markets": _labeled_list(lines, _JENNY_STRUCTURED_LABELS["markets"]),
+        "sectors": _labeled_list(lines, _JENNY_STRUCTURED_LABELS["sectors"]),
+        "tickers": tickers,
         "key_takeaways": [value for value in (takeaways, risk) if value],
+        "creator_market_view": _section(lines, _JENNY_STRUCTURED_LABELS["market_view"], limit_lines=2),
+        "creator_strategy_view": _section(lines, _JENNY_STRUCTURED_LABELS["strategy_view"], limit_lines=2),
+        "creator_risk_view": _section(lines, _JENNY_STRUCTURED_LABELS["risk_view"], limit_lines=2) or risk,
+        "key_numbers": _key_numbers(lines),
         "claims": [facts] if facts else [],
         "opinions": [value for value in (opinions, risk) if value],
         "verification_state": "unverified",
         "evidence_alignment": "not_verifiable",
         "parse_status": "parsed",
         "parser_version": _JENNY_PARSER,
+        "summary_image_available": media.get("availability") == "private_ready",
+        "summary_image_hash": media.get("sha256", ""),
     })
     insight.update({
         "parse_status": "parsed",
@@ -164,6 +223,7 @@ def parse_creator_template(
     subject: str,
     body: str,
     message_id: str = "",
+    media_summary: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Parse one known template and return a public-safe derived record.
 
@@ -195,6 +255,7 @@ def parse_creator_template(
             body=body,
             message_id=message_id,
             provider_config=provider_config,
+            media_summary=media_summary,
         )
     lines = [line.strip() for line in body.splitlines() if line.strip()]
     labels = _LABELS.get(normalized_source, _BASE_LABELS)

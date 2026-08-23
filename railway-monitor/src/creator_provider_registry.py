@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/creator_provider_registry.py
-# Canonical source SHA256: 4cf9cd4c4443e722b92c5e6dc3232bcccc841c0b9b87ec5dde5b79d3f499768e
+# Canonical source SHA256: 33c3650ecf7ffe3965c92eae464800d9abad4df4e0e0047e81c906119aaa5b49
 
 """Canonical, fail-closed registry for optional Creator providers.
 
@@ -35,7 +35,8 @@ class CreatorProvider:
     notification_policy: str
     media_policy: str
     display_order: int
-    enabled: bool
+    morning_required: bool = False
+    enabled: bool = True
 
     @property
     def markers(self) -> tuple[str, ...]:
@@ -116,6 +117,7 @@ def load_creator_registry(path: str | Path | None = None) -> tuple[CreatorProvid
             notification_policy=notification_policy,
             media_policy=media_policy,
             display_order=order,
+            morning_required=bool(entry.get("morning_required", False)),
             enabled=bool(entry.get("enabled", True)),
         ))
     return tuple(sorted(providers, key=lambda item: item.display_order))

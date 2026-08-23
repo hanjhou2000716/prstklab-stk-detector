@@ -121,7 +121,9 @@ def test_jenny_html_template_extracts_structured_fields_and_hash() -> None:
         message_id="jenny-20260820-01",
     )
     assert result["parse_status"] == "parsed"
-    assert result["source_adapter"] == "jenny-template-v1"
+    assert result["source_adapter"] == "jenny-template-v2"
+    assert result["tickers"] == ["CSCO", "COHR"]
+    assert result["content_hash"]
     assert result["provider_fields"] == {
         "CSCO": "network demand remains a watch item",
         "COHR": "optical components require official confirmation",
