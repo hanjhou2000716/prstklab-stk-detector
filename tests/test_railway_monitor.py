@@ -925,6 +925,26 @@ def test_gdelt_invalid_json_uses_recent_cache_and_stays_failed(monkeypatch, tmp_
     assert len(articles) == 1
     assert monitor._GDELT_LAST_FETCH_STATE == "stale_cache"
     assert monitor._GDELT_LAST_FETCH_ERROR == "invalid_json"
+    assert store.read_cache("gdelt-rate-limit", 7200)
+
+    # A restart must honor the malformed-response cooldown as well as a 429
+    # cooldown, otherwise a non-JSON 200 response can create a retry storm.
+    monitor._GDELT_BACKOFF_UNTIL = 0.0
+
+    class NoRequestClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def get(self, *_args, **_kwargs):
+            raise AssertionError("malformed-response cooldown should prevent a request")
+
+    monkeypatch.setattr(monitor.httpx, "AsyncClient", lambda **_kwargs: NoRequestClient())
+    assert len(asyncio.run(monitor.fetch_gdelt_articles(store))) == 1
+    assert monitor._GDELT_LAST_FETCH_STATE == "stale_cache"
+    assert monitor._GDELT_LAST_FETCH_ERROR == "invalid_json"
 
 
 def test_monitor_health_forbidden_is_degraded_but_nonfatal(monkeypatch):
