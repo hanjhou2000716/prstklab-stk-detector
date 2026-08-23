@@ -55,6 +55,8 @@ def test_email_router_imports_from_standalone_railway_root() -> None:
         capture_output=True,
         text=True,
     )
+    assert "haojiao" in result.stdout
+    assert "jenny" in result.stdout
 
 
 def _oauth_config() -> GmailWatchConfig:
@@ -68,8 +70,6 @@ def _oauth_config() -> GmailWatchConfig:
         oauth_client_secret="client-secret",
         refresh_token="refresh-token",
     )
-    assert "haojiao" in result.stdout
-    assert "jenny" in result.stdout
 
 
 def test_watch_renewal_is_due_without_expiration() -> None:
