@@ -1,7 +1,7 @@
 # Creator Intelligence V2 — current state reconciliation (2026-08-24)
 
 This is the current-state reconciliation after `main` commit
-`b4ac1c8844413d8a2a0152ef34e90b43cc400549` (PR #739). It supersedes older
+`c30399d55f4a08f91535df92fef155d714ab3b59` (PR #740). It supersedes older
 acceptance notes that pre-date the Gmail Watch and delivery-receipt fixes. A
 local contract is marked `PASS-LOCAL`; a production statement is only marked
 `PASS-EXTERNAL` when the corresponding public or Railway evidence exists.
@@ -26,8 +26,8 @@ local contract is marked `PASS-LOCAL`; a production statement is only marked
 | FinancialJuice production receipt | release-gated notification lane | current poll reports `no_new_content` | NEEDS-REVERIFY |
 | News provider registry and market routing | `src/news_feed_adapters.py`, `src/news_intelligence.py` | provider/domain/ranking/dedupe tests | PASS-LOCAL |
 | News public refresh | scheduled/refresh workflow and Pages artifacts | public release is ready; freshness is a separate live observation | NEEDS-REVERIFY |
-| Pages release gate | manifest, hash and snapshot audit | external run 32661041562: 5/5 hashes verified | PASS-EXTERNAL |
-| Railway heartbeat and Gmail Watch | `/health` projection | external run 32661041562: HTTP 200, heartbeat/Gmail/Watch healthy | PASS-EXTERNAL |
+| Pages release gate | manifest, hash and snapshot audit | external run 32662281221: 5/5 hashes verified | PASS-EXTERNAL |
+| Railway heartbeat and Gmail Watch | `/health` projection | external run 32662281221: HTTP 200, heartbeat/Gmail/Watch healthy | PASS-EXTERNAL |
 | Telegram generic photo delivery | production photo acceptance workflow | controlled single-recipient receipt delivered | PASS-EXTERNAL |
 | Telegram Creator/FJ event delivery | release-gated domain lanes | no qualifying live event captured | NEEDS-REVERIFY |
 | GDELT discovery health | bounded backoff and stale-cache path | provider returned HTTP 429; no alert was promoted | NEEDS-REVERIFY |
@@ -41,9 +41,12 @@ local contract is marked `PASS-LOCAL`; a production statement is only marked
 - PR #739 CI run `32661260305`: full test-and-dry-run, coverage, Ruff, Mypy,
   overlap/provenance, Mini App, Telegram configuration, and offline release
   acceptance all passed.
-- External read-only run `32661041562`: Pages ready with artifact hashes and
-  snapshot lineage verified; Railway/Gmail/Watch healthy; delivery state is
-  interpreted as a receipt state; GDELT is explicitly `failed` with `HTTP_429`.
+- External read-only run `32662281221` (2026-08-23T19:46Z): Pages ready with
+  release `release-879015c6279c1ccc`, 5/5 artifact hashes and snapshot lineage
+  verified; Railway heartbeat/Gmail/Watch healthy; Creator and FinancialJuice
+  both reported `no_new_content`; GDELT explicitly reported `HTTP_429` with no
+  stale cache and no promoted alert. The GDELT health callback remained
+  healthy, so the monitor stayed running under bounded backoff.
 - The redacted snapshot is retained in the workflow artifact; this document
   contains no secret, raw email, recipient ID, or Telegram response body.
 
@@ -59,6 +62,14 @@ local contract is marked `PASS-LOCAL`; a production statement is only marked
 These items are deliberately not reclassified as “no event” or “complete”. A
 provider failure, an empty poll, and a verified absence of an event remain
 different states in the public contract.
+
+## Latest external capture
+
+Run `32662281221` was read-only: it made no Railway writes, changed no
+configuration, and sent no Telegram messages. The resulting redacted artifact
+is the source of truth for the evidence above. Because Creator/FJ had no new
+mail and GDELT was rate-limited, the external completion debt remains open;
+the system must not manufacture an event or claim a successful live delivery.
 
 ## Rollback
 
