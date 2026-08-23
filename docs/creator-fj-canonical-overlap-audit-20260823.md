@@ -20,6 +20,7 @@ canonical owners; this change does not introduce a parallel pipeline.
 | Official/news routing | `src/news_intelligence.py`, `src/news_feed_adapters.py` | pass | partially_integrated | live provider freshness and market split |
 | Release manifest and Pages gate | `src/release_manifest.py`, `src/release_gate.py` | pass | production | public release/hash evidence |
 | Telegram photo delivery | `src/telegram_client.py`, `src/creator_photo_delivery.py` | pass | needs reverify | single-recipient production-safe receipt |
+| Gmail Watch renewal and push ingress | `railway-monitor/gmail_watch.py`, `railway-monitor/gmail_ingress.py` | pass | partially_integrated | one live Gmail event and delivery receipt |
 
 The local verification command for this checkpoint is:
 
@@ -61,7 +62,7 @@ fails closed and preserves the previous immutable release.
 
 ## Open external evidence debt
 
-- Railway Gmail/FinancialJuice sanitized export and health projection.
+- Railway FinancialJuice sanitized export and health projection.
 - Public Pages manifest/hash and Mini App release lineage.
 - One-recipient Telegram photo/card/deep-link delivery receipt.
 - Live official news-feed freshness and Taiwan/US market separation.
