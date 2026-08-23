@@ -75,6 +75,20 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     build_gmail_ingress = _gmail_runtime_module.configure_gmail_ingress
 
 try:
+    from gmail_watch_service import renew_watch_if_due
+except ModuleNotFoundError:  # pragma: no cover - direct file loading
+    _gmail_watch_spec = spec_from_file_location(
+        "railway_gmail_watch_service",
+        Path(__file__).with_name("gmail_watch_service.py"),
+    )
+    if _gmail_watch_spec is None or _gmail_watch_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/gmail_watch_service.py") from None
+    _gmail_watch_module = module_from_spec(_gmail_watch_spec)
+    sys.modules[_gmail_watch_spec.name] = _gmail_watch_module
+    _gmail_watch_spec.loader.exec_module(_gmail_watch_module)
+    renew_watch_if_due = _gmail_watch_module.renew_watch_if_due
+
+try:
     from dispatch_transport import dispatch_repository_payload as send_repository_payload
 except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
     _dispatch_spec = spec_from_file_location(
@@ -1786,6 +1800,20 @@ def configure_gmail_ingress() -> None:
             update_health("financialjuice", status="failed", error="health_projection_failed")
 
 
+async def renew_gmail_watch() -> None:
+    """Renew the private Gmail lease without interrupting market polling."""
+    if EMAIL_INGRESS is None:
+        return
+    try:
+        result = await renew_watch_if_due(EMAIL_INGRESS.config, EMAIL_INGRESS.store)
+        safe = {key: result[key] for key in ("watch_status", "watch_expiration", "missing", "error") if key in result}
+        update_health("gmail", **safe)
+    except Exception:
+        # OAuth/API failures remain visible but must never stop Jin10/GDELT.
+        logging.exception("Gmail watch renewal failed; continuing monitor loop")
+        update_health("gmail", watch_status="failed", error="renewal_exception")
+
+
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         # Monitoring probes and browser cache-busting commonly append a
@@ -2016,6 +2044,7 @@ async def monitor_forever() -> None:
         except Exception:
             # Maintenance must never stop a fresh source poll or a retry pass.
             logging.exception("Delivery history retention cleanup failed; continuing monitor cycle")
+        await renew_gmail_watch()
         try:
             retried = await retry_due_outbox(
                 store,
