@@ -743,9 +743,31 @@ const renderExternalIntelligence = (snapshot) => {
     const priorityText = priorityStatus
       ? `${priorityLabels[priorityStatus] || "供應商優先：待核對"}${priority?.notification_reason ? `｜${escapeHtml(priority.notification_reason)}` : ""}`
       : "供應商優先：尚未產生決策";
+    const isFinancialJuice = String(item.source_key || item.source || item.content_origin || "").toLowerCase() === "financialjuice";
+    const vendorImportance = item.vendor_importance ?? priority?.vendor_importance;
+    const prstkRisk = item.prstk_risk?.prstk_risk_level || item.risk_level || "R2";
+    const evidenceText = official && synced
+      ? "官方與市場同步已核對"
+      : official ? "等待市場同步"
+        : synced ? "等待官方核對"
+          : "等待官方核對／市場同步";
+    const evidence = isFinancialJuice
+      ? `<small class="external-evidence">來源重要度：${escapeHtml(vendorImportance === null || vendorImportance === undefined || vendorImportance === "" ? "待核對" : `${vendorImportance}/10`)}（不等同 PRStK 風險）｜PRStK Risk：${escapeHtml(prstkRisk)}｜${escapeHtml(evidenceText)}</small>`
+      : "";
+    const lineage = isFinancialJuice
+      ? [
+          item.release_id ? `release ${item.release_id}` : "",
+          item.snapshot_id ? `snapshot ${item.snapshot_id}` : "",
+          item.observation_id ? `observation ${item.observation_id}` : "",
+        ].filter(Boolean).join("｜")
+      : "";
+    const lineageText = lineage ? `<small class="external-lineage">發布鏈：${escapeHtml(lineage)}</small>` : "";
+    const timing = isFinancialJuice && (item.published_at || item.fetched_at)
+      ? `<small class="external-timing">資料時間：${escapeHtml(traceTime(item.published_at || item.fetched_at))}</small>`
+      : "";
     const url = String(item.source_url || "").trim();
     const link = /^https:\/\//.test(url) ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">公開來源</a>` : "";
-    return `<article class="external-insight"><h4>${title}</h4><small>${source}｜${state}</small><small>${priorityText}</small><p>${summary}</p>${link}</article>`;
+    return `<article class="external-insight"><h4>${title}</h4><small>${source}｜${state}</small><small>${priorityText}</small>${evidence}${lineageText}${timing}<p>${summary}</p>${link}</article>`;
   }).join("");
 };
 
