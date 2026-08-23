@@ -88,6 +88,13 @@ this evidence.
 
 ## Fail-closed rules
 
+### Current-state reconciliation
+
+For the latest merged-main evidence and the explicit open regression/debt
+ledger, see [`creator-intelligence-v2-current-state-20260824.md`](creator-intelligence-v2-current-state-20260824.md).
+Older rows in this historical traceability document are preserved as audit
+history; they must not override the newer reconciliation.
+
 - 未通過 provider parser、私有欄位或無法驗證的附件不得進入公開 Creator release。
 - Creator 觀點永遠是 attributed editorial content，不會直接變成 PRStK 風險或交易訊號。
 - Gmail、Railway、Pages 或 Telegram 的外部驗證缺證據時，狀態維持
