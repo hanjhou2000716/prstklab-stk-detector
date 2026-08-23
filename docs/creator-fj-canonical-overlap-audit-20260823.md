@@ -25,7 +25,7 @@ The local verification command for this checkpoint is:
 
 ```text
 python -m pytest -q --basetemp=<isolated-temp>
-1360 passed
+1361 passed
 ```
 
 This is local evidence only; it does not claim live Railway, Pages or Telegram
