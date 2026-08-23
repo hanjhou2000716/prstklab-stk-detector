@@ -1,0 +1,39 @@
+name: External acceptance (read-only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      railway_url:
+        description: "Public Railway health base URL"
+        required: true
+        type: string
+      public_url:
+        description: "Public Pages dashboard base URL"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.11"
+      - name: Install runtime dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Capture redacted external evidence
+        run: >-
+          python -m src.external_acceptance
+          --railway-url "${{ inputs.railway_url }}"
+          --public-url "${{ inputs.public_url }}"
+          --output external-acceptance.json
+      - name: Upload read-only evidence
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        with:
+          name: external-acceptance-readonly
+          path: external-acceptance.json
+          if-no-files-found: error

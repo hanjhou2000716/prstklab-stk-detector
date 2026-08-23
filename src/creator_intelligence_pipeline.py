@@ -46,11 +46,19 @@ def build_creator_intelligence_release(
             dropped.append(f"{index}:adapter_required_fields_missing")
             continue
         normalized = normalize_creator_insight(record)
+        # Bind correlation freshness to the immutable release snapshot, not
+        # the wall clock at which a historical artifact is rebuilt.
+        correlation_as_of = (
+            market_snapshot.get("generated_at")
+            if isinstance(market_snapshot, dict)
+            else None
+        )
         normalized["prstk_correlation"] = correlate_creator_insight(
             normalized,
             market_snapshot=market_snapshot,
             research_snapshot=research_snapshot,
             event_snapshot=event_snapshot,
+            as_of=correlation_as_of,
         )
         if (record.get("parse_status") or record.get("source_adapter")) and not normalized["episode_title"]:
             dropped.append(f"{index}:missing_episode_title")
