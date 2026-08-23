@@ -86,15 +86,23 @@ def test_manifest_can_build_creator_artifact_from_sanitized_records(tmp_path):
 
 def test_manifest_creator_correlation_uses_release_bound_snapshots(tmp_path):
     artifacts = _artifacts(tmp_path)
+    # Keep the fixture inside the correlation freshness window so this test
+    # remains valid as the calendar advances; the production stale gate stays
+    # strict at 36 hours.
+    fixture_time = (datetime.now(UTC) - timedelta(hours=1)).replace(microsecond=0).isoformat()
     market_path = artifacts["market.json"]
     market = json.loads(market_path.read_text(encoding="utf-8"))
     market.update(
         {
-            "generated_at": "2026-08-21T04:00:00+00:00",
+            "generated_at": fixture_time,
             "quotes": [{"ticker": "2330.TW", "symbol": "2330.TW"}],
         }
     )
     market_path.write_text(json.dumps(market), encoding="utf-8")
+    research_path = artifacts["research-report.json"]
+    research = json.loads(research_path.read_text(encoding="utf-8"))
+    research["generated_at"] = fixture_time
+    research_path.write_text(json.dumps(research), encoding="utf-8")
     result = build_release_manifest(
         root=tmp_path,
         artifacts=artifacts,

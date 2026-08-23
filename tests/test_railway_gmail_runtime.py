@@ -16,14 +16,21 @@ class Config:
 
 
 class Ingress:
+    ensure_calls = 0
+
     def __init__(self, _store: object, _config: Config) -> None:
         self._config = _config
+
+    def ensure_watch(self) -> dict[str, object]:
+        type(self).ensure_calls += 1
+        return {"status": "healthy", "renewed": True}
 
     def health(self) -> dict[str, object]:
         return {"watch": {"status": "healthy", "history_id": "private", "observability": {"parser_error_count": 0}}}
 
 
 def test_configured_runtime_returns_ingress_and_redacted_health():
+    Ingress.ensure_calls = 0
     ingress, health = runtime.configure_gmail_ingress(
         {"GMAIL_STATE_PATH": "state.sqlite3"},
         config_factory=lambda _env: Config(),
@@ -31,6 +38,7 @@ def test_configured_runtime_returns_ingress_and_redacted_health():
         ingress_factory=Ingress,
     )
     assert isinstance(ingress, Ingress)
+    assert Ingress.ensure_calls == 1
     assert health == {
         "status": "ready",
         "watch_status": "healthy",
@@ -67,4 +75,3 @@ def test_factory_failure_is_explicit_and_fail_closed():
         "observability": {},
         "error": "RuntimeError",
     }
-

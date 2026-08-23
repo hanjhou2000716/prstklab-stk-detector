@@ -11,7 +11,7 @@ from typing import Any
 
 from email_router import DLQ_STATES, parse_email
 from email_store import EmailStore
-from gmail_watch import GmailWatchConfig
+from gmail_watch import GmailWatchConfig, GmailWatchManager
 from gmail_watch import health as watch_health
 
 MAX_BODY_BYTES = 256 * 1024
@@ -36,6 +36,15 @@ class GmailIngressService:
         self.store = store
         self.config = config
         self.token_verifier = token_verifier
+
+    def ensure_watch(self) -> dict[str, Any]:
+        """Create or renew the Gmail lease when it is missing or near expiry.
+
+        Renewal errors are returned as a bounded diagnostic and persisted by
+        the manager; they must not prevent the Pub/Sub health server from
+        starting or accepting a later retry.
+        """
+        return GmailWatchManager(self.config, self.store).ensure_watch()
 
     def _authenticate(self, headers: Mapping[str, str]) -> None:
         if self.config.missing:
@@ -102,28 +111,16 @@ class GmailIngressService:
         if not claimed:
             observation["parse_status"] = "duplicate"
             return {"accepted": False, "status": "duplicate", "observation": observation}
-        public_rows = parsed.get("public_observations")
-        if isinstance(public_rows, list):
-            for row in public_rows:
-                if isinstance(row, dict):
-                    try:
-                        self.store.save_public_observation(row)
-                    except (TypeError, ValueError):
-                        # A malformed derived row must not turn an already
-                        # durably claimed Gmail message into a retry storm.
-                        continue
         self.store.save_cursor(last_message_id=message_id, last_notification_at=_now(), last_sync_at=_now())
-        return {
-            "accepted": True,
-            "status": parsed["parse_status"],
-            "observation": observation,
-            "public_observation_count": len(public_rows) if isinstance(public_rows, list) else 0,
-        }
+        return {"accepted": True, "status": parsed["parse_status"], "observation": observation}
 
     def health(self) -> dict[str, Any]:
         store_health = self.store.health()
+        cursor = store_health.get("cursor")
+        if not isinstance(cursor, Mapping):
+            cursor = self.store.cursor()
         return {
-            "watch": watch_health(self.config, store_health.get("cursor", {}), store_health=store_health),
+            "watch": watch_health(self.config, cursor, store_health=store_health),
             "store": store_health,
         }
 

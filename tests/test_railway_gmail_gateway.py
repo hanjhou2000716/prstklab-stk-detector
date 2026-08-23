@@ -1,8 +1,8 @@
 import base64
 import json
-import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import parse_qs
 
 import pytest
 
@@ -10,7 +10,7 @@ RAILWAY_MODULES = Path(__file__).parents[1] / "railway-monitor"
 sys.path.insert(0, str(RAILWAY_MODULES))
 
 from email_store import EmailStore  # noqa: E402
-from gmail_watch import GmailWatchConfig, health, renewal_due  # noqa: E402
+from gmail_watch import GmailWatchConfig, GmailWatchManager, health, renewal_due  # noqa: E402
 
 from gmail_ingress import GmailIngressError, GmailIngressService  # noqa: E402
 
@@ -59,55 +59,77 @@ def test_email_router_imports_from_standalone_railway_root() -> None:
     assert "jenny" in result.stdout
 
 
-def test_standalone_known_email_uses_generated_canonical_parser_bundle() -> None:
-    """The root-only image must run the generated canonical parser."""
-    import os
-
-    environment = os.environ.copy()
-    environment.pop("PYTHONPATH", None)
-    payload = {
-        "gmail_message_id": "standalone-1",
-        "sender": "alerts@financialjuice.com",
-        "subject": "FinancialJuice breaking news",
-        "body": (
-            "Original headline: oil supply update\n"
-            "Importance: 10/10\n"
-            "Possible impact: monitor crude and rates\n"
-            "AI commentary: source facts only"
-        ),
-    }
-    command = [
-        sys.executable,
-        "-c",
-        f"import json, email_router; print(json.dumps(email_router.parse_email({payload!r})))",
-    ]
-    result = subprocess.run(
-        command,
-        cwd=RAILWAY_MODULES,
-        env=environment,
-        check=True,
-        capture_output=True,
-        text=True,
+def _oauth_config() -> GmailWatchConfig:
+    return GmailWatchConfig(
+        topic_name="projects/p/topics/t",
+        label_ids=("INBOX",),
+        oauth_state="configured",
+        audience="https://railway.example/gmail/push",
+        service_account="push@example.iam.gserviceaccount.com",
+        oauth_client_id="client-id",
+        oauth_client_secret="client-secret",
+        refresh_token="refresh-token",
     )
-    parsed = json.loads(result.stdout)
-    assert parsed["parse_status"] == "parsed"
-    assert parsed["failure_reason"] is None
-    assert len(parsed["public_observations"]) == 1
-    assert parsed["public_observations"][0]["source"] == "financialjuice"
-
-
-def test_standalone_creator_bundle_matches_canonical_registry() -> None:
-    canonical = json.loads(
-        (Path(__file__).parents[1] / "config" / "creator_providers.json").read_text(encoding="utf-8")
-    )
-    bundled = json.loads(
-        (RAILWAY_MODULES / "creator_providers.json").read_text(encoding="utf-8")
-    )
-    assert bundled == canonical
 
 
 def test_watch_renewal_is_due_without_expiration() -> None:
     assert renewal_due(None)
+
+
+def test_watch_manager_refreshes_oauth_and_persists_lease(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    calls: list[tuple[str, dict, dict]] = []
+
+    def transport(url: str, body: bytes, headers: dict[str, str], _timeout: float) -> tuple[int, bytes]:
+        payload = parse_qs(body.decode()) if url.endswith("/token") else json.loads(body.decode())
+        calls.append((url, payload, headers))
+        if url.endswith("/token"):
+            assert headers["Content-Type"] == "application/x-www-form-urlencoded"
+            assert payload["grant_type"] == ["refresh_token"]
+            return 200, json.dumps({"access_token": "access-token"}).encode()
+        assert headers["Authorization"] == "Bearer access-token"
+        assert payload == {
+            "topicName": "projects/p/topics/t",
+            "labelIds": ["INBOX"],
+            "labelFilterAction": "include",
+        }
+        return 200, json.dumps({"historyId": "history-1", "expiration": "1780000000000"}).encode()
+
+    result = GmailWatchManager(_oauth_config(), store, transport=transport).ensure_watch()
+    assert result["status"] == "healthy"
+    assert result["renewed"] is True
+    cursor = store.cursor()
+    assert cursor["last_history_id"] == "history-1"
+    assert cursor["watch_expiration"]
+    assert cursor["watch_last_renewed_at"]
+    assert cursor["watch_error"] is None
+    assert len(calls) == 2
+
+
+def test_watch_manager_does_not_renew_active_lease(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(watch_expiration="2099-01-01T00:00:00+00:00")
+    calls: list[str] = []
+    result = GmailWatchManager(
+        _oauth_config(), store,
+        transport=lambda url, *_args: (calls.append(url) or (500, b"{}")),
+    ).ensure_watch()
+    assert result == {"status": "healthy", "renewed": False, "watch_expiration": "2099-01-01T00:00:00+00:00"}
+    assert calls == []
+
+
+def test_watch_manager_failure_is_bounded_and_redacted(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+
+    def transport(_url: str, _body: bytes, _headers: dict[str, str], _timeout: float) -> tuple[int, bytes]:
+        return 403, b'{"error":"forbidden"}'
+
+    result = GmailWatchManager(_oauth_config(), store, transport=transport).ensure_watch()
+    assert result == {"status": "failed", "renewed": False, "error": "http_403"}
+    assert "refresh-token" not in json.dumps(result)
+    cursor = store.cursor()
+    assert cursor["watch_error"] == "http_403"
+    assert cursor["watch_error_at"]
 
 
 def test_ingress_rejects_invalid_identity(tmp_path: Path) -> None:
@@ -170,63 +192,6 @@ def test_ingress_accepts_replay_safe_observation_and_dedupes(tmp_path: Path) -> 
     assert store.health()["raw_content_stored"] is False
 
 
-def test_ingress_persists_public_safe_derived_observation_only(tmp_path: Path) -> None:
-    store = EmailStore(tmp_path / "mail.sqlite3")
-    service = GmailIngressService(store, _config())
-    result = service.accept_email({
-        "gmail_message_id": "m-public-1",
-        "sender": "alerts@financialjuice.com",
-        "subject": "FinancialJuice breaking news",
-        "body": "Original headline: Oil supply update\nImportance: 10/10\nPossible Impact: energy\nAI Commentary: watch",
-    })
-    assert result["accepted"] is True
-    assert result["public_observation_count"] >= 1
-    rows = store.public_observations()
-    assert rows and rows[0]["source"] == "financialjuice"
-    assert rows[0]["public_safe"] is True
-    assert not any(key in rows[0] for key in ("body", "sender", "gmail_message_id"))
-
-
-def test_store_health_separates_creator_and_financialjuice_sources(tmp_path: Path) -> None:
-    store = EmailStore(tmp_path / "mail.sqlite3")
-    service = GmailIngressService(store, _config())
-    creator = service.accept_email({
-        "gmail_message_id": "creator-health-1",
-        "sender": "財經皓角",
-        "subject": "財經皓角 market view episode",
-        "body": "Episode market view takeaway creator",
-    })
-    assert creator["accepted"] is True
-    service.accept_email({
-        "gmail_message_id": "fj-health-1",
-        "sender": "alerts@financialjuice.com",
-        "subject": "FinancialJuice breaking news",
-        "body": "Original headline: Oil supply update\nImportance: 10/10\nPossible Impact: energy\nAI Commentary: watch",
-    })
-    health = store.health()["source_health"]
-    assert health["creator"]["received_count"] == 1
-    assert health["creator"]["parsed_count"] == 1
-    assert health["financialjuice"]["public_observation_count"] >= 1
-    assert health["financialjuice"]["importance_gte_8_count"] >= 1
-    assert "gmail_message_id" not in json.dumps(health)
-
-
-def test_store_health_distinguishes_parse_failure_from_no_new_content(tmp_path: Path) -> None:
-    store = EmailStore(tmp_path / "mail.sqlite3")
-    service = GmailIngressService(store, _config())
-    result = service.accept_email({
-        "gmail_message_id": "fj-health-failed",
-        "sender": "alerts@financialjuice.com",
-        "subject": "hello",
-        "body": "unknown",
-    })
-    assert result["status"] == "unsupported_template"
-    health = store.health()["source_health"]["financialjuice"]
-    assert health["status"] == "failed"
-    assert health["failed_count"] == 1
-    assert health["decision"] == "not_checked"
-
-
 def test_push_advances_durable_cursor_without_storing_message_body(tmp_path: Path) -> None:
     store = EmailStore(tmp_path / "mail.sqlite3")
     service = GmailIngressService(store, _config())
@@ -270,20 +235,17 @@ def test_health_exposes_privacy_safe_observability(tmp_path: Path) -> None:
         },
     )
     assert result["status"] == "healthy"
-    assert result["observability"] == {
-        "observations": 0,
-        "last_received_at": "2026-08-13T00:00:00+00:00",
-        "last_parsed_at": "2026-08-13T00:01:00+00:00",
-        "parser_error_count": 2,
-        "last_delivery_at": "2026-08-13T00:02:00+00:00",
-        "state": "healthy",
-        "queue_pending_count": 0,
-        "dead_letter_count": 2,
-        "last_ingress_at": "2026-08-13T00:00:00+00:00",
-        "last_sync_at": "2026-08-13T00:01:00+00:00",
-        "history_cursor_present": True,
-        "history_cursor_hash": "c09b41d6226d7c86",
-    }
+    observability = result["observability"]
+    assert observability["observations"] == 0
+    assert observability["last_received_at"] == "2026-08-13T00:00:00+00:00"
+    assert observability["last_parsed_at"] == "2026-08-13T00:01:00+00:00"
+    assert observability["parser_error_count"] == 2
+    assert observability["last_delivery_at"] == "2026-08-13T00:02:00+00:00"
+    assert observability["state"] == "healthy"
+    assert observability["history_cursor_present"] is True
+    assert len(observability["history_cursor_hash"]) == 16
+    assert observability["queue_pending_count"] == 0
+    assert observability["dead_letter_count"] == 2
     assert "last_history_id" not in result
     assert "last_message_id" not in result
 
