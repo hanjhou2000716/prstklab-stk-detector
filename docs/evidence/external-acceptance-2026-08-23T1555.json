@@ -1,0 +1,35 @@
+{
+  "kind": "external-acceptance-readonly",
+  "captured_at": "2026-08-23T15:55:26.530437+00:00",
+  "status": "NEEDS_REVERIFY",
+  "blocking_reasons": ["railway_gdelt:failed"],
+  "railway": {
+    "url": "https://loving-happiness-production-b1a9.up.railway.app/health",
+    "http_status": 200,
+    "monitor_status": "running",
+    "heartbeat_status": "healthy",
+    "jin10_status": "healthy",
+    "gmail_status": "ready",
+    "gmail_watch_status": "active",
+    "gmail_watch_expiration": "2026-08-30T15:53:06.965000+00:00",
+    "gmail_history_cursor_present": true,
+    "gdelt_status": "failed",
+    "gdelt_error": "HTTP_429",
+    "runtime_status": "healthy",
+    "secret_values_exposed": false
+  },
+  "google_cloud": {
+    "project": "calendar-automation-497107",
+    "topic": "projects/calendar-automation-497107/topics/prstk-gmail-watch",
+    "push_subscription": "prstk-gmail-push-sub",
+    "push_endpoint": "https://loving-happiness-production-b1a9.up.railway.app/gmail/push",
+    "publisher_identity_verified": true,
+    "push_identity_configured": true
+  },
+  "side_effects": {
+    "telegram": false,
+    "railway_write": false,
+    "google_cloud_subscription_created": true,
+    "configuration_values_exposed": false
+  }
+}
