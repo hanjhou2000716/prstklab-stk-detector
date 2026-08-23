@@ -54,11 +54,12 @@
 
 The latest read-only Railway/Pages capture is intentionally not promoted to
 PASS. Pages served a `ready` manifest with matching hashes; Railway reported a
-GDELT `HTTP_429` and a Gmail `GmailIngressError`. PR #731 fixes the two
+GDELT `invalid_json` and a Gmail `GmailIngressError`. PR #731 fixes the two
 repository-side causes (persistent GDELT cooldown and optional Pub/Sub
 audience-header handling), but the live service must be redeployed before the
-same workflow can provide new evidence. No production Telegram broadcast was
-performed by this checkpoint.
+same workflow can provide new evidence. The capture is recorded in
+`docs/evidence/external-acceptance-2026-08-24-pr731.md`; no production Telegram
+broadcast was performed by this checkpoint.
 
 Required post-merge sequence:
 
