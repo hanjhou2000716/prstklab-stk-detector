@@ -10,7 +10,8 @@ bounded and never stop the Railway polling loop.
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+import math
 from typing import Any
 
 import httpx
@@ -37,6 +38,27 @@ def _iso_expiration(value: Any) -> str | None:
     return datetime.fromtimestamp(millis / 1000, tz=UTC).isoformat()
 
 
+def _retry_after_seconds(cursor: dict[str, Any], config: GmailWatchConfig, now: datetime) -> int:
+    """Return a bounded retry delay after a failed watch attempt."""
+    error = str(cursor.get("watch_error") or "").strip()
+    error_at = str(cursor.get("watch_error_at") or "").strip()
+    if not error or not error_at:
+        return 0
+    try:
+        failed_at = datetime.fromisoformat(error_at.replace("Z", "+00:00")).astimezone(UTC)
+    except ValueError:
+        return 0
+    remaining = failed_at + timedelta(minutes=max(1, config.retry_cooldown_minutes)) - now.astimezone(UTC)
+    return max(0, math.ceil(remaining.total_seconds()))
+
+
+def _failure(store: EmailStore, error: str, now: datetime) -> dict[str, Any]:
+    """Persist a redacted failure while keeping the monitor non-fatal."""
+    safe_error = error[:80]
+    store.save_cursor(watch_error=safe_error, watch_error_at=now.astimezone(UTC).isoformat())
+    return {"status": "failed", "watch_status": "failed", "attempted": True, "error": safe_error}
+
+
 async def renew_watch_if_due(
     config: GmailWatchConfig,
     store: EmailStore,
@@ -48,6 +70,7 @@ async def renew_watch_if_due(
     """Create or renew a Gmail watch when its durable lease is near expiry."""
     cursor = store.cursor()
     expiration = cursor.get("watch_expiration")
+    current = (now or datetime.now(UTC)).astimezone(UTC)
     if not force and not renewal_due(str(expiration) if expiration else None, now=now):
         return {
             "status": "active",
@@ -56,6 +79,17 @@ async def renew_watch_if_due(
             "attempted": False,
             "error": None,
         }
+    if not force:
+        retry_after = _retry_after_seconds(cursor, config, current)
+        if retry_after:
+            return {
+                "status": "failed",
+                "watch_status": "failed",
+                "attempted": False,
+                "error": str(cursor.get("watch_error") or "watch_renewal_failed")[:80],
+                "retry_suppressed": True,
+                "retry_after_seconds": retry_after,
+            }
     if config.missing:
         return {
             "status": "configuration_missing",
@@ -85,26 +119,32 @@ async def renew_watch_if_due(
                 },
             )
             if token_response.status_code >= 400:
-                return {"status": "failed", "watch_status": "failed", "attempted": True, "error": _http_error(token_response)}
+                return _failure(store, _http_error(token_response), current)
             token_payload = token_response.json()
             access_token = token_payload.get("access_token") if isinstance(token_payload, dict) else None
             if not isinstance(access_token, str) or not access_token.strip():
-                return {"status": "failed", "watch_status": "failed", "attempted": True, "error": "invalid_token_response"}
+                return _failure(store, "invalid_token_response", current)
             watch_response = await client.post(
                 WATCH_URL,
                 headers={"Authorization": f"Bearer {access_token}"},
                 json=config.watch_request(),
             )
             if watch_response.status_code >= 400:
-                return {"status": "failed", "watch_status": "failed", "attempted": True, "error": _http_error(watch_response)}
+                return _failure(store, _http_error(watch_response), current)
             watch_payload = watch_response.json()
             if not isinstance(watch_payload, dict):
-                return {"status": "failed", "watch_status": "failed", "attempted": True, "error": "invalid_watch_response"}
+                return _failure(store, "invalid_watch_response", current)
             new_expiration = _iso_expiration(watch_payload.get("expiration"))
             history_id = str(watch_payload.get("historyId") or "").strip()
             if not new_expiration or not history_id:
-                return {"status": "failed", "watch_status": "failed", "attempted": True, "error": "invalid_watch_response"}
-            store.save_cursor(watch_expiration=new_expiration, last_history_id=history_id)
+                return _failure(store, "invalid_watch_response", current)
+            store.save_cursor(
+                watch_expiration=new_expiration,
+                watch_last_renewed_at=current.isoformat(),
+                watch_error=None,
+                watch_error_at=None,
+                last_history_id=history_id,
+            )
             return {
                 "status": "active",
                 "watch_status": "active",
@@ -113,11 +153,11 @@ async def renew_watch_if_due(
                 "error": None,
             }
     except httpx.TimeoutException:
-        return {"status": "failed", "watch_status": "failed", "attempted": True, "error": "timeout"}
+        return _failure(store, "timeout", current)
     except httpx.HTTPError as error:
-        return {"status": "failed", "watch_status": "failed", "attempted": True, "error": type(error).__name__}
+        return _failure(store, type(error).__name__, current)
     except (TypeError, ValueError, KeyError):
-        return {"status": "failed", "watch_status": "failed", "attempted": True, "error": "invalid_response"}
+        return _failure(store, "invalid_response", current)
 
 
 __all__ = ["TOKEN_URL", "WATCH_URL", "renew_watch_if_due"]

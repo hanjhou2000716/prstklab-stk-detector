@@ -36,6 +36,7 @@ class GmailWatchConfig:
     oauth_client_secret: str = ""
     refresh_token: str = ""
     renewal_margin_hours: int = 6
+    retry_cooldown_minutes: int = 60
     timeout_seconds: float = 15.0
 
     @classmethod
@@ -53,6 +54,7 @@ class GmailWatchConfig:
             oauth_client_secret=source.get("GMAIL_OAUTH_CLIENT_SECRET", "").strip(),
             refresh_token=source.get("GMAIL_REFRESH_TOKEN", "").strip(),
             renewal_margin_hours=_positive_int(source.get("GMAIL_WATCH_RENEWAL_MARGIN_HOURS", "6"), 6),
+            retry_cooldown_minutes=_positive_int(source.get("GMAIL_WATCH_RETRY_COOLDOWN_MINUTES", "60"), 60),
             timeout_seconds=_positive_float(source.get("GMAIL_WATCH_TIMEOUT_SECONDS", "15"), 15.0),
         )
 
