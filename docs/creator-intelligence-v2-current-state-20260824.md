@@ -86,6 +86,24 @@ FinancialJuice remain explicit `no_new_content`, and Pages still verifies all
 five declared artifacts. GDELT remains rate-limited with `HTTP_429`, so the
 external completion debt remains open.
 
+## Railway parser runtime recheck (2026-08-24)
+
+The deployment bundle audit found a concrete dependency defect: the generated
+Railway parser imports `bs4.BeautifulSoup` for HTML-only Creator and
+FinancialJuice relays, but `railway-monitor/requirements.txt` did not declare
+`beautifulsoup4`.  In the standalone Railway image this made the canonical
+parser import fail, which correctly degraded ingress to
+`parser_unavailable` but also meant no public observation could reach the
+release pipeline.  The fix is committed in `563f584` and includes a runtime
+requirements contract test; the generated parser remains the single canonical
+bundle and is still checked by `scripts/sync_railway_canonical_parser.py`.
+
+Local evidence after the fix: targeted Railway/Gmail contract suite `38
+passed`; full repository suite `1383 passed`; canonical bundle check and
+`compileall` passed.  A fresh Railway deploy and sanitized Gmail observation
+are still required before changing the external rows above to
+`PASS-EXTERNAL`.
+
 The latest read-only capture at `2026-08-24T02:00:50Z` is recorded in
 [`docs/evidence/external-acceptance-2026-08-24T0200Z.md`](evidence/external-acceptance-2026-08-24T0200Z.md).
 It verifies the same fail-closed boundary after the next Railway cycle:
