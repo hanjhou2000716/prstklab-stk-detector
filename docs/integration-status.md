@@ -578,3 +578,18 @@ sanitised `source_health` array, `source_failure_count`, and `collection_state`
 news panel from being interpreted as a successful scan when an official feed
 was rate-limited or failed. The schema fields are additive so older release
 artifacts remain readable; newly produced releases always emit them.
+
+## Canonical intelligence audit (2026-08-24)
+
+After PR #749, the current mainline audit is recorded in
+`docs/canonical-intelligence-audit-20260824.md`. It reconciles Creator,
+FinancialJuice, Gmail Watch, official/discovery News, Release Gate, Mini App and
+Telegram against their existing owners. The audit deliberately keeps local
+contract success separate from Railway/Pages/WebView evidence and records
+GDELT `HTTP_429`, research `stale_fallback`, and delivery `not_checked` as
+degraded states rather than silently promoting them to healthy.
+
+The Google Cloud least-privilege and Watch-renewal boundary is documented in
+`docs/google-cloud-gmail-iam-runbook.md`; it contains no credentials or mailbox
+content. A runtime identity must not depend on a broad Editor role when a
+topic-level publisher and subscription-level consumer can be granted instead.
