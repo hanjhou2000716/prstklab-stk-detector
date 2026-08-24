@@ -62,6 +62,22 @@ The read-only capture used for this audit was taken on 2026-08-24 Asia/Taipei:
 This evidence is diagnostic only. It does not claim a new Telegram send or a
 live Creator/FinancialJuice message unless a matching receipt is present.
 
+## Fresh external capture — 2026-08-24 22:59:54 Asia/Taipei
+
+The redacted capture is preserved at
+`docs/evidence/external-acceptance-2026-08-24T145954Z.json`. It confirms the
+same release lineage is publicly available: Pages returned HTTP 200 with
+`status=ready`, release `release-1df139db83e19642`, and all five declared
+artifact hashes and snapshot identities verified. Railway returned HTTP 200;
+the monitor heartbeat, Jin10, Gmail Watch, Creator and FinancialJuice lanes
+were healthy at capture time.
+
+The capture remains `NEEDS_REVERIFY`, not `PASS`, because GDELT returned
+`HTTP_429`. No stale cache was promoted, the bounded health dispatch remained
+healthy, and no Telegram or Railway write was attempted. Delivery remains
+`not_checked`; this is deliberate evidence of the fail-closed boundary rather
+than evidence of a successful production notification.
+
 ## Remaining gates
 
 1. Capture one sanitized Gmail observation on Railway and confirm the same
