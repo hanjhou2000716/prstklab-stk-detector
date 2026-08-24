@@ -37,6 +37,12 @@ FinancialJuice regression contracts passed with:
 The test run used a workspace-local temporary pytest directory because the
 host's shared temporary directory is access-restricted.
 
+The full repository regression on the same checkpoint also passed:
+
+```text
+1376 passed in 145.01s
+```
+
 ## Privacy and rollback
 
 This record contains no mailbox content, OAuth token, secret, recipient ID,
