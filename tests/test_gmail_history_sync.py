@@ -7,7 +7,8 @@ RAILWAY_MODULES = Path(__file__).parents[1] / "railway-monitor"
 sys.path.insert(0, str(RAILWAY_MODULES))
 
 from email_store import EmailStore  # noqa: E402
-from gmail_history_sync import message_record, sync_gmail_history  # noqa: E402
+from email_router import route_source  # noqa: E402
+from gmail_history_sync import _decode_header_value, message_record, sync_gmail_history  # noqa: E402
 from gmail_watch import GmailWatchConfig  # noqa: E402
 
 from gmail_ingress import GmailIngressService  # noqa: E402
@@ -98,6 +99,22 @@ def test_message_record_extracts_only_parser_fields() -> None:
     assert "Oil supply update" in record["body"]
     assert record["source_published_at"] == "2026-08-24T02:15:42+00:00"
     assert "payload" not in record
+
+
+def test_message_record_decodes_rfc2047_creator_headers_before_routing() -> None:
+    encoded_subject = "=?UTF-8?B?6LKh57aT55qT6KeS?="  # 財經皓角
+    encoded_from = "=?UTF-8?B?6LKh57aT55qT6KeS?= <creator@example.com>"  # 財經皓角
+    message = _message()
+    message["payload"]["headers"] = [
+        {"name": "From", "value": encoded_from},
+        {"name": "Subject", "value": encoded_subject},
+    ]
+    record = message_record(message)
+    assert "皓角" in record["sender"]
+    assert "皓角" in record["subject"]
+    assert _decode_header_value(encoded_subject) == record["subject"]
+    routed = route_source(sender=record["sender"], subject=record["subject"], body="今日市場觀察")
+    assert routed["source"] == "haojiao"
 
 
 def test_sync_history_routes_message_and_saves_public_projection(tmp_path) -> None:
