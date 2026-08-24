@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 _MAX_TEXT_LENGTH = 160
 _PUBLIC_FIELD_TYPES: dict[str, dict[str, str]] = {
     "creator": {
@@ -41,6 +40,7 @@ _PUBLIC_FIELD_TYPES: dict[str, dict[str, str]] = {
         "duplicate_count": "counter",
         "public_observation_count": "counter",
         "importance_gte_8_count": "counter",
+        "qualifying_item_count": "counter",
         "pending_cluster_count": "counter",
         "last_received_at": "timestamp",
         "last_parsed_at": "timestamp",

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -53,6 +53,16 @@ _EVENT_TOPIC_ALIASES: dict[str, tuple[str, ...]] = {
     "semiconductor": ("semiconductor", "chip", "半導體", "晶片"),
     "ai": ("ai", "artificial intelligence", "人工智慧", "生成式"),
 }
+
+_SOURCE_FAILURE_STATES = frozenset({
+    "failed", "rate_limited", "parse_failed", "provider_failed", "scan_failed",
+    "configuration_missing", "configuration_required", "critical",
+})
+_SOURCE_HEALTH_FIELDS = (
+    "provider", "key", "label", "status", "source_tier", "source_url",
+    "item_count", "checked_at", "last_parsed_at", "latency_ms", "data_gap",
+    "stale_used", "fallback_used",
+)
 
 
 def provider_registry() -> list[dict[str, Any]]:
@@ -351,6 +361,7 @@ def build_news_intelligence(
     research_tickers: Iterable[str] = (),
     active_event_topics: Iterable[str] = (),
     creator_mentions: Iterable[str] = (),
+    source_health: Iterable[Mapping[str, Any]] | None = None,
     limit: int = 5,
 ) -> dict[str, Any]:
     normalized = [normalize_news_story(story, market or story.get("market")) for story in stories]
@@ -365,6 +376,32 @@ def build_news_intelligence(
     )
     ranked = deduplicate_and_rank(normalized, limit=limit)
     excluded = [item for item in normalized if item.get("market_compatible") is False]
+    health_rows: list[dict[str, Any]] = []
+    for raw_health in source_health or ():
+        if not isinstance(raw_health, Mapping):
+            continue
+        # Keep only the public source-health contract.  In particular, do not
+        # copy provider exceptions, response bodies, or request headers into a
+        # release-bound artifact.
+        row = {
+            field: raw_health[field]
+            for field in _SOURCE_HEALTH_FIELDS
+            if field in raw_health and raw_health[field] is not None
+        }
+        if row:
+            health_rows.append(row)
+    failure_count = sum(
+        1 for row in health_rows
+        if str(row.get("status") or "").casefold() in _SOURCE_FAILURE_STATES
+    )
+    if ranked:
+        collection_state = "degraded" if failure_count else "ready"
+    elif failure_count:
+        collection_state = "source_failed"
+    elif health_rows:
+        collection_state = "no_event"
+    else:
+        collection_state = "no_event"
     return {
         "schema_version": "1.0",
         "provider_registry": provider_registry(),
@@ -373,5 +410,8 @@ def build_news_intelligence(
         "excluded_count": len(excluded),
         "exclusion_reasons": {"market_scope_mismatch": len(excluded)} if excluded else {},
         "status": "ready" if ranked else "no_event",
+        "collection_state": collection_state,
+        "source_failure_count": failure_count,
+        "source_health": health_rows,
     }
 

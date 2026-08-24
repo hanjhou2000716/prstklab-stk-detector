@@ -280,6 +280,23 @@ def test_empty_news_scan_is_distinguished_from_provider_failure(monkeypatch, tmp
     assert all(item["status"] == "no_event" for item in snapshot["source_health"])
 
 
+def test_release_bound_news_intelligence_keeps_provider_failure_state(monkeypatch, tmp_path):
+    monkeypatch.setenv("NEWS_CACHE_PATH", str(tmp_path / "news-cache.json"))
+    monkeypatch.setattr("src.risk_news.fetch_market_news", lambda market: [])
+    monkeypatch.setattr("src.risk_news.fetch_market_news_fallback", lambda market: [])
+    monkeypatch.setattr(
+        "src.risk_news._LAST_OFFICIAL_NEWS_HEALTH",
+        {
+            "taiwan": {"source_health": [{"provider": "twse", "status": "failed", "item_count": 0}]},
+            "us": {"source_health": [{"provider": "sec", "status": "rate_limited", "item_count": 0}]},
+        },
+    )
+    snapshot = build_news_snapshot()
+    assert snapshot["intelligence"]["taiwan"]["collection_state"] == "source_failed"
+    assert snapshot["intelligence"]["us"]["collection_state"] == "source_failed"
+    assert snapshot["intelligence"]["us"]["source_failure_count"] == 1
+
+
 def test_news_snapshot_binds_explicit_interest_context(monkeypatch, tmp_path):
     monkeypatch.setenv("NEWS_CACHE_PATH", str(tmp_path / "news-cache.json"))
     monkeypatch.setattr(

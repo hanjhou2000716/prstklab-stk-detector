@@ -8,7 +8,10 @@
     "provider_registry": {"type": "array", "items": {"type": "object"}},
     "stories": {"type": "array", "items": {"$ref": "#/$defs/story"}},
     "interest_graph": {"type": "object"},
-    "status": {"enum": ["ready", "no_event"]}
+    "status": {"enum": ["ready", "no_event"]},
+    "collection_state": {"enum": ["ready", "degraded", "no_event", "source_failed"]},
+    "source_failure_count": {"type": "integer", "minimum": 0},
+    "source_health": {"type": "array", "items": {"type": "object"}}
   },
   "additionalProperties": true,
   "$defs": {

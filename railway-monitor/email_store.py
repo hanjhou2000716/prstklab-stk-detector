@@ -287,7 +287,8 @@ class EmailStore:
                 "public_observation_count": 0, "last_received_at": None,
                 "last_parsed_at": None, "last_failure_at": None,
                 "today_count": 0, "latest_count": 0,
-                "morning_batch_count": 0, "coverage_status": "not_checked",
+                "morning_batch_count": 0, "daily_coverage_count": 0,
+                "coverage_status": "not_checked", "morning_batch_state": "not_checked",
                 "consensus_status": "not_checked", "last_release_id": None,
                 "last_telegram_delivery_at": None,
                 "failure_reason_counts": {}, "last_failure_reason": None,
@@ -296,10 +297,13 @@ class EmailStore:
                 "status": "not_checked", "received_count": 0,
                 "parsed_count": 0, "failed_count": 0, "duplicate_count": 0,
                 "public_observation_count": 0, "importance_gte_8_count": 0,
-                "pending_cluster_count": 0, "last_received_at": None,
+                "qualifying_item_count": 0, "pending_cluster_count": 0,
+                "last_importance_gte_8_at": None, "last_received_at": None,
                 "last_parsed_at": None, "last_failure_at": None,
                 "decision": "not_checked", "last_release_id": None,
+                "last_snapshot_id": None, "last_observation_id": None,
                 "last_telegram_delivery_at": None,
+                "last_telegram_delivery_status": "not_checked",
                 "failure_reason_counts": {}, "last_failure_reason": None,
             },
         }
@@ -386,11 +390,58 @@ class EmailStore:
                 try:
                     if float(payload.get("vendor_importance")) >= 8:
                         item["importance_gte_8_count"] += 1
+                        note(
+                            source_name,
+                            "last_importance_gte_8_at",
+                            payload.get("published_at") or row[2],
+                        )
                 except (TypeError, ValueError):
                     pass
+                if bool(
+                    payload.get("vendor_priority_notification")
+                    or payload.get("qualifying_for_notification")
+                    or (isinstance(payload.get("notification_state"), dict)
+                        and payload["notification_state"].get("vendor_priority_notification"))
+                ):
+                    item["qualifying_item_count"] += 1
                 cluster = str(payload.get("event_cluster_key") or "").strip()
                 if cluster and not bool(payload.get("official_confirmed")):
                     item["pending_cluster_count"] += 1
+                note(source_name, "last_release_id", payload.get("release_id"))
+                note(source_name, "last_snapshot_id", payload.get("snapshot_id"))
+                note(source_name, "last_observation_id", payload.get("observation_id"))
+                note(source_name, "last_telegram_delivery_at", payload.get("last_telegram_delivery_at"))
+                if payload.get("last_telegram_delivery_status"):
+                    item["last_telegram_delivery_status"] = str(payload["last_telegram_delivery_status"])[:80]
+            elif source_name == "creator" and isinstance(payload, dict):
+                # Creator is optional enrichment.  Only explicit, sanitized
+                # batch metadata is projected; dates are not inferred from
+                # Gmail transport timestamps or from a local timezone.
+                if payload.get("is_today") is True:
+                    item["today_count"] += 1
+                if payload.get("is_latest") is True:
+                    item["latest_count"] += 1
+                if payload.get("morning_batch_key"):
+                    item["morning_batch_count"] += 1
+                    item["morning_batch_key"] = str(payload["morning_batch_key"])[:160]
+                if payload.get("daily_coverage_count") is not None:
+                    try:
+                        item["daily_coverage_count"] = max(
+                            item["daily_coverage_count"],
+                            min(1_000_000_000, int(payload["daily_coverage_count"])),
+                        )
+                    except (TypeError, ValueError):
+                        pass
+                for key in ("coverage_status", "morning_batch_state", "consensus_status"):
+                    value = str(payload.get(key) or "").strip()
+                    if value:
+                        item[key] = value[:80]
+                note(source_name, "last_release_id", payload.get("release_id"))
+                note(source_name, "last_snapshot_id", payload.get("snapshot_id"))
+                note(source_name, "last_observation_id", payload.get("observation_id"))
+                note(source_name, "last_telegram_delivery_at", payload.get("last_telegram_delivery_at"))
+                if payload.get("last_telegram_delivery_status"):
+                    item["last_telegram_delivery_status"] = str(payload["last_telegram_delivery_status"])[:80]
 
         for item in sources.values():
             if item["failed_count"] and not item["parsed_count"]:
@@ -401,7 +452,12 @@ class EmailStore:
                 item["status"] = "no_new_content"
         fj = sources["financialjuice"]
         if fj["public_observation_count"]:
-            fj["decision"] = "awaiting_confirmation" if fj["pending_cluster_count"] else "ready_for_release_review"
+            if fj["qualifying_item_count"]:
+                fj["decision"] = "priority_items_ready_for_release_review"
+            elif fj["pending_cluster_count"]:
+                fj["decision"] = "awaiting_confirmation"
+            else:
+                fj["decision"] = "parsed_below_priority_threshold"
         return sources
 
 
