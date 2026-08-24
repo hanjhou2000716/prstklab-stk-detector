@@ -26,3 +26,13 @@ def test_missing_parent_is_unavailable(tmp_path: Path) -> None:
     assert result["state_parent_exists"] is False
     assert result["status"] == "unavailable"
     assert result["fail_closed_for_high_risk"] is True
+
+
+def test_mounted_writable_parent_is_ready(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(storage_health.os.path, "ismount", lambda _path: True)
+
+    result = storage_diagnostics(tmp_path / "monitor.sqlite3")
+
+    assert result["durable_volume_detected"] is True
+    assert result["status"] == "ready"
+    assert result["fail_closed_for_high_risk"] is False
