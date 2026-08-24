@@ -290,6 +290,7 @@ class EmailStore:
                 "morning_batch_count": 0, "coverage_status": "not_checked",
                 "consensus_status": "not_checked", "last_release_id": None,
                 "last_telegram_delivery_at": None,
+                "failure_reason_counts": {}, "last_failure_reason": None,
             },
             "financialjuice": {
                 "status": "not_checked", "received_count": 0,
@@ -299,6 +300,7 @@ class EmailStore:
                 "last_parsed_at": None, "last_failure_at": None,
                 "decision": "not_checked", "last_release_id": None,
                 "last_telegram_delivery_at": None,
+                "failure_reason_counts": {}, "last_failure_reason": None,
             },
         }
 
@@ -321,7 +323,7 @@ class EmailStore:
                 "SELECT metadata_json, parse_status, received_at, inserted_at FROM email_observations"
             ).fetchall()
             dlq_rows = connection.execute(
-                "SELECT metadata_json, created_at FROM email_dlq"
+                "SELECT metadata_json, failure_reason, created_at FROM email_dlq"
             ).fetchall()
             public_rows = connection.execute(
                 "SELECT content_origin, payload_json, created_at FROM public_observations"
@@ -353,8 +355,22 @@ class EmailStore:
             source_name = bucket(metadata.get("content_origin"))
             if source_name is None:
                 continue
-            sources[source_name]["failed_count"] += 1
-            note(source_name, "last_failure_at", row[1])
+            item = sources[source_name]
+            item["failed_count"] += 1
+            reason = str(row[1] or "parse_failed").strip()[:80] or "parse_failed"
+            reason_counts = item.setdefault("failure_reason_counts", {})
+            reason_counts[reason] = int(reason_counts.get(reason, 0)) + 1
+            timestamp = row[2]
+            note(source_name, "last_failure_at", timestamp)
+            current = item.get("last_failure_at")
+            if current and str(timestamp or "") == str(current):
+                item["last_failure_reason"] = reason
+
+        for item in sources.values():
+            counts = item.get("failure_reason_counts") or {}
+            item["failure_reason_counts"] = dict(
+                sorted(counts.items(), key=lambda pair: (-pair[1], pair[0]))[:8]
+            )
 
         for row in public_rows:
             source_name = bucket(row[0])

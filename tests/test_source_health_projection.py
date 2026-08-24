@@ -25,6 +25,11 @@ def test_source_health_projection_keeps_only_public_creator_and_fj_fields() -> N
                     "last_telegram_delivery_status": "delivered",
                     "raw_body": "never expose",
                     "gmail_message_id": "private-id",
+                    "failure_reason_counts": {
+                        "known_source_template_not_matched": 3,
+                        "source_not_recognized": 2,
+                    },
+                    "last_failure_reason": "known_source_template_not_matched",
                 },
                 "financialjuice": {"status": "no_new_content", "importance_gte_8_count": 0},
                 "news": {"body": "must not be projected"},
@@ -38,6 +43,8 @@ def test_source_health_projection_keeps_only_public_creator_and_fj_fields() -> N
     assert result["creator"]["daily_coverage_count"] == 2
     assert result["creator"]["last_snapshot_id"] == "creator-snapshot-1"
     assert result["creator"]["last_telegram_delivery_status"] == "delivered"
+    assert result["creator"]["failure_reason_counts"]["known_source_template_not_matched"] == 3
+    assert result["creator"]["last_failure_reason"] == "known_source_template_not_matched"
     assert "raw_body" not in result
     assert "gmail_message_id" not in result["creator"]
 
