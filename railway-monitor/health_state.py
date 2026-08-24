@@ -20,7 +20,7 @@ HEALTH_STATE: dict[str, Any] = {
     "gdelt": {"enabled": True, "status": "not_checked", "event_scan": "not_checked", "last_success_at": None, "last_failure_at": None, "article_count": 0, "alert_count": 0, "pending_count": 0, "pending_reasons": {}, "error": None, "stale_cache_used": False, "health_dispatch_status": "not_checked", "health_dispatch_error": None, "health_dispatch_next_retry_at": None},
     "market_sync": {"status": "not_checked", "source_url": None, "fetched_at": None, "record_count": 0, "error": None},
     "classification": {"status": "not_checked", "updated_at": None, "classification_counts": {}, "unclassified_count": 0, "reason_counts": {}},
-    "delivery": {"status": "not_checked", "last_trace_id": None, "last_outbox_status": None, "last_receipt_status": None, "counts": {}, "last_updated_at": None, "last_error": None},
+    "delivery": {"status": "not_checked", "last_trace_id": None, "last_outbox_status": None, "last_receipt_status": None, "counts": {}, "last_updated_at": None, "last_error": None, "storage": {"status": "not_checked", "durable_volume_detected": False, "state_parent_writable": False, "state_parent_exists": False, "fail_closed_for_high_risk": True}},
     "monitor": {"status": "starting", "poll_interval_seconds": None, "last_cycle_started_at": None, "last_cycle_completed_at": None},
     "gmail": {
         "status": "not_configured", "watch_status": "not_checked",

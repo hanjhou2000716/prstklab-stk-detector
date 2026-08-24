@@ -172,6 +172,19 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     initialize_state_schema = _schema_module.initialize_state_schema
 
 try:
+    from storage_health import storage_diagnostics
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _storage_health_spec = spec_from_file_location(
+        "railway_storage_health",
+        Path(__file__).with_name("storage_health.py"),
+    )
+    if _storage_health_spec is None or _storage_health_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/storage_health.py") from None
+    _storage_health_module = module_from_spec(_storage_health_spec)
+    _storage_health_spec.loader.exec_module(_storage_health_module)
+    storage_diagnostics = _storage_health_module.storage_diagnostics
+
+try:
     from classification_store import (
         add_if_new as store_add_if_new,
         classification_diagnostics as store_classification_diagnostics,
@@ -2015,11 +2028,13 @@ async def monitor_forever() -> None:
     gdelt_enabled = settings.gdelt_enabled
     update_health("gdelt", enabled=gdelt_enabled, poll_seconds=gdelt_interval,
                   status="disabled" if not gdelt_enabled else "not_checked")
-    store = SeenStore(Path(os.environ.get("MONITOR_STATE_PATH", "/data/jin10-monitor.sqlite3")))
+    state_path = Path(os.environ.get("MONITOR_STATE_PATH", "/data/jin10-monitor.sqlite3"))
+    store = SeenStore(state_path)
     global DELIVERY_STORE
     DELIVERY_STORE = store
     update_health(
         "delivery",
+        storage=storage_diagnostics(state_path),
         **store.delivery_diagnostics(),
         retention_days=30,
         last_pruned_at=None,
