@@ -1,0 +1,24 @@
+{
+  "captured_at": "2026-08-24T23:06:20Z",
+  "kind": "read_only_external_acceptance",
+  "status": "NEEDS_REVERIFY",
+  "railway": {
+    "http_status": 200,
+    "monitor_status": "running",
+    "gmail_watch_status": "healthy",
+    "gdelt_status": "failed",
+    "gdelt_error_class": "HTTP_429",
+    "delivery_status": "not_checked",
+    "delivery_trace_present": false
+  },
+  "interpretation": [
+    "The service remained reachable after restart, but the prior delivery receipt was not visible to the read-only probe.",
+    "This is not evidence of a failed Telegram delivery; it is evidence that receipt continuity was not proven.",
+    "The persistence health gate in this PR makes the ambiguity visible and fail-closed until a mounted Railway volume is verified."
+  ],
+  "safety": {
+    "network_write_performed": false,
+    "telegram_sent": false,
+    "secrets_or_recipients_recorded": false
+  }
+}
