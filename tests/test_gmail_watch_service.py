@@ -134,3 +134,19 @@ def test_missing_oauth_is_fail_closed(tmp_path: Path) -> None:
     }), store, force=True, client_factory=lambda **_kwargs: _Client([])))
     assert result["status"] == "configuration_missing"
     assert "GMAIL_REFRESH_TOKEN" in result["missing"]
+
+
+def test_watch_includes_inbox_by_default_for_history_sync() -> None:
+    config = GmailWatchConfig.from_env({
+        "GMAIL_WATCH_TOPIC": "projects/p/topics/t",
+        "GMAIL_WATCH_LABEL_IDS": "Label_1",
+        "GMAIL_OAUTH_STATE": "configured",
+        "GMAIL_PUBSUB_AUDIENCE": "https://railway.example/gmail/push",
+        "GMAIL_PUBSUB_SERVICE_ACCOUNT": "push@example.iam.gserviceaccount.com",
+    })
+    assert config.label_ids == ("Label_1", "INBOX")
+
+
+def test_watch_can_opt_out_of_inbox() -> None:
+    config = GmailWatchConfig.from_env({"GMAIL_WATCH_INCLUDE_INBOX": "false"})
+    assert config.label_ids == ()

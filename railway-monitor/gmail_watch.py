@@ -42,10 +42,17 @@ class GmailWatchConfig:
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> GmailWatchConfig:
         source = os.environ if env is None else env
-        labels = tuple(value.strip() for value in source.get("GMAIL_WATCH_LABEL_IDS", "").split(",") if value.strip())
+        labels = [value.strip() for value in source.get("GMAIL_WATCH_LABEL_IDS", "").split(",") if value.strip()]
+        # Gmail history notifications otherwise miss normal inbox mail when a
+        # deployment only configured a private/custom label.  Keep custom
+        # labels, but include INBOX by default; it is opt-out for installations
+        # that intentionally scope the watch to a dedicated label.
+        include_inbox = source.get("GMAIL_WATCH_INCLUDE_INBOX", "true").strip().casefold() == "true"
+        if include_inbox and "INBOX" not in labels:
+            labels.append("INBOX")
         return cls(
             topic_name=source.get("GMAIL_WATCH_TOPIC", "").strip(),
-            label_ids=labels,
+            label_ids=tuple(labels),
             oauth_state=source.get("GMAIL_OAUTH_STATE", "").strip(),
             audience=source.get("GMAIL_PUBSUB_AUDIENCE", "").strip(),
             service_account=source.get("GMAIL_PUBSUB_SERVICE_ACCOUNT", "").strip(),

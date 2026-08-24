@@ -762,6 +762,20 @@ def test_gdelt_error_label_preserves_status_without_exposing_response_body():
     assert monitor.gdelt_error_label(ValueError("invalid payload")) == "invalid_payload"
 
 
+def test_gdelt_failure_health_marks_scan_failed_not_not_checked():
+    observed_at = monitor.datetime(2026, 8, 24, 2, 0, tzinfo=monitor.timezone.utc)
+    values = monitor.gdelt_failure_health(
+        RuntimeError("upstream 429"),
+        now=observed_at,
+    )
+    assert values["status"] == "failed"
+    assert values["event_scan"] == "scan_failed"
+    assert values["error"] == "RuntimeError"
+    assert values["article_count"] == 0
+    assert values["alert_count"] == 0
+    assert values["last_failure_at"] == observed_at.isoformat()
+
+
 def test_gdelt_request_uses_identifiable_json_headers(monkeypatch):
     captured = {}
 

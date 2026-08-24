@@ -79,6 +79,52 @@ FinancialJuice remain explicit `no_new_content`. Pages is `ready` with 5/5
 artifact hashes verified. GDELT remains `HTTP_429` under bounded backoff, so
 the capture remains `NEEDS_REVERIFY`.
 
+The subsequent read-only capture at `2026-08-24T01:39:31Z` is recorded in
+[`docs/evidence/external-acceptance-2026-08-24T0139Z.md`](evidence/external-acceptance-2026-08-24T0139Z.md).
+It confirms that Railway and the Gmail Watch remain healthy, Creator and
+FinancialJuice remain explicit `no_new_content`, and Pages still verifies all
+five declared artifacts. GDELT remains rate-limited with `HTTP_429`, so the
+external completion debt remains open.
+
+## Railway parser runtime recheck (2026-08-24)
+
+The deployment bundle audit found a concrete dependency defect: the generated
+Railway parser imports `bs4.BeautifulSoup` for HTML-only Creator and
+FinancialJuice relays, but `railway-monitor/requirements.txt` did not declare
+`beautifulsoup4`.  In the standalone Railway image this made the canonical
+parser import fail, which correctly degraded ingress to
+`parser_unavailable` but also meant no public observation could reach the
+release pipeline.  The fix is committed in `563f584` and includes a runtime
+requirements contract test; the generated parser remains the single canonical
+bundle and is still checked by `scripts/sync_railway_canonical_parser.py`.
+
+Local evidence after the fix: targeted Railway/Gmail contract suite `38
+passed`; full repository suite `1384 passed`; canonical bundle check and
+`compileall` passed.  A fresh Railway deploy and sanitized Gmail observation
+are still required before changing the external rows above to
+`PASS-EXTERNAL`.
+
+The Gmail History adapter also now handles an expired history ID explicitly:
+a `404` clears the invalid cursor, marks `history_cursor_expired` with
+`history_gap=true`, and forces the next bounded Watch renewal to establish a
+new baseline.  It does not pretend that messages in the expired interval were
+recovered, and it prevents an infinite retry loop against the same cursor.
+
+The latest read-only capture at `2026-08-24T02:00:50Z` is recorded in
+[`docs/evidence/external-acceptance-2026-08-24T0200Z.md`](evidence/external-acceptance-2026-08-24T0200Z.md).
+It verifies the same fail-closed boundary after the next Railway cycle:
+Railway/Gmail/Gmail Watch remain healthy, Creator and FinancialJuice are
+explicitly empty polls, Pages is `ready` with all five hashes verified, and
+GDELT remains the only blocking upstream failure (`HTTP_429`).
+
+The latest read-only capture at `2026-08-24T02:19:56Z` is recorded in
+[`docs/evidence/external-acceptance-2026-08-24T0219Z.md`](evidence/external-acceptance-2026-08-24T0219Z.md).
+It confirms Railway and Pages remain reachable, the Gmail Watch remains
+healthy, and Creator/FinancialJuice remain explicit `no_new_content`. The
+deployed monitor still exposes the pre-merge GDELT `event_scan=not_checked`
+projection while the upstream returns `HTTP_429`; PR #744 contains the
+fail-closed taxonomy correction. No production side effect was performed.
+
 ## Rollback
 
 This document is additive. Reverting its PR does not change runtime behavior.
