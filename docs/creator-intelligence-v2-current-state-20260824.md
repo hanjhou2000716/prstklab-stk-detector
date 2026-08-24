@@ -93,6 +93,14 @@ Railway/Gmail/Gmail Watch remain healthy, Creator and FinancialJuice are
 explicitly empty polls, Pages is `ready` with all five hashes verified, and
 GDELT remains the only blocking upstream failure (`HTTP_429`).
 
+The latest read-only capture at `2026-08-24T02:19:56Z` is recorded in
+[`docs/evidence/external-acceptance-2026-08-24T0219Z.md`](evidence/external-acceptance-2026-08-24T0219Z.md).
+It confirms Railway and Pages remain reachable, the Gmail Watch remains
+healthy, and Creator/FinancialJuice remain explicit `no_new_content`. The
+deployed monitor still exposes the pre-merge GDELT `event_scan=not_checked`
+projection while the upstream returns `HTTP_429`; PR #744 contains the
+fail-closed taxonomy correction. No production side effect was performed.
+
 ## Rollback
 
 This document is additive. Reverting its PR does not change runtime behavior.
