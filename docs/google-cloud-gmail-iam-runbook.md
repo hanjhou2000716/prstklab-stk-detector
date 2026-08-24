@@ -51,3 +51,8 @@ Verify these facts in Cloud Console or with an authenticated read-only command:
 The read-only 2026-08-24 audit found the Pub/Sub topic and subscription and a
 healthy Gmail Watch lease. It did not change IAM, create a key, read a secret,
 or send a message. A live sanitized event remains an external acceptance gate.
+
+The companion [IAM audit](google-cloud-gmail-iam-audit-20260824.md) records the
+observed push settings and the project-level `calendar-reader` Editor finding.
+Permission reduction remains a separately confirmed change; it must not be
+papered over by creating a service-account key.
