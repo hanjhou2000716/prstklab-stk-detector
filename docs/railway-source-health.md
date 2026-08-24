@@ -26,9 +26,11 @@ The source states are intentionally distinct:
 - `no_new_content`: the source has not produced a new observation;
 - `not_checked`: no source evidence has been evaluated yet.
 
-`financialjuice.decision` is `awaiting_confirmation` while public items still
-lack official confirmation. It is not a Telegram risk decision and does not
-override the release gate or market-synchronisation policy.
+`financialjuice.decision` is `awaiting_confirmation` while priority (vendor
+importance `>=8`) public items still lack official confirmation. Routine
+lower-importance clusters do not block this priority lane. It is not a
+Telegram risk decision and does not override the release gate or
+market-synchronisation policy.
 
 When a sanitized item has vendor importance `>=8` but is missing the explicit
 priority-notification flag, the decision is

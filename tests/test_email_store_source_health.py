@@ -135,3 +135,39 @@ def test_financialjuice_health_does_not_call_high_importance_item_below_threshol
     assert health["qualifying_item_count"] == 0
     assert health["pending_cluster_count"] == 0
     assert health["decision"] == "priority_items_blocked_by_notification_gate"
+
+
+def test_financialjuice_low_importance_cluster_does_not_block_priority_lane(
+    tmp_path: Path,
+) -> None:
+    store = EmailStore(tmp_path / "email.sqlite3")
+    assert store.claim_observation(
+        {
+            "gmail_message_id": "private-message-id-3",
+            "observation_id": "obs-3",
+            "content_origin": "financialjuice",
+            "parse_status": "parsed",
+            "parser_version": "test",
+            "received_at": "2026-08-24T04:00:00+00:00",
+        }
+    )
+    assert store.save_public_observation(
+        {
+            "public_safe": True,
+            "observation_id": "obs-3",
+            "content_origin": "financialjuice",
+            "vendor_importance": 5,
+            "vendor_priority_notification": False,
+            "event_cluster_key": "routine-cluster",
+            "official_confirmed": False,
+            "published_at": "2026-08-24T03:59:00+00:00",
+            "release_id": "release-3",
+            "snapshot_id": "snapshot-3",
+            "source_url": "https://example.invalid/item-3",
+        }
+    )
+
+    health = store.source_health()["financialjuice"]
+    assert health["importance_gte_8_count"] == 0
+    assert health["pending_cluster_count"] == 0
+    assert health["decision"] == "parsed_below_priority_threshold"
