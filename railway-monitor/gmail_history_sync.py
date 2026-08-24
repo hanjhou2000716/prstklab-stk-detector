@@ -13,6 +13,7 @@ import base64
 import binascii
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
+from email.header import decode_header, make_header
 from email.utils import parsedate_to_datetime
 from typing import Any
 
@@ -53,8 +54,28 @@ def _recover_expired_cursor(store: EmailStore) -> None:
 def _header(payload: Mapping[str, Any], name: str) -> str:
     for item in payload.get("headers") or ():
         if isinstance(item, Mapping) and str(item.get("name") or "").casefold() == name.casefold():
-            return str(item.get("value") or "").strip()
+            return _decode_header_value(item.get("value"))
     return ""
+
+
+def _decode_header_value(value: Any) -> str:
+    """Decode RFC 2047 Gmail headers before source/creator routing.
+
+    Gmail's full-message API may return encoded-word values for non-ASCII
+    display names and subjects.  Comparing those raw values to the canonical
+    Creator markers makes valid mail look like ``source_not_recognized`` and
+    silently prevents the public observation from being produced.
+    """
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    try:
+        return str(make_header(decode_header(raw))).strip()
+    except (LookupError, UnicodeError, ValueError):
+        # Keep ingress fail-soft for malformed third-party headers; the raw
+        # value remains bounded and the normal parser will decide whether it
+        # is a known source.
+        return raw
 
 
 def _decode(value: Any) -> str:
