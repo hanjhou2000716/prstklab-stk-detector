@@ -557,3 +557,14 @@ of creator notification keys used by the creator-history endpoint. It filters
 receipt category, deduplicates and truncates keys without exposing message
 bodies or recipient identifiers. Status is **partially_integrated** pending
 stacked PR and live creator receipt verification.
+
+## Gmail intelligence health projection
+
+`railway-monitor/email_store.py` now projects bounded FinancialJuice priority
+and release-lineage counters (`importance_gte_8_count`,
+`qualifying_item_count`, `release_id`, `snapshot_id`, and `observation_id`)
+through `railway-monitor/source_health_projection.py`. This keeps the vendor
+priority lane separate from official risk and makes `no_new_content`, pending
+confirmation, and release-review states auditable. Status is
+**partially_integrated** until a real Gmail event and delivery receipt are
+observed on Railway; no synthetic event is used to mark it production.
