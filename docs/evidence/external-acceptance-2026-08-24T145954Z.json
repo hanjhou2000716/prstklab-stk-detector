@@ -1,0 +1,80 @@
+{
+  "kind": "external-acceptance-readonly",
+  "captured_at": "2026-08-24T14:59:54.154639+00:00",
+  "status": "NEEDS_REVERIFY",
+  "blocking_reasons": ["railway_gdelt:failed"],
+  "side_effects": {
+    "telegram": false,
+    "railway_write": false,
+    "configuration_changed": false
+  },
+  "railway": {
+    "http_status": 200,
+    "service": "prstk-jin10-monitor",
+    "monitor": {
+      "status": "running",
+      "heartbeat_status": "healthy",
+      "last_cycle_completed_at": "2026-08-24T14:58:45.027490+00:00"
+    },
+    "jin10": {
+      "status": "healthy",
+      "item_count": 0
+    },
+    "gdelt": {
+      "status": "failed",
+      "event_scan": "scan_failed",
+      "error": "HTTP_429",
+      "stale_cache_used": false,
+      "health_dispatch_status": "healthy",
+      "poll_seconds": 900
+    },
+    "gmail": {
+      "status": "healthy",
+      "watch_status": "healthy",
+      "watch_expiration": "2026-08-31T14:26:33.952000+00:00",
+      "missing": []
+    },
+    "creator": {
+      "status": "healthy",
+      "received_count": 1,
+      "parsed_count": 1,
+      "failed_count": 0,
+      "last_observation_id": "email-7e65da4a82163ed61f96-0"
+    },
+    "financialjuice": {
+      "status": "healthy",
+      "received_count": 1,
+      "parsed_count": 1,
+      "failed_count": 0,
+      "importance_gte_8_count": 1,
+      "decision": "priority_items_blocked_by_notification_gate",
+      "last_observation_id": "email-c85bf9db8b250d5026c3-0"
+    },
+    "delivery": {
+      "status": "not_checked",
+      "retention_days": 30
+    }
+  },
+  "pages": {
+    "http_status": 200,
+    "status": "ready",
+    "release_id": "release-1df139db83e19642",
+    "market_snapshot_id": "632c92828b4c27a7",
+    "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
+    "event_snapshot_id": "event-a889bf10a4141a3b",
+    "artifact_hash_audit": {
+      "declared_count": 5,
+      "verified_count": 5,
+      "missing_count": 0,
+      "mismatch_count": 0,
+      "error_count": 0,
+      "snapshot_mismatch_count": 0
+    }
+  },
+  "interpretation": {
+    "pages_release_gate": "pass",
+    "railway_runtime": "pass_with_gdelt_rate_limit",
+    "telegram_production_acceptance": "not_run",
+    "high_risk_alert_eligibility": "blocked_until_gdelt_recovers_or_is_explicitly_not_required"
+  }
+}
