@@ -456,6 +456,13 @@ class EmailStore:
                 fj["decision"] = "priority_items_ready_for_release_review"
             elif fj["pending_cluster_count"]:
                 fj["decision"] = "awaiting_confirmation"
+            elif fj["importance_gte_8_count"]:
+                # A vendor importance score of >=8 is evidence that the item
+                # is high-priority for the separate FinancialJuice lane.  It
+                # is not evidence that the explicit notification flag or
+                # release gate passed.  Do not mislabel this state as
+                # "below threshold"; that hides a parser/policy mismatch.
+                fj["decision"] = "priority_items_blocked_by_notification_gate"
             else:
                 fj["decision"] = "parsed_below_priority_threshold"
         return sources

@@ -29,3 +29,11 @@ The source states are intentionally distinct:
 `financialjuice.decision` is `awaiting_confirmation` while public items still
 lack official confirmation. It is not a Telegram risk decision and does not
 override the release gate or market-synchronisation policy.
+
+When a sanitized item has vendor importance `>=8` but is missing the explicit
+priority-notification flag, the decision is
+`priority_items_blocked_by_notification_gate`.  This is intentionally
+different from `parsed_below_priority_threshold`: the former identifies a
+metadata or policy-gate mismatch that needs investigation, while the latter
+means no high-importance item was observed.  Neither state grants Telegram
+delivery or changes PRStK risk.

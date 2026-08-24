@@ -96,3 +96,42 @@ def test_creator_health_projects_explicit_batch_state_and_lineage(tmp_path: Path
     assert health["last_release_id"] == "release-creator-1"
     assert health["last_snapshot_id"] == "snapshot-creator-1"
     assert health["last_observation_id"] == "creator-obs-1"
+
+
+def test_financialjuice_health_does_not_call_high_importance_item_below_threshold(
+    tmp_path: Path,
+) -> None:
+    store = EmailStore(tmp_path / "email.sqlite3")
+    assert store.claim_observation(
+        {
+            "gmail_message_id": "private-message-id-2",
+            "observation_id": "obs-2",
+            "content_origin": "financialjuice",
+            "parse_status": "parsed",
+            "parser_version": "test",
+            "received_at": "2026-08-24T03:00:00+00:00",
+        }
+    )
+    assert store.save_public_observation(
+        {
+            "public_safe": True,
+            "observation_id": "obs-2",
+            "content_origin": "financialjuice",
+            "vendor_importance": 9,
+            # The explicit priority flag is absent, so this item is blocked
+            # by the notification/release gate rather than below the score
+            # threshold.
+            "vendor_priority_notification": False,
+            "official_confirmed": True,
+            "published_at": "2026-08-24T02:59:00+00:00",
+            "release_id": "release-2",
+            "snapshot_id": "snapshot-2",
+            "source_url": "https://example.invalid/item-2",
+        }
+    )
+
+    health = store.source_health()["financialjuice"]
+    assert health["importance_gte_8_count"] == 1
+    assert health["qualifying_item_count"] == 0
+    assert health["pending_cluster_count"] == 0
+    assert health["decision"] == "priority_items_blocked_by_notification_gate"
