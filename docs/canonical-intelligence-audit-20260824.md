@@ -78,6 +78,20 @@ healthy, and no Telegram or Railway write was attempted. Delivery remains
 `not_checked`; this is deliberate evidence of the fail-closed boundary rather
 than evidence of a successful production notification.
 
+## Follow-up external capture — 2026-08-24 23:12:08 Asia/Taipei
+
+The follow-up capture is preserved at
+`docs/evidence/external-acceptance-2026-08-24T151208Z.json`. Pages continued to
+serve a `ready` release (`release-671d7405d51f5b08`) with all five declared
+artifact hashes and snapshot identities verified. Railway remained HTTP 200
+with a healthy heartbeat, active Gmail Watch, and healthy Creator and
+FinancialJuice lanes.
+
+GDELT remained `scan_failed` with `HTTP_429`; the monitor did not promote a
+stale cache and remained backoff-protected. Telegram delivery is still
+`not_checked`, so this capture does not claim production notification
+acceptance.
+
 ## Remaining gates
 
 1. Capture one sanitized Gmail observation on Railway and confirm the same
