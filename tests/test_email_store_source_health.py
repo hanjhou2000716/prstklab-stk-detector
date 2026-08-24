@@ -53,3 +53,46 @@ def test_financialjuice_health_projects_priority_and_lineage_without_private_ids
     assert health["last_importance_gte_8_at"] == "2026-08-24T01:59:00+00:00"
     assert "gmail_message_id" not in health
 
+
+def test_creator_health_projects_explicit_batch_state_and_lineage(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "email.sqlite3")
+    assert store.claim_observation(
+        {
+            "gmail_message_id": "private-creator-message",
+            "observation_id": "creator-obs-1",
+            "content_origin": "jenny",
+            "parse_status": "parsed",
+            "parser_version": "test",
+            "received_at": "2026-08-24T02:00:00+00:00",
+        }
+    )
+    assert store.save_public_observation(
+        {
+            "public_safe": True,
+            "observation_id": "creator-obs-1",
+            "content_origin": "jenny",
+            "is_today": True,
+            "is_latest": True,
+            "morning_batch_key": "jenny:2026-08-24",
+            "daily_coverage_count": 2,
+            "coverage_status": "complete",
+            "morning_batch_state": "complete",
+            "consensus_status": "ready",
+            "release_id": "release-creator-1",
+            "snapshot_id": "snapshot-creator-1",
+            "source_url": "https://example.invalid/creator",
+        }
+    )
+
+    health = store.source_health()["creator"]
+    assert health["status"] == "healthy"
+    assert health["today_count"] == 1
+    assert health["latest_count"] == 1
+    assert health["morning_batch_count"] == 1
+    assert health["daily_coverage_count"] == 2
+    assert health["coverage_status"] == "complete"
+    assert health["morning_batch_state"] == "complete"
+    assert health["consensus_status"] == "ready"
+    assert health["last_release_id"] == "release-creator-1"
+    assert health["last_snapshot_id"] == "snapshot-creator-1"
+    assert health["last_observation_id"] == "creator-obs-1"
