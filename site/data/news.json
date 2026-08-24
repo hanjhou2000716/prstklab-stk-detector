@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "632c92828b4c27a7",
-  "snapshot_id": "news-2840126ba7c8d4c5",
+  "market_snapshot_id": "5cbff19d76e97c91",
+  "snapshot_id": "news-0d68b1b1ae7fa445",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -345,21 +345,20 @@
           "ranking_score": 35
         },
         {
-          "story_id": "news-3c81017e8a16886d370b",
+          "story_id": "news-56b0dde865aaeb47261e",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "台積電爆「成交窒息量」創2年多來最低！台股無量無價走勢判斷 - 理財周刊",
-          "canonical_url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE00WTR5YURqZUFnTDFKb2FsRzZNLVRBUkVLTnViRFRTMElsUW5zODhEdHB5enNPTTFEWEsxcndaY0hLUTR5d1YxWm1uUFJXYWUyRXNvQnNWT3JrY0U2RVlXUjV5VHJ5RVc4dTlXVjZRVQ",
-          "url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE00WTR5YURqZUFnTDFKb2FsRzZNLVRBUkVLTnViRFRTMElsUW5zODhEdHB5enNPTTFEWEsxcndaY0hLUTR5d1YxWm1uUFJXYWUyRXNvQnNWT3JrY0U2RVlXUjV5VHJ5RVc4dTlXVjZRVQ",
-          "published_at": "2026-08-24T09:07:36+00:00",
+          "title": "台積電幾乎沒有理由不買！外媒喊現在是絕佳投資機會 原因全說了 - 自由財經",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE5JV0J4UVhSUXZBcUtUSGtTajhQY243eUVpazJoRGxTVnNGenFvMTIyNkNoSXRyT1lXZ3ZwSm51dndUN3BiU25SQ0phaE5CZHl4X185QWoyZm9uMDdBVVhr",
+          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE5JV0J4UVhSUXZBcUtUSGtTajhQY243eUVpazJoRGxTVnNGenFvMTIyNkNoSXRyT1lXZ3ZwSm51dndUN3BiU25SQ0phaE5CZHl4X185QWoyZm9uMDdBVVhr",
+          "published_at": "2026-08-24T07:42:26+00:00",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
           "entities": [
             "2330",
-            "TAIEX",
             "TSM"
           ],
           "sectors": [],
@@ -370,9 +369,9 @@
             "tracked_ticker:TSM"
           ],
           "freshness": "published",
-          "dedupe_key": "台積電爆成交窒息量創2年多來最低台股無量無價走勢判斷理財周刊",
-          "event_cluster_key": "event-2f655a2895f604d141e0",
-          "published_time_bucket": "2026-08-24T09:00:00+00:00",
+          "dedupe_key": "台積電幾乎沒有理由不買外媒喊現在是絕佳投資機會原因全說了自由財經",
+          "event_cluster_key": "event-1cf954cb8d6c8af137c3",
+          "published_time_bucket": "2026-08-24T07:00:00+00:00",
           "public_safe": true,
           "source": "Google News｜台股線索",
           "ranking_score": 30
@@ -380,9 +379,9 @@
       ],
       "interest_graph": {
         "ticker_interest": {
-          "2330": 4,
-          "TSM": 4,
-          "NVDA": 1
+          "2330": 2,
+          "NVDA": 1,
+          "TSM": 2
         },
         "sector_interest": {},
         "topic_interest": {},
@@ -402,7 +401,9 @@
           "research_tickers": [],
           "tracked_sectors": [],
           "active_event_topics": [
+            "ai",
             "brent",
+            "taifex",
             "wti",
             "原油",
             "地震",
@@ -413,9 +414,9 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 4,
-            "TSM": 4,
-            "NVDA": 1
+            "2330": 2,
+            "NVDA": 1,
+            "TSM": 2
           },
           "research_candidate": {},
           "tracked_sector": {},
@@ -425,7 +426,39 @@
       },
       "excluded_count": 0,
       "exclusion_reasons": {},
-      "status": "ready"
+      "status": "ready",
+      "collection_state": "ready",
+      "source_failure_count": 0,
+      "source_health": [
+        {
+          "key": "news_taiwan",
+          "label": "taiwan market news",
+          "status": "healthy",
+          "source_tier": "discovery",
+          "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
+          "item_count": 5,
+          "checked_at": "2026-08-24T16:27:32.976683+00:00",
+          "fallback_used": true
+        },
+        {
+          "key": "official_news_taiwan_twse",
+          "label": "twse official news",
+          "status": "no_event",
+          "source_tier": "official",
+          "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
+          "item_count": 0,
+          "checked_at": "2026-08-24T16:27:32.976683+00:00"
+        },
+        {
+          "key": "official_news_taiwan_mops",
+          "label": "mops official news",
+          "status": "no_event",
+          "source_tier": "official",
+          "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
+          "item_count": 0,
+          "checked_at": "2026-08-24T16:27:32.976683+00:00"
+        }
+      ]
     },
     "us": {
       "schema_version": "1.0",
@@ -582,64 +615,70 @@
       ],
       "stories": [
         {
-          "story_id": "news-1d2a3771559e5989f808",
-          "provider": "sec",
-          "provider_name": "SEC EDGAR",
-          "source_tier": "official",
-          "authority_tier": "official",
-          "title": "8-K - BITMINE IMMERSION TECHNOLOGIES, INC. (0001829311) (Filer)",
-          "canonical_url": "https://www.sec.gov/Archives/edgar/data/1829311/000149315226039789/0001493152-26-039789-index.htm",
-          "url": "https://www.sec.gov/Archives/edgar/data/1829311/000149315226039789/0001493152-26-039789-index.htm",
-          "published_at": "2026-08-24T12:45:26+00:00",
+          "story_id": "news-d1d1ec3a1f06c0c1da0f",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Dow Jones, Nasdaq, S&P 500 preview: Nvidia results, Jackson Hole take center stage - Investing.com",
+          "canonical_url": "https://news.google.com/rss/articles/CBMizwFBVV95cUxQdHUtVXE3ZndNSHRHWlFPNWhPS3dNNE96X3JtZXhNVVExOHg2M1B5cjNmNl9uN0VyU0RqbGRpenF2M0xRTHVxN0RLWU1FZU9lcjk2Y1FDaXpVdWRNdXJ2TlNhbEszb0EyOGFOUTVFY3pKTmhmeC10Nm93STV5Y25qQVNJVkx1UldqTmNTYjg5b09oNEhfbUMwSWQ4NUE3VFdReE5TTjhNWE5YanRneVh0NWVlOGZneGNkNXJIUnByRDFKVFlqVl9ZSXNUVnFQUkE",
+          "url": "https://news.google.com/rss/articles/CBMizwFBVV95cUxQdHUtVXE3ZndNSHRHWlFPNWhPS3dNNE96X3JtZXhNVVExOHg2M1B5cjNmNl9uN0VyU0RqbGRpenF2M0xRTHVxN0RLWU1FZU9lcjk2Y1FDaXpVdWRNdXJ2TlNhbEszb0EyOGFOUTVFY3pKTmhmeC10Nm93STV5Y25qQVNJVkx1UldqTmNTYjg5b09oNEhfbUMwSWQ4NUE3VFdReE5TTjhNWE5YanRneVh0NWVlOGZneGNkNXJIUnByRDFKVFlqVl9ZSXNUVnFQUkE",
+          "published_at": "2026-08-24T13:16:26+00:00",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "NASDAQ",
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [],
+          "relevance_reasons": [
+            "market:us",
+            "tracked_ticker:NVDA"
+          ],
+          "freshness": "published",
+          "dedupe_key": "dowjonesnasdaqsp500previewnvidiaresultsjacksonholetakecenterstageinvestingcom",
+          "event_cluster_key": "event-0435e314b7a4401985c8",
+          "published_time_bucket": "2026-08-24T13:00:00+00:00",
+          "public_safe": true,
+          "source": "Google News｜美股線索",
+          "ranking_score": 25
+        },
+        {
+          "story_id": "news-6887c79044d5b2eb1a63",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "S&P 500, Nasdaq slip as Iran tensions test markets in high-stakes week - Reuters",
+          "canonical_url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxQZmVCQWYzaWpzTVpmVFJPV0xRdEtUcXg0N2JKZHB5Z2JFZWpWRHFwS0Q3R2NtVHp1c29rem5scXhwa0FZMFZJNGtqM3ZCRlVOa1doNGNtWEcxVVZCYXFDSXlEbmJwODhKbG5Kdk15RDJpbDFleUFpWkdmbWEtMkhGWnF0U1FWWVpmSnp4aXp4UzlPc2hzaFNTWllwSm5UVWlpNWtWQlkzX1dqOHJNbkg5ag",
+          "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxQZmVCQWYzaWpzTVpmVFJPV0xRdEtUcXg0N2JKZHB5Z2JFZWpWRHFwS0Q3R2NtVHp1c29rem5scXhwa0FZMFZJNGtqM3ZCRlVOa1doNGNtWEcxVVZCYXFDSXlEbmJwODhKbG5Kdk15RDJpbDFleUFpWkdmbWEtMkhGWnF0U1FWWVpmSnp4aXp4UzlPc2hzaFNTWllwSm5UVWlpNWtWQlkzX1dqOHJNbkg5ag",
+          "published_at": "2026-08-24T14:11:42+00:00",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NASDAQ"
+          ],
           "sectors": [],
           "topics": [],
           "relevance_reasons": [
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "8kbitmineimmersiontechnologiesinc0001829311filer",
+          "dedupe_key": "sp500nasdaqslipasirantensionstestmarketsinhighstakesweekreuters",
           "event_cluster_key": "",
-          "published_time_bucket": "2026-08-24T12:00:00+00:00",
+          "published_time_bucket": "2026-08-24T14:00:00+00:00",
           "public_safe": true,
-          "source": "SEC",
-          "ranking_score": 50
-        },
-        {
-          "story_id": "news-2e084baf4e8c6f3d273e",
-          "provider": "sec",
-          "provider_name": "SEC EDGAR",
-          "source_tier": "official",
-          "authority_tier": "official",
-          "title": "8-K - Rocky Mountain Chocolate Factory, Inc. (0001616262) (Filer)",
-          "canonical_url": "https://www.sec.gov/Archives/edgar/data/1616262/000121390026092815/0001213900-26-092815-index.htm",
-          "url": "https://www.sec.gov/Archives/edgar/data/1616262/000121390026092815/0001213900-26-092815-index.htm",
-          "published_at": "2026-08-24T12:40:58+00:00",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "8krockymountainchocolatefactoryinc0001616262filer",
-          "event_cluster_key": "event-2cbdc6ecd1a13d3d0e54",
-          "published_time_bucket": "2026-08-24T12:00:00+00:00",
-          "public_safe": true,
-          "source": "SEC",
-          "ranking_score": 50
+          "source": "Google News｜美股線索",
+          "ranking_score": 20
         }
       ],
       "interest_graph": {
-        "ticker_interest": {},
+        "ticker_interest": {
+          "NVDA": 1
+        },
         "sector_interest": {},
         "topic_interest": {},
         "market_interest": {
@@ -658,7 +697,9 @@
           "research_tickers": [],
           "tracked_sectors": [],
           "active_event_topics": [
+            "ai",
             "brent",
+            "taifex",
             "wti",
             "原油",
             "地震",
@@ -668,7 +709,9 @@
           "creator_mentions": []
         },
         "source_interest": {
-          "tracked_ticker": {},
+          "tracked_ticker": {
+            "NVDA": 1
+          },
           "research_candidate": {},
           "tracked_sector": {},
           "active_event": {},
@@ -677,7 +720,49 @@
       },
       "excluded_count": 0,
       "exclusion_reasons": {},
-      "status": "ready"
+      "status": "ready",
+      "collection_state": "degraded",
+      "source_failure_count": 2,
+      "source_health": [
+        {
+          "key": "news_us",
+          "label": "us market news",
+          "status": "healthy",
+          "source_tier": "discovery",
+          "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+S%26P+500+OR+Federal+Reserve+OR+Nvidia+OR+US+stocks&hl=en-US&gl=US&ceid=US%3Aen",
+          "item_count": 5,
+          "checked_at": "2026-08-24T16:27:32.976683+00:00",
+          "fallback_used": true
+        },
+        {
+          "key": "official_news_us_sec",
+          "label": "sec official news",
+          "status": "failed",
+          "source_tier": "official",
+          "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
+          "item_count": 0,
+          "checked_at": "2026-08-24T16:27:32.976683+00:00",
+          "data_gap": "failed"
+        },
+        {
+          "key": "official_news_us_fed",
+          "label": "fed official news",
+          "status": "failed",
+          "source_tier": "official",
+          "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
+          "item_count": 0,
+          "checked_at": "2026-08-24T16:27:32.976683+00:00",
+          "data_gap": "failed"
+        },
+        {
+          "key": "official_news_us_nasdaq",
+          "label": "nasdaq official news",
+          "status": "disabled",
+          "source_tier": "official",
+          "item_count": 0,
+          "checked_at": "2026-08-24T16:27:32.976683+00:00"
+        }
+      ]
     }
   },
   "status": "ready"
