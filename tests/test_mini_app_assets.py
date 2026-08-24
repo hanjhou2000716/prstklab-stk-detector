@@ -132,6 +132,8 @@ def test_mini_app_binds_news_artifact_to_release_before_rendering():
     assert "snapshot.news = news" in app
     assert "snapshot.news?.markets || snapshot.news?.intelligence" in app
     assert "stories.slice(0, 5)" in app
+    assert "collection_state" in app
+    assert "source_failure_count" in app
 
 
 def test_mini_app_orders_sections_and_uses_strategy_match_scores():

@@ -349,7 +349,10 @@ const renderRisk = (risk) => {
 
 const newsEmptyState = (health) => {
   const status = String(health?.status || "").toLowerCase();
+  const collectionState = String(health?.collection_state || "").toLowerCase();
   const checkedAt = traceTime(health?.checked_at || health?.fetched_at);
+  if (collectionState === "source_failed") return { title: "新聞來源掃描失敗", detail: "本輪未採用不完整來源，等待下一次重試" };
+  if (collectionState === "degraded") return { title: "新聞來源部分降級", detail: "部分來源失敗，本輪內容需待核對" };
   if (status === "failed") return { title: "新聞來源暫時失敗", detail: "本輪未採用不完整來源，等待下一次重試" };
   if (status === "stale") return { title: "目前使用最近成功快取", detail: checkedAt ? `最後成功 ${checkedAt}` : "等待來源恢復後更新" };
   if (status === "pending") return { title: "新聞來源檢查中", detail: "等待本輪市場掃描完成" };
@@ -1072,7 +1075,15 @@ const render = (snapshot) => {
   const newsRegistry = snapshot.news?.provider_registry || [];
   const newsMarkets = snapshot.news?.markets || snapshot.news?.intelligence || snapshot.news;
   const newsHealth = Array.isArray(snapshot.news?.source_health) ? snapshot.news.source_health : [];
-  const newsHealthFor = (market) => newsHealth.find((item) => item?.key === `news_${market}`) || null;
+  const newsHealthFor = (market) => {
+    const aggregate = newsHealth.find((item) => item?.key === `news_${market}`) || {};
+    const intelligence = newsMarkets?.[market] || {};
+    return {
+      ...aggregate,
+      collection_state: intelligence.collection_state || aggregate.collection_state,
+      source_failure_count: intelligence.source_failure_count ?? aggregate.source_failure_count,
+    };
+  };
   renderNewsList("taiwan-news", newsMarkets?.taiwan?.stories || snapshot.news?.taiwan, newsRegistry, newsHealthFor("taiwan"));
   renderNewsList("us-news", newsMarkets?.us?.stories || snapshot.news?.us, newsRegistry, newsHealthFor("us"));
 };
