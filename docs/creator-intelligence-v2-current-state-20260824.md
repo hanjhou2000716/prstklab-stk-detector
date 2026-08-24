@@ -71,6 +71,14 @@ is the source of truth for the evidence above. Because Creator/FJ had no new
 mail and GDELT was rate-limited, the external completion debt remains open;
 the system must not manufacture an event or claim a successful live delivery.
 
+The newer read-only capture at `2026-08-24T01:19:25Z` is recorded in
+[`docs/evidence/external-acceptance-2026-08-24T0119Z.md`](evidence/external-acceptance-2026-08-24T0119Z.md).
+It confirms that the Gmail Watch lease is healthy through
+`2026-08-30T20:05:00Z`, with no missing configuration, while Creator and
+FinancialJuice remain explicit `no_new_content`. Pages is `ready` with 5/5
+artifact hashes verified. GDELT remains `HTTP_429` under bounded backoff, so
+the capture remains `NEEDS_REVERIFY`.
+
 ## Rollback
 
 This document is additive. Reverting its PR does not change runtime behavior.
