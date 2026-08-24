@@ -99,7 +99,7 @@ requirements contract test; the generated parser remains the single canonical
 bundle and is still checked by `scripts/sync_railway_canonical_parser.py`.
 
 Local evidence after the fix: targeted Railway/Gmail contract suite `38
-passed`; full repository suite `1383 passed`; canonical bundle check and
+passed`; full repository suite `1384 passed`; canonical bundle check and
 `compileall` passed.  A fresh Railway deploy and sanitized Gmail observation
 are still required before changing the external rows above to
 `PASS-EXTERNAL`.
