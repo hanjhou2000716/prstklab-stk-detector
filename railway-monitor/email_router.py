@@ -86,6 +86,27 @@ def _text(value: Any) -> str:
     return str(value or "").strip()
 
 
+def _display_name(value: str) -> str:
+    """Return the human sender label without treating a domain as identity."""
+    candidate = _text(value).split("<", 1)[0].strip()
+    # Gmail may omit the display name and return only ``local@domain``.
+    # Treat that as an address, not as a trusted provider label.
+    return "" if "@" in candidate else candidate
+
+
+def _trusted_identity(*, markers: tuple[str, ...], sender: str, subject: str) -> bool:
+    """Require a source marker in a human label/subject before fallback parsing.
+
+    A provider domain alone is not enough to bypass the template gate: generic
+    mail from ``alerts@financialjuice.com`` with an unrelated subject must
+    remain in the DLQ.  Gmail display names and RFC-2047-decoded subjects are
+    safe identity signals, while the body is deliberately excluded so an
+    article mentioning a provider cannot steal the route.
+    """
+    identity_text = " ".join((_display_name(sender), _text(subject))).casefold()
+    return any(marker.casefold() in identity_text for marker in markers)
+
+
 def template_fingerprint(subject: str, body: str, attachments: list[dict[str, Any]] | None = None) -> str:
     """Hash structure only; do not persist the raw body."""
     markers = "|".join(re.findall(r"[A-Za-z][A-Za-z _-]{2,32}", f"{subject}\n{body}")[:32])
@@ -102,11 +123,27 @@ def route_source(*, sender: str, subject: str, body: str, attachments: list[dict
     }
     for provider, markers in registry_signals.items():
         if any(marker in haystack for marker in markers):
+            trusted_identity = _trusted_identity(
+                markers=markers,
+                sender=sender,
+                subject=subject,
+            )
+            complete_message = bool(_text(subject) and _text(body))
             return {
                 "source": provider,
                 "content_type": "creator_analysis",
-                "parse_status": "identified" if any(marker in haystack for marker in ("episode", "market view", "takeaway", "creator")) else "unsupported_template",
-                "failure_reason": None if any(marker in haystack for marker in ("episode", "market view", "takeaway", "creator")) else "known_source_template_not_matched",
+                "parse_status": "identified" if (
+                    complete_message and (
+                        trusted_identity
+                        or any(marker in haystack for marker in ("episode", "market view", "takeaway", "creator"))
+                    )
+                ) else "unsupported_template",
+                "failure_reason": None if (
+                    complete_message and (
+                        trusted_identity
+                        or any(marker in haystack for marker in ("episode", "market view", "takeaway", "creator"))
+                    )
+                ) else "known_source_template_not_matched",
                 "template_fingerprint": template_fingerprint(subject, body, attachments),
             }
     # Creator identities are owned by the canonical registry above.  The
@@ -120,7 +157,10 @@ def route_source(*, sender: str, subject: str, body: str, attachments: list[dict
     }
     if source == "unknown":
         status, reason = "invalid_source", "source_not_recognized"
-    elif not any(marker.casefold() in haystack for marker in expected[source]):
+    elif not (
+        any(marker.casefold() in haystack for marker in expected[source])
+        or _trusted_identity(markers=signals[source], sender=sender, subject=subject)
+    ):
         status, reason = "unsupported_template", "known_source_template_not_matched"
     else:
         status, reason = "identified", None
@@ -180,6 +220,7 @@ def parse_email(record: dict[str, Any]) -> dict[str, Any]:
             )
         except Exception:  # pragma: no cover - parser failures are DLQ-safe
             derived = {"parse_status": "parse_failed", "failure_reason": "derived_parser_error"}
+        derived_status = str(derived.get("parse_status") or "parse_failed") if isinstance(derived, dict) else "parse_failed"
         items = derived.get("items") if isinstance(derived, dict) else None
         candidates = items if isinstance(items, list) else [derived]
         for index, candidate in enumerate(candidates):
@@ -193,6 +234,17 @@ def parse_email(record: dict[str, Any]) -> dict[str, Any]:
             row["public_safe"] = True
             row["parse_status"] = "normalized"
             public_rows.append(row)
+        if derived_status not in {"parsed", "normalized"}:
+            result["parse_status"] = derived_status if derived_status in DLQ_STATES else "parse_failed"
+            result["failure_reason"] = str(
+                derived.get("failure_reason") if isinstance(derived, dict) else "derived_parser_error"
+            )[:120] or "derived_parser_error"
+        elif not public_rows:
+            # A parser must produce at least one public-safe observation; do
+            # not acknowledge a message that would otherwise disappear after
+            # the source route succeeded.
+            result["parse_status"] = "parse_failed"
+            result["failure_reason"] = "derived_parser_no_public_observation"
     result["public_observations"] = public_rows
     return result
 
