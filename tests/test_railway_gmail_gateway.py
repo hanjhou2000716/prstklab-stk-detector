@@ -256,6 +256,38 @@ def test_known_source_template_failure_enters_dlq(tmp_path: Path) -> None:
     assert store.health()["dlq_count"] == 1
 
 
+def test_financialjuice_subject_identity_allows_canonical_fallback_parser(tmp_path: Path) -> None:
+    """A real source-labelled alert need not contain every legacy field label."""
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    service = GmailIngressService(store, _config())
+    result = service.accept_email({
+        "gmail_message_id": "fj-natural-1",
+        "sender": "alerts@financialjuice.com",
+        "subject": "FinancialJuice alert",
+        "body": "Oil supply update",
+    })
+    assert result["accepted"] is True
+    assert result["status"] == "parsed"
+    assert result["public_observation_count"] == 1
+    assert store.health()["source_health"]["financialjuice"]["failed_count"] == 0
+
+
+def test_creator_display_name_allows_legacy_fallback_without_template_labels(tmp_path: Path) -> None:
+    """Known Creator mail is retained for review while parser labels evolve."""
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    service = GmailIngressService(store, _config())
+    result = service.accept_email({
+        "gmail_message_id": "creator-natural-1",
+        "sender": "財經皓角 <creator@example.com>",
+        "subject": "今日市場觀察",
+        "body": "台股與美股市場摘要，僅供公開資訊整理。",
+    })
+    assert result["accepted"] is True
+    assert result["status"] == "parsed"
+    assert result["public_observation_count"] == 1
+    assert store.health()["source_health"]["creator"]["failed_count"] == 0
+
+
 def test_health_reports_stale_watch(tmp_path: Path) -> None:
     store = EmailStore(tmp_path / "mail.sqlite3")
     store.save_cursor(watch_expiration="2020-01-01T00:00:00+00:00")
