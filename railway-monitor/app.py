@@ -1570,6 +1570,28 @@ def gdelt_error_label(error: BaseException) -> str:
     return type(error).__name__
 
 
+def gdelt_failure_health(error: BaseException, *, now: datetime | None = None) -> dict[str, Any]:
+    """Project a provider failure as an explicit failed scan.
+
+    Keeping this projection in one pure-ish helper prevents the monitor loop's
+    exception path from silently reverting to ``event_scan=not_checked``.
+    """
+    observed_at = now or datetime.now(timezone.utc)
+    values = store_project_gdelt_health(
+        fetch_state="failed",
+        fetch_error=gdelt_error_label(error),
+        article_count=0,
+        alert_count=0,
+        pending_count=0,
+        pending_reasons={},
+        market_sync_status="not_confirmed",
+        stale_cache_used=False,
+        now=observed_at,
+    )
+    values["last_failure_at"] = observed_at.astimezone(timezone.utc).isoformat()
+    return values
+
+
 def _gmail_error_label(error: BaseException) -> str:
     """Return a bounded Gmail ingress label without exposing request data."""
     if type(error).__name__ == "GmailIngressError":
@@ -2322,8 +2344,12 @@ async def monitor_forever() -> None:
                     logging.exception("GDELT health publication failed; continuing monitor loop")
                 gdelt_baseline = False
             except Exception as error:
-                update_health("gdelt", status="failed", last_failure_at=datetime.now(timezone.utc).isoformat(),
-                              error=gdelt_error_label(error))
+                # Keep the public taxonomy explicit on the failure path.  A
+                # provider error is a completed *failed* scan, not an
+                # unobserved ``not_checked`` state; this prevents Mini App
+                # consumers from confusing an upstream 429/timeout with an
+                # empty event result.
+                update_health("gdelt", **gdelt_failure_health(error))
                 logging.exception("GDELT discovery failed; will wait for the next interval")
                 try:
                     await dispatch_monitor_health(
