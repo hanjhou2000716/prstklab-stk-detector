@@ -71,6 +71,14 @@ class _Client:
         return _Response(_message())
 
 
+class _ExpiredCursorClient(_Client):
+    async def get(self, url, **kwargs):
+        self.calls.append(("GET", url, kwargs))
+        if url.endswith("/history"):
+            return _Response({"error": {"status": "NOT_FOUND"}}, status_code=404)
+        return _Response(_message())
+
+
 def _config() -> GmailWatchConfig:
     return GmailWatchConfig(
         topic_name="projects/test/topics/gmail",
@@ -102,3 +110,23 @@ def test_sync_history_routes_message_and_saves_public_projection(tmp_path) -> No
     assert health["public_observation_count"] == 1
     assert health["source_health"]["financialjuice"]["parsed_count"] == 1
     assert store.cursor()["last_history_id"] == "h1"
+
+
+def test_expired_history_cursor_is_cleared_and_reported_as_gap(tmp_path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(last_history_id="expired")
+    ingress = GmailIngressService(store, _config())
+    result = asyncio.run(
+        sync_gmail_history(_config(), store, ingress, client_factory=_ExpiredCursorClient)
+    )
+    assert result == {
+        "status": "history_cursor_expired",
+        "processed": 0,
+        "failed": 1,
+        "duplicate": 0,
+        "history_gap": True,
+    }
+    cursor = store.cursor()
+    assert cursor["last_history_id"] is None
+    assert cursor["watch_expiration"] is None
+    assert cursor["watch_error"] == "history_cursor_expired"

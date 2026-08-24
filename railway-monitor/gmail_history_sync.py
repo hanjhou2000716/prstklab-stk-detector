@@ -33,6 +33,23 @@ class GmailHistorySyncError(RuntimeError):
     """Bounded, non-sensitive synchronisation failure."""
 
 
+def _recover_expired_cursor(store: EmailStore) -> None:
+    """Clear an expired history cursor and force the next Watch renewal.
+
+    Gmail expires history IDs after a bounded retention window.  Retrying the
+    same ID forever only creates noisy failures and never recovers delivery.
+    Clearing the cursor is fail-closed: the missed interval is explicitly
+    reported as a gap, and the next watch renewal establishes a new baseline.
+    """
+    store.save_cursor(
+        last_history_id=None,
+        watch_expiration=None,
+        watch_error="history_cursor_expired",
+        watch_error_at=datetime.now(UTC).isoformat(),
+        last_full_sync_at=datetime.now(UTC).isoformat(),
+    )
+
+
 def _header(payload: Mapping[str, Any], name: str) -> str:
     for item in payload.get("headers") or ():
         if isinstance(item, Mapping) and str(item.get("name") or "").casefold() == name.casefold():
@@ -199,6 +216,15 @@ async def sync_gmail_history(
         store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
         return {"status": type(error).__name__.lower(), "processed": processed, "failed": failed + 1, "duplicate": duplicate}
     except GmailHistorySyncError as error:
+        if str(error) == "http_404":
+            _recover_expired_cursor(store)
+            return {
+                "status": "history_cursor_expired",
+                "processed": processed,
+                "failed": failed + 1,
+                "duplicate": duplicate,
+                "history_gap": True,
+            }
         store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
         return {"status": str(error), "processed": processed, "failed": failed + 1, "duplicate": duplicate}
     return {"status": "healthy" if failed == 0 else "degraded", "processed": processed, "failed": failed, "duplicate": duplicate}
