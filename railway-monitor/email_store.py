@@ -387,8 +387,10 @@ class EmailStore:
             except (TypeError, json.JSONDecodeError):
                 payload = {}
             if source_name == "financialjuice" and isinstance(payload, dict):
+                is_priority = False
                 try:
-                    if float(payload.get("vendor_importance")) >= 8:
+                    is_priority = float(payload.get("vendor_importance")) >= 8
+                    if is_priority:
                         item["importance_gte_8_count"] += 1
                         note(
                             source_name,
@@ -405,7 +407,10 @@ class EmailStore:
                 ):
                     item["qualifying_item_count"] += 1
                 cluster = str(payload.get("event_cluster_key") or "").strip()
-                if cluster and not bool(payload.get("official_confirmed")):
+                # The decision is for the >=8 vendor-priority lane.  A
+                # routine low-importance cluster must not make that lane look
+                # like it is waiting for confirmation.
+                if is_priority and cluster and not bool(payload.get("official_confirmed")):
                     item["pending_cluster_count"] += 1
                 note(source_name, "last_release_id", payload.get("release_id"))
                 note(source_name, "last_snapshot_id", payload.get("snapshot_id"))
