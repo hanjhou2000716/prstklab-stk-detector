@@ -1,0 +1,58 @@
+{
+  "kind": "external-acceptance-readonly-plus-controlled-photo",
+  "captured_at": "2026-08-24T15:23:45.707459Z",
+  "status": "NEEDS_REVERIFY",
+  "blocking_reasons": ["railway_gdelt:failed"],
+  "side_effects": {
+    "telegram": "single_recipient_only",
+    "railway_write": false,
+    "configuration_changed": false
+  },
+  "pages": {
+    "http_status": 200,
+    "status": "ready",
+    "release_id": "release-be32bbe1a377553f",
+    "market_snapshot_id": "632c92828b4c27a7",
+    "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
+    "event_snapshot_id": "event-a889bf10a4141a3b",
+    "artifact_hash_audit": {
+      "declared_count": 5,
+      "verified_count": 5,
+      "missing_count": 0,
+      "mismatch_count": 0,
+      "error_count": 0,
+      "snapshot_mismatch_count": 0
+    }
+  },
+  "railway": {
+    "http_status": 200,
+    "monitor_status": "running",
+    "heartbeat_status": "healthy",
+    "gmail_watch_status": "healthy",
+    "gdelt_status": "failed",
+    "gdelt_error": "HTTP_429",
+    "gdelt_stale_cache_used": false,
+    "delivery_status": "delivered",
+    "delivery_trace_id": "production-photo-smoke-release-be32bbe1a377553f-53d8408763fa442a",
+    "delivery_receipt_matches_last_outbox": true,
+    "delivered_count": 1,
+    "failed_count": 0,
+    "recipient_count": 1,
+    "retryable_count": 0,
+    "retention_days": 30
+  },
+  "photo_smoke": {
+    "status": "delivered",
+    "release_id": "release-be32bbe1a377553f",
+    "snapshot_id": "632c92828b4c27a7",
+    "card_dimensions": {"width": 1080, "height": 1350},
+    "renderer_error_type": null,
+    "delivery_performed": true
+  },
+  "interpretation": {
+    "pages_release_gate": "pass",
+    "telegram_single_recipient_photo": "pass",
+    "railway_delivery_receipt": "pass",
+    "high_risk_alert_eligibility": "blocked_until_gdelt_recovers_or_is_explicitly_not_required"
+  }
+}
