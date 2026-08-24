@@ -30,6 +30,7 @@ HEALTH_STATE: dict[str, Any] = {
             "queue_pending_count": 0, "dead_letter_count": 0,
             "history_cursor_present": False, "history_cursor_hash": None, "state": "not_checked",
         },
+        "storage": {"status": "not_checked", "durable_volume_detected": False, "state_parent_writable": False, "state_parent_exists": False, "fail_closed_for_high_risk": True},
         "error": None,
     },
     "creator": {

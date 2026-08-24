@@ -14,6 +14,19 @@ from pathlib import Path
 from typing import Any
 
 try:
+    from storage_health import storage_diagnostics
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _storage_spec = spec_from_file_location(
+        "railway_storage_health",
+        Path(__file__).with_name("storage_health.py"),
+    )
+    if _storage_spec is None or _storage_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/storage_health.py") from None
+    _storage_module = module_from_spec(_storage_spec)
+    _storage_spec.loader.exec_module(_storage_module)
+    storage_diagnostics = _storage_module.storage_diagnostics
+
+try:
     from health_contract import gmail_health_fields
 except ModuleNotFoundError:  # pragma: no cover - direct file loading
     _spec = spec_from_file_location("railway_health_contract", Path(__file__).with_name("health_contract.py"))
@@ -66,6 +79,7 @@ def configure_gmail_ingress(
         return ingress, {
             "status": "configuration_missing" if config.missing else "ready",
             **gmail_health_fields(diagnostics),
+            "storage": storage_diagnostics(path),
             # Keep the configuration contract authoritative even when the
             # ingress health payload predates the public ``missing`` field.
             "missing": list(config.missing),

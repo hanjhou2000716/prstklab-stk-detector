@@ -251,6 +251,11 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
                 watch_status = str(state.get("watch_status") or "not_checked")
                 if watch_status not in {"healthy", "active", "no_new_content", "no_event", "not_checked"}:
                     reasons.append(f"railway_gmail_watch:{watch_status}")
+                storage = state.get("storage")
+                if isinstance(storage, dict):
+                    storage_status = str(storage.get("status") or "unknown")
+                    if storage_status != "ready":
+                        reasons.append(f"railway_gmail_persistence:{storage_status}")
                 continue
             # Delivery health is a receipt state, not a provider availability
             # state.  A successful single-recipient acceptance therefore
