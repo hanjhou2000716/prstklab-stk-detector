@@ -568,3 +568,13 @@ priority lane separate from official risk and makes `no_new_content`, pending
 confirmation, and release-review states auditable. Status is
 **partially_integrated** until a real Gmail event and delivery receipt are
 observed on Railway; no synthetic event is used to mark it production.
+
+## Release-bound market-news health
+
+`src/risk_news.py` now passes the per-market official/discovery source rows
+into the canonical `news.intelligence` payload. Each market view includes a
+sanitised `source_health` array, `source_failure_count`, and `collection_state`
+(`ready`, `degraded`, `no_event`, or `source_failed`). This prevents an empty
+news panel from being interpreted as a successful scan when an official feed
+was rate-limited or failed. The schema fields are additive so older release
+artifacts remain readable; newly produced releases always emit them.

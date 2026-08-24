@@ -848,6 +848,14 @@ def build_news_snapshot(
     # never linkable by the frontend or considered public-safe.
     for market in ("taiwan", "us"):
         stories = result.get(market) or []
+        market_health = [
+            row for row in result.get("source_health", [])
+            if isinstance(row, dict)
+            and (
+                row.get("key") == f"news_{market}"
+                or str(row.get("key") or "").startswith(f"official_news_{market}_")
+            )
+        ]
         result.setdefault("intelligence", {})[market] = build_news_intelligence(
             stories,
             market=market,
@@ -857,6 +865,7 @@ def build_news_snapshot(
             topics=(),
             active_event_topics=interest_context["active_event_topics"],
             creator_mentions=interest_context["creator_mentions"],
+            source_health=market_health,
             limit=5,
         )
     result["provider_registry"] = provider_registry()

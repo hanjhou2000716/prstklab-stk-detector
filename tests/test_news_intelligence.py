@@ -102,6 +102,27 @@ def test_news_intelligence_exposes_release_interest_context():
     ]
 
 
+def test_news_intelligence_distinguishes_no_event_from_source_failure():
+    empty = build_news_intelligence(
+        [],
+        market="us",
+        source_health=[{"provider": "fed", "status": "no_event", "item_count": 0}],
+    )
+    failed = build_news_intelligence(
+        [],
+        market="us",
+        source_health=[{
+            "provider": "sec", "status": "failed", "item_count": 0,
+            "error": "RequestsException must not be published",
+        }],
+    )
+    assert empty["collection_state"] == "no_event"
+    assert empty["source_failure_count"] == 0
+    assert failed["collection_state"] == "source_failed"
+    assert failed["source_failure_count"] == 1
+    assert "error" not in failed["source_health"][0]
+
+
 def test_dedup_prefers_official_and_retains_supporting_source():
     stories = [
         {"title": "Fed rates unchanged", "url": "https://news.google.com/rss/articles/1"},
