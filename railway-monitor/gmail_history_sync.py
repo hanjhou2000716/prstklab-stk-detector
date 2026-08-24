@@ -1,0 +1,207 @@
+"""Bounded Gmail History -> canonical parser synchronisation.
+
+The Gmail Watch notification contains only a history cursor.  This adapter
+fetches the corresponding ``messageAdded`` records from the official Gmail
+API, extracts only the fields needed by the existing canonical parser, and
+immediately discards the raw transport payload.  It never persists message
+bodies or attachment bytes.
+"""
+
+from __future__ import annotations
+
+import base64
+import binascii
+from collections.abc import Callable, Mapping
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
+from typing import Any
+
+import httpx
+from email_store import EmailStore
+from gmail_watch import GmailWatchConfig
+
+from gmail_ingress import GmailIngressService
+
+TOKEN_URL = "https://oauth2.googleapis.com/token"
+HISTORY_URL = "https://gmail.googleapis.com/gmail/v1/users/me/history"
+MESSAGE_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
+DEFAULT_MAX_MESSAGES = 50
+MAX_PAGE_SIZE = 100
+
+
+class GmailHistorySyncError(RuntimeError):
+    """Bounded, non-sensitive synchronisation failure."""
+
+
+def _header(payload: Mapping[str, Any], name: str) -> str:
+    for item in payload.get("headers") or ():
+        if isinstance(item, Mapping) and str(item.get("name") or "").casefold() == name.casefold():
+            return str(item.get("value") or "").strip()
+    return ""
+
+
+def _decode(value: Any) -> str:
+    if not value:
+        return ""
+    try:
+        raw = base64.urlsafe_b64decode(str(value) + "=" * (-len(str(value)) % 4))
+        return raw.decode("utf-8", errors="replace")
+    except (ValueError, binascii.Error, UnicodeError):
+        return ""
+
+
+def _walk_text(payload: Mapping[str, Any], parts: list[tuple[str, str]] | None = None) -> list[tuple[str, str]]:
+    found = parts if parts is not None else []
+    mime = str(payload.get("mimeType") or "").casefold()
+    body = payload.get("body") if isinstance(payload.get("body"), Mapping) else {}
+    decoded = _decode(body.get("data")) if isinstance(body, Mapping) else ""
+    if decoded and mime in {"text/plain", "text/html"}:
+        found.append((mime, decoded))
+    for child in payload.get("parts") or ():
+        if isinstance(child, Mapping):
+            _walk_text(child, found)
+    return found
+
+
+def _plain_body(payload: Mapping[str, Any]) -> str:
+    parts = _walk_text(payload)
+    for mime, value in parts:
+        if mime == "text/plain":
+            return value[:256 * 1024]
+    return next((value[:256 * 1024] for _mime, value in parts), "")
+
+
+def _published_at(value: str) -> str | None:
+    if not value:
+        return None
+    try:
+        return parsedate_to_datetime(value).astimezone(UTC).isoformat()
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def message_record(message: Mapping[str, Any]) -> dict[str, Any]:
+    """Convert one Gmail ``format=full`` response into parser input."""
+    payload = message.get("payload") if isinstance(message.get("payload"), Mapping) else {}
+    labels = [str(value) for value in (message.get("labelIds") or ()) if value]
+    internal_ms = message.get("internalDate")
+    received_at = None
+    try:
+        received_at = datetime.fromtimestamp(int(str(internal_ms)) / 1000, UTC).isoformat()
+    except (TypeError, ValueError, OverflowError):
+        pass
+    return {
+        "gmail_message_id": str(message.get("id") or "").strip(),
+        "gmail_thread_id": str(message.get("threadId") or "").strip(),
+        "sender": _header(payload, "From"),
+        "subject": _header(payload, "Subject"),
+        "body": _plain_body(payload),
+        "received_at": received_at,
+        "source_published_at": _published_at(_header(payload, "Date")),
+        "attachments": [
+            {"mime_type": str(child.get("mimeType") or "")}
+            for child in (payload.get("parts") or ())
+            if isinstance(child, Mapping) and child.get("filename")
+        ],
+        "label_ids": labels,
+    }
+
+
+async def _access_token(config: GmailWatchConfig, client: Any) -> str:
+    response = await client.post(
+        TOKEN_URL,
+        data={
+            "client_id": config.oauth_client_id,
+            "client_secret": config.oauth_client_secret,
+            "refresh_token": config.refresh_token,
+            "grant_type": "refresh_token",
+        },
+    )
+    if response.status_code >= 400:
+        raise GmailHistorySyncError(f"http_{response.status_code}")
+    payload = response.json()
+    token = payload.get("access_token") if isinstance(payload, Mapping) else None
+    if not isinstance(token, str) or not token.strip():
+        raise GmailHistorySyncError("access_token_missing")
+    return token
+
+
+async def _get_json(client: Any, url: str, token: str, params: Mapping[str, Any]) -> dict[str, Any]:
+    response = await client.get(url, headers={"Authorization": f"Bearer {token}"}, params=dict(params))
+    if response.status_code >= 400:
+        raise GmailHistorySyncError(f"http_{response.status_code}")
+    payload = response.json()
+    if not isinstance(payload, dict):
+        raise GmailHistorySyncError("invalid_json_response")
+    return payload
+
+
+async def sync_gmail_history(
+    config: GmailWatchConfig,
+    store: EmailStore,
+    ingress: GmailIngressService,
+    *,
+    client_factory: Callable[..., Any] = httpx.AsyncClient,
+    max_messages: int = DEFAULT_MAX_MESSAGES,
+) -> dict[str, Any]:
+    """Process bounded ``messageAdded`` history and return safe counters."""
+    if config.missing:
+        return {"status": "configuration_missing", "processed": 0, "failed": 0}
+    if config.oauth_missing:
+        return {"status": "configuration_missing", "processed": 0, "failed": 0}
+    cursor = store.cursor()
+    history_id = str(cursor.get("last_history_id") or "").strip()
+    if not history_id:
+        store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
+        return {"status": "no_history_cursor", "processed": 0, "failed": 0}
+
+    bounded = max(1, min(MAX_PAGE_SIZE, int(max_messages)))
+    processed = failed = duplicate = 0
+    try:
+        async with client_factory(timeout=config.timeout_seconds, follow_redirects=True) as client:
+            token = await _access_token(config, client)
+            history = await _get_json(
+                client,
+                HISTORY_URL,
+                token,
+                {"startHistoryId": history_id, "historyTypes": "messageAdded", "maxResults": bounded},
+            )
+            message_ids: list[str] = []
+            for row in history.get("history") or ():
+                if not isinstance(row, Mapping):
+                    continue
+                for added in row.get("messagesAdded") or ():
+                    if not isinstance(added, Mapping):
+                        continue
+                    message = added.get("message")
+                    message_id = str(message.get("id") or "").strip() if isinstance(message, Mapping) else ""
+                    if message_id and message_id not in message_ids:
+                        message_ids.append(message_id)
+                    if len(message_ids) >= bounded:
+                        break
+                if len(message_ids) >= bounded:
+                    break
+            for message_id in message_ids:
+                try:
+                    message = await _get_json(client, f"{MESSAGE_URL}/{message_id}", token, {"format": "full"})
+                    result = ingress.accept_email(message_record(message))
+                    processed += 1
+                    if result.get("status") == "duplicate":
+                        duplicate += 1
+                except (GmailHistorySyncError, ValueError, TypeError, KeyError):
+                    failed += 1
+            latest_history = str(history.get("historyId") or "").strip()
+            store.save_cursor(
+                last_history_id=latest_history or history_id,
+                last_full_sync_at=datetime.now(UTC).isoformat(),
+            )
+    except (httpx.TimeoutException, httpx.HTTPError) as error:
+        store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
+        return {"status": type(error).__name__.lower(), "processed": processed, "failed": failed + 1, "duplicate": duplicate}
+    except GmailHistorySyncError as error:
+        store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
+        return {"status": str(error), "processed": processed, "failed": failed + 1, "duplicate": duplicate}
+    return {"status": "healthy" if failed == 0 else "degraded", "processed": processed, "failed": failed, "duplicate": duplicate}
+
+
+__all__ = ["GmailHistorySyncError", "message_record", "sync_gmail_history"]

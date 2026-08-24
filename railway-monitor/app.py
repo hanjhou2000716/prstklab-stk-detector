@@ -89,6 +89,20 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading
     renew_watch_if_due = _gmail_watch_module.renew_watch_if_due
 
 try:
+    from gmail_history_sync import sync_gmail_history as sync_gmail_history_records
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _gmail_history_spec = spec_from_file_location(
+        "railway_gmail_history_sync",
+        Path(__file__).with_name("gmail_history_sync.py"),
+    )
+    if _gmail_history_spec is None or _gmail_history_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/gmail_history_sync.py") from None
+    _gmail_history_module = module_from_spec(_gmail_history_spec)
+    sys.modules[_gmail_history_spec.name] = _gmail_history_module
+    _gmail_history_spec.loader.exec_module(_gmail_history_module)
+    sync_gmail_history_records = _gmail_history_module.sync_gmail_history
+
+try:
     from dispatch_transport import dispatch_repository_payload as send_repository_payload
 except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
     _dispatch_spec = spec_from_file_location(
@@ -1897,6 +1911,24 @@ async def renew_gmail_watch() -> None:
         update_health("gmail", watch_status="failed", error="renewal_exception")
 
 
+async def sync_gmail_history() -> dict[str, Any]:
+    """Fetch and route Gmail history after Pub/Sub advances the cursor."""
+    if EMAIL_INGRESS is None:
+        return {"status": "not_configured", "processed": 0, "failed": 0}
+    try:
+        result = await sync_gmail_history_records(
+            EMAIL_INGRESS.config,
+            EMAIL_INGRESS.store,
+            EMAIL_INGRESS,
+            max_messages=max(1, int(os.environ.get("GMAIL_HISTORY_MAX_MESSAGES", "50"))),
+        )
+        sync_external_source_health(EMAIL_INGRESS.health())
+        return result
+    except Exception as error:  # pragma: no cover - monitor must continue polling
+        logging.exception("Gmail history sync failed; will retry")
+        return {"status": type(error).__name__, "processed": 0, "failed": 1}
+
+
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         # Monitoring probes and browser cache-busting commonly append a
@@ -2128,6 +2160,13 @@ async def monitor_forever() -> None:
             # Maintenance must never stop a fresh source poll or a retry pass.
             logging.exception("Delivery history retention cleanup failed; continuing monitor cycle")
         await renew_gmail_watch()
+        gmail_sync = await sync_gmail_history()
+        if gmail_sync.get("processed") or gmail_sync.get("failed"):
+            logging.info(
+                "Gmail history sync status=%s processed=%s failed=%s duplicate=%s",
+                gmail_sync.get("status"), gmail_sync.get("processed", 0),
+                gmail_sync.get("failed", 0), gmail_sync.get("duplicate", 0),
+            )
         try:
             retried = await retry_due_outbox(
                 store,

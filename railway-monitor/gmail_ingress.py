@@ -152,8 +152,24 @@ class GmailIngressService:
         if not claimed:
             observation["parse_status"] = "duplicate"
             return {"accepted": False, "status": "duplicate", "observation": observation}
+        public_rows = parsed.get("public_observations")
+        saved_public = 0
+        if isinstance(public_rows, list):
+            for row in public_rows:
+                if not isinstance(row, dict):
+                    continue
+                try:
+                    if self.store.save_public_observation(row):
+                        saved_public += 1
+                except (TypeError, ValueError):
+                    # A malformed derived row is isolated to this message;
+                    # the private observation remains durably recorded and
+                    # the parser contract exposes the failure on the next
+                    # health projection rather than dropping the whole batch.
+                    continue
+        observation["public_observation_count"] = saved_public
         self.store.save_cursor(last_message_id=message_id, last_notification_at=_now(), last_sync_at=_now())
-        return {"accepted": True, "status": parsed["parse_status"], "observation": observation}
+        return {"accepted": True, "status": parsed["parse_status"], "observation": observation, "public_observation_count": saved_public}
 
     def health(self) -> dict[str, Any]:
         store_health = self.store.health()
