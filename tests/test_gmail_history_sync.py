@@ -1,11 +1,16 @@
 import asyncio
 import base64
+import sys
+from pathlib import Path
 
-from email_store import EmailStore
-from gmail_history_sync import message_record, sync_gmail_history
-from gmail_watch import GmailWatchConfig
+RAILWAY_MODULES = Path(__file__).parents[1] / "railway-monitor"
+sys.path.insert(0, str(RAILWAY_MODULES))
 
-from gmail_ingress import GmailIngressService
+from email_store import EmailStore  # noqa: E402
+from gmail_history_sync import message_record, sync_gmail_history  # noqa: E402
+from gmail_watch import GmailWatchConfig  # noqa: E402
+
+from gmail_ingress import GmailIngressService  # noqa: E402
 
 
 def _encoded(value: str) -> str:
