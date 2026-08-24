@@ -56,3 +56,25 @@ The companion [IAM audit](google-cloud-gmail-iam-audit-20260824.md) records the
 observed push settings and the project-level `calendar-reader` Editor finding.
 Permission reduction remains a separately confirmed change; it must not be
 papered over by creating a service-account key.
+
+## Read-only IAM audit
+
+Before changing a policy, export the project policy and (separately) the Gmail
+Watch topic policy. The repository includes a deterministic, read-only audit:
+
+```powershell
+gcloud projects get-iam-policy calendar-automation-497107 --format=json > project-iam.json
+gcloud pubsub topics get-iam-policy prstk-gmail-watch --project=calendar-automation-497107 --format=json > topic-iam.json
+python -m src.gcp_iam_audit project-iam.json `
+  --protected-principal serviceAccount:calendar-reader@calendar-automation-497107.iam.gserviceaccount.com `
+  --protected-principal serviceAccount:prstk-gmail-pubsub@calendar-automation-497107.iam.gserviceaccount.com `
+  --topic-policy topic-iam.json `
+  --publisher-principal serviceAccount:prstk-gmail-pubsub@calendar-automation-497107.iam.gserviceaccount.com
+```
+
+Exit status 1 means a protected identity has a broad project role or the
+Pub/Sub publisher binding is absent. The command never grants or revokes IAM,
+never creates a service-account key, and prints no OAuth or mailbox secret.
+The `calendar-reader` Editor finding from the 2026-08-24 audit must be removed
+by an authorised project administrator after reviewing the required resource
+roles; do not replace it blindly with a guessed role.
