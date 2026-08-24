@@ -1460,6 +1460,38 @@ def test_delivery_receipt_can_be_saved_from_health_server_thread(tmp_path):
     assert result == [True]
 
 
+def test_delivery_history_can_be_read_from_health_server_thread(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    alert = monitor.Alert("history-thread", "macro", "CPI release", "2026-08-02T10:00:00+00:00")
+    trace_id = store.record_outbox(alert, {"summary": alert.summary})
+    result: list[list[dict[str, object]]] = []
+
+    def health_thread() -> None:
+        result.append(store.delivery_history(limit=5))
+
+    thread = threading.Thread(target=health_thread)
+    thread.start()
+    thread.join(timeout=5)
+    assert not thread.is_alive()
+    assert result and result[0][0]["trace_id"] == trace_id
+
+
+def test_delivery_diagnostics_can_be_read_from_health_server_thread(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    alert = monitor.Alert("diagnostics-thread", "macro", "CPI release", "2026-08-02T10:00:00+00:00")
+    store.record_outbox(alert, {"summary": alert.summary})
+    result: list[dict[str, object]] = []
+
+    def health_thread() -> None:
+        result.append(store.delivery_diagnostics())
+
+    thread = threading.Thread(target=health_thread)
+    thread.start()
+    thread.join(timeout=5)
+    assert not thread.is_alive()
+    assert result and result[0]["counts"]["pending"] == 1
+
+
 def test_health_endpoint_accepts_cache_busting_query_string():
     assert monitor._health_request_path("/health?ts=31353476129") == "/health"
     assert monitor._health_request_path("/") == "/"

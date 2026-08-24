@@ -28,6 +28,8 @@ _PUBLIC_FIELD_TYPES: dict[str, dict[str, str]] = {
         "last_received_at": "timestamp",
         "last_parsed_at": "timestamp",
         "last_failure_at": "timestamp",
+        "last_failure_reason": "text",
+        "failure_reason_counts": "mapping",
         "last_telegram_delivery_at": "timestamp",
         "last_telegram_delivery_status": "text",
     },
@@ -43,6 +45,8 @@ _PUBLIC_FIELD_TYPES: dict[str, dict[str, str]] = {
         "last_received_at": "timestamp",
         "last_parsed_at": "timestamp",
         "last_failure_at": "timestamp",
+        "last_failure_reason": "text",
+        "failure_reason_counts": "mapping",
         "last_importance_gte_8_at": "timestamp",
         "decision": "text",
         "last_release_id": "text",
@@ -78,6 +82,16 @@ def _counter(value: Any) -> int | None:
 def _project_value(value: Any, kind: str) -> Any:
     if kind == "counter":
         return _counter(value)
+    if kind == "mapping":
+        if not isinstance(value, dict):
+            return None
+        projected: dict[str, int] = {}
+        for key, count in sorted(value.items(), key=lambda pair: (-int(pair[1]) if isinstance(pair[1], int) else 0, str(pair[0])))[:8]:
+            reason = _bounded_text(str(key))
+            parsed = _counter(count)
+            if reason is not None and parsed is not None:
+                projected[reason] = parsed
+        return projected
     # Timestamps are intentionally treated as bounded text here.  The health
     # endpoint is diagnostic, while timestamp semantics are validated by the
     # producer and release contracts; keeping this adapter dependency-free is

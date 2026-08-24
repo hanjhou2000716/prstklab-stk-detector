@@ -1085,6 +1085,21 @@ class SeenStore:
         initialize_state_schema(self.connection)
         self.connection.commit()
 
+    def _connection_for_thread(self) -> tuple[sqlite3.Connection, bool]:
+        """Return a connection owned by the current thread.
+
+        The monitor loop keeps one connection for its own writes, while the
+        HTTP health/callback server runs in worker threads.  Reusing the loop
+        connection from a worker raises sqlite3.ProgrammingError and makes
+        otherwise healthy Railway probes fail with 500.  Worker connections
+        are short-lived and are closed by the caller.
+        """
+        if threading.get_ident() == self.owner_thread_id:
+            return self.connection, False
+        db = sqlite3.connect(self.path, timeout=5)
+        db.execute("PRAGMA busy_timeout=5000")
+        return db, True
+
     def record_incoming_flash(self, flash: Flash, classification_reason: str | None = None) -> None:
         store_record_incoming_flash(
             self.connection,
@@ -1138,11 +1153,25 @@ class SeenStore:
 
     def delivery_history(self, db: sqlite3.Connection | None = None, limit: int = 10) -> list[dict[str, Any]]:
         """Return a bounded, non-secret recent delivery history for health checks."""
-        return store_delivery_history(db or self.connection, limit=limit, age_seconds_fn=_age_seconds)
+        owned = False
+        if db is None:
+            db, owned = self._connection_for_thread()
+        try:
+            return store_delivery_history(db, limit=limit, age_seconds_fn=_age_seconds)
+        finally:
+            if owned:
+                db.close()
 
     def delivery_diagnostics(self, db: sqlite3.Connection | None = None) -> dict[str, Any]:
         """Return non-secret delivery state for Railway's health endpoint."""
-        return store_delivery_diagnostics(db or self.connection, age_seconds_fn=_age_seconds)
+        owned = False
+        if db is None:
+            db, owned = self._connection_for_thread()
+        try:
+            return store_delivery_diagnostics(db, age_seconds_fn=_age_seconds)
+        finally:
+            if owned:
+                db.close()
 
     def prune_delivery_history(self, retention_days: int = 30, limit: int = 500) -> int:
         """Remove bounded, terminal delivery history after the retention window.
@@ -1157,134 +1186,11 @@ class SeenStore:
 
     def record_delivery_status(self, payload: dict[str, Any]) -> bool:
         """Persist an authenticated GitHub per-run delivery receipt."""
-        callback_connection = threading.get_ident() != self.owner_thread_id
-        db = sqlite3.connect(self.path, timeout=5) if callback_connection else self.connection
+        db, callback_connection = self._connection_for_thread()
         try:
-            db.execute("PRAGMA busy_timeout=5000")
             accepted = store_record_delivery_status(db, payload)
-            update_health("delivery", **self.delivery_diagnostics(db))
+            update_health("delivery", **store_delivery_diagnostics(db, age_seconds_fn=_age_seconds))
             return accepted
-        finally:
-            if callback_connection:
-                db.close()
-        trace_id = str(payload.get("trace_id") or "").strip()
-        receipt_kind = str(payload.get("receipt_kind") or "production").strip()
-        status = str(payload.get("delivery_status") or "unknown").strip()
-        if receipt_kind not in {"production", "photo_smoke", "creator"}:
-            raise ValueError("invalid delivery receipt kind")
-        if not trace_id or status not in {"delivered", "partial", "failed"}:
-            raise ValueError("invalid delivery receipt")
-        failed_hashes = payload.get("failed_recipient_hashes") or []
-        if not isinstance(failed_hashes, list) or any(not isinstance(item, str) for item in failed_hashes):
-            raise ValueError("invalid failed recipient hashes")
-        delivered_count = _non_negative_int(payload.get("delivered_count", 0))
-        failed_count = _non_negative_int(payload.get("failed_count", 0))
-        if delivered_count is None or failed_count is None:
-            raise ValueError("invalid delivery counts")
-        reported_at = str(payload.get("reported_at") or "")[:80] or None
-        callback_connection = threading.get_ident() != self.owner_thread_id
-        db = sqlite3.connect(self.path, timeout=5) if callback_connection else self.connection
-        try:
-            db.execute("PRAGMA busy_timeout=5000")
-            now = datetime.now(timezone.utc).isoformat()
-            exists = db.execute(
-                "SELECT 1 FROM delivery_outbox WHERE trace_id = ?", (trace_id,)
-            ).fetchone()
-            if exists is None:
-                # A scoped photo smoke test is intentionally emitted before
-                # any Railway outbox row exists.  Accept only this explicit,
-                # non-production contract.  Production GitHub Actions jobs
-                # publish immutable release metadata before the callback, but
-                # do not create a Railway outbox row.  The signed callback is
-                # therefore allowed to register that row when it carries the
-                # complete release/snapshot/alert tuple and explicit origin.
-                photo_smoke = (
-                    receipt_kind == "photo_smoke"
-                    and (
-                        (
-                            payload.get("release_id") == "photo-smoke-test"
-                            and payload.get("snapshot_id") == "photo-smoke-test"
-                            and payload.get("alert_id") == "photo-smoke-test"
-                        )
-                        or (
-                            payload.get("receipt_origin") == "github_actions"
-                            and bool(payload.get("release_id"))
-                            and bool(payload.get("snapshot_id"))
-                            and bool(payload.get("alert_id"))
-                        )
-                    )
-                    and payload.get("delivery_mode") == "photo"
-                )
-                creator_receipt = (
-                    receipt_kind == "creator"
-                    and payload.get("receipt_origin") == "github_actions"
-                    and bool(payload.get("release_id"))
-                    and bool(payload.get("snapshot_id"))
-                    and bool(payload.get("alert_id"))
-                    and payload.get("delivery_mode") in {"photo", "text"}
-                )
-                production_receipt = (
-                    receipt_kind == "production"
-                    and payload.get("receipt_origin") == "github_actions"
-                    and bool(payload.get("release_id"))
-                    and bool(payload.get("snapshot_id"))
-                    and bool(payload.get("alert_id"))
-                    and payload.get("delivery_mode") in {"text", "photo"}
-                )
-                if not (photo_smoke or creator_receipt or production_receipt):
-                    logging.warning("delivery receipt for unknown trace_id=%s", trace_id)
-                    return False
-                smoke_payload = {
-                    "receipt_kind": receipt_kind,
-                    "receipt_origin": payload.get("receipt_origin"),
-                    "release_id": payload.get("release_id"),
-                    "snapshot_id": payload.get("snapshot_id"),
-                    "alert_id": payload.get("alert_id"),
-                    "delivery_mode": payload.get("delivery_mode"),
-                    "notification_keys": [
-                        str(item)[:160] for item in (payload.get("notification_keys") or [])
-                        if isinstance(item, str) and item.strip()
-                    ][:200],
-                }
-                db.execute(
-                    """INSERT INTO delivery_outbox(
-                        trace_id,canonical_key,source,event_id,category,payload_json,
-                        status,created_at,updated_at
-                    ) VALUES(?,?,?,?,?,?,?, ?, ?)""",
-                    (
-                        trace_id,
-                        (
-                            f"photo-smoke:{trace_id}"
-                            if photo_smoke
-                            else f"github-actions:{payload.get('alert_id')}"
-                        ),
-                        "github_actions",
-                        payload.get("alert_id") or "photo-smoke-test",
-                        "photo_smoke" if photo_smoke else "creator_receipt" if creator_receipt else "production_receipt",
-                        json.dumps(smoke_payload, ensure_ascii=False, sort_keys=True),
-                        status,
-                        now,
-                        now,
-                    ),
-                )
-            db.execute(
-                "UPDATE delivery_outbox SET status=?, last_error=?, updated_at=? WHERE trace_id=?",
-                (status, None if status == "delivered" else "recipient delivery incomplete", now, trace_id),
-            )
-            for recipient_hash in failed_hashes:
-                db.execute(
-                    "INSERT OR REPLACE INTO delivery_receipts(trace_id,recipient_hash,status,error,updated_at) VALUES(?,?,?,?,?)",
-                    (trace_id, recipient_hash[:128], "failed", "recipient delivery failed", now),
-                )
-            db.execute(
-                """INSERT OR REPLACE INTO delivery_receipts(
-                    trace_id,recipient_hash,status,error,delivered_count,failed_count,reported_at,updated_at
-                ) VALUES(?,?,?,?,?,?,?,?)""",
-                (trace_id, "__aggregate__", status, None, delivered_count, failed_count, reported_at, now),
-            )
-            db.commit()
-            update_health("delivery", **self.delivery_diagnostics(db))
-            return True
         finally:
             if callback_connection:
                 db.close()
@@ -2389,7 +2295,13 @@ async def monitor_forever() -> None:
                 # consumers from confusing an upstream 429/timeout with an
                 # empty event result.
                 update_health("gdelt", **gdelt_failure_health(error))
-                logging.exception("GDELT discovery failed; will wait for the next interval")
+                if health_snapshot().get("gdelt", {}).get("error") == "HTTP_429":
+                    # 429 is an expected provider back-pressure response.  It
+                    # remains fail-closed and backoff-protected, but should
+                    # not flood Railway logs with a traceback every poll.
+                    logging.warning("GDELT rate limited; backoff active; waiting for the next interval")
+                else:
+                    logging.exception("GDELT discovery failed; will wait for the next interval")
                 try:
                     await dispatch_monitor_health(
                         token=github_token,
