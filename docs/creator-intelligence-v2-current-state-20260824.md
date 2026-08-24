@@ -79,6 +79,13 @@ FinancialJuice remain explicit `no_new_content`. Pages is `ready` with 5/5
 artifact hashes verified. GDELT remains `HTTP_429` under bounded backoff, so
 the capture remains `NEEDS_REVERIFY`.
 
+The subsequent read-only capture at `2026-08-24T01:39:31Z` is recorded in
+[`docs/evidence/external-acceptance-2026-08-24T0139Z.md`](evidence/external-acceptance-2026-08-24T0139Z.md).
+It confirms that Railway and the Gmail Watch remain healthy, Creator and
+FinancialJuice remain explicit `no_new_content`, and Pages still verifies all
+five declared artifacts. GDELT remains rate-limited with `HTTP_429`, so the
+external completion debt remains open.
+
 ## Rollback
 
 This document is additive. Reverting its PR does not change runtime behavior.
