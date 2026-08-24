@@ -6,8 +6,8 @@ from pathlib import Path
 RAILWAY_MODULES = Path(__file__).parents[1] / "railway-monitor"
 sys.path.insert(0, str(RAILWAY_MODULES))
 
-from email_store import EmailStore  # noqa: E402
 from email_router import route_source  # noqa: E402
+from email_store import EmailStore  # noqa: E402
 from gmail_history_sync import _decode_header_value, message_record, sync_gmail_history  # noqa: E402
 from gmail_watch import GmailWatchConfig  # noqa: E402
 
