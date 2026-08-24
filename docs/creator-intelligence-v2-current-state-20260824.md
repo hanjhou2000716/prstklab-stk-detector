@@ -86,6 +86,13 @@ FinancialJuice remain explicit `no_new_content`, and Pages still verifies all
 five declared artifacts. GDELT remains rate-limited with `HTTP_429`, so the
 external completion debt remains open.
 
+The latest read-only capture at `2026-08-24T02:00:50Z` is recorded in
+[`docs/evidence/external-acceptance-2026-08-24T0200Z.md`](evidence/external-acceptance-2026-08-24T0200Z.md).
+It verifies the same fail-closed boundary after the next Railway cycle:
+Railway/Gmail/Gmail Watch remain healthy, Creator and FinancialJuice are
+explicitly empty polls, Pages is `ready` with all five hashes verified, and
+GDELT remains the only blocking upstream failure (`HTTP_429`).
+
 ## Rollback
 
 This document is additive. Reverting its PR does not change runtime behavior.
