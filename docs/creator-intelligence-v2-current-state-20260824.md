@@ -104,6 +104,12 @@ passed`; full repository suite `1383 passed`; canonical bundle check and
 are still required before changing the external rows above to
 `PASS-EXTERNAL`.
 
+The Gmail History adapter also now handles an expired history ID explicitly:
+a `404` clears the invalid cursor, marks `history_cursor_expired` with
+`history_gap=true`, and forces the next bounded Watch renewal to establish a
+new baseline.  It does not pretend that messages in the expired interval were
+recovered, and it prevents an infinite retry loop against the same cursor.
+
 The latest read-only capture at `2026-08-24T02:00:50Z` is recorded in
 [`docs/evidence/external-acceptance-2026-08-24T0200Z.md`](evidence/external-acceptance-2026-08-24T0200Z.md).
 It verifies the same fail-closed boundary after the next Railway cycle:
