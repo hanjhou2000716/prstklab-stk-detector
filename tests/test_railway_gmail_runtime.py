@@ -44,6 +44,14 @@ def test_configured_runtime_returns_ingress_and_redacted_health():
         "watch_status": "healthy",
         "missing": [],
         "observability": {"parser_error_count": 0},
+        "storage": {
+            "status": "unknown",
+            "durable_volume_detected": False,
+            "state_parent_writable": True,
+            "state_parent_exists": True,
+            "expected_volume_path": "/data",
+            "fail_closed_for_high_risk": True,
+        },
         "error": None,
     }
 

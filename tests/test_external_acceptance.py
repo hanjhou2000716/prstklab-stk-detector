@@ -112,6 +112,28 @@ def test_capture_accepts_a_successful_delivery_receipt() -> None:
     assert report["blocking_reasons"] == []
 
 
+def test_capture_fails_closed_when_delivery_storage_is_not_durable() -> None:
+    health = {
+        "status": "ok",
+        "service": "monitor",
+        "gmail": {"status": "healthy", "watch_status": "healthy"},
+        "gdelt": {"status": "no_event"},
+        "delivery": {
+            "status": "delivered",
+            "storage": {"status": "unknown", "durable_volume_detected": False},
+        },
+    }
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([_Response(200, health), _Response(200, manifest), _Response(200, None, artifact)]),
+    )
+    assert report["status"] == "NEEDS_REVERIFY"
+    assert report["blocking_reasons"] == ["railway_delivery_persistence:unknown"]
+
+
 def test_capture_distinguishes_configured_gmail_from_failed_watch() -> None:
     health = {
         "status": "ok",
