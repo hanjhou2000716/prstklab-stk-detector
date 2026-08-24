@@ -1,7 +1,7 @@
 {
-  "release_id": "release-cb08458d6fd306a9",
-  "created_at": "2026-08-24T05:09:07.275036+00:00",
-  "market_snapshot_id": "95850cd3b84090ee",
+  "release_id": "release-9716eb85621f4593",
+  "created_at": "2026-08-24T05:17:03.493195+00:00",
+  "market_snapshot_id": "3258e6f19b3c204a",
   "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
   "event_snapshot_id": "event-a889bf10a4141a3b",
   "backtest_release": null,
@@ -163,36 +163,42 @@
     "research": "2.0",
     "events": "1",
     "news": "1.0",
-    "creator_insights": null
+    "creator_insights": "1.0"
   },
   "artifact_hashes": {
-    "market.json": "be4e54a51c439cc4b40c437b33e046558b79f00bb395adff09e1ce621c5c898c",
+    "market.json": "b5aca69e389eb59f483f03c1fdb8aa5e640fb906f52022a7e408a99e67c21749",
     "research-report.json": "1961992e8cee354fd6c6760acde8b6ab3d9e013cd26645439a9c48d2e5b3f15f",
     "event-ledger.json": "348232cf2f3b13202c4acededd9066649c3c83020ace800f181a8a578a578fff",
-    "source-health.json": "376afeab83f5a72d9ad35206605e7229764ce92bb73140b0759d16874f39de42",
-    "news.json": "2dadb32b3e96df8d9a72b69365e38aa6b8c29f7a69d54166f4839ad69b22bdc3"
+    "source-health.json": "7169a254db62a8a533b762b89c09d244ea9b97d08849ad63a782f3c076bb6d8b",
+    "news.json": "e45f0d898e67ce5066b11fb78cf23c6cfaa58adbf9fc222a3a29a88522313e26",
+    "creator-release.json": "955340ec4dfe838ca43f8bc66afc48924ad08c1a534da1268228fa86adb83592",
+    "creator-insights.json": "40423742da011efc8857638e7cb38b2d4b02bdbf29dcb411ab9971878e169251"
   },
   "artifact_paths": {
     "market.json": "data/market.json",
     "research-report.json": "data/research-report.json",
     "event-ledger.json": "data/event-ledger.json",
     "source-health.json": "data/source-health.json",
-    "news.json": "data/news.json"
+    "news.json": "data/news.json",
+    "creator-release.json": "data/creator-release.json",
+    "creator-insights.json": "data/creator-insights.json"
   },
-  "normalization_notes": [],
+  "normalization_notes": [
+    "market: indices[0].quote_source=Yahoo"
+  ],
   "research_freshness": "stale_fallback",
   "research_fallback_used": false,
   "research_fallback_reason": null,
-  "creator_release_id": null,
-  "creator_status": "not_available",
+  "creator_release_id": "creator-79f7793e30d30ecb",
+  "creator_status": "ready",
   "creator_validation_errors": [],
-  "creator_artifact_hash": null,
-  "creator_input_hash": null,
-  "creator_public_status": "not_available",
+  "creator_artifact_hash": "1f93a7718140ccd37e42c07c6ef18500f97303f7deafc9f97b213876583a6c22",
+  "creator_input_hash": "7207f7913baa01c1fc7fa6ed7bcd04679546a62b30801d3098aeb528253613b1",
+  "creator_public_status": "ready",
   "creator_public_validation_errors": [],
-  "creator_snapshot_id": null,
-  "creator_public_artifact_hash": null,
-  "news_snapshot_id": "news-ba334a0047052136",
+  "creator_snapshot_id": "creator-79f7793e30d30ecb",
+  "creator_public_artifact_hash": "40423742da011efc8857638e7cb38b2d4b02bdbf29dcb411ab9971878e169251",
+  "news_snapshot_id": "news-267324785e3201d3",
   "news_status": "ready",
   "external_observation_count": 0,
   "external_observation_ids_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
