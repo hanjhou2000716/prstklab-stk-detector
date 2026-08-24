@@ -1,7 +1,7 @@
 {
-  "release_id": "release-8486bf6cd0469dde",
-  "created_at": "2026-08-24T17:04:16.410736+00:00",
-  "market_snapshot_id": "5cbff19d76e97c91",
+  "release_id": "release-a8a57cc46c1bd7fc",
+  "created_at": "2026-08-24T17:07:40.220992+00:00",
+  "market_snapshot_id": "8cceab9fd5640bbf",
   "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
   "event_snapshot_id": "event-2668aef41e66e57b",
   "backtest_release": null,
@@ -166,11 +166,11 @@
     "creator_insights": null
   },
   "artifact_hashes": {
-    "market.json": "2a27de553b8719a58678ec3b0d469f4d294f912870e053fa57cebe349d2c6df9",
+    "market.json": "fe4fcc2d6614833c5d5f1603b1e6908f18e647e062d63780707a07cabc0fa139",
     "research-report.json": "1961992e8cee354fd6c6760acde8b6ab3d9e013cd26645439a9c48d2e5b3f15f",
     "event-ledger.json": "80e2c1c6d4b0545b498d6086a2690f32e6e5a0a3634ff44ca6efdf7bd293d428",
-    "source-health.json": "1cf6439eb90764a5b12c0418c3476d869ffc4b6b3258087edc099b2647956ce9",
-    "news.json": "6b423a2d0f996566c1f8cdf6b01282311b526f28f7281ca89f6d6600568991f6"
+    "source-health.json": "77d830160dc47e5d81805bd6b49043254a48aaaa793ecdebed29ca614d55e1a9",
+    "news.json": "1d56035d5d1efb35de3f13b49b2811b4091102b64abfa2166f6dc7c3daa78393"
   },
   "artifact_paths": {
     "market.json": "data/market.json",
@@ -179,7 +179,10 @@
     "source-health.json": "data/source-health.json",
     "news.json": "data/news.json"
   },
-  "normalization_notes": [],
+  "normalization_notes": [
+    "market: indices[1].technical_context_stale=true",
+    "events: snapshot_id=deterministic"
+  ],
   "research_freshness": "stale_fallback",
   "research_fallback_used": false,
   "research_fallback_reason": null,
@@ -192,7 +195,7 @@
   "creator_public_validation_errors": [],
   "creator_snapshot_id": null,
   "creator_public_artifact_hash": null,
-  "news_snapshot_id": "news-0d68b1b1ae7fa445",
+  "news_snapshot_id": "news-a70cfdcb7f9cc95e",
   "news_status": "ready",
   "external_observation_count": null,
   "external_observation_ids_hash": null,
