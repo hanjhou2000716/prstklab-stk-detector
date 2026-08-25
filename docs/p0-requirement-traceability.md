@@ -96,3 +96,19 @@ Verification on the continuation branch:
 
 This is branch-level evidence only. Live Railway volume continuity and the
 post-merge Pages/Mini App/Telegram acceptance gates remain `NEEDS_REVERIFY`.
+
+### 2026-08-25 read-only external acceptance refresh
+
+The public Railway health endpoint and Pages release were probed again after
+the durable health-history change. The redacted capture is retained at
+[`docs/evidence/external-acceptance-2026-08-25T0820Z.json`](evidence/external-acceptance-2026-08-25T0820Z.json).
+Railway returned HTTP 200 with a running monitor, healthy heartbeat, healthy
+Jin10 and Gmail Watch, and the canonical shared-secret name active without
+exposing values. Pages returned `status=ready`; all five declared artifact
+hashes and market/research/event snapshot bindings matched.
+
+This evidence does **not** close the external gate: GDELT remained explicitly
+`HTTP_429`, the last aggregate delivery receipt was partial (4 of 7), and the
+public health projection cannot prove durable Railway volume continuity. No
+Telegram message, Railway write, configuration change, or credential access
+was performed by this probe.
