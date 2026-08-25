@@ -22,6 +22,10 @@ from urllib.parse import urljoin, urlparse, urlsplit, urlunparse
 
 import requests
 
+from src.artifact_contract import validate_news_release
+from src.creator_artifact import validate_creator_artifact
+from src.creator_release import validate_creator_release
+
 SAFE_HEALTH_KEYS = {
     "status", "service", "started_at", "last_success_at", "last_failure_at",
     "item_count", "article_count", "alert_count", "pending_count",
@@ -313,9 +317,11 @@ def _artifact_hash_audit(
         "mismatch_count": 0,
         "error_count": 0,
         "snapshot_mismatch_count": 0,
+        "lineage_mismatch_count": 0,
         "mismatches": [],
         "errors": [],
         "snapshot_errors": [],
+        "lineage_errors": [],
     }
     reasons: list[str] = []
     if not isinstance(hashes, dict) or not hashes:
@@ -355,42 +361,96 @@ def _artifact_hash_audit(
             reasons.append(f"pages_artifact_hash_mismatch:{artifact_name}")
             continue
         if artifact_name in {
-            "market.json", "research-report.json", "event-ledger.json"
+            "market.json", "research-report.json", "event-ledger.json",
+            "news.json", "creator-release.json", "creator-insights.json",
         }:
             try:
                 decoded = json.loads(content.decode("utf-8"))
             except (UnicodeError, json.JSONDecodeError):
                 decoded = None
-            expected_snapshot_key = {
-                "market.json": "market_snapshot_id",
-                "research-report.json": "research_snapshot_id",
-                "event-ledger.json": "event_snapshot_id",
-            }[artifact_name]
-            expected_snapshot = str(manifest.get(expected_snapshot_key) or "").strip()
-            actual_snapshot = (
-                str(decoded.get("snapshot_id") or "").strip()
-                if isinstance(decoded, dict)
-                else ""
-            )
             if not isinstance(decoded, dict):
                 audit["error_count"] += 1
                 audit["errors"].append(artifact_name)
                 reasons.append(f"pages_artifact_json_invalid:{artifact_name}")
                 continue
-            if not expected_snapshot:
-                audit["snapshot_mismatch_count"] += 1
-                audit["snapshot_errors"].append(artifact_name)
-                reasons.append(f"pages_manifest_snapshot_missing:{artifact_name}")
-                continue
-            if actual_snapshot != expected_snapshot:
-                audit["snapshot_mismatch_count"] += 1
-                audit["snapshot_errors"].append(artifact_name)
-                reasons.append(f"pages_artifact_snapshot_mismatch:{artifact_name}")
+            if artifact_name in {"market.json", "research-report.json", "event-ledger.json"}:
+                expected_snapshot_key = {
+                    "market.json": "market_snapshot_id",
+                    "research-report.json": "research_snapshot_id",
+                    "event-ledger.json": "event_snapshot_id",
+                }[artifact_name]
+                expected_snapshot = str(manifest.get(expected_snapshot_key) or "").strip()
+                actual_snapshot = str(decoded.get("snapshot_id") or "").strip()
+                if not expected_snapshot:
+                    audit["snapshot_mismatch_count"] += 1
+                    audit["snapshot_errors"].append(artifact_name)
+                    reasons.append(f"pages_manifest_snapshot_missing:{artifact_name}")
+                    continue
+                if actual_snapshot != expected_snapshot:
+                    audit["snapshot_mismatch_count"] += 1
+                    audit["snapshot_errors"].append(artifact_name)
+                    reasons.append(f"pages_artifact_snapshot_mismatch:{artifact_name}")
+                    continue
+            lineage_errors: list[str] = []
+            contract_errors: list[str] = []
+            if artifact_name == "news.json":
+                contract_errors = validate_news_release(decoded)
+                expected_market = str(manifest.get("market_snapshot_id") or "")
+                if expected_market and str(decoded.get("market_snapshot_id") or "") != expected_market:
+                    lineage_errors.append("market_snapshot_id")
+                expected_news = str(manifest.get("news_snapshot_id") or "")
+                if expected_news and str(decoded.get("snapshot_id") or "") != expected_news:
+                    lineage_errors.append("snapshot_id")
+                if manifest.get("news_status") == "ready" and decoded.get("status") not in {"ready", "no_event"}:
+                    lineage_errors.append("status")
+            elif artifact_name == "creator-release.json":
+                contract_errors = validate_creator_release(
+                    decoded,
+                    parent_manifest={
+                        "release_id": manifest.get("release_id"),
+                        "market_snapshot_id": manifest.get("market_snapshot_id"),
+                        "research_snapshot_id": manifest.get("research_snapshot_id"),
+                        "event_snapshot_id": manifest.get("event_snapshot_id"),
+                    },
+                )
+                expected_release = str(manifest.get("creator_release_id") or "")
+                if expected_release and str(decoded.get("release_id") or "") != expected_release:
+                    lineage_errors.append("release_id")
+                for field in ("market_snapshot_id", "research_snapshot_id", "event_snapshot_id"):
+                    expected = str(manifest.get(field) or "")
+                    if expected and str(decoded.get(field) or "") != expected:
+                        lineage_errors.append(field)
+                if manifest.get("creator_status") == "ready" and decoded.get("status") != "ready":
+                    lineage_errors.append("status")
+            elif artifact_name == "creator-insights.json":
+                contract_errors = validate_creator_artifact(decoded)
+                expected_parent = str(manifest.get("release_id") or "")
+                if expected_parent and str(decoded.get("parent_release_id") or "") != expected_parent:
+                    lineage_errors.append("parent_release_id")
+                for field in ("market_snapshot_id", "research_snapshot_id", "event_snapshot_id"):
+                    expected = str(manifest.get(field) or "")
+                    if expected and str(decoded.get(field) or "") != expected:
+                        lineage_errors.append(field)
+                expected_creator = str(manifest.get("creator_snapshot_id") or "")
+                if expected_creator and str(decoded.get("snapshot_id") or "") != expected_creator:
+                    lineage_errors.append("snapshot_id")
+                if manifest.get("creator_public_status") == "ready" and decoded.get("status") != "ready":
+                    lineage_errors.append("status")
+            if contract_errors:
+                audit["error_count"] += len(contract_errors)
+                audit["errors"].append(artifact_name)
+                reasons.extend(f"pages_artifact_contract_invalid:{artifact_name}:{error}" for error in sorted(set(contract_errors)))
+            if lineage_errors:
+                audit["lineage_mismatch_count"] += len(set(lineage_errors))
+                audit["lineage_errors"].append(artifact_name)
+                reasons.extend(f"pages_artifact_lineage_mismatch:{artifact_name}:{field}" for field in sorted(set(lineage_errors)))
+            if contract_errors or lineage_errors:
                 continue
         audit["verified_count"] += 1
     audit["mismatches"] = sorted(set(audit["mismatches"]))
     audit["errors"] = sorted(set(audit["errors"]))
     audit["snapshot_errors"] = sorted(set(audit["snapshot_errors"]))
+    audit["lineage_errors"] = sorted(set(audit["lineage_errors"]))
     return audit, reasons
 
 

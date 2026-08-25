@@ -407,6 +407,68 @@ def test_capture_fails_closed_when_public_snapshot_identity_mismatches() -> None
     assert report["blocking_reasons"] == ["pages_artifact_snapshot_mismatch:market.json"]
 
 
+def test_capture_fails_closed_when_news_artifact_is_from_another_release() -> None:
+    manifest = _manifest()
+    market_artifact = manifest.pop("_artifact_fixture")
+    news_artifact = b'{"snapshot_id":"news-other","market_snapshot_id":"market-1","status":"no_event"}\n'
+    manifest.update({
+        "news_snapshot_id": "news-1",
+        "news_status": "no_event",
+        "artifact_hashes": {
+            **manifest["artifact_hashes"],
+            "news.json": hashlib.sha256(news_artifact).hexdigest(),
+        },
+        "artifact_paths": {
+            **manifest["artifact_paths"],
+            "news.json": "data/news.json",
+        },
+    })
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([
+            _Response(200, {"gmail": {"status": "no_new_content"}, "gdelt": {"status": "no_event"}, "delivery": {"status": "not_checked"}}),
+            _Response(200, manifest),
+            _Response(200, None, market_artifact),
+            _Response(200, None, news_artifact),
+        ]),
+    )
+    assert report["status"] == "NEEDS_REVERIFY"
+    assert report["pages"]["artifact_hash_audit"]["lineage_mismatch_count"] == 1
+    assert "pages_artifact_lineage_mismatch:news.json:snapshot_id" in report["blocking_reasons"]
+
+
+def test_capture_fails_closed_when_creator_public_artifact_is_not_bound() -> None:
+    manifest = _manifest()
+    market_artifact = manifest.pop("_artifact_fixture")
+    creator_artifact = b'{"snapshot_id":"creator-other","parent_release_id":"release-1","market_snapshot_id":"market-1","research_snapshot_id":"research-1","event_snapshot_id":"event-1","status":"ready"}\n'
+    manifest.update({
+        "creator_snapshot_id": "creator-1",
+        "creator_public_status": "ready",
+        "artifact_hashes": {
+            **manifest["artifact_hashes"],
+            "creator-insights.json": hashlib.sha256(creator_artifact).hexdigest(),
+        },
+        "artifact_paths": {
+            **manifest["artifact_paths"],
+            "creator-insights.json": "data/creator-insights.json",
+        },
+    })
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([
+            _Response(200, {"gmail": {"status": "no_new_content"}, "gdelt": {"status": "no_event"}, "delivery": {"status": "not_checked"}}),
+            _Response(200, manifest),
+            _Response(200, None, market_artifact),
+            _Response(200, None, creator_artifact),
+        ]),
+    )
+    assert report["status"] == "NEEDS_REVERIFY"
+    assert report["pages"]["artifact_hash_audit"]["lineage_mismatch_count"] == 1
+    assert "pages_artifact_lineage_mismatch:creator-insights.json:snapshot_id" in report["blocking_reasons"]
+
+
 def test_capture_rejects_non_https_urls() -> None:
     with pytest.raises(ValueError, match="HTTPS"):
         capture(railway_url="http://railway.example/", public_url="https://pages.example/")
