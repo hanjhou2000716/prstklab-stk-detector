@@ -37,5 +37,22 @@ def test_registry_rejects_unknown_source_type(tmp_path):
     payload = json.loads(Path("config/creator_providers.json").read_text(encoding="utf-8"))
     payload["providers"][0]["source_type"] = "official"
     path.write_text(json.dumps(payload), encoding="utf-8")
-    with pytest.raises(ValueError, match="unsupported creator source type"):
+    with pytest.raises(ValueError, match="registry schema invalid"):
         load_creator_registry(path)
+
+
+def test_registry_rejects_schema_drift_before_semantic_normalization(tmp_path):
+    path = tmp_path / "providers.json"
+    payload = json.loads(Path("config/creator_providers.json").read_text(encoding="utf-8"))
+    payload["providers"][0]["unexpected_private_field"] = "must not enter the contract"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="registry schema invalid"):
+        load_creator_registry(path)
+
+
+def test_canonical_registry_validates_against_formal_schema():
+    import jsonschema
+
+    registry = json.loads(Path("config/creator_providers.json").read_text(encoding="utf-8"))
+    schema = json.loads(Path("schemas/creator-providers.schema.json").read_text(encoding="utf-8"))
+    jsonschema.Draft202012Validator(schema).validate(registry)

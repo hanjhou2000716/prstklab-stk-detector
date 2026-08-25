@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/creator-providers.schema.json",
+  "title": "PRStK canonical Creator provider registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "providers"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "providers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/provider"
+      }
+    }
+  },
+  "$defs": {
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "creator_id",
+        "display_name",
+        "source_type",
+        "email_identity_rules",
+        "gmail_label",
+        "parser",
+        "consensus_eligible",
+        "notification_policy",
+        "media_policy",
+        "display_order",
+        "morning_required",
+        "enabled"
+      ],
+      "properties": {
+        "creator_id": {"type": "string", "minLength": 1, "pattern": "^[a-z0-9][a-z0-9_-]*$"},
+        "display_name": {"type": "string", "minLength": 1},
+        "source_type": {"const": "editorial"},
+        "email_identity_rules": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["markers", "domains"],
+          "properties": {
+            "markers": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+            "domains": {"type": "array", "items": {"type": "string", "minLength": 1}}
+          }
+        },
+        "gmail_label": {"type": "string", "minLength": 1},
+        "parser": {"type": "string", "minLength": 1},
+        "consensus_eligible": {"type": "boolean"},
+        "notification_policy": {"const": "optional_reviewed_only"},
+        "media_policy": {"const": "summary_image_if_reviewed"},
+        "display_order": {"type": "integer", "minimum": 1},
+        "morning_required": {"type": "boolean"},
+        "enabled": {"type": "boolean"}
+      }
+    }
+  }
+}
