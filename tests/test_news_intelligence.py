@@ -181,6 +181,40 @@ def test_normalized_story_exposes_bounded_event_identity():
     assert story["event_cluster_key"].startswith("event-")
 
 
+def test_news_story_uses_shared_classifier_with_full_evidence_fields():
+    story = normalize_news_story({
+        "title": "White House Iran talks update",
+        "summary": "Officials discuss shipping and oil supply risks.",
+        "what_happened": "Negotiations continue while the market waits for confirmation.",
+        "market_impact": "WTI +5.2%; Nasdaq -0.4%.",
+        "related_quotes": {"WTI": {"change_percent": 5.2}, "Nasdaq": {"change_percent": -0.4}},
+        "url": "https://news.google.com/rss/articles/iran-1",
+        "published_at": "2026-08-21T04:01:00+00:00",
+    }, "us")
+    classification = story["event_classification"]
+    assert classification["classifier"] == "src.event_classifier.classify_event_fields"
+    assert classification["category"] == "conflict"
+    assert "summary" in classification["input_fields"]
+    assert "what_happened" in classification["input_fields"]
+    assert "market_impact" in classification["input_fields"]
+    assert "related_quotes" in classification["input_fields"]
+    assert "text" not in classification
+
+
+def test_news_and_live_event_share_category_and_matched_term():
+    from src.event_classifier import classify_event_fields
+
+    record = {
+        "title": "Fed rate decision affects Nasdaq",
+        "summary": "US rates and bond yields are being repriced.",
+        "market_data": {"Nasdaq": {"change_percent": -0.4}},
+    }
+    story = normalize_news_story({**record, "url": "https://www.federalreserve.gov/a"}, "us")
+    live = classify_event_fields(record)
+    assert story["event_classification"]["category"] == live["category"]
+    assert story["event_classification"]["matched_terms"] == live["matched_terms"]
+
+
 def test_news_intelligence_schema_rejects_provider_domain_mismatch():
     artifact = build_news_intelligence([{"title": "Fed", "url": "https://www.federalreserve.gov/a"}], market="us")
     assert validate_news_intelligence(artifact) == []
