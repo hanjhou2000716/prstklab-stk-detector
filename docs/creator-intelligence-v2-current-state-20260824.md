@@ -131,3 +131,30 @@ This document is additive. Reverting its PR does not change runtime behavior.
 Runtime rollback remains the immutable previous `data-release` release; never
 mix market, research, event, Creator, or FinancialJuice artifacts from separate
 releases.
+
+## Latest read-only reconciliation (2026-08-25)
+
+The earlier rows in this historical document predate the latest public health
+capture and must not be read as evidence that Gmail configuration is still
+missing.  The authoritative redacted capture is
+[`docs/evidence/external-acceptance-2026-08-25T0820Z.json`](evidence/external-acceptance-2026-08-25T0820Z.json):
+
+- Railway returned HTTP 200; the monitor heartbeat, Jin10, Creator and
+  FinancialJuice source projections were healthy.
+- Gmail Watch was healthy through `2026-09-01T00:23:01.779000+00:00` and the
+  public health projection exposed no missing configuration.  This proves
+  configuration and lease health, not a new Creator/FJ message or durable
+  volume continuity.
+- The delivery receipt matched the last outbox, but delivery remained partial
+  (4 delivered, 3 failed of 7).  The result is therefore not a production
+  acceptance pass.
+- GDELT remained fail-closed on HTTP 429 without stale-cache promotion.
+- Pages served `status=ready`; all five declared artifacts matched their
+  manifest hashes and market/research/event snapshot identities.
+
+The current canonical gate ledger in `config/gate_evidence.json` supersedes the
+older Gmail configuration debt labels.  It closes only the configuration item
+and keeps Gmail cursor/volume durability, partial delivery, GDELT recovery and
+Mini App interaction evidence open.  No production Telegram delivery is
+inferred from this read-only capture; the next production step remains one
+scoped recipient acceptance after durable-volume evidence, never a broadcast.
