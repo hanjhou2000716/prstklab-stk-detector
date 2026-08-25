@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 WORKFLOW = (Path(__file__).parents[1] / ".github" / "workflows" / "production-acceptance-photo.yml").read_text(
     encoding="utf-8"
 )
