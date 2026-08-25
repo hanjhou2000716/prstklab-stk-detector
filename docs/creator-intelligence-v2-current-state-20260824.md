@@ -158,3 +158,18 @@ and keeps Gmail cursor/volume durability, partial delivery, GDELT recovery and
 Mini App interaction evidence open.  No production Telegram delivery is
 inferred from this read-only capture; the next production step remains one
 scoped recipient acceptance after durable-volume evidence, never a broadcast.
+
+## Latest read-only reconciliation (2026-08-25 10:55 UTC)
+
+The newer capture
+[`docs/evidence/external-acceptance-2026-08-25T1055Z.json`](evidence/external-acceptance-2026-08-25T1055Z.json)
+is the latest public-boundary evidence.  Railway remained reachable (HTTP
+200), the monitor heartbeat and Jin10/Gmail/Creator/FinancialJuice/runtime
+projections were healthy, and the canonical shared secret was active without
+exposing its value.  GDELT was still explicitly `scan_failed` with `HTTP_429`;
+no stale cache was promoted.  Delivery receipts matched the outbox but were
+partial (4 delivered, 3 failed of 7), and storage continuity was still
+unproven by the deployed health projection.  Pages remained `ready` with all
+five declared artifact hashes and snapshot bindings verified.  This remains
+`NEEDS_REVERIFY`, not production acceptance; no Telegram or Railway write was
+performed.
