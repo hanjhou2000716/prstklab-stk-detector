@@ -23,6 +23,7 @@ from src.creator_delivery_store import (
     load_creator_delivery_history,
     load_remote_creator_delivery_history,
 )
+from src.creator_media import MAX_MEDIA_BYTES, validate_creator_media
 from src.creator_notification import deliver_creator_episode, deliver_creator_morning_digest
 from src.creator_release import validate_creator_release
 from src.railway_secret import delivery_shared_secret
@@ -43,7 +44,13 @@ def _read_object(path: Path) -> dict[str, Any] | None:
 
 
 def _media_path(root: Path | None, episode_key: str) -> Path | None:
-    """Resolve only a bounded, filename-derived private media path."""
+    """Resolve and validate a bounded private media attachment.
+
+    A file existing under the private media root is not sufficient evidence
+    that it is safe to send.  Validate the filename, size, MIME signature and
+    bytes before crossing into the Telegram transport; invalid media must
+    degrade to the text-only path rather than producing a blank/invalid photo.
+    """
     if root is None or not root.is_dir():
         return None
     stem = re.sub(r"[^A-Za-z0-9._-]+", "_", episode_key).strip("._")
@@ -55,7 +62,18 @@ def _media_path(root: Path | None, episode_key: str) -> Path | None:
             candidate.relative_to(root.resolve())
         except ValueError:
             continue
-        if candidate.is_file():
+        if not candidate.is_file():
+            continue
+        try:
+            if candidate.stat().st_size > MAX_MEDIA_BYTES:
+                continue
+            validation = validate_creator_media({
+                "filename": candidate.name,
+                "data": candidate.read_bytes(),
+            })
+        except (OSError, ValueError):
+            continue
+        if validation["availability"] == "private_ready":
             return candidate
     return None
 
