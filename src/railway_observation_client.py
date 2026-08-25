@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
+import time
 from typing import Any
 from urllib.parse import urlparse, urlunparse
 
@@ -48,6 +49,7 @@ def load_railway_observations(
     url: str | None = None,
     secret: str | None = None,
     timeout: float = 8.0,
+    max_attempts: int = 2,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Return sanitized observations and an explicit source-health result.
 
@@ -60,17 +62,50 @@ def load_railway_observations(
     token = str(secret or delivery_shared_secret()).strip()
     if not endpoint or not token:
         return [], {"status": "configuration_missing", "reason": "railway_observation_export_not_configured", "rejected_count": 0}
-    try:
-        response = httpx.get(
-            endpoint,
-            headers={"X-PRSTK-Signature": _signature(endpoint, token), "Accept": "application/json"},
-            timeout=max(1.0, min(30.0, float(timeout))),
-        )
-        if response.status_code != 200:
-            return [], {"status": "failed", "reason": f"http_{response.status_code}", "rejected_count": 0}
-        payload = response.json()
-    except (httpx.HTTPError, ValueError, TypeError):
-        return [], {"status": "failed", "reason": "request_or_json_error", "rejected_count": 0}
+    attempts_limit = max(1, min(2, int(max_attempts)))
+    retry_count = 0
+    response: Any = None
+    payload: Any = None
+    last_reason = "request_or_json_error"
+    for attempt in range(attempts_limit):
+        try:
+            response = httpx.get(
+                endpoint,
+                headers={"X-PRSTK-Signature": _signature(endpoint, token), "Accept": "application/json"},
+                timeout=max(1.0, min(30.0, float(timeout))),
+            )
+            status_code = int(response.status_code)
+            if status_code != 200:
+                last_reason = f"http_{status_code}"
+                retryable = status_code == 429 or status_code >= 500
+                if not retryable or attempt + 1 >= attempts_limit:
+                    return [], {
+                        "status": "failed",
+                        "reason": last_reason,
+                        "retryable": retryable,
+                        "attempts": attempt + 1,
+                        "retry_count": retry_count,
+                        "rejected_count": 0,
+                    }
+                retry_count += 1
+                _sleep_before_retry(response, attempt)
+                continue
+            payload = response.json()
+            break
+        except (httpx.HTTPError, ValueError, TypeError):
+            if attempt + 1 >= attempts_limit:
+                return [], {
+                    "status": "failed",
+                    "reason": last_reason,
+                    "retryable": True,
+                    "attempts": attempt + 1,
+                    "retry_count": retry_count,
+                    "rejected_count": 0,
+                }
+            retry_count += 1
+            _sleep_before_retry(response, attempt)
+    if payload is None:
+        return [], {"status": "failed", "reason": last_reason, "retryable": True, "attempts": attempts_limit, "retry_count": retry_count, "rejected_count": 0}
     rows = payload.get("observations") if isinstance(payload, dict) else None
     if not isinstance(rows, list):
         return [], {"status": "failed", "reason": "invalid_observation_shape", "rejected_count": 0}
@@ -96,7 +131,18 @@ def load_railway_observations(
         safe.append(normalized)
     status_value = payload.get("status") or ("ready" if safe else "no_event")
     status = str(status_value)
-    return safe, {"status": status, "count": len(safe), "rejected_count": rejected}
+    return safe, {"status": status, "count": len(safe), "rejected_count": rejected, "attempts": retry_count + 1, "retry_count": retry_count}
+
+
+def _sleep_before_retry(response: Any, attempt: int) -> None:
+    """Apply a short, bounded delay without retrying auth/configuration errors."""
+    headers = getattr(response, "headers", {}) or {}
+    raw_retry_after = headers.get("Retry-After") if hasattr(headers, "get") else None
+    try:
+        delay = float(raw_retry_after) if raw_retry_after is not None else 0.5 * (2**attempt)
+    except (TypeError, ValueError):
+        delay = 0.5 * (2**attempt)
+    time.sleep(max(0.0, min(5.0, delay)))
 
 
 __all__ = ["load_railway_observations", "observation_export_url"]
