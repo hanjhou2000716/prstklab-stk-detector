@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import json
 import threading
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 # Public diagnostics contain only bounded state, timestamps and counters.
 # Credentials, message bodies, transport IDs and recipient identifiers never
 # belong in this module or in the serialized health snapshot.
 HEALTH_LOCK = threading.Lock()
+MAX_HEALTH_HISTORY = 168
+HEALTH_HISTORY: list[dict[str, Any]] = []
 HEALTH_STATE: dict[str, Any] = {
     "status": "ok",
     "service": "prstk-jin10-monitor",
@@ -137,12 +139,77 @@ def update_health(component: str, **values: Any) -> None:
         HEALTH_STATE.setdefault(component, {}).update(values)
 
 
+def record_health_sample(*, recorded_at: datetime | None = None) -> dict[str, Any]:
+    """Append one bounded, privacy-safe poll-cycle health sample.
+
+    The sample contains only component states and aggregate counters; it never
+    copies credentials, message bodies, transport IDs, or recipient data.
+    Keeping the history in memory avoids turning the public health endpoint
+    into a second private datastore while still making short outages visible.
+    """
+    timestamp = recorded_at or datetime.now(UTC)
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=UTC)
+    with HEALTH_LOCK:
+        snapshot = json.loads(json.dumps(HEALTH_STATE))
+        summary = summarize_health(snapshot)
+        sample = {
+            "recorded_at": timestamp.astimezone(UTC).isoformat(),
+            "overall_state": summary["overall_state"],
+            "failure_count": summary["failure_count"],
+            "no_event_count": summary["no_event_count"],
+            "component_statuses": summary["component_statuses"],
+        }
+        HEALTH_HISTORY.append(sample)
+        del HEALTH_HISTORY[:-MAX_HEALTH_HISTORY]
+        return json.loads(json.dumps(sample))
+
+
+def health_history_summary(*, now: datetime | None = None) -> dict[str, Any]:
+    """Return bounded 24-hour/7-day counts for the current health history."""
+    reference = now or datetime.now(UTC)
+    if reference.tzinfo is None:
+        reference = reference.replace(tzinfo=UTC)
+    with HEALTH_LOCK:
+        samples = json.loads(json.dumps(HEALTH_HISTORY))
+
+    def parsed_time(row: dict[str, Any]) -> datetime | None:
+        try:
+            value = datetime.fromisoformat(str(row.get("recorded_at", "")).replace("Z", "+00:00"))
+            return (value if value.tzinfo else value.replace(tzinfo=UTC)).astimezone(UTC)
+        except (TypeError, ValueError, OverflowError):
+            return None
+
+    def window(hours: int) -> dict[str, Any]:
+        cutoff = reference.astimezone(UTC) - timedelta(hours=hours)
+        rows = [row for row in samples if (stamp := parsed_time(row)) is not None and stamp >= cutoff]
+        failures = sum(1 for row in rows if row.get("overall_state") in {"failed", "partial"})
+        return {
+            "sample_count": len(rows),
+            "failure_count": failures,
+            "healthy_count": sum(1 for row in rows if row.get("overall_state") == "healthy"),
+            "latest_at": rows[-1].get("recorded_at") if rows else None,
+        }
+
+    return {
+        "sample_count": len(samples),
+        "max_samples": MAX_HEALTH_HISTORY,
+        "windows": {"24h": window(24), "7d": window(168)},
+        "samples": samples,
+    }
+
+
 def snapshot_health() -> dict[str, Any]:
     """Return a detached JSON-safe copy for HTTP responses."""
     with HEALTH_LOCK:
         snapshot = json.loads(json.dumps(HEALTH_STATE))
     snapshot["health_summary"] = summarize_health(snapshot)
+    snapshot["observability"] = {"history": health_history_summary()}
     return snapshot
 
 
-__all__ = ["HEALTH_LOCK", "HEALTH_STATE", "snapshot_health", "summarize_health", "update_health"]
+__all__ = [
+    "HEALTH_HISTORY", "HEALTH_LOCK", "HEALTH_STATE", "MAX_HEALTH_HISTORY",
+    "health_history_summary", "record_health_sample", "snapshot_health",
+    "summarize_health", "update_health",
+]
