@@ -1,6 +1,7 @@
 import base64
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qs
 
@@ -130,6 +131,26 @@ def test_watch_manager_failure_is_bounded_and_redacted(tmp_path: Path) -> None:
     cursor = store.cursor()
     assert cursor["watch_error"] == "http_403"
     assert cursor["watch_error_at"]
+
+
+def test_watch_manager_suppresses_recent_failure_until_cooldown(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(
+        watch_error="http_403",
+        watch_error_at="2026-08-25T08:00:00+00:00",
+    )
+    calls: list[str] = []
+    manager = GmailWatchManager(
+        _oauth_config(),
+        store,
+        transport=lambda url, *_args: (calls.append(url) or (500, b"{}")),
+        now=lambda: datetime.fromisoformat("2026-08-25T08:30:00+00:00"),
+    )
+    result = manager.ensure_watch()
+    assert result["status"] == "failed"
+    assert result["retry_suppressed"] is True
+    assert result["retry_after_seconds"] > 0
+    assert calls == []
 
 
 def test_ingress_rejects_invalid_identity(tmp_path: Path) -> None:

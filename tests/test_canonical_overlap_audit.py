@@ -3,7 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from scripts.verify_canonical_overlap import audit, check_generated_pair, check_json_bundle
+from scripts.verify_canonical_overlap import (
+    audit,
+    check_generated_pair,
+    check_gmail_watch_canonical,
+    check_json_bundle,
+)
 
 ROOT = Path(__file__).parents[1]
 
@@ -42,3 +47,22 @@ def test_json_bundle_detects_drift(tmp_path: Path) -> None:
     result = check_json_bundle(tmp_path, "creator_providers.json")
     assert result["ok"] is False
     assert result["reason"] == "bundle_drift"
+
+
+def test_gmail_watch_audit_rejects_second_manager(tmp_path: Path) -> None:
+    railway = tmp_path / "railway-monitor"
+    railway.mkdir(parents=True)
+    (railway / "gmail_watch.py").write_text(
+        'CANONICAL_WATCH_OWNER = "railway-monitor/gmail_watch.py:GmailWatchManager"\n'
+        "class GmailWatchManager:\n"
+        "    def ensure_watch(self): ...\n",
+        encoding="utf-8",
+    )
+    (railway / "gmail_watch_service.py").write_text(
+        "class GmailWatchManager:\n"
+        "    def ensure_watch(self): ...\n",
+        encoding="utf-8",
+    )
+    result = check_gmail_watch_canonical(tmp_path)
+    assert result["ok"] is False
+    assert result["reason"] == "duplicate_watch_producer"
