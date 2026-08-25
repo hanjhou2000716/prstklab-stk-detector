@@ -368,6 +368,24 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
         no_events = observability.get("no_event_count")
         if isinstance(failures, int) and isinstance(no_events, int) and failures < 0:
             errors.append("source_health.observability.failure_count must be non-negative")
+        history = observability.get("history")
+        if isinstance(history, dict):
+            samples = history.get("samples")
+            sample_count = history.get("sample_count")
+            max_samples = history.get("max_samples")
+            if isinstance(samples, list) and isinstance(sample_count, int) and sample_count != len(samples):
+                errors.append("source_health.observability.history.sample_count does not match samples")
+            if isinstance(samples, list) and isinstance(max_samples, int) and len(samples) > max_samples:
+                errors.append("source_health.observability.history exceeds max_samples")
+            for window_name in ("24h", "7d"):
+                metric = history.get("windows", {}).get(window_name) if isinstance(history.get("windows"), dict) else None
+                if not isinstance(metric, dict):
+                    continue
+                window_count = metric.get("sample_count")
+                if isinstance(window_count, int) and isinstance(sample_count, int) and window_count > sample_count:
+                    errors.append(f"source_health.observability.history.{window_name}.sample_count exceeds history.sample_count")
+                if metric.get("state") == "no_observations" and window_count not in (0, None):
+                    errors.append(f"source_health.observability.history.{window_name} no_observations has samples")
     return errors
 
 
