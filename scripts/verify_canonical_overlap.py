@@ -124,11 +124,32 @@ def check_gmail_watch_canonical(root: Path) -> dict[str, Any]:
     }
 
 
+def check_schema_bundle(root: Path, name: str) -> dict[str, Any]:
+    """Ensure runtime schema copies are identical to the canonical schema."""
+    canonical = root / "schemas" / name
+    copies = (root / "railway-monitor" / "schemas" / name,)
+    try:
+        expected = _json(canonical)
+        missing = [path.relative_to(root).as_posix() for path in copies if not path.is_file()]
+        drifted = [path.relative_to(root).as_posix() for path in copies if path.is_file() and _json(path) != expected]
+    except (OSError, ValueError, TypeError) as exc:
+        return {"check": f"schemas/{name}", "ok": False, "reason": f"invalid_json:{type(exc).__name__}"}
+    ok = not missing and not drifted
+    return {
+        "check": f"schemas/{name}",
+        "ok": ok,
+        "reason": None if ok else "schema_bundle_drift",
+        "missing": missing,
+        "drifted": drifted,
+    }
+
+
 def audit(root: Path = ROOT) -> dict[str, Any]:
     """Run the offline canonical-overlap audit against *root*."""
     checks: list[dict[str, Any]] = []
     for name in ("creator_providers.json", "event_keywords.json"):
         checks.append(check_json_bundle(root, name))
+    checks.append(check_schema_bundle(root, "creator-providers.schema.json"))
 
     generated_root = root / "railway-monitor" / "src"
     generated_targets = sorted(generated_root.glob("*.py")) if generated_root.is_dir() else []

@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from jsonschema import Draft202012Validator
+
 _ALLOWED_SOURCE_TYPES = {"editorial"}
 _ALLOWED_NOTIFICATION_POLICIES = {"optional_reviewed_only"}
 _ALLOWED_MEDIA_POLICIES = {"summary_image_if_reviewed"}
@@ -46,6 +48,29 @@ def _default_path() -> Path:
     return Path(__file__).resolve().parents[1] / "config" / "creator_providers.json"
 
 
+def _schema_path() -> Path:
+    root = Path(__file__).resolve().parents[1]
+    for candidate in (
+        root / "schemas" / "creator-providers.schema.json",
+        root / "config" / "creator-providers.schema.json",
+    ):
+        if candidate.is_file():
+            return candidate
+    return root / "schemas" / "creator-providers.schema.json"
+
+
+def _validate_document(payload: Any, candidate: Path) -> None:
+    """Apply the formal registry contract before semantic normalization."""
+    try:
+        schema = json.loads(_schema_path().read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("creator provider registry schema unavailable") from exc
+    errors = sorted(Draft202012Validator(schema).iter_errors(payload), key=lambda item: list(item.path))
+    if errors:
+        path = ".".join(str(part) for part in errors[0].path) or "root"
+        raise ValueError(f"creator provider registry schema invalid at {path}: {errors[0].message}")
+
+
 def _as_text(value: Any, field: str, provider: str) -> str:
     text = str(value or "").strip()
     if not text:
@@ -69,6 +94,7 @@ def load_creator_registry(path: str | Path | None = None) -> tuple[CreatorProvid
         payload = json.loads(candidate.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"creator provider registry unavailable: {candidate}") from exc
+    _validate_document(payload, candidate)
     entries = payload.get("providers") if isinstance(payload, dict) else None
     if not isinstance(entries, list) or not entries:
         raise ValueError("creator provider registry requires a non-empty providers list")
