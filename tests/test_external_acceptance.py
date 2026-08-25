@@ -120,6 +120,63 @@ def test_capture_accepts_a_successful_delivery_receipt() -> None:
     assert report["gate_summary"]["delivery_receipt"]["status"] == "pass"
 
 
+def test_capture_requires_restart_continuity_for_durable_delivery() -> None:
+    health = {
+        "status": "ok",
+        "service": "monitor",
+        "gmail": {"status": "healthy", "watch_status": "healthy"},
+        "gdelt": {"status": "no_event"},
+        "delivery": {
+            "status": "delivered",
+            "last_delivered_count": 1,
+            "last_failed_count": 0,
+            "storage": {
+                "status": "ready",
+                "durable_volume_detected": True,
+                "restart_continuity": {"status": "not_verified"},
+            },
+        },
+    }
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([_Response(200, health), _Response(200, manifest), _Response(200, None, artifact)]),
+    )
+    assert report["status"] == "NEEDS_REVERIFY"
+    assert "railway_delivery_persistence:restart_continuity_not_verified" in report["blocking_reasons"]
+    assert report["railway"]["health"]["delivery"]["storage"]["restart_continuity"]["status"] == "not_verified"
+
+
+def test_capture_accepts_verified_restart_continuity() -> None:
+    health = {
+        "status": "ok",
+        "service": "monitor",
+        "gmail": {
+            "status": "healthy",
+            "watch_status": "healthy",
+            "storage": {"status": "ready", "restart_continuity": {"status": "verified"}},
+        },
+        "gdelt": {"status": "no_event"},
+        "delivery": {
+            "status": "delivered",
+            "last_delivered_count": 1,
+            "last_failed_count": 0,
+            "storage": {"status": "ready", "restart_continuity": {"status": "verified"}},
+        },
+    }
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([_Response(200, health), _Response(200, manifest), _Response(200, None, artifact)]),
+    )
+    assert report["status"] == "PASS"
+    assert report["blocking_reasons"] == []
+
+
 def test_capture_records_sanitized_external_observation_evidence(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "acceptance-secret")
     health = {

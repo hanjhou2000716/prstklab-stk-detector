@@ -44,6 +44,12 @@ SAFE_HEALTH_KEYS = {
     "keyword_bundle_sha256", "keyword_categories", "updated_at",
     "delivery_secret_configured", "canonical_name_present", "legacy_name_present",
     "active_name", "migration_required", "secret_values_exposed",
+    # Storage health is deliberately bounded to mount/probe state only.  The
+    # marker path, database path, process identity and receipt contents never
+    # leave Railway.
+    "storage", "durable_volume_detected", "state_parent_writable",
+    "state_parent_exists", "expected_volume_path", "fail_closed_for_high_risk",
+    "restart_continuity", "previous_started_at",
 }
 
 
@@ -499,6 +505,11 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
                     storage_status = str(storage.get("status") or "unknown")
                     if storage_status != "ready":
                         reasons.append(f"railway_gmail_persistence:{storage_status}")
+                    continuity = storage.get("restart_continuity")
+                    if isinstance(continuity, dict) and continuity.get("status") != "verified":
+                        reasons.append(
+                            f"railway_gmail_persistence:restart_continuity_{continuity.get('status') or 'unknown'}"
+                        )
                 continue
             # Delivery health is a receipt state, not a provider availability
             # state.  A successful single-recipient acceptance therefore
@@ -525,6 +536,11 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
                         # receipt itself visible, but do not call the external
                         # acceptance durable until a mounted volume is proven.
                         reasons.append(f"railway_delivery_persistence:{storage_status}")
+                    continuity = storage.get("restart_continuity")
+                    if isinstance(continuity, dict) and continuity.get("status") != "verified":
+                        reasons.append(
+                            f"railway_delivery_persistence:restart_continuity_{continuity.get('status') or 'unknown'}"
+                        )
                 continue
             if status not in {"healthy", "no_new_content", "no_event", "not_checked"}:
                 reasons.append(f"railway_{section}:{status}")
