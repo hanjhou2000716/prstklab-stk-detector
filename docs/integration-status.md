@@ -27,6 +27,7 @@ pipeline call and a tested consumer.
 | Strategy registry/explainability | `src/strategy_registry.py`, `src/advice_gate.py` | yes | partial | partial | partial | no | partially_integrated |
 | Backtest/cost model | `src/four_strategy_walk_forward.py`, `src/backtest_costs.py`, `src/backtest_release.py` | yes | scheduled | artifact + risk-adjusted metrics | no | no | partially_integrated |
 | Release manifest/gate | `src/release_manifest.py`, `src/release_gate.py`, `src/production_e2e.py` | yes | yes | yes | loader gate | send gate | production |
+| External acceptance gate summary | `src/external_acceptance.py`, `docs/external-acceptance-gates.md` | yes | read-only acceptance probe | redacted `gate_summary` evidence | operator evidence (not release data) | never sends | partially_integrated |
 | Telegram delivery | `src/telegram_client.py`, `src/scheduled_delivery.py`, `src/official_event_monitor.py`, `src/emergency_alert.py` | yes | release-gated `sendPhoto` path with shared file ID | photo receipt | alert/release deep-link button | renderer failure is fail-closed; recipient failures are isolated | production |
 | Source-health release artifact | `src/release_manifest.py`, `src/release_gate.py`, `site/app.js` | yes | manifest/release gate | `data/source-health.json` | release-bound health view | gate evidence only | production |
 | Mini App deep-link/timeline | `site/app.js`, `src/event_timeline.py` | yes | Pages | yes | yes | button target | production |

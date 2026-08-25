@@ -226,6 +226,82 @@ def _artifact_hash_audit(
     return audit, reasons
 
 
+def _gate_status(*, ready: bool, checked: bool = True, reasons: list[str] | None = None) -> dict[str, Any]:
+    """Return one stable, privacy-safe external acceptance gate state.
+
+    ``not_checked`` is intentionally different from ``needs_reverify``.  A
+    missing optional provider or a delivery lane that was not exercised in a
+    read-only probe is not evidence of failure, but it is also not evidence
+    of production acceptance.  Keeping this distinction in the report makes
+    the Mini App/operations view actionable without weakening the fail-closed
+    delivery gate.
+    """
+    status = "pass" if ready else ("needs_reverify" if checked else "not_checked")
+    return {"status": status, "blocking_reasons": sorted(set(reasons or []))}
+
+
+def _build_gate_summary(
+    *,
+    railway_status: int | None,
+    health: dict[str, Any] | None,
+    railway_error: str | None,
+    manifest_status: int | None,
+    manifest: dict[str, Any] | None,
+    manifest_error: str | None,
+    artifact_audit: dict[str, Any],
+    reasons: list[str],
+) -> dict[str, Any]:
+    """Project one canonical summary for operators and downstream tooling.
+
+    This is deliberately derived from the same ``reasons`` used for the
+    overall status; it cannot claim a gate passed when the existing
+    fail-closed evaluator found a blocker.
+    """
+    def reasons_for(prefixes: tuple[str, ...]) -> list[str]:
+        return sorted({reason for reason in reasons if reason.startswith(prefixes)})
+
+    railway_reasons = reasons_for(("railway_",))
+    pages_reasons = reasons_for(("pages_",))
+    health_ready = railway_status == 200 and health is not None
+    manifest_ready = manifest_status == 200 and isinstance(manifest, dict) and manifest.get("status") == "ready"
+    artifact_checked = manifest_ready and artifact_audit.get("declared_count", 0) > 0
+    artifact_ready = artifact_checked and not any(
+        int(artifact_audit.get(field, 0) or 0) > 0
+        for field in ("missing_count", "mismatch_count", "error_count", "snapshot_mismatch_count")
+    )
+    delivery = health.get("delivery") if isinstance(health, dict) else None
+    delivery_checked = isinstance(delivery, dict) and str(delivery.get("status") or "not_checked") != "not_checked"
+    gmail = health.get("gmail") if isinstance(health, dict) else None
+    gmail_checked = isinstance(gmail, dict) and str(gmail.get("status") or "not_checked") not in {"not_checked", ""}
+    return {
+        "railway_health": _gate_status(
+            ready=health_ready and not railway_reasons,
+            checked=railway_status is not None or railway_error is not None,
+            reasons=railway_reasons or ([f"railway_health_unavailable:{railway_error or railway_status}"] if not health_ready else []),
+        ),
+        "gmail_watch": _gate_status(
+            ready=gmail_checked and not reasons_for(("railway_gmail:", "railway_gmail_watch:", "railway_gmail_persistence:")),
+            checked=gmail_checked,
+            reasons=reasons_for(("railway_gmail:", "railway_gmail_watch:", "railway_gmail_persistence:")),
+        ),
+        "delivery_receipt": _gate_status(
+            ready=delivery_checked and not reasons_for(("railway_delivery:", "railway_delivery_persistence:")),
+            checked=delivery_checked,
+            reasons=reasons_for(("railway_delivery:", "railway_delivery_persistence:")),
+        ),
+        "pages_manifest": _gate_status(
+            ready=manifest_ready and not pages_reasons,
+            checked=manifest_status is not None or manifest_error is not None,
+            reasons=pages_reasons or ([f"pages_manifest_unavailable:{manifest_error or manifest_status}"] if not manifest_ready else []),
+        ),
+        "pages_artifacts": _gate_status(
+            ready=artifact_ready,
+            checked=artifact_checked,
+            reasons=pages_reasons,
+        ),
+    }
+
+
 def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session: requests.Session | None = None) -> dict[str, Any]:
     """Fetch public health/manifest endpoints and return safe evidence."""
     railway = _require_https(railway_url, "Railway health URL")
@@ -322,11 +398,23 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
         pages["artifact_hash_count"] = len(hashes) if isinstance(hashes, dict) else 0
         pages.pop("artifact_hashes", None)
     pages["artifact_hash_audit"] = artifact_audit
+    gate_summary = _build_gate_summary(
+        railway_status=railway_status,
+        health=health,
+        railway_error=railway_error,
+        manifest_status=manifest_status,
+        manifest=manifest,
+        manifest_error=manifest_error,
+        artifact_audit=artifact_audit,
+        reasons=reasons,
+    )
     return {
         "kind": "external-acceptance-readonly",
+        "schema_version": "1.0",
         "captured_at": datetime.now(UTC).isoformat(),
         "status": "PASS" if not reasons else "NEEDS_REVERIFY",
         "blocking_reasons": sorted(set(reasons)),
+        "gate_summary": gate_summary,
         "railway": {"url": railway, "http_status": railway_status, "error": railway_error, "health": _safe_health(health or {})},
         "pages": pages,
         "side_effects": {"telegram": False, "railway_write": False, "configuration_changed": False},
