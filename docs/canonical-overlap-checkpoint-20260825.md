@@ -45,6 +45,27 @@ PR is merged.
   one-way observation identity hash. Raw mail, transport IDs, recipients and
   secrets remain outside the artifact.
 
+## Controlled external capture (branch evidence)
+
+The read-only capture on the PR branch reached the live Railway endpoints on
+2026-08-25. Railway returned a ready sanitized set with two observations from
+`financialjuice` and `jenny`; Gmail Watch was healthy and the Creator/FJ
+projections were present. The same capture also showed that the public Pages
+manifest still described an older observation set, so the lineage gate correctly
+reported count, source and identity-hash mismatches. GDELT was independently
+reported as HTTP 429 and delivery was partial; neither condition was treated as
+success.
+
+The branch now publishes the complete sanitized set in
+`market.json.external_observations` and keeps the FinancialJuice-only derived
+input in `financialjuice_observations`. A manual scheduled run defaults to
+`notify=false`, so an operator can publish and verify a release without sending
+Telegram or Creator messages. The first attempt was rejected before any job
+step because the `github-pages` environment only allows protected branches;
+this is an environment policy boundary, not a renderer or data failure. After
+the stack is merged to `main`, run the same publish-only dispatch and then run
+the read-only external acceptance probe again.
+
 ## External gates still open
 
 The following require a controlled post-merge run and cannot be fabricated by
