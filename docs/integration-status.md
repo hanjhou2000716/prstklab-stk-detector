@@ -59,11 +59,22 @@ pipeline call and a tested consumer.
 | External event unification | `src/external_event_pipeline.py`, `src/financialjuice_contract.py`, `src/intelligence_pipeline.py` | yes | shared classification and evidence gate | event cluster/evidence state | pending reason and source evidence | only policy-eligible events | production |
 | News provider registry | `src/news_intelligence.py`, `schemas/news-story.schema.json` | yes | `risk_news.build_news_snapshot` | provider/domain contract | release-provided URL allowlist | no direct alert | production |
 | Official news feed adapters | `src/news_feed_adapters.py`, `src/risk_news.py` | yes | official-first, fail-soft fallback | provider health + NewsStory | provider/status badges | context only | partially_integrated |
-| News interest/ranking/dedup | `src/news_intelligence.py`, `src/risk_news.py` | yes | market snapshot | `news.intelligence` | badges/relevance reasons | context only | production |
+| News interest/ranking/dedup | `src/news_intelligence.py`, `src/risk_news.py`, `src/event_classifier.py` | yes | market snapshot | `news.intelligence` + shared `event_classification` | badges/relevance reasons/event category | context only | production |
 | News artifact/release binding | `src/release_manifest.py`, `src/artifact_contract.py`, `site/app.js` | yes | multi-market release envelope with lineage and browser verification | `data/news.json` | release-bound and loaded by manifest | release gate and Mini App | production |
 | Creator source health runtime | `src/creator_source_health.py`, `src/scheduled_delivery.py`, `site/app.js` | yes | scheduled snapshot preparation | `source_health` + `creator_source_health` | optional source rows and no-event/failed distinction | observability only | production |
 | Creator delivery lineage | `src/creator_delivery_store.py`, `src/delivery_callback.py`, `railway-monitor/app.py` | yes | signed Creator callback + history read | private Railway receipt metadata | no raw receipt data | dedupe evidence | production |
 | Feedback/paper portfolio | `src/event_feedback.py`, `src/production_evidence.py` | yes | briefing contract + optional endpoint/local queue | yes | feedback controls | no | partially_integrated |
+
+### Shared news/event classification
+
+News reports and live events now call the same `src.event_classifier.classify_event_fields`
+function.  The news producer passes the title, summary/description, structured
+event facts, impact notes and available market quote evidence; the release keeps
+only the bounded category, reason, matched aliases and input-field audit (never
+the internal haystack).  Regional routing remains a separate contract, so a
+shared category cannot move a Taiwan story into the US feed or qualify a
+notification by itself.  Missing evidence remains `category: null` and is
+visible as a classification reason rather than being treated as no risk.
 
 ## Data state contract
 
