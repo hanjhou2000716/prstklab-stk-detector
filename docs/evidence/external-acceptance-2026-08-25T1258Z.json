@@ -1,0 +1,47 @@
+{
+  "kind": "external-acceptance-readonly",
+  "schema_version": "1.0",
+  "captured_at": "2026-08-25T12:58:42.733319+00:00",
+  "status": "NEEDS_REVERIFY",
+  "scope": "single-recipient production photo acceptance; recipient identifier intentionally omitted",
+  "pages": {
+    "http_status": 200,
+    "status": "ready",
+    "release_id": "release-eacfb72b487aee4f",
+    "market_snapshot_id": "25ab9e0c2d311f79",
+    "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
+    "event_snapshot_id": "event-2668aef41e66e57b",
+    "artifact_hash_audit": {
+      "declared_count": 5,
+      "verified_count": 5,
+      "mismatch_count": 0,
+      "error_count": 0
+    }
+  },
+  "railway": {
+    "http_status": 200,
+    "monitor_status": "running",
+    "heartbeat_status": "healthy",
+    "delivery": {
+      "status": "delivered",
+      "last_receipt_status": "delivered",
+      "receipt_matches_last_outbox": true,
+      "last_delivered_count": 1,
+      "last_failed_count": 0,
+      "last_recipient_count": 1,
+      "retryable_count": 0,
+      "due_retry_count": 0,
+      "retention_days": 30
+    },
+    "gmail_watch_status": "healthy",
+    "gmail_storage_restart_continuity": "not_verified",
+    "gdelt_status": "failed",
+    "gdelt_error": "HTTP_429"
+  },
+  "side_effects": {
+    "telegram": false,
+    "railway_write": false,
+    "configuration_changed": false
+  },
+  "interpretation": "The controlled workflow performed the single-recipient photo delivery and Railway reports a matching delivered receipt. This closes the constrained Telegram receipt evidence only; durable Railway storage, Gmail restart continuity, and GDELT recovery remain open gates."
+}
