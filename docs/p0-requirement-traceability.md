@@ -75,3 +75,24 @@ Railway observation set is the same set represented by the public release
 manifest. This is still local/branch evidence; the external rows above remain
 `NEEDS_REVERIFY` until a controlled post-merge Railway, Pages and
 single-recipient Telegram run is captured.
+
+### 2026-08-25 Railway health-history durability evidence
+
+The bounded source-health projection is now durable across Railway monitor
+restarts. `railway-monitor/health_history_store.py` persists only aggregate
+states, counters and component labels in the existing SQLite state volume;
+`health_state.restore_health_history()` restores at most 168 chronological
+samples before the first health response. Schema migration is additive for
+existing volumes and SQLite write failures remain non-fatal to polling.
+
+Verification on the continuation branch:
+
+- health-history/store/monitor targeted suite: **104 passed**;
+- full repository regression: **1444 passed**;
+- Ruff, compileall, mypy and the offline production E2E gate: **passed**;
+- the latest manual Quality and Security Actions runs on commit `9310614`:
+  [Quality run 32824397226](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32824397226),
+  [Security run 32824401282](https://github.com/hanjhou2000716/prstklab-stk-detector/actions/runs/32824401282).
+
+This is branch-level evidence only. Live Railway volume continuity and the
+post-merge Pages/Mini App/Telegram acceptance gates remain `NEEDS_REVERIFY`.
