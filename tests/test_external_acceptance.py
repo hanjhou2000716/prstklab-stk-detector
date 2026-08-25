@@ -74,6 +74,11 @@ def test_capture_is_read_only_and_redacts_health_payload() -> None:
     assert report["side_effects"] == {"telegram": False, "railway_write": False, "configuration_changed": False}
     assert report["pages"]["artifact_hash_count"] == 1
     assert report["pages"]["artifact_hash_audit"]["verified_count"] == 1
+    assert report["schema_version"] == "1.0"
+    assert report["gate_summary"]["railway_health"]["status"] == "needs_reverify"
+    assert report["gate_summary"]["gmail_watch"]["status"] == "needs_reverify"
+    assert report["gate_summary"]["pages_manifest"]["status"] == "pass"
+    assert report["gate_summary"]["pages_artifacts"]["status"] == "pass"
 
 
 def test_capture_passes_when_health_and_manifest_are_ready() -> None:
@@ -87,6 +92,8 @@ def test_capture_passes_when_health_and_manifest_are_ready() -> None:
     )
     assert report["status"] == "PASS"
     assert report["blocking_reasons"] == []
+    assert all(gate["status"] == "pass" for gate in report["gate_summary"].values() if gate["status"] != "not_checked")
+    assert report["gate_summary"]["delivery_receipt"]["status"] == "not_checked"
 
 
 def test_capture_accepts_a_successful_delivery_receipt() -> None:
@@ -110,6 +117,7 @@ def test_capture_accepts_a_successful_delivery_receipt() -> None:
     )
     assert report["status"] == "PASS"
     assert report["blocking_reasons"] == []
+    assert report["gate_summary"]["delivery_receipt"]["status"] == "pass"
 
 
 def test_capture_fails_closed_when_delivery_storage_is_not_durable() -> None:
@@ -132,6 +140,7 @@ def test_capture_fails_closed_when_delivery_storage_is_not_durable() -> None:
     )
     assert report["status"] == "NEEDS_REVERIFY"
     assert report["blocking_reasons"] == ["railway_delivery_persistence:unknown"]
+    assert report["gate_summary"]["delivery_receipt"]["status"] == "needs_reverify"
 
 
 def test_capture_distinguishes_configured_gmail_from_failed_watch() -> None:
@@ -230,3 +239,6 @@ def test_capture_marks_http_or_invalid_json_as_needs_reverify() -> None:
     assert report["status"] == "NEEDS_REVERIFY"
     assert any(reason.startswith("railway_health_unavailable:") for reason in report["blocking_reasons"])
     assert any(reason.startswith("pages_manifest_unavailable:") for reason in report["blocking_reasons"])
+    assert report["gate_summary"]["railway_health"]["status"] == "needs_reverify"
+    assert report["gate_summary"]["pages_manifest"]["status"] == "needs_reverify"
+    assert report["gate_summary"]["pages_artifacts"]["status"] == "not_checked"
