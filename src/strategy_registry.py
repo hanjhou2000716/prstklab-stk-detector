@@ -8,6 +8,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from jsonschema import Draft202012Validator
+
 REQUIRED_RELEASE_FIELDS = (
     "strategy_id",
     "strategy_version",
@@ -82,4 +84,17 @@ def validate_strategy_release(row: Any) -> list[str]:
             errors.append(f"strategy_registry.{field} is missing")
         elif not isinstance(value, str):
             errors.append(f"strategy_registry.{field} must be a string")
+    if errors:
+        return errors
+
+    schema_path = Path(__file__).resolve().parents[1] / "schemas" / "strategy-registry.schema.json"
+    try:
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError) as exc:
+        return [f"strategy_registry schema unavailable: {type(exc).__name__}"]
+    validator = Draft202012Validator(schema)
+    for error in sorted(validator.iter_errors(row), key=lambda item: list(item.path)):
+        location = ".".join(str(part) for part in error.path)
+        suffix = f" at {location}" if location else ""
+        errors.append(f"strategy_registry schema: {error.message}{suffix}")
     return errors

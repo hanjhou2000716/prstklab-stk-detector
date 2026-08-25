@@ -44,3 +44,11 @@ def test_standalone_fallback_configs_match_canonical_payloads() -> None:
         )
         assert root_bundle == canonical
         assert packaged_bundle == canonical
+
+
+def test_railway_schema_bundle_matches_canonical_schema() -> None:
+    canonical = json.loads((ROOT / "schemas" / "creator-providers.schema.json").read_text(encoding="utf-8"))
+    bundled = json.loads(
+        (ROOT / "railway-monitor" / "schemas" / "creator-providers.schema.json").read_text(encoding="utf-8")
+    )
+    assert bundled == canonical

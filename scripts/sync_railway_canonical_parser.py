@@ -19,6 +19,7 @@ SOURCE_ROOT = ROOT / "src"
 RAILWAY_ROOT = ROOT / "railway-monitor"
 TARGET_ROOT = RAILWAY_ROOT / "src"
 CONFIG_FILES = ("creator_providers.json", "event_keywords.json")
+SCHEMA_FILES = ("creator-providers.schema.json",)
 ENTRYPOINT = "external_source_parsers.py"
 HEADER = "# GENERATED FILE: do not edit manually.\n# Run scripts/sync_railway_canonical_parser.py to refresh it.\n"
 
@@ -72,6 +73,11 @@ def _expected() -> dict[Path, str]:
         # files generated from the exact same canonical payload instead of
         # leaving an unmanaged second provider/keyword table.
         expected[RAILWAY_ROOT / name] = raw if raw.endswith("\n") else raw + "\n"
+    target_schemas = RAILWAY_ROOT / "schemas"
+    for name in SCHEMA_FILES:
+        source = ROOT / "schemas" / name
+        raw = source.read_text(encoding="utf-8")
+        expected[target_schemas / name] = raw if raw.endswith("\n") else raw + "\n"
     return expected
 
 
@@ -83,6 +89,7 @@ def main() -> int:
     actual_paths = {path for path in TARGET_ROOT.rglob("*.py") if path.is_file()} if TARGET_ROOT.exists() else set()
     actual_paths |= {path for path in (RAILWAY_ROOT / "config").glob("*.json") if path.is_file()}
     actual_paths |= {RAILWAY_ROOT / name for name in CONFIG_FILES if (RAILWAY_ROOT / name).is_file()}
+    actual_paths |= {RAILWAY_ROOT / "schemas" / name for name in SCHEMA_FILES if (RAILWAY_ROOT / "schemas" / name).is_file()}
     if args.check:
         if any(not path.is_file() or path.read_text(encoding="utf-8") != content for path, content in expected.items()):
             print("railway canonical parser bundle is stale")
