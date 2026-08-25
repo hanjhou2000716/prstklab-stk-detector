@@ -61,6 +61,8 @@ jobs:
         run: python scripts/sync_railway_canonical_parser.py --check
       - name: Verify canonical overlap and generated bundle provenance
         run: python scripts/verify_canonical_overlap.py
+      - name: Verify Gate-Driven requirement and evidence registry
+        run: python scripts/verify_gate_evidence.py
       - name: Verify Creator, FinancialJuice and news intelligence contracts
         run: python scripts/verify_intelligence_contracts.py
       - name: Mypy full source gate

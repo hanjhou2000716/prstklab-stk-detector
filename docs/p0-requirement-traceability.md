@@ -5,6 +5,14 @@ rows with implementation, required verification, regression evidence, and
 preservation evidence. A row with code or an old PR but no current objective
 evidence remains `NEEDS_REVERIFY`.
 
+The machine-readable counterpart is [`config/gate_evidence.json`](../config/gate_evidence.json),
+validated by [`scripts/verify_gate_evidence.py`](../scripts/verify_gate_evidence.py).
+It keeps local contract locks separate from the external completion-debt ledger;
+the default audit therefore reports `needs_reverify` while Gmail, Railway,
+Pages or Telegram evidence is still open. `--strict` is reserved for the final
+production/merge gate and fails closed until both ledgers contain no `OPEN`
+entries.
+
 | Requirement | Task / implementation | Verification and evidence | Regression / preservation | Status |
 |---|---|---|---|---|
 | P0-01 artifact schema and cross-field invariants | `src/artifact_contract.py`, `schemas/*.schema.json` | PR #575 targeted artifact suite 32; CI quality/security | release gate and legacy artifact compatibility | PASS / LOCKED |
