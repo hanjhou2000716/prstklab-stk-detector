@@ -29,6 +29,14 @@ def test_scheduled_production_workflow_installs_renderer_browser():
     assert "playwright install --with-deps chromium" in workflow
 
 
+def test_manual_scheduled_run_is_publish_only_by_default():
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
+    assert "notify:" in workflow
+    assert "default: false" in workflow
+    assert "NOTIFY:" in workflow
+    assert "env.NOTIFY == 'true'" in workflow
+
+
 def test_scheduled_workflow_only_passes_explicit_external_creator_records():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
     assert "CREATOR_RECORDS_PATH" in workflow
