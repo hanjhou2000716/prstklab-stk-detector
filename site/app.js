@@ -376,6 +376,19 @@ const newsBadgeLabels = (story) => {
   add("creator", "Creator 提及", reasons.some((item) => /^creator_mentioned:/i.test(item)) || (story?.creator_mentions || []).length > 0);
   add("sector", "產業", reasons.some((item) => /^tracked_sector:/i.test(item)) || (story?.sector_interest || []).length > 0);
   add("macro", "總經", reasons.some((item) => /^active_topic:/i.test(item)) || /macro|econom|rate|fed|inflation|cpi|pce|gdp|央行|利率|通膨|總經/.test(`${reasonText} ${topicText}`));
+  const eventCategory = String(story?.event_classification?.category || "").trim();
+  const eventLabels = {
+    black_swan: "黑天鵝",
+    conflict: "地緣衝突",
+    policy: "政策",
+    fed: "央行／利率",
+    macro: "總經數據",
+    energy: "能源",
+    semiconductor: "半導體",
+    market: "市場波動",
+    material_positive: "風險降級",
+  };
+  add("event", `事件：${eventLabels[eventCategory] || eventCategory}`, Boolean(eventCategory));
   if (!badges.length) add("source", "公開來源", true);
   return badges;
 };
@@ -403,8 +416,10 @@ const renderNewsList = (id, stories, providerRegistry = [], health = null) => {
     const title = String(story.title || "").replace(/^\s*\d+\.\s*/, "");
     const badges = newsBadgeLabels(story).map((badge) => `<span class="news-badge news-badge-${badge.key}">${escapeHtml(badge.label)}</span>`).join("");
     const reasonDetails = (story.relevance_reasons || []).slice(0, 2).map((reason) => escapeHtml(reason)).join("、");
+    const eventReason = story?.event_classification?.reason ? `分類依據：${String(story.event_classification.reason)}` : "";
     const source = escapeHtml(story.source || story.provider_name || "公開來源");
-    const detail = reasonDetails ? `<span class="news-reason-detail">${reasonDetails}</span>` : "";
+    const detailParts = [reasonDetails, eventReason].filter(Boolean).map((item) => escapeHtml(item));
+    const detail = detailParts.length ? `<span class="news-reason-detail">${detailParts.join("、")}</span>` : "";
     return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><div class="news-badges" aria-label="這則新聞的關聯理由">${badges}</div><small>${source}${detail}</small></li>`;
   }).join("");
 };
