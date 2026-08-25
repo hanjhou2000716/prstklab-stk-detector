@@ -35,14 +35,16 @@
   "regressions": [
     {"id":"REG-GDELT-429","description":"Railway GDELT rate limit remains bounded and visible","resolution":"observe a successful post-backoff poll","evidence":["docs/p0-requirement-traceability.md"],"status":"OPEN"},
     {"id":"REG-RAILWAY-403","description":"Health callback permission is not available to the runtime","resolution":"provision an approved callback path or keep observability-only mode","evidence":["docs/p0-requirement-traceability.md"],"status":"OPEN"},
-    {"id":"REG-GMAIL-CONFIG","description":"Live Gmail/PubSub watch configuration is not yet proven","resolution":"configure and validate the protected watch variables","evidence":["docs/creator-intelligence-v2-traceability.md"],"status":"OPEN"},
+    {"id":"REG-GMAIL-CONFIG","description":"Live Gmail/PubSub watch configuration is not yet proven","resolution":"configure and validate the protected watch variables","evidence":["docs/evidence/external-acceptance-2026-08-25T0820Z.json"],"status":"CLOSED"},
+    {"id":"REG-GMAIL-PERSISTENCE","description":"Live Gmail cursor and watch state durability is not proven by the public health projection","resolution":"attach a Railway durable volume and capture restart continuity without exposing mailbox data","evidence":["docs/evidence/external-acceptance-2026-08-25T0820Z.json"],"status":"OPEN"},
     {"id":"REG-TELEGRAM-RECEIPT","description":"Creator/FinancialJuice production receipt requires a current controlled run","resolution":"run one scoped recipient acceptance after a ready release","evidence":["docs/p0-requirement-traceability.md"],"status":"OPEN"},
     {"id":"REG-UX-001","description":"Telegram WebView interaction evidence remains external","resolution":"complete a non-broadcast Mini App interaction test","evidence":["docs/gate-driven-status-2026-08-21.md"],"status":"OPEN"}
   ],
   "completion_debt": [
     {"id":"DEBT-GDELT-001","description":"GDELT recovery evidence","resolution":"capture successful poll after bounded backoff or document outage","evidence":["docs/p0-requirement-traceability.md"],"status":"OPEN"},
     {"id":"DEBT-RAILWAY-001","description":"Canonical health callback permission","resolution":"use an approved callback path without weakening fail-closed behavior","evidence":["docs/creator-intelligence-v2-traceability.md"],"status":"OPEN"},
-    {"id":"DEBT-GMAIL-001","description":"Gmail OAuth/PubSub watch configuration","resolution":"configure and validate the protected Railway variables","evidence":["docs/creator-intelligence-v2-traceability.md"],"status":"OPEN"},
+    {"id":"DEBT-GMAIL-001","description":"Gmail OAuth/PubSub watch configuration","resolution":"configure and validate the protected Railway variables","evidence":["docs/evidence/external-acceptance-2026-08-25T0820Z.json"],"status":"CLOSED"},
+    {"id":"DEBT-GMAIL-PERSISTENCE-001","description":"Gmail cursor and watch state durability","resolution":"attach a Railway durable volume and capture restart continuity without exposing mailbox data","evidence":["docs/evidence/external-acceptance-2026-08-25T0820Z.json"],"status":"OPEN"},
     {"id":"DEBT-TELEGRAM-001","description":"Creator/FinancialJuice constrained delivery receipt","resolution":"capture a single-recipient production receipt","evidence":["docs/p0-requirement-traceability.md"],"status":"OPEN"},
     {"id":"DEBT-UX-001","description":"Telegram WebView interaction evidence","resolution":"execute a controlled non-broadcast browser test","evidence":["docs/gate-driven-status-2026-08-21.md"],"status":"OPEN"}
   ],
