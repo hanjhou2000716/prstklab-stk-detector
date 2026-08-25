@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import datetime
 from typing import Any
 
-from src.health_observability import aggregate_source_health
+from src.health_observability import aggregate_source_health, summarize_health_history
 
 SOURCE_DEFINITIONS = (
     ("market_quotes", "市場報價", {"", "index", "macro_quote", "taiwan_crosscheck"}),
@@ -277,6 +278,7 @@ def build_source_health(
     creator_sources: list[dict[str, Any]] | None = None,
     monitor_health: dict[str, Any] | None = None,
     quote_evidence: dict[str, Any] | None = None,
+    history_records: Iterable[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Expose failures distinctly from a clean scan with no market event."""
     checked = checked_at.isoformat()
@@ -437,6 +439,8 @@ def build_source_health(
         for source in gap_sources
     ]
     observability = aggregate_source_health(sources)
+    if history_records is not None:
+        observability["history"] = summarize_health_history(history_records, now=checked_at)
     # Configuration is an explicit operator action, not a provider outage.
     # Keep it visible for engineering users, but do not fold it into runtime
     # failure counts or imply that the configured market sources are broken.
