@@ -22,3 +22,12 @@ def test_registry_validation_accepts_complete_row():
         "universe_version": "u", "data_version": "d", "code_commit": "c",
         "backtest_release": "b",
     }) == []
+
+
+def test_registry_validation_rejects_uncontracted_metadata():
+    errors = validate_strategy_release({
+        "strategy_id": "momentum", "strategy_version": "1", "parameter_hash": "p",
+        "universe_version": "u", "data_version": "d", "code_commit": "c",
+        "backtest_release": "b", "private_note": "must not be published",
+    })
+    assert any("strategy_registry schema" in error for error in errors)
