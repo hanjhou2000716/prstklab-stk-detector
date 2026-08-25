@@ -9,9 +9,14 @@ file for durable state.
 
 from __future__ import annotations
 
+import json
 import os
+import tempfile
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+_PROBE_FILE = ".prstk-storage-probe.json"
 
 
 def _safe_writable(path: Path) -> bool:
@@ -21,6 +26,78 @@ def _safe_writable(path: Path) -> bool:
         return os.access(path, os.W_OK)
     except (OSError, ValueError):
         return False
+
+
+def _probe_path(state_path: str | Path) -> Path:
+    """Return the redacted startup marker path beside the state database."""
+
+    return Path(state_path).parent / _PROBE_FILE
+
+
+def _read_probe(path: Path) -> dict[str, Any] | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    started_at = payload.get("started_at")
+    if not isinstance(started_at, str) or not started_at.strip():
+        return None
+    return {"started_at": started_at.strip()}
+
+
+def record_storage_startup(state_path: str | Path, *, now: datetime | None = None) -> dict[str, Any]:
+    """Persist a tiny privacy-safe process-start marker.
+
+    A second process start that can read the previous marker proves that the
+    state directory survived that restart.  It does *not* override the mount
+    check or the fail-closed high-risk gate; it only supplies stronger
+    observability than a writable directory alone.
+    """
+
+    marker = _probe_path(state_path)
+    timestamp = (now or datetime.now(UTC)).astimezone(UTC).isoformat()
+    previous = _read_probe(marker) if marker.exists() else None
+    payload = {"schema_version": 1, "started_at": timestamp}
+    try:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=marker.parent, delete=False,
+            prefix=f"{marker.name}.", suffix=".tmp",
+        ) as handle:
+            json.dump(payload, handle, ensure_ascii=False, sort_keys=True)
+            handle.flush()
+            os.fsync(handle.fileno())
+            temporary = Path(handle.name)
+        os.replace(temporary, marker)
+    except (OSError, ValueError) as error:
+        try:
+            temporary.unlink(missing_ok=True)
+        except (UnboundLocalError, OSError):
+            pass
+        return {
+            "status": "failed",
+            "previous_started_at": previous.get("started_at") if previous else None,
+            "error": type(error).__name__,
+        }
+    return {
+        "status": "verified" if previous else "not_verified",
+        "previous_started_at": previous.get("started_at") if previous else None,
+        "error": None,
+    }
+
+
+def storage_probe_diagnostics(state_path: str | Path) -> dict[str, Any]:
+    """Read startup continuity without exposing the marker path or contents."""
+
+    marker = _probe_path(state_path)
+    if not marker.exists():
+        return {"status": "not_verified", "previous_started_at": None, "error": None}
+    payload = _read_probe(marker)
+    if payload is None:
+        return {"status": "failed", "previous_started_at": None, "error": "invalid_marker"}
+    return {"status": "verified", "previous_started_at": payload["started_at"], "error": None}
 
 
 def storage_diagnostics(state_path: str | Path) -> dict[str, Any]:
@@ -54,8 +131,9 @@ def storage_diagnostics(state_path: str | Path) -> dict[str, Any]:
         "state_parent_writable": bool(writable),
         "state_parent_exists": bool(parent_exists),
         "expected_volume_path": "/data",
+        "restart_continuity": storage_probe_diagnostics(path),
         "fail_closed_for_high_risk": status != "ready",
     }
 
 
-__all__ = ["storage_diagnostics"]
+__all__ = ["record_storage_startup", "storage_diagnostics", "storage_probe_diagnostics"]

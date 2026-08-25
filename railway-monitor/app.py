@@ -188,7 +188,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     load_health_samples = _health_history_module.load_health_samples
 
 try:
-    from storage_health import storage_diagnostics
+    from storage_health import record_storage_startup, storage_diagnostics
 except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
     _storage_health_spec = spec_from_file_location(
         "railway_storage_health",
@@ -198,6 +198,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
         raise ImportError("cannot load railway-monitor/storage_health.py") from None
     _storage_health_module = module_from_spec(_storage_health_spec)
     _storage_health_spec.loader.exec_module(_storage_health_module)
+    record_storage_startup = _storage_health_module.record_storage_startup
     storage_diagnostics = _storage_health_module.storage_diagnostics
 
 try:
@@ -1113,6 +1114,14 @@ class SeenStore:
         self.connection.execute("PRAGMA journal_mode=WAL")
         initialize_state_schema(self.connection)
         self.connection.commit()
+        # Keep a tiny marker beside the SQLite state so a later process can
+        # prove restart continuity without exposing database contents.  This
+        # must never prevent the monitor from starting; the health projection
+        # remains fail-closed when the marker cannot be written.
+        try:
+            record_storage_startup(path)
+        except Exception:  # pragma: no cover - defensive startup boundary
+            logging.exception("storage startup probe failed; continuing monitor")
 
     def restore_health_history(self) -> int:
         """Load the bounded redacted history from the durable Railway volume."""
