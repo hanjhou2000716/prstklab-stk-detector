@@ -348,7 +348,13 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
             )
             if key in raw_macro
         }
-    raw_external = snapshot.get("external_observations")
+    # The public release keeps every sanitized external row for lineage and
+    # Creator display.  The shared market-event classifier consumes only the
+    # FinancialJuice subset; editorial Creator observations use their own
+    # attributed-content lane below.
+    raw_external = snapshot.get("financialjuice_observations")
+    if not isinstance(raw_external, list):
+        raw_external = snapshot.get("external_observations")
     external_input = raw_external if isinstance(raw_external, list) else []
     intelligence = build_intelligence_context(
         lead if isinstance(lead, dict) else {"title": "briefing"},
