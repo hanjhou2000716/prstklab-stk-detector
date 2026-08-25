@@ -182,8 +182,9 @@ def record_health_sample(
 
     The sample contains only component states and aggregate counters; it never
     copies credentials, message bodies, transport IDs, or recipient data.
-    Keeping the history in memory avoids turning the public health endpoint
-    into a second private datastore while still making short outages visible.
+    The in-memory history remains the fast public projection; when ``persist``
+    is supplied, the same redacted sample is handed to the durable Railway
+    store so restarts do not erase the recent outage window.
     """
     timestamp = recorded_at or datetime.now(UTC)
     if timestamp.tzinfo is None:
