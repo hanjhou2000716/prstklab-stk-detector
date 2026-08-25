@@ -143,7 +143,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     project_source_health = _source_health_module.project_source_health
 
 try:
-    from health_state import HEALTH_LOCK, HEALTH_STATE, record_health_sample, snapshot_health, update_health
+    from health_state import HEALTH_LOCK, HEALTH_STATE, record_health_sample, restore_health_history, snapshot_health, update_health
 except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
     _health_state_spec = spec_from_file_location(
         "railway_health_state",
@@ -156,6 +156,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     HEALTH_LOCK = _health_state_module.HEALTH_LOCK
     HEALTH_STATE = _health_state_module.HEALTH_STATE
     record_health_sample = _health_state_module.record_health_sample
+    restore_health_history = _health_state_module.restore_health_history
     snapshot_health = _health_state_module.snapshot_health
     update_health = _health_state_module.update_health
 
@@ -171,6 +172,20 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     _schema_module = module_from_spec(_schema_spec)
     _schema_spec.loader.exec_module(_schema_module)
     initialize_state_schema = _schema_module.initialize_state_schema
+
+try:
+    from health_history_store import append_health_sample, load_health_samples
+except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
+    _health_history_spec = spec_from_file_location(
+        "railway_health_history_store",
+        Path(__file__).with_name("health_history_store.py"),
+    )
+    if _health_history_spec is None or _health_history_spec.loader is None:
+        raise ImportError("cannot load railway-monitor/health_history_store.py") from None
+    _health_history_module = module_from_spec(_health_history_spec)
+    _health_history_spec.loader.exec_module(_health_history_module)
+    append_health_sample = _health_history_module.append_health_sample
+    load_health_samples = _health_history_module.load_health_samples
 
 try:
     from storage_health import storage_diagnostics
@@ -1098,6 +1113,24 @@ class SeenStore:
         self.connection.execute("PRAGMA journal_mode=WAL")
         initialize_state_schema(self.connection)
         self.connection.commit()
+
+    def restore_health_history(self) -> int:
+        """Load the bounded redacted history from the durable Railway volume."""
+        db, owned = self._connection_for_thread()
+        try:
+            return restore_health_history(load_health_samples(db))
+        finally:
+            if owned:
+                db.close()
+
+    def persist_health_sample(self, sample: dict[str, Any]) -> None:
+        """Persist only the public health projection; failures stay non-fatal."""
+        db, owned = self._connection_for_thread()
+        try:
+            append_health_sample(db, sample)
+        finally:
+            if owned:
+                db.close()
 
     def _connection_for_thread(self) -> tuple[sqlite3.Connection, bool]:
         """Return a connection owned by the current thread.
@@ -2031,6 +2064,9 @@ async def monitor_forever() -> None:
                   status="disabled" if not gdelt_enabled else "not_checked")
     state_path = Path(os.environ.get("MONITOR_STATE_PATH", "/data/jin10-monitor.sqlite3"))
     store = SeenStore(state_path)
+    # Restore history before the first health response so a process restart is
+    # distinguishable from a source that has never been polled.
+    store.restore_health_history()
     global DELIVERY_STORE
     DELIVERY_STORE = store
     update_health(
@@ -2330,7 +2366,10 @@ async def monitor_forever() -> None:
         update_health("monitor", status="running", last_cycle_completed_at=cycle_completed_at)
         # Keep one bounded, privacy-safe sample per completed poll cycle so
         # transient provider failures remain diagnosable after recovery.
-        record_health_sample(recorded_at=datetime.fromisoformat(cycle_completed_at))
+        record_health_sample(
+            recorded_at=datetime.fromisoformat(cycle_completed_at),
+            persist=store.persist_health_sample,
+        )
         await asyncio.sleep(interval)
 
 

@@ -27,6 +27,19 @@ def initialize_state_schema(connection: sqlite3.Connection) -> None:
     connection.execute(
         "CREATE TABLE IF NOT EXISTS cache (cache_key TEXT PRIMARY KEY, payload TEXT NOT NULL, refreshed_at TEXT NOT NULL)"
     )
+    # Bounded, privacy-safe monitor samples survive Railway restarts.  The
+    # payload intentionally contains only aggregate counters and component
+    # status labels; raw events, credentials and delivery identifiers never
+    # belong in this table.
+    connection.execute(
+        """CREATE TABLE IF NOT EXISTS health_samples (
+            recorded_at TEXT PRIMARY KEY,
+            overall_state TEXT NOT NULL,
+            failure_count INTEGER NOT NULL DEFAULT 0,
+            no_event_count INTEGER NOT NULL DEFAULT 0,
+            component_statuses_json TEXT NOT NULL DEFAULT '{}'
+        )"""
+    )
     connection.execute(
         """CREATE TABLE IF NOT EXISTS event_ledger (
             canonical_key TEXT PRIMARY KEY,

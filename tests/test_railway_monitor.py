@@ -43,6 +43,22 @@ def test_health_snapshot_exposes_redacted_runtime_configuration(monkeypatch):
     }
 
 
+def test_health_history_survives_store_reopen_without_private_fields(tmp_path):
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    sample = {
+        "recorded_at": "2026-08-25T00:00:00+00:00",
+        "overall_state": "partial",
+        "failure_count": 1,
+        "no_event_count": 0,
+        "component_statuses": {"gdelt": "rate_limited"},
+    }
+    store.persist_health_sample(sample)
+    monitor.restore_health_history([])
+    reopened = monitor.SeenStore(tmp_path / "state.sqlite3")
+    assert reopened.restore_health_history() == 1
+    assert monitor.snapshot_health()["observability"]["history"]["samples"] == [sample]
+
+
 def test_monitor_imports_shared_classifier_from_railway_root_without_repository_src_package():
     """The root-only Railway image must use the generated canonical bundle."""
     environment = os.environ.copy()
