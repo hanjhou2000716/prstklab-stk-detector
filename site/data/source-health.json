@@ -5,9 +5,9 @@
   "generated_at": "2026-08-25T14:27:01.898794+08:00",
   "source_health": {
     "checked_at": "2026-08-25T14:27:01.898794+08:00",
-    "status": "critical",
-    "summary": "7 個來源有資料缺口",
-    "investor_status": "核心資料不足",
+    "status": "partial",
+    "summary": "8 個來源有資料缺口",
+    "investor_status": "部分資料降級",
     "observability": {
       "observations": 15,
       "success_rate": 36.36,
@@ -709,6 +709,21 @@
           "last_delivery_at": null,
           "state": "no_observations"
         }
+      },
+      {
+        "key": "gdelt_crosscheck",
+        "label": "GDELT 事件交叉核對",
+        "status": "partial",
+        "semantic_state": "partial",
+        "role": "optional",
+        "checked_at": "2026-08-25T06:37:44.530197+00:00",
+        "source_url": "https://api.gdeltproject.org/api/v2/doc/doc",
+        "issues": [
+          "GDELT 掃描失敗：invalid_json"
+        ],
+        "pending_count": 0,
+        "pending_reasons": {},
+        "market_sync_status": "not_confirmed"
       }
     ],
     "data_gaps": [
@@ -754,8 +769,8 @@
         ]
       }
     ],
-    "missing_source_count": 7,
-    "runtime_failure_count": 5,
+    "missing_source_count": 8,
+    "runtime_failure_count": 6,
     "configuration_missing_count": 2,
     "gap_source_keys": [
       "market_quotes",
@@ -784,6 +799,14 @@
       "required_for_alert": 2,
       "required_for_research": 0,
       "optional": 10
-    }
+    },
+    "monitor_health": {
+      "component": "gdelt",
+      "checked_at": "2026-08-25T06:37:44.530197+00:00",
+      "status": "partial",
+      "pending_count": 0,
+      "pending_reasons": {}
+    },
+    "pending_event_count": 0
   }
 }
