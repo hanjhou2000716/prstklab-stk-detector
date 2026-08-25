@@ -97,6 +97,33 @@ def _text_contains(root: Path, relative: str, needles: tuple[str, ...]) -> dict[
     return {"check": relative, "ok": not missing, "reason": None if not missing else "missing_contract", "missing": missing}
 
 
+def check_gmail_watch_canonical(root: Path) -> dict[str, Any]:
+    """Ensure Railway Gmail lease work has one canonical producer.
+
+    The async service module is intentionally only an adapter for the existing
+    event loop.  Endpoint constants, lease decisions and cursor persistence
+    must remain owned by ``GmailWatchManager``.
+    """
+    canonical = root / "railway-monitor" / "gmail_watch.py"
+    adapter = root / "railway-monitor" / "gmail_watch_service.py"
+    if not canonical.is_file() or not adapter.is_file():
+        return {"check": "railway-monitor/gmail-watch-canonical", "ok": False, "reason": "missing_file"}
+    owner = "CANONICAL_WATCH_OWNER = \"railway-monitor/gmail_watch.py:GmailWatchManager\""
+    canonical_text = canonical.read_text(encoding="utf-8")
+    adapter_text = adapter.read_text(encoding="utf-8")
+    required = (owner, "class GmailWatchManager", "def ensure_watch")
+    forbidden = ("class GmailWatchManager", "TOKEN_ENDPOINT =", "WATCH_ENDPOINT =", "def renewal_due")
+    missing = [needle for needle in required if needle not in canonical_text]
+    duplicate = [needle for needle in forbidden if needle in adapter_text]
+    return {
+        "check": "railway-monitor/gmail-watch-canonical",
+        "ok": not missing and not duplicate and "GmailWatchManager" in adapter_text,
+        "reason": None if not missing and not duplicate else "duplicate_watch_producer",
+        "missing": missing,
+        "duplicate": duplicate,
+    }
+
+
 def audit(root: Path = ROOT) -> dict[str, Any]:
     """Run the offline canonical-overlap audit against *root*."""
     checks: list[dict[str, Any]] = []
@@ -113,6 +140,7 @@ def audit(root: Path = ROOT) -> dict[str, Any]:
 
     checks.extend(
         [
+            check_gmail_watch_canonical(root),
             _text_contains(root, "src/email_intelligence.py", ("creator_ids()", "get_creator_provider")),
             _text_contains(root, "railway-monitor/src/email_intelligence.py", ("creator_ids()", "get_creator_provider")),
             _text_contains(root, "src/news_feed_adapters.py", ("from src.news_intelligence import provider_registry", "for provider in provider_registry()")),
