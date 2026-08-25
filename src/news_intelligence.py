@@ -405,6 +405,65 @@ def deduplicate_and_rank(stories: Iterable[dict[str, Any]], *, limit: int = 5, m
     return result
 
 
+def summarize_source_diversity(stories: Iterable[dict[str, Any]]) -> dict[str, Any]:
+    """Summarize independent evidence behind the ranked news stories.
+
+    A provider count alone is not sufficient: two aliases can resolve to the
+    same domain, while one story can carry an independently retained source in
+    ``supporting_sources``.  The public contract therefore counts canonical
+    source domains (falling back to provider IDs when a supporting URL is not
+    available) and makes the cross-check state explicit.  This is descriptive
+    evidence only; it never upgrades event severity or qualifies an alert.
+    """
+    providers: set[str] = set()
+    domains: set[str] = set()
+    supporting_count = 0
+
+    def add_source(provider: Any, url: Any) -> None:
+        provider_id = str(provider or "").strip().casefold()
+        host = _host(str(url or ""))
+        if host:
+            domains.add(host)
+        elif provider_id:
+            providers.add(provider_id)
+
+    materialized = [item for item in stories if isinstance(item, dict)]
+    for story in materialized:
+        provider = story.get("provider")
+        if provider:
+            providers.add(str(provider).strip().casefold())
+        add_source(provider, story.get("canonical_url") or story.get("url"))
+        supporting = story.get("supporting_sources")
+        if not isinstance(supporting, list):
+            continue
+        for source in supporting:
+            if not isinstance(source, Mapping):
+                continue
+            supporting_count += 1
+            provider = source.get("provider")
+            if provider:
+                providers.add(str(provider).strip().casefold())
+            add_source(provider, source.get("url") or source.get("canonical_url"))
+
+    independent_count = len(domains) or len(providers)
+    status = (
+        "no_event" if not materialized
+        else "multi_source" if independent_count >= 2
+        else "single_source"
+    )
+    return {
+        "schema_version": "1.0",
+        "status": status,
+        "cross_checked": independent_count >= 2,
+        "minimum_required": 2,
+        "independent_source_count": independent_count,
+        "provider_count": len(providers),
+        "provider_ids": sorted(providers),
+        "source_domains": sorted(domains),
+        "supporting_source_count": supporting_count,
+    }
+
+
 def build_news_intelligence(
     stories: Iterable[dict[str, Any]],
     *,
@@ -429,6 +488,7 @@ def build_news_intelligence(
         creator_mentions=creator_mentions,
     )
     ranked = deduplicate_and_rank(normalized, limit=limit)
+    source_diversity = summarize_source_diversity(ranked)
     excluded = [item for item in normalized if item.get("market_compatible") is False]
     health_rows: list[dict[str, Any]] = []
     for raw_health in source_health or ():
@@ -460,6 +520,7 @@ def build_news_intelligence(
         "schema_version": "1.0",
         "provider_registry": provider_registry(),
         "stories": ranked,
+        "source_diversity": source_diversity,
         "interest_graph": graph,
         "excluded_count": len(excluded),
         "exclusion_reasons": {"market_scope_mismatch": len(excluded)} if excluded else {},

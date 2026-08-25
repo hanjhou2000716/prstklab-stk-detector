@@ -153,6 +153,29 @@ def validate_news_intelligence(document: dict[str, Any]) -> list[str]:
     known: dict[str, dict[str, Any]] = {}
     if not isinstance(registry, list):
         return errors + ["news provider_registry must be an array"]
+    diversity = document.get("source_diversity")
+    if diversity is not None:
+        if not isinstance(diversity, dict):
+            errors.append("news.source_diversity must be an object")
+        else:
+            status = str(diversity.get("status") or "")
+            if status not in {"no_event", "single_source", "multi_source"}:
+                errors.append("news.source_diversity.status is invalid")
+            count = diversity.get("independent_source_count")
+            if not isinstance(count, int) or count < 0:
+                errors.append("news.source_diversity.independent_source_count must be non-negative")
+            else:
+                expected_cross_checked = count >= 2
+                if diversity.get("cross_checked") is not expected_cross_checked:
+                    errors.append("news.source_diversity.cross_checked disagrees with source count")
+                if document.get("stories") and status == "no_event":
+                    errors.append("news.source_diversity.no_event conflicts with stories")
+                if not document.get("stories") and status != "no_event":
+                    errors.append("news.source_diversity status must be no_event without stories")
+                if count >= 2 and status != "multi_source":
+                    errors.append("news.source_diversity status must be multi_source for two sources")
+                if count < 2 and document.get("stories") and status != "single_source":
+                    errors.append("news.source_diversity status must be single_source for one source")
     for index, provider in enumerate(registry):
         if not isinstance(provider, dict):
             errors.append(f"news.provider_registry[{index}] must be an object")

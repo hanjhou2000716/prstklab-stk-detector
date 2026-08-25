@@ -393,9 +393,23 @@ const newsBadgeLabels = (story) => {
   return badges;
 };
 
-const renderNewsList = (id, stories, providerRegistry = [], health = null) => {
+const renderNewsList = (id, stories, providerRegistry = [], health = null, intelligence = null) => {
   const container = document.getElementById(id);
   if (!container) return;
+  const diversityNode = document.getElementById(`${id}-source-status`);
+  const diversity = intelligence?.source_diversity;
+  if (diversityNode) {
+    if (!diversity || diversity.status === "no_event") {
+      diversityNode.textContent = "來源核對：本輪沒有可用新聞";
+      diversityNode.dataset.state = "no-event";
+    } else if (diversity.status === "multi_source") {
+      diversityNode.textContent = `來源核對：${Number(diversity.independent_source_count) || 0} 個獨立來源`;
+      diversityNode.dataset.state = "multi-source";
+    } else {
+      diversityNode.textContent = "來源核對：單一來源，等待第二來源";
+      diversityNode.dataset.state = "single-source";
+    }
+  }
   if (!stories?.length) {
     const state = newsEmptyState(health);
     container.innerHTML = `<li class="empty news-empty-state"><strong>${escapeHtml(state.title)}</strong><small>${escapeHtml(state.detail)}</small></li>`;
@@ -1099,8 +1113,8 @@ const render = (snapshot) => {
       source_failure_count: intelligence.source_failure_count ?? aggregate.source_failure_count,
     };
   };
-  renderNewsList("taiwan-news", newsMarkets?.taiwan?.stories || snapshot.news?.taiwan, newsRegistry, newsHealthFor("taiwan"));
-  renderNewsList("us-news", newsMarkets?.us?.stories || snapshot.news?.us, newsRegistry, newsHealthFor("us"));
+  renderNewsList("taiwan-news", newsMarkets?.taiwan?.stories || snapshot.news?.taiwan, newsRegistry, newsHealthFor("taiwan"), newsMarkets?.taiwan);
+  renderNewsList("us-news", newsMarkets?.us?.stories || snapshot.news?.us, newsRegistry, newsHealthFor("us"), newsMarkets?.us);
 };
 
 // Telegram buttons carry the release and alert identity.  Resolve that

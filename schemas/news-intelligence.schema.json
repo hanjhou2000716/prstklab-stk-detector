@@ -11,7 +11,23 @@
     "status": {"enum": ["ready", "no_event"]},
     "collection_state": {"enum": ["ready", "degraded", "no_event", "source_failed"]},
     "source_failure_count": {"type": "integer", "minimum": 0},
-    "source_health": {"type": "array", "items": {"type": "object"}}
+    "source_health": {"type": "array", "items": {"type": "object"}},
+    "source_diversity": {
+      "type": "object",
+      "required": ["status", "cross_checked", "independent_source_count", "minimum_required"],
+      "properties": {
+        "schema_version": {"type": "string"},
+        "status": {"enum": ["no_event", "single_source", "multi_source"]},
+        "cross_checked": {"type": "boolean"},
+        "minimum_required": {"type": "integer", "minimum": 2},
+        "independent_source_count": {"type": "integer", "minimum": 0},
+        "provider_count": {"type": "integer", "minimum": 0},
+        "provider_ids": {"type": "array", "items": {"type": "string"}},
+        "source_domains": {"type": "array", "items": {"type": "string"}},
+        "supporting_source_count": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": true
+    }
   },
   "additionalProperties": true,
   "$defs": {

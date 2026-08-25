@@ -105,6 +105,15 @@
 .news-panel .news-list {
   width: 100%;
 }
+.news-source-status {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: .68rem;
+  line-height: 1.4;
+}
+.news-source-status[data-state="multi-source"] { color: var(--positive); }
+.news-source-status[data-state="single-source"] { color: var(--orange); }
+.news-source-status[data-state="no-event"] { color: var(--muted); }
 .news-panel .news-list li {
   min-height: 54px;
   padding: 13px 0;
