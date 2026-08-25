@@ -203,3 +203,27 @@ def test_remote_external_health_preserves_status_and_fallback() -> None:
         accepted=[], rejected=0, checked_at=checked_at,
     )
     assert missing["semantic_state"] == "configuration_missing"
+
+
+def test_remote_empty_scan_aliases_are_successful_no_event_states() -> None:
+    checked_at = datetime.now(UTC)
+    for provider_status in ("no_new_content", "scan_complete", "empty", "idle"):
+        row = external_source_health_from_remote(
+            {"status": provider_status, "rejected_count": 0},
+            accepted=[], rejected=0, checked_at=checked_at,
+        )
+        assert row["provider_status"] == provider_status
+        assert row["semantic_state"] == "no_event"
+        assert row["last_success_at"] == checked_at.isoformat()
+
+
+def test_remote_configuration_aliases_remain_configuration_missing() -> None:
+    checked_at = datetime.now(UTC)
+    for provider_status in ("configuration_required", "not_configured"):
+        row = external_source_health_from_remote(
+            {"status": provider_status, "reason": "missing_secret"},
+            accepted=[], rejected=0, checked_at=checked_at,
+        )
+        assert row["provider_status"] == provider_status
+        assert row["semantic_state"] == "configuration_missing"
+        assert row["last_success_at"] is None
