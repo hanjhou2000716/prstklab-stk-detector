@@ -56,3 +56,14 @@ gates are cleared:
 
 No production notification, secret access, or data fabrication was used to
 make these checks green.
+
+## 2026-08-25 continuation evidence
+
+The canonical overlap checkpoint is documented in
+`docs/canonical-overlap-checkpoint-20260825.md`. PRs #757–#761 form one
+stacked architecture: shared classification is used by both news and live
+events, while the external acceptance probe now verifies that the reviewed
+Railway observation set is the same set represented by the public release
+manifest. This is still local/branch evidence; the external rows above remain
+`NEEDS_REVERIFY` until a controlled post-merge Railway, Pages and
+single-recipient Telegram run is captured.
