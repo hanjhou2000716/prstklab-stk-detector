@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import threading
+from collections.abc import Callable, Iterable
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -139,7 +140,44 @@ def update_health(component: str, **values: Any) -> None:
         HEALTH_STATE.setdefault(component, {}).update(values)
 
 
-def record_health_sample(*, recorded_at: datetime | None = None) -> dict[str, Any]:
+def restore_health_history(samples: Iterable[dict[str, Any]]) -> int:
+    """Restore a bounded, already-redacted history after process startup."""
+    accepted: list[dict[str, Any]] = []
+    for row in samples:
+        if not isinstance(row, dict):
+            continue
+        statuses = row.get("component_statuses")
+        if not isinstance(statuses, dict):
+            continue
+        try:
+            failure_count = max(0, int(row.get("failure_count") or 0))
+            no_event_count = max(0, int(row.get("no_event_count") or 0))
+        except (TypeError, ValueError):
+            continue
+        recorded_at = str(row.get("recorded_at") or "").strip()
+        if not recorded_at:
+            continue
+        accepted.append({
+            "recorded_at": recorded_at,
+            "overall_state": str(row.get("overall_state") or "not_checked"),
+            "failure_count": failure_count,
+            "no_event_count": no_event_count,
+            "component_statuses": {
+                str(key): str(value) for key, value in statuses.items()
+                if str(key).strip() and str(value).strip()
+            },
+        })
+    accepted.sort(key=lambda row: row["recorded_at"])
+    with HEALTH_LOCK:
+        HEALTH_HISTORY[:] = accepted[-MAX_HEALTH_HISTORY:]
+    return len(HEALTH_HISTORY)
+
+
+def record_health_sample(
+    *,
+    recorded_at: datetime | None = None,
+    persist: Callable[[dict[str, Any]], None] | None = None,
+) -> dict[str, Any]:
     """Append one bounded, privacy-safe poll-cycle health sample.
 
     The sample contains only component states and aggregate counters; it never
@@ -162,7 +200,15 @@ def record_health_sample(*, recorded_at: datetime | None = None) -> dict[str, An
         }
         HEALTH_HISTORY.append(sample)
         del HEALTH_HISTORY[:-MAX_HEALTH_HISTORY]
-        return json.loads(json.dumps(sample))
+        result = json.loads(json.dumps(sample))
+    if persist is not None:
+        # Persistence is deliberately outside HEALTH_LOCK.  SQLite busy or
+        # disk errors must not block the health endpoint or the poll loop.
+        try:
+            persist(result)
+        except Exception:  # pragma: no cover - defensive runtime boundary
+            pass
+    return result
 
 
 def health_history_summary(*, now: datetime | None = None) -> dict[str, Any]:
@@ -210,6 +256,6 @@ def snapshot_health() -> dict[str, Any]:
 
 __all__ = [
     "HEALTH_HISTORY", "HEALTH_LOCK", "HEALTH_STATE", "MAX_HEALTH_HISTORY",
-    "health_history_summary", "record_health_sample", "snapshot_health",
+    "health_history_summary", "record_health_sample", "restore_health_history", "snapshot_health",
     "summarize_health", "update_health",
 ]

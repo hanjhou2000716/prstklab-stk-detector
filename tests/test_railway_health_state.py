@@ -74,3 +74,28 @@ def test_health_history_caps_samples() -> None:
         module.record_health_sample(recorded_at=module.datetime(2026, 8, 1 + index // 24, index % 24, tzinfo=module.UTC))
     assert len(module.HEALTH_HISTORY) == module.MAX_HEALTH_HISTORY
     assert module.health_history_summary()["sample_count"] == module.MAX_HEALTH_HISTORY
+
+
+def test_restore_health_history_keeps_only_redacted_bounded_samples() -> None:
+    module.HEALTH_HISTORY.clear()
+    restored = module.restore_health_history([
+        {
+            "recorded_at": "2026-08-25T00:00:00+00:00",
+            "overall_state": "healthy",
+            "failure_count": 0,
+            "no_event_count": 1,
+            "component_statuses": {"gdelt": "no_event"},
+            "token": "must-not-leak",
+        },
+        {"recorded_at": "", "component_statuses": {}},
+    ])
+    assert restored == 1
+    sample = module.snapshot_health()["observability"]["history"]["samples"][0]
+    assert sample == {
+        "recorded_at": "2026-08-25T00:00:00+00:00",
+        "overall_state": "healthy",
+        "failure_count": 0,
+        "no_event_count": 1,
+        "component_statuses": {"gdelt": "no_event"},
+    }
+    assert "token" not in str(module.snapshot_health()["observability"]["history"])
