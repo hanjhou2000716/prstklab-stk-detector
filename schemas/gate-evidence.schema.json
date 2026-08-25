@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/gate-evidence.schema.json",
+  "type": "object",
+  "required": ["schema_version", "policy_version", "requirements", "regressions", "completion_debt", "preservation_contracts"],
+  "properties": {
+    "schema_version": {"type": "string", "minLength": 1},
+    "policy_version": {"type": "string", "minLength": 1},
+    "requirements": {"type": "array", "minItems": 29, "items": {"$ref": "#/$defs/requirement"}},
+    "regressions": {"type": "array", "items": {"$ref": "#/$defs/ledger"}},
+    "completion_debt": {"type": "array", "items": {"$ref": "#/$defs/ledger"}},
+    "preservation_contracts": {"type": "array", "items": {"$ref": "#/$defs/ledger"}}
+  },
+  "$defs": {
+    "status": {"enum": ["NOT_STARTED", "IN_PROGRESS", "NEEDS_REVERIFY", "PASS", "FAIL", "BLOCKED", "REOPENED", "LOCKED"]},
+    "ledger_status": {"enum": ["OPEN", "CLOSED", "ACCEPTED", "NEEDS_REVERIFY"]},
+    "requirement": {
+      "type": "object",
+      "required": ["id", "title", "implementation", "verification", "evidence", "regression_ids", "preservation_ids", "status"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^(P0-[0-9]{2}|REQ-[A-Z0-9-]+)$"},
+        "title": {"type": "string", "minLength": 1},
+        "dod_ids": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "implementation": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "verification": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "evidence": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "regression_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "preservation_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "status": {"$ref": "#/$defs/status"}
+      },
+      "additionalProperties": true
+    },
+    "ledger": {
+      "type": "object",
+      "required": ["id", "description", "status"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "description": {"type": "string", "minLength": 1},
+        "resolution": {"type": "string"},
+        "evidence": {"type": "array", "items": {"type": "string"}},
+        "status": {"$ref": "#/$defs/ledger_status"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
