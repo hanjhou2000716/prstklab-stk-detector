@@ -55,3 +55,22 @@ def test_health_summary_marks_all_empty_scan_as_healthy() -> None:
     assert summary["overall_state"] == "healthy"
     assert summary["no_event_count"] == 1
     assert summary["failure_count"] == 0
+
+
+def test_health_history_is_bounded_and_exposes_only_component_states() -> None:
+    module.HEALTH_HISTORY.clear()
+    module.update_health("gdelt", status="rate_limited", error="HTTP_429", token="must-not-leak")
+    module.record_health_sample(recorded_at=module.datetime(2026, 8, 25, tzinfo=module.UTC))
+    history = module.health_history_summary(now=module.datetime(2026, 8, 25, 1, tzinfo=module.UTC))
+    assert history["sample_count"] == 1
+    assert history["windows"]["24h"]["failure_count"] == 1
+    assert history["samples"][0]["component_statuses"]["gdelt"] == "rate_limited"
+    assert "token" not in str(history)
+
+
+def test_health_history_caps_samples() -> None:
+    module.HEALTH_HISTORY.clear()
+    for index in range(module.MAX_HEALTH_HISTORY + 5):
+        module.record_health_sample(recorded_at=module.datetime(2026, 8, 1 + index // 24, index % 24, tzinfo=module.UTC))
+    assert len(module.HEALTH_HISTORY) == module.MAX_HEALTH_HISTORY
+    assert module.health_history_summary()["sample_count"] == module.MAX_HEALTH_HISTORY

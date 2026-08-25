@@ -143,7 +143,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     project_source_health = _source_health_module.project_source_health
 
 try:
-    from health_state import HEALTH_LOCK, HEALTH_STATE, snapshot_health, update_health
+    from health_state import HEALTH_LOCK, HEALTH_STATE, record_health_sample, snapshot_health, update_health
 except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
     _health_state_spec = spec_from_file_location(
         "railway_health_state",
@@ -155,6 +155,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     _health_state_spec.loader.exec_module(_health_state_module)
     HEALTH_LOCK = _health_state_module.HEALTH_LOCK
     HEALTH_STATE = _health_state_module.HEALTH_STATE
+    record_health_sample = _health_state_module.record_health_sample
     snapshot_health = _health_state_module.snapshot_health
     update_health = _health_state_module.update_health
 
@@ -2327,6 +2328,9 @@ async def monitor_forever() -> None:
                     logging.exception("GDELT failure health publication failed")
         cycle_completed_at = datetime.now(timezone.utc).isoformat()
         update_health("monitor", status="running", last_cycle_completed_at=cycle_completed_at)
+        # Keep one bounded, privacy-safe sample per completed poll cycle so
+        # transient provider failures remain diagnosable after recovery.
+        record_health_sample(recorded_at=datetime.fromisoformat(cycle_completed_at))
         await asyncio.sleep(interval)
 
 
