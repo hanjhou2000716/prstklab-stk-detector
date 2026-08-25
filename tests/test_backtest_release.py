@@ -53,3 +53,18 @@ def test_backtest_release_preserves_net_performance_and_audit_provenance():
     assert contract["survivorship_audit"]["status"] == "pass"
     schema = json.loads(Path("schemas/backtest-release.schema.json").read_text(encoding="utf-8"))
     validate(contract, schema)
+
+
+def test_backtest_release_exposes_registry_validation_and_blocks_invalid_rows(monkeypatch):
+    monkeypatch.setattr(
+        "src.backtest_release.validate_strategy_release",
+        lambda row: ["strategy_registry.code_commit is missing"],
+    )
+    contract = build_backtest_release(_report(), market="us", config={})
+    assert contract["strategy_registry_validation"] == {
+        "status": "failed",
+        "errors": ["strategy_registry[0]: strategy_registry.code_commit is missing"],
+    }
+    assert contract["publication_state"] == "blocked"
+    assert contract["publish_eligible"] is False
+    assert any("strategy_registry[0]" in reason for reason in contract["blocking_reasons"])
