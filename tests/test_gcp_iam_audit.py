@@ -1,6 +1,17 @@
 from __future__ import annotations
 
-from src.gcp_iam_audit import audit_documents, audit_project_policy, audit_topic_policy
+from src.gcp_iam_audit import (
+    DEFAULT_GMAIL_PUBLISHER_PRINCIPAL,
+    audit_documents,
+    audit_project_policy,
+    audit_topic_policy,
+)
+
+
+def test_documented_gmail_publisher_identity_is_the_cli_default() -> None:
+    assert DEFAULT_GMAIL_PUBLISHER_PRINCIPAL == (
+        "serviceAccount:gmail-api-push@system.gserviceaccount.com"
+    )
 
 
 def test_project_policy_flags_editor_for_protected_runtime_identity() -> None:

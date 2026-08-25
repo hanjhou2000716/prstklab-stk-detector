@@ -10,6 +10,13 @@ from typing import Any
 
 _BROAD_ROLES = frozenset({"roles/owner", "roles/editor", "roles/viewer"})
 _PUBLISH_ROLE = "roles/pubsub.publisher"
+# Gmail push notifications are published by Google's managed Gmail identity.
+# Keep this as the CLI default so the read-only audit checks the identity that
+# Gmail actually documents and uses; callers may still pass an explicit
+# principal when auditing a different, intentionally configured integration.
+DEFAULT_GMAIL_PUBLISHER_PRINCIPAL = (
+    "serviceAccount:gmail-api-push@system.gserviceaccount.com"
+)
 
 
 def _members(binding: dict[str, Any]) -> Iterable[str]:
@@ -102,7 +109,11 @@ def _main() -> int:
     parser.add_argument("project_policy", type=Path)
     parser.add_argument("--protected-principal", action="append", default=[])
     parser.add_argument("--topic-policy", type=Path)
-    parser.add_argument("--publisher-principal", default="")
+    parser.add_argument(
+        "--publisher-principal",
+        default=DEFAULT_GMAIL_PUBLISHER_PRINCIPAL,
+        help="Topic publisher principal (defaults to Gmail's managed identity)",
+    )
     args = parser.parse_args()
     project = json.loads(args.project_policy.read_text(encoding="utf-8"))
     topic = json.loads(args.topic_policy.read_text(encoding="utf-8")) if args.topic_policy else None
@@ -120,4 +131,9 @@ if __name__ == "__main__":  # pragma: no cover - CLI wrapper
     raise SystemExit(_main())
 
 
-__all__ = ["audit_documents", "audit_project_policy", "audit_topic_policy"]
+__all__ = [
+    "DEFAULT_GMAIL_PUBLISHER_PRINCIPAL",
+    "audit_documents",
+    "audit_project_policy",
+    "audit_topic_policy",
+]
