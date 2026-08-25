@@ -543,12 +543,24 @@ const renderSourceHealth = (health, snapshot = {}) => {
   };
   const scanStateLabel = sourceHealthStateLabel(scanState);
   const observation = health.observability || health.slo || health.monitor_health || {};
+  const history = observation.history && typeof observation.history === "object" ? observation.history : null;
+  const historyWindow = (key) => history && history.windows && history.windows[key] && typeof history.windows[key] === "object"
+    ? history.windows[key] : null;
+  const historyParts = [];
+  ["24h", "7d"].forEach((key) => {
+    const metric = historyWindow(key);
+    if (!metric || !Number.isFinite(Number(metric.sample_count))) return;
+    const label = key === "24h" ? "24 小時" : "7 日";
+    const success = Number.isFinite(Number(metric.success_rate)) ? `成功率 ${Number(metric.success_rate).toFixed(1)}%` : "成功率待定";
+    historyParts.push(`${label} ${success}／失敗 ${Number(metric.failure_count) || 0}／無事件 ${Number(metric.no_event_count) || 0}`);
+  });
   const healthMetricParts = [
     Number.isFinite(Number(observation.success_rate)) ? `成功率 ${Number(observation.success_rate).toFixed(1)}%` : "",
     Number.isFinite(Number(observation.no_event_count)) ? `無事件 ${Number(observation.no_event_count)} 個` : "",
     Number.isFinite(Number(observation.failure_count)) ? `掃描失敗 ${Number(observation.failure_count)} 個` : "",
     Number.isFinite(Number(observation.crosscheck_rate)) ? `核對率 ${Number(observation.crosscheck_rate).toFixed(1)}%` : "",
     Number.isFinite(Number(observation.stale_count)) ? `快取 ${Number(observation.stale_count)} 筆` : "",
+    historyParts.length ? `歷史：${historyParts.join("；")}` : "",
   ].filter(Boolean).join("｜");
   event.textContent = `${scan.label || "事件掃描"}｜${scanStateLabel}${scan.detail ? `｜${scan.detail}` : ""}${healthMetricParts ? `｜${healthMetricParts}` : ""}`;
   event.dataset.status = scan.status || "partial";

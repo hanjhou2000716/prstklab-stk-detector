@@ -68,9 +68,63 @@
         "degraded_count": {"type": "integer", "minimum": 0},
         "crosscheck_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
         "parser_error_count": {"type": "integer", "minimum": 0},
-        "state": {"enum": ["healthy", "partial", "failed", "no_observations"]}
+        "state": {"enum": ["healthy", "partial", "failed", "no_observations"]},
+        "history": {"$ref": "#/$defs/history"}
       },
       "additionalProperties": true
+    },
+    "history": {
+      "type": "object",
+      "required": ["retention_hours", "max_samples", "sample_count", "windows", "samples"],
+      "properties": {
+        "retention_hours": {"type": "integer", "minimum": 24, "maximum": 168},
+        "max_samples": {"type": "integer", "minimum": 1, "maximum": 168},
+        "sample_count": {"type": "integer", "minimum": 0, "maximum": 168},
+        "invalid_sample_count": {"type": "integer", "minimum": 0},
+        "last_checked_at": {"type": ["string", "null"], "format": "date-time"},
+        "windows": {
+          "type": "object",
+          "required": ["24h", "7d"],
+          "properties": {
+            "24h": {"$ref": "#/$defs/historyMetric"},
+            "7d": {"$ref": "#/$defs/historyMetric"}
+          },
+          "additionalProperties": false
+        },
+        "samples": {"type": "array", "maxItems": 168, "items": {"$ref": "#/$defs/historySample"}}
+      },
+      "additionalProperties": false
+    },
+    "historyMetric": {
+      "type": "object",
+      "required": ["sample_count", "failure_count", "no_event_count", "stale_count", "parser_error_count", "state"],
+      "properties": {
+        "sample_count": {"type": "integer", "minimum": 0},
+        "success_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+        "failure_count": {"type": "integer", "minimum": 0},
+        "no_event_count": {"type": "integer", "minimum": 0},
+        "stale_count": {"type": "integer", "minimum": 0},
+        "crosscheck_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+        "parser_error_count": {"type": "integer", "minimum": 0},
+        "state": {"enum": ["healthy", "partial", "failed", "no_observations"]}
+      },
+      "additionalProperties": false
+    },
+    "historySample": {
+      "type": "object",
+      "required": ["checked_at", "sample_count", "failure_count", "no_event_count", "stale_count", "parser_error_count", "state"],
+      "properties": {
+        "checked_at": {"type": "string", "format": "date-time"},
+        "sample_count": {"const": 1},
+        "success_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+        "failure_count": {"type": "integer", "minimum": 0},
+        "no_event_count": {"type": "integer", "minimum": 0},
+        "stale_count": {"type": "integer", "minimum": 0},
+        "crosscheck_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+        "parser_error_count": {"type": "integer", "minimum": 0},
+        "state": {"enum": ["healthy", "partial", "failed", "no_observations"]}
+      },
+      "additionalProperties": false
     },
     "externalObservability": {
       "type": "object",
