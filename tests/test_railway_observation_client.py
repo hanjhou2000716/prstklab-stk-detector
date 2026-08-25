@@ -71,3 +71,48 @@ def test_loader_rejects_unknown_source_and_private_transport_fields(monkeypatch)
     rows, health = client.load_railway_observations(url="https://railway.example/health", secret="secret")
     assert rows == []
     assert health["rejected_count"] == 2
+
+
+def test_loader_retries_rate_limit_once_and_honors_retry_after(monkeypatch) -> None:
+    class Response:
+        def __init__(self, status_code, payload=None, headers=None):
+            self.status_code = status_code
+            self._payload = payload
+            self.headers = headers or {}
+
+        def json(self):
+            return self._payload
+
+    responses = iter([
+        Response(429, {}, {"Retry-After": "0"}),
+        Response(200, {"status": "no_new_content", "observations": []}),
+    ])
+    sleeps = []
+    monkeypatch.setattr(client.httpx, "get", lambda *_args, **_kwargs: next(responses))
+    monkeypatch.setattr(client.time, "sleep", sleeps.append)
+    rows, health = client.load_railway_observations(url="https://railway.example/health", secret="secret")
+    assert rows == []
+    assert health["status"] == "no_new_content"
+    assert health["attempts"] == 2
+    assert health["retry_count"] == 1
+    assert sleeps == [0.0]
+
+
+def test_loader_does_not_retry_forbidden_response(monkeypatch) -> None:
+    calls = []
+
+    class Response:
+        status_code = 403
+        headers = {}
+
+    def fake_get(*_args, **_kwargs):
+        calls.append(True)
+        return Response()
+
+    monkeypatch.setattr(client.httpx, "get", fake_get)
+    rows, health = client.load_railway_observations(url="https://railway.example/health", secret="secret")
+    assert rows == []
+    assert health["reason"] == "http_403"
+    assert health["retryable"] is False
+    assert health["attempts"] == 1
+    assert len(calls) == 1
