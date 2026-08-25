@@ -14,7 +14,8 @@ service-account keys or Pub/Sub secrets.
 
 ## IAM boundary
 
-- The service account used by Gmail push delivery needs permission to publish
+- Gmail push delivery uses Google's managed identity
+  `gmail-api-push@system.gserviceaccount.com`. It needs permission to publish
   to the single topic only (`pubsub.topics.publish` on that topic).
 - The Railway runtime identity that consumes the subscription needs subscriber
   permission on that subscription only (`pubsub.subscriptions.consume` and
@@ -67,9 +68,8 @@ gcloud projects get-iam-policy calendar-automation-497107 --format=json > projec
 gcloud pubsub topics get-iam-policy prstk-gmail-watch --project=calendar-automation-497107 --format=json > topic-iam.json
 python -m src.gcp_iam_audit project-iam.json `
   --protected-principal serviceAccount:calendar-reader@calendar-automation-497107.iam.gserviceaccount.com `
-  --protected-principal serviceAccount:prstk-gmail-pubsub@calendar-automation-497107.iam.gserviceaccount.com `
   --topic-policy topic-iam.json `
-  --publisher-principal serviceAccount:prstk-gmail-pubsub@calendar-automation-497107.iam.gserviceaccount.com
+  --publisher-principal serviceAccount:gmail-api-push@system.gserviceaccount.com
 ```
 
 Exit status 1 means a protected identity has a broad project role or the
@@ -77,4 +77,7 @@ Pub/Sub publisher binding is absent. The command never grants or revokes IAM,
 never creates a service-account key, and prints no OAuth or mailbox secret.
 The `calendar-reader` Editor finding from the 2026-08-24 audit must be removed
 by an authorised project administrator after reviewing the required resource
-roles; do not replace it blindly with a guessed role.
+roles; do not replace it blindly with a guessed role. The
+`prstk-gmail-pubsub@...` name in older audit examples is not Gmail's publisher
+identity and must not be granted topic publish access unless a separate,
+explicit integration uses it.
