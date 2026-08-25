@@ -194,3 +194,29 @@ def test_restore_reports_empty_remote_release_without_pathspec_failure(tmp_path,
         "reason": "no_remote_paths",
         "missing_remote": ["data/taiwan-mops-pristine-history.json"],
     }
+
+
+def test_restore_dry_run_never_checks_out_files(tmp_path, monkeypatch):
+    data_dir = tmp_path / "site" / "data"
+    data_dir.mkdir(parents=True)
+    (data_dir / "market.json").write_text("{}", encoding="utf-8")
+    calls = []
+
+    def fake_run(*args, check=True):
+        calls.append(args)
+        if args[:2] == ("fetch", "origin"):
+            return data_release.subprocess.CompletedProcess(args, 0, "", "")
+        if args[0] == "ls-tree":
+            return data_release.subprocess.CompletedProcess(args, 0, "site/data/market.json\n", "")
+        raise AssertionError(args)
+
+    monkeypatch.setattr(data_release, "_run", fake_run)
+    result = data_release.restore(root=tmp_path, dry_run=True)
+    assert result == {
+        "restored": False,
+        "dry_run": True,
+        "branch": "data-release",
+        "planned_files": ["site/data/market.json"],
+        "missing_remote": [],
+    }
+    assert not any(args and args[0] == "checkout" for args in calls)
