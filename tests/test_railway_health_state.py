@@ -30,3 +30,28 @@ def test_health_state_updates_are_serialized() -> None:
         worker.join()
     snapshot = module.snapshot_health()
     assert snapshot["monitor"]["last_cycle_completed_at"] in {"0", "1", "2", "3"}
+
+
+def test_health_summary_distinguishes_no_event_configuration_and_failure() -> None:
+    summary = module.summarize_health({
+        "gdelt": {"status": "no_event"},
+        "gmail": {"status": "configuration_missing"},
+        "news": {"status": "failed"},
+    })
+    assert summary["overall_state"] == "partial"
+    assert summary["no_event_count"] == 1
+    assert summary["configuration_missing_count"] == 1
+    assert summary["failure_count"] == 1
+    assert summary["component_statuses"] == {
+        "gdelt": "no_event", "gmail": "configuration_missing", "news": "failed",
+    }
+
+
+def test_health_summary_marks_all_empty_scan_as_healthy() -> None:
+    summary = module.summarize_health({
+        "gdelt": {"status": "no_new_content"},
+        "financialjuice": {"status": "scan_complete"},
+    })
+    assert summary["overall_state"] == "healthy"
+    assert summary["no_event_count"] == 1
+    assert summary["failure_count"] == 0
