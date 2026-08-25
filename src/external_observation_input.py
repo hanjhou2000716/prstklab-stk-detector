@@ -258,14 +258,20 @@ def external_source_health_from_remote(
     """
     raw_status = str(remote_health.get("status") or "failed").strip().casefold()
     provider_status = raw_status or "failed"
-    if raw_status in {"ready", "healthy"}:
+    # Railway has historically emitted several names for a completed empty
+    # scan.  They are successful observations, not provider outages.  Keep
+    # the raw provider value for diagnostics, but normalize the public source
+    # state so ``no_new_content`` cannot become a false ``failed`` gap.
+    no_event_statuses = {"no_event", "no_new_content", "scan_complete", "empty", "idle"}
+    success_statuses = {"ready", "healthy", "ok", "success"}
+    if raw_status in success_statuses:
         state = "healthy" if accepted else "no_event"
-    elif raw_status == "no_event":
-        state = "no_event"
+    elif raw_status in no_event_statuses:
+        state = "healthy" if accepted else "no_event"
+    elif raw_status in {"configuration_missing", "configuration_required", "not_configured"}:
+        state = "configuration_missing"
     elif accepted:
         state = "partial"
-    elif raw_status == "configuration_missing":
-        state = "configuration_missing"
     else:
         state = "failed"
     issues: list[str] = []
@@ -288,10 +294,11 @@ def external_source_health_from_remote(
         "checked_at": checked_at.isoformat(),
         "accepted_count": len(accepted),
         "rejected_count": rejected,
+        "last_success_at": None,
         "observability": _observability(accepted, rejected),
         "issues": list(dict.fromkeys(issues)),
     }
-    if state in {"healthy", "no_event"} and raw_status in {"ready", "healthy", "no_event"}:
+    if state in {"healthy", "no_event"} and raw_status in success_statuses | no_event_statuses:
         row["last_success_at"] = checked_at.isoformat()
     return row
 
