@@ -9,6 +9,15 @@
     "publish_eligible": {"type": "boolean"},
     "blocking_reasons": {"type": "array", "items": {"type": "string"}},
     "strategy_registry": {"type": "array", "items": {"type": "object"}},
+    "strategy_registry_validation": {
+      "type": "object",
+      "required": ["status", "errors"],
+      "properties": {
+        "status": {"enum": ["pass", "failed"]},
+        "errors": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
     "performance_summary": {
       "type": "object",
       "additionalProperties": {

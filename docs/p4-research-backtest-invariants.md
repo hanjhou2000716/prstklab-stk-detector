@@ -9,6 +9,7 @@
 - 研究層的 `backtest_release_status` 與契約 `publication_state` 必須一致；為了讀取舊的 blocked release，未提供研究層 status 仍可相容。
 - 候選的 `backtest_release` 與候選契約必須和研究層的 release ID、狀態一致。
 - 沒有回測欄位的舊觀察報表維持可讀，但不會因此取得正式建議資格。
+- 每個正式回測契約會輸出 `strategy_registry_validation`；所有策略列必須通過完整 provenance 欄位檢查，缺欄位時契約會保持 `blocked`。
 
 ## 失敗處理與回滾
 
