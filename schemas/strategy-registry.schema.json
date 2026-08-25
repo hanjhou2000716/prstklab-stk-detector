@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/strategy-registry.schema.json",
+  "title": "PRStK strategy registry release",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "strategy_id",
+    "strategy_version",
+    "parameter_hash",
+    "universe_version",
+    "data_version",
+    "code_commit",
+    "backtest_release"
+  ],
+  "properties": {
+    "strategy_id": {"type": "string", "minLength": 1},
+    "strategy_version": {"type": "string", "minLength": 1},
+    "parameter_hash": {"type": "string", "minLength": 1},
+    "universe_version": {"type": "string", "minLength": 1},
+    "data_version": {"type": "string", "minLength": 1},
+    "code_commit": {"type": "string", "minLength": 1},
+    "backtest_release": {"type": "string", "minLength": 1},
+    "deployment_date": {"type": ["string", "null"]},
+    "retirement_date": {"type": ["string", "null"]}
+  }
+}

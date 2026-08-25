@@ -1,5 +1,23 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "strategyRegistry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategy_id", "strategy_version", "parameter_hash", "universe_version", "data_version", "code_commit", "backtest_release"],
+      "properties": {
+        "strategy_id": {"type": "string", "minLength": 1},
+        "strategy_version": {"type": "string", "minLength": 1},
+        "parameter_hash": {"type": "string", "minLength": 1},
+        "universe_version": {"type": "string", "minLength": 1},
+        "data_version": {"type": "string", "minLength": 1},
+        "code_commit": {"type": "string", "minLength": 1},
+        "backtest_release": {"type": "string", "minLength": 1},
+        "deployment_date": {"type": ["string", "null"]},
+        "retirement_date": {"type": ["string", "null"]}
+      }
+    }
+  },
   "type": "object",
   "required": ["backtest_release", "market", "publication_state", "publish_eligible", "blocking_reasons", "strategy_registry", "research_only"],
   "properties": {
@@ -8,7 +26,12 @@
     "publication_state": {"enum": ["ready", "blocked"]},
     "publish_eligible": {"type": "boolean"},
     "blocking_reasons": {"type": "array", "items": {"type": "string"}},
-    "strategy_registry": {"type": "array", "items": {"type": "object"}},
+    "strategy_registry": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/strategyRegistry"
+      }
+    },
     "strategy_registry_validation": {
       "type": "object",
       "required": ["status", "errors"],
