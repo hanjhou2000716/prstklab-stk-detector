@@ -10,6 +10,14 @@ recipients, or secrets. It calculates a one-way SHA-256 over sorted pairs of
 `observation_id` and normalized source label. The release manifest contains the
 matching count, source list, status (`ready` or `no_event`) and identity hash.
 
+The market artifact's `external_observations` is the complete sanitized set
+returned by the Railway export, including registered Creator providers. The
+market-event classifier consumes the derived `financialjuice_observations`
+subset only; Creator material remains in the attributed-content lane. This
+separation prevents editorial observations from being treated as FinancialJuice
+market evidence while still proving that every reviewed row reached the same
+release.
+
 If the Railway projection is healthy but the manifest is missing or differs,
 the `external_observations` gate becomes `needs_reverify` and the overall
 acceptance remains fail-closed. This prevents a healthy ingress from being
