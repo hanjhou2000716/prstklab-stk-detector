@@ -320,6 +320,32 @@ def test_ready_backtest_registry_requires_complete_provenance():
     assert any("ready backtest strategy_registry.strategy_version is missing" in error for error in errors)
 
 
+def test_backtest_contract_schema_rejects_uncontracted_fields():
+    document = _research(
+        backtest_release_status="ready",
+        backtest_release_contract={
+            "backtest_release": "backtest-1234567890abcdef",
+            "market": "taiwan",
+            "publication_state": "ready",
+            "publish_eligible": True,
+            "blocking_reasons": [],
+            "strategy_registry": [{
+                "strategy_id": "value",
+                "strategy_version": "1",
+                "parameter_hash": "p",
+                "universe_version": "u",
+                "data_version": "d",
+                "code_commit": "c",
+                "backtest_release": "backtest-1234567890abcdef",
+            }],
+            "research_only": True,
+            "private_note": "must not reach a release",
+        },
+    )
+    errors = validate_research(document)
+    assert any("schema:" in error and "private_note" in error for error in errors)
+
+
 def test_candidate_strategy_must_be_present_in_ready_registry():
     research = _research(
         backtest_release_status="ready",
