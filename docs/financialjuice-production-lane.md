@@ -25,6 +25,11 @@ held, or deduplicated.  A matching cluster is marked
 `already_cluster_notified` rather than sending a duplicate full alert.  Items
 below 8 remain visible as `not_eligible`; they are not silently dropped.
 
+Before `write_snapshot`, `src/financialjuice_release_contract.py` verifies
+that every reviewed observation has one decision and that every eligible item
+has a matching event with explicit vendor-risk separation.  A mismatch writes
+only a blocked diagnostic and cannot reach Pages or Telegram.
+
 The release gate and renderer still run before Telegram.  Missing or stale
 market evidence therefore remains fail-closed, and the Mini App can explain
 `等待官方核對` / `等待市場同步` without exposing private Gmail transport IDs.
