@@ -23,6 +23,8 @@ from src.external_observation_input import (
     load_external_observations,
     merge_external_source_health,
 )
+from src.financialjuice_priority import project_financialjuice_priority
+from src.financialjuice_release_contract import validate_financialjuice_release
 from src.market_data import build_market_snapshot
 from src.railway_observation_client import load_railway_observations
 from src.railway_secret import delivery_shared_secret
@@ -178,21 +180,23 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
     if _railway_observations_configured():
         remote_observations, remote_health = load_railway_observations()
     all_external_observations = _merge_external_observations(local_observations, remote_observations)
-    # FinancialJuice observations feed the event pipeline; Creator rows use
-    # the separate attributed-content lane and must not be counted as FJ
-    # market evidence or shown under the FJ source-health label.
+    # All sanitized external rows belong to the release-bound observation
+    # lineage.  FinancialJuice rows feed the market-event lane; Creator rows
+    # remain in the attributed-content lane and must not be counted as FJ
+    # market evidence or shown under the FJ source-health label.  Keeping the
+    # complete set on the snapshot is important: the release manifest must
+    # prove that the same reviewed observations returned by Railway reached
+    # Pages, not only the subset used by one classifier.
     creator_records = _load_creator_records(all_external_observations)
-    external_observations = [
+    financialjuice_observations = [
         row for row in all_external_observations
         if str(row.get("content_origin") or row.get("source") or "").strip().casefold() == "financialjuice"
     ]
     # Project FinancialJuice into the same release-bound event lane as other
     # public events.  The vendor score is kept separate from PRStK risk and
     # every non-send decision remains visible to Mini App/audit consumers.
-    from src.financialjuice_priority import project_financialjuice_priority
-
     existing_events = ((snapshot.get("events") or {}).get("items") or []) if isinstance(snapshot.get("events"), dict) else []
-    fj_projection = project_financialjuice_priority(external_observations, existing_events=existing_events)
+    fj_projection = project_financialjuice_priority(financialjuice_observations, existing_events=existing_events)
     if fj_projection["events"]:
         if not isinstance(snapshot.get("events"), dict):
             snapshot["events"] = {"items": []}
@@ -201,25 +205,40 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
     snapshot["financialjuice_priority_events"] = [
         event for event in fj_projection["events"] if event.get("notification_status") == "eligible"
     ]
+    snapshot["financialjuice_observations"] = financialjuice_observations
+    # Persist the contract result in the same release snapshot and stop before
+    # publication if a qualifying FJ item is no longer aligned with its
+    # decision/event lineage.  This prevents a partial or hand-edited bundle
+    # from reaching Pages or the Telegram gate.
+    financialjuice_contract = validate_financialjuice_release(snapshot)
+    snapshot["financialjuice_release_contract"] = financialjuice_contract
+    if not financialjuice_contract["ok"]:
+        _write_output({
+            "prepared": "false",
+            "sent": "false",
+            "reason": "financialjuice_release_contract_blocked",
+            "financialjuice_contract_errors": ";".join(financialjuice_contract["errors"]),
+        })
+        return snapshot
     remote_rejected = remote_health.get("rejected_count")
     external_rejected = local_rejected + (int(remote_rejected) if isinstance(remote_rejected, (int, str, float)) else 0)
-    if external_observations:
-        snapshot["external_observations"] = external_observations
-    elif "external_observations" not in snapshot:
-        snapshot["external_observations"] = []
+    snapshot["external_observations"] = all_external_observations
+    # Preserve an explicit classifier input so downstream consumers cannot
+    # accidentally treat editorial Creator material as FinancialJuice market
+    # evidence.  This field is derived from the same release-bound set.
     checked_at = datetime.now(UTC)
     external_health: dict[str, Any] | None
     if _railway_observations_configured():
         external_health = external_source_health_from_remote(
             remote_health,
-            accepted=external_observations,
+            accepted=financialjuice_observations,
             rejected=external_rejected,
             checked_at=checked_at,
         )
     else:
         external_health = external_source_health(
             path=external_path,
-            accepted=external_observations,
+            accepted=financialjuice_observations,
             rejected=external_rejected,
             checked_at=checked_at,
         )

@@ -7,11 +7,11 @@ renew it at startup without putting OAuth or Gmail response data in logs.
 
 from __future__ import annotations
 
-import json
 import hashlib
+import json
+import math
 import os
-from collections.abc import Callable
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -19,9 +19,9 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-
 TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
 WATCH_ENDPOINT = "https://gmail.googleapis.com/gmail/v1/users/me/watch"
+CANONICAL_WATCH_OWNER = "railway-monitor/gmail_watch.py:GmailWatchManager"
 
 
 @dataclass(frozen=True)
@@ -186,6 +186,19 @@ class GmailWatchManager:
             {"Content-Type": "application/json", **dict(headers)},
         )
 
+    def _retry_after_seconds(self, cursor: Mapping[str, Any]) -> int:
+        """Bound retries after a failed lease request."""
+        error = str(cursor.get("watch_error") or "").strip()
+        error_at = str(cursor.get("watch_error_at") or "").strip()
+        if not error or not error_at:
+            return 0
+        try:
+            failed_at = datetime.fromisoformat(error_at.replace("Z", "+00:00")).astimezone(UTC)
+        except ValueError:
+            return 0
+        remaining = failed_at + timedelta(minutes=max(1, self.config.retry_cooldown_minutes)) - self.now().astimezone(UTC)
+        return max(0, math.ceil(remaining.total_seconds()))
+
     def _access_token(self) -> str:
         result = self._post(
             TOKEN_ENDPOINT,
@@ -202,19 +215,29 @@ class GmailWatchManager:
             raise GmailWatchError("oauth_access_token_missing")
         return token
 
-    def ensure_watch(self) -> dict[str, Any]:
+    def ensure_watch(self, *, force: bool = False) -> dict[str, Any]:
         cursor = self.store.cursor()
         if self.config.missing:
             return {"status": "configuration_missing", "renewed": False, "missing": list(self.config.missing)}
         if self.config.oauth_missing:
             return {"status": "configuration_missing", "renewed": False, "missing": list(self.config.oauth_missing)}
         expiration = cursor.get("watch_expiration")
-        if not renewal_due(
+        if not force and not renewal_due(
             str(expiration) if expiration else None,
             now=self.now(),
             margin_hours=self.config.renewal_margin_hours,
         ):
             return {"status": "healthy", "renewed": False, "watch_expiration": expiration}
+        if not force:
+            retry_after = self._retry_after_seconds(cursor)
+            if retry_after:
+                return {
+                    "status": "failed",
+                    "renewed": False,
+                    "error": str(cursor.get("watch_error") or "watch_renewal_failed")[:80],
+                    "retry_suppressed": True,
+                    "retry_after_seconds": retry_after,
+                }
         try:
             token = self._access_token()
             request = self.config.watch_request()
@@ -248,6 +271,14 @@ class GmailWatchManager:
                 watch_error_at=self.now().astimezone(UTC).isoformat(),
             )
             return {"status": "failed", "renewed": False, "error": type(error).__name__}
+        except Exception as error:  # pragma: no cover - third-party transport boundary
+            # The async compatibility adapter may surface a provider-specific
+            # timeout/HTTP exception. Never let it escape the Railway loop or
+            # persist a response body; retain only a bounded class label.
+            error_name = type(error).__name__.casefold()
+            safe_error = "timeout" if "timeout" in error_name else "transport_error"
+            self.store.save_cursor(watch_error=safe_error, watch_error_at=self.now().astimezone(UTC).isoformat())
+            return {"status": "failed", "renewed": False, "error": safe_error}
 
 
 def health(
@@ -343,4 +374,11 @@ def health(
     return result
 
 
-__all__ = ["GmailWatchConfig", "GmailWatchError", "GmailWatchManager", "health", "renewal_due"]
+__all__ = [
+    "CANONICAL_WATCH_OWNER",
+    "GmailWatchConfig",
+    "GmailWatchError",
+    "GmailWatchManager",
+    "health",
+    "renewal_due",
+]

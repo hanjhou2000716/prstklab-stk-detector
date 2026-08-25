@@ -14,6 +14,8 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+from src.event_classifier import classify_event_fields
+
 PROVIDER_REGISTRY: tuple[dict[str, Any], ...] = (
     # ``feed_url``/``feed_kind`` are the canonical adapter contract.  The
     # fetch layer must derive its catalog from this registry instead of
@@ -164,9 +166,43 @@ def _story_id(provider: str, canonical_url: str, title: str) -> str:
     return f"news-{hashlib.sha256(material).hexdigest()[:20]}"
 
 
+def _event_classification_input(raw: Mapping[str, Any], *, title: str, summary: str, description: str) -> tuple[dict[str, Any], list[str]]:
+    """Build the bounded, shared-classifier input for a news story.
+
+    News routing and event classification are deliberately separate contracts:
+    the former decides which regional feed may display a story, while the
+    latter uses the same evidence fields as live events.  Keep the input
+    explicit so an adapter cannot accidentally classify from only a headline
+    or leak an entire provider payload into a public release.
+    """
+    fields: dict[str, Any] = {
+        "title": title,
+        "summary": summary,
+        "description": description,
+    }
+    aliases = (
+        "what_happened", "event", "impact", "market_impact", "possible_impact",
+        "watch", "follow_up", "event_type", "category", "topics", "tickers",
+        "market_data", "market_evidence", "related_quotes", "quotes",
+        "price_change", "change_percent", "direction",
+    )
+    for key in aliases:
+        value = raw.get(key)
+        if value not in (None, "", [], {}):
+            fields[key] = value
+    return fields, sorted(fields)
+
+
 def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict[str, Any]:
     """Normalize one public headline without trusting provider supplied labels."""
     title = " ".join(str(raw.get("title") or "").split())
+    summary = " ".join(str(
+        raw.get("summary")
+        or raw.get("brief_summary")
+        or raw.get("chinese_translation")
+        or ""
+    ).split())
+    description = " ".join(str(raw.get("description") or raw.get("body") or "").split())
     url = canonicalize_url(str(raw.get("canonical_url") or raw.get("url") or ""))
     provider = provider_for_url(url)
     chosen_market = str(market or raw.get("market") or "").strip().lower() or None
@@ -181,6 +217,21 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
     raw_topics = sorted({str(item) for item in (raw.get("topics") or []) if str(item).strip()})
     entities = sorted(_matched_tickers(title, raw_tickers))
     topics_normalized = sorted(_matched_topics(title, raw_topics))
+    classifier_input, classifier_fields = _event_classification_input(
+        raw, title=title, summary=summary, description=description,
+    )
+    classification = classify_event_fields(classifier_input)
+    # ``text`` is an internal haystack and must never be copied into a release
+    # artifact.  The public subset is enough to reproduce the decision and to
+    # show why the news story and live event took the same classification path.
+    event_classification = {
+        "schema_version": "1.0",
+        "classifier": "src.event_classifier.classify_event_fields",
+        "category": classification.get("category"),
+        "reason": str(classification.get("reason") or "keyword_no_match"),
+        "matched_terms": [str(item) for item in (classification.get("matched_terms") or []) if str(item).strip()],
+        "input_fields": classifier_fields,
+    }
     return {
         "story_id": _story_id(provider["provider_id"], url, title),
         "provider": provider["provider_id"],
@@ -188,6 +239,8 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         "source_tier": tier,
         "authority_tier": authority,
         "title": title,
+        "summary": summary,
+        "description": description,
         "canonical_url": url,
         "url": url,
         "published_at": published,
@@ -197,6 +250,7 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         "entities": entities,
         "sectors": sorted({str(item) for item in (raw.get("sectors") or []) if str(item).strip()}),
         "topics": topics_normalized,
+        "event_classification": event_classification,
         "relevance_reasons": list(dict.fromkeys(str(item) for item in (raw.get("relevance_reasons") or []) if str(item).strip())),
         "freshness": str(raw.get("freshness") or ("published" if published else "unknown")),
         "dedupe_key": _headline_key(title),
@@ -351,6 +405,65 @@ def deduplicate_and_rank(stories: Iterable[dict[str, Any]], *, limit: int = 5, m
     return result
 
 
+def summarize_source_diversity(stories: Iterable[dict[str, Any]]) -> dict[str, Any]:
+    """Summarize independent evidence behind the ranked news stories.
+
+    A provider count alone is not sufficient: two aliases can resolve to the
+    same domain, while one story can carry an independently retained source in
+    ``supporting_sources``.  The public contract therefore counts canonical
+    source domains (falling back to provider IDs when a supporting URL is not
+    available) and makes the cross-check state explicit.  This is descriptive
+    evidence only; it never upgrades event severity or qualifies an alert.
+    """
+    providers: set[str] = set()
+    domains: set[str] = set()
+    supporting_count = 0
+
+    def add_source(provider: Any, url: Any) -> None:
+        provider_id = str(provider or "").strip().casefold()
+        host = _host(str(url or ""))
+        if host:
+            domains.add(host)
+        elif provider_id:
+            providers.add(provider_id)
+
+    materialized = [item for item in stories if isinstance(item, dict)]
+    for story in materialized:
+        provider = story.get("provider")
+        if provider:
+            providers.add(str(provider).strip().casefold())
+        add_source(provider, story.get("canonical_url") or story.get("url"))
+        supporting = story.get("supporting_sources")
+        if not isinstance(supporting, list):
+            continue
+        for source in supporting:
+            if not isinstance(source, Mapping):
+                continue
+            supporting_count += 1
+            provider = source.get("provider")
+            if provider:
+                providers.add(str(provider).strip().casefold())
+            add_source(provider, source.get("url") or source.get("canonical_url"))
+
+    independent_count = len(domains) or len(providers)
+    status = (
+        "no_event" if not materialized
+        else "multi_source" if independent_count >= 2
+        else "single_source"
+    )
+    return {
+        "schema_version": "1.0",
+        "status": status,
+        "cross_checked": independent_count >= 2,
+        "minimum_required": 2,
+        "independent_source_count": independent_count,
+        "provider_count": len(providers),
+        "provider_ids": sorted(providers),
+        "source_domains": sorted(domains),
+        "supporting_source_count": supporting_count,
+    }
+
+
 def build_news_intelligence(
     stories: Iterable[dict[str, Any]],
     *,
@@ -375,6 +488,7 @@ def build_news_intelligence(
         creator_mentions=creator_mentions,
     )
     ranked = deduplicate_and_rank(normalized, limit=limit)
+    source_diversity = summarize_source_diversity(ranked)
     excluded = [item for item in normalized if item.get("market_compatible") is False]
     health_rows: list[dict[str, Any]] = []
     for raw_health in source_health or ():
@@ -406,6 +520,7 @@ def build_news_intelligence(
         "schema_version": "1.0",
         "provider_registry": provider_registry(),
         "stories": ranked,
+        "source_diversity": source_diversity,
         "interest_graph": graph,
         "excluded_count": len(excluded),
         "exclusion_reasons": {"market_scope_mismatch": len(excluded)} if excluded else {},

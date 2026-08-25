@@ -20,6 +20,12 @@ not been proven; `unavailable` means it cannot write. External acceptance
 remains fail-closed for both non-ready states, even if the latest receipt says
 `delivered`.
 
+The response also exposes a redacted `delivery.storage.restart_continuity`
+probe. The monitor writes only a timestamp marker beside the SQLite database
+at startup; `verified` means a later process start could read the previous
+marker. This is useful restart evidence, but it never upgrades
+`storage.status=unknown` to `ready` and never bypasses the high-risk gate.
+
 ## Verification after a restart
 
 1. Record the current `/health` `delivery.last_trace_id` and
@@ -28,7 +34,10 @@ remains fail-closed for both non-ready states, even if the latest receipt says
 3. Query `/health` again and confirm the same receipt trace is present,
    `receipt_matches_last_outbox=true`, and `delivery.storage.status=ready`.
 4. Confirm the Gmail `watch_expiration` and history cursor remain present.
-5. Run the read-only external acceptance collector. Do not send a production
+5. Confirm `delivery.storage.restart_continuity.status=verified` when a prior
+   marker exists. A missing or invalid marker is evidence to investigate, not
+   evidence that the volume is durable.
+6. Run the read-only external acceptance collector. Do not send a production
    notification merely to test persistence.
 
 If the trace disappears or storage is not `ready`, stop high-risk delivery,

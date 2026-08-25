@@ -6,6 +6,8 @@ import hashlib
 import json
 from typing import Any
 
+from src.strategy_registry import validate_strategy_release
+
 
 def _canonical(value: Any) -> bytes:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
@@ -88,6 +90,12 @@ def build_backtest_release(
     # observation-only even when the walk-forward study itself passed.
     for row in strategy_registry:
         row["backtest_release"] = release_id
+    registry_errors: list[str] = []
+    for index, row in enumerate(strategy_registry):
+        for error in validate_strategy_release(row):
+            registry_errors.append(f"strategy_registry[{index}]: {error}")
+    if registry_errors:
+        reasons.extend(registry_errors)
     eligible = not reasons and report.get("status") == "complete"
     return {
         "backtest_release": release_id,
@@ -96,6 +104,10 @@ def build_backtest_release(
         "publish_eligible": eligible,
         "blocking_reasons": reasons,
         "strategy_registry": strategy_registry,
+        "strategy_registry_validation": {
+            "status": "pass" if not registry_errors else "failed",
+            "errors": registry_errors,
+        },
         "performance_summary": performance_summary,
         "survivorship_audit": identity["survivorship_audit"],
         "research_only": True,

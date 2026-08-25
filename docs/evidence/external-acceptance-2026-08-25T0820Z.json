@@ -1,0 +1,84 @@
+{
+  "kind": "external-acceptance-readonly",
+  "schema_version": "1.0",
+  "captured_at": "2026-08-25T08:20:08.932531+00:00",
+  "status": "NEEDS_REVERIFY",
+  "blocking_reasons": [
+    "railway_delivery:partial",
+    "railway_delivery_persistence:unknown",
+    "railway_gdelt:failed",
+    "railway_gmail_persistence:unknown"
+  ],
+  "gate_summary": {
+    "railway_health": {
+      "status": "needs_reverify",
+      "blocking_reasons": [
+        "railway_delivery:partial",
+        "railway_delivery_persistence:unknown",
+        "railway_gdelt:failed",
+        "railway_gmail_persistence:unknown"
+      ]
+    },
+    "gmail_watch": {
+      "status": "needs_reverify",
+      "blocking_reasons": ["railway_gmail_persistence:unknown"]
+    },
+    "delivery_receipt": {
+      "status": "needs_reverify",
+      "blocking_reasons": [
+        "railway_delivery:partial",
+        "railway_delivery_persistence:unknown"
+      ]
+    },
+    "pages_manifest": {"status": "pass", "blocking_reasons": []},
+    "pages_artifacts": {"status": "pass", "blocking_reasons": []},
+    "external_observations": {"status": "not_checked", "blocking_reasons": []}
+  },
+  "railway": {
+    "url": "https://loving-happiness-production-b1a9.up.railway.app/",
+    "http_status": 200,
+    "service_status": "ok",
+    "monitor_status": "running",
+    "heartbeat_status": "healthy",
+    "jin10_status": "healthy",
+    "gdelt_status": "failed",
+    "gdelt_error": "HTTP_429",
+    "gdelt_stale_cache_used": false,
+    "gmail_status": "healthy",
+    "gmail_watch_status": "healthy",
+    "gmail_watch_expiration": "2026-09-01T00:23:01.779000+00:00",
+    "creator_status": "healthy",
+    "financialjuice_status": "healthy",
+    "delivery_status": "partial",
+    "delivery_receipt_matches_last_outbox": true,
+    "delivery_last_delivered_count": 4,
+    "delivery_last_failed_count": 3,
+    "delivery_last_recipient_count": 7,
+    "delivery_retention_days": 30,
+    "runtime_config_status": "healthy",
+    "secret_values_exposed": false
+  },
+  "pages": {
+    "url": "https://hanjhou2000716.github.io/prstklab-stk-detector/",
+    "http_status": 200,
+    "status": "ready",
+    "release_id": "release-de26b8f8650e0e1c",
+    "market_snapshot_id": "25ab9e0c2d311f79",
+    "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
+    "event_snapshot_id": "event-2668aef41e66e57b",
+    "artifact_hash_count": 5,
+    "artifact_hash_audit": {
+      "declared_count": 5,
+      "verified_count": 5,
+      "missing_count": 0,
+      "mismatch_count": 0,
+      "error_count": 0,
+      "snapshot_mismatch_count": 0
+    }
+  },
+  "side_effects": {
+    "telegram": false,
+    "railway_write": false,
+    "configuration_changed": false
+  }
+}

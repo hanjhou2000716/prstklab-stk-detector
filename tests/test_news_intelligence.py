@@ -7,6 +7,7 @@ from src.news_intelligence import (
     normalize_news_story,
     provider_for_url,
     provider_supports_market,
+    summarize_source_diversity,
 )
 
 
@@ -134,6 +135,37 @@ def test_dedup_prefers_official_and_retains_supporting_source():
     assert ranked[0]["supporting_sources"][0]["provider"] == "google_news"
 
 
+def test_source_diversity_counts_independent_domains_after_dedup():
+    ranked = deduplicate_and_rank([
+        {"title": "Fed rates unchanged", "url": "https://news.google.com/rss/articles/1"},
+        {"title": "Fed rates unchanged", "url": "https://www.federalreserve.gov/newsevents/pressreleases/a.htm"},
+    ])
+    summary = summarize_source_diversity(ranked)
+    assert summary["status"] == "multi_source"
+    assert summary["cross_checked"] is True
+    assert summary["independent_source_count"] == 2
+    assert summary["source_domains"] == ["federalreserve.gov", "news.google.com"]
+
+
+def test_source_diversity_marks_single_source_without_inventing_confirmation():
+    artifact = build_news_intelligence(
+        [{"title": "Fed rates unchanged", "url": "https://www.federalreserve.gov/newsevents/pressreleases/a.htm"}],
+        market="us",
+    )
+    assert artifact["source_diversity"]["status"] == "single_source"
+    assert artifact["source_diversity"]["cross_checked"] is False
+
+
+def test_source_diversity_contract_rejects_inconsistent_confirmation():
+    artifact = build_news_intelligence(
+        [{"title": "Fed rates unchanged", "url": "https://www.federalreserve.gov/newsevents/pressreleases/a.htm"}],
+        market="us",
+    )
+    artifact["source_diversity"]["cross_checked"] = True
+    errors = validate_news_intelligence(artifact)
+    assert any("cross_checked disagrees" in error for error in errors)
+
+
 def test_dedup_merges_cross_provider_event_with_different_headlines():
     ranked = deduplicate_and_rank([
         {
@@ -179,6 +211,40 @@ def test_normalized_story_exposes_bounded_event_identity():
     assert "rates" in story["topics"]
     assert story["published_time_bucket"] == "2026-08-21T04:00:00+00:00"
     assert story["event_cluster_key"].startswith("event-")
+
+
+def test_news_story_uses_shared_classifier_with_full_evidence_fields():
+    story = normalize_news_story({
+        "title": "White House Iran talks update",
+        "summary": "Officials discuss shipping and oil supply risks.",
+        "what_happened": "Negotiations continue while the market waits for confirmation.",
+        "market_impact": "WTI +5.2%; Nasdaq -0.4%.",
+        "related_quotes": {"WTI": {"change_percent": 5.2}, "Nasdaq": {"change_percent": -0.4}},
+        "url": "https://news.google.com/rss/articles/iran-1",
+        "published_at": "2026-08-21T04:01:00+00:00",
+    }, "us")
+    classification = story["event_classification"]
+    assert classification["classifier"] == "src.event_classifier.classify_event_fields"
+    assert classification["category"] == "conflict"
+    assert "summary" in classification["input_fields"]
+    assert "what_happened" in classification["input_fields"]
+    assert "market_impact" in classification["input_fields"]
+    assert "related_quotes" in classification["input_fields"]
+    assert "text" not in classification
+
+
+def test_news_and_live_event_share_category_and_matched_term():
+    from src.event_classifier import classify_event_fields
+
+    record = {
+        "title": "Fed rate decision affects Nasdaq",
+        "summary": "US rates and bond yields are being repriced.",
+        "market_data": {"Nasdaq": {"change_percent": -0.4}},
+    }
+    story = normalize_news_story({**record, "url": "https://www.federalreserve.gov/a"}, "us")
+    live = classify_event_fields(record)
+    assert story["event_classification"]["category"] == live["category"]
+    assert story["event_classification"]["matched_terms"] == live["matched_terms"]
 
 
 def test_news_intelligence_schema_rejects_provider_domain_mismatch():

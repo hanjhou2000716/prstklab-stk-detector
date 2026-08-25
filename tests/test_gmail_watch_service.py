@@ -5,6 +5,8 @@ import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import httpx
+
 sys.path.append(str(Path(__file__).parents[1] / "railway-monitor"))
 
 from email_store import EmailStore  # noqa: E402
@@ -50,6 +52,11 @@ class _Client:
         return self.responses.pop(0)
 
 
+class _TimeoutClient(_Client):
+    async def post(self, _url: str, **_kwargs: object) -> _Response:
+        raise httpx.ReadTimeout("provider timeout")
+
+
 def _run(coro):
     return asyncio.run(coro)
 
@@ -90,6 +97,15 @@ def test_http_403_is_reported_without_leaking_response(tmp_path: Path) -> None:
     result = _run(renew_watch_if_due(_config(), store, force=True, client_factory=lambda **_kwargs: client))
     assert result == {"status": "failed", "watch_status": "failed", "attempted": True, "error": "http_403"}
     assert store.cursor()["watch_error"] == "http_403"
+
+
+def test_transport_timeout_is_persisted_as_bounded_failure(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    client = _TimeoutClient([])
+    result = _run(renew_watch_if_due(_config(), store, force=True, client_factory=lambda **_kwargs: client))
+    assert result["status"] == "failed"
+    assert result["error"] == "timeout"
+    assert store.cursor()["watch_error"] == "timeout"
 
 
 def test_recent_failure_suppresses_repeated_watch_call(tmp_path: Path) -> None:

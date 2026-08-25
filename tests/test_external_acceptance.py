@@ -120,6 +120,188 @@ def test_capture_accepts_a_successful_delivery_receipt() -> None:
     assert report["gate_summary"]["delivery_receipt"]["status"] == "pass"
 
 
+def test_capture_requires_restart_continuity_for_durable_delivery() -> None:
+    health = {
+        "status": "ok",
+        "service": "monitor",
+        "gmail": {"status": "healthy", "watch_status": "healthy"},
+        "gdelt": {"status": "no_event"},
+        "delivery": {
+            "status": "delivered",
+            "last_delivered_count": 1,
+            "last_failed_count": 0,
+            "storage": {
+                "status": "ready",
+                "durable_volume_detected": True,
+                "restart_continuity": {"status": "not_verified"},
+            },
+        },
+    }
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([_Response(200, health), _Response(200, manifest), _Response(200, None, artifact)]),
+    )
+    assert report["status"] == "NEEDS_REVERIFY"
+    assert "railway_delivery_persistence:restart_continuity_not_verified" in report["blocking_reasons"]
+    assert report["railway"]["health"]["delivery"]["storage"]["restart_continuity"]["status"] == "not_verified"
+
+
+def test_capture_accepts_verified_restart_continuity() -> None:
+    health = {
+        "status": "ok",
+        "service": "monitor",
+        "gmail": {
+            "status": "healthy",
+            "watch_status": "healthy",
+            "storage": {"status": "ready", "restart_continuity": {"status": "verified"}},
+        },
+        "gdelt": {"status": "no_event"},
+        "delivery": {
+            "status": "delivered",
+            "last_delivered_count": 1,
+            "last_failed_count": 0,
+            "storage": {"status": "ready", "restart_continuity": {"status": "verified"}},
+        },
+    }
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([_Response(200, health), _Response(200, manifest), _Response(200, None, artifact)]),
+    )
+    assert report["status"] == "PASS"
+    assert report["blocking_reasons"] == []
+
+
+def test_capture_records_sanitized_external_observation_evidence(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "acceptance-secret")
+    health = {
+        "status": "ok",
+        "service": "monitor",
+        "gmail": {"status": "healthy", "watch_status": "active"},
+        "gdelt": {"status": "no_event"},
+        "delivery": {"status": "not_checked"},
+    }
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
+    identity_hash = hashlib.sha256(
+        json.dumps(
+            [{"observation_id": "obs-1", "source": "financialjuice"}],
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    manifest.update({
+        "external_observation_count": 1,
+        "external_observation_ids_hash": identity_hash,
+        "external_observation_sources": ["financialjuice"],
+        "external_observation_status": "ready",
+    })
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([
+            _Response(200, health),
+            _Response(200, {
+                "status": "ready",
+                "observations": [{
+                    "public_safe": True,
+                    "observation_id": "obs-1",
+                    "source": "financialjuice",
+                    "fetched_at": "2026-08-25T01:00:00+00:00",
+                }],
+            }),
+            _Response(200, manifest),
+            _Response(200, None, artifact),
+        ]),
+    )
+    assert report["external_observations"] == {
+        "http_status": 200,
+        "status": "ready",
+        "count": 1,
+        "rejected_count": 0,
+        "sources": ["financialjuice"],
+        "latest_fetched_at": "2026-08-25T01:00:00+00:00",
+        "observation_ids_hash": identity_hash,
+    }
+    assert report["gate_summary"]["external_observations"]["status"] == "pass"
+    encoded = json.dumps(report, ensure_ascii=False)
+    assert "acceptance-secret" not in encoded
+
+
+def test_capture_rejects_external_observations_not_bound_to_public_release(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "acceptance-secret")
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([
+            _Response(200, {"gmail": {"status": "healthy"}, "gdelt": {"status": "no_event"}, "delivery": {"status": "not_checked"}}),
+            _Response(200, {"status": "ready", "observations": [{
+                "public_safe": True,
+                "observation_id": "obs-unpublished",
+                "source": "financialjuice",
+                "fetched_at": "2026-08-25T01:00:00+00:00",
+            }]}),
+            _Response(200, manifest),
+            _Response(200, None, artifact),
+        ]),
+    )
+    assert report["status"] == "NEEDS_REVERIFY"
+    assert report["gate_summary"]["external_observations"]["status"] == "needs_reverify"
+    assert "pages_external_observations:manifest_status_missing" in report["blocking_reasons"]
+
+
+def test_capture_marks_external_observation_failure_without_inventing_events(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "acceptance-secret")
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([
+            _Response(200, {"gmail": {"status": "no_new_content"}, "gdelt": {"status": "no_event"}, "delivery": {"status": "not_checked"}}),
+            _Response(403, {}),
+            _Response(200, manifest),
+            _Response(200, None, artifact),
+        ]),
+    )
+    assert report["external_observations"]["status"] == "failed"
+    assert report["gate_summary"]["external_observations"]["status"] == "needs_reverify"
+    assert "railway_observations:HTTPError" in report["blocking_reasons"]
+
+
+def test_capture_rejects_private_rows_from_observation_projection(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "acceptance-secret")
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([
+            _Response(200, {"gmail": {"status": "no_new_content"}, "gdelt": {"status": "no_event"}, "delivery": {"status": "not_checked"}}),
+            _Response(200, {"status": "ready", "observations": [{
+                "public_safe": True,
+                "observation_id": "obs-private",
+                "source": "creator",
+                "body": "private body",
+            }]}),
+            _Response(200, manifest),
+            _Response(200, None, artifact),
+        ]),
+    )
+    assert report["external_observations"]["count"] == 0
+    assert report["external_observations"]["rejected_count"] == 1
+    assert report["gate_summary"]["external_observations"]["status"] == "needs_reverify"
+    assert "private body" not in json.dumps(report, ensure_ascii=False)
+
+
 def test_capture_fails_closed_when_delivery_storage_is_not_durable() -> None:
     health = {
         "status": "ok",

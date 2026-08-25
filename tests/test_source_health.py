@@ -217,3 +217,27 @@ def test_source_health_publishes_observability_counts_for_mini_app():
     assert metrics["stale_count"] == 1
     assert metrics["crosscheck_rate"] > 0
     assert metrics["state"] == "partial"
+
+
+def test_source_health_can_bind_bounded_history_without_changing_current_counts():
+    health = build_source_health(
+        errors=[],
+        events={"is_major": False},
+        research_report={},
+        checked_at=NOW,
+        history_records=[
+            {
+                "checked_at": "2026-07-29T01:00:00+00:00",
+                "observations": 1,
+                "success_rate": 100,
+                "failure_count": 0,
+                "no_event_count": 1,
+                "stale_count": 0,
+                "crosscheck_rate": 100,
+                "parser_error_count": 0,
+            }
+        ],
+    )
+    assert health["observability"]["failure_count"] == 0
+    assert health["observability"]["history"]["sample_count"] == 1
+    assert health["observability"]["history"]["windows"]["24h"]["success_rate"] == 100

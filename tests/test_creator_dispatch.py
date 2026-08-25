@@ -133,6 +133,51 @@ def test_creator_dispatch_sends_once_and_persists_receipt(tmp_path, monkeypatch)
     assert "test-chat" not in receipt_path.read_text(encoding="utf-8")
 
 
+def test_creator_dispatch_rejects_invalid_media_before_photo_sender(tmp_path, monkeypatch):
+    monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
+    manifest = _bundle(tmp_path)
+    media_root = tmp_path / "private-media"
+    media_root.mkdir()
+    (media_root / "haojiao_ep-1.png").write_bytes(b"not-a-png")
+    photo_calls: list[dict] = []
+    text_calls: list[dict] = []
+
+    def fake_photo_sender(**kwargs):
+        photo_calls.append(kwargs)
+        raise AssertionError("invalid media must not reach photo sender")
+
+    def fake_text_sender(**kwargs):
+        text_calls.append(kwargs)
+
+        class Result:
+            message_id = 19
+
+        class Delivery:
+            chat_id = kwargs["chat_ids"][0]
+            result = Result()
+            error = None
+
+            @property
+            def delivered(self):
+                return True
+
+        return (Delivery(),)
+
+    monkeypatch.setattr("src.creator_notification.send_photo_briefs", fake_photo_sender)
+    monkeypatch.setattr("src.creator_notification.send_briefs", fake_text_sender)
+    result = dispatch(
+        manifest_path=manifest,
+        public_url="https://example.test/app",
+        media_root=media_root,
+        token="token",
+        chat_ids=("test-chat",),
+    )
+    assert result["status"] == "delivered"
+    assert photo_calls == []
+    assert text_calls
+    assert result["receipts"][0]["media_mode"] == "text_only"
+
+
 def test_creator_dispatch_fails_closed_when_configured_remote_history_is_unavailable(tmp_path, monkeypatch):
     monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
     monkeypatch.setenv("RAILWAY_STATUS_URL", "https://railway.example")

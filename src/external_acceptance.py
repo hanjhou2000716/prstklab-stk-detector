@@ -11,12 +11,14 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import hmac
 import json
+import os
 import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urljoin, urlparse, urlsplit, urlunparse
 
 import requests
 
@@ -42,6 +44,12 @@ SAFE_HEALTH_KEYS = {
     "keyword_bundle_sha256", "keyword_categories", "updated_at",
     "delivery_secret_configured", "canonical_name_present", "legacy_name_present",
     "active_name", "migration_required", "secret_values_exposed",
+    # Storage health is deliberately bounded to mount/probe state only.  The
+    # marker path, database path, process identity and receipt contents never
+    # leave Railway.
+    "storage", "durable_volume_detected", "state_parent_writable",
+    "state_parent_exists", "expected_volume_path", "fail_closed_for_high_risk",
+    "restart_continuity", "previous_started_at",
 }
 
 
@@ -94,6 +102,160 @@ def _fetch_json(url: str, *, timeout: float, session: requests.Session) -> tuple
     return status, value, None
 
 
+def _observation_export_url(railway_url: str) -> str:
+    """Build the bounded Railway observation endpoint without exposing secrets."""
+    configured = str(os.getenv("RAILWAY_OBSERVATIONS_URL") or "").strip()
+    raw = configured or railway_url
+    parsed = urlparse(raw)
+    if parsed.scheme != "https" or not parsed.netloc:
+        return ""
+    return urlunparse((parsed.scheme, parsed.netloc, "/external-observations", "", "limit=100", ""))
+
+
+def _observation_signature(url: str, secret: str) -> str:
+    parsed = urlparse(url)
+    target = parsed.path or "/"
+    if parsed.query:
+        target += "?" + parsed.query
+    return "sha256=" + hmac.new(
+        secret.encode("utf-8"), f"GET\n{target}".encode(), hashlib.sha256
+    ).hexdigest()
+
+
+def _fetch_observation_evidence(
+    railway_url: str,
+    *,
+    timeout: float,
+    session: requests.Session,
+) -> tuple[dict[str, Any] | None, str | None]:
+    """Fetch only the reviewed Railway observation projection.
+
+    This is an optional read-only acceptance probe.  It never stores row
+    contents, transport IDs, or response bodies; it records counts, source
+    labels and timestamps only.  Missing credentials means ``not_checked``
+    rather than a false failure so local/offline acceptance remains usable.
+    """
+    secret = str(
+        os.getenv("RAILWAY_STATUS_SHARED_SECRET")
+        or os.getenv("DELIVERY_STATUS_SHARED_SECRET")
+        or ""
+    ).strip()
+    endpoint = _observation_export_url(railway_url)
+    if not secret or not endpoint:
+        return None, None
+    try:
+        response = session.get(
+            endpoint,
+            timeout=timeout,
+            headers={
+                "Accept": "application/json",
+                "Cache-Control": "no-cache",
+                "User-Agent": "PRStK-external-acceptance",
+                "X-PRSTK-Signature": _observation_signature(endpoint, secret),
+            },
+        )
+        status_code = response.status_code
+        response.raise_for_status()
+        payload = response.json()
+    except requests.RequestException as exc:
+        return {"http_status": locals().get("status_code"), "status": "failed", "count": 0, "rejected_count": 0, "sources": []}, type(exc).__name__
+    except (ValueError, TypeError):
+        return {"http_status": locals().get("status_code"), "status": "failed", "count": 0, "rejected_count": 0, "sources": []}, "invalid_json"
+    if not isinstance(payload, dict) or not isinstance(payload.get("observations"), list):
+        return {"http_status": status_code, "status": "failed", "count": 0, "rejected_count": 0, "sources": []}, "invalid_observation_shape"
+    rows = payload["observations"]
+    accepted = 0
+    rejected = 0
+    sources: set[str] = set()
+    identities: list[dict[str, str]] = []
+    latest_fetched_at: str | None = None
+    for row in rows:
+        if (
+            not isinstance(row, dict)
+            or row.get("public_safe") is not True
+            or not str(row.get("observation_id") or "").strip()
+            or any(row.get(key) not in (None, "", [], {}) for key in _OBSERVATION_BLOCKED_FIELDS)
+        ):
+            rejected += 1
+            continue
+        source = str(row.get("source") or row.get("content_origin") or "").strip().casefold()
+        if not source:
+            rejected += 1
+            continue
+        accepted += 1
+        sources.add(source)
+        identities.append({
+            "observation_id": str(row.get("observation_id") or "").strip(),
+            "source": source,
+        })
+        fetched_at = str(row.get("fetched_at") or row.get("received_at") or "").strip()
+        if fetched_at and (latest_fetched_at is None or fetched_at > latest_fetched_at):
+            latest_fetched_at = fetched_at
+    status = str(payload.get("status") or ("ready" if accepted else "no_event"))
+    identities.sort(key=lambda item: (item["observation_id"], item["source"]))
+    observation_ids_hash = hashlib.sha256(
+        json.dumps(
+            identities,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    return {
+        "http_status": status_code,
+        "status": status,
+        "count": accepted,
+        "rejected_count": rejected,
+        "sources": sorted(sources),
+        "latest_fetched_at": latest_fetched_at,
+        # A one-way identity hash proves that the reviewed rows reached the
+        # release without retaining observation IDs or private mail data in
+        # the acceptance artifact.
+        "observation_ids_hash": observation_ids_hash,
+    }, None
+
+
+def _external_observation_lineage_reasons(
+    evidence: dict[str, Any] | None,
+    manifest: dict[str, Any] | None,
+) -> list[str]:
+    """Compare reviewed Railway observations with the public release manifest.
+
+    The endpoint and Pages probe intentionally expose only bounded metadata.
+    This comparison closes the remaining gap: a healthy ingress alone cannot
+    prove that the same approved observations were published.
+    """
+    if evidence is None or manifest is None or manifest.get("status") != "ready":
+        return []
+    reasons: list[str] = []
+    evidence_status = str(evidence.get("status") or "")
+    declared_status = manifest.get("external_observation_status")
+    if declared_status not in {"ready", "no_event"}:
+        reasons.append("pages_external_observations:manifest_status_missing")
+        return reasons
+    if declared_status != evidence_status and not (declared_status == "ready" and evidence_status == "no_event"):
+        reasons.append("pages_external_observations:status_mismatch")
+    declared_count_raw = manifest.get("external_observation_count")
+    try:
+        if declared_count_raw is None:
+            raise ValueError("missing")
+        declared_count = int(str(declared_count_raw))
+    except (TypeError, ValueError):
+        reasons.append("pages_external_observations:count_missing")
+        declared_count = -1
+    if declared_count != int(evidence.get("count", 0) or 0):
+        reasons.append("pages_external_observations:count_mismatch")
+    declared_sources = sorted(str(item).casefold() for item in (manifest.get("external_observation_sources") or []))
+    evidence_sources = sorted(str(item).casefold() for item in (evidence.get("sources") or []))
+    if declared_sources != evidence_sources:
+        reasons.append("pages_external_observations:sources_mismatch")
+    declared_hash = str(manifest.get("external_observation_ids_hash") or "")
+    evidence_hash = str(evidence.get("observation_ids_hash") or "")
+    if declared_count > 0 and (not declared_hash or declared_hash != evidence_hash):
+        reasons.append("pages_external_observations:ids_hash_mismatch")
+    return reasons
+
+
 def _fetch_bytes(url: str, *, timeout: float, session: requests.Session) -> tuple[int | None, bytes | None, str | None]:
     """Fetch one public artifact without retaining its payload in evidence.
 
@@ -120,6 +282,12 @@ def _fetch_bytes(url: str, *, timeout: float, session: requests.Session) -> tupl
 
 
 _SHA256 = re.compile(r"^[0-9a-fA-F]{64}$")
+
+_OBSERVATION_BLOCKED_FIELDS = {
+    "body", "raw_body", "attachments", "data", "local_path", "private_url",
+    "gmail_message_id", "gmail_thread_id", "gmail_history_id", "message_id",
+    "thread_id", "sender", "recipient", "email_address",
+}
 
 
 def _artifact_hash_audit(
@@ -308,6 +476,11 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
     public = _require_https(public_url, "Pages URL")
     client = session or requests.Session()
     railway_status, health, railway_error = _fetch_json(urljoin(railway, "health"), timeout=timeout, session=client)
+    observation_evidence, observation_error = _fetch_observation_evidence(
+        railway,
+        timeout=timeout,
+        session=client,
+    )
     manifest_status, manifest, manifest_error = _fetch_json(urljoin(public, "data/release-manifest.json"), timeout=timeout, session=client)
     reasons: list[str] = []
     if railway_status != 200 or health is None:
@@ -332,6 +505,11 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
                     storage_status = str(storage.get("status") or "unknown")
                     if storage_status != "ready":
                         reasons.append(f"railway_gmail_persistence:{storage_status}")
+                    continuity = storage.get("restart_continuity")
+                    if isinstance(continuity, dict) and continuity.get("status") != "verified":
+                        reasons.append(
+                            f"railway_gmail_persistence:restart_continuity_{continuity.get('status') or 'unknown'}"
+                        )
                 continue
             # Delivery health is a receipt state, not a provider availability
             # state.  A successful single-recipient acceptance therefore
@@ -358,6 +536,11 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
                         # receipt itself visible, but do not call the external
                         # acceptance durable until a mounted volume is proven.
                         reasons.append(f"railway_delivery_persistence:{storage_status}")
+                    continuity = storage.get("restart_continuity")
+                    if isinstance(continuity, dict) and continuity.get("status") != "verified":
+                        reasons.append(
+                            f"railway_delivery_persistence:restart_continuity_{continuity.get('status') or 'unknown'}"
+                        )
                 continue
             if status not in {"healthy", "no_new_content", "no_event", "not_checked"}:
                 reasons.append(f"railway_{section}:{status}")
@@ -368,6 +551,14 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
             # fail-closed until the operator migrates the variable; never
             # persist or expose its value here.
             reasons.append("railway_runtime_config:secret_migration_required")
+    if observation_evidence is not None:
+        if observation_error:
+            reasons.append(f"railway_observations:{observation_error}")
+        elif observation_evidence.get("status") not in {"ready", "no_event"}:
+            reasons.append(f"railway_observations:{observation_evidence.get('status')}")
+        if int(observation_evidence.get("rejected_count", 0) or 0) > 0:
+            reasons.append("railway_observations:rejected_rows")
+    reasons.extend(_external_observation_lineage_reasons(observation_evidence, manifest))
     artifact_audit: dict[str, Any] = {
         "declared_count": 0,
         "verified_count": 0,
@@ -408,6 +599,20 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
         artifact_audit=artifact_audit,
         reasons=reasons,
     )
+    if observation_evidence is None:
+        gate_summary["external_observations"] = {
+            "status": "not_checked",
+            "blocking_reasons": [],
+        }
+    else:
+        observation_reasons = sorted(
+            reason for reason in reasons
+            if reason.startswith(("railway_observations:", "pages_external_observations:"))
+        )
+        gate_summary["external_observations"] = {
+            "status": "pass" if not observation_reasons else "needs_reverify",
+            "blocking_reasons": observation_reasons,
+        }
     return {
         "kind": "external-acceptance-readonly",
         "schema_version": "1.0",
@@ -416,6 +621,12 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
         "blocking_reasons": sorted(set(reasons)),
         "gate_summary": gate_summary,
         "railway": {"url": railway, "http_status": railway_status, "error": railway_error, "health": _safe_health(health or {})},
+        "external_observations": observation_evidence or {
+            "status": "not_checked",
+            "count": 0,
+            "rejected_count": 0,
+            "sources": [],
+        },
         "pages": pages,
         "side_effects": {"telegram": False, "railway_write": False, "configuration_changed": False},
     }

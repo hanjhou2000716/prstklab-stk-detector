@@ -15,7 +15,7 @@
 | Release-gated creator dispatch | `src/creator_dispatch.py`、`scheduled-brief.yml` | release mismatch／receipt tests | creator dispatch test suite | PASS |
 | Reviewed Creator Railway ingress | `src/railway_observation_client.py`、`src/scheduled_delivery.py`、`scheduled-brief.yml` | sanitized Creator projection and release binding tests | 51 targeted tests | PASS |
 | FinancialJuice compound parser | `src/external_source_parsers.py`、`src/financialjuice_contract.py` | compound／importance／cluster tests | FinancialJuice test suite | PASS |
-| FinancialJuice live Gmail ingress | Gmail watch + Railway configuration | health endpoint and delivery receipt | live health currently reports missing Gmail variables | NEEDS_REVERIFY |
+| FinancialJuice live Gmail ingress | Gmail watch + Railway configuration | health endpoint and delivery receipt | live health reports configured, healthy Watch; durable cursor volume remains unproven | NEEDS_REVERIFY |
 | Official news provider adapters | `src/news_feed_adapters.py`、`src/news_intelligence.py` | provider/domain/dedupe tests | news test suite | PASS |
 | News production refresh | refresh workflow + public release | public artifact and freshness audit | must be rechecked after next refresh | NEEDS_REVERIFY |
 | Canonical Railway bundle | `scripts/sync_railway_canonical_parser.py` | `--check` and overlap audit | CI #656 | PASS |
@@ -60,9 +60,10 @@ All five PRs remain stacked and must be reviewed in order. The local branch
 checkpoint is green (`1350 passed` before the latest acceptance-contract test;
 the targeted acceptance suite is green and full regression is rerun on this
 branch), but the external acceptance state is still `NEEDS_REVERIFY` because
-the live Railway service lacks Gmail watch configuration, GDELT is rate
-limited, the health callback returns HTTP 403, and the runtime reports a
-legacy delivery-secret migration requirement. This is deliberate fail-closed
+the live Railway service reports GDELT rate limiting, the delivery receipt is
+partial, and the health projection cannot prove durable Gmail/Railway volume
+continuity. The Gmail Watch configuration itself is now healthy and the
+canonical delivery-secret migration is complete. This is deliberate fail-closed
 behavior; it is not evidence that there was no new Creator or FinancialJuice
 content.
 
@@ -77,14 +78,14 @@ the additional Windows long-path raw-observation fallback is deterministic and
 does not change the public observation schema.
 
 The latest read-only external capture is
-`docs/evidence/external-acceptance-2026-08-22T1403.json` (captured at
-`2026-08-22T14:04:32Z`). Pages serves a ready release and all seven declared
+`docs/evidence/external-acceptance-2026-08-25T0820Z.json` (captured at
+`2026-08-25T08:20:08Z`). Pages serves a ready release and all five declared
 public artifact hashes and market/research/event snapshot identities match.
-Railway is running, Jin10 is healthy, and the canonical delivery-secret
-migration is now verified (`migration_required=false`). Acceptance remains
-`NEEDS_REVERIFY` for GDELT HTTP 429, the HTTP 403 health callback, and missing
-Gmail watch configuration. No production Telegram delivery is inferred from
-this evidence.
+Railway is running, Jin10 and Gmail Watch are healthy, and the canonical
+delivery-secret migration is verified (`migration_required=false`). Acceptance
+remains `NEEDS_REVERIFY` for GDELT HTTP 429, the partial delivery receipt, and
+unknown durable-volume continuity. No production Telegram delivery is inferred
+from this evidence.
 
 ## Fail-closed rules
 
@@ -106,5 +107,5 @@ history; they must not override the newer reconciliation.
 1. 合併 #655 後先確認 canonical Railway bundle 在 main 重新產生。
 2. 合併 #656 後執行一次 `refresh-dashboard`，保存 release manifest、Pages、Railway
    health 與 delivery receipt 的同一組 release／snapshot ID。
-3. Gmail 來源完成變數設定後，再以單一測試收件人驗證 Jenny／FinancialJuice 的
-   受控推播；未完成前不得廣播。
+3. Gmail Watch 變數已通過健康檢查；下一步仍須在 Railway durable volume
+   可驗證後，以單一測試收件人驗證 Jenny／FinancialJuice 的受控推播；未完成前不得廣播。

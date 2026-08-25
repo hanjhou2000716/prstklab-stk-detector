@@ -108,8 +108,11 @@ def _remote_files(branch: str, files: list[str]) -> set[str]:
     return {line.strip() for line in result.stdout.splitlines() if line.strip()}
 
 
-def restore(*, root: Path | str = Path("."), branch: str = DEFAULT_BRANCH, includes: list[str] | None = None) -> dict[str, Any]:
-    """Restore the latest data-only branch into the current checkout."""
+def restore(
+    *, root: Path | str = Path("."), branch: str = DEFAULT_BRANCH,
+    includes: list[str] | None = None, dry_run: bool = False,
+) -> dict[str, Any]:
+    """Restore the latest data-only branch, or report a non-mutating plan."""
     root = Path(root)
     branch = branch.strip() or DEFAULT_BRANCH
     if not _fetch_branch(branch):
@@ -126,16 +129,25 @@ def restore(*, root: Path | str = Path("."), branch: str = DEFAULT_BRANCH, inclu
             "reason": "no_remote_paths",
             "missing_remote": missing_remote,
         }
+    selected = [path for path in files if path in remote_files]
+    if dry_run:
+        return {
+            "restored": False,
+            "dry_run": True,
+            "branch": branch,
+            "planned_files": selected,
+            "missing_remote": missing_remote,
+        }
     result = _run(
         "checkout", f"origin/{branch}", "--",
-        *[path for path in files if path in remote_files], check=False,
+        *selected, check=False,
     )
     if result.returncode:
         raise DataReleaseError(result.stderr.strip() or "data-release restore failed")
     return {
         "restored": True,
         "branch": branch,
-        "files": [path for path in files if path in remote_files],
+        "files": selected,
         "missing_remote": missing_remote,
     }
 
@@ -225,7 +237,7 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     try:
-        result = restore(branch=args.branch, includes=args.include) if args.restore else publish(
+        result = restore(branch=args.branch, includes=args.include, dry_run=args.dry_run) if args.restore else publish(
             branch=args.branch, includes=args.include, message=args.message, dry_run=args.dry_run,
         )
     except DataReleaseError as exc:

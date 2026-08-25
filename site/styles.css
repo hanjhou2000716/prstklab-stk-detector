@@ -105,6 +105,15 @@
 .news-panel .news-list {
   width: 100%;
 }
+.news-source-status {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: .68rem;
+  line-height: 1.4;
+}
+.news-source-status[data-state="multi-source"] { color: var(--positive); }
+.news-source-status[data-state="single-source"] { color: var(--orange); }
+.news-source-status[data-state="no-event"] { color: var(--muted); }
 .news-panel .news-list li {
   min-height: 54px;
   padding: 13px 0;
@@ -200,6 +209,7 @@
 .news-badge-creator { border-color: #d8c9ed; background: #f4eefb; color: #654487; }
 .news-badge-sector { border-color: #efd1ad; background: #fff4e8; color: #8b5128; }
 .news-badge-macro { border-color: #e3c3a4; background: #fff1e4; color: #8d4d1c; }
+.news-badge-event { border-color: #e7b27d; background: #fff7ec; color: #9a5720; }
 .news-reason-detail { margin-left: 6px; color: var(--muted); }
 
 /* Taiwan market convention: gains red, losses green. */

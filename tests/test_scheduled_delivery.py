@@ -369,7 +369,10 @@ def test_prepare_fetches_sanitized_railway_observations_into_release(tmp_path, m
     monkeypatch.setattr(scheduled_delivery, "load_railway_observations", lambda: ([{
         "observation_id": "fj-remote", "source": "financialjuice", "content_origin": "financialjuice",
         "headline": "Public remote headline", "public_safe": True,
-    }], {"status": "ready", "count": 1, "rejected_count": 0}))
+    }, {
+        "observation_id": "jenny-remote", "source": "jenny", "content_origin": "jenny",
+        "headline": "Public creator headline", "public_safe": True,
+    }], {"status": "ready", "count": 2, "rejected_count": 0}))
     monkeypatch.setattr(scheduled_delivery, "build_market_snapshot", lambda: {
         "snapshot_id": "m-1", "quotes": [], "indices": [],
         "source_health": {"status": "healthy", "sources": [], "data_gaps": [],
@@ -387,6 +390,8 @@ def test_prepare_fetches_sanitized_railway_observations_into_release(tmp_path, m
     scheduled_delivery.prepare("morning", snapshot_path)
     published = json.loads(snapshot_path.read_text(encoding="utf-8"))
     assert published["external_observations"][0]["observation_id"] == "fj-remote"
+    assert {row["observation_id"] for row in published["external_observations"]} == {"fj-remote", "jenny-remote"}
+    assert [row["observation_id"] for row in published["financialjuice_observations"]] == ["fj-remote"]
     assert published["external_source_health"]["provider_status"] == "ready"
     assert published["external_source_health"]["status"] == "healthy"
 

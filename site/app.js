@@ -376,13 +376,40 @@ const newsBadgeLabels = (story) => {
   add("creator", "Creator 提及", reasons.some((item) => /^creator_mentioned:/i.test(item)) || (story?.creator_mentions || []).length > 0);
   add("sector", "產業", reasons.some((item) => /^tracked_sector:/i.test(item)) || (story?.sector_interest || []).length > 0);
   add("macro", "總經", reasons.some((item) => /^active_topic:/i.test(item)) || /macro|econom|rate|fed|inflation|cpi|pce|gdp|央行|利率|通膨|總經/.test(`${reasonText} ${topicText}`));
+  const eventCategory = String(story?.event_classification?.category || "").trim();
+  const eventLabels = {
+    black_swan: "黑天鵝",
+    conflict: "地緣衝突",
+    policy: "政策",
+    fed: "央行／利率",
+    macro: "總經數據",
+    energy: "能源",
+    semiconductor: "半導體",
+    market: "市場波動",
+    material_positive: "風險降級",
+  };
+  add("event", `事件：${eventLabels[eventCategory] || eventCategory}`, Boolean(eventCategory));
   if (!badges.length) add("source", "公開來源", true);
   return badges;
 };
 
-const renderNewsList = (id, stories, providerRegistry = [], health = null) => {
+const renderNewsList = (id, stories, providerRegistry = [], health = null, intelligence = null) => {
   const container = document.getElementById(id);
   if (!container) return;
+  const diversityNode = document.getElementById(`${id}-source-status`);
+  const diversity = intelligence?.source_diversity;
+  if (diversityNode) {
+    if (!diversity || diversity.status === "no_event") {
+      diversityNode.textContent = "來源核對：本輪沒有可用新聞";
+      diversityNode.dataset.state = "no-event";
+    } else if (diversity.status === "multi_source") {
+      diversityNode.textContent = `來源核對：${Number(diversity.independent_source_count) || 0} 個獨立來源`;
+      diversityNode.dataset.state = "multi-source";
+    } else {
+      diversityNode.textContent = "來源核對：單一來源，等待第二來源";
+      diversityNode.dataset.state = "single-source";
+    }
+  }
   if (!stories?.length) {
     const state = newsEmptyState(health);
     container.innerHTML = `<li class="empty news-empty-state"><strong>${escapeHtml(state.title)}</strong><small>${escapeHtml(state.detail)}</small></li>`;
@@ -403,8 +430,10 @@ const renderNewsList = (id, stories, providerRegistry = [], health = null) => {
     const title = String(story.title || "").replace(/^\s*\d+\.\s*/, "");
     const badges = newsBadgeLabels(story).map((badge) => `<span class="news-badge news-badge-${badge.key}">${escapeHtml(badge.label)}</span>`).join("");
     const reasonDetails = (story.relevance_reasons || []).slice(0, 2).map((reason) => escapeHtml(reason)).join("、");
+    const eventReason = story?.event_classification?.reason ? `分類依據：${String(story.event_classification.reason)}` : "";
     const source = escapeHtml(story.source || story.provider_name || "公開來源");
-    const detail = reasonDetails ? `<span class="news-reason-detail">${reasonDetails}</span>` : "";
+    const detailParts = [reasonDetails, eventReason].filter(Boolean).map((item) => escapeHtml(item));
+    const detail = detailParts.length ? `<span class="news-reason-detail">${detailParts.join("、")}</span>` : "";
     return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><div class="news-badges" aria-label="這則新聞的關聯理由">${badges}</div><small>${source}${detail}</small></li>`;
   }).join("");
 };
@@ -514,12 +543,24 @@ const renderSourceHealth = (health, snapshot = {}) => {
   };
   const scanStateLabel = sourceHealthStateLabel(scanState);
   const observation = health.observability || health.slo || health.monitor_health || {};
+  const history = observation.history && typeof observation.history === "object" ? observation.history : null;
+  const historyWindow = (key) => history && history.windows && history.windows[key] && typeof history.windows[key] === "object"
+    ? history.windows[key] : null;
+  const historyParts = [];
+  ["24h", "7d"].forEach((key) => {
+    const metric = historyWindow(key);
+    if (!metric || !Number.isFinite(Number(metric.sample_count))) return;
+    const label = key === "24h" ? "24 小時" : "7 日";
+    const success = Number.isFinite(Number(metric.success_rate)) ? `成功率 ${Number(metric.success_rate).toFixed(1)}%` : "成功率待定";
+    historyParts.push(`${label} ${success}／失敗 ${Number(metric.failure_count) || 0}／無事件 ${Number(metric.no_event_count) || 0}`);
+  });
   const healthMetricParts = [
     Number.isFinite(Number(observation.success_rate)) ? `成功率 ${Number(observation.success_rate).toFixed(1)}%` : "",
     Number.isFinite(Number(observation.no_event_count)) ? `無事件 ${Number(observation.no_event_count)} 個` : "",
     Number.isFinite(Number(observation.failure_count)) ? `掃描失敗 ${Number(observation.failure_count)} 個` : "",
     Number.isFinite(Number(observation.crosscheck_rate)) ? `核對率 ${Number(observation.crosscheck_rate).toFixed(1)}%` : "",
     Number.isFinite(Number(observation.stale_count)) ? `快取 ${Number(observation.stale_count)} 筆` : "",
+    historyParts.length ? `歷史：${historyParts.join("；")}` : "",
   ].filter(Boolean).join("｜");
   event.textContent = `${scan.label || "事件掃描"}｜${scanStateLabel}${scan.detail ? `｜${scan.detail}` : ""}${healthMetricParts ? `｜${healthMetricParts}` : ""}`;
   event.dataset.status = scan.status || "partial";
@@ -1084,8 +1125,8 @@ const render = (snapshot) => {
       source_failure_count: intelligence.source_failure_count ?? aggregate.source_failure_count,
     };
   };
-  renderNewsList("taiwan-news", newsMarkets?.taiwan?.stories || snapshot.news?.taiwan, newsRegistry, newsHealthFor("taiwan"));
-  renderNewsList("us-news", newsMarkets?.us?.stories || snapshot.news?.us, newsRegistry, newsHealthFor("us"));
+  renderNewsList("taiwan-news", newsMarkets?.taiwan?.stories || snapshot.news?.taiwan, newsRegistry, newsHealthFor("taiwan"), newsMarkets?.taiwan);
+  renderNewsList("us-news", newsMarkets?.us?.stories || snapshot.news?.us, newsRegistry, newsHealthFor("us"), newsMarkets?.us);
 };
 
 // Telegram buttons carry the release and alert identity.  Resolve that

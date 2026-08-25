@@ -47,11 +47,16 @@ def test_configured_runtime_returns_ingress_and_redacted_health():
         "storage": {
             "status": "unknown",
             "durable_volume_detected": False,
-            "state_parent_writable": True,
-            "state_parent_exists": True,
-            "expected_volume_path": "/data",
-            "fail_closed_for_high_risk": True,
-        },
+                "state_parent_writable": True,
+                "state_parent_exists": True,
+                "expected_volume_path": "/data",
+                "restart_continuity": {
+                    "status": "not_verified",
+                    "previous_started_at": None,
+                    "error": None,
+                },
+                "fail_closed_for_high_risk": True,
+            },
         "error": None,
     }
 

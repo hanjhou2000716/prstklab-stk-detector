@@ -153,6 +153,29 @@ def validate_news_intelligence(document: dict[str, Any]) -> list[str]:
     known: dict[str, dict[str, Any]] = {}
     if not isinstance(registry, list):
         return errors + ["news provider_registry must be an array"]
+    diversity = document.get("source_diversity")
+    if diversity is not None:
+        if not isinstance(diversity, dict):
+            errors.append("news.source_diversity must be an object")
+        else:
+            status = str(diversity.get("status") or "")
+            if status not in {"no_event", "single_source", "multi_source"}:
+                errors.append("news.source_diversity.status is invalid")
+            count = diversity.get("independent_source_count")
+            if not isinstance(count, int) or count < 0:
+                errors.append("news.source_diversity.independent_source_count must be non-negative")
+            else:
+                expected_cross_checked = count >= 2
+                if diversity.get("cross_checked") is not expected_cross_checked:
+                    errors.append("news.source_diversity.cross_checked disagrees with source count")
+                if document.get("stories") and status == "no_event":
+                    errors.append("news.source_diversity.no_event conflicts with stories")
+                if not document.get("stories") and status != "no_event":
+                    errors.append("news.source_diversity status must be no_event without stories")
+                if count >= 2 and status != "multi_source":
+                    errors.append("news.source_diversity status must be multi_source for two sources")
+                if count < 2 and document.get("stories") and status != "single_source":
+                    errors.append("news.source_diversity status must be single_source for one source")
     for index, provider in enumerate(registry):
         if not isinstance(provider, dict):
             errors.append(f"news.provider_registry[{index}] must be an object")
@@ -345,6 +368,24 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
         no_events = observability.get("no_event_count")
         if isinstance(failures, int) and isinstance(no_events, int) and failures < 0:
             errors.append("source_health.observability.failure_count must be non-negative")
+        history = observability.get("history")
+        if isinstance(history, dict):
+            samples = history.get("samples")
+            sample_count = history.get("sample_count")
+            max_samples = history.get("max_samples")
+            if isinstance(samples, list) and isinstance(sample_count, int) and sample_count != len(samples):
+                errors.append("source_health.observability.history.sample_count does not match samples")
+            if isinstance(samples, list) and isinstance(max_samples, int) and len(samples) > max_samples:
+                errors.append("source_health.observability.history exceeds max_samples")
+            for window_name in ("24h", "7d"):
+                metric = history.get("windows", {}).get(window_name) if isinstance(history.get("windows"), dict) else None
+                if not isinstance(metric, dict):
+                    continue
+                window_count = metric.get("sample_count")
+                if isinstance(window_count, int) and isinstance(sample_count, int) and window_count > sample_count:
+                    errors.append(f"source_health.observability.history.{window_name}.sample_count exceeds history.sample_count")
+                if metric.get("state") == "no_observations" and window_count not in (0, None):
+                    errors.append(f"source_health.observability.history.{window_name} no_observations has samples")
     return errors
 
 

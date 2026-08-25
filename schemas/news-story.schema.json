@@ -10,6 +10,8 @@
     "source_tier": {"enum": ["official", "market", "discovery", "unknown"]},
     "authority_tier": {"enum": ["official", "market", "discovery", "unknown"]},
     "title": {"type": "string", "minLength": 1},
+    "summary": {"type": "string"},
+    "description": {"type": "string"},
     "canonical_url": {"type": "string", "pattern": "^https://"},
     "url": {"type": "string", "pattern": "^https://"},
     "published_at": {"type": ["string", "null"], "format": "date-time"},
@@ -17,6 +19,19 @@
     "tickers": {"type": "array", "items": {"type": "string"}},
     "sectors": {"type": "array", "items": {"type": "string"}},
     "topics": {"type": "array", "items": {"type": "string"}},
+    "event_classification": {
+      "type": "object",
+      "required": ["schema_version", "classifier", "category", "reason", "matched_terms", "input_fields"],
+      "properties": {
+        "schema_version": {"type": "string", "minLength": 1},
+        "classifier": {"const": "src.event_classifier.classify_event_fields"},
+        "category": {"type": ["string", "null"]},
+        "reason": {"type": "string", "minLength": 1},
+        "matched_terms": {"type": "array", "items": {"type": "string"}},
+        "input_fields": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
     "relevance_reasons": {"type": "array", "items": {"type": "string"}},
     "freshness": {"type": "string", "minLength": 1},
     "dedupe_key": {"type": "string", "minLength": 1},

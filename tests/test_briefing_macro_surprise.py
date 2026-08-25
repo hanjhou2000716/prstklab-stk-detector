@@ -56,3 +56,19 @@ def test_briefing_forwards_external_observations_to_conservative_risk_engine():
     assert risk["unified_events"][0]["lifecycle_state"] == "pending_confirmation"
     assert risk["unified_events"][0]["notification"]["allowed"] is False
     assert risk["pending_reasons"]
+
+
+def test_briefing_uses_financialjuice_subset_when_release_contains_creator_rows():
+    briefing = build_briefing_snapshot({
+        "indices": [], "quotes": [], "macro_quotes": [], "events": {"items": []},
+        "external_observations": [
+            {"event_type": "energy", "title": "FJ oil risk", "source": "financialjuice"},
+            {"event_type": "technology", "title": "Creator view", "source": "jenny"},
+        ],
+        "financialjuice_observations": [
+            {"event_type": "energy", "title": "FJ oil risk", "source": "financialjuice"},
+        ],
+    })
+    risk = briefing["intelligence"]["external_event_risk"]
+    assert risk["cluster"]["observations"][0]["title"] == "FJ oil risk"
+    assert all(item.get("title") != "Creator view" for item in risk["cluster"]["observations"])

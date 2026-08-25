@@ -1,0 +1,203 @@
+{
+  "kind": "external-acceptance-readonly",
+  "schema_version": "1.0",
+  "captured_at": "2026-08-25T10:55:40.946360+00:00",
+  "status": "NEEDS_REVERIFY",
+  "blocking_reasons": [
+    "railway_delivery:partial",
+    "railway_delivery_persistence:unknown",
+    "railway_gdelt:failed",
+    "railway_gmail_persistence:unknown"
+  ],
+  "gate_summary": {
+    "railway_health": {
+      "status": "needs_reverify",
+      "blocking_reasons": [
+        "railway_delivery:partial",
+        "railway_delivery_persistence:unknown",
+        "railway_gdelt:failed",
+        "railway_gmail_persistence:unknown"
+      ]
+    },
+    "gmail_watch": {
+      "status": "needs_reverify",
+      "blocking_reasons": [
+        "railway_gmail_persistence:unknown"
+      ]
+    },
+    "delivery_receipt": {
+      "status": "needs_reverify",
+      "blocking_reasons": [
+        "railway_delivery:partial",
+        "railway_delivery_persistence:unknown"
+      ]
+    },
+    "pages_manifest": {
+      "status": "pass",
+      "blocking_reasons": []
+    },
+    "pages_artifacts": {
+      "status": "pass",
+      "blocking_reasons": []
+    },
+    "external_observations": {
+      "status": "not_checked",
+      "blocking_reasons": []
+    }
+  },
+  "railway": {
+    "url": "https://loving-happiness-production-b1a9.up.railway.app/",
+    "http_status": 200,
+    "error": null,
+    "health": {
+      "jin10": {
+        "status": "healthy",
+        "last_success_at": "2026-08-25T10:55:03.355680+00:00",
+        "last_failure_at": null,
+        "item_count": 0,
+        "error": null
+      },
+      "gdelt": {
+        "status": "failed",
+        "event_scan": "scan_failed",
+        "last_success_at": null,
+        "last_failure_at": "2026-08-25T10:43:32.314735+00:00",
+        "article_count": 0,
+        "alert_count": 0,
+        "pending_count": 0,
+        "pending_reasons": {},
+        "error": "HTTP_429",
+        "stale_cache_used": false,
+        "health_dispatch_status": "healthy",
+        "health_dispatch_error": null,
+        "health_dispatch_next_retry_at": null,
+        "poll_seconds": 900
+      },
+      "market_sync": {
+        "status": "not_checked",
+        "source_url": null,
+        "fetched_at": null,
+        "record_count": 0,
+        "error": null
+      },
+      "monitor": {
+        "status": "running",
+        "last_cycle_started_at": "2026-08-25T10:54:44.843246+00:00",
+        "last_cycle_completed_at": "2026-08-25T10:55:03.355708+00:00",
+        "heartbeat_status": "healthy",
+        "heartbeat_timeout_seconds": 300,
+        "last_cycle_age_seconds": 34,
+        "current_cycle_age_seconds": 53
+      },
+      "gmail": {
+        "status": "healthy",
+        "watch_status": "healthy",
+        "watch_expiration": "2026-09-01T00:23:01.779000+00:00",
+        "missing": [],
+        "error": null
+      },
+      "creator": {
+        "status": "healthy",
+        "received_count": 1,
+        "parsed_count": 1,
+        "failed_count": 0,
+        "duplicate_count": 0,
+        "public_observation_count": 1,
+        "last_failure_at": null,
+        "coverage_status": "not_checked",
+        "morning_batch_state": "not_checked",
+        "consensus_status": "not_checked",
+        "last_release_id": null,
+        "last_snapshot_id": null,
+        "last_observation_id": "email-7e65da4a82163ed61f96-0",
+        "last_telegram_delivery_status": "not_checked"
+      },
+      "financialjuice": {
+        "status": "healthy",
+        "received_count": 1,
+        "parsed_count": 1,
+        "failed_count": 0,
+        "duplicate_count": 0,
+        "public_observation_count": 1,
+        "importance_gte_8_count": 1,
+        "pending_cluster_count": 0,
+        "last_failure_at": null,
+        "decision": "priority_items_blocked_by_notification_gate",
+        "last_release_id": null,
+        "last_snapshot_id": null,
+        "last_observation_id": "email-c85bf9db8b250d5026c3-0",
+        "last_telegram_delivery_status": "not_checked"
+      },
+      "news": {
+        "status": "not_checked",
+        "last_success_at": null,
+        "last_failure_at": null
+      },
+      "runtime": {
+        "status": "healthy",
+        "classifier_mode": "repository-shared",
+        "classifier_source_sha256": "35b558894135d96cd7ba0fce07091081e6e165aa6fbe1c5662919b16709bb458",
+        "keyword_bundle_sha256": "0ffdbe4a9b3106832e380cefcd37cffc023c64e8f9a27f672c65c012ffeab698",
+        "keyword_categories": 7,
+        "updated_at": "2026-08-25T00:23:01.437020+00:00",
+        "error": null
+      },
+      "runtime_config": {
+        "status": "healthy",
+        "delivery_secret_configured": true,
+        "canonical_name_present": true,
+        "legacy_name_present": true,
+        "active_name": "RAILWAY_STATUS_SHARED_SECRET",
+        "migration_required": false,
+        "secret_values_exposed": false
+      },
+      "delivery": {
+        "status": "partial",
+        "last_trace_id": "creator-release-997f088390d6f036-940057153b3c",
+        "last_receipt_status": "partial",
+        "receipt_matches_last_outbox": true,
+        "retryable_count": 0,
+        "due_retry_count": 0,
+        "last_delivered_count": 4,
+        "last_failed_count": 3,
+        "last_recipient_count": 7,
+        "retention_days": 30
+      },
+      "status": "ok",
+      "service": "prstk-jin10-monitor",
+      "started_at": "2026-08-25T00:23:01.417486+00:00"
+    }
+  },
+  "external_observations": {
+    "status": "not_checked",
+    "count": 0,
+    "rejected_count": 0,
+    "sources": []
+  },
+  "pages": {
+    "http_status": 200,
+    "error": null,
+    "status": "ready",
+    "release_id": "release-4e446da29b0ed886",
+    "market_snapshot_id": "25ab9e0c2d311f79",
+    "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
+    "event_snapshot_id": "event-2668aef41e66e57b",
+    "artifact_hash_count": 5,
+    "artifact_hash_audit": {
+      "declared_count": 5,
+      "verified_count": 5,
+      "missing_count": 0,
+      "mismatch_count": 0,
+      "error_count": 0,
+      "snapshot_mismatch_count": 0,
+      "mismatches": [],
+      "errors": [],
+      "snapshot_errors": []
+    }
+  },
+  "side_effects": {
+    "telegram": false,
+    "railway_write": false,
+    "configuration_changed": false
+  }
+}
