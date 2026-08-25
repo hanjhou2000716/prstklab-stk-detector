@@ -589,6 +589,25 @@ def _backtest_release_contract_errors(document: dict[str, Any]) -> list[str]:
     if contract is not None and not isinstance(contract, dict):
         errors.append("backtest_release_contract must be an object")
         contract = None
+    # Legacy blocked contracts from before the formal backtest schema may only
+    # contain the publication flags and a partial registry. Keep those
+    # observation-only documents readable; once a producer emits any of the
+    # formal contract fields, the complete schema gate applies.
+    formal_contract = isinstance(contract, dict) and any(
+        field in contract for field in (
+            "market", "research_only", "strategy_registry_validation",
+            "performance_summary", "survivorship_audit",
+        )
+    )
+    if formal_contract and isinstance(contract, dict):
+        # The release boundary must enforce the same formal contract used by
+        # the producer.  Manual checks below remain for stable, actionable
+        # compatibility errors, while the schema rejects unknown fields and
+        # malformed nested rows before publication.
+        try:
+            errors.extend(_schema_errors(contract, "backtest-release.schema.json"))
+        except (OSError, ValueError, TypeError) as exc:
+            errors.append(f"backtest_release_contract schema unavailable: {type(exc).__name__}")
     contract_state = contract.get("publication_state") if contract else None
     release_id = str(contract.get("backtest_release") or "").strip() if contract else ""
     publish_eligible = contract.get("publish_eligible") if contract else None
