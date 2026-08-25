@@ -12,6 +12,35 @@
     "collection_state": {"enum": ["ready", "degraded", "no_event", "source_failed"]},
     "source_failure_count": {"type": "integer", "minimum": 0},
     "source_health": {"type": "array", "items": {"type": "object"}},
+    "observability": {
+      "type": "object",
+      "required": ["stories_ingested", "stories_deduped", "ranked_count", "relevance_distribution", "providers"],
+      "properties": {
+        "stories_ingested": {"type": "integer", "minimum": 0},
+        "stories_deduped": {"type": "integer", "minimum": 0},
+        "ranked_count": {"type": "integer", "minimum": 0},
+        "relevance_distribution": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "providers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["provider", "status", "stories_ingested", "stories_deduped", "ranked_count", "relevance_distribution"],
+            "properties": {
+              "provider": {"type": "string", "minLength": 1},
+              "status": {"type": "string", "minLength": 1},
+              "last_success_at": {"type": ["string", "null"]},
+              "last_failure_at": {"type": ["string", "null"]},
+              "stories_ingested": {"type": "integer", "minimum": 0},
+              "stories_deduped": {"type": "integer", "minimum": 0},
+              "ranked_count": {"type": "integer", "minimum": 0},
+              "relevance_distribution": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
     "source_diversity": {
       "type": "object",
       "required": ["status", "cross_checked", "independent_source_count", "minimum_required"],

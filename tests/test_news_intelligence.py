@@ -124,6 +124,60 @@ def test_news_intelligence_distinguishes_no_event_from_source_failure():
     assert "error" not in failed["source_health"][0]
 
 
+def test_news_intelligence_exposes_provider_observability_counts_and_timestamps():
+    artifact = build_news_intelligence(
+        [
+            {
+                "title": "Fed rates unchanged",
+                "url": "https://www.federalreserve.gov/newsevents/pressreleases/a.htm",
+                "published_at": "2026-08-25T01:00:00+00:00",
+            },
+            {
+                "title": "Fed rates unchanged",
+                "url": "https://news.google.com/rss/articles/fed-1",
+                "published_at": "2026-08-25T01:01:00+00:00",
+            },
+        ],
+        market="us",
+        source_health=[
+            {
+                "provider": "fed",
+                "status": "healthy",
+                "checked_at": "2026-08-25T01:02:00+00:00",
+                "item_count": 1,
+            },
+            {
+                "provider": "sec",
+                "status": "rate_limited",
+                "checked_at": "2026-08-25T01:02:00+00:00",
+                "item_count": 0,
+            },
+        ],
+    )
+    fed = next(item for item in artifact["observability"]["providers"] if item["provider"] == "fed")
+    sec = next(item for item in artifact["observability"]["providers"] if item["provider"] == "sec")
+    assert artifact["observability"]["stories_ingested"] == 2
+    assert artifact["observability"]["stories_deduped"] == 1
+    assert artifact["observability"]["ranked_count"] == 1
+    assert fed["stories_ingested"] == 1
+    assert fed["stories_deduped"] == 1
+    assert fed["ranked_count"] == 1
+    assert fed["last_success_at"] == "2026-08-25T01:02:00+00:00"
+    assert sec["last_failure_at"] == "2026-08-25T01:02:00+00:00"
+    assert artifact["source_health"][0]["stories_ingested"] == 1
+
+
+def test_news_intelligence_observability_is_schema_valid_for_empty_and_failed_scan():
+    artifact = build_news_intelligence(
+        [],
+        market="us",
+        source_health=[{"provider": "sec", "status": "failed", "checked_at": "2026-08-25T01:02:00+00:00"}],
+    )
+    assert artifact["observability"]["stories_ingested"] == 0
+    assert artifact["observability"]["ranked_count"] == 0
+    assert validate_news_intelligence(artifact) == []
+
+
 def test_dedup_prefers_official_and_retains_supporting_source():
     stories = [
         {"title": "Fed rates unchanged", "url": "https://news.google.com/rss/articles/1"},
