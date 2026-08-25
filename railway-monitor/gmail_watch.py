@@ -271,6 +271,14 @@ class GmailWatchManager:
                 watch_error_at=self.now().astimezone(UTC).isoformat(),
             )
             return {"status": "failed", "renewed": False, "error": type(error).__name__}
+        except Exception as error:  # pragma: no cover - third-party transport boundary
+            # The async compatibility adapter may surface a provider-specific
+            # timeout/HTTP exception. Never let it escape the Railway loop or
+            # persist a response body; retain only a bounded class label.
+            error_name = type(error).__name__.casefold()
+            safe_error = "timeout" if "timeout" in error_name else "transport_error"
+            self.store.save_cursor(watch_error=safe_error, watch_error_at=self.now().astimezone(UTC).isoformat())
+            return {"status": "failed", "renewed": False, "error": safe_error}
 
 
 def health(
