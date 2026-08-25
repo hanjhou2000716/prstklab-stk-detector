@@ -27,3 +27,10 @@ before staging the requested paths. A partial writer updates only its selected
 artifacts and carries every other artifact forward; it must never turn a
 market-only refresh into a cache deletion. This is covered by
 `test_publish_stages_on_existing_release_tree`.
+
+## Non-mutating restore drill
+
+Use `python -m src.data_release --restore --dry-run` to inspect the latest
+`data-release` tree without checking files out or changing the working tree.
+The result reports `planned_files` and `missing_remote`; only an explicit
+restore without `--dry-run` may modify the checkout.
