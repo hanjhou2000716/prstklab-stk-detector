@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import json
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
-
 
 # Public diagnostics contain only bounded state, timestamps and counters.
 # Credentials, message bodies, transport IDs and recipient identifiers never
@@ -15,7 +14,7 @@ HEALTH_LOCK = threading.Lock()
 HEALTH_STATE: dict[str, Any] = {
     "status": "ok",
     "service": "prstk-jin10-monitor",
-    "started_at": datetime.now(timezone.utc).isoformat(),
+    "started_at": datetime.now(UTC).isoformat(),
     "jin10": {"status": "not_checked", "last_success_at": None, "last_failure_at": None, "item_count": 0, "error": None},
     "gdelt": {"enabled": True, "status": "not_checked", "event_scan": "not_checked", "last_success_at": None, "last_failure_at": None, "article_count": 0, "alert_count": 0, "pending_count": 0, "pending_reasons": {}, "error": None, "stale_cache_used": False, "health_dispatch_status": "not_checked", "health_dispatch_error": None, "health_dispatch_next_retry_at": None},
     "market_sync": {"status": "not_checked", "source_url": None, "fetched_at": None, "record_count": 0, "error": None},
@@ -66,6 +65,71 @@ HEALTH_STATE: dict[str, Any] = {
     },
 }
 
+_HEALTHY_STATES = {"healthy", "ok", "ready", "success", "no_event", "no_new_content", "scan_complete"}
+_NO_EVENT_STATES = {"no_event", "no_events", "no_new_content", "empty"}
+_CONFIGURATION_STATES = {"configuration_missing", "configuration_required", "not_configured"}
+_NOT_CHECKED_STATES = {"not_checked", "starting", "idle"}
+_FAILURE_STATES = {
+    "failed", "provider_failed", "parse_failed", "scan_failed", "stale", "partial",
+    "release_blocked", "rate_limited", "permission_denied", "http_error", "invalid_payload",
+}
+
+
+def summarize_health(state: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Summarize component health without collapsing no-event into failure.
+
+    The legacy top-level ``status=ok`` remains untouched for clients that use
+    it as an HTTP reachability signal.  This additive summary is the semantic
+    status for operators and Mini App source-health consumers.
+    """
+    source = state if isinstance(state, dict) else HEALTH_STATE
+    component_statuses: dict[str, str] = {}
+    no_event_count = 0
+    configuration_missing_count = 0
+    not_checked_count = 0
+    failure_count = 0
+    healthy_count = 0
+    for component, value in source.items():
+        if not isinstance(value, dict):
+            continue
+        status = str(value.get("status") or value.get("state") or "not_checked").strip().casefold()
+        component_statuses[str(component)] = status
+        if status in _NO_EVENT_STATES:
+            no_event_count += 1
+        if status in _CONFIGURATION_STATES:
+            configuration_missing_count += 1
+        elif status in _NOT_CHECKED_STATES:
+            not_checked_count += 1
+        elif status in _FAILURE_STATES:
+            failure_count += 1
+        elif status in _HEALTHY_STATES:
+            healthy_count += 1
+        else:
+            # Unknown statuses are not evidence of health.  Keep the endpoint
+            # usable while surfacing the unknown state as a degraded component.
+            failure_count += 1
+    component_count = len(component_statuses)
+    if failure_count:
+        overall_state = "partial" if healthy_count or no_event_count else "failed"
+    elif configuration_missing_count and not (healthy_count or no_event_count):
+        overall_state = "configuration_missing"
+    elif not_checked_count and not (healthy_count or no_event_count):
+        overall_state = "not_checked"
+    elif configuration_missing_count or not_checked_count:
+        overall_state = "partial"
+    else:
+        overall_state = "healthy" if component_count else "not_checked"
+    return {
+        "overall_state": overall_state,
+        "component_count": component_count,
+        "healthy_count": healthy_count,
+        "no_event_count": no_event_count,
+        "configuration_missing_count": configuration_missing_count,
+        "not_checked_count": not_checked_count,
+        "failure_count": failure_count,
+        "component_statuses": component_statuses,
+    }
+
 
 def update_health(component: str, **values: Any) -> None:
     """Atomically merge bounded component values into runtime health."""
@@ -76,7 +140,9 @@ def update_health(component: str, **values: Any) -> None:
 def snapshot_health() -> dict[str, Any]:
     """Return a detached JSON-safe copy for HTTP responses."""
     with HEALTH_LOCK:
-        return json.loads(json.dumps(HEALTH_STATE))
+        snapshot = json.loads(json.dumps(HEALTH_STATE))
+    snapshot["health_summary"] = summarize_health(snapshot)
+    return snapshot
 
 
-__all__ = ["HEALTH_LOCK", "HEALTH_STATE", "snapshot_health", "update_health"]
+__all__ = ["HEALTH_LOCK", "HEALTH_STATE", "snapshot_health", "summarize_health", "update_health"]
