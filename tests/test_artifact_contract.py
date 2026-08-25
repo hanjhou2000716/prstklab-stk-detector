@@ -142,6 +142,26 @@ def test_source_health_rejects_scan_failed_with_events():
     assert any("has_events=true" in error for error in errors)
 
 
+def test_source_health_history_rejects_inconsistent_sample_counts():
+    health = _source_health(observability={
+        "failure_count": 0,
+        "no_event_count": 1,
+        "history": {
+            "retention_hours": 168,
+            "max_samples": 2,
+            "sample_count": 1,
+            "windows": {
+                "24h": {"sample_count": 2, "failure_count": 0, "no_event_count": 0, "stale_count": 0, "parser_error_count": 0, "state": "healthy"},
+                "7d": {"sample_count": 1, "failure_count": 0, "no_event_count": 0, "stale_count": 0, "parser_error_count": 0, "state": "healthy"},
+            },
+            "samples": [],
+        },
+    })
+    errors = validate_source_health(health)
+    assert any("sample_count does not match" in error for error in errors)
+    assert any("24h.sample_count exceeds" in error for error in errors)
+
+
 def test_source_health_accepts_external_observability_contract():
     health = _source_health()
     health["sources"].append({
