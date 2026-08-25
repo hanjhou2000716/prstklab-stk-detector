@@ -547,6 +547,35 @@ def classifier_delivery_allowed() -> bool:
 JIN10_MCP_URL = "https://mcp.jin10.com/mcp"
 GDELT_DOC_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
 DEFAULT_GDELT_QUERY = '(war OR invasion OR ceasefire OR sanctions OR Hormuz OR tariff OR "export controls" OR semiconductor OR earthquake OR tsunami OR cyberattack OR ransomware OR pandemic OR Bitcoin OR Ethereum OR Trump OR "cancel attack" OR "call off attack" OR Iran OR "White House")'
+# GDELT returns a human-readable HTTP 200 error page when the Boolean query is
+# too long.  Keep the discovery query deliberately bounded; the full keyword
+# database remains available to the local classifier after articles arrive.
+GDELT_QUERY_MAX_CHARS = 900
+GDELT_COMPACT_QUERY = (
+    '(war OR invasion OR ceasefire OR sanctions OR Hormuz OR tariff OR '
+    '"export controls" OR semiconductor OR earthquake OR tsunami OR '
+    'cyberattack OR ransomware OR pandemic OR Bitcoin OR Ethereum OR Trump '
+    'OR Iran OR "White House" OR talks OR negotiation OR dialogue OR oil '
+    'OR OPEC OR Kuwait OR Taiwan OR China OR 戰爭 OR 停火 OR 制裁 OR 地震 '
+    'OR 海嘯 OR 半導體 OR 伊朗 OR 川普 OR 特朗普 OR 原油 OR 石油 OR 航運 '
+    'OR 會談 OR 談判 OR 協商 OR 對話 OR 關稅 OR 貿易戰)'
+)
+
+
+def bounded_gdelt_query(value: str | None, *, max_chars: int = GDELT_QUERY_MAX_CHARS) -> str:
+    """Return a provider-safe discovery query without weakening local matching.
+
+    GDELT's endpoint emits an HTML error (sometimes with status 200) for an
+    overlong Boolean expression.  Falling back to a curated, bounded query
+    prevents a retry loop while the repository keyword database continues to
+    provide the richer Chinese/English semantic matching downstream.
+    """
+    candidate = str(value or "").strip()
+    if candidate and len(candidate) <= max_chars:
+        return candidate
+    return GDELT_COMPACT_QUERY
+
+
 GDELT_QUERY = DEFAULT_GDELT_QUERY
 GITHUB_API_VERSION = "2022-11-28"
 EVENT_COOLDOWN_SECONDS = 30 * 60
@@ -641,6 +670,7 @@ GDELT_QUERY = (
     f"\"crude production\" OR \"oil output\" OR OPEC OR "
     "科威特 OR 科威特國 OR 科威特国 OR 石油產量 OR 石油产量 OR 原油產量 OR 原油产量)"
 )
+GDELT_QUERY = bounded_gdelt_query(GDELT_QUERY)
 
 # A discovery item is never sufficient on its own. GDELT candidates must have
 # two independent domains from this conservative set and share a concrete
@@ -1634,7 +1664,7 @@ async def fetch_gdelt_articles(store: SeenStore | None = None) -> list[Discovery
         _GDELT_LAST_FETCH_STATE = "failed"
         _GDELT_LAST_FETCH_ERROR = "HTTP_429"
         raise RuntimeError("GDELT backoff active after rate limit")
-    params = {"query": os.environ.get("GDELT_QUERY", GDELT_QUERY), "mode": "artlist", "format": "json", "sort": "datedesc", "maxrecords": 75}
+    params = {"query": bounded_gdelt_query(os.environ.get("GDELT_QUERY", GDELT_QUERY)), "mode": "artlist", "format": "json", "sort": "datedesc", "maxrecords": 75}
     try:
         async with httpx.AsyncClient(timeout=20, follow_redirects=True, headers={
             "Accept": "application/json",

@@ -826,6 +826,42 @@ def test_gdelt_request_uses_identifiable_json_headers(monkeypatch):
     assert "github.com/hanjhou2000716/prstklab-stk-detector" in captured["headers"]["User-Agent"]
 
 
+def test_gdelt_query_is_bounded_when_keyword_bundle_is_too_long(monkeypatch):
+    captured = {}
+
+    class Response:
+        status_code = 200
+        headers = {}
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"articles": []}
+
+    class Client:
+        def __init__(self, **_kwargs):
+            return None
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def get(self, _url, **kwargs):
+            captured.update(kwargs)
+            return Response()
+
+    monkeypatch.setattr(monitor.httpx, "AsyncClient", Client)
+    monkeypatch.setattr(monitor, "_GDELT_BACKOFF_UNTIL", 0.0)
+    monkeypatch.setenv("GDELT_QUERY", "(" + " OR ".join(["Iran"] * 500) + ")")
+    asyncio.run(monitor.fetch_gdelt_articles())
+    query = captured["params"]["query"]
+    assert len(query) <= monitor.GDELT_QUERY_MAX_CHARS
+    assert query == monitor.GDELT_COMPACT_QUERY
+
+
 def test_gdelt_rate_limit_fallback_is_marked_stale_and_not_live(monkeypatch, tmp_path):
     store = monitor.SeenStore(tmp_path / "state.sqlite3")
     payload = [{
