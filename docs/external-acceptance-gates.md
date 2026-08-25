@@ -17,8 +17,11 @@ The gates are:
 - `pages_artifacts`: every declared artifact hash and snapshot binding passed.
 - `external_observations`: when the canonical Railway shared secret is
   configured, the signed `/external-observations` projection was reachable
-  and contained only reviewed public-safe rows. `no_event` is a valid checked
-  state; an HTTP/authentication/parser failure is `needs_reverify`.
+  and contained only reviewed public-safe rows. The probe also compares the
+  bounded count, source list and identity hash with the public release
+  manifest, proving that the reviewed rows reached the same release. `no_event`
+  is a valid checked state; an HTTP/authentication/parser/lineage failure is
+  `needs_reverify`.
 
 Each gate has one of:
 

@@ -131,6 +131,20 @@ def test_capture_records_sanitized_external_observation_evidence(monkeypatch: py
     }
     manifest = _manifest()
     artifact = manifest.pop("_artifact_fixture")
+    identity_hash = hashlib.sha256(
+        json.dumps(
+            [{"observation_id": "obs-1", "source": "financialjuice"}],
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    manifest.update({
+        "external_observation_count": 1,
+        "external_observation_ids_hash": identity_hash,
+        "external_observation_sources": ["financialjuice"],
+        "external_observation_status": "ready",
+    })
     report = capture(
         railway_url="https://railway.example/",
         public_url="https://pages.example/",
@@ -156,10 +170,35 @@ def test_capture_records_sanitized_external_observation_evidence(monkeypatch: py
         "rejected_count": 0,
         "sources": ["financialjuice"],
         "latest_fetched_at": "2026-08-25T01:00:00+00:00",
+        "observation_ids_hash": identity_hash,
     }
     assert report["gate_summary"]["external_observations"]["status"] == "pass"
     encoded = json.dumps(report, ensure_ascii=False)
     assert "acceptance-secret" not in encoded
+
+
+def test_capture_rejects_external_observations_not_bound_to_public_release(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "acceptance-secret")
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        public_url="https://pages.example/",
+        session=_Session([
+            _Response(200, {"gmail": {"status": "healthy"}, "gdelt": {"status": "no_event"}, "delivery": {"status": "not_checked"}}),
+            _Response(200, {"status": "ready", "observations": [{
+                "public_safe": True,
+                "observation_id": "obs-unpublished",
+                "source": "financialjuice",
+                "fetched_at": "2026-08-25T01:00:00+00:00",
+            }]}),
+            _Response(200, manifest),
+            _Response(200, None, artifact),
+        ]),
+    )
+    assert report["status"] == "NEEDS_REVERIFY"
+    assert report["gate_summary"]["external_observations"]["status"] == "needs_reverify"
+    assert "pages_external_observations:manifest_status_missing" in report["blocking_reasons"]
 
 
 def test_capture_marks_external_observation_failure_without_inventing_events(monkeypatch: pytest.MonkeyPatch) -> None:

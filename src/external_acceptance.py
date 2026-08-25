@@ -161,6 +161,7 @@ def _fetch_observation_evidence(
     accepted = 0
     rejected = 0
     sources: set[str] = set()
+    identities: list[dict[str, str]] = []
     latest_fetched_at: str | None = None
     for row in rows:
         if (
@@ -177,10 +178,23 @@ def _fetch_observation_evidence(
             continue
         accepted += 1
         sources.add(source)
+        identities.append({
+            "observation_id": str(row.get("observation_id") or "").strip(),
+            "source": source,
+        })
         fetched_at = str(row.get("fetched_at") or row.get("received_at") or "").strip()
         if fetched_at and (latest_fetched_at is None or fetched_at > latest_fetched_at):
             latest_fetched_at = fetched_at
     status = str(payload.get("status") or ("ready" if accepted else "no_event"))
+    identities.sort(key=lambda item: (item["observation_id"], item["source"]))
+    observation_ids_hash = hashlib.sha256(
+        json.dumps(
+            identities,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
     return {
         "http_status": status_code,
         "status": status,
@@ -188,7 +202,52 @@ def _fetch_observation_evidence(
         "rejected_count": rejected,
         "sources": sorted(sources),
         "latest_fetched_at": latest_fetched_at,
+        # A one-way identity hash proves that the reviewed rows reached the
+        # release without retaining observation IDs or private mail data in
+        # the acceptance artifact.
+        "observation_ids_hash": observation_ids_hash,
     }, None
+
+
+def _external_observation_lineage_reasons(
+    evidence: dict[str, Any] | None,
+    manifest: dict[str, Any] | None,
+) -> list[str]:
+    """Compare reviewed Railway observations with the public release manifest.
+
+    The endpoint and Pages probe intentionally expose only bounded metadata.
+    This comparison closes the remaining gap: a healthy ingress alone cannot
+    prove that the same approved observations were published.
+    """
+    if evidence is None or manifest is None or manifest.get("status") != "ready":
+        return []
+    reasons: list[str] = []
+    evidence_status = str(evidence.get("status") or "")
+    declared_status = manifest.get("external_observation_status")
+    if declared_status not in {"ready", "no_event"}:
+        reasons.append("pages_external_observations:manifest_status_missing")
+        return reasons
+    if declared_status != evidence_status and not (declared_status == "ready" and evidence_status == "no_event"):
+        reasons.append("pages_external_observations:status_mismatch")
+    declared_count_raw = manifest.get("external_observation_count")
+    try:
+        if declared_count_raw is None:
+            raise ValueError("missing")
+        declared_count = int(str(declared_count_raw))
+    except (TypeError, ValueError):
+        reasons.append("pages_external_observations:count_missing")
+        declared_count = -1
+    if declared_count != int(evidence.get("count", 0) or 0):
+        reasons.append("pages_external_observations:count_mismatch")
+    declared_sources = sorted(str(item).casefold() for item in (manifest.get("external_observation_sources") or []))
+    evidence_sources = sorted(str(item).casefold() for item in (evidence.get("sources") or []))
+    if declared_sources != evidence_sources:
+        reasons.append("pages_external_observations:sources_mismatch")
+    declared_hash = str(manifest.get("external_observation_ids_hash") or "")
+    evidence_hash = str(evidence.get("observation_ids_hash") or "")
+    if declared_count > 0 and (not declared_hash or declared_hash != evidence_hash):
+        reasons.append("pages_external_observations:ids_hash_mismatch")
+    return reasons
 
 
 def _fetch_bytes(url: str, *, timeout: float, session: requests.Session) -> tuple[int | None, bytes | None, str | None]:
@@ -483,6 +542,7 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
             reasons.append(f"railway_observations:{observation_evidence.get('status')}")
         if int(observation_evidence.get("rejected_count", 0) or 0) > 0:
             reasons.append("railway_observations:rejected_rows")
+    reasons.extend(_external_observation_lineage_reasons(observation_evidence, manifest))
     artifact_audit: dict[str, Any] = {
         "declared_count": 0,
         "verified_count": 0,
@@ -530,7 +590,8 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
         }
     else:
         observation_reasons = sorted(
-            reason for reason in reasons if reason.startswith("railway_observations:")
+            reason for reason in reasons
+            if reason.startswith(("railway_observations:", "pages_external_observations:"))
         )
         gate_summary["external_observations"] = {
             "status": "pass" if not observation_reasons else "needs_reverify",
