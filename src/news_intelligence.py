@@ -464,6 +464,77 @@ def summarize_source_diversity(stories: Iterable[dict[str, Any]]) -> dict[str, A
     }
 
 
+def _news_provider_observability(
+    normalized: list[dict[str, Any]],
+    deduped: list[dict[str, Any]],
+    ranked: list[dict[str, Any]],
+    health_rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Build bounded provider metrics for source-health and release audits.
+
+    Counts are derived from the same normalized stories that feed ranking.  A
+    provider cannot report a healthy ingestion count merely by returning an
+    HTTP 200 response, and failed providers remain visible even when another
+    provider supplies the ranked result.
+    """
+    def by_provider(rows: Iterable[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+        grouped: dict[str, list[dict[str, Any]]] = {}
+        for row in rows:
+            provider = str(row.get("provider") or "unknown").strip().casefold()
+            grouped.setdefault(provider, []).append(row)
+        return grouped
+
+    normalized_by = by_provider(normalized)
+    deduped_by = by_provider(deduped)
+    ranked_by = by_provider(ranked)
+
+    def relevance_distribution(rows: Iterable[dict[str, Any]]) -> dict[str, int]:
+        distribution: dict[str, int] = {}
+        for row in rows:
+            buckets = {
+                str(reason).split(":", 1)[0]
+                for reason in row.get("relevance_reasons") or []
+                if str(reason).strip()
+            }
+            if not buckets:
+                buckets = {"unmatched"}
+            for bucket in sorted(buckets):
+                distribution[bucket] = distribution.get(bucket, 0) + 1
+        return dict(sorted(distribution.items()))
+
+    provider_ids = set(normalized_by) | set(deduped_by) | set(ranked_by)
+    health_by = by_provider(health_rows)
+    provider_ids.update(health_by)
+    rows: list[dict[str, Any]] = []
+    for provider in sorted(provider_ids):
+        source = health_by.get(provider, [{}])[-1]
+        status = str(source.get("status") or ("healthy" if normalized_by.get(provider) else "no_event"))
+        checked_at = source.get("checked_at")
+        success = source.get("last_success_at")
+        failure = source.get("last_failure_at")
+        if success is None and status in {"healthy", "no_event", "stale", "disabled"}:
+            success = checked_at
+        if failure is None and status in _SOURCE_FAILURE_STATES:
+            failure = checked_at
+        rows.append({
+            "provider": provider,
+            "status": status,
+            "last_success_at": success,
+            "last_failure_at": failure,
+            "stories_ingested": len(normalized_by.get(provider, [])),
+            "stories_deduped": len(deduped_by.get(provider, [])),
+            "ranked_count": len(ranked_by.get(provider, [])),
+            "relevance_distribution": relevance_distribution(normalized_by.get(provider, [])),
+        })
+    return {
+        "stories_ingested": len(normalized),
+        "stories_deduped": len(deduped),
+        "ranked_count": len(ranked),
+        "relevance_distribution": relevance_distribution(normalized),
+        "providers": rows,
+    }
+
+
 def build_news_intelligence(
     stories: Iterable[dict[str, Any]],
     *,
@@ -488,6 +559,11 @@ def build_news_intelligence(
         creator_mentions=creator_mentions,
     )
     ranked = deduplicate_and_rank(normalized, limit=limit)
+    deduped = deduplicate_and_rank(
+        normalized,
+        limit=max(len(normalized), 1),
+        max_per_provider=max(len(normalized), 1),
+    )
     source_diversity = summarize_source_diversity(ranked)
     excluded = [item for item in normalized if item.get("market_compatible") is False]
     health_rows: list[dict[str, Any]] = []
@@ -504,6 +580,22 @@ def build_news_intelligence(
         }
         if row:
             health_rows.append(row)
+    observability = _news_provider_observability(normalized, deduped, ranked, health_rows)
+    health_by_provider = {
+        str(row.get("provider") or "").casefold(): row
+        for row in health_rows
+        if str(row.get("provider") or "").strip()
+    }
+    for provider_metrics in observability["providers"]:
+        source = health_by_provider.get(provider_metrics["provider"])
+        if source is not None:
+            source.update({
+                key: provider_metrics[key]
+                for key in (
+                    "last_success_at", "last_failure_at", "stories_ingested",
+                    "stories_deduped", "ranked_count", "relevance_distribution",
+                )
+            })
     failure_count = sum(
         1 for row in health_rows
         if str(row.get("status") or "").casefold() in _SOURCE_FAILURE_STATES
@@ -528,5 +620,6 @@ def build_news_intelligence(
         "collection_state": collection_state,
         "source_failure_count": failure_count,
         "source_health": health_rows,
+        "observability": observability,
     }
 
