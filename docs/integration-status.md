@@ -11,7 +11,7 @@ pipeline call and a tested consumer.
 | Raw observation store | `src/raw_observation_store.py`, `src/production_evidence.py` | yes | market/research/brief workflows persist immutable records | quality metadata + observation envelope | no raw payload | no | production |
 | Instrument master | `src/instrument_master.py` | yes | research + market producers | candidate/quote lineage | no | no | production |
 | Data quality/SLA | `src/data_quality.py`, `src/source_health.py` | yes | yes | yes | yes | gate reason | production |
-| Taiwan crosscheck | `src/taiwan_market_crosscheck.py`, `src/market_crosscheck.py` | yes | yes | yes | yes | price gate | production |
+| Taiwan crosscheck/policy | `src/taiwan_market_crosscheck.py`, `src/market_crosscheck.py`, `src/source_policy.py` | yes | yes | yes (policy + comparison basis) | yes | price gate | production |
 | Event source catalog | `src/event_source_catalog.py` | yes | yes | yes | health | event | production |
 | Event cluster/ledger | `src/event_ledger.py`, `src/event_output.py` | yes | yes | yes | timeline | event | production |
 | Event evidence state | `src/event_evidence.py`, `src/event_crosscheck.py` | yes | yes | yes | wait reason/timeline | lifecycle gate | production |
