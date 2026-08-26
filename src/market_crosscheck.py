@@ -90,6 +90,13 @@ def compare_quotes(
 def quote_provenance(quote: dict[str, Any]) -> dict[str, Any]:
     """Return stable card fields required for every market quote."""
     ticker = str(quote.get("ticker") or "")
+    # Keep source priority and comparison semantics in the published
+    # provenance.  The policy is imported lazily because source_policy uses
+    # this module's generic quote comparator; doing so avoids an import cycle
+    # while ensuring every producer and consumer sees the same contract.
+    from src.source_policy import source_policy_for
+
+    policy = source_policy_for(ticker)
     source = str(quote.get("quote_source") or quote.get("source") or "unknown")
     source_lower = source.lower()
     if "twse" in source_lower:
@@ -134,5 +141,15 @@ def quote_provenance(quote: dict[str, Any]) -> dict[str, Any]:
         "cross_checked": cross_checked,
         "crosscheck_status": quote.get("crosscheck_status") or "未交叉核對",
         "crosscheck_sources": crosscheck_sources,
-        "expected_sources": list(MARKET_SOURCE_PAIRS.get(ticker, (source_label, ""))),
+        "expected_sources": list(
+            policy.primary + policy.secondary
+            if policy.primary and policy.secondary
+            else MARKET_SOURCE_PAIRS.get(ticker, (source_label, ""))
+        ),
+        "crosscheck_policy": policy.to_dict(),
+        "comparison_basis": (
+            "direction_only" if ticker.strip().upper() == "TAIEX"
+            else "price_and_time" if policy.primary and policy.secondary
+            else "not_defined"
+        ),
     }

@@ -18,12 +18,20 @@ class SourcePolicy:
     official_required: bool = False
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        value = asdict(self)
+        # ``asdict`` preserves tuple annotations.  Published contracts are
+        # JSON-facing and must expose arrays consistently across producers.
+        value["primary"] = list(self.primary)
+        value["secondary"] = list(self.secondary)
+        return value
 
 
 _OVERRIDES: dict[str, SourcePolicy] = {
     "TAIEX": SourcePolicy("TAIEX", ("TWSE",), ("TAIFEX",), 15, 0.5, True),
-    "TPEx": SourcePolicy("TPEx", ("TPEx",), ("TWSE MIS",), 30, 1.0, True),
+    # Keys are normalized to uppercase by ``source_policy_for``.  Keep the
+    # display ticker in the value while avoiding a case-sensitive lookup bug
+    # for the canonical ``TPEx`` label.
+    "TPEX": SourcePolicy("TPEx", ("TPEx",), ("TWSE MIS",), 30, 1.0, True),
     "BTC": SourcePolicy("BTC", ("Binance",), ("CoinGecko",), 10, 1.5),
     "ETH": SourcePolicy("ETH", ("Binance",), ("CoinGecko",), 10, 1.5),
     "WTI": SourcePolicy("WTI", ("Yahoo",), ("EIA",), 120, 2.0),

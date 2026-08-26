@@ -14,6 +14,9 @@ def test_quote_provenance_exposes_basis_and_crosscheck_state():
     assert result["source_label"] == "TPEx"
     assert result["quote_basis"] == "最近收盤"
     assert result["cross_checked"] is True
+    assert result["crosscheck_policy"]["primary"] == ["TPEx"]
+    assert result["crosscheck_policy"]["secondary"] == ["TWSE MIS"]
+    assert result["comparison_basis"] == "price_and_time"
 
 
 def test_quote_provenance_normalizes_legacy_provider_map_to_array():
@@ -59,4 +62,15 @@ def test_quote_provenance_does_not_treat_pending_status_as_confirmed():
         "crosscheck_status": "pending",
     })
     assert result["cross_checked"] is False
+
+
+def test_taiex_provenance_declares_direction_only_policy():
+    result = quote_provenance({
+        "ticker": "TAIEX",
+        "quote_source": "TWSE MIS cash index",
+        "quote_date": "2026-08-05",
+    })
+    assert result["expected_sources"] == ["TWSE", "TAIFEX"]
+    assert result["comparison_basis"] == "direction_only"
+    assert result["crosscheck_policy"]["official_required"] is True
 
