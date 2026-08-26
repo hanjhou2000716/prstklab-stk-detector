@@ -194,6 +194,8 @@ def normalize_quote_record(record: dict[str, Any], *, fetched_at: str | None = N
         "crosscheck_status": item.get("crosscheck_status") or provenance["crosscheck_status"],
         "crosscheck_sources": item.get("crosscheck_sources") or provenance["crosscheck_sources"],
         "expected_sources": item.get("expected_sources") or provenance["expected_sources"],
+        "crosscheck_policy": item.get("crosscheck_policy") or provenance["crosscheck_policy"],
+        "comparison_basis": item.get("comparison_basis") or provenance["comparison_basis"],
     })
     return item
 

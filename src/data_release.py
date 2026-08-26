@@ -108,6 +108,41 @@ def _remote_files(branch: str, files: list[str]) -> set[str]:
     return {line.strip() for line in result.stdout.splitlines() if line.strip()}
 
 
+def _clear_unpublished_site_data(
+    root: Path, requested: list[str], remote_files: set[str],
+) -> list[str]:
+    """Remove local public artifacts that the selected release does not have.
+
+    ``git checkout <release> -- <existing files>`` is additive: a file that
+    disappeared from the immutable branch remains in the working tree.  That
+    behaviour can silently create a mixed release (new manifest plus an old
+    research/event artifact).  Only the generated ``site/data`` tree is
+    eligible for cleanup; durable raw observation caches under ``data/`` are
+    intentionally left untouched for the next publisher.
+    """
+    removed: list[str] = []
+    # Only a full ``site/data`` restore establishes an exact public release.
+    # A caller restoring one optional file must not delete unrelated local
+    # artifacts that it did not ask to reconcile.
+    if "site/data" not in requested:
+        return removed
+    public_root = root / "site" / "data"
+    if not public_root.is_dir():
+        return removed
+    for path in sorted((item for item in public_root.rglob("*") if item.is_file()), reverse=True):
+        relative = path.relative_to(root).as_posix()
+        if relative in remote_files:
+            continue
+        try:
+            path.unlink()
+        except OSError as exc:
+            raise DataReleaseError(
+                f"cannot clear unpublished public artifact {relative}: {type(exc).__name__}"
+            ) from exc
+        removed.append(relative)
+    return removed
+
+
 def restore(
     *, root: Path | str = Path("."), branch: str = DEFAULT_BRANCH,
     includes: list[str] | None = None, dry_run: bool = False,
@@ -138,6 +173,9 @@ def restore(
             "planned_files": selected,
             "missing_remote": missing_remote,
         }
+    removed_local = _clear_unpublished_site_data(
+        root, includes or list(DEFAULT_INCLUDES), remote_files,
+    )
     result = _run(
         "checkout", f"origin/{branch}", "--",
         *selected, check=False,
@@ -149,6 +187,7 @@ def restore(
         "branch": branch,
         "files": selected,
         "missing_remote": missing_remote,
+        "removed_local": removed_local,
     }
 
 

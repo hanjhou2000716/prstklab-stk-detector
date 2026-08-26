@@ -76,6 +76,20 @@
             "additionalProperties": true
           }
         },
+        "crosscheck_policy": {
+          "type": "object",
+          "required": ["ticker", "primary", "secondary", "max_gap_minutes", "max_gap_percent", "official_required"],
+          "properties": {
+            "ticker": {"type": "string", "minLength": 1},
+            "primary": {"type": "array", "items": {"type": "string", "minLength": 1}},
+            "secondary": {"type": "array", "items": {"type": "string", "minLength": 1}},
+            "max_gap_minutes": {"type": "integer", "minimum": 0},
+            "max_gap_percent": {"type": "number", "minimum": 0},
+            "official_required": {"type": "boolean"}
+          },
+          "additionalProperties": true
+        },
+        "comparison_basis": {"enum": ["direction_only", "price_and_time", "not_defined"]},
         "technical_context": {
           "type": "object",
           "properties": {

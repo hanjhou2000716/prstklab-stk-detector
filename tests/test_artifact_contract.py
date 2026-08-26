@@ -83,9 +83,42 @@ def test_market_schema_accepts_provenance_and_crosscheck_fields():
         "source_domain": "mis.twse.com.tw",
         "quote_time": "2026-08-04T09:59:00+08:00",
         "crosscheck_sources": [{"provider": "TAIFEX", "source_url": "https://www.taifex.com.tw", "status": "observed"}],
+        "crosscheck_policy": {
+            "ticker": "TAIEX", "primary": ["TWSE"], "secondary": ["TAIFEX"],
+            "max_gap_minutes": 15, "max_gap_percent": 0.5, "official_required": True,
+        },
+        "comparison_basis": "direction_only",
         "technical_context": {"as_of": "2026-08-04T00:00:00+08:00", "technical_context_stale": True},
     })
     assert validate_market(market) == []
+
+
+def test_market_rejects_crosscheck_policy_bound_to_another_ticker():
+    market = _market()
+    quote = market["indices"][0]
+    quote["crosscheck_policy"] = {
+        "ticker": "TPEx", "primary": ["TPEx"], "secondary": ["TWSE MIS"],
+        "max_gap_minutes": 30, "max_gap_percent": 1.0, "official_required": True,
+    }
+    quote["comparison_basis"] = "price_and_time"
+    quote["expected_sources"] = ["TPEx", "TWSE MIS"]
+    errors = validate_market(market)
+    assert any("policy.ticker" in error for error in errors)
+    assert any("comparison_basis" in error for error in errors)
+
+
+def test_market_rejects_expected_sources_that_drift_from_policy():
+    market = _market()
+    quote = market["indices"][0]
+    quote.update({
+        "crosscheck_policy": {
+            "ticker": "TAIEX", "primary": ["TWSE"], "secondary": ["TAIFEX"],
+            "max_gap_minutes": 15, "max_gap_percent": 0.5, "official_required": True,
+        },
+        "comparison_basis": "direction_only",
+        "expected_sources": ["Yahoo", "Stooq"],
+    })
+    assert any("expected_sources" in error for error in validate_market(market))
 
 
 def test_market_schema_rejects_crosscheck_without_provider():

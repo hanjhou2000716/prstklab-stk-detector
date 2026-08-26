@@ -173,6 +173,51 @@ def test_restore_skips_cache_paths_missing_from_remote_branch(tmp_path, monkeypa
     assert "data/sec-companyfacts-cache.json" not in checkout
 
 
+def test_restore_clears_public_artifacts_missing_from_remote_release(tmp_path, monkeypatch):
+    site_data = tmp_path / "site" / "data"
+    site_data.mkdir(parents=True)
+    (site_data / "market.json").write_text("new", encoding="utf-8")
+    (site_data / "legacy-event.json").write_text("old", encoding="utf-8")
+
+    def fake_run(*args, check=True):
+        if args[:2] == ("fetch", "origin"):
+            return data_release.subprocess.CompletedProcess(args, 0, "", "")
+        if args[0] == "ls-tree":
+            return data_release.subprocess.CompletedProcess(args, 0, "site/data/market.json\n", "")
+        if args[0] == "checkout":
+            return data_release.subprocess.CompletedProcess(args, 0, "", "")
+        raise AssertionError(args)
+
+    monkeypatch.setattr(data_release, "_run", fake_run)
+    result = data_release.restore(root=tmp_path, includes=["site/data"])
+
+    assert result["removed_local"] == ["site/data/legacy-event.json"]
+    assert not (site_data / "legacy-event.json").exists()
+    assert (site_data / "market.json").exists()
+
+
+def test_restore_of_one_public_file_does_not_clear_other_files(tmp_path, monkeypatch):
+    site_data = tmp_path / "site" / "data"
+    site_data.mkdir(parents=True)
+    (site_data / "market.json").write_text("new", encoding="utf-8")
+    (site_data / "legacy-event.json").write_text("old", encoding="utf-8")
+
+    def fake_run(*args, check=True):
+        if args[:2] == ("fetch", "origin"):
+            return data_release.subprocess.CompletedProcess(args, 0, "", "")
+        if args[0] == "ls-tree":
+            return data_release.subprocess.CompletedProcess(args, 0, "site/data/market.json\n", "")
+        if args[0] == "checkout":
+            return data_release.subprocess.CompletedProcess(args, 0, "", "")
+        raise AssertionError(args)
+
+    monkeypatch.setattr(data_release, "_run", fake_run)
+    result = data_release.restore(root=tmp_path, includes=["site/data/market.json"])
+
+    assert result["removed_local"] == []
+    assert (site_data / "legacy-event.json").exists()
+
+
 def test_restore_reports_empty_remote_release_without_pathspec_failure(tmp_path, monkeypatch):
     data_dir = tmp_path / "data"
     data_dir.mkdir()
