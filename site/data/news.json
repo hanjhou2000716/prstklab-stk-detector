@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "aaa0e9e140a99901",
-  "snapshot_id": "news-310f0904315054f1",
+  "market_snapshot_id": "ec6ac5e3470663a5",
+  "snapshot_id": "news-28b2dd9d0bc47e09",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -409,13 +409,7 @@
           "published_time_bucket": "2026-08-26T01:00:00+00:00",
           "public_safe": true,
           "source": "Google News｜台股線索",
-          "ranking_score": 30,
-          "supporting_sources": [
-            {
-              "provider": "google_news",
-              "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE1kQUswTTR2dFQ4cmNFaDdJTWlRRzFybml2RG4td2p6bVBVbUs5ekpualFjYjdxT0dYdV9vN25mbDBlcUxpVXBmcmdiclhqV0E"
-            }
-          ]
+          "ranking_score": 30
         }
       ],
       "source_diversity": {
@@ -431,12 +425,12 @@
         "source_domains": [
           "news.google.com"
         ],
-        "supporting_source_count": 1
+        "supporting_source_count": 0
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 4,
-          "TSM": 4,
+          "2330": 3,
+          "TSM": 3,
           "NVDA": 1
         },
         "sector_interest": {},
@@ -466,8 +460,8 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 4,
-            "TSM": 4,
+            "2330": 3,
+            "TSM": 3,
             "NVDA": 1
           },
           "research_candidate": {},
@@ -489,7 +483,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 5,
-          "checked_at": "2026-08-26T02:14:31.172661+00:00",
+          "checked_at": "2026-08-26T03:46:51.036866+00:00",
           "fallback_used": true
         },
         {
@@ -499,7 +493,7 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-08-26T02:14:31.172661+00:00"
+          "checked_at": "2026-08-26T03:46:51.036866+00:00"
         },
         {
           "key": "official_news_taiwan_mops",
@@ -508,16 +502,16 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-08-26T02:14:31.172661+00:00"
+          "checked_at": "2026-08-26T03:46:51.036866+00:00"
         }
       ],
       "observability": {
         "stories_ingested": 5,
-        "stories_deduped": 4,
+        "stories_deduped": 5,
         "ranked_count": 2,
         "relevance_distribution": {
           "market": 5,
-          "tracked_ticker": 4
+          "tracked_ticker": 3
         },
         "providers": [
           {
@@ -526,17 +520,17 @@
             "last_success_at": null,
             "last_failure_at": null,
             "stories_ingested": 5,
-            "stories_deduped": 4,
+            "stories_deduped": 5,
             "ranked_count": 2,
             "relevance_distribution": {
               "market": 5,
-              "tracked_ticker": 4
+              "tracked_ticker": 3
             }
           },
           {
             "provider": "unknown",
             "status": "no_event",
-            "last_success_at": "2026-08-26T02:14:31.172661+00:00",
+            "last_success_at": "2026-08-26T03:46:51.036866+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -846,7 +840,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 5,
-          "checked_at": "2026-08-26T02:14:31.172661+00:00"
+          "checked_at": "2026-08-26T03:46:51.036866+00:00"
         },
         {
           "key": "official_news_us_sec",
@@ -855,7 +849,7 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 10,
-          "checked_at": "2026-08-26T02:14:31.172661+00:00"
+          "checked_at": "2026-08-26T03:46:51.036866+00:00"
         },
         {
           "key": "official_news_us_fed",
@@ -864,7 +858,7 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-08-26T02:14:31.172661+00:00",
+          "checked_at": "2026-08-26T03:46:51.036866+00:00",
           "data_gap": "failed"
         },
         {
@@ -873,7 +867,7 @@
           "status": "disabled",
           "source_tier": "official",
           "item_count": 0,
-          "checked_at": "2026-08-26T02:14:31.172661+00:00"
+          "checked_at": "2026-08-26T03:46:51.036866+00:00"
         }
       ],
       "observability": {
@@ -899,7 +893,7 @@
           {
             "provider": "unknown",
             "status": "disabled",
-            "last_success_at": "2026-08-26T02:14:31.172661+00:00",
+            "last_success_at": "2026-08-26T03:46:51.036866+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
