@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "e6e03512ce0506ff",
-  "snapshot_id": "news-b5cf22b76bbef8f8",
+  "market_snapshot_id": "2fd350c4a12f23b0",
+  "snapshot_id": "news-ee882ed80ce76ae0",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -309,6 +309,60 @@
       ],
       "stories": [
         {
+          "story_id": "news-86ae950be540fa12434f",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "輝達財報押寶行情？台積電領軍台股漲663點收45,832點、成交量破8千億| 股市要聞| 股市 - UDN",
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE1WaG8zYUxsNm1LV3R5aTZpQkVXSkxlVm9DekZ6bDJGbklwVDZaS3hUeWpxSXNMLS1RZFpTY0R6aTlMcEl3TGh3VDNsNjNuWVA4",
+          "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE1WaG8zYUxsNm1LV3R5aTZpQkVXSkxlVm9DekZ6bDJGbklwVDZaS3hUeWpxSXNMLS1RZFpTY0R6aTlMcEl3TGh3VDNsNjNuWVA4",
+          "published_at": "2026-08-26T05:44:03+00:00",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "NVDA",
+            "TAIEX",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_keyword",
+            "matched_terms": [
+              "輝達"
+            ],
+            "input_fields": [
+              "description",
+              "summary",
+              "title",
+              "topics"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan",
+            "tracked_ticker:2330",
+            "tracked_ticker:NVDA",
+            "tracked_ticker:TSM"
+          ],
+          "freshness": "published",
+          "dedupe_key": "輝達財報押寶行情台積電領軍台股漲663點收45832點成交量破8千億股市要聞股市udn",
+          "event_cluster_key": "event-217c720939a7fcf85bb9",
+          "published_time_bucket": "2026-08-26T05:00:00+00:00",
+          "public_safe": true,
+          "source": "Google News｜台股線索",
+          "ranking_score": 35
+        },
+        {
           "story_id": "news-9be914ea80904c4c88ea",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -361,54 +415,6 @@
           "public_safe": true,
           "source": "Google News｜台股線索",
           "ranking_score": 35
-        },
-        {
-          "story_id": "news-5393ba6ff5e9ef3b44e0",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "提前押寶台積電 市場都在等「這張成績單」 - 自由財經",
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE5xRVh5VEJKbXd5aFNEUEpQeTlKWFBrR3NweGZxbWhsbGlDenJNZ3phTzUxenpiY2xOMjRMdzZTaUNpeWhzWkhSSFA3LU5TZ3c3WExqcjZaR2haRkl1OG9F",
-          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE5xRVh5VEJKbXd5aFNEUEpQeTlKWFBrR3NweGZxbWhsbGlDenJNZ3phTzUxenpiY2xOMjRMdzZTaUNpeWhzWkhSSFA3LU5TZ3c3WExqcjZaR2haRkl1OG9F",
-          "published_at": "2026-08-26T02:15:10+00:00",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_keyword",
-            "matched_terms": [
-              "台積電"
-            ],
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "提前押寶台積電市場都在等這張成績單自由財經",
-          "event_cluster_key": "event-ca74adc4d1f67b22d9ab",
-          "published_time_bucket": "2026-08-26T02:00:00+00:00",
-          "public_safe": true,
-          "source": "Google News｜台股線索",
-          "ranking_score": 30
         }
       ],
       "source_diversity": {
@@ -428,9 +434,9 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 3,
-          "TSM": 3,
-          "NVDA": 1
+          "2330": 4,
+          "TSM": 4,
+          "NVDA": 2
         },
         "sector_interest": {},
         "topic_interest": {},
@@ -461,9 +467,9 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 3,
-            "TSM": 3,
-            "NVDA": 1
+            "2330": 4,
+            "TSM": 4,
+            "NVDA": 2
           },
           "research_candidate": {},
           "tracked_sector": {},
@@ -484,7 +490,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 5,
-          "checked_at": "2026-08-26T05:16:41.935762+00:00",
+          "checked_at": "2026-08-26T06:26:59.589341+00:00",
           "fallback_used": true
         },
         {
@@ -494,7 +500,7 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-08-26T05:16:41.935762+00:00"
+          "checked_at": "2026-08-26T06:26:59.589341+00:00"
         },
         {
           "key": "official_news_taiwan_mops",
@@ -503,7 +509,7 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-08-26T05:16:41.935762+00:00"
+          "checked_at": "2026-08-26T06:26:59.589341+00:00"
         }
       ],
       "observability": {
@@ -512,7 +518,7 @@
         "ranked_count": 2,
         "relevance_distribution": {
           "market": 5,
-          "tracked_ticker": 3
+          "tracked_ticker": 4
         },
         "providers": [
           {
@@ -525,13 +531,13 @@
             "ranked_count": 2,
             "relevance_distribution": {
               "market": 5,
-              "tracked_ticker": 3
+              "tracked_ticker": 4
             }
           },
           {
             "provider": "unknown",
             "status": "no_event",
-            "last_success_at": "2026-08-26T05:16:41.935762+00:00",
+            "last_success_at": "2026-08-26T06:26:59.589341+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -843,7 +849,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 5,
-          "checked_at": "2026-08-26T05:16:41.935762+00:00"
+          "checked_at": "2026-08-26T06:26:59.589341+00:00"
         },
         {
           "key": "official_news_us_sec",
@@ -852,7 +858,7 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 10,
-          "checked_at": "2026-08-26T05:16:41.935762+00:00"
+          "checked_at": "2026-08-26T06:26:59.589341+00:00"
         },
         {
           "key": "official_news_us_fed",
@@ -861,7 +867,7 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-08-26T05:16:41.935762+00:00",
+          "checked_at": "2026-08-26T06:26:59.589341+00:00",
           "data_gap": "failed"
         },
         {
@@ -870,7 +876,7 @@
           "status": "disabled",
           "source_tier": "official",
           "item_count": 0,
-          "checked_at": "2026-08-26T05:16:41.935762+00:00"
+          "checked_at": "2026-08-26T06:26:59.589341+00:00"
         }
       ],
       "observability": {
@@ -896,7 +902,7 @@
           {
             "provider": "unknown",
             "status": "disabled",
-            "last_success_at": "2026-08-26T05:16:41.935762+00:00",
+            "last_success_at": "2026-08-26T06:26:59.589341+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
