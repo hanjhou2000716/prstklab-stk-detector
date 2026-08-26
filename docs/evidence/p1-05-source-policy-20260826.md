@@ -4,7 +4,10 @@
 
 This change makes the versioned market source policy part of every normalized
 quote's provenance.  It does not replace provider fetchers or claim that an
-unavailable second source was observed.
+unavailable second source was observed.  The release restore path also treats
+the selected `site/data` tree as an exact snapshot, removing local public
+artifacts that are absent from the immutable branch so a manifest cannot be
+combined with stale files.
 
 - `TAIEX`: TWSE cash is the displayed value; TAIFEX TXF is a direction/time
   check only (`comparison_basis=direction_only`).
@@ -15,10 +18,14 @@ unavailable second source was observed.
 
 ## Verification
 
-- Targeted contract and artifact tests: **49 passed**.
-- Full repository regression: **1464 passed** (`--basetemp=.tmp-full-source-policy-20260826c`).
+- Targeted source-policy, artifact and data-release tests: **66 passed**.
+- Full repository regression: **1468 passed** (`--basetemp=.tmp-full-source-policy-20260826e`).
 - Ruff checks for changed modules: **pass**.
 - Mypy checks for changed modules: **pass**.
+- `src.runtime_audit`: contract audit **pass**; local stale-data warnings remain
+  explicit and do not qualify a release.
+- `src.production_e2e`: offline release, renderer, photo and Telegram contract
+  checks **pass** without production side effects.
 - GitHub PR #791 security checks: dependency review, SBOM and CodeQL **pass**;
   quality/dry-run was **pass** after the latest push.
 
