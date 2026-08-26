@@ -30,6 +30,12 @@ The Gmail ingress writes an equivalent marker beside `GMAIL_STATE_PATH`, so
 delivery store. A first deployment reports `not_verified`; only a subsequent
 restart that reads the persisted marker reports `verified`.
 
+The sanitized 2026-08-26 control-plane observation is recorded in
+`docs/evidence/railway-volume-state-2026-08-26.json`. It confirms that the
+Volume is attached at `/data`, while the service is currently offline and
+restart continuity remains `not_verified`; this evidence must not be treated as
+a successful production deployment.
+
 ## Verification after a restart
 
 1. Record the current `/health` `delivery.last_trace_id` and
