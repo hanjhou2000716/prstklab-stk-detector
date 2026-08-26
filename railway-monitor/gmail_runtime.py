@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from storage_health import storage_diagnostics
+    from storage_health import record_storage_startup, storage_diagnostics
 except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
     _storage_spec = spec_from_file_location(
         "railway_storage_health",
@@ -24,6 +24,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
         raise ImportError("cannot load railway-monitor/storage_health.py") from None
     _storage_module = module_from_spec(_storage_spec)
     _storage_spec.loader.exec_module(_storage_module)
+    record_storage_startup = _storage_module.record_storage_startup
     storage_diagnostics = _storage_module.storage_diagnostics
 
 try:
@@ -64,6 +65,16 @@ def configure_gmail_ingress(
             ingress_factory = ingress_factory or GmailIngressService
         config = config_factory(env)
         path = env.get("GMAIL_STATE_PATH", "/data/gmail-ingress.sqlite3")
+        # Gmail has its own SQLite cursor/watch state, separate from the
+        # monitor delivery store.  Record a startup marker beside that state
+        # file so the public health projection can prove the Gmail volume
+        # survived a subsequent restart instead of reporting only that the
+        # directory is writable.  The probe is deliberately non-fatal: a
+        # failed marker must never take down ingress construction.
+        try:
+            record_storage_startup(path)
+        except Exception:  # pragma: no cover - defensive observability boundary
+            pass
         if default_ingress:
             verifier = _google_oidc_verifier if getattr(config, "require_jwt_verification", False) else None
             ingress = ingress_factory(store_factory(path), config, token_verifier=verifier)

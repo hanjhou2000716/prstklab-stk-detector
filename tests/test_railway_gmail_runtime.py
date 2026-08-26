@@ -29,10 +29,11 @@ class Ingress:
         return {"watch": {"status": "healthy", "history_id": "private", "observability": {"parser_error_count": 0}}}
 
 
-def test_configured_runtime_returns_ingress_and_redacted_health():
+def test_configured_runtime_returns_ingress_and_redacted_health(tmp_path):
     Ingress.ensure_calls = 0
+    state_path = tmp_path / "state.sqlite3"
     ingress, health = runtime.configure_gmail_ingress(
-        {"GMAIL_STATE_PATH": "state.sqlite3"},
+        {"GMAIL_STATE_PATH": str(state_path)},
         config_factory=lambda _env: Config(),
         store_factory=lambda path: {"path": path},
         ingress_factory=Ingress,
@@ -59,6 +60,11 @@ def test_configured_runtime_returns_ingress_and_redacted_health():
             },
         "error": None,
     }
+    # The first startup creates the marker; a later process start can then
+    # report verified restart continuity without exposing mailbox data.
+    assert runtime.storage_diagnostics(state_path)["restart_continuity"]["status"] == "not_verified"
+    runtime.record_storage_startup(state_path)
+    assert runtime.storage_diagnostics(state_path)["restart_continuity"]["status"] == "verified"
 
 
 def test_missing_configuration_is_visible_without_private_values():

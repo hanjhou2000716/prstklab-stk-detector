@@ -25,6 +25,10 @@ probe. The monitor writes only a timestamp marker beside the SQLite database
 at startup; `verified` means a later process start could read the previous
 marker. This is useful restart evidence, but it never upgrades
 `storage.status=unknown` to `ready` and never bypasses the high-risk gate.
+The Gmail ingress writes an equivalent marker beside `GMAIL_STATE_PATH`, so
+`gmail_watch.storage.restart_continuity` is evaluated independently from the
+delivery store. A first deployment reports `not_verified`; only a subsequent
+restart that reads the persisted marker reports `verified`.
 
 ## Verification after a restart
 
@@ -34,9 +38,10 @@ marker. This is useful restart evidence, but it never upgrades
 3. Query `/health` again and confirm the same receipt trace is present,
    `receipt_matches_last_outbox=true`, and `delivery.storage.status=ready`.
 4. Confirm the Gmail `watch_expiration` and history cursor remain present.
-5. Confirm `delivery.storage.restart_continuity.status=verified` when a prior
-   marker exists. A missing or invalid marker is evidence to investigate, not
-   evidence that the volume is durable.
+5. Confirm both `delivery.storage.restart_continuity.status=verified` and
+   `gmail_watch.storage.restart_continuity.status=verified` after the restart.
+   A first boot is intentionally `not_verified`; a missing or invalid marker
+   is evidence to investigate, not evidence that the volume is durable.
 6. Run the read-only external acceptance collector. Do not send a production
    notification merely to test persistence.
 
