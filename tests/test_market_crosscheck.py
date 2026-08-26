@@ -1,3 +1,4 @@
+from src.intel_contract import normalize_quote_record
 from src.market_crosscheck import compare_quotes, quote_provenance
 
 
@@ -73,4 +74,16 @@ def test_taiex_provenance_declares_direction_only_policy():
     assert result["expected_sources"] == ["TWSE", "TAIFEX"]
     assert result["comparison_basis"] == "direction_only"
     assert result["crosscheck_policy"]["official_required"] is True
+
+
+def test_normalized_quote_retains_policy_for_published_artifact():
+    result = normalize_quote_record({
+        "ticker": "TAIEX",
+        "price": 20_100,
+        "previous_close": 20_000,
+        "quote_source": "TWSE MIS cash index",
+        "quote_date": "2026-08-05",
+    })
+    assert result["comparison_basis"] == "direction_only"
+    assert result["crosscheck_policy"]["secondary"] == ["TAIFEX"]
 
