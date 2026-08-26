@@ -94,6 +94,29 @@ def _quote_contract_errors(quote: dict[str, Any], path: str) -> list[str]:
     if normalized_label and source and normalized_label not in source:
         errors.append(f"{path}: source_label is not represented in quote_source")
 
+    # Once a producer publishes the source-priority policy, keep the policy
+    # bound to the exact ticker and comparison semantics.  Without this
+    # invariant a stale/legacy row can advertise (for example) the TAIEX
+    # direction-only rule while carrying another instrument's price policy.
+    policy = quote.get("crosscheck_policy")
+    if isinstance(policy, dict):
+        policy_ticker = str(policy.get("ticker") or "").strip().upper()
+        ticker = str(quote.get("ticker") or "").strip().upper()
+        if policy_ticker and ticker and policy_ticker != ticker:
+            errors.append(f"{path}: crosscheck_policy.ticker does not match quote ticker")
+        primary = policy.get("primary")
+        secondary = policy.get("secondary")
+        if isinstance(primary, list) and isinstance(secondary, list):
+            expected = [str(item) for item in [*primary, *secondary] if str(item).strip()]
+            declared = quote.get("expected_sources")
+            if isinstance(declared, list) and declared and [str(item) for item in declared] != expected:
+                errors.append(f"{path}: expected_sources does not match crosscheck_policy")
+            basis = quote.get("comparison_basis")
+            if basis is not None:
+                required_basis = "direction_only" if ticker == "TAIEX" else "price_and_time"
+                if basis != required_basis:
+                    errors.append(f"{path}: comparison_basis conflicts with crosscheck_policy")
+
     fetched = _parse_time(quote.get("fetched_at"))
     published = _parse_time(quote.get("published_at"))
     if fetched and published and published > fetched:
