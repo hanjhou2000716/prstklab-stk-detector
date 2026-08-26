@@ -44,7 +44,14 @@ def _read_probe(path: Path) -> dict[str, Any] | None:
     started_at = payload.get("started_at")
     if not isinstance(started_at, str) or not started_at.strip():
         return None
-    return {"started_at": started_at.strip()}
+    # ``restart_verified`` is written by the *next* startup.  A marker that
+    # merely exists proves that this process can write the directory, not
+    # that a restart has occurred, so old markers (schema v1) remain
+    # explicitly unverified for backward compatibility.
+    return {
+        "started_at": started_at.strip(),
+        "restart_verified": payload.get("restart_verified") is True,
+    }
 
 
 def record_storage_startup(state_path: str | Path, *, now: datetime | None = None) -> dict[str, Any]:
@@ -59,7 +66,14 @@ def record_storage_startup(state_path: str | Path, *, now: datetime | None = Non
     marker = _probe_path(state_path)
     timestamp = (now or datetime.now(UTC)).astimezone(UTC).isoformat()
     previous = _read_probe(marker) if marker.exists() else None
-    payload = {"schema_version": 1, "started_at": timestamp}
+    payload = {
+        "schema_version": 2,
+        "started_at": timestamp,
+        # The previous marker is evidence that a prior process started and
+        # persisted state.  Persist the result so later health projections do
+        # not mistake the current process's first write for a restart.
+        "restart_verified": previous is not None,
+    }
     try:
         marker.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(
@@ -97,7 +111,11 @@ def storage_probe_diagnostics(state_path: str | Path) -> dict[str, Any]:
     payload = _read_probe(marker)
     if payload is None:
         return {"status": "failed", "previous_started_at": None, "error": "invalid_marker"}
-    return {"status": "verified", "previous_started_at": payload["started_at"], "error": None}
+    return {
+        "status": "verified" if payload.get("restart_verified") else "not_verified",
+        "previous_started_at": payload["started_at"] if payload.get("restart_verified") else None,
+        "error": None,
+    }
 
 
 def storage_diagnostics(state_path: str | Path) -> dict[str, Any]:
