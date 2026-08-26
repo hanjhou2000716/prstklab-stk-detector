@@ -16,3 +16,24 @@ def test_crosscheck_requires_aligned_quotes():
     )
     assert result["cross_checked"] is True
 
+
+def test_taiex_crosscheck_compares_direction_not_unlike_contract_prices():
+    result = evaluate_crosscheck(
+        "TAIEX",
+        {"price": 20_000, "change_percent": 2.4, "quote_time": "2026-08-05T01:00:00+00:00"},
+        {"price": 20_250, "change_percent": 1.1, "quote_time": "2026-08-05T01:03:00+00:00"},
+    )
+    assert result["cross_checked"] is True
+    assert result["comparison_basis"] == "direction_only"
+    assert result["price_comparable"] is False
+
+
+def test_taiex_crosscheck_blocks_opposite_direction():
+    result = evaluate_crosscheck(
+        "TAIEX",
+        {"price": 20_000, "change_percent": 2.4, "quote_time": "2026-08-05T01:00:00+00:00"},
+        {"price": 20_250, "change_percent": -1.1, "quote_time": "2026-08-05T01:03:00+00:00"},
+    )
+    assert result["cross_checked"] is False
+    assert result["status"] == "direction_mismatch"
+
