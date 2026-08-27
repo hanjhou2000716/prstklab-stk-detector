@@ -27,6 +27,9 @@ comma-separated allowlist, never a wildcard.
    dispatch the report workflow for this repository.
 3. Configure the Worker variables `GITHUB_REPOSITORY`, `TG_ALLOWED_USERS`,
    `TG_SUBSCRIBERS` (or `TELEGRAM_CHAT_IDS`) and explicit `ALLOWED_ORIGINS`.
+   Store the bot credential as `TELEGRAM_BOT_TOKEN`; the Worker also accepts
+   legacy `TG_TOKEN` during migration, but new deployments should use the
+   canonical name shared with GitHub Actions.
 4. Deploy `worker/` with Wrangler, then set the Pages build-time
    `PUBLIC_API_BASE_URL`/`PRSTK_API_BASE_URL` to the Worker URL.
 5. Keep the legacy Railway service available until the external acceptance

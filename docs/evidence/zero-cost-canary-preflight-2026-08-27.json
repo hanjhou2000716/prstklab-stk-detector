@@ -1,0 +1,41 @@
+{
+  "observed_at": "2026-08-27",
+  "scope": "supabase-cloudflare-zero-cost-canary",
+  "repository": "hanjhou2000716/prstklab-stk-detector",
+  "github_actions": {
+    "required_secrets": {
+      "SUPABASE_URL": "missing",
+      "SUPABASE_SERVICE_ROLE_KEY": "missing",
+      "GITHUB_DISPATCH_TOKEN": "missing"
+    },
+    "required_variables": {
+      "PUBLIC_API_BASE_URL": "missing",
+      "DASHBOARD_URL": "present"
+    },
+    "telegram_bot_token": "present",
+    "telegram_chat_ids": "present"
+  },
+  "provider_deployments": {
+    "supabase_migrations": "not_checked",
+    "cloudflare_worker": "not_deployed",
+    "cloudflare_pages_api_base": "not_configured"
+  },
+  "canary": {
+    "supabase_job": "not_run",
+    "actions_report_worker": "not_run",
+    "worker_health": "not_reachable",
+    "pages_polling": "not_checked",
+    "telegram_single_recipient": "not_sent",
+    "delivery_receipt": "not_checked"
+  },
+  "acceptance": {
+    "status": "needs_provider_configuration",
+    "railway_role": "rollback_only_until_canary_passes",
+    "high_risk_delivery_allowed": false
+  },
+  "privacy": {
+    "secret_values_included": false,
+    "recipient_ids_included": false,
+    "mailbox_content_included": false
+  }
+}
