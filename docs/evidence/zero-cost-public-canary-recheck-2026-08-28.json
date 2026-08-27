@@ -1,0 +1,34 @@
+{
+  "captured_at": "2026-08-28T02:50:32+08:00",
+  "pages_manifest_url": "https://hanjhou2000716.github.io/prstklab-stk-detector/data/release-manifest.json",
+  "worker_health_url": "https://prstk-api.hanjhou2000716.workers.dev/api/health",
+  "pages": {
+    "http_status": 200,
+    "status": "ready",
+    "release_id": "release-495be75d829e5b1b"
+  },
+  "worker": {
+    "http_status": 200,
+    "ok": false,
+    "status": "configuration_missing",
+    "database": "configuration_missing",
+    "version": "zero-cost-worker-1",
+    "configuration": {
+      "supabase": false,
+      "report_dispatch": false,
+      "telegram": false
+    }
+  },
+  "interpretation": {
+    "pages_release_ready": true,
+    "worker_reachable": true,
+    "worker_provider_canary": "blocked",
+    "telegram_sent": false,
+    "high_risk_notifications_allowed": false
+  },
+  "notes": [
+    "This is a read-only public endpoint observation; no secret values were read or transmitted.",
+    "The Pages manifest is ready, but the Worker remains fail-closed until provider secrets are configured.",
+    "The Pages release and Worker health response are recorded separately and must not be treated as one successful canary."
+  ]
+}

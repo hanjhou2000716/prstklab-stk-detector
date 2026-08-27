@@ -36,6 +36,13 @@ but is not a successful canary until the provider secrets are configured.
 The earlier [public health evidence](evidence/zero-cost-worker-public-health-2026-08-28.json)
 remains the pre-redeployment observation.
 
+The latest read-only Pages/Worker comparison is recorded in
+[public canary recheck evidence](evidence/zero-cost-public-canary-recheck-2026-08-28.json).
+Pages currently exposes a `ready` manifest (`release-495be75d829e5b1b`), while
+the Worker correctly remains `configuration_missing`.  These are deliberately
+reported as separate states; a ready Pages manifest alone does not authorize a
+Telegram canary.
+
 The complete gate-driven migration snapshot is recorded in the
 [2026-08-28 migration audit](gate-driven-migration-20260828.md), including
 requirement traceability, regression status and open completion debt.

@@ -30,7 +30,7 @@ the migration protocol vocabulary: `NOT_STARTED`, `IN_PROGRESS`,
 | Cloudflare Worker public reachability | `PASS` (runtime) | `/api/health` returns HTTP 200; this proves reachability only |
 | Supabase-backed Worker canary | `BLOCKED` | deployed response is `status=configuration_missing`; provider secrets are not configured |
 | Railway rollback path | `PASS` (preserved) / `NEEDS_REVERIFY` (canary) | Railway is retained as rollback-only until Worker canary succeeds |
-| Full production acceptance | `BLOCKED` | requires provider secrets, ready release, Pages verification and controlled Telegram receipt |
+| Full production acceptance | `BLOCKED` | Pages is ready, but Worker provider secrets and controlled Telegram receipt are still required |
 
 ## Requirement traceability (current checkpoint)
 
@@ -43,6 +43,7 @@ the migration protocol vocabulary: `NOT_STARTED`, `IN_PROGRESS`,
 | No false production canary claim | `docs/zero-cost-production-acceptance.md` | acceptance contract tests | health response + runbook | `PASS` → `LOCKED` |
 | Supabase/GitHub/Telegram secrets available to Worker | Cloudflare Worker Secret Variables | provider-side canary | names are absent from the accessible settings view | `BLOCKED` |
 | Canonical Worker source deployed | Cloudflare dashboard deployment `ba4dd5f6` | public `/api/health` | `docs/evidence/zero-cost-worker-deploy-recheck-2026-08-28.json` | `PASS` (reachability/source version) |
+| Pages/Worker canary lineage | public Pages manifest + Worker health endpoint | read-only HTTPS comparison | `docs/evidence/zero-cost-public-canary-recheck-2026-08-28.json` | `NEEDS_REVERIFY` (Worker configuration missing) |
 
 ## Regression ledger
 
