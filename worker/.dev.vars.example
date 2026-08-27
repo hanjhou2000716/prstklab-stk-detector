@@ -1,0 +1,11 @@
+# Copy to .dev.vars for local Wrangler development only.
+# Never commit real values; use Cloudflare Worker Secret Variables in production.
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<set-in-cloudflare-secret>
+GITHUB_REPOSITORY=hanjhou2000716/prstklab-stk-detector
+GITHUB_DISPATCH_TOKEN=<set-in-cloudflare-secret>
+TELEGRAM_BOT_TOKEN=<set-in-cloudflare-secret>
+TG_SUBSCRIBERS=<test-chat-id-only>
+ALLOWED_ORIGINS=https://hanjhou2000716.github.io
+SERVICE_NAME=PRStK 稜量盤後速覽
+VERSION=zero-cost-worker-1

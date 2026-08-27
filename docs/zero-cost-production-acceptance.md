@@ -56,6 +56,10 @@ requirement traceability, regression status and open completion debt.
    `TELEGRAM_BOT_TOKEN`, `TG_SUBSCRIBERS` and an explicit `ALLOWED_ORIGINS`
    value. Secrets are configured in the provider UI, never committed or
    printed.
+   For local Wrangler checks, use the non-secret-name template
+   [`worker/.dev.vars.example`](../worker/.dev.vars.example); do not copy real
+   values into Git. The public `/api/health` response must report
+   `status=healthy` before proceeding to the canary.
 3. Set `PUBLIC_API_BASE_URL` for the Pages deployment and publish a ready
    release. A failed manifest must leave the last known-good release intact.
 4. Use a Telegram WebView session to create one report, then wait for the
