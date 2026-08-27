@@ -21,6 +21,8 @@ interface Env {
   ALLOWED_ORIGINS?: string;
   SERVICE_NAME?: string;
   VERSION?: string;
+  /** HMAC secret shared with GitHub Actions for receipt ingestion. */
+  DELIVERY_RECEIPT_SHARED_SECRET?: string;
 }
 
 type Job = Record<string, unknown> & { id: string; status: string };
@@ -94,16 +96,87 @@ async function isAuthorized(request: Request, env: Env): Promise<{ userId: strin
   return !allowlist.length || allowlist.includes(identity.userId) ? { userId: identity.userId, admin: false } : null;
 }
 
-async function supabase(env: Env, method: string, table: string, query = "", body?: unknown): Promise<any[]> {
+async function supabase(env: Env, method: string, table: string, query = "", body?: unknown, prefer = "return=representation"): Promise<any[]> {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) throw new Error("database is not configured");
   const response = await fetch(`${env.SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${table}${query}`, {
     method,
-    headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, "content-type": "application/json", Prefer: "return=representation" },
+    headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, "content-type": "application/json", Prefer: prefer },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!response.ok) throw new Error(`database request failed (${response.status})`);
   const payload: unknown = await response.json().catch(() => []);
   return Array.isArray(payload) ? payload : payload && typeof payload === "object" ? [payload] : [];
+}
+
+function boundedString(value: unknown, max = 240): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed && trimmed.length <= max ? trimmed : null;
+}
+
+function boundedHashes(value: unknown): string[] | null {
+  if (!Array.isArray(value) || value.length > 200) return null;
+  const values = value.map((item) => boundedString(item, 128));
+  return values.every((item): item is string => Boolean(item)) ? values : null;
+}
+
+function validCount(value: unknown): number | null {
+  return Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 100000 ? Number(value) : null;
+}
+
+async function signatureFor(secret: string, body: string): Promise<string> {
+  return `sha256=${hex(await hmac(secret, body))}`;
+}
+
+async function verifyReceiptSignature(request: Request, body: string, secret: string): Promise<boolean> {
+  const supplied = request.headers.get("X-PRSTK-Signature") || "";
+  if (!/^sha256=[0-9a-f]{64}$/i.test(supplied)) return false;
+  const expected = await signatureFor(secret, body);
+  const left = new TextEncoder().encode(supplied.toLowerCase());
+  const right = new TextEncoder().encode(expected);
+  if (left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) difference |= left[index] ^ right[index];
+  return difference === 0;
+}
+
+function normalizeReceipt(input: unknown): Record<string, unknown> | null {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return null;
+  const value = input as Record<string, unknown>;
+  const traceId = boundedString(value.trace_id, 160);
+  const kind = boundedString(value.receipt_kind, 32);
+  const origin = boundedString(value.receipt_origin, 32);
+  const mode = boundedString(value.delivery_mode, 32);
+  const status = boundedString(value.delivery_status, 32);
+  const releaseId = boundedString(value.release_id, 160);
+  const snapshotId = boundedString(value.snapshot_id, 160);
+  const alertId = value.alert_id == null ? null : boundedString(value.alert_id, 160);
+  const delivered = validCount(value.delivered_count);
+  const failed = validCount(value.failed_count);
+  const failedHashes = boundedHashes(value.failed_recipient_hashes);
+  const notificationKeys = boundedHashes(value.notification_keys);
+  if (!traceId || !kind || !origin || !mode || !status || !releaseId || !snapshotId || delivered === null || failed === null || !failedHashes || !notificationKeys) return null;
+  if (!['production', 'photo_smoke', 'creator'].includes(kind) || origin !== 'github_actions' || !['text', 'photo'].includes(mode) || !['delivered', 'partial', 'failed'].includes(status)) return null;
+  if (failed === 0 && failedHashes.length > 0) return null;
+  if (status === "delivered" && failed > 0) return null;
+  if (status === "failed" && delivered > 0) return null;
+  return {
+    trace_id: traceId,
+    receipt_kind: kind,
+    receipt_origin: origin,
+    alert_id: alertId,
+    release_id: releaseId,
+    snapshot_id: snapshotId,
+    delivery_mode: mode,
+    delivery_status: status,
+    delivered_count: delivered,
+    failed_count: failed,
+    failed_recipient_hashes: failedHashes,
+    notification_keys: notificationKeys,
+    renderer_error_type: value.renderer_error_type == null ? null : boundedString(value.renderer_error_type, 160),
+    financialjuice_delivery_trace: value.financialjuice_delivery_trace && typeof value.financialjuice_delivery_trace === "object" && !Array.isArray(value.financialjuice_delivery_trace) ? value.financialjuice_delivery_trace : null,
+    reported_at: value.reported_at == null ? null : boundedString(value.reported_at, 64),
+  };
 }
 
 async function dispatchReport(env: Env, jobId: string): Promise<void> {
@@ -179,6 +252,23 @@ async function handle(request: Request, env: Env): Promise<Response> {
     try { await supabase(env, "GET", "system_status", "?select=component,status&limit=1"); database = "ok"; } catch (_) { database = "unavailable"; }
     return json({ ok: database === "ok", service: env.SERVICE_NAME || "PRStK 稜量盤後速覽", api: "ok", database, version: env.VERSION || "worker" });
   }
+  if (url.pathname === "/api/delivery-receipt" && request.method === "POST") {
+    const secret = String(env.DELIVERY_RECEIPT_SHARED_SECRET || "").trim();
+    if (!secret) return json({ ok: false, error: "RECEIPT_NOT_CONFIGURED" }, 503);
+    const body = await request.text();
+    if (body.length > 32768) return json({ ok: false, error: "PAYLOAD_TOO_LARGE" }, 413);
+    if (!await verifyReceiptSignature(request, body, secret)) return json({ ok: false, error: "INVALID_SIGNATURE" }, 401);
+    let input: unknown;
+    try { input = JSON.parse(body); } catch (_) { return json({ ok: false, error: "INVALID_JSON" }, 400); }
+    const receipt = normalizeReceipt(input);
+    if (!receipt) return json({ ok: false, error: "INVALID_RECEIPT" }, 400);
+    try {
+      await supabase(env, "POST", "delivery_receipt_events", "?on_conflict=trace_id", receipt, "resolution=merge-duplicates,return=representation");
+    } catch (_) {
+      return json({ ok: false, error: "RECEIPT_PERSISTENCE_FAILED" }, 503);
+    }
+    return json({ ok: true, trace_id: receipt.trace_id, receipt_status: "persisted", receipt_backend: "supabase" });
+  }
   if (url.pathname === "/api/report" && request.method === "POST") {
     const identity = await isAuthorized(request, env);
     if (!identity) return json({ ok: false, error: "UNAUTHORIZED" }, 401);
@@ -209,9 +299,9 @@ async function handle(request: Request, env: Env): Promise<Response> {
     const traceId = crypto.randomUUID();
     const result = await sendTelegram(env, report, {
       traceId,
-      alertId: typeof payload.alert_id === "string" ? payload.alert_id.slice(0, 160) : undefined,
-      releaseId: typeof payload.release_id === "string" ? payload.release_id.slice(0, 160) : undefined,
-      snapshotId: typeof payload.snapshot_id === "string" ? payload.snapshot_id.slice(0, 160) : undefined,
+      alertId: typeof payload?.alert_id === "string" ? payload.alert_id.slice(0, 160) : undefined,
+      releaseId: typeof payload?.release_id === "string" ? payload.release_id.slice(0, 160) : undefined,
+      snapshotId: typeof payload?.snapshot_id === "string" ? payload.snapshot_id.slice(0, 160) : undefined,
     });
     let receiptStatus = "persisted";
     try { await supabase(env, "POST", "delivery_receipts", "", result.receipts); } catch (_) { receiptStatus = "persistence_failed"; }

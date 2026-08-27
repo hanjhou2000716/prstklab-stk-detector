@@ -35,12 +35,14 @@ def validate_delivery_configuration() -> dict[str, Any]:
     except ValueError as error:
         errors.append(str(error))
 
-    callback_url = os.environ.get("RAILWAY_STATUS_URL", "").strip()
-    callback_secret = bool(delivery_shared_secret())
+    worker_callback_url = os.environ.get("RECEIPT_CALLBACK_URL", "").strip()
+    railway_callback_url = os.environ.get("RAILWAY_STATUS_URL", "").strip()
+    callback_url = worker_callback_url or railway_callback_url
+    callback_secret = bool(os.environ.get("DELIVERY_RECEIPT_SHARED_SECRET", "").strip() or delivery_shared_secret())
     if bool(callback_url) != callback_secret:
-        errors.append("RAILWAY_STATUS_URL and RAILWAY_STATUS_SHARED_SECRET must be configured together")
+        errors.append("receipt callback URL and delivery receipt secret must be configured together")
     if callback_url and not callback_url.startswith("https://"):
-        errors.append("RAILWAY_STATUS_URL must use HTTPS")
+        errors.append(f"{('RECEIPT_CALLBACK_URL' if worker_callback_url else 'RAILWAY_STATUS_URL')} must use HTTPS")
 
     return {
         "ok": not errors,
@@ -48,6 +50,7 @@ def validate_delivery_configuration() -> dict[str, Any]:
         "legacy_singular_configured": bool(legacy_chat_id),
         "dashboard_https": settings.dashboard_url.startswith("https://"),
         "callback_configured": bool(callback_url and callback_secret),
+        "callback_backend": "cloudflare_worker" if worker_callback_url else "railway" if railway_callback_url else None,
         "smoke_text_length": len(SMOKE_TEXT),
         "errors": errors,
     }

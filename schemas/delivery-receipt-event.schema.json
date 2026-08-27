@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prstk.example/schemas/delivery-receipt-event.schema.json",
+  "title": "PRStK aggregate delivery receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["receipt_origin", "trace_id", "receipt_kind", "release_id", "snapshot_id", "delivery_mode", "delivery_status", "delivered_count", "failed_count", "failed_recipient_hashes", "notification_keys"],
+  "properties": {
+    "receipt_origin": {"const": "github_actions"},
+    "trace_id": {"type": "string", "minLength": 1, "maxLength": 160},
+    "receipt_kind": {"enum": ["production", "photo_smoke", "creator"]},
+    "alert_id": {"type": ["string", "null"], "maxLength": 160},
+    "release_id": {"type": "string", "minLength": 1, "maxLength": 160},
+    "snapshot_id": {"type": "string", "minLength": 1, "maxLength": 160},
+    "delivery_mode": {"enum": ["text", "photo"]},
+    "delivery_status": {"enum": ["delivered", "partial", "failed"]},
+    "delivered_count": {"type": "integer", "minimum": 0},
+    "failed_count": {"type": "integer", "minimum": 0},
+    "failed_recipient_hashes": {"type": "array", "maxItems": 200, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+    "notification_keys": {"type": "array", "maxItems": 200, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+    "renderer_error_type": {"type": ["string", "null"], "maxLength": 160},
+    "financialjuice_delivery_trace": {"type": ["object", "null"]},
+    "reported_at": {"type": ["string", "null"], "maxLength": 64}
+  }
+}

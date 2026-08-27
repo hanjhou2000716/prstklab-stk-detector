@@ -68,9 +68,12 @@ jobs:
           else
             python -m src.main --send
           fi
-      - name: Persist photo smoke delivery receipt to Railway
+      - name: Persist photo smoke delivery receipt to Railway/Worker
         if: always() && inputs.photo_test == true && steps.photo_smoke.outputs.sent == 'true'
         env:
+          # Prefer the zero-cost Cloudflare Worker; Railway remains an optional rollback.
+          RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
+          DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
           RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           DELIVERY_RECEIPT_KIND: photo_smoke
