@@ -16,6 +16,8 @@ that the external cutover has already happened.
 | Railway event ingress | `railway-monitor/app.py` and sibling modules | Gmail/Jin10 polling, source health and repository dispatch | Cloudflare Worker API + provider-specific Actions jobs | legacy; cutover pending |
 | Async report API | `worker/src/index.ts` | Auth, validation, job enqueue/status, workflow dispatch, Telegram proxy and health | Cloudflare Worker | partially_integrated |
 | Telegram transport | `src/telegram_client.py`, `src/creator_notification.py` | Release-gated text/photo delivery and receipts | Cloudflare Worker `/api/send` for interactive reports; Actions for scheduled delivery | production + target adapter pending |
+| Alert decision boundary | `src/alert_contract.py`, `src/alert_lifecycle.py`, `src/alert_budget.py`, `src/alert_orchestrator.py` | Shared envelope, lifecycle, material-change and budget decision | All new async report/event consumers | partially_integrated |
+| Alert card renderer | `src/alert_card_renderer.py`, `src/photo_smoke_test.py` | Fixed-size evidence card with fail-closed renderer validation | Telegram photo delivery and offline acceptance | production |
 | Persistence | `site/data/*`, `data-release`, Railway SQLite, `app/db/repository.py` | Immutable public release plus monitor state | Supabase PostgreSQL for jobs/reports/status; data-release remains public snapshot | partially_integrated |
 | Release gate | `src/release_gate.py`, `src/pages_release.py` | Validate immutable artifacts before notification | Actions publish gate and Pages deployment | production |
 | Research strategies | `src/*research*.py`, `src/run_*.py` | Heavy scans and explainability artifacts | GitHub Actions only | production |
