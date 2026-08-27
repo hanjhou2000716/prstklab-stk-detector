@@ -14,6 +14,12 @@ and Telegram bot secret have not been entered into the Worker. See the redacted
 and the earlier [preflight evidence](evidence/zero-cost-canary-preflight-2026-08-27.json).
 Until those provider values are configured, Railway remains rollback-only.
 
+The 2026-08-28 health recheck returned HTTP 200 with `api: ok` and
+`database: unavailable`; this is recorded in the redacted
+[health recheck evidence](evidence/zero-cost-worker-health-recheck-2026-08-28.json).
+The response is intentionally fail-closed and does not represent a successful
+production canary or Telegram delivery.
+
 ## Required order
 
 1. Apply `supabase/migrations/202608270001_report_jobs.sql` and
