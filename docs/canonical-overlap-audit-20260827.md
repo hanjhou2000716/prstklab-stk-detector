@@ -69,6 +69,13 @@ The latest sanitized Railway probe is recorded in
 the service endpoints returned HTTP 404, so the previously attached Volume is
 not yet accompanied by a reachable deployment or restart-continuity evidence.
 
+The Railway control plane was checked again on 2026-08-27.  It reports the
+`/data` Volume attached at 500 MB, but the service is offline with no active
+deployment and the workspace trial is expired.  This control-plane evidence is
+kept separately from the HTTP probe in
+[`docs/evidence/railway-control-plane-2026-08-27.json`](evidence/railway-control-plane-2026-08-27.json).
+It does not establish a successful redeploy or restart-continuity proof.
+
 ## Rollback
 
 Reverting the checkpoint commit removes only this audit note.  Existing release
