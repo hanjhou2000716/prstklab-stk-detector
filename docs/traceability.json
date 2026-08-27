@@ -35,7 +35,7 @@
       "task": "telegram-delivery-receipts",
       "implementation": ["worker/src/index.ts", "supabase/migrations/202608270002_delivery_receipts.sql", "docs/telegram-delivery-receipts.md"],
       "verification": ["tests/test_zero_cost_migration_contract.py"],
-      "evidence": "PR #796 CI run pending",
+      "evidence": "PR #796 CI test-and-dry-run passed",
       "regression": "production canary and provider-side receipt query are not yet verified",
       "status": "NEEDS_REVERIFY"
     },
@@ -44,7 +44,7 @@
       "task": "miniapp-release-provenance",
       "implementation": ["site/report-client.js", "site/index.html", "docs/zero-cost-production-migration.md"],
       "verification": ["tests/test_zero_cost_migration_contract.py", "node --check site/report-client.js"],
-      "evidence": "PR #797 CI run pending",
+      "evidence": "PR #797 CI test-and-dry-run passed; public Pages/deep-link canary remains external",
       "regression": "public Pages deployment and deep-link canary remain external acceptance items",
       "status": "NEEDS_REVERIFY"
     },
@@ -56,6 +56,15 @@
       "evidence": "no provider-side evidence captured",
       "regression": "Railway remains enabled until Supabase, Worker, Pages and Telegram canary pass",
       "status": "BLOCKED"
+    },
+    {
+      "requirement": "REQ-MIGRATION-007",
+      "task": "quality-security-e2e-acceptance",
+      "implementation": ["docs/zero-cost-production-acceptance.md", "tests/test_zero_cost_acceptance_runbook.py"],
+      "verification": ["PR #799 test-and-dry-run", "1490 offline pytest tests", "ruff", "mypy", "compileall"],
+      "evidence": "PR #799 CI run 33072586803 passed; provider-side acceptance is not captured",
+      "regression": "offline dry-run remains non-network and production recipients are not contacted",
+      "status": "NEEDS_REVERIFY"
     }
   ]
 }
