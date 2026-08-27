@@ -64,6 +64,11 @@ in `site/data` manifest is invalid or incomplete.  No stale or unverified
 artifact is promoted, and no production Telegram broadcast is implied by this
 document.
 
+The latest sanitized Railway probe is recorded in
+[`docs/evidence/railway-volume-probe-2026-08-27.json`](evidence/railway-volume-probe-2026-08-27.json):
+the service endpoints returned HTTP 404, so the previously attached Volume is
+not yet accompanied by a reachable deployment or restart-continuity evidence.
+
 ## Rollback
 
 Reverting the checkpoint commit removes only this audit note.  Existing release
