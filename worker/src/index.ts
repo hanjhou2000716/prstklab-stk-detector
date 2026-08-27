@@ -175,9 +175,24 @@ async function handle(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...cors(request, env), "access-control-allow-methods": "GET,POST,OPTIONS", "access-control-allow-headers": "content-type,authorization,x-admin-key,x-telegram-init-data" } });
   if (url.pathname === "/api/health" && request.method === "GET") {
-    let database = "unknown";
-    try { await supabase(env, "GET", "system_status", "?select=component,status&limit=1"); database = "ok"; } catch (_) { database = "unavailable"; }
-    return json({ ok: database === "ok", service: env.SERVICE_NAME || "PRStK 稜量盤後速覽", api: "ok", database, version: env.VERSION || "worker" });
+    const supabaseConfigured = Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY);
+    const dispatchConfigured = Boolean(env.GITHUB_DISPATCH_TOKEN && env.GITHUB_REPOSITORY);
+    const telegramConfigured = Boolean(telegramToken(env) && recipients(env).length);
+    let database = "configuration_missing";
+    if (supabaseConfigured) {
+      try { await supabase(env, "GET", "system_status", "?select=component,status&limit=1"); database = "ok"; }
+      catch (_) { database = "provider_failed"; }
+    }
+    const status = database === "ok" ? "healthy" : database === "configuration_missing" ? "configuration_missing" : "provider_failed";
+    return json({
+      ok: status === "healthy",
+      status,
+      service: env.SERVICE_NAME || "PRStK 稜量盤後速覽",
+      api: "ok",
+      database,
+      configuration: { supabase: supabaseConfigured, report_dispatch: dispatchConfigured, telegram: telegramConfigured },
+      version: env.VERSION || "worker",
+    });
   }
   if (url.pathname === "/api/report" && request.method === "POST") {
     const identity = await isAuthorized(request, env);
