@@ -26,7 +26,7 @@ the migration protocol vocabulary: `NOT_STARTED`, `IN_PROGRESS`,
 |---|---|---|
 | Canonical Creator/FJ/news ownership | `LOCKED` | overlap audit and regression evidence show one registry/classifier/parser path |
 | Release and Telegram fail-closed contract | `LOCKED` (local) | release-gate and delivery tests pass; production receipt remains external |
-| Worker source and health classification | `PASS` (local/runtime) | `worker/src/index.ts` typechecks; dashboard deployment `2c8a6744` reports `version=zero-cost-worker-1` |
+| Worker source and health classification | `PASS` (local/runtime) | `worker/src/index.ts` typechecks; dashboard deployment `ba4dd5f6` reports `version=zero-cost-worker-1` and explicit configuration state |
 | Cloudflare Worker public reachability | `PASS` (runtime) | `/api/health` returns HTTP 200; this proves reachability only |
 | Supabase-backed Worker canary | `BLOCKED` | deployed response is `database=unavailable`; provider secrets are not configured |
 | Railway rollback path | `PASS` (preserved) / `NEEDS_REVERIFY` (canary) | Railway is retained as rollback-only until Worker canary succeeds |
@@ -42,7 +42,7 @@ the migration protocol vocabulary: `NOT_STARTED`, `IN_PROGRESS`,
 | Public health response is recorded without secrets | `docs/evidence/zero-cost-worker-public-health-2026-08-28.json` | JSON parse + public HTTPS probe | redacted health evidence | `PASS` (observation) |
 | No false production canary claim | `docs/zero-cost-production-acceptance.md` | acceptance contract tests | health response + runbook | `PASS` → `LOCKED` |
 | Supabase/GitHub/Telegram secrets available to Worker | Cloudflare Worker Secret Variables | provider-side canary | names are absent from the accessible settings view | `BLOCKED` |
-| Canonical Worker source deployed | Cloudflare dashboard deployment `2c8a6744` | public `/api/health` | `docs/evidence/zero-cost-worker-deploy-recheck-2026-08-28.json` | `PASS` (reachability/source version) |
+| Canonical Worker source deployed | Cloudflare dashboard deployment `ba4dd5f6` | public `/api/health` | `docs/evidence/zero-cost-worker-deploy-recheck-2026-08-28.json` | `PASS` (reachability/source version) |
 
 ## Regression ledger
 

@@ -1,16 +1,21 @@
 {
-  "captured_at": "2026-08-28T18:00:00+08:00",
+  "captured_at": "2026-08-28T18:35:00+08:00",
   "worker_url": "https://prstk-api.hanjhou2000716.workers.dev",
-  "dashboard_version": "2c8a6744",
+  "dashboard_version": "ba4dd5f6",
   "health_endpoint": "/api/health",
   "health_http_status": 200,
   "health": {
     "ok": false,
     "status": "configuration_missing",
     "api": "ok",
-    "database": "unavailable",
+    "database": "configuration_missing",
     "service": "PRStK 稜量盤後速覽",
-    "version": "zero-cost-worker-1"
+    "version": "zero-cost-worker-1",
+    "configuration": {
+      "supabase": false,
+      "report_dispatch": false,
+      "telegram": false
+    }
   },
   "interpretation": {
     "worker_reachable": true,
