@@ -5,9 +5,9 @@ path. It is intentionally separate from offline CI: a green unit-test job does
 not prove that a provider-side deployment, public Pages release, or Telegram
 delivery occurred.
 
-The 2026-08-28 provisioning checkpoint created and deployed the canonical
-Worker at `https://prstk-api.hanjhou2000716.workers.dev`. The Worker health
-endpoint is reachable, but the canary remains
+The 2026-08-28 provisioning checkpoint created the canonical Worker at
+`https://prstk-api.hanjhou2000716.workers.dev`. The deployed health endpoint
+is reachable, but the canary remains
 `needs_provider_secrets`: the Supabase service-role key, GitHub dispatch token,
 and Telegram bot secret have not been entered into the Worker. See the redacted
 [provisioning evidence](evidence/zero-cost-worker-provisioning-2026-08-28.json)
@@ -26,6 +26,12 @@ The 2026-08-28 health recheck returned HTTP 200 with `api: ok` and
 [health recheck evidence](evidence/zero-cost-worker-health-recheck-2026-08-28.json).
 The response is intentionally fail-closed and does not represent a successful
 production canary or Telegram delivery.
+
+The latest public endpoint check is recorded in
+[public health evidence](evidence/zero-cost-worker-public-health-2026-08-28.json).
+It confirms that `/api/health` is reachable while the active deployment still
+uses the legacy runtime version; the local health-classification fix is not
+considered deployed until a token-authorized Worker deployment succeeds.
 
 ## Required order
 

@@ -1,0 +1,23 @@
+{
+  "captured_at": "2026-08-28T02:02:39+08:00",
+  "endpoint": "https://prstk-api.hanjhou2000716.workers.dev/api/health",
+  "http_status": 200,
+  "response": {
+    "ok": false,
+    "api": "ok",
+    "database": "unavailable",
+    "service": "PRStK 稜量盤後速覽",
+    "version": "worker"
+  },
+  "interpretation": {
+    "worker_reachable": true,
+    "database_ready": false,
+    "production_canary": "blocked",
+    "high_risk_notifications_allowed": false
+  },
+  "notes": [
+    "The public /health path is not a valid route; /api/health is the canonical health endpoint.",
+    "This observation confirms network reachability only and must not be treated as a successful production restore.",
+    "The deployed runtime still reports the legacy worker version until a token-authorized deployment is completed."
+  ]
+}
