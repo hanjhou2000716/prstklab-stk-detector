@@ -10,15 +10,15 @@ the migration protocol vocabulary: `NOT_STARTED`, `IN_PROGRESS`,
 | Field | Evidence |
 |---|---|
 | Branch | `feat/zero-cost-worker-token-contract` |
-| HEAD | `30e728e5` (`docs: record Worker configuration fail-closed state`) |
+| HEAD | `6a26f59b` (`docs: record Worker configuration inventory`) |
 | Base | `origin/main` at `34fe90e8` |
 | PR | [#801](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/801), open, clean, non-draft |
-| Recovery checkpoint | `789719eb`, follow-up evidence `ce50eee3`, and Worker deployment evidence `30e728e5` |
+| Recovery checkpoint | `789719eb`, follow-up evidence `ce50eee3`, Worker deployment evidence `30e728e5`, and Cloudflare login inventory `6a26f59b` |
 | Working tree | tracked changes clean; historical untracked test artifacts preserved and not staged |
 | Canonical overlap audit | `python scripts/verify_canonical_overlap.py` → `status=pass`, `failed_count=0` |
-| Local regression | `1493 passed`; targeted acceptance suite `30 passed` with isolated workspace temp |
+| Local regression | `1493 passed`; targeted acceptance suite `72 passed` with isolated workspace temp |
 | Static checks | Ruff, Mypy, compileall, frontend syntax and Worker typecheck passed |
-| PR checks | test-and-dry-run, CodeQL, dependency review and SBOM all successful |
+| PR checks | latest test-and-dry-run `33109779424`, CodeQL, dependency review and SBOM all successful |
 
 ## Current task reconciliation
 
@@ -40,6 +40,7 @@ the migration protocol vocabulary: `NOT_STARTED`, `IN_PROGRESS`,
 | Creator/FJ/news integration does not duplicate paths | `src/creator_intelligence_pipeline.py`, `src/external_event_pipeline.py`, `src/news_intelligence.py` | full regression | `creator-fj-overlap-regression-2026-08-28.json` | `PASS` → `LOCKED` |
 | Worker health distinguishes configuration from provider failure | `worker/src/index.ts` | Worker typecheck + source review | PR #801 | `PASS` (local) |
 | Public health response is recorded without secrets | `docs/evidence/zero-cost-worker-public-health-2026-08-28.json` | JSON parse + public HTTPS probe | redacted health evidence | `PASS` (observation) |
+| Cloudflare authentication and Worker variable inventory is recorded without values | `docs/evidence/zero-cost-cloudflare-login-check-2026-08-28.json` | authenticated settings-page inspection + public HTTPS probe | redacted login/configuration evidence | `PASS` (observation) |
 | No false production canary claim | `docs/zero-cost-production-acceptance.md` | acceptance contract tests | health response + runbook | `PASS` → `LOCKED` |
 | Supabase/GitHub/Telegram secrets available to Worker | Cloudflare Worker Secret Variables | provider-side canary | names are absent from the accessible settings view | `BLOCKED` |
 | Canonical Worker source deployed | Cloudflare dashboard deployment `ba4dd5f6` | public `/api/health` | `docs/evidence/zero-cost-worker-deploy-recheck-2026-08-28.json` | `PASS` (reachability/source version) |
