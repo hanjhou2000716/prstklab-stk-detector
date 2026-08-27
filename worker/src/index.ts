@@ -209,9 +209,9 @@ async function handle(request: Request, env: Env): Promise<Response> {
     const traceId = crypto.randomUUID();
     const result = await sendTelegram(env, report, {
       traceId,
-      alertId: typeof payload.alert_id === "string" ? payload.alert_id.slice(0, 160) : undefined,
-      releaseId: typeof payload.release_id === "string" ? payload.release_id.slice(0, 160) : undefined,
-      snapshotId: typeof payload.snapshot_id === "string" ? payload.snapshot_id.slice(0, 160) : undefined,
+      alertId: typeof payload?.alert_id === "string" ? payload.alert_id.slice(0, 160) : undefined,
+      releaseId: typeof payload?.release_id === "string" ? payload.release_id.slice(0, 160) : undefined,
+      snapshotId: typeof payload?.snapshot_id === "string" ? payload.snapshot_id.slice(0, 160) : undefined,
     });
     let receiptStatus = "persisted";
     try { await supabase(env, "POST", "delivery_receipts", "", result.receipts); } catch (_) { receiptStatus = "persistence_failed"; }
