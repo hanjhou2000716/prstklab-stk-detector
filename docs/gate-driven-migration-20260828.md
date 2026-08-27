@@ -10,15 +10,15 @@ the migration protocol vocabulary: `NOT_STARTED`, `IN_PROGRESS`,
 | Field | Evidence |
 |---|---|
 | Branch | `feat/zero-cost-worker-token-contract` |
-| HEAD | `fdcf1d1b` (`docs: reconcile Worker health checkpoint`) |
+| HEAD | `e83af841` (`docs: clarify Worker readiness probe`) |
 | Base | `origin/main` at `34fe90e8` |
 | PR | [#801](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/801), open, clean, non-draft |
-| Recovery checkpoint | `789719eb`, follow-up evidence `ce50eee3`, Worker deployment evidence `30e728e5`, Cloudflare login inventory `6a26f59b`, and latest checkpoint reconciliation `fdcf1d1b` |
+| Recovery checkpoint | `789719eb`, follow-up evidence `ce50eee3`, Worker deployment evidence `30e728e5`, Cloudflare login inventory `6a26f59b`, and latest checkpoint reconciliation `e83af841` |
 | Working tree | tracked changes clean; historical untracked test artifacts preserved and not staged |
 | Canonical overlap audit | `python scripts/verify_canonical_overlap.py` → `status=pass`, `failed_count=0` |
 | Local regression | `1493 passed`; targeted acceptance suite `72 passed` with isolated workspace temp |
 | Static checks | Ruff, Mypy, compileall, frontend syntax and Worker typecheck passed |
-| PR checks | test-and-dry-run `33111104863`, CodeQL, dependency review and SBOM all successful |
+| PR checks | test-and-dry-run `33111683764`, CodeQL, dependency review and SBOM all successful |
 
 ## Current task reconciliation
 
