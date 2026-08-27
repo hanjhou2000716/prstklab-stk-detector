@@ -11,7 +11,9 @@ interface Env {
   SUPABASE_SERVICE_ROLE_KEY: string;
   GITHUB_DISPATCH_TOKEN: string;
   GITHUB_REPOSITORY: string;
-  TG_TOKEN: string;
+  /** Canonical name shared with GitHub Actions; TG_TOKEN remains a legacy alias. */
+  TELEGRAM_BOT_TOKEN?: string;
+  TG_TOKEN?: string;
   TG_SUBSCRIBERS?: string;
   TELEGRAM_CHAT_IDS?: string;
   TG_ALLOWED_USERS?: string;
@@ -31,6 +33,10 @@ const json = (body: unknown, status = 200, headers: Record<string, string> = {})
 
 function origins(env: Env): string[] {
   return String(env.ALLOWED_ORIGINS || "").split(",").map((value) => value.trim()).filter(Boolean);
+}
+
+function telegramToken(env: Env): string {
+  return String(env.TELEGRAM_BOT_TOKEN || env.TG_TOKEN || "").trim();
 }
 
 function cors(request: Request, env: Env): Record<string, string> {
@@ -61,14 +67,15 @@ function hex(buffer: ArrayBuffer): string {
 
 async function verifyTelegramInitData(request: Request, env: Env): Promise<{ userId: string; username?: string } | null> {
   const supplied = request.headers.get("X-Telegram-Init-Data") || request.headers.get("Authorization")?.replace(/^tma\s+/i, "") || "";
-  if (!supplied || !env.TG_TOKEN) return null;
+  const token = telegramToken(env);
+  if (!supplied || !token) return null;
   const params = new URLSearchParams(supplied);
   const hash = params.get("hash");
   const authDate = Number(params.get("auth_date") || 0);
   if (!hash || !Number.isFinite(authDate) || Math.abs(Date.now() / 1000 - authDate) > 86400) return null;
   params.delete("hash");
   const dataCheck = [...params.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([key, value]) => `${key}=${value}`).join("\n");
-  const secret = await hmac("WebAppData", env.TG_TOKEN);
+  const secret = await hmac("WebAppData", token);
   if (hex(await hmac(secret, dataCheck)) !== hash.toLowerCase()) return null;
   try {
     const user = JSON.parse(params.get("user") || "{}");
@@ -123,7 +130,8 @@ function recipients(env: Env): string[] {
 }
 
 async function sendTelegram(env: Env, report: string, provenance: { traceId: string; alertId?: string; releaseId?: string; snapshotId?: string }): Promise<{ sent: number; total: number; failed: number; receipts: Array<Record<string, unknown>> }> {
-  if (!env.TG_TOKEN) throw new Error("Telegram is not configured");
+  const token = telegramToken(env);
+  if (!token) throw new Error("Telegram is not configured");
   const target = recipients(env);
   if (!target.length) throw new Error("Telegram recipients are not configured");
   const text = escapeHtml(report);
@@ -138,12 +146,12 @@ async function sendTelegram(env: Env, report: string, provenance: { traceId: str
     let status = "failed";
     try {
       for (const chunk of chunks) {
-        let response = await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chat_id: chatId, text: chunk, parse_mode: "HTML", disable_web_page_preview: true }) });
+        let response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chat_id: chatId, text: chunk, parse_mode: "HTML", disable_web_page_preview: true }) });
         if (response.status === 429) {
           const payload = await response.clone().json().catch(() => ({})) as Record<string, unknown>;
           const retryAfter = Math.min(10, Math.max(1, Number((payload.parameters as Record<string, unknown> | undefined)?.retry_after || 1)));
           await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
-          response = await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chat_id: chatId, text: chunk, parse_mode: "HTML", disable_web_page_preview: true }) });
+          response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chat_id: chatId, text: chunk, parse_mode: "HTML", disable_web_page_preview: true }) });
         }
         if (!response.ok) {
           errorClass = response.status >= 500 ? "temporary_api" : response.status === 403 ? "blocked" : "telegram_api";
