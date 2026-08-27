@@ -4,9 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="稜量速報系統 Telegram Mini App" />
+    <meta name="prstk-api-base" content="__PUBLIC_API_BASE_URL__" />
     <title>稜量速報系統</title>
     <link rel="stylesheet" href="styles.css?v=__ASSET_VERSION__" />
     <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
+    <script src="report-client.js?v=__ASSET_VERSION__" defer></script>
   </head>
   <body>
     <main class="app-shell">
@@ -31,6 +33,18 @@
       <nav class="quick-nav" aria-label="Mini App 區段">
         <a href="#risk">風險</a><a href="#market">市場</a><a href="#research">研究</a><a href="#news">新聞</a>
       </nav>
+
+      <section id="report-actions" class="report-actions" aria-labelledby="report-actions-title">
+        <div class="section-heading"><div><p class="section-kicker">REPORT</p><h2 id="report-actions-title">自訂報告</h2></div><span id="report-job-state" class="source-chip">待命</span></div>
+        <div class="report-form">
+          <label>市場<select id="report-market"><option value="tw">台股</option><option value="us">美股</option></select></label>
+          <label>開場白（選填）<input id="report-intro" maxlength="2000" /></label>
+          <label>結語（選填）<input id="report-outro" maxlength="2000" /></label>
+          <div class="report-actions-row"><button type="button" id="generate-report">產生完整報告</button><button type="button" id="send-report" disabled>發送 Telegram</button></div>
+          <p id="report-error" class="section-note" role="status"></p>
+          <pre id="report-preview" class="report-preview" hidden></pre>
+        </div>
+      </section>
 
       <section id="risk" class="section-block" aria-labelledby="risk-title">
         <div class="section-heading"><div><p class="section-kicker">RISK</p><h2 id="risk-title">風控資訊</h2></div><span id="event-tag" class="tag neutral">觀察中</span></div>

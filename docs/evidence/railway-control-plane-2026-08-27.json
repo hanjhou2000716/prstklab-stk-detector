@@ -1,0 +1,31 @@
+{
+  "observed_at": "2026-08-27",
+  "project": "modest-celebration",
+  "environment": "production",
+  "service": "loving-happiness",
+  "service_state": "offline",
+  "deployment_state": "no_active_deployment",
+  "account_state": "trial_expired",
+  "volume": {
+    "name": "loving-happiness-volume",
+    "mount_path": "/data",
+    "capacity": "500 MB",
+    "region": "US West (California, USA)",
+    "attached_to_service": true
+  },
+  "network": {
+    "public_endpoint": "https://loving-happiness-production-b1a9.up.railway.app",
+    "target_port": 8080
+  },
+  "acceptance": {
+    "volume_configuration_verified": true,
+    "deployment_reachable": false,
+    "restart_continuity_verified": false,
+    "high_risk_delivery_allowed": false
+  },
+  "privacy": {
+    "secrets_included": false,
+    "recipient_ids_included": false,
+    "mailbox_content_included": false
+  }
+}

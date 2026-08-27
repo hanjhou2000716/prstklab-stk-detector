@@ -1,0 +1,70 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-08-27T00:00:00Z",
+  "baseline": "123395ee",
+  "entries": [
+    {
+      "requirement": "REQ-MIGRATION-001",
+      "task": "zero-cost-report-production",
+      "implementation": ["jobs/process_report_job.py", "supabase/migrations/202608270001_report_jobs.sql", ".github/workflows/report-worker.yml"],
+      "verification": ["tests/test_report_worker.py", "tests/test_report_repository.py"],
+      "evidence": "offline CI run 33068381617",
+      "regression": "preserves the existing scheduled delivery path",
+      "status": "PASS"
+    },
+    {
+      "requirement": "REQ-MIGRATION-002",
+      "task": "alert-contract-lifecycle",
+      "implementation": ["src/alert_orchestrator.py", "src/alert_contract.py", "src/alert_lifecycle.py", "src/alert_budget.py"],
+      "verification": ["tests/test_alert_orchestrator.py", "tests/test_alert_budget.py"],
+      "evidence": "PR #794 CI passed",
+      "regression": "stale and unverified observations remain blocked",
+      "status": "PASS"
+    },
+    {
+      "requirement": "REQ-MIGRATION-003",
+      "task": "evidence-card-rendering",
+      "implementation": ["src/alert_card_renderer.py", "tests/test_alert_card_renderer.py"],
+      "verification": ["tests/test_alert_card_renderer.py", "tests/test_zero_cost_migration_contract.py"],
+      "evidence": "PR #795 test-and-dry-run passed",
+      "regression": "renderer failure remains fail-closed",
+      "status": "PASS"
+    },
+    {
+      "requirement": "REQ-MIGRATION-004",
+      "task": "telegram-delivery-receipts",
+      "implementation": ["worker/src/index.ts", "supabase/migrations/202608270002_delivery_receipts.sql", "docs/telegram-delivery-receipts.md"],
+      "verification": ["tests/test_zero_cost_migration_contract.py"],
+      "evidence": "PR #796 CI test-and-dry-run passed",
+      "regression": "production canary and provider-side receipt query are not yet verified",
+      "status": "NEEDS_REVERIFY"
+    },
+    {
+      "requirement": "REQ-MIGRATION-005",
+      "task": "miniapp-release-provenance",
+      "implementation": ["site/report-client.js", "site/index.html", "docs/zero-cost-production-migration.md"],
+      "verification": ["tests/test_zero_cost_migration_contract.py", "node --check site/report-client.js"],
+      "evidence": "PR #797 CI test-and-dry-run passed; public Pages/deep-link canary remains external",
+      "regression": "public Pages deployment and deep-link canary remain external acceptance items",
+      "status": "NEEDS_REVERIFY"
+    },
+    {
+      "requirement": "REQ-MIGRATION-006",
+      "task": "external-provider-cutover",
+      "implementation": ["worker/src/index.ts", "supabase/migrations/202608270001_report_jobs.sql", "docs/external-acceptance-gates.md"],
+      "verification": ["tests/test_zero_cost_migration_contract.py"],
+      "evidence": "no provider-side evidence captured",
+      "regression": "Railway remains enabled until Supabase, Worker, Pages and Telegram canary pass",
+      "status": "BLOCKED"
+    },
+    {
+      "requirement": "REQ-MIGRATION-007",
+      "task": "quality-security-e2e-acceptance",
+      "implementation": ["docs/zero-cost-production-acceptance.md", "tests/test_zero_cost_acceptance_runbook.py"],
+      "verification": ["PR #799 test-and-dry-run", "1490 offline pytest tests", "ruff", "mypy", "compileall"],
+      "evidence": "PR #799 CI run 33072586803 passed; provider-side acceptance is not captured",
+      "regression": "offline dry-run remains non-network and production recipients are not contacted",
+      "status": "NEEDS_REVERIFY"
+    }
+  ]
+}

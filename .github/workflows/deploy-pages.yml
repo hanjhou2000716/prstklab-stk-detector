@@ -63,6 +63,8 @@ jobs:
           echo "pages_publish=skipped"
       - name: Build cache-busted static assets
         if: steps.release.outputs.publish == 'true'
+        env:
+          PUBLIC_API_BASE_URL: ${{ vars.PUBLIC_API_BASE_URL }}
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
       - name: Validate static asset contract

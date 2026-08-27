@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from src.alert_budget import decide_alert_budget
+from src.alert_budget import decide_alert_budget, notification_identity
 from src.alert_caption import make_caption
 from src.alert_contract import AlertEnvelope
 from src.deep_link_router import parse_deep_link, resolve_deep_link
@@ -25,6 +25,20 @@ def test_budget_covers_invalid_timestamp_and_event_update_cap():
     assert result["reason"] == "event_update_budget_exhausted"
 
 
+def test_budget_fail_closed_reasons_and_unknown_identity_are_explicit():
+    assert notification_identity({}) == "unknown-notification"
+    assert decide_alert_budget(
+        {"event_key": "evt", "alert_eligible": False, "blocking_reason": "missing evidence"},
+        [],
+        now=NOW,
+    )["reason"] == "missing evidence"
+    assert decide_alert_budget(
+        {"event_key": "evt", "source_quality_ok": False},
+        [],
+        now=NOW,
+    )["reason"] == "source_quality_gate"
+
+
 def test_caption_fallback_keeps_semantic_status_under_limit():
     caption = make_caption(
         subject="這是一個非常長的事件標題，需要安全壓縮而不能切斷關鍵字",
@@ -35,11 +49,27 @@ def test_caption_fallback_keeps_semantic_status_under_limit():
     assert "等待官方核對" in caption
 
 
+def test_caption_uses_bounded_fallback_when_even_status_is_long():
+    caption = make_caption(subject="事件" * 100, change="變動" * 100, state="狀態" * 100)
+    assert len(caption) <= 40
+
+
 def test_deep_link_normalizes_unknown_view_and_missing_alert():
     link = parse_deep_link("https://example.test/?release=r1&alert=a1&view=not-a-view")
     assert link.view == "event"
     result = resolve_deep_link(link, manifest={"release_id": "r1"}, alerts=[])
     assert result["status"] == "missing"
+
+
+def test_deep_link_rejects_alert_snapshot_mismatch():
+    link = parse_deep_link("https://example.test/?release=r1&alert=a1&snapshot=s2")
+    result = resolve_deep_link(
+        link,
+        manifest={"release_id": "r1", "market_snapshot_id": "s2"},
+        alerts=[{"alert_id": "a1", "snapshot_id": "s1"}],
+    )
+    assert result["status"] == "archived"
+    assert result["message"] == "alert snapshot mismatch"
 
 
 def test_alert_contract_rejects_invalid_enum_and_missing_timezone():

@@ -7,7 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 
-ASSETS = ("app.js", "styles.css", "assets/hero-prism-cover.png")
+ASSETS = ("app.js", "styles.css", "report-client.js", "assets/hero-prism-cover.png")
 
 
 def _sha256(path: Path) -> str:
