@@ -23,6 +23,7 @@ from src.external_observation_input import (
     load_external_observations,
     merge_external_source_health,
 )
+from src.financialjuice_notification import deliver_financialjuice_event
 from src.financialjuice_priority import project_financialjuice_priority
 from src.financialjuice_release_contract import validate_financialjuice_release
 from src.market_data import build_market_snapshot
@@ -168,6 +169,39 @@ def _creator_input_failures() -> dict[str, str]:
         elif any(item.get(field) not in (None, "", [], {}) for field in private_fields):
             failures[provider] = "creator_records_private_fields"
     return failures
+
+
+def _financialjuice_delivery_history(history: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Flatten durable FJ receipts for recipient-level replay protection.
+
+    The general event ledger stores one delivery row per event.  FinancialJuice
+    additionally needs to know which individual recipients already succeeded,
+    so the FJ adapter persists a redacted ``delivery_receipts`` list inside
+    that row and this boundary projects it back to the adapter's contract.
+    Legacy rows without the nested list remain valid and simply have no FJ
+    recipient history to replay.
+    """
+    flattened: list[dict[str, Any]] = []
+    for row in history:
+        if not isinstance(row, dict):
+            continue
+        receipts = row.get("delivery_receipts")
+        if isinstance(receipts, list):
+            for receipt in receipts:
+                if not isinstance(receipt, dict):
+                    continue
+                flattened.append({
+                    "notification_key": receipt.get("notification_key") or row.get("notification_key"),
+                    "recipient_hash": receipt.get("recipient_hash") or receipt.get("chat_id_hash"),
+                    "delivery_status": receipt.get("delivery_status") or receipt.get("status"),
+                })
+        elif row.get("notification_key") and row.get("recipient_hash"):
+            flattened.append({
+                "notification_key": row.get("notification_key"),
+                "recipient_hash": row.get("recipient_hash"),
+                "delivery_status": row.get("delivery_status") or row.get("status"),
+            })
+    return flattened
 
 
 def prepare(slot: str, snapshot_path: Path) -> dict:
@@ -323,6 +357,8 @@ def send(
         raise RuntimeError("Telegram configuration is incomplete")
     event = _pick_event(snapshot, slot)
     budget = {"allowed": True, "reason": "no_event", "event_key": ""}
+    ledger: EventLedger | None = None
+    history: list[dict[str, Any]] = []
     if event:
         ledger = EventLedger()
         history = ledger.delivery_history()
@@ -347,6 +383,8 @@ def send(
         or (event or {}).get("event_key")
         or trace_id
     )
+    fj_delivery: dict[str, Any] | None = None
+    deliveries: tuple[Any, ...] = ()
     try:
         with tempfile.TemporaryDirectory(prefix="prstk-alert-card-") as temporary:
             card_alert = {
@@ -364,17 +402,34 @@ def send(
                 card_alert,
                 Path(temporary) / "alert.png",
             )
-            deliveries = send_photo_briefs(
-                token=settings.telegram_bot_token or "",
-                chat_ids=settings.telegram_chat_ids,
-                caption=caption,
-                photo_path=photo_path,
-                mini_app_url=settings.dashboard_url,
-                alert_id=alert_id,
-                release_id=gate.release_id or "",
-                snapshot_id=snapshot_id,
-                observation_id=observation_id,
-            )
+            if isinstance(event, dict) and str(event.get("source_key") or "").strip().casefold() == "financialjuice":
+                # FinancialJuice has an additional recipient-level contract:
+                # vendor priority may select the event, but release readiness,
+                # idempotency and per-recipient receipts are still mandatory.
+                fj_delivery = deliver_financialjuice_event(
+                    event,
+                    release_id=gate.release_id or "",
+                    snapshot_id=snapshot_id,
+                    mini_app_url=settings.dashboard_url,
+                    release_ready=True,
+                    token=settings.telegram_bot_token or "",
+                    chat_ids=settings.telegram_chat_ids,
+                    photo_path=photo_path,
+                    delivery_history=_financialjuice_delivery_history(history),
+                    photo_sender=send_photo_briefs,
+                )
+            else:
+                deliveries = send_photo_briefs(
+                    token=settings.telegram_bot_token or "",
+                    chat_ids=settings.telegram_chat_ids,
+                    caption=caption,
+                    photo_path=photo_path,
+                    mini_app_url=settings.dashboard_url,
+                    alert_id=alert_id,
+                    release_id=gate.release_id or "",
+                    snapshot_id=snapshot_id,
+                    observation_id=observation_id,
+                )
     except (RendererError, OSError, ValueError) as exc:
         _write_output({
             "sent": "false",
@@ -385,10 +440,43 @@ def send(
             "snapshot_id": snapshot_id,
         })
         return
-    delivered = sum(delivery.status == "delivered" for delivery in deliveries)
-    failed = len(deliveries) - delivered
-    delivery_status = "delivered" if not failed else "partial" if delivered else "failed"
-    failed_recipient_hashes = [delivery.chat_id_hash for delivery in deliveries if delivery.status != "delivered"]
+    if fj_delivery is not None:
+        fj_receipts = [row for row in fj_delivery.get("receipts", []) if isinstance(row, dict)]
+        delivered = sum(str(row.get("delivery_status") or "") == "delivered" for row in fj_receipts)
+        failed = len(fj_receipts) - delivered
+        fj_status = str(fj_delivery.get("status") or "failed")
+        if fj_status == "already_delivered":
+            _write_output({
+                "sent": "false",
+                "delivery_status": "suppressed",
+                "reason": "financialjuice_already_delivered",
+                "notification_key": fj_delivery.get("notification_key", ""),
+                "release_id": gate.release_id,
+                "snapshot_id": snapshot_id,
+            })
+            return
+        if fj_status == "blocked" and not fj_receipts:
+            _write_output({
+                "sent": "false",
+                "delivery_status": "blocked",
+                "reason": "financialjuice_delivery_blocked",
+                "notification_key": fj_delivery.get("notification_key", ""),
+                "delivery_reasons": ";".join(str(item) for item in (fj_delivery.get("reasons") or [])),
+                "release_id": gate.release_id,
+                "snapshot_id": snapshot_id,
+            })
+            return
+        delivery_status = "delivered" if fj_status == "delivered" else "partial" if delivered else "failed"
+        failed_recipient_hashes = [
+            str(row.get("recipient_hash") or row.get("chat_id_hash") or "")
+            for row in fj_receipts
+            if str(row.get("delivery_status") or "") != "delivered"
+        ]
+    else:
+        delivered = sum(delivery.status == "delivered" for delivery in deliveries)
+        failed = len(deliveries) - delivered
+        delivery_status = "delivered" if not failed else "partial" if delivered else "failed"
+        failed_recipient_hashes = [delivery.chat_id_hash for delivery in deliveries if delivery.status != "delivered"]
     output: dict[str, Any] = {
         "sent": "true",
         "reason": "sent_partial" if failed else "sent",
@@ -415,19 +503,26 @@ def send(
             "release_id": gate.release_id,
             "snapshot_id": snapshot_id,
             "delivery_status": delivery_status,
+            "notification_key": fj_delivery.get("notification_key") if fj_delivery else None,
+            "delivery_reasons": fj_delivery.get("reasons", []) if fj_delivery else [],
         }
     _write_output(output)
     if event:
         write_event_lock_key(event)
-        ledger = EventLedger()
+        if ledger is None:
+            ledger = EventLedger()
+        ledger_event = {
+            **event,
+            "trace_id": trace_id,
+            "release_id": gate.release_id,
+            "snapshot_id": snapshot_id,
+            "delivery_status": delivery_status,
+        }
+        if fj_delivery is not None:
+            ledger_event["notification_key"] = fj_delivery.get("notification_key")
+            ledger_event["delivery_receipts"] = fj_delivery.get("receipts", [])
         ledger.record_delivery(
-            {
-                **event,
-                "trace_id": trace_id,
-                "release_id": gate.release_id,
-                "snapshot_id": snapshot_id,
-                "delivery_status": delivery_status,
-            },
+            ledger_event,
             trace_id=trace_id,
             reason="scheduled_delivery",
         )

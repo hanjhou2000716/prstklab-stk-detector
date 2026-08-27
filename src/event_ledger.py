@@ -389,7 +389,8 @@ class EventLedger:
         for field in (
             "release_id", "snapshot_id", "delivery_status", "observation_id_hash",
             "item_id", "event_cluster_key", "vendor_importance", "prstk_risk",
-            "notification_reason", "parser_version", "received_at",
+            "notification_reason", "parser_version", "received_at", "notification_key",
+            "delivery_receipts",
         ):
             value = event.get(field)
             if value not in (None, "", [], {}):

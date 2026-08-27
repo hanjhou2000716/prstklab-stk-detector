@@ -3,6 +3,7 @@ import json
 from src import scheduled_delivery
 from src.release_gate import ReleaseGateResult
 from src.scheduled_delivery import _creator_records_from_observations, _load_creator_records
+from src.telegram_client import PhotoDeliveryReceipt
 
 
 def test_creator_observations_are_projected_into_release_records() -> None:
@@ -25,6 +26,24 @@ def test_scheduled_brief_prioritises_eligible_financialjuice_event() -> None:
         "events": {"items": [{"kind": "market_signal", "title": "TAIEX"}]},
     }
     assert scheduled_delivery._pick_event(snapshot, "morning") == event
+
+
+def test_financialjuice_history_flattens_redacted_recipient_receipts() -> None:
+    history = scheduled_delivery._financialjuice_delivery_history([
+        {
+            "notification_key": "financialjuice:event-1",
+            "delivery_receipts": [
+                {"recipient_hash": "abc", "delivery_status": "delivered"},
+                {"recipient_hash": "def", "delivery_status": "failed"},
+            ],
+        },
+        {"notification_key": "financialjuice:event-2", "recipient_hash": "ghi", "status": "delivered"},
+    ])
+    assert history == [
+        {"notification_key": "financialjuice:event-1", "recipient_hash": "abc", "delivery_status": "delivered"},
+        {"notification_key": "financialjuice:event-1", "recipient_hash": "def", "delivery_status": "failed"},
+        {"notification_key": "financialjuice:event-2", "recipient_hash": "ghi", "delivery_status": "delivered"},
+    ]
 
 
 def _settings():
@@ -91,7 +110,11 @@ def test_scheduled_delivery_uses_photo_delivery_after_release_gate(tmp_path, mon
     monkeypatch.setattr(
         scheduled_delivery,
         "send_photo_briefs",
-        lambda **_kwargs: (type("Delivery", (), {"status": "delivered", "chat_id_hash": "hash"})(),),
+        lambda **kwargs: (PhotoDeliveryReceipt(
+            kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"],
+            "hash", "delivered", message_id=1, telegram_file_id="file-1",
+            telegram_file_id_hash="file-hash", observation_id=kwargs.get("observation_id", ""),
+        ),),
     )
     scheduled_delivery.send(snapshot_path, "morning", manifest_path)
     text = output.read_text(encoding="utf-8")
@@ -117,6 +140,8 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
         "item_id": "item-1",
         "title": "Oil supply risk",
         "vendor_importance": 8,
+        "notification_status": "eligible",
+        "vendor_priority_notification": True,
         "prstk_risk": {"prstk_risk_level": "R2"},
         "notification_reason": "vendor_priority_importance_ge_8",
         "parser_version": "financialjuice-compound-v1",
@@ -135,7 +160,11 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
     monkeypatch.setattr(
         scheduled_delivery,
         "send_photo_briefs",
-        lambda **_kwargs: (type("Delivery", (), {"status": "delivered", "chat_id_hash": "hash"})(),),
+        lambda **kwargs: (PhotoDeliveryReceipt(
+            kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"],
+            "hash", "delivered", message_id=2, telegram_file_id="file-2",
+            telegram_file_id_hash="file-hash", observation_id=kwargs.get("observation_id", ""),
+        ),),
     )
     monkeypatch.setattr(scheduled_delivery, "write_event_lock_key", lambda *_args: None)
     recorded: dict = {}
@@ -162,6 +191,8 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
     assert recorded["snapshot_id"] == "market-12345678"
     assert recorded["delivery_status"] == "delivered"
     assert recorded["observation_id_hash"] == "a" * 64
+    assert recorded["notification_key"].startswith("financialjuice:")
+    assert recorded["delivery_receipts"][0]["delivery_status"] == "delivered"
 
 
 def test_scheduled_delivery_blocks_photo_when_renderer_fails(tmp_path, monkeypatch):
