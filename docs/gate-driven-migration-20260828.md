@@ -10,15 +10,15 @@ the migration protocol vocabulary: `NOT_STARTED`, `IN_PROGRESS`,
 | Field | Evidence |
 |---|---|
 | Branch | `feat/zero-cost-worker-token-contract` |
-| HEAD | `6a26f59b` (`docs: record Worker configuration inventory`) |
+| HEAD | `d2b7a328` (`docs: reconcile migration checkpoint evidence`) |
 | Base | `origin/main` at `34fe90e8` |
 | PR | [#801](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/801), open, clean, non-draft |
-| Recovery checkpoint | `789719eb`, follow-up evidence `ce50eee3`, Worker deployment evidence `30e728e5`, and Cloudflare login inventory `6a26f59b` |
+| Recovery checkpoint | `789719eb`, follow-up evidence `ce50eee3`, Worker deployment evidence `30e728e5`, Cloudflare login inventory `6a26f59b`, and latest checkpoint reconciliation `d2b7a328` |
 | Working tree | tracked changes clean; historical untracked test artifacts preserved and not staged |
 | Canonical overlap audit | `python scripts/verify_canonical_overlap.py` → `status=pass`, `failed_count=0` |
 | Local regression | `1493 passed`; targeted acceptance suite `72 passed` with isolated workspace temp |
 | Static checks | Ruff, Mypy, compileall, frontend syntax and Worker typecheck passed |
-| PR checks | latest test-and-dry-run `33109779424`, CodeQL, dependency review and SBOM all successful |
+| PR checks | test-and-dry-run `33110187038`, CodeQL, dependency review and SBOM all successful |
 
 ## Current task reconciliation
 
@@ -27,7 +27,7 @@ the migration protocol vocabulary: `NOT_STARTED`, `IN_PROGRESS`,
 | Canonical Creator/FJ/news ownership | `LOCKED` | overlap audit and regression evidence show one registry/classifier/parser path |
 | Release and Telegram fail-closed contract | `LOCKED` (local) | release-gate and delivery tests pass; production receipt remains external |
 | Worker source and health classification | `PASS` (local/runtime) | `worker/src/index.ts` typechecks; dashboard deployment `ba4dd5f6` reports `version=zero-cost-worker-1` and explicit configuration state |
-| Cloudflare Worker public reachability | `PASS` (runtime) | `/api/health` returns HTTP 200; this proves reachability only |
+| Cloudflare Worker public reachability | `PASS` (runtime) | `/api/health` returns HTTP 200; this proves reachability only (the bare `/health` path is intentionally 404) |
 | Supabase-backed Worker canary | `BLOCKED` | deployed response is `status=configuration_missing`; provider secrets are not configured |
 | Railway rollback path | `PASS` (preserved) / `NEEDS_REVERIFY` (canary) | Railway is retained as rollback-only until Worker canary succeeds |
 | Full production acceptance | `BLOCKED` | Pages is ready, but Worker provider secrets and controlled Telegram receipt are still required |

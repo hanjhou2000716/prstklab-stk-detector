@@ -1,20 +1,53 @@
 {
-  "captured_at": "2026-08-28T17:30:00+08:00",
-  "worker_url": "https://prstk-api.hanjhou2000716.workers.dev",
-  "health_http_status": 200,
-  "health": {
-    "ok": false,
-    "api": "ok",
-    "database": "unavailable",
-    "service": "PRStK 稜量盤後速覽",
-    "version": "worker"
+  "captured_at": "2026-08-28T03:58:00+08:00",
+  "worker": {
+    "name": "prstk-api",
+    "public_url": "https://prstk-api.hanjhou2000716.workers.dev",
+    "active_deployment": "ba4dd5f6"
   },
-  "configuration": {
-    "public_variables_present": true,
-    "required_provider_secrets_present": false
+  "probes": [
+    {
+      "path": "/api/health",
+      "http_status": 200,
+      "response": {
+        "ok": false,
+        "status": "configuration_missing",
+        "api": "ok",
+        "database": "configuration_missing",
+        "configuration": {
+          "supabase": false,
+          "report_dispatch": false,
+          "telegram": false
+        },
+        "version": "zero-cost-worker-1"
+      }
+    },
+    {
+      "path": "/health",
+      "http_status": 404,
+      "interpretation": "non-canonical path; not a deployment failure"
+    }
+  ],
+  "interpretation": {
+    "worker_reachable": true,
+    "deployment_active": true,
+    "provider_canary": "blocked",
+    "high_risk_notifications_allowed": false,
+    "telegram_sent": false
   },
-  "canary_state": "needs_provider_secrets",
-  "interpretation": "Worker routing is reachable, but the database-backed canary is fail-closed until the provider secrets are configured.",
-  "telegram_sent": false,
-  "railway": "rollback_only"
+  "required_external_configuration": [
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "GITHUB_DISPATCH_TOKEN",
+    "TELEGRAM_BOT_TOKEN"
+  ],
+  "safety": {
+    "secret_values_read": false,
+    "secret_values_written": false,
+    "production_message_sent": false
+  },
+  "notes": [
+    "Only /api/health is the canonical health endpoint.",
+    "A 200 response with configuration_missing proves reachability but not readiness.",
+    "No provider secret can be recovered from Cloudflare; values must be entered by the operator in the Worker secret settings."
+  ]
 }
