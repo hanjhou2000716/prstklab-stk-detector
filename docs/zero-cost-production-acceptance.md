@@ -14,6 +14,10 @@ and Telegram bot secret have not been entered into the Worker. See the redacted
 and the earlier [preflight evidence](evidence/zero-cost-canary-preflight-2026-08-27.json).
 Until those provider values are configured, Railway remains rollback-only.
 
+The canonical-overlap audit is independently recorded in
+[canonical overlap evidence](evidence/canonical-overlap-audit-2026-08-28.json)
+and currently reports zero drifted or duplicate canonical paths.
+
 The 2026-08-28 health recheck returned HTTP 200 with `api: ok` and
 `database: unavailable`; this is recorded in the redacted
 [health recheck evidence](evidence/zero-cost-worker-health-recheck-2026-08-28.json).
