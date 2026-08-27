@@ -5,6 +5,13 @@ path. It is intentionally separate from offline CI: a green unit-test job does
 not prove that a provider-side deployment, public Pages release, or Telegram
 delivery occurred.
 
+The 2026-08-27 preflight found that the repository currently has Telegram
+secrets but does not yet have the Supabase secrets, Worker URL, or Pages API
+variable required for this canary. See the redacted
+[preflight evidence](evidence/zero-cost-canary-preflight-2026-08-27.json).
+Until those provider values are configured, the canary remains
+`needs_provider_configuration` and Railway remains rollback-only.
+
 ## Required order
 
 1. Apply `supabase/migrations/202608270001_report_jobs.sql` and
