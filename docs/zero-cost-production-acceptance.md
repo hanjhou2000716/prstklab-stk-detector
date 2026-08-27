@@ -33,6 +33,11 @@ It confirms that `/api/health` is reachable and the current
 `zero-cost-worker-1` health-classification source is deployed.  The response is
 now explicitly `status=configuration_missing`; this proves source reachability
 but is not a successful canary until the provider secrets are configured.
+The follow-up route check is recorded in
+[Worker health recheck evidence](evidence/zero-cost-worker-health-recheck-2026-08-28.json).
+It verifies that the Dashboard-provided `prstk-api` workers.dev hostname and
+`/api/health` route are canonical; a bare `/health` request is intentionally a
+404 and must not be used as a readiness probe.
 The earlier [public health evidence](evidence/zero-cost-worker-public-health-2026-08-28.json)
 remains the pre-redeployment observation.
 
