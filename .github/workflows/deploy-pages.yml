@@ -64,7 +64,10 @@ jobs:
       - name: Build cache-busted static assets
         if: steps.release.outputs.publish == 'true'
         env:
-          PUBLIC_API_BASE_URL: ${{ vars.PUBLIC_API_BASE_URL }}
+          # Keep the Pages→Worker boundary usable when the optional repository
+          # variable has not been added yet.  An explicitly configured value
+          # still wins; the default is the already deployed canonical Worker.
+          PUBLIC_API_BASE_URL: ${{ vars.PUBLIC_API_BASE_URL || 'https://prstk-api.hanjhou2000716.workers.dev' }}
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
       - name: Validate static asset contract

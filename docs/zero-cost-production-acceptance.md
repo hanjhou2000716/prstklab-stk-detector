@@ -21,7 +21,10 @@ Until those provider values are configured, the canary remains
    explicit `ALLOWED_ORIGINS` value. Secrets are configured in the provider
    UI, never committed or printed.
 3. Set `PUBLIC_API_BASE_URL` for the Pages deployment and publish a ready
-   release. A failed manifest must leave the last known-good release intact.
+   release. The Pages workflow defaults to the existing canonical Worker
+   (`https://prstk-api.hanjhou2000716.workers.dev`) when the repository
+   variable is absent; an explicit variable may override it. A failed
+   manifest must leave the last known-good release intact.
 4. Use a Telegram WebView session to create one report, then wait for the
    bounded job status to become `ready` or `failed`.
 5. For the designated test chat only, send one release-bound `sendPhoto`

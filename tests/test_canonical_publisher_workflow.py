@@ -10,6 +10,7 @@ def test_pages_is_the_single_release_publisher():
     assert "src.release_gate" in workflow
     assert "env -u GITHUB_OUTPUT python -m src.release_gate" in workflow
     assert "--require-production-research" in workflow
+    assert "PUBLIC_API_BASE_URL: ${{ vars.PUBLIC_API_BASE_URL || 'https://prstk-api.hanjhou2000716.workers.dev' }}" in workflow
     assert "upload-pages-artifact" in workflow
     assert "concurrency:" in workflow
 
