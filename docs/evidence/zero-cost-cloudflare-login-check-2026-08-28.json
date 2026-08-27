@@ -1,0 +1,28 @@
+{
+  "captured_at": "2026-08-28T03:35:25+08:00",
+  "worker": {
+    "name": "prstk-api",
+    "dashboard_access": true,
+    "settings_page_access": true,
+    "deployment_state": "active",
+    "public_url": "https://prstk-api.hanjhou2000716.workers.dev"
+  },
+  "health_check": {
+    "http_status": 200,
+    "status": "configuration_missing",
+    "api": "ok",
+    "database": "configuration_missing",
+    "configuration": {
+      "supabase": false,
+      "report_dispatch": false,
+      "telegram": false
+    }
+  },
+  "safety": {
+    "secrets_read": false,
+    "secrets_written": false,
+    "telegram_sent": false,
+    "canary_authorized": false
+  },
+  "conclusion": "Cloudflare authentication and Worker reachability are verified; provider configuration and production canary remain pending."
+}
