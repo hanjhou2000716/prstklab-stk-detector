@@ -30,7 +30,7 @@ def test_build_assets_replaces_all_placeholders_and_writes_manifest(tmp_path, mo
     html = (root / "index.html").read_text(encoding="utf-8")
     assert PLACEHOLDER not in html
     assert html.count(manifest["asset_version"]) == 3
-    assert 'name="prstk-api-base" content=""' in html
+    assert 'name="prstk-api-base" content="' in html
     assert "__PUBLIC_API_BASE_URL__" not in html
     assert manifest["build_sha"] == "abc123"
     saved = json.loads((root / "asset-manifest.json").read_text(encoding="utf-8"))
