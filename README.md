@@ -174,6 +174,18 @@ TAIEX Macro FGI 是台股市場風險偏好的公開日資料模型，不是個�
 
 ## 可靠性、安全與部署
 
+### Zero-cost async report path（遷移中）
+
+報告產生已提供不依賴 Railway 的契約骨架：Cloudflare Worker 負責 Telegram
+WebApp 驗證、Supabase job CRUD、GitHub Actions dispatch 與 Telegram proxy；
+重量級行情／研究運算仍由 GitHub Actions 執行，Cloudflare Pages 只負責 Mini
+App 與輪詢。設定與回滾步驟請見
+[zero-cost production migration](docs/zero-cost-production-migration.md)；
+[migration inventory](docs/migration-inventory.md) 會記錄尚未完成的外部驗收。
+
+在 Supabase migration、Worker、Pages API base 與單一 Telegram canary 尚未
+完成驗收前，Railway 保持為 rollback 路徑，不會宣稱已完成切換。
+
 - GitHub Actions 的 `scheduled-brief` 以時段鍵和 Cache 防止主排程與 cron-job.org 重複發 Telegram。
 - `official-event-monitor` 與定時快報使用 Pages 併發鎖，市場快照回存失敗會嘗試 rebase 後重送 3 次。
 - Railway 將已見事件、已發送分類冷卻與探索快取保存在 SQLite；GitHub 仍會驗證外部快訊 HMAC 簽章與允許來源。

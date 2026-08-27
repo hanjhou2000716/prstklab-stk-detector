@@ -18,8 +18,9 @@ from typing import Any
 
 from src.atomic_file import replace_with_retry
 
-ASSETS = ("app.js", "styles.css", "assets/hero-prism-cover.png")
+ASSETS = ("app.js", "styles.css", "report-client.js", "assets/hero-prism-cover.png")
 PLACEHOLDER = "__ASSET_VERSION__"
+API_PLACEHOLDER = "__PUBLIC_API_BASE_URL__"
 
 
 def _sha256(path: Path) -> str:
@@ -59,7 +60,8 @@ def build_assets(root: Path, *, build_sha: str | None = None) -> dict[str, Any]:
     html = index.read_text(encoding="utf-8")
     if PLACEHOLDER not in html:
         raise ValueError("site/index.html is missing __ASSET_VERSION__ placeholders")
-    _atomic_write(index, html.replace(PLACEHOLDER, version))
+    api_base = os.getenv("PUBLIC_API_BASE_URL", "").strip().rstrip("/")
+    _atomic_write(index, html.replace(PLACEHOLDER, version).replace(API_PLACEHOLDER, api_base))
 
     manifest: dict[str, Any] = {
         "asset_version": version,

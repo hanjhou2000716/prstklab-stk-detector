@@ -12,21 +12,26 @@ def _fixture(tmp_path: Path) -> Path:
     (root / "assets").mkdir(parents=True)
     (root / "index.html").write_text(
         '<link href="styles.css?v=__ASSET_VERSION__"><script src="app.js?v=__ASSET_VERSION__"></script>'
-        '<img src="assets/hero-prism-cover.png?v=__ASSET_VERSION__">',
+        '<img src="assets/hero-prism-cover.png?v=__ASSET_VERSION__">'
+        '<meta name="prstk-api-base" content="__PUBLIC_API_BASE_URL__">',
         encoding="utf-8",
     )
     (root / "app.js").write_bytes(b"app")
     (root / "styles.css").write_bytes(b"css")
+    (root / "report-client.js").write_bytes(b"client")
     (root / "assets" / "hero-prism-cover.png").write_bytes(b"png")
     return root
 
 
-def test_build_assets_replaces_all_placeholders_and_writes_manifest(tmp_path):
+def test_build_assets_replaces_all_placeholders_and_writes_manifest(tmp_path, monkeypatch):
     root = _fixture(tmp_path)
+    monkeypatch.setenv("PUBLIC_API_BASE_URL", "https://worker.example.test/")
     manifest = build_assets(root, build_sha="abc123")
     html = (root / "index.html").read_text(encoding="utf-8")
     assert PLACEHOLDER not in html
     assert html.count(manifest["asset_version"]) == 3
+    assert "https://worker.example.test" in html
+    assert "__PUBLIC_API_BASE_URL__" not in html
     assert manifest["build_sha"] == "abc123"
     saved = json.loads((root / "asset-manifest.json").read_text(encoding="utf-8"))
     assert saved == manifest
