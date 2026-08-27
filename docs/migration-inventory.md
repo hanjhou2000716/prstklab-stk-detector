@@ -8,6 +8,12 @@ This inventory is the migration checkpoint. It records the repository state and
 the replacement contracts now present on the feature branch; it is not a claim
 that the external cutover has already happened.
 
+The machine-readable requirement/evidence ledger is
+[`docs/traceability.json`](traceability.json), validated by
+[`src/traceability.py`](../src/traceability.py).  A `PASS` entry requires
+objective evidence; provider-side work without captured evidence remains
+`NEEDS_REVERIFY` or `BLOCKED`.
+
 | Current component | Current file(s) | Current responsibility | Target component | Migration status |
 | --- | --- | --- | --- | --- |
 | Public Mini App | `site/index.html`, `site/app.js`, `site/styles.css`, `site/report-client.js` | Static release dashboard, authenticated async report polling and Telegram WebView | Cloudflare Pages | partially migrated |
