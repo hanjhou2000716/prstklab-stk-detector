@@ -1,15 +1,15 @@
 {
-  "observed_at": "2026-08-27",
+  "observed_at": "2026-08-27T21:22:37Z",
   "scope": "supabase-cloudflare-zero-cost-canary",
   "repository": "hanjhou2000716/prstklab-stk-detector",
   "github_actions": {
     "required_secrets": {
-      "SUPABASE_URL": "missing",
+      "SUPABASE_URL": "configured_in_worker_only",
       "SUPABASE_SERVICE_ROLE_KEY": "missing",
       "GITHUB_DISPATCH_TOKEN": "missing"
     },
     "required_variables": {
-      "PUBLIC_API_BASE_URL": "missing",
+      "PUBLIC_API_BASE_URL": "optional_default_configured_in_pages_workflow",
       "DASHBOARD_URL": "present"
     },
     "telegram_bot_token": "present",
@@ -17,13 +17,20 @@
   },
   "provider_deployments": {
     "supabase_migrations": "not_checked",
-    "cloudflare_worker": "not_deployed",
-    "cloudflare_pages_api_base": "not_configured"
+    "cloudflare_worker": "deployed_and_reachable",
+    "cloudflare_pages_api_base": "canonical_default_configured"
   },
   "canary": {
     "supabase_job": "not_run",
     "actions_report_worker": "not_run",
-    "worker_health": "not_reachable",
+    "worker_health": {
+      "status_code": 200,
+      "status": "configuration_missing",
+      "api": "ok",
+      "database": "configuration_missing",
+      "report_dispatch": "configuration_missing",
+      "telegram": "configuration_missing"
+    },
     "pages_polling": "not_checked",
     "telegram_single_recipient": "not_sent",
     "delivery_receipt": "not_checked"
