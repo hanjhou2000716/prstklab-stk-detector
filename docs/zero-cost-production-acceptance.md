@@ -5,21 +5,24 @@ path. It is intentionally separate from offline CI: a green unit-test job does
 not prove that a provider-side deployment, public Pages release, or Telegram
 delivery occurred.
 
-The 2026-08-27 preflight found that the repository currently has Telegram
-secrets but does not yet have the Supabase secrets, Worker URL, or Pages API
-variable required for this canary. See the redacted
-[preflight evidence](evidence/zero-cost-canary-preflight-2026-08-27.json).
-Until those provider values are configured, the canary remains
-`needs_provider_configuration` and Railway remains rollback-only.
+The 2026-08-28 provisioning checkpoint created and deployed the canonical
+Worker at `https://prstk-api.hanjhou2000716.workers.dev`. The Worker health
+endpoint is reachable, but the canary remains
+`needs_provider_secrets`: the Supabase service-role key, GitHub dispatch token,
+and Telegram bot secret have not been entered into the Worker. See the redacted
+[provisioning evidence](evidence/zero-cost-worker-provisioning-2026-08-28.json)
+and the earlier [preflight evidence](evidence/zero-cost-canary-preflight-2026-08-27.json).
+Until those provider values are configured, Railway remains rollback-only.
 
 ## Required order
 
 1. Apply `supabase/migrations/202608270001_report_jobs.sql` and
    `202608270002_delivery_receipts.sql` in the intended Supabase project.
-2. Deploy `worker/` with `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
-   `GITHUB_DISPATCH_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TG_SUBSCRIBERS` and an
-   explicit `ALLOWED_ORIGINS` value. Secrets are configured in the provider
-   UI, never committed or printed.
+2. Confirm the deployed Worker URL and configure `SUPABASE_URL`,
+   `SUPABASE_SERVICE_ROLE_KEY`, `GITHUB_DISPATCH_TOKEN`,
+   `TELEGRAM_BOT_TOKEN`, `TG_SUBSCRIBERS` and an explicit `ALLOWED_ORIGINS`
+   value. Secrets are configured in the provider UI, never committed or
+   printed.
 3. Set `PUBLIC_API_BASE_URL` for the Pages deployment and publish a ready
    release. A failed manifest must leave the last known-good release intact.
 4. Use a Telegram WebView session to create one report, then wait for the
