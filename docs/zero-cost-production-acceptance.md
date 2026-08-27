@@ -17,6 +17,9 @@ Until those provider values are configured, Railway remains rollback-only.
 The canonical-overlap audit is independently recorded in
 [canonical overlap evidence](evidence/canonical-overlap-audit-2026-08-28.json)
 and currently reports zero drifted or duplicate canonical paths.
+The subsequent full offline regression is recorded in
+[Creator/FJ overlap regression evidence](evidence/creator-fj-overlap-regression-2026-08-28.json):
+1493 tests passed, with only the expected non-ready sample-artifact warnings.
 
 The 2026-08-28 health recheck returned HTTP 200 with `api: ok` and
 `database: unavailable`; this is recorded in the redacted

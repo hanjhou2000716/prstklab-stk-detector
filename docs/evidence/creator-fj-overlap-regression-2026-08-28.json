@@ -1,0 +1,31 @@
+{
+  "captured_at": "2026-08-28T01:52:53+08:00",
+  "scope": "canonical Creator / FinancialJuice overlap continuation",
+  "repository_head": "1a6f47d5e1db6cd608081a4308bed0f9dc508767",
+  "overlap_audit": {
+    "command": "python scripts/verify_canonical_overlap.py",
+    "status": "pass",
+    "failed_count": 0
+  },
+  "regression": {
+    "command": "python -m pytest -q",
+    "status": "pass",
+    "tests_passed": 1493
+  },
+  "static_checks": {
+    "ruff": "pass",
+    "mypy": "pass",
+    "compileall": "pass",
+    "site_app_syntax": "pass",
+    "runtime_audit": "pass_with_expected_sample_warnings"
+  },
+  "runtime_audit_warnings": [
+    "market source gaps: 6",
+    "research source 7 state: building",
+    "production acceptance: events snapshot is missing",
+    "production acceptance: manifest status is not ready",
+    "production acceptance: research snapshot is missing"
+  ],
+  "interpretation": "No duplicate canonical Creator, FinancialJuice, news, classifier, Gmail Watch, or release-gate implementation was introduced. Runtime warnings are limited to intentionally non-ready sample artifacts and do not represent a passing production acceptance.",
+  "secrets_or_external_delivery": "not_used"
+}
