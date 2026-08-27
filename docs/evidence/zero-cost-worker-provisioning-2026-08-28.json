@@ -6,6 +6,8 @@
   "worker_url": "https://prstk-api.hanjhou2000716.workers.dev",
   "deployment_version": "93c4a693",
   "deployment_status": "active",
+  "pages_api_base_variable": "configured",
+  "pages_redeploy": "not_triggered_until_worker_canary",
   "health": {
     "http_status": 200,
     "api": "ok",
@@ -16,5 +18,6 @@
   "interpretation": "Worker is deployed and reachable; database and notification canary remain blocked until provider secrets are configured.",
   "secrets_written": false,
   "telegram_sent": false,
-  "railway": "rollback_only"
+  "railway": "rollback_only",
+  "canary_state": "needs_worker_secrets"
 }
