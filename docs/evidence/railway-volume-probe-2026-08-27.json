@@ -1,0 +1,26 @@
+{
+  "observed_at": "2026-08-27",
+  "service": "loving-happiness",
+  "endpoint": "https://loving-happiness-production-b1a9.up.railway.app",
+  "probe": {
+    "/": { "http_status": 404 },
+    "/health": { "http_status": 404 },
+    "/status": { "http_status": 404 }
+  },
+  "interpretation": "service_unavailable_or_not_deployed",
+  "volume": {
+    "mount_path": "/data",
+    "attachment": "previous_control_plane_evidence_only",
+    "restart_continuity": "not_verified"
+  },
+  "acceptance": {
+    "deployment_reachable": false,
+    "persistence_verified": false,
+    "high_risk_delivery_allowed": false
+  },
+  "privacy": {
+    "secrets_included": false,
+    "recipient_ids_included": false,
+    "mailbox_content_included": false
+  }
+}
