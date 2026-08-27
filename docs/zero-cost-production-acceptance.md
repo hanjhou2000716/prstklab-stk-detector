@@ -33,6 +33,10 @@ It confirms that `/api/health` is reachable while the active deployment still
 uses the legacy runtime version; the local health-classification fix is not
 considered deployed until a token-authorized Worker deployment succeeds.
 
+The complete gate-driven migration snapshot is recorded in the
+[2026-08-28 migration audit](gate-driven-migration-20260828.md), including
+requirement traceability, regression status and open completion debt.
+
 ## Required order
 
 1. Apply `supabase/migrations/202608270001_report_jobs.sql` and
