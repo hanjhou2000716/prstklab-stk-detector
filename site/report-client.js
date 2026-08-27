@@ -8,6 +8,7 @@
   const meta = document.querySelector('meta[name="prstk-api-base"]');
   const API_BASE = String(window.PRSTK_API_BASE_URL || meta?.content || window.location.origin).replace(/\/$/, "");
   const state = { jobId: null, timer: null, deadline: 0 };
+  const query = new URLSearchParams(window.location.search);
   const byId = (id) => document.getElementById(id);
   const setState = (value) => { const node = byId("report-job-state"); if (node) node.textContent = value; };
   const authHeaders = () => {
@@ -44,7 +45,20 @@
   };
   const send = async () => {
     const report = byId("report-preview").textContent.trim(); if (!report) return; byId("send-report").disabled = true; setState("發送中");
-    try { const result = await request("/api/send", { method: "POST", body: JSON.stringify({ report }) }); setState(result.ok ? "已送出" : "部分失敗"); byId("report-error").textContent = `Telegram：${result.sent}/${result.total} 位收件人成功。`; }
+    try {
+      const manifest = window.releaseManifest || {};
+      const result = await request("/api/send", {
+        method: "POST",
+        body: JSON.stringify({
+          report,
+          alert_id: query.get("alert") || `report-${state.jobId}`,
+          release_id: manifest.release_id || "",
+          snapshot_id: manifest.market_snapshot_id || "",
+        }),
+      });
+      setState(result.ok ? "已送出" : "部分失敗");
+      byId("report-error").textContent = `Telegram：${result.sent}/${result.total} 位收件人成功｜追蹤 ${result.trace_id || "待取得"}｜回執 ${result.receipt_status || "未提供"}`;
+    }
     catch (error) { setState("發送失敗"); byId("report-error").textContent = error.message; }
     finally { byId("send-report").disabled = false; }
   };

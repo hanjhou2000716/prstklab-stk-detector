@@ -24,6 +24,9 @@ def test_frontend_does_not_accept_caller_supplied_recipient() -> None:
     assert "X-Telegram-Init-Data" in client
     assert "user_id" not in client
     assert "5 * 60 * 1000" in client
+    assert "release_id" in client
+    assert "snapshot_id" in client
+    assert "trace_id" in client
 
 
 def test_worker_has_security_boundary_and_required_routes() -> None:
