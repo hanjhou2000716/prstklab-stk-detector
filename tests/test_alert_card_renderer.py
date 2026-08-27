@@ -60,6 +60,19 @@ def test_card_html_includes_evidence_sections():
     })
     for text in ("發生什麼事", "為何重要", "可能連動", "股市觀察", "官方來源", "台指同步", "核對不成立"):
         assert text in html
+    assert html.index("發生什麼事") < html.index("</main>")
+
+
+def test_validate_png_rejects_nearly_single_color(tmp_path):
+    pytest.importorskip("PIL.Image")
+    from PIL import Image, ImageDraw
+
+    target = tmp_path / "nearly-single.png"
+    image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
+    ImageDraw.Draw(image).rectangle((0, 0, 5, 5), fill=(255, 255, 255))
+    image.save(target)
+    with pytest.raises(RendererError, match="nearly a single color"):
+        _validate_png(target)
 
 
 def test_validate_png_rejects_corrupt_file(tmp_path):

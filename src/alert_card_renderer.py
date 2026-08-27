@@ -80,23 +80,25 @@ def build_card_html(alert: dict[str, Any]) -> str:
     market = evidence("market_evidence", "市場同步狀態：待核對。")
     invalidation = text("invalidation_condition", "若來源或行情核對不成立，取消本次判定。")
     return f"""<!doctype html>
-<html lang="zh-Hant"><meta charset="utf-8">
-<style>
+<html lang="zh-Hant"><head><meta charset="utf-8"><style>
 html,body{{margin:0;width:{WIDTH}px;height:{HEIGHT}px;background:#f4f2ed;color:#102f4b;font-family:Arial,'Noto Sans CJK TC',sans-serif}}
-main{{box-sizing:border-box;padding:64px 72px;width:100%;height:100%}}
+main{{box-sizing:border-box;padding:64px 72px;width:100%;height:100%;position:relative}}
 .brand{{font-size:26px;letter-spacing:4px;color:#c85d27;font-weight:700}}
-h1{{font-size:58px;line-height:1.18;margin:34px 0 30px}}
+h1{{font-size:58px;line-height:1.18;margin:28px 0 24px}}
 .state{{display:inline-block;background:#c85d27;color:#fff;font-size:30px;padding:12px 22px;border-radius:12px}}
-.panel{{margin-top:32px;background:#fff;border:2px solid #d3d9dd;border-radius:24px;padding:28px}}
-.panel p{{font-size:30px;line-height:1.34;margin:0 0 16px}}
+.panel{{margin-top:24px;background:#fff;border:2px solid #d3d9dd;border-radius:24px;padding:24px}}
+.panel p{{font-size:27px;line-height:1.28;margin:0 0 12px}}
 .label{{color:#c85d27;font-weight:700}}
-.meta{{font-size:22px;line-height:1.55;color:#4b6378}}
-.footer{{position:absolute;left:72px;bottom:62px;font-size:20px;color:#4b6378}}
-</style><main><div class="brand">PRStK MARKET INTELLIGENCE</div>
+.meta{{font-size:21px;line-height:1.45;color:#4b6378}}
+.evidence{{margin-top:20px}}
+.evidence p{{font-size:23px;line-height:1.22;margin:0 0 8px}}
+.footer{{position:absolute;left:72px;right:72px;bottom:46px;font-size:20px;color:#4b6378}}
+</style></head><body><main><div class="brand">PRStK MARKET INTELLIGENCE</div>
 <h1>{title}</h1><div class="state">狀態｜{state}</div>
 <section class="panel"><p>{reason}</p><div class="meta">release｜{release_id}<br>snapshot｜{snapshot_id}</div></section>
+<section class="panel evidence"><p><span class="label">事件：</span>{event}</p><p><span class="label">為何重要：</span>{importance}</p><p><span class="label">可能連動：</span>{transmission}</p><p><span class="label">股市觀察：</span>{watch}</p><p><span class="label">來源：</span>{sources}</p><p><span class="label">行情核對：</span>{market}</p><p><span class="label">失效條件：</span>{invalidation}</p></section>
 <div class="footer">僅供公開資訊整理與教育性觀察，不構成投資建議。</div>
-</main><section class="panel"><p><span class="label">事件：</span>{event}</p><p><span class="label">為何重要：</span>{importance}</p><p><span class="label">可能連動：</span>{transmission}</p><p><span class="label">股市觀察：</span>{watch}</p><p><span class="label">來源：</span>{sources}</p><p><span class="label">行情核對：</span>{market}</p><p><span class="label">失效條件：</span>{invalidation}</p></section></html>"""
+</main></body></html>"""
 
 
 def _validate_png(target: Path) -> None:
@@ -112,6 +114,8 @@ def _validate_png(target: Path) -> None:
             colors = rgb.getcolors(maxcolors=1024)
             if colors is not None and len(colors) <= 1:
                 raise RendererError("blank_image", "rendered card is a single color")
+            if colors is not None and colors and max(count for count, _color in colors) >= image.width * image.height * 0.995:
+                raise RendererError("blank_image", "rendered card is nearly a single color")
             if rgb.getbbox() is None:
                 raise RendererError("blank_image", "rendered card has no visible pixels")
     except RendererError:
