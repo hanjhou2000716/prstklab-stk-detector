@@ -21,17 +21,20 @@ The subsequent full offline regression is recorded in
 [Creator/FJ overlap regression evidence](evidence/creator-fj-overlap-regression-2026-08-28.json):
 1493 tests passed, with only the expected non-ready sample-artifact warnings.
 
-The 2026-08-28 health recheck returned HTTP 200 with `api: ok` and
-`database: unavailable`; this is recorded in the redacted
+The pre-redeployment 2026-08-28 health recheck returned HTTP 200 with
+`api: ok` and `database: unavailable`; it is retained as historical evidence in
 [health recheck evidence](evidence/zero-cost-worker-health-recheck-2026-08-28.json).
-The response is intentionally fail-closed and does not represent a successful
+The response was intentionally fail-closed and did not represent a successful
 production canary or Telegram delivery.
 
-The latest public endpoint check is recorded in
-[public health evidence](evidence/zero-cost-worker-public-health-2026-08-28.json).
-It confirms that `/api/health` is reachable while the active deployment still
-uses the legacy runtime version; the local health-classification fix is not
-considered deployed until a token-authorized Worker deployment succeeds.
+The latest dashboard redeployment and public endpoint check are recorded in
+[Worker deployment recheck evidence](evidence/zero-cost-worker-deploy-recheck-2026-08-28.json).
+It confirms that `/api/health` is reachable and the current
+`zero-cost-worker-1` health-classification source is deployed.  The response is
+now explicitly `status=configuration_missing`; this proves source reachability
+but is not a successful canary until the provider secrets are configured.
+The earlier [public health evidence](evidence/zero-cost-worker-public-health-2026-08-28.json)
+remains the pre-redeployment observation.
 
 The complete gate-driven migration snapshot is recorded in the
 [2026-08-28 migration audit](gate-driven-migration-20260828.md), including

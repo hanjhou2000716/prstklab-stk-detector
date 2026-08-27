@@ -10,10 +10,10 @@ the migration protocol vocabulary: `NOT_STARTED`, `IN_PROGRESS`,
 | Field | Evidence |
 |---|---|
 | Branch | `feat/zero-cost-worker-token-contract` |
-| HEAD | `7c5a7e4d` (`docs: reconcile gate-driven migration state`) |
+| HEAD | `30e728e5` (`docs: record Worker configuration fail-closed state`) |
 | Base | `origin/main` at `34fe90e8` |
 | PR | [#801](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/801), open, clean, non-draft |
-| Recovery checkpoint | `789719eb` and the follow-up evidence commit `ce50eee3` |
+| Recovery checkpoint | `789719eb`, follow-up evidence `ce50eee3`, and Worker deployment evidence `30e728e5` |
 | Working tree | tracked changes clean; historical untracked test artifacts preserved and not staged |
 | Canonical overlap audit | `python scripts/verify_canonical_overlap.py` → `status=pass`, `failed_count=0` |
 | Local regression | `1493 passed`; targeted acceptance suite `30 passed` with isolated workspace temp |
@@ -28,7 +28,7 @@ the migration protocol vocabulary: `NOT_STARTED`, `IN_PROGRESS`,
 | Release and Telegram fail-closed contract | `LOCKED` (local) | release-gate and delivery tests pass; production receipt remains external |
 | Worker source and health classification | `PASS` (local/runtime) | `worker/src/index.ts` typechecks; dashboard deployment `ba4dd5f6` reports `version=zero-cost-worker-1` and explicit configuration state |
 | Cloudflare Worker public reachability | `PASS` (runtime) | `/api/health` returns HTTP 200; this proves reachability only |
-| Supabase-backed Worker canary | `BLOCKED` | deployed response is `database=unavailable`; provider secrets are not configured |
+| Supabase-backed Worker canary | `BLOCKED` | deployed response is `status=configuration_missing`; provider secrets are not configured |
 | Railway rollback path | `PASS` (preserved) / `NEEDS_REVERIFY` (canary) | Railway is retained as rollback-only until Worker canary succeeds |
 | Full production acceptance | `BLOCKED` | requires provider secrets, ready release, Pages verification and controlled Telegram receipt |
 
@@ -59,7 +59,7 @@ the migration protocol vocabulary: `NOT_STARTED`, `IN_PROGRESS`,
 | `DEBT-WORKER-001` | Add `SUPABASE_SERVICE_ROLE_KEY` to Worker Secret Variables | operator/provider UI | `OPEN EXTERNAL` |
 | `DEBT-WORKER-002` | Add `GITHUB_DISPATCH_TOKEN` to Worker Secret Variables | operator/provider UI | `OPEN EXTERNAL` |
 | `DEBT-WORKER-003` | Add `TELEGRAM_BOT_TOKEN` to Worker Secret Variables | operator/provider UI | `OPEN EXTERNAL` |
-| `DEBT-WORKER-004` | Deploy the current Worker source with token-authorized Wrangler or dashboard deployment | deployment owner | `OPEN EXTERNAL` |
+| `DEBT-WORKER-004` | Replace the manual dashboard deployment with a token-authorized repeatable deployment path | deployment owner | `OPEN EXTERNAL` |
 | `DEBT-WORKER-005` | Run ready-release → Pages → Mini App → single-recipient Telegram canary and receipt query | deployment owner | `OPEN EXTERNAL` |
 | `DEBT-ENV-001` | Historical untracked test artifacts in the shared checkout | separate hygiene task; never stage during feature work | `OPEN NON-PRODUCTION` |
 
