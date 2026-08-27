@@ -10,7 +10,7 @@ the migration protocol vocabulary: `NOT_STARTED`, `IN_PROGRESS`,
 | Field | Evidence |
 |---|---|
 | Branch | `feat/zero-cost-worker-token-contract` |
-| HEAD | `ce50eee3` (`docs: record public Worker health state`) |
+| HEAD | `7c5a7e4d` (`docs: reconcile gate-driven migration state`) |
 | Base | `origin/main` at `34fe90e8` |
 | PR | [#801](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/801), open, clean, non-draft |
 | Recovery checkpoint | `789719eb` and the follow-up evidence commit `ce50eee3` |
@@ -26,7 +26,7 @@ the migration protocol vocabulary: `NOT_STARTED`, `IN_PROGRESS`,
 |---|---|---|
 | Canonical Creator/FJ/news ownership | `LOCKED` | overlap audit and regression evidence show one registry/classifier/parser path |
 | Release and Telegram fail-closed contract | `LOCKED` (local) | release-gate and delivery tests pass; production receipt remains external |
-| Worker source and health classification | `PASS` (local) / `NEEDS_REVERIFY` (runtime) | `worker/src/index.ts` typechecks; deployed runtime has not received the latest token-authorized deployment |
+| Worker source and health classification | `PASS` (local/runtime) | `worker/src/index.ts` typechecks; dashboard deployment `2c8a6744` reports `version=zero-cost-worker-1` |
 | Cloudflare Worker public reachability | `PASS` (runtime) | `/api/health` returns HTTP 200; this proves reachability only |
 | Supabase-backed Worker canary | `BLOCKED` | deployed response is `database=unavailable`; provider secrets are not configured |
 | Railway rollback path | `PASS` (preserved) / `NEEDS_REVERIFY` (canary) | Railway is retained as rollback-only until Worker canary succeeds |
@@ -42,6 +42,7 @@ the migration protocol vocabulary: `NOT_STARTED`, `IN_PROGRESS`,
 | Public health response is recorded without secrets | `docs/evidence/zero-cost-worker-public-health-2026-08-28.json` | JSON parse + public HTTPS probe | redacted health evidence | `PASS` (observation) |
 | No false production canary claim | `docs/zero-cost-production-acceptance.md` | acceptance contract tests | health response + runbook | `PASS` → `LOCKED` |
 | Supabase/GitHub/Telegram secrets available to Worker | Cloudflare Worker Secret Variables | provider-side canary | names are absent from the accessible settings view | `BLOCKED` |
+| Canonical Worker source deployed | Cloudflare dashboard deployment `2c8a6744` | public `/api/health` | `docs/evidence/zero-cost-worker-deploy-recheck-2026-08-28.json` | `PASS` (reachability/source version) |
 
 ## Regression ledger
 
@@ -69,4 +70,3 @@ canary is intentionally not marked `PASS`: the public Worker is reachable but
 its current deployment cannot reach Supabase, and no token-authorized deploy or
 provider-secret entry is available to this checkout.  No Telegram message was
 sent and no high-risk notification was enabled.
-

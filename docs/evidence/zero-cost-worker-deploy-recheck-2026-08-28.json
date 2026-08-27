@@ -1,0 +1,34 @@
+{
+  "captured_at": "2026-08-28T18:00:00+08:00",
+  "worker_url": "https://prstk-api.hanjhou2000716.workers.dev",
+  "dashboard_version": "2c8a6744",
+  "health_endpoint": "/api/health",
+  "health_http_status": 200,
+  "health": {
+    "ok": false,
+    "status": "configuration_missing",
+    "api": "ok",
+    "database": "unavailable",
+    "service": "PRStK 稜量盤後速覽",
+    "version": "zero-cost-worker-1"
+  },
+  "interpretation": {
+    "worker_reachable": true,
+    "current_source_deployed": true,
+    "database_ready": false,
+    "production_canary": "blocked",
+    "high_risk_notifications_allowed": false
+  },
+  "required_external_configuration": [
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "GITHUB_DISPATCH_TOKEN",
+    "TELEGRAM_BOT_TOKEN"
+  ],
+  "telegram_sent": false,
+  "railway": "rollback_only",
+  "notes": [
+    "Deployment was performed from the canonical Worker source through the authenticated Cloudflare dashboard.",
+    "No provider secret values were read, logged, or transmitted by this verification.",
+    "A 200 response proves reachability only; the fail-closed database state remains intentional until all required secrets are configured."
+  ]
+}
