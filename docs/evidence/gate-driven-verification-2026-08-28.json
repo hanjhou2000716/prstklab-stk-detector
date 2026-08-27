@@ -1,0 +1,68 @@
+{
+  "captured_at": "2026-08-27T19:12:17.2741331Z",
+  "scope": "Creator Intelligence / FinancialJuice / News / Release Gate continuation",
+  "repository_branch": "feat/zero-cost-worker-token-contract",
+  "repository_head_at_capture": "97853d5162120c90174ca4b7ad12a03ddf130c6e",
+  "verification": {
+    "canonical_overlap": {
+      "command": "python scripts/verify_canonical_overlap.py",
+      "status": "pass",
+      "failed_count": 0
+    },
+    "intelligence_contracts": {
+      "command": "python scripts/verify_intelligence_contracts.py",
+      "status": "pass",
+      "mode": "offline_fixture"
+    },
+    "targeted_regression": {
+      "command": "python -m pytest -q tests/test_creator_intelligence_e2e.py tests/test_financialjuice_notification_e2e.py tests/test_news_intelligence.py tests/test_release_gate.py tests/test_telegram_client.py",
+      "status": "pass",
+      "tests_passed": 72
+    },
+    "full_regression": {
+      "command": "python -m pytest -q --basetemp <isolated-workspace-temp>",
+      "status": "pass",
+      "tests_passed": 1493
+    },
+    "static_quality": {
+      "ruff": "pass",
+      "mypy": "pass",
+      "compileall": "pass",
+      "site_app_syntax": "pass"
+    },
+    "offline_production_e2e": {
+      "command": "python -m src.production_e2e",
+      "status": "pass",
+      "mode": "SIMULATED",
+      "network_used": false,
+      "production_side_effects": false,
+      "renderer_dimensions": "1080x1350",
+      "telegram_transport": "mocked"
+    },
+    "delivery_smoke": {
+      "command": "python -m src.delivery_smoke_test",
+      "status": "needs_provider_configuration",
+      "reason": "TELEGRAM_CHAT_IDS is empty",
+      "production_side_effects": false
+    },
+    "runtime_audit": {
+      "command": "python -m src.runtime_audit",
+      "status": "pass_with_expected_sample_warnings",
+      "warnings_are_blocking": false
+    }
+  },
+  "github_actions": {
+    "quality_and_delivery_run": "33106325896",
+    "security_and_supply_chain_run": "33106325914",
+    "status": "pass",
+    "head_sha": "97853d5162120c90174ca4b7ad12a03ddf130c6e"
+  },
+  "external_state": {
+    "pages_manifest": "ready",
+    "worker_health": "configuration_missing",
+    "telegram_canary": "not_sent",
+    "interpretation": "Offline contracts and regression are green; real Worker/Telegram acceptance remains fail-closed until provider secrets and a designated test recipient are configured."
+  },
+  "secrets_used": false,
+  "status": "needs_external_acceptance"
+}

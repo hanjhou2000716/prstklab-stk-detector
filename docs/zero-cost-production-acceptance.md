@@ -47,6 +47,15 @@ The complete gate-driven migration snapshot is recorded in the
 [2026-08-28 migration audit](gate-driven-migration-20260828.md), including
 requirement traceability, regression status and open completion debt.
 
+The latest offline continuation verification is recorded in
+[gate-driven verification evidence](evidence/gate-driven-verification-2026-08-28.json).
+It covers the canonical overlap audit, Creator/FinancialJuice/News contracts,
+the 72-test targeted suite, the 1493-test full regression, static quality
+checks, and the simulated production E2E.  The real delivery smoke remains
+explicitly `needs_provider_configuration` while the public Worker health
+endpoint reports `configuration_missing`; no production Telegram message is
+inferred from the offline pass.
+
 ## Required order
 
 1. Apply `supabase/migrations/202608270001_report_jobs.sql` and
