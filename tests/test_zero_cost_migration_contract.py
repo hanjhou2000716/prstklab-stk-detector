@@ -35,3 +35,6 @@ def test_worker_has_security_boundary_and_required_routes() -> None:
     assert '"access-control-allow-origin": "*"' not in worker
     assert "SUPABASE_SERVICE_ROLE_KEY" in worker
     assert "GITHUB_DISPATCH_TOKEN" in worker
+    assert "recipientHash" in worker
+    assert "delivery_receipts" in worker
+    assert "retry_after" in worker

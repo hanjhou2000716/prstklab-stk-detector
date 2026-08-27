@@ -109,6 +109,11 @@ async function dispatchReport(env: Env, jobId: string): Promise<void> {
   if (!response.ok) throw new Error(`report worker dispatch failed (${response.status})`);
 }
 
+async function recipientHash(chatId: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(chatId));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("").slice(0, 16);
+}
+
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] || char);
 }
@@ -117,7 +122,7 @@ function recipients(env: Env): string[] {
   return [...new Set(String(env.TG_SUBSCRIBERS || env.TELEGRAM_CHAT_IDS || "").split(/[\s,]+/).map((value) => value.trim()).filter((value) => /^-?\d+$/.test(value)))].slice(0, 30);
 }
 
-async function sendTelegram(env: Env, report: string): Promise<{ sent: number; total: number; failed: number }> {
+async function sendTelegram(env: Env, report: string, provenance: { traceId: string; alertId?: string; releaseId?: string; snapshotId?: string }): Promise<{ sent: number; total: number; failed: number; receipts: Array<Record<string, unknown>> }> {
   if (!env.TG_TOKEN) throw new Error("Telegram is not configured");
   const target = recipients(env);
   if (!target.length) throw new Error("Telegram recipients are not configured");
@@ -125,18 +130,37 @@ async function sendTelegram(env: Env, report: string): Promise<{ sent: number; t
   const chunks = text.match(/[\s\S]{1,4000}/g) || [text];
   let sent = 0;
   let failed = 0;
+  const receipts: Array<Record<string, unknown>> = [];
   for (const chatId of target) {
+    const hash = await recipientHash(chatId);
+    let messageId: number | undefined;
+    let errorClass: string | undefined;
+    let status = "failed";
     try {
       for (const chunk of chunks) {
-        const response = await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chat_id: chatId, text: chunk, parse_mode: "HTML", disable_web_page_preview: true }) });
-        if (!response.ok) throw new Error(`Telegram request failed (${response.status})`);
+        let response = await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chat_id: chatId, text: chunk, parse_mode: "HTML", disable_web_page_preview: true }) });
+        if (response.status === 429) {
+          const payload = await response.clone().json().catch(() => ({})) as Record<string, unknown>;
+          const retryAfter = Math.min(10, Math.max(1, Number((payload.parameters as Record<string, unknown> | undefined)?.retry_after || 1)));
+          await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
+          response = await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chat_id: chatId, text: chunk, parse_mode: "HTML", disable_web_page_preview: true }) });
+        }
+        if (!response.ok) {
+          errorClass = response.status >= 500 ? "temporary_api" : response.status === 403 ? "blocked" : "telegram_api";
+          throw new Error(`Telegram request failed (${response.status})`);
+        }
+        const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
+        const result = payload.result as Record<string, unknown> | undefined;
+        if (typeof result?.message_id === "number") messageId = result.message_id;
       }
       sent += 1;
+      status = "delivered";
     } catch (_) {
       failed += 1;
     }
+    receipts.push({ trace_id: provenance.traceId, alert_id: provenance.alertId || null, release_id: provenance.releaseId || null, snapshot_id: provenance.snapshotId || null, recipient_hash: hash, status, message_id: messageId || null, error_class: errorClass || null, sent_at: new Date().toISOString() });
   }
-  return { sent, total: target.length, failed };
+  return { sent, total: target.length, failed, receipts };
 }
 
 async function handle(request: Request, env: Env): Promise<Response> {
@@ -174,8 +198,16 @@ async function handle(request: Request, env: Env): Promise<Response> {
     const payload = await request.json().catch(() => null) as Record<string, unknown> | null;
     const report = typeof payload?.report === "string" ? payload.report.trim() : "";
     if (!report) return json({ ok: false, error: "REPORT_REQUIRED" }, 400);
-    const result = await sendTelegram(env, report);
-    return json({ ok: result.failed === 0, ...result }, result.failed ? 207 : 200);
+    const traceId = crypto.randomUUID();
+    const result = await sendTelegram(env, report, {
+      traceId,
+      alertId: typeof payload.alert_id === "string" ? payload.alert_id.slice(0, 160) : undefined,
+      releaseId: typeof payload.release_id === "string" ? payload.release_id.slice(0, 160) : undefined,
+      snapshotId: typeof payload.snapshot_id === "string" ? payload.snapshot_id.slice(0, 160) : undefined,
+    });
+    let receiptStatus = "persisted";
+    try { await supabase(env, "POST", "delivery_receipts", "", result.receipts); } catch (_) { receiptStatus = "persistence_failed"; }
+    return json({ ok: result.failed === 0 && receiptStatus === "persisted", trace_id: traceId, sent: result.sent, total: result.total, failed: result.failed, receipt_status: receiptStatus }, result.failed || receiptStatus !== "persisted" ? 207 : 200);
   }
   return json({ ok: false, error: "NOT_FOUND" }, 404);
 }
