@@ -181,6 +181,18 @@ def normalize_quote_record(record: dict[str, Any], *, fetched_at: str | None = N
     # whether the secondary source was available this round.
     from src.market_crosscheck import quote_provenance
     provenance = quote_provenance(item)
+    # Source policy fields are producer-owned. Do not carry forward a stale
+    # policy/basis from an older release: the artifact contract validates these
+    # fields against the ticker's canonical policy and would otherwise reject
+    # an otherwise safe observation. Unknown instruments have no policy, so
+    # preserve their provider-supplied metadata for backwards compatibility.
+    policy = provenance["crosscheck_policy"]
+    has_canonical_policy = bool(policy.get("primary") or policy.get("secondary"))
+    expected_sources = provenance["expected_sources"]
+    comparison_basis = provenance["comparison_basis"]
+    canonical_policy = policy if has_canonical_policy else item.get("crosscheck_policy") or policy
+    canonical_expected = expected_sources if has_canonical_policy else item.get("expected_sources") or expected_sources
+    canonical_basis = comparison_basis if comparison_basis != "not_defined" else item.get("comparison_basis") or comparison_basis
     item.update({
         "source_tier": item.get("source_tier") or ("official" if official else "public-market"),
         "fetched_at": item.get("fetched_at") or fetched_at or _now(),
@@ -193,9 +205,9 @@ def normalize_quote_record(record: dict[str, Any], *, fetched_at: str | None = N
         "cross_checked": bool(item.get("cross_checked") or provenance["cross_checked"]),
         "crosscheck_status": item.get("crosscheck_status") or provenance["crosscheck_status"],
         "crosscheck_sources": item.get("crosscheck_sources") or provenance["crosscheck_sources"],
-        "expected_sources": item.get("expected_sources") or provenance["expected_sources"],
-        "crosscheck_policy": item.get("crosscheck_policy") or provenance["crosscheck_policy"],
-        "comparison_basis": item.get("comparison_basis") or provenance["comparison_basis"],
+        "expected_sources": canonical_expected,
+        "crosscheck_policy": canonical_policy,
+        "comparison_basis": canonical_basis,
     })
     return item
 
