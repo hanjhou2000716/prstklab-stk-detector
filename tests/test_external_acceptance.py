@@ -96,6 +96,52 @@ def test_capture_passes_when_health_and_manifest_are_ready() -> None:
     assert report["gate_summary"]["delivery_receipt"]["status"] == "not_checked"
 
 
+def test_capture_accepts_healthy_worker_when_railway_is_optional() -> None:
+    """A healthy zero-cost Worker keeps delivery available during Railway outage."""
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        worker_url="https://worker.example/",
+        public_url="https://pages.example/",
+        session=_Session([
+            _Response(404, {}),
+            _Response(200, {"ok": True, "status": "healthy", "database": "ok"}),
+            _Response(200, manifest),
+            _Response(200, None, artifact),
+        ]),
+    )
+    assert report["status"] == "PASS"
+    assert report["warnings"] == ["railway_optional_unavailable"]
+    assert report["worker"]["health"]["status"] == "healthy"
+    assert report["gate_summary"]["worker_health"]["status"] == "pass"
+    assert report["gate_summary"]["railway_health"]["status"] == "optional_unavailable"
+    assert report["gate_summary"]["external_observations"]["status"] == "optional_unavailable"
+
+
+def test_capture_does_not_hide_railway_source_failure_when_worker_is_healthy() -> None:
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        worker_url="https://worker.example/",
+        public_url="https://pages.example/",
+        session=_Session([
+            _Response(200, {
+                "status": "ok",
+                "gmail": {"status": "healthy"},
+                "gdelt": {"status": "failed"},
+                "delivery": {"status": "not_checked"},
+            }),
+            _Response(200, {"ok": True, "status": "healthy"}),
+            _Response(200, manifest),
+            _Response(200, None, artifact),
+        ]),
+    )
+    assert report["status"] == "NEEDS_REVERIFY"
+    assert "railway_gdelt:failed" in report["blocking_reasons"]
+
+
 def test_capture_accepts_a_successful_delivery_receipt() -> None:
     health = {
         "status": "ok",

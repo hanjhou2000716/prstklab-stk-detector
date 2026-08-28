@@ -1,0 +1,30 @@
+{
+  "kind": "external-acceptance-readonly",
+  "schema_version": "1.0",
+  "captured_at": "2026-08-28T02:00:37Z",
+  "status": "PASS",
+  "blocking_reasons": [],
+  "warnings": ["railway_optional_unavailable"],
+  "gate_summary": {
+    "worker_health": {"status": "pass", "blocking_reasons": []},
+    "railway_health": {"status": "optional_unavailable", "blocking_reasons": ["railway_health_unavailable:HTTPError"]},
+    "gmail_watch": {"status": "not_checked", "blocking_reasons": []},
+    "delivery_receipt": {"status": "not_checked", "blocking_reasons": []},
+    "pages_manifest": {"status": "pass", "blocking_reasons": []},
+    "pages_artifacts": {"status": "pass", "blocking_reasons": []},
+    "external_observations": {"status": "optional_unavailable", "blocking_reasons": ["railway_observations_unavailable"]}
+  },
+  "worker": {"http_status": 200, "status": "healthy"},
+  "railway": {"http_status": 404, "error": "HTTPError"},
+  "pages": {
+    "http_status": 200,
+    "status": "ready",
+    "release_id": "release-495be75d829e5b1b",
+    "market_snapshot_id": "2fd350c4a12f23b0",
+    "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
+    "event_snapshot_id": "event-2668aef41e66e57b",
+    "artifact_hash_count": 7,
+    "artifact_hash_audit": {"declared_count": 7, "verified_count": 7, "mismatch_count": 0, "error_count": 0, "snapshot_mismatch_count": 0, "lineage_mismatch_count": 0}
+  },
+  "side_effects": {"telegram": false, "railway_write": false, "configuration_changed": false}
+}

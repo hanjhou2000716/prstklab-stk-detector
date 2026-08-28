@@ -36,6 +36,7 @@ jobs:
           python -m src.external_acceptance
           --railway-url "${{ inputs.railway_url }}"
           --public-url "${{ inputs.public_url }}"
+          --worker-url "${{ vars.PUBLIC_API_BASE_URL || 'https://prstk-api.hanjhou2000716.workers.dev' }}"
           --output external-acceptance.json
       - name: Upload read-only evidence
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0

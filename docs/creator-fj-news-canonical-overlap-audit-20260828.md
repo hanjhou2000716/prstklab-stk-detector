@@ -2,8 +2,8 @@
 
 ## Snapshot
 
-This audit is based on the working branch `feat/cloudflare-supabase-receipt-backend`
-at `a4bae987` (base `origin/main` `34fe90e8`).  The receipt backend change is
+This audit is based on the current mainline after PR #802 and PR #805
+(`41470dd4`). The receipt backend change is
 additive; it does not create a second parser, classifier, release producer or
 Telegram dispatcher.  The existing PR is [#804](https://github.com/hanjhou2000716/prstklab-stk-detector/pull/804).
 
@@ -21,7 +21,7 @@ treated as live Railway, Pages, Gmail or Telegram acceptance evidence.
 | News provider identity and routing | `src/news_intelligence.py`, `src/news_feed_adapters.py` | regional News artifact | provider scope/health/dedup tests | PASS (offline) |
 | Shared news/live event classification | `src/event_classifier.py`, `src/news_intelligence.py`, `src/external_event_pipeline.py` | event ledger, lifecycle and release | canonical integration regression tests | PASS (offline) |
 | Release and notification gate | `src/release_manifest.py`, `src/release_gate.py`, `src/telegram_client.py` | Pages → card → Telegram | release-gate and dry-run tests | NEEDS_REVERIFY |
-| Delivery receipt persistence | `src/delivery_callback.py`, `worker/src/index.ts`, `supabase/migrations/202608280001_delivery_receipt_events.sql` | Worker/Supabase or Railway fallback | callback/worker contract tests | BLOCKED until Worker migration/deploy canary |
+| Delivery receipt persistence | `src/delivery_callback.py`, `worker/src/index.ts`, `supabase/migrations/202608280001_delivery_receipt_events.sql` | Worker/Supabase preferred, Railway bounded fallback | callback/worker contract tests; public Worker health 200 | NEEDS_REVERIFY for valid receipt canary |
 
 ## Overlap decision
 
@@ -44,9 +44,11 @@ There is one canonical path for each responsibility:
 
 ## Required gates still open
 
-- Apply the Supabase migration and deploy the Worker, then run a single
-  recipient receipt canary.  Until that evidence exists, #804 is not a
-  production acceptance claim.
+- Apply/verify the Supabase migration and run a single recipient receipt
+  canary. Until that evidence exists, receipt persistence is not a production
+  acceptance claim.
+- The repository `DASHBOARD_URL` now points to the verified Pages project path;
+  the prior `/prstk-lab/` value returned 404 for the manifest.
 - Obtain a live Pages release manifest whose hashes match the release gate.
 - Capture a current sanitized Gmail Watch/Creator and FinancialJuice
   observation; `no_new_content` is not proof of a successful content poll.
@@ -70,4 +72,3 @@ There is one canonical path for each responsibility:
 Revert the additive receipt commit and this audit/test change; keep the prior
 Railway callback path and existing release gate.  Do not delete release
 artifacts or alter the canonical Creator/FJ/News registries during rollback.
-

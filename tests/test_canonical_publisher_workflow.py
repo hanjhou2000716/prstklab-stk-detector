@@ -33,6 +33,13 @@ def test_public_release_smoke_restores_immutable_data_before_verifying():
     assert "sendPhoto" not in workflow
 
 
+def test_external_acceptance_probes_canonical_worker_and_keeps_railway_optional():
+    workflow = Path(".github/workflows/external-acceptance-readonly.yml").read_text(encoding="utf-8")
+    assert "--worker-url" in workflow
+    assert "vars.PUBLIC_API_BASE_URL" in workflow
+    assert "railway_url" in workflow
+
+
 def test_scheduled_brief_skips_telegram_for_stale_research_without_failing():
     workflow = Path(".github/workflows/scheduled-brief.yml").read_text(encoding="utf-8")
     assert "Resolve research delivery policy" in workflow

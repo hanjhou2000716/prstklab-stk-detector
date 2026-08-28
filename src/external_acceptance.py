@@ -473,6 +473,10 @@ def _build_gate_summary(
     railway_status: int | None,
     health: dict[str, Any] | None,
     railway_error: str | None,
+    worker_status: int | None,
+    worker_health: dict[str, Any] | None,
+    worker_error: str | None,
+    railway_optional: bool,
     manifest_status: int | None,
     manifest: dict[str, Any] | None,
     manifest_error: str | None,
@@ -501,12 +505,29 @@ def _build_gate_summary(
     delivery_checked = isinstance(delivery, dict) and str(delivery.get("status") or "not_checked") != "not_checked"
     gmail = health.get("gmail") if isinstance(health, dict) else None
     gmail_checked = isinstance(gmail, dict) and str(gmail.get("status") or "not_checked") not in {"not_checked", ""}
-    return {
-        "railway_health": _gate_status(
+    worker_ready = worker_status == 200 and isinstance(worker_health, dict) and (
+        worker_health.get("ok") is True or str(worker_health.get("status") or "").casefold() in {"healthy", "ok"}
+    )
+    worker_reasons = reasons_for(("worker_",))
+    worker_gate = _gate_status(
+        ready=worker_ready and not worker_reasons,
+        checked=worker_status is not None or worker_error is not None,
+        reasons=worker_reasons or ([f"worker_health_unavailable:{worker_error or worker_status}"] if not worker_ready else []),
+    )
+    if railway_optional and not health_ready:
+        railway_gate = {
+            "status": "optional_unavailable",
+            "blocking_reasons": railway_reasons or [f"railway_health_unavailable:{railway_error or railway_status}"],
+        }
+    else:
+        railway_gate = _gate_status(
             ready=health_ready and not railway_reasons,
             checked=railway_status is not None or railway_error is not None,
             reasons=railway_reasons or ([f"railway_health_unavailable:{railway_error or railway_status}"] if not health_ready else []),
-        ),
+        )
+    return {
+        "railway_health": railway_gate,
+        "worker_health": worker_gate,
         "gmail_watch": _gate_status(
             ready=gmail_checked and not reasons_for(("railway_gmail:", "railway_gmail_watch:", "railway_gmail_persistence:")),
             checked=gmail_checked,
@@ -530,12 +551,24 @@ def _build_gate_summary(
     }
 
 
-def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session: requests.Session | None = None) -> dict[str, Any]:
-    """Fetch public health/manifest endpoints and return safe evidence."""
+def capture(*, railway_url: str, public_url: str, worker_url: str | None = None, timeout: float = 15.0, session: requests.Session | None = None) -> dict[str, Any]:
+    """Fetch public health/manifest endpoints and return safe evidence.
+
+    ``worker_url`` is the canonical zero-cost runtime.  Railway remains an
+    optional rollback/ingress observer: its outage is explicit in the report,
+    but it must not block acceptance when the Worker is healthy.  A healthy
+    Worker never masks a reachable Railway source-quality failure.
+    """
     railway = _require_https(railway_url, "Railway health URL")
     public = _require_https(public_url, "Pages URL")
+    worker = _require_https(worker_url, "Worker health URL") if worker_url else ""
     client = session or requests.Session()
     railway_status, health, railway_error = _fetch_json(urljoin(railway, "health"), timeout=timeout, session=client)
+    worker_status: int | None = None
+    worker_health: dict[str, Any] | None = None
+    worker_error: str | None = None
+    if worker:
+        worker_status, worker_health, worker_error = _fetch_json(urljoin(worker, "api/health"), timeout=timeout, session=client)
     observation_evidence, observation_error = _fetch_observation_evidence(
         railway,
         timeout=timeout,
@@ -543,9 +576,21 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
     )
     manifest_status, manifest, manifest_error = _fetch_json(urljoin(public, "data/release-manifest.json"), timeout=timeout, session=client)
     reasons: list[str] = []
+    warnings: list[str] = []
+    worker_ready = worker_status == 200 and isinstance(worker_health, dict) and (
+        worker_health.get("ok") is True or str(worker_health.get("status") or "").casefold() in {"healthy", "ok"}
+    )
+    railway_optional = bool(worker and worker_ready)
     if railway_status != 200 or health is None:
-        reasons.append(f"railway_health_unavailable:{railway_error or railway_status}")
-    else:
+        reason = f"railway_health_unavailable:{railway_error or railway_status}"
+        if railway_optional:
+            warnings.append("railway_optional_unavailable")
+        else:
+            reasons.append(reason)
+    if worker:
+        if not worker_ready:
+            reasons.append(f"worker_health_unavailable:{worker_error or worker_status}")
+    if railway_status == 200 and health is not None:
         for section in ("gmail", "gdelt", "delivery"):
             state = health.get(section)
             if not isinstance(state, dict):
@@ -653,6 +698,10 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
         railway_status=railway_status,
         health=health,
         railway_error=railway_error,
+        worker_status=worker_status,
+        worker_health=worker_health,
+        worker_error=worker_error,
+        railway_optional=railway_optional,
         manifest_status=manifest_status,
         manifest=manifest,
         manifest_error=manifest_error,
@@ -661,8 +710,8 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
     )
     if observation_evidence is None:
         gate_summary["external_observations"] = {
-            "status": "not_checked",
-            "blocking_reasons": [],
+            "status": "optional_unavailable" if railway_optional else "not_checked",
+            "blocking_reasons": ["railway_observations_unavailable"] if railway_optional else [],
         }
     else:
         observation_reasons = sorted(
@@ -679,8 +728,10 @@ def capture(*, railway_url: str, public_url: str, timeout: float = 15.0, session
         "captured_at": datetime.now(UTC).isoformat(),
         "status": "PASS" if not reasons else "NEEDS_REVERIFY",
         "blocking_reasons": sorted(set(reasons)),
+        "warnings": sorted(set(warnings)),
         "gate_summary": gate_summary,
         "railway": {"url": railway, "http_status": railway_status, "error": railway_error, "health": _safe_health(health or {})},
+        "worker": {"url": worker or None, "http_status": worker_status, "error": worker_error, "health": _safe_health(worker_health or {})},
         "external_observations": observation_evidence or {
             "status": "not_checked",
             "count": 0,
@@ -696,10 +747,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--railway-url", required=True)
     parser.add_argument("--public-url", required=True)
+    parser.add_argument("--worker-url", default=None, help="Canonical zero-cost Worker health base URL; Railway is optional when this is healthy.")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--fail-on-needs-reverify", action="store_true")
     args = parser.parse_args(argv)
-    report = capture(railway_url=args.railway_url, public_url=args.public_url)
+    report = capture(railway_url=args.railway_url, public_url=args.public_url, worker_url=args.worker_url)
     serialized = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if args.output:
         args.output.write_text(serialized, encoding="utf-8")
