@@ -25,18 +25,19 @@ secrets are written to the receipt payload or logs.
 ## Live evidence and remaining gate
 
 The public Worker health endpoint was reachable with HTTP 200 and reported
-Supabase, report dispatch, and Telegram configuration healthy. At capture time,
-the Worker settings did not contain `DELIVERY_RECEIPT_SHARED_SECRET`, so the
-live `/api/delivery-receipt` route cannot yet be considered verified. This is
-deliberately recorded as **NEEDS_REVERIFY**, not PASS.
+Supabase, report dispatch, and Telegram configuration healthy. A newly generated
+random value was stored in both the Cloudflare Worker secret
+`DELIVERY_RECEIPT_SHARED_SECRET` and the GitHub Actions secret with the same
+name on 2026-08-28. The GitHub secret listing confirms the secret name and
+timestamp without exposing its value; the Cloudflare settings page confirms the
+Worker secret entry without exposing its value.
 
-To close the gate, create one new random shared secret and store it in both:
-
-1. Cloudflare Worker secret `DELIVERY_RECEIPT_SHARED_SECRET`.
-2. GitHub Actions secret `DELIVERY_RECEIPT_SHARED_SECRET`.
-
-Then deploy the Worker and run the controlled single-receipt canary. The
-secret value must never be committed, logged, or included in this document.
+The secret synchronisation is **PASS**. The live `/api/delivery-receipt` route
+still requires a controlled canary with a valid HMAC and a real receipt payload
+before it can be marked fully verified. No valid receipt was submitted during
+this configuration step, so no production receipt row or Telegram message was
+created. The secret value must never be committed, logged, or included in this
+document.
 
 ## Rollback
 
