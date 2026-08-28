@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "2fd350c4a12f23b0",
-  "snapshot_id": "news-ee882ed80ce76ae0",
+  "market_snapshot_id": "1090a9f03cc907bc",
+  "snapshot_id": "news-69811ba67ec1e0c2",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -88,6 +88,49 @@
       "timeout_seconds": 8,
       "cache_ttl_seconds": 300,
       "enabled": true,
+      "failure_isolation": true
+    },
+    {
+      "provider_id": "reuters",
+      "display_name": "Reuters",
+      "authority_tier": "trusted_media",
+      "markets": [
+        "global",
+        "taiwan",
+        "us"
+      ],
+      "domains": [
+        "reuters.com"
+      ],
+      "content_types": [
+        "discovery",
+        "market_news"
+      ],
+      "fetch_method": "public_url",
+      "cache_ttl_seconds": 900,
+      "enabled": false,
+      "disabled_reason": "no stable documented public feed endpoint; use as corroboration",
+      "failure_isolation": true
+    },
+    {
+      "provider_id": "gdelt",
+      "display_name": "GDELT",
+      "authority_tier": "discovery",
+      "markets": [
+        "global",
+        "taiwan",
+        "us"
+      ],
+      "domains": [
+        "gdeltproject.org"
+      ],
+      "content_types": [
+        "discovery"
+      ],
+      "fetch_method": "configured_endpoint",
+      "cache_ttl_seconds": 900,
+      "enabled": false,
+      "disabled_reason": "discovery-only endpoint; bounded backoff and cache policy applies",
       "failure_isolation": true
     },
     {
@@ -245,6 +288,49 @@
           "failure_isolation": true
         },
         {
+          "provider_id": "reuters",
+          "display_name": "Reuters",
+          "authority_tier": "trusted_media",
+          "markets": [
+            "global",
+            "taiwan",
+            "us"
+          ],
+          "domains": [
+            "reuters.com"
+          ],
+          "content_types": [
+            "discovery",
+            "market_news"
+          ],
+          "fetch_method": "public_url",
+          "cache_ttl_seconds": 900,
+          "enabled": false,
+          "disabled_reason": "no stable documented public feed endpoint; use as corroboration",
+          "failure_isolation": true
+        },
+        {
+          "provider_id": "gdelt",
+          "display_name": "GDELT",
+          "authority_tier": "discovery",
+          "markets": [
+            "global",
+            "taiwan",
+            "us"
+          ],
+          "domains": [
+            "gdeltproject.org"
+          ],
+          "content_types": [
+            "discovery"
+          ],
+          "fetch_method": "configured_endpoint",
+          "cache_ttl_seconds": 900,
+          "enabled": false,
+          "disabled_reason": "discovery-only endpoint; bounded backoff and cache policy applies",
+          "failure_isolation": true
+        },
+        {
           "provider_id": "nasdaq",
           "display_name": "Nasdaq",
           "authority_tier": "market",
@@ -309,112 +395,100 @@
       ],
       "stories": [
         {
-          "story_id": "news-86ae950be540fa12434f",
+          "story_id": "news-1e87fe2cc2225a0a67ce",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "輝達財報押寶行情？台積電領軍台股漲663點收45,832點、成交量破8千億| 股市要聞| 股市 - UDN",
+          "title": "台積電漲35元至2445元 分析師：洗盤結束、該補漲了！ - Yahoo股市",
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE1WaG8zYUxsNm1LV3R5aTZpQkVXSkxlVm9DekZ6bDJGbklwVDZaS3hUeWpxSXNMLS1RZFpTY0R6aTlMcEl3TGh3VDNsNjNuWVA4",
-          "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE1WaG8zYUxsNm1LV3R5aTZpQkVXSkxlVm9DekZ6bDJGbklwVDZaS3hUeWpxSXNMLS1RZFpTY0R6aTlMcEl3TGh3VDNsNjNuWVA4",
-          "published_at": "2026-08-26T05:44:03+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMi4AJBVV95cUxNV0FKbTQxVDhIcnRCWU13T3Y1amlTRy1icllFXzBLaUYyUzU3dTN5U1YwYXg0QUI0UVpwMm9UZml2ck9HczFwUmczRUFLMkxfWEZCaE9zSWhpNFFGQWk2c0JHQUhLVG0xVjVFRXQ5bmZraV9kMm5DNkpRcFByZFVXMTBvS1Z3LWJTQU1OdVV6S1BhclN4V1MyZzlqYThQRk5HcjJLaTBqbFB1cWdrSEZ4TzBSbnNpdGV3MnVfZ05OV0huaE9HRmFEN2pLM0hHcG8zclZvMW5yeXR1NWo1ZEZnd1E0TkUtejJQT2RpbjU5TXVkUGlveHloZUtDc3hFSjNrT29uaF9zZjFvSHJya2p2TUNwcW9CTU1RNDRBT0p1WXA4Zk1kUm9QamNRRGxrYkpvT2l5YkpZRTRNLUZSbDRsNEdBM29rWkNJaGVmcHI2cDJoVF9YOXVjU1pwZWtwX055",
+          "url": "https://news.google.com/rss/articles/CBMi4AJBVV95cUxNV0FKbTQxVDhIcnRCWU13T3Y1amlTRy1icllFXzBLaUYyUzU3dTN5U1YwYXg0QUI0UVpwMm9UZml2ck9HczFwUmczRUFLMkxfWEZCaE9zSWhpNFFGQWk2c0JHQUhLVG0xVjVFRXQ5bmZraV9kMm5DNkpRcFByZFVXMTBvS1Z3LWJTQU1OdVV6S1BhclN4V1MyZzlqYThQRk5HcjJLaTBqbFB1cWdrSEZ4TzBSbnNpdGV3MnVfZ05OV0huaE9HRmFEN2pLM0hHcG8zclZvMW5yeXR1NWo1ZEZnd1E0TkUtejJQT2RpbjU5TXVkUGlveHloZUtDc3hFSjNrT29uaF9zZjFvSHJya2p2TUNwcW9CTU1RNDRBT0p1WXA4Zk1kUm9QamNRRGxrYkpvT2l5YkpZRTRNLUZSbDRsNEdBM29rWkNJaGVmcHI2cDJoVF9YOXVjU1pwZWtwX055",
+          "published_at": "2026-08-28T02:21:55+00:00",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
           "entities": [
             "2330",
-            "NVDA",
-            "TAIEX",
             "TSM"
           ],
           "sectors": [],
-          "topics": [
-            "earnings"
-          ],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
             "category": "semiconductor",
             "reason": "semiconductor_keyword",
             "matched_terms": [
-              "輝達"
+              "台積電"
             ],
             "input_fields": [
               "description",
               "summary",
-              "title",
-              "topics"
+              "title"
             ]
           },
           "relevance_reasons": [
             "market:taiwan",
             "tracked_ticker:2330",
-            "tracked_ticker:NVDA",
             "tracked_ticker:TSM"
           ],
           "freshness": "published",
-          "dedupe_key": "輝達財報押寶行情台積電領軍台股漲663點收45832點成交量破8千億股市要聞股市udn",
-          "event_cluster_key": "event-217c720939a7fcf85bb9",
-          "published_time_bucket": "2026-08-26T05:00:00+00:00",
+          "dedupe_key": "台積電漲35元至2445元分析師洗盤結束該補漲了yahoo股市",
+          "event_cluster_key": "event-2ac050e1a3233fd1f78a",
+          "published_time_bucket": "2026-08-28T02:00:00+00:00",
           "public_safe": true,
           "source": "Google News｜台股線索",
-          "ranking_score": 35
+          "ranking_score": 30
         },
         {
-          "story_id": "news-9be914ea80904c4c88ea",
+          "story_id": "news-39c724d078a443ca669d",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "美股齊揚台積電ADR漲1.78% 投顧：關注輝達財報| 證券 - cna.com.tw",
+          "title": "台積電分紅開獎！「33職等」年薪600萬 工程師：直奔賓士展間 - TVBS新聞網",
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTFBuUU9oMXNwR19qaTFKbllweGtSYWExcVlxeHBnejZXSjZiSGpTcTU1YXRWb0ZEVW03cXhqT25ucHdxakp4QTNRQ3BWbjlERDVkcWpDY2lhcEl2Vlh4MXc",
-          "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTFBuUU9oMXNwR19qaTFKbllweGtSYWExcVlxeHBnejZXSjZiSGpTcTU1YXRWb0ZEVW03cXhqT25ucHdxakp4QTNRQ3BWbjlERDVkcWpDY2lhcEl2Vlh4MXc",
-          "published_at": "2026-08-26T00:24:00+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE9xY2tSRkNCdVZoUXA1TzlUdW9XYTlRR2kwd3ZJRmxTbmRNVG0xX01IZkhFRzZ6eDZXTzZneHdrUm1vMUtULW9tTXNtdlBuRWM",
+          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE9xY2tSRkNCdVZoUXA1TzlUdW9XYTlRR2kwd3ZJRmxTbmRNVG0xX01IZkhFRzZ6eDZXTzZneHdrUm1vMUtULW9tTXNtdlBuRWM",
+          "published_at": "2026-08-28T05:16:00+00:00",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
           "entities": [
             "2330",
-            "NVDA",
             "TSM"
           ],
           "sectors": [],
-          "topics": [
-            "earnings"
-          ],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
             "category": "semiconductor",
             "reason": "semiconductor_keyword",
             "matched_terms": [
-              "輝達"
+              "台積電"
             ],
             "input_fields": [
               "description",
               "summary",
-              "title",
-              "topics"
+              "title"
             ]
           },
           "relevance_reasons": [
-            "market:cross_market",
+            "market:taiwan",
             "tracked_ticker:2330",
-            "tracked_ticker:NVDA",
-            "tracked_ticker:TSM",
-            "market:taiwan"
+            "tracked_ticker:TSM"
           ],
           "freshness": "published",
-          "dedupe_key": "美股齊揚台積電adr漲178投顧關注輝達財報證券cnacomtw",
-          "event_cluster_key": "event-19ac78131e0d6bef7cd2",
-          "published_time_bucket": "2026-08-26T00:00:00+00:00",
+          "dedupe_key": "台積電分紅開獎33職等年薪600萬工程師直奔賓士展間tvbs新聞網",
+          "event_cluster_key": "event-09bdfb46f5dcb83ee787",
+          "published_time_bucket": "2026-08-28T05:00:00+00:00",
           "public_safe": true,
           "source": "Google News｜台股線索",
-          "ranking_score": 35
+          "ranking_score": 30
         }
       ],
       "source_diversity": {
@@ -434,9 +508,8 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 4,
-          "TSM": 4,
-          "NVDA": 2
+          "2330": 5,
+          "TSM": 5
         },
         "sector_interest": {},
         "topic_interest": {},
@@ -459,17 +532,14 @@
             "brent",
             "wti",
             "原油",
-            "地震",
-            "重大災害",
-            "黑天鵝"
+            "地震"
           ],
           "creator_mentions": []
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 4,
-            "TSM": 4,
-            "NVDA": 2
+            "2330": 5,
+            "TSM": 5
           },
           "research_candidate": {},
           "tracked_sector": {},
@@ -490,7 +560,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 5,
-          "checked_at": "2026-08-26T06:26:59.589341+00:00",
+          "checked_at": "2026-08-28T14:21:15.910540+00:00",
           "fallback_used": true
         },
         {
@@ -500,7 +570,7 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-08-26T06:26:59.589341+00:00"
+          "checked_at": "2026-08-28T14:21:15.910540+00:00"
         },
         {
           "key": "official_news_taiwan_mops",
@@ -509,7 +579,7 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-08-26T06:26:59.589341+00:00"
+          "checked_at": "2026-08-28T14:21:15.910540+00:00"
         }
       ],
       "observability": {
@@ -518,7 +588,7 @@
         "ranked_count": 2,
         "relevance_distribution": {
           "market": 5,
-          "tracked_ticker": 4
+          "tracked_ticker": 5
         },
         "providers": [
           {
@@ -531,13 +601,13 @@
             "ranked_count": 2,
             "relevance_distribution": {
               "market": 5,
-              "tracked_ticker": 4
+              "tracked_ticker": 5
             }
           },
           {
             "provider": "unknown",
             "status": "no_event",
-            "last_success_at": "2026-08-26T06:26:59.589341+00:00",
+            "last_success_at": "2026-08-28T14:21:15.910540+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -638,6 +708,49 @@
           "failure_isolation": true
         },
         {
+          "provider_id": "reuters",
+          "display_name": "Reuters",
+          "authority_tier": "trusted_media",
+          "markets": [
+            "global",
+            "taiwan",
+            "us"
+          ],
+          "domains": [
+            "reuters.com"
+          ],
+          "content_types": [
+            "discovery",
+            "market_news"
+          ],
+          "fetch_method": "public_url",
+          "cache_ttl_seconds": 900,
+          "enabled": false,
+          "disabled_reason": "no stable documented public feed endpoint; use as corroboration",
+          "failure_isolation": true
+        },
+        {
+          "provider_id": "gdelt",
+          "display_name": "GDELT",
+          "authority_tier": "discovery",
+          "markets": [
+            "global",
+            "taiwan",
+            "us"
+          ],
+          "domains": [
+            "gdeltproject.org"
+          ],
+          "content_types": [
+            "discovery"
+          ],
+          "fetch_method": "configured_endpoint",
+          "cache_ttl_seconds": 900,
+          "enabled": false,
+          "disabled_reason": "discovery-only endpoint; bounded backoff and cache policy applies",
+          "failure_isolation": true
+        },
+        {
           "provider_id": "nasdaq",
           "display_name": "Nasdaq",
           "authority_tier": "market",
@@ -702,86 +815,101 @@
       ],
       "stories": [
         {
-          "story_id": "news-07d129dac0d6394e3f79",
-          "provider": "sec",
-          "provider_name": "SEC EDGAR",
-          "source_tier": "official",
-          "authority_tier": "official",
-          "title": "8-K - MDWerks, Inc. (0001295514) (Filer)",
+          "story_id": "news-4f70135cf4500ce85a94",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Nasdaq, S&P 500 lifted by Nvidia's forecast; investors eye speech by Fed's Warsh - Reuters",
           "summary": "",
           "description": "",
-          "canonical_url": "https://www.sec.gov/Archives/edgar/data/1295514/000149315226040103/0001493152-26-040103-index.htm",
-          "url": "https://www.sec.gov/Archives/edgar/data/1295514/000149315226040103/0001493152-26-040103-index.htm",
-          "published_at": "2026-08-25T21:29:54+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxPQjFsZE5oMDdHNmpjOTd5V0dmUHItLXFIbzQyblhZQ3Bfa0tGcmFDM3ZHS2ZJRlJEZzhDMXk2b2syeVRZNndVNzZvSnNVSnRFalZXUXJhUm5aZGVUVHVSZVQ0VzllN09IcWtOZENfRmV5eW9fOGU3Mi1JN1VNWGJ4RE1aY0gycWJfRjRrLXpzTmdoSXlSMW9vVHVtdTNJVmdhS0tXT2FwS2dGbGM2",
+          "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxPQjFsZE5oMDdHNmpjOTd5V0dmUHItLXFIbzQyblhZQ3Bfa0tGcmFDM3ZHS2ZJRlJEZzhDMXk2b2syeVRZNndVNzZvSnNVSnRFalZXUXJhUm5aZGVUVHVSZVQ0VzllN09IcWtOZENfRmV5eW9fOGU3Mi1JN1VNWGJ4RE1aY0gycWJfRjRrLXpzTmdoSXlSMW9vVHVtdTNJVmdhS0tXT2FwS2dGbGM2",
+          "published_at": "2026-08-27T23:05:57+00:00",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "NASDAQ",
+            "NVDA"
+          ],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "conflict",
+            "rates"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
+            "category": "black_swan",
+            "reason": "black_swan_keyword",
+            "matched_terms": [
+              "war"
+            ],
             "input_fields": [
               "description",
               "summary",
-              "title"
+              "title",
+              "topics"
             ]
           },
           "relevance_reasons": [
-            "market:us"
+            "market:us",
+            "tracked_ticker:NVDA"
           ],
           "freshness": "published",
-          "dedupe_key": "8kmdwerksinc0001295514filer",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-08-25T21:00:00+00:00",
+          "dedupe_key": "nasdaqsp500liftedbynvidiasforecastinvestorseyespeechbyfedswarshreuters",
+          "event_cluster_key": "event-cc47e45cd008cb3f4291",
+          "published_time_bucket": "2026-08-27T23:00:00+00:00",
           "public_safe": true,
-          "source": "SEC",
-          "ranking_score": 50
+          "source": "Google News｜美股線索",
+          "ranking_score": 25
         },
         {
-          "story_id": "news-0e2389cec61470e20376",
-          "provider": "sec",
-          "provider_name": "SEC EDGAR",
-          "source_tier": "official",
-          "authority_tier": "official",
-          "title": "8-K - PAR PACIFIC HOLDINGS, INC. (0000821483) (Filer)",
+          "story_id": "news-59c6f3daae8230527166",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Wall St set for subdued open as tech rally pauses before Warsh's speech - Reuters",
           "summary": "",
           "description": "",
-          "canonical_url": "https://www.sec.gov/Archives/edgar/data/821483/000143774926028947/0001437749-26-028947-index.htm",
-          "url": "https://www.sec.gov/Archives/edgar/data/821483/000143774926028947/0001437749-26-028947-index.htm",
-          "published_at": "2026-08-25T21:26:32+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPYzh4MV92bkEtZUxKUlZLdW5KN2RKeGVEa2xtekxiVnhNbF9RMWxGVGRCZkZJOWEwQkhaVEhBV2hpb3A2S000Vjd0VklkeTdqRFJGeXpYTFdwb19mclEtbEtneVB0M3VlWE84Q0tGeVdhcUM4QU90a2Rmb1pfR3ljSFNWaDVWbGhFT3lLMzQtQnl2VmR5S2lsVUF1RWQyN2diQWdwaHlqUGRwV3lyUkZJ",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPYzh4MV92bkEtZUxKUlZLdW5KN2RKeGVEa2xtekxiVnhNbF9RMWxGVGRCZkZJOWEwQkhaVEhBV2hpb3A2S000Vjd0VklkeTdqRFJGeXpYTFdwb19mclEtbEtneVB0M3VlWE84Q0tGeVdhcUM4QU90a2Rmb1pfR3ljSFNWaDVWbGhFT3lLMzQtQnl2VmR5S2lsVUF1RWQyN2diQWdwaHlqUGRwV3lyUkZJ",
+          "published_at": "2026-08-28T12:54:27+00:00",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
           "entities": [],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "conflict"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
+            "category": "black_swan",
+            "reason": "black_swan_keyword",
+            "matched_terms": [
+              "war"
+            ],
             "input_fields": [
               "description",
               "summary",
-              "title"
+              "title",
+              "topics"
             ]
           },
           "relevance_reasons": [
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "8kparpacificholdingsinc0000821483filer",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-08-25T21:00:00+00:00",
+          "dedupe_key": "wallstsetforsubduedopenastechrallypausesbeforewarshsspeechreuters",
+          "event_cluster_key": "event-272fc818755ed69bc67d",
+          "published_time_bucket": "2026-08-28T12:00:00+00:00",
           "public_safe": true,
-          "source": "SEC",
-          "ranking_score": 50
+          "source": "Google News｜美股線索",
+          "ranking_score": 20
         }
       ],
       "source_diversity": {
@@ -792,15 +920,17 @@
         "independent_source_count": 1,
         "provider_count": 1,
         "provider_ids": [
-          "sec"
+          "google_news"
         ],
         "source_domains": [
-          "sec.gov"
+          "news.google.com"
         ],
         "supporting_source_count": 0
       },
       "interest_graph": {
-        "ticker_interest": {},
+        "ticker_interest": {
+          "NVDA": 1
+        },
         "sector_interest": {},
         "topic_interest": {},
         "market_interest": {
@@ -822,14 +952,14 @@
             "brent",
             "wti",
             "原油",
-            "地震",
-            "重大災害",
-            "黑天鵝"
+            "地震"
           ],
           "creator_mentions": []
         },
         "source_interest": {
-          "tracked_ticker": {},
+          "tracked_ticker": {
+            "NVDA": 1
+          },
           "research_candidate": {},
           "tracked_sector": {},
           "active_event": {},
@@ -840,25 +970,27 @@
       "exclusion_reasons": {},
       "status": "ready",
       "collection_state": "degraded",
-      "source_failure_count": 1,
+      "source_failure_count": 2,
       "source_health": [
         {
           "key": "news_us",
           "label": "us market news",
           "status": "healthy",
           "source_tier": "discovery",
-          "source_url": "https://news.cnyes.com/news/cat/us_stock",
+          "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+S%26P+500+OR+Federal+Reserve+OR+Nvidia+OR+US+stocks&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 5,
-          "checked_at": "2026-08-26T06:26:59.589341+00:00"
+          "checked_at": "2026-08-28T14:21:15.910540+00:00",
+          "fallback_used": true
         },
         {
           "key": "official_news_us_sec",
           "label": "sec official news",
-          "status": "healthy",
+          "status": "failed",
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
-          "item_count": 10,
-          "checked_at": "2026-08-26T06:26:59.589341+00:00"
+          "item_count": 0,
+          "checked_at": "2026-08-28T14:21:15.910540+00:00",
+          "data_gap": "failed"
         },
         {
           "key": "official_news_us_fed",
@@ -867,7 +999,7 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-08-26T06:26:59.589341+00:00",
+          "checked_at": "2026-08-28T14:21:15.910540+00:00",
           "data_gap": "failed"
         },
         {
@@ -876,7 +1008,7 @@
           "status": "disabled",
           "source_tier": "official",
           "item_count": 0,
-          "checked_at": "2026-08-26T06:26:59.589341+00:00"
+          "checked_at": "2026-08-28T14:21:15.910540+00:00"
         }
       ],
       "observability": {
@@ -884,11 +1016,12 @@
         "stories_deduped": 5,
         "ranked_count": 2,
         "relevance_distribution": {
-          "market": 5
+          "market": 5,
+          "tracked_ticker": 1
         },
         "providers": [
           {
-            "provider": "sec",
+            "provider": "google_news",
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
@@ -896,13 +1029,14 @@
             "stories_deduped": 5,
             "ranked_count": 2,
             "relevance_distribution": {
-              "market": 5
+              "market": 5,
+              "tracked_ticker": 1
             }
           },
           {
             "provider": "unknown",
             "status": "disabled",
-            "last_success_at": "2026-08-26T06:26:59.589341+00:00",
+            "last_success_at": "2026-08-28T14:21:15.910540+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
