@@ -89,3 +89,50 @@ def test_delivery_callback_posts_to_worker_endpoint(monkeypatch):
     assert captured["url"] == "https://worker.example/api/delivery-receipt"
     assert captured["headers"]["X-PRSTK-Signature"].startswith("sha256=")
     assert "test-only-secret" not in captured["data"].decode()
+
+
+def test_delivery_callback_falls_back_to_railway_when_worker_is_unavailable(monkeypatch):
+    monkeypatch.setenv("TRACE_ID", "fallback-trace")
+    monkeypatch.setenv("RELEASE_ID", "release-fallback")
+    monkeypatch.setenv("SNAPSHOT_ID", "snapshot-fallback")
+    monkeypatch.setenv("RECEIPT_CALLBACK_URL", "https://worker.example/api/delivery-receipt")
+    monkeypatch.setenv("RAILWAY_STATUS_URL", "https://railway.example")
+    monkeypatch.setenv("DELIVERY_RECEIPT_SHARED_SECRET", "worker-secret")
+    monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "railway-secret")
+    calls = []
+
+    class Response:
+        def __init__(self, status_code):
+            self.status_code = status_code
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise RuntimeError(f"HTTP {self.status_code}")
+
+    def post(url, **kwargs):
+        calls.append((url, kwargs))
+        return Response(503 if len(calls) == 1 else 200)
+
+    monkeypatch.setattr("src.delivery_callback.requests.post", post)
+    assert send_callback() is True
+    assert [url for url, _ in calls] == [
+        "https://worker.example/api/delivery-receipt",
+        "https://railway.example/delivery-status",
+    ]
+    assert calls[0][1]["headers"]["X-PRSTK-Signature"] != calls[1][1]["headers"]["X-PRSTK-Signature"]
+
+
+def test_delivery_callback_reports_both_backends_when_fallback_also_fails(monkeypatch):
+    monkeypatch.setenv("TRACE_ID", "fallback-failed-trace")
+    monkeypatch.setenv("RECEIPT_CALLBACK_URL", "https://worker.example/api/delivery-receipt")
+    monkeypatch.setenv("RAILWAY_STATUS_URL", "https://railway.example")
+    monkeypatch.setenv("DELIVERY_RECEIPT_SHARED_SECRET", "worker-secret")
+    monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "railway-secret")
+
+    class Response:
+        def raise_for_status(self):
+            raise RuntimeError("HTTP 503")
+
+    monkeypatch.setattr("src.delivery_callback.requests.post", lambda *args, **kwargs: Response())
+    with pytest.raises(RuntimeError, match="backends unavailable"):
+        send_callback()

@@ -46,6 +46,8 @@ def test_worker_has_security_boundary_and_required_routes() -> None:
     assert "retry_after" in worker
     assert "DELIVERY_RECEIPT_SHARED_SECRET" in worker
     assert "delivery_receipt_events" in worker
+    assert 'backend: "supabase"' in worker
+    assert "configured: Boolean" in worker
 
 
 def test_receipt_events_migration_is_idempotent_and_privacy_safe() -> None:
