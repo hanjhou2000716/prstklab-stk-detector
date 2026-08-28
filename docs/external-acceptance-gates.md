@@ -1,14 +1,18 @@
 # External acceptance gate summary
 
-`src.external_acceptance` is a read-only probe for the live Railway and Pages
+`src.external_acceptance` is a read-only probe for the live Worker, Railway and Pages
 boundaries.  It now emits a `gate_summary` alongside the existing overall
 `PASS`/`NEEDS_REVERIFY` result.  The summary is derived from the same blocking
 reasons, so it cannot turn an unsafe release into an accepted one.
 
 The gates are:
 
-- `railway_health`: the health endpoint was reachable and did not report a
-  blocking Railway state;
+- `worker_health`: the canonical zero-cost Worker health endpoint was reachable
+  and healthy;
+- `railway_health`: the rollback/ingress health endpoint was reachable and did
+  not report a blocking Railway state. When Worker is healthy and Railway is
+  unavailable, this is explicitly `optional_unavailable`, never silently
+  reported as healthy;
 - `gmail_watch`: Gmail ingress/watch state was checked and is healthy (or the
   probe explicitly records `not_checked`);
 - `delivery_receipt`: a delivery receipt was observed and its persistence was
@@ -28,6 +32,9 @@ Each gate has one of:
 - `pass` — the gate was checked and passed;
 - `needs_reverify` — a checked gate has a bounded failure or mismatch;
 - `not_checked` — the probe did not have enough evidence to make a claim.
+- `optional_unavailable` — the configured rollback path is unavailable while
+  the canonical Worker path is healthy; this is a warning, not a claim that
+  Railway ingress or observations were checked.
 
 This distinction is intentionally conservative.  A missing optional provider
 is not reported as “no risk”, and an unexercised delivery lane is not reported
@@ -41,7 +48,8 @@ Example (redacted):
   "schema_version": "1.0",
   "status": "NEEDS_REVERIFY",
   "gate_summary": {
-    "railway_health": {"status": "pass", "blocking_reasons": []},
+    "worker_health": {"status": "pass", "blocking_reasons": []},
+    "railway_health": {"status": "optional_unavailable", "blocking_reasons": ["railway_health_unavailable:HTTPError"]},
     "gmail_watch": {"status": "needs_reverify", "blocking_reasons": ["railway_gmail_watch:failed"]},
     "delivery_receipt": {"status": "not_checked", "blocking_reasons": []},
     "pages_manifest": {"status": "pass", "blocking_reasons": []},
@@ -58,5 +66,6 @@ source labels, rejected-row count and latest fetched time; it never stores raw
 mail, Gmail IDs, sender/recipient data or the shared secret. This evidence is
 diagnostic and does not itself promote a release or send Telegram.
 
-Use `--fail-on-needs-reverify` in CI or an acceptance run when a live PASS is
-required.  Do not treat an offline/mock run as evidence of production delivery.
+Use `--worker-url` for the zero-cost path and `--fail-on-needs-reverify` in CI
+or an acceptance run when a live PASS is required. Do not treat an offline/mock
+run as evidence of production delivery.
