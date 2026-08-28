@@ -6,10 +6,11 @@ are intentionally excluded.
 
 ## Mainline
 
-- `main`: `0dbdf568f6c5c...` (merge commit for PR #810)
+- `main`: `b2136a44bb06e8...` (merge commit for PR #811)
 - PR #808: canonicalize known quote crosscheck policy metadata — merged
 - PR #809: keep raw observations usable on long paths — merged
 - PR #810: omit unregistered quote crosscheck policy — merged
+- PR #811: record canonical intelligence sync checkpoint — merged
 
 ## Canonical ownership audit
 
@@ -20,8 +21,7 @@ The following checks pass on the merged mainline:
 - `ruff check src tests`
 - `mypy src` (183 source files)
 - Python compilation and Mini App syntax check
-- full local regression: 1,509 passed before the final metadata-only gate fix;
-  the final fix passed its targeted 78-test regression suite
+- full local regression on the current mainline: 1,509 passed (2026-08-28)
 
 Creator, FinancialJuice and News remain additive projections over the existing
 market/event release path. Creator records stay editorial and cannot become
@@ -65,6 +65,11 @@ dispatch and Telegram as configured. The deployed `/api/delivery-receipt`
 route still returns `404 NOT_FOUND`, which proves the live Worker source has
 not yet been redeployed to the latest receipt implementation. Presence of a
 secret is not treated as proof of value equality.
+
+The secret-name audit was repeated against GitHub Actions and the authenticated
+Cloudflare Worker settings on 2026-08-28. It confirms the same boundary: the
+Worker has the service-role key while GitHub Actions does not. No secret value
+was read, copied, logged or committed.
 
 ## Open gates
 
