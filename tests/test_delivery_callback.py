@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from src.delivery_callback import build_payload
+from src.delivery_callback import build_payload, send_callback
 
 
 def test_delivery_callback_payload_contains_counts_and_only_failed_hashes(monkeypatch):
@@ -61,3 +61,31 @@ def test_delivery_callback_rejects_mismatched_financialjuice_release(monkeypatch
     monkeypatch.setenv("FINANCIALJUICE_TRACE", json.dumps({"release_id": "release-other"}))
     with pytest.raises(ValueError, match="release_id"):
         build_payload()
+
+
+def test_delivery_callback_posts_to_worker_endpoint(monkeypatch):
+    monkeypatch.setenv("TRACE_ID", "worker-trace")
+    monkeypatch.setenv("RELEASE_ID", "release-worker")
+    monkeypatch.setenv("SNAPSHOT_ID", "snapshot-worker")
+    monkeypatch.setenv("DELIVERY_RECEIPT_KIND", "photo_smoke")
+    monkeypatch.setenv("DELIVERY_STATUS", "delivered")
+    monkeypatch.setenv("DELIVERED_COUNT", "1")
+    monkeypatch.setenv("FAILED_COUNT", "0")
+    monkeypatch.setenv("RECEIPT_CALLBACK_URL", "https://worker.example/api/delivery-receipt")
+    monkeypatch.setenv("DELIVERY_RECEIPT_SHARED_SECRET", "test-only-secret")
+    monkeypatch.delenv("RAILWAY_STATUS_URL", raising=False)
+    captured = {}
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+    def post(url, **kwargs):
+        captured.update(url=url, **kwargs)
+        return Response()
+
+    monkeypatch.setattr("src.delivery_callback.requests.post", post)
+    assert send_callback() is True
+    assert captured["url"] == "https://worker.example/api/delivery-receipt"
+    assert captured["headers"]["X-PRSTK-Signature"].startswith("sha256=")
+    assert "test-only-secret" not in captured["data"].decode()

@@ -1,8 +1,9 @@
-"""Send a signed, non-secret Telegram delivery receipt to Railway.
+"""Send a signed, non-secret Telegram delivery receipt to the configured backend.
 
-The callback is optional so GitHub Actions remains usable while the Railway
-variable is being configured.  It contains counts and recipient hashes only;
-bot tokens and raw chat IDs never leave the runner.
+The Cloudflare Worker/Supabase endpoint is preferred; Railway remains an
+optional rollback. The callback is optional so GitHub Actions remains usable
+while the backend is being configured. It contains counts and recipient
+hashes only; bot tokens and raw chat IDs never leave the runner.
 """
 
 from __future__ import annotations
@@ -17,6 +18,26 @@ from datetime import UTC, datetime
 import requests
 
 from src.railway_secret import delivery_shared_secret
+
+
+def _callback_target() -> tuple[str, str] | None:
+    """Return the preferred zero-cost endpoint and its backend label.
+
+    Railway remains a rollback target for existing deployments.  When the
+    Cloudflare Worker URL is configured it is always preferred, so a Railway
+    outage cannot prevent the durable receipt path from being attempted.
+    """
+    worker_url = os.environ.get("RECEIPT_CALLBACK_URL", "").strip().rstrip("/")
+    if worker_url:
+        return worker_url, "cloudflare_worker"
+    railway_url = os.environ.get("RAILWAY_STATUS_URL", "").strip().rstrip("/")
+    if railway_url:
+        return railway_url + "/delivery-status", "railway"
+    return None
+
+
+def _callback_secret() -> str:
+    return os.environ.get("DELIVERY_RECEIPT_SHARED_SECRET", "").strip() or delivery_shared_secret()
 
 
 def _financialjuice_trace() -> dict[str, object] | None:
@@ -90,24 +111,25 @@ def build_payload() -> dict[str, object]:
 
 
 def send_callback() -> bool:
-    url = os.environ.get("RAILWAY_STATUS_URL", "").strip().rstrip("/")
-    if not url:
-        print("Railway delivery callback skipped: RAILWAY_STATUS_URL is not configured")
+    target = _callback_target()
+    if not target:
+        print("Delivery receipt callback skipped: no receipt endpoint is configured")
         return False
-    secret = delivery_shared_secret()
+    url, backend = target
+    secret = _callback_secret()
     payload = build_payload()
     if not payload["trace_id"] or not secret:
-        raise RuntimeError("TRACE_ID and Railway delivery secret are required for the callback")
+        raise RuntimeError("TRACE_ID and delivery receipt secret are required for the callback")
     body = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
     signature = "sha256=" + hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
     response = requests.post(
-        url + "/delivery-status",
+        url,
         data=body,
         headers={"Content-Type": "application/json", "X-PRSTK-Signature": signature},
         timeout=15,
     )
     response.raise_for_status()
-    print(f"Railway delivery callback accepted trace_id={payload['trace_id']}")
+    print(f"{backend} delivery callback accepted trace_id={payload['trace_id']}")
     return True
 
 

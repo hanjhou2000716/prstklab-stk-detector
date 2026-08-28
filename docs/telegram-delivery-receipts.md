@@ -1,5 +1,10 @@
 # Telegram delivery receipts
 
+Aggregate receipts from GitHub Actions prefer the signed Cloudflare Worker
+`/api/delivery-receipt` endpoint and are stored in Supabase. Railway's
+`/delivery-status` endpoint remains an optional rollback for existing runs;
+see [zero-cost-receipt-backend.md](zero-cost-receipt-backend.md).
+
 Cloudflare Worker `/api/send` now assigns a per-request `trace_id` and records
 one privacy-safe receipt per configured recipient in Supabase. Only a short
 SHA-256 recipient hash is stored; raw chat IDs, bot tokens and Telegram response

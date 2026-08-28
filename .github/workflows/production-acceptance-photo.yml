@@ -24,6 +24,8 @@ jobs:
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+      RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
+      DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
       RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
       RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
     steps:
@@ -55,6 +57,8 @@ jobs:
       - name: Persist the scoped delivery receipt
         if: always() && steps.photo.outputs.sent == 'true'
         env:
+          RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
+          DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           DELIVERY_RECEIPT_KIND: photo_smoke
           TRACE_ID: ${{ steps.photo.outputs.trace_id }}
           ALERT_ID: ${{ steps.photo.outputs.alert_id }}

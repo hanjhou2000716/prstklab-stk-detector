@@ -124,10 +124,12 @@ jobs:
           PUBLIC_RELEASE_URL: ${{ steps.deployment.outputs.page_url }}
           RELEASE_ID: ${{ steps.release_gate.outputs.release_id }}
         run: python -m src.official_event_monitor --send --prepared --expected-key "${{ steps.status.outputs.key }}"
-      - name: Persist Telegram delivery receipt to Railway
+      - name: Persist Telegram delivery receipt
         if: always() && steps.send.outputs.sent == 'true'
         continue-on-error: true
         env:
+          RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
+          DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
           RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           TRACE_ID: ${{ steps.send.outputs.trace_id }}

@@ -54,6 +54,8 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
       DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+      RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
+      DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
       RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
       # Optional authenticated sanitized Gmail/FJ export.  When omitted,
       # the client derives /external-observations from RAILWAY_STATUS_URL.
@@ -232,7 +234,7 @@ jobs:
         if: steps.release_gate.outputs.allowed == 'true' && steps.research_policy.outputs.allow_telegram == 'true' && env.NOTIFY == 'true'
         id: send_brief
         run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --send-only --snapshot "$SNAPSHOT_PATH" --manifest "$MANIFEST_PATH" --public-url "${{ steps.deployment.outputs.page_url }}"
-      - name: Persist scheduled-brief delivery receipt to Railway
+      - name: Persist scheduled-brief delivery receipt
         if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome == 'success'
         continue-on-error: true
         env:
@@ -283,7 +285,7 @@ jobs:
               echo "- no Creator Telegram message was sent in this run; fail-closed policy remained active"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Persist Creator delivery receipt to Railway
+      - name: Persist Creator delivery receipt
         if: always() && steps.creator_dispatch.outcome == 'success' && steps.creator_dispatch.outputs.creator_delivery_status != '' && steps.creator_dispatch.outputs.creator_sent != '0'
         continue-on-error: true
         env:

@@ -158,10 +158,12 @@ jobs:
           echo "trace_id=${{ steps.send.outputs.trace_id }}"
           echo "delivery_status=${{ steps.send.outputs.delivery_status }}"
           echo "delivered_count=${{ steps.send.outputs.delivered_count }} failed_count=${{ steps.send.outputs.failed_count }}"
-      - name: Persist Telegram delivery receipt to Railway
+      - name: Persist Telegram delivery receipt
         if: always() && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true')
         continue-on-error: true
         env:
+          RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
+          DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
           RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           TRACE_ID: ${{ steps.send.outputs.trace_id }}

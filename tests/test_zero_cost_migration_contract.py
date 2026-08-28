@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
@@ -31,7 +32,7 @@ def test_frontend_does_not_accept_caller_supplied_recipient() -> None:
 
 def test_worker_has_security_boundary_and_required_routes() -> None:
     worker = (ROOT / "worker/src/index.ts").read_text(encoding="utf-8")
-    for route in ('"/api/health"', '"/api/report"', '"/api/send"'):
+    for route in ('"/api/health"', '"/api/report"', '"/api/send"', '"/api/delivery-receipt"'):
         assert route in worker
     assert "verifyTelegramInitData" in worker
     assert "ALLOWED_ORIGINS" in worker
@@ -43,3 +44,29 @@ def test_worker_has_security_boundary_and_required_routes() -> None:
     assert "recipientHash" in worker
     assert "delivery_receipts" in worker
     assert "retry_after" in worker
+    assert "DELIVERY_RECEIPT_SHARED_SECRET" in worker
+    assert "delivery_receipt_events" in worker
+
+
+def test_receipt_events_migration_is_idempotent_and_privacy_safe() -> None:
+    migration = (ROOT / "supabase/migrations/202608280001_delivery_receipt_events.sql").read_text(encoding="utf-8")
+    assert "public.delivery_receipt_events" in migration
+    assert "trace_id text not null unique" in migration
+    assert "delivery_status in ('delivered', 'partial', 'failed')" in migration
+    assert "alter table public.delivery_receipt_events enable row level security" in migration
+    assert "chat_id" not in migration
+
+
+def test_receipt_callback_prefers_worker_over_railway(monkeypatch) -> None:
+    from src.delivery_callback import _callback_target
+
+    monkeypatch.setenv("RECEIPT_CALLBACK_URL", "https://worker.example/api/delivery-receipt")
+    monkeypatch.setenv("RAILWAY_STATUS_URL", "https://railway.example")
+    assert _callback_target() == ("https://worker.example/api/delivery-receipt", "cloudflare_worker")
+
+
+def test_receipt_event_schema_is_strict_and_machine_readable() -> None:
+    schema = json.loads((ROOT / "schemas/delivery-receipt-event.schema.json").read_text(encoding="utf-8"))
+    assert schema["additionalProperties"] is False
+    assert schema["properties"]["receipt_origin"]["const"] == "github_actions"
+    assert "trace_id" in schema["required"]
