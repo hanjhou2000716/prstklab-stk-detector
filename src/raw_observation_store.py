@@ -140,7 +140,13 @@ class RawObservationStore:
         # addressed object path; the full provenance remains in SQLite and
         # callers only use the relative location recorded below.
         if len(str(destination)) >= 240:
-            relative = Path("o") / f"{observation_id}.json"
+            # The store root itself may already be close to Windows' legacy
+            # MAX_PATH (for example a nested OneDrive/pytest directory). Keep
+            # the fallback filename deliberately short and retain the full
+            # observation id in SQLite metadata. The id is content-addressed,
+            # so the prefix remains deterministic while keeping the raw file
+            # usable on long roots.
+            relative = Path(f".obs-{observation_id[:12]}.json")
             destination = self.root / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         if not destination.exists():
