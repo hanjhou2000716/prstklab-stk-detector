@@ -104,7 +104,7 @@ def test_normalized_quote_replaces_stale_known_policy_metadata():
     assert result["comparison_basis"] == "direction_only"
 
 
-def test_normalized_quote_preserves_custom_metadata_without_known_policy():
+def test_normalized_quote_drops_unregistered_policy_metadata():
     result = normalize_quote_record({
         "ticker": "CUSTOM-INDEX",
         "price": 100,
@@ -114,7 +114,7 @@ def test_normalized_quote_preserves_custom_metadata_without_known_policy():
         "crosscheck_policy": {"ticker": "CUSTOM-INDEX", "primary": ["vendor"], "secondary": ["backup"]},
         "comparison_basis": "vendor_specific",
     })
-    assert result["expected_sources"] == ["vendor", "backup"]
-    assert result["crosscheck_policy"]["primary"] == ["vendor"]
-    assert result["comparison_basis"] == "vendor_specific"
+    assert "expected_sources" not in result
+    assert "crosscheck_policy" not in result
+    assert "comparison_basis" not in result
 
