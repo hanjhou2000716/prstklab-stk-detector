@@ -406,6 +406,24 @@ def _load_cache(path: Path) -> dict[str, Any]:
     return {"schema": CACHE_SCHEMA, "records": {}, "failures": {}}
 
 
+def _save_cache(path: Path, records: dict[str, Any], failures: dict[str, Any]) -> None:
+    """Persist incremental MOPS progress without exposing a partial JSON file.
+
+    A hosted research worker can be terminated by its bounded timeout while a
+    single ticker is still being fetched.  Saving only after the complete
+    batch would discard every ticker processed before that timeout and make
+    the next scheduled run start over.  Write after each ticker attempt via a
+    sibling temporary file, then atomically replace the cache so an
+    interruption can leave either the previous complete cache or the newest
+    complete snapshot, never truncated JSON.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp")
+    payload = {"schema": CACHE_SCHEMA, "records": records, "failures": failures}
+    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    temporary.replace(path)
+
+
 def _fresh(record: dict[str, Any], now: datetime) -> bool:
     try:
         checked = datetime.fromisoformat(str(record["history_checked_at"]).replace("Z", "+00:00"))
@@ -465,6 +483,9 @@ def mops_pristine_history(
                 raise IncompleteMopsHistoryError(ticker, record)
             records[ticker] = record
             failures.pop(ticker, None)
+            # Persist each verified ticker immediately.  This keeps progress
+            # across the worker's bounded timeout and later scheduled runs.
+            _save_cache(cache_path, records, failures)
         except IncompleteMopsHistoryError as error:
             errors.append(f"{ticker} MOPS history: incomplete")
             failures[ticker] = {
@@ -473,6 +494,7 @@ def mops_pristine_history(
                 "missing_periods": error.record.get("missing_periods", []),
                 "attempts": int(previous_failure.get("attempts", 0)) + 1 if isinstance(previous_failure, dict) else 1,
             }
+            _save_cache(cache_path, records, failures)
         except (OSError, ValueError, requests.RequestException, RuntimeError) as error:
             errors.append(f"{ticker} MOPS history: {type(error).__name__}")
             failures[ticker] = {
@@ -481,6 +503,8 @@ def mops_pristine_history(
                 "detail": str(error)[:240],
                 "attempts": int(previous_failure.get("attempts", 0)) + 1 if isinstance(previous_failure, dict) else 1,
             }
-    cache_path.parent.mkdir(parents=True, exist_ok=True)
-    cache_path.write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
+            _save_cache(cache_path, records, failures)
+    # Keep the final write for compatibility with callers that provide an
+    # empty pending set; it also normalizes legacy cache files to schema 2.
+    _save_cache(cache_path, records, failures)
     return {ticker: records[ticker] for ticker in tickers if ticker in records}, errors
