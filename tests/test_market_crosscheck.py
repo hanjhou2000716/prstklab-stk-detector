@@ -87,3 +87,34 @@ def test_normalized_quote_retains_policy_for_published_artifact():
     assert result["comparison_basis"] == "direction_only"
     assert result["crosscheck_policy"]["secondary"] == ["TAIFEX"]
 
+
+def test_normalized_quote_replaces_stale_known_policy_metadata():
+    result = normalize_quote_record({
+        "ticker": "TAIEX",
+        "price": 20_100,
+        "quote_source": "TWSE MIS cash index",
+        "quote_date": "2026-08-05",
+        "expected_sources": ["Yahoo", "Stooq"],
+        "crosscheck_policy": {"ticker": "NASDAQ", "primary": ["Yahoo"], "secondary": ["Stooq"]},
+        "comparison_basis": "price_and_time",
+    })
+    assert result["expected_sources"] == ["TWSE", "TAIFEX"]
+    assert result["crosscheck_policy"]["ticker"] == "TAIEX"
+    assert result["crosscheck_policy"]["primary"] == ["TWSE"]
+    assert result["comparison_basis"] == "direction_only"
+
+
+def test_normalized_quote_preserves_custom_metadata_without_known_policy():
+    result = normalize_quote_record({
+        "ticker": "CUSTOM-INDEX",
+        "price": 100,
+        "quote_source": "vendor",
+        "quote_date": "2026-08-05",
+        "expected_sources": ["vendor", "backup"],
+        "crosscheck_policy": {"ticker": "CUSTOM-INDEX", "primary": ["vendor"], "secondary": ["backup"]},
+        "comparison_basis": "vendor_specific",
+    })
+    assert result["expected_sources"] == ["vendor", "backup"]
+    assert result["crosscheck_policy"]["primary"] == ["vendor"]
+    assert result["comparison_basis"] == "vendor_specific"
+
