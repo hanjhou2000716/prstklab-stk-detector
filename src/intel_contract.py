@@ -190,9 +190,9 @@ def normalize_quote_record(record: dict[str, Any], *, fetched_at: str | None = N
     has_canonical_policy = bool(policy.get("primary") or policy.get("secondary"))
     expected_sources = provenance["expected_sources"]
     comparison_basis = provenance["comparison_basis"]
-    canonical_policy = policy if has_canonical_policy else item.get("crosscheck_policy") or policy
-    canonical_expected = expected_sources if has_canonical_policy else item.get("expected_sources") or expected_sources
-    canonical_basis = comparison_basis if comparison_basis != "not_defined" else item.get("comparison_basis") or comparison_basis
+    canonical_policy = policy if has_canonical_policy else None
+    canonical_expected = expected_sources if has_canonical_policy else None
+    canonical_basis = comparison_basis if has_canonical_policy else None
     item.update({
         "source_tier": item.get("source_tier") or ("official" if official else "public-market"),
         "fetched_at": item.get("fetched_at") or fetched_at or _now(),
@@ -205,9 +205,20 @@ def normalize_quote_record(record: dict[str, Any], *, fetched_at: str | None = N
         "cross_checked": bool(item.get("cross_checked") or provenance["cross_checked"]),
         "crosscheck_status": item.get("crosscheck_status") or provenance["crosscheck_status"],
         "crosscheck_sources": item.get("crosscheck_sources") or provenance["crosscheck_sources"],
-        "expected_sources": canonical_expected,
-        "crosscheck_policy": canonical_policy,
-        "comparison_basis": canonical_basis,
     })
+    if has_canonical_policy:
+        item.update({
+            "expected_sources": canonical_expected,
+            "crosscheck_policy": canonical_policy,
+            "comparison_basis": canonical_basis,
+        })
+    else:
+        # An empty policy is not a policy.  Leaving the fallback source label
+        # beside an empty primary/secondary list makes the artifact contract
+        # report a false mismatch, and carrying an old custom policy can make
+        # a quote appear cross-checkable when no canonical rule exists.
+        item.pop("expected_sources", None)
+        item.pop("crosscheck_policy", None)
+        item.pop("comparison_basis", None)
     return item
 
