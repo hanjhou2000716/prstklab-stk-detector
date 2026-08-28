@@ -250,7 +250,17 @@ async function handle(request: Request, env: Env): Promise<Response> {
   if (url.pathname === "/api/health" && request.method === "GET") {
     let database = "unknown";
     try { await supabase(env, "GET", "system_status", "?select=component,status&limit=1"); database = "ok"; } catch (_) { database = "unavailable"; }
-    return json({ ok: database === "ok", service: env.SERVICE_NAME || "PRStK 稜量盤後速覽", api: "ok", database, version: env.VERSION || "worker" });
+    return json({
+      ok: database === "ok",
+      service: env.SERVICE_NAME || "PRStK 稜量盤後速覽",
+      api: "ok",
+      database,
+      version: env.VERSION || "worker",
+      receipt: {
+        backend: "supabase",
+        configured: Boolean(String(env.DELIVERY_RECEIPT_SHARED_SECRET || "").trim()),
+      },
+    });
   }
   if (url.pathname === "/api/delivery-receipt" && request.method === "POST") {
     const secret = String(env.DELIVERY_RECEIPT_SHARED_SECRET || "").trim();

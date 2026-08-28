@@ -21,9 +21,12 @@ bot tokens never leave the sender.
    `https://<worker-host>/api/delivery-receipt`.
 
 `RAILWAY_STATUS_URL` and its existing secret remain supported as an optional
-rollback. When `RECEIPT_CALLBACK_URL` is present, it is preferred. If neither
-endpoint is configured, the callback is explicitly skipped and the delivery
-step reports that no receipt backend is available.
+rollback. When `RECEIPT_CALLBACK_URL` is present, it is preferred. If the
+Worker returns an error or times out, Actions makes one bounded fallback
+attempt to Railway using Railway's own secret; the two signatures are never
+shared implicitly. If neither endpoint is configured, the callback is
+explicitly skipped and the delivery step reports that no receipt backend is
+available.
 
 ## Guarantees and failure handling
 
@@ -33,7 +36,8 @@ step reports that no receipt backend is available.
 - `trace_id` is unique, so retries are idempotent and cannot create duplicate
   aggregate receipts.
 - A Supabase outage returns a generic `503` without exposing database details;
-  Actions can retry or fall back to Railway.
+  Actions can retry or fall back to Railway. The Worker `/api/health` response
+  exposes only `receipt.backend` and `receipt.configured`, never the secret.
 - The existing per-recipient `delivery_receipts` table remains unchanged for
   Worker `/api/send` responses.
 

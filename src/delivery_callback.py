@@ -40,6 +40,37 @@ def _callback_secret() -> str:
     return os.environ.get("DELIVERY_RECEIPT_SHARED_SECRET", "").strip() or delivery_shared_secret()
 
 
+def _callback_secret_for(backend: str) -> str:
+    """Resolve the secret for a specific receipt backend.
+
+    The zero-cost Worker may use a newly rotated secret while the optional
+    Railway rollback still uses its existing canonical secret.  Keeping these
+    lookups separate lets a Worker outage fail over without signing a Railway
+    request with the wrong key.
+    """
+    if backend == "cloudflare_worker":
+        return _callback_secret()
+    if backend == "railway":
+        return delivery_shared_secret()
+    return ""
+
+
+def _post_callback(url: str, backend: str, payload: dict[str, object]) -> None:
+    """Post one signed receipt and raise a bounded, backend-neutral error."""
+    secret = _callback_secret_for(backend)
+    if not secret:
+        raise RuntimeError(f"{backend} delivery receipt secret is not configured")
+    body = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    signature = "sha256=" + hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
+    response = requests.post(
+        url,
+        data=body,
+        headers={"Content-Type": "application/json", "X-PRSTK-Signature": signature},
+        timeout=15,
+    )
+    response.raise_for_status()
+
+
 def _financialjuice_trace() -> dict[str, object] | None:
     """Return only the release-bound FJ trace fields safe for Railway storage."""
     raw = os.environ.get("FINANCIALJUICE_TRACE", "").strip()
@@ -116,19 +147,28 @@ def send_callback() -> bool:
         print("Delivery receipt callback skipped: no receipt endpoint is configured")
         return False
     url, backend = target
-    secret = _callback_secret()
     payload = build_payload()
-    if not payload["trace_id"] or not secret:
-        raise RuntimeError("TRACE_ID and delivery receipt secret are required for the callback")
-    body = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    signature = "sha256=" + hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
-    response = requests.post(
-        url,
-        data=body,
-        headers={"Content-Type": "application/json", "X-PRSTK-Signature": signature},
-        timeout=15,
-    )
-    response.raise_for_status()
+    if not payload["trace_id"]:
+        raise RuntimeError("TRACE_ID is required for the callback")
+    try:
+        _post_callback(url, backend, payload)
+    except Exception as primary_error:
+        # The Worker is preferred, but Railway is an explicitly supported
+        # rollback path.  A receipt outage must not erase the delivery result
+        # or prevent a second, independently signed attempt.
+        railway_url = os.environ.get("RAILWAY_STATUS_URL", "").strip().rstrip("/")
+        if backend != "cloudflare_worker" or not railway_url:
+            raise
+        fallback_url = railway_url + "/delivery-status"
+        try:
+            _post_callback(fallback_url, "railway", payload)
+        except Exception as fallback_error:
+            raise RuntimeError(
+                "delivery receipt backends unavailable "
+                f"(worker={type(primary_error).__name__}, railway={type(fallback_error).__name__})"
+            ) from fallback_error
+        print(f"railway delivery callback accepted after worker failure trace_id={payload['trace_id']}")
+        return True
     print(f"{backend} delivery callback accepted trace_id={payload['trace_id']}")
     return True
 
