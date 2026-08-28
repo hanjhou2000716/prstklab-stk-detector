@@ -156,6 +156,39 @@ def test_mops_history_full_run_retries_recent_failures(tmp_path: Path):
     assert errors == ["1101 MOPS history: RuntimeError"]
 
 
+def test_mops_history_persists_each_ticker_before_later_worker_interrupt(tmp_path: Path, monkeypatch):
+    """A bounded worker timeout must not discard earlier verified tickers."""
+
+    path = tmp_path / "mops.json"
+    calls = {"count": 0}
+
+    def fake_fetch(ticker, *, client=None, as_of=None):
+        calls["count"] += 1
+        if calls["count"] == 2:
+            # KeyboardInterrupt represents the process being terminated by a
+            # host-side timeout; it is intentionally outside the helper's
+            # provider-error handling.
+            raise KeyboardInterrupt
+        return {
+            "three_year_eps_positive": True,
+            "four_quarter_eps_positive": True,
+            "three_year_dividend_paid": True,
+            "history_data_complete": True,
+        }
+
+    monkeypatch.setattr(mops_history, "fetch_pristine_history", fake_fetch)
+    try:
+        mops_pristine_history(["1101", "1102"], path, max_refresh=0, client=object())
+    except KeyboardInterrupt:
+        pass
+    else:  # pragma: no cover - the fake must interrupt the first run
+        raise AssertionError("the simulated worker interruption did not occur")
+
+    cached = json.loads(path.read_text(encoding="utf-8"))
+    assert "1101" in cached["records"]
+    assert "1102" not in cached["records"]
+
+
 def test_mops_client_uses_legacy_public_endpoint_after_redirect_failure():
     client = MopsPublicClient()
     client._report_once = lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("redirect blocked"))
