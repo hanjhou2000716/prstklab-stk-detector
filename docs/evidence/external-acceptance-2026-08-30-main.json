@@ -1,0 +1,67 @@
+{
+  "kind": "external-acceptance-readonly",
+  "schema_version": "1.0",
+  "captured_at": "2026-08-29T20:34:50.881990+00:00",
+  "status": "PASS",
+  "blocking_reasons": [],
+  "warnings": [
+    "railway_observations_optional_unavailable",
+    "railway_optional_unavailable"
+  ],
+  "gate_summary": {
+    "railway_health": {"status": "optional_unavailable", "blocking_reasons": ["railway_health_unavailable:HTTPError"]},
+    "worker_health": {"status": "pass", "blocking_reasons": []},
+    "gmail_watch": {"status": "not_checked", "blocking_reasons": []},
+    "delivery_receipt": {"status": "not_checked", "blocking_reasons": []},
+    "pages_manifest": {"status": "pass", "blocking_reasons": []},
+    "pages_artifacts": {"status": "pass", "blocking_reasons": []},
+    "external_observations": {"status": "optional_unavailable", "blocking_reasons": ["railway_observations_unavailable"]}
+  },
+  "railway": {
+    "url": "https://loving-happiness-production-b1a9.up.railway.app/",
+    "http_status": 404,
+    "error": "HTTPError",
+    "health": {}
+  },
+  "worker": {
+    "url": "https://prstk-api.hanjhou2000716.workers.dev/",
+    "http_status": 200,
+    "error": null,
+    "health": {"service": "PRStK 稜量盤後速覽"}
+  },
+  "external_observations": {
+    "http_status": 404,
+    "status": "failed",
+    "count": 0,
+    "rejected_count": 0,
+    "sources": []
+  },
+  "pages": {
+    "http_status": 200,
+    "error": null,
+    "status": "ready",
+    "release_id": "release-291ffb0f995750bd",
+    "market_snapshot_id": "2f7d11d0365ff5da",
+    "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
+    "event_snapshot_id": "event-2668aef41e66e57b",
+    "artifact_hash_count": 5,
+    "artifact_hash_audit": {
+      "declared_count": 5,
+      "verified_count": 5,
+      "missing_count": 0,
+      "mismatch_count": 0,
+      "error_count": 0,
+      "snapshot_mismatch_count": 0,
+      "lineage_mismatch_count": 0,
+      "mismatches": [],
+      "errors": [],
+      "snapshot_errors": [],
+      "lineage_errors": []
+    }
+  },
+  "side_effects": {
+    "telegram": false,
+    "railway_write": false,
+    "configuration_changed": false
+  }
+}
