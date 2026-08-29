@@ -15,6 +15,12 @@ def test_mini_app_does_not_replace_unknown_alert_with_current_event():
     assert "applyDeepLink(snapshot)" in APP
 
 
+def test_mini_app_accepts_canonical_delivery_event_identities():
+    assert "item.event_cluster_key" in APP
+    assert "item.notification_id" in APP
+    assert "item.story_id" in APP
+
+
 def test_mini_app_verifies_snapshot_and_observation_identity():
     assert 'params.get("snapshot")' in APP
     assert 'params.get("observation")' in APP

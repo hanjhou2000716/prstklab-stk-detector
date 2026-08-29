@@ -1,0 +1,25 @@
+{
+  "kind": "production-photo-acceptance-single-recipient",
+  "captured_at": "2026-08-29T12:36:59Z",
+  "workflow_run": "33252923777",
+  "status": "PARTIAL",
+  "scope": {"recipient_count": 1, "broadcast": false},
+  "release_id": "release-0c17992be7a6c05c",
+  "snapshot_id": "1090a9f03cc907bc",
+  "alert_id": "production-photo-smoke-release-0c17992be7a6c05c",
+  "photo": {
+    "delivery_status": "delivered",
+    "delivered_count": 1,
+    "failed_count": 0,
+    "card_dimensions": {"width": 1080, "height": 1350},
+    "renderer_error_type": null
+  },
+  "receipt": {
+    "status": "failed",
+    "worker_http_status": 404,
+    "railway_http_status": 404,
+    "reason": "receipt_backends_unavailable"
+  },
+  "side_effects": {"telegram": true, "railway_write": false, "configuration_changed": false},
+  "next_action": "merge PR #814, deploy the canonical Worker, then rerun the same scoped acceptance"
+}

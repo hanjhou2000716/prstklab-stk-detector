@@ -116,13 +116,19 @@ def template_fingerprint(subject: str, body: str, attachments: list[dict[str, An
 
 def route_source(*, sender: str, subject: str, body: str, attachments: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     haystack = " ".join((_text(sender), _text(subject), _text(body))).casefold()
+    # Provider identity must come from trusted transport headers (sender
+    # display name/address) or the subject.  A body can quote another
+    # newsletter and must never be allowed to select a Creator parser.  The
+    # previous body-inclusive match could therefore route an arbitrary mail
+    # mentioning "財經皓角" into the editorial pipeline.
+    identity_text = " ".join((_text(sender), _text(subject))).casefold()
     registry_signals = {
         provider: get_creator_provider(provider).markers
         for provider in creator_ids()
         if get_creator_provider(provider)
     }
     for provider, markers in registry_signals.items():
-        if any(marker in haystack for marker in markers):
+        if any(marker in identity_text for marker in markers):
             trusted_identity = _trusted_identity(
                 markers=markers,
                 sender=sender,
@@ -132,18 +138,8 @@ def route_source(*, sender: str, subject: str, body: str, attachments: list[dict
             return {
                 "source": provider,
                 "content_type": "creator_analysis",
-                "parse_status": "identified" if (
-                    complete_message and (
-                        trusted_identity
-                        or any(marker in haystack for marker in ("episode", "market view", "takeaway", "creator"))
-                    )
-                ) else "unsupported_template",
-                "failure_reason": None if (
-                    complete_message and (
-                        trusted_identity
-                        or any(marker in haystack for marker in ("episode", "market view", "takeaway", "creator"))
-                    )
-                ) else "known_source_template_not_matched",
+                "parse_status": "identified" if complete_message and trusted_identity else "unsupported_template",
+                "failure_reason": None if complete_message and trusted_identity else "known_source_template_not_matched",
                 "template_fingerprint": template_fingerprint(subject, body, attachments),
             }
     # Creator identities are owned by the canonical registry above.  The

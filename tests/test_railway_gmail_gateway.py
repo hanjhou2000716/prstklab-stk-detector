@@ -10,6 +10,7 @@ import pytest
 RAILWAY_MODULES = Path(__file__).parents[1] / "railway-monitor"
 sys.path.insert(0, str(RAILWAY_MODULES))
 
+from email_router import route_source  # noqa: E402
 from email_store import EmailStore  # noqa: E402
 from gmail_watch import GmailWatchConfig, GmailWatchManager, health, renewal_due  # noqa: E402
 
@@ -275,6 +276,16 @@ def test_known_source_template_failure_enters_dlq(tmp_path: Path) -> None:
     result = service.accept_email({"gmail_message_id": "m-2", "sender": "alerts@financialjuice.com", "subject": "hello", "body": "unknown"})
     assert result["status"] == "unsupported_template"
     assert store.health()["dlq_count"] == 1
+
+
+def test_creator_marker_in_body_cannot_hijack_source_route() -> None:
+    result = route_source(
+        sender="newsletter@unknown.example",
+        subject="市場摘要",
+        body="引用財經皓角的看法；Episode: unrelated commentary",
+    )
+    assert result["source"] == "unknown"
+    assert result["parse_status"] == "invalid_source"
 
 
 def test_financialjuice_subject_identity_allows_canonical_fallback_parser(tmp_path: Path) -> None:

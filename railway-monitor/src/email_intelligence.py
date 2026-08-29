@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/email_intelligence.py
-# Canonical source SHA256: 483693167596a4265930ca0628a992a1f212f71ab56afbc00e417e94baaa8a74
+# Canonical source SHA256: 44a5fb3bed9d3046444afa42730bbff7b124f2d2526a82a404a4f469bc15b9dd
 
 """Privacy-preserving email and creator-intelligence contracts.
 
@@ -66,11 +66,16 @@ def creator_episode_key(record: dict[str, Any]) -> str:
 def route_email_source(*, sender: str = "", subject: str = "", body: str = "") -> dict[str, str]:
     """Route by deterministic sender/marker signals; unknown mail is DLQ-safe."""
     haystack = " ".join((_text(sender), _text(subject), _text(body))).casefold()
+    # A quoted creator name in the body is not an authenticated provider
+    # identity.  Only sender/subject markers may select an editorial parser;
+    # otherwise an unrelated newsletter could be promoted into Creator
+    # intelligence merely by mentioning a known creator.
+    identity_text = " ".join((_text(sender), _text(subject))).casefold()
     # Registry-driven providers are checked first so newly configured creators
     # (including Jenny) do not require another hard-coded whitelist.
     for provider in creator_ids():
         metadata = get_creator_provider(provider)
-        if metadata and any(marker in haystack for marker in metadata.markers):
+        if metadata and any(marker in identity_text for marker in metadata.markers):
             return {"source": provider, "content_type": "creator_analysis", "parse_status": "identified"}
     # Creator identities are defined only by creator_providers.json above.
     # Keep this fallback limited to FinancialJuice so a second Creator

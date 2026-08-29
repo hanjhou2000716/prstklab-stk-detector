@@ -33,4 +33,7 @@ jobs:
           set -eu
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "CLOUDFLARE_API_TOKEN is not configured" >&2; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "CLOUDFLARE_ACCOUNT_ID is not configured" >&2; exit 1; }
-          npx --yes wrangler@4.127.0 deploy --account-id "$CLOUDFLARE_ACCOUNT_ID"
+          # Wrangler v4 reads the account from CLOUDFLARE_ACCOUNT_ID; the
+          # removed --account-id CLI flag is no longer accepted by v4.127.0.
+          # Keep dashboard-managed vars while deploying the canonical bundle.
+          npx --yes wrangler@4.127.0 deploy --keep-vars
