@@ -119,6 +119,29 @@ def test_capture_accepts_healthy_worker_when_railway_is_optional() -> None:
     assert report["gate_summary"]["external_observations"]["status"] == "optional_unavailable"
 
 
+def test_capture_keeps_optional_observation_404_non_blocking_when_worker_is_healthy(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A retired Railway observation route must not block the Worker release gate."""
+    monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "acceptance-secret")
+    manifest = _manifest()
+    artifact = manifest.pop("_artifact_fixture")
+    report = capture(
+        railway_url="https://railway.example/",
+        worker_url="https://worker.example/",
+        public_url="https://pages.example/",
+        session=_Session([
+            _Response(404, {}),
+            _Response(200, {"ok": True, "status": "healthy"}),
+            _Response(404, {}),
+            _Response(200, manifest),
+            _Response(200, None, artifact),
+        ]),
+    )
+    assert report["status"] == "PASS"
+    assert "railway_observations:HTTPError" not in report["blocking_reasons"]
+    assert "railway_observations_optional_unavailable" in report["warnings"]
+    assert report["gate_summary"]["external_observations"]["status"] == "optional_unavailable"
+
+
 def test_capture_does_not_hide_railway_source_failure_when_worker_is_healthy() -> None:
     manifest = _manifest()
     artifact = manifest.pop("_artifact_fixture")

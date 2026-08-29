@@ -51,16 +51,12 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     env:
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
       DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
       RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
-      DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
       RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
       # Optional authenticated sanitized Gmail/FJ export.  When omitted,
       # the client derives /external-observations from RAILWAY_STATUS_URL.
       RAILWAY_OBSERVATIONS_URL: ${{ vars.RAILWAY_OBSERVATIONS_URL }}
-      RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
       SLOT: ${{ inputs.slot || github.event.client_payload.slot || 'auto' }}
       FORCE: ${{ inputs.force || github.event.client_payload.force || 'false' }}
       # Manual runs publish and verify by default but never send production
@@ -233,11 +229,18 @@ jobs:
       - name: Send Telegram brief after successful publication
         if: steps.release_gate.outputs.allowed == 'true' && steps.research_policy.outputs.allow_telegram == 'true' && env.NOTIFY == 'true'
         id: send_brief
+        env:
+          # Notification credentials are scoped to this step; collection and
+          # publication steps above never receive Telegram secrets.
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
         run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --send-only --snapshot "$SNAPSHOT_PATH" --manifest "$MANIFEST_PATH" --public-url "${{ steps.deployment.outputs.page_url }}"
       - name: Persist scheduled-brief delivery receipt
         if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome == 'success'
         continue-on-error: true
         env:
+          DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
+          RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           TRACE_ID: ${{ steps.send_brief.outputs.trace_id }}
           RELEASE_ID: ${{ steps.send_brief.outputs.release_id }}
           SNAPSHOT_ID: ${{ steps.send_brief.outputs.snapshot_id }}
@@ -254,8 +257,12 @@ jobs:
         if: steps.release_gate.outputs.allowed == 'true' && env.CREATOR_NOTIFICATION_ENABLED == 'true' && env.NOTIFY == 'true'
         id: creator_dispatch
         env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
+          DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
           RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
+          RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
         run: |
           python -m src.creator_dispatch \
             --manifest "$MANIFEST_PATH" \
