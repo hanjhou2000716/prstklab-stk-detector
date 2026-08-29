@@ -569,6 +569,11 @@ def capture(*, railway_url: str, public_url: str, worker_url: str | None = None,
     worker_error: str | None = None
     if worker:
         worker_status, worker_health, worker_error = _fetch_json(urljoin(worker, "api/health"), timeout=timeout, session=client)
+    worker_ready = worker_status == 200 and isinstance(worker_health, dict) and (
+        worker_health.get("ok") is True or str(worker_health.get("status") or "").casefold() in {"healthy", "ok"}
+    )
+    railway_optional = bool(worker and worker_ready)
+    observations_optional = railway_optional and railway_status != 200
     observation_evidence, observation_error = _fetch_observation_evidence(
         railway,
         timeout=timeout,
@@ -577,10 +582,6 @@ def capture(*, railway_url: str, public_url: str, worker_url: str | None = None,
     manifest_status, manifest, manifest_error = _fetch_json(urljoin(public, "data/release-manifest.json"), timeout=timeout, session=client)
     reasons: list[str] = []
     warnings: list[str] = []
-    worker_ready = worker_status == 200 and isinstance(worker_health, dict) and (
-        worker_health.get("ok") is True or str(worker_health.get("status") or "").casefold() in {"healthy", "ok"}
-    )
-    railway_optional = bool(worker and worker_ready)
     if railway_status != 200 or health is None:
         reason = f"railway_health_unavailable:{railway_error or railway_status}"
         if railway_optional:
@@ -658,12 +659,20 @@ def capture(*, railway_url: str, public_url: str, worker_url: str | None = None,
             reasons.append("railway_runtime_config:secret_migration_required")
     if observation_evidence is not None:
         if observation_error:
-            reasons.append(f"railway_observations:{observation_error}")
+            if observations_optional:
+                warnings.append("railway_observations_optional_unavailable")
+            else:
+                reasons.append(f"railway_observations:{observation_error}")
         elif observation_evidence.get("status") not in {"ready", "no_event"}:
-            reasons.append(f"railway_observations:{observation_evidence.get('status')}")
+            if observations_optional:
+                warnings.append("railway_observations_optional_unavailable")
+            else:
+                reasons.append(f"railway_observations:{observation_evidence.get('status')}")
         if int(observation_evidence.get("rejected_count", 0) or 0) > 0:
-            reasons.append("railway_observations:rejected_rows")
-    reasons.extend(_external_observation_lineage_reasons(observation_evidence, manifest))
+            if not observations_optional:
+                reasons.append("railway_observations:rejected_rows")
+    if observation_error is None and not observations_optional:
+        reasons.extend(_external_observation_lineage_reasons(observation_evidence, manifest))
     artifact_audit: dict[str, Any] = {
         "declared_count": 0,
         "verified_count": 0,
@@ -712,6 +721,11 @@ def capture(*, railway_url: str, public_url: str, worker_url: str | None = None,
         gate_summary["external_observations"] = {
             "status": "optional_unavailable" if railway_optional else "not_checked",
             "blocking_reasons": ["railway_observations_unavailable"] if railway_optional else [],
+        }
+    elif observations_optional and observation_error:
+        gate_summary["external_observations"] = {
+            "status": "optional_unavailable",
+            "blocking_reasons": ["railway_observations_unavailable"],
         }
     else:
         observation_reasons = sorted(
