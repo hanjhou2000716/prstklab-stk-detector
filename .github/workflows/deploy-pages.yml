@@ -84,10 +84,22 @@ jobs:
           # GITHUB_OUTPUT makes release_gate intentionally quiet; unset it in
           # this diagnostic step so a failed gate leaves actionable errors in
           # the Actions log while retaining fail-closed behaviour.
-          env -u GITHUB_OUTPUT python -m src.release_gate --manifest site/data/release-manifest.json --require-production-research
+          if [ "${{ steps.release.outputs.preserved_public }}" = "true" ]; then
+            # A last-good public bundle may be older than today's freshness
+            # window.  It is safe for a static UI rollback, but it must never
+            # be treated as a fresh production release by a notifier.
+            env -u GITHUB_OUTPUT python -m src.release_gate --manifest site/data/release-manifest.json
+          else
+            env -u GITHUB_OUTPUT python -m src.release_gate --manifest site/data/release-manifest.json --require-production-research
+          fi
       - name: Audit production artifacts before Pages upload
         if: steps.release.outputs.publish == 'true'
-        run: python -m src.runtime_audit --require-production
+        run: |
+          if [ "${{ steps.release.outputs.preserved_public }}" = "true" ]; then
+            python -m src.runtime_audit
+          else
+            python -m src.runtime_audit --require-production
+          fi
       - name: 設定 GitHub Pages
         if: steps.release.outputs.publish == 'true'
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
