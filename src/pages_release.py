@@ -13,6 +13,7 @@ then left untouched.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import io
 import json
 import os
@@ -22,6 +23,8 @@ import sys
 import tarfile
 from pathlib import Path
 from typing import Any
+
+import requests
 
 
 class PagesReleaseError(RuntimeError):
@@ -103,12 +106,108 @@ def _validate(root: Path, *, require_production_research: bool) -> tuple[bool, d
     return ready, payload
 
 
+def restore_public_release(
+    *, root: Path | str = Path("."), public_url: str, timeout: float = 15.0
+) -> dict[str, Any]:
+    """Restore the last-good immutable Pages bundle without trusting the checkout.
+
+    A data-release commit can be temporarily invalid while the currently
+    published Pages bundle is still a safe, internally consistent release.
+    Fetch every manifest-referenced artifact, verify its declared SHA-256 and
+    only then replace ``site/data`` atomically.  This keeps static UI deploys
+    useful while preventing an invalid candidate from replacing public data.
+    """
+    root = Path(root).resolve()
+    base = public_url.rstrip("/")
+    if not base.startswith("https://"):
+        raise PagesReleaseError("public release URL must use HTTPS")
+    headers = {
+        "Accept": "application/json",
+        "Cache-Control": "no-cache, no-store",
+        "Pragma": "no-cache",
+        "User-Agent": "PRStK-pages-release",
+    }
+    try:
+        response = requests.get(
+            f"{base}/data/release-manifest.json?pages_restore=1",
+            timeout=timeout,
+            headers=headers,
+        )
+        response.raise_for_status()
+        manifest = response.json()
+    except (requests.RequestException, ValueError, TypeError) as exc:
+        raise PagesReleaseError(f"public manifest unavailable: {type(exc).__name__}") from exc
+    if not isinstance(manifest, dict) or manifest.get("status") != "ready":
+        raise PagesReleaseError("public manifest status is not ready")
+    paths = manifest.get("artifact_paths")
+    hashes = manifest.get("artifact_hashes")
+    if not isinstance(paths, dict) or not isinstance(hashes, dict):
+        raise PagesReleaseError("public manifest artifact paths/hashes are missing")
+
+    staging = root / ".pages-public-release-staging"
+    if staging.exists():
+        shutil.rmtree(staging)
+    staging.mkdir(parents=True, exist_ok=True)
+    try:
+        for name, raw_path in paths.items():
+            if not isinstance(raw_path, str) or not raw_path.strip():
+                raise PagesReleaseError(f"public manifest path missing: {name}")
+            expected = hashes.get(name)
+            if not isinstance(expected, str) or len(expected) != 64:
+                raise PagesReleaseError(f"public manifest hash missing: {name}")
+            relative = Path(raw_path)
+            target = (staging / relative).resolve()
+            if not target.is_relative_to(staging.resolve()):
+                raise PagesReleaseError(f"public artifact path escapes data root: {name}")
+            url = f"{base}/{raw_path.lstrip('/')}"
+            try:
+                artifact_response = requests.get(url, timeout=timeout, headers=headers)
+                artifact_response.raise_for_status()
+                body = bytes(artifact_response.content)
+            except (requests.RequestException, TypeError, ValueError) as exc:
+                raise PagesReleaseError(
+                    f"public artifact unavailable {name}: {type(exc).__name__}"
+                ) from exc
+            if hashlib.sha256(body).hexdigest() != expected:
+                raise PagesReleaseError(f"public artifact hash mismatch: {name}")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(body)
+        data_root = root / "site" / "data"
+        data_root.mkdir(parents=True, exist_ok=True)
+        for child in data_root.iterdir():
+            if child.is_dir() and not child.is_symlink():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
+        for child in (staging / "data").iterdir() if (staging / "data").exists() else ():
+            destination = data_root / child.name
+            if child.is_dir():
+                shutil.copytree(child, destination)
+            else:
+                shutil.copy2(child, destination)
+    finally:
+        if staging.exists():
+            shutil.rmtree(staging)
+    ready, validated = _validate(root, require_production_research=False)
+    if not ready:
+        raise PagesReleaseError(
+            "public release failed local validation: "
+            + "; ".join(str(item) for item in validated.get("validation_errors") or [])
+        )
+    return {
+        "release_id": str(manifest.get("release_id") or ""),
+        "snapshot_id": str(manifest.get("market_snapshot_id") or ""),
+        "artifact_count": len(paths),
+    }
+
+
 def restore_latest_valid(
     *,
     root: Path | str = Path("."),
     branch: str = "data-release",
     max_commits: int = 100,
     require_production_research: bool = True,
+    preserve_public_url: str | None = None,
 ) -> dict[str, Any]:
     """Select the newest production-valid immutable release.
 
@@ -141,6 +240,27 @@ def restore_latest_valid(
             "validation_errors": list(manifest.get("validation_errors") or [])[:5],
         })
 
+    if preserve_public_url:
+        try:
+            preserved = restore_public_release(root=root, public_url=preserve_public_url)
+        except PagesReleaseError as exc:
+            _clear_data(root)
+            return {
+                "publish": False,
+                "reason": "no_valid_production_release",
+                "preserve_error": str(exc),
+                "rejected_count": len(rejected),
+                "latest_rejections": rejected[:5],
+            }
+        return {
+            "publish": True,
+            "preserved_public": True,
+            "reason": "preserved_last_good_public_release",
+            "release_id": preserved["release_id"],
+            "snapshot_id": preserved["snapshot_id"],
+            "rejected_count": len(rejected),
+        }
+
     _clear_data(root)
     return {
         "publish": False,
@@ -169,6 +289,11 @@ def main() -> int:
     parser.add_argument("--branch", default=os.getenv("DATA_RELEASE_BRANCH", "data-release"))
     parser.add_argument("--max-commits", type=int, default=100)
     parser.add_argument("--require-production-research", action="store_true")
+    parser.add_argument(
+        "--preserve-public-url",
+        default=os.getenv("PAGES_PUBLIC_URL"),
+        help="restore the currently published last-good bundle when no candidate is valid",
+    )
     args = parser.parse_args()
     try:
         result = restore_latest_valid(
@@ -176,6 +301,7 @@ def main() -> int:
             branch=args.branch,
             max_commits=args.max_commits,
             require_production_research=args.require_production_research,
+            preserve_public_url=args.preserve_public_url,
         )
     except PagesReleaseError as exc:
         print(json.dumps({"publish": False, "error": str(exc)}, ensure_ascii=False))
