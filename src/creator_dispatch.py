@@ -125,10 +125,16 @@ def dispatch(
     bot_token = token if token is not None else settings.telegram_bot_token
     recipients = chat_ids if chat_ids is not None else settings.telegram_chat_ids
     history = load_creator_delivery_history(receipt_path)
-    remote_history, remote_history_status = load_remote_creator_delivery_history(
-        os.getenv("RAILWAY_STATUS_URL"), delivery_shared_secret()
-    )
-    if os.getenv("RAILWAY_STATUS_URL", "").strip() and remote_history_status not in {"healthy", "not_configured"}:
+    railway_url = os.getenv("RAILWAY_STATUS_URL", "").strip()
+    worker_url = os.getenv("RECEIPT_CALLBACK_URL", "").strip()
+    history_url = worker_url or railway_url
+    history_secret = (os.getenv("DELIVERY_RECEIPT_SHARED_SECRET", "").strip() or delivery_shared_secret()) if worker_url else delivery_shared_secret()
+    remote_history, remote_history_status = load_remote_creator_delivery_history(history_url, history_secret)
+    # The zero-cost Worker is canonical.  Railway remains an explicit rollback
+    # path when the Worker history endpoint is unavailable.
+    if worker_url and remote_history_status != "healthy" and railway_url:
+        remote_history, remote_history_status = load_remote_creator_delivery_history(railway_url, delivery_shared_secret())
+    if history_url and remote_history_status not in {"healthy", "not_configured"}:
         reason = f"creator_delivery_history_{remote_history_status}"
         _write_output({
             "creator_enabled": "true",

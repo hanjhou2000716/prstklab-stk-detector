@@ -32,7 +32,7 @@ def test_frontend_does_not_accept_caller_supplied_recipient() -> None:
 
 def test_worker_has_security_boundary_and_required_routes() -> None:
     worker = (ROOT / "worker/src/index.ts").read_text(encoding="utf-8")
-    for route in ('"/api/health"', '"/api/report"', '"/api/send"', '"/api/delivery-receipt"'):
+    for route in ('"/api/health"', '"/api/report"', '"/api/send"', '"/api/delivery-receipt"', '"/api/creator-delivery-history"'):
         assert route in worker
     assert "verifyTelegramInitData" in worker
     assert "ALLOWED_ORIGINS" in worker
@@ -48,6 +48,7 @@ def test_worker_has_security_boundary_and_required_routes() -> None:
     assert "delivery_receipt_events" in worker
     assert 'backend: "supabase"' in worker
     assert "configured: Boolean" in worker
+    assert "RECEIPT_HISTORY_UNAVAILABLE" in worker
 
 
 def test_receipt_events_migration_is_idempotent_and_privacy_safe() -> None:

@@ -192,6 +192,25 @@ def test_creator_dispatch_fails_closed_when_configured_remote_history_is_unavail
     assert result["reasons"] == ["creator_delivery_history_unavailable"]
 
 
+def test_creator_dispatch_prefers_worker_history_and_uses_worker_secret(tmp_path, monkeypatch):
+    monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
+    monkeypatch.setenv("RECEIPT_CALLBACK_URL", "https://worker.example/api/delivery-receipt")
+    monkeypatch.setenv("DELIVERY_RECEIPT_SHARED_SECRET", "worker-secret")
+    monkeypatch.setenv("RAILWAY_STATUS_URL", "https://railway.example")
+    monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "railway-secret")
+    manifest = _bundle(tmp_path)
+    calls: list[tuple[str | None, str | None]] = []
+
+    def fake_history(url, secret, **_kwargs):
+        calls.append((url, secret))
+        return [{"notification_key": "creator:haojiao:ep-1:initial", "delivery_status": "delivered"}], "healthy"
+
+    monkeypatch.setattr("src.creator_dispatch.load_remote_creator_delivery_history", fake_history)
+    result = dispatch(manifest_path=manifest, public_url="https://example.test/app", token="token", chat_ids=("test-chat",))
+    assert result["status"] == "no_new_content"
+    assert calls == [("https://worker.example/api/delivery-receipt", "worker-secret")]
+
+
 def test_complete_morning_batch_sends_episode_notifications_and_one_digest(tmp_path, monkeypatch):
     monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
     manifest = _bundle(tmp_path, include_morning_batch=True)

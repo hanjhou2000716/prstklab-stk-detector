@@ -20,8 +20,9 @@ bundle.
 
 ## Verification
 
-After a successful deployment, verify the public health endpoint and the
-signed `/api/delivery-receipt` canary. A `404 NOT_FOUND` on the receipt route
+After a successful deployment, verify the public health endpoint, the signed
+`/api/delivery-receipt` canary, and the signed
+`/api/creator-delivery-history` read path. A `404 NOT_FOUND` on either route
 means the active Worker is still an older deployment; do not send a Telegram
 production notification until the route and receipt persistence are verified.
 
