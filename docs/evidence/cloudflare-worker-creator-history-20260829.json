@@ -1,0 +1,25 @@
+{
+  "captured_at": "2026-08-29T13:41:06Z",
+  "environment": "production-canary",
+  "worker_url": "https://prstk-api.hanjhou2000716.workers.dev",
+  "deployment_workflow_run": "33255594938",
+  "deployed_commit": "fa5e0dfbcec7b3f3bc1516bb93a40b06dee78ded",
+  "routes": {
+    "/api/health": {
+      "method": "GET",
+      "status": 200,
+      "assertion": "canonical Worker and Supabase health are available"
+    },
+    "/api/creator-delivery-history": {
+      "method": "POST",
+      "unsigned_probe_status": 401,
+      "assertion": "history endpoint is active and rejects unsigned requests"
+    }
+  },
+  "safety": {
+    "telegram_sent": false,
+    "supabase_write_performed": false,
+    "secret_values_recorded": false
+  },
+  "remaining_gate": "signed creator history read and single-recipient receipt canary"
+}
