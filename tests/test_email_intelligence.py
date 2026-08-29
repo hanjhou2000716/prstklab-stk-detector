@@ -29,6 +29,15 @@ def test_unknown_email_is_explicit_invalid_source() -> None:
     assert len(result["body_hash"]) == 64
 
 
+def test_creator_name_in_body_does_not_select_editorial_source() -> None:
+    result = route_email_source(
+        sender="newsletter@unknown.example",
+        subject="市場摘要",
+        body="引用財經皓角的觀點；Episode: unrelated commentary",
+    )
+    assert result == {"source": "unknown", "content_type": "unknown", "parse_status": "invalid_source"}
+
+
 def test_email_schema_is_valid_and_public_safe() -> None:
     result = normalize_email_observation({
         "message_id": "gmail-1", "thread_id": "thread-1", "sender": "news@financialjuice.com",
