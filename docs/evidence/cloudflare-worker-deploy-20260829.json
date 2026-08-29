@@ -6,6 +6,16 @@
   "status": "success",
   "validation": "wrangler_4_127_0_dry_run_passed",
   "deployment": "canonical_worker_uploaded",
+  "post_deploy_route_probe": {
+    "captured_at": "2026-08-29T21:17:35.2226387+08:00",
+    "health_path": "/api/health",
+    "health_status": 200,
+    "health_ok": true,
+    "receipt_path": "/api/delivery-receipt",
+    "unsigned_probe_status": 401,
+    "unsigned_probe_error": "INVALID_SIGNATURE",
+    "interpretation": "canonical receipt route is active; no receipt was written"
+  },
   "secret_values_exposed": false,
   "main_merged": false,
   "follow_up": "rerun one explicitly approved single-recipient photo acceptance to verify receipt persistence"

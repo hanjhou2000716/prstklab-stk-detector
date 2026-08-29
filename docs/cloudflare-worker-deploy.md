@@ -29,7 +29,11 @@ On 2026-08-29 the canonical Worker was successfully deployed from the
 unmerged feature branch in workflow run `33253334569`. A follow-up
 single-recipient photo acceptance is still required to prove receipt
 persistence; the prior attempt reached Telegram but both receipt backends
-returned 404.
+returned 404. A non-mutating post-deploy probe subsequently returned HTTP 200
+from `/api/health` and HTTP 401 `INVALID_SIGNATURE` from
+`/api/delivery-receipt`, proving that the canonical route is active without
+writing a synthetic receipt. The signed production canary is still required
+to verify Supabase persistence end to end.
 
 Rollback uses the Cloudflare Worker Versions page to promote the previous
 known-good version. The workflow is intentionally manual so a missing token or
