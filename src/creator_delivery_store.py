@@ -64,13 +64,20 @@ def append_creator_delivery_receipts(
     return True
 
 
+def _history_endpoint(base_url: str) -> str:
+    """Map a Railway base or canonical Worker callback URL to its history route."""
+    if base_url.endswith("/api/delivery-receipt"):
+        return base_url[: -len("/api/delivery-receipt")] + "/api/creator-delivery-history"
+    return base_url + "/creator-delivery-history"
+
+
 def load_remote_creator_delivery_history(
     base_url: str | None,
     shared_secret: str | None,
     *,
     timeout: float = 10,
 ) -> tuple[list[dict[str, Any]], str]:
-    """Read bounded Creator notification keys from Railway.
+    """Read bounded Creator notification keys from the configured backend.
 
     A remote outage is explicitly fail-soft: the caller keeps local history
     and records ``unavailable`` rather than treating the outage as proof that
@@ -87,7 +94,7 @@ def load_remote_creator_delivery_history(
     signature = "sha256=" + hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
     try:
         response = requests.post(
-            url + "/creator-delivery-history",
+            _history_endpoint(url),
             data=body,
             headers={"Content-Type": "application/json", "X-PRSTK-Signature": signature},
             timeout=timeout,

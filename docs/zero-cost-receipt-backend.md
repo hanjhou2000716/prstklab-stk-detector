@@ -7,6 +7,13 @@ verifies the HMAC and writes one idempotent row to
 `delivery_receipt_events`. Only recipient hashes are stored—raw chat IDs and
 bot tokens never leave the sender.
 
+The same Worker is also the canonical Creator idempotency-history reader:
+`POST /api/creator-delivery-history` accepts the same HMAC boundary and returns
+only bounded, deduplicated `notification_keys` from Creator receipt rows. The
+Creator dispatcher derives this route from `RECEIPT_CALLBACK_URL`, so it does
+not require a live Railway service for duplicate protection. Railway remains
+an explicit rollback reader when the Worker history endpoint is unavailable.
+
 ## One-time setup
 
 1. Apply `supabase/migrations/202608280001_delivery_receipt_events.sql` to the
@@ -40,6 +47,8 @@ available.
   exposes only `receipt.backend` and `receipt.configured`, never the secret.
 - The existing per-recipient `delivery_receipts` table remains unchanged for
   Worker `/api/send` responses.
+- Creator history queries are read-only, require `receipt_kind=creator`, and
+  never return message text, media, raw chat IDs, or transport secrets.
 
 ## Verification
 
@@ -54,6 +63,12 @@ For a controlled canary, set `RECEIPT_CALLBACK_URL`,
 Confirm the returned `trace_id` in Supabase, then repeat the same trace to
 verify that the row is updated rather than duplicated. Do not broadcast a
 test to production recipients.
+
+For Creator idempotency, a signed request body such as
+`{"receipt_kind":"creator","limit":200}` to
+`/api/creator-delivery-history` should return only notification keys. A `503`
+is treated as unavailable and causes a bounded Railway fallback; it is never
+treated as evidence that no Creator episode was delivered.
 
 ## Rollback
 

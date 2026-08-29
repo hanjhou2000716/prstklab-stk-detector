@@ -120,6 +120,14 @@ function boundedHashes(value: unknown): string[] | null {
   return values.every((item): item is string => Boolean(item)) ? values : null;
 }
 
+function boundedNotificationKeys(value: unknown, limit = 200): string[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value
+    .map((item) => boundedString(item, 160))
+    .filter((item): item is string => Boolean(item)))]
+    .slice(0, Math.max(1, Math.min(200, limit)));
+}
+
 function validCount(value: unknown): number | null {
   return Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 100000 ? Number(value) : null;
 }
@@ -278,6 +286,25 @@ async function handle(request: Request, env: Env): Promise<Response> {
       return json({ ok: false, error: "RECEIPT_PERSISTENCE_FAILED" }, 503);
     }
     return json({ ok: true, trace_id: receipt.trace_id, receipt_status: "persisted", receipt_backend: "supabase" });
+  }
+  if (url.pathname === "/api/creator-delivery-history" && request.method === "POST") {
+    const secret = String(env.DELIVERY_RECEIPT_SHARED_SECRET || "").trim();
+    if (!secret) return json({ ok: false, error: "RECEIPT_NOT_CONFIGURED" }, 503);
+    const body = await request.text();
+    if (body.length > 4096) return json({ ok: false, error: "PAYLOAD_TOO_LARGE" }, 413);
+    if (!await verifyReceiptSignature(request, body, secret)) return json({ ok: false, error: "INVALID_SIGNATURE" }, 401);
+    let input: unknown;
+    try { input = JSON.parse(body); } catch (_) { return json({ ok: false, error: "INVALID_JSON" }, 400); }
+    const requestBody = input && typeof input === "object" && !Array.isArray(input) ? input as Record<string, unknown> : {};
+    if (requestBody.receipt_kind !== "creator") return json({ ok: false, error: "INVALID_RECEIPT_KIND" }, 400);
+    const limit = validCount(requestBody.limit) ?? 200;
+    try {
+      const rows = await supabase(env, "GET", "delivery_receipt_events", `?receipt_kind=eq.creator&select=notification_keys&order=received_at.desc&limit=${Math.min(200, Math.max(1, limit))}`);
+      const keys = boundedNotificationKeys(rows.flatMap((row) => row && typeof row === "object" ? (row as Record<string, unknown>).notification_keys : []), limit);
+      return json({ ok: true, notification_keys: keys, receipt_backend: "supabase" });
+    } catch (_) {
+      return json({ ok: false, error: "RECEIPT_HISTORY_UNAVAILABLE" }, 503);
+    }
   }
   if (url.pathname === "/api/report" && request.method === "POST") {
     const identity = await isAuthorized(request, env);

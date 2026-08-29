@@ -34,3 +34,17 @@ def test_remote_creator_history_fails_soft_without_secret():
     rows, status = creator_delivery_store.load_remote_creator_delivery_history("https://railway.example", "")
     assert rows == []
     assert status == "secret_missing"
+
+
+def test_worker_callback_url_uses_canonical_history_route(monkeypatch):
+    captured = {}
+
+    def post(*args, **kwargs):
+        captured["url"] = args[0] if args else kwargs.get("url")
+        return _Response()
+
+    monkeypatch.setattr(creator_delivery_store.requests, "post", post)
+    creator_delivery_store.load_remote_creator_delivery_history(
+        "https://worker.example/api/delivery-receipt", "secret"
+    )
+    assert captured["url"] == "https://worker.example/api/creator-delivery-history"
