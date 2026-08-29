@@ -30,6 +30,13 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunsplit
 
 import httpx
 
+# The monitor is also loaded directly by the standalone image and by contract
+# tests (rather than imported as a package).  Make sibling modules resolvable
+# in that mode without relying on pytest collection order or PYTHONPATH.
+_MONITOR_DIR = str(Path(__file__).resolve().parent)
+if _MONITOR_DIR not in sys.path:
+    sys.path.insert(0, _MONITOR_DIR)
+
 try:
     from runtime_config import configuration_health, delivery_shared_secret
 except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
