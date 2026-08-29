@@ -8,6 +8,31 @@ from urllib.parse import parse_qs, urlparse
 VIEWS = {"event", "market", "briefing", "research", "resolved", "source-health"}
 
 
+def _alert_identities(item: dict[str, Any]) -> set[str]:
+    """Return identities that delivery producers may place in ``alert=``.
+
+    Event-cluster and notification IDs are the durable identities used by the
+    release/Telegram pipeline; older artifacts may expose only ``alert_id`` or
+    ``canonical_key``.  Matching these aliases is safe because resolution is
+    still constrained to the supplied release and alert collection.
+    """
+    return {
+        str(item.get(key)).strip()
+        for key in (
+            "alert_id",
+            "event_id",
+            "id",
+            "canonical_key",
+            "event_cluster_key",
+            "event_key",
+            "notification_id",
+            "item_id",
+            "story_id",
+        )
+        if item.get(key) not in (None, "")
+    }
+
+
 @dataclass(frozen=True)
 class DeepLink:
     alert: str = ""
@@ -41,7 +66,7 @@ def resolve_deep_link(link: DeepLink, *, manifest: dict[str, Any], alerts: list[
     }
     if link.snapshot and known_snapshots and link.snapshot not in known_snapshots:
         return {"status": "archived", "message": "snapshot does not belong to this release", "view": link.view}
-    match = next((item for item in alerts if str(item.get("alert_id") or "") == link.alert), None)
+    match = next((item for item in alerts if link.alert in _alert_identities(item)), None)
     if not match:
         return {"status": "missing", "message": "alert not found", "view": link.view}
     alert_snapshot = str(match.get("snapshot_id") or "")

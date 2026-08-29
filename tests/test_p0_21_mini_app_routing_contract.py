@@ -28,3 +28,14 @@ def test_p0_21_snapshot_and_observation_lineage_must_remain_exact() -> None:
     assert result["status"] == "ok"
     assert result["snapshot_id"] == "s1"
     assert result["observation_id"] == "o1"
+
+
+def test_p0_21_event_cluster_identity_resolves_without_cross_release_fallback() -> None:
+    link = parse_deep_link("https://example.test/app?alert=cluster-1&release=r1&view=event")
+    result = resolve_deep_link(
+        link,
+        manifest={"release_id": "r1", "event_snapshot_id": "s1"},
+        alerts=[{"event_cluster_key": "cluster-1", "snapshot_id": "s1"}],
+    )
+    assert result["status"] == "ok"
+    assert result["alert"]["event_cluster_key"] == "cluster-1"

@@ -1165,8 +1165,21 @@ const applyDeepLink = (snapshot) => {
   if (target?.tagName === "DETAILS") target.open = true;
   if (requestedAlert) {
     const items = Array.isArray(snapshot.events?.items) ? snapshot.events.items : [];
-    const event = items.find((item) => [item.alert_id, item.event_id, item.id, item.canonical_key]
-      .filter(Boolean).some((value) => String(value) === requestedAlert));
+    // Delivery producers use the durable event-cluster/notification identity,
+    // while older market artifacts may expose only `id` or `canonical_key`.
+    // Accept every contract identity that can be emitted in a deep link, but
+    // still resolve only against this release's event items.
+    const event = items.find((item) => [
+      item.alert_id,
+      item.event_id,
+      item.id,
+      item.canonical_key,
+      item.event_cluster_key,
+      item.event_key,
+      item.notification_id,
+      item.item_id,
+      item.story_id,
+    ].filter(Boolean).some((value) => String(value) === requestedAlert));
     if (!event) {
       setReleaseHealth("該訊息已歸檔或不可用；未顯示其他事件。", "error");
       setText("market-focus", "找不到此 alert 的同一 release 證據，暫不替換為其他事件。");
