@@ -25,6 +25,12 @@ signed `/api/delivery-receipt` canary. A `404 NOT_FOUND` on the receipt route
 means the active Worker is still an older deployment; do not send a Telegram
 production notification until the route and receipt persistence are verified.
 
+On 2026-08-29 the canonical Worker was successfully deployed from the
+unmerged feature branch in workflow run `33253334569`. A follow-up
+single-recipient photo acceptance is still required to prove receipt
+persistence; the prior attempt reached Telegram but both receipt backends
+returned 404.
+
 Rollback uses the Cloudflare Worker Versions page to promote the previous
 known-good version. The workflow is intentionally manual so a missing token or
 an invalid bundle fails closed without changing the active version.
