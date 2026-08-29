@@ -13,6 +13,11 @@ The API token should be scoped to the target account with Workers Script edit
 permission only. Do not commit or print the token. Runtime secrets remain in
 Cloudflare Worker settings and are not copied into GitHub logs.
 
+Wrangler 4 reads the account from `CLOUDFLARE_ACCOUNT_ID`; the deploy workflow
+does not pass the removed `--account-id` CLI option. `--keep-vars` preserves
+variables configured in the Worker dashboard while publishing the canonical
+bundle.
+
 ## Verification
 
 After a successful deployment, verify the public health endpoint and the
