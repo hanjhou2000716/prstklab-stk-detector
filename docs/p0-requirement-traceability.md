@@ -60,7 +60,7 @@ gates are cleared:
 | Debt | Evidence | Status |
 |---|---|---|
 | Production release acceptance | Read-only run `33252637471` reached Pages manifest `ready` (`release-0c17992be7a6c05c`); 7/7 declared artifact hashes matched; Worker `/api/health` returned 200/healthy; redacted evidence is `docs/evidence/external-acceptance-2026-08-29T123004Z.json` | NEEDS_REVERIFY on latest main; external observation lineage and post-merge Mini App visual acceptance remain |
-| Telegram/Railway delivery acceptance | Prior Actions photo smoke run `31839093636` / job `94891873503`; one scoped recipient; Railway receipt `delivered`, `receipt_matches=true` | NEEDS_REVERIFY on latest main; current read-only probe returned Railway HTTP 404, so Gmail watch, persistence, and current delivery receipt are not claimed |
+| Telegram/Railway delivery acceptance | Prior Actions photo smoke run `31839093636` / job `94891873503`; latest controlled photo run `33252923777` delivered one 1080×1350 card to one recipient; redacted evidence `docs/evidence/production-photo-acceptance-2026-08-29T123659Z.json` | NEEDS_REVERIFY on latest main; current run reached Telegram but both Worker and Railway receipt endpoints returned HTTP 404, so receipt persistence is not claimed |
 
 No production notification, secret access, or data fabrication was used to
 make these checks green.
