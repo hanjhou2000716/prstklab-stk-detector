@@ -36,6 +36,8 @@ def test_pages_workflow_preserves_previous_release_when_no_candidate_is_valid():
     assert "python -m src.pages_release" in workflow
     assert "steps.release.outputs.publish == 'true'" in workflow
     assert "no_valid_production_release" in workflow
+    assert "steps.release.outputs.preserved_public" in workflow
+    assert "python -m src.release_gate --manifest site/data/release-manifest.json" in workflow
 
 
 def test_restore_public_release_verifies_hashes_before_replacing_data(tmp_path, monkeypatch):
