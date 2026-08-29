@@ -4,6 +4,7 @@ from pathlib import Path
 def test_creator_insight_panel_is_safe_and_optional():
     page = Path("site/index.html").read_text(encoding="utf-8")
     app = Path("site/app.js").read_text(encoding="utf-8")
+    assert '<a href="#creator-section">洞察</a>' in page
     assert 'id="creator-intelligence"' in page
     assert 'id="creator-intelligence" class="briefing-intelligence" aria-label="財經內容洞察" open' in page
     assert "財經內容洞察" in page
