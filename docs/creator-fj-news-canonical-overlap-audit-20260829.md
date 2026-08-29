@@ -15,6 +15,7 @@ branches or create a parallel pipeline.
 | Base | `origin/main` → `011103210538d3db0c0bf05f02f56b20d5cb9f67` |
 | Tracked working tree | clean before this audit change |
 | Existing local regression | 1,509 passed (main baseline) |
+| Current branch full regression | 1,511 passed in 156.63s; storage probe startup hang fixed |
 | Canonical-overlap audit | pass before this change |
 | External acceptance | `NEEDS_REVERIFY` for Gmail/Railway/Pages/Telegram; no claim is inferred from mocks |
 
@@ -69,6 +70,12 @@ python -m pytest -q --basetemp=.tmp-creator-route-hardening \
 The full local baseline and canonical-overlap checks remain required after the
 atomic commit. Live Gmail, Railway, Pages and Telegram evidence is not
 fabricated; those rows stay `NEEDS_REVERIFY` until a controlled canary exists.
+
+The post-fix full regression completed with 1,511 tests passing. During the
+first run, Gmail runtime startup exposed a Windows/OneDrive stall in
+`tempfile.NamedTemporaryFile`; the storage probe now uses a deterministic
+per-process sibling and atomic replace, and the Gmail runtime/storage suites
+pass (8 tests).
 
 ## Requirement reconciliation
 
