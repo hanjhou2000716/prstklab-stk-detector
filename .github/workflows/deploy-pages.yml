@@ -55,7 +55,11 @@ jobs:
           # currently published Pages release instead of failing/emailing.
           # The previous inline guard (manifest.get("status") != "ready") is
           # now enforced for every candidate by src.pages_release.
-          python -m src.pages_release --branch data-release --max-commits 100 --require-production-research
+          python -m src.pages_release \
+            --branch data-release \
+            --max-commits 100 \
+            --require-production-research \
+            --preserve-public-url "${{ vars.DASHBOARD_URL || 'https://hanjhou2000716.github.io/prstklab-stk-detector' }}"
       - name: Report preserved Pages release
         if: steps.release.outputs.publish != 'true'
         run: |
