@@ -59,8 +59,8 @@ gates are cleared:
 
 | Debt | Evidence | Status |
 |---|---|---|
-| Production release acceptance | Public Pages manifest `release-957714e850293f39` is `ready`; six declared public artifact hashes matched | NEEDS_REVERIFY on latest main; post-merge Mini App visual acceptance remains |
-| Telegram/Railway delivery acceptance | Actions photo smoke run `31839093636` / job `94891873503`; one scoped recipient; Railway receipt `delivered`, `receipt_matches=true` | NEEDS_REVERIFY on latest main; Railway GDELT `HTTP_429` and dispatch `HTTP_403` remain open runtime issues |
+| Production release acceptance | Read-only run `33252637471` reached Pages manifest `ready` (`release-0c17992be7a6c05c`); 7/7 declared artifact hashes matched; Worker `/api/health` returned 200/healthy; redacted evidence is `docs/evidence/external-acceptance-2026-08-29T123004Z.json` | NEEDS_REVERIFY on latest main; external observation lineage and post-merge Mini App visual acceptance remain |
+| Telegram/Railway delivery acceptance | Prior Actions photo smoke run `31839093636` / job `94891873503`; one scoped recipient; Railway receipt `delivered`, `receipt_matches=true` | NEEDS_REVERIFY on latest main; current read-only probe returned Railway HTTP 404, so Gmail watch, persistence, and current delivery receipt are not claimed |
 
 No production notification, secret access, or data fabrication was used to
 make these checks green.

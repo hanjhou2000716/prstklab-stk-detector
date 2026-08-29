@@ -17,7 +17,7 @@ branches or create a parallel pipeline.
 | Existing local regression | 1,509 passed (main baseline) |
 | Current branch full regression | 1,511 passed in 156.63s; storage probe startup hang fixed |
 | Canonical-overlap audit | pass before this change |
-| External acceptance | `NEEDS_REVERIFY` for Gmail/Railway/Pages/Telegram; no claim is inferred from mocks |
+| External acceptance | Read-only run `33252637471`: Worker healthy and Pages 7/7 artifact hashes matched; Railway returned 404 and external observation lineage is `NEEDS_REVERIFY` |
 
 Untracked historical pytest and temporary directories are intentionally left
 untouched. They are not part of this change and are never staged.
@@ -76,6 +76,12 @@ first run, Gmail runtime startup exposed a Windows/OneDrive stall in
 `tempfile.NamedTemporaryFile`; the storage probe now uses a deterministic
 per-process sibling and atomic replace, and the Gmail runtime/storage suites
 pass (8 tests).
+
+The read-only external acceptance run `33252637471` verified the public Worker
+health endpoint and the Pages release (`release-0c17992be7a6c05c`) with all 7
+declared artifact hashes matching. The configured Railway hostname returned
+HTTP 404, so no Gmail, persistence, observation-lineage, or delivery-receipt
+claim is promoted to production evidence.
 
 ## Requirement reconciliation
 
