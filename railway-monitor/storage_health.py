@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import json
 import os
-import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -76,14 +75,16 @@ def record_storage_startup(state_path: str | Path, *, now: datetime | None = Non
     }
     try:
         marker.parent.mkdir(parents=True, exist_ok=True)
-        with tempfile.NamedTemporaryFile(
-            mode="w", encoding="utf-8", dir=marker.parent, delete=False,
-            prefix=f"{marker.name}.", suffix=".tmp",
-        ) as handle:
+        # Avoid ``tempfile.NamedTemporaryFile`` here.  On Windows-mounted
+        # OneDrive volumes its randomized-name probing can block behind the
+        # sync/filter driver, which stalls Gmail ingress startup indefinitely.
+        # A deterministic per-process sibling keeps the same atomic replace
+        # semantics without the unbounded candidate-name loop.
+        temporary = marker.with_name(f"{marker.name}.{os.getpid()}.tmp")
+        with temporary.open("w", encoding="utf-8") as handle:
             json.dump(payload, handle, ensure_ascii=False, sort_keys=True)
             handle.flush()
             os.fsync(handle.fileno())
-            temporary = Path(handle.name)
         os.replace(temporary, marker)
     except (OSError, ValueError) as error:
         try:
