@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from collections.abc import Mapping
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -55,36 +57,85 @@ def load_upstream_candidates(market: str, data_dir: Path, universe_file: str | N
     return list(candidates.values())
 
 
-def public_share_counts(candidates: list[dict[str, str]]) -> dict[str, float]:
+def public_share_count_records(
+    candidates: list[dict[str, str]], *, cache_path: str | Path | None = None,
+    max_cache_age_days: int = 7,
+) -> dict[str, dict[str, Any]]:
     """Read a bounded public share-count proxy for turnover-rate screening.
 
     Yahoo's public ``floatShares`` field is preferred; ``shares`` is the
     disclosed outstanding-share fallback.  The result is used only to derive
     a transparent turnover proxy when TWSE free-float data is unavailable.
     """
+    cache_file = Path(cache_path) if cache_path else None
+    cache: dict[str, dict[str, Any]] = {}
+    if cache_file and cache_file.exists():
+        try:
+            loaded = json.loads(cache_file.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                cache = loaded
+        except (OSError, ValueError, TypeError):
+            cache = {}
+    now = datetime.now(UTC)
     try:
         import yfinance as yf
     except ImportError:
-        return {}
-    output: dict[str, float] = {}
+        return {
+            symbol: {**record, "freshness": "bounded_cache"}
+            for symbol, record in cache.items()
+            if isinstance(record, dict) and record.get("value")
+            and _cache_is_fresh(record.get("fetched_at"), now, max_cache_age_days)
+        }
+    output: dict[str, dict[str, Any]] = {}
     for item in candidates:
         symbol = item["symbol"]
         try:
             ticker = yf.Ticker(symbol)
             info = ticker.info
-            shares = info.get("floatShares") or info.get("sharesOutstanding")
+            field_name = "floatShares" if info.get("floatShares") else "sharesOutstanding"
+            shares = info.get(field_name)
             if shares is None:
+                field_name = "fast_info.shares"
                 shares = dict(ticker.fast_info).get("shares")
             if isinstance(shares, (int, float)) and float(shares) > 0:
-                output[symbol] = float(shares)
+                output[symbol] = {
+                    "value": float(shares), "source": "Yahoo public quote metadata",
+                    "source_tier": "secondary_public", "field": field_name,
+                    "fetched_at": now.isoformat(), "freshness": "fresh",
+                }
         except Exception:
-            continue
+            cached = cache.get(symbol)
+            if isinstance(cached, dict) and cached.get("value"):
+                try:
+                    if _cache_is_fresh(cached.get("fetched_at"), now, max_cache_age_days):
+                        output[symbol] = {**cached, "freshness": "bounded_cache"}
+                except (TypeError, ValueError):
+                    pass
+    if cache_file and output:
+        try:
+            cache_file.parent.mkdir(parents=True, exist_ok=True)
+            cache_file.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+        except OSError:
+            pass
     return output
+
+
+def _cache_is_fresh(value: Any, now: datetime, max_age_days: int) -> bool:
+    try:
+        fetched = datetime.fromisoformat(str(value or "").replace("Z", "+00:00")).astimezone(UTC)
+    except (TypeError, ValueError):
+        return False
+    return now - fetched <= timedelta(days=max_age_days)
+
+
+def public_share_counts(candidates: list[dict[str, str]]) -> dict[str, float]:
+    """Backward-compatible values-only view of audited share-count records."""
+    return {symbol: float(record["value"]) for symbol, record in public_share_count_records(candidates).items()}
 
 
 def public_quotes(
     candidates: list[dict[str, str]], batch_size: int = 50,
-    share_counts: dict[str, float] | None = None,
+    share_counts: Mapping[str, float | dict[str, Any]] | None = None,
 ) -> tuple[dict[str, dict[str, float | str]], list[str]]:
     """Return latest quote plus three-month heat observations for each symbol."""
     quotes: dict[str, dict[str, float | str]] = {}
@@ -97,10 +148,15 @@ def public_quotes(
                     bars = downloaded[item["symbol"]].dropna() if len(group) > 1 else downloaded.dropna()
                     context = latest_quote_context(bars)
                     if context:
-                        shares = (share_counts or {}).get(item["symbol"])
+                        raw_shares = (share_counts or {}).get(item["symbol"])
+                        metadata = raw_shares if isinstance(raw_shares, dict) else None
+                        shares = metadata.get("value") if metadata else raw_shares
+                        shares_value = float(shares) if isinstance(shares, (int, float)) else None
                         quote: dict[str, Any] = {
-                            **context, **heat_metrics(bars, shares_outstanding=shares),
-                            "turnover_rate_basis": "Yahoo floatShares/shares proxy" if shares else None,
+                            **context, **heat_metrics(bars, shares_outstanding=shares_value),
+                            "turnover_rate_basis": "公開流通股數／流通股代理" if shares_value else None,
+                            "turnover_rate_provenance": metadata if metadata else ({"source": "legacy_proxy"} if shares_value else None),
+                            "turnover_rate_fetched_at": metadata.get("fetched_at") if metadata else None,
                         }
                         quotes[item["symbol"]] = quote
                     else:
@@ -148,8 +204,9 @@ def main() -> None:
     # Turnover-rate is one of the six Pristine conditions for both markets.
     # Use the public float/outstanding-share proxy for US rows too; leaving it
     # null silently made every US row incomplete and guaranteed zero candidates.
-    share_counts = public_share_counts(
+    share_counts = public_share_count_records(
         [item for item in candidates if args.market != "taiwan" or item["ticker"] in history]
+        , cache_path=os.getenv("PUBLIC_SHARE_CACHE_PATH", str(data_dir / "public-share-count-cache.json"))
     )
     if args.market == "us":
         # SEC CompanyFacts is the first-party fallback for share counts.  Yahoo
@@ -158,7 +215,11 @@ def main() -> None:
         for item in candidates:
             sec_shares = fundamentals.get(item["ticker"], {}).get("shares_outstanding")
             if sec_shares and item["symbol"] not in share_counts:
-                share_counts[item["symbol"]] = float(sec_shares)
+                share_counts[item["symbol"]] = {
+                    "value": float(sec_shares), "source": "SEC EDGAR CompanyFacts",
+                    "source_tier": "primary", "fetched_at": fundamentals[item["ticker"]].get("sec_data_fetched_at"),
+                    "freshness": "fresh",
+                }
     quotes, quote_errors = public_quotes(candidates, args.batch_size, share_counts)
     base_rows = review_public_pool(
         candidates, fundamentals, quotes, args.market, limit=None,
@@ -192,11 +253,7 @@ def main() -> None:
         scan_state = "partial"
     else:
         scan_state = "failed"
-    candidate_state = (
-        "available" if rows else
-        "data_gap" if scan_state in {"partial", "failed"} else
-        "no_candidates"
-    )
+    candidate_state = "available" if rows else "no_candidates" if scan_state == "complete" else "data_unavailable"
     summary = {
         "requested": len(candidates),
         "requested_records": len(candidates),
@@ -211,6 +268,12 @@ def main() -> None:
         "candidates": len(rows),
         "formal_candidates": len(formal_rows),
         "observation_candidates": len(visible_observation_rows),
+        "visible_candidate_count": len(rows),
+        "formal_candidate_count": len(formal_rows),
+        "observation_candidate_count": len(visible_observation_rows),
+        "history_pending_count": 0,
+        "source_failure_count": failed_total,
+        "incomplete_record_count": max(len(candidates) - complete_records, 0),
         "selection_diagnostics": selection_diagnostics,
         "failed": failed_total,
         "scan_state": scan_state,
@@ -246,9 +309,10 @@ def main() -> None:
         )
         summary["history_pending"] = max(len(candidates) - len(history), 0)
         summary["history_failure_count"] = len(history_errors)
+        summary["history_pending_count"] = summary["history_pending"]
         if len(history) < len(candidates):
             summary["scan_state"] = "building"
-            summary["candidate_state"] = "data_gap"
+            summary["candidate_state"] = "available_from_completed_records" if rows else "building"
             summary["status"] = "建檔中"
             summary["notice"] = (
                 f"璞玉價值歷史資料建檔中：已核對 {len(history)}／{len(candidates)} 檔；"

@@ -1,0 +1,18 @@
+{
+  "evidence_id": "g4-g12-local-20260830",
+  "branch": "feat/g4-g12-production-repair-20260830",
+  "base": "origin/main",
+  "base_sha": "42f4654d9a133dd1383d5f645509b5875aa706ba",
+  "implementation_commit": "addaf133",
+  "targeted_tests": {"status": "pass", "passed": 112},
+  "full_regression": {"status": "pass", "passed": 1536},
+  "ruff": {"status": "pass", "command": "ruff check src tests"},
+  "mypy": {"status": "pass", "command": "mypy src"},
+  "syntax": {"status": "pass", "python_compileall": true, "node_check": true},
+  "external_production_acceptance": "pending_merge_and_release_gate",
+  "secret_values_present": false,
+  "notes": [
+    "No release data, production secret, or Telegram broadcast was changed by this branch.",
+    "Production acceptance must be rerun from main after merge; branch CI is not a substitute for main verification."
+  ]
+}

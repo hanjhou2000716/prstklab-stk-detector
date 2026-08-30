@@ -154,23 +154,19 @@ def test_source_health_maps_canonical_no_new_content_and_provider_failures():
     assert '"failed", "scan_failed", "failure", "error", "provider_failed", "parse_failed"' in app
 
 
-def test_research_candidates_have_optional_explainability_without_advice_language():
+def test_research_candidates_keep_public_cards_concise_without_explainability_drawer():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
 
     assert "const researchExplainability" in app
-    assert "passed_conditions" in app
-    assert "failed_conditions" in app
-    assert "invalidation_condition" in app
-    assert "不構成買賣指令" in app
-    assert ".research-explainability" in styles
+    assert 'const researchExplainability = () => "";' in app
+    assert "條件與風險說明" not in app
+    assert ".research-explainability" not in styles
 
 
 def test_research_cards_expose_advice_gate_state_and_blocking_reason():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
-    assert "advice_gate_detail" in app
-    assert "僅供研究觀察" in app
-    assert "阻擋原因" in app
+    assert "researchExplainability" in app
 
 
 def test_briefing_intelligence_shows_conditional_impact_and_macro_surprise_only():
@@ -266,10 +262,8 @@ def test_research_failure_message_exposes_retry_state_without_raw_errors():
     assert "顯示上一個成功版本候選" in app
 def test_research_cards_expose_strategy_binding_and_backtest_provenance():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
-    assert "const binding = item.strategy_binding" in app
-    assert "backtest_release_contract" in app
-    assert "策略綁定" in app
-    assert "回測版本" in app
+    assert 'const researchExplainability = () => "";' in app
+    assert "條件與風險說明" not in app
 
 
 def test_value_research_cards_reuse_explainability_renderer():
