@@ -107,13 +107,23 @@ def _fetch_json(url: str, *, timeout: float, session: requests.Session) -> tuple
 
 
 def _observation_export_url(railway_url: str) -> str:
-    """Build the bounded Railway observation endpoint without exposing secrets."""
-    configured = str(os.getenv("RAILWAY_OBSERVATIONS_URL") or "").strip()
+    """Build the bounded sanitized observation endpoint.
+
+    The Worker URL is preferred when configured; the Railway name remains for
+    backwards-compatible evidence files and rollback deployments.
+    """
+    configured = str(os.getenv("PUBLIC_OBSERVATIONS_URL") or os.getenv("RAILWAY_OBSERVATIONS_URL") or "").strip()
     raw = configured or railway_url
     parsed = urlparse(raw)
     if parsed.scheme != "https" or not parsed.netloc:
         return ""
-    return urlunparse((parsed.scheme, parsed.netloc, "/external-observations", "", "limit=100", ""))
+    path = parsed.path.rstrip("/")
+    if not path or path in {"/health", "/api/health"}:
+        path = "/external-observations"
+    query = parsed.query or "limit=100"
+    if "limit=" not in query:
+        query = f"{query}&limit=100" if query else "limit=100"
+    return urlunparse((parsed.scheme, parsed.netloc, path, "", query, ""))
 
 
 def _observation_signature(url: str, secret: str) -> str:
@@ -140,7 +150,8 @@ def _fetch_observation_evidence(
     rather than a false failure so local/offline acceptance remains usable.
     """
     secret = str(
-        os.getenv("RAILWAY_STATUS_SHARED_SECRET")
+        os.getenv("DELIVERY_RECEIPT_SHARED_SECRET")
+        or os.getenv("RAILWAY_STATUS_SHARED_SECRET")
         or os.getenv("DELIVERY_STATUS_SHARED_SECRET")
         or ""
     ).strip()

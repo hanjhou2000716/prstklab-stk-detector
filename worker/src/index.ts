@@ -23,6 +23,9 @@ interface Env {
   VERSION?: string;
   /** HMAC secret shared with GitHub Actions for receipt ingestion. */
   DELIVERY_RECEIPT_SHARED_SECRET?: string;
+  /** Google Pub/Sub authenticated push contract for Gmail notifications. */
+  GMAIL_PUBSUB_AUDIENCE?: string;
+  GMAIL_PUBSUB_SERVICE_ACCOUNT?: string;
 }
 
 type Job = Record<string, unknown> & { id: string; status: string };
@@ -65,6 +68,87 @@ async function hmac(key: ArrayBuffer | string, data: string): Promise<ArrayBuffe
 
 function hex(buffer: ArrayBuffer): string {
   return [...new Uint8Array(buffer)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function base64UrlBytes(value: string): Uint8Array | null {
+  try {
+    const normalized = value.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - value.length % 4) % 4);
+    const decoded = atob(normalized);
+    return Uint8Array.from(decoded, (char) => char.charCodeAt(0));
+  } catch (_) {
+    return null;
+  }
+}
+
+function parseJwtPart(value: string): Record<string, unknown> | null {
+  const bytes = base64UrlBytes(value);
+  if (!bytes) return null;
+  try {
+    const parsed: unknown = JSON.parse(new TextDecoder().decode(bytes));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+let googleCerts: { expiresAt: number; keys: Array<Record<string, unknown>> } | null = null;
+
+async function verifyGoogleOidc(token: string, env: Env): Promise<Record<string, unknown> | null> {
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  const header = parseJwtPart(parts[0]);
+  const claims = parseJwtPart(parts[1]);
+  const signature = base64UrlBytes(parts[2]);
+  const kid = typeof header?.kid === "string" ? header.kid : "";
+  if (!header || !claims || !signature || header.alg !== "RS256" || !kid) return null;
+  const issuer = String(claims.iss || "");
+  const audience = String(claims.aud || "");
+  const email = String(claims.email || "");
+  const exp = Number(claims.exp || 0);
+  const issuedAt = Number(claims.iat || 0);
+  const now = Math.floor(Date.now() / 1000);
+  if (!["accounts.google.com", "https://accounts.google.com"].includes(issuer)) return null;
+  if (!env.GMAIL_PUBSUB_AUDIENCE || audience !== env.GMAIL_PUBSUB_AUDIENCE) return null;
+  if (!env.GMAIL_PUBSUB_SERVICE_ACCOUNT || email !== env.GMAIL_PUBSUB_SERVICE_ACCOUNT) return null;
+  if (claims.email_verified === false || !Number.isFinite(exp) || exp < now - 30 || exp > now + 86400) return null;
+  if (Number.isFinite(issuedAt) && issuedAt > now + 60) return null;
+  try {
+    if (!googleCerts || googleCerts.expiresAt <= Date.now()) {
+      const response = await fetch("https://www.googleapis.com/oauth2/v3/certs", { headers: { Accept: "application/json" } });
+      if (!response.ok) return null;
+      const payload = await response.json() as { keys?: unknown };
+      const keys = Array.isArray(payload.keys) ? payload.keys.filter((value): value is Record<string, unknown> => Boolean(value && typeof value === "object")) : [];
+      const cacheSeconds = Number(response.headers.get("cache-control")?.match(/max-age=(\d+)/i)?.[1] || 300);
+      googleCerts = { keys, expiresAt: Date.now() + Math.min(3600000, Math.max(60000, cacheSeconds * 1000)) };
+    }
+    const jwk = googleCerts.keys.find((value) => value.kid === kid);
+    if (!jwk) return null;
+    const key = await crypto.subtle.importKey("jwk", jwk as unknown as JsonWebKey, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+    const valid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, signature, new TextEncoder().encode(`${parts[0]}.${parts[1]}`));
+    return valid ? claims : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function gmailNotification(body: unknown): Promise<{ historyId: string; emailHash: string } | null> {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const message = (body as Record<string, unknown>).message;
+  if (!message || typeof message !== "object" || Array.isArray(message)) return null;
+  const encoded = (message as Record<string, unknown>).data;
+  if (typeof encoded !== "string" || encoded.length > 8192) return null;
+  const bytes = base64UrlBytes(encoded);
+  if (!bytes) return null;
+  try {
+    const payload: unknown = JSON.parse(new TextDecoder().decode(bytes));
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+    const historyId = String((payload as Record<string, unknown>).historyId || "").trim();
+    const email = String((payload as Record<string, unknown>).emailAddress || "").trim().toLowerCase();
+    if (!/^\d{1,40}$/.test(historyId) || !/^[^@\s]{1,128}@[^@\s]{1,255}$/.test(email)) return null;
+    return { historyId, emailHash: hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email))).slice(0, 32) };
+  } catch (_) {
+    return null;
+  }
 }
 
 async function verifyTelegramInitData(request: Request, env: Env): Promise<{ userId: string; username?: string } | null> {
@@ -197,6 +281,35 @@ async function dispatchReport(env: Env, jobId: string): Promise<void> {
   if (!response.ok) throw new Error(`report worker dispatch failed (${response.status})`);
 }
 
+async function verifyGetSignature(request: Request, secret: string): Promise<boolean> {
+  const supplied = request.headers.get("X-PRSTK-Signature") || "";
+  if (!/^sha256=[0-9a-f]{64}$/i.test(supplied)) return false;
+  const url = new URL(request.url);
+  const target = `${url.pathname}${url.search}`;
+  const expected = await signatureFor(secret, `GET\n${target}`);
+  const left = new TextEncoder().encode(supplied.toLowerCase());
+  const right = new TextEncoder().encode(expected);
+  if (left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) difference |= left[index] ^ right[index];
+  return difference === 0;
+}
+
+async function dispatchGmailHistorySync(env: Env, historyId: string): Promise<void> {
+  if (!env.GITHUB_DISPATCH_TOKEN || !env.GITHUB_REPOSITORY) throw new Error("gmail sync is not configured");
+  const response = await fetch(`https://api.github.com/repos/${env.GITHUB_REPOSITORY}/actions/workflows/gmail-history-sync.yml/dispatches`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.GITHUB_DISPATCH_TOKEN}`,
+      Accept: "application/vnd.github+json",
+      "User-Agent": "PRStK-Cloudflare-Worker",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ref: "main", inputs: { history_id: historyId } }),
+  });
+  if (!response.ok) throw new Error(`gmail sync dispatch failed (${response.status})`);
+}
+
 async function recipientHash(chatId: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(chatId));
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("").slice(0, 16);
@@ -270,6 +383,21 @@ async function handle(request: Request, env: Env): Promise<Response> {
       },
     });
   }
+  if (url.pathname === "/external-observations" && request.method === "GET") {
+    const secret = String(env.DELIVERY_RECEIPT_SHARED_SECRET || "").trim();
+    if (!secret || !await verifyGetSignature(request, secret)) return json({ ok: false, error: "UNAUTHORIZED" }, 401);
+    const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit") || 100)));
+    if (!Number.isInteger(limit)) return json({ ok: false, error: "INVALID_LIMIT" }, 400);
+    try {
+      const rows = await supabase(env, "GET", "gmail_public_observations", `?select=payload_json&order=created_at.desc,observation_id.desc&limit=${limit}`);
+      const observations = rows
+        .map((row) => row && typeof row === "object" ? (row as Record<string, unknown>).payload_json : null)
+        .filter((row): row is Record<string, unknown> => Boolean(row && typeof row === "object" && !Array.isArray(row) && (row as Record<string, unknown>).public_safe === true));
+      return json({ status: observations.length ? "ready" : "no_event", observations, count: observations.length });
+    } catch (_) {
+      return json({ ok: false, error: "OBSERVATIONS_UNAVAILABLE" }, 503);
+    }
+  }
   if (url.pathname === "/api/delivery-receipt" && request.method === "POST") {
     const secret = String(env.DELIVERY_RECEIPT_SHARED_SECRET || "").trim();
     if (!secret) return json({ ok: false, error: "RECEIPT_NOT_CONFIGURED" }, 503);
@@ -286,6 +414,33 @@ async function handle(request: Request, env: Env): Promise<Response> {
       return json({ ok: false, error: "RECEIPT_PERSISTENCE_FAILED" }, 503);
     }
     return json({ ok: true, trace_id: receipt.trace_id, receipt_status: "persisted", receipt_backend: "supabase" });
+  }
+  if (url.pathname === "/api/gmail-pubsub" && request.method === "POST") {
+    const authorization = request.headers.get("Authorization") || "";
+    if (!authorization.toLowerCase().startsWith("bearer ")) return json({ ok: false, error: "UNAUTHENTICATED_PUBSUB" }, 401);
+    const claims = await verifyGoogleOidc(authorization.slice(7).trim(), env);
+    if (!claims) return json({ ok: false, error: "INVALID_PUBSUB_ID_TOKEN" }, 401);
+    const body = await request.json().catch(() => null);
+    const notification = await gmailNotification(body);
+    if (!notification) return json({ ok: false, error: "INVALID_GMAIL_NOTIFICATION" }, 400);
+    const rows = await supabase(env, "POST", "gmail_pubsub_events", "?on_conflict=history_id", {
+      history_id: notification.historyId,
+      gmail_address_hash: notification.emailHash,
+      dispatch_status: "pending",
+    }, "resolution=ignore-duplicates,return=representation");
+    if (rows.length === 0) {
+      const existing = await supabase(env, "GET", "gmail_pubsub_events", `?history_id=eq.${encodeURIComponent(notification.historyId)}&select=dispatch_status&limit=1`);
+      if (String(existing[0]?.dispatch_status || "pending") === "dispatched") return new Response(null, { status: 204 });
+    }
+    try {
+      await dispatchGmailHistorySync(env, notification.historyId);
+      await supabase(env, "PATCH", "gmail_pubsub_events", `?history_id=eq.${encodeURIComponent(notification.historyId)}`, { dispatch_status: "dispatched", processed_at: new Date().toISOString(), dispatch_error: null }, "return=minimal");
+      await supabase(env, "POST", "gmail_watch_state", "?on_conflict=id", { id: "primary", pending_history_id: notification.historyId, last_notification_at: new Date().toISOString() }, "resolution=merge-duplicates,return=minimal");
+      return new Response(null, { status: 204 });
+    } catch (_) {
+      await supabase(env, "PATCH", "gmail_pubsub_events", `?history_id=eq.${encodeURIComponent(notification.historyId)}`, { dispatch_status: "failed", dispatch_error: "dispatch_failed" }, "return=minimal").catch(() => undefined);
+      return json({ ok: false, error: "GMAIL_SYNC_DISPATCH_FAILED" }, 503);
+    }
   }
   if (url.pathname === "/api/creator-delivery-history" && request.method === "POST") {
     const secret = String(env.DELIVERY_RECEIPT_SHARED_SECRET || "").trim();

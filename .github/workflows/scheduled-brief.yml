@@ -57,6 +57,8 @@ jobs:
       # Optional authenticated sanitized Gmail/FJ export.  When omitted,
       # the client derives /external-observations from RAILWAY_STATUS_URL.
       RAILWAY_OBSERVATIONS_URL: ${{ vars.RAILWAY_OBSERVATIONS_URL }}
+      # Canonical zero-cost replacement; takes precedence over Railway.
+      PUBLIC_OBSERVATIONS_URL: ${{ vars.PUBLIC_OBSERVATIONS_URL }}
       SLOT: ${{ inputs.slot || github.event.client_payload.slot || 'auto' }}
       FORCE: ${{ inputs.force || github.event.client_payload.force || 'false' }}
       # Manual runs publish and verify by default but never send production
