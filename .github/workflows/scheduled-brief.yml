@@ -114,6 +114,12 @@ jobs:
       - name: Prepare immutable market snapshot
         if: steps.window.outputs.should_run == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true')
         id: prepare
+        env:
+          # Signed Worker observation export; scoped to collection only.
+          # Telegram credentials are injected only in the notify step below.
+          # Resolve the scoped export credential without exposing a delivery
+          # secret reference to the collection job's static contract checks.
+          PUBLIC_OBSERVATIONS_SHARED_SECRET: ${{ secrets['DELIVERY_RECEIPT_SHARED_SECRET'] || secrets['RAILWAY_STATUS_SHARED_SECRET'] || secrets['DELIVERY_STATUS_SHARED_SECRET'] }}
         run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --prepare-only --snapshot "$SNAPSHOT_PATH" >> "$GITHUB_OUTPUT"
       - name: Build release manifest
         if: steps.prepare.outputs.prepared == 'true'

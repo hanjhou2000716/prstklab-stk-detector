@@ -21,7 +21,13 @@ CURSOR_FIELDS = (
     "last_full_sync_at", "last_message_id",
 )
 DEFAULT_CURSOR = {key: None for key in CURSOR_FIELDS}
-BLOCKED_FIELDS = {"body", "raw_body", "attachments", "gmail_thread_id", "sender", "recipient"}
+BLOCKED_FIELDS = {
+    "body", "raw_body", "attachments", "gmail_thread_id", "sender", "recipient",
+    # These identifiers are useful only inside the private observation table.
+    # Never copy a Gmail transport ID into the public projection JSONB.
+    "gmail_message_id", "gmail_history_id", "message_id", "thread_id",
+    "source_message_id", "episode_id", "email_address",
+}
 
 
 def _now() -> str:
@@ -152,13 +158,38 @@ class SupabaseEmailStore:
 
     def health(self) -> dict[str, Any]:
         cursor = self.cursor()
+        observation_count = 0
+        dlq_count = 0
+        public_count = 0
+        try:
+            _status, payload = self._request(
+                "GET", "gmail_email_observations",
+                "?select=gmail_message_id&limit=1000",
+                prefer="return=representation",
+            )
+            observation_count = len(payload) if isinstance(payload, list) else 0
+            _status, payload = self._request(
+                "GET", "gmail_email_dlq", "?select=id&limit=1000",
+                prefer="return=representation",
+            )
+            dlq_count = len(payload) if isinstance(payload, list) else 0
+            _status, payload = self._request(
+                "GET", "gmail_public_observations", "?select=observation_id&limit=1000",
+                prefer="return=representation",
+            )
+            public_count = len(payload) if isinstance(payload, list) else 0
+        except RuntimeError:
+            # Health remains available when an optional count query is denied;
+            # the stable cursor state still tells operators whether ingress is
+            # live, and no provider response body is exposed.
+            pass
         return {
             "status": "healthy" if cursor.get("last_sync_at") else "no_new_content",
-            "observation_count": 0,
-            "dlq_count": 0,
+            "observation_count": observation_count,
+            "dlq_count": dlq_count,
             "queue_pending_count": 0,
-            "dead_letter_count": 0,
-            "public_observation_count": 0,
+            "dead_letter_count": dlq_count,
+            "public_observation_count": public_count,
             "cursor": cursor,
             "raw_content_stored": False,
             "source_health": self.source_health(),

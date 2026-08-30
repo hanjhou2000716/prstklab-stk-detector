@@ -55,6 +55,35 @@ def test_public_projection_rejects_private_mail_fields(monkeypatch: pytest.Monke
         })
 
 
+def test_public_projection_keeps_creator_fields_but_strips_transport_ids(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: list[dict[str, Any]] = []
+
+    def request(method: str, url: str, **kwargs: Any) -> _Response:
+        captured.append(kwargs.get("json") or {})
+        return _Response(201, [{"observation_id": "jenny:abc"}])
+
+    monkeypatch.setattr("supabase_email_store.requests.request", request)
+    store = SupabaseEmailStore("https://example.supabase.co", "key")
+    assert store.save_public_observation({
+        "observation_id": "jenny:abc",
+        "content_origin": "jenny",
+        "episode_key": "jenny:abc",
+        "episode_title": "今日市場觀察",
+        "public_safe": True,
+    }) is True
+    payload = captured[0]["payload_json"]
+    assert payload["episode_title"] == "今日市場觀察"
+    with pytest.raises(ValueError, match="private"):
+        store.save_public_observation({
+            "observation_id": "jenny:def",
+            "content_origin": "jenny",
+            "episode_key": "jenny:def",
+            "source_message_id": "gmail-private-id",
+            "public_safe": True,
+        })
+    assert "gmail_message_id" not in payload
+
+
 def test_store_requires_https_and_credentials() -> None:
     with pytest.raises(ValueError, match="not_configured"):
         SupabaseEmailStore("", "")

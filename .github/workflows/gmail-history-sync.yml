@@ -46,4 +46,7 @@ jobs:
       - name: Sync bounded history into canonical parser
         env:
           HISTORY_ID: ${{ inputs.history_id || github.event.client_payload.history_id || '' }}
-        run: python scripts/sync_gmail_supabase.py
+        run: |
+          args=()
+          if [ -n "${HISTORY_ID:-}" ]; then args+=(--history-id "$HISTORY_ID"); fi
+          python scripts/sync_gmail_supabase.py "${args[@]}"

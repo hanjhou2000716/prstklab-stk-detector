@@ -69,7 +69,10 @@ def load_railway_observations(
     events.
     """
     endpoint = observation_export_url(url)
-    token = str(secret or delivery_shared_secret()).strip()
+    # The scheduled collection step receives this narrowly scoped secret only
+    # when the canonical Worker export is enabled.  Keep it separate from the
+    # legacy Railway helper so Telegram tokens never enter the job.
+    token = str(secret or os.getenv("PUBLIC_OBSERVATIONS_SHARED_SECRET") or delivery_shared_secret()).strip()
     if not endpoint or not token:
         return [], {"status": "configuration_missing", "reason": "railway_observation_export_not_configured", "rejected_count": 0}
     attempts_limit = max(1, min(2, int(max_attempts)))
