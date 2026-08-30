@@ -47,7 +47,16 @@ def creator_episode_key(record: dict[str, Any]) -> str:
     source = _text(record.get("content_origin") or record.get("source")) or "unknown"
     explicit = _text(record.get("episode_key"))
     if explicit:
-        return explicit
+        # Parser-produced identities use ``<provider>:<20 hex chars>``.  Keep
+        # historical hand-authored keys for compatibility, but reject an
+        # explicit raw Gmail-like ID so a transport identifier cannot cross
+        # into a public artifact by accident.
+        suffix = explicit.split(":", 1)[1] if ":" in explicit else ""
+        if suffix and len(suffix) >= 16 and all(char.isalnum() or char in "-_" for char in suffix):
+            if suffix.isdigit() or suffix.startswith("msg-") or suffix.startswith("gmail-"):
+                explicit = ""
+        if explicit:
+            return explicit
     material = "|".join((
         source.casefold(),
         _text(record.get("episode_id") or record.get("source_message_id") or record.get("message_id")),

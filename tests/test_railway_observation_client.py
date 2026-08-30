@@ -116,3 +116,29 @@ def test_loader_does_not_retry_forbidden_response(monkeypatch) -> None:
     assert health["retryable"] is False
     assert health["attempts"] == 1
     assert len(calls) == 1
+
+
+def test_loader_prefers_scoped_worker_secret_from_environment(monkeypatch) -> None:
+    class Response:
+        status_code = 200
+
+        def json(self):
+            return {"status": "no_new_content", "observations": []}
+
+    seen = {}
+
+    def fake_get(url, **kwargs):
+        seen.update({"url": url, **kwargs})
+        return Response()
+
+    monkeypatch.setenv("PUBLIC_OBSERVATIONS_SHARED_SECRET", "scoped-worker-secret")
+    monkeypatch.setattr(client, "delivery_shared_secret", lambda: "legacy-secret")
+    monkeypatch.setattr(client.httpx, "get", fake_get)
+
+    rows, health = client.load_railway_observations(url="https://worker.example/external-observations")
+
+    assert rows == []
+    assert health["status"] == "no_new_content"
+    assert seen["headers"]["X-PRSTK-Signature"] == client._signature(
+        "https://worker.example/external-observations?limit=100", "scoped-worker-secret"
+    )
