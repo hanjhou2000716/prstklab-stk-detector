@@ -567,7 +567,10 @@ def fetch_market_news(market: str) -> list[dict[str, str]]:
                            "item_count": 0, "checked_at": datetime.now(UTC).isoformat()})
             errors.append({"provider": provider, "error": type(exc).__name__})
     _LAST_OFFICIAL_NEWS_HEALTH[market] = {"source_health": health, "errors": errors}
-    return stories[:30]
+    # Keep the complete bounded provider pool.  Each adapter already caps its
+    # own response, and a second global slice could silently drop later
+    # providers (for example Google/SEC) before normalization and ranking.
+    return stories
 
 
 def _market_news_rss_url(market: str) -> str:

@@ -179,6 +179,37 @@ def test_news_intelligence_exposes_provider_observability_counts_and_timestamps(
     assert artifact["source_health"][0]["stories_ingested"] == 1
 
 
+def test_provider_funnel_explains_fetched_to_ranked_counts():
+    artifact = build_news_intelligence(
+        [
+            {"title": "Fed rates unchanged", "url": "https://www.federalreserve.gov/newsevents/pressreleases/a.htm"},
+            {"title": "Unrelated filing", "url": "https://www.sec.gov/Archives/edgar/data/example/8-k.htm"},
+        ],
+        market="us",
+        source_health=[
+            {"provider": "fed", "status": "healthy", "item_count": 4, "checked_at": "2026-08-25T01:02:00+00:00"},
+            {"provider": "sec", "status": "healthy", "item_count": 2, "checked_at": "2026-08-25T01:02:00+00:00"},
+        ],
+    )
+
+    fed = next(item for item in artifact["observability"]["providers"] if item["provider"] == "fed")
+    sec = next(item for item in artifact["observability"]["providers"] if item["provider"] == "sec")
+    assert fed["funnel"] == {
+        "fetched_count": 4,
+        "normalized_count": 1,
+        "market_compatible_count": 1,
+        "eligible_count": 1,
+        "excluded_count": 0,
+        "deduped_count": 1,
+        "ranked_count": 1,
+    }
+    assert sec["funnel"]["fetched_count"] == 2
+    assert sec["funnel"]["eligible_count"] == 0
+    assert sec["funnel"]["excluded_count"] == 1
+    health_fed = next(item for item in artifact["source_health"] if item["provider"] == "fed")
+    assert health_fed["funnel"]["ranked_count"] == 1
+
+
 def test_news_intelligence_observability_is_schema_valid_for_empty_and_failed_scan():
     artifact = build_news_intelligence(
         [],
