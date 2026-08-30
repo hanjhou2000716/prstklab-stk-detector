@@ -117,6 +117,39 @@ def test_validate_png_rejects_single_color_and_wrong_dimensions(tmp_path):
         _validate_png(wrong)
 
 
+def test_validate_png_rejects_image_without_visible_pixels(monkeypatch, tmp_path):
+    """Keep the transparent/empty-image guard covered without a real PNG."""
+    image_module = types.ModuleType("PIL.Image")
+
+    class EmptyImage:
+        size = (WIDTH, HEIGHT)
+        width = WIDTH
+        height = HEIGHT
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def convert(self, _mode):
+            return self
+
+        def getcolors(self, **_kwargs):
+            return [(1, (0, 0, 0)), (1, (1, 1, 1))]
+
+        def getbbox(self):
+            return None
+
+    image_module.open = lambda _path: EmptyImage()
+    pil_module = types.ModuleType("PIL")
+    pil_module.Image = image_module
+    monkeypatch.setitem(sys.modules, "PIL", pil_module)
+    monkeypatch.setitem(sys.modules, "PIL.Image", image_module)
+    with pytest.raises(RendererError, match="no visible pixels"):
+        _validate_png(tmp_path / "transparent.png")
+
+
 def test_renderer_classifies_chromium_launch_failure(monkeypatch, tmp_path):
     class Context:
         def __enter__(self):
@@ -137,6 +170,39 @@ def test_renderer_classifies_chromium_launch_failure(monkeypatch, tmp_path):
     with pytest.raises(RendererError, match="browser executable missing") as error:
         render_alert_card({"title": "x"}, tmp_path / "broken.png")
     assert error.value.error_type == "chromium_unavailable"
+
+
+def test_renderer_propagates_validation_error(monkeypatch, tmp_path):
+    class Page:
+        def set_content(self, *args, **kwargs):
+            return None
+
+        def screenshot(self, *, path, **kwargs):
+            fallback_card(path)
+
+    class Browser:
+        def new_page(self, **kwargs):
+            return Page()
+
+        def close(self):
+            return None
+
+    class Context:
+        def __enter__(self):
+            return types.SimpleNamespace(chromium=types.SimpleNamespace(launch=lambda **kwargs: Browser()))
+
+        def __exit__(self, *args):
+            return None
+
+    module = types.ModuleType("playwright.sync_api")
+    module.sync_playwright = lambda: Context()
+    monkeypatch.setitem(sys.modules, "playwright.sync_api", module)
+    monkeypatch.setattr(
+        "src.alert_card_renderer._validate_png",
+        lambda _target: (_ for _ in ()).throw(RendererError("blank_image", "test")),
+    )
+    with pytest.raises(RendererError, match="test"):
+        render_alert_card({"title": "x"}, tmp_path / "invalid.png")
 
 
 def test_renderer_closes_browser_even_when_close_fails(monkeypatch, tmp_path):

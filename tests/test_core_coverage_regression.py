@@ -2,10 +2,13 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+import src.system_dry_run as system_dry_run
 from src.alert_budget import decide_alert_budget, notification_identity
 from src.alert_caption import make_caption
+from src.alert_card_renderer import RendererError
 from src.alert_contract import AlertEnvelope
 from src.deep_link_router import parse_deep_link, resolve_deep_link
+from src.system_dry_run import run_dry_run
 
 NOW = datetime(2026, 8, 10, 8, 0, tzinfo=UTC)
 
@@ -92,4 +95,47 @@ def test_alert_contract_rejects_invalid_enum_and_missing_timezone():
     envelope.created_at = "2026-08-10T08:00:00"
     with pytest.raises(ValueError, match="timezone"):
         envelope.validate()
+
+
+def test_alert_contract_rejects_missing_identity_caption_and_quality():
+    """Exercise the three fail-closed provenance/contract guards."""
+    envelope = AlertEnvelope(
+        alert_id="",
+        event_cluster_key="e1",
+        alert_type="market_risk",
+        lifecycle_state="observation",
+        severity="normal",
+        title="事件",
+        short_caption="事件",
+        release_id="r1",
+        snapshot_id="s1",
+        created_at="2026-08-10T08:00:00+00:00",
+    )
+    with pytest.raises(ValueError, match="identity"):
+        envelope.validate()
+
+    envelope.alert_id = "a1"
+    envelope.notification_id = "a1"
+    envelope.short_caption = "x" * 41
+    with pytest.raises(ValueError, match="short_caption"):
+        envelope.validate()
+
+    envelope.short_caption = "事件"
+    envelope.data_quality_score = 101
+    with pytest.raises(ValueError, match="data_quality_score"):
+        envelope.validate()
+
+
+def test_system_dry_run_uses_safe_renderer_fallback(monkeypatch):
+    """Renderer failures remain visible while the offline contract stays valid."""
+    monkeypatch.setattr(
+        system_dry_run,
+        "render_alert_card",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RendererError("chromium_unavailable", "test")),
+    )
+    result = run_dry_run()
+    assert result["ok"] is True
+    assert result["renderer_available"] is False
+    assert result["card_dimensions"] == {"width": 1080, "height": 1350}
+    assert result["photo_contract"]["delivery_status"] == "blocked"
 
