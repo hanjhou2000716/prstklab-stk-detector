@@ -102,6 +102,14 @@ def test_mini_app_strategy_cards_render_price_change_and_strategy_emphasis():
     assert "本益比 ${Number(item.pe).toFixed(1)}" in app
 
 
+def test_value_cards_keep_a_compact_public_label_instead_of_rule_chips():
+    root = Path(__file__).resolve().parents[1]
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert 'if (item.strategy === "value") {\n    // Keep the six-condition evidence' in app
+    assert 'return ["璞玉價值"];' in app
+
+
 def test_mini_app_integrates_the_alert_into_risk_and_splits_research_by_market():
     root = Path(__file__).resolve().parents[1]
     page = (root / "site" / "index.html").read_text(encoding="utf-8")
