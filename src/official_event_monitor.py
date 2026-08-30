@@ -5,20 +5,18 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import tempfile
 from datetime import datetime, time
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
 from src.alert_budget import decide_alert_budget
-from src.alert_card_renderer import RendererError, render_alert_card
 from src.config import get_settings
 from src.event_ledger import EventLedger, canonical_event_key
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import write_snapshot
 from src.release_gate import verify_release_for_delivery
-from src.telegram_client import send_photo_briefs, summarize_photo_deliveries, validate_brief
+from src.telegram_client import send_text_briefs_audited, validate_brief
 
 
 def _is_taiwan_market_window(now: datetime | None = None) -> bool:
@@ -199,15 +197,17 @@ def _write_delivery_output(
     *, trace_id: str, deliveries: tuple[Any, ...], event: dict[str, Any] | None = None,
     budget: dict[str, Any] | None = None,
 ) -> None:
-    summary = summarize_photo_deliveries(deliveries)
+    delivered_count = sum(getattr(item, "status", "") == "delivered" for item in deliveries)
+    failed_count = len(deliveries) - delivered_count
+    failed_hashes = [getattr(item, "chat_id_hash", "") for item in deliveries if getattr(item, "status", "") != "delivered"]
     lines = [
         f"trace_id={trace_id}",
         f"release_id={os.environ.get('RELEASE_ID', '')}",
-        f"delivered_count={summary.delivered_count}",
-        f"failed_count={summary.failed_count}",
-        f"delivery_status={'delivered' if summary.failed_count == 0 else 'partial' if summary.delivered_count else 'failed'}",
-        "delivery_mode=photo",
-        f"failed_recipient_hashes={','.join(summary.failed_recipient_hashes)}",
+        f"delivered_count={delivered_count}",
+        f"failed_count={failed_count}",
+        f"delivery_status={'delivered' if failed_count == 0 else 'partial' if delivered_count else 'failed'}",
+        "delivery_mode=text",
+        f"failed_recipient_hashes={','.join(failed_hashes)}",
     ]
     if event:
         lines.extend([
@@ -301,35 +301,24 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
     caption = build_official_event_brief(event)
     snapshot_id = str(snapshot.get("snapshot_id") or "")
     try:
-        with tempfile.TemporaryDirectory(prefix="prstk-official-card-") as temporary:
-            photo_path = render_alert_card(
-                {
-                    "title": event.get("title") or "官方市場事件",
-                    "lifecycle_state": event.get("lifecycle_state") or "confirmed",
-                    "trigger_reason": caption,
-                    "release_id": gate.release_id,
-                    "snapshot_id": snapshot_id,
-                },
-                Path(temporary) / "alert.png",
-            )
-            deliveries = send_photo_briefs(
-                token=settings.telegram_bot_token or "",
-                chat_ids=settings.telegram_chat_ids,
-                caption=caption,
-                photo_path=photo_path,
-                mini_app_url=settings.dashboard_url,
-                alert_id=event_id,
-                release_id=gate.release_id or "",
-                snapshot_id=snapshot_id,
-                observation_id=observation_id,
-            )
-    except (RendererError, OSError, ValueError) as exc:
-        write_send_output(False, "renderer_failed")
-        print(f"Renderer blocked official event delivery: {getattr(exc, 'error_type', type(exc).__name__)}")
+        deliveries = send_text_briefs_audited(
+            token=settings.telegram_bot_token or "",
+            chat_ids=settings.telegram_chat_ids,
+            text=caption,
+            dashboard_url=settings.dashboard_url,
+            alert_id=event_id,
+            release_id=gate.release_id or "",
+            snapshot_id=snapshot_id,
+            observation_id=observation_id,
+        )
+    except (OSError, ValueError) as exc:
+        write_send_output(False, "text_delivery_failed")
+        print(f"Text delivery blocked official event: {type(exc).__name__}")
         return False
     _write_delivery_output(trace_id=trace_id, deliveries=deliveries, event=event, budget=budget)
-    delivery_summary = summarize_photo_deliveries(deliveries)
-    if not delivery_summary.any_delivered:
+    delivered_count = sum(item.status == "delivered" for item in deliveries)
+    failed_count = len(deliveries) - delivered_count
+    if not delivered_count:
         write_send_output(False, "all_recipients_failed")
         raise RuntimeError("Telegram delivery failed for every configured recipient")
     ledger.record_delivery(
@@ -338,7 +327,7 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         reason="official_event_monitor",
     )
     ledger.save()
-    write_send_output(True, "sent_partial" if delivery_summary.failed_count else "sent")
+    write_send_output(True, "sent_partial" if failed_count else "sent")
     return True
 
 

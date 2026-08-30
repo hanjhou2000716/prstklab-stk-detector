@@ -103,14 +103,14 @@ def test_briefing_report_renders_fail_closed_intelligence_context():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
 
-    assert 'id="briefing-intelligence"' in page
-    assert '<details id="briefing-intelligence"' in page
-    assert '<details id="briefing-intelligence" class="briefing-intelligence" aria-label="市場情報證據" open' not in page
+    assert 'id="briefing-intelligence"' not in page
+    assert '<div id="briefing-intelligence-content"' in page
+    assert '<details id="briefing-system-analysis" class="technical-details"' in page
+    assert '<details id="briefing-intelligence"' not in page
     assert 'const context = report.intelligence;' in app
     assert 'context.market_regime' in app
     assert 'context.stress_scenarios' in app
-    assert 'intelligence.open = false;' in app
-    assert 'intelligence.hidden = true;' not in app
+    assert 'briefing-system-analysis' in page
     assert 'briefing-intelligence-content' in app
     assert ".briefing-intelligence" in styles
 
@@ -263,7 +263,7 @@ def test_research_failure_message_exposes_retry_state_without_raw_errors():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert "source.failure_evidence || {}" in app
     assert "已重試" in app
-    assert "不沿用舊候選" in app
+    assert "顯示上一個成功版本候選" in app
 def test_research_cards_expose_strategy_binding_and_backtest_provenance():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert "const binding = item.strategy_binding" in app

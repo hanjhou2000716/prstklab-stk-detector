@@ -8,7 +8,6 @@
     <title>稜量速報系統</title>
     <link rel="stylesheet" href="styles.css?v=__ASSET_VERSION__" />
     <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
-    <script src="report-client.js?v=__ASSET_VERSION__" defer></script>
   </head>
   <body>
     <main class="app-shell">
@@ -31,20 +30,8 @@
       </section>
 
       <nav class="quick-nav" aria-label="Mini App 區段">
-        <a href="#risk">風險</a><a href="#market">市場</a><a href="#research">研究</a><a href="#creator-section">洞察</a><a href="#news">新聞</a>
+        <a href="#risk">風險</a><a href="#market">市場</a><a href="#research">研究</a><a href="#news">新聞</a>
       </nav>
-
-      <section id="report-actions" class="report-actions" aria-labelledby="report-actions-title">
-        <div class="section-heading"><div><p class="section-kicker">REPORT</p><h2 id="report-actions-title">自訂報告</h2></div><span id="report-job-state" class="source-chip">待命</span></div>
-        <div class="report-form">
-          <label>市場<select id="report-market"><option value="tw">台股</option><option value="us">美股</option></select></label>
-          <label>開場白（選填）<input id="report-intro" maxlength="2000" /></label>
-          <label>結語（選填）<input id="report-outro" maxlength="2000" /></label>
-          <div class="report-actions-row"><button type="button" id="generate-report">產生完整報告</button><button type="button" id="send-report" disabled>發送 Telegram</button></div>
-          <p id="report-error" class="section-note" role="status"></p>
-          <pre id="report-preview" class="report-preview" hidden></pre>
-        </div>
-      </section>
 
       <section id="risk" class="section-block" aria-labelledby="risk-title">
         <div class="section-heading"><div><p class="section-kicker">RISK</p><h2 id="risk-title">風控資訊</h2></div><span id="event-tag" class="tag neutral">觀察中</span></div>
@@ -61,8 +48,7 @@
               <p role="listitem"><b>4.</b><strong>股市觀察</strong><span id="alert-stock-observation"></span></p>
             </div>
           </div>
-          <details class="technical-details"><summary>系統分析資料</summary><div id="alert-trace" class="alert-trace" aria-label="事件來源核對資訊"></div></details>
-          <p id="alert-pending" class="alert-pending" hidden></p>
+          <details id="alert-system-analysis" class="technical-details"><summary>系統分析資料</summary><div id="alert-trace" class="alert-trace" aria-label="事件來源核對資訊"></div><p id="alert-pending" class="alert-pending" hidden></p></details>
           <section id="event-timeline" class="event-timeline" aria-label="事件時間軸" hidden>
             <h4>事件時間軸</h4>
             <ol id="event-timeline-list"></ol>
@@ -81,10 +67,7 @@
         <details id="briefing-report" class="briefing-report collapsible-card" open>
           <summary class="briefing-report-header"><h3 class="market-report-title">市場定時報告</h3><time id="briefing-time">資料載入中</time></summary>
           <p id="briefing-overview" class="briefing-overview">正在整理本次公開市場脈絡。</p>
-          <details class="technical-details"><summary>系統分析資料</summary><div id="briefing-correlation" class="alert-trace" aria-label="定時報告觀測關聯"></div></details>
-          <details id="briefing-intelligence" class="briefing-intelligence" aria-label="市場情報證據"><summary>市場情報證據</summary><div id="briefing-intelligence-content"><p class="empty">本輪市場情報證據載入後可展開查看。</p></div></details>
-          <details id="external-intelligence" class="briefing-intelligence" aria-label="外部財經快訊"><summary>外部財經快訊</summary><div id="external-intelligence-content"><p class="empty">本輪沒有可公開顯示的外部快訊。</p></div></details>
-          <details id="briefing-paper" class="briefing-intelligence" aria-label="紙上研究追蹤"><summary>紙上研究追蹤</summary><div id="briefing-paper-content"><p class="empty">本輪沒有可追蹤的研究觀察。</p></div></details>
+          <details id="briefing-system-analysis" class="technical-details"><summary>系統分析資料</summary><div id="briefing-correlation" class="alert-trace" aria-label="定時報告觀測關聯"></div><div id="briefing-intelligence-content"><p class="empty">本輪市場情報證據載入後可展開查看。</p></div><div id="external-intelligence-content"><p class="empty">本輪沒有可公開顯示的外部快訊。</p></div><div id="briefing-paper-content"><p class="empty">本輪沒有可追蹤的研究觀察。</p></div></details>
           <div id="briefing-observations" class="briefing-observations"><p class="empty">載入中</p></div>
           <aside id="briefing-reminder" class="alert-reminder">僅供公開資訊整理與教育性觀察，不構成投資建議。</aside>
         </details>
@@ -116,11 +99,6 @@
           <details class="research-drawer"><summary>三維共振</summary><ul id="resonance-list" class="research-list"><li class="empty">載入中</li></ul></details>
           <details class="research-drawer"><summary>璞玉價值</summary><ul id="value-list" class="research-list"><li class="empty">載入中</li></ul></details>
         </div>
-      </section>
-
-      <section id="creator-section" class="section-block creator-section" aria-labelledby="creator-title">
-        <div class="section-heading"><div><p class="section-kicker">INSIGHT</p><h2 id="creator-title">財經內容洞察</h2></div><span id="creator-status" class="source-chip">資料檢查中</span></div>
-        <details id="creator-intelligence" class="briefing-intelligence" aria-label="財經內容洞察" open><summary>創作者觀點與多來源共識</summary><div id="creator-intelligence-content"><p class="empty">目前沒有可公開顯示的內容洞察。</p></div></details>
       </section>
 
       <section id="news" class="section-block" aria-labelledby="news-title">

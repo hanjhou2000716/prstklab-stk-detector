@@ -663,15 +663,9 @@ const renderBriefing = (briefing, generatedAt) => {
     });
     correlation.hidden = correlation.childElementCount === 0;
   }
-  const intelligence = document.getElementById("briefing-intelligence");
   const intelligenceContent = document.getElementById("briefing-intelligence-content");
   const context = report.intelligence;
-  if (intelligence) {
-    // Keep the evidence disclosure in the investor flow even when this
-    // release has no intelligence payload.  It must be a real, collapsed
-    // disclosure rather than a JS-hidden block that appears/disappears.
-    intelligence.hidden = false;
-    intelligence.open = false;
+  if (intelligenceContent) {
     if (!context || typeof context !== "object") {
       if (intelligenceContent) intelligenceContent.innerHTML = '<p class="empty">本輪市場情報證據暫時無法取得。</p>';
     } else {
@@ -710,14 +704,11 @@ const renderBriefing = (briefing, generatedAt) => {
         ? `已觀測 ${reactionQuotes.length} 筆價格反應，尚未確認方向`
         : "本輪沒有可用的事件後市場報價";
       if (intelligenceContent) intelligenceContent.innerHTML = `<p><b>市場狀態：</b>${escapeHtml(regime.regime || "資料不足")}｜分數 ${escapeHtml(String(regime.score ?? "—"))}</p><p><b>因子：</b>${escapeHtml(factors)}</p><p><b>跨資產核對：</b>${escapeHtml(contagion.status || "資料不足")}｜${escapeHtml(signals)}</p><p><b>傳導路徑：</b>${escapeHtml(pathText)}</p><p><b>外部事件證據：</b>${escapeHtml(unifiedText)}</p><p><b>${escapeHtml(surpriseText)}</b>（不單獨推定市場方向）</p><p><b>市場第一反應：</b>${escapeHtml(reactionText)}｜${escapeHtml(reaction.reason || "")}</p><p><b>建議閘門：</b>${escapeHtml(context.advice_gate || "observation_only")}｜${escapeHtml(blocking)}</p>${scenarios ? `<ul class="briefing-stress-list"><li class="briefing-stress-heading">壓力情境（非預測）</li>${scenarios}</ul>` : ""}<small>資料不足時維持觀察，不產生買進／賣出指令。</small>`;
-      intelligence.open = false;
     }
   }
-  const paper = document.getElementById("briefing-paper");
   const paperContent = document.getElementById("briefing-paper-content");
-  if (paper && paperContent) {
+  if (paperContent) {
     const tracker = report.paper_portfolio;
-    paper.open = false;
     if (!tracker || typeof tracker !== "object") {
       paperContent.innerHTML = '<p class="empty">本輪紙上研究追蹤資料暫時無法取得。</p>';
     } else {
@@ -738,9 +729,8 @@ const renderBriefing = (briefing, generatedAt) => {
 };
 
 const renderExternalIntelligence = (snapshot) => {
-  const panel = document.getElementById("external-intelligence");
   const content = document.getElementById("external-intelligence-content");
-  if (!panel || !content) return;
+  if (!content) return;
   const observations = Array.isArray(snapshot?.external_observations)
     ? snapshot.external_observations
     : Array.isArray(snapshot?.briefing?.external_observations)
@@ -770,7 +760,6 @@ const renderExternalIntelligence = (snapshot) => {
     rows.push({ ...event, _priorityDecision: { notification_status: "eligible" } });
     seen.add(key);
   }
-  panel.hidden = false;
   if (!rows.length) {
     content.innerHTML = '<p class="empty">本輪沒有可公開顯示的外部快訊；來源無事件與掃描失敗分開記錄。</p>';
     return;
@@ -945,29 +934,38 @@ const renderResearch = (snapshot) => {
   const candidates = report.candidates || [];
   const generatedAt = report.generated_at ? ` 掃描時間：${new Date(report.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}` : "";
   setText("research-tag", activeResearchMarket === "taiwan" ? "台股" : "美股");
-  const unavailable = report.availability === "expired" ? "研究資料逾時，等待下一次全市場掃描" : null;
+  const staleResearch = report.availability === "expired"
+    || report.research_freshness === "stale_fallback"
+    || report.fallback_used === true
+    || report.scan_state === "failed";
+  const lastSuccessfulAt = report.last_successful_generated_at || report.fallback_from_generated_at || report.generated_at;
+  const staleNotice = staleResearch
+    ? `資料降級｜沿用上一個成功版本${lastSuccessfulAt ? `（${new Date(lastSuccessfulAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}）` : ""}`
+    : null;
   const backtestState = window.releaseManifest?.backtest_publication_state;
   const backtestNotice = backtestState && backtestState !== "ready"
     ? "正式回測尚未發布；候選僅供研究觀察，不提供操作判斷。"
     : "";
-  setText("research-notice", unavailable || backtestNotice || generatedAt.trim() || "掃描時間暫時無法取得");
+  setText("research-notice", staleNotice || backtestNotice || generatedAt.trim() || "掃描時間暫時無法取得");
   const sourceFor = (strategy) => (report.sources || []).find((item) => item.market === activeResearchMarket && item.strategy === strategy) || {};
   const sourceBlocked = (strategy) => {
     const source = sourceFor(strategy);
     const partialCandidatesAllowed = source.partial_candidates_allowed === true;
     const buildingWithoutPartialRows = source.status === "建檔中" || source.scan_state === "building";
-    return unavailable || source.status === "掃描失敗" || source.status === "資料暫時無法取得" || source.scan_state === "failed" || (buildingWithoutPartialRows && !partialCandidatesAllowed);
+    const sourceHasCandidates = marketCandidates.some((item) => item.strategy === strategy);
+    return (!sourceHasCandidates && (source.status === "掃描失敗" || source.status === "資料暫時無法取得" || source.scan_state === "failed"))
+      || (buildingWithoutPartialRows && !partialCandidatesAllowed && !sourceHasCandidates);
   };
   const marketCandidates = candidates.filter((item) => item.market === activeResearchMarket);
   const sourceMessage = (strategy, fallback) => {
     const source = sourceFor(strategy);
-    if (unavailable) return unavailable;
+    if (staleNotice) return staleNotice;
     if (source.status === "掃描失敗" || source.scan_state === "failed") {
       const evidence = source.failure_evidence || {};
       const attempts = Number.isFinite(Number(evidence.attempts)) ? `（已重試 ${Number(evidence.attempts)} 次）` : "";
-      return `本輪掃描失敗${attempts}，等待重試；不沿用舊候選。`;
+      return `本輪掃描失敗${attempts}；顯示上一個成功版本候選，等待重試。`;
     }
-    if (source.status === "資料暫時無法取得") return "本輪資料暫時無法取得；不沿用舊候選。";
+    if (source.status === "資料暫時無法取得") return "本輪資料暫時無法取得；顯示上一個成功版本候選。";
     if (source.failed > 0) return `本輪有 ${source.failed} 檔資料缺漏，候選僅供檢視。`;
     return fallback;
   };
@@ -1107,11 +1105,6 @@ const render = (snapshot) => {
   renderSourceHealth(snapshot.source_health, snapshot);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
   renderExternalIntelligence(snapshot);
-  // Prefer the bounded public artifact: it is the UI-facing projection and
-  // may contain sanitized insight episodes even when the internal release
-  // envelope only carries lineage/health metadata.
-  const creatorSource = snapshot.creator_public_artifact || snapshot.creator_release || snapshot.creator_intelligence;
-  renderCreatorInsights(creatorSource);
   renderResearch(snapshot);
   const newsRegistry = snapshot.news?.provider_registry || [];
   const newsMarkets = snapshot.news?.markets || snapshot.news?.intelligence || snapshot.news;
@@ -1261,6 +1254,7 @@ const readLastGoodRelease = async () => {
     const research = saved.artifactTexts["research-report.json"] ? JSON.parse(saved.artifactTexts["research-report.json"]) : null;
     const events = saved.artifactTexts["event-ledger.json"] ? JSON.parse(saved.artifactTexts["event-ledger.json"]) : null;
     if (saved.manifest.research_snapshot_id && String(research?.snapshot_id || "") !== String(saved.manifest.research_snapshot_id)) return null;
+    if (research && typeof research === "object") snapshot.research_report = research;
     if (saved.manifest.event_snapshot_id && String(events?.snapshot_id || "") !== String(saved.manifest.event_snapshot_id)) return null;
     const newsText = saved.artifactTexts["news.json"];
     if (newsText) {
@@ -1324,6 +1318,9 @@ const loadPublishedRelease = async () => {
     if (String(research.snapshot_id || "") !== String(manifest.research_snapshot_id)) {
       throw new Error("research snapshot does not match release");
     }
+    snapshot.research_report = research;
+  } else if (researchText) {
+    snapshot.research_report = JSON.parse(researchText);
   }
   const eventText = artifactTexts["event-ledger.json"];
   if (manifest.event_snapshot_id && eventText) {

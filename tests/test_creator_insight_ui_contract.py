@@ -1,23 +1,16 @@
 from pathlib import Path
 
 
-def test_creator_insight_panel_is_safe_and_optional():
+def test_creator_insight_panel_is_not_public_but_backend_contract_remains():
     page = Path("site/index.html").read_text(encoding="utf-8")
     app = Path("site/app.js").read_text(encoding="utf-8")
-    assert '<a href="#creator-section">洞察</a>' in page
-    assert 'id="creator-intelligence"' in page
-    assert 'id="creator-intelligence" class="briefing-intelligence" aria-label="財經內容洞察" open' in page
-    assert "財經內容洞察" in page
-    assert "const renderCreatorInsights" in app
-    assert "snapshot.creator_public_artifact || snapshot.creator_release || snapshot.creator_intelligence" in app
-    assert "來源主張：" in app
-    assert "作者觀點：" in app
-    assert "開啟公開來源" in app
-    assert "多來源內容共識" in app
-    assert "creator-consensus" in app
-    assert "不是投資訊號" in app
-    assert "confidence" not in app[app.index("const renderCreatorInsights"):app.index("const render =")]
+    assert 'href="#creator-section"' not in page
+    assert 'id="creator-section"' not in page
+    assert 'id="report-actions"' not in page
+    assert 'report-client.js' not in page
+    assert "renderCreatorInsights(creatorSource)" not in app
     assert "raw_body" not in app
+    assert (Path("src/creator_notification.py")).exists()
 
 
 def test_creator_release_loader_enforces_parent_release_binding():

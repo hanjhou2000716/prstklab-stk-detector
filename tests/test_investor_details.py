@@ -5,7 +5,7 @@ ROOT = Path(__file__).parents[1]
 
 def test_technical_evidence_is_collapsed_by_default():
     page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
-    assert '<details class="technical-details">' in page
+    assert 'class="technical-details"' in page
     assert 'class="technical-details" open' not in page
 
 

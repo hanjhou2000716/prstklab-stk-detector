@@ -189,6 +189,27 @@ def test_dedup_prefers_official_and_retains_supporting_source():
     assert ranked[0]["supporting_sources"][0]["provider"] == "google_news"
 
 
+def test_rank_uses_diversity_first_then_fills_to_limit():
+    stories = [
+        {"title": f"NVIDIA update {index}", "url": f"https://news.google.com/rss/articles/{index}", "published_at": f"2026-08-30T0{index}:00:00+00:00"}
+        for index in range(1, 6)
+    ] + [
+        {"title": "台積電供應鏈觀察", "url": "https://www.cnyes.com/news/tsmc-1", "market": "taiwan"},
+    ]
+    ranked = deduplicate_and_rank(stories, limit=5)
+    assert len(ranked) == 5
+    assert ranked[0]["provider"] != ranked[1]["provider"]
+
+
+def test_rank_returns_only_available_safe_rows_when_fewer_than_limit():
+    ranked = deduplicate_and_rank([
+        {"title": "only one", "url": "https://www.sec.gov/Archives/edgar/data/one"},
+        {"title": "only two", "url": "https://www.sec.gov/Archives/edgar/data/two"},
+        {"title": "only three", "url": "https://www.sec.gov/Archives/edgar/data/three"},
+    ], limit=5)
+    assert len(ranked) == 3
+
+
 def test_source_diversity_counts_independent_domains_after_dedup():
     ranked = deduplicate_and_rank([
         {"title": "Fed rates unchanged", "url": "https://news.google.com/rss/articles/1"},

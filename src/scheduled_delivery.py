@@ -5,13 +5,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from src.alert_budget import decide_alert_budget
-from src.alert_card_renderer import RendererError, render_alert_card
 from src.briefing_cards import build_briefing_snapshot
 from src.config import get_settings
 from src.creator_provider_registry import creator_ids
@@ -38,7 +36,7 @@ from src.scheduled_brief import (
     build_brief,
     write_event_lock_key,
 )
-from src.telegram_client import send_photo_briefs
+from src.telegram_client import send_text_briefs_audited
 
 _DEFAULT_CREATOR_RECORDS_PATH = Path("creator/public-records.json")
 
@@ -386,59 +384,31 @@ def send(
     fj_delivery: dict[str, Any] | None = None
     deliveries: tuple[Any, ...] = ()
     try:
-        with tempfile.TemporaryDirectory(prefix="prstk-alert-card-") as temporary:
-            card_alert = {
-                    "title": (event or {}).get("title") or f"{slot} market briefing",
-                    "lifecycle_state": (event or {}).get("lifecycle_state") or "observation",
-                    "trigger_reason": caption,
-                    "release_id": gate.release_id,
-                    "snapshot_id": snapshot_id,
-                }
-            if isinstance(event, dict):
-                for key in ("event", "importance", "market_transmission", "watch", "source_evidence", "market_evidence", "invalidation_condition"):
-                    if event.get(key) not in (None, "", []):
-                        card_alert[key] = event[key]
-            photo_path = render_alert_card(
-                card_alert,
-                Path(temporary) / "alert.png",
+        if isinstance(event, dict) and str(event.get("source_key") or "").strip().casefold() == "financialjuice":
+            fj_delivery = deliver_financialjuice_event(
+                event,
+                release_id=gate.release_id or "",
+                snapshot_id=snapshot_id,
+                mini_app_url=settings.dashboard_url,
+                release_ready=True,
+                token=settings.telegram_bot_token or "",
+                chat_ids=settings.telegram_chat_ids,
+                delivery_history=_financialjuice_delivery_history(history),
+                text_sender=send_text_briefs_audited,
             )
-            if isinstance(event, dict) and str(event.get("source_key") or "").strip().casefold() == "financialjuice":
-                # FinancialJuice has an additional recipient-level contract:
-                # vendor priority may select the event, but release readiness,
-                # idempotency and per-recipient receipts are still mandatory.
-                fj_delivery = deliver_financialjuice_event(
-                    event,
-                    release_id=gate.release_id or "",
-                    snapshot_id=snapshot_id,
-                    mini_app_url=settings.dashboard_url,
-                    release_ready=True,
-                    token=settings.telegram_bot_token or "",
-                    chat_ids=settings.telegram_chat_ids,
-                    photo_path=photo_path,
-                    delivery_history=_financialjuice_delivery_history(history),
-                    photo_sender=send_photo_briefs,
-                )
-            else:
-                deliveries = send_photo_briefs(
-                    token=settings.telegram_bot_token or "",
-                    chat_ids=settings.telegram_chat_ids,
-                    caption=caption,
-                    photo_path=photo_path,
-                    mini_app_url=settings.dashboard_url,
-                    alert_id=alert_id,
-                    release_id=gate.release_id or "",
-                    snapshot_id=snapshot_id,
-                    observation_id=observation_id,
-                )
-    except (RendererError, OSError, ValueError) as exc:
-        _write_output({
-            "sent": "false",
-            "delivery_status": "blocked",
-            "reason": "renderer_failed",
-            "renderer_error_type": getattr(exc, "error_type", type(exc).__name__),
-            "release_id": gate.release_id,
-            "snapshot_id": snapshot_id,
-        })
+        else:
+            deliveries = send_text_briefs_audited(
+                token=settings.telegram_bot_token or "",
+                chat_ids=settings.telegram_chat_ids,
+                text=caption,
+                dashboard_url=settings.dashboard_url,
+                alert_id=alert_id,
+                release_id=gate.release_id or "",
+                snapshot_id=snapshot_id,
+                observation_id=observation_id,
+            )
+    except (OSError, ValueError) as exc:
+        _write_output({"sent": "false", "delivery_status": "blocked", "reason": "text_delivery_failed", "error_type": type(exc).__name__, "release_id": gate.release_id, "snapshot_id": snapshot_id})
         return
     if fj_delivery is not None:
         fj_receipts = [row for row in fj_delivery.get("receipts", []) if isinstance(row, dict)]
@@ -487,7 +457,7 @@ def send(
         "delivery_status": delivery_status,
         "delivered_count": delivered,
         "failed_count": failed,
-        "delivery_mode": "photo",
+        "delivery_mode": "text",
         "alert_id": alert_id,
         "alert_budget": budget,
         "failed_recipient_hashes": failed_recipient_hashes,

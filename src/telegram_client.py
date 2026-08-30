@@ -84,6 +84,20 @@ class PhotoDeliveryReceipt:
 
 
 @dataclass(frozen=True)
+class TextDeliveryReceipt:
+    """Auditable result for one non-Creator text delivery."""
+
+    alert_id: str
+    release_id: str
+    snapshot_id: str
+    chat_id_hash: str
+    status: str
+    message_id: int | None = None
+    error_class: str | None = None
+    observation_id: str = ""
+
+
+@dataclass(frozen=True)
 class DeliverySummary:
     """Aggregate outcome without exposing recipient identifiers in logs."""
 
@@ -323,6 +337,35 @@ def send_briefs(
                 deliveries[index] = TelegramDelivery(chat_id=delivery.chat_id, result=result)
         pending = next_pending
     return tuple(deliveries)
+
+
+def send_text_briefs_audited(
+    *, token: str, chat_ids: tuple[str, ...], text: str, dashboard_url: str,
+    alert_id: str, release_id: str, snapshot_id: str,
+    observation_id: str = "", target_url: str | None = None,
+) -> tuple[TextDeliveryReceipt, ...]:
+    """Send one text-only Mini App message per recipient with bounded receipts."""
+    if not chat_ids:
+        raise ValueError("Telegram recipient list is empty")
+    receipts: list[TextDeliveryReceipt] = []
+    for chat_id in chat_ids:
+        recipient_hash = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]
+        try:
+            result = send_brief(
+                token=token, chat_id=chat_id, text=text,
+                dashboard_url=dashboard_url, target_url=target_url,
+            )
+        except (TelegramError, OSError, requests.RequestException) as exc:
+            receipts.append(TextDeliveryReceipt(
+                alert_id, release_id, snapshot_id, recipient_hash, "failed",
+                error_class=type(exc).__name__.lower(), observation_id=observation_id,
+            ))
+        else:
+            receipts.append(TextDeliveryReceipt(
+                alert_id, release_id, snapshot_id, recipient_hash, "delivered",
+                message_id=result.message_id, observation_id=observation_id,
+            ))
+    return tuple(receipts)
 
 
 def send_photo_brief(
