@@ -22,6 +22,7 @@ BLOCKED_FIELDS = {
     "body", "raw_body", "attachments", "data", "local_path", "private_url",
     "gmail_message_id", "gmail_thread_id", "gmail_history_id", "message_id",
     "thread_id", "sender", "recipient", "email_address",
+    "source_message_id",
 }
 PARSE_FAILURES = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
 CONTENT_HASH_RE = re.compile(r"^[0-9a-f]{64}$")

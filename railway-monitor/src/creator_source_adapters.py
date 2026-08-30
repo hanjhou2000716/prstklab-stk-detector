@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/creator_source_adapters.py
-# Canonical source SHA256: 2d5d334d4b43610775ed82ba0f588d1e57eb24075c751ff63e6cfa548bc00210
+# Canonical source SHA256: f733df760d6a575dd58ca90c374ef470f2cf3e8b10127069385cda35e0c68cee
 
 """Deterministic adapters for known creator newsletter templates.
 
@@ -83,6 +83,12 @@ def _section(lines: list[str], labels: tuple[str, ...], *, limit_lines: int = 3)
 def _fingerprint(source: str, subject: str, body: str) -> str:
     material = "|".join((source.casefold(), _clip(subject, 240).casefold(), body[:2000].casefold()))
     return hashlib.sha256(material.encode("utf-8")).hexdigest()[:20]
+
+
+def _episode_key(source: str, message_id: str, title: str, body: str) -> str:
+    """Return a stable public identity without exposing Gmail transport IDs."""
+    material = "|".join((source.casefold(), message_id, _clip(title, 240).casefold(), body[:2000].casefold()))
+    return f"{source.casefold()}:{hashlib.sha256(material.encode('utf-8')).hexdigest()[:20]}"
 
 
 def _plain_text(value: str) -> str:
@@ -184,7 +190,7 @@ def _parse_jenny_template(
     insight = normalize_creator_insight({
         "creator_id": "jenny",
         "creator_name": provider_config.display_name,
-        "episode_key": f"jenny:{message_id or title.casefold()}",
+        "episode_key": _episode_key("jenny", message_id, title, text),
         "episode_id": message_id,
         "episode_title": title,
         "source_message_id": message_id,
@@ -288,7 +294,7 @@ def parse_creator_template(
     insight = normalize_creator_insight({
         "creator_id": normalized_source,
         "creator_name": provider_config.display_name if provider_config else normalized_source,
-        "episode_key": f"{normalized_source}:{message_id or title.casefold()}",
+        "episode_key": _episode_key(normalized_source, message_id, title, body),
         "episode_id": message_id,
         "episode_title": title,
         "source_message_id": message_id,

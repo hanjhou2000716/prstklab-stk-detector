@@ -79,6 +79,17 @@ _PUBLIC_FIELDS = {
     "market_sync_confirmed", "cross_source_count", "market_evidence",
     "entities", "topics", "tickers", "candidate_event_type", "item_id",
     "content_hash", "parser_version", "parse_status", "public_safe",
+    # Creator-derived fields are public-safe structured projections.  Gmail
+    # transport identifiers (message/thread IDs, sender and raw bodies) are
+    # deliberately absent and are rejected by the storage adapter below.
+    "creator_id", "creator_name", "episode_key", "episode_title",
+    "published_at", "received_at", "markets", "sectors", "key_takeaways",
+    "creator_market_view", "creator_strategy_view", "creator_risk_view",
+    "key_numbers", "claims", "opinions", "verification_state",
+    "evidence_alignment", "prstk_correlation", "summary_image_available",
+    "summary_image_hash", "source_adapter", "template_fingerprint",
+    "provider_fields", "provider_fields_missing", "required_fields_present",
+    "attribution", "event_cluster_key", "compound", "item_count",
 }
 
 
