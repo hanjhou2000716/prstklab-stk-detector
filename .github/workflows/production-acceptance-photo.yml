@@ -39,16 +39,20 @@ jobs:
         run: |
           python -m pip install -r requirements.txt
           python -m playwright install chromium
-      - name: Restore the latest immutable data release
+      - name: Restore the exact release selected for Pages
         run: |
           # The photo gate must validate the same release that Pages serves.
-          # A main checkout intentionally carries only a placeholder site/data
-          # tree, so restore the latest data-release snapshot before checking
-          # the public manifest. This step has no Telegram credentials and does
-          # not publish or mutate the data-release branch.
+          # Pages walks immutable data-release history and skips invalid or
+          # incomplete heads. Repeating that selector here prevents an invalid
+          # newest data-release commit from being compared with the last-good
+          # public bundle. This step has no Telegram credentials and does not
+          # publish or mutate the data-release branch.
           git fetch --no-tags origin refs/heads/data-release:refs/remotes/origin/data-release
-          python -m src.data_release --restore --branch data-release --include site/data
-          git restore --source=origin/data-release --worktree -- site/data/
+          python -m src.pages_release \
+            --branch data-release \
+            --max-commits 100 \
+            --require-production-research \
+            --preserve-public-url "$DASHBOARD_URL"
       - name: Verify release and send one photo
         id: photo
         env:
