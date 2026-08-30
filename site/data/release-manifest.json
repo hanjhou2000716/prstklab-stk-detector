@@ -1,7 +1,7 @@
 {
-  "release_id": "release-9010830bc4bbe0d2",
-  "created_at": "2026-08-30T13:07:02.435205+00:00",
-  "market_snapshot_id": "3d98da28a6f2d311",
+  "release_id": "release-d86729fd2824588f",
+  "created_at": "2026-08-30T22:18:00.675639+00:00",
+  "market_snapshot_id": "493fe705d8e27810",
   "research_snapshot_id": "research-8b8ec8f6e5ee51aa",
   "event_snapshot_id": "event-2668aef41e66e57b",
   "backtest_release": null,
@@ -180,6 +180,27 @@
       "failure_isolation": true
     },
     {
+      "provider_id": "yahoo_finance",
+      "display_name": "Yahoo Taiwan Finance",
+      "authority_tier": "market",
+      "markets": [
+        "taiwan",
+        "us"
+      ],
+      "domains": [
+        "finance.yahoo.com",
+        "tw.stock.yahoo.com"
+      ],
+      "content_types": [
+        "market_news"
+      ],
+      "fetch_method": "rss",
+      "timeout_seconds": 15,
+      "cache_ttl_seconds": 300,
+      "enabled": true,
+      "failure_isolation": true
+    },
+    {
       "provider_id": "google_news",
       "display_name": "Google News",
       "authority_tier": "discovery",
@@ -209,13 +230,13 @@
     "creator_insights": "1.0"
   },
   "artifact_hashes": {
-    "market.json": "c967fea3b60b548a2e72623d0e4fba009d48e14a5545113b01c398fedf83c2fa",
+    "market.json": "4fed02adca1e1014c844ec3f612ccaaa26d658f27f75ecef6c05f3583ffc6b79",
     "research-report.json": "1961992e8cee354fd6c6760acde8b6ab3d9e013cd26645439a9c48d2e5b3f15f",
     "event-ledger.json": "80e2c1c6d4b0545b498d6086a2690f32e6e5a0a3634ff44ca6efdf7bd293d428",
-    "source-health.json": "db89655be4fe2c04b97e9005b3ef1e5313a476c28c7c581fdd9b1b284c36e278",
-    "news.json": "035168792bf5ad7fe7205ffd6448ca57dc966185336ba63c6c448ff46defb277",
-    "creator-release.json": "1f84dd069d7f467ff9ad330f0828979265960b990e6ba5a5a9ba3fd9855b1c2a",
-    "creator-insights.json": "f93ffe0aab919c5a5ec26125f05f8fc981ca5140e34e75a2ff1e32975250d1ff"
+    "source-health.json": "f4910c7fe28e5279dd0c091bbde808b55bf9c1c0ad06320545594b9a8d4a90ae",
+    "news.json": "c1ccbf9ec4afc99bc118846db6efb4b771b33619e6b361868ad356480c1cf3b7",
+    "creator-release.json": "a35cb8cbd9ef5eeb82af73d32105614f4654d592e0ea8fdb49cf043cf092f2f7",
+    "creator-insights.json": "b49e054632825137989ec744804312f44b975e2471d5d0aa0e11c0ab7de64bc6"
   },
   "artifact_paths": {
     "market.json": "data/market.json",
@@ -232,21 +253,21 @@
   "research_freshness": "stale_fallback",
   "research_fallback_used": false,
   "research_fallback_reason": null,
-  "creator_release_id": "creator-ae22f5934cbfb74b",
+  "creator_release_id": "creator-99fbea208c30dc13",
   "creator_status": "ready",
   "creator_validation_errors": [],
-  "creator_artifact_hash": "201b88165dd352617558a00ff3e8f185239fc31b688d2f1451c9c0cbeae5871c",
+  "creator_artifact_hash": "41e0c9a04a307672c1413c88151f638e08b7af0b2b5969ced4e2911820301c6a",
   "creator_input_hash": "7207f7913baa01c1fc7fa6ed7bcd04679546a62b30801d3098aeb528253613b1",
   "creator_public_status": "ready",
   "creator_public_validation_errors": [],
-  "creator_snapshot_id": "creator-ae22f5934cbfb74b",
-  "creator_public_artifact_hash": "f93ffe0aab919c5a5ec26125f05f8fc981ca5140e34e75a2ff1e32975250d1ff",
-  "news_snapshot_id": "news-1737c0a3eae43c6b",
+  "creator_snapshot_id": "creator-99fbea208c30dc13",
+  "creator_public_artifact_hash": "b49e054632825137989ec744804312f44b975e2471d5d0aa0e11c0ab7de64bc6",
+  "news_snapshot_id": "news-ced79fddf95ba1f7",
   "news_status": "ready",
-  "external_observation_count": null,
-  "external_observation_ids_hash": null,
+  "external_observation_count": 0,
+  "external_observation_ids_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "external_observation_sources": [],
-  "external_observation_status": "not_available",
+  "external_observation_status": "no_event",
   "status": "ready",
   "validation_errors": []
 }
