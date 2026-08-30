@@ -16,7 +16,7 @@ from src.event_ledger import EventLedger, canonical_event_key
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import write_snapshot
 from src.release_gate import verify_release_for_delivery
-from src.telegram_client import send_text_briefs_audited, validate_brief
+from src.telegram_client import canonical_prstk_risk_level, send_text_briefs_audited, validate_brief
 
 
 def _is_taiwan_market_window(now: datetime | None = None) -> bool:
@@ -310,6 +310,7 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             release_id=gate.release_id or "",
             snapshot_id=snapshot_id,
             observation_id=observation_id,
+            prstk_risk_level=canonical_prstk_risk_level(event),
         )
     except (OSError, ValueError) as exc:
         write_send_output(False, "text_delivery_failed")

@@ -25,6 +25,7 @@ SEND_ATTEMPTS = 3
 RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 FAILED_RECIPIENT_RETRIES = 1
 MAX_FAILED_RECIPIENT_RETRIES = 3
+PRSTK_RISK_LEVELS = frozenset({"R0", "R1", "R2", "R3", "R4"})
 
 
 def _failed_recipient_retry_count() -> int:
@@ -95,6 +96,23 @@ class TextDeliveryReceipt:
     message_id: int | None = None
     error_class: str | None = None
     observation_id: str = ""
+    prstk_risk_level: str = "R2"
+
+
+def canonical_prstk_risk_level(event: dict[str, object] | None) -> str:
+    """Read the canonical R0–R4 risk field without inferring from price text."""
+    if not isinstance(event, dict):
+        return "R2"
+    nested = event.get("prstk_risk")
+    candidates = [
+        nested.get("prstk_risk_level") if isinstance(nested, dict) else None,
+        event.get("prstk_risk_level"),
+    ]
+    for value in candidates:
+        level = str(value or "").strip().upper()
+        if level in PRSTK_RISK_LEVELS:
+            return level
+    return "R2"
 
 
 @dataclass(frozen=True)
@@ -343,10 +361,13 @@ def send_text_briefs_audited(
     *, token: str, chat_ids: tuple[str, ...], text: str, dashboard_url: str,
     alert_id: str, release_id: str, snapshot_id: str,
     observation_id: str = "", target_url: str | None = None,
+    prstk_risk_level: str = "R2",
 ) -> tuple[TextDeliveryReceipt, ...]:
     """Send one text-only Mini App message per recipient with bounded receipts."""
     if not chat_ids:
         raise ValueError("Telegram recipient list is empty")
+    if prstk_risk_level not in PRSTK_RISK_LEVELS:
+        raise ValueError("PRStK risk level must be one of R0-R4")
     receipts: list[TextDeliveryReceipt] = []
     for chat_id in chat_ids:
         recipient_hash = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]
@@ -359,11 +380,13 @@ def send_text_briefs_audited(
             receipts.append(TextDeliveryReceipt(
                 alert_id, release_id, snapshot_id, recipient_hash, "failed",
                 error_class=type(exc).__name__.lower(), observation_id=observation_id,
+                prstk_risk_level=prstk_risk_level,
             ))
         else:
             receipts.append(TextDeliveryReceipt(
                 alert_id, release_id, snapshot_id, recipient_hash, "delivered",
                 message_id=result.message_id, observation_id=observation_id,
+                prstk_risk_level=prstk_risk_level,
             ))
     return tuple(receipts)
 

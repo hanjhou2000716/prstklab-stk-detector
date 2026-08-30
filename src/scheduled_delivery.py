@@ -36,7 +36,7 @@ from src.scheduled_brief import (
     build_brief,
     write_event_lock_key,
 )
-from src.telegram_client import send_text_briefs_audited
+from src.telegram_client import canonical_prstk_risk_level, send_text_briefs_audited
 
 _DEFAULT_CREATOR_RECORDS_PATH = Path("creator/public-records.json")
 
@@ -406,6 +406,7 @@ def send(
                 release_id=gate.release_id or "",
                 snapshot_id=snapshot_id,
                 observation_id=observation_id,
+                prstk_risk_level=canonical_prstk_risk_level(event),
             )
     except (OSError, ValueError) as exc:
         _write_output({"sent": "false", "delivery_status": "blocked", "reason": "text_delivery_failed", "error_type": type(exc).__name__, "release_id": gate.release_id, "snapshot_id": snapshot_id})
