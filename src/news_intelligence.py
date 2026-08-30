@@ -561,9 +561,12 @@ def _news_provider_observability(
             success = checked_at
         if failure is None and status in _SOURCE_FAILURE_STATES:
             failure = checked_at
-        fetched_count = source.get("item_count")
+        raw_fetched_count = source.get("item_count")
         try:
-            fetched_count = max(int(fetched_count), len(normalized_by.get(provider, [])))
+            fetched_count = max(
+                int(str(raw_fetched_count)) if raw_fetched_count is not None else 0,
+                len(normalized_by.get(provider, [])),
+            )
         except (TypeError, ValueError):
             fetched_count = len(normalized_by.get(provider, []))
         normalized_count = len(normalized_by.get(provider, []))
