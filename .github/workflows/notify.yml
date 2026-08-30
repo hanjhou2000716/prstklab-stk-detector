@@ -67,7 +67,9 @@ jobs:
           DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
           RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
-          DELIVERY_RECEIPT_KIND: text_acceptance
+          # Controlled text acceptance is stored under the existing
+          # production receipt contract; the delivery mode remains text.
+          DELIVERY_RECEIPT_KIND: production
           TRACE_ID: ${{ steps.text_acceptance.outputs.trace_id }}
           ALERT_ID: ${{ steps.text_acceptance.outputs.alert_id }}
           RELEASE_ID: ${{ steps.text_acceptance.outputs.release_id }}

@@ -22,3 +22,8 @@ def test_photo_acceptance_uses_the_same_valid_release_selector_as_pages() -> Non
     assert "sendPhoto" not in WORKFLOW
     assert "playwright install" not in WORKFLOW
     assert "production_text_acceptance" in WORKFLOW
+
+
+def test_text_acceptance_uses_existing_production_receipt_contract() -> None:
+    assert "DELIVERY_RECEIPT_KIND: production" in WORKFLOW
+    assert "DELIVERY_RECEIPT_KIND: text_acceptance" not in WORKFLOW
