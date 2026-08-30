@@ -67,7 +67,7 @@ def financialjuice_caption(event: dict[str, Any], *, limit: int = MAX_FINANCIALJ
     escaped = html.escape(_bounded(raw, limit), quote=False)
     if len(escaped) <= limit:
         return escaped
-    return html.escape(_bounded(f"🟠 FJ｜{headline}", limit), quote=False)
+    return html.escape(_bounded(f"🟣 FJ｜{risk}｜{headline}", limit), quote=False)
 
 
 def _history_delivered(
