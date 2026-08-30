@@ -11,12 +11,11 @@ from __future__ import annotations
 import hashlib
 import html
 from collections.abc import Callable
-from pathlib import Path
 from typing import Any
 
-from src.telegram_client import PhotoDeliveryReceipt, alert_mini_app_url, send_photo_briefs
+from src.telegram_client import TextDeliveryReceipt, alert_mini_app_url, send_text_briefs_audited
 
-MAX_FINANCIALJUICE_CAPTION = 40
+MAX_FINANCIALJUICE_CAPTION = 30
 
 
 def _text(value: Any) -> str:
@@ -88,9 +87,10 @@ def deliver_financialjuice_event(
     release_ready: bool,
     token: str,
     chat_ids: tuple[str, ...],
-    photo_path: str | Path,
+    photo_path: str | None = None,
     delivery_history: list[dict[str, Any]] | None = None,
-    photo_sender: Callable[..., tuple[PhotoDeliveryReceipt, ...]] | None = None,
+    photo_sender: Callable[..., tuple[TextDeliveryReceipt, ...]] | None = None,
+    text_sender: Callable[..., tuple[TextDeliveryReceipt, ...]] | None = None,
 ) -> dict[str, Any]:
     """Deliver one eligible FJ event with recipient-level idempotency.
 
@@ -110,8 +110,6 @@ def deliver_financialjuice_event(
         reasons.append("notification_key_missing")
     if not token or not chat_ids:
         reasons.append("telegram_configuration_missing")
-    if not Path(photo_path).is_file():
-        reasons.append("photo_missing")
     if reasons:
         return {
             "status": "blocked",
@@ -146,14 +144,13 @@ def deliver_financialjuice_event(
         snapshot_id=_text(snapshot_id),
         observation_id=observation_id,
     )
-    sender = photo_sender or send_photo_briefs
+    sender = text_sender or photo_sender or send_text_briefs_audited
     try:
         delivered = sender(
             token=token,
             chat_ids=pending_ids,
-            caption=financialjuice_caption(event),
-            photo_path=photo_path,
-            mini_app_url=mini_app_url,
+            text=financialjuice_caption(event),
+            dashboard_url=mini_app_url,
             alert_id=alert_id,
             release_id=release_id,
             snapshot_id=snapshot_id,
@@ -181,7 +178,7 @@ def deliver_financialjuice_event(
             "release_id": receipt.release_id,
             "snapshot_id": receipt.snapshot_id,
             "observation_id": receipt.observation_id,
-            "telegram_file_id_hash": receipt.telegram_file_id_hash,
+            "telegram_file_id_hash": getattr(receipt, "telegram_file_id_hash", None),
         })
     delivered_count = sum(row["delivery_status"] == "delivered" for row in receipts)
     failed_count = len(receipts) - delivered_count

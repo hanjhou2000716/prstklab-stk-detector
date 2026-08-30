@@ -3,7 +3,7 @@ import json
 from src import scheduled_delivery
 from src.release_gate import ReleaseGateResult
 from src.scheduled_delivery import _creator_records_from_observations, _load_creator_records
-from src.telegram_client import PhotoDeliveryReceipt
+from src.telegram_client import TextDeliveryReceipt
 
 
 def test_creator_observations_are_projected_into_release_records() -> None:
@@ -87,14 +87,14 @@ def test_scheduled_delivery_blocks_when_manifest_is_not_ready(tmp_path, monkeypa
     def fail_if_called(**_kwargs):
         raise AssertionError("Telegram must not be called when release gate fails")
 
-    monkeypatch.setattr(scheduled_delivery, "send_photo_briefs", fail_if_called)
+    monkeypatch.setattr(scheduled_delivery, "send_text_briefs_audited", fail_if_called)
     scheduled_delivery.send(snapshot_path, "morning", manifest_path)
     text = output.read_text(encoding="utf-8")
     assert "sent=false" in text
     assert "reason=release_gate_blocked" in text
 
 
-def test_scheduled_delivery_uses_photo_delivery_after_release_gate(tmp_path, monkeypatch):
+def test_scheduled_delivery_uses_text_delivery_after_release_gate(tmp_path, monkeypatch):
     snapshot_path = tmp_path / "market.json"
     manifest_path = tmp_path / "release-manifest.json"
     snapshot_path.write_text(
@@ -104,22 +104,18 @@ def test_scheduled_delivery_uses_photo_delivery_after_release_gate(tmp_path, mon
     manifest_path.write_text("{}", encoding="utf-8")
     output = tmp_path / "output"
     _patch_ready(monkeypatch, output)
-    photo = tmp_path / "alert.png"
-    photo.write_bytes(b"png")
-    monkeypatch.setattr(scheduled_delivery, "render_alert_card", lambda *_args, **_kwargs: photo)
     monkeypatch.setattr(
         scheduled_delivery,
-        "send_photo_briefs",
-        lambda **kwargs: (PhotoDeliveryReceipt(
+        "send_text_briefs_audited",
+        lambda **kwargs: (TextDeliveryReceipt(
             kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"],
-            "hash", "delivered", message_id=1, telegram_file_id="file-1",
-            telegram_file_id_hash="file-hash", observation_id=kwargs.get("observation_id", ""),
+            "hash", "delivered", message_id=1, observation_id=kwargs.get("observation_id", ""),
         ),),
     )
     scheduled_delivery.send(snapshot_path, "morning", manifest_path)
     text = output.read_text(encoding="utf-8")
     assert "sent=true" in text
-    assert "delivery_mode=photo" in text
+    assert "delivery_mode=text" in text
 
 
 def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path, monkeypatch):
@@ -154,16 +150,12 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
         "decide_alert_budget",
         lambda *_args: {"allowed": True, "reason": "material_change", "event_key": "cluster-1"},
     )
-    photo = tmp_path / "alert.png"
-    photo.write_bytes(b"png")
-    monkeypatch.setattr(scheduled_delivery, "render_alert_card", lambda *_args, **_kwargs: photo)
     monkeypatch.setattr(
         scheduled_delivery,
-        "send_photo_briefs",
-        lambda **kwargs: (PhotoDeliveryReceipt(
+        "send_text_briefs_audited",
+        lambda **kwargs: (TextDeliveryReceipt(
             kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"],
-            "hash", "delivered", message_id=2, telegram_file_id="file-2",
-            telegram_file_id_hash="file-hash", observation_id=kwargs.get("observation_id", ""),
+            "hash", "delivered", message_id=2, observation_id=kwargs.get("observation_id", ""),
         ),),
     )
     monkeypatch.setattr(scheduled_delivery, "write_event_lock_key", lambda *_args: None)
@@ -195,7 +187,7 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
     assert recorded["delivery_receipts"][0]["delivery_status"] == "delivered"
 
 
-def test_scheduled_delivery_blocks_photo_when_renderer_fails(tmp_path, monkeypatch):
+def test_scheduled_delivery_records_text_delivery_failure(tmp_path, monkeypatch):
     snapshot_path = tmp_path / "market.json"
     manifest_path = tmp_path / "release-manifest.json"
     snapshot_path.write_text(
@@ -207,19 +199,13 @@ def test_scheduled_delivery_blocks_photo_when_renderer_fails(tmp_path, monkeypat
     _patch_ready(monkeypatch, output)
     monkeypatch.setattr(
         scheduled_delivery,
-        "render_alert_card",
-        lambda *_args, **_kwargs: (_ for _ in ()).throw(scheduled_delivery.RendererError("chromium_unavailable")),
-    )
-    monkeypatch.setattr(
-        scheduled_delivery,
-        "send_photo_briefs",
-        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("must not send when renderer fails")),
+        "send_text_briefs_audited",
+        lambda **_kwargs: (_ for _ in ()).throw(ValueError("text failure")),
     )
     scheduled_delivery.send(snapshot_path, "morning", manifest_path)
     text = output.read_text(encoding="utf-8")
     assert "sent=false" in text
-    assert "reason=renderer_failed" in text
-    assert "renderer_error_type=chromium_unavailable" in text
+    assert "reason=text_delivery_failed" in text
 
 
 def test_scheduled_delivery_blocks_quality_ineligible_event_before_renderer(tmp_path, monkeypatch):
@@ -241,11 +227,6 @@ def test_scheduled_delivery_blocks_quality_ineligible_event_before_renderer(tmp_
             "alert_eligible": False,
             "quality_reasons": ["quote_stale"],
         },
-    )
-    monkeypatch.setattr(
-        scheduled_delivery,
-        "render_alert_card",
-        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("quality gate must run before renderer")),
     )
     scheduled_delivery.send(snapshot_path, "morning", manifest_path)
     text = output.read_text(encoding="utf-8")

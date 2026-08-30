@@ -400,12 +400,36 @@ def deduplicate_and_rank(stories: Iterable[dict[str, Any]], *, limit: int = 5, m
     ordered = sorted(groups, key=lambda item: (-item["ranking_score"], item["story_id"]))
     result: list[dict[str, Any]] = []
     counts: dict[str, int] = {}
+    selected_ids: set[str] = set()
+    # First pass is diversity-first: every eligible provider gets one slot.
     for story in ordered:
         provider = story["provider"]
-        if counts.get(provider, 0) >= max_per_provider and len(ordered) - len(result) > 0:
+        if provider in counts:
             continue
-        counts[provider] = counts.get(provider, 0) + 1
         result.append(story)
+        selected_ids.add(story["story_id"])
+        counts[provider] = 1
+        if len(result) >= limit:
+            return result
+    # Second pass honours the historical per-provider cap.
+    for story in ordered:
+        if story["story_id"] in selected_ids:
+            continue
+        provider = story["provider"]
+        if counts.get(provider, 0) >= max_per_provider:
+            continue
+        result.append(story)
+        selected_ids.add(story["story_id"])
+        counts[provider] = counts.get(provider, 0) + 1
+        if len(result) >= limit:
+            return result
+    # Final fill pass prevents a provider cap from making a healthy feed look
+    # empty.  Safety, URL validation and ranking have already happened above.
+    for story in ordered:
+        if story["story_id"] in selected_ids:
+            continue
+        result.append(story)
+        selected_ids.add(story["story_id"])
         if len(result) >= limit:
             break
     return result

@@ -161,7 +161,7 @@ def test_official_monitor_suppresses_budgeted_event_before_renderer(monkeypatch,
             return None
 
     monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
-    monkeypatch.setattr(monitor, "send_photo_briefs", lambda **_kwargs: (_ for _ in ()).throw(AssertionError("renderer must not run")))
+    monkeypatch.setattr(monitor, "send_text_briefs_audited", lambda **_kwargs: (_ for _ in ()).throw(AssertionError("delivery must not run")))
 
     assert monitor.send_current_event() is False
     text = output.read_text(encoding="utf-8")

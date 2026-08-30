@@ -1,7 +1,7 @@
 import json
 
 from src import telegram_client
-from src.telegram_client import send_photo_brief, send_photo_briefs
+from src.telegram_client import send_photo_brief, send_photo_briefs, send_text_briefs_audited
 
 
 class Response:
@@ -122,6 +122,19 @@ def test_send_photo_briefs_rejects_empty_recipients(tmp_path):
     import pytest
     with pytest.raises(ValueError, match="recipient"):
         send_photo_briefs(token="t", chat_ids=(), caption="ok", photo_path=tmp_path / "x", mini_app_url="https://example.test", alert_id="a", release_id="r", snapshot_id="s")
+
+
+def test_text_delivery_is_single_message_and_keeps_lineage(monkeypatch):
+    monkeypatch.setattr("src.telegram_client.send_brief", lambda **_kwargs: type("R", (), {"message_id": 42})())
+    receipts = send_text_briefs_audited(
+        token="t", chat_ids=("8869592162",), text="快訊｜R2｜待核對", dashboard_url="https://example.test/app",
+        alert_id="alert-1", release_id="release-1", snapshot_id="snapshot-1", observation_id="obs-1",
+    )
+    assert receipts[0].status == "delivered"
+    assert receipts[0].message_id == 42
+    assert receipts[0].release_id == "release-1"
+    assert receipts[0].snapshot_id == "snapshot-1"
+    assert receipts[0].chat_id_hash != "8869592162"
 
 
 def test_photo_delivery_propagates_observation_to_receipt_and_deep_link(monkeypatch, tmp_path):

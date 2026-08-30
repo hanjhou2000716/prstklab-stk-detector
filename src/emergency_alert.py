@@ -4,15 +4,12 @@ from __future__ import annotations
 
 import argparse
 import os
-import tempfile
 from datetime import UTC, datetime
-from pathlib import Path
 
 from src.alert_budget import decide_alert_budget
-from src.alert_card_renderer import RendererError, render_alert_card
 from src.config import get_settings
 from src.event_ledger import EventLedger
-from src.telegram_client import send_photo_briefs, summarize_photo_deliveries, validate_brief
+from src.telegram_client import send_text_briefs_audited, validate_brief
 
 STRICT_HIGH_RISK_CATEGORIES = {"black_swan", "conflict"}
 
@@ -76,7 +73,7 @@ def main() -> None:
     release_id = os.environ.get("RELEASE_ID", "")
     snapshot_id = os.environ.get("SNAPSHOT_ID", "")
     if not release_id or not snapshot_id:
-        raise RuntimeError("Emergency photo delivery requires RELEASE_ID and SNAPSHOT_ID")
+        raise RuntimeError("Emergency text delivery requires RELEASE_ID and SNAPSHOT_ID")
     alert_id = os.environ.get("ALERT_ID", f"manual-{args.category}")
     trace_id = os.environ.get("TRACE_ID", f"manual-{args.category}")
     event = {
@@ -104,7 +101,7 @@ def main() -> None:
             "alert_budget_allowed=false",
             f"alert_budget_reason={budget.get('reason', 'suppressed')}",
             f"alert_budget_upgraded={'true' if budget.get('upgraded') else 'false'}",
-            "delivery_mode=photo",
+            "delivery_mode=text",
         ]
         destination = os.environ.get("GITHUB_OUTPUT")
         if destination:
@@ -115,49 +112,31 @@ def main() -> None:
         print(f"Emergency alert suppressed by alert budget: {budget.get('reason', 'suppressed')}")
         return
     try:
-        with tempfile.TemporaryDirectory(prefix="prstk-emergency-card-") as temporary:
-            photo_path = render_alert_card(
-                {
-                    "title": CATEGORY_LABELS[args.category],
-                    "lifecycle_state": "escalated" if args.category in STRICT_HIGH_RISK_CATEGORIES else "confirmed",
-                    "trigger_reason": text,
-                    "event": args.summary,
-                    "importance": "重大事件需完成官方來源與市場同步核對。",
-                    "market_transmission": "僅呈現已取得的市場證據，不預設方向。",
-                    "watch": "觀察官方更新與相關市場是否持續同步。",
-                    "source_evidence": [f"official_confirmed={os.environ.get('EXTERNAL_OFFICIAL_CONFIRMED', 'false')}"],
-                    "market_evidence": [f"market_sync_confirmed={os.environ.get('EXTERNAL_MARKET_SYNC_CONFIRMED', 'false')}"],
-                    "invalidation_condition": "官方核對或市場同步失效時降級或解除。",
-                    "release_id": release_id,
-                    "snapshot_id": snapshot_id,
-                },
-                Path(temporary) / "alert.png",
-            )
-            results = send_photo_briefs(
-                token=settings.telegram_bot_token or "",
-                chat_ids=settings.telegram_chat_ids,
-                caption=text,
-                photo_path=photo_path,
-                mini_app_url=settings.dashboard_url,
-                alert_id=alert_id,
-                release_id=release_id,
-                snapshot_id=snapshot_id,
-                observation_id=trace_id,
-            )
-    except (RendererError, OSError, ValueError) as exc:
-        print(f"renderer_failed={getattr(exc, 'error_type', type(exc).__name__)}")
-        raise RuntimeError("renderer failed; Telegram photo was not sent") from exc
-    summary = summarize_photo_deliveries(results)
+        results = send_text_briefs_audited(
+            token=settings.telegram_bot_token or "",
+            chat_ids=settings.telegram_chat_ids,
+            text=text,
+            dashboard_url=settings.dashboard_url,
+            alert_id=alert_id,
+            release_id=release_id,
+            snapshot_id=snapshot_id,
+            observation_id=trace_id,
+        )
+    except (OSError, ValueError) as exc:
+        print(f"text_delivery_failed={type(exc).__name__}")
+        raise RuntimeError("text delivery failed") from exc
+    delivered_count = sum(row.status == "delivered" for row in results)
+    failed_count = len(results) - delivered_count
     lines = [
         f"trace_id={trace_id}",
         f"alert_id={os.environ.get('ALERT_ID', f'manual-{args.category}')}",
         f"release_id={os.environ.get('RELEASE_ID', '')}",
         f"snapshot_id={os.environ.get('SNAPSHOT_ID', '')}",
-        f"delivered_count={summary.delivered_count}",
-        f"failed_count={summary.failed_count}",
-        f"delivery_status={'delivered' if summary.failed_count == 0 else 'partial' if summary.delivered_count else 'failed'}",
-        "delivery_mode=photo",
-        f"failed_recipient_hashes={','.join(summary.failed_recipient_hashes)}",
+        f"delivered_count={delivered_count}",
+        f"failed_count={failed_count}",
+        f"delivery_status={'delivered' if failed_count == 0 else 'partial' if delivered_count else 'failed'}",
+        "delivery_mode=text",
+        f"failed_recipient_hashes={','.join(row.chat_id_hash for row in results if row.status != 'delivered')}",
         "alert_budget_allowed=true",
         f"alert_budget_reason={budget.get('reason', 'budget_available')}",
         f"alert_budget_upgraded={'true' if budget.get('upgraded') else 'false'}",
@@ -169,11 +148,11 @@ def main() -> None:
             handle.write("\n".join(lines) + "\n")
     else:
         print("\n".join(lines))
-    if not summary.any_delivered:
+    if not delivered_count:
         raise RuntimeError("Telegram delivery failed for every configured recipient")
     ledger.record_delivery(event, trace_id=trace_id, reason="emergency_alert")
     ledger.save()
-    print(f"Telegram delivery: {summary.delivered_count} delivered, {summary.failed_count} failed")
+    print(f"Telegram delivery: {delivered_count} delivered, {failed_count} failed")
 
 
 if __name__ == "__main__":
