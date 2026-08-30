@@ -61,8 +61,9 @@ def financialjuice_caption(event: dict[str, Any], *, limit: int = MAX_FINANCIALJ
     """Build the short caption without turning vendor importance into risk."""
     headline = _text(event.get("title") or event.get("brief_title") or "FinancialJuice 公開快訊")
     importance = event.get("vendor_importance")
-    suffix = f"重要度 {importance}/10" if importance is not None else "待核對"
-    raw = f"🟠 FinancialJuice｜{headline}｜{suffix}"
+    suffix = f"FJ {importance}/10" if importance is not None else "FJ 待核對"
+    risk = canonical_prstk_risk_level(event)
+    raw = f"🟣 {suffix}｜{risk}｜{headline}"
     escaped = html.escape(_bounded(raw, limit), quote=False)
     if len(escaped) <= limit:
         return escaped

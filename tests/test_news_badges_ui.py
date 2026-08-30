@@ -20,7 +20,8 @@ def test_news_cards_render_readable_interest_badges_instead_of_raw_reason_codes(
 def test_news_badges_keep_reason_details_escaped_and_source_visible():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
 
-    assert 'const reasonDetails = (story.relevance_reasons || []).slice(0, 2).map((reason) => escapeHtml(reason))' in app
+    assert 'const reasonDetails = (story.relevance_reasons || []).map(humanNewsReason)' in app
+    assert "keyword_no_match" in app
     assert 'const source = escapeHtml(story.source || story.provider_name || "公開來源")' in app
 
 
@@ -29,4 +30,4 @@ def test_news_cards_render_shared_event_classification_evidence():
 
     assert 'const eventCategory = String(story?.event_classification?.category || "").trim();' in app
     assert 'add("event", `事件：${eventLabels[eventCategory] || eventCategory}`, Boolean(eventCategory));' in app
-    assert 'const eventReason = story?.event_classification?.reason ? `分類依據：${String(story.event_classification.reason)}` : "";' in app
+    assert 'story.event_classification.reason !== "keyword_no_match"' in app

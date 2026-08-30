@@ -387,7 +387,20 @@ def deduplicate_and_rank(stories: Iterable[dict[str, Any]], *, limit: int = 5, m
         current = next((candidate for candidate in groups if candidate.get("dedupe_key") == key or (
             item.get("event_cluster_key") and candidate.get("event_cluster_key") == item.get("event_cluster_key")
         )), None)
-        score = weights.get(item["authority_tier"], 0) + min(20, len(item["relevance_reasons"]) * 5) + (5 if item["published_at"] else 0)
+        # SEC is authoritative for filings, but authority alone is not topical
+        # relevance.  A generic 8-K with only ``market:us`` must not outrank a
+        # tracked ticker, research candidate, or active event topic.
+        contextual_reasons = [
+            reason for reason in item["relevance_reasons"]
+            if not str(reason).startswith("market:")
+        ]
+        generic_sec = item["provider"] == "sec" and not contextual_reasons and not item.get("entities") and not item.get("topics")
+        score = weights.get(item["authority_tier"], 0) + min(20, len(contextual_reasons) * 5) + (5 if item["published_at"] else 0)
+        if generic_sec:
+            score -= 35
+            item["relevance_class"] = "generic_official_filing"
+        else:
+            item["relevance_class"] = "contextual"
         item["ranking_score"] = score
         if current is None or score > current["ranking_score"]:
             if current is not None:

@@ -18,7 +18,7 @@ import requests
 
 from src.news_feed_adapters import fetch_official_market_news
 from src.news_intelligence import build_news_intelligence, provider_registry
-from src.taiwan_macro_fgi import calculate_taiwan_macro_fgi
+from src.taiwan_macro_fgi import FGIUnavailableError, calculate_taiwan_macro_fgi
 
 CNN_FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
 TAIFEX_VIX_INDEX_URL = "https://www.taifex.com.tw/cht/7/vixMinNew"
@@ -423,8 +423,9 @@ def build_risk_snapshot() -> dict[str, Any]:
         }
     us = _market_risk("美股", "^VIX", us_sentiment)
     try:
-        taiwan_sentiment = calculate_taiwan_macro_fgi()
-    except Exception:
+        fgi_cache = os.getenv("TAIWAN_FGI_CACHE_PATH")
+        taiwan_sentiment = calculate_taiwan_macro_fgi(cache_path=fgi_cache) if fgi_cache else calculate_taiwan_macro_fgi()
+    except FGIUnavailableError as exc:
         # Never substitute an old score. The Mini App will say explicitly that
         # this particular public source could not be refreshed.
         taiwan_sentiment = {
@@ -434,6 +435,23 @@ def build_risk_snapshot() -> dict[str, Any]:
             "date": None,
             "index_level": None,
             "sub_scores": {},
+            "component_health": exc.component_health,
+            "stale_components": [],
+            "data_quality": "unavailable",
+            "calculation_state": "unavailable",
+        }
+    except Exception as exc:
+        taiwan_sentiment = {
+            "score": None,
+            "label": "資料暫時無法取得",
+            "source_label": "TAIEX Macro FGI",
+            "date": None,
+            "index_level": None,
+            "sub_scores": {},
+            "component_health": {"model": {"status": "failed", "error_type": type(exc).__name__}},
+            "stale_components": [],
+            "data_quality": "unavailable",
+            "calculation_state": "unavailable",
         }
     taiwan = _market_risk("台股", "^VIXTWN", taiwan_sentiment, fallback=fetch_taifex_vix_quote)
     if us_sentiment["score"] is None:

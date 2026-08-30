@@ -4,6 +4,7 @@ import requests
 from src import telegram_client
 from src.telegram_client import (
     alert_mini_app_url,
+    format_text_brief,
     mini_app_button,
     mini_app_menu_button,
     send_brief,
@@ -16,6 +17,12 @@ from src.telegram_client import (
 
 def test_accepts_30_character_brief():
     validate_brief("測" * 30)
+
+
+def test_text_brief_always_contains_canonical_risk_grade_and_stays_bounded():
+    text = format_text_brief("台指波動觀察｜+2.9%｜等待官方核對", prstk_risk_level="R1")
+    assert text.startswith("R1｜")
+    assert len(text) <= 30
 
 
 def test_rejects_over_30_character_brief():

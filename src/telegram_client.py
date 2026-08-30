@@ -147,6 +147,32 @@ def validate_brief(text: str) -> None:
         raise ValueError(f"快報超過 30 字，目前為 {len(text)} 字：{text}")
 
 
+def format_text_brief(text: str, *, prstk_risk_level: str = "R2") -> str:
+    """Add the canonical PRStK risk grade to every non-Creator text alert."""
+    level = str(prstk_risk_level or "R2").upper()
+    if level not in PRSTK_RISK_LEVELS:
+        level = "R2"
+    source = " ".join(str(text or "").split())
+    if not source:
+        source = "市場公開資訊待核對"
+    if f"{level}｜" in source or source.startswith(f"{level} "):
+        candidate = source
+    else:
+        candidate = f"{level}｜{source}"
+    if len(candidate) <= 30:
+        return candidate
+    # Preserve the complete risk token and avoid cutting a ticker/number in
+    # the middle; the caption is intentionally short, details live in Mini App.
+    prefix = f"{level}｜"
+    remaining = max(1, 30 - len(prefix))
+    compact = source[:remaining].rstrip("｜、，, ")
+    while compact and compact[-1] in ".0123456789":
+        if compact[-1].isdigit() and any(ch.isdigit() for ch in compact[:-1]):
+            break
+        compact = compact[:-1]
+    return f"{prefix}{compact}…"[:30]
+
+
 def mini_app_button(mini_app_url: str) -> dict[str, object]:
     """Build an Inline Keyboard button that opens inside Telegram."""
     if not mini_app_url.startswith("https://"):
@@ -315,6 +341,7 @@ def send_briefs(
     """
     if not chat_ids:
         raise ValueError("至少需要一個 Telegram 收件人。")
+    text = format_text_brief(text)
     deliveries: list[TelegramDelivery] = []
     for chat_id in chat_ids:
         try:
@@ -368,6 +395,7 @@ def send_text_briefs_audited(
         raise ValueError("Telegram recipient list is empty")
     if prstk_risk_level not in PRSTK_RISK_LEVELS:
         raise ValueError("PRStK risk level must be one of R0-R4")
+    text = format_text_brief(text, prstk_risk_level=prstk_risk_level)
     receipts: list[TextDeliveryReceipt] = []
     for chat_id in chat_ids:
         recipient_hash = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]

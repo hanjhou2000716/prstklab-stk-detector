@@ -117,32 +117,34 @@ const renderAlertTrace = (event) => {
   container.replaceChildren();
   container.hidden = true;
   const trace = event?.source_trace;
-  const facts = [];
+  const identity = [];
+  const evidence = [];
+  const decision = [];
   const observationId = event?.observation_id || event?.instrument?.observation_id;
-  if (observationId) facts.push(`觀測 ID：${observationId}`);
-  if (event?.snapshot_id) facts.push(`快照 ID：${event.snapshot_id}`);
-  if (event?.trace_id) facts.push(`Trace ID：${event.trace_id}`);
-  if (trace?.verification) facts.push(`核對：${trace.verification}`);
+  if (observationId) identity.push(`觀測 ID：${observationId}`);
+  if (event?.snapshot_id) identity.push(`快照 ID：${event.snapshot_id}`);
+  if (event?.trace_id) identity.push(`Trace ID：${event.trace_id}`);
   if (event?.impact_confirmation?.method) {
     const markets = (event.impact_confirmation.markets || []).join("、");
-    facts.push(`市場影響核對：${event.impact_confirmation.method}${markets ? `（${markets}）` : ""}`);
+    evidence.push(`市場影響核對：${event.impact_confirmation.method}${markets ? `（${markets}）` : ""}`);
   }
-  if (trace?.source_label) facts.push(`來源：${trace.source_label}`);
+  if (trace?.verification) evidence.push(`核對：${trace.verification}`);
+  if (trace?.source_label) evidence.push(`來源：${trace.source_label}`);
   // FinancialJuice is an attributed discovery source.  Keep its vendor
   // priority visibly separate from the PRStK risk decision so the risk card
   // cannot be read as a vendor score being promoted to system risk.
   const isFinancialJuice = String(event?.source_key || event?.source || "").toLowerCase() === "financialjuice";
   if (isFinancialJuice) {
     const importance = event?.vendor_importance ?? trace?.vendor_importance;
-    facts.push(`來源重要度：${importance === null || importance === undefined || importance === "" ? "待核對" : `${importance} / 10`}`);
+    evidence.push(`來源重要度：${importance === null || importance === undefined || importance === "" ? "待核對" : `${importance} / 10`}`);
     const riskLevel = event?.prstk_risk?.prstk_risk_level || event?.risk_level || "R2";
-    facts.push(`PRStK Risk：${riskLevel}`);
+    evidence.push(`PRStK Risk：${riskLevel}`);
     const hasCrosscheck = Boolean(event?.crosscheck_status && event.crosscheck_status !== "unverified")
       || Boolean(trace?.crosscheck_status && trace.crosscheck_status !== "unverified");
-    facts.push(`Evidence：${hasCrosscheck ? "已完成來源核對" : "等待第二來源"}`);
+    evidence.push(`Evidence：${hasCrosscheck ? "已完成來源核對" : "等待第二來源"}`);
   }
   const domains = Array.isArray(trace?.verified_domains) ? trace.verified_domains.filter(Boolean) : [];
-  if (domains.length) facts.push(`核對網域：${domains.join("、")}`);
+  if (domains.length) evidence.push(`核對網域：${domains.join("、")}`);
   const crosscheckStatus = String(event?.crosscheck_status || trace?.crosscheck_status || "").trim();
   const crosscheckDomains = Array.isArray(event?.crosscheck_domains)
     ? event.crosscheck_domains.filter(Boolean)
@@ -153,7 +155,7 @@ const renderAlertTrace = (event) => {
       : crosscheckStatus === "corroborated"
         ? "第二來源已核對"
         : "等待第二來源";
-    facts.push(`事件交叉核對：${label}${crosscheckDomains.length ? `（${crosscheckDomains.join("、")}）` : ""}`);
+    evidence.push(`事件交叉核對：${label}${crosscheckDomains.length ? `（${crosscheckDomains.join("、")}）` : ""}`);
   }
   const evidenceState = String(event?.evidence_state || trace?.evidence_state || "").trim();
   const evidenceReason = String(event?.evidence_reason || trace?.evidence_reason || "").trim();
@@ -166,29 +168,24 @@ const renderAlertTrace = (event) => {
       official_confirmed: "官方已確認",
     };
     const stateLabel = stateLabels[evidenceState] || evidenceState || "證據狀態待確認";
-    facts.push(`證據狀態：${stateLabel}${evidenceReason ? `｜${evidenceReason}` : ""}`);
+    evidence.push(`證據狀態：${stateLabel}${evidenceReason ? `｜${evidenceReason}` : ""}`);
   }
   const eventTime = traceTime(trace?.event_time);
-  if (eventTime) facts.push(`事件時間：${eventTime} CST`);
+  if (eventTime) identity.push(`事件時間：${eventTime} CST`);
   const checkedAt = traceTime(trace?.checked_at);
-  if (checkedAt) facts.push(`核對時間：${checkedAt} CST`);
+  if (checkedAt) evidence.push(`核對時間：${checkedAt} CST`);
   const pendingReasons = Array.isArray(event?.notification_reasons)
     ? event.notification_reasons.filter(Boolean)
     : (event?.notification_reason ? [event.notification_reason] : []);
   if (event?.notification_status === "pending" && pendingReasons.length) {
-    facts.push(`未推播原因：${pendingReasons.join("、")}`);
+    decision.push(`未推播原因：${pendingReasons.join("、")}`);
   }
   const verificationPlan = Array.isArray(event?.verification_plan) && event.verification_plan.length
     ? event.verification_plan
     : (Array.isArray(trace?.verification_plan) ? trace.verification_plan : []);
-  if (verificationPlan.length) {
-    facts.push(`核對計畫：${verificationPlan.join("＋")}`);
-  }
-  facts.forEach((fact) => {
-    const item = document.createElement("span");
-    item.textContent = fact;
-    container.append(item);
-  });
+  if (verificationPlan.length) decision.push(`核對計畫：${verificationPlan.join("＋")}`);
+  const status = event?.notification_status || event?.lifecycle_state;
+  if (status) decision.push(`通知判定：${status}`);
   const sourceUrl = safeHttpsUrl(trace?.source_url);
   if (sourceUrl) {
     const link = document.createElement("a");
@@ -196,8 +193,31 @@ const renderAlertTrace = (event) => {
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     link.textContent = "開啟原始來源 ↗";
-    container.append(link);
+    link.dataset.traceSource = sourceUrl;
   }
+  const groups = [["資料識別", identity], ["來源與證據", evidence], ["通知判定", decision]];
+  groups.forEach(([title, facts]) => {
+    if (!facts.length) return;
+    const section = document.createElement("section");
+    section.className = "trace-group";
+    const heading = document.createElement("h4");
+    heading.textContent = title;
+    section.append(heading);
+    facts.forEach((fact) => {
+      const item = document.createElement("span");
+      item.textContent = fact;
+      section.append(item);
+    });
+    if (title === "來源與證據" && sourceUrl) {
+      const link = document.createElement("a");
+      link.href = sourceUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "開啟原始來源 ↗";
+      section.append(link);
+    }
+    container.append(section);
+  });
   container.hidden = container.childElementCount === 0;
 };
 
@@ -336,6 +356,9 @@ const renderRisk = (risk) => {
     const source = sentiment.source_label || (marketKey === "taiwan" ? "TAIEX Macro FGI" : "CNN Fear & Greed");
     const score = sentiment.score === null || sentiment.score === undefined ? "—" : Number(sentiment.score).toFixed(1);
     const sentimentLabel = sentiment.label || "資料暫時無法取得";
+    const sentimentQuality = sentiment.data_quality === "stale_last_good"
+      ? "｜資料降級（最後成功版本）"
+      : sentiment.data_quality === "unavailable" ? "｜來源失敗" : "";
     const vix = market.vix || {};
     const vixValue = vix.value === undefined || vix.value === null ? "—" : Number(vix.value).toFixed(2);
     const vixChange = vix.change_percent === null || vix.change_percent === undefined ? "—" : signedPercent(vix.change_percent);
@@ -343,7 +366,7 @@ const renderRisk = (risk) => {
     const vixState = vix.change_percent > 0 ? "risk-up" : vix.change_percent < 0 ? "risk-down" : "flat";
     const vixPercentile = vix.percentile_status === "available" && vix.percentile !== null && vix.percentile !== undefined
       ? `｜歷史百分位 ${Number(vix.percentile).toFixed(1)}` : "";
-    return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}｜${escapeHtml(vixStage)}${escapeHtml(vixPercentile)}</small></article></div></section>`;
+    return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}${escapeHtml(sentimentQuality)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}｜${escapeHtml(vixStage)}${escapeHtml(vixPercentile)}</small></article></div></section>`;
   }).join("");
 };
 
@@ -393,6 +416,19 @@ const newsBadgeLabels = (story) => {
   return badges;
 };
 
+const humanNewsReason = (reason) => {
+  const value = String(reason || "");
+  if (/^tracked_ticker:/i.test(value)) return "追蹤標的相關";
+  if (/^research_candidate:/i.test(value)) return "研究標的相關";
+  if (/^tracked_sector:/i.test(value)) return "追蹤產業相關";
+  if (/^active_topic:/i.test(value)) return "主題相關";
+  if (/^active_event:/i.test(value)) return "進行中事件相關";
+  if (/^creator_mentioned:/i.test(value)) return "Creator 提及";
+  if (/^market:/i.test(value) || value === "keyword_no_match") return "市場公開資訊";
+  if (/^official(?::|$)/i.test(value)) return "官方來源";
+  return value && !value.includes(":") ? value : "";
+};
+
 const renderNewsList = (id, stories, providerRegistry = [], health = null, intelligence = null) => {
   const container = document.getElementById(id);
   if (!container) return;
@@ -429,8 +465,8 @@ const renderNewsList = (id, stories, providerRegistry = [], health = null, intel
     }
     const title = String(story.title || "").replace(/^\s*\d+\.\s*/, "");
     const badges = newsBadgeLabels(story).map((badge) => `<span class="news-badge news-badge-${badge.key}">${escapeHtml(badge.label)}</span>`).join("");
-    const reasonDetails = (story.relevance_reasons || []).slice(0, 2).map((reason) => escapeHtml(reason)).join("、");
-    const eventReason = story?.event_classification?.reason ? `分類依據：${String(story.event_classification.reason)}` : "";
+    const reasonDetails = (story.relevance_reasons || []).map(humanNewsReason).filter(Boolean).slice(0, 2).join("、");
+    const eventReason = story?.event_classification?.reason && story.event_classification.reason !== "keyword_no_match" ? "事件分類已核對" : "";
     const source = escapeHtml(story.source || story.provider_name || "公開來源");
     const detailParts = [reasonDetails, eventReason].filter(Boolean).map((item) => escapeHtml(item));
     const detail = detailParts.length ? `<span class="news-reason-detail">${detailParts.join("、")}</span>` : "";
@@ -862,28 +898,9 @@ const researchScoreParts = (item) => {
   return { label: "動能分數", value: `${Number(item.score).toFixed(1)} / 100` };
 };
 
-const researchExplainability = (item) => {
-  const asList = (value) => Array.isArray(value) ? value : String(value || "").split(/[|,、;]/).map((entry) => entry.trim()).filter(Boolean);
-  const passed = asList(item.passed_conditions);
-  const failed = asList(item.failed_conditions);
-  const risks = asList(item.risk_factors);
-  const completeness = item.data_completeness ?? item.data_quality_score;
-  const invalidation = item.invalidation || item.invalidation_condition;
-  const gate = item.advice_gate_detail || (item.explainability && item.explainability.advice_gate) || {};
-  const binding = item.strategy_binding || (item.explainability && item.explainability.strategy_binding) || {};
-  const backtest = item.backtest_release_contract || {};
-  if (!passed.length && !failed.length && !risks.length && completeness === undefined && !invalidation && !Object.keys(gate).length && !Object.keys(binding).length && !Object.keys(backtest).length) return "";
-  const list = (values, fallback) => values.length ? values.map((value) => `<li>${escapeHtml(value)}</li>`).join("") : `<li>${fallback}</li>`;
-  const quality = completeness === undefined || completeness === null ? "資料完整度暫時無法取得" : `資料完整度 ${escapeHtml(String(completeness))}`;
-  const gateLabel = gate.allowed === true ? "條件式研究內容可用" : "僅供研究觀察";
-  const gateReasons = asList(gate.blocking_reasons);
-  const gateReason = gateReasons.length ? `｜阻擋原因：${gateReasons.join("、")}` : "";
-  const bindingState = binding.state || (Object.keys(backtest).length ? "unverified" : "not_provided");
-  const bindingReason = binding.reason || (backtest.publication_state === "ready" ? "候選尚未完成策略版本核對" : "正式回測尚未發布");
-  const releaseLabel = backtest.backtest_release || item.backtest_release || "尚未提供";
-  const registryLabel = binding.strategy_id ? `${binding.strategy_id}${binding.strategy_version ? ` v${binding.strategy_version}` : ""}` : "尚未核對";
-  return `<details class="research-explainability"><summary>條件與風險說明</summary><p><b>研究閘門：</b>${escapeHtml(gateLabel)}${escapeHtml(gateReason)}</p><p><b>策略綁定：</b>${escapeHtml(bindingState)}｜${escapeHtml(registryLabel)}<br><small>${escapeHtml(bindingReason)}｜回測版本：${escapeHtml(releaseLabel)}</small></p><p><b>已通過：</b></p><ul>${list(passed, "尚未提供")}</ul><p><b>未通過：</b></p><ul>${list(failed, "無額外未通過條件")}</ul><p><b>風險：</b></p><ul>${list(risks, "尚未提供")}</ul><small>${escapeHtml(quality)}${invalidation ? `｜失效條件：${escapeHtml(invalidation)}` : ""}。僅供研究觀察，不構成買賣指令。</small></details>`;
-};
+// Research cards remain concise; detailed explainability is available in the
+// backend/Creator report and is intentionally not rendered in the public list.
+const researchExplainability = () => "";
 
 const renderResearchList = (id, items, empty) => {
   const container = document.getElementById(id);
