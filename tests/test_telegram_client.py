@@ -4,6 +4,7 @@ import requests
 from src import telegram_client
 from src.telegram_client import (
     alert_mini_app_url,
+    canonical_short_message,
     format_text_brief,
     mini_app_button,
     mini_app_menu_button,
@@ -23,6 +24,17 @@ def test_text_brief_always_contains_canonical_risk_grade_and_stays_bounded():
     text = format_text_brief("台指波動觀察｜+2.9%｜等待官方核對", prstk_risk_level="R1")
     assert text.startswith("R1｜")
     assert len(text) <= 30
+
+
+def test_canonical_short_message_has_one_risk_token_and_preserves_fj_vendor_score():
+    text = canonical_short_message("快訊｜台指波動觀察｜+2.9%｜R2", prstk_risk_level="R2")
+    assert text.startswith("🟡 R2｜")
+    assert text.count("R2") == 1
+    assert len(text) <= 30
+
+    fj = canonical_short_message("🟣 FJ 8/10｜R2｜北韓發射飛行物", prstk_risk_level="R2")
+    assert fj.startswith("🟣 FJ 8/10｜R2｜")
+    assert fj.count("R2") == 1
 
 
 def test_rejects_over_30_character_brief():
