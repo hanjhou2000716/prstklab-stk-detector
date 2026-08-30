@@ -64,7 +64,13 @@ def test_restore_public_release_verifies_hashes_before_replacing_data(tmp_path, 
         return Response(json.dumps(manifest).encode() if url.endswith("release-manifest.json?pages_restore=1") else body)
 
     monkeypatch.setattr("src.pages_release.requests.get", get)
-    monkeypatch.setattr("src.pages_release._validate", lambda *args, **kwargs: (True, {"status": "ready"}))
+    def validate_and_rebuild_manifest(root, **_kwargs):
+        (Path(root) / "site" / "data" / "release-manifest.json").write_text(
+            json.dumps({"status": "ready", "release_id": "release-derived"}), encoding="utf-8"
+        )
+        return True, {"status": "ready"}
+
+    monkeypatch.setattr("src.pages_release._validate", validate_and_rebuild_manifest)
     (tmp_path / "site" / "data").mkdir(parents=True)
     (tmp_path / "site" / "data" / "old.json").write_text("old", encoding="utf-8")
 
@@ -73,6 +79,10 @@ def test_restore_public_release_verifies_hashes_before_replacing_data(tmp_path, 
     assert result["release_id"] == "release-last-good"
     assert not (tmp_path / "site" / "data" / "old.json").exists()
     assert (tmp_path / "site" / "data" / "market.json").read_bytes() == body
+    restored_manifest = json.loads(
+        (tmp_path / "site" / "data" / "release-manifest.json").read_text(encoding="utf-8")
+    )
+    assert restored_manifest["release_id"] == "release-last-good"
 
 
 def test_restore_latest_valid_preserves_public_release_when_data_branch_has_no_valid_candidate(tmp_path, monkeypatch):

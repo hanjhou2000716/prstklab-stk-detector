@@ -194,6 +194,18 @@ def restore_public_release(
             "public release failed local validation: "
             + "; ".join(str(item) for item in validated.get("validation_errors") or [])
         )
+    # ``_validate`` invokes the manifest builder, which writes a derived
+    # manifest for the restored artifacts.  That generated identity can differ
+    # from the immutable manifest currently served by Pages (for example when
+    # release metadata was added after the artifact snapshot).  The public
+    # manifest is the source of truth for the preserved bundle, so restore it
+    # after validation; otherwise the downstream photo gate sees a stale or
+    # locally-derived release id and blocks a safe delivery.
+    data_root = root / "site" / "data"
+    (data_root / "release-manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
     return {
         "release_id": str(manifest.get("release_id") or ""),
         "snapshot_id": str(manifest.get("market_snapshot_id") or ""),
