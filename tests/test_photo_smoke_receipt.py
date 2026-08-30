@@ -13,6 +13,6 @@ def test_photo_smoke_exports_delivery_receipt_fields():
 def test_photo_smoke_persists_scoped_receipt_without_broadcasting():
     assert "inputs.photo_test == true" in WORKFLOW
     assert "RAILWAY_STATUS_SHARED_SECRET" in WORKFLOW
-    assert "DELIVERY_RECEIPT_KIND: photo_smoke" in WORKFLOW
-    callback = WORKFLOW.split("Persist photo smoke delivery receipt to Railway", 1)[1]
+    assert "DELIVERY_RECEIPT_KIND: text_acceptance" in WORKFLOW
+    callback = WORKFLOW.split("Persist text acceptance delivery receipt to Railway", 1)[1]
     assert "continue-on-error: true" not in callback.split("run: python -m src.delivery_callback", 1)[0]

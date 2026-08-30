@@ -52,8 +52,9 @@ def test_production_receipts_bind_release_and_snapshot():
         assert "python -m src.delivery_callback" in workflow
 
 
-def test_scoped_photo_smoke_is_explicitly_separate_from_production_delivery():
+def test_scoped_legacy_photo_input_is_text_only_and_explicitly_single_recipient():
     workflow = _workflow("notify.yml")
-    assert "photo_test requires an explicit single test_chat_id" in workflow
+    assert "text acceptance requires an explicit single test_chat_id" in workflow
     assert "inputs.photo_test == true" in workflow
-    assert "DELIVERY_RECEIPT_KIND: photo_smoke" in workflow
+    assert "DELIVERY_RECEIPT_KIND: text_acceptance" in workflow
+    assert "sendPhoto" not in workflow

@@ -28,6 +28,10 @@ ANUE_CATEGORY_URLS = {
     "taiwan": "https://news.cnyes.com/news/cat/tw_stock_news",
     "us": "https://news.cnyes.com/news/cat/us_stock",
 }
+YAHOO_NEWS_RSS_URLS = {
+    "taiwan": "https://tw.stock.yahoo.com/rss?category=news",
+    "us": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
+}
 NEWS_RSS_QUERIES = {
     "taiwan": "台股 OR 台積電 OR 半導體",
     "us": "美股 OR Nasdaq OR Nvidia OR Federal Reserve",
@@ -493,18 +497,42 @@ def _news_from_html(html: str, market: str, limit: int = 5) -> list[dict[str, st
 
 
 def fetch_market_news(market: str) -> list[dict[str, str]]:
-    """Fetch market news, preferring isolated official feeds over discovery."""
+    """Fetch an additive official/market/discovery news pool.
+
+    Official feeds are retained as first-party evidence, but no longer
+    short-circuit Anue, Yahoo Finance, or Google discovery. Each provider is
+    isolated so an outage cannot erase otherwise relevant stories.
+    """
     global _LAST_OFFICIAL_NEWS_HEALTH
     official = fetch_official_market_news(market)
-    _LAST_OFFICIAL_NEWS_HEALTH[market] = {
-        "source_health": official.get("source_health", []),
-        "errors": official.get("errors", []),
-    }
-    if official["stories"]:
-        return official["stories"][:5]
-    response = requests.get(ANUE_CATEGORY_URLS[market], headers=HEADERS, timeout=15)
-    response.raise_for_status()
-    return _news_from_html(response.text, market)
+    stories: list[dict[str, Any]] = list(official.get("stories") or [])
+    health = list(official.get("source_health") or [])
+    errors = list(official.get("errors") or [])
+    for provider in ("anue", "yahoo_finance", "google_news"):
+        source_url = (
+            ANUE_CATEGORY_URLS[market] if provider == "anue"
+            else YAHOO_NEWS_RSS_URLS[market] if provider == "yahoo_finance"
+            else _market_news_rss_url(market)
+        )
+        try:
+            response = requests.get(source_url, headers=HEADERS, timeout=15)
+            response.raise_for_status()
+            if provider == "anue":
+                found = _news_from_html(response.text, market, limit=10)
+            elif provider == "yahoo_finance":
+                found = _news_from_yahoo_rss(response.text, market, limit=10)
+            else:
+                found = _news_from_rss(response.text, market, limit=10)
+            stories.extend(found)
+            health.append({"provider": provider, "status": "healthy" if found else "no_event",
+                           "source_url": source_url, "item_count": len(found),
+                           "checked_at": datetime.now(UTC).isoformat()})
+        except Exception as exc:
+            health.append({"provider": provider, "status": "failed", "source_url": source_url,
+                           "item_count": 0, "checked_at": datetime.now(UTC).isoformat()})
+            errors.append({"provider": provider, "error": type(exc).__name__})
+    _LAST_OFFICIAL_NEWS_HEALTH[market] = {"source_health": health, "errors": errors}
+    return stories[:30]
 
 
 def _market_news_rss_url(market: str) -> str:
@@ -574,6 +602,17 @@ def _news_from_rss(xml: str, market: str, limit: int = 5) -> list[dict[str, Any]
         })
         if len(stories) >= limit:
             break
+    return stories
+
+
+def _news_from_yahoo_rss(xml: str, market: str, limit: int = 10) -> list[dict[str, Any]]:
+    """Parse Yahoo Finance's structured RSS as a market-tier source."""
+    stories = _news_from_rss(xml, market, limit=limit)
+    for story in stories:
+        story["source"] = "Yahoo Taiwan Finance" if market == "taiwan" else "Yahoo Finance"
+        story["source_tier"] = "market"
+        story["authority_tier"] = "market"
+        story["provider"] = "yahoo_finance"
     return stories
 
 

@@ -7,11 +7,46 @@ from src.value_fundamentals import sec_fundamentals, sec_value_metrics
 from src.value_review import review_public_pool, score_public_fundamentals
 from src.value_universe import (
     _yuanta_pcf_rows,
+    fetch_taiwan_official_share_records,
     fetch_us_value_universe,
     parse_sp500_constituents,
     parse_vanguard_holdings,
     parse_yuanta_holdings,
 )
+
+
+def test_taiwan_official_share_records_use_one_issued_common_basis(tmp_path):
+    class Response:
+        def __init__(self, payload): self.payload = payload
+        def raise_for_status(self): return None
+        def json(self): return self.payload
+
+    class Client:
+        headers = {}
+        def get(self, url, **_):
+            if "tpex" in url:
+                return Response([{"SecuritiesCompanyCode": "6488", "IssueShares": "1,234,000", "Date": "1150830"}])
+            return Response([{"公司代號": "2330", "已發行普通股數或TDR原股發行股數": "7,523,181,742", "出表日期": "1150829"}])
+
+    rows, errors = fetch_taiwan_official_share_records(
+        [{"ticker": "2330", "symbol": "2330.TW"}, {"ticker": "6488", "symbol": "6488.TWO"}],
+        session=Client(), cache_path=tmp_path / "shares.json",
+    )
+    assert errors == []
+    assert {item["shares_basis"] for item in rows.values()} == {"issued_common_shares"}
+    assert rows["2330.TW"]["shares_as_of"] == "2026-08-29"
+    assert rows["6488.TWO"]["shares_source"].startswith("TPEx")
+
+
+def test_taiwan_official_share_records_do_not_use_incompatible_cache(tmp_path):
+    cache = tmp_path / "shares.json"
+    cache.write_text('{"2330.TW":{"value":10,"shares_basis":"float_shares","fetched_at":"2026-08-30T00:00:00+00:00"}}', encoding="utf-8")
+    class Client:
+        headers = {}
+        def get(self, *_, **__): raise requests.RequestException("offline")
+    rows, errors = fetch_taiwan_official_share_records([{"ticker":"2330","symbol":"2330.TW"}], session=Client(), cache_path=cache)
+    assert rows == {}
+    assert any("missing" in item for item in errors)
 
 
 def test_yuanta_parser_keeps_only_taiwan_common_stock_rows():

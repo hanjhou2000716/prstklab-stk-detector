@@ -138,7 +138,7 @@ def build_official_event_brief(event: dict[str, Any]) -> str:
             return text
         move = f"{float(percent):+.1f}%" if percent is not None else "波動"
         pattern = str(event.get("pattern") or "價格訊號")
-        risk = str(event.get("risk_level") or "觀察")
+        risk = canonical_prstk_risk_level(event)
         text = f"快訊｜{label} {move}｜{pattern}｜{risk}"
         text = text[:30]
         validate_brief(text)

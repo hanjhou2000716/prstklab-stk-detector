@@ -25,6 +25,7 @@ from src.research_contract import latest_quote_context
 from src.value_fundamentals import sec_fundamentals, twse_financial_snapshot
 from src.value_review import review_public_pool
 from src.value_universe import (
+    fetch_taiwan_official_share_records,
     fetch_taiwan_value_universe,
     fetch_us_value_universe,
     universe_snapshot,
@@ -152,9 +153,10 @@ def public_quotes(
                         metadata = raw_shares if isinstance(raw_shares, dict) else None
                         shares = metadata.get("value") if metadata else raw_shares
                         shares_value = float(shares) if isinstance(shares, (int, float)) else None
+                        basis = metadata.get("shares_basis") if metadata else ("legacy_proxy" if shares_value else None)
                         quote: dict[str, Any] = {
                             **context, **heat_metrics(bars, shares_outstanding=shares_value),
-                            "turnover_rate_basis": "公開流通股數／流通股代理" if shares_value else None,
+                            "turnover_rate_basis": basis if shares_value else None,
                             "turnover_rate_provenance": metadata if metadata else ({"source": "legacy_proxy"} if shares_value else None),
                             "turnover_rate_fetched_at": metadata.get("fetched_at") if metadata else None,
                         }
@@ -204,10 +206,17 @@ def main() -> None:
     # Turnover-rate is one of the six Pristine conditions for both markets.
     # Use the public float/outstanding-share proxy for US rows too; leaving it
     # null silently made every US row incomplete and guaranteed zero candidates.
-    share_counts = public_share_count_records(
-        [item for item in candidates if args.market != "taiwan" or item["ticker"] in history]
-        , cache_path=os.getenv("PUBLIC_SHARE_CACHE_PATH", str(data_dir / "public-share-count-cache.json"))
-    )
+    if args.market == "taiwan":
+        share_counts, share_errors = fetch_taiwan_official_share_records(
+            candidates,
+            cache_path=os.getenv("TAIWAN_SHARE_CACHE_PATH", str(data_dir / "taiwan-issued-share-cache.json")),
+        )
+    else:
+        share_counts = public_share_count_records(
+            candidates,
+            cache_path=os.getenv("PUBLIC_SHARE_CACHE_PATH", str(data_dir / "public-share-count-cache.json")),
+        )
+        share_errors = []
     if args.market == "us":
         # SEC CompanyFacts is the first-party fallback for share counts.  Yahoo
         # may omit floatShares during rate limiting; do not turn that omission
@@ -245,7 +254,7 @@ def main() -> None:
     rows = formal_rows + visible_observation_rows
 
     pd.DataFrame(rows).to_csv(data_dir / f"{args.market}-value-scan.csv", index=False, encoding="utf-8-sig")
-    failed_total = len(universe_errors) + len(fundamental_errors) + len(quote_errors)
+    failed_total = len(universe_errors) + len(fundamental_errors) + len(quote_errors) + len(share_errors)
     complete_records = len(evaluable_rows)
     if failed_total == 0 and (args.market != "taiwan" or history_complete):
         scan_state = "complete"
@@ -253,7 +262,14 @@ def main() -> None:
         scan_state = "partial"
     else:
         scan_state = "failed"
-    candidate_state = "available" if rows else "no_candidates" if scan_state == "complete" else "data_unavailable"
+    if rows:
+        candidate_state = "available"
+    elif scan_state == "complete" and not share_errors:
+        candidate_state = "no_candidates"
+    elif share_errors or quote_errors or fundamental_errors:
+        candidate_state = "data_unavailable"
+    else:
+        candidate_state = "building" if args.market == "taiwan" else "data_unavailable"
     summary = {
         "requested": len(candidates),
         "requested_records": len(candidates),
@@ -273,6 +289,10 @@ def main() -> None:
         "observation_candidate_count": len(visible_observation_rows),
         "history_pending_count": 0,
         "source_failure_count": failed_total,
+        "share_source_failure_count": len(share_errors),
+        "official_share_coverage": len(share_counts) if args.market == "taiwan" else None,
+        "official_share_missing_count": max(len(candidates) - len(share_counts), 0) if args.market == "taiwan" else None,
+        "turnover_coverage": sum(1 for item in quotes.values() if item.get("turnover_rate") is not None),
         "incomplete_record_count": max(len(candidates) - complete_records, 0),
         "selection_diagnostics": selection_diagnostics,
         "failed": failed_total,
@@ -283,6 +303,7 @@ def main() -> None:
             "universe": len(universe_errors),
             "fundamentals": len(fundamental_errors),
             "quotes": len(quote_errors),
+            "shares": len(share_errors),
             "history": len(history_errors) if args.market == "taiwan" else 0,
         },
         "status": "可用" if failed_total == 0 else "部分缺漏",
@@ -290,11 +311,12 @@ def main() -> None:
         "financial_source": "TWSE OpenAPI + MOPS historical filings" if args.market == "taiwan" else "SEC EDGAR CompanyFacts",
         "sec_cache_hits": sum(1 for item in fundamentals.values() if item.get("sec_cache_used")) if args.market == "us" else 0,
         "sec_data_as_of": max((str(item.get("sec_data_fetched_at", "")) for item in fundamentals.values()), default=None) if args.market == "us" else None,
-        "errors": universe_errors + fundamental_errors + quote_errors,
+        "errors": universe_errors + fundamental_errors + quote_errors + share_errors,
         "error_details": {
             "universe": universe_errors,
             "fundamentals": fundamental_errors,
             "quotes": quote_errors,
+            "shares": share_errors,
         },
         "mops_refresh_limit": args.mops_max_refresh if args.market == "taiwan" else None,
         "partial_candidates_allowed": args.market == "taiwan" and not history_complete,

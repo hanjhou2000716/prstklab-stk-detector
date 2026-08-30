@@ -52,8 +52,20 @@ def test_unknown_domain_is_excluded_from_public_ranking():
         ],
         market="us",
     )
-    assert [story["title"] for story in payload["stories"]] == ["safe"]
-    assert payload["status"] == "ready"
+    assert payload["stories"] == []
+    assert payload["status"] == "no_event"
+    assert payload["exclusion_reasons"]["generic_official_filing"] == 1
+
+
+def test_generic_sec_filing_is_diagnostic_only_but_tracked_nvidia_filing_is_public():
+    payload = build_news_intelligence(
+        [
+            {"title": "8-K current report", "url": "https://www.sec.gov/Archives/edgar/data/generic"},
+            {"title": "NVDA announces quarterly results", "url": "https://www.sec.gov/Archives/edgar/data/nvda"},
+        ], market="us", tracked_tickers=["NVDA"], research_tickers=["NVDA"],
+    )
+    assert [item["title"] for item in payload["stories"]] == ["NVDA announces quarterly results"]
+    assert payload["exclusion_reasons"]["generic_official_filing"] == 1
 
 
 def test_interest_graph_explains_tracked_ticker_and_market():

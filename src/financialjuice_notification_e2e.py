@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import tempfile
-from pathlib import Path
 from typing import Any
 
 from src.external_source_parsers import parse_financialjuice_email
@@ -12,7 +10,7 @@ from src.financialjuice_notification import (
     financialjuice_caption,
 )
 from src.financialjuice_priority import project_financialjuice_priority
-from src.telegram_client import PhotoDeliveryReceipt
+from src.telegram_client import TextDeliveryReceipt
 
 _FIXTURE = (
     "Item 1\nImportance: 9/10\nOriginal headline: Oil supply disruption\n"
@@ -41,34 +39,30 @@ def run_financialjuice_notification_e2e() -> dict[str, Any]:
     sent_calls: list[tuple[str, ...]] = []
     call_number = 0
 
-    def fake_sender(**kwargs: Any) -> tuple[PhotoDeliveryReceipt, ...]:
+    def fake_sender(**kwargs: Any) -> tuple[TextDeliveryReceipt, ...]:
         nonlocal call_number
         call_number += 1
         recipients = tuple(str(item) for item in kwargs["chat_ids"])
         sent_calls.append(recipients)
-        result: list[PhotoDeliveryReceipt] = []
+        result: list[TextDeliveryReceipt] = []
         for index, chat_id in enumerate(recipients):
             recipient_hash = __import__("hashlib").sha256(chat_id.encode("utf-8")).hexdigest()[:12]
             if call_number == 1 and index == 1:
-                result.append(PhotoDeliveryReceipt(
+                result.append(TextDeliveryReceipt(
                     kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"],
                     recipient_hash, "failed", error_class="temporary_api",
                     observation_id=kwargs.get("observation_id", ""),
                 ))
             else:
-                result.append(PhotoDeliveryReceipt(
+                result.append(TextDeliveryReceipt(
                     kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"],
                     recipient_hash, "delivered", message_id=100 + call_number,
-                    telegram_file_id="file-e2e", telegram_file_id_hash="file-hash",
                     observation_id=kwargs.get("observation_id", ""),
                 ))
         return tuple(result)
 
-    with tempfile.TemporaryDirectory(prefix="prstk-fj-e2e-") as directory:
-        photo_path = Path(directory) / "alert.png"
-        photo_path.write_bytes(b"synthetic-rendered-png")
-        recipients = ("e2e-fj-recipient-a", "e2e-fj-recipient-b")
-        first = deliver_financialjuice_event(
+    recipients = ("e2e-fj-recipient-a", "e2e-fj-recipient-b")
+    first = deliver_financialjuice_event(
             event,
             release_id="e2e-release-fj",
             snapshot_id="e2e-snapshot-fj",
@@ -76,18 +70,17 @@ def run_financialjuice_notification_e2e() -> dict[str, Any]:
             release_ready=True,
             token="offline-token",
             chat_ids=recipients,
-            photo_path=photo_path,
-            photo_sender=fake_sender,
-        )
-        history = [
-            {
-                "notification_key": first.get("notification_key"),
-                "recipient_hash": row.get("recipient_hash"),
-                "delivery_status": row.get("delivery_status"),
-            }
-            for row in first.get("receipts", [])
-        ]
-        second = deliver_financialjuice_event(
+            text_sender=fake_sender,
+    )
+    history = [
+        {
+            "notification_key": first.get("notification_key"),
+            "recipient_hash": row.get("recipient_hash"),
+            "delivery_status": row.get("delivery_status"),
+        }
+        for row in first.get("receipts", [])
+    ]
+    second = deliver_financialjuice_event(
             event,
             release_id="e2e-release-fj",
             snapshot_id="e2e-snapshot-fj",
@@ -95,19 +88,18 @@ def run_financialjuice_notification_e2e() -> dict[str, Any]:
             release_ready=True,
             token="offline-token",
             chat_ids=recipients,
-            photo_path=photo_path,
             delivery_history=history,
-            photo_sender=fake_sender,
-        )
-        replay_history = history + [
-            {
-                "notification_key": second.get("notification_key"),
-                "recipient_hash": row.get("recipient_hash"),
-                "delivery_status": row.get("delivery_status"),
-            }
-            for row in second.get("receipts", [])
-        ]
-        replay = deliver_financialjuice_event(
+            text_sender=fake_sender,
+    )
+    replay_history = history + [
+        {
+            "notification_key": second.get("notification_key"),
+            "recipient_hash": row.get("recipient_hash"),
+            "delivery_status": row.get("delivery_status"),
+        }
+        for row in second.get("receipts", [])
+    ]
+    replay = deliver_financialjuice_event(
             event,
             release_id="e2e-release-fj",
             snapshot_id="e2e-snapshot-fj",
@@ -115,9 +107,8 @@ def run_financialjuice_notification_e2e() -> dict[str, Any]:
             release_ready=True,
             token="offline-token",
             chat_ids=recipients,
-            photo_path=photo_path,
             delivery_history=replay_history,
-            photo_sender=fake_sender,
+            text_sender=fake_sender,
         )
 
     first_receipts = first.get("receipts", [])
