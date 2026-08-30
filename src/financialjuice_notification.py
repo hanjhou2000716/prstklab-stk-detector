@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import html
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from src.telegram_client import TextDeliveryReceipt, alert_mini_app_url, send_text_briefs_audited
@@ -87,9 +88,9 @@ def deliver_financialjuice_event(
     release_ready: bool,
     token: str,
     chat_ids: tuple[str, ...],
-    photo_path: str | None = None,
+    photo_path: str | Path | None = None,
     delivery_history: list[dict[str, Any]] | None = None,
-    photo_sender: Callable[..., tuple[TextDeliveryReceipt, ...]] | None = None,
+    photo_sender: Callable[..., tuple[Any, ...]] | None = None,
     text_sender: Callable[..., tuple[TextDeliveryReceipt, ...]] | None = None,
 ) -> dict[str, Any]:
     """Deliver one eligible FJ event with recipient-level idempotency.
