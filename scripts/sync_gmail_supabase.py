@@ -25,15 +25,20 @@ from gmail_ingress import GmailIngressService  # noqa: E402
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--max-messages", type=int, default=50)
+    parser.add_argument("--history-id", default=None, help="Pub/Sub cursor supplied by the Worker")
     args = parser.parse_args()
     config = GmailWatchConfig.from_env()
     store: Any = SupabaseEmailStore()
     cursor = store.cursor()
-    pending = str(cursor.get("pending_history_id") or "").strip()
-    if pending and pending != str(cursor.get("last_history_id") or "").strip():
-        # Keep the Pub/Sub cursor private and let the canonical history sync
-        # advance the durable baseline only after a successful API read.
-        store.save_cursor(last_notification_at=cursor.get("last_notification_at"), last_sync_at=cursor.get("last_sync_at"))
+    pending = str(args.history_id or cursor.get("pending_history_id") or "").strip()
+    baseline = str(cursor.get("last_history_id") or "").strip()
+    if not baseline and pending:
+        # A freshly-created Watch returns a baseline cursor.  If an operator
+        # invokes this workflow before the first renewal persisted it, use the
+        # notification cursor as a fail-closed baseline (no historical replay).
+        store.save_cursor(last_history_id=pending)
+    elif pending and pending == baseline:
+        store.save_cursor(pending_history_id=None)
     result = asyncio.run(sync_gmail_history(config, store, GmailIngressService(store, config), max_messages=args.max_messages))
     if result.get("status") in {"healthy", "no_history_cursor"}:
         store.save_cursor(pending_history_id=None)

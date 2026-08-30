@@ -260,7 +260,10 @@ def _parse_creator_email_legacy(*, sender: str, subject: str, body: str, source:
     insight = normalize_creator_insight({
         "creator_id": origin,
         "creator_name": origin,
-        "episode_key": f"{origin}:{message_id or title.casefold()}",
+        # ``normalize_creator_insight`` derives a hashed identity from the
+        # transport message ID when no explicit key is supplied.  Never expose
+        # the Gmail ID itself in a public-safe fallback record.
+        "episode_id": message_id,
         "episode_id": message_id,
         "episode_title": title,
         "source_message_id": message_id,

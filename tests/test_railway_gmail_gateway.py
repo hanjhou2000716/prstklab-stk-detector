@@ -320,6 +320,24 @@ def test_creator_display_name_allows_legacy_fallback_without_template_labels(tmp
     assert store.health()["source_health"]["creator"]["failed_count"] == 0
 
 
+def test_creator_public_projection_preserves_structured_fields_without_gmail_ids(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    service = GmailIngressService(store, _config())
+    result = service.accept_email({
+        "gmail_message_id": "private-creator-message",
+        "sender": "財經皓角 <creator@example.com>",
+        "subject": "今日市場觀察",
+        "body": "標題：AI 產業觀察\n重點：供應鏈仍需核對\n看法：保持中立",
+    })
+    assert result["accepted"] is True
+    rows = store.public_observations()
+    assert rows and rows[0]["content_origin"] == "haojiao"
+    assert rows[0].get("episode_title")
+    assert "source_message_id" not in rows[0]
+    assert "gmail_message_id" not in rows[0]
+    assert "private-creator-message" not in rows[0].get("episode_key", "")
+
+
 def test_health_reports_stale_watch(tmp_path: Path) -> None:
     store = EmailStore(tmp_path / "mail.sqlite3")
     store.save_cursor(watch_expiration="2020-01-01T00:00:00+00:00")

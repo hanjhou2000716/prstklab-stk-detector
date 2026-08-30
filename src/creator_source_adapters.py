@@ -80,6 +80,12 @@ def _fingerprint(source: str, subject: str, body: str) -> str:
     return hashlib.sha256(material.encode("utf-8")).hexdigest()[:20]
 
 
+def _episode_key(source: str, message_id: str, title: str, body: str) -> str:
+    """Return a stable public identity without exposing Gmail transport IDs."""
+    material = "|".join((source.casefold(), message_id, _clip(title, 240).casefold(), body[:2000].casefold()))
+    return f"{source.casefold()}:{hashlib.sha256(material.encode('utf-8')).hexdigest()[:20]}"
+
+
 def _plain_text(value: str) -> str:
     """Convert sanitized Jenny HTML to deterministic text without retaining markup."""
     raw = str(value or "")
@@ -179,7 +185,7 @@ def _parse_jenny_template(
     insight = normalize_creator_insight({
         "creator_id": "jenny",
         "creator_name": provider_config.display_name,
-        "episode_key": f"jenny:{message_id or title.casefold()}",
+        "episode_key": _episode_key("jenny", message_id, title, text),
         "episode_id": message_id,
         "episode_title": title,
         "source_message_id": message_id,
@@ -283,7 +289,7 @@ def parse_creator_template(
     insight = normalize_creator_insight({
         "creator_id": normalized_source,
         "creator_name": provider_config.display_name if provider_config else normalized_source,
-        "episode_key": f"{normalized_source}:{message_id or title.casefold()}",
+        "episode_key": _episode_key(normalized_source, message_id, title, body),
         "episode_id": message_id,
         "episode_title": title,
         "source_message_id": message_id,
