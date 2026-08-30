@@ -24,14 +24,24 @@ _BLOCKED_FIELDS = {
 
 
 def observation_export_url(configured_url: str | None = None) -> str:
-    """Return a stable ``/external-observations`` endpoint for a Railway URL."""
-    raw = str(configured_url or os.getenv("RAILWAY_OBSERVATIONS_URL") or os.getenv("RAILWAY_STATUS_URL") or "").strip()
+    """Return the configured sanitized export endpoint.
+
+    ``PUBLIC_OBSERVATIONS_URL`` is the zero-cost Worker replacement for the
+    legacy Railway endpoint. A bare base URL remains supported for migration.
+    """
+    raw = str(configured_url or os.getenv("PUBLIC_OBSERVATIONS_URL") or os.getenv("RAILWAY_OBSERVATIONS_URL") or os.getenv("RAILWAY_STATUS_URL") or "").strip()
     if not raw:
         return ""
     parsed = urlparse(raw)
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         return ""
-    return urlunparse((parsed.scheme, parsed.netloc, "/external-observations", "", "limit=100", ""))
+    path = parsed.path.rstrip("/")
+    if not path or path in {"/health", "/api/health"}:
+        path = "/external-observations"
+    query = parsed.query or "limit=100"
+    if "limit=" not in query:
+        query = f"{query}&limit=100" if query else "limit=100"
+    return urlunparse((parsed.scheme, parsed.netloc, path, "", query, ""))
 
 
 def _signature(url: str, secret: str) -> str:

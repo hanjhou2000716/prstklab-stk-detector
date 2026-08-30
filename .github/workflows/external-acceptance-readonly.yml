@@ -31,7 +31,9 @@ jobs:
           # never writes or exposes this secret; without it the observation
           # gate remains explicitly not_checked.
           RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
+          DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           RAILWAY_OBSERVATIONS_URL: ${{ vars.RAILWAY_OBSERVATIONS_URL }}
+          PUBLIC_OBSERVATIONS_URL: ${{ vars.PUBLIC_OBSERVATIONS_URL }}
         run: >-
           python -m src.external_acceptance
           --railway-url "${{ inputs.railway_url }}"
