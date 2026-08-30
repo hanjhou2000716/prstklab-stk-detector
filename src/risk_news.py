@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 import unicodedata
@@ -292,6 +293,11 @@ def _parse_taifex_vix_file(content: bytes) -> dict[str, Any]:
             value = float(fields[-1])
         except ValueError:
             continue
+        # TAIFEX can publish a zero/negative placeholder while the session is
+        # not available.  It is not a Taiwan VIX observation and must never
+        # reach the risk model as a real value.
+        if not math.isfinite(value) or value <= 0:
+            continue
         return {
             "value": round(value, 2),
             "date": datetime.strptime(fields[0], "%Y%m%d").date().isoformat(),
@@ -351,10 +357,36 @@ def fetch_taifex_vix_quote() -> dict[str, Any]:
         raise ValueError("TAIFEX did not return a Taiwan VIX quote.")
 
     quote = next((item for item in quotes if item.get("SymbolID") == "TAIWANVIX"), quotes[0])
-    value = float(quote["CLastPrice"])
-    reference = float(quote["CRefPrice"])
-    quote_date = datetime.strptime(str(quote["CDate"]), "%Y%m%d").date().isoformat()
-    change_percent = None if reference == 0 else round((value / reference - 1) * 100, 2)
+    try:
+        live_value = float(quote.get("CLastPrice"))
+    except (TypeError, ValueError):
+        live_value = None
+    try:
+        reference = float(quote.get("CRefPrice"))
+    except (TypeError, ValueError):
+        reference = None
+    if not live_value or not math.isfinite(live_value) or live_value <= 0:
+        # During pre-open/closed sessions TAIFEX uses CLastPrice=0 (and may
+        # expose a valid prior reference).  Show the reference explicitly as
+        # a recent reference; never manufacture -100% intraday movement.
+        if reference is None or not math.isfinite(reference) or reference <= 0:
+            raise ValueError("TAIFEX Taiwan VIX live value is unavailable.")
+        value = reference
+        freshness_state = "recent_reference"
+        change_percent = None
+        value_status = "recent_reference"
+    else:
+        value = live_value
+        freshness_state = "intraday"
+        change_percent = (
+            None if reference is None or not math.isfinite(reference) or reference <= 0
+            else round((value / reference - 1) * 100, 2)
+        )
+        value_status = "live"
+    try:
+        quote_date = datetime.strptime(str(quote["CDate"]), "%Y%m%d").date().isoformat()
+    except (KeyError, TypeError, ValueError):
+        quote_date = None
     return {
         "value": round(value, 2),
         "date": quote_date,
@@ -370,7 +402,10 @@ def fetch_taifex_vix_quote() -> dict[str, Any]:
         "percentile_as_of": None,
         "percentile_status": "unavailable",
         "stage_basis": "absolute_level_fallback",
-        "freshness_state": "intraday",
+        "freshness_state": freshness_state,
+        "value_status": value_status,
+        "live_value": round(live_value, 2) if live_value is not None and math.isfinite(live_value) else None,
+        "reference_value": round(reference, 2) if reference is not None and math.isfinite(reference) else None,
     }
 
 
