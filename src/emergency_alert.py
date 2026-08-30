@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from src.alert_budget import decide_alert_budget
 from src.config import get_settings
 from src.event_ledger import EventLedger
-from src.telegram_client import send_text_briefs_audited, validate_brief
+from src.telegram_client import canonical_prstk_risk_level, send_text_briefs_audited, validate_brief
 
 STRICT_HIGH_RISK_CATEGORIES = {"black_swan", "conflict"}
 
@@ -121,6 +121,7 @@ def main() -> None:
             release_id=release_id,
             snapshot_id=snapshot_id,
             observation_id=trace_id,
+            prstk_risk_level=canonical_prstk_risk_level(event),
         )
     except (OSError, ValueError) as exc:
         print(f"text_delivery_failed={type(exc).__name__}")

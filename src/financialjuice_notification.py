@@ -14,7 +14,12 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from src.telegram_client import TextDeliveryReceipt, alert_mini_app_url, send_text_briefs_audited
+from src.telegram_client import (
+    TextDeliveryReceipt,
+    alert_mini_app_url,
+    canonical_prstk_risk_level,
+    send_text_briefs_audited,
+)
 
 MAX_FINANCIALJUICE_CAPTION = 30
 
@@ -156,6 +161,7 @@ def deliver_financialjuice_event(
             release_id=release_id,
             snapshot_id=snapshot_id,
             observation_id=observation_id,
+            prstk_risk_level=canonical_prstk_risk_level(event),
         )
     except Exception as exc:  # transport adapters must fail closed
         return {
