@@ -1,89 +1,50 @@
-"""Send one deterministic alert-card smoke test to the configured recipient.
+"""Legacy smoke command now performs a scoped text-only delivery check.
 
-This command is intentionally separate from the scheduled broadcast.  CI can
-scope ``TELEGRAM_CHAT_IDS`` to one explicitly requested chat for a real
-``sendPhoto`` check without risking a broadcast to the production list.
+The module name is retained for existing workflow links, but no non-Creator
+production path may render or upload a Telegram photo.
 """
 
 from __future__ import annotations
 
 import os
-import struct
-import tempfile
 import uuid
 from pathlib import Path
 
-from src.alert_card_renderer import HEIGHT, WIDTH, render_alert_card
 from src.config import get_settings
-from src.telegram_client import send_photo_briefs
+from src.telegram_client import send_text_briefs_audited
 
-CAPTION = "🧪 PRStK 圖卡測試｜觀察"
-ALERT_ID = "photo-smoke-test"
-RELEASE_ID = "photo-smoke-test"
-SNAPSHOT_ID = "photo-smoke-test"
-
-
-def _png_dimensions(path: Path) -> tuple[int, int]:
-    """Read dimensions from a PNG IHDR without requiring Pillow."""
-    header = path.read_bytes()
-    if header[:8] != b"\x89PNG\r\n\x1a\n" or header[12:16] != b"IHDR":
-        raise ValueError("renderer did not produce a PNG")
-    return struct.unpack(">II", header[16:24])
+CAPTION = "PRStK 受控驗證｜R2｜資料待核對"
+ALERT_ID = "text-smoke-test"
+RELEASE_ID = "text-smoke-test"
+SNAPSHOT_ID = "text-smoke-test"
 
 
 def run() -> int:
     settings = get_settings()
     if not settings.telegram_bot_token or not settings.telegram_chat_ids:
-        raise RuntimeError("Telegram configuration is incomplete for photo smoke test")
-
-    alert = {
-        "title": "PRStK 圖卡推播測試",
-        "lifecycle_state": "observation",
-        "trigger_reason": "測試固定 1080×1350 圖卡、caption 與 Mini App 深連結",
-        "market": "test",
-        "source_tier": "test",
-        "release_id": RELEASE_ID,
-        "snapshot_id": SNAPSHOT_ID,
-    }
-    with tempfile.TemporaryDirectory(prefix="prstk-photo-smoke-") as temporary:
-        photo_path = render_alert_card(alert, Path(temporary) / "photo-smoke.png")
-        if _png_dimensions(photo_path) != (WIDTH, HEIGHT):
-            raise RuntimeError("alert card dimensions are not 1080x1350")
-        receipts = send_photo_briefs(
-            token=settings.telegram_bot_token,
-            chat_ids=settings.telegram_chat_ids,
-            caption=CAPTION,
-            photo_path=photo_path,
-            mini_app_url=settings.dashboard_url,
-            alert_id=ALERT_ID,
-            release_id=RELEASE_ID,
-            snapshot_id=SNAPSHOT_ID,
-        )
-
+        raise RuntimeError("Telegram configuration is incomplete for text smoke test")
+    receipts = send_text_briefs_audited(
+        token=settings.telegram_bot_token, chat_ids=settings.telegram_chat_ids,
+        text=CAPTION, dashboard_url=settings.dashboard_url, alert_id=ALERT_ID,
+        release_id=RELEASE_ID, snapshot_id=SNAPSHOT_ID,
+        observation_id=f"{ALERT_ID}-{uuid.uuid4().hex[:12]}", prstk_risk_level="R2",
+    )
     delivered = sum(receipt.status == "delivered" for receipt in receipts)
     failed = len(receipts) - delivered
-    trace_id = f"photo-smoke-{uuid.uuid4().hex[:16]}"
+    trace_id = f"text-smoke-{uuid.uuid4().hex[:16]}"
     output_path = Path(os.environ["GITHUB_OUTPUT"]) if os.environ.get("GITHUB_OUTPUT") else None
     if output_path:
         output_path.open("a", encoding="utf-8").write(
             "\n".join((
-                "sent=true",
-                f"trace_id={trace_id}",
-                f"alert_id={ALERT_ID}",
-                f"release_id={RELEASE_ID}",
-                f"snapshot_id={SNAPSHOT_ID}",
-                "delivery_mode=photo",
-                f"delivery_status={'delivered' if failed == 0 else 'partial'}",
-                f"delivered_count={delivered}",
-                f"failed_count={failed}",
-                "renderer_error_type=",
+                "sent=true", f"trace_id={trace_id}", f"alert_id={ALERT_ID}",
+                f"release_id={RELEASE_ID}", f"snapshot_id={SNAPSHOT_ID}",
+                "delivery_mode=text", f"delivery_status={'delivered' if failed == 0 else 'partial'}",
+                f"delivered_count={delivered}", f"failed_count={failed}",
+                "renderer_error_type=not_applicable",
             )) + "\n"
         )
-    print(f"photo_card_dimensions={WIDTH}x{HEIGHT}")
-    print(f"photo_delivery_delivered={delivered}")
-    print(f"photo_delivery_failed={failed}")
     if failed:
-        raise RuntimeError("photo smoke test did not deliver to every scoped recipient")
+        raise RuntimeError("text smoke test did not deliver to every scoped recipient")
     return 0
 
 

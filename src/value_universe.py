@@ -7,9 +7,11 @@ owner: 0050 + 0051 in Taiwan, and VOO in the United States.
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import UTC, datetime, timedelta
 from io import StringIO
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -28,6 +30,12 @@ VANGUARD_VOO_URL = "https://investor.vanguard.com/investment-products/etfs/profi
 SP500_CONSTITUENTS_URL = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
 USER_AGENT = "PRStK-Lab-public-research/1.0 contact: prstklab@example.invalid"
 
+# Issued ordinary shares are the only Taiwan turnover denominator accepted by
+# the value screen.  Both endpoints are issuer/regulator operated and return
+# the same semantic field (TWSE in Chinese, TPEx in English).
+TWSE_ISSUED_SHARES_URL = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L"
+TPEX_ISSUED_SHARES_URL = "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O"
+
 
 def _text(value: Any) -> str:
     return "" if value is None else str(value).strip()
@@ -36,6 +44,141 @@ def _text(value: Any) -> str:
 def _taiwan_code(value: Any) -> str | None:
     match = re.fullmatch(r"\s*(\d{4})\s*", _text(value))
     return match.group(1) if match else None
+
+
+def _number(value: Any) -> float | None:
+    try:
+        number = float(str(value).replace(",", "").strip())
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None
+
+
+def _roc_or_iso_date(value: Any) -> str | None:
+    """Normalise regulator dates without treating a quote date as a time."""
+    text = _text(value)
+    if not text:
+        return None
+    digits = re.sub(r"[^0-9]", "", text)
+    if len(digits) == 7 and 90 <= int(digits[:3]) <= 200:
+        return f"{int(digits[:3]) + 1911:04d}-{digits[3:5]}-{digits[5:7]}"
+    if len(digits) == 8:
+        return f"{digits[:4]}-{digits[4:6]}-{digits[6:8]}"
+    return text
+
+
+def _official_share_row(row: dict[str, Any], *, source: str, fetched_at: str) -> tuple[str, dict[str, Any]] | None:
+    """Parse one TWSE/TPEx issued-common-share row."""
+    ticker = _taiwan_code(
+        row.get("公司代號") or row.get("SecuritiesCompanyCode")
+        or row.get("證券代號") or row.get("Code")
+    )
+    shares = _number(
+        row.get("已發行普通股數或TDR原股發行股數")
+        or row.get("IssueShares") or row.get("IssuedShares")
+        or row.get("普通股已發行股數")
+    )
+    as_of = _roc_or_iso_date(row.get("出表日期") or row.get("Date") or row.get("資料日期"))
+    if not ticker or shares is None:
+        return None
+    return ticker, {
+        "value": shares,
+        "shares_value": shares,
+        "shares_basis": "issued_common_shares",
+        "shares_source": source,
+        "shares_as_of": as_of,
+        "source": source,
+        "source_tier": "official",
+        "fetched_at": fetched_at,
+        "freshness": "fresh",
+        "fallback_used": False,
+        "fallback_source": None,
+        "fallback_basis": None,
+    }
+
+
+def _official_share_payload(response: requests.Response) -> list[dict[str, Any]]:
+    response.raise_for_status()
+    payload = response.json()
+    if isinstance(payload, list):
+        return [item for item in payload if isinstance(item, dict)]
+    if isinstance(payload, dict):
+        for key in ("data", "Data", "aaData", "results", "items"):
+            value = payload.get(key)
+            if isinstance(value, list):
+                return [item for item in value if isinstance(item, dict)]
+    return []
+
+
+def fetch_taiwan_official_share_records(
+    candidates: list[dict[str, str]], *, session: requests.Session | None = None,
+    cache_path: str | Path | None = None, max_cache_age_days: int = 7,
+) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    """Fetch one consistent Taiwan issued-share denominator for every candidate.
+
+    Yahoo float/outstanding shares are intentionally not a Taiwan fallback:
+    they are different bases and would make cross-sectional turnover rankings
+    incomparable.  A bounded cache is permitted only when it contains the
+    same official ``issued_common_shares`` basis.
+    """
+    client = session or requests.Session()
+    client.headers.setdefault("User-Agent", USER_AGENT)
+    now = datetime.now(UTC)
+    cache_file = Path(cache_path) if cache_path else None
+    cache: dict[str, Any] = {}
+    if cache_file and cache_file.exists():
+        try:
+            loaded = json.loads(cache_file.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                cache = loaded
+        except (OSError, ValueError, TypeError):
+            cache = {}
+    records: dict[str, dict[str, Any]] = {}
+    errors: list[str] = []
+    for url, source in ((TWSE_ISSUED_SHARES_URL, "TWSE official issued common shares"),
+                        (TPEX_ISSUED_SHARES_URL, "TPEx official issued common shares")):
+        try:
+            for row in _official_share_payload(client.get(url, timeout=30)):
+                parsed = _official_share_row(row, source=source, fetched_at=now.isoformat())
+                if parsed:
+                    records.setdefault(parsed[0], parsed[1])
+        except (OSError, ValueError, requests.RequestException) as exc:
+            errors.append(f"{source} unavailable: {type(exc).__name__}")
+    wanted = {_taiwan_code(item.get("ticker")) for item in candidates}
+    wanted.discard(None)
+    output = {f"{ticker}.TW": record for ticker, record in records.items() if ticker in wanted}
+    # Preserve the market suffix used by the candidate (TPEx often uses .TWO).
+    for item in candidates:
+        ticker = _taiwan_code(item.get("ticker"))
+        if not ticker or ticker not in records:
+            continue
+        output[item["symbol"]] = dict(records[ticker])
+        output.pop(f"{ticker}.TW", None) if item["symbol"] != f"{ticker}.TW" else None
+    if cache_file and output:
+        try:
+            cache_file.parent.mkdir(parents=True, exist_ok=True)
+            cache_file.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+        except OSError:
+            pass
+    missing = []
+    for item in candidates:
+        symbol = item["symbol"]
+        if symbol in output:
+            continue
+        cached = cache.get(symbol)
+        if isinstance(cached, dict) and cached.get("value") and cached.get("shares_basis") == "issued_common_shares":
+            try:
+                fetched = datetime.fromisoformat(str(cached.get("fetched_at")).replace("Z", "+00:00")).astimezone(UTC)
+            except (TypeError, ValueError):
+                fetched = None
+            if fetched and now - fetched <= timedelta(days=max_cache_age_days):
+                output[symbol] = {**cached, "freshness": "bounded_cache", "fallback_used": True,
+                                  "fallback_source": "official_cache", "fallback_basis": "issued_common_shares"}
+                continue
+        missing.append(item.get("ticker", symbol))
+    if missing:
+        errors.append(f"official issued-share records missing: {len(missing)}")
+    return output, errors
 
 
 def parse_yuanta_holdings(tables: list[pd.DataFrame], fund: str) -> list[dict[str, str]]:

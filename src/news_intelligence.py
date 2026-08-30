@@ -32,6 +32,7 @@ PROVIDER_REGISTRY: tuple[dict[str, Any], ...] = (
     {"provider_id": "gdelt", "display_name": "GDELT", "authority_tier": "discovery", "markets": ("global", "taiwan", "us"), "domains": ("gdeltproject.org",), "content_types": ("discovery",), "fetch_method": "configured_endpoint", "cache_ttl_seconds": 900, "enabled": False, "disabled_reason": "discovery-only endpoint; bounded backoff and cache policy applies", "failure_isolation": True},
     {"provider_id": "nasdaq", "display_name": "Nasdaq", "authority_tier": "market", "markets": ("us",), "domains": ("nasdaq.com",), "content_types": ("market_news",), "fetch_method": "configured_endpoint", "feed_url": "", "feed_kind": "rss", "timeout_seconds": 8, "cache_ttl_seconds": 300, "enabled": False, "disabled_reason": "no stable documented public feed endpoint", "failure_isolation": True},
     {"provider_id": "anue", "display_name": "Anue", "authority_tier": "market", "markets": ("taiwan", "us"), "domains": ("cnyes.com",), "content_types": ("market_news",), "fetch_method": "html", "timeout_seconds": 15, "cache_ttl_seconds": 300, "enabled": True, "failure_isolation": True},
+    {"provider_id": "yahoo_finance", "display_name": "Yahoo Taiwan Finance", "authority_tier": "market", "markets": ("taiwan", "us"), "domains": ("finance.yahoo.com", "tw.stock.yahoo.com"), "content_types": ("market_news",), "fetch_method": "rss", "timeout_seconds": 15, "cache_ttl_seconds": 300, "enabled": True, "failure_isolation": True},
     {"provider_id": "google_news", "display_name": "Google News", "authority_tier": "discovery", "markets": ("taiwan", "us"), "domains": ("news.google.com",), "content_types": ("discovery",), "fetch_method": "rss", "timeout_seconds": 15, "cache_ttl_seconds": 900, "enabled": True, "failure_isolation": True},
 )
 
@@ -263,6 +264,7 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         "event_cluster_key": _event_cluster_key(entities=entities, topics=topics_normalized, published_at=published),
         "published_time_bucket": _time_bucket(published),
         "public_safe": safe,
+        "public_news_eligible": safe and market_compatible,
         "source": str(raw.get("source") or provider["display_name"]),
     }
 
@@ -601,14 +603,27 @@ def build_news_intelligence(
         active_event_topics=active_event_topics,
         creator_mentions=creator_mentions,
     )
-    ranked = deduplicate_and_rank(normalized, limit=limit)
+    # Official SEC filings remain useful evidence, but a generic filing with
+    # no tracked/research/event/index/sector relevance is not a public news
+    # candidate. Keep it in diagnostics while excluding it from top-five and
+    # final-fill selection.
+    generic_sec_count = 0
+    for item in normalized:
+        contextual = [reason for reason in item.get("relevance_reasons") or [] if not str(reason).startswith("market:")]
+        generic = item.get("provider") == "sec" and not contextual and not item.get("entities") and not item.get("topics")
+        if generic:
+            item["public_news_eligible"] = False
+            item["relevance_class"] = "generic_official_filing"
+            generic_sec_count += 1
+    eligible = [item for item in normalized if item.get("public_news_eligible", True)]
+    ranked = deduplicate_and_rank(eligible, limit=limit)
     deduped = deduplicate_and_rank(
-        normalized,
-        limit=max(len(normalized), 1),
-        max_per_provider=max(len(normalized), 1),
+        eligible,
+        limit=max(len(eligible), 1),
+        max_per_provider=max(len(eligible), 1),
     )
     source_diversity = summarize_source_diversity(ranked)
-    excluded = [item for item in normalized if item.get("market_compatible") is False]
+    excluded = [item for item in normalized if item.get("market_compatible") is False or item.get("public_news_eligible") is False]
     health_rows: list[dict[str, Any]] = []
     for raw_health in source_health or ():
         if not isinstance(raw_health, Mapping):
@@ -658,7 +673,10 @@ def build_news_intelligence(
         "source_diversity": source_diversity,
         "interest_graph": graph,
         "excluded_count": len(excluded),
-        "exclusion_reasons": {"market_scope_mismatch": len(excluded)} if excluded else {},
+        "exclusion_reasons": {
+            **({"market_scope_mismatch": sum(1 for item in normalized if item.get("market_compatible") is False)} if any(item.get("market_compatible") is False for item in normalized) else {}),
+            **({"generic_official_filing": generic_sec_count} if generic_sec_count else {}),
+        },
         "status": "ready" if ranked else "no_event",
         "collection_state": collection_state,
         "source_failure_count": failure_count,

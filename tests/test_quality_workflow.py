@@ -19,7 +19,7 @@ def test_notify_workflow_supports_an_explicit_single_recipient_smoke_test():
     assert "test_chat_id:" in workflow
     assert "inputs.test_chat_id || secrets.TELEGRAM_CHAT_IDS" in workflow
     assert "photo_test:" in workflow
-    assert "photo_test requires an explicit single test_chat_id" in workflow
+    assert "text acceptance requires an explicit single test_chat_id" in workflow
 
 
 def test_scheduled_production_workflow_installs_renderer_browser():

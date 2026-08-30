@@ -556,18 +556,19 @@ remaining P3–P5 reliability backlog, see
 For the post-merge stacked PR order and the release verification checklist,
 see [`docs/MERGE_ORDER.md`](docs/MERGE_ORDER.md) and
 [`docs/OPERATIONS_RELEASE_CHECKLIST.md`](docs/OPERATIONS_RELEASE_CHECKLIST.md).
-The production notification contract is one release-gated `sendPhoto` message:
-an at-most-40-character caption above a fixed 1080×1350 card and a release/alert
-deep-link Mini App button. Publishing and manifest verification always complete
-before delivery; renderer failure is fail-closed and never sends a blank card.
+The production notification contract is release-gated text for market, risk,
+research, system-health and FinancialJuice lanes. The only production photo
+exception is a verified Creator email attachment; it is sent as one photo
+message with its release/alert deep-link Mini App button. Publishing and
+manifest verification always complete before delivery.
 
 ### Production notification mode
 
-Scheduled, official-event and emergency delivery use the same release-gated
-`sendPhoto` contract. The first recipient uploads the validated card and later
-recipients reuse Telegram's file ID; each recipient still receives an isolated
-delivery receipt. The explicit `photo_test` workflow remains available for a
-single-recipient smoke test. See [`docs/alert-card-renderer.md`](docs/alert-card-renderer.md).
+Scheduled, official-event, emergency, research, system-health and FinancialJuice
+delivery use the release-gated canonical text contract. The legacy `photo_test`
+input now runs a single-recipient text acceptance. Only verified Creator email
+attachments may use the photo renderer and Telegram file-ID reuse. See
+[`docs/alert-card-renderer.md`](docs/alert-card-renderer.md).
 
 ### Renderer and release recovery
 

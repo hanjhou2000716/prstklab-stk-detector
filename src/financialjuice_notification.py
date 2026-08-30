@@ -151,7 +151,10 @@ def deliver_financialjuice_event(
         snapshot_id=_text(snapshot_id),
         observation_id=observation_id,
     )
-    sender = text_sender or photo_sender or send_text_briefs_audited
+    # FinancialJuice is a vendor/news lane, never the Creator attachment
+    # exception.  Ignore any legacy photo callback so production FJ delivery
+    # can only emit one canonical text message per recipient.
+    sender = text_sender or send_text_briefs_audited
     try:
         delivered = sender(
             token=token,
