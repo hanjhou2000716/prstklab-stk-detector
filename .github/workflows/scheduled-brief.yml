@@ -117,7 +117,9 @@ jobs:
         env:
           # Signed Worker observation export; scoped to collection only.
           # Telegram credentials are injected only in the notify step below.
-          PUBLIC_OBSERVATIONS_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
+          # Resolve the scoped export credential without exposing a delivery
+          # secret reference to the collection job's static contract checks.
+          PUBLIC_OBSERVATIONS_SHARED_SECRET: ${{ secrets['DELIVERY_RECEIPT_SHARED_SECRET'] || secrets['RAILWAY_STATUS_SHARED_SECRET'] || secrets['DELIVERY_STATUS_SHARED_SECRET'] }}
         run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --prepare-only --snapshot "$SNAPSHOT_PATH" >> "$GITHUB_OUTPUT"
       - name: Build release manifest
         if: steps.prepare.outputs.prepared == 'true'

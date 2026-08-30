@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/external_source_parsers.py
-# Canonical source SHA256: 5c356bcfdf2af42fe07879caa56b6dc763d1c76c0f162af46907df37a279b597
+# Canonical source SHA256: 338e253d3781d5f10e94cbc596790aad7c9a6d8fa61b3420b171d6b12eb118d1
 
 """Deterministic parsers for sanitized external intelligence mail.
 
@@ -265,7 +265,10 @@ def _parse_creator_email_legacy(*, sender: str, subject: str, body: str, source:
     insight = normalize_creator_insight({
         "creator_id": origin,
         "creator_name": origin,
-        "episode_key": f"{origin}:{message_id or title.casefold()}",
+        # ``normalize_creator_insight`` derives a hashed identity from the
+        # transport message ID when no explicit key is supplied.  Never expose
+        # the Gmail ID itself in a public-safe fallback record.
+        "episode_id": message_id,
         "episode_id": message_id,
         "episode_title": title,
         "source_message_id": message_id,
