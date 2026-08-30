@@ -56,5 +56,5 @@ def test_scoped_legacy_photo_input_is_text_only_and_explicitly_single_recipient(
     workflow = _workflow("notify.yml")
     assert "text acceptance requires an explicit single test_chat_id" in workflow
     assert "inputs.photo_test == true" in workflow
-    assert "DELIVERY_RECEIPT_KIND: text_acceptance" in workflow
+    assert "DELIVERY_RECEIPT_KIND: production" in workflow
     assert "sendPhoto" not in workflow

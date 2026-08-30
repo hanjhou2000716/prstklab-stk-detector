@@ -49,7 +49,10 @@ jobs:
         env:
           RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
           DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
-          DELIVERY_RECEIPT_KIND: text_acceptance
+          # The durable receipt contract classifies controlled text acceptance
+          # as a production delivery.  Keep this aligned with the Worker,
+          # Supabase schema, and Railway rollback store.
+          DELIVERY_RECEIPT_KIND: production
           TRACE_ID: ${{ steps.text.outputs.trace_id }}
           ALERT_ID: ${{ steps.text.outputs.alert_id }}
           RELEASE_ID: ${{ steps.text.outputs.release_id }}
