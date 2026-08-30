@@ -185,6 +185,16 @@ def restore_public_release(
                 shutil.copytree(child, destination)
             else:
                 shutil.copy2(child, destination)
+        # The manifest is the release identity used by the downstream photo
+        # gate.  It is intentionally not part of ``artifact_paths`` (the
+        # manifest describes those artifacts), so copy the verified response
+        # explicitly when preserving a public last-good release.  Leaving the
+        # checkout's previous manifest in place would pair the new artifacts
+        # with a stale release id and incorrectly block delivery.
+        (data_root / "release-manifest.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
     finally:
         if staging.exists():
             shutil.rmtree(staging)

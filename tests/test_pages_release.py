@@ -73,6 +73,10 @@ def test_restore_public_release_verifies_hashes_before_replacing_data(tmp_path, 
     assert result["release_id"] == "release-last-good"
     assert not (tmp_path / "site" / "data" / "old.json").exists()
     assert (tmp_path / "site" / "data" / "market.json").read_bytes() == body
+    restored_manifest = json.loads(
+        (tmp_path / "site" / "data" / "release-manifest.json").read_text(encoding="utf-8")
+    )
+    assert restored_manifest["release_id"] == "release-last-good"
 
 
 def test_restore_latest_valid_preserves_public_release_when_data_branch_has_no_valid_candidate(tmp_path, monkeypatch):
