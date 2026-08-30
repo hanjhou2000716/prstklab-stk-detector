@@ -264,7 +264,6 @@ def _parse_creator_email_legacy(*, sender: str, subject: str, body: str, source:
         # transport message ID when no explicit key is supplied.  Never expose
         # the Gmail ID itself in a public-safe fallback record.
         "episode_id": message_id,
-        "episode_id": message_id,
         "episode_title": title,
         "source_message_id": message_id,
         "content_origin": origin,
