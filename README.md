@@ -1,6 +1,6 @@
 # PRStK Investment System
 
-> 文件版本：2026-08-01｜本文件以 `main` 分支目前實際程式碼與 GitHub Actions 設定為準。
+> 文件版本：2026-08-31｜本文件以 `main` 分支目前實際程式碼與 GitHub Actions 設定為準。
 
 PRStK 是部署於 GitHub 的公開市場資訊整理、風險監測與量化研究系統。它以繁體中文產生 Apple Watch 友善的 Telegram 快報，並以 GitHub Pages 提供 Telegram Mini App 儀表板。
 
@@ -8,13 +8,38 @@ PRStK 是部署於 GitHub 的公開市場資訊整理、風險監測與量化研
 
 ## 服務範圍
 
-- **Telegram 快報**：固定報告與符合門檻的速報；caption 限制 40 字內，圖片與 Mini App 按鈕同一則訊息。
+- **Telegram 快報**：固定報告與符合門檻的速報；公開文字只顯示彩色風險提示與人類可讀狀態，caption 限制 40 字內，並附對應 Mini App deep link 按鈕。內部 `R0`～`R4` 仍保留在回執與稽核資料，不直接顯示給收件人。
 - **Telegram Mini App**：GitHub Pages 儀表板顯示完整市場卡、風控、研究清單、已核對事件與資料時間。
 - **公開市場快照**：台股、日股、韓股、美股、半導體、能源、黃金與加密資產的公開報價、交易日與資料新鮮度。
 - **重大事件流程**：官方一手來源、金十 MCP 授權快訊，及「多來源交叉核對」的探索訊號，皆經去重與市場資料核對才可能推播。
 - **研究選股**：台美股的動能狙擊、三維共振、裸 K 結構與獨立璞玉價值池；結果僅是可重現的研究排序。
 - **台股 Macro FGI**：以公開日資料計算台股市場情緒的五因子百分位模型。
 - **可靠性機制**：GitHub Actions 主排程、cron-job.org Repository Dispatch 備援、推播去重、來源失敗隔離、Telegram 逐一送達重試。
+
+## 目前功能總覽（2026-08-31）
+
+這一節是系統能力的導覽，不把「程式已存在」誤寫成「外部服務已驗收」。凡是需要 Supabase、Cloudflare、GitHub Pages 或 Telegram 帳號設定的項目，仍以部署後的 release／delivery evidence 為準。
+
+| 能力 | 現有架構中的落點 | 使用者可觀察的結果 |
+|---|---|---|
+| 台股、美股與全球市場 | `src/market_data.py`、官方交叉核對與 freshness contract | Mini App 顯示盤中、最近收盤、來源與資料狀態； stale／mixed data 不會被包裝成全即時 |
+| 新聞與事件情報 | `src/risk_news.py`、`src/news_intelligence.py`、官方／公開／discovery provider funnel | 台股與美股分流；公開來源只能是 observation／待核對；官方失敗與本輪無事件分開顯示 |
+| 事件生命週期 | `src/alert_lifecycle.py`、`src/event_ledger.py`、`site/app.js` | observation → pending confirmation → confirmed → escalated／deescalated → resolved；同一事件不因輪詢重複轟炸 |
+| 總經與市場風險 | Macro Surprise、Market Regime、Contagion、Stress Scenario、Market Impact Graph | 顯示因子、缺口與連動市場；缺 expected、同步或新鮮資料時不產生保證式方向判斷 |
+| 研究與候選 | 動能狙擊、三維共振、裸 K、璞玉價值；Strategy Registry／Explainability／Advice Gate | 候選、觀察、掃描失敗與部分母體分開；未通過 Advice Gate 不會產生買賣指令 |
+| 發布與回溯 | `data-release`、release manifest、snapshot／artifact hash、Pages release gate | invalid 或 hash 不一致的 release 不會覆蓋公開版本；可回到上一個 last-known-good release |
+| 通知與回執 | Telegram client、Alert Budget、逐收件人 retry、Railway／Worker receipt | 每次送出都有 trace、release、snapshot、policy 與結果；單一收件人失敗不阻塞其他人 |
+| 零成本替代路徑 | Cloudflare Worker + Pages、Supabase job/report contract、GitHub Actions worker | 可在既有 Railway 路徑旁執行 canary；Railway 保留為可選 rollback，直到外部驗收證據完整 |
+
+### 各介面看到的內容
+
+| 介面 | 公開呈現 | 不應期待的內容 |
+|---|---|---|
+| Telegram 文字 | 彩色圓點、事件／市場／狀態、最多 40 字、對應按鈕 | 不顯示 `R0`～`R4`；不顯示未核對方向或虛構百分比 |
+| Telegram 圖卡 | 僅限通過 renderer 與 release gate 的指定照片路徑；caption 與按鈕指向同一事件 | renderer 失敗時停止送圖，不寄出黑色／單色 placeholder |
+| Mini App | 完整事件脈絡、來源 URL、published／fetched time、freshness、release lineage、事件時間線與研究狀態 | 不把來源失敗當成「本輪無事件」，不混用新舊 release；公開分析欄位可保留內部風險等級供稽核 |
+| `/health`、delivery receipt | source health、classification、trace、成功／失敗數、重試與錯誤類型 | 不回傳 Bot token、原始 Chat ID 或其他 Secret |
+| `site/data`／`data-release` | schema、provenance、snapshot、artifact hash 與品質狀態 | 不把 stale、未核對或不完整資料標成 confirmed／high-risk |
 
 ## 本次盤點與最近修正
 
@@ -25,11 +50,13 @@ PRStK 是部署於 GitHub 的公開市場資訊整理、風險監測與量化研
 - **新聞連結安全**：Mini App 只允許 `https://news.cnyes.com` 與 `https://news.google.com`，其他網址只顯示為不可開啟，避免把不明連結直接交給 Telegram WebView。
 - **璞玉價值狀態透明化**：台股 MOPS 歷史資料採分批快取；未完成個股不列入，已完成個股可先產生正式候選或觀察名單，整體仍標示「歷史核對中」，且不沿用上一輪舊資料。TWSE 的 ROE／淨利／本益比是補充欄位，不會阻擋已完成六項歷史規則的台股；自由流通週轉率在沒有官方 free-float 欄位時，會透明標示採 Yahoo `floatShares`／`sharesOutstanding` 公開股數代理計算，不把代理值誤稱為 TWSE 官方數字。
 - **報價與來源可追溯**：市場卡保留來源、報價／抓取時間、盤中或最近收盤、交叉核對狀態；逾時資料仍可顯示，但必須標示「最近收盤」，不可被價格警報使用。
+- **Telegram 顯示與內部稽核分離**：PR #849 起，收件人只看到彩色圓點與人類可讀狀態，不再看到 `R0`～`R4`；風險等級仍寫入 delivery receipt、release lineage 與 Mini App 稽核欄位。
+- **零成本路徑可回滾**：Cloudflare Worker／Pages、Supabase job contract、Gmail Watch renewal 與 GitHub Actions worker 已有正式契約與離線驗證；在外部 canary 證據完整前，Railway 不刪除且維持可選 rollback。
 - **頁尾與 Mini App 入口**：頁尾為 `@2026 PRStK Lab & D.INV | All right reserved.`；Telegram 快報按鈕為「📡 開啟稜量速報系統」，固定選單為「稜量系統」。
 
 ## 一頁式使用流程
 
-1. **先看 Telegram 短訊息**：只把「事件類型｜市場方向｜變動幅度｜風險等級」送到手錶／手機，最多 40 字；完整證據留在圖卡與 Mini App。
+1. **先看 Telegram 短訊息**：只把「事件類型｜市場方向｜變動幅度｜狀態」送到手錶／手機，最多 40 字；風險等級以彩色圓點提示，完整證據留在圖卡與 Mini App。
 2. **點擊 `📡 開啟稜量速報系統`**：在 Telegram 內開啟 GitHub Pages Mini App，閱讀四段事件脈絡、來源 URL、交叉核對時間、研究候選與資料健康度。
 3. **先看來源健康狀態**：區分「本輪無重大事件」與「部分來源失敗」；看到資料缺口時，不把空白或舊候選解讀成市場沒有訊號。
 4. **再看市場脈動**：先看台指／台積電與全球指數，再看 TPEx、日韓、Nasdaq、費半、BTC／ETH 等卡片的來源與新鮮度。
@@ -174,7 +201,7 @@ TAIEX Macro FGI 是台股市場風險偏好的公開日資料模型，不是個�
 
 ## 可靠性、安全與部署
 
-### Zero-cost async report path（遷移中）
+### Zero-cost async report path（並行、可回滾）
 
 報告產生已提供不依賴 Railway 的契約骨架：Cloudflare Worker 負責 Telegram
 WebApp 驗證、Supabase job CRUD、GitHub Actions dispatch 與 Telegram proxy；
@@ -183,8 +210,10 @@ App 與輪詢。設定與回滾步驟請見
 [zero-cost production migration](docs/zero-cost-production-migration.md)；
 [migration inventory](docs/migration-inventory.md) 會記錄尚未完成的外部驗收。
 
-在 Supabase migration、Worker、Pages API base 與單一 Telegram canary 尚未
-完成驗收前，Railway 保持為 rollback 路徑，不會宣稱已完成切換。
+這條路徑的程式契約、migration、Worker API、Gmail Watch renewal 與 Actions
+工作流程已在 repository 中提供；是否可宣稱正式切換，仍要以 Supabase／Worker／Pages
+公開驗證及單一 Telegram canary 的可追蹤 evidence 為準。在所有外部 gate 通過前，
+Railway 保持為 rollback 路徑，不刪除既有資料，也不把離線測試誤寫成生產驗收。
 
 - GitHub Actions 的 `scheduled-brief` 以時段鍵和 Cache 防止主排程與 cron-job.org 重複發 Telegram。
 - `official-event-monitor` 與定時快報使用 Pages 併發鎖，市場快照回存失敗會嘗試 rebase 後重送 3 次。
@@ -274,13 +303,13 @@ Binance／CoinGecko、油價／黃金 Yahoo／EIA 或公開市場來源、VIX Ya
 ### 第 6 階段：輸出與通知品質
 
 市場風險快訊與市場定時報告固定使用四段：**事件、為何重要、可能連動、股市觀察**；
-每輪最多四個主題。Telegram Apple Watch 短訊息只保留「事件類型｜市場方向｜變動幅度｜風險等級」，
-完整來源 URL、核對網域、事件／核對時間、交叉核對市場與傳導說明放在 Mini App。
+每輪最多四個主題。Telegram Apple Watch 短訊息只保留「事件類型｜市場方向｜變動幅度｜狀態」，
+以彩色圓點提示風險層級；完整來源 URL、核對網域、事件／核對時間、交叉核對市場與傳導說明放在 Mini App。
 輸出固定附上「僅供公開資訊整理與教育性觀察，不構成投資建議」。
 
 詳細欄位與範例見 [第 4～6 階段事件、行情與輸出規格](docs/PHASES_4_TO_6_EVENT_MARKET_OUTPUT.md)。
 
-## 自我審查：已知限制與下一步建議
+## 目前限制與下一步（誠實邊界）
 
 下列項目是目前系統的真實邊界，並非已完成的功能；優先度由高到低排序。
 
@@ -328,7 +357,7 @@ Binance／CoinGecko、油價／黃金 Yahoo／EIA 或公開市場來源、VIX Ya
 | 路徑 | 責任 |
 |---|---|
 | `src/market_data.py` | 公開行情、台股／加密／海外交叉核對、freshness 與最近收盤標記 |
-| `src/risk_news.py` | FGI、VIX、台美新聞、Cnyes／Google RSS 分流與來源健康 |
+| `src/risk_news.py`、`src/news_intelligence.py`、`src/news_feed_adapters.py` | FGI、VIX、台美新聞、provider funnel、Cnyes／Google／Yahoo／SEC／Fed 分流與來源健康 |
 | `src/event_alerts.py`、`src/official_event_monitor.py` | 價格級距、重大事件四段內容、官方確認與市場同步升級 |
 | `src/event_ledger.py` | canonical key、URL／人物／地點／動作指紋、30 天帳本 |
 | `src/scheduled_brief.py` | 時段解析、台股優先、40 字 caption 與同時段防重複 |
@@ -337,6 +366,9 @@ Binance／CoinGecko、油價／黃金 Yahoo／EIA 或公開市場來源、VIX Ya
 | `src/price_action.py` | 四種裸 K 結構與嚴格訂單塊 |
 | `src/pristine_value.py`、`src/mops_history.py`、`src/value_universe.py` | 璞玉價值六項規則、0050＋0051／VOO 母體、MOPS 分批快取 |
 | `src/source_health.py`、`src/research_report.py` | 研究逾時、資料缺口、掃描失敗與「本次無候選」分流 |
+| `src/telegram_client.py`、`src/financialjuice_notification.py` | Telegram 顯示清理、40 字限制、FinancialJuice 來源標記與送達回執 |
+| `src/alert_card_renderer.py`、`src/release_gate.py`、`src/pages_release.py` | 1080×1350 圖卡、renderer fail-closed、manifest／hash／Pages 發布閘門 |
+| `worker/src/index.ts`、`supabase/migrations/` | 零成本 job／report API、Gmail Pub/Sub ingress、驗證與 Supabase 持久化契約 |
 | `site/index.html`、`site/app.js`、`site/styles.css` | Telegram Mini App UI、卡片、來源追溯與市場切換 |
 | `railway-monitor/app.py` | 金十 MCP／GDELT 輪詢、事件去重、HMAC Repository Dispatch、`/health` |
 | `site/data/market.json` | Mini App 最新公開快照；非交易資料庫 |
@@ -560,7 +592,9 @@ The production notification contract is release-gated text for market, risk,
 research, system-health and FinancialJuice lanes. The only production photo
 exception is a verified Creator email attachment; it is sent as one photo
 message with its release/alert deep-link Mini App button. Publishing and
-manifest verification always complete before delivery.
+manifest verification always complete before delivery. Telegram-facing text and
+photo captions remove internal `R0`–`R4` labels while preserving the original
+`prstk_risk_level` in receipts, audit records and the relevant Mini App evidence.
 
 ### Production notification mode
 
@@ -569,6 +603,11 @@ delivery use the release-gated canonical text contract. The legacy `photo_test`
 input now runs a single-recipient text acceptance. Only verified Creator email
 attachments may use the photo renderer and Telegram file-ID reuse. See
 [`docs/alert-card-renderer.md`](docs/alert-card-renderer.md).
+
+The public Telegram contract is intentionally shorter than the audit contract:
+the color dot remains a visual cue, but the text never exposes `R0`, `R1`, `R2`,
+`R3` or `R4`. This is a presentation-only change; alert qualification,
+deduplication, Alert Budget, release lineage and safety gates are unchanged.
 
 ### Renderer and release recovery
 
