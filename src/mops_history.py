@@ -19,6 +19,8 @@ from typing import Any
 import requests
 from bs4 import BeautifulSoup
 
+from src.http_client import configure_public_source_tls
+
 MOPS_API = "https://mops.twse.com.tw/mops/api/redirectToOld"
 MOPS_OLD = "https://mopsov.twse.com.tw/mops/web"
 USER_AGENT = "Mozilla/5.0 (compatible; PRStK-Lab-public-research/1.0)"
@@ -164,9 +166,9 @@ class MopsPublicClient:
     """Minimal, session-aware client for public MOPS report pages."""
 
     def __init__(self, session: requests.Session | None = None) -> None:
-        self.session = session or requests.Session()
+        self.session = configure_public_source_tls(session)
         self._last_request_at = 0.0
-        self._session_factory = requests.Session
+        self._session_factory = lambda: configure_public_source_tls()
         # requests installs its own default UA, so setdefault would leave it in
         # place and MOPS would return a security-block page instead of JSON.
         self.session.headers["User-Agent"] = USER_AGENT

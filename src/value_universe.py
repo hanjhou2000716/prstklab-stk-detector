@@ -17,6 +17,7 @@ from typing import Any
 import pandas as pd
 import requests
 
+from src.http_client import configure_public_source_tls
 from src.us_universe import (
     NASDAQ100_REFERER,
     NASDAQ100_URL,
@@ -39,6 +40,14 @@ TPEX_ISSUED_SHARES_URL = "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O"
 
 def _text(value: Any) -> str:
     return "" if value is None else str(value).strip()
+
+
+def _display_name(value: Any, fallback: Any, ticker: str) -> str:
+    """Prefer readable issuer names when a provider returns replacement chars."""
+    name = _text(value)
+    if name and "�" not in name:
+        return name
+    return _text(fallback) or ticker
 
 
 def _taiwan_code(value: Any) -> str | None:
@@ -121,7 +130,7 @@ def fetch_taiwan_official_share_records(
     incomparable.  A bounded cache is permitted only when it contains the
     same official ``issued_common_shares`` basis.
     """
-    client = session or requests.Session()
+    client = configure_public_source_tls(session)
     client.headers.setdefault("User-Agent", USER_AGENT)
     now = datetime.now(UTC)
     cache_file = Path(cache_path) if cache_path else None
@@ -290,7 +299,7 @@ def _yuanta_pcf_rows(client: requests.Session, fund: str) -> list[dict[str, str]
             continue
         rows[ticker] = {
             "ticker": ticker, "symbol": f"{ticker}.TW",
-            "name": _text(item.get("name")) or ticker,
+            "name": _display_name(item.get("name"), item.get("ename"), ticker),
             "pool": fund, "source": f"Yuanta {fund} PCF API",
         }
     if not rows:
@@ -299,7 +308,7 @@ def _yuanta_pcf_rows(client: requests.Session, fund: str) -> list[dict[str, str]
 
 
 def fetch_taiwan_value_universe(session: requests.Session | None = None) -> tuple[list[dict[str, str]], list[str]]:
-    client = session or requests.Session()
+    client = configure_public_source_tls(session)
     client.headers.setdefault("User-Agent", USER_AGENT)
     candidates: dict[str, dict[str, str]] = {}
     errors: list[str] = []
@@ -321,7 +330,7 @@ def fetch_taiwan_value_universe(session: requests.Session | None = None) -> tupl
 
 def fetch_taiwan_0050_universe(session: requests.Session | None = None) -> tuple[list[dict[str, str]], list[str]]:
     """Return the current issuer-published 0050 ordinary-share constituents."""
-    client = session or requests.Session()
+    client = configure_public_source_tls(session)
     client.headers.setdefault("User-Agent", USER_AGENT)
     try:
         rows = _yuanta_pcf_rows(client, "0050")
@@ -331,7 +340,7 @@ def fetch_taiwan_0050_universe(session: requests.Session | None = None) -> tuple
 
 
 def _fetch_us_value_universe_from_vanguard_page(session: requests.Session | None = None) -> tuple[list[dict[str, str]], list[str]]:
-    client = session or requests.Session()
+    client = configure_public_source_tls(session)
     client.headers.setdefault("User-Agent", USER_AGENT)
     try:
         rows = parse_vanguard_holdings(_read_tables(client.get(VANGUARD_VOO_URL, timeout=30)))
@@ -349,7 +358,7 @@ def fetch_us_value_universe(session: requests.Session | None = None) -> tuple[li
     product scope is now the smaller, explicit Nasdaq-100 + semiconductor/AI
     core pool; SEC remains the only formal financial-data source.
     """
-    client = session or requests.Session()
+    client = configure_public_source_tls(session)
     client.headers.setdefault("User-Agent", USER_AGENT)
     headers = {"User-Agent": "Mozilla/5.0 (compatible; PRStKInvestmentSystem/1.0)", "Referer": NASDAQ100_REFERER}
     errors: list[str] = []
