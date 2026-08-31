@@ -75,6 +75,67 @@ def content_snapshot_id(value: dict[str, Any], prefix: str) -> str:
     return f"{prefix}-{digest}"
 
 
+def _reconcile_news_health(document: dict[str, Any]) -> dict[str, Any]:
+    """Bind provider availability to the final stories at the release boundary."""
+    markets = document.get("markets")
+    if not isinstance(markets, dict):
+        return document
+    failure_states = {
+        "failed", "rate_limited", "parse_failed", "provider_failed",
+        "scan_failed", "configuration_missing", "configuration_required", "critical",
+    }
+    for market, payload in markets.items():
+        if not isinstance(payload, dict):
+            continue
+        stories = [item for item in (payload.get("stories") or []) if isinstance(item, dict)]
+        accepted: dict[str, int] = {}
+        for story in stories:
+            provider = str(story.get("provider") or "unknown")
+            accepted[provider] = accepted.get(provider, 0) + 1
+        rows = payload.get("source_health")
+        if not isinstance(rows, list):
+            continue
+        failures = 0
+        successes = 0
+        for row in rows:
+            if not isinstance(row, dict) or str(row.get("key") or "") == f"news_{market}":
+                continue
+            provider = str(row.get("provider") or "unknown")
+            raw = row.get("raw_item_count", row.get("item_count", 0))
+            try:
+                raw_count = max(0, int(raw or 0))
+            except (TypeError, ValueError):
+                raw_count = 0
+            filtered = accepted.get(provider, 0)
+            row["raw_item_count"] = raw_count
+            row["filtered_item_count"] = filtered
+            row["item_count"] = filtered
+            if raw_count > 0 and filtered == 0 and row.get("status") == "healthy":
+                row["status"] = "no_event"
+                row["data_gap"] = "filtered_no_market_match"
+            status = str(row.get("status") or "").casefold()
+            if status in failure_states:
+                failures += 1
+            elif status in {"healthy", "no_event", "stale"}:
+                successes += 1
+        if stories:
+            payload["status"] = "ready"
+            payload["collection_state"] = "degraded" if failures else "ready"
+        elif failures:
+            payload["status"] = "no_event"
+            payload["collection_state"] = "degraded" if successes else "source_failed"
+        else:
+            payload["status"] = "no_event"
+            payload["collection_state"] = "no_event"
+        payload["source_failure_count"] = failures
+        summary = payload.get("scan_summary")
+        if isinstance(summary, dict):
+            summary["failed_provider_count"] = failures
+            summary["successful_provider_count"] = successes
+            summary["ranked_story_count"] = len(stories)
+    return document
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -443,6 +504,7 @@ def build_release_manifest(
             ) else "no_event",
         }
     if isinstance(news_artifact, dict):
+        news_artifact = _reconcile_news_health(news_artifact)
         news_snapshot_id = str(news_artifact["snapshot_id"])
         news_status = "ready" if news_artifact.get("status") in {"ready", "no_event"} else "unavailable"
         news_path = root / "site" / "data" / "news.json"
