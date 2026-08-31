@@ -106,6 +106,35 @@ def test_manifest_publishes_multi_market_news_release(tmp_path):
     assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 
+def test_manifest_reconciles_legacy_news_health_before_validation(tmp_path):
+    """Raw provider volume must not block an empty, market-filtered release."""
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    intelligence = build_news_intelligence([], market="us")
+    intelligence["source_health"] = [{
+        "provider": "yahoo_finance",
+        "key": "news_us_yahoo_finance",
+        "status": "healthy",
+        "item_count": 7,
+    }]
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["news"] = {
+        "provider_registry": intelligence["provider_registry"],
+        "intelligence": {"us": intelligence},
+    }
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+
+    assert manifest["status"] == "ready"
+    news = json.loads((tmp_path / "site" / "data" / "news.json").read_text(encoding="utf-8"))
+    provider = news["markets"]["us"]["source_health"][0]
+    assert provider["raw_item_count"] == 7
+    assert provider["filtered_item_count"] == 0
+    assert provider["item_count"] == 0
+    assert provider["status"] == "no_event"
+
+
 def test_multi_market_news_release_schema_rejects_missing_lineage(tmp_path):
     _artifacts(tmp_path)
     market_path = tmp_path / "site" / "data" / "market.json"
