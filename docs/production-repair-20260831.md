@@ -63,9 +63,13 @@ original attachments remain the only photo exception.
 ## Verification run
 
 - Targeted risk, news, Mini App, and Telegram tests: 93 passed.
-- Ruff on changed files: passed.
-- Mypy on changed modules: passed.
-- JavaScript syntax check: passed.
+- Full repository regression: `1552 passed in 124.73s`.
+- Full Ruff check (`src` and `tests`): passed.
+- Full Mypy check (`src`, 184 files): passed.
+- Python bytecode compilation (`src` and `railway-monitor`): passed.
+- Mini App JavaScript syntax check: passed.
 
-Full repository regression and post-merge production acceptance remain
-required before this record can be marked complete.
+This branch is locally verified. Post-merge production acceptance still
+requires the release workflow to publish a new gated artifact and the public
+manifest, Worker health, Mini App, and (if explicitly enabled) single-recipient
+Telegram delivery to be checked against the same release and snapshot IDs.
