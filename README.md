@@ -1,6 +1,6 @@
 # PRStK Investment System
 
-> 文件版本：2026-08-31｜本文件以 `main` 分支目前實際程式碼與 GitHub Actions 設定為準。
+> 文件版本：2026-09-01｜本文件以 `main` 分支目前實際程式碼與 GitHub Actions 設定為準。
 
 PRStK 是部署於 GitHub 的公開市場資訊整理、風險監測與量化研究系統。它以繁體中文產生 Apple Watch 友善的 Telegram 快報，並以 GitHub Pages 提供 Telegram Mini App 儀表板。
 
@@ -16,7 +16,46 @@ PRStK 是部署於 GitHub 的公開市場資訊整理、風險監測與量化研
 - **台股 Macro FGI**：以公開日資料計算台股市場情緒的五因子百分位模型。
 - **可靠性機制**：GitHub Actions 主排程、cron-job.org Repository Dispatch 備援、推播去重、來源失敗隔離、Telegram 逐一送達重試。
 
-## 目前功能總覽（2026-08-31）
+## 這次整體增加了什麼
+
+以下是從原本「單次抓資料」架構逐步整合到現在的能力。每一項都沿用同一條
+資料、事件、發布與通知鏈，不另外建立平行的風險判斷或 Telegram 發送器；
+「已整合」代表程式與離線契約已存在，「待驗證」則代表仍需要最新的外部
+Pages／Worker／Telegram evidence 才能宣稱正式生產完成。
+
+| 區域 | 已增加或整合的能力 | 主要落點與目前邊界 |
+|---|---|---|
+| 市場覆蓋 | 台股、美股、日韓、Nasdaq／費半、能源、貴金屬、美元與加密資產的公開行情 | `src/market_data.py`、freshness／mixed-data contract；逾時資料可觀察但不觸發高風險 |
+| 新聞與來源 | TWSE／MOPS／SEC／Fed 官方來源，加上鉅亨、Yahoo Finance、Google News discovery；台美市場分流、provider funnel、來源健康與失敗原因 | `src/risk_news.py`、`src/news_intelligence.py`、`src/news_feed_adapters.py`；公開來源是 observation／待核對，不取代官方證據 |
+| 事件生命週期 | observation、待核對、confirmed、escalated、deescalated、resolved，以及事件時間線與材料變化判斷 | `src/alert_lifecycle.py`、`src/event_ledger.py`、`site/app.js`；同一事件輪詢不重複轟炸 |
+| 市場風險 | Macro Surprise、Market Regime、Contagion、Stress Scenario、Portfolio Risk、Market Impact Graph | 各因子、缺口、同步市場與資料品質可追溯；缺 expected／同步／新鮮度時保持 fail-closed |
+| 研究系統 | 動能狙擊、三維共振、裸 K、璞玉價值四策略；Strategy Registry、Candidate Explainability、Advice Gate、Paper Portfolio、Event Feedback | 研究排序與事件觀察分離；母體不完整、掃描失敗與本輪無候選分開顯示，不產生交易指令 |
+| Creator／財經內容 | Gmail Watch／Pub/Sub ingress、Creator 內容解析、FinancialJuice compound parser 與 vendor importance 優先級 | `railway-monitor/gmail_watch.py`、`src/financialjuice_*`、`src/external_*`；來源分數不改寫 PRStK risk，原始郵件不進公開頁面 |
+| 發布安全 | release manifest、snapshot／artifact hash、schema validation、data-release、Pages release gate、last-known-good rollback | `src/release_gate.py`、`src/pages_release.py`、`.github/workflows/`；invalid／hash mismatch 不覆蓋公開版本 |
+| Telegram 送達 | canonical text contract、Mini App deep link、Alert Budget、事件去重、逐收件人 retry、429 backoff、delivery receipt | `src/telegram_client.py`、`src/delivery_callback.py`；單一收件人失敗不阻塞其他人，也不輸出 token／原始 Chat ID |
+| 零成本替代 | Cloudflare Worker、Supabase job／report／receipt contract、GitHub Actions worker；Railway 保留為 rollback | `worker/`、`supabase/`、`docs/zero-cost-production-migration.md`；正式切換仍以外部 canary evidence 為準 |
+
+### 我們可以一起補強的地方
+
+這些不是用文件掩蓋的「已完成」，而是目前架構下最值得優先改善的缺口：
+
+1. **即時 watchlist 覆蓋**：把既有公開報價、EventLedger 與 Alert Budget 串成明確的
+   watchlist 價格速報 lane，嚴格處理 1.50% 邊界、stale／delayed 與方向反轉。
+2. **美股新聞可用性**：持續驗證 SEC／Fed 與 Yahoo／Google／鉅亨的 provider funnel，
+   讓「本輪無事件」、「部分降級」、「來源失敗」在 Mini App 與 release 中一致。
+3. **研究與即時事件解耦**：研究逾時只阻擋研究主張，不阻擋已通過來源與行情 gate 的
+   即時事件；每一條通知仍必須有相應的 release 證據。
+4. **外部正式 evidence**：完成 Pages 公開 manifest/hash、Cloudflare／Supabase canary、
+   Railway rollback 與單一測試收件人的 Telegram receipt，並把 trace、release、snapshot
+   串回同一條 lineage。
+5. **可觀測性與回溯**：增加各 provider 的歷史成功時間、排除原因、通知預期／狀態與
+   送達率摘要，但不暴露個人收件人或任何 Secret。
+
+每次補強都必須先有 targeted test，再跑相關 regression、release audit 與 Mini App／
+Telegram dry-run；外部服務未提供證據時，README 只標示「待驗證」，不把離線測試寫成
+正式生產驗收。
+
+## 目前功能總覽（2026-09-01）
 
 這一節是系統能力的導覽，不把「程式已存在」誤寫成「外部服務已驗收」。凡是需要 Supabase、Cloudflare、GitHub Pages 或 Telegram 帳號設定的項目，仍以部署後的 release／delivery evidence 為準。
 
