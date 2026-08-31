@@ -278,7 +278,7 @@ def test_us_news_filter_preserves_later_eligible_providers_before_ranking():
     """Generic SEC rows must not starve valid stories that arrive later."""
     generic_sec = [
         {
-            "title": f"8-K current report {index}",
+            "title": "8-K - ALLIANCE ENTERTAINMENT HOLDING CORP (Filer)" if index == 5 else f"8-K current report {index}",
             "url": f"https://www.sec.gov/Archives/edgar/data/generic-{index}",
         }
         for index in range(6)
