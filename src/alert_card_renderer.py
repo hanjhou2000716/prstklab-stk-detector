@@ -144,7 +144,13 @@ def render_alert_card(alert: dict[str, Any], output: str | Path) -> Path:
     except RendererError:
         raise
     except Exception as exc:
-        error_type = "chromium_unavailable" if "browser" in str(exc).lower() or "executable" in str(exc).lower() else "render_failed"
+        error_text = str(exc).lower()
+        # Playwright reports missing sandbox/system capabilities as a generic
+        # screenshot protocol error on some CI runners.  Keep delivery
+        # fail-closed, but classify it as an unavailable renderer so callers
+        # retain the bounded retry path instead of treating it as bad input.
+        unavailable_markers = ("browser", "executable", "capturescreenshot", "protocol error", "unable to capture")
+        error_type = "chromium_unavailable" if any(marker in error_text for marker in unavailable_markers) else "render_failed"
         raise RendererError(error_type, str(exc)) from exc
     finally:
         if browser is not None:
