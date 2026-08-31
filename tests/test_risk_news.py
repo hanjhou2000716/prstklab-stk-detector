@@ -1,5 +1,6 @@
 import pytest
 
+from src.news_intelligence import build_news_intelligence
 from src.risk_news import (
     _filter_market_news,
     _market_news_rss_url,
@@ -271,6 +272,45 @@ def test_us_news_filter_rejects_taiwan_headlines_but_keeps_us_headlines():
     ]
     filtered = _filter_market_news(stories, "us")
     assert [item["title"] for item in filtered] == ["Nasdaq futures and Federal Reserve outlook"]
+
+
+def test_us_news_filter_preserves_later_eligible_providers_before_ranking():
+    """Generic SEC rows must not starve valid stories that arrive later."""
+    generic_sec = [
+        {
+            "title": f"8-K current report {index}",
+            "url": f"https://www.sec.gov/Archives/edgar/data/generic-{index}",
+        }
+        for index in range(6)
+    ]
+    later = [
+        {
+            "title": "NVIDIA earnings outlook supports Nasdaq",
+            "url": "https://news.cnyes.com/news/id/us-nvda",
+            "provider": "anue",
+            "tickers": ["NVDA"],
+        },
+        {
+            "title": "NVIDIA outlook lifts US semiconductor shares",
+            "url": "https://finance.yahoo.com/news/us-nvda-outlook",
+            "provider": "yahoo_finance",
+            "tickers": ["NVDA"],
+        },
+        {
+            "title": "Nasdaq and NVIDIA earnings outlook",
+            "url": "https://news.google.com/rss/articles/us-nvda",
+            "provider": "google_news",
+            "tickers": ["NVDA"],
+        },
+    ]
+
+    filtered = _filter_market_news(generic_sec + later, "us")
+    assert len(filtered) == 9
+
+    payload = build_news_intelligence(filtered, market="us", tracked_tickers=["NVDA"])
+    assert 0 < len(payload["stories"]) <= 5
+    assert all(item["provider"] != "sec" for item in payload["stories"])
+    assert payload["exclusion_reasons"]["generic_official_filing"] == 6
 
 
 def test_market_classifier_routes_fed_and_lai_to_their_own_tabs():
