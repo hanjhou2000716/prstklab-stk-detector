@@ -60,6 +60,33 @@ def test_news_release_uses_filtered_count_for_empty_market_after_routing():
     assert validate_news_release(document) == []
 
 
+def test_news_release_uses_nested_funnel_eligible_count_when_projection_is_legacy():
+    """A producer funnel remains authoritative when top-level projection is absent."""
+    intelligence = {
+        "schema_version": "1.0",
+        "provider_registry": [],
+        "stories": [],
+        "interest_graph": {},
+        "status": "no_event",
+        "collection_state": "no_event",
+        "source_health": [{
+            "key": "news_us_yahoo_finance",
+            "status": "healthy",
+            "item_count": 10,
+            "funnel": {"eligible_count": 0, "ranked_count": 0},
+        }],
+    }
+    document = {
+        "schema_version": "1.0",
+        "market_snapshot_id": "market-123",
+        "snapshot_id": "news-123",
+        "provider_registry": [],
+        "markets": {"us": intelligence},
+        "status": "ready",
+    }
+    assert validate_news_release(document) == []
+
+
 def test_source_catalog_contract_rejects_duplicate_and_policy_mismatch():
     catalog = [{
         "provider": "TWSE", "can_trigger_alert": True,

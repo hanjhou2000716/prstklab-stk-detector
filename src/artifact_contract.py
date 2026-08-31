@@ -255,7 +255,18 @@ def _safe_item_count(row: Mapping[str, Any]) -> int:
     # whose headlines were all rejected does not create the impossible
     # ``stories=0 + available provider items`` release state.  Older releases
     # without the field continue to use the legacy count for compatibility.
-    value = row.get("filtered_item_count", row.get("item_count"))
+    if "filtered_item_count" in row:
+        value = row.get("filtered_item_count")
+    else:
+        funnel = row.get("funnel")
+        if isinstance(funnel, Mapping) and "eligible_count" in funnel:
+            # Some producers expose the post-routing count only in the
+            # observability funnel.  It is the same semantic quantity as the
+            # top-level filtered count and is safer than treating raw feed
+            # volume as publishable stories.
+            value = funnel.get("eligible_count")
+        else:
+            value = row.get("item_count")
     try:
         return max(0, int(value or 0))
     except (TypeError, ValueError):
