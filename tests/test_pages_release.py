@@ -99,6 +99,36 @@ def test_restore_latest_valid_preserves_public_release_when_data_branch_has_no_v
     assert result["release_id"] == "release-last-good"
 
 
+def test_restore_latest_valid_restores_immutable_manifest_identity_after_validation(tmp_path, monkeypatch):
+    data_root = tmp_path / "site" / "data"
+    data_root.mkdir(parents=True)
+    immutable = {"status": "ready", "release_id": "release-immutable", "market_snapshot_id": "market-1"}
+    manifest_path = data_root / "release-manifest.json"
+
+    monkeypatch.setattr("src.pages_release._commits", lambda *args, **kwargs: ["good"])
+
+    def restore_archive(*args, **kwargs):
+        manifest_path.write_text(json.dumps(immutable), encoding="utf-8")
+        return True
+
+    monkeypatch.setattr("src.pages_release._restore_archive", restore_archive)
+
+    def validate_and_rebuild(root, **kwargs):
+        manifest_path.write_text(
+            json.dumps({"status": "ready", "release_id": "release-derived"}),
+            encoding="utf-8",
+        )
+        return True, {"status": "ready", "release_id": "release-derived"}
+
+    monkeypatch.setattr("src.pages_release._validate", validate_and_rebuild)
+
+    result = restore_latest_valid(root=tmp_path)
+
+    assert result["publish"] is True
+    assert result["release_id"] == "release-immutable"
+    assert json.loads(manifest_path.read_text(encoding="utf-8"))["release_id"] == "release-immutable"
+
+
 def test_restore_latest_valid_remains_fail_closed_when_public_preservation_fails(tmp_path, monkeypatch):
     monkeypatch.setattr("src.pages_release._commits", lambda *args, **kwargs: ["bad"])
     monkeypatch.setattr("src.pages_release._restore_archive", lambda *args, **kwargs: True)
