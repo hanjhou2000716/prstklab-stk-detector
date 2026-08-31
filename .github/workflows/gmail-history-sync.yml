@@ -11,7 +11,7 @@ on:
     types: [gmail-history-sync]
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: gmail-history-sync
@@ -49,4 +49,16 @@ jobs:
         run: |
           args=()
           if [ -n "${HISTORY_ID:-}" ]; then args+=(--history-id "$HISTORY_ID"); fi
-          python scripts/sync_gmail_supabase.py "${args[@]}"
+          python scripts/sync_gmail_supabase.py "${args[@]}" | tee gmail-sync-result.json
+      - name: Trigger realtime event monitor for new reviewed email
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          processed="$(jq -r '.processed // 0' gmail-sync-result.json)"
+          if [ "$processed" -gt 0 ]; then
+            gh api --method POST "repos/$GH_REPO/dispatches" \
+              -f event_type=official-event-check \
+              -f 'client_payload[reason]=gmail-reviewed-observation'
+          fi

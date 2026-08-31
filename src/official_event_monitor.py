@@ -13,7 +13,19 @@ from zoneinfo import ZoneInfo
 from src.alert_budget import decide_alert_budget
 from src.config import get_settings
 from src.event_ledger import EventLedger, canonical_event_key
+from src.external_observation_input import (
+    external_observations_path,
+    external_source_health,
+    external_source_health_from_remote,
+    load_external_observations,
+    merge_external_source_health,
+)
+from src.financialjuice_notification import deliver_financialjuice_event
+from src.financialjuice_priority import project_financialjuice_priority
+from src.financialjuice_release_contract import validate_financialjuice_release
 from src.market_data import build_market_snapshot
+from src.railway_observation_client import load_railway_observations
+from src.railway_secret import delivery_shared_secret
 from src.refresh_market_data import write_snapshot
 from src.release_gate import verify_release_for_delivery
 from src.telegram_client import canonical_prstk_risk_level, send_text_briefs_audited, validate_brief
@@ -27,6 +39,95 @@ def _is_taiwan_market_window(now: datetime | None = None) -> bool:
     else:
         local_now = local_now.astimezone(ZoneInfo("Asia/Taipei"))
     return local_now.weekday() < 5 and time(8, 45) <= local_now.time() <= time(13, 30)
+
+
+def _external_observations_configured() -> bool:
+    """Return whether the signed Worker/Railway observation export is enabled."""
+    return bool(
+        os.getenv("PUBLIC_OBSERVATIONS_URL", "").strip()
+        or os.getenv("RAILWAY_OBSERVATIONS_URL", "").strip()
+        or os.getenv("RAILWAY_STATUS_URL", "").strip()
+        or delivery_shared_secret()
+    )
+
+
+def _merge_observations(local: list[dict[str, Any]], remote: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Prefer the authenticated remote row while retaining local fallback rows."""
+    merged: dict[str, dict[str, Any]] = {}
+    for row in [*local, *remote]:
+        if not isinstance(row, dict):
+            continue
+        key = str(row.get("observation_id") or "").strip()
+        if key:
+            merged[key] = row
+    return list(merged.values())
+
+
+def _attach_realtime_external_events(snapshot: dict[str, Any]) -> dict[str, Any]:
+    """Bind reviewed FinancialJuice observations to the realtime event lane.
+
+    Gmail/Worker ingestion only stores a sanitized observation.  This monitor
+    projects it through the existing event/risk/release contract so an event is
+    delivered on the next monitor dispatch instead of waiting for a scheduled
+    briefing.  Creator rows remain in the external observation lineage and are
+    deliberately excluded from this market-event projection.
+    """
+    local_path = external_observations_path()
+    local_rows, local_rejected = load_external_observations(local_path)
+    remote_rows: list[dict[str, Any]] = []
+    remote_health: dict[str, Any] = {}
+    health: dict[str, Any] | None
+    if _external_observations_configured():
+        remote_rows, remote_health = load_railway_observations()
+    observations = _merge_observations(local_rows, remote_rows)
+    fj_rows = [
+        row for row in observations
+        if str(row.get("content_origin") or row.get("source") or "").strip().casefold() == "financialjuice"
+    ]
+    events_container = snapshot.setdefault("events", {})
+    if not isinstance(events_container, dict):
+        events_container = {"items": []}
+        snapshot["events"] = events_container
+    existing_items = events_container.get("items")
+    existing_events = [item for item in existing_items if isinstance(item, dict)] if isinstance(existing_items, list) else []
+    projection = project_financialjuice_priority(fj_rows, existing_events=existing_events)
+    snapshot["external_observations"] = observations
+    snapshot["financialjuice_observations"] = fj_rows
+    snapshot["financialjuice_priority_decisions"] = projection["decisions"]
+    snapshot["financialjuice_priority_events"] = [
+        item for item in projection["events"]
+        if str(item.get("notification_status") or "") == "eligible"
+    ]
+    rejected = local_rejected + int(remote_health.get("rejected_count") or 0)
+    if _external_observations_configured():
+        health = external_source_health_from_remote(
+            remote_health, accepted=fj_rows, rejected=rejected, checked_at=datetime.now().astimezone(),
+        )
+    else:
+        health = external_source_health(
+            path=local_path, accepted=fj_rows, rejected=rejected, checked_at=datetime.now().astimezone(),
+        )
+    if health:
+        snapshot["source_health"] = merge_external_source_health(snapshot.get("source_health") or {}, health)
+        snapshot["external_source_health"] = health
+    contract = validate_financialjuice_release(snapshot)
+    snapshot["financialjuice_release_contract"] = contract
+    if contract["ok"]:
+        # Preserve the canonical event list and append only once per
+        # observation.  The event key remains stable across monitor polls.
+        existing_ids = {
+            str(item.get("observation_id") or item.get("item_id") or "")
+            for item in existing_events
+            if isinstance(item, dict)
+        }
+        events_container["items"] = [
+            *existing_events,
+            *[
+                item for item in projection["events"]
+                if str(item.get("observation_id") or item.get("item_id") or "") not in existing_ids
+            ],
+        ]
+    return snapshot
 
 
 def select_official_event(
@@ -75,6 +176,21 @@ def select_official_event(
             )
             if detailed:
                 return detailed
+    # Major news is evaluated by the same event builder as official releases
+    # and price signals.  Public providers can produce a low-risk observation
+    # notification, while strict conflict/black-swan rows remain pending until
+    # the existing official + market-sync gate is satisfied.
+    for event in detailed_events:
+        if event.get("kind") == "market_signal":
+            continue
+        status = str(event.get("notification_status") or "").strip().lower()
+        if status not in {"eligible", "ready"}:
+            continue
+        risk = canonical_prstk_risk_level(event)
+        if event.get("public_observation") and risk in {"R3", "R4"}:
+            continue
+        return event
+
     signals = [event for event in snapshot.get("events", {}).get("items", []) if event.get("kind") == "market_signal"]
     if _is_taiwan_market_window(now):
         # During the Taiwan session, a broad Taiwan price signal has priority.
@@ -119,6 +235,30 @@ def _observe_event(event: dict[str, Any] | None, *, reminded: bool = False) -> d
     return record
 
 
+def _financialjuice_delivery_history(history: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Project redacted FJ recipient receipts for replay-safe immediate sends."""
+    projected: list[dict[str, Any]] = []
+    for row in history:
+        if not isinstance(row, dict):
+            continue
+        receipts = row.get("delivery_receipts")
+        if isinstance(receipts, list):
+            for receipt in receipts:
+                if isinstance(receipt, dict):
+                    projected.append({
+                        "notification_key": receipt.get("notification_key") or row.get("notification_key"),
+                        "recipient_hash": receipt.get("recipient_hash") or receipt.get("chat_id_hash"),
+                        "delivery_status": receipt.get("delivery_status") or receipt.get("status"),
+                    })
+        elif row.get("notification_key") and row.get("recipient_hash"):
+            projected.append({
+                "notification_key": row.get("notification_key"),
+                "recipient_hash": row.get("recipient_hash"),
+                "delivery_status": row.get("delivery_status") or row.get("status"),
+            })
+    return projected
+
+
 def build_official_event_brief(event: dict[str, Any]) -> str:
     """Make a neutral watch-sized alert for an official event or price move."""
     if event.get("market_direction") or event.get("market_move"):
@@ -154,6 +294,7 @@ def build_official_event_brief(event: dict[str, Any]) -> str:
 def prepare_snapshot() -> tuple[dict[str, Any], dict[str, Any] | None]:
     """Refresh the public snapshot before the Mini App button is sent."""
     snapshot = build_market_snapshot()
+    snapshot = _attach_realtime_external_events(snapshot)
     if not write_snapshot(snapshot):
         # Never evaluate or deliver an event from a run that lost the
         # freshness race with a newer published snapshot.
@@ -195,17 +336,29 @@ def write_send_output(sent: bool, reason: str) -> None:
 
 def _write_delivery_output(
     *, trace_id: str, deliveries: tuple[Any, ...], event: dict[str, Any] | None = None,
-    budget: dict[str, Any] | None = None,
+    budget: dict[str, Any] | None = None, delivery_status: str | None = None,
+    delivered_count: int | None = None, failed_count: int | None = None,
+    failed_recipient_hashes: list[str] | None = None,
 ) -> None:
-    delivered_count = sum(getattr(item, "status", "") == "delivered" for item in deliveries)
-    failed_count = len(deliveries) - delivered_count
-    failed_hashes = [getattr(item, "chat_id_hash", "") for item in deliveries if getattr(item, "status", "") != "delivered"]
+    delivered_count = (
+        sum(getattr(item, "status", "") == "delivered" for item in deliveries)
+        if delivered_count is None else delivered_count
+    )
+    failed_count = (
+        len(deliveries) - delivered_count
+        if failed_count is None else failed_count
+    )
+    failed_hashes = (
+        [getattr(item, "chat_id_hash", "") for item in deliveries if getattr(item, "status", "") != "delivered"]
+        if failed_recipient_hashes is None else failed_recipient_hashes
+    )
+    computed_status = "delivered" if failed_count == 0 and delivered_count else "partial" if delivered_count else "failed"
     lines = [
         f"trace_id={trace_id}",
         f"release_id={os.environ.get('RELEASE_ID', '')}",
         f"delivered_count={delivered_count}",
         f"failed_count={failed_count}",
-        f"delivery_status={'delivered' if failed_count == 0 else 'partial' if delivered_count else 'failed'}",
+        f"delivery_status={delivery_status or computed_status}",
         "delivery_mode=text",
         f"failed_recipient_hashes={','.join(failed_hashes)}",
     ]
@@ -214,6 +367,11 @@ def _write_delivery_output(
             f"alert_id={event.get('event_cluster_key') or event.get('event_key') or ''}",
             f"snapshot_id={event.get('snapshot_id') or ''}",
             f"observation_id={event.get('observation_id') or (event.get('instrument') or {}).get('observation_id') or ''}",
+            f"notification_expected={'true' if event.get('notification_expected') else 'false'}",
+            f"notification_status={event.get('notification_status') or ''}",
+            f"notification_reason={event.get('notification_reason') or '、'.join(event.get('notification_reasons') or [])}",
+            f"event_key={event_key(event)}",
+            f"risk={canonical_prstk_risk_level(event)}",
         ])
     if budget is not None:
         lines.extend([
@@ -269,7 +427,10 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
     gate = verify_release_for_delivery(
         expected_snapshot_id=str(snapshot.get("snapshot_id") or ""),
         public_url=os.environ.get("PUBLIC_RELEASE_URL") or None,
-        require_production_research=True,
+        # Official/index/news alerts only require the relevant market/event
+        # artifacts. Research freshness is enforced when a notification
+        # actually includes research-specific claims.
+        require_production_research=False,
     )
     if not gate.allowed:
         if hasattr(ledger, "record_decision"):
@@ -300,6 +461,63 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
     event_id = str(event.get("event_cluster_key") or event.get("event_key") or observation_id or trace_id)
     caption = build_official_event_brief(event)
     snapshot_id = str(snapshot.get("snapshot_id") or "")
+    release_id = gate.release_id or ""
+    if str(event.get("source_key") or event.get("source") or "").strip().casefold() == "financialjuice":
+        # FinancialJuice uses the same release-gated event lane but its
+        # vendor-priority contract adds recipient-level replay protection and
+        # keeps FJ importance separate from the PRStK risk grade.
+        fj_result = deliver_financialjuice_event(
+            event,
+            release_id=release_id,
+            snapshot_id=snapshot_id,
+            mini_app_url=settings.dashboard_url,
+            release_ready=True,
+            token=settings.telegram_bot_token or "",
+            chat_ids=settings.telegram_chat_ids,
+            delivery_history=_financialjuice_delivery_history(ledger.delivery_history()),
+            text_sender=send_text_briefs_audited,
+        )
+        fj_receipts = [row for row in fj_result.get("receipts", []) if isinstance(row, dict)]
+        delivered_count = sum(str(row.get("delivery_status") or "") == "delivered" for row in fj_receipts)
+        failed_count = len(fj_receipts) - delivered_count
+        fj_status = str(fj_result.get("status") or "failed")
+        if fj_status == "already_delivered":
+            _write_delivery_output(
+                trace_id=trace_id, deliveries=(), event={**event, "snapshot_id": snapshot_id}, budget=budget,
+                delivery_status="suppressed", delivered_count=0, failed_count=0,
+            )
+            write_send_output(False, "financialjuice_already_delivered")
+            return False
+        if fj_status == "blocked" and not fj_receipts:
+            if hasattr(ledger, "record_decision"):
+                ledger.record_decision(event, {"allowed": False, "status": "suppressed", "reason": "financialjuice_delivery_blocked", "reasons": list(fj_result.get("reasons") or [])})
+                ledger.save()
+            write_send_output(False, "financialjuice_delivery_blocked")
+            return False
+        delivery_status = "delivered" if fj_status == "delivered" else "partial" if delivered_count else "failed"
+        failed_hashes = [
+            str(row.get("recipient_hash") or row.get("chat_id_hash") or "")
+            for row in fj_receipts
+            if str(row.get("delivery_status") or "") != "delivered"
+        ]
+        _write_delivery_output(
+            trace_id=trace_id, deliveries=(), event={**event, "snapshot_id": snapshot_id}, budget=budget,
+            delivery_status=delivery_status, delivered_count=delivered_count,
+            failed_count=failed_count, failed_recipient_hashes=failed_hashes,
+        )
+        if not delivered_count:
+            write_send_output(False, "all_recipients_failed")
+            raise RuntimeError("Telegram FinancialJuice delivery failed for every configured recipient")
+        ledger.record_delivery(
+            {**budget_event, "trace_id": trace_id, "release_id": release_id, "snapshot_id": snapshot_id,
+             "delivery_status": delivery_status, "notification_key": fj_result.get("notification_key"),
+             "delivery_receipts": fj_receipts},
+            trace_id=trace_id,
+            reason="financialjuice_realtime_monitor",
+        )
+        ledger.save()
+        write_send_output(True, "sent_partial" if failed_count else "sent")
+        return True
     try:
         deliveries = send_text_briefs_audited(
             token=settings.telegram_bot_token or "",
@@ -307,7 +525,7 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             text=caption,
             dashboard_url=settings.dashboard_url,
             alert_id=event_id,
-            release_id=gate.release_id or "",
+            release_id=release_id,
             snapshot_id=snapshot_id,
             observation_id=observation_id,
             prstk_risk_level=canonical_prstk_risk_level(event),
@@ -323,7 +541,15 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         write_send_output(False, "all_recipients_failed")
         raise RuntimeError("Telegram delivery failed for every configured recipient")
     ledger.record_delivery(
-        {**budget_event, "trace_id": trace_id},
+        {
+            **budget_event,
+            "trace_id": trace_id,
+            "release_id": release_id,
+            "snapshot_id": snapshot_id,
+            "notification_status": event.get("notification_status") or "eligible",
+            "notification_reason": event.get("notification_reason") or "",
+            "delivery_status": "delivered" if failed_count == 0 else "partial",
+        },
         trace_id=trace_id,
         reason="official_event_monitor",
     )

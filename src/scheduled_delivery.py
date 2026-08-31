@@ -328,10 +328,10 @@ def send(
     try:
         snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        _write_output({"sent": "false", "delivery_status": "blocked", "reason": f"snapshot_unreadable:{type(exc).__name__}"})
+        _write_output({"sent": "false", "delivery_status": "blocked", "notification_expected": "false", "notification_status": "blocked", "reason": f"snapshot_unreadable:{type(exc).__name__}"})
         return
     if not isinstance(snapshot, dict):
-        _write_output({"sent": "false", "delivery_status": "blocked", "reason": "snapshot_not_object"})
+        _write_output({"sent": "false", "delivery_status": "blocked", "notification_expected": "false", "notification_status": "blocked", "reason": "snapshot_not_object"})
         return
     snapshot_id = str(snapshot.get("snapshot_id") or "")
     gate = verify_release_for_delivery(
@@ -348,6 +348,9 @@ def send(
             "release_id": gate.release_id,
             "snapshot_id": snapshot_id,
             "release_gate_errors": ";".join(gate.errors),
+            "notification_expected": "false",
+            "notification_status": "blocked",
+            "notification_reason": "release_gate_blocked",
         })
         print("Release gate blocked Telegram delivery: " + "; ".join(gate.errors))
         return
@@ -356,6 +359,7 @@ def send(
     if not settings.telegram_ready:
         raise RuntimeError("Telegram configuration is incomplete")
     event = _pick_event(snapshot, slot)
+    event_risk = canonical_prstk_risk_level(event) if isinstance(event, dict) else ""
     budget = {"allowed": True, "reason": "no_event", "event_key": ""}
     ledger: EventLedger | None = None
     history: list[dict[str, Any]] = []
@@ -371,6 +375,10 @@ def send(
                 "event_key": budget.get("event_key", ""),
                 "snapshot_id": snapshot_id,
                 "release_id": gate.release_id,
+                "notification_expected": "false",
+                "notification_status": "suppressed",
+                "notification_reason": budget["reason"],
+                "risk": event_risk,
             })
             return
     briefing = snapshot.get("briefing") or {}
@@ -411,7 +419,7 @@ def send(
                 prstk_risk_level=canonical_prstk_risk_level(event),
             )
     except (OSError, ValueError) as exc:
-        _write_output({"sent": "false", "delivery_status": "blocked", "reason": "text_delivery_failed", "error_type": type(exc).__name__, "release_id": gate.release_id, "snapshot_id": snapshot_id})
+        _write_output({"sent": "false", "delivery_status": "blocked", "reason": "text_delivery_failed", "error_type": type(exc).__name__, "release_id": gate.release_id, "snapshot_id": snapshot_id, "notification_expected": "true", "notification_status": "failed", "notification_reason": "text_delivery_failed", "risk": event_risk})
         return
     if fj_delivery is not None:
         fj_receipts = [row for row in fj_delivery.get("receipts", []) if isinstance(row, dict)]
@@ -426,6 +434,10 @@ def send(
                 "notification_key": fj_delivery.get("notification_key", ""),
                 "release_id": gate.release_id,
                 "snapshot_id": snapshot_id,
+                "notification_expected": "false",
+                "notification_status": "suppressed",
+                "notification_reason": "financialjuice_already_delivered",
+                "risk": event_risk,
             })
             return
         if fj_status == "blocked" and not fj_receipts:
@@ -437,6 +449,10 @@ def send(
                 "delivery_reasons": ";".join(str(item) for item in (fj_delivery.get("reasons") or [])),
                 "release_id": gate.release_id,
                 "snapshot_id": snapshot_id,
+                "notification_expected": "false",
+                "notification_status": "blocked",
+                "notification_reason": "financialjuice_delivery_blocked",
+                "risk": event_risk,
             })
             return
         delivery_status = "delivered" if fj_status == "delivered" else "partial" if delivered else "failed"
@@ -464,6 +480,11 @@ def send(
         "alert_id": alert_id,
         "alert_budget": budget,
         "failed_recipient_hashes": failed_recipient_hashes,
+        "notification_expected": "true" if event else "false",
+        "notification_status": ("ready" if delivery_status == "delivered" else delivery_status) if event else "no_event",
+        "notification_reason": ("sent" if delivery_status == "delivered" else "recipient_delivery_partial" if delivery_status == "partial" else "recipient_delivery_failed") if event else "no_event",
+        "event_key": alert_id,
+        "risk": event_risk,
     }
     if isinstance(event, dict) and str(event.get("source_key") or "").strip().casefold() == "financialjuice":
         output["financialjuice_delivery_trace"] = {

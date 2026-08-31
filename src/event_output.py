@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.telegram_client import canonical_prstk_risk_level
+from src.telegram_client import canonical_prstk_risk_level, canonical_short_message
 
 SECTION_KEYS = ("event", "importance", "market_impact", "watch")
 SECTION_LABELS = ("事件", "為何重要", "可能連動", "股市觀察")
@@ -22,10 +22,14 @@ def four_section_event(event: dict[str, Any]) -> dict[str, str]:
 
 
 def short_event_message(event: dict[str, Any], *, prefix: str = "快訊") -> str:
-    """Format one bounded watch message using only the canonical R0-R4 grade."""
+    """Format one bounded watch message through the canonical risk boundary."""
     label = str(event.get("short_label") or event.get("event_type") or "市場事件").strip()
     direction = str(event.get("market_direction") or "市場待核對").strip()
     move = str(event.get("market_move") or "變動待核對").strip()
     risk = canonical_prstk_risk_level(event)
-    text = f"{prefix}｜{label}｜{direction}｜{move}｜{risk}"
-    return text[:30].rstrip("｜ ")
+    # ``canonical_short_message`` places the risk token before the bounded
+    # context so truncation can never remove R0-R4 or leave a misleading
+    # partial suffix. ``prefix`` remains useful for callers that supply a
+    # domain label other than the legacy ``快訊`` wrapper.
+    context = "｜".join(part for part in (prefix, label, direction, move) if part)
+    return canonical_short_message(context, prstk_risk_level=risk)

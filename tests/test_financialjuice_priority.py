@@ -25,6 +25,7 @@ def test_qualifying_fj_item_becomes_release_bound_vendor_priority_event():
     event = projection["events"][0]
     assert event["vendor_priority_notification"] is True
     assert event["risk_level"] == "R2"
+    assert event["prstk_risk_level"] == "R2"
     assert event["market_direction"] is None
     assert event["source_trace"]["vendor_importance_is_not_risk"] is True
     assert event["received_at"] == "2026-08-21T01:01:00Z"

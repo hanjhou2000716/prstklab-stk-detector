@@ -54,6 +54,9 @@ def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, r
     ).strip() or None
     received_at = row.get("received_at") or row.get("fetched_at") or row.get("published_at") or _now()
     pending = list(dict.fromkeys(str(item) for item in (result.get("pending_reasons") or []) if str(item).strip()))
+    canonical_risk = str(risk.get("prstk_risk_level") or "R2").upper()
+    if canonical_risk not in {"R0", "R1", "R2", "R3", "R4"}:
+        canonical_risk = "R2"
     return {
         "kind": "external_event",
         "source": "FinancialJuice",
@@ -73,7 +76,8 @@ def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, r
         "parser_version": parser_version,
         "notification_id": result.get("notification_id") or row.get("item_id") or observation_id,
         "lifecycle_state": result.get("lifecycle_state") or "pending_confirmation",
-        "risk_level": risk.get("prstk_risk_level") or "R2",
+        "risk_level": canonical_risk,
+        "prstk_risk_level": canonical_risk,
         "prstk_risk": risk,
         "vendor_importance": importance,
         "vendor_priority_notification": bool(
