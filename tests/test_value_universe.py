@@ -92,6 +92,23 @@ def test_yuanta_pcf_reader_uses_issuer_api_payload():
     }]
 
 
+def test_yuanta_pcf_reader_uses_english_name_when_provider_chinese_is_corrupt():
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"InKind": {"FundComposition": [
+                {"stkcd": "2330", "name": "�Τ@", "ename": "TSMC"},
+            ]}}
+
+    class Client:
+        def get(self, *args, **kwargs):
+            return Response()
+
+    assert _yuanta_pcf_rows(Client(), "0050")[0]["name"] == "TSMC"
+
+
 def test_us_value_universe_is_bounded_to_nasdaq100_and_semiconductor_core():
     class Response:
         def raise_for_status(self):
