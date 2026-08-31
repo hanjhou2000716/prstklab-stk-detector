@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import ntpath
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -245,6 +246,14 @@ def validate_news_intelligence(document: dict[str, Any]) -> list[str]:
     return errors
 
 
+def _safe_item_count(row: Mapping[str, Any]) -> int:
+    """Read provider item counts without letting malformed diagnostics crash audit."""
+    try:
+        return max(0, int(row.get("item_count") or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
 def validate_news_release(document: dict[str, Any]) -> list[str]:
     """Validate the release-bound multi-market News artifact."""
     if not isinstance(document, dict):
@@ -267,6 +276,32 @@ def validate_news_release(document: dict[str, Any]) -> list[str]:
         if not candidate.get("provider_registry") and isinstance(registry, list):
             candidate["provider_registry"] = registry
         errors.extend(f"markets[{market}]: {error}" for error in validate_news_intelligence(candidate))
+        # A release must not claim a complete source failure when any provider
+        # successfully completed (even with no matching headline), nor claim
+        # failure while publishing stories.  This catches the production bug
+        # where the aggregate market-news health was healthy but the US
+        # intelligence panel was incorrectly marked source_failed.
+        collection_state = str(candidate.get("collection_state") or "").casefold()
+        stories = candidate.get("stories") or []
+        provider_rows = [
+            row for row in (candidate.get("source_health") or [])
+            if isinstance(row, dict) and str(row.get("key") or "") != f"news_{market}"
+        ]
+        successful_rows = [
+            row for row in provider_rows
+            if str(row.get("status") or "").casefold() in {"healthy", "no_event", "stale"}
+        ]
+        available_rows = [
+            row for row in provider_rows
+            if str(row.get("status") or "").casefold() == "healthy"
+            and _safe_item_count(row) > 0
+        ]
+        if collection_state == "source_failed" and (stories or successful_rows):
+            errors.append(f"markets[{market}]: source_failed conflicts with published/provider-success data")
+        if stories and collection_state == "no_event":
+            errors.append(f"markets[{market}]: no_event conflicts with published stories")
+        if not stories and available_rows:
+            errors.append(f"markets[{market}]: empty stories conflict with available provider items")
         for index, story in enumerate(candidate.get("stories", [])):
             if isinstance(story, dict) and story.get("market") not in {market, "global", "cross_market"}:
                 errors.append(f"markets[{market}].stories[{index}]: market does not match envelope")

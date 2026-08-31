@@ -7,12 +7,15 @@ def test_news_empty_state_distinguishes_no_event_from_provider_failure_and_cache
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
 
-    assert "const newsEmptyState = (health)" in app
+    assert "const newsEmptyState = (health, intelligence = null)" in app
     assert 'status === "failed"' in app
     assert 'status === "stale"' in app
     assert 'status === "no_event"' in app
     assert 'class=\"empty news-empty-state\"' in app
     assert "newsHealthFor = (market)" in app
+    assert "scan_summary" in app
+    assert "來源" in app and "成功" in app and "失敗" in app
+    assert "可用" in app and "排除" in app
     assert ".news-empty-state" in styles
 
 

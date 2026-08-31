@@ -6,6 +6,7 @@ from src.risk_news import (
     _market_risk,
     _news_from_html,
     _news_from_rss,
+    _news_lists_collide,
     _parse_taifex_vix_file,
     build_news_snapshot,
     build_risk_snapshot,
@@ -294,6 +295,47 @@ def test_market_filter_rejects_unclassified_headline_instead_of_copying_to_both_
     assert classify_news_market(story)["market_scope"] == "unclassified"
     assert _filter_market_news([story], "taiwan") == []
     assert _filter_market_news([story], "us") == []
+
+
+def test_us_discovery_success_with_official_failure_is_degraded_not_source_failed(monkeypatch, tmp_path):
+    monkeypatch.setenv("NEWS_CACHE_PATH", str(tmp_path / "news-cache.json"))
+    story = {
+        "title": "Nasdaq and Nvidia earnings outlook",
+        "url": "https://news.google.com/rss/articles/us-observation",
+    }
+    monkeypatch.setattr("src.risk_news.fetch_market_news", lambda market: [story] if market == "us" else [])
+    monkeypatch.setattr("src.risk_news.fetch_market_news_fallback", lambda market: [])
+    monkeypatch.setattr(
+        "src.risk_news._LAST_OFFICIAL_NEWS_HEALTH",
+        {
+            "taiwan": {"source_health": []},
+            "us": {"source_health": [
+                {"provider": "sec", "status": "failed", "item_count": 0},
+                {"provider": "fed", "status": "failed", "item_count": 0},
+                {"provider": "google_news", "status": "healthy", "item_count": 1, "source_tier": "discovery"},
+            ]},
+        },
+    )
+
+    snapshot = build_news_snapshot()
+    us = snapshot["intelligence"]["us"]
+
+    assert us["stories"][0]["evidence_state"] == "observation"
+    assert us["collection_state"] == "degraded"
+    assert us["scan_summary"]["successful_provider_count"] == 1
+    assert us["scan_summary"]["failed_provider_count"] == 2
+
+
+def test_global_story_does_not_trigger_false_taiwan_us_collision():
+    story = {
+        "title": "Iran oil shock hits Taiwan semiconductor shares and Nasdaq",
+        "url": "https://news.google.com/rss/articles/global-shock",
+    }
+    taiwan = _filter_market_news([story], "taiwan")
+    us = _filter_market_news([story], "us")
+
+    assert taiwan and us
+    assert not _news_lists_collide(taiwan, us)
 
 
 def test_global_or_cross_market_story_is_explicitly_auditable():

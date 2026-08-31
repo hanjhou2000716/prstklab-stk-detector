@@ -3,11 +3,33 @@ from src.artifact_contract import (
     validate_events,
     validate_manifest,
     validate_market,
+    validate_news_release,
     validate_release,
     validate_research,
     validate_source_catalog,
     validate_source_health,
 )
+
+
+def test_news_release_rejects_empty_stories_when_provider_has_items():
+    intelligence = {
+        "schema_version": "1.0",
+        "provider_registry": [],
+        "stories": [],
+        "interest_graph": {},
+        "status": "no_event",
+        "collection_state": "no_event",
+        "source_health": [{"key": "news_us_yahoo_finance", "status": "healthy", "item_count": 3}],
+    }
+    document = {
+        "schema_version": "1.0",
+        "market_snapshot_id": "market-123",
+        "snapshot_id": "news-123",
+        "provider_registry": [],
+        "markets": {"us": intelligence},
+        "status": "ready",
+    }
+    assert any("empty stories conflict" in error for error in validate_news_release(document))
 
 
 def test_source_catalog_contract_rejects_duplicate_and_policy_mismatch():

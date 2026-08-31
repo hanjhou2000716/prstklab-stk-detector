@@ -370,12 +370,16 @@ const renderRisk = (risk) => {
   }).join("");
 };
 
-const newsEmptyState = (health) => {
+const newsEmptyState = (health, intelligence = null) => {
   const status = String(health?.status || "").toLowerCase();
   const collectionState = String(health?.collection_state || "").toLowerCase();
   const checkedAt = traceTime(health?.checked_at || health?.fetched_at);
-  if (collectionState === "source_failed") return { title: "新聞來源掃描失敗", detail: "本輪未採用不完整來源，等待下一次重試" };
-  if (collectionState === "degraded") return { title: "新聞來源部分降級", detail: "部分來源失敗，本輪內容需待核對" };
+  const summary = intelligence?.scan_summary || {};
+  const sourceDetail = Number.isFinite(Number(summary.provider_count))
+    ? `來源 ${Number(summary.provider_count)} 個｜成功 ${Number(summary.successful_provider_count) || 0}／失敗 ${Number(summary.failed_provider_count) || 0}`
+    : "";
+  if (collectionState === "source_failed") return { title: "新聞來源掃描失敗", detail: ["本輪未採用不完整來源，等待下一次重試", sourceDetail].filter(Boolean).join("｜") };
+  if (collectionState === "degraded") return { title: "新聞來源部分降級", detail: ["部分來源失敗，本輪內容需待核對", sourceDetail].filter(Boolean).join("｜") };
   if (status === "failed") return { title: "新聞來源暫時失敗", detail: "本輪未採用不完整來源，等待下一次重試" };
   if (status === "stale") return { title: "目前使用最近成功快取", detail: checkedAt ? `最後成功 ${checkedAt}` : "等待來源恢復後更新" };
   if (status === "pending") return { title: "新聞來源檢查中", detail: "等待本輪市場掃描完成" };
@@ -434,20 +438,25 @@ const renderNewsList = (id, stories, providerRegistry = [], health = null, intel
   if (!container) return;
   const diversityNode = document.getElementById(`${id}-source-status`);
   const diversity = intelligence?.source_diversity;
+  const scanSummary = intelligence?.scan_summary || {};
+  const observationCount = (stories || []).filter((story) => String(story?.source_tier || story?.authority_tier || "").toLowerCase() !== "official").length;
+  const funnelDetail = Number.isFinite(Number(scanSummary.provider_count))
+    ? `｜來源 ${Number(scanSummary.provider_count)} 個｜可用 ${Number(scanSummary.ranked_story_count) || 0} 則｜排除 ${Number(scanSummary.filtered_story_count) || 0} 則`
+    : "";
   if (diversityNode) {
     if (!diversity || diversity.status === "no_event") {
-      diversityNode.textContent = "來源核對：本輪沒有可用新聞";
+      diversityNode.textContent = `來源核對：本輪沒有可用新聞${funnelDetail}`;
       diversityNode.dataset.state = "no-event";
     } else if (diversity.status === "multi_source") {
-      diversityNode.textContent = `來源核對：${Number(diversity.independent_source_count) || 0} 個獨立來源`;
+      diversityNode.textContent = `來源核對：${Number(diversity.independent_source_count) || 0} 個獨立來源${observationCount ? `｜觀察 ${observationCount} 則` : ""}${funnelDetail}`;
       diversityNode.dataset.state = "multi-source";
     } else {
-      diversityNode.textContent = "來源核對：單一來源，等待第二來源";
+      diversityNode.textContent = `來源核對：單一來源，等待第二來源${observationCount ? `｜觀察 ${observationCount} 則` : ""}${funnelDetail}`;
       diversityNode.dataset.state = "single-source";
     }
   }
   if (!stories?.length) {
-    const state = newsEmptyState(health);
+    const state = newsEmptyState(health, intelligence);
     container.innerHTML = `<li class="empty news-empty-state"><strong>${escapeHtml(state.title)}</strong><small>${escapeHtml(state.detail)}</small></li>`;
     return;
   }
