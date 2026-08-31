@@ -237,12 +237,38 @@ def restore_latest_valid(
         if not _restore_archive(root, commit):
             rejected.append({"commit": commit, "reason": "missing_site_data"})
             continue
+        # Keep the immutable manifest that was committed with the selected
+        # data-release snapshot.  ``_validate`` invokes the manifest builder,
+        # which derives a new release identity from the current clock and can
+        # therefore rewrite an otherwise valid release with a different
+        # release_id.  Downstream release gates compare this identity with the
+        # public Pages manifest, so replacing it would make a safe release
+        # appear mismatched and block delivery.  Validation still runs first;
+        # this only restores the already-validated source-of-truth metadata.
+        immutable_manifest_path = root / "site" / "data" / "release-manifest.json"
+        try:
+            immutable_manifest_bytes = immutable_manifest_path.read_bytes()
+            immutable_manifest = json.loads(immutable_manifest_bytes.decode("utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError, TypeError):
+            immutable_manifest_bytes = None
+            immutable_manifest = None
         ready, manifest = _validate(root, require_production_research=require_production_research)
         if ready:
+            selected_manifest = manifest
+            if isinstance(immutable_manifest, dict) and immutable_manifest.get("status") == "ready":
+                try:
+                    immutable_manifest_path.write_bytes(immutable_manifest_bytes or b"")
+                    selected_manifest = immutable_manifest
+                except OSError:
+                    # The validator result remains authoritative if the
+                    # checkout cannot be rewritten; report its identity so
+                    # callers fail closed rather than claiming a preserved
+                    # identity that was not actually restored.
+                    selected_manifest = manifest
             return {
                 "publish": True,
                 "selected_commit": commit,
-                "release_id": str(manifest.get("release_id") or ""),
+                "release_id": str(selected_manifest.get("release_id") or ""),
                 "rejected_count": len(rejected),
             }
         rejected.append({
