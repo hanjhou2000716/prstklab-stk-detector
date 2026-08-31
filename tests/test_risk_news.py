@@ -355,6 +355,31 @@ def test_provider_funnel_counts_only_market_scoped_stories(monkeypatch, tmp_path
     assert snapshot["intelligence"]["us"]["collection_state"] == "no_event"
 
 
+def test_final_intelligence_projection_rebinds_health_after_cache_or_fallback(monkeypatch, tmp_path):
+    """The release-bound intelligence cannot retain raw provider availability."""
+    monkeypatch.setenv("NEWS_CACHE_PATH", str(tmp_path / "news-cache.json"))
+    monkeypatch.setattr("src.risk_news.fetch_market_news", lambda market: [
+        {"title": "Company announces quarterly update", "url": "https://example.test/raw", "provider": "yahoo_finance"}
+    ] if market == "us" else [])
+    monkeypatch.setattr("src.risk_news.fetch_market_news_fallback", lambda market: [])
+    monkeypatch.setattr(
+        "src.risk_news._LAST_OFFICIAL_NEWS_HEALTH",
+        {
+            "taiwan": {"source_health": []},
+            "us": {"source_health": [{"provider": "yahoo_finance", "status": "healthy", "item_count": 7}]},
+        },
+    )
+
+    snapshot = build_news_snapshot()
+    provider = next(row for row in snapshot["intelligence"]["us"]["source_health"]
+                    if row.get("provider") == "yahoo_finance")
+
+    assert provider["raw_item_count"] == 7
+    assert provider["filtered_item_count"] == 0
+    assert provider["item_count"] == 0
+    assert provider["status"] == "no_event"
+
+
 def test_global_story_does_not_trigger_false_taiwan_us_collision():
     story = {
         "title": "Iran oil shock hits Taiwan semiconductor shares and Nasdaq",
