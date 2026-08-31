@@ -326,6 +326,35 @@ def test_us_discovery_success_with_official_failure_is_degraded_not_source_faile
     assert us["scan_summary"]["failed_provider_count"] == 2
 
 
+def test_provider_funnel_counts_only_market_scoped_stories(monkeypatch, tmp_path):
+    """Raw feed hits rejected by routing must not block a valid no-event release."""
+    monkeypatch.setenv("NEWS_CACHE_PATH", str(tmp_path / "news-cache.json"))
+    monkeypatch.setattr(
+        "src.risk_news.fetch_market_news",
+        lambda market: ([{"title": "Company announces quarterly update", "url": "https://example.test/raw"}] if market == "us" else []),
+    )
+    monkeypatch.setattr("src.risk_news.fetch_market_news_fallback", lambda market: [])
+    monkeypatch.setattr(
+        "src.risk_news._LAST_OFFICIAL_NEWS_HEALTH",
+        {
+            "taiwan": {"source_health": []},
+            "us": {"source_health": [{"provider": "yahoo_finance", "status": "healthy", "item_count": 3}]},
+        },
+    )
+
+    snapshot = build_news_snapshot()
+    provider = next(
+        row for row in snapshot["source_health"]
+        if row.get("key") == "news_us_yahoo_finance"
+    )
+
+    assert provider["raw_item_count"] == 3
+    assert provider["filtered_item_count"] == 0
+    assert provider["item_count"] == 0
+    assert provider["status"] == "no_event"
+    assert snapshot["intelligence"]["us"]["collection_state"] == "no_event"
+
+
 def test_global_story_does_not_trigger_false_taiwan_us_collision():
     story = {
         "title": "Iran oil shock hits Taiwan semiconductor shares and Nasdaq",

@@ -7,6 +7,7 @@ import math
 import os
 import re
 import unicodedata
+from collections import Counter
 from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
@@ -558,6 +559,11 @@ def fetch_market_news(market: str) -> list[dict[str, str]]:
                 found = _news_from_yahoo_rss(response.text, market, limit=10)
             else:
                 found = _news_from_rss(response.text, market, limit=10)
+            for story in found:
+                # Keep provider identity on every discovery story so the
+                # post-filter funnel can distinguish accepted from rejected
+                # items without guessing from display labels or URLs.
+                story.setdefault("provider", provider)
             stories.extend(found)
             health.append({"provider": provider, "status": "healthy" if found else "no_event",
                            "source_url": source_url, "item_count": len(found),
@@ -785,6 +791,36 @@ def _build_news_snapshot_primary() -> dict[str, Any]:
                     "data_gap": None if provider.get("status") in {"healthy", "no_event", "disabled"} else provider.get("status"),
                     "market": market,
                 })
+
+        # Bind provider counts to the market-scoped stories that survived
+        # semantic routing.  A shared feed may return headlines successfully
+        # while every item is rejected as unclassified or cross-market; using
+        # the raw count as ``item_count`` then creates the impossible release
+        # state ``stories=0 + provider available``.  Keep that raw count for
+        # diagnostics and expose the filtered count to release/UI consumers.
+        accepted_by_provider: Counter[str] = Counter(
+            str(story.get("provider") or "unknown")
+            for story in result.get(market, [])
+            if isinstance(story, dict)
+        )
+        for row in result["source_health"]:
+            if not isinstance(row, dict) or row.get("market") != market:
+                continue
+            if row.get("key") == f"news_{market}":
+                continue
+            provider_id = str(row.get("provider") or "unknown")
+            raw_count = row.get("item_count")
+            try:
+                raw_count = max(0, int(raw_count or 0))
+            except (TypeError, ValueError):
+                raw_count = 0
+            filtered_count = accepted_by_provider.get(provider_id, 0)
+            row["raw_item_count"] = raw_count
+            row["filtered_item_count"] = filtered_count
+            row["item_count"] = filtered_count
+            if raw_count > 0 and filtered_count == 0 and row.get("status") == "healthy":
+                row["status"] = "no_event"
+                row["data_gap"] = "filtered_no_market_match"
 
     # A transient CDN/cache response must never be presented as two different
     # markets.  If both lists are identical (or nearly identical), refresh both from
