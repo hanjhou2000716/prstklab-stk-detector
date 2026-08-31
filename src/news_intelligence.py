@@ -70,7 +70,7 @@ _SOURCE_FAILURE_STATES = frozenset({
 _SOURCE_HEALTH_FIELDS = (
     "provider", "key", "legacy_key", "label", "status", "source_tier", "source_url",
     "item_count", "checked_at", "last_parsed_at", "latency_ms", "data_gap",
-    "stale_used", "fallback_used", "funnel",
+    "stale_used", "fallback_used", "raw_item_count", "filtered_item_count", "funnel",
 )
 
 
