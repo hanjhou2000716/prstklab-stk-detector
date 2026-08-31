@@ -1,0 +1,44 @@
+{
+  "kind": "production-text-acceptance",
+  "schema_version": "1.0",
+  "captured_at": "2026-09-01T07:33:53+08:00",
+  "workflow_run_id": 33451168434,
+  "workflow_job_id": 99681164503,
+  "status": "PASS",
+  "scope": {
+    "recipient_count": 1,
+    "recipient_policy": "explicit_single_chat_id",
+    "recipient_value": "redacted",
+    "broadcast": false
+  },
+  "release_gate": {
+    "status": "PASS",
+    "release_id": "release-7bcef9c7ea5a37b7",
+    "market_snapshot_id": "c7288cec0c29c9e7",
+    "selected_data_release_commit": "3b0de37ada9381215666963487723a3b90002ff3"
+  },
+  "delivery": {
+    "mode": "text",
+    "status": "delivered",
+    "delivered_count": 1,
+    "failed_count": 0,
+    "renderer_error_type": "not_applicable",
+    "receipt_callback": "accepted_by_cloudflare_worker",
+    "telegram_message": "sent_once_after_release_gate"
+  },
+  "lineage": {
+    "alert_id": "production-text-acceptance-release-7bcef9c7ea5a37b7",
+    "trace_id": "redacted",
+    "snapshot_id": "c7288cec0c29c9e7"
+  },
+  "side_effects": {
+    "telegram": true,
+    "railway_write": false,
+    "configuration_changed": false
+  },
+  "notes": [
+    "The workflow verified the same immutable release selected for Pages before sending.",
+    "The callback was accepted by the canonical Cloudflare Worker receipt route.",
+    "The single recipient value and trace identifier are intentionally redacted."
+  ]
+}
