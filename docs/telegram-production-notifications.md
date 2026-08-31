@@ -5,10 +5,12 @@
 > photo exception is a verified Creator email attachment.
 
 Production scheduled and event notifications use one `sendMessage` after the
-release gate succeeds. The canonical R0–R4 risk grade is included in the
-bounded text; full evidence, provenance, market context and research details
-remain in the release referenced by the Mini App deep link. A verified Creator
-attachment may use one `sendPhoto` with the same release lineage.
+release gate succeeds. Telegram displays the risk colour cue and human-readable
+state, but never exposes the internal R0–R4 grade. The grade remains in the
+receipt and release evidence for audit and policy decisions; full provenance,
+market context and research details remain in the release referenced by the
+Mini App deep link. A verified Creator attachment may use one `sendPhoto` with
+the same release lineage.
 
 The renderer is fail-closed: a missing browser, invalid dimensions, blank
 image, or missing required fields blocks delivery and records the renderer

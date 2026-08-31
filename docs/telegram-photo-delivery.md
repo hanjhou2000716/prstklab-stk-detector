@@ -11,5 +11,10 @@ stopping delivery to the remaining recipients. Receipts contain only a
 recipient hash plus alert/release/snapshot IDs. Tests mock Telegram and must
 never use production chat IDs.
 
+Photo captions apply the same public display policy as text notifications:
+colour cues may remain, while internal R0–R4 risk codes are removed before the
+Telegram request is built. The original risk grade remains available in the
+delivery and release audit records.
+
 The card is temporary runtime output and is not written to `data-release`; the
 snapshot and manifest remain the source of truth for Mini App rendering.

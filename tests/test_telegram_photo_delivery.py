@@ -26,6 +26,23 @@ def test_photo_delivery_uses_one_message_and_deep_link(monkeypatch, tmp_path):
     assert "alert=a1" in payload["inline_keyboard"][0][0]["web_app"]["url"]
 
 
+def test_photo_delivery_hides_internal_risk_grade_in_caption(monkeypatch, tmp_path):
+    photo = tmp_path / "card.png"
+    photo.write_bytes(b"png")
+    captured = {}
+
+    def post(url, **kwargs):
+        captured.update(kwargs)
+        return Response()
+
+    monkeypatch.setattr(telegram_client.requests, "post", post)
+    send_photo_brief(
+        token="secret", chat_id="123", caption="🟡 R2｜市場觀察｜資料待核對", photo_path=photo,
+        mini_app_url="https://example.test/app", alert_id="a1", release_id="r1", snapshot_id="s1",
+    )
+    assert captured["data"]["caption"] == "🟡 市場觀察｜資料待核對"
+
+
 def test_photo_delivery_can_send_reused_file_id(monkeypatch, tmp_path):
     photo = tmp_path / "card.png"
     photo.write_bytes(b"png")
@@ -135,6 +152,7 @@ def test_text_delivery_is_single_message_and_keeps_lineage(monkeypatch):
     assert receipts[0].release_id == "release-1"
     assert receipts[0].snapshot_id == "snapshot-1"
     assert receipts[0].chat_id_hash != "8869592162"
+    assert receipts[0].prstk_risk_level == "R2"
 
 
 def test_photo_delivery_propagates_observation_to_receipt_and_deep_link(monkeypatch, tmp_path):
