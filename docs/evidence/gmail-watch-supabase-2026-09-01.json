@@ -1,0 +1,23 @@
+{
+  "kind": "gmail-watch-renewal",
+  "schema_version": "1.0",
+  "captured_at": "2026-09-01T07:48:10+08:00",
+  "workflow_run_id": 33452184179,
+  "status": "configuration_missing",
+  "storage_backend": "supabase",
+  "renewed": false,
+  "missing_configuration": [
+    "GMAIL_WATCH_TOPIC",
+    "GMAIL_PUBSUB_AUDIENCE",
+    "GMAIL_PUBSUB_SERVICE_ACCOUNT"
+  ],
+  "side_effects": {
+    "gmail_watch_created_or_renewed": false,
+    "mailbox_read": false,
+    "secrets_exposed": false
+  },
+  "notes": [
+    "The Supabase-backed renewal path executed successfully but fail-closed because the protected Pub/Sub configuration names are not configured.",
+    "OAuth client and refresh-token values were not printed or changed."
+  ]
+}
