@@ -103,7 +103,13 @@ class TextDeliveryReceipt:
 
 
 def canonical_prstk_risk_level(event: dict[str, object] | None) -> str:
-    """Read the canonical R0–R4 risk field without inferring from price text."""
+    """Read the canonical R0–R4 risk field at the notification boundary.
+
+    Production producers should always attach ``prstk_risk_level`` before a
+    sender is called.  The small label mapping is retained for older event
+    records so a missing canonical field is not silently turned into an
+    arbitrary R2 when an unambiguous legacy label is available.
+    """
     if not isinstance(event, dict):
         return "R2"
     nested = event.get("prstk_risk")
@@ -115,6 +121,14 @@ def canonical_prstk_risk_level(event: dict[str, object] | None) -> str:
         level = str(value or "").strip().upper()
         if level in PRSTK_RISK_LEVELS:
             return level
+    legacy = str(event.get("risk_level") or event.get("importance") or "").strip().casefold()
+    legacy_map = {
+        "觀察": "R1", "持續觀察": "R1", "市場待核對": "R1", "normal": "R1",
+        "警戒": "R3", "warning": "R3", "高波動": "R2", "波動擴大": "R2",
+        "高風險": "R4", "high-risk": "R4", "high risk": "R4",
+    }
+    if legacy in legacy_map:
+        return legacy_map[legacy]
     return "R2"
 
 
@@ -153,11 +167,11 @@ def validate_brief(text: str) -> None:
 def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
     """Build the one canonical, bounded user-facing non-Creator message.
 
-    The internal risk grade selects a colour cue, but the ``R0``-``R4`` code
-    is deliberately not exposed to Telegram recipients. Existing risk tokens,
-    ``快訊`` wrappers, and a FinancialJuice prefix are normalized instead of
-    being stacked by downstream senders. Truncation happens only at the
-    ``｜`` segment boundary, so tickers and numbers are never cut in half.
+    The public contract includes exactly one canonical ``R0``-``R4`` token.
+    Existing risk tokens, colour icons, ``快訊`` wrappers, and a FinancialJuice
+    prefix are normalized instead of being stacked by downstream senders.
+    Truncation happens only at the ``｜`` segment boundary, so the risk token
+    and the first context segment are never cut in half.
     """
     level = str(prstk_risk_level or "R2").upper()
     if level not in PRSTK_RISK_LEVELS:
@@ -165,21 +179,22 @@ def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
     source = " ".join(str(text or "").split()) or "市場公開資訊待核對"
     # Preserve the vendor score while removing any existing severity token.
     fj_match = re.search(r"FJ\s*\d+(?:\.\d+)?\s*/\s*10", source, flags=re.IGNORECASE)
-    # Keep a possible colour icon as the public visual cue while removing all
-    # internal risk-grade tokens from the user-visible message.
+    # Remove all caller-provided icons and risk tokens before rebuilding the
+    # canonical prefix. This guarantees ``R2｜...｜R2`` cannot leak through.
     source = re.sub(r"(?<![A-Za-z0-9])R[0-4](?![A-Za-z0-9])\s*[｜|:]?", "", source, flags=re.IGNORECASE)
+    source = re.sub(r"^[🟢🟡🟠🔴⚪⚫🟣]\s*", "", source)
     source = re.sub(r"[🟢🟡🟠🔴⚪⚫🟣]?\s*FJ\s*\d+(?:\.\d+)?\s*/\s*10\s*[｜|:]?", "", source, flags=re.IGNORECASE)
     segments = [part.strip() for part in re.split(r"[｜|]", source) if part.strip() and part.strip() != "快訊"]
     if fj_match:
         fj_score = re.sub(r"\s+", " ", fj_match.group(0)).strip()
-        head = f"🟣 {fj_score}｜"
         # FJ's vendor importance is evidence metadata, not a replacement for
         # the PRStK risk grade.
+        head = f"🟣 {fj_score}｜{level}｜"
         category = ""
     else:
-        head = f"{_RISK_ICONS[level]} "
+        head = f"{_RISK_ICONS[level]} {level}｜"
         category = _RISK_CATEGORIES[level]
-    body_segments = ([category] if category else []) + segments
+    body_segments = ([category] if category and (not segments or segments[0] != category) else []) + segments
     if not body_segments:
         body_segments = ["市場資訊待核對"]
     kept: list[str] = []
@@ -373,7 +388,7 @@ def send_brief(
 
 def send_briefs(
     *, token: str, chat_ids: tuple[str, ...], text: str, dashboard_url: str,
-    target_url: str | None = None,
+    target_url: str | None = None, prstk_risk_level: str = "R2",
 ) -> tuple[TelegramDelivery, ...]:
     """Send one identical brief to every reachable configured recipient.
 
@@ -384,7 +399,7 @@ def send_briefs(
     """
     if not chat_ids:
         raise ValueError("至少需要一個 Telegram 收件人。")
-    text = canonical_short_message(text)
+    text = canonical_short_message(text, prstk_risk_level=prstk_risk_level)
     deliveries: list[TelegramDelivery] = []
     for chat_id in chat_ids:
         try:

@@ -35,6 +35,69 @@ _MATERIAL_CORPORATE_TERMS = (
     "capital increase", "regulatory", "investigation", "suspension", "shutdown",
     "合併案", "收購", "財報公布", "財報結果", "財測", "配息", "增資", "減資", "停工", "法規", "調查",
 )
+WATCHLIST_REALTIME_THRESHOLD = 1.5
+
+
+def _watchlist_tickers() -> set[str]:
+    """Read the canonical instrument registry used by market collection.
+
+    The import is intentionally lazy because ``market_data`` imports this
+    module while building a snapshot.  Keeping the registry lookup here (and
+    not a second tuple of symbols) prevents the alert lane from drifting from
+    the research/quote watchlist.
+    """
+    from src.market_data import WATCHLIST
+
+    return {
+        str(item.get("ticker") or "").strip().upper()
+        for item in WATCHLIST
+        if isinstance(item, dict) and str(item.get("ticker") or "").strip()
+    }
+
+
+def _watchlist_quote_suppression(quote: dict[str, Any]) -> dict[str, Any] | None:
+    """Return a safe, machine-readable reason a watchlist quote was skipped."""
+    ticker = str(quote.get("ticker") or "").strip().upper()
+    if quote.get("price") is None:
+        return {"ticker": ticker, "reason": "missing_price"}
+    if quote.get("change_percent") is None:
+        return {"ticker": ticker, "reason": "missing_change_percent"}
+    if quote.get("alert_eligible") is False:
+        reasons = quote.get("quality_reasons") or ["quote_quality_gate"]
+        return {"ticker": ticker, "reason": str(reasons[0])}
+    if quote.get("stale_used") is True:
+        return {"ticker": ticker, "reason": "stale_data"}
+    if quote.get("quote_delayed") is True:
+        return {"ticker": ticker, "reason": "quote_delayed"}
+    freshness = str(quote.get("freshness") or "").strip().lower()
+    if not freshness:
+        return {"ticker": ticker, "reason": "missing_quote_freshness"}
+    if freshness != "live":
+        return {"ticker": ticker, "reason": f"quote_{freshness}"}
+    # A normalized production quote must carry at least one provenance
+    # identity.  Tests may use a compact source label, while live adapters
+    # normally provide URL/domain plus snapshot/observation IDs.
+    provenance_fields = (
+        "source_url", "source_domain", "quote_source", "source_label",
+        "snapshot_id", "observation_id",
+    )
+    if not any(str(quote.get(field) or "").strip() for field in provenance_fields):
+        return {"ticker": ticker, "reason": "missing_quote_provenance"}
+    return None
+
+
+def _price_risk_code(risk: str, *, market_sync: bool = False) -> str:
+    """Map an existing public risk label to the canonical PRStK R grade."""
+    normalized = str(risk or "").strip()
+    if normalized.upper() in {"R0", "R1", "R2", "R3", "R4"}:
+        return normalized.upper()
+    if normalized == "高風險":
+        return "R4" if market_sync else "R3"
+    if normalized in {"警戒", "高波動"}:
+        return "R3" if normalized == "警戒" else "R2"
+    if normalized in {"波動擴大", "下跌", "上漲"}:
+        return "R2"
+    return "R1"
 
 
 def _clean_title(title: str) -> str:
@@ -383,8 +446,12 @@ def _price_signal_suppression(index: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
-def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[str, Any] | None:
+def _price_signal(
+    index: dict[str, Any], indices: list[dict[str, Any]], *, watchlist: bool = False,
+) -> dict[str, Any] | None:
     """Create an educational alert card for a material index move, never advice."""
+    if watchlist and _watchlist_quote_suppression(index):
+        return None
     # Evidence binding is optional for legacy callers/tests, but when present
     # it is authoritative: a stale or unverified quote may remain visible and
     # must never become a Telegram alert.
@@ -403,6 +470,8 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     # the same direction.  The Mini App may still display a partial quote, but
     # it must not become an urgent Telegram alert.
     if (
+        not watchlist
+        and
         index.get("ticker") == "TAIEX"
         and index.get("quote_time")
         and index.get("crosscheck_status")
@@ -428,8 +497,16 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
     minimum_daily_move, minimum_15m_move, _ = _price_signal_thresholds(index)
     move_15m = index.get("change_15m_percent")
     move_15m = float(move_15m) if move_15m is not None else None
-    has_daily_move = abs(percent) >= minimum_daily_move
-    has_15m_acceleration = move_15m is not None and abs(move_15m) >= minimum_15m_move
+    if watchlist:
+        # Individual watchlist alerts use a strict daily boundary.  A quote at
+        # exactly 1.50% is an observation; 1.51% is the first candidate.  The
+        # existing index lane retains its established >= thresholds below.
+        minimum_daily_move = WATCHLIST_REALTIME_THRESHOLD
+        has_daily_move = abs(percent) > WATCHLIST_REALTIME_THRESHOLD
+        has_15m_acceleration = False
+    else:
+        has_daily_move = abs(percent) >= minimum_daily_move
+        has_15m_acceleration = move_15m is not None and abs(move_15m) >= minimum_15m_move
     if not has_daily_move and not has_15m_acceleration:
         return None
 
@@ -499,11 +576,14 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
             domain = str(value).strip().lower().removeprefix("www.")
         if domain and domain not in verified_domains:
             verified_domains.append(domain)
+    prstk_risk_level = _price_risk_code(risk, market_sync=bool(impact_confirmation.get("confirmed")))
     return {
         "kind": "market_signal",
         "short_label": label,
         "pattern": pattern,
         "risk_level": risk,
+        "prstk_risk_level": prstk_risk_level,
+        "prstk_risk": {"prstk_risk_level": prstk_risk_level, "source": "price_signal"},
         "brief_title": f"{label}｜{pattern}｜{risk}",
         "title": f"{index.get('name', ticker)}日內變動 {move}",
         "summary": f"{index.get('name', ticker)} {price:,.2f}" if isinstance(price, (int, float)) else f"{index.get('name', ticker)} 公開報價更新",
@@ -530,6 +610,10 @@ def _price_signal(index: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
             "verified_domains": verified_domains,
         },
         "instrument": index,
+        "watchlist_realtime": watchlist,
+        "notification_expected": True,
+        "notification_status": "eligible",
+        "notification_reasons": ["watchlist_price_threshold"] if watchlist else [],
         "related": related,
         "impact_confirmation": impact_confirmation,
         "change": change,
@@ -626,6 +710,16 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         official_confirmed=official_verified,
         market_sync_confirmed=bool(impact_confirmation.get("confirmed")),
     )
+    # Public market/news providers may surface a useful observation in the
+    # realtime lane, but they cannot claim first-party confirmation.  Keep
+    # strict conflict/black-swan candidates pending; non-strict material
+    # stories remain low-risk observations with their source role intact.
+    public_observation = not official_verified
+    if public_observation and notification["status"] == "eligible":
+        notification = {
+            "status": "eligible",
+            "reasons": ["public_source_observation"],
+        }
     if is_corporate:
         if routine_corporate:
             notification = {
@@ -676,11 +770,22 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         else None
     )
     market_move = f"{float(representative_move):+.1f}%" if representative_move is not None else None
+    if event.get("prstk_risk_level") in {"R0", "R1", "R2", "R3", "R4"}:
+        prstk_risk_level = str(event["prstk_risk_level"])
+    elif public_observation:
+        # Public/discovery material is deliberately capped below confirmed
+        # risk until an official source and, where required, market sync are
+        # attached by the shared cross-check pipeline.
+        prstk_risk_level = "R2" if category else "R1"
+    else:
+        prstk_risk_level = _price_risk_code(risk_level, market_sync=bool(strict_confirmation))
     return normalize_event_record({
         **event,
         "kind": event.get("kind") or "major_event",
         "pattern": event.get("pattern") or "重要事件",
         "risk_level": risk_level,
+        "prstk_risk_level": prstk_risk_level,
+        "prstk_risk": {"prstk_risk_level": prstk_risk_level, "source": "event_alerts"},
         "brief_title": brief_title,
         "summary": event.get("summary") or event.get("brief_summary") or title,
         "trigger": event.get("trigger") or (f"事件：{event.get('brief_summary') or title}。核對來源：{source}。" if is_black_swan else "已核對公開來源；請查看完整內容與市場後續反應。"),
@@ -710,8 +815,50 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "notification_status": notification["status"],
         "notification_reasons": notification["reasons"],
         "notification_reason": "、".join(notification["reasons"]),
+        "notification_expected": notification["status"] in {"eligible", "ready"},
+        "public_observation": public_observation,
         "verification_plan": verification_plan,
     })
+
+
+def _reconcile_crosschecked_notification(event: dict[str, Any]) -> dict[str, Any]:
+    """Recompute notification state after providers are clustered.
+
+    ``_detail_event`` evaluates one provider at a time.  Cross-checking can
+    then attach an official source or a second market source, so retaining the
+    first provider's pending state would incorrectly suppress a now-qualified
+    event.  This is a policy reconciliation only; it never weakens the strict
+    official-plus-market gate for conflict/black-swan categories.
+    """
+    item = dict(event)
+    category = str(item.get("classification") or item.get("event_type") or "").strip().casefold()
+    strict = category in {"black_swan", "conflict"}
+    official = bool(item.get("official_confirmed") or item.get("source_tier") == "official")
+    impact_value = item.get("impact_confirmation")
+    impact: dict[str, Any] = impact_value if isinstance(impact_value, dict) else {}
+    market_sync = bool(impact.get("confirmed") or item.get("market_sync_confirmed"))
+    if strict:
+        reasons: list[str] = []
+        if not official:
+            reasons.append("等待官方核對")
+        if not market_sync:
+            reasons.append("等待市場同步")
+        status = "ready" if not reasons else "pending"
+    elif str(item.get("notification_status") or "").casefold() not in {"observe_only", "suppressed"}:
+        status, reasons = "eligible", []
+    else:
+        status = str(item.get("notification_status") or "observe_only")
+        reasons = [str(value) for value in (item.get("notification_reasons") or []) if str(value).strip()]
+    item["notification_status"] = status
+    item["notification_reasons"] = reasons
+    item["notification_reason"] = "、".join(reasons)
+    item["notification_expected"] = status in {"eligible", "ready"}
+    # Once an official representative is selected, the cluster is no longer a
+    # public-only observation.  Supporting market/discovery URLs remain in the
+    # lineage and still cannot elevate a strict event by themselves.
+    if official:
+        item["public_observation"] = False
+    return item
 
 
 def build_event_snapshot(
@@ -760,6 +907,34 @@ def build_event_snapshot(
     for signal in signals:
         append(signal, f"signal:{signal['instrument'].get('ticker')}")
 
+    # Individual securities/ETFs use the same canonical price-signal builder
+    # as indices, but with the product's strict >1.50% realtime boundary.
+    # Quotes remain subject to freshness, provenance and adapter eligibility
+    # gates; ordinary watchlist refreshes are therefore observations only.
+    watchlist_quotes = [
+        quote for quote in quotes
+        if str(quote.get("ticker") or "").strip().upper() in _watchlist_tickers()
+    ]
+    watchlist_suppressions = []
+    for quote in watchlist_quotes:
+        reason = _watchlist_quote_suppression(quote)
+        if reason:
+            watchlist_suppressions.append({
+                **reason,
+                "notification_expected": False,
+                "notification_status": "suppressed",
+                "notification_reason": str(reason.get("reason") or "watchlist_quality_gate"),
+            })
+    watchlist_signals = [
+        signal for quote in watchlist_quotes
+        if (signal := _price_signal(quote, fresh_indices, watchlist=True))
+    ]
+    watchlist_signals.sort(
+        key=lambda item: -abs(float((item.get("instrument") or {}).get("change_percent") or 0))
+    )
+    for signal in watchlist_signals:
+        append(signal, f"watchlist:{signal['instrument'].get('ticker')}")
+
     for market in ("taiwan", "us"):
         for story in news.get(market, []):
             event = detect_major_event(story)
@@ -777,20 +952,41 @@ def build_event_snapshot(
     # same event with different wording.  Merge only when independent source
     # domains share a concrete entity/place and action; otherwise keep the
     # record visible with an explicit unverified/pending state.
-    events = cross_check_event_records(events)
-    events = events[:4]
+    events = [_reconcile_crosschecked_notification(item) for item in cross_check_event_records(events)]
+    # Keep the existing four-card dashboard bound without dropping every
+    # realtime watchlist candidate when broad index/news cards fill the list.
+    # Watchlist candidates are the explicit high-frequency lane and replace
+    # the lowest-priority non-watchlist card only when necessary.
+    if len(events) > 4:
+        selected = events[:4]
+        missing_watchlist = [
+            item for item in events
+            if item.get("watchlist_realtime") and item not in selected
+        ]
+        for item in missing_watchlist:
+            replace_at = next(
+                (index for index in range(len(selected) - 1, -1, -1)
+                 if not selected[index].get("watchlist_realtime")),
+                None,
+            )
+            if replace_at is None:
+                break
+            selected[replace_at] = item
+        events = selected
     if events:
         return {
             "is_major": True,
             "status": "市場訊號已更新",
             "message": "已核對的重要市場事件與價格訊號；請查看完整脈絡。",
             "items": events,
-            "suppressed_signals": suppressed_signals,
+            "suppressed_signals": [*suppressed_signals, *watchlist_suppressions],
+            "watchlist_price_signals": watchlist_signals,
         }
     return {
         "is_major": False,
         "status": "持續觀察",
         "message": "今日無重大市場事件，持續觀察。",
         "items": [],
-        "suppressed_signals": suppressed_signals,
+        "suppressed_signals": [*suppressed_signals, *watchlist_suppressions],
+        "watchlist_price_signals": watchlist_signals,
     }
