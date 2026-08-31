@@ -96,7 +96,7 @@ Telegram dry-run；外部服務未提供證據時，README 只標示「待驗證
 
 ## 一頁式使用流程
 
-1. **先看 Telegram 短訊息**：只把「事件類型｜市場方向｜變動幅度｜狀態」送到手錶／手機，最多 40 字；風險等級以彩色圓點提示，完整證據留在圖卡與 Mini App。
+1. **先看 Telegram 短訊息**：只把「彩色圓點＋一個 R0～R4｜事件類型｜市場方向｜變動幅度｜狀態」送到手錶／手機，最多 40 字；完整證據留在圖卡與 Mini App。
 2. **點擊 `📡 開啟稜量速報系統`**：在 Telegram 內開啟 GitHub Pages Mini App，閱讀四段事件脈絡、來源 URL、交叉核對時間、研究候選與資料健康度。
 3. **先看來源健康狀態**：區分「本輪無重大事件」與「部分來源失敗」；看到資料缺口時，不把空白或舊候選解讀成市場沒有訊號。
 4. **再看市場脈動**：先看台指／台積電與全球指數，再看 TPEx、日韓、Nasdaq、費半、BTC／ETH 等卡片的來源與新鮮度。
@@ -633,8 +633,9 @@ research, system-health and FinancialJuice lanes. The only production photo
 exception is a verified Creator email attachment; it is sent as one photo
 message with its release/alert deep-link Mini App button. Publishing and
 manifest verification always complete before delivery. Telegram-facing text and
-photo captions remove internal `R0`–`R4` labels while preserving the original
-`prstk_risk_level` in receipts, audit records and the relevant Mini App evidence.
+photo captions display exactly one canonical `R0`–`R4` label while preserving
+the original `prstk_risk_level` in receipts, audit records and the relevant Mini
+App evidence.
 
 ### Production notification mode
 
