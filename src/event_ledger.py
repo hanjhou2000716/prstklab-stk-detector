@@ -503,7 +503,6 @@ class EventLedger:
             for key, record in self.records.items():
                 merged[key] = self._merge_record(merged[key], record) if key in merged else dict(record)
             self.records = merged
-            self.prune()
             self.path.parent.mkdir(parents=True, exist_ok=True)
             payload = {"schema_version": 1, "retention_days": self.retention_days, "events": self.records}
             temporary = self.path.with_name(f".{self.path.name}.{os.getpid()}.{time.time_ns()}.tmp")

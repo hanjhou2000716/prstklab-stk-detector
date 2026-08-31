@@ -884,8 +884,11 @@ const researchStrategyTags = (item) => {
     return labels.length ? labels : [researchStrategyLabel(item)];
   }
   if (item.strategy === "value") {
-    const labels = researchStructureLabel(item.value_checks).split("、").filter(Boolean);
-    return labels.length ? labels : [researchStrategyLabel(item)];
+    // Keep the six-condition evidence in the release JSON for audit and
+    // explainability, but project the public card to one compact strategy
+    // label.  Rendering every internal rule as a chip makes the investor view
+    // unreadable and leaks implementation taxonomy.
+    return ["璞玉價值"];
   }
   return [researchStrategyLabel(item)];
 };

@@ -1,3 +1,5 @@
+import pytest
+
 from src.risk_news import (
     _filter_market_news,
     _market_news_rss_url,
@@ -69,6 +71,13 @@ def test_taifex_vix_parser_uses_the_final_intraday_observation():
     assert parsed["stage"] == "極度恐慌"
 
 
+def test_taifex_vix_parser_rejects_zero_placeholder():
+    content = b"header\r\n20260831\t000000\t\t\t0.00\r\n"
+
+    with pytest.raises(ValueError, match="沒有可用數值"):
+        _parse_taifex_vix_file(content)
+
+
 def test_vix_stage_uses_the_confirmed_10_30_70_90_percentile_bands():
     assert vix_stage(18, 10) == "極度樂觀"
     assert vix_stage(18, 30) == "樂觀"
@@ -120,6 +129,49 @@ def test_taifex_quote_fallback_uses_official_mis_endpoint(monkeypatch):
     assert result["change_percent"] == -7.99
     assert result["date"] == "2026-07-31"
     assert result["source_label"] == "TAIFEX"
+
+
+def test_taifex_zero_placeholder_uses_explicit_recent_reference(monkeypatch):
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"RtData": {"QuoteList": [{
+                "SymbolID": "TAIWANVIX",
+                "CLastPrice": "0.00",
+                "CRefPrice": "24.99",
+                "CDate": "20260831",
+                "CTime": "000000",
+            }]}}
+
+    monkeypatch.setattr("src.risk_news.requests.post", lambda *args, **kwargs: Response())
+
+    result = fetch_taifex_vix_quote()
+
+    assert result["value"] == 24.99
+    assert result["change_percent"] is None
+    assert result["freshness_state"] == "recent_reference"
+    assert result["value_status"] == "recent_reference"
+    assert result["live_value"] == 0.0
+    assert result["reference_value"] == 24.99
+
+
+def test_taifex_invalid_live_and_reference_is_unavailable(monkeypatch):
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"RtData": {"QuoteList": [{
+                "SymbolID": "TAIWANVIX", "CLastPrice": "", "CRefPrice": "0",
+                "CDate": "20260831",
+            }]}}
+
+    monkeypatch.setattr("src.risk_news.requests.post", lambda *args, **kwargs: Response())
+
+    with pytest.raises(ValueError, match="unavailable"):
+        fetch_taifex_vix_quote()
 
 
 def test_market_news_rss_parser_keeps_market_specific_links():

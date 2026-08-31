@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from time import sleep, time
@@ -26,6 +27,8 @@ RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 FAILED_RECIPIENT_RETRIES = 1
 MAX_FAILED_RECIPIENT_RETRIES = 3
 PRSTK_RISK_LEVELS = frozenset({"R0", "R1", "R2", "R3", "R4"})
+_RISK_ICONS = {"R0": "🟢", "R1": "🟢", "R2": "🟡", "R3": "🟠", "R4": "🔴"}
+_RISK_CATEGORIES = {"R0": "市場觀察", "R1": "市場觀察", "R2": "市場觀察", "R3": "市場風險", "R4": "重大風險"}
 
 
 def _failed_recipient_retry_count() -> int:
@@ -147,22 +150,70 @@ def validate_brief(text: str) -> None:
         raise ValueError(f"快報超過 30 字，目前為 {len(text)} 字：{text}")
 
 
-def format_text_brief(text: str, *, prstk_risk_level: str = "R2") -> str:
-    """Add the canonical PRStK risk grade to every non-Creator text alert."""
+def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
+    """Build the one canonical, bounded user-facing non-Creator message.
+
+    Risk is rendered exactly once and kept at the beginning.  Existing risk
+    tokens, ``快訊`` wrappers, and a FinancialJuice prefix are normalized
+    instead of being stacked by downstream senders.  Truncation happens only
+    at the ``｜`` segment boundary, so tickers, numbers, and the risk token are
+    never cut in half.
+    """
     level = str(prstk_risk_level or "R2").upper()
     if level not in PRSTK_RISK_LEVELS:
         level = "R2"
-    source = " ".join(str(text or "").split())
-    if not source:
-        source = "市場公開資訊待核對"
+    source = " ".join(str(text or "").split()) or "市場公開資訊待核對"
+    # Preserve the vendor score while removing any existing severity token.
+    fj_match = re.search(r"FJ\s*\d+(?:\.\d+)?\s*/\s*10", source, flags=re.IGNORECASE)
+    source = re.sub(r"[🟢🟡🟠🔴⚪⚫🟣]?\s*R[0-4]\s*[｜|:]?", "", source, flags=re.IGNORECASE)
+    source = re.sub(r"[🟢🟡🟠🔴⚪⚫🟣]?\s*FJ\s*\d+(?:\.\d+)?\s*/\s*10\s*[｜|:]?", "", source, flags=re.IGNORECASE)
+    segments = [part.strip() for part in re.split(r"[｜|]", source) if part.strip() and part.strip() != "快訊"]
+    if fj_match:
+        fj_score = re.sub(r"\s+", " ", fj_match.group(0)).strip()
+        head = f"🟣 {fj_score}｜{level}｜"
+        # FJ's vendor importance is evidence metadata, not a replacement for
+        # the PRStK risk grade.
+        category = ""
+    else:
+        head = f"{_RISK_ICONS[level]} {level}｜"
+        category = _RISK_CATEGORIES[level]
+    body_segments = ([category] if category else []) + segments
+    if not body_segments:
+        body_segments = ["市場資訊待核對"]
+    kept: list[str] = []
+    for segment in body_segments:
+        candidate = head + "｜".join([*kept, segment])
+        if len(candidate) <= 30:
+            kept.append(segment)
+            continue
+        break
+    if not kept:
+        # Safe semantic fallback rather than arbitrary substring truncation.
+        fallback = "市場資訊待核對"
+        return (head + fallback)[:30]
+    candidate = head + "｜".join(kept)
+    if len(candidate) < len(head + "｜".join(body_segments)) and len(candidate) < 30:
+        candidate += "…"
+    return candidate[:30]
+
+
+def format_text_brief(text: str, *, prstk_risk_level: str = "R2") -> str:
+    """Backward-compatible bounded formatter for internal legacy callers.
+
+    Telegram send paths use :func:`canonical_short_message`; this helper is
+    retained for older integrations that still expect the pre-existing
+    ``R2｜...`` representation.
+    """
+    level = str(prstk_risk_level or "R2").upper()
+    if level not in PRSTK_RISK_LEVELS:
+        level = "R2"
+    source = " ".join(str(text or "").split()) or "市場公開資訊待核對"
     if f"{level}｜" in source or source.startswith(f"{level} "):
         candidate = source
     else:
         candidate = f"{level}｜{source}"
     if len(candidate) <= 30:
         return candidate
-    # Preserve the complete risk token and avoid cutting a ticker/number in
-    # the middle; the caption is intentionally short, details live in Mini App.
     prefix = f"{level}｜"
     remaining = max(1, 30 - len(prefix))
     compact = source[:remaining].rstrip("｜、，, ")
@@ -341,7 +392,7 @@ def send_briefs(
     """
     if not chat_ids:
         raise ValueError("至少需要一個 Telegram 收件人。")
-    text = format_text_brief(text)
+    text = canonical_short_message(text)
     deliveries: list[TelegramDelivery] = []
     for chat_id in chat_ids:
         try:
@@ -395,7 +446,7 @@ def send_text_briefs_audited(
         raise ValueError("Telegram recipient list is empty")
     if prstk_risk_level not in PRSTK_RISK_LEVELS:
         raise ValueError("PRStK risk level must be one of R0-R4")
-    text = format_text_brief(text, prstk_risk_level=prstk_risk_level)
+    text = canonical_short_message(text, prstk_risk_level=prstk_risk_level)
     receipts: list[TextDeliveryReceipt] = []
     for chat_id in chat_ids:
         recipient_hash = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]

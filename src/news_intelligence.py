@@ -70,7 +70,7 @@ _SOURCE_FAILURE_STATES = frozenset({
 _SOURCE_HEALTH_FIELDS = (
     "provider", "key", "label", "status", "source_tier", "source_url",
     "item_count", "checked_at", "last_parsed_at", "latency_ms", "data_gap",
-    "stale_used", "fallback_used",
+    "stale_used", "fallback_used", "funnel",
 )
 
 
@@ -561,6 +561,26 @@ def _news_provider_observability(
             success = checked_at
         if failure is None and status in _SOURCE_FAILURE_STATES:
             failure = checked_at
+        raw_fetched_count = source.get("item_count")
+        try:
+            fetched_count = max(
+                int(str(raw_fetched_count)) if raw_fetched_count is not None else 0,
+                len(normalized_by.get(provider, [])),
+            )
+        except (TypeError, ValueError):
+            fetched_count = len(normalized_by.get(provider, []))
+        normalized_count = len(normalized_by.get(provider, []))
+        compatible_count = sum(1 for item in normalized_by.get(provider, []) if item.get("market_compatible") is not False)
+        eligible_count = sum(1 for item in normalized_by.get(provider, []) if item.get("public_news_eligible", True))
+        funnel = {
+            "fetched_count": fetched_count,
+            "normalized_count": normalized_count,
+            "market_compatible_count": compatible_count,
+            "eligible_count": eligible_count,
+            "excluded_count": max(normalized_count - eligible_count, 0),
+            "deduped_count": len(deduped_by.get(provider, [])),
+            "ranked_count": len(ranked_by.get(provider, [])),
+        }
         rows.append({
             "provider": provider,
             "status": status,
@@ -570,6 +590,7 @@ def _news_provider_observability(
             "stories_deduped": len(deduped_by.get(provider, [])),
             "ranked_count": len(ranked_by.get(provider, [])),
             "relevance_distribution": relevance_distribution(normalized_by.get(provider, [])),
+            "funnel": funnel,
         })
     return {
         "stories_ingested": len(normalized),
@@ -651,7 +672,7 @@ def build_news_intelligence(
                 key: provider_metrics[key]
                 for key in (
                     "last_success_at", "last_failure_at", "stories_ingested",
-                    "stories_deduped", "ranked_count", "relevance_distribution",
+                    "stories_deduped", "ranked_count", "relevance_distribution", "funnel",
                 )
             })
     failure_count = sum(
