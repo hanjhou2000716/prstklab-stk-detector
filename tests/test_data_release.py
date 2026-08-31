@@ -32,7 +32,8 @@ def test_all_data_release_publishers_share_one_concurrency_group():
             if group is not None:
                 break
         assert group is not None, f"{path.name} must define a concurrency group"
-        assert group == "main-data-writer", f"{path.name} uses a separate data writer lock"
+        assert group.startswith("main-data-writer-"), f"{path.name} must use the shared writer queue"
+        assert "python -m src.writer_queue" in text, f"{path.name} must wait for older writers"
 
 
 def test_data_release_rejects_paths_outside_public_data():

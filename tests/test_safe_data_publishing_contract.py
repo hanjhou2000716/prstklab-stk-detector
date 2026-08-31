@@ -17,7 +17,8 @@ def test_every_data_publisher_is_serialized_and_targets_data_release():
     assert publishers
     for path in publishers:
         text = path.read_text(encoding="utf-8")
-        assert "group: main-data-writer" in text, f"{path.name} can race data-release"
+        assert "group: main-data-writer-${{ github.run_id }}" in text, f"{path.name} can replace a pending writer"
+        assert "python -m src.writer_queue" in text, f"{path.name} can race data-release"
         assert "DATA_RELEASE_BRANCH: data-release" in text
         assert "--branch \"$DATA_RELEASE_BRANCH\"" in text
         assert "git push origin HEAD:main" not in text

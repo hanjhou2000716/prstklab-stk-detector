@@ -40,12 +40,13 @@ def test_external_acceptance_probes_canonical_worker_and_keeps_railway_optional(
     assert "railway_url" in workflow
 
 
-def test_scheduled_brief_skips_telegram_for_stale_research_without_failing():
+def test_scheduled_brief_keeps_market_telegram_when_research_is_stale():
     workflow = Path(".github/workflows/scheduled-brief.yml").read_text(encoding="utf-8")
     assert "Resolve research delivery policy" in workflow
     assert "research_freshness" in workflow
     assert "allow_telegram" in workflow
-    assert "steps.research_policy.outputs.allow_telegram == 'true'" in workflow
+    assert "steps.research_policy.outputs.allow_telegram == 'true'" not in workflow
+    assert "market delivery continues without research claims" in workflow
     assert "Resolve release publication policy" in workflow
     assert "steps.release_policy.outputs.publish == 'true'" in workflow
     assert "RELEASE_MANIFEST_PATH" in workflow

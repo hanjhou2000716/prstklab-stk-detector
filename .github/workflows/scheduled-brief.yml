@@ -32,12 +32,16 @@ on:
     - cron: "0 13 * * 1-5"
 
 permissions:
+  actions: read
   contents: write
   pages: write
   id-token: write
 
 concurrency:
-  group: main-data-writer
+  # GitHub keeps only one pending run per concurrency group.  A unique key
+  # avoids silently replacing a pending writer; the queue step below provides
+  # deterministic single-writer serialization across all production writers.
+  group: main-data-writer-${{ github.run_id }}
   cancel-in-progress: false
 
 # The lock deduplicates the Telegram notification, not the dashboard publication.
@@ -64,7 +68,10 @@ jobs:
       # Manual runs publish and verify by default but never send production
       # notifications unless the operator explicitly opts in. Scheduled runs
       # retain the established notification behavior.
-      NOTIFY: ${{ inputs.notify || github.event.client_payload.notify || (github.event_name == 'schedule' && 'true' || 'false') }}
+      # Scheduled cron and trusted backup repository_dispatch runs are both
+      # automatic notification intents.  Manual workflow_dispatch remains
+      # opt-in through inputs.notify.
+      NOTIFY: ${{ github.event_name == 'schedule' && 'true' || github.event_name == 'repository_dispatch' && 'true' || inputs.notify && 'true' || 'false' }}
       STRICT_WINDOW: ${{ github.event_name == 'workflow_dispatch' && 'false' || 'true' }}
       NEWS_CACHE_PATH: site/data/news-cache.json
       SNAPSHOT_PATH: site/data/market.json
@@ -88,6 +95,10 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
+      - name: Wait for production writer queue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -m src.writer_queue
       - name: Restore last immutable data release
         run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data
       - name: Set up Python
@@ -215,27 +226,25 @@ jobs:
 
           manifest = json.loads(Path(os.environ["RELEASE_MANIFEST_PATH"]).read_text(encoding="utf-8"))
           freshness = manifest.get("research_freshness")
-          allowed = freshness == "fresh"
+          include_research = freshness == "fresh"
           with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
               output.write(f"research_freshness={freshness or 'unknown'}\n")
-              output.write(f"allow_telegram={'true' if allowed else 'false'}\n")
-          if not allowed:
-              print("::warning::Research is stale or unverified; Telegram delivery is skipped.")
+              output.write(f"include_research={'true' if include_research else 'false'}\n")
+              output.write("allow_telegram=true\n")
+          if not include_research:
+              print("::warning::Research is stale or unverified; market delivery continues without research claims.")
           PY
       - name: Verify deployed release before delivery
         if: steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment.outputs.available == 'true'
         id: release_gate
         run: |
           arguments=(--manifest "$MANIFEST_PATH" --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --public-url "${{ steps.deployment.outputs.page_url }}" --public-attempts 12 --public-delay 5)
-          if [ "${{ steps.research_policy.outputs.allow_telegram }}" = "true" ]; then
-            arguments+=(--require-production-research)
-          fi
           python -m src.release_gate "${arguments[@]}" >> "$GITHUB_OUTPUT"
       - name: Record delivery gate when Pages is unavailable
         if: steps.prepare.outputs.prepared == 'true' && (steps.release_policy.outputs.publish != 'true' || steps.deployment.outputs.available != 'true')
         run: echo "Release is not fresh or Pages is unavailable; Telegram delivery intentionally skipped (fail closed)."
       - name: Send Telegram brief after successful publication
-        if: steps.release_gate.outputs.allowed == 'true' && steps.research_policy.outputs.allow_telegram == 'true' && env.NOTIFY == 'true'
+        if: steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true'
         id: send_brief
         env:
           # Notification credentials are scoped to this step; collection and

@@ -8,12 +8,13 @@ on:
     - cron: "*/5 * * * 1-5"
 
 permissions:
+  actions: read
   contents: write
   pages: write
   id-token: write
 
 concurrency:
-  group: main-data-writer
+  group: main-data-writer-${{ github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -38,6 +39,10 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
+      - name: Wait for production writer queue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -m src.writer_queue
       - name: Restore last immutable data release
         run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data
       - name: Set up Python

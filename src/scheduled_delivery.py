@@ -321,6 +321,8 @@ def send(
     slot: str,
     manifest_path: Path,
     public_url: str | None = None,
+    *,
+    require_production_research: bool = False,
 ) -> None:
     """Send only after local and deployed release manifests agree."""
     try:
@@ -336,7 +338,7 @@ def send(
         manifest_path=manifest_path,
         expected_snapshot_id=snapshot_id,
         public_url=public_url,
-        require_production_research=True,
+        require_production_research=require_production_research,
     )
     if not gate.allowed:
         _write_output({
@@ -508,13 +510,24 @@ def main() -> int:
     parser.add_argument("--snapshot", type=Path, default=Path("site/data/market.json"))
     parser.add_argument("--manifest", type=Path, default=Path("site/data/release-manifest.json"))
     parser.add_argument("--public-url", default=None)
+    parser.add_argument(
+        "--require-production-research",
+        action="store_true",
+        help="require a fresh production research artifact for research-only delivery",
+    )
     args = parser.parse_args()
     if args.prepare_only == args.send_only:
         parser.error("choose exactly one of --prepare-only or --send-only")
     if args.prepare_only:
         prepare(args.slot, args.snapshot)
     else:
-        send(args.snapshot, args.slot, args.manifest, args.public_url)
+        send(
+            args.snapshot,
+            args.slot,
+            args.manifest,
+            args.public_url,
+            require_production_research=args.require_production_research,
+        )
     return 0
 
 
