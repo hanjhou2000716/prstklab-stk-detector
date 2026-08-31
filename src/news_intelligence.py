@@ -128,11 +128,21 @@ def _headline_key(title: str) -> str:
     return _WORD_RE.sub("", str(title).casefold())
 
 
+def _alias_matches(text: str, alias: str) -> bool:
+    """Match short Latin aliases as tokens, avoiding false substring hits."""
+    normalized = str(alias).casefold().strip()
+    if not normalized:
+        return False
+    if len(normalized) <= 2 and re.fullmatch(r"[a-z0-9]+", normalized):
+        return re.search(rf"(?<![a-z0-9]){re.escape(normalized)}(?![a-z0-9])", text) is not None
+    return normalized in text
+
+
 def _matched_tickers(title: str, tickers: Iterable[str]) -> set[str]:
     text = str(title).casefold()
     matched = {str(item).upper() for item in tickers if str(item).strip()}
     for ticker, aliases in _TICKER_ALIASES.items():
-        if any(alias in text for alias in aliases):
+        if any(_alias_matches(text, alias) for alias in aliases):
             matched.add(ticker)
     return matched
 
@@ -141,7 +151,7 @@ def _matched_topics(title: str, topics: Iterable[str]) -> set[str]:
     text = str(title).casefold()
     matched = {str(item).casefold() for item in topics if str(item).strip()}
     for topic, aliases in _EVENT_TOPIC_ALIASES.items():
-        if any(alias in text for alias in aliases):
+        if any(_alias_matches(text, alias) for alias in aliases):
             matched.add(topic)
     return matched
 
