@@ -561,10 +561,12 @@ def fetch_market_news(market: str) -> list[dict[str, str]]:
             stories.extend(found)
             health.append({"provider": provider, "status": "healthy" if found else "no_event",
                            "source_url": source_url, "item_count": len(found),
-                           "checked_at": datetime.now(UTC).isoformat()})
+                           "checked_at": datetime.now(UTC).isoformat(), "market": market,
+                           "source_tier": "discovery" if provider == "google_news" else "market"})
         except Exception as exc:
             health.append({"provider": provider, "status": "failed", "source_url": source_url,
-                           "item_count": 0, "checked_at": datetime.now(UTC).isoformat()})
+                           "item_count": 0, "checked_at": datetime.now(UTC).isoformat(),
+                           "market": market, "source_tier": "discovery" if provider == "google_news" else "market"})
             errors.append({"provider": provider, "error": type(exc).__name__})
     _LAST_OFFICIAL_NEWS_HEALTH[market] = {"source_health": health, "errors": errors}
     # Keep the complete bounded provider pool.  Each adapter already caps its
@@ -700,12 +702,27 @@ def _filter_market_news(stories: list[dict[str, Any]], market: str) -> list[dict
     return valid[:5]
 
 
-def _news_identity(stories: list[dict[str, str]]) -> frozenset[str]:
-    """Return order-independent article identities for collision detection."""
-    return frozenset(story.get("url") or story.get("title", "") for story in stories)
+def _news_identity(stories: list[dict[str, Any]]) -> frozenset[str]:
+    """Return scoped article identities for collision detection.
+
+    Global/cross-market stories may legitimately appear in both regional
+    panels, so only explicitly routed Taiwan/US stories participate in the
+    duplicate-payload guard.
+    """
+    identities: set[str] = set()
+    for story in stories:
+        raw_classification = story.get("market_classification")
+        classification: dict[str, Any] = raw_classification if isinstance(raw_classification, dict) else {}
+        scope = str(story.get("market") or classification.get("market_scope") or "").casefold()
+        if scope in {"global", "cross_market"}:
+            continue
+        identity = str(story.get("url") or story.get("title", "")).strip()
+        if identity:
+            identities.add(f"{scope}|{identity}")
+    return frozenset(identities)
 
 
-def _news_lists_collide(left: list[dict[str, str]], right: list[dict[str, str]]) -> bool:
+def _news_lists_collide(left: list[dict[str, Any]], right: list[dict[str, Any]]) -> bool:
     """Detect identical or near-identical payloads despite provider reordering."""
     first, second = _news_identity(left), _news_identity(right)
     if not first or not second:
@@ -720,11 +737,23 @@ def _build_news_snapshot_primary() -> dict[str, Any]:
     for market in ("taiwan", "us"):
         try:
             result[market] = _filter_market_news(fetch_market_news(market), market)
+            provider_state = _LAST_OFFICIAL_NEWS_HEALTH.get(market, {}).get("source_health", [])
+            enabled_states = [
+                str(item.get("status") or "").casefold()
+                for item in provider_state
+                if str(item.get("status") or "").casefold() != "disabled"
+            ]
+            failed_states = {"failed", "rate_limited", "parse_failed", "provider_failed", "scan_failed"}
+            all_failed = bool(enabled_states) and all(state in failed_states for state in enabled_states)
             result["source_health"].append({
                 "key": f"news_{market}", "label": f"{market} market news",
                 "source_tier": "discovery", "source_url": ANUE_CATEGORY_URLS[market],
-                "status": "healthy" if result[market] else "no_event", "checked_at": checked_at,
-                "item_count": len(result[market]), "data_gap": None,
+                "status": "healthy" if result[market] else "failed" if all_failed else "no_event",
+                "checked_at": checked_at, "item_count": len(result[market]),
+                "data_gap": "request_failed" if all_failed else None,
+                "provider_count": len(enabled_states),
+                "successful_provider_count": sum(state in {"healthy", "no_event"} for state in enabled_states),
+                "failed_provider_count": sum(state in failed_states for state in enabled_states),
             })
         except Exception:
             result["errors"].append(f"{market}新聞資料暫時無法取得")
@@ -737,15 +766,24 @@ def _build_news_snapshot_primary() -> dict[str, Any]:
         official_state = _LAST_OFFICIAL_NEWS_HEALTH.get(market)
         if official_state:
             for provider in official_state.get("source_health", []):
+                provider_id = str(provider.get("provider", "unknown"))
+                registry_item = next(
+                    (item for item in provider_registry() if item.get("provider_id") == provider_id),
+                    {},
+                )
+                source_tier = str(provider.get("source_tier") or registry_item.get("authority_tier") or "unknown")
                 result["source_health"].append({
-                    "key": f"official_news_{market}_{provider.get('provider', 'unknown')}",
-                    "label": f"{provider.get('provider', 'unknown')} official news",
-                    "source_tier": "official",
+                    "key": f"news_{market}_{provider_id}",
+                    "legacy_key": f"official_news_{market}_{provider_id}",
+                    "label": f"{provider_id} {source_tier} news",
+                    "provider": provider_id,
+                    "source_tier": source_tier,
                     "source_url": provider.get("source_url"),
                     "status": provider.get("status", "failed"),
                     "checked_at": checked_at,
                     "item_count": provider.get("item_count", 0),
                     "data_gap": None if provider.get("status") in {"healthy", "no_event", "disabled"} else provider.get("status"),
+                    "market": market,
                 })
 
     # A transient CDN/cache response must never be presented as two different
@@ -772,10 +810,19 @@ def _build_news_snapshot_primary() -> dict[str, Any]:
                 # single fallback outage does not erase otherwise useful data.
                 continue
         if result["taiwan"] and result["us"] and _news_lists_collide(result["taiwan"], result["us"]):
-            result["us"] = []
-            result["errors"].append("美股新聞資料暫時無法與台股來源區分")
-            health = next(item for item in result["source_health"] if item["key"] == "news_us")
-            health.update({"status": "failed", "item_count": 0, "data_gap": "duplicate_market_payload"})
+            taiwan_ids = _news_identity(result["taiwan"])
+            distinct_us = [
+                story for story in result["us"]
+                if f"us|{story.get('url') or story.get('title', '')}" not in taiwan_ids
+            ]
+            if distinct_us:
+                result["us"] = distinct_us
+                result.setdefault("diagnostics", []).append("美股來源含可區分內容，已保留市場分流結果")
+            else:
+                result["us"] = []
+                result["errors"].append("美股新聞資料暫時無法與台股來源區分")
+                health = next(item for item in result["source_health"] if item["key"] == "news_us")
+                health.update({"status": "failed", "item_count": 0, "data_gap": "duplicate_market_payload"})
     return result
 
 
@@ -948,6 +995,7 @@ def build_news_snapshot(
             if isinstance(row, dict)
             and (
                 row.get("key") == f"news_{market}"
+                or str(row.get("key") or "").startswith(f"news_{market}_")
                 or str(row.get("key") or "").startswith(f"official_news_{market}_")
             )
         ]

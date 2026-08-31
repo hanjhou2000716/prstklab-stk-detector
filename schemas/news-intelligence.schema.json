@@ -11,6 +11,18 @@
     "status": {"enum": ["ready", "no_event"]},
     "collection_state": {"enum": ["ready", "degraded", "no_event", "source_failed"]},
     "source_failure_count": {"type": "integer", "minimum": 0},
+    "scan_summary": {
+      "type": "object",
+      "properties": {
+        "provider_count": {"type": "integer", "minimum": 0},
+        "successful_provider_count": {"type": "integer", "minimum": 0},
+        "failed_provider_count": {"type": "integer", "minimum": 0},
+        "disabled_provider_count": {"type": "integer", "minimum": 0},
+        "filtered_story_count": {"type": "integer", "minimum": 0},
+        "ranked_story_count": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
     "source_health": {"type": "array", "items": {"type": "object"}},
     "observability": {
       "type": "object",
@@ -75,6 +87,8 @@
         "event_cluster_key": {"type": "string"},
         "published_time_bucket": {"type": ["string", "null"]},
         "entities": {"type": "array", "items": {"type": "string"}},
+        "evidence_state": {"enum": ["official", "observation"]},
+        "confirmation_required": {"type": "boolean"},
         "public_safe": {"type": "boolean"}
       },
       "additionalProperties": true

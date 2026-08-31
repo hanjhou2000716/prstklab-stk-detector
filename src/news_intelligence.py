@@ -68,7 +68,7 @@ _SOURCE_FAILURE_STATES = frozenset({
     "configuration_missing", "configuration_required", "critical",
 })
 _SOURCE_HEALTH_FIELDS = (
-    "provider", "key", "label", "status", "source_tier", "source_url",
+    "provider", "key", "legacy_key", "label", "status", "source_tier", "source_url",
     "item_count", "checked_at", "last_parsed_at", "latency_ms", "data_gap",
     "stale_used", "fallback_used", "funnel",
 )
@@ -266,6 +266,12 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         "public_safe": safe,
         "public_news_eligible": safe and market_compatible,
         "source": str(raw.get("source") or provider["display_name"]),
+        # Public market/discovery headlines are useful observations, but they
+        # are never confirmation evidence by themselves.  Keep this explicit
+        # in the release so downstream cards and alert gates cannot infer a
+        # stronger state from a provider label.
+        "evidence_state": "official" if authority == "official" else "observation",
+        "confirmation_required": authority != "official",
     }
 
 
@@ -659,10 +665,19 @@ def build_news_intelligence(
         }
         if row:
             health_rows.append(row)
-    observability = _news_provider_observability(normalized, deduped, ranked, health_rows)
+    # The market aggregate row is derived from the provider rows and must not
+    # count as a second failure.  A failed SEC/Fed endpoint alongside a
+    # healthy discovery feed is a degraded scan, not a completely unavailable
+    # market feed.
+    aggregate_key = f"news_{market}" if market else ""
+    provider_health = [
+        row for row in health_rows
+        if str(row.get("key") or "") != aggregate_key
+    ]
+    observability = _news_provider_observability(normalized, deduped, ranked, provider_health)
     health_by_provider = {
         str(row.get("provider") or "").casefold(): row
-        for row in health_rows
+        for row in provider_health
         if str(row.get("provider") or "").strip()
     }
     for provider_metrics in observability["providers"]:
@@ -676,13 +691,29 @@ def build_news_intelligence(
                 )
             })
     failure_count = sum(
-        1 for row in health_rows
+        1 for row in provider_health
         if str(row.get("status") or "").casefold() in _SOURCE_FAILURE_STATES
     )
+    success_count = sum(
+        1 for row in provider_health
+        if str(row.get("status") or "").casefold() in {"healthy", "no_event", "stale"}
+    )
+    disabled_count = sum(
+        1 for row in provider_health
+        if str(row.get("status") or "").casefold() == "disabled"
+    )
+    scan_summary = {
+        "provider_count": len(provider_health),
+        "successful_provider_count": success_count,
+        "failed_provider_count": failure_count,
+        "disabled_provider_count": disabled_count,
+        "filtered_story_count": len(excluded),
+        "ranked_story_count": len(ranked),
+    }
     if ranked:
         collection_state = "degraded" if failure_count else "ready"
     elif failure_count:
-        collection_state = "source_failed"
+        collection_state = "degraded" if success_count else "source_failed"
     elif health_rows:
         collection_state = "no_event"
     else:
@@ -701,6 +732,7 @@ def build_news_intelligence(
         "status": "ready" if ranked else "no_event",
         "collection_state": collection_state,
         "source_failure_count": failure_count,
+        "scan_summary": scan_summary,
         "source_health": health_rows,
         "observability": observability,
     }
