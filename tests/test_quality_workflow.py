@@ -44,6 +44,14 @@ def test_scheduled_workflow_only_passes_explicit_external_creator_records():
     assert "--creator-records \"$CREATOR_RECORDS_PATH\"" in workflow
 
 
+def test_scheduled_market_delivery_is_not_blocked_by_stale_research():
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
+    send = workflow.split("- name: Send Telegram brief", 1)[1].split("- name: Persist scheduled-brief delivery receipt", 1)[0]
+    assert "steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true'" in send
+    assert "steps.research_policy.outputs.allow_telegram" not in send
+    assert "market delivery continues without research claims" in workflow
+
+
 def test_scheduled_morning_slot_binds_creator_batch_to_release_manifest():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
     assert 'steps.window.outputs.slot' in workflow

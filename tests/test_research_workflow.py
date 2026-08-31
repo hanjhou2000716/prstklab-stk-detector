@@ -4,7 +4,8 @@ from pathlib import Path
 def test_research_workflow_deploys_the_new_research_snapshot_to_pages():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "unified-research-report.yml").read_text(encoding="utf-8")
 
-    assert "group: main-data-writer" in workflow
+    assert "group: main-data-writer-${{ github.run_id }}" in workflow
+    assert "python -m src.writer_queue" in workflow
     assert "types: [unified-research-report]" in workflow
     assert "github.event.client_payload.taiwan_limit" in workflow
     assert "pages: write" in workflow

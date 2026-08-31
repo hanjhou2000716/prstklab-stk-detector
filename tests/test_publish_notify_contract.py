@@ -15,11 +15,11 @@ def _send_block(workflow: str, marker: str) -> str:
     return workflow[start:] if end < 0 else workflow[start:end]
 
 
-def test_scheduled_notification_requires_public_release_gate_and_research_gate():
+def test_scheduled_notification_requires_public_release_gate_but_not_research_gate():
     workflow = _workflow("scheduled-brief.yml")
     block = _send_block(workflow, "- name: Send Telegram brief after successful publication")
     assert "steps.release_gate.outputs.allowed == 'true'" in block
-    assert "steps.research_policy.outputs.allow_telegram == 'true'" in block
+    assert "steps.research_policy.outputs.allow_telegram" not in block
     assert "--send-only" in block
 
 
@@ -35,6 +35,14 @@ def test_emergency_notification_requires_public_release_gate():
     block = _send_block(workflow, "- name: Send Telegram emergency alert")
     assert "steps.release_gate.outputs.allowed == 'true'" in block
     assert "src.emergency_alert" in block
+
+
+def test_emergency_release_gate_is_independent_from_research_freshness():
+    workflow = _workflow("emergency-alert.yml")
+    gate = workflow.split("- name: Verify deployed release before emergency delivery", 1)[1].split(
+        "- name: Record delivery gate when Pages is unavailable", 1
+    )[0]
+    assert "--require-production-research" not in gate
 
 
 def test_creator_notification_requires_parent_release_gate():

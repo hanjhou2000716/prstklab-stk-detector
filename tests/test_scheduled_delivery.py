@@ -118,6 +118,35 @@ def test_scheduled_delivery_uses_text_delivery_after_release_gate(tmp_path, monk
     assert "delivery_mode=text" in text
 
 
+def test_scheduled_market_delivery_does_not_require_fresh_research(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / "market.json"
+    manifest_path = tmp_path / "release-manifest.json"
+    snapshot_path.write_text(
+        json.dumps({"snapshot_id": "market-12345678", "quotes": [], "indices": [], "briefing": {}}),
+        encoding="utf-8",
+    )
+    manifest_path.write_text("{}", encoding="utf-8")
+    output = tmp_path / "output"
+    _patch_ready(monkeypatch, output)
+    captured: dict[str, object] = {}
+
+    def gate(**kwargs):
+        captured.update(kwargs)
+        return ReleaseGateResult(True, release_id="release-1", snapshot_id="market-12345678")
+
+    monkeypatch.setattr(scheduled_delivery, "verify_release_for_delivery", gate)
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "send_text_briefs_audited",
+        lambda **kwargs: (TextDeliveryReceipt(
+            kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"],
+            "hash", "delivered", message_id=3, observation_id=kwargs.get("observation_id", ""),
+        ),),
+    )
+    scheduled_delivery.send(snapshot_path, "morning", manifest_path)
+    assert captured["require_production_research"] is False
+
+
 def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path, monkeypatch):
     snapshot_path = tmp_path / "market.json"
     manifest_path = tmp_path / "release-manifest.json"

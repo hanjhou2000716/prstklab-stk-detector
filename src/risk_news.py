@@ -705,7 +705,12 @@ def _filter_market_news(stories: list[dict[str, Any]], market: str) -> list[dict
             enriched.update(canonical[0])
             enriched["market"] = scope
         valid.append(enriched)
-    return valid[:5]
+    # Keep the complete bounded, market-compatible provider pool here.  The
+    # canonical intelligence builder owns eligibility, dedupe, provider
+    # diversity and the final public Top-N projection.  Truncating by adapter
+    # order at this boundary lets a burst of generic SEC filings starve later
+    # eligible Anue/Yahoo/Google stories before their relevance is evaluated.
+    return valid
 
 
 def _news_identity(stories: list[dict[str, Any]]) -> frozenset[str]:

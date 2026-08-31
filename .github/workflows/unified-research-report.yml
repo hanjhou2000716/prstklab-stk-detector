@@ -43,6 +43,7 @@ on:
     # bounded MOPS/value scan enough room to publish a fresh release.
     - cron: '0 2 * * 1-5'
 permissions:
+  actions: read
   contents: write
   pages: write
   id-token: write
@@ -51,7 +52,7 @@ concurrency:
   # research in a separate group allowed a refresh/brief workflow to race its
   # immutable snapshot commit and produce non-fast-forward or mixed releases.
   # group: unified-research-report is superseded by the shared writer lock.
-  group: main-data-writer
+  group: main-data-writer-${{ github.run_id }}
   cancel-in-progress: false
 jobs:
   # actions/upload-pages-artifact@v3 (pinned SHA is used by the deployment step)
@@ -78,6 +79,10 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
+      - name: Wait for production writer queue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -m src.writer_queue
       - name: Restore last immutable data release
         run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json
       - name: Save last successful research snapshot
