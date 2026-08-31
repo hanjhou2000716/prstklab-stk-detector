@@ -380,6 +380,46 @@ def test_final_intelligence_projection_rebinds_health_after_cache_or_fallback(mo
     assert provider["status"] == "no_event"
 
 
+def test_final_intelligence_projection_reconciles_legacy_builder_output(monkeypatch, tmp_path):
+    """A legacy intelligence builder cannot leak raw availability into a release."""
+    monkeypatch.setenv("NEWS_CACHE_PATH", str(tmp_path / "news-cache.json"))
+    monkeypatch.setattr("src.risk_news.fetch_market_news", lambda market: [])
+    monkeypatch.setattr("src.risk_news.fetch_market_news_fallback", lambda market: [])
+    monkeypatch.setattr(
+        "src.risk_news._LAST_OFFICIAL_NEWS_HEALTH",
+        {
+            "taiwan": {"source_health": []},
+            "us": {"source_health": [{"provider": "yahoo_finance", "status": "healthy", "item_count": 7}]},
+        },
+    )
+
+    def legacy_builder(*_args, market=None, **_kwargs):
+        return {
+            "stories": [],
+            "status": "no_event",
+            "collection_state": "source_failed",
+            "source_failure_count": 0,
+            "scan_summary": {},
+            "source_health": [{
+                "provider": "yahoo_finance",
+                "key": f"news_{market}_yahoo_finance",
+                "status": "healthy",
+                "item_count": 7,
+            }],
+        }
+
+    monkeypatch.setattr("src.risk_news.build_news_intelligence", legacy_builder)
+    snapshot = build_news_snapshot()
+    us = snapshot["intelligence"]["us"]
+    provider = us["source_health"][0]
+
+    assert provider["raw_item_count"] == 7
+    assert provider["filtered_item_count"] == 0
+    assert provider["item_count"] == 0
+    assert provider["status"] == "no_event"
+    assert us["collection_state"] == "no_event"
+
+
 def test_global_story_does_not_trigger_false_taiwan_us_collision():
     story = {
         "title": "Iran oil shock hits Taiwan semiconductor shares and Nasdaq",

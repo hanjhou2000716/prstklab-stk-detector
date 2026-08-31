@@ -1061,7 +1061,7 @@ def build_news_snapshot(
             if raw_count > 0 and filtered_count == 0 and row.get("status") == "healthy":
                 row["status"] = "no_event"
                 row["data_gap"] = "filtered_no_market_match"
-        result.setdefault("intelligence", {})[market] = build_news_intelligence(
+        intelligence = build_news_intelligence(
             stories,
             market=market,
             tracked_tickers=interest_context["tracked_tickers"],
@@ -1073,6 +1073,61 @@ def build_news_snapshot(
             source_health=market_health,
             limit=5,
         )
+        # Reconcile once more after intelligence construction.  The
+        # observability builder may receive a legacy provider-health row from
+        # a cached/older producer and retain its raw ``item_count`` while the
+        # final story set is empty.  Release validation must only see the
+        # post-routing count; otherwise a valid no-event/degraded scan is
+        # rejected as ``stories=0 + available provider items``.  Keep the raw
+        # count for diagnostics, but make filtered/item_count and the
+        # collection state authoritative at this final producer boundary.
+        intelligence_rows = intelligence.get("source_health", [])
+        if isinstance(intelligence_rows, list):
+            accepted_by_provider = Counter(
+                str(story.get("provider") or "unknown")
+                for story in stories
+                if isinstance(story, dict)
+            )
+            failures = 0
+            successes = 0
+            failure_states = {"failed", "rate_limited", "parse_failed", "provider_failed", "scan_failed", "configuration_missing", "configuration_required", "critical"}
+            for row in intelligence_rows:
+                if not isinstance(row, dict) or str(row.get("key") or "") == f"news_{market}":
+                    continue
+                provider_id = str(row.get("provider") or "unknown")
+                raw_count = row.get("raw_item_count", row.get("item_count", 0))
+                try:
+                    raw_count = max(0, int(raw_count or 0))
+                except (TypeError, ValueError):
+                    raw_count = 0
+                filtered_count = accepted_by_provider.get(provider_id, 0)
+                row["raw_item_count"] = raw_count
+                row["filtered_item_count"] = filtered_count
+                row["item_count"] = filtered_count
+                if raw_count > 0 and filtered_count == 0 and row.get("status") == "healthy":
+                    row["status"] = "no_event"
+                    row["data_gap"] = "filtered_no_market_match"
+                status = str(row.get("status") or "").casefold()
+                if status in failure_states:
+                    failures += 1
+                elif status in {"healthy", "no_event", "stale"}:
+                    successes += 1
+            if stories:
+                intelligence["collection_state"] = "degraded" if failures else "ready"
+                intelligence["status"] = "ready"
+            elif failures:
+                intelligence["collection_state"] = "degraded" if successes else "source_failed"
+                intelligence["status"] = "no_event"
+            else:
+                intelligence["collection_state"] = "no_event"
+                intelligence["status"] = "no_event"
+            intelligence["source_failure_count"] = failures
+            summary = intelligence.get("scan_summary")
+            if isinstance(summary, dict):
+                summary["failed_provider_count"] = failures
+                summary["successful_provider_count"] = successes
+                summary["ranked_story_count"] = len(stories)
+        result.setdefault("intelligence", {})[market] = intelligence
     result["provider_registry"] = provider_registry()
     result["interest_context"] = interest_context
     result["schema_version"] = "1.0"
