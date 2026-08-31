@@ -13,7 +13,7 @@ from pathlib import Path
 from src.config import get_settings
 from src.telegram_client import send_text_briefs_audited
 
-CAPTION = "PRStK 受控驗證｜R2｜資料待核對"
+CAPTION = "🟡 PRStK 受控驗證｜資料待核對"
 ALERT_ID = "text-smoke-test"
 RELEASE_ID = "text-smoke-test"
 SNAPSHOT_ID = "text-smoke-test"

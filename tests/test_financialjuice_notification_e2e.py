@@ -1,3 +1,4 @@
+from src.financialjuice_notification import financialjuice_caption
 from src.financialjuice_notification_e2e import run_financialjuice_notification_e2e
 
 
@@ -11,3 +12,13 @@ def test_financialjuice_notification_e2e_is_offline_and_replay_safe() -> None:
     assert result["checks"]["partial_delivery_isolated"] is True
     assert result["checks"]["retry_only_failed_recipient"] is True
     assert result["checks"]["replay_suppressed"] is True
+
+
+def test_financialjuice_caption_hides_internal_risk_grade() -> None:
+    caption = financialjuice_caption({
+        "title": "Oil supply disruption",
+        "vendor_importance": 8,
+        "prstk_risk": {"prstk_risk_level": "R2"},
+    })
+    assert "FJ 8/10" in caption
+    assert not any(f"R{level}" in caption for level in range(5))

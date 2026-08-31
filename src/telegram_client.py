@@ -153,11 +153,11 @@ def validate_brief(text: str) -> None:
 def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
     """Build the one canonical, bounded user-facing non-Creator message.
 
-    Risk is rendered exactly once and kept at the beginning.  Existing risk
-    tokens, ``快訊`` wrappers, and a FinancialJuice prefix are normalized
-    instead of being stacked by downstream senders.  Truncation happens only
-    at the ``｜`` segment boundary, so tickers, numbers, and the risk token are
-    never cut in half.
+    The internal risk grade selects a colour cue, but the ``R0``-``R4`` code
+    is deliberately not exposed to Telegram recipients. Existing risk tokens,
+    ``快訊`` wrappers, and a FinancialJuice prefix are normalized instead of
+    being stacked by downstream senders. Truncation happens only at the
+    ``｜`` segment boundary, so tickers and numbers are never cut in half.
     """
     level = str(prstk_risk_level or "R2").upper()
     if level not in PRSTK_RISK_LEVELS:
@@ -165,17 +165,19 @@ def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
     source = " ".join(str(text or "").split()) or "市場公開資訊待核對"
     # Preserve the vendor score while removing any existing severity token.
     fj_match = re.search(r"FJ\s*\d+(?:\.\d+)?\s*/\s*10", source, flags=re.IGNORECASE)
-    source = re.sub(r"[🟢🟡🟠🔴⚪⚫🟣]?\s*R[0-4]\s*[｜|:]?", "", source, flags=re.IGNORECASE)
+    # Keep a possible colour icon as the public visual cue while removing all
+    # internal risk-grade tokens from the user-visible message.
+    source = re.sub(r"(?<![A-Za-z0-9])R[0-4](?![A-Za-z0-9])\s*[｜|:]?", "", source, flags=re.IGNORECASE)
     source = re.sub(r"[🟢🟡🟠🔴⚪⚫🟣]?\s*FJ\s*\d+(?:\.\d+)?\s*/\s*10\s*[｜|:]?", "", source, flags=re.IGNORECASE)
     segments = [part.strip() for part in re.split(r"[｜|]", source) if part.strip() and part.strip() != "快訊"]
     if fj_match:
         fj_score = re.sub(r"\s+", " ", fj_match.group(0)).strip()
-        head = f"🟣 {fj_score}｜{level}｜"
+        head = f"🟣 {fj_score}｜"
         # FJ's vendor importance is evidence metadata, not a replacement for
         # the PRStK risk grade.
         category = ""
     else:
-        head = f"{_RISK_ICONS[level]} {level}｜"
+        head = f"{_RISK_ICONS[level]} "
         category = _RISK_CATEGORIES[level]
     body_segments = ([category] if category else []) + segments
     if not body_segments:
@@ -198,30 +200,20 @@ def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
 
 
 def format_text_brief(text: str, *, prstk_risk_level: str = "R2") -> str:
-    """Backward-compatible bounded formatter for internal legacy callers.
-
-    Telegram send paths use :func:`canonical_short_message`; this helper is
-    retained for older integrations that still expect the pre-existing
-    ``R2｜...`` representation.
-    """
+    """Backward-compatible bounded formatter with the public display policy."""
     level = str(prstk_risk_level or "R2").upper()
     if level not in PRSTK_RISK_LEVELS:
         level = "R2"
-    source = " ".join(str(text or "").split()) or "市場公開資訊待核對"
-    if f"{level}｜" in source or source.startswith(f"{level} "):
-        candidate = source
-    else:
-        candidate = f"{level}｜{source}"
-    if len(candidate) <= 30:
-        return candidate
-    prefix = f"{level}｜"
-    remaining = max(1, 30 - len(prefix))
-    compact = source[:remaining].rstrip("｜、，, ")
-    while compact and compact[-1] in ".0123456789":
-        if compact[-1].isdigit() and any(ch.isdigit() for ch in compact[:-1]):
-            break
-        compact = compact[:-1]
-    return f"{prefix}{compact}…"[:30]
+    return canonical_short_message(text, prstk_risk_level=level)
+
+
+def sanitize_public_photo_caption(caption: str) -> str:
+    """Remove internal R0-R4 tokens while preserving public caption cues."""
+    source = " ".join(str(caption or "").split())
+    source = re.sub(r"(?<![A-Za-z0-9])R[0-4](?![A-Za-z0-9])\s*[｜|:]?", "", source, flags=re.IGNORECASE)
+    source = re.sub(r"[｜|]\s*([｜|])+", "｜", source)
+    source = re.sub(r"^[｜|]\s*|\s*[｜|]$", "", source).strip()
+    return source or "市場資訊待核對"
 
 
 def mini_app_button(mini_app_url: str) -> dict[str, object]:
@@ -481,7 +473,10 @@ def send_photo_brief(
     The function is deliberately small and injectable via monkeypatching
     `requests.post` for CI. It never logs the token, chat ID, or API payload.
     """
-    if not caption.strip() or len(caption) > 40:
+    if not caption.strip():
+        raise ValueError("photo caption must be 1-40 characters")
+    caption = sanitize_public_photo_caption(caption)
+    if len(caption) > 40:
         raise ValueError("photo caption must be 1-40 characters")
     path = Path(photo_path)
     if not path.is_file():
