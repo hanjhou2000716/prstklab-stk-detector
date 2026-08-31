@@ -6,7 +6,13 @@ from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-LEVELS = {"normal": 0, "warning": 1, "high-risk": 2}
+# The budget is a delivery-volume guard, not the risk engine.  Keep the
+# existing three buckets while accepting canonical PRStK R0-R4 values so a
+# newly formatted event cannot silently fall back to the normal bucket.
+LEVELS = {
+    "normal": 0, "warning": 1, "high-risk": 2,
+    "R0": 0, "R1": 0, "R2": 1, "R3": 1, "R4": 2,
+}
 
 
 def notification_identity(event: dict[str, Any]) -> str:
@@ -55,6 +61,9 @@ def _level(value: Any) -> str:
         "高風險警報": "high-risk",
         "high risk": "high-risk",
     }
+    upper = str(value or "").strip().upper()
+    if upper in {"R0", "R1", "R2", "R3", "R4"}:
+        return upper
     return aliases.get(text, text)
 
 

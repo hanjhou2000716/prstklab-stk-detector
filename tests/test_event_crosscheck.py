@@ -130,3 +130,28 @@ def test_same_event_from_different_urls_gets_same_cluster_key():
     assert event_cluster_key(official) == event_cluster_key(wire)
     rows = cross_check_event_records([official, wire])
     assert rows[0]["event_cluster_key"] == rows[0]["source_trace"]["event_cluster_key"]
+
+
+def test_market_news_providers_deduplicate_without_becoming_official():
+    records = [
+        {
+            "kind": "major_event", "source_tier": "market", "classification": "policy",
+            "title": "Nvidia export control urges policy review",
+            "source_url": "https://www.cnyes.com/news/1",
+        },
+        {
+            "kind": "major_event", "source_tier": "market", "classification": "policy",
+            "title": "Yahoo: Nvidia export control urges policy review",
+            "source_url": "https://finance.yahoo.com/news/1",
+        },
+        {
+            "kind": "major_event", "source_tier": "discovery", "classification": "policy",
+            "title": "Google Nvidia export control urges policy review",
+            "source_url": "https://news.google.com/articles/1",
+        },
+    ]
+    merged = cross_check_event_records(records)
+    assert len(merged) == 1
+    assert merged[0]["crosscheck_status"] == "corroborated"
+    assert merged[0]["source_tier"] in {"market", "discovery"}
+    assert merged[0]["source_tier"] != "official"

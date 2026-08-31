@@ -93,6 +93,53 @@ def test_monitor_selects_threshold_price_signal_when_no_official_release_exists(
     assert build_official_event_brief(event) == "快訊｜台指價格訊號觸發｜急跌｜高風險"
 
 
+def test_realtime_external_projection_adds_eligible_fj_to_shared_event_lane(monkeypatch, tmp_path):
+    source = tmp_path / "observations.json"
+    monkeypatch.setattr(monitor, "external_observations_path", lambda: source)
+    source.write_text("[]", encoding="utf-8")
+    row = {
+        "observation_id": "fj-realtime-1",
+        "item_id": "fj-item-1",
+        "source": "financialjuice",
+        "original_headline": "Oil supply risk",
+        "event_type": "energy",
+        "importance": 8,
+        "source_url": "https://financialjuice.com/item/1",
+        "published_at": "2026-08-21T01:00:00Z",
+        "received_at": "2026-08-21T01:01:00Z",
+        "parser_version": "financialjuice-v1",
+        "public_safe": True,
+    }
+    monkeypatch.setattr(monitor, "load_external_observations", lambda _path: ([row], 0))
+    monkeypatch.setattr(monitor, "_external_observations_configured", lambda: False)
+    snapshot = {"events": {"items": []}, "source_health": {"sources": []}}
+    result = monitor._attach_realtime_external_events(snapshot)
+    assert result["financialjuice_priority_events"][0]["vendor_importance"] == 8
+    assert result["financialjuice_priority_events"][0]["notification_status"] == "eligible"
+    assert result["events"]["items"][0]["source_key"] == "financialjuice"
+    assert result["financialjuice_release_contract"]["ok"] is True
+
+
+def test_realtime_external_projection_keeps_below_threshold_visible_without_selection(monkeypatch, tmp_path):
+    source = tmp_path / "observations.json"
+    source.write_text("[]", encoding="utf-8")
+    row = {
+        "observation_id": "fj-realtime-7",
+        "source": "financialjuice",
+        "original_headline": "Routine market note",
+        "importance": 7,
+        "source_url": "https://financialjuice.com/item/7",
+        "public_safe": True,
+    }
+    monkeypatch.setattr(monitor, "external_observations_path", lambda: source)
+    monkeypatch.setattr(monitor, "load_external_observations", lambda _path: ([row], 0))
+    monkeypatch.setattr(monitor, "_external_observations_configured", lambda: False)
+    result = monitor._attach_realtime_external_events({"events": {"items": []}})
+    assert result["financialjuice_priority_decisions"][0]["notification_status"] == "not_eligible"
+    assert result["financialjuice_priority_events"] == []
+    assert result["events"]["items"][0]["notification_status"] == "not_eligible"
+
+
 def test_price_signal_key_changes_for_escalation_or_a_direction_reversal():
     warning = {"kind": "market_signal", "instrument": {"ticker": "SOX", "quote_date": "2026-07-27"}, "risk_level": "警戒", "signal_state": "急跌:警戒:down"}
     high = {**warning, "risk_level": "高風險", "signal_state": "急跌:高風險:down"}
@@ -167,3 +214,55 @@ def test_official_monitor_suppresses_budgeted_event_before_renderer(monkeypatch,
     text = output.read_text(encoding="utf-8")
     assert "sent=false" in text
     assert "reason=alert_budget:cooldown" in text
+
+
+def test_financialjuice_event_uses_immediate_text_lane_and_records_receipt(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    event = {
+        "source_key": "financialjuice",
+        "source": "FinancialJuice",
+        "event_cluster_key": "fj-cluster-1",
+        "observation_id": "fj-observation-1",
+        "vendor_importance": 9,
+        "vendor_priority_notification": True,
+        "notification_status": "eligible",
+        "notification_reason": "vendor_priority_importance_ge_8",
+        "prstk_risk": {"prstk_risk_level": "R2"},
+        "title": "Oil supply risk",
+    }
+    snapshot = {"snapshot_id": "snap-1", "events": {"items": [event]}}
+    monkeypatch.setattr(monitor, "prepare_snapshot", lambda: (snapshot, event))
+    monkeypatch.setattr(monitor, "event_key", lambda _event: "fj-key")
+    monkeypatch.setattr(monitor, "verify_release_for_delivery", lambda **_kwargs: ReleaseGateResult(True, release_id="release-1", snapshot_id="snap-1"))
+    monkeypatch.setattr(monitor, "_observe_event", lambda *_args, **_kwargs: {"should_remind": True})
+    monkeypatch.setattr(monitor, "get_settings", lambda: type("Settings", (), {
+        "telegram_ready": True, "telegram_bot_token": "token", "telegram_chat_ids": ("test",),
+        "dashboard_url": "https://example.test/app",
+    })())
+    recorded = {}
+
+    class FakeLedger:
+        def delivery_history(self):
+            return []
+
+        def record_delivery(self, payload, **_kwargs):
+            recorded.update(payload)
+
+        def save(self):
+            return None
+
+    monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
+    monkeypatch.setattr(monitor, "decide_alert_budget", lambda *_args: {"allowed": True, "reason": "material_change", "event_key": "fj-key"})
+    monkeypatch.setattr(monitor, "deliver_financialjuice_event", lambda *_args, **_kwargs: {
+        "status": "delivered", "notification_key": "financialjuice:key", "receipts": [{
+            "recipient_hash": "hash", "delivery_status": "delivered", "message_id": 7,
+        }],
+    })
+    assert monitor.send_current_event() is True
+    text = output.read_text(encoding="utf-8")
+    assert "sent=true" in text
+    assert "delivery_mode=text" in text
+    assert "delivered_count=1" in text
+    assert "risk=R2" in text
+    assert recorded["delivery_status"] == "delivered"

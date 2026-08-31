@@ -87,6 +87,12 @@ def main() -> None:
         "released_at": os.environ.get("EXTERNAL_OCCURRED_AT") or datetime.now(UTC).isoformat(),
         "trace_id": trace_id,
     }
+    # Normalize the canonical risk once at the producer boundary.  The
+    # notification sender may render it, while receipts and the event ledger
+    # retain the same value for audit and downstream policy checks.
+    prstk_level = canonical_prstk_risk_level(event)
+    event["prstk_risk_level"] = prstk_level
+    event["prstk_risk"] = {"prstk_risk_level": prstk_level, "source": "emergency"}
     ledger = EventLedger()
     budget = decide_alert_budget(event, ledger.delivery_history())
     if not budget.get("allowed", False):
@@ -102,6 +108,10 @@ def main() -> None:
             f"alert_budget_reason={budget.get('reason', 'suppressed')}",
             f"alert_budget_upgraded={'true' if budget.get('upgraded') else 'false'}",
             "delivery_mode=text",
+            "notification_expected=false",
+            "notification_status=suppressed",
+            f"notification_reason=alert_budget:{budget.get('reason', 'suppressed')}",
+            f"risk={prstk_level}",
         ]
         destination = os.environ.get("GITHUB_OUTPUT")
         if destination:
@@ -121,7 +131,7 @@ def main() -> None:
             release_id=release_id,
             snapshot_id=snapshot_id,
             observation_id=trace_id,
-            prstk_risk_level=canonical_prstk_risk_level(event),
+            prstk_risk_level=prstk_level,
         )
     except (OSError, ValueError) as exc:
         print(f"text_delivery_failed={type(exc).__name__}")
@@ -137,6 +147,10 @@ def main() -> None:
         f"failed_count={failed_count}",
         f"delivery_status={'delivered' if failed_count == 0 else 'partial' if delivered_count else 'failed'}",
         "delivery_mode=text",
+        "notification_expected=true",
+        "notification_status=ready",
+        "notification_reason=emergency_alert",
+        f"risk={prstk_level}",
         f"failed_recipient_hashes={','.join(row.chat_id_hash for row in results if row.status != 'delivered')}",
         "alert_budget_allowed=true",
         f"alert_budget_reason={budget.get('reason', 'budget_available')}",

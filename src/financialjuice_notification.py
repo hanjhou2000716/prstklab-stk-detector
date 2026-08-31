@@ -62,13 +62,18 @@ def financialjuice_caption(event: dict[str, Any], *, limit: int = MAX_FINANCIALJ
     headline = _text(event.get("title") or event.get("brief_title") or "FinancialJuice 公開快訊")
     importance = event.get("vendor_importance")
     suffix = f"FJ {importance}/10" if importance is not None else "FJ 待核對"
-    # Keep the vendor score as public metadata, but do not expose the
-    # internal PRStK R0-R4 risk code in Telegram captions.
-    raw = f"🟣 {suffix}｜{headline}"
+    # Vendor importance remains separate metadata, while the canonical
+    # formatter adds exactly one PRStK risk token to the user-facing text.
+    from src.telegram_client import canonical_short_message
+
+    raw = canonical_short_message(
+        f"🟣 {suffix}｜{headline}",
+        prstk_risk_level=canonical_prstk_risk_level(event),
+    )
     escaped = html.escape(_bounded(raw, limit), quote=False)
     if len(escaped) <= limit:
         return escaped
-    return html.escape(_bounded(f"🟣 FJ｜{headline}", limit), quote=False)
+    return html.escape(_bounded(f"🟣 {suffix}｜{canonical_prstk_risk_level(event)}", limit), quote=False)
 
 
 def _history_delivered(

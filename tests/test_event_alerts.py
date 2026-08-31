@@ -39,6 +39,71 @@ def test_snapshot_explains_overseas_price_signal_below_threshold():
     }]
 
 
+def _live_watch_quote(ticker: str, change_percent: float) -> dict[str, object]:
+    return {
+        "ticker": ticker,
+        "name": ticker,
+        "market": "us" if ticker in {"QQQM", "QLD", "TSM", "NVDA"} else "taiwan",
+        "price": 100.0,
+        "change_percent": change_percent,
+        "freshness": "live",
+        "source_tier": "public-market",
+        "source_url": f"https://finance.yahoo.com/quote/{ticker}",
+        "source_domain": "finance.yahoo.com",
+        "snapshot_id": "market-test",
+        "observation_id": f"obs-{ticker}",
+    }
+
+
+def test_watchlist_price_alert_uses_strict_greater_than_1_50_boundary():
+    below = build_event_snapshot({"taiwan": [], "us": []}, [_live_watch_quote("NVDA", 1.49)])
+    equal = build_event_snapshot({"taiwan": [], "us": []}, [_live_watch_quote("NVDA", 1.50)])
+    above = build_event_snapshot({"taiwan": [], "us": []}, [_live_watch_quote("NVDA", 1.51)])
+    assert below["watchlist_price_signals"] == []
+    assert equal["watchlist_price_signals"] == []
+    assert above["watchlist_price_signals"][0]["instrument"]["ticker"] == "NVDA"
+    assert above["watchlist_price_signals"][0]["watchlist_realtime"] is True
+    assert above["watchlist_price_signals"][0]["notification_expected"] is True
+
+
+def test_watchlist_price_alert_supports_negative_boundary_and_preserves_risk_code():
+    snapshot = build_event_snapshot({"taiwan": [], "us": []}, [_live_watch_quote("2330", -1.8)])
+    event = snapshot["watchlist_price_signals"][0]
+    assert event["market_direction"] == "下跌"
+    assert event["prstk_risk_level"] in {"R1", "R2", "R3", "R4"}
+    assert event["source_trace"]["source_domain"] == "finance.yahoo.com"
+
+
+def test_watchlist_stale_delayed_or_missing_provenance_cannot_alert():
+    stale = {**_live_watch_quote("NVDA", 3.0), "freshness": "stale"}
+    delayed = {**_live_watch_quote("NVDA", 3.0), "quote_delayed": True}
+    no_provenance = {key: value for key, value in _live_watch_quote("NVDA", 3.0).items()
+                     if key not in {"source_tier", "source_url", "source_domain", "snapshot_id", "observation_id"}}
+    for quote, reason in ((stale, "quote_stale"), (delayed, "quote_delayed"), (no_provenance, "missing_quote_provenance")):
+        snapshot = build_event_snapshot({"taiwan": [], "us": []}, [quote])
+        assert snapshot["watchlist_price_signals"] == []
+        assert snapshot["suppressed_signals"][0]["reason"] == reason
+
+
+def test_realtime_watchlist_candidate_is_retained_when_other_cards_fill_limit():
+    official_items = [
+        detect_major_event({"title": title, "url": f"https://example.com/{index}", "source": "official"})
+        for index, title in enumerate((
+            "美國宣布新一輪關稅措施",
+            "Fed 緊急政策聲明",
+            "半導體出口限制更新",
+            "地緣衝突影響能源供應",
+        ))
+    ]
+    snapshot = build_event_snapshot(
+        {"taiwan": [], "us": []},
+        [_live_watch_quote("NVDA", 2.1)],
+        official={"items": [item for item in official_items if item]},
+    )
+    assert len(snapshot["items"]) == 4
+    assert any(item.get("watchlist_realtime") for item in snapshot["items"])
+
+
 def test_large_representative_move_becomes_market_volatility_event():
     snapshot = build_event_snapshot({"taiwan": [], "us": []}, [{"ticker": "NVDA", "change_percent": -3.5}])
     assert snapshot["items"][0]["short_label"] == "NVDA價格訊號觸發"
@@ -210,6 +275,31 @@ def test_market_signal_keeps_quote_provenance_for_mini_app_trace():
     assert event["source_trace"]["source_url"].startswith("https://finance.yahoo.com/")
     assert event["source_trace"]["source_domain"] == "finance.yahoo.com"
     assert event["source_trace"]["checked_at"].startswith("2026-08-01T13:01")
+
+
+def test_public_news_enters_realtime_observation_without_high_risk_claim():
+    snapshot = build_event_snapshot({"us": [{
+        "title": "Nvidia export control urges policy review",
+        "url": "https://www.cnyes.com/news/1",
+    }]}, [], indices=[])
+    assert len(snapshot["items"]) == 1
+    event = snapshot["items"][0]
+    assert event["notification_status"] == "eligible"
+    assert event["public_observation"] is True
+    assert event["prstk_risk_level"] in {"R1", "R2"}
+    assert event["official_confirmed"] is False
+
+
+def test_google_conflict_observation_stays_pending_without_official_and_sync():
+    snapshot = build_event_snapshot({"us": [{
+        "title": "Iran conflict attack rumor spreads",
+        "url": "https://news.google.com/articles/1",
+    }]}, [], indices=[])
+    assert len(snapshot["items"]) == 1
+    event = snapshot["items"][0]
+    assert event["notification_status"] == "pending"
+    assert event["notification_expected"] is False
+    assert event["high_risk_eligible"] is False
 
 
 def test_delayed_intraday_quote_cannot_trigger_an_urgent_price_signal():

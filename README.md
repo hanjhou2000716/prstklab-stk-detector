@@ -8,7 +8,7 @@ PRStK 是部署於 GitHub 的公開市場資訊整理、風險監測與量化研
 
 ## 服務範圍
 
-- **Telegram 快報**：固定報告與符合門檻的速報；公開文字只顯示彩色風險提示與人類可讀狀態，caption 限制 40 字內，並附對應 Mini App deep link 按鈕。內部 `R0`～`R4` 仍保留在回執與稽核資料，不直接顯示給收件人。
+- **Telegram 快報**：固定報告與符合門檻的速報；公開文字以彩色圓點搭配一個 canonical `R0`～`R4` 風險代碼與人類可讀狀態，caption 限制 40 字內，並附對應 Mini App deep link 按鈕。相同風險等級會同步保留在回執與稽核資料。
 - **Telegram Mini App**：GitHub Pages 儀表板顯示完整市場卡、風控、研究清單、已核對事件與資料時間。
 - **公開市場快照**：台股、日股、韓股、美股、半導體、能源、黃金與加密資產的公開報價、交易日與資料新鮮度。
 - **重大事件流程**：官方一手來源、金十 MCP 授權快訊，及「多來源交叉核對」的探索訊號，皆經去重與市場資料核對才可能推播。
@@ -68,13 +68,14 @@ Telegram dry-run；外部服務未提供證據時，README 只標示「待驗證
 | 研究與候選 | 動能狙擊、三維共振、裸 K、璞玉價值；Strategy Registry／Explainability／Advice Gate | 候選、觀察、掃描失敗與部分母體分開；未通過 Advice Gate 不會產生買賣指令 |
 | 發布與回溯 | `data-release`、release manifest、snapshot／artifact hash、Pages release gate | invalid 或 hash 不一致的 release 不會覆蓋公開版本；可回到上一個 last-known-good release |
 | 通知與回執 | Telegram client、Alert Budget、逐收件人 retry、Railway／Worker receipt | 每次送出都有 trace、release、snapshot、policy 與結果；單一收件人失敗不阻塞其他人 |
+| 即時覆蓋 | Watchlist 價格速報（絕對變動 >1.5%）、官方／公開新聞與 FinancialJuice ≥8 優先通知 | 共用 EventLedger、Alert Budget 與同一 release gate；stale／delayed／未核對資料只保留觀察 |
 | 零成本替代路徑 | Cloudflare Worker + Pages、Supabase job/report contract、GitHub Actions worker | 可在既有 Railway 路徑旁執行 canary；Railway 保留為可選 rollback，直到外部驗收證據完整 |
 
 ### 各介面看到的內容
 
 | 介面 | 公開呈現 | 不應期待的內容 |
 |---|---|---|
-| Telegram 文字 | 彩色圓點、事件／市場／狀態、最多 40 字、對應按鈕 | 不顯示 `R0`～`R4`；不顯示未核對方向或虛構百分比 |
+| Telegram 文字 | 彩色圓點、一個 canonical `R0`～`R4`、事件／市場／狀態、最多 40 字、對應按鈕 | 不重複顯示風險代碼；不顯示未核對方向或虛構百分比 |
 | Telegram 圖卡 | 僅限通過 renderer 與 release gate 的指定照片路徑；caption 與按鈕指向同一事件 | renderer 失敗時停止送圖，不寄出黑色／單色 placeholder |
 | Mini App | 完整事件脈絡、來源 URL、published／fetched time、freshness、release lineage、事件時間線與研究狀態 | 不把來源失敗當成「本輪無事件」，不混用新舊 release；公開分析欄位可保留內部風險等級供稽核 |
 | `/health`、delivery receipt | source health、classification、trace、成功／失敗數、重試與錯誤類型 | 不回傳 Bot token、原始 Chat ID 或其他 Secret |
@@ -89,7 +90,7 @@ Telegram dry-run；外部服務未提供證據時，README 只標示「待驗證
 - **新聞連結安全**：Mini App 只允許 `https://news.cnyes.com` 與 `https://news.google.com`，其他網址只顯示為不可開啟，避免把不明連結直接交給 Telegram WebView。
 - **璞玉價值狀態透明化**：台股 MOPS 歷史資料採分批快取；未完成個股不列入，已完成個股可先產生正式候選或觀察名單，整體仍標示「歷史核對中」，且不沿用上一輪舊資料。TWSE 的 ROE／淨利／本益比是補充欄位，不會阻擋已完成六項歷史規則的台股；自由流通週轉率在沒有官方 free-float 欄位時，會透明標示採 Yahoo `floatShares`／`sharesOutstanding` 公開股數代理計算，不把代理值誤稱為 TWSE 官方數字。
 - **報價與來源可追溯**：市場卡保留來源、報價／抓取時間、盤中或最近收盤、交叉核對狀態；逾時資料仍可顯示，但必須標示「最近收盤」，不可被價格警報使用。
-- **Telegram 顯示與內部稽核分離**：PR #849 起，收件人只看到彩色圓點與人類可讀狀態，不再看到 `R0`～`R4`；風險等級仍寫入 delivery receipt、release lineage 與 Mini App 稽核欄位。
+- **Telegram 顯示與內部稽核一致**：所有非 Creator 文字通知在送出邊界正規化為一個 canonical `R0`～`R4`，並與彩色圓點、人類可讀狀態同時呈現；同一等級也寫入 delivery receipt、release lineage 與 Mini App 稽核欄位，避免重複或遺失風險上下文。
 - **零成本路徑可回滾**：Cloudflare Worker／Pages、Supabase job contract、Gmail Watch renewal 與 GitHub Actions worker 已有正式契約與離線驗證；在外部 canary 證據完整前，Railway 不刪除且維持可選 rollback。
 - **頁尾與 Mini App 入口**：頁尾為 `@2026 PRStK Lab & D.INV | All right reserved.`；Telegram 快報按鈕為「📡 開啟稜量速報系統」，固定選單為「稜量系統」。
 
@@ -644,9 +645,10 @@ attachments may use the photo renderer and Telegram file-ID reuse. See
 [`docs/alert-card-renderer.md`](docs/alert-card-renderer.md).
 
 The public Telegram contract is intentionally shorter than the audit contract:
-the color dot remains a visual cue, but the text never exposes `R0`, `R1`, `R2`,
-`R3` or `R4`. This is a presentation-only change; alert qualification,
-deduplication, Alert Budget, release lineage and safety gates are unchanged.
+the color dot and exactly one canonical `R0`–`R4` token provide a compact risk
+cue, while full evidence remains in the Mini App and receipt. This is a
+presentation-only contract; alert qualification, deduplication, Alert Budget,
+release lineage and safety gates are unchanged.
 
 ### Renderer and release recovery
 

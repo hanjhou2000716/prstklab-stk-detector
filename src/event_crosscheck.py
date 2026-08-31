@@ -69,6 +69,13 @@ _TRUSTED_DISCOVERY_DOMAINS = {
     "reuters.com", "apnews.com", "bloomberg.com", "ft.com", "wsj.com",
     "bbc.com", "cnbc.com", "cnn.com", "aljazeera.com", "nytimes.com",
 }
+# Market-news providers are allowed to corroborate and deduplicate a topic,
+# but their authority tier remains ``market``/``discovery``.  This distinction
+# lets Anue/Yahoo/Google enter the same realtime event cluster without
+# promoting a headline to official confirmation.
+_MARKET_NEWS_DOMAINS = {
+    "cnyes.com", "finance.yahoo.com", "tw.stock.yahoo.com", "news.google.com",
+}
 
 
 def _hits(aliases: Iterable[str], text: str) -> set[str]:
@@ -141,7 +148,7 @@ def _credible_sources(records: Iterable[dict[str, Any]]) -> set[str]:
     for record in records:
         for value in _source_domains(record):
             tier = str(record.get("source_tier") or "")
-            if tier == "official" or value in _TRUSTED_DISCOVERY_DOMAINS:
+            if tier == "official" or value in _TRUSTED_DISCOVERY_DOMAINS or value in _MARKET_NEWS_DOMAINS:
                 domains.add(value)
     return domains
 
