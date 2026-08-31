@@ -248,8 +248,16 @@ def validate_news_intelligence(document: dict[str, Any]) -> list[str]:
 
 def _safe_item_count(row: Mapping[str, Any]) -> int:
     """Read provider item counts without letting malformed diagnostics crash audit."""
+    # ``item_count`` historically represented the provider's raw response
+    # size.  Release-bound news health now also carries
+    # ``filtered_item_count`` after market-scope and eligibility routing.  Use
+    # that explicit post-filter value when present so a successful provider
+    # whose headlines were all rejected does not create the impossible
+    # ``stories=0 + available provider items`` release state.  Older releases
+    # without the field continue to use the legacy count for compatibility.
+    value = row.get("filtered_item_count", row.get("item_count"))
     try:
-        return max(0, int(row.get("item_count") or 0))
+        return max(0, int(value or 0))
     except (TypeError, ValueError):
         return 0
 
