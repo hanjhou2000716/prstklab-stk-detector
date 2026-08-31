@@ -1035,6 +1035,32 @@ def build_news_snapshot(
                 or str(row.get("key") or "").startswith(f"official_news_{market}_")
             )
         ]
+        # Re-bind the final, post-fallback story set to provider health at the
+        # last producer boundary.  Earlier collection diagnostics can be
+        # replaced by a cache/fallback payload, so relying only on the initial
+        # raw count would let stale provider volume leak back into the release
+        # contract as "available" stories.
+        accepted_by_provider: Counter[str] = Counter(
+            str(story.get("provider") or "unknown")
+            for story in stories
+            if isinstance(story, dict)
+        )
+        for row in market_health:
+            if str(row.get("key") or "") == f"news_{market}":
+                continue
+            provider_id = str(row.get("provider") or "unknown")
+            raw_count = row.get("raw_item_count", row.get("item_count", 0))
+            try:
+                raw_count = max(0, int(raw_count or 0))
+            except (TypeError, ValueError):
+                raw_count = 0
+            filtered_count = accepted_by_provider.get(provider_id, 0)
+            row["raw_item_count"] = raw_count
+            row["filtered_item_count"] = filtered_count
+            row["item_count"] = filtered_count
+            if raw_count > 0 and filtered_count == 0 and row.get("status") == "healthy":
+                row["status"] = "no_event"
+                row["data_gap"] = "filtered_no_market_match"
         result.setdefault("intelligence", {})[market] = build_news_intelligence(
             stories,
             market=market,
