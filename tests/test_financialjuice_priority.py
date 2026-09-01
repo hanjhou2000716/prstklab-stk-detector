@@ -76,6 +76,24 @@ def test_rich_fj_fields_project_to_canonical_semantics_without_risk_mutation():
     assert event["source_evidence"][0]["chinese_translation"] == row["chinese_translation"]
 
 
+def test_rich_source_fields_win_over_legacy_generic_canonical_values():
+    row = _row(10)
+    row.update({
+        "event": "FinancialJuice 公開快訊",
+        "why_important": "舊版摘要",
+        "possible_linkage": "舊版影響",
+        "chinese_translation": "某公司據報正在評估合作",
+        "ai_commentary": "目前仍未正式確認，但可能提高 AI 基礎建設需求。",
+        "possible_impact": "可能影響 AI 伺服器供應鏈。",
+    })
+
+    event = project_financialjuice_priority([row])["events"][0]
+
+    assert event["event"] == row["chinese_translation"]
+    assert event["why_important"] == row["ai_commentary"]
+    assert event["possible_linkage"] == row["possible_impact"]
+
+
 def test_compound_rich_semantics_stay_bound_to_each_item():
     parsed = parse_financialjuice_email(
         sender="alerts@financialjuice.com",
