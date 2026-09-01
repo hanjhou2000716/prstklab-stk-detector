@@ -2,11 +2,11 @@
   "schema": 1,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-09-01T03:47:07.245679+00:00",
+      "fetched_at": "2026-09-01T03:49:06.508836+00:00",
       "stories": [
         {
-          "title": "2. 〈台股盤前要聞〉台指期夜盤跌破4萬5 台股季線高度警戒、群創正向看明年FOPLP出貨",
-          "url": "https://news.cnyes.com/news/id/6580775",
+          "title": "3. 〈台股盤前要聞〉9月開局捍衛4萬6、輝達砸35億美元認購聯發科ECB",
+          "url": "https://news.cnyes.com/news/id/6589725",
           "source": "鉅亨網｜持股關聯",
           "relevance": "holding",
           "provider": "anue",
@@ -14,7 +14,7 @@
             "market_scope": "taiwan",
             "taiwan_matches": [
               "台股",
-              "台指"
+              "聯發科"
             ],
             "us_matches": [],
             "global_matches": [],
@@ -28,7 +28,7 @@
           "market_scope": "taiwan",
           "taiwan_matches": [
             "台股",
-            "台指"
+            "聯發科"
           ],
           "us_matches": [],
           "global_matches": [],
@@ -38,18 +38,19 @@
             "matched_term_count": 2,
             "source_market_hint": "taiwan"
           },
-          "story_id": "news-64b6e70ebc8f2cde044a",
+          "story_id": "news-3feb5d0b702f641421c2",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6580775",
+          "canonical_url": "https://news.cnyes.com/news/id/6589725",
           "published_at": null,
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
           "entities": [
+            "NVDA",
             "TAIEX"
           ],
           "sectors": [],
@@ -57,9 +58,11 @@
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
+            "category": "semiconductor",
+            "reason": "semiconductor_keyword",
+            "matched_terms": [
+              "輝達"
+            ],
             "input_fields": [
               "description",
               "summary",
@@ -70,82 +73,8 @@
             "market:taiwan"
           ],
           "freshness": "unknown",
-          "dedupe_key": "2台股盤前要聞台指期夜盤跌破4萬5台股季線高度警戒群創正向看明年foplp出貨",
-          "event_cluster_key": "",
-          "published_time_bucket": null,
-          "public_safe": true,
-          "public_news_eligible": true,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "relevance_class": "contextual",
-          "ranking_score": 25
-        },
-        {
-          "title": "5. 兩枚伊朗飛彈逼近！阿聯宣布暫停與伊朗經貿往來",
-          "url": "https://news.cnyes.com/news/id/6580680",
-          "source": "鉅亨網｜市場焦點",
-          "relevance": "market",
-          "provider": "anue",
-          "market_classification": {
-            "market_scope": "global",
-            "taiwan_matches": [],
-            "us_matches": [],
-            "global_matches": [
-              "伊朗"
-            ],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "global"
-            }
-          },
-          "market_scope": "global",
-          "taiwan_matches": [],
-          "us_matches": [],
-          "global_matches": [
-            "伊朗"
-          ],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "global"
-          },
-          "story_id": "news-01c527e852e9f2d8fd70",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6580680",
-          "published_at": null,
-          "market": "global",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "conflict",
-            "reason": "conflict_keyword",
-            "matched_terms": [
-              "伊朗"
-            ],
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:global"
-          ],
-          "freshness": "unknown",
-          "dedupe_key": "5兩枚伊朗飛彈逼近阿聯宣布暫停與伊朗經貿往來",
-          "event_cluster_key": "",
+          "dedupe_key": "3台股盤前要聞9月開局捍衛4萬6輝達砸35億美元認購聯發科ecb",
+          "event_cluster_key": "event-7a628ee5b4a5a2c3d1c8",
           "published_time_bucket": null,
           "public_safe": true,
           "public_news_eligible": true,
@@ -299,6 +228,235 @@
           "ranking_score": 30
         },
         {
+          "title": "片山皋月：日美聯手干預匯市有益，並淡化貝森特敦促日本升息報導",
+          "url": "https://tw.stock.yahoo.com/news/%E7%89%87%E5%B1%B1%E7%9A%8B%E6%9C%88-%E6%97%A5%E7%BE%8E%E8%81%AF%E6%89%8B%E5%B9%B2%E9%A0%90%E5%8C%AF%E5%B8%82%E6%9C%89%E7%9B%8A-%E4%B8%A6%E6%B7%A1%E5%8C%96%E8%B2%9D%E6%A3%AE%E7%89%B9%E6%95%A6%E4%BF%83%E6%97%A5%E6%9C%AC%E5%8D%87%E6%81%AF%E5%A0%B1%E5%B0%8E-034404155.html",
+          "source": "Yahoo Taiwan Finance",
+          "relevance": "market",
+          "published_at": "2026-09-01T03:44:04+00:00",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "provider": "yahoo_finance",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          },
+          "story_id": "news-fb440d8d7a6f46f55b4e",
+          "provider_name": "Yahoo Taiwan Finance",
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%89%87%E5%B1%B1%E7%9A%8B%E6%9C%88-%E6%97%A5%E7%BE%8E%E8%81%AF%E6%89%8B%E5%B9%B2%E9%A0%90%E5%8C%AF%E5%B8%82%E6%9C%89%E7%9B%8A-%E4%B8%A6%E6%B7%A1%E5%8C%96%E8%B2%9D%E6%A3%AE%E7%89%B9%E6%95%A6%E4%BF%83%E6%97%A5%E6%9C%AC%E5%8D%87%E6%81%AF%E5%A0%B1%E5%B0%8E-034404155.html",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "policy",
+            "reason": "policy_keyword",
+            "matched_terms": [
+              "敦促"
+            ],
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "片山皋月日美聯手干預匯市有益並淡化貝森特敦促日本升息報導",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-09-01T03:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "relevance_class": "contextual",
+          "ranking_score": 30
+        },
+        {
+          "title": "清晰巔峰再進化：AGON by AOC 推出全球首款 5K NVIDIA G-SYNC® Pulsar 電競顯示器",
+          "url": "https://tw.stock.yahoo.com/news/%E6%B8%85%E6%99%B0%E5%B7%94%E5%B3%B0%E5%86%8D%E9%80%B2%E5%8C%96-agon-aoc-%E6%8E%A8%E5%87%BA%E5%85%A8%E7%90%83%E9%A6%96%E6%AC%BE-5k-034400105.html",
+          "source": "Yahoo Taiwan Finance",
+          "relevance": "market",
+          "published_at": "2026-09-01T03:44:00+00:00",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "provider": "yahoo_finance",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [
+              "nvidia"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "cross_market"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [
+            "nvidia"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "cross_market"
+          },
+          "story_id": "news-7f5a7949329cac95ed92",
+          "provider_name": "Yahoo Taiwan Finance",
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%B8%85%E6%99%B0%E5%B7%94%E5%B3%B0%E5%86%8D%E9%80%B2%E5%8C%96-agon-aoc-%E6%8E%A8%E5%87%BA%E5%85%A8%E7%90%83%E9%A6%96%E6%AC%BE-5k-034400105.html",
+          "market": "cross_market",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_keyword",
+            "matched_terms": [
+              "nvidia"
+            ],
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market"
+          ],
+          "freshness": "published",
+          "dedupe_key": "清晰巔峰再進化agonbyaoc推出全球首款5knvidiagsyncpulsar電競顯示器",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-09-01T03:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "relevance_class": "contextual",
+          "ranking_score": 30
+        },
+        {
+          "title": "MicroLED光通訊2028年有望在AI數據中心獲商用，錼創開發專案搶商機",
+          "url": "https://tw.stock.yahoo.com/news/microled%E5%85%89%E9%80%9A%E8%A8%8A2028%E5%B9%B4%E6%9C%89%E6%9C%9B%E5%9C%A8ai%E6%95%B8%E6%93%9A%E4%B8%AD%E5%BF%83%E7%8D%B2%E5%95%86%E7%94%A8-%E9%8C%BC%E5%89%B5%E9%96%8B%E7%99%BC%E5%B0%88%E6%A1%88%E6%90%B6%E5%95%86%E6%A9%9F-034054025.html",
+          "source": "Yahoo Taiwan Finance",
+          "relevance": "market",
+          "published_at": "2026-09-01T03:40:54+00:00",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "provider": "yahoo_finance",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          },
+          "story_id": "news-7d81ae8348aa6bd7d721",
+          "provider_name": "Yahoo Taiwan Finance",
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/microled%E5%85%89%E9%80%9A%E8%A8%8A2028%E5%B9%B4%E6%9C%89%E6%9C%9B%E5%9C%A8ai%E6%95%B8%E6%93%9A%E4%B8%AD%E5%BF%83%E7%8D%B2%E5%95%86%E7%94%A8-%E9%8C%BC%E5%89%B5%E9%96%8B%E7%99%BC%E5%B0%88%E6%A1%88%E6%90%B6%E5%95%86%E6%A9%9F-034054025.html",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "input_fields": [
+              "description",
+              "summary",
+              "title",
+              "topics"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "microled光通訊2028年有望在ai數據中心獲商用錼創開發專案搶商機",
+          "event_cluster_key": "event-d0379bd7ff6032d39da3",
+          "published_time_bucket": "2026-09-01T03:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "relevance_class": "contextual",
+          "ranking_score": 30
+        },
+        {
           "title": "勞動基金7月回吐2463億 新制勞工分紅縮至10.2萬元",
           "url": "https://tw.stock.yahoo.com/news/%E5%8B%9E%E5%8B%95%E5%9F%BA%E9%87%917%E6%9C%88%E5%9B%9E%E5%90%902463%E5%84%84-%E6%96%B0%E5%88%B6%E5%8B%9E%E5%B7%A5%E5%88%86%E7%B4%85%E7%B8%AE%E8%87%B310-2%E8%90%AC%E5%85%83-033900423.html",
           "source": "Yahoo Taiwan Finance",
@@ -361,6 +519,82 @@
           ],
           "freshness": "published",
           "dedupe_key": "勞動基金7月回吐2463億新制勞工分紅縮至102萬元",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-09-01T03:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "relevance_class": "contextual",
+          "ranking_score": 30
+        },
+        {
+          "title": "美國批准2017年來最大規模生物燃料豁免，尋求平衡煉油商與農戶利益",
+          "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B%E6%89%B9%E5%87%862017%E5%B9%B4%E4%BE%86%E6%9C%80%E5%A4%A7%E8%A6%8F%E6%A8%A1%E7%94%9F%E7%89%A9%E7%87%83%E6%96%99%E8%B1%81%E5%85%8D-%E5%B0%8B%E6%B1%82%E5%B9%B3%E8%A1%A1%E7%85%89%E6%B2%B9%E5%95%86%E8%88%87%E8%BE%B2%E6%88%B6%E5%88%A9%E7%9B%8A-033758037.html",
+          "source": "Yahoo Taiwan Finance",
+          "relevance": "market",
+          "published_at": "2026-09-01T03:37:58+00:00",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "provider": "yahoo_finance",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [
+              "美國"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "cross_market"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [
+            "美國"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "cross_market"
+          },
+          "story_id": "news-e1128d9369394ff61f1d",
+          "provider_name": "Yahoo Taiwan Finance",
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B%E6%89%B9%E5%87%862017%E5%B9%B4%E4%BE%86%E6%9C%80%E5%A4%A7%E8%A6%8F%E6%A8%A1%E7%94%9F%E7%89%A9%E7%87%83%E6%96%99%E8%B1%81%E5%85%8D-%E5%B0%8B%E6%B1%82%E5%B9%B3%E8%A1%A1%E7%85%89%E6%B2%B9%E5%95%86%E8%88%87%E8%BE%B2%E6%88%B6%E5%88%A9%E7%9B%8A-033758037.html",
+          "market": "cross_market",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國批准2017年來最大規模生物燃料豁免尋求平衡煉油商與農戶利益",
           "event_cluster_key": "",
           "published_time_bucket": "2026-09-01T03:00:00+00:00",
           "public_safe": true,
@@ -587,272 +821,6 @@
           "freshness": "published",
           "dedupe_key": "hot台股大立光盤中衝近8000元創新高網嗨第一個cpo萬金股分析師有機會",
           "event_cluster_key": "",
-          "published_time_bucket": "2026-09-01T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "relevance_class": "contextual",
-          "ranking_score": 30
-        },
-        {
-          "title": "總統：台灣半導體串連全球 攜手打造更具韌性供應鏈",
-          "url": "https://tw.stock.yahoo.com/news/%E7%B8%BD%E7%B5%B1-%E5%8F%B0%E7%81%A3%E5%8D%8A%E5%B0%8E%E9%AB%94%E4%B8%B2%E9%80%A3%E5%85%A8%E7%90%83-%E6%94%9C%E6%89%8B%E6%89%93%E9%80%A0%E6%9B%B4%E5%85%B7%E9%9F%8C%E6%80%A7%E4%BE%9B%E6%87%89%E9%8F%88-032709702.html",
-          "source": "Yahoo Taiwan Finance",
-          "relevance": "market",
-          "published_at": "2026-09-01T03:27:09+00:00",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "provider": "yahoo_finance",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan",
-              "台灣"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan",
-            "台灣"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          },
-          "story_id": "news-caaf4d3406c9a0c189af",
-          "provider_name": "Yahoo Taiwan Finance",
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%B8%BD%E7%B5%B1-%E5%8F%B0%E7%81%A3%E5%8D%8A%E5%B0%8E%E9%AB%94%E4%B8%B2%E9%80%A3%E5%85%A8%E7%90%83-%E6%94%9C%E6%89%8B%E6%89%93%E9%80%A0%E6%9B%B4%E5%85%B7%E9%9F%8C%E6%80%A7%E4%BE%9B%E6%87%89%E9%8F%88-032709702.html",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_keyword",
-            "matched_terms": [
-              "semiconductor"
-            ],
-            "input_fields": [
-              "description",
-              "summary",
-              "title",
-              "topics"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "總統台灣半導體串連全球攜手打造更具韌性供應鏈",
-          "event_cluster_key": "event-797d36fa0799999a4453",
-          "published_time_bucket": "2026-09-01T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "relevance_class": "contextual",
-          "ranking_score": 30
-        },
-        {
-          "title": "美國電網可靠性拉警報 分散式儲能系統成解方 NeoVolta與SK On簽百億大單",
-          "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B%E9%9B%BB%E7%B6%B2%E5%8F%AF%E9%9D%A0%E6%80%A7%E6%8B%89%E8%AD%A6%E5%A0%B1-%E5%88%86%E6%95%A3%E5%BC%8F%E5%84%B2%E8%83%BD%E7%B3%BB%E7%B5%B1%E6%88%90%E8%A7%A3%E6%96%B9-neovolta%E8%88%87sk-on%E7%B0%BD%E7%99%BE%E5%84%84%E5%A4%A7%E5%96%AE-032511348.html",
-          "source": "Yahoo Taiwan Finance",
-          "relevance": "market",
-          "published_at": "2026-09-01T03:25:11+00:00",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "provider": "yahoo_finance",
-          "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [
-              "美國"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "cross_market"
-            }
-          },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [
-            "美國"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "cross_market"
-          },
-          "story_id": "news-57aca53a12d26261ba83",
-          "provider_name": "Yahoo Taiwan Finance",
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B%E9%9B%BB%E7%B6%B2%E5%8F%AF%E9%9D%A0%E6%80%A7%E6%8B%89%E8%AD%A6%E5%A0%B1-%E5%88%86%E6%95%A3%E5%BC%8F%E5%84%B2%E8%83%BD%E7%B3%BB%E7%B5%B1%E6%88%90%E8%A7%A3%E6%96%B9-neovolta%E8%88%87sk-on%E7%B0%BD%E7%99%BE%E5%84%84%E5%A4%A7%E5%96%AE-032511348.html",
-          "market": "cross_market",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美國電網可靠性拉警報分散式儲能系統成解方neovolta與skon簽百億大單",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-09-01T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "relevance_class": "contextual",
-          "ranking_score": 30
-        },
-        {
-          "title": "15年庫克時代終結！工程師接棒新CEO",
-          "url": "https://tw.news.yahoo.com/15%E5%B9%B4%E5%BA%AB%E5%85%8B%E6%99%82%E4%BB%A3%E7%B5%82%E7%B5%90-%E5%B7%A5%E7%A8%8B%E5%B8%AB%E6%8E%A5%E6%A3%92%E6%96%B0ceo-032418520.html",
-          "source": "Yahoo Taiwan Finance",
-          "relevance": "market",
-          "published_at": "2026-09-01T03:24:18+00:00",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "provider": "yahoo_finance",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": null
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": null
-          }
-        },
-        {
-          "title": "環球晶CPO主攻12吋SOI矽光子晶圓，徐秀蘭有信心逐步看到先進封裝營收",
-          "url": "https://tw.stock.yahoo.com/news/%E7%92%B0%E7%90%83%E6%99%B6cpo%E4%B8%BB%E6%94%BB12%E5%90%8Bsoi%E7%9F%BD%E5%85%89%E5%AD%90%E6%99%B6%E5%9C%93-%E5%BE%90%E7%A7%80%E8%98%AD%E6%9C%89%E4%BF%A1%E5%BF%83%E9%80%90%E6%AD%A5%E7%9C%8B%E5%88%B0%E5%85%88%E9%80%B2%E5%B0%81%E8%A3%9D%E7%87%9F%E6%94%B6-032417161.html",
-          "source": "Yahoo Taiwan Finance",
-          "relevance": "market",
-          "published_at": "2026-09-01T03:24:17+00:00",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "provider": "yahoo_finance",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          },
-          "story_id": "news-29cf9e6157ca96913b25",
-          "provider_name": "Yahoo Taiwan Finance",
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%92%B0%E7%90%83%E6%99%B6cpo%E4%B8%BB%E6%94%BB12%E5%90%8Bsoi%E7%9F%BD%E5%85%89%E5%AD%90%E6%99%B6%E5%9C%93-%E5%BE%90%E7%A7%80%E8%98%AD%E6%9C%89%E4%BF%A1%E5%BF%83%E9%80%90%E6%AD%A5%E7%9C%8B%E5%88%B0%E5%85%88%E9%80%B2%E5%B0%81%E8%A3%9D%E7%87%9F%E6%94%B6-032417161.html",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "earnings"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "input_fields": [
-              "description",
-              "summary",
-              "title",
-              "topics"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "環球晶cpo主攻12吋soi矽光子晶圓徐秀蘭有信心逐步看到先進封裝營收",
-          "event_cluster_key": "event-2806e24bc8195b1e4115",
           "published_time_bucket": "2026-09-01T03:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
@@ -1258,7 +1226,7 @@
           "ranking_score": 15
         },
         {
-          "title": "台股9月開門紅「飆近700點」！台積電漲25元、聯發科跳空漲停 - 台視新聞網",
+          "title": "台股9月開門紅「飆近700點」！台積電漲25元、聯發科跳空漲停 - news.ttv.com.tw",
           "url": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE1qaXY5eEpVNGdOUFM0NERwSUNPOXQ5TUdfWVBZSkZXWGVYVFVLaFVndzVqU1o4SVJSSVVtakZjN0RtZ0NoTE5Qd0NvMjNOMnBjV085WExpWQ",
           "source": "Google News｜台股線索",
           "relevance": "market",
@@ -1294,7 +1262,7 @@
             "matched_term_count": 3,
             "source_market_hint": "taiwan"
           },
-          "story_id": "news-8668b21d9983b8d76603",
+          "story_id": "news-6d8bc40c8d3c6244fd13",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
@@ -1329,160 +1297,8 @@
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "台股9月開門紅飆近700點台積電漲25元聯發科跳空漲停台視新聞網",
+          "dedupe_key": "台股9月開門紅飆近700點台積電漲25元聯發科跳空漲停newsttvcomtw",
           "event_cluster_key": "event-5ddf3952151fdd837910",
-          "published_time_bucket": "2026-09-01T01:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "relevance_class": "contextual",
-          "ranking_score": 15
-        },
-        {
-          "title": "聯發科漲停領漲 台股盤中勁揚近700點突破46800點 - cna.com.tw",
-          "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE1XZEVBNmExTlJ2NTUwUG4xYnF0N0R3a3hWVWFWNVRuVTY3QWhDYWNCS0VRclZXZk43T0dmZlBDV1ZibHROQkp4Wk1pTnlkelVPWDNOaE1rY1BnbFVjOGc",
-          "source": "Google News｜台股線索",
-          "relevance": "market",
-          "published_at": "2026-09-01T02:54:00+00:00",
-          "provider": "google_news",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股",
-              "聯發科"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股",
-            "聯發科"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          },
-          "story_id": "news-9eb3dbfae5a9236c96ac",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE1XZEVBNmExTlJ2NTUwUG4xYnF0N0R3a3hWVWFWNVRuVTY3QWhDYWNCS0VRclZXZk43T0dmZlBDV1ZibHROQkp4Wk1pTnlkelVPWDNOaE1rY1BnbFVjOGc",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "TAIEX"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "聯發科漲停領漲台股盤中勁揚近700點突破46800點cnacomtw",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-09-01T02:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "relevance_class": "contextual",
-          "ranking_score": 15
-        },
-        {
-          "title": "〈台股開盤〉9月起高調 聯發科漲停「輝」映領軍大漲逾600點 - news.cnyes.com",
-          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE1oa0lnV3JSRjRIel8tWjIySTZNbnBfUmszUEFWbE1ueUd5RlhmaE9hM0JUUHVIdlJPaU80ZVpaUHgyVy1qQVp5cW14c3k1cW8",
-          "source": "Google News｜台股線索",
-          "relevance": "market",
-          "published_at": "2026-09-01T01:53:04+00:00",
-          "provider": "google_news",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股",
-              "聯發科"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股",
-            "聯發科"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          },
-          "story_id": "news-c96bf490fee55af3e8e0",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE1oa0lnV3JSRjRIel8tWjIySTZNbnBfUmszUEFWbE1ueUd5RlhmaE9hM0JUUHVIdlJPaU80ZVpaUHgyVy1qQVp5cW14c3k1cW8",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "TAIEX"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "台股開盤9月起高調聯發科漲停輝映領軍大漲逾600點newscnyescom",
-          "event_cluster_key": "",
           "published_time_bucket": "2026-09-01T01:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
@@ -1644,11 +1460,172 @@
           "confirmation_required": true,
           "relevance_class": "contextual",
           "ranking_score": 15
+        },
+        {
+          "title": "台積電才是AI終極贏家？外媒點名「賣鏟子」優勢 鄉民卻抓到1亮點 - udn.com",
+          "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE9fZmotaklWeU5qSzZ4OG1DVlNvMWJCRU0xRkUwWGhqNlN0SXRzakt0bEp4amRacF8yUGx1U3NFeVluX3lTT2RaaTlRenNZNmF1TFE",
+          "source": "Google News｜台股線索",
+          "relevance": "market",
+          "published_at": "2026-09-01T02:35:20+00:00",
+          "provider": "google_news",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "台積電"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "台積電"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "taiwan"
+          },
+          "story_id": "news-41a3aa2086f78b8f09ae",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE9fZmotaklWeU5qSzZ4OG1DVlNvMWJCRU0xRkUwWGhqNlN0SXRzakt0bEp4amRacF8yUGx1U3NFeVluX3lTT2RaaTlRenNZNmF1TFE",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_keyword",
+            "matched_terms": [
+              "台積電"
+            ],
+            "input_fields": [
+              "description",
+              "summary",
+              "title",
+              "topics"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "台積電才是ai終極贏家外媒點名賣鏟子優勢鄉民卻抓到1亮點udncom",
+          "event_cluster_key": "event-7e9e2729e1842e74f700",
+          "published_time_bucket": "2026-09-01T02:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "relevance_class": "contextual",
+          "ranking_score": 15
+        },
+        {
+          "title": "隱形大股東！「這醫院」緊抱1.46萬張台積電 3年狂翻4.5倍 - Yahoo股市",
+          "url": "https://news.google.com/rss/articles/CBMivwJBVV95cUxQWmx1SWxvdGx0dmJfbktKY1JTN0dpY0ZJUlZJNXdtcjExeU1kbTZSb0xUcXZRbGxFUFcyY3l3Y1M4TUQxaXVuOWNPZkRTR0JrUFUyMk02NWliUUFmZXl4Mm0weXl2S2FuOHh3aWZxbWpQdFlJOHpBa2N0WWdRT05mSFNWUjZkb2otaVItYTBXUllLbXhCS2oxUTNRYUQtaUctNENOanVyUU5zVWdSem9ZNFFBVHhfb1hEMGk1RWZjQU51TFI3eVotZC16ODZ6Q1o5Q1JrOUJucjlRdFNDd3pabUtYajFmaUE0R2s4X2FJcGxudUpRRnJwQVN5RmJfUWR5NU5BcXNTZ291dFZzRE96ZzRyOW00R0VpOEJ0Ym9FMzYtN0MxT005c1ltZFlVbXNhT013dzIyWUlTRnQ3Q09n",
+          "source": "Google News｜台股線索",
+          "relevance": "market",
+          "published_at": "2026-09-01T03:12:56+00:00",
+          "provider": "google_news",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "台積電"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "台積電"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "taiwan"
+          },
+          "story_id": "news-0187e904d29da344785e",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMivwJBVV95cUxQWmx1SWxvdGx0dmJfbktKY1JTN0dpY0ZJUlZJNXdtcjExeU1kbTZSb0xUcXZRbGxFUFcyY3l3Y1M4TUQxaXVuOWNPZkRTR0JrUFUyMk02NWliUUFmZXl4Mm0weXl2S2FuOHh3aWZxbWpQdFlJOHpBa2N0WWdRT05mSFNWUjZkb2otaVItYTBXUllLbXhCS2oxUTNRYUQtaUctNENOanVyUU5zVWdSem9ZNFFBVHhfb1hEMGk1RWZjQU51TFI3eVotZC16ODZ6Q1o5Q1JrOUJucjlRdFNDd3pabUtYajFmaUE0R2s4X2FJcGxudUpRRnJwQVN5RmJfUWR5NU5BcXNTZ291dFZzRE96ZzRyOW00R0VpOEJ0Ym9FMzYtN0MxT005c1ltZFlVbXNhT013dzIyWUlTRnQ3Q09n",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_keyword",
+            "matched_terms": [
+              "台積電"
+            ],
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "隱形大股東這醫院緊抱146萬張台積電3年狂翻45倍yahoo股市",
+          "event_cluster_key": "event-cb25733bdc33c263b1ce",
+          "published_time_bucket": "2026-09-01T03:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "relevance_class": "contextual",
+          "ranking_score": 15
         }
       ]
     },
     "us": {
-      "fetched_at": "2026-09-01T03:47:07.245679+00:00",
+      "fetched_at": "2026-09-01T03:49:06.508836+00:00",
       "stories": [
         {
           "title": "8-K - Inflection Point Acquisition Corp. V (0002028355) (Filer)",
@@ -2938,7 +2915,7 @@
           "ranking_score": 15
         },
         {
-          "title": "1 S&P 500 Stock with Exciting Potential and 2 We Ignore - stockstory.org",
+          "title": "1 S&P 500 Stock with Exciting Potential and 2 We Ignore - StockStory",
           "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxOWjVtUVJ6NjZndlBBaXpSYnRBdEdIRXdHemx2SU0wZFZlM3lGbGFGWDQ1cmhhT1pRQU4wN2d1MlRubkNqSk1WckdwbEEtVkhXMW1WcmVIS3E5bFc0REc2QTlMWWtwd0VwY0g3SnFFcjYxZHZCNlhXamt2cnRaNjBUaWJkVUJucFVORmoyZE1mOE4wOE5mMmFsRnpudzV6YVp5VkNNbS1YRlIyZHZmYVhwX3FpSXNhY29jUEpj",
           "source": "Google News｜美股線索",
           "relevance": "market",
@@ -2972,7 +2949,7 @@
             "matched_term_count": 2,
             "source_market_hint": "us"
           },
-          "story_id": "news-46169bb5caa0411ee32b",
+          "story_id": "news-cd5722680a8b90f55a5d",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
@@ -3001,7 +2978,7 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "1sp500stockwithexcitingpotentialand2weignorestockstoryorg",
+          "dedupe_key": "1sp500stockwithexcitingpotentialand2weignorestockstory",
           "event_cluster_key": "",
           "published_time_bucket": "2026-08-31T22:00:00+00:00",
           "public_safe": true,
@@ -3246,7 +3223,7 @@
           "ranking_score": 15
         },
         {
-          "title": "Oil prices rise and stocks fall after US hits Iranian sites in the Strait of Hormuz - ABC30 Fresno",
+          "title": "Oil prices rise and stocks fall after US hits Iranian sites in the Strait of Hormuz - abc30.com",
           "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNVjllOUpjb1VwbnVyYlBCU2FhaU85VDhQc0NFQ2xjaEdqMFhCM1lmcktFUHR5S1JCLTdEOXVoRHZtYnRYWW5WSHFIOTNGZXdkMGpWdmp5MS0tRWRNTUNPbm16WmlsZUdIdnB1SnBvanpVTzl5cHVkaTlES2c1TXYzMVlRQTM4VjlpNW14UWdNSjAtc0NQRXhtZFB3RzE3d2hING5CQVdSTFRpYW_SAbABQVVfeXFMTjAtN3c5VngzR2E2SkhDUzNDazlrYzFIUEdpUVRXT0NhNEV0U2pTZ0JvY1F6eXhMS0x1UHlPU2VmbjNyMm1sUEF4TDVrN1BpeEh4ajhHTGZLQ3VjUkhpa3VLRzkwXzJ0cDJTQUtMZzNoMUZ3bnJ6QkZFZ3ZZY1A4SF91Vmk0eHhtSVBjUm9Hc2FWRWVTYVA4OWhGOXFNaDZUTXBmVWpJTEdhNjE2bTUyTS0",
           "source": "Google News｜美股線索",
           "relevance": "market",
@@ -3286,7 +3263,7 @@
             "matched_term_count": 4,
             "source_market_hint": "us"
           },
-          "story_id": "news-e8db60825ae210c49d12",
+          "story_id": "news-fea3b6f698c44857cd84",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
@@ -3320,7 +3297,7 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "oilpricesriseandstocksfallafterushitsiraniansitesinthestraitofhormuzabc30fresno",
+          "dedupe_key": "oilpricesriseandstocksfallafterushitsiraniansitesinthestraitofhormuzabc30com",
           "event_cluster_key": "event-2d915de6b437754faf18",
           "published_time_bucket": "2026-08-31T17:00:00+00:00",
           "public_safe": true,
