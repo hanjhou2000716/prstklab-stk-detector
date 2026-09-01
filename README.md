@@ -17,7 +17,7 @@ lineage；以下狀態以目前 `main` 的程式與 Actions evidence 為準：
 | Telegram 文字與圖卡安全 | 已整合 | release gate、單一訊息、逐收件人 retry、renderer 失敗即停止送圖；不寄黑色 placeholder |
 | Pages／Mini App 公開版本 | 已驗收 | `ready` manifest、7/7 artifact hash、一致的 market／research／event snapshot，以及美股新聞頁與 release-bound deep link |
 | Cloudflare Worker／Supabase 零成本路徑 | canary 可用 | Worker health 與 Supabase contract 已驗證；Railway 仍保留為可選 rollback |
-| Gmail Watch 持久化 | 待補外部憑證 | Watch／Pub/Sub／Supabase 程式已存在，正式續期仍需要 OAuth client secret 與 refresh token；在補齊前不宣稱郵件事件正式接收 |
+| Gmail Watch 持久化 | canary 已驗證 | OAuth／Pub/Sub 設定已以加密 GitHub Secrets 保存；Supabase Watch 續期與跨 runner restart continuity 已驗證，Railway 僅保留為可選 rollback |
 
 公開頁面的檢查結果、release ID、snapshot ID 與 hash 會記錄在
 [`docs/evidence/postmerge-acceptance-2026-09-01.json`](docs/evidence/postmerge-acceptance-2026-09-01.json)。
@@ -25,7 +25,7 @@ lineage；以下狀態以目前 `main` 的程式與 Actions evidence 為準：
 
 ## 服務範圍
 
-- **Telegram 快報**：固定報告與符合門檻的速報；公開文字以彩色圓點搭配一個 canonical `R0`～`R4` 風險代碼與人類可讀狀態，caption 限制 40 字內，並附對應 Mini App deep link 按鈕。相同風險等級會同步保留在回執與稽核資料。
+- **Telegram 快報**：固定報告與符合門檻的速報；公開文字保留依風險等級選出的彩色圓點與人類可讀狀態，不顯示內部 `R0`～`R4` 代碼，caption 限制 40 字內，並附對應 Mini App deep link 按鈕。原始風險等級仍保留在回執與稽核資料。
 - **Telegram Mini App**：GitHub Pages 儀表板顯示完整市場卡、風控、研究清單、已核對事件與資料時間。
 - **公開市場快照**：台股、日股、韓股、美股、半導體、能源、黃金與加密資產的公開報價、交易日與資料新鮮度。
 - **重大事件流程**：官方一手來源、金十 MCP 授權快訊，及「多來源交叉核對」的探索訊號，皆經去重與市場資料核對才可能推播。
@@ -92,7 +92,7 @@ Telegram dry-run；外部服務未提供證據時，README 只標示「待驗證
 
 | 介面 | 公開呈現 | 不應期待的內容 |
 |---|---|---|
-| Telegram 文字 | 彩色圓點、一個 canonical `R0`～`R4`、事件／市場／狀態、最多 40 字、對應按鈕 | 不重複顯示風險代碼；不顯示未核對方向或虛構百分比 |
+| Telegram 文字 | 彩色圓點、事件／市場／狀態、最多 40 字、對應按鈕 | 不顯示內部 `R0`～`R4` 代碼；不顯示未核對方向或虛構百分比 |
 | Telegram 圖卡 | 僅限通過 renderer 與 release gate 的指定照片路徑；caption 與按鈕指向同一事件 | renderer 失敗時停止送圖，不寄出黑色／單色 placeholder |
 | Mini App | 完整事件脈絡、來源 URL、published／fetched time、freshness、release lineage、事件時間線與研究狀態 | 不把來源失敗當成「本輪無事件」，不混用新舊 release；公開分析欄位可保留內部風險等級供稽核 |
 | `/health`、delivery receipt | source health、classification、trace、成功／失敗數、重試與錯誤類型 | 不回傳 Bot token、原始 Chat ID 或其他 Secret |
@@ -107,13 +107,13 @@ Telegram dry-run；外部服務未提供證據時，README 只標示「待驗證
 - **新聞連結安全**：Mini App 只允許 `https://news.cnyes.com` 與 `https://news.google.com`，其他網址只顯示為不可開啟，避免把不明連結直接交給 Telegram WebView。
 - **璞玉價值狀態透明化**：台股 MOPS 歷史資料採分批快取；未完成個股不列入，已完成個股可先產生正式候選或觀察名單，整體仍標示「歷史核對中」，且不沿用上一輪舊資料。TWSE 的 ROE／淨利／本益比是補充欄位，不會阻擋已完成六項歷史規則的台股；自由流通週轉率在沒有官方 free-float 欄位時，會透明標示採 Yahoo `floatShares`／`sharesOutstanding` 公開股數代理計算，不把代理值誤稱為 TWSE 官方數字。
 - **報價與來源可追溯**：市場卡保留來源、報價／抓取時間、盤中或最近收盤、交叉核對狀態；逾時資料仍可顯示，但必須標示「最近收盤」，不可被價格警報使用。
-- **Telegram 顯示與內部稽核一致**：所有非 Creator 文字通知在送出邊界正規化為一個 canonical `R0`～`R4`，並與彩色圓點、人類可讀狀態同時呈現；同一等級也寫入 delivery receipt、release lineage 與 Mini App 稽核欄位，避免重複或遺失風險上下文。
+- **Telegram 顯示與內部稽核分層**：所有非 Creator 文字通知在送出邊界移除內部 `R0`～`R4` 顯示，只保留彩色圓點與人類可讀狀態；原始等級仍寫入 delivery receipt、release lineage 與 Mini App 稽核欄位，避免遺失風險上下文。
 - **零成本路徑可回滾**：Cloudflare Worker／Pages、Supabase job contract、Gmail Watch renewal 與 GitHub Actions worker 已有正式契約與離線驗證；在外部 canary 證據完整前，Railway 不刪除且維持可選 rollback。
 - **頁尾與 Mini App 入口**：頁尾為 `@2026 PRStK Lab & D.INV | All right reserved.`；Telegram 快報按鈕為「📡 開啟稜量速報系統」，固定選單為「稜量系統」。
 
 ## 一頁式使用流程
 
-1. **先看 Telegram 短訊息**：只把「彩色圓點＋一個 R0～R4｜事件類型｜市場方向｜變動幅度｜狀態」送到手錶／手機，最多 40 字；完整證據留在圖卡與 Mini App。
+1. **先看 Telegram 短訊息**：只把「彩色圓點＋事件類型｜市場方向｜變動幅度｜狀態」送到手錶／手機，最多 40 字；完整風險等級與證據留在回執、圖卡與 Mini App。
 2. **點擊 `📡 開啟稜量速報系統`**：在 Telegram 內開啟 GitHub Pages Mini App，閱讀四段事件脈絡、來源 URL、交叉核對時間、研究候選與資料健康度。
 3. **先看來源健康狀態**：區分「本輪無重大事件」與「部分來源失敗」；看到資料缺口時，不把空白或舊候選解讀成市場沒有訊號。
 4. **再看市場脈動**：先看台指／台積電與全球指數，再看 TPEx、日韓、Nasdaq、費半、BTC／ETH 等卡片的來源與新鮮度。
@@ -142,7 +142,7 @@ flowchart LR
 
 ## 資料更新、掃描與推播時間
 
-所有時間均為台灣時間（UTC+8）。GitHub Actions 與 cron-job.org 都可能延後執行，因此「時間」是目標排程，不是交易所逐筆行情承諾。每個定時快報會先刷新公開市場資料、再寫入 `site/data/market.json`、發 Telegram、部署 Mini App。
+所有時間均為台灣時間（UTC+8）。GitHub Actions 與 cron-job.org 都可能延後執行，因此「時間」是目標排程，不是交易所逐筆行情承諾。每個定時快報會先刷新公開市場資料並發布 immutable `data-release`，通過 manifest／hash／Pages gate 後部署 Mini App，最後才可發 Telegram。
 
 | 類別 | 目標時間／頻率 | 工作內容 |
 |---|---|---|
@@ -650,9 +650,9 @@ research, system-health and FinancialJuice lanes. The only production photo
 exception is a verified Creator email attachment; it is sent as one photo
 message with its release/alert deep-link Mini App button. Publishing and
 manifest verification always complete before delivery. Telegram-facing text and
-photo captions display exactly one canonical `R0`–`R4` label while preserving
-the original `prstk_risk_level` in receipts, audit records and the relevant Mini
-App evidence.
+ photo captions hide the internal `R0`–`R4` label while preserving the colour cue
+ and original `prstk_risk_level` in receipts, audit records and the relevant Mini
+ App evidence.
 
 ### Production notification mode
 
@@ -663,8 +663,8 @@ attachments may use the photo renderer and Telegram file-ID reuse. See
 [`docs/alert-card-renderer.md`](docs/alert-card-renderer.md).
 
 The public Telegram contract is intentionally shorter than the audit contract:
-the color dot and exactly one canonical `R0`–`R4` token provide a compact risk
-cue, while full evidence remains in the Mini App and receipt. This is a
+the colour dot provides a compact risk cue while the internal `R0`–`R4` grade
+remains in the Mini App and receipt. This is a
 presentation-only contract; alert qualification, deduplication, Alert Budget,
 release lineage and safety gates are unchanged.
 
