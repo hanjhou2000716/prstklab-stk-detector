@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 from src.alert_budget import decide_alert_budget
 from src.briefing_cards import build_briefing_snapshot
 from src.config import get_settings
-from src.event_ledger import EventLedger
+from src.event_ledger import EventLedger, is_secondary_commentary, taiwan_investor_priority
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import merge_published_metadata, write_snapshot
 from src.telegram_client import alert_mini_app_url, send_briefs
@@ -141,7 +141,10 @@ def _pick_event(snapshot: dict, slot: str) -> dict | None:
         first_priority = next((item for item in priority_events if isinstance(item, dict)), None)
         if first_priority:
             return first_priority
-    events = (snapshot.get("events") or {}).get("items", [])
+    events = [
+        event for event in ((snapshot.get("events") or {}).get("items", []) or [])
+        if isinstance(event, dict) and not is_secondary_commentary(event)
+    ]
     preferred: tuple[str, ...]
     if slot in TAIWAN_SESSION_SLOTS:
         preferred = tuple(["TAIEX", "TPEx"])
@@ -159,7 +162,8 @@ def _pick_event(snapshot: dict, slot: str) -> dict | None:
         # During Taiwan trading hours, an overseas price-only move (Brent,
         # crypto, etc.) stays visible in the Mini App but must not replace the
         # Taiwan-market headline. A verified policy/macro/company event may.
-        return next((event for event in events if event.get("kind") != "market_signal"), None)
+        taiwan_ordered = sorted(events, key=taiwan_investor_priority)
+        return next((event for event in taiwan_ordered if event.get("kind") != "market_signal"), None)
     return events[0] if events else None
 
 

@@ -12,7 +12,12 @@ from zoneinfo import ZoneInfo
 
 from src.alert_budget import decide_alert_budget
 from src.config import get_settings
-from src.event_ledger import EventLedger, canonical_event_key
+from src.event_ledger import (
+    EventLedger,
+    canonical_event_key,
+    is_secondary_commentary,
+    taiwan_investor_priority,
+)
 from src.external_observation_input import (
     external_observations_path,
     external_source_health,
@@ -140,6 +145,7 @@ def select_official_event(
     """
     items = snapshot.get("official_events", {}).get("items", [])
     detailed_events = snapshot.get("events", {}).get("items", [])
+    candidates: list[dict[str, Any]] = []
     if items and not baseline_official:
         for item in items:
             detailed = next(
@@ -161,7 +167,8 @@ def select_official_event(
             if item.get("importance") != "high-risk":
                 if detailed and detailed.get("high_risk_eligible") is False:
                     continue
-                return detailed or item
+                candidates.append(detailed or item)
+                continue
             # A black-swan candidate must be confirmed by a related public
             # market move before it becomes a Telegram alert. It remains in
             # the dashboard as an observation when confirmation is absent.
@@ -175,7 +182,7 @@ def select_official_event(
                 None,
             )
             if detailed:
-                return detailed
+                candidates.append(detailed)
     # Major news is evaluated by the same event builder as official releases
     # and price signals.  Public providers can produce a low-risk observation
     # notification, while strict conflict/black-swan rows remain pending until
@@ -189,14 +196,35 @@ def select_official_event(
         risk = canonical_prstk_risk_level(event)
         if event.get("public_observation") and risk in {"R3", "R4"}:
             continue
-        return event
+        if is_secondary_commentary(event):
+            # Keep the row in the release/Mini App, but route opinion-only
+            # discovery content to the scheduled digest rather than an
+            # immediate Telegram interruption.
+            event["notification_status"] = "digest_only"
+            event["notification_reason"] = "secondary_commentary_digest_only"
+            continue
+        candidates.append(event)
+    if candidates:
+        def _candidate_key(event: dict[str, Any]) -> tuple[int, int, int]:
+            risk = canonical_prstk_risk_level(event)
+            risk_rank = {"R0": 0, "R1": 0, "R2": 1, "R3": 1, "R4": 2}.get(risk, 0)
+            official = int(bool(event.get("official_confirmed") or event.get("official_confirmation") or event.get("source_tier") == "official"))
+            return (taiwan_investor_priority(event, now=now), -official, -risk_rank)
+        candidates.sort(key=_candidate_key)
+        return candidates[0]
 
     signals = [event for event in snapshot.get("events", {}).get("items", []) if event.get("kind") == "market_signal"]
     if _is_taiwan_market_window(now):
         # During the Taiwan session, a broad Taiwan price signal has priority.
         # Commodity/crypto moves remain visible in the Mini App unless paired
         # with a verified official event above.
-        taiwan_signal = next((event for event in signals if (event.get("instrument") or {}).get("ticker") == "TAIEX"), None)
+        taiwan_signal = next(
+            (
+                event for event in signals
+                if (event.get("instrument") or {}).get("ticker") in {"TAIEX", "2330", "006208", "00685L"}
+            ),
+            None,
+        )
         if taiwan_signal:
             return taiwan_signal
         # Keep the Taiwan session focused, but do not suppress a genuinely
@@ -260,33 +288,9 @@ def _financialjuice_delivery_history(history: list[dict[str, Any]]) -> list[dict
 
 
 def build_official_event_brief(event: dict[str, Any]) -> str:
-    """Make a neutral watch-sized alert for an official event or price move."""
-    if event.get("market_direction") or event.get("market_move"):
-        from src.event_output import short_event_message
-        text = short_event_message(event)
-        validate_brief(text)
-        return text
-    if event.get("kind") == "market_signal":
-        text = f"快訊｜{event.get('brief_title') or event.get('short_label', '價格訊號')}"
-        instrument = event.get("instrument") or {}
-        ticker = str(instrument.get("ticker") or "市場")
-        label = "台指" if ticker == "TAIEX" else ticker
-        percent = instrument.get("change_percent")
-        if percent is None:
-            text = f"快訊｜{event.get('brief_title') or event.get('short_label', '價格訊號')}"[:30]
-            validate_brief(text)
-            return text
-        move = f"{float(percent):+.1f}%" if percent is not None else "波動"
-        pattern = str(event.get("pattern") or "價格訊號")
-        risk = canonical_prstk_risk_level(event)
-        text = f"快訊｜{label} {move}｜{pattern}｜{risk}"
-        text = text[:30]
-        validate_brief(text)
-        return text
-    label = " ".join(event.get("short_label", "官方事件").split())
-    title = " ".join(event.get("brief_summary") or event.get("title", "").split())
-    text = f"快訊｜{label}｜{title}"
-    text = text[:30]
+    """Make a neutral watch-sized alert through the single public formatter."""
+    from src.event_output import short_event_message
+    text = short_event_message(event)
     validate_brief(text)
     return text
 
@@ -439,6 +443,20 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         write_send_output(False, "release_gate_blocked")
         print("Release gate blocked official event delivery: " + "; ".join(gate.errors))
         return False
+    # Semantic investor-theme suppression sits alongside (not inside) the
+    # delivery-volume budget.  It keeps every supporting article in the
+    # ledger/Mini App while preventing a new URL or headline from replaying
+    # the same theme within two hours.
+    if hasattr(ledger, "theme_decision"):
+        theme = ledger.theme_decision(event)
+        ledger.save()
+        if not theme.get("allowed", False):
+            if hasattr(ledger, "record_decision"):
+                ledger.record_decision(event, theme)
+                ledger.save()
+            write_send_output(False, f"theme:{theme.get('reason', 'same_theme_within_2h')}")
+            print(f"Official event suppressed by notification theme: {theme.get('reason', 'same_theme_within_2h')}")
+            return False
     cooldown_record = _observe_event(event)
     if not cooldown_record.get("should_remind", True):
         write_send_output(False, "event_cooldown")

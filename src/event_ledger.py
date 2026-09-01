@@ -35,6 +35,7 @@ RISK_RANK = {
     "高風險": 2, "R4": 2,
 }
 DEFAULT_COOLDOWN_SECONDS = 30 * 60
+THEME_WINDOW_SECONDS = 2 * 60 * 60
 
 
 def _risk_rank(value: Any) -> int:
@@ -140,6 +141,148 @@ def canonical_event_key(event: dict[str, Any] | None) -> str:
     return hashlib.sha256(material.encode("utf-8")).hexdigest()[:32]
 
 
+def notification_theme_key(event: dict[str, Any] | None) -> str:
+    """Project an event into a stable investor-facing notification theme.
+
+    This is deliberately a projection over the existing EventLedger identity;
+    it is not a second persistence layer.  Providers may supply an explicit
+    key, while common market/news facts receive deterministic, material
+    specific keys so a new URL or headline does not create a new alert.
+    """
+    if not isinstance(event, dict):
+        return "unknown"
+    explicit = str(event.get("notification_theme_key") or "").strip().casefold()
+    if explicit:
+        return explicit
+    raw_instrument = event.get("instrument")
+    instrument = raw_instrument if isinstance(raw_instrument, dict) else {}
+    ticker = str(instrument.get("ticker") or event.get("ticker") or "").strip().upper()
+    if str(event.get("kind") or "").casefold() == "market_signal" or ticker:
+        return f"{ticker or 'market'}-price-move"
+    topic = str(event.get("topic_key") or event.get("source_key") or event.get("event_type") or "event").strip().casefold()
+    text = " ".join(str(event.get(key) or "") for key in ("title", "summary", "brief_summary")).casefold()
+    if any(term in topic or term in text for term in ("fomc", "fed", "central-bank", "interest", "rate", "利率", "聯準")):
+        if any(term in topic or term in text for term in ("official", "decision", "statement", "fomc", "公布", "決議")):
+            return "fed-official-decision"
+        return "fed-rate-outlook"
+    if any(term in topic or term in text for term in ("tariff", "trade", "關稅", "貿易")):
+        if any(term in topic or term in text for term in ("semiconductor", "chip", "半導體", "晶片")):
+            return "us-semiconductor-policy"
+        return "trade-policy"
+    if any(term in topic or term in text for term in ("conflict", "war", "iran", "israel", "地緣", "衝突")):
+        return "middle-east-conflict" if any(term in text for term in ("iran", "israel", "中東", "伊朗", "以色列")) else "geopolitical-conflict"
+    anchors = [
+        *(_tokens(event.get("person"))[:2]),
+        *(_tokens(event.get("location"))[:2]),
+        *(_tokens(event.get("action"))[:2]),
+    ]
+    suffix = "-".join(anchors) or hashlib.sha256(text.encode("utf-8")).hexdigest()[:10]
+    return f"{topic or 'event'}-{suffix}"
+
+
+def _material_state(event: dict[str, Any] | None) -> dict[str, Any]:
+    """Return only fields that can justify a same-theme re-alert."""
+    if not isinstance(event, dict):
+        return {}
+    raw_instrument = event.get("instrument")
+    instrument = raw_instrument if isinstance(raw_instrument, dict) else {}
+    percent = instrument.get("change_percent", event.get("change_percent"))
+    try:
+        numeric_percent = float(percent) if percent is not None else None
+    except (TypeError, ValueError):
+        numeric_percent = None
+    direction = "up" if numeric_percent is not None and numeric_percent > 0 else "down" if numeric_percent is not None and numeric_percent < 0 else str(event.get("direction") or event.get("market_direction") or "").casefold()
+    raw_impact = event.get("impact_confirmation")
+    impact = raw_impact if isinstance(raw_impact, dict) else {}
+    official = bool(event.get("official_confirmation") or event.get("official_confirmed") or event.get("crosscheck_status") in {"official_confirmed", "confirmed"})
+    market = bool(event.get("market_sync_confirmed") or event.get("market_confirmation") or impact.get("confirmed"))
+    risk = str(event.get("prstk_risk_level") or event.get("risk_level") or (event.get("prstk_risk") or {}).get("prstk_risk_level") or "R0").upper()
+    return {
+        "risk_rank": _risk_rank(risk),
+        "risk": risk,
+        "official_confirmation": official,
+        "market_confirmation": market,
+        "material_fact_version": str(event.get("material_fact_version") or event.get("fact_version") or "").strip(),
+        "direction": direction,
+        "price_bucket": (4 if numeric_percent is not None and abs(numeric_percent) >= 4 else 3 if numeric_percent is not None and abs(numeric_percent) >= 3 else 2 if numeric_percent is not None and abs(numeric_percent) > 1.5 else 0),
+        "systemic_emergency": bool(event.get("systemic_emergency") or (risk == "R4" and official and market)),
+    }
+
+
+def material_state_changed(previous: dict[str, Any] | None, event: dict[str, Any] | None) -> bool:
+    """Return whether an event contains a contract-approved material change."""
+    current = _material_state(event)
+    if not previous:
+        return True
+    if current.get("systemic_emergency") and not previous.get("systemic_emergency"):
+        return True
+    if current.get("official_confirmation") and not previous.get("official_confirmation"):
+        return True
+    if current.get("market_confirmation") and not previous.get("market_confirmation"):
+        return True
+    if int(current.get("risk_rank", 0)) > int(previous.get("risk_rank", 0)):
+        return True
+    if current.get("material_fact_version") and current.get("material_fact_version") != previous.get("material_fact_version"):
+        return True
+    if current.get("direction") and previous.get("direction") and current.get("direction") != previous.get("direction"):
+        return True
+    if int(current.get("price_bucket", 0)) > int(previous.get("price_bucket", 0)):
+        return True
+    return False
+
+
+def taiwan_investor_priority(event: dict[str, Any] | None, *, now: datetime | None = None) -> int:
+    """Return the Taiwan-session queue priority (1 is highest)."""
+    current = now or datetime.now(UTC)
+    try:
+        from zoneinfo import ZoneInfo
+        local = current.astimezone(ZoneInfo("Asia/Taipei"))
+    except Exception:
+        local = current
+    minute = local.hour * 60 + local.minute
+    in_session = local.weekday() < 5 and 8 * 60 + 45 <= minute <= 13 * 60 + 30
+    if not in_session or not isinstance(event, dict):
+        return 4
+    raw_instrument = event.get("instrument")
+    instrument = raw_instrument if isinstance(raw_instrument, dict) else {}
+    ticker = str(instrument.get("ticker") or event.get("ticker") or "").upper()
+    market = str(event.get("market") or event.get("region") or "").casefold()
+    text = " ".join(str(event.get(key) or "") for key in ("topic_key", "event_type", "short_label", "title", "summary")).casefold()
+    risk = str(event.get("prstk_risk_level") or event.get("risk_level") or (event.get("prstk_risk") or {}).get("prstk_risk_level") or "").upper()
+    official = bool(event.get("official_confirmation") or event.get("official_confirmed") or event.get("crosscheck_status") in {"official_confirmed", "confirmed"})
+    synced = bool(event.get("market_sync_confirmed") or event.get("market_confirmation") or (event.get("impact_confirmation") or {}).get("confirmed"))
+    if risk == "R4" and official and synced:
+        return 0
+    if ticker in {"2330", "006208", "00685L", "TAIEX", "TPEX"} or market in {"taiwan", "tw", "台股", "台灣"} or any(term in text for term in ("台灣政策", "台股政策", "taiwan policy")):
+        return 1
+    if ticker in {"TSM", "NVDA", "SOX", "NASDAQ"} or any(term in text for term in ("semiconductor", "chip", "半導體", "晶片", "ai supply")):
+        return 2
+    if official or any(term in text for term in ("fed", "fomc", "cpi", "pce", "nfp", "usd/twd", "貨幣", "利率")):
+        return 3
+    return 4
+
+
+def is_secondary_commentary(event: dict[str, Any] | None) -> bool:
+    """Identify opinion-only discovery content without blocking evidence."""
+    if not isinstance(event, dict):
+        return False
+    source_role = str(event.get("source_role") or "").casefold()
+    source_tier = str(event.get("source_tier") or "").casefold()
+    provider = str(event.get("provider") or event.get("source_key") or event.get("source") or "").casefold()
+    commentary = bool(event.get("commentary_only") or event.get("is_commentary"))
+    opinion = any(term in source_role or term in provider for term in ("commentary", "analyst", "broker", "yahoo", "google"))
+    discovery = source_tier in {"discovery", "secondary", "public"} or opinion
+    official = bool(event.get("official_confirmation") or event.get("official_confirmed") or event.get("crosscheck_status") in {"official_confirmed", "confirmed"})
+    market_sync = bool(event.get("market_sync_confirmed") or event.get("market_confirmation") or (event.get("impact_confirmation") or {}).get("confirmed"))
+    watchlist = bool(event.get("watchlist_trigger") or event.get("kind") == "market_signal")
+    fj = event.get("vendor_importance")
+    try:
+        fj_priority = float(str(fj)) >= 8
+    except (TypeError, ValueError):
+        fj_priority = False
+    return bool(commentary or (discovery and not official and not market_sync and not watchlist and not fj_priority))
+
+
 class EventLedger:
     """Atomic JSON ledger with retention and concurrent-writer protection."""
 
@@ -195,6 +338,8 @@ class EventLedger:
         current = now or datetime.now(UTC)
         now_iso = current.isoformat()
         key = canonical_event_key(event)
+        theme_key = notification_theme_key(event)
+        state = _material_state(event)
         facts = fact_fingerprint(event)
         source_url = normalize_source_url(event.get("source_url") or event.get("url"))
         source_domain = (urlsplit(source_url).hostname or "").lower().removeprefix("www.") if source_url else ""
@@ -204,6 +349,8 @@ class EventLedger:
             risk_level = str(event.get("risk_level") or "觀察")
             record = {
                 "canonical_key": key,
+                "notification_theme_key": theme_key,
+                "material_state": state,
                 "event_type": event.get("event_type") or event.get("kind") or "market",
                 "source_url": source_url,
                 "source_domain": source_domain,
@@ -250,6 +397,13 @@ class EventLedger:
                 record["source_url"] = source_url
                 record["source_domain"] = source_domain
                 changed = True
+            if record.get("notification_theme_key") != theme_key:
+                record["notification_theme_key"] = theme_key
+                changed = True
+            previous_state = record.get("material_state") if isinstance(record.get("material_state"), dict) else {}
+            if material_state_changed(previous_state, event):
+                record["material_state"] = state
+                changed = True
             escalated = bool(record.get("escalated") or event.get("escalation") or incoming_rank >= 2)
             if escalated != bool(record.get("escalated")):
                 record["escalated"] = escalated
@@ -274,6 +428,69 @@ class EventLedger:
         )
         return {**record, "is_new": is_new, "risk_upgraded": risk_upgraded,
                 "escalation_upgraded": escalation_upgraded, "changed": bool(changed or removed)}
+
+    def theme_decision(
+        self,
+        event: dict[str, Any],
+        *,
+        now: datetime | None = None,
+        window_seconds: int = THEME_WINDOW_SECONDS,
+    ) -> dict[str, Any]:
+        """Decide whether a candidate is a new investor-theme notification.
+
+        Every outcome is returned with an explicit reason.  Suppressed rows
+        remain in the same EventLedger and can therefore update the Mini App
+        evidence without sending another Telegram message.
+        """
+        current = now or datetime.now(UTC)
+        theme = notification_theme_key(event)
+        state = _material_state(event)
+        candidates = [
+            record for record in self.records.values()
+            if isinstance(record, dict) and record.get("notification_theme_key") == theme
+        ]
+        latest: dict[str, Any] | None = None
+        latest_time = datetime.min.replace(tzinfo=UTC)
+        for record in candidates:
+            raw = record.get("last_theme_notification_at") or record.get("last_reminded_at")
+            stamp = self._timestamp(raw)
+            if stamp > latest_time:
+                latest, latest_time = record, stamp
+        within_window = latest is not None and (current - latest_time).total_seconds() < max(0, int(window_seconds))
+        changed = material_state_changed((latest or {}).get("material_state") if latest else None, event)
+        if within_window and not changed:
+            reason = "same_theme_within_2h"
+            status = "suppressed"
+            allowed = False
+        else:
+            reason = "material_state_change" if latest else "new_theme"
+            status = "eligible"
+            allowed = True
+        decision = {
+            "allowed": allowed,
+            "status": status,
+            "reason": reason,
+            "notification_theme_key": theme,
+            "event_key": canonical_event_key(event),
+            "risk": state.get("risk", "R0"),
+            "theme_window": window_seconds,
+            "material_state_changed": changed,
+            "last_notified_at": latest_time.isoformat() if latest else None,
+        }
+        self.record_decision(event, decision, now=current)
+        return decision
+
+    def mark_theme_notified(self, event: dict[str, Any], *, now: datetime | None = None) -> None:
+        """Record the last successful notification for a theme."""
+        current = now or datetime.now(UTC)
+        key = canonical_event_key(event)
+        self.observe(event, now=current)
+        record = self.records[key]
+        record["notification_theme_key"] = notification_theme_key(event)
+        record["material_state"] = _material_state(event)
+        record["last_theme_notification_at"] = current.isoformat()
+        record["last_notified_at"] = current.isoformat()
+        record["updated_at"] = current.isoformat()
 
     def should_remind(self, event: dict[str, Any], *, cooldown_seconds: int = DEFAULT_COOLDOWN_SECONDS, now: datetime | None = None) -> bool:
         record = self.observe(event, now=now)
@@ -348,6 +565,13 @@ class EventLedger:
             "status": str(raw.get("status") or nested.get("status") or "pending"),
             "reason": str(raw.get("reason") or (reasons[0] if reasons else "")),
             "reasons": [str(item) for item in reasons if str(item).strip()],
+            "notification_theme_key": notification_theme_key(event),
+            "event_key": key,
+            "risk": _material_state(event).get("risk", "R0"),
+            "theme_window": raw.get("theme_window", THEME_WINDOW_SECONDS),
+            "material_state_changed": bool(raw.get("material_state_changed", False)),
+            "last_notified_at": raw.get("last_notified_at"),
+            "taiwan_priority": taiwan_investor_priority(event, now=current),
         }
         record["last_decision"] = row
         history = record.setdefault("decision_history", [])
@@ -387,6 +611,10 @@ class EventLedger:
             "alert_type": str(event.get("alert_type") or event.get("event_type") or event.get("kind") or "market"),
             "lifecycle_state": str(event.get("lifecycle_state") or "confirmed"),
             "reason": reason,
+            "notification_theme_key": notification_theme_key(event),
+            "risk": _material_state(event).get("risk", "R0"),
+            "taiwan_priority": taiwan_investor_priority(event, now=current),
+            "material_state_changed": True,
         }
         # Preserve release-bound provenance needed to reconcile a FinancialJuice
         # observation from ingress through delivery. Legacy events simply omit
@@ -407,6 +635,10 @@ class EventLedger:
         # malformed producer to grow the public ledger indefinitely.
         record["delivery_history"] = history[-100:]
         record["last_reminded_at"] = current.isoformat()
+        record["last_theme_notification_at"] = current.isoformat()
+        record["last_notified_at"] = current.isoformat()
+        record["notification_theme_key"] = notification_theme_key(event)
+        record["material_state"] = _material_state(event)
         record["updated_at"] = current.isoformat()
         return row
 
@@ -437,6 +669,14 @@ class EventLedger:
             merged["last_reminded_at"] = reminder.isoformat()
         merged["escalated"] = bool(left.get("escalated") or right.get("escalated"))
         merged["risk_rank"] = max(int(left.get("risk_rank", 0) or 0), int(right.get("risk_rank", 0) or 0))
+        if left.get("notification_theme_key") or right.get("notification_theme_key"):
+            merged["notification_theme_key"] = str(right.get("notification_theme_key") or left.get("notification_theme_key"))
+        theme_times = [cls._timestamp(item.get("last_theme_notification_at")) for item in (left, right)]
+        theme_time = max(theme_times)
+        if theme_time != datetime.min.replace(tzinfo=UTC):
+            merged["last_theme_notification_at"] = theme_time.isoformat()
+            merged["last_notified_at"] = theme_time.isoformat()
+        merged["material_state"] = right.get("material_state") or left.get("material_state") or {}
         verified = list(dict.fromkeys([
             *(left.get("verified_sources") or []),
             *(right.get("verified_sources") or []),

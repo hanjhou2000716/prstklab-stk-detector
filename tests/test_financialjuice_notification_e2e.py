@@ -14,11 +14,11 @@ def test_financialjuice_notification_e2e_is_offline_and_replay_safe() -> None:
     assert result["checks"]["replay_suppressed"] is True
 
 
-def test_financialjuice_caption_includes_one_internal_risk_grade() -> None:
+def test_financialjuice_caption_hides_internal_risk_grade() -> None:
     caption = financialjuice_caption({
         "title": "Oil supply disruption",
         "vendor_importance": 8,
         "prstk_risk": {"prstk_risk_level": "R2"},
     })
     assert "FJ 8/10" in caption
-    assert caption.count("R2") == 1
+    assert all(level not in caption for level in ("R0", "R1", "R2", "R3", "R4"))

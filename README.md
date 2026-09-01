@@ -49,7 +49,7 @@ Pages／Worker／Telegram evidence 才能宣稱正式生產完成。
 | 研究系統 | 動能狙擊、三維共振、裸 K、璞玉價值四策略；Strategy Registry、Candidate Explainability、Advice Gate、Paper Portfolio、Event Feedback | 研究排序與事件觀察分離；母體不完整、掃描失敗與本輪無候選分開顯示，不產生交易指令 |
 | Creator／財經內容 | Gmail Watch／Pub/Sub ingress、Creator 內容解析、FinancialJuice compound parser 與 vendor importance 優先級 | `railway-monitor/gmail_watch.py`、`src/financialjuice_*`、`src/external_*`；來源分數不改寫 PRStK risk，原始郵件不進公開頁面 |
 | 發布安全 | release manifest、snapshot／artifact hash、schema validation、data-release、Pages release gate、last-known-good rollback | `src/release_gate.py`、`src/pages_release.py`、`.github/workflows/`；invalid／hash mismatch 不覆蓋公開版本 |
-| Telegram 送達 | canonical text contract、Mini App deep link、Alert Budget、事件去重、逐收件人 retry、429 backoff、delivery receipt | `src/telegram_client.py`、`src/delivery_callback.py`；單一收件人失敗不阻塞其他人，也不輸出 token／原始 Chat ID |
+| Telegram 送達 | canonical text contract、Mini App deep link、Alert Budget、事件／投資主題去重、2 小時 material-state re-alert、逐收件人 retry、429 backoff、delivery receipt | `src/telegram_client.py`、`src/event_ledger.py`、`src/delivery_callback.py`；公開訊息只顯示彩色提示與事件摘要，不輸出 R0–R4 或原始 Chat ID |
 | 零成本替代 | Cloudflare Worker、Supabase job／report／receipt contract、GitHub Actions worker；Railway 保留為 rollback | `worker/`、`supabase/`、`docs/zero-cost-production-migration.md`；正式切換仍以外部 canary evidence 為準 |
 
 ### 我們可以一起補強的地方
@@ -107,13 +107,13 @@ Telegram dry-run；外部服務未提供證據時，README 只標示「待驗證
 - **新聞連結安全**：Mini App 只允許 `https://news.cnyes.com` 與 `https://news.google.com`，其他網址只顯示為不可開啟，避免把不明連結直接交給 Telegram WebView。
 - **璞玉價值狀態透明化**：台股 MOPS 歷史資料採分批快取；未完成個股不列入，已完成個股可先產生正式候選或觀察名單，整體仍標示「歷史核對中」，且不沿用上一輪舊資料。TWSE 的 ROE／淨利／本益比是補充欄位，不會阻擋已完成六項歷史規則的台股；自由流通週轉率在沒有官方 free-float 欄位時，會透明標示採 Yahoo `floatShares`／`sharesOutstanding` 公開股數代理計算，不把代理值誤稱為 TWSE 官方數字。
 - **報價與來源可追溯**：市場卡保留來源、報價／抓取時間、盤中或最近收盤、交叉核對狀態；逾時資料仍可顯示，但必須標示「最近收盤」，不可被價格警報使用。
-- **Telegram 顯示與內部稽核分層**：所有非 Creator 文字通知在送出邊界移除內部 `R0`～`R4` 顯示，只保留彩色圓點與人類可讀狀態；原始等級仍寫入 delivery receipt、release lineage 與 Mini App 稽核欄位，避免遺失風險上下文。
+- **Telegram 顯示與內部稽核分層**：所有非 Creator 文字通知在送出邊界移除內部 `R0`～`R4` 顯示，只保留彩色圓點、主題與 evidence-grounded 摘要；同一投資主題在兩小時內只於 material state change 時重發。原始等級、suppression reason 與 supporting sources 仍寫入 EventLedger、delivery receipt、release lineage 與 Mini App 稽核欄位。
 - **零成本路徑可回滾**：Cloudflare Worker／Pages、Supabase job contract、Gmail Watch renewal 與 GitHub Actions worker 已有正式契約與離線驗證；在外部 canary 證據完整前，Railway 不刪除且維持可選 rollback。
 - **頁尾與 Mini App 入口**：頁尾為 `@2026 PRStK Lab & D.INV | All right reserved.`；Telegram 快報按鈕為「📡 開啟稜量速報系統」，固定選單為「稜量系統」。
 
 ## 一頁式使用流程
 
-1. **先看 Telegram 短訊息**：只把「彩色圓點＋事件類型｜市場方向｜變動幅度｜狀態」送到手錶／手機，最多 40 字；完整風險等級與證據留在回執、圖卡與 Mini App。
+1. **先看 Telegram 短訊息**：只把「彩色圓點＋主題｜發生的新資訊」送到手錶／手機（文字最多 30 字、圖卡 caption 最多 40 字）；完整風險等級、去重決策與證據留在回執、圖卡與 Mini App。
 2. **點擊 `📡 開啟稜量速報系統`**：在 Telegram 內開啟 GitHub Pages Mini App，閱讀四段事件脈絡、來源 URL、交叉核對時間、研究候選與資料健康度。
 3. **先看來源健康狀態**：區分「本輪無重大事件」與「部分來源失敗」；看到資料缺口時，不把空白或舊候選解讀成市場沒有訊號。
 4. **再看市場脈動**：先看台指／台積電與全球指數，再看 TPEx、日韓、Nasdaq、費半、BTC／ETH 等卡片的來源與新鮮度。

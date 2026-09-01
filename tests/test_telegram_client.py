@@ -20,29 +20,29 @@ def test_accepts_30_character_brief():
     validate_brief("測" * 30)
 
 
-def test_text_brief_exposes_one_canonical_risk_grade_and_stays_bounded():
+def test_text_brief_hides_internal_risk_grade_and_stays_bounded():
     text = format_text_brief("台指波動觀察｜+2.9%｜等待官方核對", prstk_risk_level="R1")
-    assert text.startswith("🟢 R1｜")
-    assert text.count("R1") == 1
+    assert text.startswith("🟢 ")
+    assert all(level not in text for level in ("R0", "R1", "R2", "R3", "R4"))
     assert len(text) <= 30
 
 
-def test_canonical_short_message_preserves_one_risk_token_and_fj_vendor_score():
+def test_canonical_short_message_preserves_colour_and_fj_vendor_score_without_risk_token():
     text = canonical_short_message("快訊｜台指波動觀察｜+2.9%｜R2", prstk_risk_level="R2")
-    assert text.startswith("🟡 R2｜")
-    assert text.count("R2") == 1
+    assert text.startswith("🟡 ")
+    assert "R2" not in text
     assert len(text) <= 30
 
     fj = canonical_short_message("🟣 FJ 8/10｜R2｜北韓發射飛行物", prstk_risk_level="R2")
-    assert fj.startswith("🟣 FJ 8/10｜R2｜")
-    assert fj.count("R2") == 1
+    assert fj.startswith("🟣 FJ 8/10｜")
+    assert "R2" not in fj
 
 
-def test_canonical_short_message_keeps_exactly_one_risk_grade_and_colour_cue():
+def test_canonical_short_message_keeps_colour_cue_without_internal_grade():
     for level, icon in (("R0", "🟢"), ("R1", "🟢"), ("R2", "🟡"), ("R3", "🟠"), ("R4", "🔴")):
         text = canonical_short_message(f"{icon} {level}｜市場觀察｜資料待核對", prstk_risk_level=level)
-        assert text.startswith(f"{icon} {level}｜")
-        assert text.count(level) == 1
+        assert text.startswith(f"{icon} ")
+        assert all(code not in text for code in ("R0", "R1", "R2", "R3", "R4"))
 
 
 def test_public_photo_caption_removes_risk_grade_and_collapses_separators():

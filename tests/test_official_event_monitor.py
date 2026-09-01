@@ -76,7 +76,8 @@ def test_official_event_key_applies_two_hour_topic_cooldown_but_allows_escalatio
 
 def test_monitor_brief_is_neutral_and_watch_sized():
     brief = build_official_event_brief({"short_label": "Fed／貨幣政策", "title": "Federal Reserve issues FOMC statement with a long title"})
-    assert brief.startswith("快訊｜Fed／貨幣政策｜")
+    assert brief.startswith("🟡 Fed｜")
+    assert all(level not in brief for level in ("R0", "R1", "R2", "R3", "R4"))
     assert len(brief) <= 30
 
 
@@ -90,7 +91,7 @@ def test_monitor_selects_threshold_price_signal_when_no_official_release_exists(
     }
     event = select_official_event(snapshot)
     assert event is not None
-    assert build_official_event_brief(event) == "快訊｜台指價格訊號觸發｜急跌｜高風險"
+    assert build_official_event_brief(event).startswith("🔴 TAIEX｜")
 
 
 def test_realtime_external_projection_adds_eligible_fj_to_shared_event_lane(monkeypatch, tmp_path):
