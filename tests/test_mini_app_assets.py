@@ -46,6 +46,10 @@ def test_mini_app_exposes_release_bound_external_intelligence():
     assert "供應商優先：未達 8/10" in app
     assert "供應商優先：同事件已通知" in app
     assert "供應商優先：可通知" in app
+    assert "item.event || item.chinese_translation" in app
+    assert "item.why_important || item.ai_commentary" in app
+    assert "item.possible_linkage || item.possible_impact" in app
+    assert "item.stock_observation || item.watch" in app
 
 
 def test_mini_app_renders_event_text_without_injecting_untrusted_links():

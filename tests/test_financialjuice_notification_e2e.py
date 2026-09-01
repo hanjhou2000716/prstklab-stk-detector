@@ -37,6 +37,18 @@ def test_financialjuice_long_english_headline_keeps_discovery_text() -> None:
     assert len(caption) <= 30
 
 
+def test_financialjuice_caption_prefers_projected_event_over_generic_title() -> None:
+    caption = financialjuice_caption({
+        "title": "FinancialJuice 公開快訊",
+        "event": "某公司據報正在評估合作",
+        "vendor_importance": 10,
+        "prstk_risk": {"prstk_risk_level": "R0"},
+    })
+    assert caption.startswith("🟣 FJ 10/10｜某公司據報")
+    assert "FinancialJuice 公開快訊" not in caption
+    assert len(caption) <= 30
+
+
 def test_financialjuice_delivery_reaches_text_sender_with_alert_deep_link() -> None:
     event = {
         "source_key": "financialjuice",

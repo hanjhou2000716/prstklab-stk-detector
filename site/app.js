@@ -811,8 +811,15 @@ const renderExternalIntelligence = (snapshot) => {
   }
   content.innerHTML = rows.slice(0, 5).map((item) => {
     const source = escapeHtml(item.source || item.content_origin || "外部來源");
-    const title = escapeHtml(item.title || item.headline || item.original_headline || "外部市場觀察");
-    const summary = escapeHtml(item.summary || item.ai_commentary || item.possible_impact || "公開內容已接收，等待進一步核對。");
+    // Consume the canonical semantic projection.  The remaining fallbacks
+    // are only for legacy snapshots; parsing and semantic selection stay
+    // upstream in the release-bound event projection.
+    const semanticEvent = item.event || item.chinese_translation || item.title || item.headline || item.original_headline || "外部市場觀察";
+    const semanticWhy = item.why_important || item.ai_commentary || item.summary || "目前尚無額外重要性說明，等待後續公開資料核對。";
+    const semanticLinkage = item.possible_linkage || item.possible_impact || "尚無足夠公開資料判定連動。";
+    const semanticObservation = item.stock_observation || item.watch || "等待官方後續確認，並觀察相關市場是否同步反應。";
+    const title = escapeHtml(item.title || item.headline || item.original_headline || semanticEvent);
+    const semanticHtml = `<p><b>事件：</b>${escapeHtml(semanticEvent)}</p><p><b>為何重要：</b>${escapeHtml(semanticWhy)}</p><p><b>可能連動：</b>${escapeHtml(semanticLinkage)}</p><p><b>股市觀察：</b>${escapeHtml(semanticObservation)}</p>`;
     const official = item.official_confirmed === true;
     const synced = item.market_sync_confirmed === true;
     const state = official && synced ? "已核對" : official ? "等待市場同步" : synced ? "等待官方核對" : "等待官方核對／市場同步";
@@ -845,7 +852,7 @@ const renderExternalIntelligence = (snapshot) => {
       : "";
     const url = String(item.source_url || "").trim();
     const link = /^https:\/\//.test(url) ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">公開來源</a>` : "";
-    return `<article class="external-insight"><h4>${title}</h4><small>${source}｜${state}</small><small>${priorityText}</small>${evidence}${lineageText}${timing}<p>${summary}</p>${link}</article>`;
+    return `<article class="external-insight"><h4>${title}</h4><small>${source}｜${state}</small><small>${priorityText}</small>${evidence}${lineageText}${timing}${semanticHtml}${link}</article>`;
   }).join("");
 };
 

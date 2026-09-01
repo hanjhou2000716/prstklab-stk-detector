@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/financialjuice_contract.py
-# Canonical source SHA256: e045252dd299ead6513f331f65c914686d1873c228b0c565b4e35a93a089cef7
+# Canonical source SHA256: 7d3964e0106a59d1014597d759d29591a61bc12de17d97bae302b09c6f0746ff
 
 """FinancialJuice observation contract and conservative PRStK risk mapping.
 
@@ -69,6 +69,10 @@ def build_financialjuice_envelope(
 
 
 def _text(value: Any) -> str:
+    # FJ semantic fields are source text.  Treat malformed containers as
+    # missing instead of serializing dict/list reprs into public evidence.
+    if isinstance(value, (dict, list, tuple, set)):
+        return ""
     return str(value or "").strip()
 
 

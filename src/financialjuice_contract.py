@@ -64,6 +64,10 @@ def build_financialjuice_envelope(
 
 
 def _text(value: Any) -> str:
+    # FJ semantic fields are source text.  Treat malformed containers as
+    # missing instead of serializing dict/list reprs into public evidence.
+    if isinstance(value, (dict, list, tuple, set)):
+        return ""
     return str(value or "").strip()
 
 
