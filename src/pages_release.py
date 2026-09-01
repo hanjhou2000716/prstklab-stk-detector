@@ -103,6 +103,55 @@ def _validate(root: Path, *, require_production_research: bool) -> tuple[bool, d
             payload = candidate
             break
     ready = result.returncode == 0 and payload.get("status") == "ready"
+
+    # ``release_manifest`` compares the research snapshot with the market
+    # snapshot.  That is useful for generation-level consistency, but it does
+    # not prove that the research is still fresh at deployment time.  The
+    # downstream delivery gate performs that stricter wall-clock check.  Run
+    # the same gate here so Pages never selects a candidate that will be
+    # rejected immediately before upload (and can instead preserve the last
+    # known-good public bundle).
+    #
+    # Keep this defensive for lightweight/unit fixtures that mock the manifest
+    # command but do not provide a gate-shaped response.  Production's real
+    # ``release_gate`` always emits an ``allowed=`` line, so an actual failure
+    # is fail-closed and recorded in the manifest diagnostics.
+    if ready and require_production_research:
+        gate_command = [
+            sys.executable,
+            "-m",
+            "src.release_gate",
+            "--manifest",
+            "site/data/release-manifest.json",
+            "--require-production-research",
+        ]
+        gate = subprocess.run(
+            gate_command,
+            cwd=root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        gate_lines = [line.strip() for line in (gate.stdout or "").splitlines() if line.strip()]
+        gate_allowed = next(
+            (line.split("=", 1)[1].strip().lower() for line in gate_lines if line.startswith("allowed=")),
+            None,
+        )
+        if gate_allowed is not None and (gate.returncode != 0 or gate_allowed != "true"):
+            gate_errors = next(
+                (line.split("=", 1)[1].strip() for line in gate_lines if line.startswith("errors=")),
+                "release gate rejected candidate",
+            )
+            existing = list(payload.get("validation_errors") or [])
+            payload["validation_errors"] = sorted({*existing, *[item for item in gate_errors.split(";") if item]})
+            payload["status"] = "invalid"
+            ready = False
+        elif gate.returncode != 0 and gate_allowed is None:
+            existing = list(payload.get("validation_errors") or [])
+            detail = (gate.stderr or "").strip() or "release gate failed without diagnostics"
+            payload["validation_errors"] = sorted({*existing, detail})
+            payload["status"] = "invalid"
+            ready = False
     return ready, payload
 
 
