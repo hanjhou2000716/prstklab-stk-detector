@@ -33,7 +33,7 @@ from src.railway_observation_client import load_railway_observations
 from src.railway_secret import delivery_shared_secret
 from src.refresh_market_data import write_snapshot
 from src.release_gate import verify_release_for_delivery
-from src.telegram_client import canonical_prstk_risk_level, send_text_briefs_audited, validate_brief
+from src.telegram_client import alert_mini_app_url, canonical_prstk_risk_level, send_text_briefs_audited, validate_brief
 
 
 def _is_taiwan_market_window(now: datetime | None = None) -> bool:
@@ -480,6 +480,13 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
     caption = build_official_event_brief(event)
     snapshot_id = str(snapshot.get("snapshot_id") or "")
     release_id = gate.release_id or ""
+    target_url = alert_mini_app_url(
+        settings.dashboard_url,
+        alert_id=event_id,
+        release_id=release_id,
+        snapshot_id=snapshot_id,
+        observation_id=observation_id,
+    )
     if str(event.get("source_key") or event.get("source") or "").strip().casefold() == "financialjuice":
         # FinancialJuice uses the same release-gated event lane but its
         # vendor-priority contract adds recipient-level replay protection and
@@ -546,6 +553,7 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             release_id=release_id,
             snapshot_id=snapshot_id,
             observation_id=observation_id,
+            target_url=target_url,
             prstk_risk_level=canonical_prstk_risk_level(event),
         )
     except (OSError, ValueError) as exc:

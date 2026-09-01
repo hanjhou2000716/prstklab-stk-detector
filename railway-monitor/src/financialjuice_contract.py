@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/financialjuice_contract.py
-# Canonical source SHA256: 5662b84169d323c8cdfc55264e377d1df41e0ed0ddc7555db8d17ce64a1da8d1
+# Canonical source SHA256: e045252dd299ead6513f331f65c914686d1873c228b0c565b4e35a93a089cef7
 
 """FinancialJuice observation contract and conservative PRStK risk mapping.
 
@@ -14,6 +14,7 @@ market-synchronisation proof.  This module keeps those concepts separate so a
 from __future__ import annotations
 
 import hashlib
+import math
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
@@ -83,10 +84,12 @@ def _time(value: Any) -> str | None:
 
 def _importance(value: Any) -> int | None:
     try:
-        parsed = int(str(value).split("/", 1)[0].strip())
+        parsed = float(str(value).split("/", 1)[0].strip())
     except (TypeError, ValueError):
         return None
-    return min(VENDOR_IMPORTANCE_MAX, max(0, parsed))
+    if not math.isfinite(parsed):
+        return None
+    return min(VENDOR_IMPORTANCE_MAX, max(0, int(parsed)))
 
 
 def _identity(record: dict[str, Any]) -> str:
@@ -178,15 +181,26 @@ def normalize_financialjuice_item(
 
 
 def financialjuice_notification_state(record: dict[str, Any]) -> dict[str, Any]:
-    """Expose why a relay item is or is not eligible for notification."""
+    """Expose the FJ lane decision without changing the PRStK risk gate.
+
+    ``importance>=8`` is an explicit vendor-priority exception: it authorizes
+    the release-bound FJ notification lane even while the generic risk
+    decision remains pending for missing official or market confirmation.
+    The release gate, freshness checks, deduplication, and recipient-level
+    delivery checks still apply downstream.
+    """
     normalized = record if isinstance(record.get("prstk_risk"), dict) else normalize_financialjuice(record)
     risk = normalized["prstk_risk"]
     eligible = bool(risk.get("notification_eligible"))
     vendor_importance = normalized.get("vendor_importance")
-    vendor_priority = isinstance(vendor_importance, int) and vendor_importance >= VENDOR_PRIORITY_THRESHOLD
+    normalized_importance = _importance(vendor_importance)
+    vendor_priority = normalized_importance is not None and normalized_importance >= VENDOR_PRIORITY_THRESHOLD
+    vendor_exception = vendor_priority and not eligible
     return {
-        "status": "eligible" if eligible else "pending_confirmation",
+        "status": "eligible" if eligible or vendor_priority else "pending_confirmation",
         "vendor_priority_notification": vendor_priority,
+        "vendor_priority_exception": vendor_exception,
+        "delivery_authorized": bool(eligible or vendor_priority),
         "vendor_priority_reason": (
             "vendor_importance_at_or_above_8"
             if vendor_priority

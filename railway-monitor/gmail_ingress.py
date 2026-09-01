@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import hashlib
 import json
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
@@ -23,6 +24,26 @@ class GmailIngressError(ValueError):
 
 def _now() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def _message_content_hash(record: Mapping[str, Any]) -> str:
+    """Hash message content for exact-content deduplication.
+
+    The template fingerprint intentionally describes a provider format and is
+    therefore shared by many different emails.  It must not be used as the
+    unique content key in the durable observation store.
+    """
+    subject = str(record.get("subject") or "")
+    body = str(record.get("body") or "")
+    raw_attachments = record.get("attachments")
+    attachments: list[Mapping[str, Any]] = (
+        [item for item in raw_attachments if isinstance(item, Mapping)]
+        if isinstance(raw_attachments, list)
+        else []
+    )
+    mime_types = [str(item.get("mime_type") or "") for item in attachments]
+    material = "\x1f".join((subject, body, *mime_types))
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()
 
 
 def _normalize_service_account(value: str) -> str:
@@ -130,7 +151,7 @@ class GmailIngressService:
         observation = {
             "observation_id": f"email-{message_id or parsed['template_fingerprint'][:16]}",
             "gmail_message_id": message_id,
-            "content_hash": parsed["template_fingerprint"],
+            "content_hash": _message_content_hash(record),
             "parse_status": parsed["parse_status"],
             "parser_version": parsed["parser_version"],
             "received_at": record.get("received_at"),

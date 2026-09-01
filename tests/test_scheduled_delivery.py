@@ -1,9 +1,11 @@
 import json
 
+import pytest
+
 from src import scheduled_delivery
 from src.release_gate import ReleaseGateResult
 from src.scheduled_delivery import _creator_records_from_observations, _load_creator_records
-from src.telegram_client import TextDeliveryReceipt
+from src.telegram_client import TextDeliveryReceipt, alert_mini_app_url
 
 
 def test_creator_observations_are_projected_into_release_records() -> None:
@@ -104,18 +106,52 @@ def test_scheduled_delivery_uses_text_delivery_after_release_gate(tmp_path, monk
     manifest_path.write_text("{}", encoding="utf-8")
     output = tmp_path / "output"
     _patch_ready(monkeypatch, output)
+    event = {
+        "source_key": "official",
+        "event_cluster_key": "event-1",
+        "observation_id": "observation-1",
+        "notification_status": "eligible",
+        "title": "官方事件",
+    }
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: event)
+    monkeypatch.setattr(scheduled_delivery, "write_event_lock_key", lambda *_args: None)
+    captured = {}
+
+    class FakeLedger:
+        def delivery_history(self):
+            return []
+
+        def record_delivery(self, payload, **_kwargs):
+            return payload
+
+        def save(self):
+            return None
+
+    monkeypatch.setattr(scheduled_delivery, "EventLedger", FakeLedger)
+
+    def sender(**kwargs):
+        captured.update(kwargs)
+        return (TextDeliveryReceipt(
+            kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"],
+            "hash", "delivered", message_id=1, observation_id=kwargs.get("observation_id", ""),
+        ),)
+
     monkeypatch.setattr(
         scheduled_delivery,
         "send_text_briefs_audited",
-        lambda **kwargs: (TextDeliveryReceipt(
-            kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"],
-            "hash", "delivered", message_id=1, observation_id=kwargs.get("observation_id", ""),
-        ),),
+        sender,
     )
     scheduled_delivery.send(snapshot_path, "morning", manifest_path)
     text = output.read_text(encoding="utf-8")
     assert "sent=true" in text
     assert "delivery_mode=text" in text
+    assert captured["target_url"] == alert_mini_app_url(
+        "https://example.test/app",
+        alert_id="event-1",
+        release_id="release-1",
+        snapshot_id="market-12345678",
+        observation_id="obs-1",
+    )
 
 
 def test_scheduled_market_delivery_does_not_require_fresh_research(tmp_path, monkeypatch):
@@ -214,6 +250,59 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
     assert recorded["observation_id_hash"] == "a" * 64
     assert recorded["notification_key"].startswith("financialjuice:")
     assert recorded["delivery_receipts"][0]["delivery_status"] == "delivered"
+
+
+def test_scheduled_financialjuice_all_recipient_failure_is_fail_closed(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / "market.json"
+    manifest_path = tmp_path / "release-manifest.json"
+    snapshot_path.write_text(
+        json.dumps({"snapshot_id": "market-12345678", "quotes": [], "indices": [], "briefing": {}}),
+        encoding="utf-8",
+    )
+    manifest_path.write_text("{}", encoding="utf-8")
+    output = tmp_path / "output"
+    _patch_ready(monkeypatch, output)
+    event = {
+        "source_key": "financialjuice",
+        "event_cluster_key": "cluster-failed",
+        "observation_id": "fj-observation-failed",
+        "notification_status": "eligible",
+        "vendor_priority_notification": True,
+        "vendor_importance": 8,
+        "title": "Oil supply risk",
+    }
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: event)
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "decide_alert_budget",
+        lambda *_args: {"allowed": True, "reason": "budget_available", "event_key": "cluster-failed"},
+    )
+    monkeypatch.setattr(scheduled_delivery, "deliver_financialjuice_event", lambda *_args, **_kwargs: {
+        "status": "failed",
+        "receipts": [{"recipient_hash": "hash", "delivery_status": "failed"}],
+        "reasons": ["delivery_exception"],
+    })
+    monkeypatch.setattr(scheduled_delivery, "write_event_lock_key", lambda *_args: None)
+
+    class FakeLedger:
+        def delivery_history(self):
+            return []
+
+        def record_delivery(self, *_args, **_kwargs):
+            raise AssertionError("failed FJ delivery must not be recorded as delivered")
+
+        def save(self):
+            return None
+
+    monkeypatch.setattr(scheduled_delivery, "EventLedger", FakeLedger)
+    monkeypatch.setattr(scheduled_delivery, "get_settings", _settings)
+
+    with pytest.raises(RuntimeError, match="FinancialJuice delivery failed"):
+        scheduled_delivery.send(snapshot_path, "morning", manifest_path)
+    text = output.read_text(encoding="utf-8")
+    assert "sent=false" in text
+    assert "delivery_status=failed" in text
+    assert "reason=all_recipients_failed" in text
 
 
 def test_scheduled_delivery_records_text_delivery_failure(tmp_path, monkeypatch):
