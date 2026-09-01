@@ -29,6 +29,32 @@ def test_validate_rejects_invalid_manifest_even_with_zero_exit(monkeypatch):
     assert payload["status"] == "invalid"
 
 
+def test_validate_rejects_candidate_when_delivery_gate_reports_stale_research(tmp_path, monkeypatch):
+    class Result:
+        def __init__(self, returncode, stdout, stderr=""):
+            self.returncode = returncode
+            self.stdout = stdout
+            self.stderr = stderr
+
+    responses = iter(
+        [
+            Result(0, '{"status":"ready","release_id":"release-stale"}\n'),
+            Result(
+                1,
+                "allowed=false\nrelease_id=release-stale\n"
+                "errors=production release research is older than 24 hours\n",
+            ),
+        ]
+    )
+    monkeypatch.setattr("src.pages_release.subprocess.run", lambda *args, **kwargs: next(responses))
+
+    ready, payload = _validate(tmp_path, require_production_research=True)
+
+    assert ready is False
+    assert payload["status"] == "invalid"
+    assert payload["validation_errors"] == ["production release research is older than 24 hours"]
+
+
 def test_pages_workflow_preserves_previous_release_when_no_candidate_is_valid():
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "deploy-pages.yml"
