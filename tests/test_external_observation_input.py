@@ -174,7 +174,7 @@ def test_external_health_exposes_financialjuice_observability_without_private_fi
     metrics = row["observability"]
     assert metrics["qualifying_item_count"] == 1
     assert metrics["pending_cluster_count"] == 1
-    assert metrics["last_notification_decision"] == "pending_confirmation"
+    assert metrics["last_notification_decision"] == "eligible"
     assert metrics["parser_error_count"] == 2
     assert metrics["last_delivery_at"] is None
     assert "observation_id" not in metrics

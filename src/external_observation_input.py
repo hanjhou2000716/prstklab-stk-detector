@@ -169,8 +169,13 @@ def _observability(accepted: list[dict[str, Any]], rejected: int) -> dict[str, A
         if not (row.get("official_confirmed") is True and row.get("market_sync_confirmed") is True)
     }
     pending_clusters.discard("")
-    eligible = any(row.get("official_confirmed") is True and row.get("market_sync_confirmed") is True for row in qualifying)
-    decision = "eligible" if eligible else "pending_confirmation" if qualifying else "no_event"
+    # FJ importance>=8 is the explicit vendor-priority exception.  Keep
+    # pending cluster counts so the Mini App still shows missing corroboration,
+    # but expose the delivery-lane decision as eligible.  The downstream
+    # release gate, freshness gate, deduplication, and recipient checks remain
+    # authoritative for actual delivery.
+    eligible = bool(qualifying)
+    decision = "eligible" if eligible else "no_event"
     return {
         "last_received_at": max(received, default=(None, None))[1],
         "last_parsed_at": max(parsed, default=(None, None))[1],
