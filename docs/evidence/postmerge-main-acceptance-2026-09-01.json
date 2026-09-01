@@ -1,0 +1,77 @@
+{
+  "kind": "postmerge-main-acceptance",
+  "schema_version": "1.0",
+  "captured_at": "2026-09-01T00:52:00Z",
+  "main_commit": "110df0ed41731bddc985909a771887aaec0317e5",
+  "status": "NEEDS_REVERIFY",
+  "workflows": {
+    "pages_deploy": {
+      "run_id": 33456208001,
+      "status": "success",
+      "head_sha": "110df0ed41731bddc985909a771887aaec0317e5"
+    },
+    "public_release_smoke": {
+      "run_id": 33456265148,
+      "status": "success",
+      "head_sha": "110df0ed41731bddc985909a771887aaec0317e5",
+      "telegram_side_effect": false
+    },
+    "external_acceptance_readonly": {
+      "run_id": 33456371644,
+      "status": "success",
+      "head_sha": "110df0ed41731bddc985909a771887aaec0317e5",
+      "pages_manifest": "ready",
+      "artifact_hashes": {
+        "declared": 5,
+        "verified": 5,
+        "mismatches": 0
+      },
+      "worker_health": "pass",
+      "railway": "optional_unavailable",
+      "telegram_side_effect": false
+    },
+    "quality": {
+      "run_id": 33456451764,
+      "status": "success",
+      "head_sha": "110df0ed41731bddc985909a771887aaec0317e5"
+    }
+  },
+  "public_release": {
+    "release_id": "release-f236d9604270f652",
+    "market_snapshot_id": "ca9760e7c1741e61",
+    "research_snapshot_id": "research-13cb6918b0e80b16",
+    "event_snapshot_id": "event-6834ca1d31dec665",
+    "status": "ready"
+  },
+  "miniapp": {
+    "public_url": "https://hanjhou2000716.github.io/prstklab-stk-detector/?release_verify=20260901",
+    "us_news_tab": "pass",
+    "us_observation_stories": 5,
+    "independent_sources": 3,
+    "available_stories": 5,
+    "excluded_stories": 13,
+    "release_bound_data": true,
+    "no_permanent_loading_or_source_failed_state": true,
+    "telegram_side_effect": false
+  },
+  "local_verification": {
+    "pytest": "1588 passed",
+    "ruff": "pass",
+    "mypy": "pass",
+    "compileall": "pass",
+    "node_check": "pass",
+    "delivery_smoke_dummy_config": "pass"
+  },
+  "open_gates": [
+    {
+      "regression_id": "REG-GMAIL-PERSISTENCE",
+      "completion_debt_id": "DEBT-GMAIL-PERSISTENCE-001",
+      "reason": "Gmail OAuth secrets and restart-continuity evidence are still required"
+    }
+  ],
+  "notes": [
+    "All checks are read-only or deployment verification; no production Telegram broadcast was performed.",
+    "Railway returned HTTP 404 and remains an optional rollback path; the canonical Worker health endpoint passed.",
+    "No secret, recipient identifier, email body, or OAuth material is included."
+  ]
+}
