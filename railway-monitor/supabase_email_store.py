@@ -110,10 +110,19 @@ class SupabaseEmailStore:
             "received_at": observation.get("received_at"),
             "metadata_json": metadata,
         }
-        _status, payload = self._request(
-            "POST", "gmail_email_observations", "?on_conflict=gmail_message_id", row,
-            prefer="resolution=ignore-duplicates,return=representation",
-        )
+        try:
+            _status, payload = self._request(
+                "POST", "gmail_email_observations", "?on_conflict=gmail_message_id", row,
+                prefer="resolution=ignore-duplicates,return=representation",
+            )
+        except RuntimeError as error:
+            # The table also has a unique exact-content index.  A replay with
+            # a new Gmail transport id can therefore conflict on content_hash
+            # rather than the upsert target; treat that as the same durable
+            # observation instead of aborting the whole history batch.
+            if str(error) != "supabase_http_409":
+                raise
+            return False
         return isinstance(payload, list) and bool(payload)
 
     def record_dlq(self, *, message_id: str, parser_name: str, parser_version: str, template_fingerprint: str,

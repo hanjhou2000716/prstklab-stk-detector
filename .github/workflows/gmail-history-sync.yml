@@ -47,6 +47,7 @@ jobs:
         env:
           HISTORY_ID: ${{ inputs.history_id || github.event.client_payload.history_id || '' }}
         run: |
+          set -o pipefail
           args=()
           if [ -n "${HISTORY_ID:-}" ]; then args+=(--history-id "$HISTORY_ID"); fi
           python scripts/sync_gmail_supabase.py "${args[@]}" | tee gmail-sync-result.json
@@ -56,7 +57,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          processed="$(jq -r '.processed // 0' gmail-sync-result.json)"
+          processed="$(jq -r 'if (.processed | type) == "number" then .processed else 0 end' gmail-sync-result.json)"
           if [ "$processed" -gt 0 ]; then
             gh api --method POST "repos/$GH_REPO/dispatches" \
               -f event_type=official-event-check \

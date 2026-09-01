@@ -258,6 +258,29 @@ def test_ingress_accepts_replay_safe_observation_and_dedupes(tmp_path: Path) -> 
     assert store.health()["raw_content_stored"] is False
 
 
+def test_different_messages_with_the_same_provider_template_are_not_collapsed(
+    tmp_path: Path,
+) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    service = GmailIngressService(store, _config())
+    base = {
+        "sender": "alerts@financialjuice.com",
+        "subject": "FinancialJuice breaking news",
+    }
+    first = service.accept_email({
+        **base,
+        "gmail_message_id": "m-template-1",
+        "body": "Original headline: Oil supply update\nImportance: 10/10",
+    })
+    second = service.accept_email({
+        **base,
+        "gmail_message_id": "m-template-2",
+        "body": "Original headline: Oil supply update\nImportance: 9/10",
+    })
+    assert first["accepted"] is True
+    assert second["accepted"] is True
+
+
 def test_push_advances_durable_cursor_without_storing_message_body(tmp_path: Path) -> None:
     store = EmailStore(tmp_path / "mail.sqlite3")
     service = GmailIngressService(store, _config())

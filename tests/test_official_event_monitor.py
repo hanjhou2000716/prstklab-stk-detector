@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 from src import official_event_monitor as monitor
 from src.official_event_monitor import build_official_event_brief, event_key, select_official_event
 from src.release_gate import ReleaseGateResult
+from src.telegram_client import TextDeliveryReceipt, alert_mini_app_url
 
 
 def test_black_swan_needs_related_market_confirmation_before_delivery():
@@ -267,3 +268,58 @@ def test_financialjuice_event_uses_immediate_text_lane_and_records_receipt(monke
     assert "delivered_count=1" in text
     assert "risk=R2" in text
     assert recorded["delivery_status"] == "delivered"
+
+
+def test_official_text_lane_passes_alert_deep_link(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    event = {
+        "source_key": "official",
+        "source": "issuer",
+        "event_cluster_key": "official-cluster-1",
+        "observation_id": "official-observation-1",
+        "notification_status": "eligible",
+        "prstk_risk": {"prstk_risk_level": "R2"},
+        "title": "Official update",
+    }
+    snapshot = {"snapshot_id": "snap-1", "events": {"items": [event]}}
+    monkeypatch.setattr(monitor, "prepare_snapshot", lambda: (snapshot, event))
+    monkeypatch.setattr(monitor, "event_key", lambda _event: "official-key")
+    monkeypatch.setattr(monitor, "verify_release_for_delivery", lambda **_kwargs: ReleaseGateResult(True, release_id="release-1", snapshot_id="snap-1"))
+    monkeypatch.setattr(monitor, "_observe_event", lambda *_args, **_kwargs: {"should_remind": True})
+    monkeypatch.setattr(monitor, "build_official_event_brief", lambda _event: "官方事件")
+    monkeypatch.setattr(monitor, "get_settings", lambda: type("Settings", (), {
+        "telegram_ready": True, "telegram_bot_token": "token", "telegram_chat_ids": ("test",),
+        "dashboard_url": "https://example.test/app",
+    })())
+    monkeypatch.setattr(monitor, "decide_alert_budget", lambda *_args: {"allowed": True, "reason": "budget_available", "event_key": "official-key"})
+
+    class FakeLedger:
+        def delivery_history(self):
+            return []
+
+        def record_delivery(self, payload, **_kwargs):
+            return payload
+
+        def save(self):
+            return None
+
+    monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
+    captured = {}
+
+    def sender(**kwargs):
+        captured.update(kwargs)
+        return (TextDeliveryReceipt(
+            kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"],
+            "hash", "delivered", message_id=1, observation_id=kwargs.get("observation_id", ""),
+        ),)
+
+    monkeypatch.setattr(monitor, "send_text_briefs_audited", sender)
+    assert monitor.send_current_event() is True
+    assert captured["target_url"] == alert_mini_app_url(
+        "https://example.test/app",
+        alert_id="official-cluster-1",
+        release_id="release-1",
+        snapshot_id="snap-1",
+        observation_id="official-observation-1",
+    )

@@ -36,7 +36,7 @@ from src.scheduled_brief import (
     build_brief,
     write_event_lock_key,
 )
-from src.telegram_client import canonical_prstk_risk_level, send_text_briefs_audited
+from src.telegram_client import alert_mini_app_url, canonical_prstk_risk_level, send_text_briefs_audited
 
 _DEFAULT_CREATOR_RECORDS_PATH = Path("creator/public-records.json")
 
@@ -408,6 +408,16 @@ def send(
         or (event or {}).get("event_key")
         or trace_id
     )
+    target_url = (
+        alert_mini_app_url(
+            settings.dashboard_url,
+            alert_id=alert_id,
+            release_id=gate.release_id or "",
+            snapshot_id=snapshot_id,
+            observation_id=observation_id,
+        )
+        if event else None
+    )
     fj_delivery: dict[str, Any] | None = None
     deliveries: tuple[Any, ...] = ()
     try:
@@ -433,6 +443,7 @@ def send(
                 release_id=gate.release_id or "",
                 snapshot_id=snapshot_id,
                 observation_id=observation_id,
+                target_url=target_url,
                 prstk_risk_level=canonical_prstk_risk_level(event),
             )
     except (OSError, ValueError) as exc:
@@ -478,6 +489,23 @@ def send(
             for row in fj_receipts
             if str(row.get("delivery_status") or "") != "delivered"
         ]
+        if not delivered:
+            _write_output({
+                "sent": "false",
+                "delivery_status": "failed",
+                "reason": "all_recipients_failed",
+                "release_id": gate.release_id,
+                "snapshot_id": snapshot_id,
+                "alert_id": alert_id,
+                "delivered_count": 0,
+                "failed_count": max(failed, len(settings.telegram_chat_ids)),
+                "failed_recipient_hashes": failed_recipient_hashes,
+                "notification_expected": "true",
+                "notification_status": "failed",
+                "notification_reason": "recipient_delivery_failed",
+                "risk": event_risk,
+            })
+            raise RuntimeError("Telegram FinancialJuice delivery failed for every configured recipient")
     else:
         delivered = sum(delivery.status == "delivered" for delivery in deliveries)
         failed = len(deliveries) - delivered

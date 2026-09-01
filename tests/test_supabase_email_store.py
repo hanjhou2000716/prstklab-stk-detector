@@ -55,6 +55,23 @@ def test_public_projection_rejects_private_mail_fields(monkeypatch: pytest.Monke
         })
 
 
+def test_claim_observation_treats_exact_content_conflict_as_duplicate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "supabase_email_store.requests.request",
+        lambda *_args, **_kwargs: _Response(409, {"code": "23505"}),
+    )
+    store = SupabaseEmailStore("https://example.supabase.co", "key")
+    assert store.claim_observation({
+        "gmail_message_id": "gmail-2",
+        "observation_id": "obs-2",
+        "content_hash": "content-1",
+        "parse_status": "parsed",
+        "parser_version": "test",
+    }) is False
+
+
 def test_public_projection_keeps_creator_fields_but_strips_transport_ids(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: list[dict[str, Any]] = []
 

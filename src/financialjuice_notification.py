@@ -62,6 +62,11 @@ def financialjuice_caption(event: dict[str, Any], *, limit: int = MAX_FINANCIALJ
     headline = _text(event.get("title") or event.get("brief_title") or "FinancialJuice 公開快訊")
     importance = event.get("vendor_importance")
     suffix = f"FJ {importance}/10" if importance is not None else "FJ 待核對"
+    prefix = f"🟣 {suffix}｜"
+    # Bound the headline before the canonical formatter sees it.  Otherwise a
+    # long English segment is rejected as a whole and canonical_short_message
+    # falls back to the generic "資訊待核對" text, losing the discovery fact.
+    headline = _bounded(headline, max(1, limit - len(prefix)))
     # Vendor importance remains separate metadata, while the canonical
     # formatter adds exactly one PRStK risk token to the user-facing text.
     from src.telegram_client import canonical_short_message
@@ -171,6 +176,7 @@ def deliver_financialjuice_event(
             release_id=release_id,
             snapshot_id=snapshot_id,
             observation_id=observation_id,
+            target_url=target_url,
             prstk_risk_level=canonical_prstk_risk_level(event),
         )
     except Exception as exc:  # transport adapters must fail closed

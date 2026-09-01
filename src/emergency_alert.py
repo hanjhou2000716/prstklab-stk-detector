@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from src.alert_budget import decide_alert_budget
 from src.config import get_settings
 from src.event_ledger import EventLedger
-from src.telegram_client import canonical_prstk_risk_level, send_text_briefs_audited, validate_brief
+from src.telegram_client import alert_mini_app_url, canonical_prstk_risk_level, send_text_briefs_audited, validate_brief
 
 STRICT_HIGH_RISK_CATEGORIES = {"black_swan", "conflict"}
 
@@ -122,6 +122,13 @@ def main() -> None:
         print(f"Emergency alert suppressed by alert budget: {budget.get('reason', 'suppressed')}")
         return
     try:
+        target_url = alert_mini_app_url(
+            settings.dashboard_url,
+            alert_id=alert_id,
+            release_id=release_id,
+            snapshot_id=snapshot_id,
+            observation_id=trace_id,
+        )
         results = send_text_briefs_audited(
             token=settings.telegram_bot_token or "",
             chat_ids=settings.telegram_chat_ids,
@@ -131,6 +138,7 @@ def main() -> None:
             release_id=release_id,
             snapshot_id=snapshot_id,
             observation_id=trace_id,
+            target_url=target_url,
             prstk_risk_level=prstk_level,
         )
     except (OSError, ValueError) as exc:
