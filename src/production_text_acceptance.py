@@ -18,7 +18,10 @@ from src.config import parse_chat_ids
 from src.release_gate import ReleaseGateResult, verify_release_for_delivery
 from src.telegram_client import TextDeliveryReceipt, canonical_prstk_risk_level, send_text_briefs_audited
 
-CAPTION = "PRStK 受控驗證｜R2｜資料待核對"
+# Keep the acceptance message on the same public presentation boundary as all
+# other Telegram paths.  The internal R2 value is still passed separately to
+# the sender and therefore remains available in the delivery receipt/audit.
+CAPTION = "PRStK 受控驗證｜資料待核對"
 ALERT_ID_PREFIX = "production-text-acceptance"
 
 
