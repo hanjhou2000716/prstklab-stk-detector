@@ -21,6 +21,8 @@ def test_retired_photo_entrypoint_sends_one_release_bound_text(tmp_path: Path) -
     def sender(**kwargs):
         calls.append(kwargs)
         assert kwargs["chat_ids"] == ("test-chat",)
+        assert all(code not in kwargs["text"] for code in ("R0", "R1", "R2", "R3", "R4"))
+        assert kwargs["prstk_risk_level"] == "R2"
         return (TextDeliveryReceipt("a", "release-acceptance", "market-acceptance", "hash", "delivered", message_id=1),)
 
     report = run(manifest=tmp_path / "manifest.json", public_url="https://example.test/prstk/",
