@@ -17,7 +17,7 @@ lineage；以下狀態以目前 `main` 的程式與 Actions evidence 為準：
 | Telegram 文字與圖卡安全 | 已整合 | release gate、單一訊息、逐收件人 retry、renderer 失敗即停止送圖；不寄黑色 placeholder |
 | Pages／Mini App 公開版本 | 已驗收 | `ready` manifest、7/7 artifact hash、一致的 market／research／event snapshot，以及美股新聞頁與 release-bound deep link |
 | Cloudflare Worker／Supabase 零成本路徑 | canary 可用 | Worker health 與 Supabase contract 已驗證；Railway 仍保留為可選 rollback |
-| Gmail Watch 持久化 | 待補外部憑證 | Watch／Pub/Sub／Supabase 程式已存在，正式續期仍需要 OAuth client secret 與 refresh token；在補齊前不宣稱郵件事件正式接收 |
+| Gmail Watch 持久化 | canary 已驗證 | OAuth／Pub/Sub 設定已以加密 GitHub Secrets 保存；Supabase Watch 續期與跨 runner restart continuity 已驗證，Railway 僅保留為可選 rollback |
 
 公開頁面的檢查結果、release ID、snapshot ID 與 hash 會記錄在
 [`docs/evidence/postmerge-acceptance-2026-09-01.json`](docs/evidence/postmerge-acceptance-2026-09-01.json)。

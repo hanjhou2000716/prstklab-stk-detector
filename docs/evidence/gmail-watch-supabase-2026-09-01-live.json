@@ -1,0 +1,42 @@
+{
+  "kind": "gmail-watch-supabase-live-acceptance",
+  "schema_version": "1.0",
+  "captured_at": "2026-09-01T10:18:04+08:00",
+  "storage_backend": "supabase",
+  "workflow_runs": {
+    "forced_renewal": {
+      "id": 33461934889,
+      "head_sha": "dbd99fbe90ea0cabdec9c71757880349194bbded",
+      "status": "healthy",
+      "renewed": true,
+      "watch_expiration": "2026-09-08T02:16:58.957000+00:00"
+    },
+    "non_forced_restart_check": {
+      "id": 33462005326,
+      "head_sha": "dbd99fbe90ea0cabdec9c71757880349194bbded",
+      "status": "healthy",
+      "renewed": false,
+      "watch_expiration": "2026-09-08T02:16:58.957000+00:00",
+      "interpretation": "A fresh hosted runner read the existing Supabase lease and did not create a second Watch."
+    }
+  },
+  "storage": {
+    "restart_continuity": {
+      "status": "verified",
+      "evidence": "The non-forced workflow ran on a separate runner after the forced renewal and observed the same healthy lease from Supabase."
+    },
+    "private_state_exposed": false,
+    "mailbox_content_read": false
+  },
+  "side_effects": {
+    "gmail_watch_created_or_renewed": true,
+    "telegram": false,
+    "railway_write": false,
+    "secrets_exposed": false
+  },
+  "notes": [
+    "OAuth client and refresh token are stored only as encrypted GitHub Actions secrets.",
+    "The Gmail Watch topic, label, Pub/Sub audience and service account variables were already configured.",
+    "The legacy Railway endpoint remains optional; Supabase is the canonical zero-cost state store."
+  ]
+}
