@@ -1,0 +1,59 @@
+{
+  "kind": "postmerge-acceptance",
+  "schema_version": "1.0",
+  "captured_at": "2026-09-01",
+  "main_commit": "bddcb3a3983352fde693890b02c92634e2093c99",
+  "status": "PASS",
+  "workflows": {
+    "pages_deploy": {
+      "run_id": 33454512037,
+      "status": "success",
+      "source": "main",
+      "checks": [
+        "restore newest valid immutable data release",
+        "validate release before Pages upload",
+        "audit production artifacts before Pages upload",
+        "deploy"
+      ]
+    },
+    "public_release_smoke": {
+      "run_id": 33454603068,
+      "status": "success",
+      "public_url": "https://hanjhou2000716.github.io/prstklab-stk-detector/",
+      "telegram_side_effect": false
+    },
+    "external_acceptance_readonly": {
+      "run_id": 33454674940,
+      "status": "success",
+      "pages_manifest": "ready",
+      "artifact_hashes": {
+        "declared": 7,
+        "verified": 7,
+        "mismatches": 0
+      },
+      "worker_health": "pass",
+      "railway": "optional_unavailable",
+      "telegram_side_effect": false
+    }
+  },
+  "public_release": {
+    "release_id": "release-7bcef9c7ea5a37b7",
+    "market_snapshot_id": "c7288cec0c29c9e7",
+    "research_snapshot_id": "research-13cb6918b0e80b16",
+    "event_snapshot_id": "event-2668aef41e66e57b",
+    "status": "ready"
+  },
+  "miniapp": {
+    "us_news_tab": "pass",
+    "us_observation_stories": 5,
+    "independent_sources": 2,
+    "release_bound_deep_link": "pass",
+    "no_permanent_loading_or_source_failed_state": true,
+    "telegram_side_effect": false
+  },
+  "notes": [
+    "This evidence is read-only or deployment verification; it does not include recipient identifiers, tokens, or OAuth material.",
+    "Railway remains an optional rollback path and returned HTTP 404; the canonical zero-cost Worker health endpoint passed.",
+    "Gmail Watch persistence remains separately gated until OAuth secrets and restart-continuity evidence exist."
+  ]
+}

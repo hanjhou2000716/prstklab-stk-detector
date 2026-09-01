@@ -6,6 +6,23 @@ PRStK 是部署於 GitHub 的公開市場資訊整理、風險監測與量化研
 
 > 僅整理公開或已授權資料、模型研究及教育性風險觀察，不構成投資建議。本系統不讀取券商、銀行、錢包或其他私人帳戶，不要求密碼、OTP 或憑證，亦不會自動交易。
 
+## 最近交付與驗收狀態（2026-09-01）
+
+本版本已把即時通知、來源品質、發布安全與公開頁面驗收串回同一條
+lineage；以下狀態以目前 `main` 的程式與 Actions evidence 為準：
+
+| 交付 | 狀態 | 可追溯內容 |
+|---|---|---|
+| 即時價格／新聞／FinancialJuice 通知 lane | 已整合 | watchlist 門檻、provider funnel、canonical 風險與 Alert Budget 共用同一條事件流程 |
+| Telegram 文字與圖卡安全 | 已整合 | release gate、單一訊息、逐收件人 retry、renderer 失敗即停止送圖；不寄黑色 placeholder |
+| Pages／Mini App 公開版本 | 已驗收 | `ready` manifest、7/7 artifact hash、一致的 market／research／event snapshot，以及美股新聞頁與 release-bound deep link |
+| Cloudflare Worker／Supabase 零成本路徑 | canary 可用 | Worker health 與 Supabase contract 已驗證；Railway 仍保留為可選 rollback |
+| Gmail Watch 持久化 | 待補外部憑證 | Watch／Pub/Sub／Supabase 程式已存在，正式續期仍需要 OAuth client secret 與 refresh token；在補齊前不宣稱郵件事件正式接收 |
+
+公開頁面的檢查結果、release ID、snapshot ID 與 hash 會記錄在
+[`docs/evidence/postmerge-acceptance-2026-09-01.json`](docs/evidence/postmerge-acceptance-2026-09-01.json)。
+這份 evidence 不包含 Bot token、OAuth secret、refresh token 或原始收件人識別碼。
+
 ## 服務範圍
 
 - **Telegram 快報**：固定報告與符合門檻的速報；公開文字以彩色圓點搭配一個 canonical `R0`～`R4` 風險代碼與人類可讀狀態，caption 限制 40 字內，並附對應 Mini App deep link 按鈕。相同風險等級會同步保留在回執與稽核資料。
