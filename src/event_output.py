@@ -22,14 +22,52 @@ def four_section_event(event: dict[str, Any]) -> dict[str, str]:
 
 
 def short_event_message(event: dict[str, Any], *, prefix: str = "快訊") -> str:
-    """Format one bounded watch message through the canonical risk boundary."""
-    label = str(event.get("short_label") or event.get("event_type") or "市場事件").strip()
-    direction = str(event.get("market_direction") or "市場待核對").strip()
-    move = str(event.get("market_move") or "變動待核對").strip()
+    """Format one bounded, evidence-grounded investor-facing message."""
+    raw_instrument = event.get("instrument")
+    instrument = raw_instrument if isinstance(raw_instrument, dict) else {}
+    ticker = str(instrument.get("ticker") or event.get("ticker") or "").strip()
+    raw_type = str(event.get("notification_topic") or event.get("short_label") or event.get("event_type") or "市場事件").strip()
+    topic_map = {
+        "fed": "Fed", "fomc": "Fed", "central-bank": "Fed",
+        "tariff": "關稅", "trade-policy": "關稅", "conflict": "地緣",
+        "geopolitical": "地緣", "macro": "總經", "energy": "能源",
+        "market_signal": ticker or "市場", "price": ticker or "市場",
+    }
+    topic = topic_map.get(raw_type.casefold(), raw_type)
+    if topic in {"市場事件", "官方事件", "重大事件", "重要事件"} and ticker:
+        topic = ticker
+    is_price = str(event.get("kind") or "").casefold() == "market_signal"
+    if is_price:
+        summary = "｜".join(
+            part for part in (
+                str(event.get("market_direction") or "").strip(),
+                str(event.get("market_move") or "").strip(),
+                str(event.get("pattern") or "").strip(),
+            ) if part
+        )
+    else:
+        summary = str(next(
+            (event.get(key) for key in ("brief_summary", "summary", "title", "event", "verified_fact", "brief_title")
+         if str(event.get(key) or "").strip()),
+            "",
+        ) or "")
+    summary = " ".join(str(summary).split())
+    generic = {"市場觀察", "市場風險", "重大風險", "市場待核對", "資料待核對", "價格訊號"}
+    if summary in generic:
+        summary = ""
+    move = str(event.get("market_move") or "").strip()
+    if not move and instrument.get("change_percent") is not None:
+        try:
+            move = f"{float(instrument['change_percent']):+.1f}%"
+        except (TypeError, ValueError):
+            move = ""
+    if not summary:
+        direction = str(event.get("market_direction") or "").strip()
+        summary = "｜".join(part for part in (direction, move) if part) or "資訊待核對"
+    if topic in {"Fed／貨幣政策", "Fed/貨幣政策"}:
+        topic = "Fed"
     risk = canonical_prstk_risk_level(event)
-    # ``canonical_short_message`` places the risk token before the bounded
-    # context so truncation can never remove R0-R4 or leave a misleading
-    # partial suffix. ``prefix`` remains useful for callers that supply a
-    # domain label other than the legacy ``快訊`` wrapper.
-    context = "｜".join(part for part in (prefix, label, direction, move) if part)
+    # ``prefix`` is intentionally ignored when it is the generic scheduler
+    # wrapper; the message should answer what happened, not which job ran.
+    context = "｜".join(part for part in (topic, summary) if part)
     return canonical_short_message(context, prstk_risk_level=risk)

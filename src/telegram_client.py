@@ -29,6 +29,10 @@ MAX_FAILED_RECIPIENT_RETRIES = 3
 PRSTK_RISK_LEVELS = frozenset({"R0", "R1", "R2", "R3", "R4"})
 _RISK_ICONS = {"R0": "🟢", "R1": "🟢", "R2": "🟡", "R3": "🟠", "R4": "🔴"}
 _RISK_CATEGORIES = {"R0": "市場觀察", "R1": "市場觀察", "R2": "市場觀察", "R3": "市場風險", "R4": "重大風險"}
+_GENERIC_PUBLIC_LABELS = frozenset({
+    "市場觀察", "市場風險", "重大風險", "市場待核對", "市場資訊待核對",
+    "資料待核對", "快訊", "價格訊號", "重大事件", "重要事件",
+})
 
 
 def _failed_recipient_retry_count() -> int:
@@ -167,11 +171,12 @@ def validate_brief(text: str) -> None:
 def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
     """Build the one canonical, bounded user-facing non-Creator message.
 
-    The public contract includes exactly one canonical ``R0``-``R4`` token.
-    Existing risk tokens, colour icons, ``快訊`` wrappers, and a FinancialJuice
-    prefix are normalized instead of being stacked by downstream senders.
-    Truncation happens only at the ``｜`` segment boundary, so the risk token
-    and the first context segment are never cut in half.
+    Risk is deliberately an internal-only field.  The public contract keeps
+    the colour cue but never exposes ``R0``-``R4``.  Existing risk tokens,
+    colour icons, generic taxonomy labels and wrappers are normalized instead
+    of being stacked by downstream senders.  Truncation happens at the
+    ``｜`` segment boundary so a topic and its evidence-grounded summary stay
+    readable.
     """
     level = str(prstk_risk_level or "R2").upper()
     if level not in PRSTK_RISK_LEVELS:
@@ -184,19 +189,22 @@ def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
     source = re.sub(r"(?<![A-Za-z0-9])R[0-4](?![A-Za-z0-9])\s*[｜|:]?", "", source, flags=re.IGNORECASE)
     source = re.sub(r"^[🟢🟡🟠🔴⚪⚫🟣]\s*", "", source)
     source = re.sub(r"[🟢🟡🟠🔴⚪⚫🟣]?\s*FJ\s*\d+(?:\.\d+)?\s*/\s*10\s*[｜|:]?", "", source, flags=re.IGNORECASE)
-    segments = [part.strip() for part in re.split(r"[｜|]", source) if part.strip() and part.strip() != "快訊"]
+    segments = [
+        part.strip() for part in re.split(r"[｜|]", source)
+        if part.strip() and part.strip() not in _GENERIC_PUBLIC_LABELS
+    ]
     if fj_match:
         fj_score = re.sub(r"\s+", " ", fj_match.group(0)).strip()
         # FJ's vendor importance is evidence metadata, not a replacement for
-        # the PRStK risk grade.
-        head = f"🟣 {fj_score}｜{level}｜"
+        # the PRStK risk grade.  The risk remains in the receipt/audit only.
+        head = f"🟣 {fj_score}｜"
         category = ""
     else:
-        head = f"{_RISK_ICONS[level]} {level}｜"
-        category = _RISK_CATEGORIES[level]
+        head = f"{_RISK_ICONS[level]} "
+        category = ""
     body_segments = ([category] if category and (not segments or segments[0] != category) else []) + segments
     if not body_segments:
-        body_segments = ["市場資訊待核對"]
+        body_segments = ["資訊待核對"]
     kept: list[str] = []
     for segment in body_segments:
         candidate = head + "｜".join([*kept, segment])
@@ -206,9 +214,18 @@ def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
         break
     if not kept:
         # Safe semantic fallback rather than arbitrary substring truncation.
-        fallback = "市場資訊待核對"
+        fallback = "資訊待核對"
         return (head + fallback)[:30]
     candidate = head + "｜".join(kept)
+    # If the topic fits but the evidence sentence does not, retain a bounded
+    # excerpt instead of dropping the very information the notification is
+    # meant to communicate.
+    if len(kept) == 1 and len(body_segments) > 1:
+        separator = "｜"
+        prefix = head + kept[0] + separator
+        available = 30 - len(prefix)
+        if available > 1:
+            return prefix + body_segments[1][: available - 1] + "…"
     if len(candidate) < len(head + "｜".join(body_segments)) and len(candidate) < 30:
         candidate += "…"
     return candidate[:30]

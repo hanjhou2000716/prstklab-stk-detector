@@ -366,6 +366,23 @@ def send(
     if event:
         ledger = EventLedger()
         history = ledger.delivery_history()
+        theme = ledger.theme_decision(event) if hasattr(ledger, "theme_decision") else {"allowed": True}
+        ledger.save()
+        if not theme.get("allowed", False):
+            _write_output({
+                "sent": "false",
+                "delivery_status": "suppressed",
+                "reason": theme.get("reason", "same_theme_within_2h"),
+                "event_key": theme.get("event_key", ""),
+                "notification_theme_key": theme.get("notification_theme_key", ""),
+                "snapshot_id": snapshot_id,
+                "release_id": gate.release_id,
+                "notification_expected": "false",
+                "notification_status": "suppressed",
+                "notification_reason": theme.get("reason", "same_theme_within_2h"),
+                "risk": event_risk,
+            })
+            return
         budget = decide_alert_budget(event, history)
         if not budget["allowed"]:
             _write_output({
