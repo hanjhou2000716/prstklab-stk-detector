@@ -101,14 +101,14 @@ def _semantic_projection(result: dict[str, Any], row: dict[str, Any]) -> dict[st
     views = _source_views(result, row)
     event = _first_text(
         views,
-        "event", "chinese_translation", "vendor_translation", "translated_headline",
+        "chinese_translation", "vendor_translation", "translated_headline", "event",
         "original_headline", "vendor_original_headline", "headline", "title", "summary",
     )
     why_important = _first_text(
-        views, "why_important", "ai_commentary", "vendor_analysis", "importance_detail",
+        views, "ai_commentary", "vendor_analysis", "why_important", "importance_detail",
     ) or _NEUTRAL_IMPORTANCE
     possible_linkage = _first_text(
-        views, "possible_linkage", "possible_impact", "vendor_possible_impact", "vendor_impact",
+        views, "possible_impact", "vendor_possible_impact", "vendor_impact", "possible_linkage",
         "market_impact", "impact",
     ) or _NEUTRAL_LINKAGE
     stock_observation = _first_text(
