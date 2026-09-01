@@ -59,7 +59,16 @@ def financialjuice_notification_key(event: dict[str, Any]) -> str:
 
 def financialjuice_caption(event: dict[str, Any], *, limit: int = MAX_FINANCIALJUICE_CAPTION) -> str:
     """Build the short caption without turning vendor importance into risk."""
-    headline = _text(event.get("title") or event.get("brief_title") or "FinancialJuice 公開快訊")
+    # The priority projection's canonical ``event`` is the parsed rich
+    # semantic fact.  Keep title/brief_title only as legacy fallbacks so a
+    # high-importance notification does not collapse into a generic label.
+    headline = _text(
+        event.get("event")
+        or event.get("chinese_translation")
+        or event.get("title")
+        or event.get("brief_title")
+        or "FinancialJuice 公開快訊"
+    )
     importance = event.get("vendor_importance")
     suffix = f"FJ {importance}/10" if importance is not None else "FJ 待核對"
     prefix = f"🟣 {suffix}｜"

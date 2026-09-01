@@ -15,6 +15,10 @@ from typing import Any
 
 from src.external_event_pipeline import build_external_events
 
+_NEUTRAL_STOCK_OBSERVATION = "等待官方後續確認，並觀察相關市場是否同步反應。"
+_NEUTRAL_IMPORTANCE = "目前尚無額外重要性說明，等待後續公開資料核對。"
+_NEUTRAL_LINKAGE = "尚無足夠公開資料判定連動。"
+
 
 def _now() -> str:
     return datetime.now(UTC).isoformat()
@@ -35,14 +39,99 @@ def _observation_id_hash(value: Any) -> str | None:
     return hashlib.sha256(text.encode("utf-8")).hexdigest() if text else None
 
 
+def _source_views(result: dict[str, Any], row: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return the current item's raw and normalized views in priority order.
+
+    Compound events arrive as an envelope row, so their item-level rich fields
+    live in ``source_evidence`` after the shared pipeline normalizes the item.
+    Prefer evidence matching the current identity to prevent one item's
+    commentary or impact from being assigned to another item.
+    """
+    evidence = [item for item in (result.get("source_evidence") or []) if isinstance(item, dict)]
+    identity = {
+        str(row.get(key) or result.get(key) or "").strip()
+        for key in ("item_id", "observation_id", "event_cluster_key")
+        if str(row.get(key) or result.get(key) or "").strip()
+    }
+    matching = [
+        item for item in evidence
+        if identity.intersection({
+            str(item.get(key) or "").strip()
+            for key in ("item_id", "observation_id", "event_cluster_key")
+            if str(item.get(key) or "").strip()
+        })
+    ]
+    ordered = [row, *matching, result]
+    ordered.extend(item for item in evidence if item not in matching)
+    return ordered
+
+
+def _first_text(views: list[dict[str, Any]], *keys: str) -> str:
+    for view in views:
+        for key in keys:
+            value = view.get(key)
+            # Optional parser fields are public text, not arbitrary JSON.
+            # Ignore malformed containers instead of leaking ``[]`` or a
+            # repr of a private object into the release/UI.
+            if not isinstance(value, (str, int, float)) or isinstance(value, bool):
+                continue
+            text = str(value).strip()
+            if text:
+                return text
+    return ""
+
+
+def _first_value(views: list[dict[str, Any]], *keys: str) -> Any:
+    for view in views:
+        for key in keys:
+            value = view.get(key)
+            if value is not None and str(value).strip():
+                return value
+    return None
+
+
+def _semantic_projection(result: dict[str, Any], row: dict[str, Any]) -> dict[str, str]:
+    """Project existing FJ facts into the canonical public semantic view.
+
+    This function only selects already-parsed source text.  It never rewrites
+    uncertainty, infers entities, or turns vendor commentary into a claim.
+    Neutral text is used only for missing optional sections so the Mini App has
+    a stable, non-hallucinatory fallback.
+    """
+    views = _source_views(result, row)
+    event = _first_text(
+        views,
+        "event", "chinese_translation", "vendor_translation", "translated_headline",
+        "original_headline", "vendor_original_headline", "headline", "title", "summary",
+    )
+    why_important = _first_text(
+        views, "why_important", "ai_commentary", "vendor_analysis", "importance_detail",
+    ) or _NEUTRAL_IMPORTANCE
+    possible_linkage = _first_text(
+        views, "possible_linkage", "possible_impact", "vendor_possible_impact", "vendor_impact",
+        "market_impact", "impact",
+    ) or _NEUTRAL_LINKAGE
+    stock_observation = _first_text(
+        views, "stock_observation", "watch", "stock_watch", "follow_up_observation",
+    ) or _NEUTRAL_STOCK_OBSERVATION
+    return {
+        "event": event or "FinancialJuice 公開快訊",
+        "why_important": why_important,
+        "possible_linkage": possible_linkage,
+        "stock_observation": stock_observation,
+    }
+
+
 def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, reasons: list[str]) -> dict[str, Any]:
     risk = _mapping(result.get("risk"))
     cluster = _mapping(result.get("cluster"))
-    headline = str(
-        row.get("original_headline") or row.get("headline") or row.get("title") or "FinancialJuice 公開快訊"
-    ).strip()
-    importance = row.get("vendor_importance", row.get("importance"))
-    source_url = str(row.get("source_url") or row.get("url") or "").strip()
+    views = _source_views(result, row)
+    semantic = _semantic_projection(result, row)
+    headline = _first_text(
+        views, "original_headline", "vendor_original_headline", "headline", "title",
+    ) or semantic["event"]
+    importance = _first_value(views, "vendor_importance", "importance")
+    source_url = _first_text(views, "source_url", "url")
     observation_id = str(result.get("observation_id") or row.get("observation_id") or "").strip() or None
     item_id = str(
         row.get("item_id") or result.get("compound_item_id") or result.get("notification_id") or ""
@@ -64,8 +153,11 @@ def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, r
         "source_tier": "discovery",
         "title": headline,
         "brief_title": f"FinancialJuice｜{headline}｜{'重要度 ' + str(importance) + '/10' if importance is not None else '待核對'}",
-        "brief_summary": str(row.get("chinese_translation") or row.get("summary") or headline).strip(),
-        "summary": str(row.get("possible_impact") or row.get("ai_commentary") or row.get("summary") or headline).strip(),
+        # Canonical semantic fields are the stable consumer contract.  The
+        # legacy summary fields remain populated for older renderers.
+        **semantic,
+        "brief_summary": semantic["event"],
+        "summary": semantic["possible_linkage"],
         "event_type": str(row.get("event_type") or row.get("category") or "unknown"),
         "classification": str(cluster.get("event_type") or row.get("event_type") or "unknown"),
         "event_cluster_key": cluster_key,
@@ -88,8 +180,8 @@ def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, r
         "notification_reasons": list(dict.fromkeys([*reasons, *pending])),
         "notification_reason": "、".join(dict.fromkeys([*reasons, *pending])),
         "source_url": source_url,
-        "published_at": row.get("published_at") or row.get("source_published_at"),
-        "fetched_at": row.get("fetched_at") or _now(),
+        "published_at": _first_value(views, "published_at", "source_published_at"),
+        "fetched_at": _first_value(views, "fetched_at") or _now(),
         "source_trace": {
             "source_label": "FinancialJuice",
             "source_url": source_url,
