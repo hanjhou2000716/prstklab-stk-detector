@@ -36,6 +36,17 @@ def test_qualifying_fj_item_becomes_release_bound_vendor_priority_event():
     assert "fj-observation-1" not in event["source_trace"]["observation_id_hash"]
 
 
+def test_fj_missing_article_url_uses_vendor_homepage_source_trace():
+    row = _row(8)
+    row.pop("source_url")
+
+    event = project_financialjuice_priority([row])["events"][0]
+
+    assert event["source_url"] == "https://www.financialjuice.com/"
+    assert event["source_trace"]["source_url"] == "https://www.financialjuice.com/"
+    assert event["source_trace"]["source_domain"] == "financialjuice.com"
+
+
 def test_fj_below_threshold_is_visible_but_not_eligible():
     projection = project_financialjuice_priority([_row(7)])
     assert projection["decisions"][0]["notification_status"] == "not_eligible"

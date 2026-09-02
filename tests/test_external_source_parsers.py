@@ -15,6 +15,8 @@ def test_financialjuice_parser_keeps_vendor_importance_separate() -> None:
     assert result["parse_status"] == "parsed"
     assert result["vendor_importance"] == 10
     assert result["attribution"] == "FinancialJuice"
+    assert result["source_url"] == "https://www.financialjuice.com/"
+    assert result["source_domain"] == "financialjuice.com"
     assert "body" not in result
 
 
@@ -42,6 +44,17 @@ def test_financialjuice_html_relay_extracts_public_fields_without_markup() -> No
     assert "<" not in result["vendor_original_headline"]
     assert "AI 評論" not in result["vendor_analysis"]
     assert result["public_safe"] is True
+
+
+def test_financialjuice_parser_keeps_explicit_source_url_domain_aligned() -> None:
+    result = parse_financialjuice_email(
+        sender="alerts@financialjuice.com", subject="FinancialJuice alert",
+        body="Importance: 8/10\nOriginal headline: Headline\nSource URL: https://www.financialjuice.com/story/1",
+        message_id="m-source-url",
+    )
+
+    assert result["source_url"] == "https://www.financialjuice.com/story/1"
+    assert result["source_domain"] == "financialjuice.com"
 
 
 def test_creator_parser_defaults_claims_to_unverified() -> None:
