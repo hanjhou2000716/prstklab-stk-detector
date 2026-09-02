@@ -103,6 +103,23 @@ def _walk_text(payload: Mapping[str, Any], parts: list[tuple[str, str]] | None =
     return found
 
 
+def _walk_text_attachments(
+    payload: Mapping[str, Any],
+    parts: list[tuple[str, str]] | None = None,
+) -> list[tuple[str, str]]:
+    found = parts if parts is not None else []
+    mime = str(payload.get("mimeType") or "").casefold()
+    body = payload.get("body") if isinstance(payload.get("body"), Mapping) else {}
+    if mime in {"text/plain", "text/html"} and isinstance(body, Mapping):
+        attachment_id = str(body.get("attachmentId") or "").strip()
+        if attachment_id and not body.get("data"):
+            found.append((mime, attachment_id))
+    for child in payload.get("parts") or ():
+        if isinstance(child, Mapping):
+            _walk_text_attachments(child, found)
+    return found
+
+
 _FJ_FIELD_MARKERS = (
     "original headline", "vendor original headline", "headline",
     "translation", "chinese translation", "繁體中文翻譯", "中文翻譯", "翻譯",
@@ -131,7 +148,10 @@ def _body_semantic_score(value: str) -> tuple[int, int]:
 
 
 def _plain_body(payload: Mapping[str, Any]) -> str:
-    parts = _walk_text(payload)
+    return _select_body(_walk_text(payload))
+
+
+def _select_body(parts: list[tuple[str, str]]) -> str:
     plain = next((value for mime, value in parts if mime == "text/plain"), "")
     html_parts = [value for mime, value in parts if mime == "text/html"]
     if not plain:
@@ -142,6 +162,25 @@ def _plain_body(payload: Mapping[str, Any]) -> str:
     if _body_semantic_score(best_html) > _body_semantic_score(plain):
         return best_html[:256 * 1024]
     return plain[:256 * 1024]
+
+
+async def _message_body(client: Any, token: str, message_id: str, payload: Mapping[str, Any]) -> str:
+    parts = _walk_text(payload)
+    seen: set[str] = set()
+    for mime, attachment_id in _walk_text_attachments(payload):
+        if attachment_id in seen:
+            continue
+        seen.add(attachment_id)
+        attachment = await _get_json(
+            client,
+            f"{MESSAGE_URL}/{message_id}/attachments/{attachment_id}",
+            token,
+            {},
+        )
+        decoded = _decode(attachment.get("data"))
+        if decoded:
+            parts.append((mime, decoded))
+    return _select_body(parts)
 
 
 def _published_at(value: str) -> str | None:
@@ -257,7 +296,10 @@ async def sync_gmail_history(
             for message_id in message_ids:
                 try:
                     message = await _get_json(client, f"{MESSAGE_URL}/{message_id}", token, {"format": "full"})
-                    result = ingress.accept_email(message_record(message))
+                    record = message_record(message)
+                    payload = message.get("payload") if isinstance(message.get("payload"), Mapping) else {}
+                    record["body"] = await _message_body(client, token, message_id, payload)
+                    result = ingress.accept_email(record)
                     processed += 1
                     if result.get("status") == "duplicate":
                         duplicate += 1

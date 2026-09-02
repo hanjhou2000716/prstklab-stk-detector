@@ -80,6 +80,30 @@ class _ExpiredCursorClient(_Client):
         return _Response(_message())
 
 
+class _AttachmentClient(_Client):
+    async def get(self, url, **kwargs):
+        self.calls.append(("GET", url, kwargs))
+        if url.endswith("/history"):
+            return _Response({"historyId": "h1", "history": [{"messagesAdded": [{"message": {"id": "m-1"}}]}]})
+        if "/attachments/" in url:
+            return _Response({"data": _encoded(
+                "重要性評分: 10/10\n"
+                "📝 繁體中文翻譯: 某公司據報正在評估合作。\n"
+                "💡 AI 評論: 目前仍未正式確認。\n"
+                "⚠️ 可能影響: 可能影響 AI 伺服器供應鏈。"
+            )})
+        message = _message()
+        message["payload"] = {
+            "mimeType": "multipart/alternative",
+            "headers": message["payload"]["headers"],
+            "parts": [
+                {"mimeType": "text/plain", "body": {"data": _encoded("Importance: 10/10\n📝 繁體中文翻譯:")}},
+                {"mimeType": "text/html", "body": {"attachmentId": "rich-html"}},
+            ],
+        }
+        return _Response(message)
+
+
 def _config() -> GmailWatchConfig:
     return GmailWatchConfig(
         topic_name="projects/test/topics/gmail",
@@ -152,6 +176,17 @@ def test_sync_history_routes_message_and_saves_public_projection(tmp_path) -> No
     assert health["public_observation_count"] == 1
     assert health["source_health"]["financialjuice"]["parsed_count"] == 1
     assert store.cursor()["last_history_id"] == "h1"
+
+
+def test_sync_history_fetches_text_attachment_before_ingress(tmp_path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(last_history_id="h0")
+    ingress = GmailIngressService(store, _config())
+    result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_AttachmentClient))
+    assert result == {"status": "healthy", "processed": 1, "failed": 0, "duplicate": 0}
+    observation = store.public_observations(limit=1)[0]
+    assert "某公司據報正在評估合作" in observation["vendor_translation"]
+    assert "可能影響 AI 伺服器供應鏈" in observation["vendor_possible_impact"]
 
 
 def test_expired_history_cursor_is_cleared_and_reported_as_gap(tmp_path) -> None:
