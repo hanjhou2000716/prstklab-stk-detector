@@ -39,7 +39,11 @@ def _plain_text(body: str) -> str:
     returned unchanged apart from normalising line endings.
     """
     raw = str(body or "")
-    if not re.search(r"<\s*(?:html|body|div|p|section|h[1-6]|br)\b", raw, re.IGNORECASE):
+    # Some Gmail relays omit ``html``/``body`` and send a table fragment only
+    # (for example ``<table><tr><td>...``).  Treat any actual HTML element as
+    # markup so labels and values are extracted from rendered text instead of
+    # being left interleaved with tags.
+    if not re.search(r"<\s*/?\s*[a-z][^>]*>", raw, re.IGNORECASE):
         return raw.replace("\r\n", "\n").replace("\r", "\n")
     soup = BeautifulSoup(raw, "html.parser")
     for node in soup.find_all(("script", "style", "noscript")):

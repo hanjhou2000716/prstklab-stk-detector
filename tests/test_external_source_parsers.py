@@ -69,6 +69,27 @@ def test_financialjuice_html_relay_extracts_public_fields_without_markup() -> No
     assert result["public_safe"] is True
 
 
+def test_financialjuice_table_fragment_extracts_fields_without_html_wrapper() -> None:
+    """Gmail may return only a table fragment rather than html/body tags."""
+    result = parse_financialjuice_email(
+        sender="jetmaie.fintech@gmail.com",
+        subject="📰 FinancialJuice 新聞 (09-02 14:20)",
+        body="""
+        <table><tr><td>即時新聞</td><td>財經資訊</td><td>⚠️ 高重要性</td></tr>
+        <tr><td><strong>重要性評分:</strong></td><td>10/10</td></tr>
+        <tr><td><strong>📝 繁體中文翻譯:</strong></td><td>沙烏地阿拉伯外交部表示，伊朗在荷莫茲海峽襲擊了一艘沙烏地船隻。</td></tr>
+        <tr><td><strong>💡 AI評論:</strong></td><td>此為荷莫茲海峽油運要道的突發軍事攻擊。</td></tr>
+        <tr><td><strong>⚠️ 可能影響:</strong></td><td>油價恐急漲並加劇通膨預期。</td></tr></table>
+        """,
+        message_id="table-fragment-fj-1",
+    )
+    assert result["parse_status"] == "parsed"
+    assert result["vendor_importance"] == 10
+    assert result["vendor_original_headline"].startswith("沙烏地阿拉伯外交部")
+    assert result["vendor_analysis"].startswith("此為荷莫茲海峽")
+    assert result["vendor_possible_impact"].startswith("油價恐急漲")
+
+
 def test_financialjuice_inline_html_labels_do_not_cross_assign_values() -> None:
     result = parse_financialjuice_email(
         sender="jetmaie.fintech@gmail.com",
