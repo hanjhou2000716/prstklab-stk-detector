@@ -239,7 +239,11 @@ def test_sync_latest_financialjuice_reprocesses_one_message_without_moving_curso
     store.save_cursor(last_history_id="h0")
     ingress = GmailIngressService(store, _config())
     result = asyncio.run(sync_latest_financialjuice(_config(), store, ingress, client_factory=_LatestFinancialJuiceClient))
-    assert result == {"status": "healthy", "processed": 1, "failed": 0, "duplicate": 0}
+    assert result["status"] == "healthy"
+    assert result["processed"] == 1
+    assert result["failed"] == 0
+    assert result["duplicate"] == 0
+    assert result["latest_financialjuice_diagnostics"]["rich_observation_count"] == 1
     assert store.cursor()["last_history_id"] == "h0"
     assert store.health()["public_observation_count"] == 1
 

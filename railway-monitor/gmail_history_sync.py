@@ -166,6 +166,32 @@ def _select_body(parts: list[tuple[str, str]]) -> str:
     return plain[:256 * 1024]
 
 
+def _body_selection_summary(parts: list[tuple[str, str]], selected: str) -> dict[str, Any]:
+    """Return bounded, content-free diagnostics for a replayed FJ MIME body."""
+    selected_score, selected_length = _body_semantic_score(selected)
+    return {
+        "part_count": len(parts),
+        "parts": [
+            {
+                "mime_type": mime,
+                "semantic_marker_count": _body_semantic_score(value)[0],
+                "length": _body_semantic_score(value)[1],
+            }
+            for mime, value in parts
+        ],
+        "selected_semantic_marker_count": selected_score,
+        "selected_length": selected_length,
+    }
+
+
+def _public_projection_summary(result: Mapping[str, Any]) -> dict[str, int]:
+    """Summarise parsed public fields without returning any email text."""
+    return {
+        "observation_count": int(result.get("public_observation_count") or 0),
+        "rich_observation_count": int(result.get("public_rich_observation_count") or 0),
+    }
+
+
 async def _message_body(client: Any, token: str, message_id: str, payload: Mapping[str, Any]) -> str:
     parts = _walk_text(payload)
     seen: set[str] = set()
@@ -362,6 +388,7 @@ async def sync_latest_financialjuice(
     if config.missing or config.oauth_missing:
         return {"status": "configuration_missing", "processed": 0, "failed": 0, "duplicate": 0}
     processed = failed = duplicate = 0
+    body_summary: dict[str, Any] = {}
     try:
         async with client_factory(timeout=config.timeout_seconds, follow_redirects=True) as client:
             token = await _access_token(config, client)
@@ -378,17 +405,23 @@ async def sync_latest_financialjuice(
             message = await _get_json(client, f"{MESSAGE_URL}/{message_id}", token, {"format": "full"})
             record = message_record(message)
             payload = message.get("payload") if isinstance(message.get("payload"), Mapping) else {}
+            parts = _walk_text(payload)
             record["body"] = await _message_body(client, token, message_id, payload)
             result = ingress.accept_email(record)
             processed = 1
             duplicate = int(result.get("status") == "duplicate")
+            body_summary = _body_selection_summary(parts, record["body"])
+            body_summary.update(_public_projection_summary(result))
     except GmailHistorySyncError as error:
         failed = 1
         return {"status": str(error), "processed": processed, "failed": failed, "duplicate": duplicate}
     except (httpx.TimeoutException, httpx.HTTPError, ValueError, TypeError, KeyError) as error:
         failed = 1
         return {"status": type(error).__name__.lower(), "processed": processed, "failed": failed, "duplicate": duplicate}
-    return {"status": "healthy", "processed": processed, "failed": failed, "duplicate": duplicate}
+    return {
+        "status": "healthy", "processed": processed, "failed": failed, "duplicate": duplicate,
+        "latest_financialjuice_diagnostics": body_summary,
+    }
 
 
 __all__ = ["GmailHistorySyncError", "message_record", "sync_gmail_history", "sync_latest_financialjuice"]

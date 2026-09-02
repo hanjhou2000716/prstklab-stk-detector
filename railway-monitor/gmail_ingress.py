@@ -148,6 +148,16 @@ class GmailIngressService:
     def accept_email(self, record: dict[str, Any]) -> dict[str, Any]:
         parsed = parse_email(record)
         message_id = parsed["gmail_message_id"]
+        public_rows = parsed.get("public_observations")
+        public_rich_count = sum(
+            1
+            for row in (public_rows if isinstance(public_rows, list) else [])
+            if isinstance(row, dict)
+            and any(str(row.get(key) or "").strip() for key in (
+                "original_headline", "chinese_translation", "ai_commentary", "possible_impact",
+                "vendor_original_headline", "vendor_translation", "vendor_analysis", "vendor_possible_impact",
+            ))
+        )
         observation = {
             "observation_id": f"email-{message_id or parsed['template_fingerprint'][:16]}",
             "gmail_message_id": message_id,
@@ -157,6 +167,7 @@ class GmailIngressService:
             "received_at": record.get("received_at"),
             "content_origin": parsed["content_origin"],
             "content_type": parsed["content_type"],
+            "public_rich_observation_count": public_rich_count,
         }
         if parsed["parse_status"] in DLQ_STATES:
             self.store.record_dlq(
@@ -169,7 +180,6 @@ class GmailIngressService:
                 metadata={"content_origin": parsed["content_origin"]},
             )
             return {"accepted": False, "status": parsed["parse_status"], "observation": observation}
-        public_rows = parsed.get("public_observations")
         claimed = self.store.claim_observation(observation)
         if not claimed:
             # A replay can carry a richer MIME part after a parser or Gmail
@@ -187,8 +197,11 @@ class GmailIngressService:
                     continue
             observation["parse_status"] = "duplicate"
             observation["public_observation_count"] = refreshed_public
-            return {"accepted": False, "status": "duplicate", "observation": observation,
-                    "public_observation_count": refreshed_public}
+            return {
+                "accepted": False, "status": "duplicate", "observation": observation,
+                "public_observation_count": refreshed_public,
+                "public_rich_observation_count": public_rich_count,
+            }
         saved_public = 0
         if isinstance(public_rows, list):
             for row in public_rows:
@@ -205,7 +218,11 @@ class GmailIngressService:
                     continue
         observation["public_observation_count"] = saved_public
         self.store.save_cursor(last_message_id=message_id, last_notification_at=_now(), last_sync_at=_now())
-        return {"accepted": True, "status": parsed["parse_status"], "observation": observation, "public_observation_count": saved_public}
+        return {
+            "accepted": True, "status": parsed["parse_status"], "observation": observation,
+            "public_observation_count": saved_public,
+            "public_rich_observation_count": public_rich_count,
+        }
 
     def health(self) -> dict[str, Any]:
         store_health = self.store.health()
