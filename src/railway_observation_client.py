@@ -141,6 +141,8 @@ def load_railway_observations(
         normalized = {key: row[key] for key in SAFE_FIELDS if key in row}
         normalized["source"] = source
         normalized["content_origin"] = source
+        if source == "financialjuice":
+            normalized["source_identity_verified"] = row.get("source_identity_verified") is True
         safe.append(normalized)
     status_value = payload.get("status") or ("ready" if safe else "no_event")
     status = str(status_value)

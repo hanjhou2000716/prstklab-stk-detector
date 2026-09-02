@@ -408,6 +408,7 @@ def _semantic_projection(result: dict[str, Any], row: dict[str, Any]) -> dict[st
 def _event_record(
     result: dict[str, Any], row: dict[str, Any], *, status: str, reasons: list[str],
     vendor_priority_notification: bool, market_snapshot: dict[str, Any] | None,
+    material_event_present: bool, public_signal_eligible: bool,
 ) -> dict[str, Any]:
     risk = _mapping(result.get("risk"))
     cluster = _mapping(result.get("cluster"))
@@ -493,10 +494,13 @@ def _event_record(
         "market_direction": None,
         "market_move": None,
         "alert_eligible": status == "eligible" and vendor_priority_notification,
-        "public_signal_eligible": status != "content_incomplete",
+        "public_signal_eligible": public_signal_eligible,
         "content_gate": {
-            "material_event_present": status != "content_incomplete",
-            "blocked_reason": "content_incomplete" if status == "content_incomplete" else None,
+            "material_event_present": material_event_present,
+            "blocked_reason": next(
+                (reason for reason in reasons if reason in {"content_incomplete", "missing_material_event", "source_identity_unverified"}),
+                None,
+            ),
         },
         "public_safe": True,
     }
@@ -534,8 +538,12 @@ def project_financialjuice_priority(
             if cluster_key:
                 result["event_cluster_key"] = cluster_key
             material_event = bool(_material_event_text(_source_views(result, row)))
+            identity_verified = row.get("source_identity_verified") is not False
             if not qualifying:
                 status, reasons = "not_eligible", ["vendor_importance_below_8_or_missing"]
+                vendor_notification = False
+            elif not identity_verified:
+                status, reasons = "content_incomplete", ["content_incomplete", "source_identity_unverified"]
                 vendor_notification = False
             elif not material_event:
                 # Importance alone is not a public event.  Keep a complete
@@ -553,6 +561,8 @@ def project_financialjuice_priority(
                 result, row, status=status, reasons=reasons,
                 vendor_priority_notification=vendor_notification,
                 market_snapshot=market_snapshot,
+                material_event_present=material_event,
+                public_signal_eligible=identity_verified and material_event,
             )
             events.append(event)
             decisions.append({
