@@ -28,6 +28,7 @@ from gmail_ingress import GmailIngressService
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 HISTORY_URL = "https://gmail.googleapis.com/gmail/v1/users/me/history"
 MESSAGE_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
+MESSAGE_LIST_URL = MESSAGE_URL
 DEFAULT_MAX_MESSAGES = 50
 MAX_PAGE_SIZE = 100
 
@@ -349,4 +350,44 @@ async def sync_gmail_history(
     return result
 
 
-__all__ = ["GmailHistorySyncError", "message_record", "sync_gmail_history"]
+async def sync_latest_financialjuice(
+    config: GmailWatchConfig,
+    store: EmailStore,
+    ingress: GmailIngressService,
+    *,
+    client_factory: Callable[..., Any] = httpx.AsyncClient,
+) -> dict[str, Any]:
+    """Reprocess exactly the newest FinancialJuice mail without moving the cursor."""
+    if config.missing or config.oauth_missing:
+        return {"status": "configuration_missing", "processed": 0, "failed": 0, "duplicate": 0}
+    processed = failed = duplicate = 0
+    try:
+        async with client_factory(timeout=config.timeout_seconds, follow_redirects=True) as client:
+            token = await _access_token(config, client)
+            listing = await _get_json(
+                client, MESSAGE_LIST_URL, token,
+                {"q": "from:financialjuice", "maxResults": 1, "includeSpamTrash": "false"},
+            )
+            messages = listing.get("messages") if isinstance(listing, Mapping) else None
+            message_id = ""
+            if isinstance(messages, list) and messages and isinstance(messages[0], Mapping):
+                message_id = str(messages[0].get("id") or "").strip()
+            if not message_id:
+                return {"status": "no_financialjuice_message", "processed": 0, "failed": 0, "duplicate": 0}
+            message = await _get_json(client, f"{MESSAGE_URL}/{message_id}", token, {"format": "full"})
+            record = message_record(message)
+            payload = message.get("payload") if isinstance(message.get("payload"), Mapping) else {}
+            record["body"] = await _message_body(client, token, message_id, payload)
+            result = ingress.accept_email(record)
+            processed = 1
+            duplicate = int(result.get("status") == "duplicate")
+    except GmailHistorySyncError as error:
+        failed = 1
+        return {"status": str(error), "processed": processed, "failed": failed, "duplicate": duplicate}
+    except (httpx.TimeoutException, httpx.HTTPError, ValueError, TypeError, KeyError) as error:
+        failed = 1
+        return {"status": type(error).__name__.lower(), "processed": processed, "failed": failed, "duplicate": duplicate}
+    return {"status": "healthy", "processed": processed, "failed": failed, "duplicate": duplicate}
+
+
+__all__ = ["GmailHistorySyncError", "message_record", "sync_gmail_history", "sync_latest_financialjuice"]
