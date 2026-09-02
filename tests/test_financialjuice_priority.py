@@ -1,7 +1,11 @@
 import hashlib
 
 from src.external_source_parsers import parse_financialjuice_email
-from src.financialjuice_priority import bind_financialjuice_semantic_views, project_financialjuice_priority
+from src.financialjuice_priority import (
+    bind_financialjuice_semantic_views,
+    project_financialjuice_priority,
+    public_financialjuice_observations,
+)
 
 
 def _row(importance=8):
@@ -180,3 +184,62 @@ def test_legacy_and_malformed_optional_fields_degrade_without_raw_json():
     assert event["stock_observation"] == "等待官方後續確認，並觀察相關市場是否同步反應。"
     assert "private" not in str(event)
     assert "[]" not in event["possible_linkage"]
+
+
+def test_importance_alone_is_audited_but_blocked_from_public_and_telegram():
+    row = {
+        "observation_id": "fj-incomplete-1",
+        "source": "financialjuice",
+        "vendor_importance": 10,
+        "public_safe": True,
+    }
+    projection = project_financialjuice_priority([row], market_snapshot={"indices": []})
+    event = projection["events"][0]
+    decision = projection["decisions"][0]
+    assert decision["notification_status"] == "content_incomplete"
+    assert "missing_material_event" in decision["notification_reason"]
+    assert decision["vendor_priority_notification"] is False
+    assert event["alert_eligible"] is False
+    assert event["public_signal_eligible"] is False
+    assert public_financialjuice_observations([row], projection["events"]) == []
+
+
+def test_fj_market_linkage_is_deterministic_and_separates_sync_from_linked():
+    snapshot = {
+        "instrument_master": {"instruments": [
+            {"ticker": "WTI", "name": "WTI", "aliases": ["原油"]},
+            {"ticker": "BRENT", "name": "Brent", "aliases": ["油價"]},
+            {"ticker": "NASDAQ", "name": "NASDAQ", "aliases": ["科技股"]},
+        ]},
+        "indices": [
+            {"ticker": "WTI", "name": "WTI", "price": 90, "change_percent": 2.2, "freshness": "recent_close", "quality_freshness": "fresh", "stale_used": False},
+            {"ticker": "BRENT", "name": "Brent", "price": 94, "change_percent": 1.5, "freshness": "recent_close", "quality_freshness": "fresh", "stale_used": False},
+            {"ticker": "NASDAQ", "name": "NASDAQ", "price": 18000, "change_percent": -0.1, "freshness": "recent_close", "quality_freshness": "fresh", "stale_used": False},
+        ],
+    }
+    row = _row(8)
+    row.update({
+        "chinese_translation": "油品供應中斷",
+        "ai_commentary": "供應風險升高。",
+        "possible_impact": "可能推升油價。",
+    })
+    event = project_financialjuice_priority([row], market_snapshot=snapshot)["events"][0]
+    assert event["linked_markets"] == ["BRENT", "WTI"]
+    assert event["market_sync_confirmed"] is True
+    assert event["linkage_state"] == "synchronized_evidence"
+    assert "BRENT +1.50%" in event["stock_observation"]
+    assert "WTI +2.20%" in event["stock_observation"]
+
+
+def test_stale_linked_market_never_confirms_sync_or_direction():
+    snapshot = {"indices": [
+        {"ticker": "BRENT", "name": "Brent", "price": 94, "change_percent": 4.0, "freshness": "stale", "quality_freshness": "stale", "stale_used": True},
+        {"ticker": "WTI", "name": "WTI", "price": 90, "change_percent": 3.0, "freshness": "recent_close", "quality_freshness": "fresh", "stale_used": False},
+    ]}
+    row = _row(8)
+    row.update({"chinese_translation": "油品供應中斷", "possible_impact": "可能推升油價。"})
+    event = project_financialjuice_priority([row], market_snapshot=snapshot)["events"][0]
+    assert event["linked_markets"] == ["BRENT", "WTI"]
+    assert event["market_sync_confirmed"] is False
+    assert event["linkage_state"] == "linked_data_stale"
+    assert "不做方向判定" in event["stock_observation"]
