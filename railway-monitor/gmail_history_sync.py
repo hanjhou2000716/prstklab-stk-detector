@@ -169,6 +169,12 @@ def _select_body(parts: list[tuple[str, str]]) -> str:
 def _body_selection_summary(parts: list[tuple[str, str]], selected: str) -> dict[str, Any]:
     """Return bounded, content-free diagnostics for a replayed FJ MIME body."""
     selected_score, selected_length = _body_semantic_score(selected)
+    normalized = html.unescape(re.sub(r"<[^>]*>", " ", str(selected or "")))
+    normalized = " ".join(normalized.split())
+    marker_labels = [
+        marker for marker in _FJ_FIELD_MARKERS
+        if re.search(re.escape(marker), normalized, re.IGNORECASE)
+    ]
     return {
         "part_count": len(parts),
         "parts": [
@@ -181,6 +187,7 @@ def _body_selection_summary(parts: list[tuple[str, str]], selected: str) -> dict
         ],
         "selected_semantic_marker_count": selected_score,
         "selected_length": selected_length,
+        "matched_marker_labels": marker_labels,
     }
 
 
