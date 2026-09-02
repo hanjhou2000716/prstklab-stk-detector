@@ -29,6 +29,7 @@ TOKEN_URL = "https://oauth2.googleapis.com/token"
 HISTORY_URL = "https://gmail.googleapis.com/gmail/v1/users/me/history"
 MESSAGE_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
 MESSAGE_LIST_URL = MESSAGE_URL
+LATEST_FINANCIALJUICE_QUERY = "{from:financialjuice subject:FinancialJuice}"
 DEFAULT_MAX_MESSAGES = 50
 MAX_PAGE_SIZE = 100
 
@@ -366,7 +367,7 @@ async def sync_latest_financialjuice(
             token = await _access_token(config, client)
             listing = await _get_json(
                 client, MESSAGE_LIST_URL, token,
-                {"q": "from:financialjuice", "maxResults": 1, "includeSpamTrash": "false"},
+                {"q": LATEST_FINANCIALJUICE_QUERY, "maxResults": 1, "includeSpamTrash": "false"},
             )
             messages = listing.get("messages") if isinstance(listing, Mapping) else None
             message_id = ""
