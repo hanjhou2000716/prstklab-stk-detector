@@ -72,7 +72,10 @@ _FINANCIALJUICE_DOMAINS = frozenset({"financialjuice.com"})
 # The production Gmail relay is an explicit canonical identity.  An exact
 # allow-list keeps forwarding workable without treating arbitrary Gmail mail
 # with an FJ-looking subject as a provider message.
-_FINANCIALJUICE_TRUSTED_SENDERS = frozenset({"jetmaie.fintech@gmail.com"})
+_FINANCIALJUICE_TRUSTED_SENDERS = frozenset({
+    "jetmaie.fintech@gmail.com",
+    "james19951209@gmail.com",
+})
 
 _PUBLIC_FIELDS = {
     "content_origin", "content_type", "event_type", "category", "title",
