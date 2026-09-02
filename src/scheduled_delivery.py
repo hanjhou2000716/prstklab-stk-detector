@@ -22,7 +22,11 @@ from src.external_observation_input import (
     merge_external_source_health,
 )
 from src.financialjuice_notification import deliver_financialjuice_event
-from src.financialjuice_priority import project_financialjuice_priority, public_financialjuice_observations
+from src.financialjuice_priority import (
+    project_financialjuice_priority,
+    public_financialjuice_observations,
+    replace_financialjuice_event_lane,
+)
 from src.financialjuice_release_contract import validate_financialjuice_release
 from src.market_data import build_market_snapshot
 from src.railway_observation_client import load_railway_observations
@@ -231,12 +235,13 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
     fj_projection = project_financialjuice_priority(
         financialjuice_observations, existing_events=existing_events, market_snapshot=snapshot,
     )
-    if fj_projection["events"]:
-        if not isinstance(snapshot.get("events"), dict):
-            snapshot["events"] = {"items": []}
-        snapshot["events"].setdefault("items", []).extend(
-            event for event in fj_projection["events"] if event.get("public_signal_eligible") is True
-        )
+    if not isinstance(snapshot.get("events"), dict):
+        snapshot["events"] = {"items": []}
+    existing_events = snapshot["events"].get("items")
+    snapshot["events"]["items"] = replace_financialjuice_event_lane(
+        existing_events if isinstance(existing_events, list) else [],
+        fj_projection["events"],
+    )
     snapshot["financialjuice_priority_decisions"] = fj_projection["decisions"]
     snapshot["financialjuice_priority_events"] = [
         event for event in fj_projection["events"] if event.get("notification_status") == "eligible"

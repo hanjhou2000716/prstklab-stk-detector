@@ -142,6 +142,35 @@ def test_realtime_external_projection_keeps_below_threshold_visible_without_sele
     assert result["events"]["items"][0]["notification_status"] == "not_eligible"
 
 
+def test_realtime_external_projection_removes_stale_blocked_fj_rows(monkeypatch, tmp_path):
+    source = tmp_path / "observations.json"
+    source.write_text("[]", encoding="utf-8")
+    row = {
+        "observation_id": "fj-realtime-clean-1",
+        "source": "financialjuice",
+        "original_headline": "Blocked source row",
+        "importance": 10,
+        "source_identity_verified": False,
+        "source_url": "https://financialjuice.com/item/clean-1",
+        "public_safe": True,
+    }
+    stale_fj = {
+        "kind": "external_event",
+        "source": "FinancialJuice",
+        "source_key": "financialjuice",
+        "observation_id": "stale-fj-row",
+        "public_signal_eligible": False,
+        "title": "PR run failed: FinancialJuice semantics",
+    }
+    retained = {"kind": "market_signal", "title": "Keep official signal"}
+    monkeypatch.setattr(monitor, "load_external_observations", lambda _path: ([row], 0))
+    monkeypatch.setattr(monitor, "_external_observations_configured", lambda: False)
+    result = monitor._attach_realtime_external_events({"events": {"items": [stale_fj, retained]}})
+    items = result["events"]["items"]
+    assert items == [retained]
+    assert result["financialjuice_priority_events"] == []
+
+
 def test_price_signal_key_changes_for_escalation_or_a_direction_reversal():
     warning = {"kind": "market_signal", "instrument": {"ticker": "SOX", "quote_date": "2026-07-27"}, "risk_level": "警戒", "signal_state": "急跌:警戒:down"}
     high = {**warning, "risk_level": "高風險", "signal_state": "急跌:高風險:down"}

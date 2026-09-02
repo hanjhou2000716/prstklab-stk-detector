@@ -26,7 +26,11 @@ from src.external_observation_input import (
     merge_external_source_health,
 )
 from src.financialjuice_notification import deliver_financialjuice_event
-from src.financialjuice_priority import project_financialjuice_priority, public_financialjuice_observations
+from src.financialjuice_priority import (
+    project_financialjuice_priority,
+    public_financialjuice_observations,
+    replace_financialjuice_event_lane,
+)
 from src.financialjuice_release_contract import validate_financialjuice_release
 from src.market_data import build_market_snapshot
 from src.railway_observation_client import load_railway_observations
@@ -120,20 +124,11 @@ def _attach_realtime_external_events(snapshot: dict[str, Any]) -> dict[str, Any]
     contract = validate_financialjuice_release(snapshot)
     snapshot["financialjuice_release_contract"] = contract
     if contract["ok"]:
-        # Preserve the canonical event list and append only once per
-        # observation.  The event key remains stable across monitor polls.
-        existing_ids = {
-            str(item.get("observation_id") or item.get("item_id") or "")
-            for item in existing_events
-            if isinstance(item, dict)
-        }
-        events_container["items"] = [
-            *existing_events,
-            *[
-                item for item in projection["events"]
-                if str(item.get("observation_id") or item.get("item_id") or "") not in existing_ids
-            ],
-        ]
+        # Preserve non-FJ producers and replace the stale FJ slice with the
+        # current release-bound public projection.
+        events_container["items"] = replace_financialjuice_event_lane(
+            existing_events, projection["events"],
+        )
     return snapshot
 
 

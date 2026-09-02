@@ -659,7 +659,46 @@ def public_financialjuice_observations(
     ]
 
 
+def replace_financialjuice_event_lane(
+    existing_events: list[dict[str, Any]], projected_events: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Replace stale FJ event rows with the current public projection.
+
+    build_market_snapshot may carry event rows from a prior release. FJ rows
+    are re-derived from the reviewed observation ingress on every
+    monitor/scheduled pass, so retaining old rows would let blocked or
+    source-unverified events leak back into the public events.items lane.
+    Non-FJ event producers remain untouched; only projected rows explicitly
+    marked public-eligible are appended.
+    """
+    retained: list[dict[str, Any]] = []
+    for item in existing_events:
+        if not isinstance(item, dict):
+            continue
+        source_values = (
+            item.get("source"), item.get("source_key"), item.get("content_origin"),
+        )
+        if any(str(value or "").strip().casefold() == "financialjuice" for value in source_values):
+            continue
+        retained.append(item)
+    existing_ids = {
+        str(item.get("observation_id") or item.get("item_id") or "")
+        for item in retained
+        if isinstance(item, dict)
+    }
+    for item in projected_events:
+        if not isinstance(item, dict) or item.get("public_signal_eligible") is not True:
+            continue
+        key = str(item.get("observation_id") or item.get("item_id") or "")
+        if key and key in existing_ids:
+            continue
+        retained.append(item)
+        if key:
+            existing_ids.add(key)
+    return retained
+
+
 __all__ = [
     "bind_financialjuice_semantic_views", "project_financialjuice_priority",
-    "public_financialjuice_observations",
+    "public_financialjuice_observations", "replace_financialjuice_event_lane",
 ]
