@@ -110,7 +110,7 @@ def test_legacy_fj_label_contamination_is_split_at_projection_boundary():
     row.update({
         "vendor_translation": "美伊衝突升級。 💡 AI 評論: 市場風險偏好受壓，但仍需核對。",
         "vendor_analysis": "重要性評分: 8/10 📝 繁體中文翻譯:",
-        "vendor_possible_impact": "油價波動可能升高。 📄 原文內容: Iran says no nuclear activity.",
+        "vendor_possible_impact": "油價波動可能升高。 📄 原文內容 Iran says no nuclear activity.",
     })
 
     event = project_financialjuice_priority([row])["events"][0]

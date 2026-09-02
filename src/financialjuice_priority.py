@@ -31,6 +31,10 @@ _IMPACT_LABELS = (
 _ORIGINAL_LABELS = ("original headline", "vendor original headline", "headline", "原始標題", "原文內容", "原文")
 _SECTION_STOP_LABELS = (*_ANALYSIS_LABELS, *_IMPACT_LABELS, *_ORIGINAL_LABELS, "source url", "來源連結")
 _HEADER_LABELS = (*_TRANSLATION_LABELS, "重要性評分", "importance")
+_ORIGINAL_CONTENT_PATTERN = re.compile(
+    r"(?:^|[\s📄])(?:原文內容|原文)(?:\s*[:：]|\s+(?=[A-Za-z]))",
+    re.IGNORECASE,
+)
 
 
 def _now() -> str:
@@ -123,6 +127,7 @@ def _clean_semantic_text(value: Any, *, kind: str) -> str:
     if kind == "translation":
         text = _after_label(text, _TRANSLATION_LABELS)
         text = _before_label(text, _SECTION_STOP_LABELS)
+        text = _before_original_content(text)
     elif kind == "analysis":
         if _label_pattern(_ANALYSIS_LABELS).search(text):
             text = _after_label(text, _ANALYSIS_LABELS)
@@ -134,6 +139,7 @@ def _clean_semantic_text(value: Any, *, kind: str) -> str:
     elif kind == "impact":
         text = _after_label(text, _IMPACT_LABELS)
         text = _before_label(text, (*_ORIGINAL_LABELS, "source url", "來源連結"))
+        text = _before_original_content(text)
     elif kind == "headline":
         text = _after_label(text, _ORIGINAL_LABELS)
         text = _before_label(text, (*_TRANSLATION_LABELS, *_ANALYSIS_LABELS, *_IMPACT_LABELS, "source url", "來源連結"))
@@ -147,6 +153,11 @@ def _after_label(text: str, labels: tuple[str, ...]) -> str:
 
 def _before_label(text: str, labels: tuple[str, ...]) -> str:
     match = _label_pattern(labels).search(text)
+    return text[:match.start()] if match else text
+
+
+def _before_original_content(text: str) -> str:
+    match = _ORIGINAL_CONTENT_PATTERN.search(text)
     return text[:match.start()] if match else text
 
 
@@ -170,6 +181,7 @@ def _embedded_clean_text(views: list[dict[str, Any]], labels: tuple[str, ...], *
                 continue
             extracted = _after_label(text, labels)
             extracted = _before_label(extracted, stop)
+            extracted = _before_original_content(extracted)
             extracted = extracted.strip(" \t:：-–—📝💡📄⚠️📌🔎📈📉📊🚨")
             if extracted:
                 return extracted
