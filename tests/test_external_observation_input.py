@@ -30,6 +30,23 @@ def test_loads_only_public_safe_financialjuice_records(tmp_path):
     assert "body" not in accepted[0]
 
 
+def test_preserves_financialjuice_vendor_semantics_at_public_boundary(tmp_path):
+    path = tmp_path / "external-rich.json"
+    path.write_text(json.dumps({"observations": [{
+        "observation_id": "fj-rich", "source": "financialjuice", "public_safe": True,
+        "vendor_original_headline": "Company evaluates partnership",
+        "vendor_translation": "某公司據報正在評估合作",
+        "vendor_analysis": "目前仍未正式確認",
+        "vendor_possible_impact": "可能影響 AI 伺服器供應鏈",
+    }]}), encoding="utf-8")
+    accepted, rejected = load_external_observations(path)
+    assert rejected == 0
+    assert accepted[0]["vendor_original_headline"] == "Company evaluates partnership"
+    assert accepted[0]["vendor_translation"] == "某公司據報正在評估合作"
+    assert accepted[0]["vendor_analysis"] == "目前仍未正式確認"
+    assert accepted[0]["vendor_possible_impact"] == "可能影響 AI 伺服器供應鏈"
+
+
 def test_loads_public_safe_creator_rows_without_treating_them_as_financialjuice(tmp_path):
     path = tmp_path / "creator.json"
     path.write_text(json.dumps({"observations": [{
