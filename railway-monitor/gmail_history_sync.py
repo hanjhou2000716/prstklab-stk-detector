@@ -16,7 +16,7 @@ import re
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from email.header import decode_header, make_header
-from email.utils import parsedate_to_datetime
+from email.utils import parseaddr, parsedate_to_datetime
 from typing import Any
 
 import httpx
@@ -195,6 +195,15 @@ def _public_projection_summary(result: Mapping[str, Any]) -> dict[str, Any]:
         "ingress_status": str(result.get("status") or ""),
         "parse_status": str(observation.get("parse_status") or ""),
     }
+
+
+def _sender_domain(value: Any) -> str:
+    """Return only a bounded sender domain for operator diagnostics."""
+    address = parseaddr(str(value or ""))[1].strip().casefold()
+    if "@" not in address:
+        return ""
+    domain = address.rsplit("@", 1)[-1].strip().rstrip(".")
+    return domain if domain and all(char.isalnum() or char in ".-" for char in domain) else ""
 
 
 async def _message_body(client: Any, token: str, message_id: str, payload: Mapping[str, Any]) -> str:
@@ -417,6 +426,7 @@ async def sync_latest_financialjuice(
             duplicate = int(result.get("status") == "duplicate")
             body_summary = _body_selection_summary(parts, record["body"])
             body_summary.update(_public_projection_summary(result))
+            body_summary["sender_domain"] = _sender_domain(record.get("sender"))
     except GmailHistorySyncError as error:
         failed = 1
         return {"status": str(error), "processed": processed, "failed": failed, "duplicate": duplicate}
