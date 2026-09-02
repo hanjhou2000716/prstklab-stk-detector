@@ -1,7 +1,7 @@
 {
-  "release_id": "release-1e4234974ddb3b7a",
-  "created_at": "2026-09-02T00:52:23.855280+00:00",
-  "market_snapshot_id": "d269233b9466a2c9",
+  "release_id": "release-7a29b1296684f490",
+  "created_at": "2026-09-02T01:02:35.631722+00:00",
+  "market_snapshot_id": "d6f3dd07784c2870",
   "research_snapshot_id": "research-13cb6918b0e80b16",
   "event_snapshot_id": "event-19fdde3274cfd471",
   "backtest_release": null,
@@ -230,11 +230,11 @@
     "creator_insights": null
   },
   "artifact_hashes": {
-    "market.json": "2c1832e37282b7e04a09174313b1fee3834473e3b282801041b204da0bf20842",
+    "market.json": "38f5121b48c3d53628da7e5004babc4d926967d18c306fead386d0ab85a0a9a5",
     "research-report.json": "c91c55bfb245c7a1aede762a70b52231853d80e64ddc0a7e7ed6c79aa51632b0",
     "event-ledger.json": "57ba8e19e2d8388a94e451817cda7863a33370f621e27d329a79fb69d268a546",
-    "source-health.json": "ca8b4c8484dff0478fd1595d73b47dfa6d365b4e022c7a9d13a2cd53a2981096",
-    "news.json": "36124c5605b9b3a81ba14fd2715d24664bb8c754f219bc9e0399a986a53c88c3"
+    "source-health.json": "0e9a28689e7e82e15a2fbddd74b2ad4c0fb34abf3cae16e870ee3aefe44bd8ca",
+    "news.json": "1388c0b289563f8df6ddf50ed41b37ae03b874415b83f14a8ac65150aa040990"
   },
   "artifact_paths": {
     "market.json": "data/market.json",
@@ -244,6 +244,9 @@
     "news.json": "data/news.json"
   },
   "normalization_notes": [
+    "market: indices[0].quote_source=Yahoo",
+    "market: indices[0].technical_context_stale=true",
+    "market: indices[1].technical_context_stale=true",
     "events: snapshot_id=deterministic"
   ],
   "research_freshness": "stale_fallback",
@@ -258,7 +261,7 @@
   "creator_public_validation_errors": [],
   "creator_snapshot_id": null,
   "creator_public_artifact_hash": null,
-  "news_snapshot_id": "news-79d629a75f771942",
+  "news_snapshot_id": "news-5cb6266b28dd5a9c",
   "news_status": "ready",
   "external_observation_count": 2,
   "external_observation_ids_hash": "10b29e15431456fa637ea7508d6d58698cdf1a75e75c719b59078732b46e8114",
