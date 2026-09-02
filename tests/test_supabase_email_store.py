@@ -159,6 +159,41 @@ def test_public_projection_does_not_replace_rich_semantics_with_sparse_replay(mo
     assert calls == ["GET"]
 
 
+def test_public_projection_prefers_cleaner_equal_width_semantics(monkeypatch: pytest.MonkeyPatch) -> None:
+    requests_seen: list[tuple[str, str, dict[str, Any]]] = []
+    previous = {
+        "observation_id": "fj:clean",
+        "content_origin": "financialjuice",
+        "public_safe": True,
+        "vendor_translation": "翻譯內容 💡 AI 評論: 舊評論",
+        "vendor_analysis": "重要性評分: 8/10 📝 繁體中文翻譯:",
+        "vendor_possible_impact": "影響內容 📄 原文內容: 舊原文",
+        "vendor_original_headline": "舊原文",
+    }
+
+    def request(method: str, url: str, **kwargs: Any) -> _Response:
+        requests_seen.append((method, url, kwargs.get("json") or {}))
+        if method == "GET":
+            return _Response(200, [{"payload_json": previous}])
+        return _Response(204, None)
+
+    monkeypatch.setattr("supabase_email_store.requests.request", request)
+    store = SupabaseEmailStore("https://example.supabase.co", "key")
+    assert store.save_public_observation({
+        "observation_id": "fj:clean",
+        "content_origin": "financialjuice",
+        "public_safe": True,
+        "vendor_original_headline": "Iran says no nuclear activity",
+        "vendor_translation": "美伊衝突升級。",
+        "vendor_analysis": "市場風險偏好受壓。",
+        "vendor_possible_impact": "油價波動可能升高。",
+    }) is True
+    assert requests_seen[1][0] == "PATCH"
+    patched = requests_seen[1][2]["payload_json"]
+    assert patched["vendor_translation"] == "美伊衝突升級。"
+    assert patched["vendor_analysis"] == "市場風險偏好受壓。"
+
+
 def test_store_requires_https_and_credentials() -> None:
     with pytest.raises(ValueError, match="not_configured"):
         SupabaseEmailStore("", "")

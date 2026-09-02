@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -43,10 +44,21 @@ _SEMANTIC_FIELDS = (
     "ai_commentary", "vendor_analysis", "possible_impact",
     "vendor_possible_impact", "vendor_impact",
 )
+_SEMANTIC_LABELS = (
+    "original headline", "headline", "translation", "chinese translation",
+    "ai commentary", "ai 評論", "AI評論", "analysis", "分析",
+    "possible impact", "可能影響", "市場影響", "原文內容", "原文", "重要性評分",
+)
 
 
-def _semantic_quality(payload: dict[str, Any]) -> tuple[int, int]:
-    """Rank sanitized observations so a replay can enrich, never erase, facts."""
+def _semantic_quality(payload: dict[str, Any]) -> tuple[int, int, int]:
+    """Rank sanitized observations so a replay can enrich, never erase, facts.
+
+    A parser repair can keep the same number of populated fields while
+    removing labels accidentally captured inside their values.  Prefer that
+    cleaner projection before comparing text length; the merge below still
+    copies only non-empty values, so a sparse replay cannot erase facts.
+    """
     values: list[str] = []
     for field in _SEMANTIC_FIELDS:
         value = payload.get(field)
@@ -54,7 +66,12 @@ def _semantic_quality(payload: dict[str, Any]) -> tuple[int, int]:
             text = " ".join(str(value).split()).strip()
             if text:
                 values.append(text)
-    return len(values), sum(len(value) for value in values)
+    noise = sum(
+        len(re.findall(re.escape(label) + r"\s*[:：]", value, flags=re.IGNORECASE))
+        for value in values
+        for label in _SEMANTIC_LABELS
+    )
+    return len(values), -noise, sum(len(value) for value in values)
 
 
 class SupabaseEmailStore:
