@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/external_source_parsers.py
-# Canonical source SHA256: f307f7fde8c5d747038c414fa92f71d855c71ffa3d2a8895acd9d320aee274db
+# Canonical source SHA256: 2677f83a8a174bdcf4a1652590170ede5ebe1523443937e83f766e13588e2b03
 
 """Deterministic parsers for sanitized external intelligence mail.
 
@@ -44,7 +44,11 @@ def _plain_text(body: str) -> str:
     returned unchanged apart from normalising line endings.
     """
     raw = str(body or "")
-    if not re.search(r"<\s*(?:html|body|div|p|section|h[1-6]|br)\b", raw, re.IGNORECASE):
+    # Some Gmail relays omit ``html``/``body`` and send a table fragment only
+    # (for example ``<table><tr><td>...``).  Treat any actual HTML element as
+    # markup so labels and values are extracted from rendered text instead of
+    # being left interleaved with tags.
+    if not re.search(r"<\s*/?\s*[a-z][^>]*>", raw, re.IGNORECASE):
         return raw.replace("\r\n", "\n").replace("\r", "\n")
     soup = BeautifulSoup(raw, "html.parser")
     for node in soup.find_all(("script", "style", "noscript")):
