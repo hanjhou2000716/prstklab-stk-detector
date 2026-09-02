@@ -68,6 +68,11 @@ DLQ_STATES = {
     "parser_unavailable",
 }
 PARSER_VERSION = "railway-email-router-v1"
+_FINANCIALJUICE_DOMAINS = frozenset({"financialjuice.com"})
+# The production Gmail relay is an explicit canonical identity.  An exact
+# allow-list keeps forwarding workable without treating arbitrary Gmail mail
+# with an FJ-looking subject as a provider message.
+_FINANCIALJUICE_TRUSTED_SENDERS = frozenset({"jetmaie.fintech@gmail.com"})
 
 _PUBLIC_FIELDS = {
     "content_origin", "content_type", "event_type", "category", "title",
@@ -103,6 +108,22 @@ def _display_name(value: str) -> str:
     # Gmail may omit the display name and return only ``local@domain``.
     # Treat that as an address, not as a trusted provider label.
     return "" if "@" in candidate else candidate
+
+
+def _sender_address(value: str) -> str:
+    """Extract the RFC-style address from a Gmail sender header."""
+    match = re.search(r"<\s*([^>\s]+@[^>\s]+)\s*>", _text(value))
+    if match:
+        return match.group(1).casefold()
+    candidate = _text(value).casefold()
+    return candidate if re.fullmatch(r"[^\s@]+@[^\s@]+", candidate) else ""
+
+
+def _trusted_financialjuice_sender(sender: str) -> bool:
+    """Require the actual sender identity to belong to FinancialJuice."""
+    address = _sender_address(sender)
+    domain = address.rsplit("@", 1)[-1].rstrip(".") if "@" in address else ""
+    return address in _FINANCIALJUICE_TRUSTED_SENDERS or domain in _FINANCIALJUICE_DOMAINS
 
 
 def _trusted_identity(*, markers: tuple[str, ...], sender: str, subject: str) -> bool:
@@ -165,13 +186,21 @@ def route_source(*, sender: str, subject: str, body: str, attachments: list[dict
     # standalone fallback only needs the non-Creator FinancialJuice aliases;
     # retaining another Creator marker table here would drift from config/.
     signals = {"financialjuice": ("financialjuice", "financial juice", "breaking news")}
-    candidates = [source for source, markers in signals.items() if any(marker.casefold() in haystack for marker in markers)]
-    source = candidates[0] if candidates else "unknown"
+    # FJ identity is transport-owned.  Subject/body markers only validate the
+    # provider template after the sender has passed this gate.  This prevents
+    # GitHub Actions and unrelated mail that merely mentions FinancialJuice
+    # from becoming market signals.
+    fj_sender_trusted = _trusted_financialjuice_sender(sender)
+    fj_marker_present = any(marker.casefold() in haystack for marker in signals["financialjuice"])
+    source = "financialjuice" if fj_sender_trusted else "unknown"
     expected = {
         "financialjuice": ("original headline", "importance", "possible impact", "ai commentary"),
     }
     if source == "unknown":
-        status, reason = "invalid_source", "source_not_recognized"
+        status, reason = (
+            ("invalid_source", "source_identity_not_trusted")
+            if fj_marker_present else ("invalid_source", "source_not_recognized")
+        )
     elif not (
         any(marker.casefold() in haystack for marker in expected[source])
         or _trusted_identity(markers=signals[source], sender=sender, subject=subject)

@@ -19,6 +19,25 @@ from src.external_event_pipeline import build_external_events
 _NEUTRAL_STOCK_OBSERVATION = "等待官方後續確認，並觀察相關市場是否同步反應。"
 _NEUTRAL_IMPORTANCE = "目前尚無額外重要性說明，等待後續公開資料核對。"
 _NEUTRAL_LINKAGE = "尚無足夠公開資料判定連動。"
+_INCOMPLETE_EVENT = "資訊待核對"
+_GENERIC_EVENT_VALUES = frozenset({
+    "financialjuice 公開快訊", "financialjuice|financialjuice 公開快訊",
+    "資訊待核對", "information pending", "pending information",
+})
+_STALE_QUOTE_VALUES = frozenset({"stale", "delayed", "unavailable", "unknown", "failed", "失效", "延遲", "不可用"})
+_MARKET_RULES: tuple[tuple[str, tuple[str, ...], frozenset[str], int], ...] = (
+    ("WTI", ("wti", "west texas", "西德州", "原油", "oil", "crude", "荷姆茲", "hormuz"), frozenset({"energy", "conflict", "macro"}), 1),
+    ("BRENT", ("brent", "布蘭特", "油價", "原油", "oil", "crude", "荷姆茲", "hormuz"), frozenset({"energy", "conflict", "macro"}), 2),
+    ("GOLD", ("gold", "黃金", "避險"), frozenset({"conflict", "macro"}), 3),
+    ("US10Y", ("us10y", "10-year", "treasury", "殖利率", "利率", "rate", "yield"), frozenset({"fed", "macro", "policy"}), 4),
+    ("DXY", ("dxy", "美元", "dollar"), frozenset({"fed", "macro", "policy", "conflict"}), 5),
+    ("SOX", ("sox", "費半", "半導體", "semiconductor", "chip", "gpu"), frozenset({"semiconductor", "policy", "market"}), 6),
+    ("TSM", ("tsm", "tsmc", "台積", "台積電"), frozenset({"semiconductor", "policy"}), 7),
+    ("2330", ("2330", "台積", "台積電", "tsmc"), frozenset({"semiconductor", "policy"}), 8),
+    ("NVDA", ("nvda", "nvidia", "gpu"), frozenset({"semiconductor", "policy"}), 9),
+    ("NASDAQ", ("nasdaq", "那斯達克", "科技股", "tech stocks"), frozenset({"fed", "macro", "semiconductor", "policy", "market", "conflict"}), 10),
+    ("TAIEX", ("taiex", "台股", "台灣加權", "台灣股市"), frozenset({"market", "semiconductor", "policy", "conflict"}), 11),
+)
 _TRANSLATION_LABELS = (
     "chinese translation", "translation", "繁體中文翻譯", "中文翻譯", "翻譯",
 )
@@ -170,6 +189,173 @@ def _first_clean_text(views: list[dict[str, Any]], kind: str, *keys: str) -> str
     return ""
 
 
+def _is_generic_event(value: Any) -> bool:
+    text = " ".join(str(value or "").split()).strip().casefold().rstrip("。.!！")
+    return not text or text in _GENERIC_EVENT_VALUES or text.startswith("financialjuice 公開快訊")
+
+
+def _material_event_text(views: list[dict[str, Any]]) -> str:
+    """Return a real FJ event fact, excluding generated placeholder labels."""
+    candidates = (
+        _first_clean_text(views, "translation", "chinese_translation", "vendor_translation"),
+        _first_clean_text(views, "headline", "translated_headline", "original_headline", "vendor_original_headline", "headline", "title", "event"),
+    )
+    return next((text for text in candidates if not _is_generic_event(text)), "")
+
+
+def _market_rows(snapshot: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """Flatten the canonical market snapshot without fabricating instruments."""
+    if not isinstance(snapshot, dict):
+        return []
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for key in ("indices", "macro_quotes", "quotes", "markets"):
+        value = snapshot.get(key)
+        values = value if isinstance(value, list) else list(value.values()) if isinstance(value, dict) else []
+        for row in values:
+            if not isinstance(row, dict):
+                continue
+            ticker = str(row.get("ticker") or row.get("symbol") or "").strip().upper()
+            if not ticker or ticker in seen:
+                continue
+            seen.add(ticker)
+            rows.append(row)
+    return rows
+
+
+def _registry_aliases(snapshot: dict[str, Any] | None, ticker: str) -> tuple[str, ...]:
+    registry = snapshot.get("instrument_master") if isinstance(snapshot, dict) else None
+    instruments = registry.get("instruments") if isinstance(registry, dict) else None
+    for instrument in instruments if isinstance(instruments, list) else []:
+        if not isinstance(instrument, dict) or str(instrument.get("ticker") or "").strip().upper() != ticker:
+            continue
+        values = [instrument.get("ticker"), instrument.get("name"), *(instrument.get("symbols") or ()), *(instrument.get("aliases") or ())]
+        return tuple(str(value).strip().casefold() for value in values if str(value or "").strip())
+    return ()
+
+
+def _market_fresh(row: dict[str, Any]) -> bool:
+    freshness = str(row.get("quality_freshness") or row.get("freshness") or row.get("data_status") or "").strip().casefold()
+    return (
+        bool(freshness) and freshness not in _STALE_QUOTE_VALUES
+        and row.get("stale_used") is not True
+        and row.get("quote_delayed") is not True
+        and row.get("data_status") not in {"stale", "延遲", "不可用", "失敗"}
+    )
+
+
+def _number(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _market_intelligence(result: dict[str, Any], row: dict[str, Any], snapshot: dict[str, Any] | None) -> dict[str, Any]:
+    """Link one FJ event to at most two scored, registry-backed market rows."""
+    views = _source_views(result, row)
+    semantic = _semantic_projection(result, row)
+    if snapshot is None:
+        # Unit callers and offline parser previews may not have a market
+        # snapshot.  Preserve the parsed vendor linkage verbatim in that mode.
+        return {
+            "linked_markets": [], "market_evidence": [],
+            "market_sync_confirmed": False, "linkage_state": "not_evaluated",
+            "possible_linkage": semantic["possible_linkage"],
+            "stock_observation": semantic["stock_observation"],
+        }
+    text = " ".join([
+        semantic["event"], semantic["why_important"], semantic["possible_linkage"],
+        _first_text(views, "entities", "topics", "tickers", "event_type", "category"),
+    ]).casefold()
+    classification = _mapping(result.get("classification"))
+    category = str(classification.get("category") or row.get("event_type") or row.get("category") or "").casefold()
+    candidates: list[tuple[int, str, dict[str, Any]]] = []
+    available = {str(market.get("ticker") or market.get("symbol") or "").strip().upper(): market for market in _market_rows(snapshot)}
+    for ticker, aliases, categories, tie_break in _MARKET_RULES:
+        market = available.get(ticker)
+        if not market:
+            continue
+        registry_aliases = _registry_aliases(snapshot, ticker)
+        direct_hits = sum(1 for alias in {ticker.casefold(), *aliases, *registry_aliases} if alias and alias in text)
+        category_hit = category in categories
+        if not direct_hits and not category_hit:
+            continue
+        score = float(direct_hits * 100 + (40 if category_hit else 0))
+        if ticker in {"TAIEX", "TSM", "2330"}:
+            score += 12
+        if _market_fresh(market):
+            score += 8
+        score -= tie_break / 100
+        candidates.append((int(score * 100), ticker, market))
+    candidates.sort(key=lambda item: (-item[0], item[1]))
+    selected = candidates[:2]
+    evidence: list[dict[str, Any]] = []
+    for _, ticker, market in selected:
+        evidence.append({
+            "ticker": ticker,
+            "name": market.get("name"),
+            "market": market.get("market"),
+            "instrument_id": market.get("instrument_id"),
+            "instrument_master_id": market.get("instrument_master_id"),
+            "price": market.get("price"),
+            "change": market.get("change"),
+            "change_percent": market.get("change_percent"),
+            "direction_sign": market.get("direction_sign"),
+            "market_direction": market.get("market_direction"),
+            "quote_date": market.get("quote_date"),
+            "fetched_at": market.get("fetched_at"),
+            "freshness": market.get("freshness") or market.get("quality_freshness"),
+            "data_status": market.get("data_status"),
+            "stale_used": market.get("stale_used", False),
+            "quote_delayed": market.get("quote_delayed", False),
+            "source_url": market.get("source_url"),
+            "observation_id": market.get("observation_id"),
+        })
+    fresh_moves: list[float] = []
+    for item in evidence:
+        if not _market_fresh(item):
+            continue
+        move = _number(item.get("change_percent"))
+        if move is not None:
+            fresh_moves.append(move)
+    synchronized = bool(
+        len(fresh_moves) >= 2
+        and all(abs(move) >= 0.5 for move in fresh_moves)
+        and (all(move > 0 for move in fresh_moves) or all(move < 0 for move in fresh_moves))
+    )
+    if not evidence:
+        linkage_state = "insufficient_evidence"
+        stock = "目前沒有足夠可驗證的市場資料建立連動，不做方向判定。"
+        linkage = f"{semantic['possible_linkage']} 尚無足夠市場證據建立連動。"
+    elif any(not _market_fresh(item) for item in evidence):
+        linkage_state = "linked_data_stale"
+        labels = "、".join(str(item.get("ticker")) for item in evidence)
+        stock = f"{labels} 為主要關聯市場，目前價格訊號待更新，不做方向判定。"
+        linkage = f"{semantic['possible_linkage']} 關聯市場：{labels}（資料待更新）。"
+    elif synchronized:
+        linkage_state = "synchronized_evidence"
+        labels = "、".join(
+            f"{item['ticker']} {float(item['change_percent']):+.2f}%"
+            for item in evidence if _number(item.get("change_percent")) is not None
+        )
+        stock = f"關聯市場同步反應：{labels}。"
+        linkage = f"{semantic['possible_linkage']} 關聯市場：{labels}。"
+    else:
+        linkage_state = "linked_no_obvious_sync"
+        labels = "、".join(str(item.get("ticker")) for item in evidence)
+        stock = f"關聯市場為{labels}，目前尚未出現明顯同步異動，持續觀察。"
+        linkage = f"{semantic['possible_linkage']} 關聯市場：{labels}，目前尚無明顯同步證據。"
+    return {
+        "linked_markets": [item["ticker"] for item in evidence],
+        "market_evidence": evidence,
+        "market_sync_confirmed": synchronized,
+        "linkage_state": linkage_state,
+        "possible_linkage": linkage,
+        "stock_observation": stock,
+    }
+
+
 def _embedded_clean_text(views: list[dict[str, Any]], labels: tuple[str, ...], *, stop: tuple[str, ...]) -> str:
     """Recover one labelled section embedded in another legacy field."""
     for view in views:
@@ -197,12 +383,7 @@ def _semantic_projection(result: dict[str, Any], row: dict[str, Any]) -> dict[st
     a stable, non-hallucinatory fallback.
     """
     views = _source_views(result, row)
-    event = _first_clean_text(
-        views, "translation", "chinese_translation", "vendor_translation",
-    ) or _first_clean_text(
-        views, "headline", "translated_headline", "original_headline",
-        "vendor_original_headline", "headline", "title", "event", "summary",
-    )
+    event = _material_event_text(views)
     why_important = _first_clean_text(
         views, "analysis", "ai_commentary", "vendor_analysis", "why_important", "importance_detail",
     ) or _embedded_clean_text(
@@ -217,18 +398,26 @@ def _semantic_projection(result: dict[str, Any], row: dict[str, Any]) -> dict[st
         views, "stock_observation", "watch", "stock_watch", "follow_up_observation",
     ) or _NEUTRAL_STOCK_OBSERVATION
     return {
-        "event": event or "FinancialJuice 公開快訊",
+        "event": event or _INCOMPLETE_EVENT,
         "why_important": why_important,
         "possible_linkage": possible_linkage,
         "stock_observation": stock_observation,
     }
 
 
-def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, reasons: list[str]) -> dict[str, Any]:
+def _event_record(
+    result: dict[str, Any], row: dict[str, Any], *, status: str, reasons: list[str],
+    vendor_priority_notification: bool, market_snapshot: dict[str, Any] | None,
+) -> dict[str, Any]:
     risk = _mapping(result.get("risk"))
     cluster = _mapping(result.get("cluster"))
     views = _source_views(result, row)
     semantic = _semantic_projection(result, row)
+    market = _market_intelligence(result, row, market_snapshot)
+    semantic.update({
+        "possible_linkage": market["possible_linkage"],
+        "stock_observation": market["stock_observation"],
+    })
     headline = _first_clean_text(
         views, "headline", "original_headline", "vendor_original_headline", "headline", "title",
     ) or semantic["event"]
@@ -254,7 +443,7 @@ def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, r
         "source_key": "financialjuice",
         "source_tier": "discovery",
         "title": headline,
-        "brief_title": f"FinancialJuice｜{headline}｜{'重要度 ' + str(importance) + '/10' if importance is not None else '待核對'}",
+        "brief_title": f"FJ 快訊｜重要度 {importance}/10｜{semantic['event']}" if importance is not None else f"FJ 快訊｜待核對｜{semantic['event']}",
         # Canonical semantic fields are the stable consumer contract.  The
         # legacy summary fields remain populated for older renderers.
         **semantic,
@@ -274,10 +463,7 @@ def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, r
         "prstk_risk_level": canonical_risk,
         "prstk_risk": risk,
         "vendor_importance": importance,
-        "vendor_priority_notification": bool(
-            isinstance(result.get("vendor_priority"), dict)
-            and result["vendor_priority"].get("vendor_priority_notification")
-        ),
+        "vendor_priority_notification": vendor_priority_notification,
         "notification_status": status,
         "notification_reasons": list(dict.fromkeys([*reasons, *pending])),
         "notification_reason": "、".join(dict.fromkeys([*reasons, *pending])),
@@ -291,7 +477,7 @@ def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, r
             "vendor_importance": importance,
             "vendor_importance_is_not_risk": True,
             "official_confirmed": bool(risk.get("official_confirmed")),
-            "market_sync_confirmed": bool(risk.get("market_sync_confirmed")),
+            "market_sync_confirmed": market["market_sync_confirmed"],
             "observation_id": observation_id,
             "observation_id_hash": observation_hash,
             "item_id": item_id,
@@ -300,10 +486,18 @@ def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, r
             "parser_version": parser_version,
         },
         "source_evidence": result.get("source_evidence") or [],
-        "market_evidence": result.get("market_evidence") or [],
+        "market_evidence": market["market_evidence"],
+        "linked_markets": market["linked_markets"],
+        "linkage_state": market["linkage_state"],
+        "market_sync_confirmed": market["market_sync_confirmed"],
         "market_direction": None,
         "market_move": None,
-        "alert_eligible": status == "eligible",
+        "alert_eligible": status == "eligible" and vendor_priority_notification,
+        "public_signal_eligible": status != "content_incomplete",
+        "content_gate": {
+            "material_event_present": status != "content_incomplete",
+            "blocked_reason": "content_incomplete" if status == "content_incomplete" else None,
+        },
         "public_safe": True,
     }
 
@@ -312,6 +506,7 @@ def project_financialjuice_priority(
     observations: list[dict[str, Any]],
     *,
     existing_events: list[dict[str, Any]] | None = None,
+    market_snapshot: dict[str, Any] | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
     """Return public event rows and auditable vendor-priority decisions.
 
@@ -338,22 +533,40 @@ def project_financialjuice_priority(
             cluster_key = str(row.get("event_cluster_key") or result.get("event_cluster_key") or "").strip()
             if cluster_key:
                 result["event_cluster_key"] = cluster_key
+            material_event = bool(_material_event_text(_source_views(result, row)))
             if not qualifying:
                 status, reasons = "not_eligible", ["vendor_importance_below_8_or_missing"]
+                vendor_notification = False
+            elif not material_event:
+                # Importance alone is not a public event.  Keep a complete
+                # decision/event row for audit and lineage, but block both
+                # release publication and Telegram eligibility.
+                status, reasons = "content_incomplete", ["content_incomplete", "missing_material_event"]
+                vendor_notification = False
             elif cluster_key and cluster_key in existing_keys:
                 status, reasons = "already_cluster_notified", ["already_cluster_notified"]
+                vendor_notification = True
             else:
                 status, reasons = "eligible", ["vendor_priority_importance_ge_8"]
-            event = _event_record(result, row, status=status, reasons=reasons)
+                vendor_notification = True
+            event = _event_record(
+                result, row, status=status, reasons=reasons,
+                vendor_priority_notification=vendor_notification,
+                market_snapshot=market_snapshot,
+            )
             events.append(event)
             decisions.append({
                 "observation_id": event["observation_id"],
                 "item_id": row.get("item_id"),
                 "event_cluster_key": cluster_key or None,
                 "vendor_importance": event.get("vendor_importance"),
-                "vendor_priority_notification": qualifying,
+                "vendor_priority_notification": vendor_notification,
                 "notification_status": status,
                 "notification_reason": event["notification_reason"],
+                "content_gate": event["content_gate"],
+                "public_signal_eligible": event["public_signal_eligible"],
+                "linked_markets": event["linked_markets"],
+                "market_sync_confirmed": event["market_sync_confirmed"],
                 "prstk_risk": event.get("prstk_risk"),
                 "release_trace_required": True,
             })
@@ -400,7 +613,7 @@ def bind_financialjuice_semantic_views(
             if isinstance(event_text, str) and event_text.strip():
                 # Keep legacy names usable for older Mini App bundles, but
                 # expose only the cleaned semantic section.
-                view["title"] = matched_event.get("title") or event_text
+                view["title"] = matched_event.get("brief_title") or matched_event.get("title") or event_text
                 view["headline"] = event_text
                 view["chinese_translation"] = event_text
                 view["vendor_translation"] = event_text
@@ -416,8 +629,27 @@ def bind_financialjuice_semantic_views(
             if isinstance(watch, str) and watch.strip():
                 view["stock_observation"] = watch
                 view["watch"] = watch
+            view["public_signal_eligible"] = matched_event.get("public_signal_eligible") is True
+            view["content_gate"] = matched_event.get("content_gate") or {}
+            view["linked_markets"] = matched_event.get("linked_markets") or []
+            view["market_evidence"] = matched_event.get("market_evidence") or []
+            view["market_sync_confirmed"] = matched_event.get("market_sync_confirmed") is True
         bound.append(view)
     return bound
 
 
-__all__ = ["bind_financialjuice_semantic_views", "project_financialjuice_priority"]
+def public_financialjuice_observations(
+    observations: list[dict[str, Any]], events: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Return public observation rows while retaining blocked rows in audit data."""
+    bound = bind_financialjuice_semantic_views(observations, events)
+    return [
+        row for row in bound
+        if _source(row) != "financialjuice" or row.get("public_signal_eligible") is True
+    ]
+
+
+__all__ = [
+    "bind_financialjuice_semantic_views", "project_financialjuice_priority",
+    "public_financialjuice_observations",
+]

@@ -352,6 +352,17 @@ def test_creator_marker_in_body_cannot_hijack_source_route() -> None:
     assert result["parse_status"] == "invalid_source"
 
 
+def test_financialjuice_marker_in_github_mail_cannot_hijack_source_route() -> None:
+    result = route_source(
+        sender="github-actions[bot] <noreply@github.com>",
+        subject="PR run failed: FinancialJuice semantics",
+        body="Quality check failed while mentioning FinancialJuice.",
+    )
+    assert result["source"] == "unknown"
+    assert result["parse_status"] == "invalid_source"
+    assert result["failure_reason"] == "source_identity_not_trusted"
+
+
 def test_financialjuice_subject_identity_allows_canonical_fallback_parser(tmp_path: Path) -> None:
     """A real source-labelled alert need not contain every legacy field label."""
     store = EmailStore(tmp_path / "mail.sqlite3")

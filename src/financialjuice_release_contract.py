@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
-_STATUSES = frozenset({"eligible", "not_eligible", "already_cluster_notified"})
+_STATUSES = frozenset({"eligible", "not_eligible", "already_cluster_notified", "content_incomplete"})
 
 
 def _rows(value: Any) -> list[dict[str, Any]]:

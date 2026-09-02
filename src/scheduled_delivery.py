@@ -22,7 +22,7 @@ from src.external_observation_input import (
     merge_external_source_health,
 )
 from src.financialjuice_notification import deliver_financialjuice_event
-from src.financialjuice_priority import bind_financialjuice_semantic_views, project_financialjuice_priority
+from src.financialjuice_priority import project_financialjuice_priority, public_financialjuice_observations
 from src.financialjuice_release_contract import validate_financialjuice_release
 from src.market_data import build_market_snapshot
 from src.railway_observation_client import load_railway_observations
@@ -228,11 +228,15 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
     # public events.  The vendor score is kept separate from PRStK risk and
     # every non-send decision remains visible to Mini App/audit consumers.
     existing_events = ((snapshot.get("events") or {}).get("items") or []) if isinstance(snapshot.get("events"), dict) else []
-    fj_projection = project_financialjuice_priority(financialjuice_observations, existing_events=existing_events)
+    fj_projection = project_financialjuice_priority(
+        financialjuice_observations, existing_events=existing_events, market_snapshot=snapshot,
+    )
     if fj_projection["events"]:
         if not isinstance(snapshot.get("events"), dict):
             snapshot["events"] = {"items": []}
-        snapshot["events"].setdefault("items", []).extend(fj_projection["events"])
+        snapshot["events"].setdefault("items", []).extend(
+            event for event in fj_projection["events"] if event.get("public_signal_eligible") is True
+        )
     snapshot["financialjuice_priority_decisions"] = fj_projection["decisions"]
     snapshot["financialjuice_priority_events"] = [
         event for event in fj_projection["events"] if event.get("notification_status") == "eligible"
@@ -254,7 +258,7 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
         return snapshot
     remote_rejected = remote_health.get("rejected_count")
     external_rejected = local_rejected + (int(remote_rejected) if isinstance(remote_rejected, (int, str, float)) else 0)
-    snapshot["external_observations"] = bind_financialjuice_semantic_views(
+    snapshot["external_observations"] = public_financialjuice_observations(
         all_external_observations, fj_projection["events"],
     )
     # Preserve an explicit classifier input so downstream consumers cannot
