@@ -1,6 +1,16 @@
+import importlib.util
+
 from src.financialjuice_notification import deliver_financialjuice_event, financialjuice_caption
 from src.financialjuice_notification_e2e import run_financialjuice_notification_e2e
 from src.telegram_client import TextDeliveryReceipt, alert_mini_app_url
+
+
+def _railway_email_router():
+    spec = importlib.util.spec_from_file_location("fj_email_router_e2e", "railway-monitor/email_router.py")
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_financialjuice_notification_e2e_is_offline_and_replay_safe() -> None:
@@ -93,3 +103,30 @@ def test_financialjuice_delivery_reaches_text_sender_with_alert_deep_link() -> N
         snapshot_id="snapshot-1",
         observation_id="fj-observation-1",
     )
+
+
+def test_rich_email_to_priority_to_telegram_preserves_semantics() -> None:
+    router = _railway_email_router()
+    parsed = router.parse_email({
+        "gmail_message_id": "g5-rich-e2e",
+        "sender": "alerts@financialjuice.com",
+        "subject": "FinancialJuice alert",
+        "body": (
+            "Importance: 10/10\n"
+            "Original headline: Reported AI partnership review\n"
+            "Translation: 某公司據報正在評估與某 AI 晶片供應商合作\n"
+            "AI commentary: 若合作成真，可能代表該公司 AI 基礎建設需求進一步提高，但目前仍未正式確認。\n"
+            "Possible impact: 可能影響 AI 伺服器、GPU、相關供應鏈個股情緒。"
+        ),
+    })
+    from src.financialjuice_priority import project_financialjuice_priority
+
+    event = project_financialjuice_priority(parsed["public_observations"])["events"][0]
+    telegram_text = financialjuice_caption(event)
+    assert event["event"] == "某公司據報正在評估與某 AI 晶片供應商合作"
+    assert event["why_important"].endswith("目前仍未正式確認。")
+    assert event["possible_linkage"].startswith("可能影響 AI 伺服器")
+    assert "某公司據報" in telegram_text
+    assert "FinancialJuice 公開快訊" not in telegram_text
+    assert event["prstk_risk_level"] == "R0"
+    assert event["vendor_priority_notification"] is True

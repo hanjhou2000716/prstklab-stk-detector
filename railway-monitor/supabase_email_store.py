@@ -38,6 +38,25 @@ def _hash(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+_SEMANTIC_FIELDS = (
+    "original_headline", "chinese_translation", "vendor_translation",
+    "ai_commentary", "vendor_analysis", "possible_impact",
+    "vendor_possible_impact", "vendor_impact",
+)
+
+
+def _semantic_quality(payload: dict[str, Any]) -> tuple[int, int]:
+    """Rank sanitized observations so a replay can enrich, never erase, facts."""
+    values: list[str] = []
+    for field in _SEMANTIC_FIELDS:
+        value = payload.get(field)
+        if isinstance(value, (str, int, float)) and not isinstance(value, bool):
+            text = " ".join(str(value).split()).strip()
+            if text:
+                values.append(text)
+    return len(values), sum(len(value) for value in values)
+
+
 class SupabaseEmailStore:
     """REST adapter with the same privacy and idempotency contract as EmailStore."""
 
@@ -149,15 +168,36 @@ class SupabaseEmailStore:
             raise ValueError("public observation identity is required")
         payload = {key: value for key, value in observation.items() if key not in BLOCKED_FIELDS | {"gmail_message_id"}}
         payload.update({"observation_id": observation_id, "content_origin": source, "source": source, "public_safe": True})
-        _status, result = self._request(
-            "POST", "gmail_public_observations", "?on_conflict=observation_id",
-            {"observation_id": observation_id, "content_origin": source,
-             "content_hash": payload.get("content_hash"),
-             "published_at": payload.get("published_at") or payload.get("source_published_at"),
-             "payload_json": payload},
-            prefer="resolution=ignore-duplicates,return=representation",
+        _status, existing = self._request(
+            "GET", "gmail_public_observations",
+            f"?observation_id=eq.{observation_id}&select=payload_json&limit=1",
         )
-        return isinstance(result, list) and bool(result)
+        previous = existing[0].get("payload_json") if isinstance(existing, list) and existing and isinstance(existing[0], dict) else None
+        if not isinstance(previous, dict):
+            _status, result = self._request(
+                "POST", "gmail_public_observations", "?on_conflict=observation_id",
+                {"observation_id": observation_id, "content_origin": source,
+                 "content_hash": payload.get("content_hash"),
+                 "published_at": payload.get("published_at") or payload.get("source_published_at"),
+                 "payload_json": payload},
+                prefer="resolution=ignore-duplicates,return=representation",
+            )
+            return isinstance(result, list) and bool(result)
+        if _semantic_quality(payload) <= _semantic_quality(previous):
+            return False
+        merged = dict(previous)
+        for key, value in payload.items():
+            if value not in (None, "", [], {}):
+                merged[key] = value
+        self._request(
+            "PATCH", "gmail_public_observations", f"?observation_id=eq.{observation_id}",
+            {"content_origin": source,
+             "content_hash": merged.get("content_hash"),
+             "published_at": merged.get("published_at") or merged.get("source_published_at"),
+             "payload_json": merged},
+            prefer="return=minimal",
+        )
+        return True
 
     def public_observations(self, *, limit: int = 100) -> list[dict[str, Any]]:
         bounded = max(1, min(500, int(limit)))

@@ -114,8 +114,8 @@ def financialjuice_content_hash(record: dict[str, Any]) -> str:
 
 
 def financialjuice_item_id(message_id: str, index: int, content_hash: str) -> str:
-    """Identify a compound item without treating the whole email as one event."""
-    material = f"{message_id}|{index}|{content_hash}"
+    """Identify a compound item stably across semantic replay enrichment."""
+    material = f"{message_id}|{index}" if message_id else f"anonymous|{index}|{content_hash}"
     return f"fj-item-{hashlib.sha256(material.encode('utf-8')).hexdigest()[:20]}"
 
 

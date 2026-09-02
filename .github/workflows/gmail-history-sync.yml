@@ -7,6 +7,10 @@ on:
         description: Pub/Sub history cursor (for an operator retry)
         required: false
         type: string
+      latest_financialjuice:
+        description: Reprocess exactly the newest FinancialJuice mail without moving the cursor
+        required: false
+        type: boolean
   repository_dispatch:
     types: [gmail-history-sync]
 
@@ -50,6 +54,7 @@ jobs:
           set -o pipefail
           args=()
           if [ -n "${HISTORY_ID:-}" ]; then args+=(--history-id "$HISTORY_ID"); fi
+          if [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" = "true" ]; then args+=(--latest-financialjuice); fi
           python scripts/sync_gmail_supabase.py "${args[@]}" | tee gmail-sync-result.json
       - name: Trigger realtime event monitor for new reviewed email
         if: success()

@@ -8,7 +8,12 @@ sys.path.insert(0, str(RAILWAY_MODULES))
 
 from email_router import route_source  # noqa: E402
 from email_store import EmailStore  # noqa: E402
-from gmail_history_sync import _decode_header_value, message_record, sync_gmail_history  # noqa: E402
+from gmail_history_sync import (  # noqa: E402
+    _decode_header_value,
+    message_record,
+    sync_gmail_history,
+    sync_latest_financialjuice,
+)
 from gmail_watch import GmailWatchConfig  # noqa: E402
 
 from gmail_ingress import GmailIngressService  # noqa: E402
@@ -112,6 +117,22 @@ class _UnavailableAttachmentClient(_AttachmentClient):
         return await super().get(url, **kwargs)
 
 
+class _DeletedMessageClient(_Client):
+    async def get(self, url, **kwargs):
+        self.calls.append(("GET", url, kwargs))
+        if url.endswith("/history"):
+            return _Response({"historyId": "h1", "history": [{"messagesAdded": [{"message": {"id": "deleted"}}]}]})
+        return _Response({"error": "message_deleted"}, status_code=404)
+
+
+class _LatestFinancialJuiceClient(_Client):
+    async def get(self, url, **kwargs):
+        self.calls.append(("GET", url, kwargs))
+        if url.endswith("/messages"):
+            return _Response({"messages": [{"id": "m-latest"}]})
+        return _Response(_message("m-latest"))
+
+
 def _config() -> GmailWatchConfig:
     return GmailWatchConfig(
         topic_name="projects/test/topics/gmail",
@@ -203,6 +224,28 @@ def test_sync_history_keeps_message_when_optional_text_attachment_is_unavailable
     ingress = GmailIngressService(store, _config())
     result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_UnavailableAttachmentClient))
     assert result == {"status": "healthy", "processed": 1, "failed": 0, "duplicate": 0}
+
+
+def test_sync_history_skips_deleted_history_messages(tmp_path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(last_history_id="h0")
+    ingress = GmailIngressService(store, _config())
+    result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_DeletedMessageClient))
+    assert result == {"status": "healthy", "processed": 0, "failed": 0, "duplicate": 0, "skipped": 1}
+
+
+def test_sync_latest_financialjuice_reprocesses_one_message_without_moving_cursor(tmp_path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(last_history_id="h0")
+    ingress = GmailIngressService(store, _config())
+    result = asyncio.run(sync_latest_financialjuice(_config(), store, ingress, client_factory=_LatestFinancialJuiceClient))
+    assert result["status"] == "healthy"
+    assert result["processed"] == 1
+    assert result["failed"] == 0
+    assert result["duplicate"] == 0
+    assert result["latest_financialjuice_diagnostics"]["rich_observation_count"] == 1
+    assert store.cursor()["last_history_id"] == "h0"
+    assert store.health()["public_observation_count"] == 1
 
 
 def test_expired_history_cursor_is_cleared_and_reported_as_gap(tmp_path) -> None:

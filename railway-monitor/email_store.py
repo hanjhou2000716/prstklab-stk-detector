@@ -23,6 +23,25 @@ def _hash(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+_SEMANTIC_FIELDS = (
+    "original_headline", "chinese_translation", "vendor_translation",
+    "ai_commentary", "vendor_analysis", "possible_impact",
+    "vendor_possible_impact", "vendor_impact",
+)
+
+
+def _semantic_quality(payload: dict[str, Any]) -> tuple[int, int]:
+    """Rank sanitized observations so a replay can enrich, never erase, facts."""
+    values: list[str] = []
+    for field in _SEMANTIC_FIELDS:
+        value = payload.get(field)
+        if isinstance(value, (str, int, float)) and not isinstance(value, bool):
+            text = " ".join(str(value).split()).strip()
+            if text:
+                values.append(text)
+    return len(values), sum(len(value) for value in values)
+
+
 class EmailStore:
     """SQLite-backed idempotency, cursor and DLQ state."""
 
@@ -212,21 +231,51 @@ class EmailStore:
         payload["source"] = source
         payload["public_safe"] = True
         with self._connect() as connection:
-            before = connection.total_changes
-            connection.execute(
-                """INSERT OR IGNORE INTO public_observations(
-                   observation_id, content_origin, content_hash, published_at,
-                   created_at, payload_json) VALUES(?,?,?,?,?,?)""",
-                (
-                    observation_id,
-                    source,
-                    str(payload.get("content_hash") or "") or None,
-                    str(payload.get("published_at") or payload.get("source_published_at") or "") or None,
-                    _now(),
-                    json.dumps(payload, ensure_ascii=False, sort_keys=True),
-                ),
-            )
-            return connection.total_changes > before
+            existing = connection.execute(
+                "SELECT payload_json FROM public_observations WHERE observation_id = ?",
+                (observation_id,),
+            ).fetchone()
+            if existing is None:
+                connection.execute(
+                    """INSERT INTO public_observations(
+                       observation_id, content_origin, content_hash, published_at,
+                       created_at, payload_json) VALUES(?,?,?,?,?,?)""",
+                    (
+                        observation_id,
+                        source,
+                        str(payload.get("content_hash") or "") or None,
+                        str(payload.get("published_at") or payload.get("source_published_at") or "") or None,
+                        _now(),
+                        json.dumps(payload, ensure_ascii=False, sort_keys=True),
+                    ),
+                )
+                return True
+            try:
+                previous = json.loads(existing[0])
+            except (TypeError, json.JSONDecodeError):
+                previous = {}
+            if not isinstance(previous, dict) or _semantic_quality(payload) <= _semantic_quality(previous):
+                return False
+            merged = dict(previous)
+            for key, value in payload.items():
+                if value not in (None, "", [], {}):
+                    merged[key] = value
+            try:
+                connection.execute(
+                    """UPDATE public_observations
+                       SET content_origin = ?, content_hash = ?, published_at = ?, payload_json = ?
+                       WHERE observation_id = ?""",
+                    (
+                        source,
+                        str(merged.get("content_hash") or "") or None,
+                        str(merged.get("published_at") or merged.get("source_published_at") or "") or None,
+                        json.dumps(merged, ensure_ascii=False, sort_keys=True),
+                        observation_id,
+                    ),
+                )
+            except sqlite3.IntegrityError:
+                return False
+            return True
 
     def public_observations(self, *, limit: int = 100) -> list[dict[str, Any]]:
         """Return bounded sanitized observations for the scheduled publisher."""

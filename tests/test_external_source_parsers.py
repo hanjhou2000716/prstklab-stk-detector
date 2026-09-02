@@ -4,6 +4,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 from src.external_source_parsers import parse_creator_email, parse_external_email, parse_financialjuice_email
+from src.financialjuice_contract import financialjuice_item_id
 
 
 def test_financialjuice_parser_keeps_vendor_importance_separate() -> None:
@@ -68,6 +69,24 @@ def test_financialjuice_html_relay_extracts_public_fields_without_markup() -> No
     assert result["public_safe"] is True
 
 
+def test_financialjuice_inline_html_labels_do_not_cross_assign_values() -> None:
+    result = parse_financialjuice_email(
+        sender="jetmaie.fintech@gmail.com",
+        subject="FinancialJuice breaking news",
+        body=(
+            "重要性評分: 10/10 📝 繁體中文翻譯: 某公司據報正在評估合作 "
+            "💡 AI 評論: 若合作成真，仍未正式確認 "
+            "⚠️ 可能影響: 可能影響 AI 伺服器供應鏈。"
+        ),
+        message_id="inline-labels-1",
+    )
+    assert result["parse_status"] == "parsed"
+    assert result["vendor_translation"] == "某公司據報正在評估合作"
+    assert result["vendor_analysis"] == "若合作成真，仍未正式確認"
+    assert result["vendor_possible_impact"] == "可能影響 AI 伺服器供應鏈。"
+    assert result["vendor_original_headline"] == "某公司據報正在評估合作"
+
+
 def test_financialjuice_parser_keeps_explicit_source_url_domain_aligned() -> None:
     result = parse_financialjuice_email(
         sender="alerts@financialjuice.com", subject="FinancialJuice alert",
@@ -123,6 +142,12 @@ def test_financialjuice_compound_email_fans_out_items() -> None:
     assert len({item["content_hash"] for item in result["items"]}) == 2
     assert len({item["event_cluster_key"] for item in result["items"]}) == 2
     assert all(item["candidate_event_type"] for item in result["items"])
+
+
+def test_financialjuice_compound_item_identity_survives_semantic_replay() -> None:
+    first = financialjuice_item_id("message-1", 0, "hash-a")
+    replay = financialjuice_item_id("message-1", 0, "hash-b")
+    assert first == replay
 
 
 def test_financialjuice_compound_missing_item_is_fail_closed() -> None:
