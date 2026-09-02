@@ -47,7 +47,10 @@ def main() -> int:
         result = asyncio.run(sync_gmail_history(config, store, ingress, max_messages=args.max_messages))
     if result.get("status") in {"healthy", "no_history_cursor"}:
         store.save_cursor(pending_history_id=None)
-    safe = {key: result[key] for key in ("status", "processed", "failed", "duplicate", "skipped", "history_gap", "failure_types") if key in result}
+    safe = {key: result[key] for key in (
+        "status", "processed", "failed", "duplicate", "skipped", "history_gap", "failure_types",
+        "latest_financialjuice_diagnostics",
+    ) if key in result}
     print(json.dumps(safe, ensure_ascii=False, sort_keys=True))
     return 0 if result.get("failed", 0) == 0 else 1
 
