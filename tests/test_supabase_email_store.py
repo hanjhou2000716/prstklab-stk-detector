@@ -76,6 +76,8 @@ def test_public_projection_keeps_creator_fields_but_strips_transport_ids(monkeyp
     captured: list[dict[str, Any]] = []
 
     def request(method: str, url: str, **kwargs: Any) -> _Response:
+        if method == "GET":
+            return _Response(200, [])
         captured.append(kwargs.get("json") or {})
         return _Response(201, [{"observation_id": "jenny:abc"}])
 
@@ -99,6 +101,62 @@ def test_public_projection_keeps_creator_fields_but_strips_transport_ids(monkeyp
             "public_safe": True,
         })
     assert "gmail_message_id" not in payload
+
+
+def test_public_projection_replay_patches_only_richer_semantics(monkeypatch: pytest.MonkeyPatch) -> None:
+    requests_seen: list[tuple[str, str, dict[str, Any]]] = []
+    previous = {
+        "observation_id": "fj:abc",
+        "content_origin": "financialjuice",
+        "public_safe": True,
+        "original_headline": "舊標題",
+    }
+
+    def request(method: str, url: str, **kwargs: Any) -> _Response:
+        requests_seen.append((method, url, kwargs.get("json") or {}))
+        if method == "GET":
+            return _Response(200, [{"payload_json": previous}])
+        return _Response(204, None)
+
+    monkeypatch.setattr("supabase_email_store.requests.request", request)
+    store = SupabaseEmailStore("https://example.supabase.co", "key")
+    assert store.save_public_observation({
+        "observation_id": "fj:abc",
+        "content_origin": "financialjuice",
+        "public_safe": True,
+        "original_headline": "新標題",
+        "chinese_translation": "繁體中文翻譯",
+    }) is True
+    assert requests_seen[0][0] == "GET"
+    assert requests_seen[1][0] == "PATCH"
+    assert requests_seen[1][2]["payload_json"]["original_headline"] == "新標題"
+
+
+def test_public_projection_does_not_replace_rich_semantics_with_sparse_replay(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+    previous = {
+        "observation_id": "fj:rich",
+        "content_origin": "financialjuice",
+        "public_safe": True,
+        "original_headline": "完整標題",
+        "chinese_translation": "完整翻譯",
+    }
+
+    def request(method: str, url: str, **kwargs: Any) -> _Response:
+        calls.append(method)
+        if method == "GET":
+            return _Response(200, [{"payload_json": previous}])
+        return _Response(204, None)
+
+    monkeypatch.setattr("supabase_email_store.requests.request", request)
+    store = SupabaseEmailStore("https://example.supabase.co", "key")
+    assert store.save_public_observation({
+        "observation_id": "fj:rich",
+        "content_origin": "financialjuice",
+        "public_safe": True,
+        "original_headline": "稀疏",
+    }) is False
+    assert calls == ["GET"]
 
 
 def test_store_requires_https_and_credentials() -> None:
