@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/financialjuice_contract.py
-# Canonical source SHA256: b4bd94915c3faf0b735b73cd939feba7fbb1733795634e1e9ef610f76b95bb5a
+# Canonical source SHA256: a04ba9ce84c52e1e02a719c2951d53045b8beb39a824fe999bb81e47cb30362f
 
 """FinancialJuice observation contract and conservative PRStK risk mapping.
 
@@ -119,8 +119,8 @@ def financialjuice_content_hash(record: dict[str, Any]) -> str:
 
 
 def financialjuice_item_id(message_id: str, index: int, content_hash: str) -> str:
-    """Identify a compound item without treating the whole email as one event."""
-    material = f"{message_id}|{index}|{content_hash}"
+    """Identify a compound item stably across semantic replay enrichment."""
+    material = f"{message_id}|{index}" if message_id else f"anonymous|{index}|{content_hash}"
     return f"fj-item-{hashlib.sha256(material.encode('utf-8')).hexdigest()[:20]}"
 
 

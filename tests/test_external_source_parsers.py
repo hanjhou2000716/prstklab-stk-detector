@@ -4,6 +4,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 from src.external_source_parsers import parse_creator_email, parse_external_email, parse_financialjuice_email
+from src.financialjuice_contract import financialjuice_item_id
 
 
 def test_financialjuice_parser_keeps_vendor_importance_separate() -> None:
@@ -123,6 +124,12 @@ def test_financialjuice_compound_email_fans_out_items() -> None:
     assert len({item["content_hash"] for item in result["items"]}) == 2
     assert len({item["event_cluster_key"] for item in result["items"]}) == 2
     assert all(item["candidate_event_type"] for item in result["items"])
+
+
+def test_financialjuice_compound_item_identity_survives_semantic_replay() -> None:
+    first = financialjuice_item_id("message-1", 0, "hash-a")
+    replay = financialjuice_item_id("message-1", 0, "hash-b")
+    assert first == replay
 
 
 def test_financialjuice_compound_missing_item_is_fail_closed() -> None:

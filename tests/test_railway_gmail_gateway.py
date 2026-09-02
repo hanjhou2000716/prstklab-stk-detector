@@ -317,6 +317,9 @@ def test_different_messages_with_the_same_provider_template_are_not_collapsed(
     })
     assert first["accepted"] is True
     assert second["accepted"] is True
+    rows = service.store.public_observations()
+    assert len(rows) == 2
+    assert len({row["observation_id"] for row in rows}) == 2
 
 
 def test_push_advances_durable_cursor_without_storing_message_body(tmp_path: Path) -> None:

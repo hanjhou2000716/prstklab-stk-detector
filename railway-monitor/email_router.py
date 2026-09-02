@@ -83,7 +83,7 @@ _PUBLIC_FIELDS = {
     # transport identifiers (message/thread IDs, sender and raw bodies) are
     # deliberately absent and are rejected by the storage adapter below.
     "creator_id", "creator_name", "episode_key", "episode_title",
-    "published_at", "received_at", "markets", "sectors", "key_takeaways",
+    "received_at", "markets", "sectors", "key_takeaways",
     "creator_market_view", "creator_strategy_view", "creator_risk_view",
     "key_numbers", "claims", "opinions", "verification_state",
     "evidence_alignment", "prstk_correlation", "summary_image_available",
@@ -123,6 +123,14 @@ def template_fingerprint(subject: str, body: str, attachments: list[dict[str, An
     markers = "|".join(re.findall(r"[A-Za-z][A-Za-z _-]{2,32}", f"{subject}\n{body}")[:32])
     mime = "|".join(_text(item.get("mime_type")) for item in (attachments or []) if isinstance(item, dict))
     return hashlib.sha256(f"{markers}|{mime}".casefold().encode("utf-8")).hexdigest()
+
+
+def _public_observation_id(message_id: str, template_hash: str, index: int) -> str:
+    """Keep one Gmail message's public rows stable without exposing its ID."""
+    if message_id:
+        digest = hashlib.sha256(message_id.encode("utf-8")).hexdigest()[:20]
+        return f"email-{digest}-{index}"
+    return f"email-{template_hash[:20]}-{index}"
 
 
 def route_source(*, sender: str, subject: str, body: str, attachments: list[dict[str, Any]] | None = None) -> dict[str, Any]:
@@ -235,7 +243,9 @@ def parse_email(record: dict[str, Any]) -> dict[str, Any]:
                 continue
             row = {key: candidate[key] for key in _PUBLIC_FIELDS if key in candidate}
             item_id = str(candidate.get("item_id") or "").strip()
-            row["observation_id"] = item_id or f"email-{result['template_fingerprint'][:20]}-{index}"
+            row["observation_id"] = item_id or _public_observation_id(
+                message_id, result["template_fingerprint"], index,
+            )
             row["source"] = str(candidate.get("content_origin") or route["source"])
             row["content_origin"] = row["source"]
             row["public_safe"] = True
