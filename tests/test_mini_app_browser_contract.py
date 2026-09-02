@@ -86,7 +86,46 @@ def test_mini_app_renders_financialjuice_evidence_from_release_fixture() -> None
         "markets": {},
         "indices": [],
         "quotes": [],
-        "events": {"items": []},
+        "events": {
+            "items": [{
+                "kind": "external_event",
+                "source": "FinancialJuice",
+                "source_key": "financialjuice",
+                "brief_title": "FJ 快訊｜重要度 10/10｜伊朗：美國攻擊電信和通信基礎設施。",
+                "title": "伊朗：美國攻擊電信和通信基礎設施。",
+                "event": "伊朗：美國攻擊電信和通信基礎設施。",
+                "why_important": "來源快訊標示重要度 10/10；來源影響評估：可能推升全球風險溢酬；仍待官方或第二來源核對。",
+                "possible_linkage": "可能影響美股與美國利率預期。關聯市場：NASDAQ、US10Y（資料待更新）。",
+                "stock_observation": "NASDAQ、US10Y 為主要關聯市場，目前尚未出現明顯同步異動，持續觀察。",
+                "linked_markets": ["NASDAQ", "US10Y"],
+                "market_evidence": [
+                    {
+                        "ticker": "NASDAQ",
+                        "name": "那斯達克綜合指數",
+                        "price": 26099.77,
+                        "change": -271.12,
+                        "change_percent": -1.03,
+                        "quote_date": "2026-09-01",
+                        "quote_source": "Yahoo Finance public daily quote",
+                        "freshness": "recent_close",
+                        "data_status": "最近收盤",
+                        "stale_used": False,
+                    },
+                    {
+                        "ticker": "US10Y",
+                        "name": "美國10年債殖利率",
+                        "price": 4.79,
+                        "change": -0.01,
+                        "change_percent": -0.21,
+                        "quote_date": "2026-09-02",
+                        "quote_source": "Yahoo Finance public daily quote",
+                        "freshness": "recent_close",
+                        "data_status": "最近收盤",
+                        "stale_used": False,
+                    },
+                ],
+            }],
+        },
         "risk": {},
         "briefing": {},
         "source_health": {"sources": []},
@@ -178,6 +217,20 @@ def test_mini_app_renders_financialjuice_evidence_from_release_fixture() -> None
                 "公開來源",
             ):
                 assert expected in rendered
+            alert = page.locator("#alert-card")
+            alert_text = alert.text_content() or ""
+            for expected in (
+                "伊朗：美國攻擊電信和通信基礎設施。",
+                "來源快訊標示重要度 10/10",
+                "可能影響美股與美國利率預期",
+                "NASDAQ",
+                "US10Y",
+                "26,099.77",
+                "4.79",
+                "最近收盤",
+            ):
+                assert expected in alert_text
+            assert "本事件暫無可顯示的公開報價" not in alert_text
             assert page.locator("#briefing-system-analysis").get_attribute("hidden") is None
 
             # A later invalid publication must keep the same validated release

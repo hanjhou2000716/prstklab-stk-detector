@@ -179,11 +179,27 @@ def test_legacy_and_malformed_optional_fields_degrade_without_raw_json():
     event = project_financialjuice_priority([row])["events"][0]
 
     assert event["event"] == "Oil supply risk"
-    assert event["why_important"] == "目前尚無額外重要性說明，等待後續公開資料核對。"
+    assert event["why_important"].startswith("來源快訊標示重要度 8/10")
+    assert "Oil supply risk" in event["why_important"]
+    assert "仍待官方或第二來源核對" in event["why_important"]
     assert event["possible_linkage"] == "尚無足夠公開資料判定連動。"
     assert event["stock_observation"] == "等待官方後續確認，並觀察相關市場是否同步反應。"
     assert "private" not in str(event)
     assert "[]" not in event["possible_linkage"]
+
+
+def test_score_only_fj_item_uses_event_and_impact_as_evidence_template():
+    row = _row(10)
+    row.update({
+        "chinese_translation": "伊朗：美國攻擊電信和通信基礎設施。",
+        "possible_impact": "可能推升能源與全球風險溢酬。",
+    })
+
+    event = project_financialjuice_priority([row])['events'][0]
+
+    assert event['why_important'].startswith('來源快訊標示重要度 10/10')
+    assert '可能推升能源與全球風險溢酬' in event['why_important']
+    assert '仍待官方或第二來源核對' in event['why_important']
 
 
 def test_importance_alone_is_audited_but_blocked_from_public_and_telegram():

@@ -91,6 +91,17 @@ def test_mini_app_has_a_detailed_alert_card_and_compact_brief_title():
     assert "event.stock_observation" in app
 
 
+def test_mini_app_alert_card_consumes_fj_semantics_and_market_evidence():
+    root = Path(__file__).resolve().parents[1]
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert "event.possible_linkage || event.possible_impact" in app
+    assert "event.market_evidence" in app
+    assert "alertLinkedMarketNames" in app
+    assert "compactQuoteMeta(item)" in app
+    assert "已連動市場：${escapeHtml(linkedMarkets)}；報價待取得" in app
+
+
 def test_mini_app_strategy_cards_render_price_change_and_strategy_emphasis():
     root = Path(__file__).resolve().parents[1]
     app = (root / "site" / "app.js").read_text(encoding="utf-8")
