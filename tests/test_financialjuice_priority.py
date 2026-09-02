@@ -1,7 +1,7 @@
 import hashlib
 
 from src.external_source_parsers import parse_financialjuice_email
-from src.financialjuice_priority import project_financialjuice_priority
+from src.financialjuice_priority import bind_financialjuice_semantic_views, project_financialjuice_priority
 
 
 def _row(importance=8):
@@ -120,6 +120,25 @@ def test_legacy_fj_label_contamination_is_split_at_projection_boundary():
     assert event["why_important"] == "市場風險偏好受壓，但仍需核對。"
     assert event["possible_linkage"] == "油價波動可能升高。"
     assert event["prstk_risk_level"] == "R2"
+
+
+def test_projection_binds_clean_semantics_to_public_observation_view():
+    row = {
+        "observation_id": "fj-public-1",
+        "source": "financialjuice",
+        "vendor_translation": "舊標題 💡 AI 評論: 舊評論",
+        "vendor_analysis": "重要性評分: 8/10 📝 繁體中文翻譯:",
+        "vendor_possible_impact": "油價可能上升。 📄 原文內容 Iran: ...",
+        "vendor_importance": 8,
+        "public_safe": True,
+    }
+    projection = project_financialjuice_priority([row])
+    view = bind_financialjuice_semantic_views([row], projection["events"])[0]
+    assert view["event"] == "舊標題"
+    assert view["vendor_translation"] == "舊標題"
+    assert view["ai_commentary"] == "舊評論"
+    assert view["vendor_possible_impact"] == "油價可能上升。"
+    assert "原文內容" not in view["vendor_possible_impact"]
 
 
 def test_compound_rich_semantics_stay_bound_to_each_item():

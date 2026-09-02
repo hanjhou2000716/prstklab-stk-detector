@@ -22,7 +22,7 @@ from src.external_observation_input import (
     merge_external_source_health,
 )
 from src.financialjuice_notification import deliver_financialjuice_event
-from src.financialjuice_priority import project_financialjuice_priority
+from src.financialjuice_priority import bind_financialjuice_semantic_views, project_financialjuice_priority
 from src.financialjuice_release_contract import validate_financialjuice_release
 from src.market_data import build_market_snapshot
 from src.railway_observation_client import load_railway_observations
@@ -254,7 +254,9 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
         return snapshot
     remote_rejected = remote_health.get("rejected_count")
     external_rejected = local_rejected + (int(remote_rejected) if isinstance(remote_rejected, (int, str, float)) else 0)
-    snapshot["external_observations"] = all_external_observations
+    snapshot["external_observations"] = bind_financialjuice_semantic_views(
+        all_external_observations, fj_projection["events"],
+    )
     # Preserve an explicit classifier input so downstream consumers cannot
     # accidentally treat editorial Creator material as FinancialJuice market
     # evidence.  This field is derived from the same release-bound set.
