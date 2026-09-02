@@ -171,12 +171,18 @@ async def _message_body(client: Any, token: str, message_id: str, payload: Mappi
         if attachment_id in seen:
             continue
         seen.add(attachment_id)
-        attachment = await _get_json(
-            client,
-            f"{MESSAGE_URL}/{message_id}/attachments/{attachment_id}",
-            token,
-            {},
-        )
+        try:
+            attachment = await _get_json(
+                client,
+                f"{MESSAGE_URL}/{message_id}/attachments/{attachment_id}",
+                token,
+                {},
+            )
+        except (GmailHistorySyncError, httpx.TimeoutException, httpx.HTTPError):
+            # An optional rich MIME part must not make the whole message
+            # disappear.  The direct text/plain part remains available and
+            # the parser will fail closed if it has no substantive content.
+            continue
         decoded = _decode(attachment.get("data"))
         if decoded:
             parts.append((mime, decoded))
