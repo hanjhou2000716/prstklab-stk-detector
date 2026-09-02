@@ -10,6 +10,7 @@ is auditable instead of silently disappearing.
 from __future__ import annotations
 
 import hashlib
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -18,6 +19,18 @@ from src.external_event_pipeline import build_external_events
 _NEUTRAL_STOCK_OBSERVATION = "等待官方後續確認，並觀察相關市場是否同步反應。"
 _NEUTRAL_IMPORTANCE = "目前尚無額外重要性說明，等待後續公開資料核對。"
 _NEUTRAL_LINKAGE = "尚無足夠公開資料判定連動。"
+_TRANSLATION_LABELS = (
+    "chinese translation", "translation", "繁體中文翻譯", "中文翻譯", "翻譯",
+)
+_ANALYSIS_LABELS = (
+    "ai commentary", "AI 評論", "AI評論", "AI analysis", "AI分析", "AI 分析",
+)
+_IMPACT_LABELS = (
+    "possible impact", "vendor impact", "impact", "可能影響", "市場影響",
+)
+_ORIGINAL_LABELS = ("original headline", "vendor original headline", "headline", "原始標題", "原文內容", "原文")
+_SECTION_STOP_LABELS = (*_ANALYSIS_LABELS, *_IMPACT_LABELS, *_ORIGINAL_LABELS, "source url", "來源連結")
+_HEADER_LABELS = (*_TRANSLATION_LABELS, "重要性評分", "importance")
 
 
 def _now() -> str:
@@ -90,6 +103,79 @@ def _first_value(views: list[dict[str, Any]], *keys: str) -> Any:
     return None
 
 
+def _label_pattern(labels: tuple[str, ...]) -> re.Pattern[str]:
+    choices = sorted({label for label in labels if label}, key=len, reverse=True)
+    return re.compile(
+        r"(?:^|[\s📝💡📄⚠️📌🔎📈📉📊🚨])(?:"
+        + "|".join(re.escape(label) for label in choices)
+        + r")\s*[:：]",
+        re.IGNORECASE,
+    )
+
+
+def _clean_semantic_text(value: Any, *, kind: str) -> str:
+    """Split known FJ labels without inventing or rewriting source text."""
+    if not isinstance(value, (str, int, float)) or isinstance(value, bool):
+        return ""
+    text = " ".join(str(value).split()).strip()
+    if not text:
+        return ""
+    if kind == "translation":
+        text = _after_label(text, _TRANSLATION_LABELS)
+        text = _before_label(text, _SECTION_STOP_LABELS)
+    elif kind == "analysis":
+        if _label_pattern(_ANALYSIS_LABELS).search(text):
+            text = _after_label(text, _ANALYSIS_LABELS)
+        elif _label_pattern(_HEADER_LABELS).search(text):
+            # A header-only legacy value is not commentary.  Do not expose it
+            # as the explanation for why an event matters.
+            return ""
+        text = _before_label(text, (*_IMPACT_LABELS, *_ORIGINAL_LABELS, "source url", "來源連結"))
+    elif kind == "impact":
+        text = _after_label(text, _IMPACT_LABELS)
+        text = _before_label(text, (*_ORIGINAL_LABELS, "source url", "來源連結"))
+    elif kind == "headline":
+        text = _after_label(text, _ORIGINAL_LABELS)
+        text = _before_label(text, (*_TRANSLATION_LABELS, *_ANALYSIS_LABELS, *_IMPACT_LABELS, "source url", "來源連結"))
+    return text.strip(" \t:：-–—📝💡📄⚠️📌🔎📈📉📊🚨")
+
+
+def _after_label(text: str, labels: tuple[str, ...]) -> str:
+    match = _label_pattern(labels).search(text)
+    return text[match.end():].lstrip() if match else text
+
+
+def _before_label(text: str, labels: tuple[str, ...]) -> str:
+    match = _label_pattern(labels).search(text)
+    return text[:match.start()] if match else text
+
+
+def _first_clean_text(views: list[dict[str, Any]], kind: str, *keys: str) -> str:
+    for view in views:
+        for key in keys:
+            value = _clean_semantic_text(view.get(key), kind=kind)
+            if value:
+                return value
+    return ""
+
+
+def _embedded_clean_text(views: list[dict[str, Any]], labels: tuple[str, ...], *, stop: tuple[str, ...]) -> str:
+    """Recover one labelled section embedded in another legacy field."""
+    for view in views:
+        for value in view.values():
+            if not isinstance(value, (str, int, float)) or isinstance(value, bool):
+                continue
+            text = " ".join(str(value).split()).strip()
+            if not _label_pattern(labels).search(text):
+                continue
+            extracted = _after_label(text, labels)
+            extracted = _before_label(extracted, stop)
+            extracted = extracted.strip(" \t:：-–—📝💡📄⚠️📌🔎📈📉📊🚨")
+            if extracted:
+                return extracted
+    return ""
+
+
 def _semantic_projection(result: dict[str, Any], row: dict[str, Any]) -> dict[str, str]:
     """Project existing FJ facts into the canonical public semantic view.
 
@@ -99,16 +185,20 @@ def _semantic_projection(result: dict[str, Any], row: dict[str, Any]) -> dict[st
     a stable, non-hallucinatory fallback.
     """
     views = _source_views(result, row)
-    event = _first_text(
-        views,
-        "chinese_translation", "vendor_translation", "translated_headline", "event",
-        "original_headline", "vendor_original_headline", "headline", "title", "summary",
+    event = _first_clean_text(
+        views, "translation", "chinese_translation", "vendor_translation",
+    ) or _first_clean_text(
+        views, "headline", "translated_headline", "original_headline",
+        "vendor_original_headline", "headline", "title", "event", "summary",
     )
-    why_important = _first_text(
-        views, "ai_commentary", "vendor_analysis", "why_important", "importance_detail",
+    why_important = _first_clean_text(
+        views, "analysis", "ai_commentary", "vendor_analysis", "why_important", "importance_detail",
+    ) or _embedded_clean_text(
+        views, _ANALYSIS_LABELS,
+        stop=(*_IMPACT_LABELS, *_ORIGINAL_LABELS, "source url", "來源連結"),
     ) or _NEUTRAL_IMPORTANCE
-    possible_linkage = _first_text(
-        views, "possible_impact", "vendor_possible_impact", "vendor_impact", "possible_linkage",
+    possible_linkage = _first_clean_text(
+        views, "impact", "possible_impact", "vendor_possible_impact", "vendor_impact", "possible_linkage",
         "market_impact", "impact",
     ) or _NEUTRAL_LINKAGE
     stock_observation = _first_text(
@@ -127,8 +217,8 @@ def _event_record(result: dict[str, Any], row: dict[str, Any], *, status: str, r
     cluster = _mapping(result.get("cluster"))
     views = _source_views(result, row)
     semantic = _semantic_projection(result, row)
-    headline = _first_text(
-        views, "original_headline", "vendor_original_headline", "headline", "title",
+    headline = _first_clean_text(
+        views, "headline", "original_headline", "vendor_original_headline", "headline", "title",
     ) or semantic["event"]
     importance = _first_value(views, "vendor_importance", "importance")
     source_url = _first_text(views, "source_url", "url")
