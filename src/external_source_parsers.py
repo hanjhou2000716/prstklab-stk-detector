@@ -65,7 +65,41 @@ def _section(body: str, labels: tuple[str, ...]) -> str:
 
 
 def _first_line(body: str) -> str:
-    return _clip(next((line.strip() for line in body.splitlines() if line.strip()), ""), 240)
+    for raw_line in body.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if re.match(r"^[^\w]{0,8}(?:importance|重要性評分|重要性|重要度)\s*[:：]", line, re.IGNORECASE):
+            continue
+        if re.match(
+            r"^[^\w]{0,8}(?:importance|重要性評分|重要性|重要度|original headline|"
+            r"原始標題|headline|translation|繁體中文翻譯|中文翻譯|翻譯|"
+            r"ai commentary|ai 評論|分析|possible impact|可能影響|市場影響|impact)"
+            r"\s*[:：]?\s*$",
+            line,
+            re.IGNORECASE,
+        ):
+            continue
+        return _clip(line, 240)
+    return ""
+
+
+def _subject_headline(subject: str) -> str:
+    """Use only substantive FJ subjects as a safe headline fallback."""
+    candidate = _clip(subject, 240)
+    if not candidate:
+        return ""
+    normalized = re.sub(r"[^a-z0-9]+", " ", candidate.casefold()).strip()
+    generic = {
+        "financialjuice",
+        "financialjuice alert",
+        "financialjuice breaking news",
+        "financialjuice news",
+        "financialjuice notification",
+    }
+    if normalized in generic or normalized.startswith("financialjuice news "):
+        return ""
+    return candidate
 
 
 def _source_domain(source_url: str) -> str:
@@ -222,7 +256,7 @@ def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_
     importance = _importance(body)
     headline = _section(body, ("original headline", "原始標題", "headline"))
     translation = _section(body, ("translation", "繁體中文翻譯", "中文翻譯", "翻譯"))
-    headline = headline or translation or _first_line(body)
+    headline = headline or translation or _subject_headline(subject) or _first_line(body)
     analysis = _section(body, ("ai commentary", "AI分析", "AI commentary", "AI 評論", "分析"))
     impact = _section(body, ("possible impact", "可能影響", "市場影響", "impact"))
     source_url = _section(body, ("source url", "來源連結", "url")) or FINANCIALJUICE_SOURCE_URL
