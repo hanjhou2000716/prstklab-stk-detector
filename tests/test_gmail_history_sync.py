@@ -112,6 +112,14 @@ class _UnavailableAttachmentClient(_AttachmentClient):
         return await super().get(url, **kwargs)
 
 
+class _DeletedMessageClient(_Client):
+    async def get(self, url, **kwargs):
+        self.calls.append(("GET", url, kwargs))
+        if url.endswith("/history"):
+            return _Response({"historyId": "h1", "history": [{"messagesAdded": [{"message": {"id": "deleted"}}]}]})
+        return _Response({"error": "message_deleted"}, status_code=404)
+
+
 def _config() -> GmailWatchConfig:
     return GmailWatchConfig(
         topic_name="projects/test/topics/gmail",
@@ -203,6 +211,14 @@ def test_sync_history_keeps_message_when_optional_text_attachment_is_unavailable
     ingress = GmailIngressService(store, _config())
     result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_UnavailableAttachmentClient))
     assert result == {"status": "healthy", "processed": 1, "failed": 0, "duplicate": 0}
+
+
+def test_sync_history_skips_deleted_history_messages(tmp_path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(last_history_id="h0")
+    ingress = GmailIngressService(store, _config())
+    result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_DeletedMessageClient))
+    assert result == {"status": "healthy", "processed": 0, "failed": 0, "duplicate": 0, "skipped": 1}
 
 
 def test_expired_history_cursor_is_cleared_and_reported_as_gap(tmp_path) -> None:
