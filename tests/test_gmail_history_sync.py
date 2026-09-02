@@ -101,6 +101,31 @@ def test_message_record_extracts_only_parser_fields() -> None:
     assert "payload" not in record
 
 
+def test_message_record_prefers_semantically_rich_html_over_plain_stub() -> None:
+    html_body = """
+    <html><body>
+      <div><strong>重要性評分:</strong><span>10/10</span></div>
+      <div><strong>📝 繁體中文翻譯:</strong><p>某公司據報正在評估合作。</p></div>
+      <div><strong>💡 AI 評論:</strong><p>目前仍未正式確認。</p></div>
+      <div><strong>⚠️ 可能影響:</strong><p>可能影響 AI 伺服器供應鏈。</p></div>
+    </body></html>
+    """
+    message = _message("multipart-rich")
+    message["payload"] = {
+        "mimeType": "multipart/alternative",
+        "headers": message["payload"]["headers"],
+        "parts": [
+            {"mimeType": "text/plain", "body": {"data": _encoded("Importance: 10/10\n📝 繁體中文翻譯:")}},
+            {"mimeType": "text/html", "body": {"data": _encoded(html_body)}},
+        ],
+    }
+
+    record = message_record(message)
+
+    assert "某公司據報正在評估合作" in record["body"]
+    assert "可能影響 AI 伺服器供應鏈" in record["body"]
+
+
 def test_message_record_decodes_rfc2047_creator_headers_before_routing() -> None:
     encoded_subject = "=?UTF-8?B?6LKh57aT55qT6KeS?="  # 財經皓角
     encoded_from = "=?UTF-8?B?6LKh57aT55qT6KeS?= <creator@example.com>"  # 財經皓角
