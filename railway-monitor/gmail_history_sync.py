@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import base64
 import binascii
+import html
+import re
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from email.header import decode_header, make_header
@@ -101,12 +103,45 @@ def _walk_text(payload: Mapping[str, Any], parts: list[tuple[str, str]] | None =
     return found
 
 
+_FJ_FIELD_MARKERS = (
+    "original headline", "vendor original headline", "headline",
+    "translation", "chinese translation", "繁體中文翻譯", "中文翻譯", "翻譯",
+    "ai commentary", "vendor analysis", "analysis", "ai 評論", "分析",
+    "possible impact", "vendor impact", "impact", "可能影響", "市場影響",
+    "importance", "重要性評分", "重要性", "重要度",
+)
+_FJ_FIELD_PATTERN = "|".join(re.escape(marker) for marker in _FJ_FIELD_MARKERS)
+
+
+def _body_semantic_score(value: str) -> tuple[int, int]:
+    """Score a MIME part by populated FJ labels, without retaining its body."""
+    flattened = html.unescape(re.sub(r"<[^>]*>", " ", str(value or "")))
+    flattened = " ".join(flattened.split())
+    score = 0
+    for match in re.finditer(
+        rf"(?:{_FJ_FIELD_PATTERN})\s*[:：]?\s*(.*?)"
+        rf"(?=(?:{_FJ_FIELD_PATTERN})\s*[:：]|$)",
+        flattened,
+        re.IGNORECASE,
+    ):
+        field_value = match.group(1).strip(" \t:-–—")
+        if field_value and re.search(r"\w|[^\W\d_]", field_value, re.UNICODE):
+            score += 1
+    return score, len(flattened)
+
+
 def _plain_body(payload: Mapping[str, Any]) -> str:
     parts = _walk_text(payload)
-    for mime, value in parts:
-        if mime == "text/plain":
-            return value[:256 * 1024]
-    return next((value[:256 * 1024] for _mime, value in parts), "")
+    plain = next((value for mime, value in parts if mime == "text/plain"), "")
+    html_parts = [value for mime, value in parts if mime == "text/html"]
+    if not plain:
+        return max(html_parts, key=_body_semantic_score, default="")[:256 * 1024]
+    if not html_parts:
+        return plain[:256 * 1024]
+    best_html = max(html_parts, key=_body_semantic_score)
+    if _body_semantic_score(best_html) > _body_semantic_score(plain):
+        return best_html[:256 * 1024]
+    return plain[:256 * 1024]
 
 
 def _published_at(value: str) -> str | None:
