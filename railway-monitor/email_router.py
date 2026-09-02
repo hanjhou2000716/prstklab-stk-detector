@@ -71,7 +71,7 @@ PARSER_VERSION = "railway-email-router-v1"
 
 _PUBLIC_FIELDS = {
     "content_origin", "content_type", "event_type", "category", "title",
-    "headline", "original_headline", "summary", "chinese_translation",
+    "headline", "original_headline", "vendor_original_headline", "summary", "chinese_translation",
     "vendor_translation", "ai_commentary", "possible_impact",
     "vendor_analysis", "vendor_possible_impact", "vendor_importance",
     "vendor_importance_present", "published_at", "source_published_at",

@@ -121,6 +121,7 @@ def test_rich_email_to_priority_to_telegram_preserves_semantics() -> None:
     })
     from src.financialjuice_priority import project_financialjuice_priority
 
+    assert parsed["public_observations"][0]["vendor_original_headline"] == "Reported AI partnership review"
     event = project_financialjuice_priority(parsed["public_observations"])["events"][0]
     telegram_text = financialjuice_caption(event)
     assert event["event"] == "某公司據報正在評估與某 AI 晶片供應商合作"
