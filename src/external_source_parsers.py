@@ -48,19 +48,46 @@ def _plain_text(body: str) -> str:
     return text.replace("\r\n", "\n").replace("\r", "\n")
 
 
+_FJ_SECTION_LABELS = (
+    "original headline", "vendor original headline", "headline", "title",
+    "translation", "chinese translation", "繁體中文翻譯", "中文翻譯", "翻譯",
+    "ai commentary", "vendor analysis", "analysis", "AI分析", "ai 評論", "AI 評論", "分析",
+    "possible impact", "vendor impact", "impact", "可能影響", "市場影響",
+    "source url", "來源連結", "url",
+)
+
+
+def _marker_pattern(labels: tuple[str, ...]) -> re.Pattern[str]:
+    choices = sorted({label for label in labels if label}, key=len, reverse=True)
+    return re.compile("|".join(re.escape(label) for label in choices), re.IGNORECASE)
+
+
 def _section(body: str, labels: tuple[str, ...]) -> str:
     lines = [line.strip() for line in body.splitlines() if line.strip()]
+    target_pattern = _marker_pattern(labels)
+    boundary_pattern = _marker_pattern(_FJ_SECTION_LABELS)
     for index, line in enumerate(lines):
-        if any(label.casefold() in line.casefold() for label in labels):
-            if "：" in line:
-                inline = line.split("：", 1)[1].strip()
-                if inline:
-                    return _clip(inline)
-            if ":" in line:
-                inline = line.split(":", 1)[1].strip()
-                if inline:
-                    return _clip(inline)
-            return _clip(" ".join(lines[index + 1:index + 4]))
+        match = target_pattern.search(line)
+        if not match:
+            continue
+        inline = re.sub(r"^[\s:：\-–—]+", "", line[match.end():])
+        # A value can legitimately begin with the same words as its label,
+        # e.g. ``可能影響: 可能影響 ...``.  Do not mistake that first token for
+        # the next field boundary; only look for a boundary after it.
+        next_marker = boundary_pattern.search(inline, 1)
+        if next_marker:
+            inline = re.sub(
+                r"[\s:：\-–—📝💡⚠️📌🔎📈📉📊🚨\ufe0f]+$", "", inline[:next_marker.start()]
+            )
+        if inline:
+            return _clip(inline)
+        following: list[str] = []
+        for candidate in lines[index + 1:index + 4]:
+            if boundary_pattern.search(candidate):
+                break
+            following.append(candidate)
+        if following:
+            return _clip(" ".join(following))
     return ""
 
 

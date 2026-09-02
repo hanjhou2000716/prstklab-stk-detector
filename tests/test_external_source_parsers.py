@@ -69,6 +69,24 @@ def test_financialjuice_html_relay_extracts_public_fields_without_markup() -> No
     assert result["public_safe"] is True
 
 
+def test_financialjuice_inline_html_labels_do_not_cross_assign_values() -> None:
+    result = parse_financialjuice_email(
+        sender="jetmaie.fintech@gmail.com",
+        subject="FinancialJuice breaking news",
+        body=(
+            "重要性評分: 10/10 📝 繁體中文翻譯: 某公司據報正在評估合作 "
+            "💡 AI 評論: 若合作成真，仍未正式確認 "
+            "⚠️ 可能影響: 可能影響 AI 伺服器供應鏈。"
+        ),
+        message_id="inline-labels-1",
+    )
+    assert result["parse_status"] == "parsed"
+    assert result["vendor_translation"] == "某公司據報正在評估合作"
+    assert result["vendor_analysis"] == "若合作成真，仍未正式確認"
+    assert result["vendor_possible_impact"] == "可能影響 AI 伺服器供應鏈。"
+    assert result["vendor_original_headline"] == "某公司據報正在評估合作"
+
+
 def test_financialjuice_parser_keeps_explicit_source_url_domain_aligned() -> None:
     result = parse_financialjuice_email(
         sender="alerts@financialjuice.com", subject="FinancialJuice alert",
