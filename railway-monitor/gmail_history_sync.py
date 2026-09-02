@@ -275,6 +275,7 @@ async def sync_gmail_history(
 
     bounded = max(1, min(MAX_PAGE_SIZE, int(max_messages)))
     processed = failed = duplicate = 0
+    failure_types: dict[str, int] = {}
     try:
         async with client_factory(timeout=config.timeout_seconds, follow_redirects=True) as client:
             token = await _access_token(config, client)
@@ -309,8 +310,10 @@ async def sync_gmail_history(
                     processed += 1
                     if result.get("status") == "duplicate":
                         duplicate += 1
-                except (GmailHistorySyncError, ValueError, TypeError, KeyError):
+                except (GmailHistorySyncError, ValueError, TypeError, KeyError) as error:
                     failed += 1
+                    failure_type = type(error).__name__
+                    failure_types[failure_type] = failure_types.get(failure_type, 0) + 1
             latest_history = str(history.get("historyId") or "").strip()
             store.save_cursor(
                 last_history_id=latest_history or history_id,
@@ -331,7 +334,10 @@ async def sync_gmail_history(
             }
         store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
         return {"status": str(error), "processed": processed, "failed": failed + 1, "duplicate": duplicate}
-    return {"status": "healthy" if failed == 0 else "degraded", "processed": processed, "failed": failed, "duplicate": duplicate}
+    result = {"status": "healthy" if failed == 0 else "degraded", "processed": processed, "failed": failed, "duplicate": duplicate}
+    if failure_types:
+        result["failure_types"] = dict(sorted(failure_types.items()))
+    return result
 
 
 __all__ = ["GmailHistorySyncError", "message_record", "sync_gmail_history"]
