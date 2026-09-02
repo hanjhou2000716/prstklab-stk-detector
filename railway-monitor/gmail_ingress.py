@@ -169,11 +169,26 @@ class GmailIngressService:
                 metadata={"content_origin": parsed["content_origin"]},
             )
             return {"accepted": False, "status": parsed["parse_status"], "observation": observation}
+        public_rows = parsed.get("public_observations")
         claimed = self.store.claim_observation(observation)
         if not claimed:
+            # A replay can carry a richer MIME part after a parser or Gmail
+            # attachment fix.  Refresh only the sanitized public projection;
+            # the private message claim and downstream notification identity
+            # remain idempotent, so enrichment cannot create a second alert.
+            refreshed_public = 0
+            for row in public_rows if isinstance(public_rows, list) else []:
+                if not isinstance(row, dict):
+                    continue
+                try:
+                    if self.store.save_public_observation(row):
+                        refreshed_public += 1
+                except (TypeError, ValueError):
+                    continue
             observation["parse_status"] = "duplicate"
-            return {"accepted": False, "status": "duplicate", "observation": observation}
-        public_rows = parsed.get("public_observations")
+            observation["public_observation_count"] = refreshed_public
+            return {"accepted": False, "status": "duplicate", "observation": observation,
+                    "public_observation_count": refreshed_public}
         saved_public = 0
         if isinstance(public_rows, list):
             for row in public_rows:

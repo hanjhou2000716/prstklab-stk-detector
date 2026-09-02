@@ -258,6 +258,44 @@ def test_ingress_accepts_replay_safe_observation_and_dedupes(tmp_path: Path) -> 
     assert store.health()["raw_content_stored"] is False
 
 
+def test_duplicate_replay_enriches_public_projection_without_second_event(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    service = GmailIngressService(store, _config())
+    base = {
+        "gmail_message_id": "m-enrich-1",
+        "sender": "alerts@financialjuice.com",
+        "subject": "FinancialJuice breaking news",
+    }
+    first = service.accept_email({
+        **base,
+        "body": (
+            "Importance: 8/10\n"
+            "Original headline: FinancialJuice 公開快訊\n"
+            "Translation: 資訊待核對。\n"
+            "AI commentary: 資訊待核對。\n"
+            "Possible impact: 資訊待核對。"
+        ),
+    })
+    second = service.accept_email({
+        **base,
+        "body": (
+            "Importance: 8/10\n"
+            "Original headline: FinancialJuice 公開快訊\n"
+            "Translation: 某公司據報正在評估合作。\n"
+            "AI commentary: 目前仍未正式確認。\n"
+            "Possible impact: 可能影響伺服器供應鏈。"
+        ),
+    })
+    assert first["accepted"] is True
+    assert second["status"] == "duplicate"
+    assert second["public_observation_count"] == 1
+    rows = store.public_observations()
+    assert len(rows) == 1
+    assert rows[0]["vendor_translation"].startswith("某公司據報")
+    assert "目前仍未正式確認" in rows[0]["vendor_analysis"]
+    assert "可能影響伺服器供應鏈" in rows[0]["vendor_possible_impact"]
+
+
 def test_different_messages_with_the_same_provider_template_are_not_collapsed(
     tmp_path: Path,
 ) -> None:
