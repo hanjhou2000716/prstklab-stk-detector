@@ -202,6 +202,20 @@ def test_score_only_fj_item_uses_event_and_impact_as_evidence_template():
     assert '仍待官方或第二來源核對' in event['why_important']
 
 
+def test_neutral_legacy_importance_is_replaced_by_fj_evidence_template():
+    row = _row(10)
+    row.update({
+        "chinese_translation": "伊朗：美國攻擊電信和通信基礎設施。",
+        "why_important": "目前尚無額外重要性說明，等待後續公開資料核對。",
+        "possible_impact": "可能推升全球風險溢酬。",
+    })
+
+    event = project_financialjuice_priority([row])['events'][0]
+
+    assert event['why_important'].startswith('來源快訊標示重要度 10/10')
+    assert '目前尚無額外重要性說明' not in event['why_important']
+
+
 def test_importance_alone_is_audited_but_blocked_from_public_and_telegram():
     row = {
         "observation_id": "fj-incomplete-1",
@@ -270,3 +284,27 @@ def test_stale_linked_market_never_confirms_sync_or_direction():
     assert event["market_sync_confirmed"] is False
     assert event["linkage_state"] == "linked_data_stale"
     assert "不做方向判定" in event["stock_observation"]
+
+
+def test_fj_market_evidence_recovers_us10y_freshness_from_date_and_price():
+    row = _row(10)
+    row.update({
+        "chinese_translation": "伊朗：美國攻擊電信和通信基礎設施。",
+        "possible_impact": "可能影響美國利率預期。",
+    })
+    snapshot = {
+        "macro_quotes": [{
+            "ticker": "US10Y",
+            "name": "美國10年債殖利率",
+            "market": "global",
+            "price": 4.79,
+            "change_percent": -0.21,
+            "quote_date": "2026-09-02",
+        }],
+    }
+
+    event = project_financialjuice_priority([row], market_snapshot=snapshot)['events'][0]
+
+    evidence = next(item for item in event['market_evidence'] if item['ticker'] == 'US10Y')
+    assert evidence['freshness'] == 'recent_close'
+    assert evidence['data_status'] == '最近收盤'

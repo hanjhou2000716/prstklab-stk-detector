@@ -64,6 +64,15 @@ def _clip(value: str, limit: int = _MAX_FIELD_CHARS) -> str:
     return f"{text[:limit - 1].rstrip()}…"
 
 
+def _is_metadata_only_analysis(value: Any) -> bool:
+    """Exclude score/placeholder labels from the public importance field."""
+    text = " ".join(str(value or "").split()).strip()
+    if not text or text == _NEUTRAL_IMPORTANCE:
+        return True
+    compact = re.sub(r"[\s📝💡📄⚠️📌🔎📈📉📊🚨]+", "", text).casefold()
+    return bool(re.fullmatch(r"(?:重要性評分|importance(?:score)?)[：:]?\d+(?:\.\d+)?(?:/10)?", compact))
+
+
 def _now() -> str:
     return datetime.now(UTC).isoformat()
 
@@ -268,6 +277,23 @@ def _market_fresh(row: dict[str, Any]) -> bool:
     )
 
 
+def _annotated_market_row(row: dict[str, Any]) -> dict[str, Any]:
+    """Recover freshness labels when a producer supplied only date and price."""
+    if row.get("freshness"):
+        item = dict(row)
+        item.setdefault("data_status", {
+            "live": "盤中",
+            "recent_close": "最近收盤",
+            "stale": "資料過期",
+            "unavailable": "暫無資料",
+        }.get(str(item["freshness"]), "時間待核對"))
+        return item
+    # Import lazily to keep the parser usable without importing the collection
+    # layer during module initialization.
+    from src.market_data import annotate_quote_freshness
+    return annotate_quote_freshness([row])[0]
+
+
 def _number(value: Any) -> float | None:
     try:
         return float(value)
@@ -295,7 +321,10 @@ def _market_intelligence(result: dict[str, Any], row: dict[str, Any], snapshot: 
     classification = _mapping(result.get("classification"))
     category = str(classification.get("category") or row.get("event_type") or row.get("category") or "").casefold()
     candidates: list[tuple[int, str, dict[str, Any]]] = []
-    available = {str(market.get("ticker") or market.get("symbol") or "").strip().upper(): market for market in _market_rows(snapshot)}
+    available = {
+        str(market.get("ticker") or market.get("symbol") or "").strip().upper(): _annotated_market_row(market)
+        for market in _market_rows(snapshot)
+    }
     for ticker, aliases, categories, tie_break in _MARKET_RULES:
         market = available.get(ticker)
         if not market:
@@ -414,7 +443,10 @@ def _semantic_projection(result: dict[str, Any], row: dict[str, Any]) -> dict[st
     ) or _NEUTRAL_LINKAGE
     why_important = _first_clean_text(
         views, "analysis", "ai_commentary", "vendor_analysis", "why_important", "importance_detail",
-    ) or _embedded_clean_text(
+    )
+    if _is_metadata_only_analysis(why_important):
+        why_important = ""
+    why_important = why_important or _embedded_clean_text(
         views, _ANALYSIS_LABELS,
         stop=(*_IMPACT_LABELS, *_ORIGINAL_LABELS, "source url", "來源連結"),
     ) or _fallback_why_important(
