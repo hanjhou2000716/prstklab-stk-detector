@@ -363,6 +363,17 @@ def test_financialjuice_marker_in_github_mail_cannot_hijack_source_route() -> No
     assert result["failure_reason"] == "source_identity_not_trusted"
 
 
+def test_configured_gmail_financialjuice_relay_is_trusted() -> None:
+    result = route_source(
+        sender="FinancialJuice <james19951209@gmail.com>",
+        subject="FinancialJuice alert",
+        body="Importance: 10/10\nOriginal headline: Oil supply update",
+    )
+    assert result["source"] == "financialjuice"
+    assert result["parse_status"] == "identified"
+    assert result["source_identity_verified"] is True
+
+
 def test_financialjuice_subject_identity_allows_canonical_fallback_parser(tmp_path: Path) -> None:
     """A real source-labelled alert need not contain every legacy field label."""
     store = EmailStore(tmp_path / "mail.sqlite3")
