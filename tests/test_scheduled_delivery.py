@@ -491,6 +491,36 @@ def test_prepare_projects_qualifying_financialjuice_into_release_event_lane(tmp_
     assert published["events"]["items"][0]["source_key"] == "financialjuice"
 
 
+def test_prepare_removes_stale_blocked_financialjuice_event_rows(tmp_path, monkeypatch):
+    records = tmp_path / "external.json"
+    records.write_text(json.dumps({"observations": []}), encoding="utf-8")
+    snapshot_path = tmp_path / "market.json"
+    monkeypatch.setenv("EXTERNAL_OBSERVATIONS_PATH", str(records))
+    monkeypatch.setattr(scheduled_delivery, "build_market_snapshot", lambda: {
+        "snapshot_id": "m-clean-1", "quotes": [], "indices": [],
+        "events": {"items": [
+            {"kind": "external_event", "source": "FinancialJuice", "source_key": "financialjuice",
+             "observation_id": "stale-fj", "public_signal_eligible": False,
+             "title": "PR run failed: FinancialJuice semantics"},
+            {"kind": "market_signal", "title": "Keep official signal"},
+        ]},
+        "source_health": {"status": "healthy", "sources": [], "data_gaps": [],
+                           "missing_source_count": 0, "runtime_failure_count": 0,
+                           "configuration_missing_count": 0, "state_counts": {},
+                           "observability": {}},
+    })
+    monkeypatch.setattr(scheduled_delivery, "build_briefing_snapshot", lambda snapshot, _slot: {
+        "external_event_notifications": snapshot.get("financialjuice_priority_decisions"),
+    })
+    monkeypatch.setattr(scheduled_delivery, "write_snapshot", lambda snapshot, path: path.write_text(json.dumps(snapshot), encoding="utf-8") or True)
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: None)
+    monkeypatch.setattr(scheduled_delivery, "briefing_correlation", lambda *_args: {"trace_id": "t", "snapshot_id": "m-clean-1", "observation_id": ""})
+    monkeypatch.setattr(scheduled_delivery, "merge_published_metadata", lambda *_args, **_kwargs: True)
+    scheduled_delivery.prepare("morning", snapshot_path)
+    published = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    assert published["events"]["items"] == [{"kind": "market_signal", "title": "Keep official signal"}]
+
+
 def test_prepare_fetches_sanitized_railway_observations_into_release(tmp_path, monkeypatch):
     snapshot_path = tmp_path / "market.json"
     monkeypatch.delenv("EXTERNAL_OBSERVATIONS_PATH", raising=False)
