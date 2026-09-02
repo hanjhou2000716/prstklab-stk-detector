@@ -739,6 +739,9 @@ def build_market_snapshot() -> dict[str, Any]:
     quotes = bind_adapter_contract(quotes, source_catalog)
     indices = bind_adapter_contract(indices, source_catalog)
     macro_quotes = bind_adapter_contract(macro_quotes, source_catalog)
+    # Adapter binding adds policy metadata but must not drop the freshness
+    # contract needed by the FJ market-linkage and release gates.
+    macro_quotes = annotate_quote_freshness(macro_quotes)
     indices = bind_market_evidence(annotate_quote_freshness(indices))
     events = build_event_snapshot(news, quotes, official_events, indices=indices)
     try:
