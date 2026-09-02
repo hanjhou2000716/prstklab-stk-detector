@@ -104,6 +104,14 @@ class _AttachmentClient(_Client):
         return _Response(message)
 
 
+class _UnavailableAttachmentClient(_AttachmentClient):
+    async def get(self, url, **kwargs):
+        if "/attachments/" in url:
+            self.calls.append(("GET", url, kwargs))
+            return _Response({"error": "attachment_unavailable"}, status_code=404)
+        return await super().get(url, **kwargs)
+
+
 def _config() -> GmailWatchConfig:
     return GmailWatchConfig(
         topic_name="projects/test/topics/gmail",
@@ -187,6 +195,14 @@ def test_sync_history_fetches_text_attachment_before_ingress(tmp_path) -> None:
     observation = store.public_observations(limit=1)[0]
     assert "某公司據報正在評估合作" in observation["vendor_translation"]
     assert "可能影響 AI 伺服器供應鏈" in observation["vendor_possible_impact"]
+
+
+def test_sync_history_keeps_message_when_optional_text_attachment_is_unavailable(tmp_path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(last_history_id="h0")
+    ingress = GmailIngressService(store, _config())
+    result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_UnavailableAttachmentClient))
+    assert result == {"status": "healthy", "processed": 1, "failed": 0, "duplicate": 0}
 
 
 def test_expired_history_cursor_is_cleared_and_reported_as_gap(tmp_path) -> None:
