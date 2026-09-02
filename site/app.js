@@ -67,9 +67,38 @@ const renderFocus = (events, externalAlert) => {
 };
 
 const formatAlertQuote = (item) => {
-  if (!item || item.price === null || item.price === undefined) return "";
+  if (!item) return "";
+  const name = item.name || item.ticker || "關聯市場";
+  if (item.price === null || item.price === undefined) {
+    const status = item.data_status || (item.freshness === "stale" ? "資料過期" : "報價待取得");
+    return `<div class="alert-quote"><b>${escapeHtml(name)}</b><strong class="flat">報價待取得</strong><small class="flat">${escapeHtml(status)}</small></div>`;
+  }
   const state = item.change_percent > 0 ? "market-up" : item.change_percent < 0 ? "market-down" : "flat";
-  return `<div class="alert-quote"><b>${escapeHtml(item.name || item.ticker)}</b><strong class="${state}">${formatNumber(item.price)}${item.currency ? ` ${escapeHtml(item.currency)}` : ""}</strong><small class="${state}">${item.change === null || item.change === undefined ? "" : `${item.change > 0 ? "+" : ""}${formatNumber(item.change)}　`}${signedPercent(item.change_percent)}</small></div>`;
+  const meta = compactQuoteMeta(item);
+  return `<div class="alert-quote"><b>${escapeHtml(name)}</b><strong class="${state}">${formatNumber(item.price)}${item.currency ? ` ${escapeHtml(item.currency)}` : ""}</strong><small class="${state}">${item.change === null || item.change === undefined ? "" : `${item.change > 0 ? "+" : ""}${formatNumber(item.change)}　`}${signedPercent(item.change_percent)}</small><em class="quote-meta">${escapeHtml(meta)}</em></div>`;
+};
+
+const alertLinkedMarketNames = {
+  NASDAQ: "那斯達克綜合指數",
+  SOX: "費城半導體指數",
+  "S&P 500": "標普 500",
+  DJIA: "道瓊工業指數",
+  US10Y: "美國10年債殖利率",
+  DXY: "美元指數",
+  WTI: "WTI 原油",
+  BRENT: "Brent 原油",
+  GOLD: "黃金期貨",
+};
+
+const alertMarketEvidence = (event) => {
+  const evidence = Array.isArray(event?.market_evidence) ? event.market_evidence : [];
+  const linked = Array.isArray(event?.linked_markets) ? event.linked_markets : [];
+  const byTicker = new Map(evidence.map((item) => [String(item?.ticker || "").toUpperCase(), item]).filter(([ticker]) => ticker));
+  linked.forEach((ticker) => {
+    const key = String(ticker || "").toUpperCase();
+    if (key && !byTicker.has(key)) byTicker.set(key, { ticker: key, name: alertLinkedMarketNames[key] || key, price: null, data_status: "報價待取得" });
+  });
+  return [...byTicker.values()].slice(0, 2);
 };
 
 const movementClass = (value) => {
@@ -320,12 +349,20 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
   const headlineNode = document.getElementById("alert-headline");
   if (headlineNode) headlineNode.className = `market-signal-title ${movementClass(headline)}`;
   setText("alert-summary", event.event || event.summary || event.title || "公開市場事件更新。");
-  setText("alert-trigger", event.importance_detail || event.why_important || event.trigger || "已核對公開訊號，等待後續市場反應。");
-  setText("alert-context", event.market_impact || event.market_context || "持續觀察公開資料。");
-  setText("alert-stock-observation", event.watch || event.stock_observation || "觀察主要市場是否出現可核對的同步變化。");
+  setText("alert-trigger", event.importance_detail || event.why_important || event.ai_commentary || event.trigger || "已核對公開訊號，等待後續市場反應。");
+  setText("alert-context", event.market_impact || event.market_context || event.possible_linkage || event.possible_impact || "已連動市場待後續公開報價確認。");
+  setText("alert-stock-observation", event.watch || event.stock_observation || event.follow_up_observation || "觀察已連動市場是否出現可核對的同步變化。");
   setText("alert-reminder", event.friendly_reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
-  const quoteItems = [event.instrument, ...(event.related || [])].filter(Boolean).slice(0, 2);
-  document.getElementById("alert-quote-grid").innerHTML = quoteItems.length ? quoteItems.map(formatAlertQuote).join("") : '<p class="empty">本事件暫無可顯示的公開報價</p>';
+  const quoteItems = [event.instrument, ...(Array.isArray(event.related) ? event.related : []), ...alertMarketEvidence(event)].filter(Boolean).slice(0, 2);
+  const linkedMarkets = Array.isArray(event.linked_markets) ? event.linked_markets.filter(Boolean).join("、") : "";
+  const quoteGrid = document.getElementById("alert-quote-grid");
+  if (quoteGrid) {
+    quoteGrid.innerHTML = quoteItems.length
+      ? quoteItems.map(formatAlertQuote).join("")
+      : linkedMarkets
+        ? `<p class="empty">已連動市場：${escapeHtml(linkedMarkets)}；報價待取得</p>`
+        : '<p class="empty">本事件尚無可核對的連動市場</p>';
+  }
   renderAlertTrace(event);
 };
 

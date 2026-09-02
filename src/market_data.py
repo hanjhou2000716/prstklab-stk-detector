@@ -719,7 +719,9 @@ def build_market_snapshot() -> dict[str, Any]:
             macro_quotes.append(get_quote(item, None))
         except Exception as exc:
             errors.append({"ticker": item["ticker"], "message": str(exc), "scope": "macro_quote"})
-    macro_quotes = [normalize_quote_record(item) for item in macro_quotes]
+    macro_quotes = annotate_quote_freshness(
+        [normalize_quote_record(item) for item in macro_quotes]
+    )
     official_events = fetch_official_events()
     risk = build_risk_snapshot()
     # Bind the current official event scan into news ranking before the

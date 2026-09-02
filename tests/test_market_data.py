@@ -47,6 +47,22 @@ def test_macro_references_are_kept_out_of_main_market_index_list():
     assert not {item["ticker"] for item in MACRO_REFERENCES} & {item["ticker"] for item in MARKET_INDICES}
 
 
+def test_macro_quote_freshness_accepts_a_current_us10y_close():
+    annotated = annotate_quote_freshness(
+        [{
+            "ticker": "US10Y",
+            "market": "global",
+            "price": 4.79,
+            "change_percent": -0.21,
+            "quote_date": "2026-09-02",
+        }],
+        now=datetime(2026, 9, 2, 22, 0, tzinfo=ZoneInfo("Asia/Taipei")),
+    )
+
+    assert annotated[0]["freshness"] == "recent_close"
+    assert annotated[0]["data_status"] == "最近收盤"
+
+
 def test_intraday_quote_uses_latest_daily_close_when_today_daily_bar_is_not_available():
     item = {"symbol": "^IXIC", "ticker": "NASDAQ", "name": "那斯達克", "market": "us", "currency": "點"}
     daily = pd.Series([100.0, 105.0], index=pd.to_datetime(["2026-07-23", "2026-07-24"]))

@@ -20,6 +20,7 @@ _NEUTRAL_STOCK_OBSERVATION = "等待官方後續確認，並觀察相關市場�
 _NEUTRAL_IMPORTANCE = "目前尚無額外重要性說明，等待後續公開資料核對。"
 _NEUTRAL_LINKAGE = "尚無足夠公開資料判定連動。"
 _INCOMPLETE_EVENT = "資訊待核對"
+_MAX_FIELD_CHARS = 600
 _GENERIC_EVENT_VALUES = frozenset({
     "financialjuice 公開快訊", "financialjuice|financialjuice 公開快訊",
     "資訊待核對", "information pending", "pending information",
@@ -54,6 +55,13 @@ _ORIGINAL_CONTENT_PATTERN = re.compile(
     r"(?:^|[\s📄])(?:原文內容|原文)(?:\s*[:：]|\s+(?=[A-Za-z]))",
     re.IGNORECASE,
 )
+
+
+def _clip(value: str, limit: int = _MAX_FIELD_CHARS) -> str:
+    text = " ".join(str(value or "").split()).strip()
+    if len(text) <= limit:
+        return text
+    return f"{text[:limit - 1].rstrip()}…"
 
 
 def _now() -> str:
@@ -201,6 +209,22 @@ def _material_event_text(views: list[dict[str, Any]]) -> str:
         _first_clean_text(views, "headline", "translated_headline", "original_headline", "vendor_original_headline", "headline", "title", "event"),
     )
     return next((text for text in candidates if not _is_generic_event(text)), "")
+
+
+def _fallback_why_important(event: str, linkage: str, importance: Any) -> str:
+    """Explain a score-only FJ item from its existing public-safe evidence."""
+    if _is_generic_event(event):
+        return _NEUTRAL_IMPORTANCE
+    score = (
+        f"來源快訊標示重要度 {str(importance).strip()}/10"
+        if importance is not None and str(importance).strip()
+        else "來源快訊已提供事件內容"
+    )
+    basis = linkage if linkage and linkage != _NEUTRAL_LINKAGE else f"事件內容「{event}」"
+    return _clip(
+        f"{score}；來源影響評估：{basis}；仍待官方或第二來源核對。",
+        limit=_MAX_FIELD_CHARS,
+    )
 
 
 def _market_rows(snapshot: dict[str, Any] | None) -> list[dict[str, Any]]:
@@ -384,16 +408,20 @@ def _semantic_projection(result: dict[str, Any], row: dict[str, Any]) -> dict[st
     """
     views = _source_views(result, row)
     event = _material_event_text(views)
+    possible_linkage = _first_clean_text(
+        views, "impact", "possible_impact", "vendor_possible_impact", "vendor_impact", "possible_linkage",
+        "market_impact", "impact",
+    ) or _NEUTRAL_LINKAGE
     why_important = _first_clean_text(
         views, "analysis", "ai_commentary", "vendor_analysis", "why_important", "importance_detail",
     ) or _embedded_clean_text(
         views, _ANALYSIS_LABELS,
         stop=(*_IMPACT_LABELS, *_ORIGINAL_LABELS, "source url", "來源連結"),
-    ) or _NEUTRAL_IMPORTANCE
-    possible_linkage = _first_clean_text(
-        views, "impact", "possible_impact", "vendor_possible_impact", "vendor_impact", "possible_linkage",
-        "market_impact", "impact",
-    ) or _NEUTRAL_LINKAGE
+    ) or _fallback_why_important(
+        event,
+        possible_linkage,
+        _first_value(views, "vendor_importance", "importance"),
+    )
     stock_observation = _first_text(
         views, "stock_observation", "watch", "stock_watch", "follow_up_observation",
     ) or _NEUTRAL_STOCK_OBSERVATION
