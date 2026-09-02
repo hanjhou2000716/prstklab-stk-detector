@@ -202,11 +202,24 @@ def select_official_event(
             continue
         candidates.append(event)
     if candidates:
-        def _candidate_key(event: dict[str, Any]) -> tuple[int, int, int]:
+        def _candidate_key(event: dict[str, Any]) -> tuple[int, int, int, int, int]:
             risk = canonical_prstk_risk_level(event)
             risk_rank = {"R0": 0, "R1": 0, "R2": 1, "R3": 1, "R4": 2}.get(risk, 0)
             official = int(bool(event.get("official_confirmed") or event.get("official_confirmation") or event.get("source_tier") == "official"))
-            return (taiwan_investor_priority(event, now=now), -official, -risk_rank)
+            # A qualifying FinancialJuice row is an explicit vendor-priority
+            # exception. Keep that notification priority separate from the
+            # PRStK risk grade, but let it win the shared candidate queue so
+            # an unrelated eligible event cannot starve the FJ lane.
+            vendor_priority = int(
+                str(event.get("source_key") or event.get("source") or "").strip().casefold() == "financialjuice"
+                and event.get("vendor_priority_notification") is True
+                and str(event.get("notification_status") or "").strip().casefold() in {"eligible", "ready"}
+            )
+            try:
+                vendor_importance = int(float(str(event.get("vendor_importance"))))
+            except (TypeError, ValueError):
+                vendor_importance = 0
+            return (0 if vendor_priority else 1, taiwan_investor_priority(event, now=now), -vendor_importance, -official, -risk_rank)
         candidates.sort(key=_candidate_key)
         return candidates[0]
 

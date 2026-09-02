@@ -95,6 +95,36 @@ def test_monitor_selects_threshold_price_signal_when_no_official_release_exists(
     assert build_official_event_brief(event).startswith("🔴 TAIEX｜")
 
 
+def test_monitor_prioritizes_eligible_financialjuice_vendor_priority_event():
+    snapshot = {
+        "official_events": {"items": []},
+        "events": {"items": [
+            {
+                "kind": "major_event",
+                "source_key": "gdacs",
+                "notification_status": "eligible",
+                "title": "Unrelated eligible event",
+                "prstk_risk_level": "R1",
+            },
+            {
+                "kind": "external_event",
+                "source": "FinancialJuice",
+                "source_key": "financialjuice",
+                "notification_status": "eligible",
+                "vendor_importance": 10,
+                "vendor_priority_notification": True,
+                "title": "Iran telecom infrastructure attack",
+                "prstk_risk_level": "R0",
+            },
+        ]},
+    }
+
+    selected = select_official_event(snapshot)
+
+    assert selected is not None
+    assert selected["source_key"] == "financialjuice"
+
+
 def test_realtime_external_projection_adds_eligible_fj_to_shared_event_lane(monkeypatch, tmp_path):
     source = tmp_path / "observations.json"
     monkeypatch.setattr(monitor, "external_observations_path", lambda: source)
