@@ -384,29 +384,29 @@ def bind_financialjuice_semantic_views(
         if not isinstance(row, dict) or _source(row) != "financialjuice":
             bound.append(dict(row) if isinstance(row, dict) else row)
             continue
-        event = None
+        matched_event: dict[str, Any] | None = None
         for key in ("item_id", "observation_id", "notification_id"):
             value = str(row.get(key) or "").strip()
             if value and value in by_key:
-                event = by_key[value]
+                matched_event = by_key[value]
                 break
         view = dict(row)
-        if event:
+        if matched_event:
             for key in ("event", "why_important", "possible_linkage", "stock_observation"):
-                value = event.get(key)
-                if isinstance(value, str) and value.strip():
-                    view[key] = value
-            event_text = event.get("event")
+                semantic_value = matched_event.get(key)
+                if isinstance(semantic_value, str) and semantic_value.strip():
+                    view[key] = semantic_value
+            event_text = matched_event.get("event")
             if isinstance(event_text, str) and event_text.strip():
                 # Keep legacy names usable for older Mini App bundles, but
                 # expose only the cleaned semantic section.
-                view["title"] = event.get("title") or event_text
+                view["title"] = matched_event.get("title") or event_text
                 view["headline"] = event_text
                 view["chinese_translation"] = event_text
                 view["vendor_translation"] = event_text
-            why = event.get("why_important")
-            linkage = event.get("possible_linkage")
-            watch = event.get("stock_observation")
+            why = matched_event.get("why_important")
+            linkage = matched_event.get("possible_linkage")
+            watch = matched_event.get("stock_observation")
             if isinstance(why, str) and why.strip():
                 view["ai_commentary"] = why
                 view["vendor_analysis"] = why
