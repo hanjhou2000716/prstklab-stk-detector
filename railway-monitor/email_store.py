@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
@@ -28,9 +29,14 @@ _SEMANTIC_FIELDS = (
     "ai_commentary", "vendor_analysis", "possible_impact",
     "vendor_possible_impact", "vendor_impact",
 )
+_SEMANTIC_LABELS = (
+    "original headline", "headline", "translation", "chinese translation",
+    "ai commentary", "ai 評論", "AI評論", "analysis", "分析",
+    "possible impact", "可能影響", "市場影響", "原文內容", "原文", "重要性評分",
+)
 
 
-def _semantic_quality(payload: dict[str, Any]) -> tuple[int, int]:
+def _semantic_quality(payload: dict[str, Any]) -> tuple[int, int, int]:
     """Rank sanitized observations so a replay can enrich, never erase, facts."""
     values: list[str] = []
     for field in _SEMANTIC_FIELDS:
@@ -39,7 +45,12 @@ def _semantic_quality(payload: dict[str, Any]) -> tuple[int, int]:
             text = " ".join(str(value).split()).strip()
             if text:
                 values.append(text)
-    return len(values), sum(len(value) for value in values)
+    noise = sum(
+        len(re.findall(re.escape(label) + r"\s*[:：]", value, flags=re.IGNORECASE))
+        for value in values
+        for label in _SEMANTIC_LABELS
+    )
+    return len(values), -noise, sum(len(value) for value in values)
 
 
 class EmailStore:

@@ -50,8 +50,9 @@ def _plain_text(body: str) -> str:
 
 _FJ_SECTION_LABELS = (
     "original headline", "vendor original headline", "headline", "title",
+    "original content", "原文內容", "原文",
     "translation", "chinese translation", "繁體中文翻譯", "中文翻譯", "翻譯",
-    "ai commentary", "vendor analysis", "analysis", "AI分析", "ai 評論", "AI 評論", "分析",
+    "ai commentary", "vendor analysis", "analysis", "AI分析", "AI 分析", "ai 評論", "AI 評論", "AI評論", "分析",
     "possible impact", "vendor impact", "impact", "可能影響", "市場影響",
     "source url", "來源連結", "url",
 )
@@ -77,7 +78,7 @@ def _section(body: str, labels: tuple[str, ...]) -> str:
         next_marker = boundary_pattern.search(inline, 1)
         if next_marker:
             inline = re.sub(
-                r"[\s:：\-–—📝💡⚠️📌🔎📈📉📊🚨\ufe0f]+$", "", inline[:next_marker.start()]
+                r"[\s:：\-–—📝💡⚠️📄📌🔎📈📉📊🚨\ufe0f]+$", "", inline[:next_marker.start()]
             )
         if inline:
             return _clip(inline)
@@ -281,10 +282,16 @@ def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_
     if compound.get("parse_status") == "compound_unresolved":
         return compound
     importance = _importance(body)
-    headline = _section(body, ("original headline", "原始標題", "headline"))
+    headline = _section(
+        body,
+        ("original headline", "原始標題", "headline", "original content", "原文內容", "原文"),
+    )
     translation = _section(body, ("translation", "繁體中文翻譯", "中文翻譯", "翻譯"))
     headline = headline or translation or _subject_headline(subject) or _first_line(body)
-    analysis = _section(body, ("ai commentary", "AI分析", "AI commentary", "AI 評論", "分析"))
+    analysis = _section(
+        body,
+        ("ai commentary", "AI分析", "AI commentary", "AI 評論", "AI評論", "分析"),
+    )
     impact = _section(body, ("possible impact", "可能影響", "市場影響", "impact"))
     source_url = _section(body, ("source url", "來源連結", "url")) or FINANCIALJUICE_SOURCE_URL
     if not headline:

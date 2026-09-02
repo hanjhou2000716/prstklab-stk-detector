@@ -87,6 +87,26 @@ def test_financialjuice_inline_html_labels_do_not_cross_assign_values() -> None:
     assert result["vendor_original_headline"] == "某公司據報正在評估合作"
 
 
+def test_financialjuice_compact_live_labels_preserve_original_translation_analysis_and_impact() -> None:
+    """Live relays may omit spaces/newlines around icon-labelled sections."""
+    result = parse_financialjuice_email(
+        sender="jetmaie.fintech@gmail.com",
+        subject="📰 FinancialJuice 新聞 (09-02 13:58)",
+        body=(
+            "重要性評分: 8/10 📝 繁體中文翻譯: 美伊衝突再度升級，油價突破90美元。"
+            " 💡 AI評論: 市場風險偏好受壓，但後續仍需核對。"
+            " 📄 原文內容: Iran says there are no nuclear activities."
+            " ⚠️ 可能影響: 油價與高估值科技股波動可能升高。"
+        ),
+        message_id="compact-live-labels-1",
+    )
+    assert result["parse_status"] == "parsed"
+    assert result["vendor_original_headline"] == "Iran says there are no nuclear activities."
+    assert result["vendor_translation"] == "美伊衝突再度升級，油價突破90美元。"
+    assert result["vendor_analysis"] == "市場風險偏好受壓，但後續仍需核對。"
+    assert result["vendor_possible_impact"] == "油價與高估值科技股波動可能升高。"
+
+
 def test_financialjuice_parser_keeps_explicit_source_url_domain_aligned() -> None:
     result = parse_financialjuice_email(
         sender="alerts@financialjuice.com", subject="FinancialJuice alert",

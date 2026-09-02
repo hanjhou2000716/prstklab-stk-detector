@@ -105,6 +105,23 @@ def test_rich_source_fields_win_over_legacy_generic_canonical_values():
     assert event["possible_linkage"] == row["possible_impact"]
 
 
+def test_legacy_fj_label_contamination_is_split_at_projection_boundary():
+    row = _row(8)
+    row.update({
+        "vendor_translation": "美伊衝突升級。 💡 AI 評論: 市場風險偏好受壓，但仍需核對。",
+        "vendor_analysis": "重要性評分: 8/10 📝 繁體中文翻譯:",
+        "vendor_possible_impact": "油價波動可能升高。 📄 原文內容 Iran says no nuclear activity.",
+    })
+
+    event = project_financialjuice_priority([row])["events"][0]
+
+    assert event["event"] == "美伊衝突升級。"
+    assert event["title"] == "Oil supply risk"
+    assert event["why_important"] == "市場風險偏好受壓，但仍需核對。"
+    assert event["possible_linkage"] == "油價波動可能升高。"
+    assert event["prstk_risk_level"] == "R2"
+
+
 def test_compound_rich_semantics_stay_bound_to_each_item():
     parsed = parse_financialjuice_email(
         sender="alerts@financialjuice.com",
