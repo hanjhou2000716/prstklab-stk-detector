@@ -184,11 +184,12 @@ def _body_selection_summary(parts: list[tuple[str, str]], selected: str) -> dict
     }
 
 
-def _public_projection_summary(result: Mapping[str, Any]) -> dict[str, int]:
+def _public_projection_summary(result: Mapping[str, Any]) -> dict[str, Any]:
     """Summarise parsed public fields without returning any email text."""
     return {
         "observation_count": int(result.get("public_observation_count") or 0),
         "rich_observation_count": int(result.get("public_rich_observation_count") or 0),
+        "semantic_field_counts": result.get("public_semantic_field_counts") or {},
     }
 
 

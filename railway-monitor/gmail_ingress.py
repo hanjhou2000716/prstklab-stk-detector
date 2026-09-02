@@ -158,6 +158,17 @@ class GmailIngressService:
                 "vendor_original_headline", "vendor_translation", "vendor_analysis", "vendor_possible_impact",
             ))
         )
+        semantic_field_counts = {
+            key: sum(
+                1
+                for row in (public_rows if isinstance(public_rows, list) else [])
+                if isinstance(row, dict) and str(row.get(key) or "").strip()
+            )
+            for key in (
+                "original_headline", "chinese_translation", "ai_commentary", "possible_impact",
+                "vendor_original_headline", "vendor_translation", "vendor_analysis", "vendor_possible_impact",
+            )
+        }
         observation = {
             "observation_id": f"email-{message_id or parsed['template_fingerprint'][:16]}",
             "gmail_message_id": message_id,
@@ -168,6 +179,7 @@ class GmailIngressService:
             "content_origin": parsed["content_origin"],
             "content_type": parsed["content_type"],
             "public_rich_observation_count": public_rich_count,
+            "public_semantic_field_counts": semantic_field_counts,
         }
         if parsed["parse_status"] in DLQ_STATES:
             self.store.record_dlq(
@@ -201,6 +213,7 @@ class GmailIngressService:
                 "accepted": False, "status": "duplicate", "observation": observation,
                 "public_observation_count": refreshed_public,
                 "public_rich_observation_count": public_rich_count,
+                "public_semantic_field_counts": semantic_field_counts,
             }
         saved_public = 0
         if isinstance(public_rows, list):
@@ -222,6 +235,7 @@ class GmailIngressService:
             "accepted": True, "status": parsed["parse_status"], "observation": observation,
             "public_observation_count": saved_public,
             "public_rich_observation_count": public_rich_count,
+            "public_semantic_field_counts": semantic_field_counts,
         }
 
     def health(self) -> dict[str, Any]:
