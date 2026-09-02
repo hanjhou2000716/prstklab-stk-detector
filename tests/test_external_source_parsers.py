@@ -20,6 +20,28 @@ def test_financialjuice_parser_keeps_vendor_importance_separate() -> None:
     assert "body" not in result
 
 
+def test_financialjuice_parser_uses_substantive_subject_when_body_is_stub() -> None:
+    result = parse_financialjuice_email(
+        sender="alerts@financialjuice.com",
+        subject="FJ: Company evaluates strategic partnership",
+        body="Importance: 8/10\n📝 繁體中文翻譯:",
+        message_id="subject-headline-1",
+    )
+    assert result["parse_status"] == "parsed"
+    assert result["vendor_original_headline"] == "FJ: Company evaluates strategic partnership"
+
+
+def test_financialjuice_parser_rejects_generic_subject_and_metadata_as_headline() -> None:
+    result = parse_financialjuice_email(
+        sender="alerts@financialjuice.com",
+        subject="FinancialJuice breaking news",
+        body="Importance: 8/10\n📝 繁體中文翻譯:",
+        message_id="subject-headline-2",
+    )
+    assert result["parse_status"] == "parse_failed"
+    assert result["failure_reason"] == "missing_headline"
+
+
 def test_financialjuice_html_relay_extracts_public_fields_without_markup() -> None:
     """The live Gmail relay is HTML-only; tags must never become an event title."""
     result = parse_financialjuice_email(
