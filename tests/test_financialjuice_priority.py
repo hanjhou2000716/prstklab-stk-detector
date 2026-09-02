@@ -204,6 +204,17 @@ def test_importance_alone_is_audited_but_blocked_from_public_and_telegram():
     assert public_financialjuice_observations([row], projection["events"]) == []
 
 
+def test_legacy_fj_row_without_verified_source_identity_is_audit_only():
+    row = _row(10)
+    row["source_identity_verified"] = False
+    projection = project_financialjuice_priority([row], market_snapshot={"indices": []})
+    event = projection["events"][0]
+    assert projection["decisions"][0]["notification_status"] == "content_incomplete"
+    assert "source_identity_unverified" in projection["decisions"][0]["notification_reason"]
+    assert event["public_signal_eligible"] is False
+    assert public_financialjuice_observations([row], projection["events"]) == []
+
+
 def test_fj_market_linkage_is_deterministic_and_separates_sync_from_linked():
     snapshot = {
         "instrument_master": {"instruments": [

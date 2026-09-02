@@ -37,6 +37,7 @@ SAFE_FIELDS = {
     "tickers", "parse_status", "parser_version", "event_cluster_key", "item_id", "content_hash",
     "candidate_event_type", "public_safe",
     "creator_id", "creator_name", "episode_key", "episode_id", "episode_title",
+    "source_identity_verified",
     "key_takeaways", "creator_market_view", "creator_strategy_view", "creator_risk_view",
     "verification_state", "evidence_alignment", "prstk_correlation", "summary_image_available",
     "summary_image_hash", "source_adapter", "template_fingerprint", "provider_fields",
@@ -75,6 +76,10 @@ def _safe_record(record: dict[str, Any]) -> dict[str, Any] | None:
     safe["content_origin"] = source
     safe["observation_id"] = observation_id
     safe["public_safe"] = True
+    if source == "financialjuice":
+        # Rows from before the transport identity gate are retained for audit,
+        # but explicitly unverified so they cannot become public signals.
+        safe["source_identity_verified"] = record.get("source_identity_verified") is True
     return safe
 
 

@@ -95,6 +95,7 @@ _PUBLIC_FIELDS = {
     "summary_image_hash", "source_adapter", "template_fingerprint",
     "provider_fields", "provider_fields_missing", "required_fields_present",
     "attribution", "event_cluster_key", "compound", "item_count",
+    "source_identity_verified",
 }
 
 
@@ -214,6 +215,7 @@ def route_source(*, sender: str, subject: str, body: str, attachments: list[dict
         "parse_status": status,
         "failure_reason": reason,
         "template_fingerprint": template_fingerprint(subject, body, attachments),
+        "source_identity_verified": source == "financialjuice" and _trusted_financialjuice_sender(sender),
     }
 
 
@@ -277,6 +279,8 @@ def parse_email(record: dict[str, Any]) -> dict[str, Any]:
             )
             row["source"] = str(candidate.get("content_origin") or route["source"])
             row["content_origin"] = row["source"]
+            if row["source"].casefold() == "financialjuice":
+                row["source_identity_verified"] = route.get("source_identity_verified") is True
             row["public_safe"] = True
             row["parse_status"] = "normalized"
             public_rows.append(row)

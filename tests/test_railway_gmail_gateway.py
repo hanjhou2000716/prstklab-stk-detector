@@ -379,6 +379,19 @@ def test_financialjuice_subject_identity_allows_canonical_fallback_parser(tmp_pa
     assert store.health()["source_health"]["financialjuice"]["failed_count"] == 0
 
 
+def test_legitimate_financialjuice_projection_carries_verified_identity(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    service = GmailIngressService(store, _config())
+    result = service.accept_email({
+        "gmail_message_id": "fj-identity-1",
+        "sender": "alerts@financialjuice.com",
+        "subject": "FinancialJuice alert",
+        "body": "Importance: 8/10\nOriginal headline: Oil supply update",
+    })
+    assert result["accepted"] is True
+    assert store.public_observations(limit=1)[0]["source_identity_verified"] is True
+
+
 def test_creator_display_name_allows_legacy_fallback_without_template_labels(tmp_path: Path) -> None:
     """Known Creator mail is retained for review while parser labels evolve."""
     store = EmailStore(tmp_path / "mail.sqlite3")

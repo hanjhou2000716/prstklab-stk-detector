@@ -433,7 +433,7 @@ def test_prepare_binds_sanitized_external_observations_to_snapshot(tmp_path, mon
     records = tmp_path / "external.json"
     records.write_text(json.dumps({"observations": [{
         "observation_id": "fj-1", "source": "financialjuice",
-        "headline": "Public headline", "public_safe": True,
+        "headline": "Public headline", "source_identity_verified": True, "public_safe": True,
     }]}), encoding="utf-8")
     snapshot_path = tmp_path / "market.json"
     monkeypatch.setenv("EXTERNAL_OBSERVATIONS_PATH", str(records))
@@ -463,7 +463,7 @@ def test_prepare_projects_qualifying_financialjuice_into_release_event_lane(tmp_
     records.write_text(json.dumps({"observations": [{
         "observation_id": "fj-8", "item_id": "item-8", "source": "financialjuice",
         "original_headline": "Oil supply risk", "event_type": "energy", "vendor_importance": 8,
-        "source_url": "https://financialjuice.com/item/8", "public_safe": True,
+        "source_url": "https://financialjuice.com/item/8", "source_identity_verified": True, "public_safe": True,
     }]}), encoding="utf-8")
     snapshot_path = tmp_path / "market.json"
     monkeypatch.setenv("EXTERNAL_OBSERVATIONS_PATH", str(records))
@@ -529,7 +529,7 @@ def test_prepare_fetches_sanitized_railway_observations_into_release(tmp_path, m
 def test_prepare_keeps_local_fallback_when_railway_export_fails(tmp_path, monkeypatch):
     records = tmp_path / "external.json"
     records.write_text(json.dumps({"observations": [{
-        "observation_id": "fj-local", "source": "financialjuice", "public_safe": True,
+        "observation_id": "fj-local", "source": "financialjuice", "original_headline": "Local oil update", "source_identity_verified": True, "public_safe": True,
     }]}), encoding="utf-8")
     snapshot_path = tmp_path / "market.json"
     monkeypatch.setenv("EXTERNAL_OBSERVATIONS_PATH", str(records))
