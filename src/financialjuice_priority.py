@@ -360,4 +360,64 @@ def project_financialjuice_priority(
     return {"events": events, "decisions": decisions}
 
 
-__all__ = ["project_financialjuice_priority"]
+def bind_financialjuice_semantic_views(
+    observations: list[dict[str, Any]],
+    events: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Attach canonical semantics to public observation rows.
+
+    The reviewed row remains the lineage record, while public consumers
+    receive the same semantic fields used by Telegram.  This prevents legacy
+    vendor fields containing section labels from leaking into the Mini App
+    without creating a second event or delivery path.
+    """
+    by_key: dict[str, dict[str, Any]] = {}
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        for key in ("item_id", "observation_id", "notification_id"):
+            value = str(event.get(key) or "").strip()
+            if value:
+                by_key[value] = event
+    bound: list[dict[str, Any]] = []
+    for row in observations:
+        if not isinstance(row, dict) or _source(row) != "financialjuice":
+            bound.append(dict(row) if isinstance(row, dict) else row)
+            continue
+        matched_event: dict[str, Any] | None = None
+        for key in ("item_id", "observation_id", "notification_id"):
+            value = str(row.get(key) or "").strip()
+            if value and value in by_key:
+                matched_event = by_key[value]
+                break
+        view = dict(row)
+        if matched_event:
+            for key in ("event", "why_important", "possible_linkage", "stock_observation"):
+                semantic_value = matched_event.get(key)
+                if isinstance(semantic_value, str) and semantic_value.strip():
+                    view[key] = semantic_value
+            event_text = matched_event.get("event")
+            if isinstance(event_text, str) and event_text.strip():
+                # Keep legacy names usable for older Mini App bundles, but
+                # expose only the cleaned semantic section.
+                view["title"] = matched_event.get("title") or event_text
+                view["headline"] = event_text
+                view["chinese_translation"] = event_text
+                view["vendor_translation"] = event_text
+            why = matched_event.get("why_important")
+            linkage = matched_event.get("possible_linkage")
+            watch = matched_event.get("stock_observation")
+            if isinstance(why, str) and why.strip():
+                view["ai_commentary"] = why
+                view["vendor_analysis"] = why
+            if isinstance(linkage, str) and linkage.strip():
+                view["possible_impact"] = linkage
+                view["vendor_possible_impact"] = linkage
+            if isinstance(watch, str) and watch.strip():
+                view["stock_observation"] = watch
+                view["watch"] = watch
+        bound.append(view)
+    return bound
+
+
+__all__ = ["bind_financialjuice_semantic_views", "project_financialjuice_priority"]
