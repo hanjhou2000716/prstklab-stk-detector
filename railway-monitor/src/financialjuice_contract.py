@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/financialjuice_contract.py
-# Canonical source SHA256: 7d3964e0106a59d1014597d759d29591a61bc12de17d97bae302b09c6f0746ff
+# Canonical source SHA256: b4bd94915c3faf0b735b73cd939feba7fbb1733795634e1e9ef610f76b95bb5a
 
 """FinancialJuice observation contract and conservative PRStK risk mapping.
 
@@ -24,6 +24,7 @@ from src.external_event_risk import score_prstk_risk
 VENDOR_IMPORTANCE_MAX = 10
 PARSER_VERSION = "financialjuice-contract-v2"
 VENDOR_PRIORITY_THRESHOLD = 8
+FINANCIALJUICE_SOURCE_URL = "https://www.financialjuice.com/"
 
 
 @dataclass(frozen=True)
@@ -125,7 +126,9 @@ def financialjuice_item_id(message_id: str, index: int, content_hash: str) -> st
 
 def normalize_financialjuice(record: dict[str, Any]) -> dict[str, Any]:
     """Return public-safe vendor facts and a pending/confirmed risk decision."""
-    source_url = _text(record.get("source_url") or record.get("url"))
+    # A relay email may not contain an article permalink. Keep the source
+    # trace auditable at the vendor level without inventing a story URL.
+    source_url = _text(record.get("source_url") or record.get("url")) or FINANCIALJUICE_SOURCE_URL
     headline = _text(record.get("original_headline") or record.get("vendor_original_headline") or record.get("headline"))
     vendor_importance = _importance(record.get("importance", record.get("vendor_importance")))
     official_confirmed = bool(record.get("official_confirmed"))
@@ -151,7 +154,7 @@ def normalize_financialjuice(record: dict[str, Any]) -> dict[str, Any]:
         "content_origin": "financialjuice",
         "source_tier": "discovery",
         "source_url": source_url,
-        "source_domain": _text(record.get("source_domain")),
+        "source_domain": _text(record.get("source_domain")) or "financialjuice.com",
         "published_at": _time(record.get("published_at") or record.get("source_published_at")),
         "fetched_at": _time(record.get("fetched_at")) or datetime.now(UTC).isoformat(),
         "vendor_importance": vendor_importance,

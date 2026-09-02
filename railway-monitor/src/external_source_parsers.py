@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/external_source_parsers.py
-# Canonical source SHA256: bcebd7a430a6b0831c10ac60a7ab5dd92e2e241e7465f3722f5e1ad3706dacf9
+# Canonical source SHA256: 0671e8b0733cdd6c52f528686fc50f48cbfdecc0beee956ed0f1f03306705be6
 
 """Deterministic parsers for sanitized external intelligence mail.
 
@@ -15,6 +15,7 @@ from __future__ import annotations
 import hashlib
 import re
 from typing import Any
+from urllib.parse import urlsplit
 
 from bs4 import BeautifulSoup
 
@@ -22,7 +23,7 @@ from src.creator_provider_registry import is_known_creator
 from src.creator_source_adapters import parse_creator_template
 from src.email_intelligence import normalize_creator_insight, route_email_source
 from src.event_classifier import classify_event_fields
-from src.financialjuice_contract import normalize_financialjuice_item
+from src.financialjuice_contract import FINANCIALJUICE_SOURCE_URL, normalize_financialjuice_item
 
 MAX_FIELD_CHARS = 600
 DLQ_STATES = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
@@ -70,6 +71,10 @@ def _section(body: str, labels: tuple[str, ...]) -> str:
 
 def _first_line(body: str) -> str:
     return _clip(next((line.strip() for line in body.splitlines() if line.strip()), ""), 240)
+
+
+def _source_domain(source_url: str) -> str:
+    return (urlsplit(source_url).hostname or "").lower().removeprefix("www.")
 
 
 def _importance(body: str) -> int | None:
@@ -225,6 +230,7 @@ def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_
     headline = headline or translation or _first_line(body)
     analysis = _section(body, ("ai commentary", "AI分析", "AI commentary", "AI 評論", "分析"))
     impact = _section(body, ("possible impact", "可能影響", "市場影響", "impact"))
+    source_url = _section(body, ("source url", "來源連結", "url")) or FINANCIALJUICE_SOURCE_URL
     if not headline:
         return {"parse_status": "parse_failed", "failure_reason": "missing_headline", "message_id": message_id}
     return {
@@ -239,6 +245,8 @@ def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_
         "vendor_translation": translation,
         "vendor_analysis": analysis,
         "vendor_possible_impact": impact,
+        "source_url": source_url,
+        "source_domain": _source_domain(source_url),
         "attribution": "FinancialJuice",
         "public_safe": True,
     }
