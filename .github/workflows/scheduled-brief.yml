@@ -301,6 +301,16 @@ jobs:
           FAILED_RECIPIENT_HASHES: ${{ steps.send_brief.outputs.failed_recipient_hashes }}
           FINANCIALJUICE_TRACE: ${{ steps.send_brief.outputs.financialjuice_delivery_trace }}
         run: python -m src.delivery_callback
+      - name: Persist notification ledger state after delivery
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python -m src.data_release
+          --publish
+          --branch "$DATA_RELEASE_BRANCH"
+          --include site/data
+          --message "chore: persist scheduled notification ledger state"
       - name: Send release-gated Creator notifications
         if: steps.release_gate.outputs.allowed == 'true' && env.CREATOR_NOTIFICATION_ENABLED == 'true' && env.NOTIFY == 'true'
         id: creator_dispatch
