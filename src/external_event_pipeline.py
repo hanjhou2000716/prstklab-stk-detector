@@ -64,6 +64,15 @@ def build_external_event(
     safe_record = _sanitize_public_record(record)
     source = str(safe_record.get("source") or safe_record.get("content_origin") or "unknown").casefold()
     normalized = normalize_financialjuice(safe_record) if source == "financialjuice" else dict(safe_record)
+    if source == "financialjuice":
+        # The generic cross-source fingerprint intentionally falls back to an
+        # empty actor/action/location tuple for vendor relays.  Preserve the
+        # parser's item identity here so two unrelated FJ headlines cannot
+        # collapse into one cluster merely because both are unclassified.
+        for key in ("event_cluster_key", "item_id", "content_hash", "notification_id"):
+            value = safe_record.get(key)
+            if value not in (None, ""):
+                normalized[key] = value
     vendor_priority = (
         financialjuice_notification_state(normalized)
         if source == "financialjuice"
@@ -92,7 +101,14 @@ def build_external_event(
         "pipeline_version": PIPELINE_VERSION,
         "observation_id": normalized.get("observation_id"),
         "event_cluster_key": cluster.get("event_cluster_key"),
-        "notification_id": str(safe_record.get("notification_id") or safe_record.get("compound_item_id") or cluster.get("event_cluster_key") or "").strip() or None,
+        "notification_id": str(
+            safe_record.get("notification_id")
+            or safe_record.get("compound_item_id")
+            or safe_record.get("item_id")
+            or safe_record.get("observation_id")
+            or cluster.get("event_cluster_key")
+            or ""
+        ).strip() or None,
         "classification": classification,
         "cluster": cluster,
         "risk": risk,
