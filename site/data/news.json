@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "c2ede40650a18316",
-  "snapshot_id": "news-7bca9e8d879b399a",
+  "market_snapshot_id": "a58e29620315e1cb",
+  "snapshot_id": "news-1a0e7032e0b3d59f",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,61 +437,16 @@
       ],
       "stories": [
         {
-          "story_id": "news-022e3249eb90efa535a0",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "波克夏CEO投資決心提振，日本貿易商社股盤中上揚，三菱商事飆逾5%",
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%B3%A2%E5%85%8B%E5%A4%8Fceo%E6%8A%95%E8%B3%87%E6%B1%BA%E5%BF%83%E6%8F%90%E6%8C%AF-%E6%97%A5%E6%9C%AC%E8%B2%BF%E6%98%93%E5%95%86%E7%A4%BE%E8%82%A1%E7%9B%A4%E4%B8%AD%E4%B8%8A%E6%8F%9A-%E4%B8%89%E8%8F%B1%E5%95%86%E4%BA%8B%E9%A3%86%E9%80%BE5-045716539.html",
-          "url": "https://tw.stock.yahoo.com/news/%E6%B3%A2%E5%85%8B%E5%A4%8Fceo%E6%8A%95%E8%B3%87%E6%B1%BA%E5%BF%83%E6%8F%90%E6%8C%AF-%E6%97%A5%E6%9C%AC%E8%B2%BF%E6%98%93%E5%95%86%E7%A4%BE%E8%82%A1%E7%9B%A4%E4%B8%AD%E4%B8%8A%E6%8F%9A-%E4%B8%89%E8%8F%B1%E5%95%86%E4%BA%8B%E9%A3%86%E9%80%BE5-045716539.html",
-          "published_at": "2026-09-03T04:57:16+00:00",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "波克夏ceo投資決心提振日本貿易商社股盤中上揚三菱商事飆逾5",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-09-03T04:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "relevance_class": "contextual",
-          "ranking_score": 30
-        },
-        {
-          "story_id": "news-57f1990fdd0c48c68282",
+          "story_id": "news-7c32dccb18eef59edcd0",
           "provider": "anue",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "4. 〈能源盤後〉美伊爆發7月以來最激烈交火 油價漲逾1% Brent逼近96美元",
+          "title": "2. 貝森特：荷姆茲2年內將被「繞過」、對石油業「毫無價值」",
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6595862",
-          "url": "https://news.cnyes.com/news/id/6595862",
+          "canonical_url": "https://news.cnyes.com/news/id/6594642",
+          "url": "https://news.cnyes.com/news/id/6594642",
           "published_at": null,
           "market": "taiwan",
           "market_compatible": true,
@@ -504,10 +459,10 @@
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "energy",
-            "reason": "energy_keyword",
+            "category": "fed",
+            "reason": "fed_keyword",
             "matched_terms": [
-              "brent"
+              "貝森特"
             ],
             "input_fields": [
               "description",
@@ -518,16 +473,70 @@
           },
           "relevance_reasons": [
             "market:global",
-            "active_event:brent",
+            "active_event:石油",
+            "active_event:荷姆茲",
             "market:taiwan"
           ],
           "freshness": "unknown",
-          "dedupe_key": "4能源盤後美伊爆發7月以來最激烈交火油價漲逾1brent逼近96美元",
+          "dedupe_key": "2貝森特荷姆茲2年內將被繞過對石油業毫無價值",
           "event_cluster_key": "event-9e113edd7e3c42a97634",
           "published_time_bucket": null,
           "public_safe": true,
           "public_news_eligible": true,
           "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "relevance_class": "contextual",
+          "ranking_score": 35
+        },
+        {
+          "story_id": "news-1209a4a0745113e6a28d",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "戰爭、赤字、Fed政策與AI融資潮四面夾擊，美債殖利率升勢難歇",
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%88%B0%E7%88%AD-%E8%B5%A4%E5%AD%97-fed%E6%94%BF%E7%AD%96%E8%88%87ai%E8%9E%8D%E8%B3%87%E6%BD%AE%E5%9B%9B%E9%9D%A2%E5%A4%BE%E6%93%8A-%E7%BE%8E%E5%82%B5%E6%AE%96%E5%88%A9%E7%8E%87%E5%8D%87%E5%8B%A2%E9%9B%A3%E6%AD%87-052340977.html",
+          "url": "https://tw.stock.yahoo.com/news/%E6%88%B0%E7%88%AD-%E8%B5%A4%E5%AD%97-fed%E6%94%BF%E7%AD%96%E8%88%87ai%E8%9E%8D%E8%B3%87%E6%BD%AE%E5%9B%9B%E9%9D%A2%E5%A4%BE%E6%93%8A-%E7%BE%8E%E5%82%B5%E6%AE%96%E5%88%A9%E7%8E%87%E5%8D%87%E5%8B%A2%E9%9B%A3%E6%AD%87-052340977.html",
+          "published_at": "2026-09-03T05:23:40+00:00",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "conflict",
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "black_swan",
+            "reason": "black_swan_keyword",
+            "matched_terms": [
+              "戰爭"
+            ],
+            "input_fields": [
+              "description",
+              "summary",
+              "title",
+              "topics"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "戰爭赤字fed政策與ai融資潮四面夾擊美債殖利率升勢難歇",
+          "event_cluster_key": "event-c807cb125887d576dc82",
+          "published_time_bucket": "2026-09-03T05:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "source": "Yahoo Taiwan Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "relevance_class": "contextual",
@@ -588,42 +597,47 @@
           "ranking_score": 30
         },
         {
-          "story_id": "news-1e6889450743dc37269a",
+          "story_id": "news-56e579ec662d1d99ba50",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "焦點股：東捷SEMICON秀雷射設備，後續放量突破是關鍵",
+          "title": "崇越半導體展秀先進封裝散熱與CPO方案 看好明後年營運",
           "summary": "",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%84%A6%E9%BB%9E%E8%82%A1-%E6%9D%B1%E6%8D%B7semicon%E7%A7%80%E9%9B%B7%E5%B0%84%E8%A8%AD%E5%82%99-%E5%BE%8C%E7%BA%8C%E6%94%BE%E9%87%8F%E7%AA%81%E7%A0%B4%E6%98%AF%E9%97%9C%E9%8D%B5-045227912.html",
-          "url": "https://tw.stock.yahoo.com/news/%E7%84%A6%E9%BB%9E%E8%82%A1-%E6%9D%B1%E6%8D%B7semicon%E7%A7%80%E9%9B%B7%E5%B0%84%E8%A8%AD%E5%82%99-%E5%BE%8C%E7%BA%8C%E6%94%BE%E9%87%8F%E7%AA%81%E7%A0%B4%E6%98%AF%E9%97%9C%E9%8D%B5-045227912.html",
-          "published_at": "2026-09-03T04:52:27+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%B4%87%E8%B6%8A%E5%8D%8A%E5%B0%8E%E9%AB%94%E5%B1%95%E7%A7%80%E5%85%88%E9%80%B2%E5%B0%81%E8%A3%9D%E6%95%A3%E7%86%B1%E8%88%87cpo%E6%96%B9%E6%A1%88-%E7%9C%8B%E5%A5%BD%E6%98%8E%E5%BE%8C%E5%B9%B4%E7%87%9F%E9%81%8B-051920339.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%B4%87%E8%B6%8A%E5%8D%8A%E5%B0%8E%E9%AB%94%E5%B1%95%E7%A7%80%E5%85%88%E9%80%B2%E5%B0%81%E8%A3%9D%E6%95%A3%E7%86%B1%E8%88%87cpo%E6%96%B9%E6%A1%88-%E7%9C%8B%E5%A5%BD%E6%98%8E%E5%BE%8C%E5%B9%B4%E7%87%9F%E9%81%8B-051920339.html",
+          "published_at": "2026-09-03T05:19:20+00:00",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
           "entities": [],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "semiconductor"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
+            "category": "semiconductor",
+            "reason": "semiconductor_keyword",
+            "matched_terms": [
+              "semiconductor"
+            ],
             "input_fields": [
               "description",
               "summary",
-              "title"
+              "title",
+              "topics"
             ]
           },
           "relevance_reasons": [
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "焦點股東捷semicon秀雷射設備後續放量突破是關鍵",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-09-03T04:00:00+00:00",
+          "dedupe_key": "崇越半導體展秀先進封裝散熱與cpo方案看好明後年營運",
+          "event_cluster_key": "event-3c3b86347256c4ae4e15",
+          "published_time_bucket": "2026-09-03T05:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "source": "Yahoo Taiwan Finance",
@@ -633,17 +647,17 @@
           "ranking_score": 30
         },
         {
-          "story_id": "news-5360875d933ab95c74ec",
+          "story_id": "news-12b5d9206f496ffd59f0",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "快訊／台積電持平至2385 台股漲249點來到46414點 - ETtoday財經雲",
+          "title": "快訊／台股開高走低收跌307點、46k失守 台積電漲5元至2390 - ETtoday財經雲",
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE5mNnk5aDE5U3lNNlJNMnNLSjNxNmpESDlCTHlRQ2dJTTM1NEUxc0R2UFU4SVU2d24wdzJRQUg4Y1RZRTZwZW8ta05OdVBMUDRlWkHSAVBBVV95cUxOWVA1QWswVXkyWVc2blVnUVl2TXM2dnFudFllV21lU2N6czM2alFhS0VoMzFDd3dxRGtodndqSmgyRllsQi1pS3E4aEhUamozLQ",
-          "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE5mNnk5aDE5U3lNNlJNMnNLSjNxNmpESDlCTHlRQ2dJTTM1NEUxc0R2UFU4SVU2d24wdzJRQUg4Y1RZRTZwZW8ta05OdVBMUDRlWkHSAVBBVV95cUxOWVA1QWswVXkyWVc2blVnUVl2TXM2dnFudFllV21lU2N6czM2alFhS0VoMzFDd3dxRGtodndqSmgyRllsQi1pS3E4aEhUamozLQ",
-          "published_at": "2026-09-03T01:01:00+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE9xU1hVbTg1RlBIQ2FzbmM3U2Z5anlCYmZBM3pIdzB3bVhfRVlFNHlaOVVqQWZ2bHJlbjMtWi1ubS1YbWNHa0xMeE5ScGxxS3BaWWc",
+          "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE9xU1hVbTg1RlBIQ2FzbmM3U2Z5anlCYmZBM3pIdzB3bVhfRVlFNHlaOVVqQWZ2bHJlbjMtWi1ubS1YbWNHa0xMeE5ScGxxS3BaWWc",
+          "published_at": "2026-09-03T05:36:00+00:00",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
@@ -674,9 +688,9 @@
             "tracked_ticker:TSM"
           ],
           "freshness": "published",
-          "dedupe_key": "快訊台積電持平至2385台股漲249點來到46414點ettoday財經雲",
-          "event_cluster_key": "event-e8c9a89ca8f0f05ce740",
-          "published_time_bucket": "2026-09-03T01:00:00+00:00",
+          "dedupe_key": "快訊台股開高走低收跌307點46k失守台積電漲5元至2390ettoday財經雲",
+          "event_cluster_key": "event-ba79ec3f623c79ba3d96",
+          "published_time_bucket": "2026-09-03T05:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "source": "Google News｜台股線索",
@@ -707,13 +721,14 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 5,
-          "TSM": 5,
+          "2330": 8,
+          "TSM": 8,
           "NVDA": 1
         },
         "sector_interest": {},
         "topic_interest": {
-          "brent": 1
+          "石油": 1,
+          "荷姆茲": 1
         },
         "market_interest": {
           "taiwan": 21
@@ -745,21 +760,22 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 5,
-            "TSM": 5,
+            "2330": 8,
+            "TSM": 8,
             "NVDA": 1
           },
           "research_candidate": {},
           "tracked_sector": {},
           "active_event": {
-            "brent": 1
+            "石油": 1,
+            "荷姆茲": 1
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 2,
+      "excluded_count": 1,
       "exclusion_reasons": {
-        "market_scope_mismatch": 2
+        "market_scope_mismatch": 1
       },
       "status": "ready",
       "collection_state": "ready",
@@ -769,7 +785,7 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "filtered_story_count": 2,
+        "filtered_story_count": 1,
         "ranked_story_count": 5
       },
       "source_health": [
@@ -780,7 +796,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 21,
-          "checked_at": "2026-09-03T05:16:57.274587+00:00"
+          "checked_at": "2026-09-03T05:54:16.844368+00:00"
         },
         {
           "provider": "twse",
@@ -791,10 +807,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-09-03T05:16:57.274587+00:00",
+          "checked_at": "2026-09-03T05:54:16.844368+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+          "last_success_at": "2026-09-03T05:54:16.844368+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -819,10 +835,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-09-03T05:16:57.274587+00:00",
+          "checked_at": "2026-09-03T05:54:16.844368+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+          "last_success_at": "2026-09-03T05:54:16.844368+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -847,10 +863,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 1,
-          "checked_at": "2026-09-03T05:16:57.274587+00:00",
+          "checked_at": "2026-09-03T05:54:16.844368+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 1,
-          "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+          "last_success_at": "2026-09-03T05:54:16.844368+00:00",
           "last_failure_at": null,
           "stories_ingested": 1,
           "stories_deduped": 1,
@@ -878,24 +894,24 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 2,
-          "checked_at": "2026-09-03T05:16:57.274587+00:00",
+          "checked_at": "2026-09-03T05:54:16.844368+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 2,
-          "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+          "last_success_at": "2026-09-03T05:54:16.844368+00:00",
           "last_failure_at": null,
-          "stories_ingested": 8,
-          "stories_deduped": 8,
+          "stories_ingested": 9,
+          "stories_deduped": 9,
           "ranked_count": 2,
           "relevance_distribution": {
-            "market": 8
+            "market": 9
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 8,
-            "market_compatible_count": 8,
-            "eligible_count": 8,
+            "normalized_count": 9,
+            "market_compatible_count": 9,
+            "eligible_count": 9,
             "excluded_count": 0,
-            "deduped_count": 8,
+            "deduped_count": 9,
             "ranked_count": 2
           }
         },
@@ -908,17 +924,17 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 2,
-          "checked_at": "2026-09-03T05:16:57.274587+00:00",
+          "checked_at": "2026-09-03T05:54:16.844368+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 2,
-          "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+          "last_success_at": "2026-09-03T05:54:16.844368+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
-          "stories_deduped": 10,
+          "stories_deduped": 9,
           "ranked_count": 2,
           "relevance_distribution": {
             "market": 10,
-            "tracked_ticker": 5
+            "tracked_ticker": 8
           },
           "funnel": {
             "fetched_count": 10,
@@ -926,7 +942,7 @@
             "market_compatible_count": 10,
             "eligible_count": 10,
             "excluded_count": 0,
-            "deduped_count": 10,
+            "deduped_count": 9,
             "ranked_count": 2
           }
         }
@@ -938,13 +954,13 @@
         "relevance_distribution": {
           "active_event": 1,
           "market": 21,
-          "tracked_ticker": 5
+          "tracked_ticker": 8
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+            "last_success_at": "2026-09-03T05:54:16.844368+00:00",
             "last_failure_at": null,
             "stories_ingested": 1,
             "stories_deduped": 1,
@@ -966,14 +982,14 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+            "last_success_at": "2026-09-03T05:54:16.844368+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
-            "stories_deduped": 10,
+            "stories_deduped": 9,
             "ranked_count": 2,
             "relevance_distribution": {
               "market": 10,
-              "tracked_ticker": 5
+              "tracked_ticker": 8
             },
             "funnel": {
               "fetched_count": 10,
@@ -981,14 +997,14 @@
               "market_compatible_count": 10,
               "eligible_count": 10,
               "excluded_count": 0,
-              "deduped_count": 10,
+              "deduped_count": 9,
               "ranked_count": 2
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+            "last_success_at": "2026-09-03T05:54:16.844368+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -1007,7 +1023,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+            "last_success_at": "2026-09-03T05:54:16.844368+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -1028,18 +1044,18 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 2,
+            "stories_ingested": 1,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 2
+              "market": 1
             },
             "funnel": {
-              "fetched_count": 2,
-              "normalized_count": 2,
+              "fetched_count": 1,
+              "normalized_count": 1,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 2,
+              "excluded_count": 1,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -1047,21 +1063,21 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+            "last_success_at": "2026-09-03T05:54:16.844368+00:00",
             "last_failure_at": null,
-            "stories_ingested": 8,
-            "stories_deduped": 8,
+            "stories_ingested": 9,
+            "stories_deduped": 9,
             "ranked_count": 2,
             "relevance_distribution": {
-              "market": 8
+              "market": 9
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 8,
-              "market_compatible_count": 8,
-              "eligible_count": 8,
+              "normalized_count": 9,
+              "market_compatible_count": 9,
+              "eligible_count": 9,
               "excluded_count": 0,
-              "deduped_count": 8,
+              "deduped_count": 9,
               "ranked_count": 2
             }
           }
@@ -1642,7 +1658,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 30,
-          "checked_at": "2026-09-03T05:16:57.274587+00:00"
+          "checked_at": "2026-09-03T05:54:16.844368+00:00"
         },
         {
           "provider": "sec",
@@ -1653,10 +1669,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-09-03T05:16:57.274587+00:00",
+          "checked_at": "2026-09-03T05:54:16.844368+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+          "last_success_at": "2026-09-03T05:54:16.844368+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -1684,12 +1700,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-09-03T05:16:57.274587+00:00",
+          "checked_at": "2026-09-03T05:54:16.844368+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-09-03T05:16:57.274587+00:00",
+          "last_failure_at": "2026-09-03T05:54:16.844368+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -1712,10 +1728,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-09-03T05:16:57.274587+00:00",
+          "checked_at": "2026-09-03T05:54:16.844368+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+          "last_success_at": "2026-09-03T05:54:16.844368+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -1740,10 +1756,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 2,
-          "checked_at": "2026-09-03T05:16:57.274587+00:00",
+          "checked_at": "2026-09-03T05:54:16.844368+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 2,
-          "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+          "last_success_at": "2026-09-03T05:54:16.844368+00:00",
           "last_failure_at": null,
           "stories_ingested": 3,
           "stories_deduped": 3,
@@ -1771,10 +1787,10 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 2,
-          "checked_at": "2026-09-03T05:16:57.274587+00:00",
+          "checked_at": "2026-09-03T05:54:16.844368+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 2,
-          "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+          "last_success_at": "2026-09-03T05:54:16.844368+00:00",
           "last_failure_at": null,
           "stories_ingested": 4,
           "stories_deduped": 4,
@@ -1802,10 +1818,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+S%26P+500+OR+Federal+Reserve+OR+Nvidia+OR+US+stocks&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 1,
-          "checked_at": "2026-09-03T05:16:57.274587+00:00",
+          "checked_at": "2026-09-03T05:54:16.844368+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 1,
-          "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+          "last_success_at": "2026-09-03T05:54:16.844368+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 10,
@@ -1838,7 +1854,7 @@
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+            "last_success_at": "2026-09-03T05:54:16.844368+00:00",
             "last_failure_at": null,
             "stories_ingested": 3,
             "stories_deduped": 3,
@@ -1861,7 +1877,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-09-03T05:16:57.274587+00:00",
+            "last_failure_at": "2026-09-03T05:54:16.844368+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -1879,7 +1895,7 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+            "last_success_at": "2026-09-03T05:54:16.844368+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 10,
@@ -1901,7 +1917,7 @@
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+            "last_success_at": "2026-09-03T05:54:16.844368+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -1920,7 +1936,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+            "last_success_at": "2026-09-03T05:54:16.844368+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -1964,7 +1980,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-09-03T05:16:57.274587+00:00",
+            "last_success_at": "2026-09-03T05:54:16.844368+00:00",
             "last_failure_at": null,
             "stories_ingested": 4,
             "stories_deduped": 4,
