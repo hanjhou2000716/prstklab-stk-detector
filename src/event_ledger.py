@@ -132,7 +132,7 @@ def canonical_event_key(event: dict[str, Any] | None) -> str:
             # location facts. Bind cache idempotency to the immutable item
             # identity; theme-level replay suppression remains separate below.
             return hashlib.sha256(
-                f"financialjuice|notification|{notification_id}".encode("utf-8")
+                f"financialjuice|notification|{notification_id}".encode()
             ).hexdigest()[:32]
         facts = fact_fingerprint(event)
         source_url = normalize_source_url(event.get("source_url") or event.get("url"))
