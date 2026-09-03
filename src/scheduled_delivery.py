@@ -415,7 +415,8 @@ def send(
     observation_id = str(briefing.get("observation_id") or correlation["observation_id"])
     caption = build_brief(snapshot, slot)
     alert_id = str(
-        (event or {}).get("event_cluster_key")
+        (event or {}).get("notification_id")
+        or (event or {}).get("event_cluster_key")
         or (event or {}).get("event_key")
         or trace_id
     )

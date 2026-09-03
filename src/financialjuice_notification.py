@@ -162,7 +162,9 @@ def deliver_financialjuice_event(
             "snapshot_id": snapshot_id,
         }
 
-    alert_id = _text(event.get("event_cluster_key") or event.get("item_id") or event.get("observation_id"))
+    # notification_id is the primary immutable alert identity.  Cluster/item
+    # aliases remain only for legacy rows that predate the identity contract.
+    alert_id = _text(event.get("notification_id") or event.get("event_cluster_key") or event.get("item_id") or event.get("observation_id"))
     observation_id = _text(event.get("observation_id"))
     target_url = alert_mini_app_url(
         mini_app_url,

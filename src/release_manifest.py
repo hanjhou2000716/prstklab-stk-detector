@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -32,11 +33,129 @@ DEFAULT_ARTIFACTS = {
     "event-ledger.json": Path("site/data/event-ledger.json"),
 }
 
+ALERT_INDEX_NAME = "alert-index.json"
+ALERT_ARTIFACT_PREFIX = "alerts"
+MAX_ALERT_INDEX_ROWS = 1000
+
 SOURCE_HEALTH_ARTIFACT = "source-health.json"
 
 
 def _canonical_json(value: Any) -> bytes:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def _alert_filename(value: str) -> str:
+    safe = re.sub(r"[^A-Za-z0-9_.-]+", "-", value).strip(".-")[:96]
+    return safe or hashlib.sha256(value.encode("utf-8")).hexdigest()[:24]
+
+
+def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot_id: str, created_at: str) -> dict[str, Any]:
+    """Create the immutable public detail for one notification identity."""
+    notification_id = str(
+        event.get("notification_id") or event.get("alert_id") or event.get("event_cluster_key")
+        or event.get("event_key") or event.get("item_id") or ""
+    ).strip()
+    if not notification_id:
+        notification_id = f"notification-{hashlib.sha256(_canonical_json(event)).hexdigest()[:24]}"
+    evidence = event.get("market_evidence")
+    if not isinstance(evidence, list):
+        evidence = []
+    return {
+        "schema_version": "1.0",
+        "notification_id": notification_id,
+        "alert_id": str(event.get("alert_id") or notification_id),
+        "event_cluster_key": event.get("event_cluster_key"),
+        "release_id": release_id,
+        "snapshot_id": str(event.get("snapshot_id") or market_snapshot_id),
+        "observation_id": event.get("observation_id"),
+        "created_at": created_at,
+        "event": event.get("event") or event.get("title") or "市場事件",
+        "why_important": event.get("why_important") or event.get("importance_detail"),
+        "possible_linkage": event.get("possible_linkage") or event.get("possible_impact") or event.get("market_context"),
+        "stock_observation": event.get("stock_observation") or event.get("watch") or event.get("follow_up_observation"),
+        "market_evidence": [item for item in evidence[:2] if isinstance(item, dict)],
+        "source_evidence": event.get("source_evidence") or [],
+        "source_trace": event.get("source_trace") or {},
+        "vendor_importance": event.get("vendor_importance"),
+        "prstk_risk_level": event.get("prstk_risk_level") or event.get("risk_level"),
+        "prstk_risk": event.get("prstk_risk") or {},
+        "notification_status": event.get("notification_status"),
+        "notification_reason": event.get("notification_reason"),
+    }
+
+
+def _publish_alert_artifacts(
+    *, root: Path, market: dict[str, Any], release_id: str, created_at: str,
+    resolved: dict[str, Path], hashes: dict[str, str],
+) -> None:
+    """Write release-bound alert details and a bounded historical index.
+
+    Alert files are release-specific and therefore never overwritten when the
+    same notification is observed again in a later release.  The index is the
+    only lookup table; the browser verifies its hash through the current
+    manifest before it follows an archived deep link.
+    """
+    alert_dir = root / "site" / "data" / ALERT_ARTIFACT_PREFIX
+    alert_dir.mkdir(parents=True, exist_ok=True)
+    index_path = root / "site" / "data" / ALERT_INDEX_NAME
+    rows: dict[tuple[str, str], dict[str, Any]] = {}
+    try:
+        previous = json.loads(index_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        previous = {}
+    for item in previous.get("alerts", []) if isinstance(previous, dict) else []:
+        if isinstance(item, dict) and item.get("notification_id") and item.get("release_id") and item.get("path"):
+            rows[(str(item["notification_id"]), str(item["release_id"]))] = dict(item)
+    for path in sorted(alert_dir.glob("*.json")):
+        try:
+            item = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            continue
+        if isinstance(item, dict) and item.get("notification_id") and item.get("release_id"):
+            rows.setdefault((str(item["notification_id"]), str(item["release_id"])), {
+                "notification_id": item["notification_id"],
+                "release_id": item["release_id"],
+                "snapshot_id": item.get("snapshot_id"),
+                "observation_id": item.get("observation_id"),
+                "path": f"{ALERT_ARTIFACT_PREFIX}/{path.name}",
+                "sha256": sha256_file(path),
+                "created_at": item.get("created_at"),
+            })
+    event_block = market.get("events") if isinstance(market, dict) else None
+    events = event_block.get("items", []) if isinstance(event_block, dict) else []
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        artifact = _alert_projection(
+            event, release_id=release_id,
+            market_snapshot_id=str(market.get("snapshot_id") or ""),
+            created_at=created_at,
+        )
+        notification_id = str(artifact["notification_id"])
+        filename = f"{_alert_filename(notification_id)}-{_alert_filename(release_id)}.json"
+        path = alert_dir / filename
+        _write_normalized_artifact(path, artifact)
+        relative = f"{ALERT_ARTIFACT_PREFIX}/{filename}"
+        rows[(notification_id, release_id)] = {
+            "notification_id": notification_id,
+            "release_id": release_id,
+            "snapshot_id": artifact.get("snapshot_id"),
+            "observation_id": artifact.get("observation_id"),
+            "path": relative,
+            "sha256": sha256_file(path),
+            "created_at": created_at,
+        }
+        resolved[relative] = path
+        hashes[relative] = sha256_file(path)
+    ordered = sorted(rows.values(), key=lambda item: str(item.get("created_at") or ""), reverse=True)
+    index = {
+        "schema_version": "1.0",
+        "generated_at": created_at,
+        "alerts": ordered[:MAX_ALERT_INDEX_ROWS],
+    }
+    _write_normalized_artifact(index_path, index)
+    resolved[ALERT_INDEX_NAME] = index_path
+    hashes[ALERT_INDEX_NAME] = sha256_file(index_path)
 
 
 def _creator_identity_hash(
@@ -536,6 +655,14 @@ def build_release_manifest(
     if external_metadata is not None:
         release_material["external_observation_ids_hash"] = external_metadata["observation_ids_hash"]
     release_id = f"release-{hashlib.sha256(_canonical_json(release_material)).hexdigest()[:16]}"
+    # Alert details are immutable per release and indexed separately from the
+    # core release identity.  Keeping them out of ``release_material`` avoids
+    # a circular hash (the artifact itself carries its release_id), while the
+    # resulting paths/hashes are still covered by the manifest gate.
+    _publish_alert_artifacts(
+        root=root, market=market, release_id=release_id, created_at=created_at,
+        resolved=resolved, hashes=hashes,
+    )
     if creator_artifact is None and creator_records is not None:
         # Records are expected to be sanitized at ingress. The pipeline still
         # rechecks privacy/source rules before writing a public artifact.

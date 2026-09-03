@@ -37,6 +37,46 @@ def test_manifest_is_ready_and_hashes_are_verifiable(tmp_path):
     assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 
+def test_manifest_publishes_release_specific_immutable_alert_details(tmp_path):
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["events"] = {"items": [{
+        "notification_id": "fj-item-1",
+        "event_cluster_key": "fj-cluster-1",
+        "snapshot_id": "market-12345678",
+        "observation_id": "obs-1",
+        "event": "伊朗通信基礎設施事件",
+        "why_important": "來源影響評估：油價與通膨風險可能上升；仍待官方核對。",
+        "possible_linkage": "關聯美國市場：NASDAQ、US10Y。",
+        "stock_observation": "觀察 NASDAQ、US10Y 是否同步。",
+        "market_evidence": [{"ticker": "NASDAQ", "price": 26199.44, "change_percent": 0.38}, {"ticker": "US10Y", "price": 4.79, "change_percent": -0.21}],
+        "vendor_importance": 10,
+        "prstk_risk_level": "R0",
+    }]}
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+
+    first = build_release_manifest(root=tmp_path)
+    assert first["status"] == "ready"
+    assert "alert-index.json" in first["artifact_paths"]
+    index = json.loads((tmp_path / "site" / "data" / "alert-index.json").read_text(encoding="utf-8"))
+    first_row = next(row for row in index["alerts"] if row["notification_id"] == "fj-item-1")
+    first_path = tmp_path / "site" / "data" / first_row["path"].removeprefix("data/")
+    first_text = first_path.read_text(encoding="utf-8")
+    assert json.loads(first_text)["release_id"] == first["release_id"]
+    assert verify_release_files(first, root=tmp_path / "site") == []
+
+    market["events"]["items"][0]["why_important"] = "官方已發布後續說明；仍待市場核對。"
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+    second = build_release_manifest(root=tmp_path)
+    assert second["release_id"] != first["release_id"]
+    assert first_path.read_text(encoding="utf-8") == first_text
+    second_index = json.loads((tmp_path / "site" / "data" / "alert-index.json").read_text(encoding="utf-8"))
+    rows = [row for row in second_index["alerts"] if row["notification_id"] == "fj-item-1"]
+    assert {row["release_id"] for row in rows} == {first["release_id"], second["release_id"]}
+    assert verify_release_files(second, root=tmp_path / "site") == []
+
+
 def test_manifest_publishes_release_bound_news_intelligence(tmp_path):
     _artifacts(tmp_path)
     market_path = tmp_path / "site" / "data" / "market.json"

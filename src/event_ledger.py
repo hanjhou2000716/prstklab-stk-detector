@@ -31,8 +31,9 @@ FACT_FIELDS = {
 
 RISK_RANK = {
     "觀察": 0, "持續觀察": 0, "市場待核對": 0, "R0": 0, "R1": 0,
-    "警戒": 1, "高波動": 1, "R2": 1, "R3": 1,
-    "高風險": 2, "R4": 2,
+    "高波動": 1, "R2": 1,
+    "警戒": 2, "R3": 2,
+    "高風險": 3, "R4": 3,
 }
 DEFAULT_COOLDOWN_SECONDS = 30 * 60
 THEME_WINDOW_SECONDS = 2 * 60 * 60
@@ -458,8 +459,11 @@ class EventLedger:
                 latest, latest_time = record, stamp
         within_window = latest is not None and (current - latest_time).total_seconds() < max(0, int(window_seconds))
         changed = material_state_changed((latest or {}).get("material_state") if latest else None, event)
-        if within_window and not changed:
-            reason = "same_theme_within_2h"
+        if latest is not None and not changed:
+            # The two-hour window is a coalescing window, not a re-arm timer.
+            # An unchanged theme stays suppressed overnight and across later
+            # releases until a contract-approved material state changes.
+            reason = "same_theme_within_2h" if within_window else "same_theme_unchanged"
             status = "suppressed"
             allowed = False
         else:
@@ -493,8 +497,17 @@ class EventLedger:
         record["updated_at"] = current.isoformat()
 
     def should_remind(self, event: dict[str, Any], *, cooldown_seconds: int = DEFAULT_COOLDOWN_SECONDS, now: datetime | None = None) -> bool:
-        record = self.observe(event, now=now)
-        if record["is_new"] or record.get("risk_upgraded") or record.get("escalation_upgraded"):
+        current = now or datetime.now(UTC)
+        key = canonical_event_key(event)
+        record = self.records.get(key)
+        if record is None:
+            return True
+        # New-format delivery records are governed by material state, never by
+        # elapsed time.  Keep the legacy cooldown only for old records that
+        # have a reminder timestamp but no material delivery marker.
+        if record.get("last_theme_notification_at") or record.get("last_notified_at"):
+            return material_state_changed(record.get("material_state"), event)
+        if material_state_changed(record.get("material_state"), event):
             return True
         raw = record.get("last_reminded_at")
         if not raw:
@@ -503,7 +516,7 @@ class EventLedger:
             reminded = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
             if reminded.tzinfo is None:
                 reminded = reminded.replace(tzinfo=UTC)
-            return (now or datetime.now(UTC)) - reminded >= timedelta(seconds=cooldown_seconds)
+            return current - reminded >= timedelta(seconds=cooldown_seconds)
         except ValueError:
             return True
 
@@ -623,7 +636,8 @@ class EventLedger:
             "release_id", "snapshot_id", "delivery_status", "observation_id_hash",
             "item_id", "event_cluster_key", "vendor_importance", "prstk_risk",
             "notification_reason", "parser_version", "received_at", "notification_key",
-            "delivery_receipts",
+            "delivery_receipts", "ingested_at", "candidate_at", "writer_wait_ms",
+            "release_ready_at", "telegram_attempted_at", "delivery_result", "delay_reason",
         ):
             value = event.get(field)
             if value not in (None, "", [], {}):
