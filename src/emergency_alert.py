@@ -9,7 +9,14 @@ from datetime import UTC, datetime
 from src.alert_budget import decide_alert_budget
 from src.config import get_settings
 from src.event_ledger import EventLedger
-from src.telegram_client import alert_mini_app_url, canonical_prstk_risk_level, send_text_briefs_audited, validate_brief
+from src.telegram_client import (
+    PUBLIC_TEXT_MAX_CHARS,
+    alert_mini_app_url,
+    canonical_prstk_risk_level,
+    send_text_briefs_audited,
+    summarize_public_message,
+    validate_brief,
+)
 
 STRICT_HIGH_RISK_CATEGORIES = {"black_swan", "conflict"}
 
@@ -49,6 +56,8 @@ def build_emergency_brief(category: str, summary: str) -> str:
     if not normalized:
         raise ValueError("快訊摘要不可空白。")
     text = f"快訊｜{CATEGORY_LABELS[category]}｜{normalized}"
+    if len(text) > PUBLIC_TEXT_MAX_CHARS:
+        text = summarize_public_message(text, limit=PUBLIC_TEXT_MAX_CHARS)
     validate_brief(text)
     return text
 
@@ -56,7 +65,7 @@ def build_emergency_brief(category: str, summary: str) -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="發送稜量重大事件手動快訊")
     parser.add_argument("--category", required=True, choices=CATEGORY_LABELS)
-    parser.add_argument("--summary", required=True, help="含前綴共 30 字內的中立摘要")
+    parser.add_argument("--summary", required=True, help="含前綴共 40 字內的中立摘要")
     return parser.parse_args()
 
 

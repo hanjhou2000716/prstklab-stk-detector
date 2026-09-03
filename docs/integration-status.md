@@ -255,7 +255,7 @@ reset the hourly or per-event budget. `src/alert_caption.py` produces a safe
 caption no longer than 40 Unicode characters above a fixed 1080x1350 photo for
 every formal alert path; production captions remain limited to the existing
 40-character photo-caption contract.  The legacy text-only helper remains
-30-character limited and is not used by production photo delivery.
+40-character limited and is not used by production photo delivery.
 
 ## Production intelligence binding
 

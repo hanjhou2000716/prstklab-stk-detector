@@ -9,19 +9,19 @@ recipient-scoped, replay-safe delivery plan for the production sender.
 from __future__ import annotations
 
 import hashlib
-import html
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 from src.telegram_client import (
+    PUBLIC_TEXT_MAX_CHARS,
     TextDeliveryReceipt,
     alert_mini_app_url,
     canonical_prstk_risk_level,
     send_text_briefs_audited,
 )
 
-MAX_FINANCIALJUICE_CAPTION = 30
+MAX_FINANCIALJUICE_CAPTION = PUBLIC_TEXT_MAX_CHARS
 
 
 def _text(value: Any) -> str:
@@ -33,17 +33,24 @@ def _recipient_hash(chat_id: str) -> str:
 
 
 def _bounded(value: str, limit: int) -> str:
-    text = _text(value)
-    if len(text) <= limit:
-        return text
-    parts = text.split(" ")
-    kept = ""
-    for part in parts:
-        candidate = part if not kept else f"{kept} {part}"
-        if len(candidate) > max(1, limit - 1):
-            break
-        kept = candidate
-    return f"{kept}…" if kept else f"{text[: max(1, limit - 1)]}…"
+    from src.telegram_client import summarize_public_message
+
+    return summarize_public_message(value, limit=limit)
+
+
+def _financialjuice_headline(event: dict[str, Any]) -> str:
+    """Select the best parsed event fact, excluding metadata-only labels."""
+    from src.telegram_client import _clean_public_fragment
+
+    generic = {"financialjuice 公開快訊", "fj 公開快訊", "公開快訊", "資訊待核對"}
+    for field in (
+        "event", "chinese_translation", "title", "brief_title",
+        "vendor_original_headline", "original_headline",
+    ):
+        value = _clean_public_fragment(event.get(field))
+        if value and value.casefold() not in generic:
+            return value
+    return ""
 
 
 def financialjuice_notification_key(event: dict[str, Any]) -> str:
@@ -62,32 +69,22 @@ def financialjuice_caption(event: dict[str, Any], *, limit: int = MAX_FINANCIALJ
     # The priority projection's canonical ``event`` is the parsed rich
     # semantic fact.  Keep title/brief_title only as legacy fallbacks so a
     # high-importance notification does not collapse into a generic label.
-    headline = _text(
-        event.get("event")
-        or event.get("chinese_translation")
-        or event.get("title")
-        or event.get("brief_title")
-        or "FinancialJuice 公開快訊"
-    )
+    headline = _financialjuice_headline(event)
+    if not headline:
+        return ""
     importance = event.get("vendor_importance")
     suffix = f"FJ {importance}/10" if importance is not None else "FJ 待核對"
-    prefix = f"🟣 {suffix}｜"
-    # Bound the headline before the canonical formatter sees it.  Otherwise a
-    # long English segment is rejected as a whole and canonical_short_message
-    # falls back to the generic "資訊待核對" text, losing the discovery fact.
-    headline = _bounded(headline, max(1, limit - len(prefix)))
-    # Vendor importance remains separate metadata, while the canonical
-    # formatter adds exactly one PRStK risk token to the user-facing text.
+    impact = _text(event.get("possible_impact") or event.get("possible_linkage"))
+    content = f"🟣 {suffix}｜{headline}"
+    if impact:
+        content += f"｜{impact}"
     from src.telegram_client import canonical_short_message
 
     raw = canonical_short_message(
-        f"🟣 {suffix}｜{headline}",
+        content,
         prstk_risk_level=canonical_prstk_risk_level(event),
     )
-    escaped = html.escape(_bounded(raw, limit), quote=False)
-    if len(escaped) <= limit:
-        return escaped
-    return html.escape(_bounded(f"🟣 {suffix}｜{canonical_prstk_risk_level(event)}", limit), quote=False)
+    return _bounded(raw, limit)
 
 
 def _history_delivered(
@@ -142,6 +139,16 @@ def deliver_financialjuice_event(
             "status": "blocked",
             "notification_key": notification_key,
             "reasons": reasons,
+            "receipts": [],
+            "release_id": release_id,
+            "snapshot_id": snapshot_id,
+        }
+
+    if not financialjuice_caption(event, limit=MAX_FINANCIALJUICE_CAPTION):
+        return {
+            "status": "blocked",
+            "notification_key": notification_key,
+            "reasons": ["content_incomplete"],
             "receipts": [],
             "release_id": release_id,
             "snapshot_id": snapshot_id,

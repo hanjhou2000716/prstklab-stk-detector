@@ -79,7 +79,7 @@ def test_monitor_brief_is_neutral_and_watch_sized():
     brief = build_official_event_brief({"short_label": "Fed／貨幣政策", "title": "Federal Reserve issues FOMC statement with a long title"})
     assert brief.startswith("🟡 Fed｜")
     assert all(level not in brief for level in ("R0", "R1", "R2", "R3", "R4"))
-    assert len(brief) <= 30
+    assert len(brief) <= 40
 
 
 def test_monitor_selects_threshold_price_signal_when_no_official_release_exists():
