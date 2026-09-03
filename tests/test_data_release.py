@@ -174,6 +174,29 @@ def test_restore_skips_cache_paths_missing_from_remote_branch(tmp_path, monkeypa
     assert "data/sec-companyfacts-cache.json" not in checkout
 
 
+def test_restore_discovers_remote_alert_archive_when_local_checkout_is_empty(tmp_path, monkeypatch):
+    site_data = tmp_path / "site" / "data"
+    site_data.mkdir(parents=True)
+    (site_data / "market.json").write_text("{}", encoding="utf-8")
+
+    def fake_run(*args, check=True):
+        if args[:2] == ("fetch", "origin"):
+            return data_release.subprocess.CompletedProcess(args, 0, "", "")
+        if args[0] == "ls-tree" and args[-1] == "site/data/alerts":
+            return data_release.subprocess.CompletedProcess(args, 0, "site/data/alerts/old-alert.json\n", "")
+        if args[0] == "ls-tree":
+            return data_release.subprocess.CompletedProcess(args, 0, "site/data/market.json\nsite/data/alerts/old-alert.json\n", "")
+        if args[0] == "checkout":
+            return data_release.subprocess.CompletedProcess(args, 0, "", "")
+        raise AssertionError(args)
+
+    monkeypatch.setattr(data_release, "_run", fake_run)
+    result = data_release.restore(root=tmp_path, includes=["site/data"])
+
+    assert result["restored"] is True
+    assert "site/data/alerts/old-alert.json" in result["files"]
+
+
 def test_restore_clears_public_artifacts_missing_from_remote_release(tmp_path, monkeypatch):
     site_data = tmp_path / "site" / "data"
     site_data.mkdir(parents=True)
