@@ -73,6 +73,24 @@ def _bucket(value: Any, minutes: int = 120) -> str:
 
 def event_cluster_key(event: dict[str, Any]) -> str:
     """Create a source-independent key from actor/action/location/time facts."""
+    source = str(event.get("source") or event.get("content_origin") or "").strip().casefold()
+    explicit = str(event.get("event_cluster_key") or "").strip()
+    if source == "financialjuice" and explicit:
+        return explicit
+    if source == "financialjuice":
+        # A legacy/unstructured relay often has no actor/action/location. Use
+        # its reviewed content identity instead of the all-empty generic key;
+        # otherwise unrelated vendor headlines become one EventLedger theme.
+        identity = str(
+            event.get("content_hash")
+            or event.get("item_id")
+            or event.get("observation_id")
+            or event.get("original_headline")
+            or event.get("headline")
+            or ""
+        ).strip()
+        if identity:
+            return f"fj-cluster-{hashlib.sha256(identity.encode('utf-8')).hexdigest()[:24]}"
     fields = (
         _norm(event.get("event_type") or event.get("category")),
         _norm(event.get("actor") or event.get("person") or event.get("entities")),

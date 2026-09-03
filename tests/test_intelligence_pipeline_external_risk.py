@@ -61,6 +61,36 @@ def test_pipeline_keeps_all_financialjuice_items_and_clusters() -> None:
     assert len(context["external_event_risk"]["clusters"]) == 2
 
 
+def test_unstructured_financialjuice_items_keep_independent_identities() -> None:
+    context = build_intelligence_context(
+        {"event_type": "energy"},
+        external_observations=[
+            {
+                "source": "financialjuice",
+                "item_id": "fj-item-a",
+                "observation_id": "fj-item-a",
+                "content_hash": "a" * 64,
+                "event_type": "unknown",
+                "original_headline": "Iran telecom attack",
+                "vendor_importance": 10,
+            },
+            {
+                "source": "financialjuice",
+                "item_id": "fj-item-b",
+                "observation_id": "fj-item-b",
+                "content_hash": "b" * 64,
+                "event_type": "unknown",
+                "original_headline": "Nscale Anthropic contract",
+                "vendor_importance": 9,
+            },
+        ],
+    )
+    events = context["external_event_risk"]["unified_events"]
+    assert len(events) == 2
+    assert {event["notification_id"] for event in events} == {"fj-item-a", "fj-item-b"}
+    assert len({event["event_cluster_key"] for event in events}) == 2
+
+
 def test_direct_compound_input_does_not_propagate_transport_or_raw_fields() -> None:
     context = build_intelligence_context(
         {"event_type": "energy"},
