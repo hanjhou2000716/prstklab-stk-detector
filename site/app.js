@@ -344,7 +344,10 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
           ? "例行公司公告｜觀察"
           : "已核對的重要市場事件";
   }
-  const headline = event.brief_title || `${event.short_label}｜${event.title}`;
+  // Older immutable alert artifacts predate the headline aliases.  Fall
+  // back to their preserved event text so historical Telegram links never
+  // render an "undefined｜undefined" heading.
+  const headline = event.brief_title || event.title || event.event || `${event.short_label || "公開事件"}｜市場事件`;
   setText("alert-headline", headline);
   const headlineNode = document.getElementById("alert-headline");
   if (headlineNode) headlineNode.className = `market-signal-title ${movementClass(headline)}`;
