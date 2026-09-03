@@ -237,7 +237,33 @@ def restore_public_release(
     finally:
         if staging.exists():
             shutil.rmtree(staging)
+    # ``release_manifest`` is also a builder: while validating it may rewrite
+    # derived alert artifacts with a newly computed release id.  That is safe
+    # for a candidate build, but not for a preserved immutable public bundle;
+    # doing so leaves the restored manifest's alert hashes pointing at bytes
+    # from another release.  Snapshot the verified bytes and restore the exact
+    # bundle after validation, including removal of any derived files created
+    # by the validator.
+    restored_bytes: dict[str, bytes] = {}
+    site_root = root / "site"
+    site_root_resolved = site_root.resolve()
+    for raw_path in paths.values():
+        if not isinstance(raw_path, str) or not raw_path.strip():
+            raise PagesReleaseError("public manifest path missing during validation")
+        target = (site_root / raw_path).resolve()
+        if not target.is_relative_to(site_root_resolved) or not target.is_file():
+            raise PagesReleaseError("public artifact missing during validation restore")
+        restored_bytes[raw_path] = target.read_bytes()
+
     ready, validated = _validate(root, require_production_research=False)
+
+    _clear_data(root)
+    for raw_path, body in restored_bytes.items():
+        target = (site_root / raw_path).resolve()
+        if not target.is_relative_to(site_root_resolved):
+            raise PagesReleaseError("public artifact path escapes data root during restore")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(body)
     if not ready:
         raise PagesReleaseError(
             "public release failed local validation: "
