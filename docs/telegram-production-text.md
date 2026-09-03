@@ -1,7 +1,7 @@
 # Production Telegram photo delivery
 
 Scheduled, official-event and emergency notifications use one release-gated
-`sendPhoto` call per recipient. The message contains an at-most-30-character
+`sendPhoto` call per recipient. The message contains an at-most-40-character
 caption above a validated 1080×1350 PNG and an inline Mini App button targeting
 the same alert, release and snapshot. A renderer or font failure blocks the
 send; no black or single-colour fallback is transmitted.

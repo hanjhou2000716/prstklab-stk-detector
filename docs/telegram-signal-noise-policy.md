@@ -11,7 +11,7 @@ publish-before-notify path; it does not create a second delivery ledger.
   ledger and Mini App audit data, but is never emitted in Telegram text or
   photo captions.
 - The risk colour dot remains visible. The message uses a topic and an
-  evidence-grounded summary, capped at 30 characters. Generic labels such as
+  evidence-grounded summary, capped at 40 characters. Generic labels such as
   “市場觀察” are removed when a real summary is available.
 - FinancialJuice importance is shown as `FJ n/10` metadata only and cannot
   change the PRStK risk level.

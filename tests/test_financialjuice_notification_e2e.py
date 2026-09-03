@@ -44,7 +44,7 @@ def test_financialjuice_long_english_headline_keeps_discovery_text() -> None:
     assert caption.startswith("🟣 FJ 8/10｜")
     assert "Federal" in caption
     assert "資訊待核對" not in caption
-    assert len(caption) <= 30
+    assert len(caption) <= 40
 
 
 def test_financialjuice_caption_prefers_projected_event_over_generic_title() -> None:
@@ -56,7 +56,52 @@ def test_financialjuice_caption_prefers_projected_event_over_generic_title() -> 
     })
     assert caption.startswith("🟣 FJ 10/10｜某公司據報")
     assert "FinancialJuice 公開快訊" not in caption
-    assert len(caption) <= 30
+    assert len(caption) <= 40
+
+
+def test_financialjuice_incomplete_attribution_is_not_deliverable() -> None:
+    assert financialjuice_caption({"title": "據《The...", "vendor_importance": 9}) == ""
+
+
+def test_financialjuice_uses_complete_fallback_when_title_is_truncated() -> None:
+    caption = financialjuice_caption({
+        "title": "據《The...",
+        "vendor_original_headline": "Iran says U.S. strikes telecommunications infrastructure.",
+        "vendor_importance": 9,
+    })
+    assert caption.startswith("🟣 FJ 9/10｜Iran says U.S. strikes")
+    assert "據《The" not in caption
+    assert "U.…" not in caption
+    assert len(caption) <= 40
+
+
+def test_financialjuice_delivery_suppresses_incomplete_attribution() -> None:
+    calls: list[dict[str, object]] = []
+
+    def sender(**kwargs: object) -> tuple[TextDeliveryReceipt, ...]:
+        calls.append(kwargs)
+        return ()
+
+    result = deliver_financialjuice_event(
+        {
+            "source_key": "financialjuice",
+            "event_cluster_key": "incomplete-1",
+            "vendor_importance": 9,
+            "vendor_priority_notification": True,
+            "notification_status": "eligible",
+            "title": "據《The...",
+        },
+        release_id="release-1",
+        snapshot_id="snapshot-1",
+        mini_app_url="https://example.test/app",
+        release_ready=True,
+        token="token",
+        chat_ids=("recipient",),
+        text_sender=sender,
+    )
+    assert result["status"] == "blocked"
+    assert result["reasons"] == ["content_incomplete"]
+    assert calls == []
 
 
 def test_financialjuice_delivery_reaches_text_sender_with_alert_deep_link() -> None:
@@ -111,6 +156,7 @@ def test_financialjuice_delivery_prefers_notification_id_for_alert_deep_link() -
         "event_cluster_key": "fj-cluster-1", "observation_id": "fj-observation-1",
         "vendor_importance": 8, "vendor_priority_notification": True,
         "notification_status": "eligible", "prstk_risk_level": "R0",
+        "title": "Oil supply update",
     }
     captured: dict[str, object] = {}
 

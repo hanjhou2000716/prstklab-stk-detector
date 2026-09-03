@@ -20,7 +20,7 @@ def configure_console() -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="PRStK Telegram 快報工具")
     parser.add_argument(
-        "--message", default=DEFAULT_TEST_MESSAGE, help="30 字內的快報內容"
+        "--message", default=DEFAULT_TEST_MESSAGE, help="40 字內的快報內容"
     )
     parser.add_argument(
         "--send", action="store_true", help="實際發送至 Telegram；預設只模擬"

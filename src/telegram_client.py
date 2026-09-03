@@ -26,6 +26,7 @@ SEND_ATTEMPTS = 3
 RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 FAILED_RECIPIENT_RETRIES = 1
 MAX_FAILED_RECIPIENT_RETRIES = 3
+PUBLIC_TEXT_MAX_CHARS = 40
 PRSTK_RISK_LEVELS = frozenset({"R0", "R1", "R2", "R3", "R4"})
 _RISK_ICONS = {"R0": "🟢", "R1": "🟢", "R2": "🟡", "R3": "🟠", "R4": "🔴"}
 _RISK_CATEGORIES = {"R0": "市場觀察", "R1": "市場觀察", "R2": "市場觀察", "R3": "市場風險", "R4": "重大風險"}
@@ -164,20 +165,81 @@ def validate_brief(text: str) -> None:
     """Enforce the watch-friendly brief format before sending."""
     if not text.strip():
         raise ValueError("快報內容不可空白。")
-    if len(text) > 30:
-        raise ValueError(f"快報超過 30 字，目前為 {len(text)} 字：{text}")
+    if len(text) > PUBLIC_TEXT_MAX_CHARS:
+        raise ValueError(f"快報超過 {PUBLIC_TEXT_MAX_CHARS} 字，目前為 {len(text)} 字：{text}")
 
 
-def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
-    """Build the one canonical, bounded user-facing non-Creator message.
+def _clean_public_fragment(value: object) -> str:
+    """Remove transport/attribution noise before selecting a public clause."""
+    source = " ".join(str(value or "").replace("\n", " ").split()).strip()
+    source = re.sub(r"https?://\S+", "", source).strip(" ｜|,，:：")
+    source = re.sub(
+        r"^(?:translation|original headline|headline|ai commentary|possible impact|"
+        r"possible linkage|why important|importance(?: score)?|事件|為何重要|可能連動|股市觀察)\s*[:：]\s*",
+        "",
+        source,
+        flags=re.IGNORECASE,
+    )
+    source = re.sub(
+        r"^(?:據|根據)\s*[《「\"']([^》」\"']+)[》」\"']\s*"
+        r"(?:報導|指出|稱|消息稱)?\s*[,，:：]?\s*",
+        "",
+        source,
+    )
+    if re.match(r"^(?:據|根據)\s*[《「\"']", source) and not re.search(r"[》」\"']", source):
+        return ""
+    return source.strip(" ｜|,，:：")
+
+
+def _semantic_excerpt(value: str, limit: int, *, allow_char_cut: bool = True) -> str:
+    """Fit one fact without cutting an English word or a source preamble."""
+    text = _clean_public_fragment(value)
+    if limit <= 0 or not text:
+        return ""
+    if len(text) <= limit:
+        return text
+    clauses = [part.strip() for part in re.split(r"(?<=[。！？；.!?;])(?:\s+|$)", text) if part.strip()]
+    for clause in clauses:
+        # A period in U.S., Inc., etc. is not a complete sentence boundary.
+        # Do not publish a fragment such as ``Iran says U.`` as if it were a
+        # meaningful event fact; the word-boundary fallback below retains the
+        # largest readable prefix instead.
+        if re.search(r"(?:\b[A-Za-z]\.)+$", clause):
+            continue
+        if len(clause) <= limit:
+            return clause
+    words = text.split()
+    if len(words) > 1:
+        kept: list[str] = []
+        for word in words:
+            candidate = " ".join([*kept, word])
+            if len(candidate) > max(1, limit - 1):
+                break
+            kept.append(word)
+        if kept:
+            result = " ".join(kept)
+            return result + ("…" if len(result) < len(text) else "")
+    if not allow_char_cut:
+        return ""
+    return text[: max(1, limit - 1)] + "…"
+
+
+def summarize_public_message(
+    text: str,
+    *,
+    prstk_risk_level: str = "R2",
+    limit: int = PUBLIC_TEXT_MAX_CHARS,
+) -> str:
+    """Create one deterministic, evidence-grounded public Telegram summary.
 
     Risk is deliberately an internal-only field.  The public contract keeps
     the colour cue but never exposes ``R0``-``R4``.  Existing risk tokens,
     colour icons, generic taxonomy labels and wrappers are normalized instead
-    of being stacked by downstream senders.  Truncation happens at the
-    ``｜`` segment boundary so a topic and its evidence-grounded summary stay
-    readable.
+    of being stacked by downstream senders.  Facts are selected at segment or
+    sentence boundaries; raw source text is never blindly cut before cleanup.
     """
+    if limit <= 0:
+        return ""
     level = str(prstk_risk_level or "R2").upper()
     if level not in PRSTK_RISK_LEVELS:
         level = "R2"
@@ -189,10 +251,11 @@ def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
     source = re.sub(r"(?<![A-Za-z0-9])R[0-4](?![A-Za-z0-9])\s*[｜|:]?", "", source, flags=re.IGNORECASE)
     source = re.sub(r"^[🟢🟡🟠🔴⚪⚫🟣]\s*", "", source)
     source = re.sub(r"[🟢🟡🟠🔴⚪⚫🟣]?\s*FJ\s*\d+(?:\.\d+)?\s*/\s*10\s*[｜|:]?", "", source, flags=re.IGNORECASE)
-    segments = [
-        part.strip() for part in re.split(r"[｜|]", source)
-        if part.strip() and part.strip() not in _GENERIC_PUBLIC_LABELS
-    ]
+    segments = []
+    for part in re.split(r"[｜|]", source):
+        cleaned = _clean_public_fragment(part)
+        if cleaned and cleaned not in _GENERIC_PUBLIC_LABELS:
+            segments.append(cleaned)
     if fj_match:
         fj_score = re.sub(r"\s+", " ", fj_match.group(0)).strip()
         # FJ's vendor importance is evidence metadata, not a replacement for
@@ -208,14 +271,18 @@ def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
     kept: list[str] = []
     for segment in body_segments:
         candidate = head + "｜".join([*kept, segment])
-        if len(candidate) <= 30:
+        if len(candidate) <= limit:
             kept.append(segment)
             continue
+        available = limit - len(head) - len("｜".join(kept)) - (1 if kept else 0)
+        excerpt = _semantic_excerpt(segment, available, allow_char_cut=not kept)
+        if excerpt and len(head + "｜".join([*kept, excerpt])) <= limit:
+            kept.append(excerpt)
         break
     if not kept:
         # Safe semantic fallback rather than arbitrary substring truncation.
         fallback = "資訊待核對"
-        return (head + fallback)[:30]
+        return _semantic_excerpt(head + fallback, limit)
     candidate = head + "｜".join(kept)
     # If the topic fits but the evidence sentence does not, retain a bounded
     # excerpt instead of dropping the very information the notification is
@@ -223,12 +290,24 @@ def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
     if len(kept) == 1 and len(body_segments) > 1:
         separator = "｜"
         prefix = head + kept[0] + separator
-        available = 30 - len(prefix)
+        available = limit - len(prefix)
         if available > 1:
-            return prefix + body_segments[1][: available - 1] + "…"
-    if len(candidate) < len(head + "｜".join(body_segments)) and len(candidate) < 30:
+            excerpt = _semantic_excerpt(body_segments[1], available, allow_char_cut=False)
+            if excerpt:
+                return prefix + excerpt
+    if (
+        len(candidate) < len(head + "｜".join(body_segments))
+        and len(candidate) < limit
+        and not candidate.endswith("…")
+        and not candidate.endswith(tuple("。！？；.!?;"))
+    ):
         candidate += "…"
-    return candidate[:30]
+    return candidate[:limit]
+
+
+def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
+    """Backward-compatible entry point for the shared public summarizer."""
+    return summarize_public_message(text, prstk_risk_level=prstk_risk_level)
 
 
 def format_text_brief(text: str, *, prstk_risk_level: str = "R2") -> str:

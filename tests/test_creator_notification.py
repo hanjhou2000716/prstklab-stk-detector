@@ -17,7 +17,7 @@ INSIGHT = {
 
 def test_captions_respect_photo_and_text_limits() -> None:
     assert len(creator_telegram_caption(INSIGHT)) <= 40
-    assert len(creator_text_caption(INSIGHT)) <= 30
+    assert len(creator_text_caption(INSIGHT)) <= 40
     assert "<" not in creator_telegram_caption({**INSIGHT, "episode_title": "x < y"})
 
 

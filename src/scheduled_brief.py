@@ -14,7 +14,7 @@ from src.config import get_settings
 from src.event_ledger import EventLedger, is_secondary_commentary, taiwan_investor_priority
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import merge_published_metadata, write_snapshot
-from src.telegram_client import alert_mini_app_url, send_briefs
+from src.telegram_client import PUBLIC_TEXT_MAX_CHARS, alert_mini_app_url, send_briefs, summarize_public_message
 
 SLOT_LABELS = {
     "morning": "晨報",
@@ -26,7 +26,7 @@ SLOT_LABELS = {
     "us_premarket": "美股盤前",
     "us_open": "美股開盤",
 }
-MAX_BRIEF_LENGTH = 30
+MAX_BRIEF_LENGTH = PUBLIC_TEXT_MAX_CHARS
 TAIWAN_SESSION_SLOTS = frozenset({"pre_open", "intraday", "midday", "afternoon"})
 
 
@@ -35,7 +35,7 @@ def _write_output(values: dict[str, object]) -> None:
 
     The same values are also printed for local runs.  Telegram text remains
     intentionally short; correlation belongs in Actions, Railway and the
-    Mini App snapshot rather than in the 30-character watch message.
+    Mini App snapshot rather than in the 40-character watch message.
     """
     lines = []
     for key, value in values.items():
@@ -168,7 +168,7 @@ def _pick_event(snapshot: dict, slot: str) -> dict | None:
 
 
 def build_brief(snapshot: dict, slot: str) -> str:
-    """Create a 30-character watch brief; detail remains in the Mini App."""
+    """Create a 40-character watch brief; detail remains in the Mini App."""
     from src.event_output import short_event_message
 
     label = SLOT_LABELS[slot]
@@ -189,7 +189,7 @@ def build_brief(snapshot: dict, slot: str) -> str:
         prepared.setdefault("market_direction", "上漲" if float(pct) > 0 else "下跌" if float(pct) < 0 else "持平")
         prepared.setdefault("market_move", f"{float(pct):+.1f}%")
         prepared.setdefault("risk_level", "高波動" if abs(float(pct)) >= 2 else "觀察")
-        return short_event_message(prepared, prefix=label)[:MAX_BRIEF_LENGTH]
+        return short_event_message(prepared, prefix=label)
     # Compatibility fallback for sparse test/legacy snapshots. Production
     # events produced by event_alerts carry the canonical fields above.
     icon = "📈" if pct > 1 else "📉" if pct < -1 else "🟰"
@@ -198,14 +198,19 @@ def build_brief(snapshot: dict, slot: str) -> str:
         if event.get("kind") == "market_signal" and event.get("pattern"):
             instrument = event.get("instrument") or quote
             market = "台指" if instrument.get("ticker") == "TAIEX" else str(instrument.get("ticker") or quote["ticker"])
-            return f"{label}｜{market} {float(pct):+.1f}%｜{event.get('pattern')}"[:MAX_BRIEF_LENGTH]
+            return f"{label}｜{market} {float(pct):+.1f}%｜{event.get('pattern')}"
         if event.get("brief_title"):
-            return f"{label}｜{event['brief_title']}"[:MAX_BRIEF_LENGTH]
+            return f"{label}｜{event['brief_title']}"
         event_label = event.get("short_label")
         if event_label:
             prefix = f"{label}｜"
             available = MAX_BRIEF_LENGTH - len(prefix) - len(suffix) - 1
-            return f"{prefix}{str(event_label)[:max(0, available)]}｜{suffix}"[:MAX_BRIEF_LENGTH]
+            label_text = str(event_label)
+            if len(label_text) > max(0, available):
+                return summarize_public_message(
+                    f"{prefix}{label_text}｜{suffix}", limit=MAX_BRIEF_LENGTH,
+                )
+            return f"{prefix}{label_text}｜{suffix}"
     return f"{label}｜{suffix}"
 
 
