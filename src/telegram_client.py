@@ -198,9 +198,16 @@ def _semantic_excerpt(value: str, limit: int, *, allow_char_cut: bool = True) ->
         return ""
     if len(text) <= limit:
         return text
-    clauses = [part.strip() for part in re.split(r"(?<=[。！？；.!?;])\s*", text) if part.strip()]
-    if clauses and len(clauses[0]) <= limit:
-        return clauses[0]
+    clauses = [part.strip() for part in re.split(r"(?<=[。！？；.!?;])(?:\s+|$)", text) if part.strip()]
+    for clause in clauses:
+        # A period in U.S., Inc., etc. is not a complete sentence boundary.
+        # Do not publish a fragment such as ``Iran says U.`` as if it were a
+        # meaningful event fact; the word-boundary fallback below retains the
+        # largest readable prefix instead.
+        if re.search(r"(?:\b[A-Za-z]\.)+$", clause):
+            continue
+        if len(clause) <= limit:
+            return clause
     words = text.split()
     if len(words) > 1:
         kept: list[str] = []

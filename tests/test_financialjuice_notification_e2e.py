@@ -63,6 +63,18 @@ def test_financialjuice_incomplete_attribution_is_not_deliverable() -> None:
     assert financialjuice_caption({"title": "據《The...", "vendor_importance": 9}) == ""
 
 
+def test_financialjuice_uses_complete_fallback_when_title_is_truncated() -> None:
+    caption = financialjuice_caption({
+        "title": "據《The...",
+        "vendor_original_headline": "Iran says U.S. strikes telecommunications infrastructure.",
+        "vendor_importance": 9,
+    })
+    assert caption.startswith("🟣 FJ 9/10｜Iran says U.S. strikes")
+    assert "據《The" not in caption
+    assert "U.…" not in caption
+    assert len(caption) <= 40
+
+
 def test_financialjuice_delivery_suppresses_incomplete_attribution() -> None:
     calls: list[dict[str, object]] = []
 

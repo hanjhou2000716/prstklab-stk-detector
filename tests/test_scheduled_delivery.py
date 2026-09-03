@@ -199,7 +199,8 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
         "observation_id": "fj-observation-1",
         "observation_id_hash": "a" * 64,
         "item_id": "item-1",
-        "title": "Oil supply risk",
+        "title": "據《The...",
+        "vendor_original_headline": "Iran says U.S. strikes telecommunications infrastructure.",
         "vendor_importance": 8,
         "notification_status": "eligible",
         "vendor_priority_notification": True,
@@ -215,14 +216,16 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
         "decide_alert_budget",
         lambda *_args: {"allowed": True, "reason": "material_change", "event_key": "cluster-1"},
     )
-    monkeypatch.setattr(
-        scheduled_delivery,
-        "send_text_briefs_audited",
-        lambda **kwargs: (TextDeliveryReceipt(
+    captured: dict[str, object] = {}
+
+    def sender(**kwargs):
+        captured.update(kwargs)
+        return (TextDeliveryReceipt(
             kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"],
             "hash", "delivered", message_id=2, observation_id=kwargs.get("observation_id", ""),
-        ),),
-    )
+        ),)
+
+    monkeypatch.setattr(scheduled_delivery, "send_text_briefs_audited", sender)
     monkeypatch.setattr(scheduled_delivery, "write_event_lock_key", lambda *_args: None)
     recorded: dict = {}
 
@@ -250,6 +253,8 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
     assert recorded["observation_id_hash"] == "a" * 64
     assert recorded["notification_key"].startswith("financialjuice:")
     assert recorded["delivery_receipts"][0]["delivery_status"] == "delivered"
+    assert "據《The" not in captured["text"]
+    assert len(captured["text"]) <= 40
 
 
 def test_scheduled_financialjuice_all_recipient_failure_is_fail_closed(tmp_path, monkeypatch):
