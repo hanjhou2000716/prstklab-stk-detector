@@ -42,6 +42,7 @@ def test_manual_scheduled_acceptance_can_scope_one_recipient():
     assert "test_chat_id:" in workflow
     assert "inputs.test_chat_id || secrets.TELEGRAM_CHAT_IDS" in workflow
     assert "FAILED_RECIPIENT_HASHES: ${{ steps.send_brief.outputs.failed_recipient_hashes }}" in workflow
+    assert "FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count || '0' }}" in workflow
 
 
 def test_scheduled_workflow_only_passes_explicit_external_creator_records():

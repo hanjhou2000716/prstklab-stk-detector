@@ -293,8 +293,8 @@ jobs:
           ALERT_ID: ${{ steps.send_brief.outputs.alert_id }}
           DELIVERY_MODE: ${{ steps.send_brief.outputs.delivery_mode }}
           DELIVERY_STATUS: ${{ steps.send_brief.outputs.delivery_status }}
-          DELIVERED_COUNT: ${{ steps.send_brief.outputs.delivered_count }}
-          FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count }}
+          DELIVERED_COUNT: ${{ steps.send_brief.outputs.delivered_count || '0' }}
+          FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count || '0' }}
           RENDERER_ERROR_TYPE: ${{ steps.send_brief.outputs.renderer_error_type }}
           FAILED_RECIPIENT_HASHES: ${{ steps.send_brief.outputs.failed_recipient_hashes }}
           FINANCIALJUICE_TRACE: ${{ steps.send_brief.outputs.financialjuice_delivery_trace }}
