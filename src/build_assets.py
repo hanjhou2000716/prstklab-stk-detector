@@ -58,6 +58,13 @@ def build_assets(root: Path, *, build_sha: str | None = None) -> dict[str, Any]:
     version = (os.getenv("ASSET_VERSION") or combined)[:16]
     index = root / "index.html"
     html = index.read_text(encoding="utf-8")
+    # A workflow may rebuild the Pages bundle after persisting a delivery
+    # claim.  The first build replaces the source placeholders in-place, so
+    # restore the cache-busting slots before the reconciled build instead of
+    # treating an already-built index as corrupt.
+    if PLACEHOLDER not in html:
+        for relative in ASSETS:
+            html = html.replace(f"{relative}?v=", f"{relative}?v={PLACEHOLDER}")
     if PLACEHOLDER not in html:
         raise ValueError("site/index.html is missing __ASSET_VERSION__ placeholders")
     api_base = os.getenv("PUBLIC_API_BASE_URL", "").strip().rstrip("/")
