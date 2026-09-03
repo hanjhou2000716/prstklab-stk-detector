@@ -15,6 +15,8 @@ def test_official_event_workflow_is_dispatchable_and_idempotent():
     assert "src.delivery_callback" in workflow
     assert "PUBLIC_OBSERVATIONS_URL" in workflow
     assert "PUBLIC_OBSERVATIONS_SHARED_SECRET" in workflow
+    assert "Prepare reconciled Pages artifact" in workflow
+    assert "artifact_name: github-pages-reconciled" in workflow
 
 
 def test_gmail_history_dispatches_realtime_monitor_after_new_reviewed_rows():

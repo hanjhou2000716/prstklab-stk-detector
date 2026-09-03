@@ -176,15 +176,43 @@ jobs:
           FAILED_RECIPIENT_HASHES: ${{ steps.send.outputs.failed_recipient_hashes }}
         run: python -m src.delivery_callback
       - name: Persist notification ledger state after delivery
+        id: persist_notification_ledger
         if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped'
         env:
           GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python -m src.release_manifest \
+            --allow-stale-research \
+            --research-fallback-reason "research scan incomplete; preserving last-known-good research snapshot"
+          python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
+            --message "chore: persist official notification ledger state"
+      - name: Prepare reconciled Pages artifact
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'
+        run: |
+          python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
+          python -m src.asset_contract --root site
+      - name: Upload reconciled Pages artifact
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+        with:
+          name: github-pages-reconciled
+          path: site
+      - name: Deploy reconciled Pages release
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'
+        id: reconciled_deployment
+        uses: ./.github/actions/deploy-pages-retry
+        with:
+          artifact_name: github-pages-reconciled
+          fallback_url: ${{ env.DASHBOARD_URL }}
+      - name: Verify reconciled public release
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success' && steps.reconciled_deployment.outputs.available == 'true'
         run: >-
-          python -m src.data_release
-          --publish
-          --branch "$DATA_RELEASE_BRANCH"
-          --include site/data
-          --message "chore: persist official notification ledger state"
+          python -m src.release_gate
+          --manifest "$MANIFEST_PATH"
+          --expected-snapshot-id "${{ steps.status.outputs.snapshot_id }}"
+          --public-url "${{ steps.reconciled_deployment.outputs.page_url }}"
+          --public-attempts 12
+          --public-delay 5
       - name: Save event delivery lock
         if: success() && steps.send.outputs.sent == 'true'
         run: touch .official-event-lock

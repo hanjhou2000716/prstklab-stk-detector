@@ -302,15 +302,49 @@ jobs:
           FINANCIALJUICE_TRACE: ${{ steps.send_brief.outputs.financialjuice_delivery_trace }}
         run: python -m src.delivery_callback
       - name: Persist notification ledger state after delivery
+        id: persist_notification_ledger
         if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped'
         env:
           GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          arguments=(
+            --allow-stale-research
+            --research-fallback-reason "research scan incomplete; preserving last-known-good research snapshot"
+          )
+          creator_records_path="/tmp/prstk-creator-records.json"
+          if [ -s "$creator_records_path" ]; then
+            arguments+=(--creator-records "$creator_records_path")
+          fi
+          python -m src.release_manifest "${arguments[@]}"
+          python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
+            --message "chore: persist scheduled notification ledger state"
+      - name: Prepare reconciled Pages artifact
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'
+        run: |
+          python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
+          python -m src.asset_contract --root site
+      - name: Upload reconciled Pages artifact
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+        with:
+          name: github-pages-reconciled
+          path: site
+      - name: Deploy reconciled Pages release
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'
+        id: reconciled_deployment
+        uses: ./.github/actions/deploy-pages-retry
+        with:
+          artifact_name: github-pages-reconciled
+          fallback_url: ${{ env.DASHBOARD_URL }}
+      - name: Verify reconciled public release
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success' && steps.reconciled_deployment.outputs.available == 'true'
         run: >-
-          python -m src.data_release
-          --publish
-          --branch "$DATA_RELEASE_BRANCH"
-          --include site/data
-          --message "chore: persist scheduled notification ledger state"
+          python -m src.release_gate
+          --manifest "$MANIFEST_PATH"
+          --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}"
+          --public-url "${{ steps.reconciled_deployment.outputs.page_url }}"
+          --public-attempts 12
+          --public-delay 5
       - name: Send release-gated Creator notifications
         if: steps.release_gate.outputs.allowed == 'true' && env.CREATOR_NOTIFICATION_ENABLED == 'true' && env.NOTIFY == 'true'
         id: creator_dispatch
@@ -324,7 +358,7 @@ jobs:
         run: |
           python -m src.creator_dispatch \
             --manifest "$MANIFEST_PATH" \
-            --public-url "${{ steps.deployment.outputs.page_url }}" \
+            --public-url "${{ steps.reconciled_deployment.outputs.page_url || steps.deployment.outputs.page_url }}" \
             >> "$GITHUB_OUTPUT"
       - name: Summarize Creator notification decision
         if: always() && steps.release_gate.outputs.allowed == 'true' && env.CREATOR_NOTIFICATION_ENABLED == 'true' && env.NOTIFY == 'true'

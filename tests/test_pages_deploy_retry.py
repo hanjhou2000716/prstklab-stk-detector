@@ -15,6 +15,8 @@ def test_pages_deploy_wrapper_retries_and_reports_degraded_status():
     assert "Neither Pages deployment attempt returned a public URL" in action
     assert "FALLBACK_URL" in action
     assert "fallback_url" in action
+    assert "artifact_name" in action
+    assert 'default: "github-pages"' in action
     assert "available:" in action
     assert "pages_deployment_unavailable" in action
     assert "exit 1" not in action
