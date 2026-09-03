@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/external_source_parsers.py
-# Canonical source SHA256: 2677f83a8a174bdcf4a1652590170ede5ebe1523443937e83f766e13588e2b03
+# Canonical source SHA256: c53380c330278df1982fc73592a12df553d4de6ff2b5e8e0c53c542bb27a4818
 
 """Deterministic parsers for sanitized external intelligence mail.
 
@@ -305,6 +305,24 @@ def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_
     source_url = _section(body, ("source url", "來源連結", "url")) or FINANCIALJUICE_SOURCE_URL
     if not headline:
         return {"parse_status": "parse_failed", "failure_reason": "missing_headline", "message_id": message_id}
+    identity_record = {
+        "original_headline": headline,
+        "chinese_translation": translation,
+        "ai_commentary": analysis,
+        "possible_impact": impact,
+        "source_url": source_url,
+    }
+    identity = normalize_financialjuice_item(
+        identity_record, message_id=message_id, index=0,
+    )
+    cluster_key = _compound_cluster_key(
+        {
+            "candidate_event_type": classify_event_fields(identity_record).get("category") or "unknown",
+            "original_headline": headline,
+            "chinese_translation": translation,
+        },
+        identity,
+    )
     return {
         "parse_status": "parsed",
         "parser_version": "financialjuice-v1",
@@ -320,6 +338,9 @@ def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_
         "source_url": source_url,
         "source_domain": _source_domain(source_url),
         "attribution": "FinancialJuice",
+        "item_id": identity["item_id"],
+        "content_hash": identity["content_hash"],
+        "event_cluster_key": cluster_key,
         "public_safe": True,
     }
 

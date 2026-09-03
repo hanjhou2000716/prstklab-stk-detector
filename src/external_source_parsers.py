@@ -300,6 +300,24 @@ def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_
     source_url = _section(body, ("source url", "來源連結", "url")) or FINANCIALJUICE_SOURCE_URL
     if not headline:
         return {"parse_status": "parse_failed", "failure_reason": "missing_headline", "message_id": message_id}
+    identity_record = {
+        "original_headline": headline,
+        "chinese_translation": translation,
+        "ai_commentary": analysis,
+        "possible_impact": impact,
+        "source_url": source_url,
+    }
+    identity = normalize_financialjuice_item(
+        identity_record, message_id=message_id, index=0,
+    )
+    cluster_key = _compound_cluster_key(
+        {
+            "candidate_event_type": classify_event_fields(identity_record).get("category") or "unknown",
+            "original_headline": headline,
+            "chinese_translation": translation,
+        },
+        identity,
+    )
     return {
         "parse_status": "parsed",
         "parser_version": "financialjuice-v1",
@@ -315,6 +333,9 @@ def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_
         "source_url": source_url,
         "source_domain": _source_domain(source_url),
         "attribution": "FinancialJuice",
+        "item_id": identity["item_id"],
+        "content_hash": identity["content_hash"],
+        "event_cluster_key": cluster_key,
         "public_safe": True,
     }
 

@@ -21,6 +21,22 @@ def test_financialjuice_parser_keeps_vendor_importance_separate() -> None:
     assert "body" not in result
 
 
+def test_financialjuice_single_item_has_stable_independent_identity() -> None:
+    first = parse_financialjuice_email(
+        sender="alerts@financialjuice.com", subject="FinancialJuice alert",
+        body="Importance: 10/10\nOriginal headline: Iran telecom attack",
+        message_id="message-a",
+    )
+    second = parse_financialjuice_email(
+        sender="alerts@financialjuice.com", subject="FinancialJuice alert",
+        body="Importance: 9/10\nOriginal headline: Nscale Anthropic contract",
+        message_id="message-b",
+    )
+    assert first["item_id"] != second["item_id"]
+    assert first["event_cluster_key"] != second["event_cluster_key"]
+    assert len(first["content_hash"]) == 64
+
+
 def test_financialjuice_parser_uses_substantive_subject_when_body_is_stub() -> None:
     result = parse_financialjuice_email(
         sender="alerts@financialjuice.com",
