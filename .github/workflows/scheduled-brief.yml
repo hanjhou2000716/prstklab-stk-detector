@@ -19,6 +19,11 @@ on:
         required: false
         default: false
         type: boolean
+      test_chat_id:
+        description: Optional single recipient for production acceptance
+        required: false
+        default: ""
+        type: string
   repository_dispatch:
     types: [scheduled-brief]
   schedule:
@@ -243,6 +248,9 @@ jobs:
       - name: Record delivery gate when Pages is unavailable
         if: steps.prepare.outputs.prepared == 'true' && (steps.release_policy.outputs.publish != 'true' || steps.deployment.outputs.available != 'true')
         run: echo "Release is not fresh or Pages is unavailable; Telegram delivery intentionally skipped (fail closed)."
+      - name: Mask acceptance recipient
+        if: inputs.test_chat_id != ''
+        run: echo "::add-mask::${{ inputs.test_chat_id }}"
       - name: Send Telegram brief after successful publication
         if: steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true'
         id: send_brief
@@ -250,7 +258,7 @@ jobs:
           # Notification credentials are scoped to this step; collection and
           # publication steps above never receive Telegram secrets.
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
+          TELEGRAM_CHAT_IDS: ${{ inputs.test_chat_id || secrets.TELEGRAM_CHAT_IDS }}
         run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --send-only --snapshot "$SNAPSHOT_PATH" --manifest "$MANIFEST_PATH" --public-url "${{ steps.deployment.outputs.page_url }}"
       - name: Publish scheduled notification decision
         if: always()
@@ -288,7 +296,7 @@ jobs:
           DELIVERED_COUNT: ${{ steps.send_brief.outputs.delivered_count }}
           FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count }}
           RENDERER_ERROR_TYPE: ${{ steps.send_brief.outputs.renderer_error_type }}
-          FAILED_RECIPIENT_HASHES: ""
+          FAILED_RECIPIENT_HASHES: ${{ steps.send_brief.outputs.failed_recipient_hashes }}
           FINANCIALJUICE_TRACE: ${{ steps.send_brief.outputs.financialjuice_delivery_trace }}
         run: python -m src.delivery_callback
       - name: Send release-gated Creator notifications

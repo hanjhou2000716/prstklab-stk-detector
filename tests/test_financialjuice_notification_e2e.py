@@ -63,6 +63,21 @@ def test_financialjuice_incomplete_attribution_is_not_deliverable() -> None:
     assert financialjuice_caption({"title": "據《The...", "vendor_importance": 9}) == ""
 
 
+def test_financialjuice_compresses_real_nscale_event_to_one_complete_sentence() -> None:
+    caption = financialjuice_caption({
+        "event": (
+            "據《The Information》報導，AI雲端及基礎設施公司 Nscale 在贏得 "
+            "Anthropic 的合約後，宣稱其已簽約的合約營收總額已超過1,000億美元。"
+        ),
+        "vendor_importance": 9,
+    })
+    assert caption == "🟣 FJ 9/10｜Nscale稱Anthropic合約簽約營收逾千億美元。"
+    assert len(caption) <= 40
+    assert "據《" not in caption
+    assert "…" not in caption and "..." not in caption
+    assert caption.count("｜") == 1
+
+
 def test_financialjuice_uses_complete_fallback_when_title_is_truncated() -> None:
     caption = financialjuice_caption({
         "title": "據《The...",

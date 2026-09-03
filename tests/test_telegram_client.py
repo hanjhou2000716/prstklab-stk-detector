@@ -59,8 +59,8 @@ def test_rejects_over_40_character_brief():
 
 def test_shared_summary_drops_incomplete_source_attribution_without_raw_cut():
     text = canonical_short_message("🟣 FJ 9/10｜據《The...", prstk_risk_level="R2")
-    assert text == "🟣 FJ 9/10｜資訊待核對"
-    assert "The…" not in text
+    assert text == ""
+    assert "據《The" not in text
 
 
 def test_shared_summary_keeps_complete_event_fact_and_uses_word_boundary():
@@ -69,7 +69,18 @@ def test_shared_summary_keeps_complete_event_fact_and_uses_word_boundary():
     )
     assert text.startswith("🟣 FJ 8/10｜Federal Reserve")
     assert len(text) <= 40
-    assert "announc…" not in text
+    assert "..." not in text
+    assert "…" not in text
+
+
+def test_shared_summary_never_uses_ellipsis_or_second_public_field_separator():
+    text = canonical_short_message(
+        "🟣 FJ 9/10｜Nscale稱Anthropic合約簽約營收逾千億美元。｜可能影響美股科技股。",
+    )
+    assert len(text) <= 40
+    assert "…" not in text and "..." not in text
+    assert text.count("｜") == 1
+    assert text.endswith("。")
 
 
 def test_shared_summary_drops_impact_fragment_when_no_complete_clause_fits():

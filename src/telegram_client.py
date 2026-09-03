@@ -192,18 +192,21 @@ def _clean_public_fragment(value: object) -> str:
 
 
 def _semantic_excerpt(value: str, limit: int, *, allow_char_cut: bool = True) -> str:
-    """Fit one fact without cutting an English word or a source preamble."""
+    """Fit one fact without ellipses or an incomplete English word.
+
+    A public alert is either a complete readable clause or no alert.  The
+    ``allow_char_cut`` argument remains for compatibility with older callers,
+    but character cutting is deliberately no longer permitted at this public
+    boundary.
+    """
     text = _clean_public_fragment(value)
-    if limit <= 0 or not text:
+    if limit <= 0 or not text or "…" in text or "..." in text:
         return ""
     if len(text) <= limit:
         return text
     clauses = [part.strip() for part in re.split(r"(?<=[。！？；.!?;])(?:\s+|$)", text) if part.strip()]
     for clause in clauses:
         # A period in U.S., Inc., etc. is not a complete sentence boundary.
-        # Do not publish a fragment such as ``Iran says U.`` as if it were a
-        # meaningful event fact; the word-boundary fallback below retains the
-        # largest readable prefix instead.
         if re.search(r"(?:\b[A-Za-z]\.)+$", clause):
             continue
         if len(clause) <= limit:
@@ -213,15 +216,14 @@ def _semantic_excerpt(value: str, limit: int, *, allow_char_cut: bool = True) ->
         kept: list[str] = []
         for word in words:
             candidate = " ".join([*kept, word])
-            if len(candidate) > max(1, limit - 1):
+            if len(candidate) + 1 > limit:
                 break
             kept.append(word)
         if kept:
-            result = " ".join(kept)
-            return result + ("…" if len(result) < len(text) else "")
-    if not allow_char_cut:
-        return ""
-    return text[: max(1, limit - 1)] + "…"
+            # A title without punctuation is treated as a compact sentence;
+            # the terminal full stop makes the one-sentence contract explicit.
+            return " ".join(kept) + "."
+    return ""
 
 
 def summarize_public_message(
@@ -243,7 +245,7 @@ def summarize_public_message(
     level = str(prstk_risk_level or "R2").upper()
     if level not in PRSTK_RISK_LEVELS:
         level = "R2"
-    source = " ".join(str(text or "").split()) or "市場公開資訊待核對"
+    source = " ".join(str(text or "").split())
     # Preserve the vendor score while removing any existing severity token.
     fj_match = re.search(r"FJ\s*\d+(?:\.\d+)?\s*/\s*10", source, flags=re.IGNORECASE)
     # Remove all caller-provided icons and risk tokens before rebuilding the
@@ -254,7 +256,12 @@ def summarize_public_message(
     segments = []
     for part in re.split(r"[｜|]", source):
         cleaned = _clean_public_fragment(part)
-        if cleaned and cleaned not in _GENERIC_PUBLIC_LABELS:
+        if (
+            cleaned
+            and cleaned not in _GENERIC_PUBLIC_LABELS
+            and "…" not in cleaned
+            and "..." not in cleaned
+        ):
             segments.append(cleaned)
     if fj_match:
         fj_score = re.sub(r"\s+", " ", fj_match.group(0)).strip()
@@ -267,42 +274,30 @@ def summarize_public_message(
         category = ""
     body_segments = ([category] if category and (not segments or segments[0] != category) else []) + segments
     if not body_segments:
-        body_segments = ["資訊待核對"]
-    kept: list[str] = []
-    for segment in body_segments:
-        candidate = head + "｜".join([*kept, segment])
-        if len(candidate) <= limit:
-            kept.append(segment)
-            continue
-        available = limit - len(head) - len("｜".join(kept)) - (1 if kept else 0)
-        excerpt = _semantic_excerpt(segment, available, allow_char_cut=not kept)
-        if excerpt and len(head + "｜".join([*kept, excerpt])) <= limit:
-            kept.append(excerpt)
-        break
-    if not kept:
-        # Safe semantic fallback rather than arbitrary substring truncation.
-        fallback = "資訊待核對"
-        return _semantic_excerpt(head + fallback, limit)
-    candidate = head + "｜".join(kept)
-    # If the topic fits but the evidence sentence does not, retain a bounded
-    # excerpt instead of dropping the very information the notification is
-    # meant to communicate.
-    if len(kept) == 1 and len(body_segments) > 1:
-        separator = "｜"
-        prefix = head + kept[0] + separator
-        available = limit - len(prefix)
-        if available > 1:
-            excerpt = _semantic_excerpt(body_segments[1], available, allow_char_cut=False)
-            if excerpt:
-                return prefix + excerpt
-    if (
-        len(candidate) < len(head + "｜".join(body_segments))
-        and len(candidate) < limit
-        and not candidate.endswith("…")
-        and not candidate.endswith(tuple("。！？；.!?;"))
-    ):
-        candidate += "…"
-    return candidate[:limit]
+        # FJ metadata without an event fact is suppression-worthy.  Other
+        # legacy callers retain a neutral, bounded fallback.
+        return "" if fj_match else f"{head}資訊待核對。"[:limit]
+
+    # Public text has one body sentence.  Prefer the first event fact and add
+    # a second fact only when it can be joined as a complete clause; never
+    # concatenate fields with another visible separator.
+    first = _semantic_excerpt(body_segments[0], limit - len(head), allow_char_cut=False)
+    if not first:
+        return ""
+    body = first
+    if len(body_segments) > 1:
+        second = _semantic_excerpt(body_segments[1], limit - len(head) - len(body) - 1, allow_char_cut=False)
+        if second:
+            left = body.rstrip("。！？；.!?;，,")
+            right = second.lstrip("。！？；.!?;，,")
+            joined = f"{left}，{right}"
+            if len(head + joined) <= limit:
+                body = joined
+    if len(head + body) > limit:
+        body = _semantic_excerpt(body, limit - len(head), allow_char_cut=False)
+    if not body or "…" in body or "..." in body:
+        return ""
+    return head + body
 
 
 def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:

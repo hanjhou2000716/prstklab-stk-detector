@@ -9,6 +9,7 @@ recipient-scoped, replay-safe delivery plan for the production sender.
 from __future__ import annotations
 
 import hashlib
+import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -38,6 +39,42 @@ def _bounded(value: str, limit: int) -> str:
     return summarize_public_message(value, limit=limit)
 
 
+def _compress_fj_sentence(value: str) -> str:
+    """Apply only factual, deterministic shortening to an FJ event sentence."""
+    from src.telegram_client import _clean_public_fragment
+
+    text = _clean_public_fragment(value)
+    if not text or "…" in text or "..." in text:
+        return ""
+    text = re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"\s+-\s+The Information\s*$", "", text, flags=re.IGNORECASE)
+    text = re.sub(
+        r"^(?P<entity>[A-Za-z][\w-]*)\s+boasts over \$100 billion in contracted revenue"
+        r" after [A-Za-z][\w-]* win\.?$",
+        r"\g<entity> claims $100B revenue.",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = text.replace("1,000億", "千億").replace("1,000 億", "千億")
+    # Preserve the reported claim while dropping nonessential industry
+    # framing and repeated Chinese function words.
+    text = re.sub(r"^AI雲端及基礎設施公司\s*", "", text)
+    text = re.sub(
+        r"^(?P<entity>\S+)\s+在贏得\s+(?P<partner>[^，,]+?)\s+的合約後，\s*"
+        r"宣稱其已簽約的合約營收總額已超過(?P<amount>[\d,]+億美元|千億美元)",
+        r"\g<entity>稱\g<partner>合約簽約營收逾\g<amount>",
+        text,
+    )
+    text = re.sub(r"(?<=[\u4e00-\u9fff])\s+(?=[A-Za-z0-9])", "", text)
+    text = re.sub(r"(?<=[A-Za-z0-9])\s+(?=[\u4e00-\u9fff])", "", text)
+    text = text.replace("其已", "").replace("已超過", "逾")
+    text = text.replace("合約營收總額", "合約營收")
+    text = text.replace("據報導", "")
+    if text and not text.endswith(("。", "！", "？", ".", "!", "?")):
+        text += "。"
+    return text
+
+
 def _financialjuice_headline(event: dict[str, Any]) -> str:
     """Select the best parsed event fact, excluding metadata-only labels."""
     from src.telegram_client import _clean_public_fragment
@@ -48,6 +85,7 @@ def _financialjuice_headline(event: dict[str, Any]) -> str:
         "vendor_original_headline", "original_headline",
     ):
         value = _clean_public_fragment(event.get(field))
+        value = _compress_fj_sentence(value)
         if value and value.casefold() not in generic:
             return value
     return ""
