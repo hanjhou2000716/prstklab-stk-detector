@@ -254,6 +254,9 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
     assert recorded["notification_key"].startswith("financialjuice:")
     assert recorded["delivery_receipts"][0]["delivery_status"] == "delivered"
     assert "據《The" not in captured["text"]
+    assert "…" not in captured["text"]
+    assert "..." not in captured["text"]
+    assert str(captured["text"]).count("｜") == 1
     assert len(captured["text"]) <= 40
 
 

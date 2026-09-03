@@ -37,6 +37,13 @@ def test_manual_scheduled_run_is_publish_only_by_default():
     assert "env.NOTIFY == 'true'" in workflow
 
 
+def test_manual_scheduled_acceptance_can_scope_one_recipient():
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
+    assert "test_chat_id:" in workflow
+    assert "inputs.test_chat_id || secrets.TELEGRAM_CHAT_IDS" in workflow
+    assert "FAILED_RECIPIENT_HASHES: ${{ steps.send_brief.outputs.failed_recipient_hashes }}" in workflow
+
+
 def test_scheduled_workflow_only_passes_explicit_external_creator_records():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
     assert "CREATOR_RECORDS_PATH" in workflow
