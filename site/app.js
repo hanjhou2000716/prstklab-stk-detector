@@ -1198,7 +1198,26 @@ const render = (snapshot) => {
 // Telegram buttons carry the release and alert identity.  Resolve that
 // identity only after the manifest/hash boundary has succeeded; never fall
 // back to an unrelated current event when a deep link is stale or unknown.
-const applyDeepLink = (snapshot) => {
+const loadArchivedAlert = async (snapshot, notificationId, releaseId, snapshotId, observationId) => {
+  const index = snapshot?.alert_index;
+  const rows = Array.isArray(index?.alerts) ? index.alerts : [];
+  const row = rows.find((item) => String(item?.notification_id || "") === notificationId && String(item?.release_id || "") === releaseId);
+  if (!row || !row.path || !row.sha256) throw new Error("immutable alert artifact is not indexed");
+  const path = String(row.path);
+  if (path.startsWith("/") || path.includes("..") || !path.startsWith("alerts/")) throw new Error("immutable alert artifact path is invalid");
+  const response = await fetchResponseWithRetry(`data/${path}`);
+  const text = await response.text();
+  if (await sha256Hex(text) !== String(row.sha256)) throw new Error("immutable alert artifact hash mismatch");
+  const alert = JSON.parse(text);
+  if (!alert || String(alert.notification_id || "") !== notificationId || String(alert.release_id || "") !== releaseId) {
+    throw new Error("immutable alert identity mismatch");
+  }
+  if (snapshotId && String(alert.snapshot_id || "") !== snapshotId) throw new Error("immutable alert snapshot mismatch");
+  if (observationId && String(alert.observation_id || "") !== observationId) throw new Error("immutable alert observation mismatch");
+  return alert;
+};
+
+const applyDeepLink = async (snapshot) => {
   const params = new URLSearchParams(window.location.search);
   const requestedRelease = String(params.get("release") || "").trim();
   const requestedAlert = String(params.get("alert") || "").trim();
@@ -1208,6 +1227,19 @@ const applyDeepLink = (snapshot) => {
   if (!requestedRelease && !requestedAlert && !view) return;
   const manifestRelease = String(window.releaseManifest?.release_id || "");
   if (!requestedRelease || requestedRelease !== manifestRelease) {
+    if (requestedAlert && requestedRelease) {
+      try {
+        const archived = await loadArchivedAlert(snapshot, requestedAlert, requestedRelease, requestedSnapshot, requestedObservation);
+        renderAlertCard({ items: [archived] }, archived.created_at || snapshot.generated_at, null, archived.market_evidence || []);
+        setReleaseHealth("已載入原始 immutable alert 詳情。", "ready");
+        setText("market-focus", "此訊息依 notification_id 載入原始 release，未改為最新事件。");
+        return;
+      } catch (error) {
+        setReleaseHealth(`該訊息版本不可驗證；已安全停止載入（${error.message}）。`, "error");
+        setText("market-focus", "找不到可驗證的原始 alert，暫不替換為其他事件。");
+        return;
+      }
+    }
     setReleaseHealth("該訊息版本已歸檔或不可用；目前顯示最新安全版本。", "error");
     setText("market-focus", "訊息版本與目前公開 release 不一致，暫不載入其他事件。");
     return;
@@ -1335,6 +1367,12 @@ const readLastGoodRelease = async () => {
       if (String(news.market_snapshot_id || "") !== String(saved.manifest.market_snapshot_id || "")) return null;
       if (saved.manifest.news_snapshot_id && String(news.snapshot_id || "") !== String(saved.manifest.news_snapshot_id)) return null;
       snapshot.news = news;
+    }
+    const alertIndexText = saved.artifactTexts["alert-index.json"];
+    if (alertIndexText) {
+      const alertIndex = JSON.parse(alertIndexText);
+      if (!Array.isArray(alertIndex.alerts)) return null;
+      snapshot.alert_index = alertIndex;
     }
     const creatorText = saved.artifactTexts["creator-release.json"];
     if (creatorText) {
@@ -1464,6 +1502,12 @@ const loadPublishedRelease = async () => {
     }
     snapshot.source_health = healthEnvelope.source_health;
   }
+  const alertIndexText = artifactTexts["alert-index.json"];
+  if (alertIndexText) {
+    const alertIndex = JSON.parse(alertIndexText);
+    if (!Array.isArray(alertIndex.alerts)) throw new Error("alert index is invalid");
+    snapshot.alert_index = alertIndex;
+  }
   window.releaseManifest = manifest;
   saveLastGoodRelease(manifest, artifactTexts);
   return snapshot;
@@ -1472,7 +1516,9 @@ const loadPublishedRelease = async () => {
 loadPublishedRelease()
   .then((snapshot) => {
     render(snapshot);
-    applyDeepLink(snapshot);
+    applyDeepLink(snapshot).catch((error) => {
+      setReleaseHealth(`訊息連結載入失敗；已安全停止（${error.message}）。`, "error");
+    });
     // Healthy is the normal state; keep engineering metadata out of the hero.
     setReleaseHealth("", "ready");
   })

@@ -133,7 +133,8 @@ def _attach_realtime_external_events(snapshot: dict[str, Any]) -> dict[str, Any]
 
 
 def select_official_event(
-    snapshot: dict[str, Any], now: datetime | None = None, *, baseline_official: bool = False
+    snapshot: dict[str, Any], now: datetime | None = None, *, baseline_official: bool = False,
+    excluded_event_keys: set[str] | None = None,
 ) -> dict[str, Any] | None:
     """Select a verified official release, then a threshold price signal.
 
@@ -201,6 +202,7 @@ def select_official_event(
             event["notification_reason"] = "secondary_commentary_digest_only"
             continue
         candidates.append(event)
+    excluded = excluded_event_keys or set()
     if candidates:
         def _candidate_key(event: dict[str, Any]) -> tuple[int, int, int, int, int]:
             risk = canonical_prstk_risk_level(event)
@@ -221,9 +223,14 @@ def select_official_event(
                 vendor_importance = 0
             return (0 if vendor_priority else 1, taiwan_investor_priority(event, now=now), -vendor_importance, -official, -risk_rank)
         candidates.sort(key=_candidate_key)
-        return candidates[0]
+        for candidate in candidates:
+            if event_key(candidate) not in excluded:
+                return candidate
 
-    signals = [event for event in snapshot.get("events", {}).get("items", []) if event.get("kind") == "market_signal"]
+    signals = [
+        event for event in snapshot.get("events", {}).get("items", [])
+        if event.get("kind") == "market_signal" and event_key(event) not in excluded
+    ]
     if _is_taiwan_market_window(now):
         # During the Taiwan session, a broad Taiwan price signal has priority.
         # Commodity/crypto moves remain visible in the Mini App unless paired
@@ -378,7 +385,8 @@ def _write_delivery_output(
     ]
     if event:
         lines.extend([
-            f"alert_id={event.get('event_cluster_key') or event.get('event_key') or ''}",
+            f"alert_id={event.get('notification_id') or event.get('event_cluster_key') or event.get('event_key') or ''}",
+            f"notification_id={event.get('notification_id') or ''}",
             f"snapshot_id={event.get('snapshot_id') or ''}",
             f"observation_id={event.get('observation_id') or (event.get('instrument') or {}).get('observation_id') or ''}",
             f"notification_expected={'true' if event.get('notification_expected') else 'false'}",
@@ -386,6 +394,13 @@ def _write_delivery_output(
             f"notification_reason={event.get('notification_reason') or '、'.join(event.get('notification_reasons') or [])}",
             f"event_key={event_key(event)}",
             f"risk={canonical_prstk_risk_level(event)}",
+            f"ingested_at={event.get('ingested_at') or event.get('received_at') or ''}",
+            f"candidate_at={event.get('candidate_at') or ''}",
+            f"writer_wait_ms={event.get('writer_wait_ms') if event.get('writer_wait_ms') is not None else ''}",
+            f"release_ready_at={event.get('release_ready_at') or ''}",
+            f"telegram_attempted_at={event.get('telegram_attempted_at') or ''}",
+            f"delivery_result={event.get('delivery_result') or delivery_status or ''}",
+            f"delay_reason={event.get('delay_reason') or 'none'}",
         ])
     if budget is not None:
         lines.extend([
@@ -457,21 +472,34 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
     # delivery-volume budget.  It keeps every supporting article in the
     # ledger/Mini App while preventing a new URL or headline from replaying
     # the same theme within two hours.
+    # ``theme_decision`` is the single material-state arbiter.  If the highest
+    # priority candidate is an unchanged duplicate, exclude only that
+    # candidate and continue the same queue so a later valid event is not
+    # starved by a stale FJ/vendor-priority row.
     if hasattr(ledger, "theme_decision"):
-        theme = ledger.theme_decision(event)
-        ledger.save()
-        if not theme.get("allowed", False):
+        excluded: set[str] = set()
+        while True:
+            theme = ledger.theme_decision(event)
+            ledger.save()
+            if theme.get("allowed", False):
+                break
             if hasattr(ledger, "record_decision"):
                 ledger.record_decision(event, theme)
                 ledger.save()
-            write_send_output(False, f"theme:{theme.get('reason', 'same_theme_within_2h')}")
-            print(f"Official event suppressed by notification theme: {theme.get('reason', 'same_theme_within_2h')}")
+            if theme.get("reason") in {"same_theme_within_2h", "same_theme_unchanged"}:
+                excluded.add(current_key)
+                next_event = select_official_event(snapshot, excluded_event_keys=excluded)
+                if next_event is not None:
+                    event = next_event
+                    current_key = event_key(event)
+                    continue
+            write_send_output(False, f"theme:{theme.get('reason', 'same_theme_unchanged')}")
+            print(f"Official event suppressed by notification theme: {theme.get('reason', 'same_theme_unchanged')}")
             return False
-    cooldown_record = _observe_event(event)
-    if not cooldown_record.get("should_remind", True):
-        write_send_output(False, "event_cooldown")
-        print("Official event is inside the shared 30-minute cooldown; skipped safely.")
-        return False
+    else:
+        # Legacy test/adapter doubles may not expose the new arbiter.  Keep
+        # their path safe without resurrecting a production cooldown gate.
+        _observe_event(event)
     budget_event = {**event, "event_key": current_key}
     budget = decide_alert_budget(budget_event, ledger.delivery_history())
     if not budget.get("allowed", False):
@@ -484,9 +512,11 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
     settings = get_settings()
     if not settings.telegram_ready:
         raise RuntimeError("缺少 Telegram 設定，無法送出官方事件快訊")
+    release_ready_at = datetime.now().astimezone().isoformat()
+    event = {**event, "release_ready_at": release_ready_at}
     observation_id = str(event.get("observation_id") or (event.get("instrument") or {}).get("observation_id") or "")
     trace_id = f"official-{observation_id or current_key[:20]}"
-    event_id = str(event.get("event_cluster_key") or event.get("event_key") or observation_id or trace_id)
+    event_id = str(event.get("notification_id") or event.get("event_cluster_key") or event.get("event_key") or observation_id or trace_id)
     caption = build_official_event_brief(event)
     snapshot_id = str(snapshot.get("snapshot_id") or "")
     release_id = gate.release_id or ""
@@ -501,6 +531,8 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         # FinancialJuice uses the same release-gated event lane but its
         # vendor-priority contract adds recipient-level replay protection and
         # keeps FJ importance separate from the PRStK risk grade.
+        telegram_attempted_at = datetime.now().astimezone().isoformat()
+        event = {**event, "telegram_attempted_at": telegram_attempted_at}
         fj_result = deliver_financialjuice_event(
             event,
             release_id=release_id,
@@ -545,6 +577,11 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             raise RuntimeError("Telegram FinancialJuice delivery failed for every configured recipient")
         ledger.record_delivery(
             {**budget_event, "trace_id": trace_id, "release_id": release_id, "snapshot_id": snapshot_id,
+             "notification_id": event.get("notification_id"), "release_ready_at": release_ready_at,
+             "telegram_attempted_at": event.get("telegram_attempted_at"), "delivery_result": delivery_status,
+             "ingested_at": event.get("ingested_at") or event.get("received_at"),
+             "candidate_at": event.get("candidate_at"), "writer_wait_ms": event.get("writer_wait_ms"),
+             "delay_reason": event.get("delay_reason") or "none",
              "delivery_status": delivery_status, "notification_key": fj_result.get("notification_key"),
              "delivery_receipts": fj_receipts},
             trace_id=trace_id,
@@ -554,6 +591,8 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         write_send_output(True, "sent_partial" if failed_count else "sent")
         return True
     try:
+        telegram_attempted_at = datetime.now().astimezone().isoformat()
+        event = {**event, "telegram_attempted_at": telegram_attempted_at}
         deliveries = send_text_briefs_audited(
             token=settings.telegram_bot_token or "",
             chat_ids=settings.telegram_chat_ids,
@@ -582,6 +621,14 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             "trace_id": trace_id,
             "release_id": release_id,
             "snapshot_id": snapshot_id,
+            "notification_id": event.get("notification_id"),
+            "release_ready_at": release_ready_at,
+            "telegram_attempted_at": event.get("telegram_attempted_at"),
+            "delivery_result": "delivered" if failed_count == 0 else "partial",
+            "ingested_at": event.get("ingested_at") or event.get("received_at"),
+            "candidate_at": event.get("candidate_at"),
+            "writer_wait_ms": event.get("writer_wait_ms"),
+            "delay_reason": event.get("delay_reason") or "none",
             "notification_status": event.get("notification_status") or "eligible",
             "notification_reason": event.get("notification_reason") or "",
             "delivery_status": "delivered" if failed_count == 0 else "partial",

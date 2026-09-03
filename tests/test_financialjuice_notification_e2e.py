@@ -105,6 +105,27 @@ def test_financialjuice_delivery_reaches_text_sender_with_alert_deep_link() -> N
     )
 
 
+def test_financialjuice_delivery_prefers_notification_id_for_alert_deep_link() -> None:
+    event = {
+        "source_key": "financialjuice", "notification_id": "fj-notification-1",
+        "event_cluster_key": "fj-cluster-1", "observation_id": "fj-observation-1",
+        "vendor_importance": 8, "vendor_priority_notification": True,
+        "notification_status": "eligible", "prstk_risk_level": "R0",
+    }
+    captured: dict[str, object] = {}
+
+    def sender(**kwargs: object) -> tuple[TextDeliveryReceipt, ...]:
+        captured.update(kwargs)
+        return (TextDeliveryReceipt(kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"], "h", "delivered", message_id=1),)
+
+    deliver_financialjuice_event(
+        event, release_id="release-1", snapshot_id="snapshot-1",
+        mini_app_url="https://example.test/app", release_ready=True,
+        token="token", chat_ids=("recipient",), text_sender=sender,
+    )
+    assert captured["alert_id"] == "fj-notification-1"
+
+
 def test_rich_email_to_priority_to_telegram_preserves_semantics() -> None:
     router = _railway_email_router()
     parsed = router.parse_email({

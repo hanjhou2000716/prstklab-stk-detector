@@ -37,6 +37,42 @@ def test_default_event_cooldown_is_thirty_minutes(tmp_path):
     assert ledger.should_remind(event, now=first + timedelta(minutes=30)) is True
 
 
+def test_unchanged_theme_stays_suppressed_after_two_hours(tmp_path):
+    ledger = EventLedger(tmp_path / "ledger.json")
+    event = {
+        "notification_theme_key": "middle-east-conflict",
+        "title": "Iran conflict update",
+        "event_cluster_key": "cluster-1",
+        "risk_level": "R2",
+    }
+    first = datetime(2026, 8, 1, 10, 0, tzinfo=UTC)
+    assert ledger.theme_decision(event, now=first)["allowed"] is True
+    ledger.mark_theme_notified(event, now=first)
+    decision = ledger.theme_decision(event, now=first + timedelta(hours=12))
+    assert decision["allowed"] is False
+    assert decision["reason"] == "same_theme_unchanged"
+
+
+def test_material_theme_replay_cases(tmp_path):
+    ledger = EventLedger(tmp_path / "ledger.json")
+    base = {
+        "notification_theme_key": "nasdaq-price-move",
+        "title": "Nasdaq move",
+        "event_cluster_key": "cluster-1",
+        "risk_level": "R2",
+        "instrument": {"ticker": "NASDAQ", "change_percent": 1.6},
+    }
+    first = datetime(2026, 8, 1, 10, 0, tzinfo=UTC)
+    assert ledger.theme_decision(base, now=first)["allowed"] is True
+    ledger.mark_theme_notified(base, now=first)
+    assert ledger.theme_decision({**base, "instrument": {"ticker": "NASDAQ", "change_percent": 1.8}}, now=first + timedelta(minutes=5))["allowed"] is False
+    assert ledger.theme_decision({**base, "instrument": {"ticker": "NASDAQ", "change_percent": 4.0}}, now=first + timedelta(minutes=6))["allowed"] is True
+    ledger.mark_theme_notified({**base, "instrument": {"ticker": "NASDAQ", "change_percent": 4.0}}, now=first + timedelta(minutes=6))
+    assert ledger.theme_decision({**base, "risk_level": "R3"}, now=first + timedelta(minutes=7))["allowed"] is True
+    ledger.mark_theme_notified({**base, "risk_level": "R3"}, now=first + timedelta(minutes=7))
+    assert ledger.theme_decision({**base, "direction": "down", "instrument": {"ticker": "NASDAQ", "change_percent": -2.0}}, now=first + timedelta(minutes=8))["allowed"] is True
+
+
 def test_delivery_history_records_each_material_send(tmp_path):
     path = tmp_path / "ledger.json"
     ledger = EventLedger(path)

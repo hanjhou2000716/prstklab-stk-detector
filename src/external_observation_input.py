@@ -42,6 +42,8 @@ SAFE_FIELDS = {
     "verification_state", "evidence_alignment", "prstk_correlation", "summary_image_available",
     "summary_image_hash", "source_adapter", "template_fingerprint", "provider_fields",
     "provider_fields_missing", "required_fields_present", "claims", "opinions",
+    "ingested_at", "candidate_at", "writer_wait_ms", "release_ready_at",
+    "telegram_attempted_at", "delivery_result", "delay_reason",
 }
 
 

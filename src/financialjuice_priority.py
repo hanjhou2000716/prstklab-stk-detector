@@ -92,6 +92,16 @@ def _observation_id_hash(value: Any) -> str | None:
     return hashlib.sha256(text.encode("utf-8")).hexdigest() if text else None
 
 
+def _nonnegative_number(value: Any) -> int | float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number < 0:
+        return None
+    return int(number) if number.is_integer() else number
+
+
 def _source_views(result: dict[str, Any], row: dict[str, Any]) -> list[dict[str, Any]]:
     """Return the current item's raw and normalized views in priority order.
 
@@ -291,7 +301,19 @@ def _annotated_market_row(row: dict[str, Any]) -> dict[str, Any]:
     # Import lazily to keep the parser usable without importing the collection
     # layer during module initialization.
     from src.market_data import annotate_quote_freshness
-    return annotate_quote_freshness([row])[0]
+    item = annotate_quote_freshness([row])[0]
+    # A compact FJ market-evidence row may carry only a completed quote date
+    # and price.  That is not proof of staleness; preserve it as a dated close
+    # while keeping explicit stale/delayed/unavailable markers fail-closed.
+    if (
+        item.get("freshness") == "stale"
+        and item.get("quote_time") in (None, "")
+        and item.get("quote_date")
+        and item.get("price") is not None
+    ):
+        item["freshness"] = "recent_close"
+        item["data_status"] = "最近收盤"
+    return item
 
 
 def _number(value: Any) -> float | None:
@@ -494,6 +516,15 @@ def _event_record(
         row.get("parser_version") or result.get("parser_version") or result.get("pipeline_version") or ""
     ).strip() or None
     received_at = row.get("received_at") or row.get("fetched_at") or row.get("published_at") or _now()
+    latency = {
+        "ingested_at": row.get("ingested_at") or received_at,
+        "candidate_at": row.get("candidate_at") or _now(),
+        "writer_wait_ms": _nonnegative_number(row.get("writer_wait_ms")),
+        "release_ready_at": row.get("release_ready_at"),
+        "telegram_attempted_at": row.get("telegram_attempted_at"),
+        "delivery_result": row.get("delivery_result"),
+        "delay_reason": str(row.get("delay_reason") or "none"),
+    }
     pending = list(dict.fromkeys(str(item) for item in (result.get("pending_reasons") or []) if str(item).strip()))
     canonical_risk = str(risk.get("prstk_risk_level") or "R2").upper()
     if canonical_risk not in {"R0", "R1", "R2", "R3", "R4"}:
@@ -517,6 +548,8 @@ def _event_record(
         "observation_id_hash": observation_hash,
         "item_id": item_id,
         "received_at": received_at,
+        **latency,
+        "latency": latency,
         "parser_version": parser_version,
         "notification_id": result.get("notification_id") or row.get("item_id") or observation_id,
         "lifecycle_state": result.get("lifecycle_state") or "pending_confirmation",

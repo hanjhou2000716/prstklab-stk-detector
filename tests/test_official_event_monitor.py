@@ -382,3 +382,57 @@ def test_official_text_lane_passes_alert_deep_link(monkeypatch, tmp_path):
         snapshot_id="snap-1",
         observation_id="official-observation-1",
     )
+
+
+def test_duplicate_top_candidate_does_not_starve_later_valid_candidate(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    fj = {
+        "source_key": "financialjuice", "source": "FinancialJuice",
+        "notification_id": "fj-duplicate", "event_cluster_key": "fj-cluster",
+        "notification_status": "eligible", "vendor_priority_notification": True,
+        "vendor_importance": 10, "prstk_risk_level": "R0", "title": "Old FJ row",
+    }
+    later = {
+        "source_key": "official", "source": "issuer", "notification_id": "official-next",
+        "event_cluster_key": "official-cluster", "notification_status": "eligible",
+        "prstk_risk_level": "R2", "title": "Later valid event",
+    }
+    snapshot = {"snapshot_id": "snap-1", "events": {"items": [fj, later]}}
+    monkeypatch.setattr(monitor, "prepare_snapshot", lambda: (snapshot, fj))
+    monkeypatch.setattr(monitor, "verify_release_for_delivery", lambda **_kwargs: ReleaseGateResult(True, release_id="release-1", snapshot_id="snap-1"))
+    monkeypatch.setattr(monitor, "get_settings", lambda: type("Settings", (), {
+        "telegram_ready": True, "telegram_bot_token": "token", "telegram_chat_ids": ("test",),
+        "dashboard_url": "https://example.test/app",
+    })())
+    monkeypatch.setattr(monitor, "build_official_event_brief", lambda _event: "Later valid event")
+    monkeypatch.setattr(monitor, "decide_alert_budget", lambda *_args: {"allowed": True, "reason": "budget_available", "event_key": "next"})
+    captured = {}
+
+    class FakeLedger:
+        def delivery_history(self):
+            return []
+
+        def theme_decision(self, event):
+            if event is fj:
+                return {"allowed": False, "status": "suppressed", "reason": "same_theme_unchanged"}
+            return {"allowed": True, "status": "eligible", "reason": "new_theme"}
+
+        def record_decision(self, _event, decision):
+            return decision
+
+        def record_delivery(self, _event, **_kwargs):
+            return None
+
+        def save(self):
+            return None
+
+    monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
+
+    def sender(**kwargs):
+        captured.update(kwargs)
+        return (TextDeliveryReceipt(kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"], "h", "delivered", message_id=1),)
+
+    monkeypatch.setattr(monitor, "send_text_briefs_audited", sender)
+    assert monitor.send_current_event() is True
+    assert captured["alert_id"] == "official-next"
