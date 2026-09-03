@@ -125,6 +125,15 @@ def canonical_event_key(event: dict[str, Any] | None) -> str:
             time_bucket,
         ))
     else:
+        source_key = str(event.get("source_key") or event.get("source") or "").strip().casefold()
+        notification_id = str(event.get("notification_id") or "").strip()
+        if source_key == "financialjuice" and notification_id:
+            # FJ vendor-priority alerts may have no structured person/action/
+            # location facts. Bind cache idempotency to the immutable item
+            # identity; theme-level replay suppression remains separate below.
+            return hashlib.sha256(
+                f"financialjuice|notification|{notification_id}".encode("utf-8")
+            ).hexdigest()[:32]
         facts = fact_fingerprint(event)
         source_url = normalize_source_url(event.get("source_url") or event.get("url"))
         compound_cluster = str(event.get("compound_event_cluster_key") or "").strip()

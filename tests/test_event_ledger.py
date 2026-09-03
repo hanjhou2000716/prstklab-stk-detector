@@ -13,6 +13,21 @@ def test_canonical_key_converges_syndicated_event_facts():
     assert canonical_event_key(first) == canonical_event_key(second)
 
 
+def test_financialjuice_notification_identity_prevents_unrelated_cache_collision():
+    first = {
+        "source_key": "financialjuice",
+        "notification_id": "fj-item-iran",
+        "title": "Iran telecom attack",
+    }
+    second = {
+        "source_key": "financialjuice",
+        "notification_id": "fj-item-nscale",
+        "title": "Nscale Anthropic contract",
+    }
+    assert canonical_event_key(first) != canonical_event_key(second)
+    assert canonical_event_key(first) == canonical_event_key({**first, "title": "replayed title"})
+
+
 def test_ledger_retains_reminder_fields_and_prunes_after_thirty_days(tmp_path):
     path = tmp_path / "ledger.json"
     ledger = EventLedger(path)
