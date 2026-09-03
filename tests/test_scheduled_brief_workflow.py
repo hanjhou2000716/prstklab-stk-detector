@@ -64,3 +64,14 @@ def test_stale_research_fallback_does_not_block_market_pages_publication():
     assert 'publish = manifest.get("status") == "ready"' in publication
     assert 'include_research = freshness == "fresh"' in research
     assert 'allow_telegram=true' in research
+
+
+def test_delivery_claim_persistence_reconciles_the_public_release():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
+    ).read_text(encoding="utf-8")
+    assert "id: persist_notification_ledger" in workflow
+    assert "Prepare reconciled Pages artifact" in workflow
+    assert "name: github-pages-reconciled" in workflow
+    assert "artifact_name: github-pages-reconciled" in workflow
+    assert "Verify reconciled public release" in workflow

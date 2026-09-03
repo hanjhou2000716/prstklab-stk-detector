@@ -13,6 +13,10 @@ inputs:
     description: Public dashboard URL to use when deploy-pages does not expose page_url.
     required: false
     default: ""
+  artifact_name:
+    description: Pages artifact name to deploy.
+    required: false
+    default: "github-pages"
 outputs:
   page_url:
     description: URL returned by the successful Pages deployment.
@@ -33,6 +37,7 @@ runs:
       uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
       with:
         timeout: ${{ inputs.timeout }}
+        artifact_name: ${{ inputs.artifact_name }}
 
     - name: Deploy Pages (retry)
       id: retry
@@ -48,6 +53,7 @@ runs:
       uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
       with:
         timeout: ${{ inputs.timeout }}
+        artifact_name: ${{ inputs.artifact_name }}
 
     - name: Select successful deployment URL
       id: select-url
