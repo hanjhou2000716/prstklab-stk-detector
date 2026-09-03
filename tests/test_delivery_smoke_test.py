@@ -17,7 +17,7 @@ def test_delivery_smoke_defaults_to_non_network_dry_run(monkeypatch):
     report = run_smoke_test()
     assert report["ok"] is True
     assert report["recipient_count"] == 2
-    assert report["smoke_text_length"] <= 30
+    assert report["smoke_text_length"] <= 40
     assert "token" not in str(report).lower()
 
 

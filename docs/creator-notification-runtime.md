@@ -7,7 +7,7 @@ after Gmail/Pub/Sub retries or a Railway restart.
 
 When an approved private media path is available, the runtime uses the shared
 `sendPhoto` contract and a Creator deep link.  If media is missing or every
-photo attempt fails, it sends one bounded 30-character text notification with
+photo attempt fails, it sends one bounded 40-character text notification with
 the same deep link and records `media_mode=text_only`; it never sends a blank
 or synthetic image.  Each recipient receives an independent, privacy-safe
 receipt containing only a recipient hash and release/snapshot lineage.

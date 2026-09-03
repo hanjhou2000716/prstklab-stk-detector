@@ -6,5 +6,5 @@ def test_event_output_uses_four_sections_and_compact_short_message():
     assert list(four_section_event(event)) == ["event", "importance", "market_impact", "watch"]
     assert short_event_message(event).startswith("🟠 台指價格訊號｜下跌")
     assert all(code not in short_event_message(event) for code in ("R0", "R1", "R2", "R3", "R4"))
-    assert len(short_event_message(event)) <= 30
+    assert len(short_event_message(event)) <= 40
 

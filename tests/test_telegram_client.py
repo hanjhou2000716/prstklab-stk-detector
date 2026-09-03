@@ -16,22 +16,22 @@ from src.telegram_client import (
 )
 
 
-def test_accepts_30_character_brief():
-    validate_brief("測" * 30)
+def test_accepts_40_character_brief():
+    validate_brief("測" * 40)
 
 
 def test_text_brief_hides_internal_risk_grade_and_stays_bounded():
     text = format_text_brief("台指波動觀察｜+2.9%｜等待官方核對", prstk_risk_level="R1")
     assert text.startswith("🟢 ")
     assert all(level not in text for level in ("R0", "R1", "R2", "R3", "R4"))
-    assert len(text) <= 30
+    assert len(text) <= 40
 
 
 def test_canonical_short_message_preserves_colour_and_fj_vendor_score_without_risk_token():
     text = canonical_short_message("快訊｜台指波動觀察｜+2.9%｜R2", prstk_risk_level="R2")
     assert text.startswith("🟡 ")
     assert "R2" not in text
-    assert len(text) <= 30
+    assert len(text) <= 40
 
     fj = canonical_short_message("🟣 FJ 8/10｜R2｜北韓發射飛行物", prstk_risk_level="R2")
     assert fj.startswith("🟣 FJ 8/10｜")
@@ -52,9 +52,31 @@ def test_public_photo_caption_removes_risk_grade_and_collapses_separators():
     assert sanitize_public_photo_caption("R4｜") == "市場資訊待核對"
 
 
-def test_rejects_over_30_character_brief():
-    with pytest.raises(ValueError, match="超過 30 字"):
-        validate_brief("測" * 31)
+def test_rejects_over_40_character_brief():
+    with pytest.raises(ValueError, match="超過 40 字"):
+        validate_brief("測" * 41)
+
+
+def test_shared_summary_drops_incomplete_source_attribution_without_raw_cut():
+    text = canonical_short_message("🟣 FJ 9/10｜據《The...", prstk_risk_level="R2")
+    assert text == "🟣 FJ 9/10｜資訊待核對"
+    assert "The…" not in text
+
+
+def test_shared_summary_keeps_complete_event_fact_and_uses_word_boundary():
+    text = canonical_short_message(
+        "🟣 FJ 8/10｜Federal Reserve announces emergency liquidity support measures",
+    )
+    assert text.startswith("🟣 FJ 8/10｜Federal Reserve")
+    assert len(text) <= 40
+    assert "announc…" not in text
+
+
+def test_shared_summary_drops_impact_fragment_when_no_complete_clause_fits():
+    text = canonical_short_message(
+        "🟣 FJ 10/10｜伊朗：美國攻擊電信和通信基礎設施。｜可能影響油價與美股能源股",
+    )
+    assert text == "🟣 FJ 10/10｜伊朗：美國攻擊電信和通信基礎設施。"
 
 
 def test_rejects_blank_brief():

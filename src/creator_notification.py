@@ -23,14 +23,16 @@ from src.creator_photo_delivery import (
     plan_creator_delivery,
 )
 from src.telegram_client import (
+    PUBLIC_TEXT_MAX_CHARS,
     PhotoDeliveryReceipt,
     TelegramDelivery,
     send_briefs,
     send_photo_briefs,
+    summarize_public_message,
 )
 
 MAX_CREATOR_PHOTO_CAPTION = 40
-MAX_CREATOR_TEXT_CAPTION = 30
+MAX_CREATOR_TEXT_CAPTION = PUBLIC_TEXT_MAX_CHARS
 
 
 def _clean(value: Any) -> str:
@@ -78,10 +80,10 @@ def creator_telegram_caption(insight: dict[str, Any], *, limit: int = MAX_CREATO
 
 
 def creator_text_caption(insight: dict[str, Any]) -> str:
-    """Return the legacy 30-character caption used by text-only fallback."""
+    """Return the shared 40-character caption used by text-only fallback."""
     creator = _clean(insight.get("creator_name") or insight.get("content_origin") or "Creator")
     title = _clean(insight.get("episode_title") or insight.get("title") or "新內容")
-    return _bounded(f"🟣 {creator}｜{title}", MAX_CREATOR_TEXT_CAPTION)
+    return summarize_public_message(f"{creator}｜{title}", limit=MAX_CREATOR_TEXT_CAPTION)
 
 
 def _photo_delivered(receipts: tuple[PhotoDeliveryReceipt, ...]) -> bool:
@@ -109,7 +111,9 @@ def creator_morning_digest_text(batch: dict[str, Any], *, late_only: bool = Fals
         text = f"Creator late update {providers or 'available'}"
     else:
         text = f"Creator morning {received}/{expected} {state}"
-    return _bounded(text, MAX_CREATOR_TEXT_CAPTION)
+    if len(text) <= MAX_CREATOR_TEXT_CAPTION:
+        return text
+    return summarize_public_message(text, limit=MAX_CREATOR_TEXT_CAPTION)
 
 
 def deliver_creator_morning_digest(
@@ -289,7 +293,7 @@ def deliver_creator_episode(
             }
 
     # Missing media or an all-recipient renderer/API failure is explicitly
-    # degraded to the existing text-only 30-character Telegram contract.
+    # degraded to the shared text-only 40-character Telegram contract.
     text_receipts = text_sender(
         token=token,
         chat_ids=chat_ids,

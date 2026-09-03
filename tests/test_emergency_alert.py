@@ -9,8 +9,9 @@ def test_emergency_alert_keeps_the_watch_message_within_30_characters():
 
 def test_emergency_alert_normalizes_whitespace_and_rejects_long_message():
     assert build_emergency_brief("market", " 盤中  波動擴大 ") == "快訊｜極端波動｜盤中 波動擴大"
-    with pytest.raises(ValueError, match="超過 30 字"):
-        build_emergency_brief("market", "測" * 30)
+    brief = build_emergency_brief("market", "測" * 40)
+    assert len(brief) <= 40
+    assert "資訊待核對" not in brief
 
 
 def test_emergency_alert_supports_black_swan_and_material_positive_categories():

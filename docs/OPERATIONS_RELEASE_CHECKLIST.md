@@ -17,7 +17,7 @@ workflow cannot be mistaken for a successfully delivered alert.
 ## Delivery gate
 
 - [ ] Pages is publicly readable and returns the expected `release_id`.
-- [ ] Production caption is at most 30 characters and contains no secret or raw
+- [ ] Production caption is at most 40 characters and contains no secret or raw
       recipient ID.
 - [ ] One `sendMessage` contains the caption and a release/alert deep-link
       Mini App button. The 1080×1350 card is tested only by the explicit,
