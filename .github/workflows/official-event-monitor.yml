@@ -19,6 +19,12 @@ concurrency:
 
 jobs:
   monitor-send-deploy:
+    # Serialize scheduled and repository-dispatch monitors on the same main
+    # release stream.  A second run must not publish a newer Pages release
+    # between Telegram send and the recipient opening its deep link.
+    concurrency:
+      group: official-event-monitor-${{ github.ref }}
+      cancel-in-progress: false
     # A transient Pages outage is exposed by the retry action.  Contract and
     # release-gate failures remain hard failures and block Telegram delivery.
     environment:
