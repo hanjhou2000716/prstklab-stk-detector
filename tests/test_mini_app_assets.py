@@ -88,6 +88,7 @@ def test_mini_app_has_a_detailed_alert_card_and_compact_brief_title():
     assert "renderSourceHealth" in app
     assert "safeHttpsUrl" in app
     assert "event.brief_title" in app
+    assert 'event.title || event.event || `${event.short_label || "公開事件"}｜市場事件`' in app
     assert "event.stock_observation" in app
 
 
