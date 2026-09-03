@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/external_event_risk.py
-# Canonical source SHA256: 0ed9681c053afbd43ffaea4b73fc7d741c2534cf6d3608aabb0b5180a84997bf
+# Canonical source SHA256: e10739b56268fa6ffccc6ccfc164de60de5683c68cb284b9732596869e379e56
 
 """Cross-source event identity and conservative PRStK risk scoring."""
 
@@ -78,6 +78,24 @@ def _bucket(value: Any, minutes: int = 120) -> str:
 
 def event_cluster_key(event: dict[str, Any]) -> str:
     """Create a source-independent key from actor/action/location/time facts."""
+    source = str(event.get("source") or event.get("content_origin") or "").strip().casefold()
+    explicit = str(event.get("event_cluster_key") or "").strip()
+    if source == "financialjuice" and explicit:
+        return explicit
+    if source == "financialjuice":
+        # A legacy/unstructured relay often has no actor/action/location. Use
+        # its reviewed content identity instead of the all-empty generic key;
+        # otherwise unrelated vendor headlines become one EventLedger theme.
+        identity = str(
+            event.get("content_hash")
+            or event.get("item_id")
+            or event.get("observation_id")
+            or event.get("original_headline")
+            or event.get("headline")
+            or ""
+        ).strip()
+        if identity:
+            return f"fj-cluster-{hashlib.sha256(identity.encode('utf-8')).hexdigest()[:24]}"
     fields = (
         _norm(event.get("event_type") or event.get("category")),
         _norm(event.get("actor") or event.get("person") or event.get("entities")),
