@@ -60,8 +60,20 @@ def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot
     evidence = event.get("market_evidence")
     if not isinstance(evidence, list):
         evidence = []
+    title = str(event.get("title") or event.get("event") or "市場事件").strip() or "市場事件"
+    brief_title = str(event.get("brief_title") or title).strip() or title
+    linked_markets = event.get("linked_markets")
+    if not isinstance(linked_markets, list):
+        linked_markets = [
+            str(item.get("ticker") or "").strip()
+            for item in evidence
+            if isinstance(item, dict) and str(item.get("ticker") or "").strip()
+        ]
     return {
         "schema_version": "1.0",
+        "kind": event.get("kind") or "external_event",
+        "source": event.get("source") or "公開來源",
+        "source_key": event.get("source_key"),
         "notification_id": notification_id,
         "alert_id": str(event.get("alert_id") or notification_id),
         "event_cluster_key": event.get("event_cluster_key"),
@@ -69,7 +81,13 @@ def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot
         "snapshot_id": str(event.get("snapshot_id") or market_snapshot_id),
         "observation_id": event.get("observation_id"),
         "created_at": created_at,
-        "event": event.get("event") or event.get("title") or "市場事件",
+        # Keep the headline aliases required by the Mini App.  Archived alert
+        # artifacts are rendered independently of the live market snapshot.
+        "title": title,
+        "brief_title": brief_title,
+        "short_label": event.get("short_label") or event.get("source") or "公開事件",
+        "event": event.get("event") or title,
+        "linked_markets": linked_markets,
         "why_important": event.get("why_important") or event.get("importance_detail"),
         "possible_linkage": event.get("possible_linkage") or event.get("possible_impact") or event.get("market_context"),
         "stock_observation": event.get("stock_observation") or event.get("watch") or event.get("follow_up_observation"),

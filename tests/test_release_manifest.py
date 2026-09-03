@@ -2,6 +2,7 @@ import json
 
 from src.news_intelligence import build_news_intelligence
 from src.release_manifest import (
+    _alert_projection,
     _gap_count,
     _normalize_market,
     _normalize_research,
@@ -75,6 +76,28 @@ def test_manifest_publishes_release_specific_immutable_alert_details(tmp_path):
     rows = [row for row in second_index["alerts"] if row["notification_id"] == "fj-item-1"]
     assert {row["release_id"] for row in rows} == {first["release_id"], second["release_id"]}
     assert verify_release_files(second, root=tmp_path / "site") == []
+
+
+def test_immutable_alert_projection_keeps_mini_app_headline_aliases():
+    artifact = _alert_projection(
+        {
+            "kind": "external_event",
+            "source": "FinancialJuice",
+            "source_key": "financialjuice",
+            "title": "Nscale 與 Anthropic 合約",
+            "brief_title": "FJ 快訊｜重要度 9/10｜Nscale 與 Anthropic 合約",
+            "event": "Nscale 將與 Anthropic 簽署超過 1000 億美元合約。",
+            "linked_markets": ["US10Y", "SOX"],
+            "market_evidence": [{"ticker": "US10Y"}, {"ticker": "SOX"}],
+        },
+        release_id="release-test",
+        market_snapshot_id="market-test",
+        created_at="2026-09-03T00:00:00+00:00",
+    )
+
+    assert artifact["title"] == "Nscale 與 Anthropic 合約"
+    assert artifact["brief_title"].startswith("FJ 快訊")
+    assert artifact["linked_markets"] == ["US10Y", "SOX"]
 
 
 def test_manifest_publishes_release_bound_news_intelligence(tmp_path):
