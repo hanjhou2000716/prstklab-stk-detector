@@ -29,6 +29,7 @@ from src.financialjuice_priority import (
 )
 from src.financialjuice_release_contract import validate_financialjuice_release
 from src.market_data import build_market_snapshot
+from src.notification_observability import decision_summary, merge_decision_health, write_summary
 from src.railway_observation_client import load_railway_observations
 from src.railway_secret import delivery_shared_secret
 from src.refresh_market_data import merge_published_metadata, write_snapshot
@@ -43,6 +44,37 @@ from src.scheduled_brief import (
 from src.telegram_client import alert_mini_app_url, canonical_prstk_risk_level, send_text_briefs_audited
 
 _DEFAULT_CREATOR_RECORDS_PATH = Path("creator/public-records.json")
+
+
+def _write_decision_output(
+    values: dict[str, Any],
+    *,
+    event: dict[str, Any] | None = None,
+    notification_status: str = "not_attempted",
+    notification_reason: str = "",
+    delivered_count: int | None = None,
+    failed_count: int | None = None,
+    last_telegram_attempt_at: str | None = None,
+    last_receipt_status: str | None = None,
+) -> None:
+    """Write workflow outputs and a matching safe Actions summary."""
+    summary = decision_summary(
+        event=event,
+        scan_status="completed",
+        notification_expected=bool(event),
+        notification_status=notification_status,
+        notification_reason=notification_reason,
+        delivered_count=delivered_count,
+        failed_count=failed_count,
+        last_telegram_attempt_at=last_telegram_attempt_at,
+        last_receipt_status=last_receipt_status or notification_status,
+    )
+    workflow_summary = {
+        key: ("true" if value is True else "false" if value is False else "" if value is None else value)
+        for key, value in summary.items()
+    }
+    _write_output({**workflow_summary, **values})
+    write_summary("Scheduled brief notification decision", summary)
 
 
 def _railway_observations_configured() -> bool:
@@ -254,12 +286,12 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
     financialjuice_contract = validate_financialjuice_release(snapshot)
     snapshot["financialjuice_release_contract"] = financialjuice_contract
     if not financialjuice_contract["ok"]:
-        _write_output({
+        _write_decision_output({
             "prepared": "false",
             "sent": "false",
             "reason": "financialjuice_release_contract_blocked",
             "financialjuice_contract_errors": ";".join(financialjuice_contract["errors"]),
-        })
+        }, notification_status="blocked", notification_reason="financialjuice_release_contract_blocked")
         return snapshot
     remote_rejected = remote_health.get("rejected_count")
     external_rejected = local_rejected + (int(remote_rejected) if isinstance(remote_rejected, (int, str, float)) else 0)
@@ -309,10 +341,23 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
     if creator_records:
         snapshot["creator_insights"] = creator_records
     snapshot["briefing"] = build_briefing_snapshot(snapshot, slot)
-    if not write_snapshot(snapshot, snapshot_path):
-        _write_output({"prepared": "false", "sent": "false", "reason": "snapshot_publish_skipped"})
-        return snapshot
     event = _pick_event(snapshot, slot)
+    prepared_decision = decision_summary(
+        event=event,
+        scan_status="completed",
+        notification_expected=bool(event),
+        notification_status="candidate_ready" if event else "no_event",
+        notification_reason="candidate_ready" if event else "no_event",
+    )
+    snapshot["source_health"] = merge_decision_health(
+        snapshot.get("source_health"), "scheduled_brief", prepared_decision,
+    )
+    if not write_snapshot(snapshot, snapshot_path):
+        _write_decision_output(
+            {"prepared": "false", "sent": "false", "reason": "snapshot_publish_skipped"},
+            event=event, notification_status="blocked", notification_reason="snapshot_publish_skipped",
+        )
+        return snapshot
     correlation = briefing_correlation(snapshot, slot, event)
     metadata: dict[str, object] = {
         "trace_id": correlation["trace_id"],
@@ -321,9 +366,17 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
     }
     snapshot.setdefault("briefing", {}).update(metadata)
     if not merge_published_metadata(metadata, destination=snapshot_path, expected_snapshot_id=correlation["snapshot_id"]):
-        _write_output({"prepared": "false", "sent": "false", "reason": "snapshot_metadata_merge_skipped"})
+        _write_decision_output(
+            {"prepared": "false", "sent": "false", "reason": "snapshot_metadata_merge_skipped"},
+            event=event, notification_status="blocked", notification_reason="snapshot_metadata_merge_skipped",
+        )
         return snapshot
-    _write_output({"prepared": "true", **metadata})
+    _write_decision_output(
+        {"prepared": "true", **metadata},
+        event=event,
+        notification_status=prepared_decision["notification_status"],
+        notification_reason=prepared_decision["notification_reason"],
+    )
     return snapshot
 
 
@@ -339,10 +392,16 @@ def send(
     try:
         snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        _write_output({"sent": "false", "delivery_status": "blocked", "notification_expected": "false", "notification_status": "blocked", "reason": f"snapshot_unreadable:{type(exc).__name__}"})
+        _write_decision_output(
+            {"sent": "false", "delivery_status": "blocked", "reason": f"snapshot_unreadable:{type(exc).__name__}"},
+            notification_status="blocked", notification_reason=f"snapshot_unreadable:{type(exc).__name__}",
+        )
         return
     if not isinstance(snapshot, dict):
-        _write_output({"sent": "false", "delivery_status": "blocked", "notification_expected": "false", "notification_status": "blocked", "reason": "snapshot_not_object"})
+        _write_decision_output(
+            {"sent": "false", "delivery_status": "blocked", "reason": "snapshot_not_object"},
+            notification_status="blocked", notification_reason="snapshot_not_object",
+        )
         return
     snapshot_id = str(snapshot.get("snapshot_id") or "")
     gate = verify_release_for_delivery(
@@ -352,7 +411,7 @@ def send(
         require_production_research=require_production_research,
     )
     if not gate.allowed:
-        _write_output({
+        _write_decision_output({
             "sent": "false",
             "delivery_status": "blocked",
             "reason": "release_gate_blocked",
@@ -362,7 +421,7 @@ def send(
             "notification_expected": "false",
             "notification_status": "blocked",
             "notification_reason": "release_gate_blocked",
-        })
+        }, notification_status="blocked", notification_reason="release_gate_blocked")
         print("Release gate blocked Telegram delivery: " + "; ".join(gate.errors))
         return
 
@@ -380,7 +439,7 @@ def send(
         theme = ledger.theme_decision(event) if hasattr(ledger, "theme_decision") else {"allowed": True}
         ledger.save()
         if not theme.get("allowed", False):
-            _write_output({
+            _write_decision_output({
                 "sent": "false",
                 "delivery_status": "suppressed",
                 "reason": theme.get("reason", "same_theme_within_2h"),
@@ -392,11 +451,11 @@ def send(
                 "notification_status": "suppressed",
                 "notification_reason": theme.get("reason", "same_theme_within_2h"),
                 "risk": event_risk,
-            })
+            }, event=event, notification_status="suppressed", notification_reason=str(theme.get("reason", "same_theme_within_2h")))
             return
         budget = decide_alert_budget(event, history)
         if not budget["allowed"]:
-            _write_output({
+            _write_decision_output({
                 "sent": "false",
                 "delivery_status": "suppressed",
                 "reason": budget["reason"],
@@ -407,7 +466,7 @@ def send(
                 "notification_status": "suppressed",
                 "notification_reason": budget["reason"],
                 "risk": event_risk,
-            })
+            }, event=event, notification_status="suppressed", notification_reason=str(budget["reason"]))
             return
     briefing = snapshot.get("briefing") or {}
     correlation = briefing_correlation(snapshot, slot, event)
@@ -459,7 +518,10 @@ def send(
                 prstk_risk_level=canonical_prstk_risk_level(event),
             )
     except (OSError, ValueError) as exc:
-        _write_output({"sent": "false", "delivery_status": "blocked", "reason": "text_delivery_failed", "error_type": type(exc).__name__, "release_id": gate.release_id, "snapshot_id": snapshot_id, "notification_expected": "true", "notification_status": "failed", "notification_reason": "text_delivery_failed", "risk": event_risk})
+        _write_decision_output(
+            {"sent": "false", "delivery_status": "blocked", "reason": "text_delivery_failed", "error_type": type(exc).__name__, "release_id": gate.release_id, "snapshot_id": snapshot_id, "risk": event_risk},
+            event=event, notification_status="failed", notification_reason="text_delivery_failed",
+        )
         return
     if fj_delivery is not None:
         fj_receipts = [row for row in fj_delivery.get("receipts", []) if isinstance(row, dict)]
@@ -467,7 +529,7 @@ def send(
         failed = len(fj_receipts) - delivered
         fj_status = str(fj_delivery.get("status") or "failed")
         if fj_status == "already_delivered":
-            _write_output({
+            _write_decision_output({
                 "sent": "false",
                 "delivery_status": "suppressed",
                 "reason": "financialjuice_already_delivered",
@@ -478,10 +540,10 @@ def send(
                 "notification_status": "suppressed",
                 "notification_reason": "financialjuice_already_delivered",
                 "risk": event_risk,
-            })
+            }, event=event, notification_status="suppressed", notification_reason="financialjuice_already_delivered", last_receipt_status="already_delivered")
             return
         if fj_status == "blocked" and not fj_receipts:
-            _write_output({
+            _write_decision_output({
                 "sent": "false",
                 "delivery_status": "blocked",
                 "reason": "financialjuice_delivery_blocked",
@@ -493,7 +555,7 @@ def send(
                 "notification_status": "blocked",
                 "notification_reason": "financialjuice_delivery_blocked",
                 "risk": event_risk,
-            })
+            }, event=event, notification_status="blocked", notification_reason="financialjuice_delivery_blocked")
             return
         delivery_status = "delivered" if fj_status == "delivered" else "partial" if delivered else "failed"
         failed_recipient_hashes = [
@@ -502,7 +564,7 @@ def send(
             if str(row.get("delivery_status") or "") != "delivered"
         ]
         if not delivered:
-            _write_output({
+            _write_decision_output({
                 "sent": "false",
                 "delivery_status": "failed",
                 "reason": "all_recipients_failed",
@@ -516,7 +578,7 @@ def send(
                 "notification_status": "failed",
                 "notification_reason": "recipient_delivery_failed",
                 "risk": event_risk,
-            })
+            }, event=event, notification_status="failed", notification_reason="recipient_delivery_failed", delivered_count=0, failed_count=max(failed, len(settings.telegram_chat_ids)), last_receipt_status="failed")
             raise RuntimeError("Telegram FinancialJuice delivery failed for every configured recipient")
     else:
         delivered = sum(delivery.status == "delivered" for delivery in deliveries)
@@ -557,7 +619,15 @@ def send(
             "notification_key": fj_delivery.get("notification_key") if fj_delivery else None,
             "delivery_reasons": fj_delivery.get("reasons", []) if fj_delivery else [],
         }
-    _write_output(output)
+    _write_decision_output(
+        output,
+        event=event,
+        notification_status=output["notification_status"],
+        notification_reason=output["notification_reason"],
+        delivered_count=delivered,
+        failed_count=failed,
+        last_receipt_status=delivery_status,
+    )
     if event:
         write_event_lock_key(event)
         if ledger is None:

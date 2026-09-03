@@ -252,6 +252,27 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
         run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --send-only --snapshot "$SNAPSHOT_PATH" --manifest "$MANIFEST_PATH" --public-url "${{ steps.deployment.outputs.page_url }}"
+      - name: Publish scheduled notification decision
+        if: always()
+        env:
+          SCAN_STATUS: ${{ steps.prepare.outcome }}
+          CANDIDATE_TYPE: ${{ steps.prepare.outputs.candidate_type || 'none' }}
+          NOTIFICATION_EXPECTED: ${{ steps.prepare.outputs.notification_expected || 'false' }}
+          NOTIFICATION_STATUS: ${{ steps.send_brief.outputs.notification_status || (env.NOTIFY == 'true' && 'not_attempted' || 'not_requested') }}
+          NOTIFICATION_REASON: ${{ steps.send_brief.outputs.reason || (env.NOTIFY == 'true' && 'send_step_not_run' || 'manual_notification_opt_in_required') }}
+          DELIVERED_COUNT: ${{ steps.send_brief.outputs.delivered_count || '' }}
+          FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count || '' }}
+        run: |
+          {
+            echo "## Scheduled brief notification decision"
+            echo "- scan_status: ${SCAN_STATUS:-unknown}"
+            echo "- candidate_type: ${CANDIDATE_TYPE:-none}"
+            echo "- notification_expected: ${NOTIFICATION_EXPECTED:-false}"
+            echo "- notification_status: ${NOTIFICATION_STATUS:-not_attempted}"
+            echo "- notification_reason: ${NOTIFICATION_REASON:-not_attempted}"
+            echo "- delivered_count: ${DELIVERED_COUNT:-unknown}"
+            echo "- failed_count: ${FAILED_COUNT:-unknown}"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Persist scheduled-brief delivery receipt
         if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome == 'success'
         continue-on-error: true

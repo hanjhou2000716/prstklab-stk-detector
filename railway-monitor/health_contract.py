@@ -128,3 +128,50 @@ def gmail_health_fields(diagnostics: Any) -> dict[str, Any]:
     if isinstance(expiration, str) and expiration:
         result["watch_expiration"] = expiration
     return result
+
+
+def gmail_notification_health(result: Any, *, now: datetime | None = None) -> dict[str, Any]:
+    """Map one Gmail history reconciliation into safe notification state.
+
+    This is intentionally a decision projection, not a delivery claim.  A
+    processed message requests the existing GitHub/EventLedger path; only the
+    later Telegram receipt can establish delivered/partial/failed.
+    """
+    values = result if isinstance(result, dict) else {}
+
+    def counter(key: str) -> int:
+        parsed = non_negative_int(values.get(key))
+        return parsed or 0
+
+    processed = counter("processed")
+    duplicate = min(processed, counter("duplicate"))
+    failed = counter("failed")
+    new_items = max(0, processed - duplicate)
+    status = str(values.get("status") or "unknown").strip()[:80] or "unknown"
+    timestamp = (now or datetime.now(UTC)).astimezone(UTC).isoformat()
+    if failed:
+        notification_status = "failed" if not new_items else "dispatch_requested"
+        reason = "gmail_sync_failed" if not new_items else "new_reviewed_email_with_sync_errors"
+    elif new_items:
+        notification_status = "dispatch_requested"
+        reason = "new_reviewed_email"
+    else:
+        notification_status = "no_new_content"
+        reason = "duplicate_email" if duplicate else "no_new_reviewed_email"
+    projection: dict[str, Any] = {
+        "scan_status": "failed" if failed and not processed else "completed",
+        "candidate_type": "financialjuice_or_creator" if new_items else "none",
+        "notification_expected": bool(new_items),
+        "notification_status": notification_status,
+        "notification_reason": reason,
+        "delivered_count": None,
+        "failed_count": failed,
+        "last_telegram_attempt_at": None,
+        "last_receipt_status": None,
+        "last_sync_status": status,
+    }
+    if processed:
+        projection["last_processed_at"] = timestamp
+    if new_items:
+        projection["last_candidate_at"] = timestamp
+    return projection

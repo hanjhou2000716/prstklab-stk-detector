@@ -434,5 +434,5 @@ def test_duplicate_top_candidate_does_not_starve_later_valid_candidate(monkeypat
         return (TextDeliveryReceipt(kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"], "h", "delivered", message_id=1),)
 
     monkeypatch.setattr(monitor, "send_text_briefs_audited", sender)
-    assert monitor.send_current_event() is True
+    assert monitor.send_current_event(expected_key=monitor.event_key(later)) is True
     assert captured["alert_id"] == "official-next"
