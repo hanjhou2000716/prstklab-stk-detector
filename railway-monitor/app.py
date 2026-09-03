@@ -52,7 +52,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     delivery_shared_secret = _config_module.delivery_shared_secret
 
 try:
-    from health_contract import age_seconds, gmail_health_fields, health_request_path, monitor_heartbeat, non_negative_int
+    from health_contract import age_seconds, gmail_health_fields, gmail_notification_health, health_request_path, monitor_heartbeat, non_negative_int
 except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalone image
     _health_spec = spec_from_file_location(
         "railway_health_contract",
@@ -64,6 +64,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct file loading / standalo
     _health_spec.loader.exec_module(_health_module)
     age_seconds = _health_module.age_seconds
     gmail_health_fields = _health_module.gmail_health_fields
+    gmail_notification_health = _health_module.gmail_notification_health
     health_request_path = _health_module.health_request_path
     monitor_heartbeat = _health_module.monitor_heartbeat
     non_negative_int = _health_module.non_negative_int
@@ -1913,7 +1914,9 @@ async def renew_gmail_watch() -> None:
 async def sync_gmail_history() -> dict[str, Any]:
     """Fetch and route Gmail history after Pub/Sub advances the cursor."""
     if EMAIL_INGRESS is None:
-        return {"status": "not_configured", "processed": 0, "failed": 0}
+        result = {"status": "not_configured", "processed": 0, "failed": 0}
+        update_health("gmail", **gmail_notification_health(result))
+        return result
     try:
         result = await sync_gmail_history_records(
             EMAIL_INGRESS.config,
@@ -1922,10 +1925,13 @@ async def sync_gmail_history() -> dict[str, Any]:
             max_messages=max(1, int(os.environ.get("GMAIL_HISTORY_MAX_MESSAGES", "50"))),
         )
         sync_external_source_health(EMAIL_INGRESS.health())
+        update_health("gmail", **gmail_notification_health(result))
         return result
     except Exception as error:  # pragma: no cover - monitor must continue polling
         logging.exception("Gmail history sync failed; will retry")
-        return {"status": type(error).__name__, "processed": 0, "failed": 1}
+        result = {"status": type(error).__name__, "processed": 0, "failed": 1}
+        update_health("gmail", **gmail_notification_health(result))
+        return result
 
 
 class HealthHandler(BaseHTTPRequestHandler):

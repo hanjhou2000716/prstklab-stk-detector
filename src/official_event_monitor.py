@@ -33,6 +33,7 @@ from src.financialjuice_priority import (
 )
 from src.financialjuice_release_contract import validate_financialjuice_release
 from src.market_data import build_market_snapshot
+from src.notification_observability import decision_summary, merge_decision_health, write_summary
 from src.railway_observation_client import load_railway_observations
 from src.railway_secret import delivery_shared_secret
 from src.refresh_market_data import write_snapshot
@@ -316,25 +317,76 @@ def prepare_snapshot() -> tuple[dict[str, Any], dict[str, Any] | None]:
     """Refresh the public snapshot before the Mini App button is sent."""
     snapshot = build_market_snapshot()
     snapshot = _attach_realtime_external_events(snapshot)
+    # Select before publishing so the immutable snapshot carries the same
+    # candidate decision that the workflow will inspect.  The ledger remains
+    # the single durable source of truth; this is only a safe public summary.
+    baseline_official = os.getenv("OFFICIAL_EVENT_BASELINE_READY") == "false"
+    event = select_official_event(snapshot, baseline_official=baseline_official)
+    summary = decision_summary(
+        event=event,
+        scan_status="completed",
+        notification_expected=bool(event),
+        notification_status="candidate_ready" if event else "no_event",
+        notification_reason="candidate_ready" if event else "no_event",
+    )
+    snapshot["source_health"] = merge_decision_health(
+        snapshot.get("source_health"), "official_event_monitor", summary,
+    )
     if not write_snapshot(snapshot):
         # Never evaluate or deliver an event from a run that lost the
         # freshness race with a newer published snapshot.
         print("Snapshot publish skipped; suppressing event delivery.")
         return snapshot, None
-    # The first deployment observes current official headlines but avoids
-    # immediately replaying them as alerts. Price signals remain eligible.
-    baseline_official = os.getenv("OFFICIAL_EVENT_BASELINE_READY") == "false"
-    return snapshot, select_official_event(snapshot, baseline_official=baseline_official)
+    return snapshot, event
 
 
-def write_status_output(event: dict[str, Any] | None) -> None:
+def write_status_output(
+    event: dict[str, Any] | None,
+    snapshot: dict[str, Any] | None = None,
+) -> None:
     """Write GitHub Actions outputs without mixing provider diagnostics into them."""
     ledger_record = _observe_event(event)
     should_send = bool(event and ledger_record.get("should_remind", True))
+    suppressed_candidates = 0
+    # The durable ledger is authoritative, but the first selected candidate
+    # can already be known and suppressed while a later candidate is new. Do
+    # not let that top candidate prevent the workflow from considering the
+    # rest of the same queue (especially a previously delivered FJ item).
+    if event and not should_send and isinstance(snapshot, dict):
+        excluded = {event_key(event)}
+        for _ in range(8):
+            next_event = select_official_event(snapshot, excluded_event_keys=excluded)
+            if next_event is None:
+                break
+            suppressed_candidates += 1
+            next_record = _observe_event(next_event)
+            event = next_event
+            ledger_record = next_record
+            should_send = bool(next_record.get("should_remind", True))
+            excluded.add(event_key(next_event))
+            if should_send:
+                break
+    reason = "candidate_ready" if should_send else "no_new_eligible_candidate" if event else "no_event"
+    summary = decision_summary(
+        event=event,
+        scan_status="completed",
+        notification_expected=bool(event),
+        notification_status="candidate_ready" if should_send else "suppressed" if event else "no_event",
+        notification_reason=reason,
+        last_candidate_at=(event or {}).get("candidate_at") if isinstance(event, dict) else None,
+    )
+    if suppressed_candidates:
+        summary["notification_reason"] = "top_candidate_suppressed_later_candidate_considered"
     lines = [
         f"should_send={'true' if should_send else 'false'}",
-        f"key={event_key(event)}",
+        f"key={event_key(event) if event else ''}",
         f"snapshot_id={event.get('snapshot_id', '') if event else ''}",
+        f"candidate_type={summary['candidate_type']}",
+        f"notification_expected={'true' if summary['notification_expected'] else 'false'}",
+        f"notification_status={summary['notification_status']}",
+        f"notification_reason={summary['notification_reason']}",
+        f"last_processed_at={summary['last_processed_at']}",
+        f"last_candidate_at={summary['last_candidate_at'] or ''}",
     ]
     destination = os.getenv("GITHUB_OUTPUT")
     if destination:
@@ -342,17 +394,53 @@ def write_status_output(event: dict[str, Any] | None) -> None:
             handle.write("\n".join(lines + [f"ledger_changed={'true' if ledger_record.get('changed') else 'false'}"]) + "\n")
     else:
         print("\n".join(lines + [f"ledger_changed={'true' if ledger_record.get('changed') else 'false'}"]))
+    write_summary("Official event / price notification decision", summary)
 
 
-def write_send_output(sent: bool, reason: str) -> None:
+def write_send_output(
+    sent: bool,
+    reason: str,
+    *,
+    event: dict[str, Any] | None = None,
+    notification_status: str | None = None,
+    delivered_count: int | None = None,
+    failed_count: int | None = None,
+    last_telegram_attempt_at: str | None = None,
+    last_receipt_status: str | None = None,
+) -> None:
     """Expose delivery result to GitHub Actions without failing a safe skip."""
     lines = [f"sent={'true' if sent else 'false'}", f"reason={reason}"]
+    status = notification_status or ("delivered" if sent else "suppressed")
+    summary = decision_summary(
+        event=event,
+        scan_status="completed",
+        notification_expected=bool(event),
+        notification_status=status,
+        notification_reason=reason,
+        delivered_count=delivered_count,
+        failed_count=failed_count,
+        last_telegram_attempt_at=last_telegram_attempt_at,
+        last_receipt_status=last_receipt_status or status,
+    )
+    lines.extend([
+        f"candidate_type={summary['candidate_type']}",
+        f"notification_expected={'true' if summary['notification_expected'] else 'false'}",
+        f"notification_status={summary['notification_status']}",
+        f"notification_reason={summary['notification_reason']}",
+        f"delivered_count={summary['delivered_count'] if summary['delivered_count'] is not None else ''}",
+        f"failed_count={summary['failed_count'] if summary['failed_count'] is not None else ''}",
+        f"last_processed_at={summary['last_processed_at']}",
+        f"last_candidate_at={summary['last_candidate_at'] or ''}",
+        f"last_telegram_attempt_at={summary['last_telegram_attempt_at'] or ''}",
+        f"last_receipt_status={summary['last_receipt_status'] or ''}",
+    ])
     destination = os.getenv("GITHUB_OUTPUT")
     if destination:
         with Path(destination).open("a", encoding="utf-8") as handle:
             handle.write("\n".join(lines) + "\n")
     else:
         print("\n".join(lines))
+    write_summary("Official event / price delivery", summary)
 
 
 def _write_delivery_output(
@@ -428,10 +516,28 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
     else:
         snapshot, event = prepare_snapshot()
     current_key = event_key(event)
+    if event and expected_key and current_key != expected_key:
+        # The status step may have excluded a suppressed top candidate and
+        # selected a later eligible one. Re-select that exact candidate from
+        # the same immutable snapshot before declaring the snapshot changed.
+        all_items = [
+            item
+            for container in (snapshot.get("official_events"), snapshot.get("events"))
+            if isinstance(container, dict)
+            for item in (container.get("items") or [])
+            if isinstance(item, dict)
+        ]
+        expected_event = next(
+            (item for item in all_items if event_key(item) == expected_key),
+            None,
+        )
+        if expected_event is not None:
+            event = expected_event
+            current_key = expected_key
     if not event or (expected_key and current_key != expected_key):
         # A newer event can arrive between the pre-send check and delivery.
         # Keep the workflow green while avoiding stale delivery or a stale lock.
-        write_send_output(False, "event_changed_before_delivery")
+        write_send_output(False, "event_changed_before_delivery", event=event, notification_status="suppressed")
         print("Official event changed before delivery; skipped safely.")
         return False
     # Price signals must be bound to the exact published observation. This is
@@ -449,7 +555,7 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             and str(trace.get("observation_id") or observation_id) == observation_id
         )
         if not provenance_matches:
-            write_send_output(False, "missing_quote_provenance")
+            write_send_output(False, "missing_quote_provenance", event=event, notification_status="suppressed")
             print("Market signal has no snapshot/observation provenance; skipped safely.")
             return False
     ledger = EventLedger()
@@ -465,7 +571,7 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         if hasattr(ledger, "record_decision"):
             ledger.record_decision(event, {"allowed": False, "status": "suppressed", "reason": "release_gate_blocked", "reasons": list(gate.errors)})
             ledger.save()
-        write_send_output(False, "release_gate_blocked")
+            write_send_output(False, "release_gate_blocked", event=event, notification_status="blocked")
         print("Release gate blocked official event delivery: " + "; ".join(gate.errors))
         return False
     # Semantic investor-theme suppression sits alongside (not inside) the
@@ -493,7 +599,12 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
                     event = next_event
                     current_key = event_key(event)
                     continue
-            write_send_output(False, f"theme:{theme.get('reason', 'same_theme_unchanged')}")
+            write_send_output(
+                False,
+                f"theme:{theme.get('reason', 'same_theme_unchanged')}",
+                event=event,
+                notification_status="suppressed",
+            )
             print(f"Official event suppressed by notification theme: {theme.get('reason', 'same_theme_unchanged')}")
             return False
     else:
@@ -506,7 +617,12 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         if hasattr(ledger, "record_decision"):
             ledger.record_decision(budget_event, {**budget, "status": "suppressed", "reasons": [str(budget.get("reason") or "suppressed")]})
             ledger.save()
-        write_send_output(False, f"alert_budget:{budget.get('reason', 'suppressed')}")
+        write_send_output(
+            False,
+            f"alert_budget:{budget.get('reason', 'suppressed')}",
+            event=event,
+            notification_status="suppressed",
+        )
         print(f"Official event suppressed by alert budget: {budget.get('reason', 'suppressed')}")
         return False
     settings = get_settings()
@@ -553,13 +669,19 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
                 trace_id=trace_id, deliveries=(), event={**event, "snapshot_id": snapshot_id}, budget=budget,
                 delivery_status="suppressed", delivered_count=0, failed_count=0,
             )
-            write_send_output(False, "financialjuice_already_delivered")
+            write_send_output(
+                False,
+                "financialjuice_already_delivered",
+                event=event,
+                notification_status="suppressed",
+                last_receipt_status="already_delivered",
+            )
             return False
         if fj_status == "blocked" and not fj_receipts:
             if hasattr(ledger, "record_decision"):
                 ledger.record_decision(event, {"allowed": False, "status": "suppressed", "reason": "financialjuice_delivery_blocked", "reasons": list(fj_result.get("reasons") or [])})
                 ledger.save()
-            write_send_output(False, "financialjuice_delivery_blocked")
+            write_send_output(False, "financialjuice_delivery_blocked", event=event, notification_status="blocked")
             return False
         delivery_status = "delivered" if fj_status == "delivered" else "partial" if delivered_count else "failed"
         failed_hashes = [
@@ -573,7 +695,15 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             failed_count=failed_count, failed_recipient_hashes=failed_hashes,
         )
         if not delivered_count:
-            write_send_output(False, "all_recipients_failed")
+            write_send_output(
+                False,
+                "all_recipients_failed",
+                event=event,
+                notification_status="failed",
+                delivered_count=delivered_count,
+                failed_count=failed_count,
+                last_receipt_status=delivery_status,
+            )
             raise RuntimeError("Telegram FinancialJuice delivery failed for every configured recipient")
         ledger.record_delivery(
             {**budget_event, "trace_id": trace_id, "release_id": release_id, "snapshot_id": snapshot_id,
@@ -588,7 +718,16 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             reason="financialjuice_realtime_monitor",
         )
         ledger.save()
-        write_send_output(True, "sent_partial" if failed_count else "sent")
+        write_send_output(
+            True,
+            "sent_partial" if failed_count else "sent",
+            event=event,
+            notification_status=delivery_status,
+            delivered_count=delivered_count,
+            failed_count=failed_count,
+            last_telegram_attempt_at=event.get("telegram_attempted_at"),
+            last_receipt_status=delivery_status,
+        )
         return True
     try:
         telegram_attempted_at = datetime.now().astimezone().isoformat()
@@ -606,14 +745,22 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             prstk_risk_level=canonical_prstk_risk_level(event),
         )
     except (OSError, ValueError) as exc:
-        write_send_output(False, "text_delivery_failed")
+        write_send_output(False, "text_delivery_failed", event=event, notification_status="failed")
         print(f"Text delivery blocked official event: {type(exc).__name__}")
         return False
     _write_delivery_output(trace_id=trace_id, deliveries=deliveries, event=event, budget=budget)
     delivered_count = sum(item.status == "delivered" for item in deliveries)
     failed_count = len(deliveries) - delivered_count
     if not delivered_count:
-        write_send_output(False, "all_recipients_failed")
+        write_send_output(
+            False,
+            "all_recipients_failed",
+            event=event,
+            notification_status="failed",
+            delivered_count=delivered_count,
+            failed_count=failed_count,
+            last_receipt_status="failed",
+        )
         raise RuntimeError("Telegram delivery failed for every configured recipient")
     ledger.record_delivery(
         {
@@ -637,7 +784,16 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         reason="official_event_monitor",
     )
     ledger.save()
-    write_send_output(True, "sent_partial" if failed_count else "sent")
+    write_send_output(
+        True,
+        "sent_partial" if failed_count else "sent",
+        event=event,
+        notification_status="partial" if failed_count else "delivered",
+        delivered_count=delivered_count,
+        failed_count=failed_count,
+        last_telegram_attempt_at=event.get("telegram_attempted_at"),
+        last_receipt_status="partial" if failed_count else "delivered",
+    )
     return True
 
 
@@ -653,8 +809,8 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     if args.write_status:
-        _, event = prepare_snapshot()
-        write_status_output(event)
+        snapshot, event = prepare_snapshot()
+        write_status_output(event, snapshot)
     if args.send:
         send_current_event(args.expected_key, prepared=args.prepared)
     if not args.write_status and not args.send:

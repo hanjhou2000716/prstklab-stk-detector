@@ -241,7 +241,7 @@ def delivery_diagnostics(
         if not next_retry_at or str(next_retry_at) <= now:
             due_retry_count += 1
     latest = connection.execute(
-        """SELECT trace_id, status, last_error, updated_at
+        """SELECT trace_id, status, last_error, updated_at, created_at, source, category
            FROM delivery_outbox ORDER BY updated_at DESC LIMIT 1"""
     ).fetchone()
     latest_receipt = connection.execute(
@@ -273,11 +273,36 @@ def delivery_diagnostics(
     outbox_status = str(latest[1]) if latest else None
     receipt_trace_id = str(receipt[0]) if receipt else None
     receipt_status = str(receipt[1]) if receipt else None
+    outbox_candidate_type = str(latest[6] or latest[5] or "unknown").strip().casefold() if latest else "none"
+    if outbox_candidate_type in {"production_receipt", "creator_receipt", "photo_smoke"}:
+        outbox_candidate_type = "unknown"
+    if outbox_candidate_type not in {
+        "financialjuice", "creator", "official", "event", "price", "price_signal", "market_signal", "briefing",
+    }:
+        outbox_candidate_type = "unknown" if latest else "none"
+    outbox_status = outbox_status or "not_checked"
+    notification_status = receipt_status or outbox_status
+    notification_reason = {
+        "delivered": "recipient_delivery_complete",
+        "partial": "recipient_delivery_partial",
+        "failed": "recipient_delivery_failed",
+        "pending": "telegram_attempt_pending",
+    }.get(notification_status, "delivery_state_observed")
     return {
         "status": receipt_status or outbox_status or "not_checked",
         "last_trace_id": str(latest[0]) if latest else None,
         "last_outbox_status": outbox_status,
         "last_receipt_status": receipt_status,
+        "scan_status": "completed" if latest else "not_checked",
+        "candidate_type": outbox_candidate_type,
+        "notification_expected": bool(latest),
+        "notification_status": notification_status,
+        "notification_reason": notification_reason,
+        "delivered_count": delivered_count,
+        "failed_count": failed_count,
+        "last_processed_at": str(latest[3]) if latest else None,
+        "last_candidate_at": str(latest[4]) if latest else None,
+        "last_telegram_attempt_at": reported_at or receipt_updated_at,
         "last_receipt_trace_id": receipt_trace_id,
         "receipt_matches_last_outbox": (receipt_trace_id == str(latest[0])) if latest and receipt_trace_id else (False if latest else None),
         "stale_receipt_status": str(latest_receipt[1]) if latest_receipt and receipt_trace_id != str(latest_receipt[0]) else None,
