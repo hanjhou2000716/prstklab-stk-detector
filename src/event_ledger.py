@@ -37,6 +37,7 @@ RISK_RANK = {
 }
 DEFAULT_COOLDOWN_SECONDS = 30 * 60
 THEME_WINDOW_SECONDS = 2 * 60 * 60
+DELIVERY_CLAIM_LEASE_SECONDS = 5 * 60
 
 
 def _risk_rank(value: Any) -> int:
@@ -310,16 +311,24 @@ class EventLedger:
         self.lock_timeout_seconds = max(0.1, float(lock_timeout_seconds))
         self.lock_stale_after_seconds = max(1.0, float(lock_stale_after_seconds))
         self.records: dict[str, dict[str, Any]] = {}
+        self.delivery_claims: dict[str, dict[str, Any]] = {}
         self.load()
 
     def load(self) -> None:
         try:
-            payload = json.loads(self.path.read_text(encoding="utf-8"))
+            payload = self._read_payload(self.path)
             rows = payload.get("events", payload) if isinstance(payload, dict) else {}
             if isinstance(rows, dict):
                 self.records = {str(key): dict(value) for key, value in rows.items() if isinstance(value, dict)}
+            claims = payload.get("delivery_claims", {}) if isinstance(payload, dict) else {}
+            if isinstance(claims, dict):
+                self.delivery_claims = {
+                    str(key): dict(value) for key, value in claims.items()
+                    if isinstance(value, dict)
+                }
         except (OSError, json.JSONDecodeError, TypeError):
             self.records = {}
+            self.delivery_claims = {}
 
     def prune(self, now: datetime | None = None) -> int:
         current = now or datetime.now(UTC)
@@ -723,14 +732,37 @@ class EventLedger:
         return merged
 
     @staticmethod
-    def _read_records(path: Path) -> dict[str, dict[str, Any]]:
+    def _read_payload(path: Path) -> dict[str, Any]:
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
-            rows = payload.get("events", payload) if isinstance(payload, dict) else {}
-            if isinstance(rows, dict):
-                return {str(key): dict(value) for key, value in rows.items() if isinstance(value, dict)}
+            return payload if isinstance(payload, dict) else {}
         except (OSError, json.JSONDecodeError, TypeError):
-            pass
+            return {}
+
+    @staticmethod
+    def _payload_metadata(payload: dict[str, Any]) -> dict[str, Any]:
+        """Keep envelope metadata without duplicating legacy event rows."""
+        if "events" not in payload:
+            return {}
+        return {
+            key: value for key, value in payload.items()
+            if key not in {"events", "delivery_claims"}
+        }
+
+    @classmethod
+    def _read_records(cls, path: Path) -> dict[str, dict[str, Any]]:
+        payload = cls._read_payload(path)
+        rows = payload.get("events", payload)
+        if isinstance(rows, dict):
+            return {str(key): dict(value) for key, value in rows.items() if isinstance(value, dict)}
+        return {}
+
+    @classmethod
+    def _read_claims(cls, path: Path) -> dict[str, dict[str, Any]]:
+        payload = cls._read_payload(path)
+        claims = payload.get("delivery_claims", {})
+        if isinstance(claims, dict):
+            return {str(key): dict(value) for key, value in claims.items() if isinstance(value, dict)}
         return {}
 
     @contextmanager
@@ -767,18 +799,168 @@ class EventLedger:
         with self._write_lock():
             # Reload while holding the lock: another process may have saved
             # after this instance was created.  Merge prevents lost events.
+            payload = self._read_payload(self.path)
             merged = self._read_records(self.path)
             for key, record in self.records.items():
                 merged[key] = self._merge_record(merged[key], record) if key in merged else dict(record)
+            current_claims = self._read_claims(self.path)
+            merged_claims = dict(current_claims)
+            for key, claim in self.delivery_claims.items():
+                if key in merged_claims:
+                    merged_claims[key] = self._merge_claim(merged_claims[key], claim)
+                else:
+                    merged_claims[key] = dict(claim)
             self.records = merged
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            payload = {"schema_version": 1, "retention_days": self.retention_days, "events": self.records}
-            temporary = self.path.with_name(f".{self.path.name}.{os.getpid()}.{time.time_ns()}.tmp")
+            self.delivery_claims = merged_claims
+            self._write_payload_locked(
+                {
+                    **self._payload_metadata(payload),
+                    "schema_version": 1,
+                    "retention_days": self.retention_days,
+                    "events": self.records,
+                    "delivery_claims": self.delivery_claims,
+                }
+            )
+
+    @classmethod
+    def _merge_claim(cls, left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
+        """Merge redacted claim state without allowing stale writers to regress it."""
+        left_time = cls._timestamp(left.get("updated_at") or left.get("claimed_at"))
+        right_time = cls._timestamp(right.get("updated_at") or right.get("claimed_at"))
+        newest = dict(right if right_time >= left_time else left)
+        delivered = sorted(set(
+            str(item) for item in [
+                *(left.get("delivered_recipient_hashes") or []),
+                *(right.get("delivered_recipient_hashes") or []),
+            ] if str(item)
+        ))
+        if delivered:
+            newest["delivered_recipient_hashes"] = delivered
+        return newest
+
+    def _write_payload_locked(self, payload: dict[str, Any]) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = self.path.with_name(f".{self.path.name}.{os.getpid()}.{time.time_ns()}.tmp")
+        try:
+            temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            temporary.replace(self.path)
+        finally:
             try:
-                temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-                temporary.replace(self.path)
-            finally:
-                try:
-                    temporary.unlink()
-                except FileNotFoundError:
-                    pass
+                temporary.unlink()
+            except FileNotFoundError:
+                pass
+
+    @staticmethod
+    def _delivery_hashes(records: dict[str, dict[str, Any]], notification_key: str) -> set[str]:
+        delivered: set[str] = set()
+        for record in records.values():
+            for row in record.get("delivery_history") or []:
+                if not isinstance(row, dict) or str(row.get("notification_key") or "") != notification_key:
+                    continue
+                receipts = row.get("delivery_receipts")
+                if isinstance(receipts, list):
+                    for receipt in receipts:
+                        if isinstance(receipt, dict) and str(receipt.get("delivery_status") or receipt.get("status") or "") == "delivered":
+                            value = receipt.get("recipient_hash") or receipt.get("chat_id_hash")
+                            if value:
+                                delivered.add(str(value))
+                elif str(row.get("delivery_status") or row.get("status") or "") == "delivered":
+                    value = row.get("recipient_hash") or row.get("chat_id_hash")
+                    if value:
+                        delivered.add(str(value))
+        return delivered
+
+    def claim_notification(
+        self,
+        notification_key: str,
+        *,
+        slot_key: str = "",
+        recipient_hashes: tuple[str, ...] = (),
+        now: datetime | None = None,
+        run_id: str = "",
+        lease_seconds: int = DELIVERY_CLAIM_LEASE_SECONDS,
+    ) -> dict[str, Any]:
+        """Atomically reserve one notification across all producer workflows."""
+        key = str(notification_key or "").strip()
+        if not key:
+            return {"status": "blocked", "reason": "notification_key_missing", "pending_recipient_hashes": []}
+        current = now or datetime.now(UTC)
+        now_iso = current.isoformat()
+        recipients = tuple(dict.fromkeys(str(item) for item in recipient_hashes if str(item)))
+        with self._write_lock():
+            payload = self._read_payload(self.path)
+            records = self._read_records(self.path)
+            claims = self._read_claims(self.path)
+            claim = dict(claims.get(key) or {})
+            delivered = self._delivery_hashes(records, key)
+            delivered.update(str(item) for item in claim.get("delivered_recipient_hashes") or [] if str(item))
+            configured = tuple(dict.fromkeys(str(item) for item in (claim.get("recipient_hashes") or []) + list(recipients) if str(item)))
+            pending = [item for item in configured if item not in delivered]
+            if not configured:
+                pending = list(recipients)
+                configured = recipients
+            lease_until = self._timestamp(claim.get("lease_until"))
+            if not pending:
+                claim.update({
+                    "notification_key": key, "slot_key": slot_key or claim.get("slot_key") or "",
+                    "status": "delivered", "recipient_hashes": list(configured),
+                    "delivered_recipient_hashes": sorted(delivered), "updated_at": now_iso,
+                })
+                claims[key] = claim
+                self._write_payload_locked({**self._payload_metadata(payload), "schema_version": 1, "events": records, "delivery_claims": claims})
+                self.delivery_claims = claims
+                self.records = records
+                return {"status": "already_delivered", "notification_key": key, "pending_recipient_hashes": []}
+            if str(claim.get("status") or "") == "uncertain":
+                return {"status": "uncertain", "notification_key": key, "pending_recipient_hashes": pending}
+            if str(claim.get("status") or "") == "in_flight" and lease_until > current:
+                return {"status": "in_flight", "notification_key": key, "pending_recipient_hashes": pending}
+            claim = {
+                "notification_key": key,
+                "slot_key": slot_key or claim.get("slot_key") or "",
+                "status": "in_flight",
+                "recipient_hashes": list(configured),
+                "delivered_recipient_hashes": sorted(delivered),
+                "attempted_recipient_hashes": pending,
+                "claimed_at": now_iso,
+                "lease_until": (current + timedelta(seconds=max(1, int(lease_seconds)))).isoformat(),
+                "run_id_hash": hashlib.sha256(str(run_id).encode("utf-8")).hexdigest()[:12] if run_id else "",
+                "updated_at": now_iso,
+            }
+            claims[key] = claim
+            self._write_payload_locked({**self._payload_metadata(payload), "schema_version": 1, "events": records, "delivery_claims": claims})
+            self.delivery_claims = claims
+            self.records = records
+            return {"status": "claimed", "notification_key": key, "pending_recipient_hashes": pending}
+
+    def complete_notification_claim(
+        self,
+        notification_key: str,
+        *,
+        delivered_recipient_hashes: tuple[str, ...] = (),
+        failed_recipient_hashes: tuple[str, ...] = (),
+        uncertain: bool = False,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Atomically close a claim and preserve recipient-level retry state."""
+        key = str(notification_key or "").strip()
+        current = now or datetime.now(UTC)
+        with self._write_lock():
+            payload = self._read_payload(self.path)
+            records = self._read_records(self.path)
+            claims = self._read_claims(self.path)
+            claim = dict(claims.get(key) or {})
+            delivered = set(str(item) for item in claim.get("delivered_recipient_hashes") or [] if str(item))
+            delivered.update(str(item) for item in delivered_recipient_hashes if str(item))
+            configured = set(str(item) for item in claim.get("recipient_hashes") or [] if str(item))
+            pending = configured - delivered
+            claim["delivered_recipient_hashes"] = sorted(delivered)
+            claim["failed_recipient_hashes"] = sorted(set(str(item) for item in failed_recipient_hashes if str(item)))
+            claim["status"] = "uncertain" if uncertain else "delivered" if not pending else "retryable"
+            claim["updated_at"] = current.isoformat()
+            claim["lease_until"] = None
+            claims[key] = claim
+            self._write_payload_locked({**payload, "schema_version": 1, "events": records, "delivery_claims": claims})
+            self.delivery_claims = claims
+            self.records = records
+            return dict(claim)

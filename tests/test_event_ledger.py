@@ -52,6 +52,26 @@ def test_default_event_cooldown_is_thirty_minutes(tmp_path):
     assert ledger.should_remind(event, now=first + timedelta(minutes=30)) is True
 
 
+def test_notification_claim_is_atomic_and_retries_only_failed_recipients(tmp_path):
+    path = tmp_path / "ledger.json"
+    first = EventLedger(path)
+    second = EventLedger(path)
+    claimed = first.claim_notification("fj:event-1", recipient_hashes=("ok", "retry"), run_id="run-a")
+    assert claimed["status"] == "claimed"
+    assert second.claim_notification("fj:event-1", recipient_hashes=("ok", "retry"), run_id="run-b")["status"] == "in_flight"
+
+    first.complete_notification_claim(
+        "fj:event-1",
+        delivered_recipient_hashes=("ok",),
+        failed_recipient_hashes=("retry",),
+    )
+    retried = second.claim_notification("fj:event-1", recipient_hashes=("ok", "retry"), run_id="run-c")
+    assert retried["status"] == "claimed"
+    assert retried["pending_recipient_hashes"] == ["retry"]
+    second.complete_notification_claim("fj:event-1", delivered_recipient_hashes=("retry",))
+    assert first.claim_notification("fj:event-1", recipient_hashes=("ok", "retry"))["status"] == "already_delivered"
+
+
 def test_unchanged_theme_stays_suppressed_after_two_hours(tmp_path):
     ledger = EventLedger(tmp_path / "ledger.json")
     event = {

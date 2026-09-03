@@ -63,6 +63,9 @@ def _settings():
 
 def _patch_ready(monkeypatch, output):
     monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    # Delivery claims are durable by design; keep each test's ledger isolated
+    # so an intentional uncertain-delivery case cannot affect the next case.
+    monkeypatch.setenv("EVENT_LEDGER_PATH", str(output.with_name("event-ledger.json")))
     monkeypatch.setattr(
         scheduled_delivery,
         "verify_release_for_delivery",
@@ -181,6 +184,10 @@ def test_scheduled_market_delivery_does_not_require_fresh_research(tmp_path, mon
     )
     scheduled_delivery.send(snapshot_path, "morning", manifest_path)
     assert captured["require_production_research"] is False
+    text = output.read_text(encoding="utf-8")
+    assert "notification_expected=true" in text
+    assert "notification_status=ready" in text
+    assert "notification_reason=no_trigger" in text
 
 
 def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path, monkeypatch):

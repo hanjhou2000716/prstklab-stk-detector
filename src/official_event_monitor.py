@@ -11,6 +11,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from src.alert_budget import decide_alert_budget
+from src.alert_orchestrator import content_is_incomplete, notification_key_for_event, recipient_hash
 from src.config import get_settings
 from src.event_ledger import (
     EventLedger,
@@ -585,6 +586,22 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
     if hasattr(ledger, "theme_decision"):
         excluded: set[str] = set()
         while True:
+            claim_key = notification_key_for_event(event)
+            claim_state = getattr(ledger, "delivery_claims", {}).get(claim_key, {})
+            claim_status = str(claim_state.get("status") or "")
+            if claim_status == "retryable":
+                # A partial delivery is a recipient-level retry, not a new
+                # theme notification. Let the claim narrow the sender list.
+                break
+            if claim_status in {"in_flight", "uncertain"}:
+                excluded.add(current_key)
+                next_event = select_official_event(snapshot, excluded_event_keys=excluded)
+                if next_event is not None:
+                    event = next_event
+                    current_key = event_key(event)
+                    continue
+                write_send_output(False, f"notification_{claim_status}", event=event, notification_status="suppressed", last_receipt_status=claim_status)
+                return False
             theme = ledger.theme_decision(event)
             ledger.save()
             if theme.get("allowed", False):
@@ -643,6 +660,7 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         snapshot_id=snapshot_id,
         observation_id=observation_id,
     )
+    notification_key = notification_key_for_event(event)
     if str(event.get("source_key") or event.get("source") or "").strip().casefold() == "financialjuice":
         # FinancialJuice uses the same release-gated event lane but its
         # vendor-priority contract adds recipient-level replay protection and
@@ -659,6 +677,8 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             chat_ids=settings.telegram_chat_ids,
             delivery_history=_financialjuice_delivery_history(ledger.delivery_history()),
             text_sender=send_text_briefs_audited,
+            ledger=ledger,
+            run_id=os.getenv("GITHUB_RUN_ID", ""),
         )
         fj_receipts = [row for row in fj_result.get("receipts", []) if isinstance(row, dict)]
         delivered_count = sum(str(row.get("delivery_status") or "") == "delivered" for row in fj_receipts)
@@ -730,11 +750,34 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         )
         return True
     try:
+        if content_is_incomplete(event, caption):
+            if hasattr(ledger, "record_decision"):
+                ledger.record_decision(event, {"allowed": False, "status": "suppressed", "reason": "content_incomplete"})
+                ledger.save()
+            write_send_output(False, "content_incomplete", event=event, notification_status="suppressed")
+            return False
+        claim = (
+            ledger.claim_notification(
+                notification_key,
+                recipient_hashes=tuple(recipient_hash(chat_id) for chat_id in settings.telegram_chat_ids),
+                run_id=os.getenv("GITHUB_RUN_ID", ""),
+            )
+            if hasattr(ledger, "claim_notification") else {"status": "claimed"}
+        )
+        if claim.get("status") != "claimed":
+            write_send_output(False, f"notification_{claim.get('status', 'blocked')}", event=event, notification_status="suppressed", last_receipt_status=str(claim.get("status") or "blocked"))
+            return False
+        pending_hashes = set(str(item) for item in claim.get("pending_recipient_hashes") or [])
+        send_chat_ids = settings.telegram_chat_ids
+        if pending_hashes:
+            send_chat_ids = tuple(
+                chat_id for chat_id in settings.telegram_chat_ids if recipient_hash(chat_id) in pending_hashes
+            )
         telegram_attempted_at = datetime.now().astimezone().isoformat()
         event = {**event, "telegram_attempted_at": telegram_attempted_at}
         deliveries = send_text_briefs_audited(
             token=settings.telegram_bot_token or "",
-            chat_ids=settings.telegram_chat_ids,
+            chat_ids=send_chat_ids,
             text=caption,
             dashboard_url=settings.dashboard_url,
             alert_id=event_id,
@@ -745,12 +788,20 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             prstk_risk_level=canonical_prstk_risk_level(event),
         )
     except (OSError, ValueError) as exc:
+        if hasattr(ledger, "complete_notification_claim"):
+            ledger.complete_notification_claim(notification_key, uncertain=True)
         write_send_output(False, "text_delivery_failed", event=event, notification_status="failed")
         print(f"Text delivery blocked official event: {type(exc).__name__}")
         return False
     _write_delivery_output(trace_id=trace_id, deliveries=deliveries, event=event, budget=budget)
     delivered_count = sum(item.status == "delivered" for item in deliveries)
     failed_count = len(deliveries) - delivered_count
+    if hasattr(ledger, "complete_notification_claim"):
+        ledger.complete_notification_claim(
+            notification_key,
+            delivered_recipient_hashes=tuple(item.chat_id_hash for item in deliveries if item.status == "delivered"),
+            failed_recipient_hashes=tuple(item.chat_id_hash for item in deliveries if item.status != "delivered"),
+        )
     if not delivered_count:
         write_send_output(
             False,

@@ -19,6 +19,56 @@ from src.alert_lifecycle import transition, transition_record
 from src.material_change import has_material_change
 
 
+def notification_key_for_event(event: dict[str, Any] | None, *, slot_key: str = "") -> str:
+    """Return one stable delivery identity shared by every producer lane."""
+    if not isinstance(event, dict):
+        return f"scheduled:{slot_key}" if slot_key else ""
+    source = str(event.get("source_key") or event.get("source") or "").strip().casefold()
+    if source == "financialjuice":
+        from src.financialjuice_notification import financialjuice_notification_key
+
+        key = financialjuice_notification_key(event)
+        if key:
+            return key
+    explicit = str(event.get("notification_key") or "").strip()
+    if explicit:
+        return explicit
+    event_key = str(event.get("event_key") or event.get("notification_id") or "").strip()
+    if event_key:
+        return event_key
+    from src.event_ledger import canonical_event_key
+
+    return canonical_event_key(event)
+
+
+def recipient_hash(chat_id: str) -> str:
+    """Hash a recipient for claim state without exposing the raw identifier."""
+    import hashlib
+
+    return hashlib.sha256(str(chat_id).encode("utf-8")).hexdigest()[:12]
+
+
+def content_is_incomplete(event: dict[str, Any] | None, text: str) -> bool:
+    """Reject generic or visibly truncated event messages before Telegram."""
+    if not isinstance(event, dict):
+        return False
+    normalized = " ".join(str(text or "").split()).strip()
+    if not normalized or normalized in {"資訊待核對", "🟢 資訊待核對。", "🔴"}:
+        return True
+    if any(marker in normalized for marker in ("市場資料暫時無法取得", "資料暫時無法取得")):
+        return True
+    raw_values = [
+        event.get("event"), event.get("summary"), event.get("brief_summary"),
+        event.get("title"), event.get("brief_title"), event.get("vendor_original_headline"),
+    ]
+    fragments = [" ".join(str(value or "").split()).strip() for value in raw_values]
+    return not any(
+        value and value.casefold() not in {"資訊待核對", "financialjuice 公開快訊", "fj 公開快訊"}
+        and not value.endswith(("...", "…"))
+        for value in fragments
+    ) or normalized.endswith(("...", "…"))
+
+
 def _number(value: Any) -> float | None:
     try:
         return float(value)
@@ -103,4 +153,6 @@ def prepare_alert(
     }
 
 
-__all__ = ["prepare_alert"]
+__all__ = [
+    "content_is_incomplete", "notification_key_for_event", "prepare_alert", "recipient_hash",
+]
