@@ -28,6 +28,16 @@ SLOT_LABELS = {
 }
 MAX_BRIEF_LENGTH = PUBLIC_TEXT_MAX_CHARS
 TAIWAN_SESSION_SLOTS = frozenset({"pre_open", "intraday", "midday", "afternoon"})
+CRON_SLOT_MAP = {
+    "0 22 * * 0-4": "morning",
+    "45 0 * * 1-5": "pre_open",
+    "0 2 * * 1-5": "intraday",
+    "30 2 * * 1-5": "intraday",
+    "45 3 * * 1-5": "midday",
+    "15 5 * * 1-5": "afternoon",
+    "45 6 * * 1-5": "post_close",
+    "0 13 * * 1-5": "us_premarket",
+}
 
 
 def _write_output(values: dict[str, object]) -> None:
@@ -85,9 +95,20 @@ def _strict_slot_at(now: datetime) -> str | None:
     return None
 
 
-def resolve_slot(value: str, now: datetime | None = None, *, strict_window: bool = False) -> str | None:
+def resolve_slot(
+    value: str,
+    now: datetime | None = None,
+    *,
+    strict_window: bool = False,
+    scheduled_cron: str | None = None,
+) -> str | None:
     """Resolve an explicit slot or choose the nearest Taiwan-time briefing slot."""
     local_now = now or datetime.now(ZoneInfo("Asia/Taipei"))
+    cron_slot = CRON_SLOT_MAP.get(str(scheduled_cron or "").strip())
+    if cron_slot and value in {"auto", cron_slot}:
+        # GitHub-hosted schedules can start late.  The cron identity, not the
+        # runner start time, is the source of truth for an automatic slot.
+        return cron_slot
     if strict_window:
         matched = _strict_slot_at(local_now)
         if matched is None or (value != "auto" and value != matched):
@@ -131,19 +152,34 @@ def _pick_quote(snapshot: dict, slot: str) -> dict | None:
     )
 
 
-def _pick_event(snapshot: dict, slot: str) -> dict | None:
+def _pick_event(
+    snapshot: dict,
+    slot: str,
+    *,
+    excluded_event_keys: set[str] | None = None,
+) -> dict | None:
     """Prioritise the market currently relevant to the timed watch brief."""
+    excluded = excluded_event_keys or set()
+    from src.alert_orchestrator import notification_key_for_event
+
+    def available(item: dict) -> bool:
+        key = notification_key_for_event(item)
+        return key not in excluded and str(item.get("event_key") or "") not in excluded
+
     # A qualifying FinancialJuice item has its own vendor-priority lane.  It
     # may lead the single scheduled photo when no prior cluster notification
     # has consumed it; risk still stays in the conservative PRStK state.
     priority_events = snapshot.get("financialjuice_priority_events") or []
     if isinstance(priority_events, list):
-        first_priority = next((item for item in priority_events if isinstance(item, dict)), None)
+        first_priority = next(
+            (item for item in priority_events if isinstance(item, dict) and available(item)),
+            None,
+        )
         if first_priority:
             return first_priority
     events = [
         event for event in ((snapshot.get("events") or {}).get("items", []) or [])
-        if isinstance(event, dict) and not is_secondary_commentary(event)
+        if isinstance(event, dict) and available(event) and not is_secondary_commentary(event)
     ]
     preferred: tuple[str, ...]
     if slot in TAIWAN_SESSION_SLOTS:
@@ -235,13 +271,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--slot", choices=("auto", *SLOT_LABELS), default="auto")
     parser.add_argument("--print-window", action="store_true")
     parser.add_argument("--strict-window", action="store_true")
+    parser.add_argument("--scheduled-cron", default="")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     now = datetime.now(ZoneInfo("Asia/Taipei"))
-    slot = resolve_slot(args.slot, now, strict_window=args.strict_window)
+    slot = resolve_slot(
+        args.slot,
+        now,
+        strict_window=args.strict_window,
+        scheduled_cron=args.scheduled_cron,
+    )
     if args.print_window:
         print(f"should_run={'true' if slot else 'false'}")
         print(f"slot={slot or 'skip'}")

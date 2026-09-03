@@ -53,6 +53,16 @@ def test_external_dispatch_accepts_the_declared_0845_pre_open_slot():
     assert resolve_slot("pre_open", scheduled, strict_window=True) == "pre_open"
 
 
+def test_delayed_cron_run_uses_declared_slot_instead_of_runner_time():
+    delayed_runner_time = datetime(2026, 7, 27, 18, 30, tzinfo=ZoneInfo("Asia/Taipei"))
+    assert resolve_slot(
+        "auto",
+        delayed_runner_time,
+        strict_window=True,
+        scheduled_cron="0 13 * * 1-5",
+    ) == "us_premarket"
+
+
 def test_brief_uses_slot_label_and_market_direction():
     snapshot = {"quotes": [{"ticker": "2330", "change_percent": 1.25}]}
     assert build_brief(snapshot, "intraday") == "盤中｜2330📈+1.2%"

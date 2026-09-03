@@ -69,6 +69,7 @@ jobs:
       # Canonical zero-cost replacement; takes precedence over Railway.
       PUBLIC_OBSERVATIONS_URL: ${{ vars.PUBLIC_OBSERVATIONS_URL }}
       SLOT: ${{ inputs.slot || github.event.client_payload.slot || 'auto' }}
+      SCHEDULE_CRON: ${{ github.event.schedule || '' }}
       FORCE: ${{ inputs.force || github.event.client_payload.force || 'false' }}
       # Manual runs publish and verify by default but never send production
       # notifications unless the operator explicitly opts in. Scheduled runs
@@ -119,6 +120,7 @@ jobs:
         run: |
           arguments=(--slot "$SLOT" --print-window)
           if [ "$STRICT_WINDOW" = "true" ]; then arguments+=(--strict-window); fi
+          if [ -n "$SCHEDULE_CRON" ]; then arguments+=(--scheduled-cron "$SCHEDULE_CRON"); fi
           python -m src.scheduled_brief "${arguments[@]}" >> "$GITHUB_OUTPUT"
       - name: Restore scheduled idempotency lock
         if: steps.window.outputs.should_run == 'true' && env.FORCE != 'true'
@@ -128,7 +130,7 @@ jobs:
           path: .scheduled-brief-lock
           key: scheduled-brief-${{ steps.window.outputs.key }}
       - name: Prepare immutable market snapshot
-        if: steps.window.outputs.should_run == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true')
+        if: steps.window.outputs.should_run == 'true'
         id: prepare
         env:
           # Signed Worker observation export; scoped to collection only.
@@ -259,7 +261,7 @@ jobs:
           # publication steps above never receive Telegram secrets.
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_IDS: ${{ inputs.test_chat_id || secrets.TELEGRAM_CHAT_IDS }}
-        run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --send-only --snapshot "$SNAPSHOT_PATH" --manifest "$MANIFEST_PATH" --public-url "${{ steps.deployment.outputs.page_url }}"
+        run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --send-only --slot-key "${{ steps.window.outputs.key }}" --snapshot "$SNAPSHOT_PATH" --manifest "$MANIFEST_PATH" --public-url "${{ steps.deployment.outputs.page_url }}"
       - name: Publish scheduled notification decision
         if: always()
         env:
@@ -367,10 +369,10 @@ jobs:
           path: .official-event-lock
           key: official-event-${{ steps.send_brief.outputs.event_key }}
       - name: Save scheduled idempotency lock
-        if: success() && steps.prepare.outputs.prepared == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true') && steps.send_brief.outputs.sent == 'true'
+        if: success() && steps.prepare.outputs.prepared == 'true' && steps.send_brief.outputs.sent == 'true'
         run: touch .scheduled-brief-lock
       - name: Persist scheduled idempotency lock
-        if: success() && steps.prepare.outputs.prepared == 'true' && (env.FORCE == 'true' || steps.idempotency.outputs.cache-hit != 'true') && steps.send_brief.outputs.sent == 'true'
+        if: success() && steps.prepare.outputs.prepared == 'true' && steps.send_brief.outputs.sent == 'true'
         uses: actions/cache/save@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: .scheduled-brief-lock
