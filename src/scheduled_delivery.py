@@ -573,7 +573,10 @@ def send(
                 "alert_id": alert_id,
                 "delivered_count": 0,
                 "failed_count": max(failed, len(settings.telegram_chat_ids)),
-                "failed_recipient_hashes": failed_recipient_hashes,
+                # This value is written to GITHUB_OUTPUT, where a JSON list
+                # would become the literal string ``[]`` and be misread by
+                # the receipt callback as one failed recipient hash.
+                "failed_recipient_hashes": ",".join(failed_recipient_hashes),
                 "notification_expected": "true",
                 "notification_status": "failed",
                 "notification_reason": "recipient_delivery_failed",
@@ -598,7 +601,10 @@ def send(
         "delivery_mode": "text",
         "alert_id": alert_id,
         "alert_budget": budget,
-        "failed_recipient_hashes": failed_recipient_hashes,
+        # Keep the workflow output comma-delimited; the callback turns it
+        # back into a bounded list and an empty value remains a true empty
+        # list for delivered=1/failed=0 receipts.
+        "failed_recipient_hashes": ",".join(failed_recipient_hashes),
         "notification_expected": "true" if event else "false",
         "notification_status": ("ready" if delivery_status == "delivered" else delivery_status) if event else "no_event",
         "notification_reason": ("sent" if delivery_status == "delivered" else "recipient_delivery_partial" if delivery_status == "partial" else "recipient_delivery_failed") if event else "no_event",
