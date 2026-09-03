@@ -155,6 +155,15 @@ def restore(
     files = _expand_includes(root, includes or list(DEFAULT_INCLUDES))
     if not files:
         return {"restored": False, "branch": branch, "reason": "no_local_paths"}
+    requested = includes or list(DEFAULT_INCLUDES)
+    # Alert artifacts are immutable history.  They may not exist in the
+    # application checkout (they are generated data), so discover them from
+    # the release branch before reconciling the public tree.  Otherwise a
+    # fresh runner can silently drop the release targeted by an existing
+    # Telegram deep link.
+    if "site/data" in requested:
+        files.extend(_remote_files(branch, ["site/data/alerts"]))
+        files = list(dict.fromkeys(files))
     remote_files = _remote_files(branch, files)
     missing_remote = [path for path in files if path not in remote_files]
     if not remote_files:
