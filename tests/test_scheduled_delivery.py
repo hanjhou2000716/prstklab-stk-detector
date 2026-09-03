@@ -247,6 +247,7 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
     assert "release-1" in text
     assert "market-12345678" in text
     assert "delivery_status=delivered" in text
+    assert "failed_recipient_hashes=\n" in text or "failed_recipient_hashes=\r\n" in text
     assert recorded["release_id"] == "release-1"
     assert recorded["snapshot_id"] == "market-12345678"
     assert recorded["delivery_status"] == "delivered"
