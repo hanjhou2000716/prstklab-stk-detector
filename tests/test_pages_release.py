@@ -111,6 +111,61 @@ def test_restore_public_release_verifies_hashes_before_replacing_data(tmp_path, 
     assert restored_manifest["release_id"] == "release-last-good"
 
 
+def test_restore_public_release_restores_alert_bytes_after_builder_validation(tmp_path, monkeypatch):
+    alert_path = "data/alerts/alert-release-last-good.json"
+    market_path = "data/market.json"
+    manifest = {
+        "status": "ready",
+        "release_id": "release-last-good",
+        "market_snapshot_id": "market-last-good",
+        "artifact_paths": {
+            "market.json": market_path,
+            "alerts/alert-release-last-good.json": alert_path,
+        },
+    }
+    market_body = b'{"snapshot_id":"market-last-good"}'
+    alert_body = b'{"release_id":"release-last-good","notification_id":"alert-1"}'
+    manifest["artifact_hashes"] = {
+        "market.json": hashlib.sha256(market_body).hexdigest(),
+        "alerts/alert-release-last-good.json": hashlib.sha256(alert_body).hexdigest(),
+    }
+
+    class Response:
+        def __init__(self, content):
+            self.content = content
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return json.loads(self.content.decode("utf-8"))
+
+    def get(url, **_kwargs):
+        if url.endswith("release-manifest.json?pages_restore=1"):
+            return Response(json.dumps(manifest).encode())
+        return Response(alert_body if url.endswith(alert_path) else market_body)
+
+    monkeypatch.setattr("src.pages_release.requests.get", get)
+
+    def validate_and_rebuild(root, **_kwargs):
+        data_root = Path(root) / "site" / "data"
+        (data_root / "market.json").write_bytes(b'{"snapshot_id":"derived"}')
+        (data_root / "alerts" / "alert-release-derived.json").parent.mkdir(parents=True, exist_ok=True)
+        (data_root / "alerts" / "alert-release-derived.json").write_bytes(
+            b'{"release_id":"release-derived"}'
+        )
+        return True, {"status": "ready"}
+
+    monkeypatch.setattr("src.pages_release._validate", validate_and_rebuild)
+
+    result = restore_public_release(root=tmp_path, public_url="https://example.test")
+
+    assert result["release_id"] == "release-last-good"
+    assert (tmp_path / "site" / "data" / "market.json").read_bytes() == market_body
+    assert (tmp_path / "site" / "data" / "alerts" / "alert-release-last-good.json").read_bytes() == alert_body
+    assert not (tmp_path / "site" / "data" / "alerts" / "alert-release-derived.json").exists()
+
+
 def test_restore_latest_valid_preserves_public_release_when_data_branch_has_no_valid_candidate(tmp_path, monkeypatch):
     monkeypatch.setattr("src.pages_release._commits", lambda *args, **kwargs: ["bad"])
     monkeypatch.setattr("src.pages_release._restore_archive", lambda *args, **kwargs: True)
