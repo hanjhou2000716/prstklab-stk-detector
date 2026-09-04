@@ -10696,7 +10696,7 @@
       "location_fingerprint": "d4328f17fc46dfde",
       "action_fingerprint": "fca30679635be3bb",
       "first_discovered_at": "2026-09-04T10:38:58.795036+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-09-04T10:39:15.653276+00:00",
       "escalated": false,
       "risk_level": "R0",
       "risk_rank": 0,
@@ -10706,9 +10706,97 @@
       "last_title": "Iran: US attacks hit telecoms, communication infrastructure. 📈 StockRocket 自動化新聞監控系統",
       "compound_item_id": null,
       "compound_event_cluster_key": null,
-      "last_decision": null,
-      "decision_history": [],
-      "updated_at": "2026-09-04T10:38:58.795036+00:00"
+      "last_decision": {
+        "recorded_at": "2026-09-04T10:39:14.833072+00:00",
+        "allowed": true,
+        "status": "eligible",
+        "reason": "new_theme",
+        "reasons": [],
+        "notification_theme_key": "financialjuice-cluster:fj-cluster-504eaa1b941a477792f3301b",
+        "event_key": "2b70ea5d2b0e290902c3d1673c321c27",
+        "risk": "R0",
+        "theme_window": 7200,
+        "material_state_changed": true,
+        "last_notified_at": null,
+        "taiwan_priority": 4
+      },
+      "decision_history": [
+        {
+          "recorded_at": "2026-09-04T10:39:14.833072+00:00",
+          "allowed": true,
+          "status": "eligible",
+          "reason": "new_theme",
+          "reasons": [],
+          "notification_theme_key": "financialjuice-cluster:fj-cluster-504eaa1b941a477792f3301b",
+          "event_key": "2b70ea5d2b0e290902c3d1673c321c27",
+          "risk": "R0",
+          "theme_window": 7200,
+          "material_state_changed": true,
+          "last_notified_at": null,
+          "taiwan_priority": 4
+        }
+      ],
+      "updated_at": "2026-09-04T10:39:15.653276+00:00",
+      "delivery_history": [
+        {
+          "event_key": "2b70ea5d2b0e290902c3d1673c321c27",
+          "notification_id": "fj-item-cd850f79bdeffc75c013",
+          "sent_at": "2026-09-04T10:39:15.653276+00:00",
+          "importance": "R0",
+          "alert_type": "unknown",
+          "lifecycle_state": "pending_confirmation",
+          "reason": "financialjuice_realtime_monitor",
+          "notification_theme_key": "financialjuice-cluster:fj-cluster-504eaa1b941a477792f3301b",
+          "risk": "R0",
+          "taiwan_priority": 4,
+          "material_state_changed": true,
+          "release_id": "release-5bcaed96d5d84d8e",
+          "snapshot_id": "1e555f0f39cf1833",
+          "delivery_status": "delivered",
+          "observation_id_hash": "d7120da5d134672066d3197d272fa23a79c5f0551f42041e00296a569471aaf9",
+          "item_id": "fj-item-cd850f79bdeffc75c013",
+          "event_cluster_key": "fj-cluster-504eaa1b941a477792f3301b",
+          "vendor_importance": 10,
+          "prstk_risk": {
+            "prstk_risk_level": "R0",
+            "risk_rank": 0,
+            "risk_reason": "non_material_or_unclassified",
+            "vendor_importance": 10,
+            "official_confirmed": false,
+            "market_sync_confirmed": false,
+            "freshness_blocked": false,
+            "freshness_reason": null,
+            "notification_eligible": false,
+            "high_priority": false
+          },
+          "notification_reason": "vendor_priority_importance_ge_8、risk_threshold_not_reached",
+          "parser_version": "financialjuice-v1",
+          "received_at": "2026-09-04T10:38:58.607153+00:00",
+          "notification_key": "financialjuice:f1eacc79a4c62645adadadc3",
+          "delivery_receipts": [
+            {
+              "notification_key": "financialjuice:f1eacc79a4c62645adadadc3",
+              "recipient_hash": "7a30574fc065",
+              "delivery_status": "delivered",
+              "message_id": 1092,
+              "error_class": null,
+              "release_id": "release-5bcaed96d5d84d8e",
+              "snapshot_id": "1e555f0f39cf1833",
+              "observation_id": "fj-item-cd850f79bdeffc75c013",
+              "telegram_file_id_hash": null
+            }
+          ],
+          "ingested_at": "2026-09-04T10:38:58.607153+00:00",
+          "candidate_at": "2026-09-04T10:38:58.607160+00:00",
+          "release_ready_at": "2026-09-04T10:39:14.858412+00:00",
+          "telegram_attempted_at": "2026-09-04T10:39:14.860807+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "trace_id": "official-fj-item-cd850f79bdeffc75c013"
+        }
+      ],
+      "last_theme_notification_at": "2026-09-04T10:39:15.653276+00:00",
+      "last_notified_at": "2026-09-04T10:39:15.653276+00:00"
     }
   },
   "delivery_claims": {
@@ -10939,6 +11027,25 @@
       "lease_until": null,
       "run_id_hash": "e62007afabe8",
       "updated_at": "2026-09-04T09:42:41.770687+00:00",
+      "failed_recipient_hashes": []
+    },
+    "financialjuice:f1eacc79a4c62645adadadc3": {
+      "notification_key": "financialjuice:f1eacc79a4c62645adadadc3",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "delivered_recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "claimed_at": "2026-09-04T10:39:14.863299+00:00",
+      "lease_until": null,
+      "run_id_hash": "3e3e40198186",
+      "updated_at": "2026-09-04T10:39:15.631991+00:00",
       "failed_recipient_hashes": []
     }
   }
