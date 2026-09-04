@@ -61,7 +61,17 @@ def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot
     if not isinstance(evidence, list):
         evidence = []
     title = str(event.get("title") or event.get("event") or "市場事件").strip() or "市場事件"
-    brief_title = str(event.get("brief_title") or title).strip() or title
+    source_key = str(event.get("source_key") or event.get("source") or "").strip().casefold()
+    if source_key == "financialjuice":
+        from src.financialjuice_notification import financialjuice_public_short_message
+
+        public_short_message = str(
+            event.get("public_short_message") or financialjuice_public_short_message(event) or ""
+        ).strip()
+        brief_title = public_short_message
+    else:
+        public_short_message = ""
+        brief_title = str(event.get("brief_title") or title).strip() or title
     linked_markets = event.get("linked_markets")
     if not isinstance(linked_markets, list):
         linked_markets = [
@@ -85,6 +95,7 @@ def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot
         # artifacts are rendered independently of the live market snapshot.
         "title": title,
         "brief_title": brief_title,
+        "public_short_message": public_short_message,
         "short_label": event.get("short_label") or event.get("source") or "公開事件",
         "event": event.get("event") or title,
         "linked_markets": linked_markets,

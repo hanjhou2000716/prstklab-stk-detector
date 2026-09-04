@@ -1,6 +1,10 @@
 import importlib.util
 
-from src.financialjuice_notification import deliver_financialjuice_event, financialjuice_caption
+from src.financialjuice_notification import (
+    deliver_financialjuice_event,
+    financialjuice_caption,
+    financialjuice_public_short_message,
+)
 from src.financialjuice_notification_e2e import run_financialjuice_notification_e2e
 from src.telegram_client import TextDeliveryReceipt, alert_mini_app_url
 
@@ -57,6 +61,21 @@ def test_financialjuice_caption_prefers_projected_event_over_generic_title() -> 
     assert caption.startswith("🟣 FJ 10/10｜某公司據報")
     assert "FinancialJuice 公開快訊" not in caption
     assert len(caption) <= 40
+
+
+def test_financialjuice_public_short_message_is_the_release_headline_contract() -> None:
+    event = {
+        "source_key": "financialjuice",
+        "title": "據《The...",
+        "event": "Nscale稱Anthropic合約簽約營收逾千億美元。",
+        "vendor_importance": 9,
+        "prstk_risk_level": "R2",
+    }
+    message = financialjuice_public_short_message(event)
+    assert message == "🟣 FJ 9/10｜Nscale稱Anthropic合約簽約營收逾千億美元。"
+    assert financialjuice_caption(event) == message
+    assert len(message) <= 40
+    assert "據《The" not in message
 
 
 def test_financialjuice_incomplete_attribution_is_not_deliverable() -> None:

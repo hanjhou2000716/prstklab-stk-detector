@@ -529,13 +529,16 @@ def _event_record(
     canonical_risk = str(risk.get("prstk_risk_level") or "R2").upper()
     if canonical_risk not in {"R0", "R1", "R2", "R3", "R4"}:
         canonical_risk = "R2"
-    return {
+    record = {
         "kind": "external_event",
         "source": "FinancialJuice",
         "source_key": "financialjuice",
         "source_tier": "discovery",
         "title": headline,
-        "brief_title": f"FJ 快訊｜重要度 {importance}/10｜{semantic['event']}" if importance is not None else f"FJ 快訊｜待核對｜{semantic['event']}",
+        # Filled below from the same canonical formatter used by Telegram.
+        # Keeping this empty while constructing the record prevents a legacy
+        # long title from becoming the release-bound public headline.
+        "brief_title": "",
         # Canonical semantic fields are the stable consumer contract.  The
         # legacy summary fields remain populated for older renderers.
         **semantic,
@@ -597,6 +600,12 @@ def _event_record(
         },
         "public_safe": True,
     }
+    from src.financialjuice_notification import financialjuice_public_short_message
+
+    public_short_message = financialjuice_public_short_message(record)
+    record["public_short_message"] = public_short_message
+    record["brief_title"] = public_short_message
+    return record
 
 
 def project_financialjuice_priority(
@@ -716,7 +725,9 @@ def bind_financialjuice_semantic_views(
             if isinstance(event_text, str) and event_text.strip():
                 # Keep legacy names usable for older Mini App bundles, but
                 # expose only the cleaned semantic section.
-                view["title"] = matched_event.get("brief_title") or matched_event.get("title") or event_text
+                public_short_message = matched_event.get("public_short_message") or matched_event.get("brief_title") or ""
+                view["public_short_message"] = public_short_message
+                view["title"] = public_short_message or matched_event.get("title") or event_text
                 view["headline"] = event_text
                 view["chinese_translation"] = event_text
                 view["vendor_translation"] = event_text

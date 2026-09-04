@@ -96,7 +96,8 @@ def test_immutable_alert_projection_keeps_mini_app_headline_aliases():
     )
 
     assert artifact["title"] == "Nscale 與 Anthropic 合約"
-    assert artifact["brief_title"].startswith("FJ 快訊")
+    assert artifact["brief_title"].startswith("🟣 FJ")
+    assert artifact["public_short_message"] == artifact["brief_title"]
     assert artifact["linked_markets"] == ["US10Y", "SOX"]
 
 
