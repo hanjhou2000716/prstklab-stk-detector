@@ -49,7 +49,8 @@ def test_creator_notification_requires_parent_release_gate():
     workflow = _workflow("scheduled-brief.yml")
     block = _send_block(workflow, "- name: Send release-gated Creator notifications")
     assert "steps.release_gate.outputs.allowed == 'true'" in block
-    assert "env.CREATOR_NOTIFICATION_ENABLED == 'true'" in block
+    assert "env.NOTIFY == 'true'" in block
+    assert "CREATOR_NOTIFICATION_ENABLED: 'false'" in workflow
 
 
 def test_production_receipts_bind_release_and_snapshot():

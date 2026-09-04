@@ -112,8 +112,24 @@ def dispatch(
 ) -> dict[str, Any]:
     """Dispatch every new Creator episode and persist privacy-safe receipts."""
     if not _enabled(os.getenv("CREATOR_NOTIFICATION_ENABLED")):
-        result = {"enabled": False, "status": "disabled", "sent": 0, "blocked": 0, "receipts": []}
-        _write_output({"creator_enabled": "false", "creator_status": "disabled", "creator_sent": "0"})
+        result = {
+            "enabled": False,
+            "status": "disabled",
+            "sent": 0,
+            "blocked": 0,
+            "reasons": ["retired_source_suppressed"],
+            "receipts": [],
+        }
+        _write_output({
+            "creator_enabled": "false",
+            "creator_status": "disabled",
+            "creator_sent": "0",
+            "creator_blocked": "0",
+            "creator_blocking_reason": "retired_source_suppressed",
+            "creator_delivery_status": "suppressed",
+            "creator_delivered_count": "0",
+            "creator_failed_count": "0",
+        })
         return result
 
     active_creator_ids = set(creator_ids(enabled_only=True))

@@ -275,6 +275,19 @@ def _creator_identity_hash(
     return hashlib.sha256(_canonical_json(material)).hexdigest()
 
 
+def _active_creator_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep retired or unknown Creator mail out of new release identity."""
+    from src.creator_provider_registry import creator_ids
+
+    active_ids = set(creator_ids(enabled_only=True))
+    return [
+        record
+        for record in records
+        if isinstance(record, dict)
+        and str(record.get("creator_id") or record.get("content_origin") or "").strip().casefold() in active_ids
+    ]
+
+
 def content_snapshot_id(value: dict[str, Any], prefix: str) -> str:
     """Return a deterministic ID for a normalized artifact payload."""
     existing = str(value.get("snapshot_id") or "").strip()
@@ -600,6 +613,11 @@ def build_release_manifest(
     silently mixing an old file with a new one.
     """
     root = Path(root)
+    if creator_records is not None:
+        # The canonical registry is the source of truth for new Creator data.
+        # Filtering before release hashing prevents retired mail from creating
+        # a new public release even when an old ingress file is replayed.
+        creator_records = _active_creator_records(creator_records)
     selected = artifacts or DEFAULT_ARTIFACTS
     resolved = {name: (root / path) for name, path in selected.items()}
     loaded: dict[str, dict[str, Any]] = {}
@@ -781,8 +799,9 @@ def build_release_manifest(
             # records cannot be presented as a current morning digest.
             batch_as_of=market.get("generated_at") if creator_morning_batch and isinstance(market, dict) else None,
         )
-        creator_artifact = creator_result["artifact"]
-        creator_public_artifact = creator_result.get("public_artifact")
+        if creator_result.get("accepted_count", 0) > 0:
+            creator_artifact = creator_result["artifact"]
+            creator_public_artifact = creator_result.get("public_artifact")
     creator_hash = hashlib.sha256(_canonical_json(creator_artifact)).hexdigest() if isinstance(creator_artifact, dict) else None
     creator_errors = (
         validate_creator_release(creator_artifact, parent_manifest={

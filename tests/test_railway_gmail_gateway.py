@@ -61,6 +61,19 @@ def test_email_router_imports_from_standalone_railway_root() -> None:
     assert "jenny" in result.stdout
 
 
+def test_standalone_email_router_exposes_no_active_retired_creators() -> None:
+    import subprocess
+
+    result = subprocess.run(
+        [sys.executable, "-c", "import email_router; print(email_router.creator_ids(enabled_only=True))"],
+        cwd=RAILWAY_MODULES,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert result.stdout.strip() == "()"
+
+
 def _oauth_config() -> GmailWatchConfig:
     return GmailWatchConfig(
         topic_name="projects/p/topics/t",

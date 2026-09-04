@@ -83,7 +83,8 @@ def test_scheduled_workflow_exposes_only_sanitized_external_observations_path():
 def test_scheduled_workflow_creator_notification_is_opt_in_and_release_gated():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
     assert "CREATOR_NOTIFICATION_ENABLED" in workflow
-    assert "steps.release_gate.outputs.allowed == 'true' && env.CREATOR_NOTIFICATION_ENABLED == 'true'" in workflow
+    assert "CREATOR_NOTIFICATION_ENABLED: 'false'" in workflow
+    assert "steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true'" in workflow
     assert "python -m src.creator_dispatch" in workflow
     assert ">> \"$GITHUB_OUTPUT\"" in workflow
     assert "DELIVERY_RECEIPT_KIND: creator" in workflow

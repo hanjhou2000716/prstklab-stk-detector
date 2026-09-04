@@ -48,8 +48,11 @@ except ModuleNotFoundError as error:  # pragma: no cover - exercised in the Rail
             self.enabled = enabled
 
     def creator_ids(*, enabled_only: bool = False) -> tuple[str, ...]:
-        del enabled_only
-        return tuple(_providers)
+        return tuple(
+            creator_id
+            for creator_id, (_markers, enabled) in _providers.items()
+            if not enabled_only or enabled
+        )
 
     def get_creator_provider(creator_id: str) -> _BundledProvider | None:
         return _BundledProvider(*_providers[creator_id]) if creator_id in _providers else None

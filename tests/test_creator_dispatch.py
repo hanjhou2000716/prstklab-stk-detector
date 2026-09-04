@@ -98,6 +98,7 @@ def test_disabled_creator_dispatch_is_noop(tmp_path, monkeypatch):
     monkeypatch.delenv("CREATOR_NOTIFICATION_ENABLED", raising=False)
     result = dispatch(manifest_path=tmp_path / "missing.json", public_url="https://example.test/app")
     assert result["status"] == "disabled"
+    assert result["reasons"] == ["retired_source_suppressed"]
 
 
 def test_retired_creator_dispatch_never_calls_sender(tmp_path, monkeypatch):
