@@ -310,7 +310,8 @@ def build_official_event_brief(event: dict[str, Any]) -> str:
     """Make a neutral watch-sized alert through the single public formatter."""
     from src.event_output import short_event_message
     text = short_event_message(event)
-    validate_brief(text)
+    if text:
+        validate_brief(text)
     return text
 
 

@@ -43,16 +43,9 @@ def _bounded(text: str, limit: int) -> str:
     value = _clean(text)
     if len(value) <= limit:
         return value
-    words = value.split(" ")
-    kept = ""
-    for word in words:
-        candidate = word if not kept else f"{kept} {word}"
-        if len(candidate) > max(1, limit - 1):
-            break
-        kept = candidate
-    if kept:
-        return kept + "…"
-    return value[: max(1, limit - 1)] + "…"
+    # Public captions use the same complete-clause boundary as text alerts;
+    # never manufacture a dangling word plus an ellipsis.
+    return summarize_public_message(value, limit=limit)
 
 
 def creator_telegram_caption(insight: dict[str, Any], *, limit: int = MAX_CREATOR_PHOTO_CAPTION) -> str:
@@ -76,7 +69,7 @@ def creator_telegram_caption(insight: dict[str, Any], *, limit: int = MAX_CREATO
     fallback = html.escape(_bounded(f"🟣 {creator}", limit), quote=False)
     if len(fallback) <= limit:
         return fallback
-    return fallback[: max(1, limit - 1)] + "…"
+    return ""
 
 
 def creator_text_caption(insight: dict[str, Any]) -> str:

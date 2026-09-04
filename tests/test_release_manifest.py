@@ -95,7 +95,7 @@ def test_immutable_alert_projection_keeps_mini_app_headline_aliases():
         created_at="2026-09-03T00:00:00+00:00",
     )
 
-    assert artifact["title"] == "Nscale 與 Anthropic 合約"
+    assert artifact["title"] == artifact["brief_title"]
     assert artifact["brief_title"].startswith("🟣 FJ")
     assert artifact["public_short_message"] == artifact["brief_title"]
     assert artifact["linked_markets"] == ["US10Y", "SOX"]

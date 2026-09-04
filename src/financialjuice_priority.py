@@ -603,8 +603,30 @@ def _event_record(
     from src.financialjuice_notification import financialjuice_public_short_message
 
     public_short_message = financialjuice_public_short_message(record)
+    from src.telegram_client import is_valid_public_summary
+
+    public_summary_valid = is_valid_public_summary(public_short_message, source="financialjuice")
+    if not public_summary_valid:
+        reasons = list(dict.fromkeys([*reasons, "content_incomplete"]))
+        status = "content_incomplete"
+        vendor_priority_notification = False
+        public_signal_eligible = False
+        record["alert_eligible"] = False
+        record["notification_status"] = status
+        record["notification_reasons"] = reasons
+        record["notification_reason"] = "、".join(reasons)
+        record["vendor_priority_notification"] = False
+        record["content_gate"] = {
+            "material_event_present": material_event_present,
+            "blocked_reason": "content_incomplete",
+        }
     record["public_short_message"] = public_short_message
     record["brief_title"] = public_short_message
+    record["public_signal_eligible"] = public_signal_eligible
+    from src.financialjuice_notification import financialjuice_notification_key
+
+    record["notification_key"] = financialjuice_notification_key(record)
+    record["material_fact_version"] = record["notification_key"]
     return record
 
 
@@ -624,6 +646,15 @@ def project_financialjuice_priority(
         str(item.get("event_cluster_key") or "").strip()
         for item in (existing_events or [])
         if isinstance(item, dict) and item.get("event_cluster_key")
+    }
+    from src.financialjuice_notification import financialjuice_notification_key
+
+    existing_notification_keys = {
+        financialjuice_notification_key(item)
+        for item in (existing_events or [])
+        if isinstance(item, dict)
+        and _source(item) == "financialjuice"
+        and financialjuice_notification_key(item)
     }
     events: list[dict[str, Any]] = []
     decisions: list[dict[str, Any]] = []
@@ -666,15 +697,34 @@ def project_financialjuice_priority(
                 material_event_present=material_event,
                 public_signal_eligible=identity_verified and material_event,
             )
+            # The public content gate is evaluated after semantic projection;
+            # its result is authoritative for both the event and the audit
+            # decision.  Never leave an ``eligible`` decision beside a
+            # suppressed/invalid public summary.
+            if event.get("notification_status") == "content_incomplete":
+                status = "content_incomplete"
+                vendor_notification = False
+            notification_key = str(event.get("notification_key") or "").strip()
+            if status == "eligible" and notification_key in existing_notification_keys:
+                status = "already_cluster_notified"
+                vendor_notification = True
+                event["notification_status"] = status
+                event["notification_reason"] = "already_cluster_notified"
+                event["notification_reasons"] = ["already_cluster_notified"]
+                event["alert_eligible"] = False
+            elif status == "eligible" and notification_key:
+                existing_notification_keys.add(notification_key)
             events.append(event)
             decisions.append({
                 "observation_id": event["observation_id"],
                 "item_id": row.get("item_id"),
+                "notification_key": event.get("notification_key"),
                 "event_cluster_key": cluster_key or None,
                 "vendor_importance": event.get("vendor_importance"),
                 "vendor_priority_notification": vendor_notification,
                 "notification_status": status,
                 "notification_reason": event["notification_reason"],
+                "public_short_message": event.get("public_short_message") or "",
                 "content_gate": event["content_gate"],
                 "public_signal_eligible": event["public_signal_eligible"],
                 "linked_markets": event["linked_markets"],
@@ -744,6 +794,7 @@ def bind_financialjuice_semantic_views(
                 view["stock_observation"] = watch
                 view["watch"] = watch
             view["public_signal_eligible"] = matched_event.get("public_signal_eligible") is True
+            view["notification_key"] = matched_event.get("notification_key") or ""
             view["content_gate"] = matched_event.get("content_gate") or {}
             view["linked_markets"] = matched_event.get("linked_markets") or []
             view["market_evidence"] = matched_event.get("market_evidence") or []
@@ -757,10 +808,30 @@ def public_financialjuice_observations(
 ) -> list[dict[str, Any]]:
     """Return public observation rows while retaining blocked rows in audit data."""
     bound = bind_financialjuice_semantic_views(observations, events)
-    return [
-        row for row in bound
-        if _source(row) != "financialjuice" or row.get("public_signal_eligible") is True
-    ]
+    from src.telegram_client import is_valid_public_summary
+
+    event_keys: dict[str, dict[str, Any]] = {}
+    for event in events:
+        if not isinstance(event, dict) or event.get("public_signal_eligible") is not True:
+            continue
+        for field in ("item_id", "observation_id", "notification_id"):
+            value = str(event.get(field) or "").strip()
+            if value:
+                event_keys[value] = event
+    public: list[dict[str, Any]] = []
+    for row in bound:
+        if _source(row) != "financialjuice":
+            public.append(row)
+            continue
+        matched = next(
+            (event_keys.get(str(row.get(field) or "").strip()) for field in ("item_id", "observation_id", "notification_id")
+             if str(row.get(field) or "").strip() in event_keys),
+            None,
+        )
+        summary = row.get("public_short_message") or row.get("brief_title") or ""
+        if matched and row.get("public_signal_eligible") is True and is_valid_public_summary(summary, source="financialjuice"):
+            public.append(row)
+    return public
 
 
 def replace_financialjuice_event_lane(
@@ -790,13 +861,21 @@ def replace_financialjuice_event_lane(
         for item in retained
         if isinstance(item, dict)
     }
+    from src.financialjuice_notification import financialjuice_notification_key
+
+    projected_keys: set[str] = set()
     for item in projected_events:
         if not isinstance(item, dict) or item.get("public_signal_eligible") is not True:
+            continue
+        notification_key = financialjuice_notification_key(item)
+        if notification_key and notification_key in projected_keys:
             continue
         key = str(item.get("observation_id") or item.get("item_id") or "")
         if key and key in existing_ids:
             continue
         retained.append(item)
+        if notification_key:
+            projected_keys.add(notification_key)
         if key:
             existing_ids.add(key)
     return retained

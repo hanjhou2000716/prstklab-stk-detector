@@ -42,7 +42,12 @@ from src.scheduled_brief import (
     build_brief,
     write_event_lock_key,
 )
-from src.telegram_client import alert_mini_app_url, canonical_prstk_risk_level, send_text_briefs_audited
+from src.telegram_client import (
+    alert_mini_app_url,
+    canonical_prstk_risk_level,
+    is_valid_public_summary,
+    send_text_briefs_audited,
+)
 
 _DEFAULT_CREATOR_RECORDS_PATH = Path("creator/public-records.json")
 
@@ -249,7 +254,7 @@ def _select_scheduled_candidate(
 ) -> tuple[dict[str, Any] | None, dict[str, Any], str]:
     """Select the first sendable candidate without letting one suppression starve the slot."""
     excluded: set[str] = set()
-    last_reason = "no_event"
+    last_reason = "no_eligible_candidate"
     for _ in range(32):
         try:
             event = _pick_event(snapshot, slot, excluded_event_keys=excluded)
@@ -262,7 +267,15 @@ def _select_scheduled_candidate(
         identity = notification_key_for_event(event)
         if not identity:
             last_reason = "notification_key_missing"
-            break
+            identity = str(
+                event.get("notification_id")
+                or event.get("event_key")
+                or event.get("item_id")
+                or event.get("observation_id")
+                or f"invalid-{len(excluded)}"
+            ).strip()
+            excluded.add(identity)
+            continue
         if release_alert_ids is not None:
             alert_id = str(
                 event.get("notification_id")
@@ -282,7 +295,7 @@ def _select_scheduled_candidate(
                 excluded.add(identity)
                 continue
         if event.get("alert_eligible") is False:
-            reasons = event.get("quality_reasons") or event.get("suppression_reasons") or []
+            reasons = event.get("quality_reasons") or event.get("suppression_reasons") or event.get("notification_reasons") or []
             last_reason = str(next((item for item in reasons if str(item).strip()), "quality_gate_blocked"))
             if hasattr(ledger, "record_decision"):
                 ledger.record_decision(event, {"allowed": False, "status": "suppressed", "reason": last_reason})
@@ -303,11 +316,24 @@ def _select_scheduled_candidate(
                     last_reason = str(theme.get("reason") or "same_theme_unchanged")
                     excluded.add(identity)
                     continue
-        if str(event.get("source_key") or event.get("source") or "").strip().casefold() == "financialjuice":
+        source = str(event.get("source_key") or event.get("source") or "").strip().casefold()
+        if source == "financialjuice" and (
+            str(event.get("notification_status") or "") != "eligible"
+            or event.get("vendor_priority_notification") is not True
+        ):
+            last_reason = "vendor_priority_not_eligible"
+            if hasattr(ledger, "record_decision"):
+                ledger.record_decision(event, {"allowed": False, "status": "suppressed", "reason": last_reason})
+                ledger.save()
+            excluded.add(identity)
+            continue
+        if source == "financialjuice":
             text = financialjuice_caption(event)
         else:
             text = build_brief(snapshot, slot)
-        if content_is_incomplete(event, text):
+        if content_is_incomplete(event, text) or (
+            source == "financialjuice" and not is_valid_public_summary(text, source="financialjuice")
+        ):
             last_reason = "content_incomplete"
             if hasattr(ledger, "record_decision"):
                 ledger.record_decision(event, {"allowed": False, "status": "suppressed", "reason": last_reason})
@@ -460,12 +486,13 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
         snapshot["creator_insights"] = creator_records
     snapshot["briefing"] = build_briefing_snapshot(snapshot, slot)
     event = _pick_event(snapshot, slot)
+    prepared_reason = "candidate_ready" if event else "no_eligible_candidate"
     prepared_decision = decision_summary(
         event=event,
         scan_status="completed",
         notification_expected=bool(event),
-        notification_status="candidate_ready" if event else "no_event",
-        notification_reason="candidate_ready" if event else "no_event",
+        notification_status=prepared_reason,
+        notification_reason=prepared_reason,
     )
     snapshot["source_health"] = merge_decision_health(
         snapshot.get("source_health"), "scheduled_brief", prepared_decision,
@@ -545,45 +572,41 @@ def send(
         print("Release gate blocked Telegram delivery: " + "; ".join(gate.errors))
         return
 
-    settings = get_settings()
-    if not settings.telegram_ready:
-        raise RuntimeError("Telegram configuration is incomplete")
     ledger = EventLedger()
     history = ledger.delivery_history()
     release_alert_ids = _release_alert_ids(manifest_path, gate.manifest)
     event, budget, selection_reason = _select_scheduled_candidate(
         snapshot, slot, ledger, release_alert_ids=release_alert_ids,
     )
-    event_risk = canonical_prstk_risk_level(event) if isinstance(event, dict) else ""
+    if event is None:
+        # A scheduled slot with no complete, release-bound candidate is a
+        # successful scan with no Telegram attempt.  Do not turn suppression
+        # into a second generic message such as "本輪無觸發".
+        reason = selection_reason or "no_eligible_candidate"
+        _write_decision_output(
+            {
+                "sent": "false",
+                "delivery_status": "suppressed",
+                "reason": reason,
+                "notification_expected": "false",
+                "notification_status": "suppressed",
+                "notification_reason": reason,
+                "last_receipt_status": "not_attempted",
+            },
+            notification_status="suppressed",
+            notification_reason=reason,
+            notification_expected=False,
+            last_receipt_status="not_attempted",
+        )
+        return
+    settings = get_settings()
+    if not settings.telegram_ready:
+        raise RuntimeError("Telegram configuration is incomplete")
+    event_risk = canonical_prstk_risk_level(event)
     effective_slot_key = str(slot_key or os.getenv("SCHEDULED_SLOT_KEY") or f"{datetime.now().astimezone().date().isoformat()}-{slot}")
     effective_run_id = str(run_id or os.getenv("GITHUB_RUN_ID", ""))
     notification_key = notification_key_for_event(event, slot_key=effective_slot_key)
     send_chat_ids = settings.telegram_chat_ids
-    if event is None:
-        if selection_reason not in {"no_event", "same_theme_within_2h", "same_theme_unchanged"}:
-            # Invalid content, missing release artifacts, budget blocks, and
-            # uncertain claims remain fail-closed.  Only a duplicate theme is
-            # safe to represent as a neutral scheduled-slot brief.
-            _write_decision_output(
-                {
-                    "sent": "false",
-                    "delivery_status": "suppressed",
-                    "reason": selection_reason,
-                    "notification_status": "suppressed",
-                    "notification_reason": selection_reason,
-                },
-                notification_status="suppressed",
-                notification_reason=selection_reason,
-            )
-            return
-        # A scheduled slot is still required to publish one bounded market
-        # brief when every event candidate was filtered by deduplication,
-        # budget, content, or release-artifact checks.  Those candidate-level
-        # decisions remain in EventLedger; the public fallback must not be a
-        # second event notification or a silent skipped slot.
-        selection_reason = "no_trigger"
-        notification_key = notification_key_for_event(None, slot_key=effective_slot_key)
-        budget = {"allowed": True, "reason": selection_reason or "no_event", "event_key": notification_key}
     if not notification_key:
         _write_decision_output({"sent": "false", "delivery_status": "suppressed", "reason": "notification_key_missing"}, notification_status="suppressed", notification_reason="notification_key_missing")
         return
@@ -591,7 +614,7 @@ def send(
     correlation = briefing_correlation(snapshot, slot, event)
     trace_id = str(briefing.get("trace_id") or correlation["trace_id"])
     observation_id = str(briefing.get("observation_id") or correlation["observation_id"])
-    caption = build_brief(snapshot, slot) if event else "市場簡報｜本輪無觸發"
+    caption = build_brief(snapshot, slot)
     alert_id = str(
         (event or {}).get("notification_id")
         or (event or {}).get("event_cluster_key")
@@ -599,44 +622,14 @@ def send(
         or notification_key
         or trace_id
     )
-    target_url = (
-        alert_mini_app_url(
-            settings.dashboard_url,
-            alert_id=alert_id,
-            release_id=gate.release_id or "",
-            snapshot_id=snapshot_id,
-            observation_id=observation_id,
-        )
-        if event else alert_mini_app_url(
-            settings.dashboard_url,
-            alert_id=alert_id,
-            release_id=gate.release_id or "",
-            snapshot_id=snapshot_id,
-            observation_id=observation_id,
-        )
+    target_url = alert_mini_app_url(
+        settings.dashboard_url,
+        alert_id=alert_id,
+        release_id=gate.release_id or "",
+        snapshot_id=snapshot_id,
+        observation_id=observation_id,
     )
-    if event is None:
-        claim = (
-            ledger.claim_notification(
-                notification_key,
-                slot_key=effective_slot_key,
-                recipient_hashes=tuple(recipient_hash(chat_id) for chat_id in settings.telegram_chat_ids),
-                run_id=effective_run_id,
-            )
-            if hasattr(ledger, "claim_notification") else {"status": "claimed"}
-        )
-        if claim.get("status") != "claimed":
-            _write_decision_output(
-                {"sent": "false", "delivery_status": "suppressed", "reason": f"scheduled_slot_{claim.get('status', 'blocked')}", "notification_key": notification_key},
-                notification_status="suppressed", notification_reason=f"scheduled_slot_{claim.get('status', 'blocked')}", last_receipt_status=str(claim.get("status") or "blocked"),
-            )
-            return
-        pending_hashes = set(str(item) for item in claim.get("pending_recipient_hashes") or [])
-        if pending_hashes:
-            send_chat_ids = tuple(
-                chat_id for chat_id in settings.telegram_chat_ids if recipient_hash(chat_id) in pending_hashes
-            )
-    elif str(event.get("source_key") or event.get("source") or "").strip().casefold() != "financialjuice":
+    if str(event.get("source_key") or event.get("source") or "").strip().casefold() != "financialjuice":
         claim = (
             ledger.claim_notification(
                 notification_key,
@@ -926,45 +919,24 @@ def send(
         last_telegram_attempt_at=telegram_attempted_at,
         last_receipt_status=delivery_status,
     )
-    if event:
-        write_event_lock_key(event)
-        if ledger is None:
-            ledger = EventLedger()
-        ledger_event = {
-            **event,
-            "trace_id": trace_id,
-            "release_id": gate.release_id,
-            "snapshot_id": snapshot_id,
-            "delivery_status": delivery_status,
-            "notification_key": notification_key,
-        }
-        if fj_delivery is not None:
-            ledger_event["notification_key"] = fj_delivery.get("notification_key")
-            ledger_event["delivery_receipts"] = fj_delivery.get("receipts", [])
-        ledger.record_delivery(
-            ledger_event,
-            trace_id=trace_id,
-            reason="scheduled_delivery",
-        )
-        ledger.save()
-    else:
-        ledger.record_delivery(
-            {
-                "source_key": "scheduled_brief",
-                "event_type": "scheduled_brief",
-                "event_key": notification_key,
-                "notification_key": notification_key,
-                "notification_theme_key": f"scheduled:{effective_slot_key}",
-                "title": "市場簡報｜本輪無觸發",
-                "trace_id": trace_id,
-                "release_id": gate.release_id,
-                "snapshot_id": snapshot_id,
-                "delivery_status": delivery_status,
-            },
-            trace_id=trace_id,
-            reason="scheduled_delivery_no_event",
-        )
-        ledger.save()
+    write_event_lock_key(event)
+    ledger_event = {
+        **event,
+        "trace_id": trace_id,
+        "release_id": gate.release_id,
+        "snapshot_id": snapshot_id,
+        "delivery_status": delivery_status,
+        "notification_key": notification_key,
+    }
+    if fj_delivery is not None:
+        ledger_event["notification_key"] = fj_delivery.get("notification_key")
+        ledger_event["delivery_receipts"] = fj_delivery.get("receipts", [])
+    ledger.record_delivery(
+        ledger_event,
+        trace_id=trace_id,
+        reason="scheduled_delivery",
+    )
+    ledger.save()
 
 
 def main() -> int:

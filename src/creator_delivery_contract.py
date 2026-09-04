@@ -2,16 +2,40 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Any
 
 
-def creator_notification_key(episode_key: str, notification_type: str = "initial") -> str:
+def creator_content_hash(insight: dict[str, Any]) -> str:
+    """Hash reviewed Creator facts without release or transport metadata."""
+    material = {
+        "creator": str(insight.get("creator_id") or insight.get("content_origin") or "").strip().casefold(),
+        "title": " ".join(str(insight.get("episode_title") or insight.get("title") or "").split()),
+        "summary": " ".join(str(insight.get("summary") or insight.get("description") or "").split()),
+        "takeaways": [" ".join(str(item).split()) for item in (insight.get("key_takeaways") or []) if str(item).strip()],
+        "tickers": [str(item).strip().upper() for item in (insight.get("tickers") or []) if str(item).strip()],
+        "sectors": [" ".join(str(item).split()) for item in (insight.get("sectors") or []) if str(item).strip()],
+    }
+    if not any(material[key] for key in ("title", "summary", "takeaways", "tickers", "sectors")):
+        return ""
+    encoded = json.dumps(material, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()[:24]
+
+
+def creator_notification_key(
+    episode_key: str,
+    notification_type: str = "initial",
+    *,
+    content_hash: str | None = None,
+) -> str:
     """Return the durable idempotency key for one Creator episode notification."""
     episode = str(episode_key or "").strip()
     kind = str(notification_type or "initial").strip().lower() or "initial"
     if not episode:
         raise ValueError("creator episode key is required")
-    return f"creator:{episode}:{kind}"
+    suffix = f":content-{str(content_hash).strip()[:24]}" if content_hash else ""
+    return f"creator:{episode}:{kind}{suffix}"
 
 
 def decide_creator_delivery(
@@ -35,12 +59,14 @@ def decide_creator_delivery(
         reasons.append("creator_artifact_not_public_safe")
     if not release_ready:
         reasons.append("release_gate_not_ready")
-    key = creator_notification_key(episode, notification_type) if episode else ""
+    content_hash = creator_content_hash(insight)
+    key = creator_notification_key(episode, notification_type, content_hash=content_hash) if episode else ""
+    legacy_key = creator_notification_key(episode, notification_type) if episode else ""
     # Historical receipts used ``status`` while the durable delivery-receipt
     # contract uses ``delivery_status``.  Read both names so a restart or a
     # schema upgrade cannot resend an episode that was already delivered.
     sent = any(
-        str(row.get("notification_key") or "") == key
+        str(row.get("notification_key") or "") in {key, legacy_key}
         and str(row.get("status") or row.get("delivery_status") or "") in {"delivered", "partial"}
         for row in (delivery_history or [])
     )
@@ -49,10 +75,11 @@ def decide_creator_delivery(
     return {
         "allowed": not reasons,
         "notification_key": key,
+        "content_hash": content_hash,
         "status": "media_ready" if media_available else "media_degraded" if not reasons else "blocked",
         "media_mode": "photo" if media_available else "text_only",
         "reasons": reasons,
     }
 
 
-__all__ = ["creator_notification_key", "decide_creator_delivery"]
+__all__ = ["creator_content_hash", "creator_notification_key", "decide_creator_delivery"]

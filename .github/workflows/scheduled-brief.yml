@@ -78,7 +78,10 @@ jobs:
       # automatic notification intents.  Manual workflow_dispatch remains
       # opt-in through inputs.notify.
       NOTIFY: ${{ github.event_name == 'schedule' && 'true' || github.event_name == 'repository_dispatch' && 'true' || inputs.notify && 'true' || 'false' }}
-      STRICT_WINDOW: ${{ github.event_name == 'workflow_dispatch' && 'false' || 'true' }}
+      # Automatic runs resolve the slot from github.event.schedule.  The
+      # runner start time is not a valid reason to suppress a delayed cron.
+      # Manual runs already require an explicit slot or opt-in notification.
+      STRICT_WINDOW: 'false'
       NEWS_CACHE_PATH: site/data/news-cache.json
       SNAPSHOT_PATH: site/data/market.json
       MANIFEST_PATH: site/data/release-manifest.json
@@ -309,7 +312,7 @@ jobs:
         run: python -m src.delivery_callback
       - name: Persist notification ledger state after delivery
         id: persist_notification_ledger
-        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped'
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -325,12 +328,12 @@ jobs:
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
             --message "chore: persist scheduled notification ledger state"
       - name: Prepare reconciled Pages artifact
-        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success'
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
           python -m src.asset_contract --root site
       - name: Upload reconciled Pages artifact
-        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           name: github-pages-reconciled
@@ -343,7 +346,7 @@ jobs:
           artifact_name: github-pages-reconciled
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Verify reconciled public release
-        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success' && steps.reconciled_deployment.outputs.available == 'true'
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && steps.reconciled_deployment.outputs.available == 'true'
         run: >-
           python -m src.release_gate
           --manifest "$MANIFEST_PATH"

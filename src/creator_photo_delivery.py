@@ -15,7 +15,7 @@ from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlencode
 
-from src.creator_delivery_contract import creator_notification_key, decide_creator_delivery
+from src.creator_delivery_contract import creator_content_hash, creator_notification_key, decide_creator_delivery
 
 MAX_CREATOR_CAPTION_CHARS = 240
 
@@ -25,7 +25,7 @@ def _compact(value: Any) -> str:
 
 
 def _bounded(value: str, limit: int) -> str:
-    """Keep complete whitespace-delimited tokens where possible."""
+    """Keep complete whitespace-delimited tokens without ellipsis."""
     text = _compact(value)
     if len(text) <= limit:
         return text
@@ -33,12 +33,10 @@ def _bounded(value: str, limit: int) -> str:
     result = ""
     for word in words:
         candidate = word if not result else f"{result} {word}"
-        if len(candidate) > max(1, limit - 1):
+        if len(candidate) > limit:
             break
         result = candidate
-    if result:
-        return result + "…"
-    return text[: max(0, limit - 1)] + "…"
+    return result
 
 
 def creator_caption(insight: dict[str, Any], *, limit: int = MAX_CREATOR_CAPTION_CHARS) -> str:
@@ -117,9 +115,10 @@ def build_creator_receipt(
     episode_key = _compact(insight.get("episode_key"))
     if not episode_key:
         raise ValueError("episode_key is required")
+    content_hash = creator_content_hash(insight)
     timestamp = sent_at or datetime.now(UTC).isoformat()
     return {
-        "notification_key": creator_notification_key(episode_key, notification_type),
+        "notification_key": creator_notification_key(episode_key, notification_type, content_hash=content_hash),
         "creator_episode_key": episode_key,
         "creator_snapshot_id": _compact(creator_snapshot_id),
         "release_id": _compact(release_id),

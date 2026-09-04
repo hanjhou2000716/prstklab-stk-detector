@@ -127,14 +127,16 @@ def canonical_event_key(event: dict[str, Any] | None) -> str:
         ))
     else:
         source_key = str(event.get("source_key") or event.get("source") or "").strip().casefold()
-        notification_id = str(event.get("notification_id") or "").strip()
-        if source_key == "financialjuice" and notification_id:
-            # FJ vendor-priority alerts may have no structured person/action/
-            # location facts. Bind cache idempotency to the immutable item
-            # identity; theme-level replay suppression remains separate below.
-            return hashlib.sha256(
-                f"financialjuice|notification|{notification_id}".encode()
-            ).hexdigest()[:32]
+        if source_key == "financialjuice":
+            # FJ ingress IDs and article URLs are transport identities, not
+            # event identities.  Reuse the canonical fact/content key so a
+            # replay from another mailbox or URL converges in this same
+            # EventLedger.
+            from src.financialjuice_notification import financialjuice_notification_key
+
+            fact_key = financialjuice_notification_key(event)
+            if fact_key:
+                return hashlib.sha256(fact_key.encode("utf-8")).hexdigest()[:32]
         facts = fact_fingerprint(event)
         source_url = normalize_source_url(event.get("source_url") or event.get("url"))
         compound_cluster = str(event.get("compound_event_cluster_key") or "").strip()
@@ -162,6 +164,15 @@ def notification_theme_key(event: dict[str, Any] | None) -> str:
     """
     if not isinstance(event, dict):
         return "unknown"
+    source_key = str(event.get("source_key") or event.get("source") or "").strip().casefold()
+    if source_key == "financialjuice":
+        cluster = str(event.get("event_cluster_key") or "").strip().casefold()
+        if cluster:
+            return f"financialjuice-cluster:{cluster}"
+        from src.financialjuice_notification import financialjuice_notification_key
+
+        fact_key = financialjuice_notification_key(event)
+        return fact_key or "financialjuice-event"
     explicit = str(event.get("notification_theme_key") or "").strip().casefold()
     if explicit:
         return explicit

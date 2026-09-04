@@ -204,7 +204,13 @@ def dispatch(
             delivery_history=history,
         )
         rows = cast(list[Any], outcome.get("receipts")) if isinstance(outcome.get("receipts"), list) else []
-        receipts.extend(row for row in rows if isinstance(row, dict))
+        valid_rows = [row for row in rows if isinstance(row, dict)]
+        receipts.extend(valid_rows)
+        # The release can contain duplicate insight rows after a source
+        # reconciliation.  Feed receipts from this run back into the same
+        # history used by the shared Creator gate so a duplicate cannot send
+        # twice before the local receipt file is persisted.
+        history.extend(valid_rows)
         if outcome.get("status") in {"delivered", "media_degraded"}:
             sent += 1
         elif "already_delivered" not in set(outcome.get("reasons") or []):
@@ -221,7 +227,9 @@ def dispatch(
             delivery_history=history,
         )
         digest_receipts = cast(list[Any], digest.get("receipts")) if isinstance(digest.get("receipts"), list) else []
-        receipts.extend(row for row in digest_receipts if isinstance(row, dict))
+        valid_digest_receipts = [row for row in digest_receipts if isinstance(row, dict)]
+        receipts.extend(valid_digest_receipts)
+        history.extend(valid_digest_receipts)
         if digest.get("status") == "delivered":
             sent += 1
         elif digest.get("status") not in {"no_new_content", "already_delivered"}:

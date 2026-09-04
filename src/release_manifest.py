@@ -12,7 +12,7 @@ import hashlib
 import json
 import os
 import re
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -36,6 +36,7 @@ DEFAULT_ARTIFACTS = {
 ALERT_INDEX_NAME = "alert-index.json"
 ALERT_ARTIFACT_PREFIX = "alerts"
 MAX_ALERT_INDEX_ROWS = 1000
+ALERT_RETENTION_DAYS = 30
 
 SOURCE_HEALTH_ARTIFACT = "source-health.json"
 
@@ -64,11 +65,18 @@ def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot
     source_key = str(event.get("source_key") or event.get("source") or "").strip().casefold()
     if source_key == "financialjuice":
         from src.financialjuice_notification import financialjuice_public_short_message
+        from src.telegram_client import is_valid_public_summary
 
         public_short_message = str(
             event.get("public_short_message") or financialjuice_public_short_message(event) or ""
         ).strip()
+        if not is_valid_public_summary(public_short_message, source="financialjuice"):
+            raise ValueError("financialjuice event has no valid public summary")
         brief_title = public_short_message
+        # ``title`` is also consumed by older Mini App bundles.  Bind it to
+        # the same canonical public sentence so an archived alert cannot show
+        # a different raw headline from the Telegram message.
+        title = public_short_message
     else:
         public_short_message = ""
         brief_title = str(event.get("brief_title") or title).strip() or title
@@ -176,11 +184,29 @@ def _publish_alert_artifacts(
         }
         resolved[relative] = path
         hashes[relative] = sha256_file(path)
+    now = datetime.now(UTC)
+    cutoff = now - timedelta(days=ALERT_RETENTION_DAYS)
+
+    def is_recent(item: dict[str, Any]) -> bool:
+        value = str(item.get("created_at") or "").strip()
+        if not value:
+            return True
+        try:
+            created = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return True
+        created = created.replace(tzinfo=UTC) if created.tzinfo is None else created.astimezone(UTC)
+        return created >= cutoff
+
     ordered = sorted(rows.values(), key=lambda item: str(item.get("created_at") or ""), reverse=True)
+    recent = [item for item in ordered if is_recent(item)]
+    older = [item for item in ordered if not is_recent(item)]
     index = {
         "schema_version": "1.0",
         "generated_at": created_at,
-        "alerts": ordered[:MAX_ALERT_INDEX_ROWS],
+        # Every recent immutable alert remains addressable for the policy
+        # retention window; the cap applies only to older history.
+        "alerts": [*recent, *older[:max(0, MAX_ALERT_INDEX_ROWS - len(recent))]],
     }
     _write_normalized_artifact(index_path, index)
     resolved[ALERT_INDEX_NAME] = index_path

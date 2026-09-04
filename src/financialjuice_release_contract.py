@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.telegram_client import is_valid_public_summary
+
 _STATUSES = frozenset({"eligible", "not_eligible", "already_cluster_notified", "content_incomplete"})
 
 
@@ -62,6 +64,10 @@ def validate_financialjuice_release(snapshot: dict[str, Any]) -> dict[str, Any]:
                 errors.append(f"decision[{index}]:eligible_below_vendor_threshold")
             if decision.get("vendor_priority_notification") is not True:
                 errors.append(f"decision[{index}]:eligible_without_priority_flag")
+            if decision.get("public_signal_eligible") is not True:
+                errors.append(f"decision[{index}]:eligible_without_public_signal")
+            if not is_valid_public_summary(str(decision.get("public_short_message") or ""), source="financialjuice"):
+                errors.append(f"decision[{index}]:invalid_public_summary")
 
     if observation_ids and set(decision_ids) != observation_ids:
         missing = sorted(observation_ids.difference(decision_ids))
@@ -96,6 +102,9 @@ def validate_financialjuice_release(snapshot: dict[str, Any]) -> dict[str, Any]:
                 errors.append(f"event[{index}]:eligible_without_priority_flag")
             if event.get("alert_eligible") is not True:
                 errors.append(f"event[{index}]:eligible_without_alert_flag")
+            public_message = event.get("public_short_message") or event.get("brief_title") or ""
+            if not is_valid_public_summary(str(public_message), source="financialjuice"):
+                errors.append(f"event[{index}]:invalid_public_summary")
     eligible_ids = {
         observation_id
         for observation_id, decision in decision_by_id.items()

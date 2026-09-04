@@ -256,6 +256,76 @@ const externalRiskReasonLabel = (reason) => ({
   market_sync_missing: "等待市場同步",
 })[String(reason || "")] || `待核對：${String(reason || "資料證據不足")}`;
 
+// FJ cards and Telegram alerts share this exact public headline.  Keep the
+// browser-side guard because historical/reconciled snapshots can outlive the
+// producer that created them; an invalid card must never silently fall back to
+// a different event or a generic placeholder.
+const canonicalFjSummary = (item) => {
+  if (!item || typeof item !== "object") return "";
+  const candidates = [item.public_short_message, item.brief_title];
+  for (const candidate of candidates) {
+    const text = String(candidate || "").trim();
+    const match = text.match(/^🟣 FJ (?:[0-9]|10)\/10｜([^｜]+)$/);
+    if (!match || [...text].length > 40 || /…|\.\.\.|undefined|https?:\/\//i.test(text)) continue;
+    const body = match[1].trim();
+    if (!body || /^(資訊待核對|資訊待核對。)$/.test(body) || /[：:]$/.test(body)) continue;
+    return text;
+  }
+  return "";
+};
+
+const isCanonicalFjSummary = (item) => Boolean(canonicalFjSummary(item));
+
+const canonicalFjBody = (item) => canonicalFjSummary(item).replace(/^🟣 FJ (?:[0-9]|10)\/10｜/, "").trim();
+
+const usableEventField = (value) => {
+  const text = String(value || "").trim();
+  return Boolean(text)
+    && !/[�]/.test(text)
+    && !/undefined|https?:\/\//i.test(text)
+    && !/^(資訊待核對|資訊待核對。)$/.test(text);
+};
+
+const sameFjIdentity = (left, right) => {
+  const fields = ["notification_key", "observation_id", "item_id", "event_cluster_key", "source_url"];
+  return fields.some((field) => {
+    const a = String(left?.[field] || "").trim();
+    const b = String(right?.[field] || "").trim();
+    return Boolean(a && b && a === b);
+  });
+};
+
+// The alert card and the external-intelligence list must consume the same
+// release-bound FJ projection.  Older snapshots can contain a malformed
+// `events.items[0]` while the validated observation still carries the public
+// summary; merge that one matching event instead of replacing it with an
+// unrelated current event.
+const primaryAlertEvents = (snapshot) => {
+  const items = Array.isArray(snapshot?.events?.items) ? snapshot.events.items : [];
+  const external = Array.isArray(snapshot?.external_observations) ? snapshot.external_observations : [];
+  const projected = Array.isArray(snapshot?.financialjuice_priority_events)
+    ? snapshot.financialjuice_priority_events : [];
+  const fjCandidates = [...external, ...projected].filter((item) => {
+    const source = String(item?.source_key || item?.source || item?.content_origin || "").toLowerCase();
+    return source === "financialjuice" && isCanonicalFjSummary(item);
+  });
+  if (!items.length) return fjCandidates.length ? [fjCandidates[0]] : items;
+  const primary = items[0];
+  const source = String(primary?.source_key || primary?.source || primary?.content_origin || "").toLowerCase();
+  if (source !== "financialjuice") return items;
+  const matching = fjCandidates.find((candidate) => sameFjIdentity(primary, candidate));
+  const fallback = !matching && fjCandidates.length === 1 ? fjCandidates[0] : null;
+  const canonical = matching || fallback;
+  if (!canonical) return items;
+  const summary = canonicalFjSummary(canonical);
+  const merged = { ...primary, ...canonical, public_short_message: summary, brief_title: summary };
+  const body = canonicalFjBody(canonical);
+  if (!usableEventField(merged.event)) merged.event = body;
+  if (!usableEventField(merged.title)) merged.title = body;
+  if (!usableEventField(merged.summary)) merged.summary = body;
+  return [merged, ...items.slice(1)];
+};
+
 const renderAlertCard = (events, generatedAt, externalAlert, indices = [], externalRisk = null) => {
   const profile = externalAlert ? externalAlertProfile(externalAlert.category, indices) : null;
   const event = externalAlert ? {
@@ -324,6 +394,20 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
     setText("alert-reminder", "僅供公開資訊整理與教育性觀察，不構成投資建議。");
     document.getElementById("alert-quote-grid").innerHTML = '<p class="empty">目前沒有符合門檻的價格訊號</p>';
     renderAlertTrace(null);
+    return;
+  }
+  const eventSource = String(event.source_key || event.source || event.content_origin || "").toLowerCase();
+  if (eventSource === "financialjuice" && !isCanonicalFjSummary(event)) {
+    card.dataset.risk = "neutral";
+    setText("alert-banner", "FJ 事件無法核對");
+    setText("alert-headline", "找不到可驗證的原始事件");
+    setText("alert-summary", "該事件缺少完整公開事實，已停止顯示。");
+    setText("alert-trigger", "請等待下一份可核對的 FinancialJuice 事件。");
+    setText("alert-context", "不以其他事件替代，也不預設市場方向。");
+    setText("alert-stock-observation", "暫無可驗證的市場觀察。");
+    setText("alert-reminder", "僅供公開資訊整理與教育性觀察，不構成投資建議。");
+    document.getElementById("alert-quote-grid").innerHTML = '<p class="empty">本事件無可核對的連動市場</p>';
+    renderAlertTrace(event);
     return;
   }
   const risk = event.risk_level || "持續觀察";
@@ -824,22 +908,42 @@ const renderExternalIntelligence = (snapshot) => {
     ? snapshot.financialjuice_priority_decisions : [];
   const priorityEvents = Array.isArray(snapshot?.financialjuice_priority_events)
     ? snapshot.financialjuice_priority_events : [];
-  const rowKey = (item) => String(item?.observation_id || item?.item_id || item?.notification_id || "").trim();
+  const rowKey = (item) => {
+    const notificationKey = String(item?.notification_key || "").trim();
+    if (notificationKey) return notificationKey;
+    const summary = String(item?.public_short_message || item?.brief_title || "").trim();
+    if (String(item?.source_key || item?.source || item?.content_origin || "").toLowerCase() === "financialjuice" && summary) {
+      return `summary:${summary}`;
+    }
+    return String(item?.observation_id || item?.item_id || item?.notification_id || "").trim();
+  };
   const decisionByKey = new Map(decisions.map((item) => [rowKey(item), item]).filter(([key]) => key));
   const priorityLabels = {
     eligible: "供應商優先：可通知",
     not_eligible: "供應商優先：未達 8/10",
     already_cluster_notified: "供應商優先：同事件已通知",
   };
-  const rows = observations.map((item) => ({
+  const projectedRows = observations.map((item) => ({
     ...item,
     _priorityDecision: decisionByKey.get(rowKey(item)) || null,
-  }));
+  })).filter((item) => {
+    const source = String(item?.source_key || item?.source || item?.content_origin || "").toLowerCase();
+    return source !== "financialjuice" || isCanonicalFjSummary(item);
+  });
+  const rows = [];
+  const rowKeys = new Set();
+  for (const item of projectedRows) {
+    const key = rowKey(item);
+    if (key && rowKeys.has(key)) continue;
+    if (key) rowKeys.add(key);
+    rows.push(item);
+  }
   const seen = new Set(rows.map(rowKey).filter(Boolean));
   // Keep release-projected eligible events visible even when the raw source
   // observation was compacted out of the public snapshot.  This is still the
   // same canonical event lane, not a second notification pipeline.
   for (const event of priorityEvents) {
+    if (!isCanonicalFjSummary(event)) continue;
     const key = rowKey(event);
     if (!key || seen.has(key)) continue;
     rows.push({ ...event, _priorityDecision: { notification_status: "eligible" } });
@@ -859,11 +963,9 @@ const renderExternalIntelligence = (snapshot) => {
     const semanticWhy = item.why_important || item.ai_commentary || item.summary || "目前尚無額外重要性說明，等待後續公開資料核對。";
     const semanticLinkage = item.possible_linkage || item.possible_impact || "尚無足夠公開資料判定連動。";
     const semanticObservation = item.stock_observation || item.watch || "等待官方後續確認，並觀察相關市場是否同步反應。";
-    const title = escapeHtml(
-      isFinancialJuice
-        ? (item.public_short_message || item.brief_title || semanticEvent)
-        : (item.title || item.headline || item.original_headline || semanticEvent),
-    );
+    const title = escapeHtml(isFinancialJuice
+      ? canonicalFjSummary(item)
+      : (item.title || item.headline || item.original_headline || semanticEvent));
     const semanticHtml = `<p><b>事件：</b>${escapeHtml(semanticEvent)}</p><p><b>為何重要：</b>${escapeHtml(semanticWhy)}</p><p><b>可能連動：</b>${escapeHtml(semanticLinkage)}</p><p><b>股市觀察：</b>${escapeHtml(semanticObservation)}</p>`;
     const official = item.official_confirmed === true;
     const synced = item.market_sync_confirmed === true;
@@ -1180,7 +1282,7 @@ const render = (snapshot) => {
   renderQuoteList("index-list", snapshot.indices || []);
   renderQuoteList("quote-list", snapshot.quotes || []);
   renderRisk(snapshot.risk);
-  renderAlertCard(snapshot.events, snapshot.generated_at, externalAlert, snapshot.indices || [], snapshot.intelligence?.external_event_risk);
+  renderAlertCard({ ...(snapshot.events || {}), items: primaryAlertEvents(snapshot) }, snapshot.generated_at, externalAlert, snapshot.indices || [], snapshot.intelligence?.external_event_risk);
   renderEvents(snapshot.events);
   renderSourceHealth(snapshot.source_health, snapshot);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
@@ -1221,6 +1323,10 @@ const loadArchivedAlert = async (snapshot, notificationId, releaseId, snapshotId
   }
   if (snapshotId && String(alert.snapshot_id || "") !== snapshotId) throw new Error("immutable alert snapshot mismatch");
   if (observationId && String(alert.observation_id || "") !== observationId) throw new Error("immutable alert observation mismatch");
+  const source = String(alert.source_key || alert.source || alert.content_origin || "").toLowerCase();
+  if (source === "financialjuice" && !isCanonicalFjSummary(alert)) {
+    throw new Error("immutable alert public summary invalid");
+  }
   return alert;
 };
 
