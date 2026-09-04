@@ -231,6 +231,68 @@ def test_scheduled_market_delivery_does_not_require_fresh_research(tmp_path, mon
     assert "notification_reason=no_trigger" in text
 
 
+def test_scheduled_market_delivery_falls_back_after_all_candidates_are_suppressed(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / "market.json"
+    manifest_path = tmp_path / "release-manifest.json"
+    snapshot_path.write_text(
+        json.dumps({"snapshot_id": "market-12345678", "quotes": [], "indices": [], "briefing": {}}),
+        encoding="utf-8",
+    )
+    manifest_path.write_text("{}", encoding="utf-8")
+    output = tmp_path / "output"
+    _patch_ready(monkeypatch, output)
+    candidate = {
+        "source_key": "financialjuice",
+        "notification_status": "eligible",
+        "notification_id": "fj-already-covered",
+        "title": "已送達的 FJ 事件",
+    }
+
+    class FakeLedger:
+        delivery_claims = {}
+
+        @staticmethod
+        def delivery_history():
+            return []
+
+        @staticmethod
+        def theme_decision(_event):
+            return {"allowed": False, "reason": "same_theme_within_2h"}
+
+        @staticmethod
+        def record_decision(*_args, **_kwargs):
+            return None
+
+        @staticmethod
+        def claim_notification(*_args, **_kwargs):
+            return {"status": "claimed", "pending_recipient_hashes": ["hash"]}
+
+        @staticmethod
+        def record_delivery(*_args, **_kwargs):
+            return None
+
+        @staticmethod
+        def save():
+            return None
+
+    monkeypatch.setattr(scheduled_delivery, "EventLedger", FakeLedger)
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args, **_kwargs: candidate)
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "send_text_briefs_audited",
+        lambda **kwargs: (TextDeliveryReceipt(
+            kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"],
+            "hash", "delivered", message_id=2, observation_id=kwargs.get("observation_id", ""),
+        ),),
+    )
+
+    scheduled_delivery.send(snapshot_path, "us_open", manifest_path)
+    text = output.read_text(encoding="utf-8")
+    assert "sent=true" in text
+    assert "notification_status=ready" in text
+    assert "notification_reason=no_trigger" in text
+
+
 def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path, monkeypatch):
     snapshot_path = tmp_path / "market.json"
     manifest_path = tmp_path / "release-manifest.json"
