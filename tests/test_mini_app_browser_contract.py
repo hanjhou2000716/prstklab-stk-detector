@@ -125,6 +125,27 @@ def test_mini_app_renders_financialjuice_evidence_from_release_fixture() -> None
                         "stale_used": False,
                     },
                 ],
+            }, {
+                "kind": "external_event",
+                "source": "FinancialJuice",
+                "source_key": "financialjuice",
+                "brief_title": "🟣 FJ 10/10｜📰 FinancialJuice新聞 (09-02.",
+                "title": "📰 FinancialJuice新聞 (09-02.",
+                "event": "📰 FinancialJuice 新聞 (09-02 13:22)",
+            }, {
+                "kind": "external_event",
+                "source": "FinancialJuice",
+                "source_key": "financialjuice",
+                "brief_title": "🟣 FJ 8/10｜川普表示油價將下跌。🔴.",
+                "title": "川普表示油價將下跌。🔴.",
+                "event": "川普表示油價將下跌。🔴 川普談伊朗：對伊朗的重新攻勢不會持續太久。",
+            }, {
+                "kind": "external_event",
+                "source": "FinancialJuice",
+                "source_key": "financialjuice",
+                "brief_title": "🟣 FJ 10/10｜聯準會賭注因沃勒而緩解：股市創一個月來最大漲幅 –.",
+                "title": "聯準會賭注因沃勒而緩解：股市創一個月來最大漲幅 –.",
+                "event": "聯準會賭注因沃勒而緩解：股市創一個月來最大漲幅 –.",
             }],
         },
         "risk": {},
@@ -271,6 +292,10 @@ def test_mini_app_renders_financialjuice_evidence_from_release_fixture() -> None
             assert "FinancialJuice新聞" not in external_text
             assert "川普表示油價將下跌。🔴." not in external_text
             assert "聯準會賭注因沃勒而緩解" not in external_text
+            event_list_text = page.locator("#event-list").text_content() or ""
+            assert "FinancialJuice新聞" not in event_list_text
+            assert "川普表示油價將下跌。🔴." not in event_list_text
+            assert "聯準會賭注因沃勒而緩解" not in event_list_text
             assert page.locator("#briefing-system-analysis").get_attribute("hidden") is None
 
             # A later invalid publication must keep the same validated release
