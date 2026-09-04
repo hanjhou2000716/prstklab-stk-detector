@@ -82,6 +82,26 @@ def test_financialjuice_incomplete_attribution_is_not_deliverable() -> None:
     assert financialjuice_caption({"title": "據《The...", "vendor_importance": 9}) == ""
 
 
+def test_financialjuice_rejects_status_only_and_source_envelope_fragments() -> None:
+    for title in (
+        "🔴，關聯市場：US10Y、NASDAQ（資料待更新）。",
+        "聯準會賭注因沃勒而緩解：股市創一個月來最大漲幅 –.",
+        "FinancialJuice新聞 (09-02)",
+        "Morning Juice - US Session Prep (2nd September)",
+    ):
+        assert financialjuice_caption({"title": title, "vendor_importance": 10}) == ""
+
+
+def test_financialjuice_public_summary_keeps_linkage_in_details_not_headline() -> None:
+    message = financialjuice_caption({
+        "event": "伊朗：美國攻擊電信和通信基礎設施。",
+        "possible_linkage": "關聯市場：NASDAQ、US10Y（資料待更新）。",
+        "vendor_importance": 10,
+    })
+    assert message == "🟣 FJ 10/10｜伊朗：美國攻擊電信和通信基礎設施。"
+    assert "關聯市場" not in message
+
+
 def test_financialjuice_compresses_real_nscale_event_to_one_complete_sentence() -> None:
     caption = financialjuice_caption({
         "event": (

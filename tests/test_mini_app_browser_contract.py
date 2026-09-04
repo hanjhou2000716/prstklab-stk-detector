@@ -262,3 +262,107 @@ def test_mini_app_renders_financialjuice_evidence_from_release_fixture() -> None
         server.shutdown()
         server.server_close()
         thread.join(timeout=2)
+
+
+@pytest.mark.skipif(sync_playwright is None, reason="Playwright is not installed")
+def test_deep_link_keeps_event_summary_outside_release_status() -> None:
+    """A verified old link must show the event in the hero, not engineering text."""
+
+    event_text = "伊朗：美國攻擊電信和通信基礎設施。"
+    public_message = f"🟣 FJ 10/10｜{event_text}"
+    old_release = "release-old"
+    current_release = "release-current"
+    old_snapshot = "snapshot-old"
+    observation = "fj-observation-1"
+    old_alert = {
+        "notification_id": "fj-notification-1",
+        "source_key": "financialjuice",
+        "release_id": old_release,
+        "snapshot_id": old_snapshot,
+        "observation_id": observation,
+        "public_short_message": public_message,
+        "brief_title": public_message,
+        "event": event_text,
+        "vendor_importance": 10,
+        "prstk_risk": {"prstk_risk_level": "R2"},
+    }
+    current_alert = {**old_alert, "release_id": current_release}
+    old_text = json.dumps(old_alert, ensure_ascii=False, separators=(",", ":"))
+    current_text = json.dumps(current_alert, ensure_ascii=False, separators=(",", ":"))
+    index = {
+        "alerts": [
+            {"notification_id": old_alert["notification_id"], "release_id": old_release, "snapshot_id": old_snapshot, "observation_id": observation, "path": "alerts/old.json", "sha256": hashlib.sha256(old_text.encode()).hexdigest()},
+            {"notification_id": current_alert["notification_id"], "release_id": current_release, "snapshot_id": old_snapshot, "observation_id": observation, "path": "alerts/current.json", "sha256": hashlib.sha256(current_text.encode()).hexdigest()},
+        ]
+    }
+    index_text = json.dumps(index, ensure_ascii=False, separators=(",", ":"))
+    market = {
+        "snapshot_id": "market-current",
+        "generated_at": "2026-09-04T08:00:00+00:00",
+        "data_status": "資料可用",
+        "markets": {},
+        "indices": [],
+        "quotes": [],
+        "events": {"items": [{"title": "不應取代通知的目前事件", "event": "不應取代通知的目前事件"}]},
+        "risk": {},
+        "briefing": {},
+        "source_health": {"sources": []},
+        "external_observations": [],
+    }
+    market_text = json.dumps(market, ensure_ascii=False, separators=(",", ":"))
+    manifest = {
+        "release_id": current_release,
+        "status": "ready",
+        "created_at": "2026-09-04T08:00:00+00:00",
+        "market_snapshot_id": "market-current",
+        "artifact_hashes": {
+            "market.json": hashlib.sha256(market_text.encode()).hexdigest(),
+            "alert-index.json": hashlib.sha256(index_text.encode()).hexdigest(),
+        },
+        "artifact_paths": {"market.json": "data/market.json", "alert-index.json": "data/alert-index.json"},
+    }
+    manifest_text = json.dumps(manifest, ensure_ascii=False, separators=(",", ":"))
+
+    handler = functools.partial(_QuietHandler, directory=str(SITE_ROOT))
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            page = browser.new_page()
+
+            def fulfill_release(route) -> None:  # type: ignore[no-untyped-def]
+                url = route.request.url
+                if "/data/release-manifest.json" in url:
+                    route.fulfill(status=200, content_type="application/json", body=manifest_text)
+                elif "/data/market.json" in url:
+                    route.fulfill(status=200, content_type="application/json", body=market_text)
+                elif "/data/alert-index.json" in url:
+                    route.fulfill(status=200, content_type="application/json", body=index_text)
+                elif "/data/alerts/old.json" in url:
+                    route.fulfill(status=200, content_type="application/json", body=old_text)
+                elif "/data/alerts/current.json" in url:
+                    route.fulfill(status=200, content_type="application/json", body=current_text)
+                else:
+                    route.continue_()
+
+            page.route("**/data/**", fulfill_release)
+            page.goto(
+                f"http://127.0.0.1:{server.server_port}/index.html?alert=fj-notification-1&release={old_release}&snapshot={old_snapshot}&observation={observation}&view=event",
+                wait_until="domcontentloaded",
+            )
+            page.wait_for_function("document.querySelector('#release-health')?.textContent.includes('最新同事件版本')")
+            assert page.locator("#market-focus").text_content() == public_message
+            assert "notification" not in (page.locator("#market-focus").text_content() or "")
+            assert page.locator("#alert-headline").text_content() == public_message
+            assert "不應取代通知的目前事件" not in (page.locator("#alert-card").text_content() or "")
+            browser.close()
+    except Exception as exc:
+        if "Executable doesn't exist" in str(exc) or "executable doesn't exist" in str(exc):
+            pytest.skip("Playwright Chromium is not installed")
+        raise
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)

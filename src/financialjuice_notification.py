@@ -49,6 +49,14 @@ def _compress_fj_sentence(value: str) -> str:
         return ""
     if re.search(r"\bundefined\b", text, flags=re.IGNORECASE) or re.search(r"https?://|www\.", text, flags=re.IGNORECASE):
         return ""
+    if re.match(r"^(?:financialjuice(?:\s+公開)?(?:新聞|快訊)|morning\s+juice)\b", text, flags=re.IGNORECASE):
+        return ""
+    if re.search(r"關聯市場|資料待更新|報價待取得|資訊待核對", text, flags=re.IGNORECASE):
+        return ""
+    if re.search(r"[-–—]\s*\.?$", text):
+        return ""
+    if re.fullmatch(r"[🟢🟡🟠🔴⚪⚫🟣\s。！？!?，,、:：|｜()（）\[\]{}]*", text):
+        return ""
     text = re.sub(r"\s+", " ", text).strip()
     text = re.sub(r"\s+-\s+The Information\s*$", "", text, flags=re.IGNORECASE)
     text = re.sub(
@@ -156,10 +164,7 @@ def financialjuice_public_short_message(
         if legacy_score:
             importance = legacy_score.group(1)
     suffix = f"FJ {importance}/10" if importance is not None else "FJ 待核對"
-    impact = _text(event.get("possible_impact") or event.get("possible_linkage"))
     content = f"🟣 {suffix}｜{headline}"
-    if impact:
-        content += f"｜{impact}"
     from src.telegram_client import canonical_short_message
 
     raw = canonical_short_message(

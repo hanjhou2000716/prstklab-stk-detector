@@ -11,8 +11,8 @@ def test_mini_app_resolves_deep_link_only_with_matching_release():
 
 
 def test_mini_app_does_not_replace_unknown_alert_with_current_event():
-    assert "找不到此 alert 的同一 release 證據" in APP
-    assert "renderAlertCard({ items: [event] }" in APP
+    assert "renderDeepLinkUnavailable(snapshot)" in APP
+    assert "renderResolvedDeepLink(snapshot, event)" in APP
     assert "applyDeepLink(snapshot)" in APP
 
 
