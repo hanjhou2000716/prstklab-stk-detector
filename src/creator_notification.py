@@ -22,6 +22,7 @@ from src.creator_photo_delivery import (
     creator_deep_link,
     plan_creator_delivery,
 )
+from src.creator_provider_registry import creator_ids
 from src.telegram_client import (
     PUBLIC_TEXT_MAX_CHARS,
     PhotoDeliveryReceipt,
@@ -127,6 +128,20 @@ def deliver_creator_morning_digest(
     arrival uses a distinct notification type so the original digest is not
     resent.  Recipient failures are isolated by the shared Telegram client.
     """
+    active_creator_ids = set(creator_ids(enabled_only=True))
+    raw_batch_records = batch.get("records")
+    batch_records: list[Any] = raw_batch_records if isinstance(raw_batch_records, list) else []
+    batch_creators = {
+        str(item.get("creator_id") or item.get("content_origin") or "").strip().casefold()
+        for item in batch_records
+        if isinstance(item, dict)
+    }
+    if not active_creator_ids or (batch_creators and not batch_creators & active_creator_ids):
+        return {
+            "status": "disabled",
+            "receipts": [],
+            "reasons": ["retired_source_suppressed"],
+        }
     state = _clean(batch.get("state") or "")
     if state == "no_new_content":
         return {"status": "no_new_content", "receipts": [], "reasons": ["no_current_day_creator_content"]}

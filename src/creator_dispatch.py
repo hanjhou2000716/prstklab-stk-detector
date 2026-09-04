@@ -25,6 +25,7 @@ from src.creator_delivery_store import (
 )
 from src.creator_media import MAX_MEDIA_BYTES, validate_creator_media
 from src.creator_notification import deliver_creator_episode, deliver_creator_morning_digest
+from src.creator_provider_registry import creator_ids
 from src.creator_release import validate_creator_release
 from src.railway_secret import delivery_shared_secret
 from src.release_manifest import verify_release_files
@@ -115,6 +116,28 @@ def dispatch(
         _write_output({"creator_enabled": "false", "creator_status": "disabled", "creator_sent": "0"})
         return result
 
+    active_creator_ids = set(creator_ids(enabled_only=True))
+    if not active_creator_ids:
+        result = {
+            "enabled": True,
+            "status": "disabled",
+            "sent": 0,
+            "blocked": 0,
+            "reasons": ["retired_source_suppressed"],
+            "receipts": [],
+        }
+        _write_output({
+            "creator_enabled": "true",
+            "creator_status": "disabled",
+            "creator_sent": "0",
+            "creator_blocked": "0",
+            "creator_blocking_reason": "retired_source_suppressed",
+            "creator_delivery_status": "suppressed",
+            "creator_delivered_count": "0",
+            "creator_failed_count": "0",
+        })
+        return result
+
     manifest, creator, errors = _load_creator_release(manifest_path)
     if errors or manifest is None or creator is None:
         result = {"enabled": True, "status": "blocked", "sent": 0, "blocked": 1, "reasons": errors, "receipts": []}
@@ -155,6 +178,11 @@ def dispatch(
         }
     history.extend(remote_history)
     insights = cast(list[Any], creator.get("insights")) if isinstance(creator.get("insights"), list) else []
+    insights = [
+        item for item in insights
+        if isinstance(item, dict)
+        and str(item.get("creator_id") or item.get("content_origin") or "").strip().casefold() in active_creator_ids
+    ]
     morning_batch = creator.get("morning_batch") if isinstance(creator.get("morning_batch"), dict) else None
     if morning_batch is not None:
         # The release may contain historical Creator insights for the Mini App,

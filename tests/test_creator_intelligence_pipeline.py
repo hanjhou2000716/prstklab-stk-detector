@@ -3,7 +3,7 @@ from src.creator_intelligence_pipeline import build_creator_intelligence_release
 PARENT = {"release_id": "release-1", "market_snapshot_id": "market-1", "event_snapshot_id": "event-1"}
 
 
-def test_pipeline_accepts_sanitized_creator_insight_and_dedupes_episode():
+def test_pipeline_suppresses_retired_creator_insights_before_deduplication():
     result = build_creator_intelligence_release(
         [
             {"content_origin": "haojiao", "episode_key": "ep-1", "public_safe": True, "verification_state": "unverified"},
@@ -11,8 +11,11 @@ def test_pipeline_accepts_sanitized_creator_insight_and_dedupes_episode():
         ],
         parent_manifest=PARENT,
     )
-    assert result["accepted_count"] == 1
-    assert result["dropped_reasons"] == ["1:duplicate_episode"]
+    assert result["accepted_count"] == 0
+    assert result["dropped_reasons"] == [
+        "0:retired_source_suppressed",
+        "1:retired_source_suppressed",
+    ]
     assert result["artifact"]["status"] == "ready"
     assert result["artifact"]["creator_consensus"]["consensus_state"] == "insufficient_sources"
     assert result["public_artifact"]["creator_consensus"]["consensus_state"] == "insufficient_sources"

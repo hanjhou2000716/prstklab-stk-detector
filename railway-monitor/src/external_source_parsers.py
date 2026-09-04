@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/external_source_parsers.py
-# Canonical source SHA256: c53380c330278df1982fc73592a12df553d4de6ff2b5e8e0c53c542bb27a4818
+# Canonical source SHA256: a550f93823e8d8ebd42a5e629ec47b388f1a59ddb18bdaa450375d47e5a7589d
 
 """Deterministic parsers for sanitized external intelligence mail.
 
@@ -426,6 +426,15 @@ def parse_external_email(**kwargs: Any) -> dict[str, Any]:
         subject=str(kwargs.get("subject") or ""),
         body=str(kwargs.get("body") or ""),
     )
+    if route.get("parse_status") == "retired_source_suppressed":
+        return {
+            "parse_status": "retired_source_suppressed",
+            "failure_reason": "creator_source_retired",
+            "message_id": kwargs.get("message_id", ""),
+            "content_origin": route.get("source", ""),
+            "content_type": route.get("content_type", "creator_analysis"),
+            "public_safe": True,
+        }
     if route["source"] == "financialjuice":
         return parse_financialjuice_email(**kwargs)
     if is_known_creator(route["source"]):

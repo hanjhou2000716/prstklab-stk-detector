@@ -6,6 +6,8 @@ import hashlib
 import json
 from typing import Any
 
+from src.creator_provider_registry import is_active_creator, is_known_creator
+
 
 def creator_content_hash(insight: dict[str, Any]) -> str:
     """Hash reviewed Creator facts without release or transport metadata."""
@@ -55,6 +57,13 @@ def decide_creator_delivery(
     reasons: list[str] = []
     if not episode:
         reasons.append("episode_key_missing")
+    creator = str(insight.get("creator_id") or insight.get("content_origin") or "").strip().casefold()
+    if not is_active_creator(creator):
+        reasons.append(
+            "retired_source_suppressed"
+            if is_known_creator(creator)
+            else "creator_source_not_active"
+        )
     if insight.get("public_safe") is not True:
         reasons.append("creator_artifact_not_public_safe")
     if not release_ready:

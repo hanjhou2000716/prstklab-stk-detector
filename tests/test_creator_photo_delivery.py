@@ -29,7 +29,8 @@ def test_caption_is_bounded_and_attributed() -> None:
     assert caption.startswith("股癌｜")
 
 
-def test_plan_uses_text_only_when_private_media_is_missing() -> None:
+def test_plan_uses_text_only_when_private_media_is_missing(monkeypatch) -> None:
+    monkeypatch.setattr("src.creator_delivery_contract.is_active_creator", lambda _creator: True)
     plan = plan_creator_delivery(
         INSIGHT,
         release_id="release-1",

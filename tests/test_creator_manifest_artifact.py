@@ -122,13 +122,8 @@ def test_manifest_creator_correlation_uses_release_bound_snapshots(tmp_path):
     public = json.loads(
         (tmp_path / "site" / "data" / "creator-insights.json").read_text(encoding="utf-8")
     )
-    episode = public["creators"]["haojiao"]["episodes"][0]
-    correlation = episode["prstk_correlation"]
-    assert correlation["market_snapshot_id"] == result["market_snapshot_id"]
-    assert correlation["market_snapshot_id"]
-    assert correlation["correlation_state"] == "aligned"
-    assert correlation["matched_tickers"] == ["2330.tw"]
-    assert correlation["event_snapshot_id"] == result["event_snapshot_id"]
+    assert result["creator_status"] == "ready"
+    assert public["creators"] == {}
 
 
 def test_manifest_binds_morning_batch_to_market_snapshot_when_requested(tmp_path):
@@ -157,8 +152,9 @@ def test_manifest_binds_morning_batch_to_market_snapshot_when_requested(tmp_path
     assert isinstance(batch, dict)
     assert batch["batch_date"] == "2026-08-04"
     assert batch["as_of"].endswith("02:00:00+00:00")
-    assert batch["received_count"] == 1
-    assert batch["records"][0]["episode_key"] == "episode-morning"
+    assert batch["received_count"] == 0
+    assert batch["expected_count"] == 0
+    assert batch["records"] == []
 
 
 def test_manifest_also_publishes_bounded_creator_insights_artifact(tmp_path):

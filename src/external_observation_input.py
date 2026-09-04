@@ -17,14 +17,20 @@ from typing import Any
 
 from src.creator_provider_registry import creator_ids
 
-ALLOWED_SOURCES = {"financialjuice", *creator_ids()}
+# Only active Creator providers may cross the public observation boundary.
+# The full registry remains available to historical validation, but retired
+# sources must never create a new market snapshot or Creator card.
+ALLOWED_SOURCES = {"financialjuice", *creator_ids(enabled_only=True)}
 BLOCKED_FIELDS = {
     "body", "raw_body", "attachments", "data", "local_path", "private_url",
     "gmail_message_id", "gmail_thread_id", "gmail_history_id", "message_id",
     "thread_id", "sender", "recipient", "email_address",
     "source_message_id",
 }
-PARSE_FAILURES = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
+PARSE_FAILURES = {
+    "parse_failed", "unsupported_template", "invalid_source", "duplicate",
+    "retired_source_suppressed",
+}
 CONTENT_HASH_RE = re.compile(r"^[0-9a-f]{64}$")
 SAFE_FIELDS = {
     "observation_id", "source", "content_origin", "content_type", "event_type", "category",

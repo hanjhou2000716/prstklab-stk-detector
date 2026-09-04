@@ -40,7 +40,7 @@ def test_loader_keeps_only_public_safe_rows(monkeypatch) -> None:
     assert seen["headers"]["X-PRSTK-Signature"].startswith("sha256=")
 
 
-def test_loader_accepts_reviewed_creator_projection(monkeypatch) -> None:
+def test_loader_rejects_retired_creator_projection(monkeypatch) -> None:
     class Response:
         status_code = 200
 
@@ -54,7 +54,8 @@ def test_loader_accepts_reviewed_creator_projection(monkeypatch) -> None:
     monkeypatch.setattr(client.httpx, "get", lambda *_args, **_kwargs: Response())
     rows, health = client.load_railway_observations(url="https://railway.example/health", secret="secret")
     assert health["status"] == "ready"
-    assert rows[0]["content_origin"] == "jenny"
+    assert rows == []
+    assert health["rejected_count"] == 1
 
 
 def test_loader_rejects_unknown_source_and_private_transport_fields(monkeypatch) -> None:

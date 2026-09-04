@@ -33,7 +33,7 @@ def test_morning_batch_selects_latest_per_creator_and_is_idempotent() -> None:
     assert first["batch_key"] == second["batch_key"]
 
 
-def test_default_morning_lane_excludes_optional_creator() -> None:
+def test_default_morning_lane_is_suppressed_when_all_creators_are_retired() -> None:
     result = build_creator_morning_batch(
         [
             _record("haojiao", "h-1", "2026-08-14T02:00:00Z"),
@@ -42,9 +42,10 @@ def test_default_morning_lane_excludes_optional_creator() -> None:
         ],
         as_of=AS_OF,
     )
-    assert result["state"] == "complete"
-    assert result["expected_count"] == 2
-    assert {item["creator_id"] for item in result["records"]} == {"haojiao", "jenny"}
+    assert result["state"] == "no_new_content"
+    assert result["expected_count"] == 0
+    assert result["received_count"] == 0
+    assert result["records"] == []
 
 
 def test_partial_batch_exposes_missing_creator_without_inventing_content() -> None:
@@ -104,6 +105,8 @@ def test_morning_batch_is_bound_into_creator_release_hash() -> None:
     record = _record("haojiao", "h-1", "2026-08-14T02:00:00Z")
     result = build_creator_intelligence_release([record], parent_manifest=parent, batch_as_of=AS_OF)
     artifact = result["artifact"]
-    assert artifact["morning_batch"]["state"] == "partial"
+    assert artifact["morning_batch"]["state"] == "no_new_content"
+    assert artifact["morning_batch"]["expected_count"] == 0
+    assert artifact["morning_batch"]["received_count"] == 0
     assert artifact["morning_batch"]["batch_key"].startswith("creator-morning:2026-08-14:")
     assert artifact["artifact_hash"]

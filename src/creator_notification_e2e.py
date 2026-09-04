@@ -10,6 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
+from unittest.mock import patch
 from urllib.parse import parse_qs, urlparse
 
 from src.creator_morning_batch import build_creator_morning_batch
@@ -35,7 +36,7 @@ def _insight(creator: str, episode: str) -> dict[str, Any]:
     }
 
 
-def run_creator_notification_e2e() -> dict[str, Any]:
+def _run_creator_notification_e2e_impl() -> dict[str, Any]:
     """Run a deterministic photo, digest, late-delta and replay audit."""
     photo_calls: list[dict[str, Any]] = []
     text_calls: list[dict[str, Any]] = []
@@ -214,6 +215,19 @@ def run_creator_notification_e2e() -> dict[str, Any]:
         "replay_status": replay.get("status"),
         "late_delta_status": late_digest.get("status"),
     }
+
+
+def run_creator_notification_e2e() -> dict[str, Any]:
+    """Run offline delivery mechanics with an explicit in-memory fixture lane.
+
+    Production Creator providers are retired.  This audit still exercises the
+    existing sender, receipt isolation and replay mechanics by enabling only
+    its fixture lane; it never changes the production registry or contacts
+    Telegram.
+    """
+    with patch("src.creator_notification.creator_ids", return_value=("haojiao", "jenny")), \
+        patch("src.creator_delivery_contract.is_active_creator", return_value=True):
+        return _run_creator_notification_e2e_impl()
 
 
 __all__ = ["run_creator_notification_e2e"]

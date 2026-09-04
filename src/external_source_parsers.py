@@ -421,6 +421,15 @@ def parse_external_email(**kwargs: Any) -> dict[str, Any]:
         subject=str(kwargs.get("subject") or ""),
         body=str(kwargs.get("body") or ""),
     )
+    if route.get("parse_status") == "retired_source_suppressed":
+        return {
+            "parse_status": "retired_source_suppressed",
+            "failure_reason": "creator_source_retired",
+            "message_id": kwargs.get("message_id", ""),
+            "content_origin": route.get("source", ""),
+            "content_type": route.get("content_type", "creator_analysis"),
+            "public_safe": True,
+        }
     if route["source"] == "financialjuice":
         return parse_financialjuice_email(**kwargs)
     if is_known_creator(route["source"]):

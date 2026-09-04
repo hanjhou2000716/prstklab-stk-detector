@@ -15,13 +15,20 @@ INSIGHT = {
 }
 
 
+def _enable_test_creator_lane(monkeypatch) -> None:
+    """Keep delivery mechanics covered without re-enabling production sources."""
+    monkeypatch.setattr("src.creator_delivery_contract.is_active_creator", lambda _creator: True)
+    monkeypatch.setattr("src.creator_notification.creator_ids", lambda *, enabled_only=False: ("gooaye",))
+
+
 def test_captions_respect_photo_and_text_limits() -> None:
     assert len(creator_telegram_caption(INSIGHT)) <= 40
     assert len(creator_text_caption(INSIGHT)) <= 40
     assert "<" not in creator_telegram_caption({**INSIGHT, "episode_title": "x < y"})
 
 
-def test_creator_missing_media_degrades_to_text_and_keeps_deep_link(tmp_path: Path) -> None:
+def test_creator_missing_media_degrades_to_text_and_keeps_deep_link(tmp_path: Path, monkeypatch) -> None:
+    _enable_test_creator_lane(monkeypatch)
     calls: list[dict] = []
 
     def fake_text(**kwargs):
@@ -45,7 +52,8 @@ def test_creator_missing_media_degrades_to_text_and_keeps_deep_link(tmp_path: Pa
     assert "view=creator" in calls[0]["target_url"]
 
 
-def test_creator_photo_success_returns_lineage_receipt(tmp_path: Path) -> None:
+def test_creator_photo_success_returns_lineage_receipt(tmp_path: Path, monkeypatch) -> None:
+    _enable_test_creator_lane(monkeypatch)
     image = tmp_path / "summary.png"
     image.write_bytes(b"png")
 
@@ -72,7 +80,8 @@ def test_creator_photo_success_returns_lineage_receipt(tmp_path: Path) -> None:
     assert result["receipts"][0]["recipient_hash"] == "7a30574fc065a0a7"
 
 
-def test_creator_delivery_is_idempotent_across_delivery_status() -> None:
+def test_creator_delivery_is_idempotent_across_delivery_status(monkeypatch) -> None:
+    _enable_test_creator_lane(monkeypatch)
     result = deliver_creator_episode(
         INSIGHT,
         release_id="release-1",

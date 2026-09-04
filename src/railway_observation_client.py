@@ -15,7 +15,7 @@ from src.creator_provider_registry import creator_ids
 from src.external_observation_input import SAFE_FIELDS
 from src.railway_secret import delivery_shared_secret
 
-_ALLOWED_SOURCES = {"financialjuice", *creator_ids()}
+_ALLOWED_SOURCES = {"financialjuice", *creator_ids(enabled_only=True)}
 _BLOCKED_FIELDS = {
     "body", "raw_body", "attachments", "data", "local_path", "private_url",
     "gmail_message_id", "gmail_thread_id", "gmail_history_id", "message_id",

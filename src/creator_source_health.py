@@ -6,9 +6,10 @@ from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import Any
 
-from src.creator_provider_registry import CREATOR_PROVIDERS, get_creator_provider
+from src.creator_provider_registry import creator_ids, get_creator_provider
 
-_FAILED_PARSE = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
+_FAILED_PARSE = {"parse_failed", "unsupported_template", "invalid_source", "duplicate", "retired_source_suppressed"}
+CREATOR_PROVIDERS = creator_ids()
 
 
 def _provider(record: dict[str, Any]) -> str:
@@ -51,15 +52,20 @@ def build_creator_source_health(
     enabled: bool,
     configured: bool,
     failures: dict[str, str] | None = None,
+    providers: Iterable[str] | None = None,
 ) -> list[dict[str, Any]]:
-    """Return one bounded health row per known Creator provider.
+    """Return one bounded health row per selected Creator provider.
 
     Creator feeds are optional enrichment.  Missing configuration is explicit
     and does not become a core market failure; an empty successful scan is
     ``no_event`` rather than ``failed``.
     """
     now = checked_at.isoformat()
-    grouped: dict[str, list[dict[str, Any]]] = {name: [] for name in CREATOR_PROVIDERS}
+    selected_providers = tuple(dict.fromkeys(
+        str(name).strip().casefold() for name in (providers if providers is not None else CREATOR_PROVIDERS)
+        if str(name).strip()
+    ))
+    grouped: dict[str, list[dict[str, Any]]] = {name: [] for name in selected_providers}
     for item in records or []:
         if not isinstance(item, dict):
             continue
@@ -68,7 +74,7 @@ def build_creator_source_health(
             grouped[name].append(item)
     errors = failures or {}
     rows: list[dict[str, Any]] = []
-    for provider in CREATOR_PROVIDERS:
+    for provider in selected_providers:
         provider_config = get_creator_provider(provider)
         provider_records = grouped[provider]
         parse_failures = sum(

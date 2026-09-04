@@ -352,6 +352,17 @@ def test_creator_marker_in_body_cannot_hijack_source_route() -> None:
     assert result["parse_status"] == "invalid_source"
 
 
+def test_retired_creator_identity_is_routed_to_suppression() -> None:
+    result = route_source(
+        sender="財經皓角 <creator@example.com>",
+        subject="財經皓角市場觀察",
+        body="Title: legacy\nFact: historical fixture",
+    )
+    assert result["source"] == "haojiao"
+    assert result["parse_status"] == "retired_source_suppressed"
+    assert result["failure_reason"] == "creator_source_retired"
+
+
 def test_financialjuice_marker_in_github_mail_cannot_hijack_source_route() -> None:
     result = route_source(
         sender="github-actions[bot] <noreply@github.com>",
@@ -403,8 +414,8 @@ def test_legitimate_financialjuice_projection_carries_verified_identity(tmp_path
     assert store.public_observations(limit=1)[0]["source_identity_verified"] is True
 
 
-def test_creator_display_name_allows_legacy_fallback_without_template_labels(tmp_path: Path) -> None:
-    """Known Creator mail is retained for review while parser labels evolve."""
+def test_retired_creator_display_name_is_suppressed_without_public_observation(tmp_path: Path) -> None:
+    """Retired Creator mail advances only through the redacted DLQ path."""
     store = EmailStore(tmp_path / "mail.sqlite3")
     service = GmailIngressService(store, _config())
     result = service.accept_email({
@@ -413,13 +424,13 @@ def test_creator_display_name_allows_legacy_fallback_without_template_labels(tmp
         "subject": "今日市場觀察",
         "body": "台股與美股市場摘要，僅供公開資訊整理。",
     })
-    assert result["accepted"] is True
-    assert result["status"] == "parsed"
-    assert result["public_observation_count"] == 1
-    assert store.health()["source_health"]["creator"]["failed_count"] == 0
+    assert result["accepted"] is False
+    assert result["status"] == "retired_source_suppressed"
+    assert store.public_observations() == []
+    assert store.health()["dlq_count"] == 1
 
 
-def test_creator_public_projection_preserves_structured_fields_without_gmail_ids(tmp_path: Path) -> None:
+def test_retired_creator_does_not_create_public_projection(tmp_path: Path) -> None:
     store = EmailStore(tmp_path / "mail.sqlite3")
     service = GmailIngressService(store, _config())
     result = service.accept_email({
@@ -428,13 +439,9 @@ def test_creator_public_projection_preserves_structured_fields_without_gmail_ids
         "subject": "今日市場觀察",
         "body": "標題：AI 產業觀察\n重點：供應鏈仍需核對\n看法：保持中立",
     })
-    assert result["accepted"] is True
-    rows = store.public_observations()
-    assert rows and rows[0]["content_origin"] == "haojiao"
-    assert rows[0].get("episode_title")
-    assert "source_message_id" not in rows[0]
-    assert "gmail_message_id" not in rows[0]
-    assert "private-creator-message" not in rows[0].get("episode_key", "")
+    assert result["accepted"] is False
+    assert result["status"] == "retired_source_suppressed"
+    assert store.public_observations() == []
 
 
 def test_health_reports_stale_watch(tmp_path: Path) -> None:

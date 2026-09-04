@@ -60,5 +60,6 @@ def test_creator_editorial_lane_cannot_become_event_evidence_or_signal():
     )
     assert creator["artifact"]["status"] == "ready"
     assert creator["artifact"]["creator_consensus"]["is_investment_signal"] is False
-    assert creator["artifact"]["insights"][0]["public_safe"] is True
-    assert "source_evidence" not in creator["artifact"]["insights"][0]
+    assert creator["accepted_count"] == 0
+    assert creator["dropped_reasons"] == ["0:retired_source_suppressed"]
+    assert creator["artifact"]["insights"] == []

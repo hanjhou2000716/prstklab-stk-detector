@@ -12,8 +12,8 @@ def test_external_intelligence_offline_dry_run_is_fail_closed():
     assert result["event_pipeline"]["lifecycle_state"] == "pending_confirmation"
     assert result["event_pipeline"]["notification"]["allowed"] is False
     assert result["creator_release"]["status"] == "ready"
-    assert result["creator_pipeline"] == {"accepted_count": 1, "dropped_count": 0}
-    assert result["creator_delivery"]["allowed"] is True
-    assert result["creator_delivery"]["media_mode"] == "text_only"
-    assert result["creator_delivery"]["status"] == "media_degraded"
+    assert result["creator_pipeline"] == {"accepted_count": 0, "dropped_count": 1}
+    assert result["creator_delivery"]["allowed"] is False
+    assert "retired_source_suppressed" in result["creator_delivery"]["reasons"]
+    assert result["creator_delivery"]["status"] == "blocked"
     assert result["creator_delivery"]["notification_key"].startswith("creator:dry-run-creator-episode:")

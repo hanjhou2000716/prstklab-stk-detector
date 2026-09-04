@@ -22,7 +22,7 @@ if str(ROOT) not in sys.path:
 
 from src.creator_intelligence_pipeline import build_creator_intelligence_release  # noqa: E402
 from src.creator_media_provenance import bind_creator_media  # noqa: E402
-from src.creator_provider_registry import creator_providers  # noqa: E402
+from src.creator_provider_registry import creator_ids, creator_providers  # noqa: E402
 from src.financialjuice_contract import build_financialjuice_envelope, normalize_financialjuice_item  # noqa: E402
 from src.financialjuice_priority import project_financialjuice_priority  # noqa: E402
 from src.news_intelligence import build_news_intelligence  # noqa: E402
@@ -55,13 +55,15 @@ def _creator_record(creator_id: str, episode_key: str) -> dict[str, Any]:
 def run_audit() -> dict[str, Any]:
     checks: dict[str, bool] = {}
     providers = {item.creator_id: item for item in creator_providers(enabled_only=True)}
+    inventory = {item.creator_id: item for item in creator_providers()}
     checks["creator_registry_canonical"] = {
         "haojiao", "jenny", "gooaye",
-    }.issubset(providers) and providers["jenny"].display_name == "財女珍妮"
+    } == set(inventory) and not providers and creator_ids(enabled_only=True) == ()
     checks["morning_lane_requires_two"] = (
-        {item.creator_id for item in providers.values() if item.morning_required}
+        not providers
+        and {item.creator_id for item in inventory.values() if item.morning_required}
         == {"haojiao", "jenny"}
-        and providers["gooaye"].morning_required is False
+        and inventory["gooaye"].morning_required is False
     )
 
     creator = build_creator_intelligence_release(
@@ -77,10 +79,10 @@ def run_audit() -> dict[str, Any]:
     checks["creator_release_lineage"] = (
         artifact.get("status") == "ready"
         and artifact.get("parent_release_id") == PARENT["release_id"]
-        and creator["accepted_count"] == 2
-        and creator["dropped_count"] == 1
-        and artifact.get("morning_batch", {}).get("state") == "complete"
-        and artifact.get("morning_batch", {}).get("expected_count") == 2
+        and creator["accepted_count"] == 0
+        and creator["dropped_count"] == 3
+        and artifact.get("morning_batch", {}).get("state") == "no_new_content"
+        and artifact.get("morning_batch", {}).get("expected_count") == 0
     )
     checks["creator_media_fail_closed"] = bind_creator_media(
         observation_id="obs-acceptance", episode_key="h-acceptance", media_record={}

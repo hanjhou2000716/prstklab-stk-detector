@@ -172,6 +172,18 @@ def test_unknown_template_is_dlq_safe() -> None:
     assert result["failure_reason"] == "unknown_template"
 
 
+def test_retired_creator_external_parser_fails_closed() -> None:
+    result = parse_external_email(
+        sender="newsletter@example.com",
+        subject="財經皓角市場觀察",
+        body="Title: legacy\nFact: historical fixture",
+        message_id="retired-parser-1",
+    )
+    assert result["parse_status"] == "retired_source_suppressed"
+    assert result["failure_reason"] == "creator_source_retired"
+    assert result["content_origin"] == "haojiao"
+
+
 def test_financialjuice_result_matches_schema() -> None:
     result = parse_financialjuice_email(sender="financialjuice", subject="alert", body="headline only", message_id="m-4")
     schema = json.loads(Path("schemas/external-parse-result.schema.json").read_text(encoding="utf-8"))

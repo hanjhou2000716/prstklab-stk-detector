@@ -16,9 +16,7 @@ def test_creator_observations_are_projected_into_release_records() -> None:
         "observation_id": "private", "source": "jenny", "content_origin": "jenny",
         "public_safe": False,
     }])
-    assert len(rows) == 1
-    assert rows[0]["creator_id"] == "jenny"
-    assert rows[0]["episode_key"] == "jenny-1"
+    assert rows == []
 
 
 def test_scheduled_brief_prioritises_eligible_financialjuice_event() -> None:
@@ -600,7 +598,7 @@ def test_creator_records_are_loaded_only_from_sanitized_external_path(tmp_path, 
     records = tmp_path / "creator-records.json"
     records.write_text(json.dumps({"records": [{"source": "haojiao", "title": "public"}]}), encoding="utf-8")
     monkeypatch.setenv("CREATOR_RECORDS_PATH", str(records))
-    assert _load_creator_records() == [{"source": "haojiao", "title": "public"}]
+    assert _load_creator_records() == []
 
 
 def test_creator_records_inside_site_are_rejected(tmp_path, monkeypatch):
@@ -624,7 +622,7 @@ def test_creator_records_with_private_body_or_parser_failure_are_rejected(tmp_pa
         encoding="utf-8",
     )
     monkeypatch.setenv("CREATOR_RECORDS_PATH", str(records))
-    assert _load_creator_records() == [{"source": "gooaye", "title": "safe", "parse_status": "parsed"}]
+    assert _load_creator_records() == []
 
 
 def test_creator_input_failure_is_not_reported_as_no_event(tmp_path, monkeypatch):
@@ -632,11 +630,7 @@ def test_creator_input_failure_is_not_reported_as_no_event(tmp_path, monkeypatch
 
     monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
     monkeypatch.setenv("CREATOR_RECORDS_PATH", str(tmp_path / "missing.json"))
-    assert _creator_input_failures() == {
-        "haojiao": "creator_records_unavailable",
-        "jenny": "creator_records_unavailable",
-        "gooaye": "creator_records_unavailable",
-    }
+    assert _creator_input_failures() == {}
 
 
 def test_creator_filtered_records_are_reported_as_parse_failure(tmp_path, monkeypatch):
@@ -649,7 +643,7 @@ def test_creator_filtered_records_are_reported_as_parse_failure(tmp_path, monkey
     }]}), encoding="utf-8")
     monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
     monkeypatch.setenv("CREATOR_RECORDS_PATH", str(records))
-    assert _creator_input_failures() == {"haojiao": "creator_records_parse_failed"}
+    assert _creator_input_failures() == {}
 
 
 def test_prepare_binds_creator_records_to_the_published_snapshot(tmp_path, monkeypatch):
@@ -665,13 +659,8 @@ def test_prepare_binds_creator_records_to_the_published_snapshot(tmp_path, monke
     monkeypatch.setattr(scheduled_delivery, "merge_published_metadata", lambda *_args, **_kwargs: True)
     scheduled_delivery.prepare("morning", snapshot_path)
     published = json.loads(snapshot_path.read_text(encoding="utf-8"))
-    assert published["creator_insights"][0]["source"] == "gooaye"
-    assert published["source_health"]["sources"]
-    assert {row["key"] for row in published["source_health"]["sources"]} == {
-        "creator_haojiao",
-        "creator_jenny",
-        "creator_gooaye",
-    }
+    assert "creator_insights" not in published
+    assert published["source_health"]["sources"] == []
 
 
 def test_prepare_binds_sanitized_external_observations_to_snapshot(tmp_path, monkeypatch):
