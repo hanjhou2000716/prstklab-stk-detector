@@ -263,9 +263,10 @@ const externalRiskReasonLabel = (reason) => ({
 const fjFactIsUsable = (value) => {
   const body = String(value || "").replace(/\s+/g, " ").trim();
   if (!body || /…|\.\.\.|undefined|https?:\/\//i.test(body)) return false;
-  if (/^(?:financialjuice(?:\s+公開)?(?:新聞|快訊)|morning\s+juice)\b/i.test(body)) return false;
+  if (/^(?:[📰🟢🟡🟠🔴⚪⚫🟣]\s*)?(?:financialjuice|morning\s+juice)(?:\s+公開)?(?:新聞|快訊)?(?:\s|[（(]|[-–—]|$)/iu.test(body)) return false;
   if (/(?:關聯市場|資料待更新|報價待取得|資訊待核對)/i.test(body)) return false;
   if (/[-–—]\s*\.?$/.test(body)) return false;
+  if (/[🟢🟡🟠🔴⚪⚫🟣]\s*[。！？!?，,、:：；;.\s]*$/u.test(body)) return false;
   if (!/[\u4e00-\u9fffA-Za-z0-9]/.test(body)) return false;
   if (/^[🟢🟡🟠🔴⚪⚫🟣\s。！？!?，,、:：|｜()（）\[\]{}]+$/u.test(body)) return false;
   return true;
