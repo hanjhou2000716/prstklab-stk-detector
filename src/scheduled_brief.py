@@ -209,7 +209,7 @@ def _pick_event(
     if slot in TAIWAN_SESSION_SLOTS:
         preferred = tuple(["TAIEX", "TPEx"])
     else:
-        preferred = tuple(["SOX", "NASDAQ", "S&P 500"])
+        preferred = tuple(["SOX", "NASDAQ", "DJIA", "S&P 500"])
     for ticker in preferred:
         selected = next(
             (event for event in events if event.get("instrument", {}).get("ticker") == ticker),

@@ -16,9 +16,9 @@ SLOT_TITLES = {
 }
 
 # Legacy flat list retained for consumers that only need the principal
-# benchmarks.  The Mini App uses ``market_topics`` below for the new grouped
+# benchmarks.  The Mini App uses ``market_topics`` below for the grouped
 # layout and can add event-related instruments separately.
-GLOBAL_TICKERS = ("TAIEX", "2330", "NIKKEI", "KOSPI", "NASDAQ", "SOX", "BRENT", "WTI", "GOLD", "BTC", "ETH")
+GLOBAL_TICKERS = ("TAIEX", "2330", "NIKKEI", "KOSPI", "NASDAQ", "SOX", "DJIA", "BRENT", "WTI", "GOLD", "BTC", "ETH")
 _UNUSABLE_FRESHNESS = frozenset({"stale", "delayed", "unavailable", "unknown", "failed"})
 
 
@@ -42,7 +42,7 @@ def _regime_factors(items: dict[str, dict[str, Any]], risk: dict[str, Any]) -> d
     resulting gaps instead of treating a single index move as a full regime.
     """
     factors: dict[str, float | int | None] = {}
-    equity_tickers = ("TAIEX", "NASDAQ", "SOX", "NIKKEI", "KOSPI")
+    equity_tickers = ("TAIEX", "NASDAQ", "SOX", "DJIA", "NIKKEI", "KOSPI")
     equity_moves = [move for ticker in equity_tickers if (move := _usable_change(items.get(ticker))) is not None]
     if equity_moves:
         factors["trend"] = round(max(-2.0, min(2.0, sum(equity_moves) / len(equity_moves) / 2)), 3)
@@ -278,7 +278,7 @@ def _topic_quote(items: dict[str, dict[str, Any]], ticker: str, name: str, curre
 
 
 def _market_topics(items: dict[str, dict[str, Any]], events: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Build four fixed two-instrument themes plus event-driven extras."""
+    """Build fixed market themes plus event-driven extras."""
     taiwan = _topic_quote(items, "TAIEX", "台股加權", "點")
     txf = _topic_quote(items, "TXF", "台指期", "點")
     ai_second = items.get("NVDA") or _topic_quote(items, "SOX", "半導體（費半）", "點")
@@ -286,7 +286,7 @@ def _market_topics(items: dict[str, dict[str, Any]], events: list[dict[str, Any]
         {"title": "臺灣總經", "items": [taiwan, txf]},
         {"title": "AI科技業", "items": [_topic_quote(items, "2330", "台積電", "TWD"), ai_second]},
         {"title": "亞洲相關", "items": [_topic_quote(items, "NIKKEI", "日經225", "點"), _topic_quote(items, "KOSPI", "韓國綜合", "點")]},
-        {"title": "美股相關", "items": [_topic_quote(items, "NASDAQ", "Nasdaq", "點"), _topic_quote(items, "SOX", "費半", "點")]},
+        {"title": "美股相關", "items": [_topic_quote(items, "NASDAQ", "Nasdaq", "點"), _topic_quote(items, "SOX", "費半", "點"), _topic_quote(items, "DJIA", "道瓊", "點")]},
     ]
     fixed = {
         str(item.get("ticker"))
@@ -332,7 +332,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
     from src.intelligence_pipeline import build_intelligence_context
 
     observed_quotes = [*indices, *quotes, *macro_quotes]
-    watchlist = [ticker for ticker in ("TAIEX", "NASDAQ", "SOX") if ticker in all_items]
+    watchlist = [ticker for ticker in ("TAIEX", "NASDAQ", "SOX", "DJIA") if ticker in all_items]
     public_watchlist = {ticker: round(1 / len(watchlist), 6) for ticker in watchlist} if watchlist else {}
     raw_macro = snapshot.get("macro")
     macro_input = None

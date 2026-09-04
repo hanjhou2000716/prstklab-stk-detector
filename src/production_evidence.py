@@ -17,6 +17,11 @@ from src.instrument_master import InstrumentMaster
 from src.intel_contract import normalize_quote_record
 from src.raw_observation_store import RawObservationStore
 
+# Yahoo remains display-only for individual securities and macro references.
+# These broad US indices may trigger only after the separately collected
+# public-market-secondary observation has confirmed the same quote.
+CROSSCHECKED_MARKET_ALERT_TICKERS = frozenset({"SOX", "NASDAQ", "DJIA"})
+
 
 def _raw_observation_required() -> bool:
     """Return whether a release requires durable raw observations.
@@ -165,10 +170,20 @@ def bind_quote_evidence(
     # attached.  Preserve their normal quality semantics; once the catalog
     # explicitly publishes a policy, enforce it as the source of truth.
     adapter_policy = item.get("adapter_alert_policy")
-    if adapter_policy is not None and adapter_policy != "crosscheck_required":
+    ticker = str(item.get("ticker") or "").strip().upper()
+    crosschecked_index_exception = (
+        adapter_policy == "display_only"
+        and ticker in CROSSCHECKED_MARKET_ALERT_TICKERS
+        and item.get("cross_checked") is True
+        and quality["alert_eligible"] is True
+    )
+    if adapter_policy is not None and adapter_policy != "crosscheck_required" and not crosschecked_index_exception:
         item["alert_eligible"] = False
         if "adapter_policy_display_only" not in item["quality_reasons"]:
             item["quality_reasons"].append("adapter_policy_display_only")
+    elif crosschecked_index_exception:
+        item["alert_eligible"] = True
+        item["adapter_policy_exception"] = "crosschecked_market_index"
     item["quality_checked_at"] = (now or datetime.now().astimezone()).isoformat()
 
     if raw_store is not None:
