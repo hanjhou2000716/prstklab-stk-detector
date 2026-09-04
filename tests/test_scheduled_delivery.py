@@ -71,6 +71,53 @@ def test_scheduled_selection_skips_fj_without_release_alert_and_uses_next_candid
     assert reason == "candidate_ready"
 
 
+def test_scheduled_selection_skips_claimed_fj_and_uses_next_candidate(monkeypatch) -> None:
+    from src.alert_orchestrator import notification_key_for_event
+
+    first = {
+        "source_key": "financialjuice", "notification_status": "eligible",
+        "vendor_priority_notification": True, "vendor_importance": 10,
+        "notification_id": "already-delivered", "event": "First FJ event。",
+    }
+    second = {
+        "source_key": "financialjuice", "notification_status": "eligible",
+        "vendor_priority_notification": True, "vendor_importance": 8,
+        "notification_id": "next-event", "event": "Second FJ event。",
+    }
+    candidates = iter((first, second))
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args, **_kwargs: next(candidates, None))
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "decide_alert_budget",
+        lambda *_args: {"allowed": True, "reason": "budget_available", "event_key": "next-event"},
+    )
+
+    class Ledger:
+        delivery_claims = {notification_key_for_event(first): {"status": "delivered"}}
+
+        @staticmethod
+        def delivery_history():
+            return []
+
+        @staticmethod
+        def theme_decision(_event):
+            return {"allowed": True}
+
+        @staticmethod
+        def record_decision(*_args, **_kwargs):
+            return None
+
+        @staticmethod
+        def save():
+            return None
+
+    event, _budget, reason = scheduled_delivery._select_scheduled_candidate(
+        {"events": {"items": [first, second]}}, "morning", Ledger(),
+    )
+    assert event == second
+    assert reason == "candidate_ready"
+
+
 def test_financialjuice_history_flattens_redacted_recipient_receipts() -> None:
     history = scheduled_delivery._financialjuice_delivery_history([
         {
@@ -294,6 +341,72 @@ def test_scheduled_market_delivery_falls_back_after_all_candidates_are_suppresse
     assert "sent=false" in text
     assert "notification_status=suppressed" in text
     assert "notification_reason=same_theme_within_2h" in text
+
+
+def test_scheduled_delivery_does_not_send_generic_fallback_after_fj_already_delivered(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / "market.json"
+    manifest_path = tmp_path / "release-manifest.json"
+    snapshot_path.write_text(
+        json.dumps({"snapshot_id": "market-12345678", "quotes": [], "indices": [], "briefing": {}}),
+        encoding="utf-8",
+    )
+    manifest_path.write_text("{}", encoding="utf-8")
+    output = tmp_path / "output"
+    _patch_ready(monkeypatch, output)
+    candidate = {
+        "source_key": "financialjuice",
+        "notification_status": "eligible",
+        "vendor_priority_notification": True,
+        "vendor_importance": 9,
+        "notification_id": "fj-already-delivered",
+        "event": "已送達的 FJ 事件。",
+    }
+
+    class FakeLedger:
+        delivery_claims = {}
+
+        @staticmethod
+        def delivery_history():
+            return []
+
+        @staticmethod
+        def theme_decision(_event):
+            return {"allowed": True}
+
+        @staticmethod
+        def record_decision(*_args, **_kwargs):
+            return None
+
+        @staticmethod
+        def save():
+            return None
+
+    monkeypatch.setattr(scheduled_delivery, "EventLedger", FakeLedger)
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args, **_kwargs: candidate)
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "decide_alert_budget",
+        lambda *_args: {"allowed": True, "reason": "budget_available", "event_key": "fj-already-delivered"},
+    )
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "deliver_financialjuice_event",
+        lambda *_args, **_kwargs: {
+            "status": "already_delivered",
+            "notification_key": "financialjuice:already-delivered",
+            "receipts": [],
+        },
+    )
+
+    def fail_if_called(**_kwargs):
+        raise AssertionError("an already-delivered FJ event must not create a generic Telegram fallback")
+
+    monkeypatch.setattr(scheduled_delivery, "send_text_briefs_audited", fail_if_called)
+    scheduled_delivery.send(snapshot_path, "us_open", manifest_path)
+    text = output.read_text(encoding="utf-8")
+    assert "sent=false" in text
+    assert "notification_reason=already_delivered" in text
+    assert "市場簡報｜本輪無觸發" not in text
 
 
 def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path, monkeypatch):
