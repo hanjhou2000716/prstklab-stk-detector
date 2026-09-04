@@ -49,11 +49,13 @@ def _compress_fj_sentence(value: str) -> str:
         return ""
     if re.search(r"\bundefined\b", text, flags=re.IGNORECASE) or re.search(r"https?://|www\.", text, flags=re.IGNORECASE):
         return ""
-    if re.match(r"^(?:financialjuice(?:\s+公開)?(?:新聞|快訊)|morning\s+juice)\b", text, flags=re.IGNORECASE):
+    if re.match(r"^(?:[📰🟢🟡🟠🔴⚪⚫🟣]\s*)?(?:financialjuice|morning\s+juice)(?:\s+公開)?(?:新聞|快訊)?(?:\s|[（(]|[-–—]|$)", text, flags=re.IGNORECASE):
         return ""
     if re.search(r"關聯市場|資料待更新|報價待取得|資訊待核對", text, flags=re.IGNORECASE):
         return ""
     if re.search(r"[-–—]\s*\.?$", text):
+        return ""
+    if re.search(r"[🟢🟡🟠🔴⚪⚫🟣]\s*[。！？!?，,、:：；;.\s]*$", text):
         return ""
     if re.fullmatch(r"[🟢🟡🟠🔴⚪⚫🟣\s。！？!?，,、:：|｜()（）\[\]{}]*", text):
         return ""

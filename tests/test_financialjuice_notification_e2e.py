@@ -87,6 +87,8 @@ def test_financialjuice_rejects_status_only_and_source_envelope_fragments() -> N
         "🔴，關聯市場：US10Y、NASDAQ（資料待更新）。",
         "聯準會賭注因沃勒而緩解：股市創一個月來最大漲幅 –.",
         "FinancialJuice新聞 (09-02)",
+        "📰 FinancialJuice新聞 (09-02.",
+        "川普表示油價將下跌。🔴.",
         "Morning Juice - US Session Prep (2nd September)",
     ):
         assert financialjuice_caption({"title": title, "vendor_importance": 10}) == ""

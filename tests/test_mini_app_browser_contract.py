@@ -91,6 +91,7 @@ def test_mini_app_renders_financialjuice_evidence_from_release_fixture() -> None
                 "kind": "external_event",
                 "source": "FinancialJuice",
                 "source_key": "financialjuice",
+                "observation_id": "obs-fj-fixture-1",
                 "brief_title": "FJ 快訊｜重要度 10/10｜伊朗：美國攻擊電信和通信基礎設施。",
                 "title": "伊朗：美國攻擊電信和通信基礎設施。",
                 "event": "伊朗：美國攻擊電信和通信基礎設施。",
@@ -153,7 +154,31 @@ def test_mini_app_renders_financialjuice_evidence_from_release_fixture() -> None
                 "published_at": "2026-08-22T01:59:00+00:00",
                 "fetched_at": "2026-08-22T02:00:00+00:00",
                 "source_url": "https://example.com/financialjuice-fixture",
-            }
+            },
+            {
+                "observation_id": "obs-fj-invalid-source-envelope",
+                "source_key": "financialjuice",
+                "source": "FinancialJuice",
+                "public_short_message": "🟣 FJ 10/10｜📰 FinancialJuice新聞 (09-02.",
+                "event": "📰 FinancialJuice 新聞 (09-02 13:22)",
+                "vendor_importance": 10,
+            },
+            {
+                "observation_id": "obs-fj-invalid-icon-fragment",
+                "source_key": "financialjuice",
+                "source": "FinancialJuice",
+                "public_short_message": "🟣 FJ 8/10｜川普表示油價將下跌。🔴.",
+                "event": "川普表示油價將下跌。🔴 川普談伊朗：對伊朗的重新攻勢不會持續太久。",
+                "vendor_importance": 8,
+            },
+            {
+                "observation_id": "obs-fj-invalid-dash-fragment",
+                "source_key": "financialjuice",
+                "source": "FinancialJuice",
+                "public_short_message": "🟣 FJ 10/10｜聯準會賭注因沃勒而緩解：股市創一個月來最大漲幅 –.",
+                "event": "聯準會賭注因沃勒而緩解：股市創一個月來最大漲幅 –.",
+                "vendor_importance": 10,
+            },
         ],
         "financialjuice_priority_decisions": [
             {
@@ -242,6 +267,10 @@ def test_mini_app_renders_financialjuice_evidence_from_release_fixture() -> None
             ):
                 assert expected in alert_text
             assert "本事件暫無可顯示的公開報價" not in alert_text
+            external_text = page.locator("#external-intelligence-content").text_content() or ""
+            assert "FinancialJuice新聞" not in external_text
+            assert "川普表示油價將下跌。🔴." not in external_text
+            assert "聯準會賭注因沃勒而緩解" not in external_text
             assert page.locator("#briefing-system-analysis").get_attribute("hidden") is None
 
             # A later invalid publication must keep the same validated release

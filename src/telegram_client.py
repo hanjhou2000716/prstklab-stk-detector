@@ -36,9 +36,10 @@ _GENERIC_PUBLIC_LABELS = frozenset({
 })
 
 _FJ_INVALID_FACT_PATTERNS = (
-    re.compile(r"^(?:undefined|financialjuice(?:\s+公開)?(?:新聞|快訊)|morning\s+juice)\b", re.IGNORECASE),
+    re.compile(r"^(?:[📰🟢🟡🟠🔴⚪⚫🟣]\s*)?(?:undefined|financialjuice|morning\s+juice)(?:\s+公開)?(?:新聞|快訊)?(?:\s|[（(]|[-–—]|$)", re.IGNORECASE),
     re.compile(r"(?:關聯市場|資料待更新|報價待取得|資訊待核對)", re.IGNORECASE),
     re.compile(r"[-–—]\s*\.?$"),
+    re.compile(r"[🟢🟡🟠🔴⚪⚫🟣]\s*[。！？!?，,、:：；;.\s]*$"),
 )
 
 
