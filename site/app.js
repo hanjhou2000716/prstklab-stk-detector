@@ -1406,8 +1406,8 @@ const applyDeepLink = async (snapshot) => {
             snapshot,
             requestedAlert,
             manifestRelease,
-            requestedSnapshot || String(archived.snapshot_id || ""),
-            requestedObservation || String(archived.observation_id || ""),
+            "",
+            "",
           );
           if (sameAlertLineage(archived, latest, requestedSnapshot || String(archived.snapshot_id || ""), requestedObservation || String(archived.observation_id || ""))
             && await sameCanonicalAlertContent(archived, latest)) {
