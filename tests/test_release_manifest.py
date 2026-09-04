@@ -64,7 +64,10 @@ def test_manifest_publishes_release_specific_immutable_alert_details(tmp_path):
     first_row = next(row for row in index["alerts"] if row["notification_id"] == "fj-item-1")
     first_path = tmp_path / "site" / "data" / first_row["path"].removeprefix("data/")
     first_text = first_path.read_text(encoding="utf-8")
-    assert json.loads(first_text)["release_id"] == first["release_id"]
+    first_alert = json.loads(first_text)
+    assert first_alert["release_id"] == first["release_id"]
+    assert len(first_alert["canonical_content_hash"]) == 64
+    assert first_row["canonical_content_hash"] == first_alert["canonical_content_hash"]
     assert verify_release_files(first, root=tmp_path / "site") == []
 
     market["events"]["items"][0]["why_important"] = "官方已發布後續說明；仍待市場核對。"

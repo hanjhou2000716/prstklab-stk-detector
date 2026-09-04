@@ -50,6 +50,30 @@ def _alert_filename(value: str) -> str:
     return safe or hashlib.sha256(value.encode("utf-8")).hexdigest()[:24]
 
 
+def canonical_alert_content_hash(
+    event: dict[str, Any], *, public_short_message: str = "",
+    brief_title: str = "", title: str = "", event_text: str = "",
+) -> str:
+    """Hash stable public alert content while excluding release metadata.
+
+    Delivery receipts can cause the same market snapshot to be published in a
+    later release.  This fingerprint lets the browser prove that the later
+    alert is the same public event without treating changing quotes or
+    timestamps as a material content change.
+    """
+    source_key = str(
+        event.get("source_key") or event.get("source") or event.get("content_origin") or ""
+    ).strip().casefold()
+    public_summary = " ".join(str(public_short_message or brief_title or title).split())
+    fact = " ".join(str(event_text or event.get("event") or event.get("summary") or title).split())
+    payload = {
+        "source_key": source_key,
+        "public_summary": public_summary,
+        "event": fact,
+    }
+    return hashlib.sha256(_canonical_json(payload)).hexdigest()
+
+
 def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot_id: str, created_at: str) -> dict[str, Any]:
     """Create the immutable public detail for one notification identity."""
     notification_id = str(
@@ -80,6 +104,14 @@ def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot
     else:
         public_short_message = ""
         brief_title = str(event.get("brief_title") or title).strip() or title
+    event_text = str(event.get("event") or title).strip() or title
+    canonical_content_hash = canonical_alert_content_hash(
+        event,
+        public_short_message=public_short_message,
+        brief_title=brief_title,
+        title=title,
+        event_text=event_text,
+    )
     linked_markets = event.get("linked_markets")
     if not isinstance(linked_markets, list):
         linked_markets = [
@@ -99,6 +131,7 @@ def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot
         "snapshot_id": str(event.get("snapshot_id") or market_snapshot_id),
         "observation_id": event.get("observation_id"),
         "created_at": created_at,
+        "canonical_content_hash": canonical_content_hash,
         # Keep the headline aliases required by the Mini App.  Archived alert
         # artifacts are rendered independently of the live market snapshot.
         "title": title,
@@ -154,6 +187,7 @@ def _publish_alert_artifacts(
                 "release_id": item["release_id"],
                 "snapshot_id": item.get("snapshot_id"),
                 "observation_id": item.get("observation_id"),
+                "canonical_content_hash": item.get("canonical_content_hash"),
                 "path": f"{ALERT_ARTIFACT_PREFIX}/{path.name}",
                 "sha256": sha256_file(path),
                 "created_at": item.get("created_at"),
@@ -178,6 +212,7 @@ def _publish_alert_artifacts(
             "release_id": release_id,
             "snapshot_id": artifact.get("snapshot_id"),
             "observation_id": artifact.get("observation_id"),
+            "canonical_content_hash": artifact.get("canonical_content_hash"),
             "path": relative,
             "sha256": sha256_file(path),
             "created_at": created_at,

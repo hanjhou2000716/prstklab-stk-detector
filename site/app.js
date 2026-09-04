@@ -278,6 +278,51 @@ const isCanonicalFjSummary = (item) => Boolean(canonicalFjSummary(item));
 
 const canonicalFjBody = (item) => canonicalFjSummary(item).replace(/^🟣 FJ (?:[0-9]|10)\/10｜/, "").trim();
 
+const normalizedAlertText = (value) => String(value || "").trim().split(/\s+/).filter(Boolean).join(" ");
+
+const alertSourceKey = (item) => String(
+  item?.source_key || item?.source || item?.content_origin || "",
+).trim().toLowerCase();
+
+const alertPublicSummaryForHash = (item) => {
+  if (alertSourceKey(item) === "financialjuice") return normalizedAlertText(canonicalFjSummary(item));
+  return normalizedAlertText(item?.public_short_message || item?.brief_title || item?.title || "");
+};
+
+const alertEventForHash = (item) => normalizedAlertText(
+  item?.event || item?.summary || item?.title || item?.brief_title || "",
+);
+
+// Keep this payload key order aligned with Python's sort_keys=True hash in
+// release_manifest.py.  Quotes, timestamps, risk and release metadata are
+// intentionally excluded because receipt reconciliation may republish the
+// same event in a later release.
+const canonicalAlertContentHash = async (item) => sha256Hex(JSON.stringify({
+  event: alertEventForHash(item),
+  public_summary: alertPublicSummaryForHash(item),
+  source_key: alertSourceKey(item),
+}));
+
+const sameAlertLineage = (left, right, snapshotId, observationId) => {
+  const leftNotification = String(left?.notification_id || "").trim();
+  const rightNotification = String(right?.notification_id || "").trim();
+  if (!leftNotification || leftNotification !== rightNotification) return false;
+  if (alertSourceKey(left) !== alertSourceKey(right)) return false;
+  const leftSnapshot = String(left?.snapshot_id || "").trim();
+  const rightSnapshot = String(right?.snapshot_id || "").trim();
+  if (!leftSnapshot || leftSnapshot !== rightSnapshot || (snapshotId && leftSnapshot !== snapshotId)) return false;
+  const leftObservation = String(left?.observation_id || "").trim();
+  const rightObservation = String(right?.observation_id || "").trim();
+  if (!leftObservation || leftObservation !== rightObservation || (observationId && leftObservation !== observationId)) return false;
+  return true;
+};
+
+const sameCanonicalAlertContent = async (left, right) => {
+  const leftHash = await canonicalAlertContentHash(left);
+  const rightHash = await canonicalAlertContentHash(right);
+  return leftHash === rightHash;
+};
+
 const usableEventField = (value) => {
   const text = String(value || "").trim();
   return Boolean(text)
@@ -1327,7 +1372,17 @@ const loadArchivedAlert = async (snapshot, notificationId, releaseId, snapshotId
   if (source === "financialjuice" && !isCanonicalFjSummary(alert)) {
     throw new Error("immutable alert public summary invalid");
   }
+  const canonicalHash = await canonicalAlertContentHash(alert);
+  if (alert.canonical_content_hash && String(alert.canonical_content_hash) !== canonicalHash) {
+    throw new Error("immutable alert canonical content hash mismatch");
+  }
   return alert;
+};
+
+const currentReleaseAlertRow = (snapshot, notificationId, releaseId) => {
+  const rows = Array.isArray(snapshot?.alert_index?.alerts) ? snapshot.alert_index.alerts : [];
+  return rows.find((item) => String(item?.notification_id || "") === notificationId
+    && String(item?.release_id || "") === releaseId) || null;
 };
 
 const applyDeepLink = async (snapshot) => {
@@ -1343,9 +1398,28 @@ const applyDeepLink = async (snapshot) => {
     if (requestedAlert && requestedRelease) {
       try {
         const archived = await loadArchivedAlert(snapshot, requestedAlert, requestedRelease, requestedSnapshot, requestedObservation);
+        const latestRow = manifestRelease
+          ? currentReleaseAlertRow(snapshot, requestedAlert, manifestRelease)
+          : null;
+        if (latestRow) {
+          const latest = await loadArchivedAlert(
+            snapshot,
+            requestedAlert,
+            manifestRelease,
+            requestedSnapshot || String(archived.snapshot_id || ""),
+            requestedObservation || String(archived.observation_id || ""),
+          );
+          if (sameAlertLineage(archived, latest, requestedSnapshot || String(archived.snapshot_id || ""), requestedObservation || String(archived.observation_id || ""))
+            && await sameCanonicalAlertContent(archived, latest)) {
+            renderAlertCard({ items: [latest] }, latest.created_at || snapshot.generated_at, null, latest.market_evidence || []);
+            setReleaseHealth("已載入本次通知對應的最新同事件版本。", "ready");
+            setText("market-focus", "已核對 notification、snapshot、observation 與摘要，顯示同一事件的最新 release。");
+            return;
+          }
+        }
         renderAlertCard({ items: [archived] }, archived.created_at || snapshot.generated_at, null, archived.market_evidence || []);
-        setReleaseHealth("已載入原始 immutable alert 詳情。", "ready");
-        setText("market-focus", "此訊息依 notification_id 載入原始 release，未改為最新事件。");
+        setReleaseHealth("已載入本次通知的歷史 immutable alert。", "ready");
+        setText("market-focus", "目前 release 沒有可核對的同事件版本，已保留原始通知內容。");
         return;
       } catch (error) {
         setReleaseHealth(`該訊息版本不可驗證；已安全停止載入（${error.message}）。`, "error");

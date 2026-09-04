@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from src.release_manifest import canonical_alert_content_hash
+
 VIEWS = {"event", "market", "briefing", "research", "resolved", "source-health"}
 
 
@@ -56,8 +58,82 @@ def parse_deep_link(url: str) -> DeepLink:
     )
 
 
-def resolve_deep_link(link: DeepLink, *, manifest: dict[str, Any], alerts: list[dict[str, Any]]) -> dict[str, Any]:
-    if not link.release or link.release != str(manifest.get("release_id") or ""):
+def _notification_id(item: dict[str, Any]) -> str:
+    return str(item.get("notification_id") or "").strip()
+
+
+def _source_key(item: dict[str, Any]) -> str:
+    return str(item.get("source_key") or item.get("source") or item.get("content_origin") or "").strip().casefold()
+
+
+def _same_event_lineage(left: dict[str, Any], right: dict[str, Any], link: DeepLink) -> bool:
+    if not _notification_id(left) or _notification_id(left) != _notification_id(right):
+        return False
+    if _source_key(left) != _source_key(right):
+        return False
+    left_snapshot = str(left.get("snapshot_id") or "").strip()
+    right_snapshot = str(right.get("snapshot_id") or "").strip()
+    if not left_snapshot or left_snapshot != right_snapshot:
+        return False
+    if link.snapshot and left_snapshot != link.snapshot:
+        return False
+    left_observation = str(left.get("observation_id") or "").strip()
+    right_observation = str(right.get("observation_id") or "").strip()
+    if not left_observation or left_observation != right_observation:
+        return False
+    if link.observation and left_observation != link.observation:
+        return False
+    return True
+
+
+def _same_canonical_content(left: dict[str, Any], right: dict[str, Any]) -> bool:
+    def content_hash(item: dict[str, Any]) -> str:
+        return canonical_alert_content_hash(
+            item,
+            public_short_message=str(item.get("public_short_message") or ""),
+            brief_title=str(item.get("brief_title") or ""),
+            title=str(item.get("title") or ""),
+            event_text=str(item.get("event") or ""),
+        )
+
+    return content_hash(left) == content_hash(right)
+
+
+def resolve_deep_link(
+    link: DeepLink, *, manifest: dict[str, Any], alerts: list[dict[str, Any]],
+    latest_alerts: list[dict[str, Any]] | None = None,
+    historical_alerts: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    manifest_release = str(manifest.get("release_id") or "")
+    if not link.release or link.release != manifest_release:
+        # A release-mismatched caller must explicitly provide the verified
+        # historical collection; treating the current-release ``alerts`` list
+        # as history would weaken the original fail-closed contract.
+        historical_pool = historical_alerts if historical_alerts is not None else []
+        historical = next((item for item in historical_pool if link.alert in _alert_identities(item)), None)
+        latest = next((item for item in (latest_alerts or []) if link.alert in _alert_identities(item)), None)
+        if historical and latest:
+            if _same_event_lineage(historical, latest, link) and _same_canonical_content(historical, latest):
+                return {
+                    "status": "ok",
+                    "resolution": "latest_same_event",
+                    "view": link.view,
+                    "alert": latest,
+                    "release_id": manifest_release,
+                    "original_release_id": link.release,
+                    "snapshot_id": str(latest.get("snapshot_id") or link.snapshot),
+                    "observation_id": link.observation,
+                }
+        if historical:
+            return {
+                "status": "archived",
+                "resolution": "historical_exact",
+                "view": link.view,
+                "alert": historical,
+                "release_id": link.release,
+                "snapshot_id": link.snapshot,
+                "observation_id": link.observation,
+            }
         return {"status": "archived", "message": "release mismatch", "view": link.view}
     known_snapshots = {
         str(manifest.get(name) or "")
@@ -74,6 +150,7 @@ def resolve_deep_link(link: DeepLink, *, manifest: dict[str, Any], alerts: list[
         return {"status": "archived", "message": "alert snapshot mismatch", "view": link.view}
     return {
         "status": "ok",
+        "resolution": "current_exact",
         "view": link.view,
         "alert": match,
         "release_id": link.release,
