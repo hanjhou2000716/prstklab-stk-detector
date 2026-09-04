@@ -2,6 +2,8 @@ import hashlib
 import json
 from pathlib import Path
 
+import requests
+
 from src.pages_release import PagesReleaseError, _validate, restore_latest_valid, restore_public_release
 
 
@@ -217,6 +219,60 @@ def test_restore_public_release_preserves_indexed_historical_alerts(tmp_path, mo
 
     assert result["release_id"] == "release-last-good"
     assert (tmp_path / "site" / "data" / historical_path).read_bytes() == historical_body
+
+
+def test_restore_public_release_keeps_verified_bundle_when_history_target_is_missing(tmp_path, monkeypatch):
+    market_path = "data/market.json"
+    index_path = "data/alert-index.json"
+    missing_path = "alerts/alert-expired.json"
+    market_body = b'{"snapshot_id":"market-last-good"}'
+    index_body = json.dumps({
+        "alerts": [{
+            "notification_id": "alert-expired",
+            "release_id": "release-old",
+            "path": missing_path,
+            "sha256": hashlib.sha256(b"expired").hexdigest(),
+        }],
+    }).encode()
+    manifest = {
+        "status": "ready",
+        "release_id": "release-last-good",
+        "market_snapshot_id": "market-last-good",
+        "artifact_paths": {"market.json": market_path, "alert-index.json": index_path},
+        "artifact_hashes": {
+            "market.json": hashlib.sha256(market_body).hexdigest(),
+            "alert-index.json": hashlib.sha256(index_body).hexdigest(),
+        },
+    }
+
+    class Response:
+        def __init__(self, content):
+            self.content = content
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return json.loads(self.content.decode("utf-8"))
+
+    def get(url, **_kwargs):
+        if url.endswith("release-manifest.json?pages_restore=1"):
+            return Response(json.dumps(manifest).encode())
+        if url.endswith(index_path):
+            return Response(index_body)
+        if url.endswith(missing_path):
+            raise requests.RequestException("historical alert no longer published")
+        return Response(market_body)
+
+    monkeypatch.setattr("src.pages_release.requests.get", get)
+    monkeypatch.setattr("src.pages_release._validate", lambda *args, **kwargs: (True, {"status": "ready"}))
+
+    result = restore_public_release(root=tmp_path, public_url="https://example.test")
+
+    assert result["release_id"] == "release-last-good"
+    assert result["historical_alert_missing"] == 1
+    assert (tmp_path / "site" / "data" / "market.json").read_bytes() == market_body
+    assert not (tmp_path / "site" / "data" / missing_path).exists()
 
 
 def test_restore_latest_valid_preserves_public_release_when_data_branch_has_no_valid_candidate(tmp_path, monkeypatch):

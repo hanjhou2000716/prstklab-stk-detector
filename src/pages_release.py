@@ -228,6 +228,7 @@ def restore_public_release(
         # alerts from earlier releases, so fetch those files before replacing
         # the local data tree.  Otherwise a Pages preservation run can keep
         # the index while silently deleting the historical files it points to.
+        historical_restore_errors = 0
         alert_index_raw_path = paths.get("alert-index.json")
         if isinstance(alert_index_raw_path, str) and alert_index_raw_path.strip():
             alert_index_path = (staging / Path(alert_index_raw_path)).resolve()
@@ -288,7 +289,18 @@ def restore_public_release(
                     for raw_path, expected in sorted(alert_specs.items())
                 }
                 for future in as_completed(futures):
-                    raw_path, body = future.result()
+                    try:
+                        raw_path, body = future.result()
+                    except PagesReleaseError:
+                        # The published index can outlive an individual
+                        # immutable alert on a partially propagated Pages
+                        # bundle.  Core release artifacts and the index are
+                        # still verified strictly; an unavailable historical
+                        # target must remain fail-closed in the browser, but
+                        # it must not prevent deploying a newer UI against
+                        # the verified last-good data bundle.
+                        historical_restore_errors += 1
+                        continue
                     target = (data_root / raw_path).resolve()
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.write_bytes(body)
@@ -358,6 +370,7 @@ def restore_public_release(
         "release_id": str(manifest.get("release_id") or ""),
         "snapshot_id": str(manifest.get("market_snapshot_id") or ""),
         "artifact_count": len(paths),
+        "historical_alert_missing": historical_restore_errors,
     }
 
 

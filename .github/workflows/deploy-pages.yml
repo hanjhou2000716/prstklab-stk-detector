@@ -6,6 +6,9 @@ on:
     paths:
       - site/**
       - '!site/data/**'
+      # Pages must redeploy when the last-good data restore logic changes;
+      # otherwise a merged pages_release fix cannot reach the static app.
+      - src/pages_release.py
       - .github/workflows/deploy-pages.yml
   workflow_dispatch:
 
