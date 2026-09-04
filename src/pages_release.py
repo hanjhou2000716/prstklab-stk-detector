@@ -194,6 +194,7 @@ def restore_public_release(
         raise PagesReleaseError("public manifest artifact paths/hashes are missing")
 
     staging = root / ".pages-public-release-staging"
+    historical_alert_paths: list[str] = []
     if staging.exists():
         shutil.rmtree(staging)
     staging.mkdir(parents=True, exist_ok=True)
@@ -221,6 +222,52 @@ def restore_public_release(
                 raise PagesReleaseError(f"public artifact hash mismatch: {name}")
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(body)
+        # ``artifact_paths`` contains only the alert files created by the
+        # selected release.  The verified alert-index also retains immutable
+        # alerts from earlier releases, so fetch those files before replacing
+        # the local data tree.  Otherwise a Pages preservation run can keep
+        # the index while silently deleting the historical files it points to.
+        alert_index_raw_path = paths.get("alert-index.json")
+        if isinstance(alert_index_raw_path, str) and alert_index_raw_path.strip():
+            alert_index_path = (staging / Path(alert_index_raw_path)).resolve()
+            if not alert_index_path.is_relative_to(staging.resolve()) or not alert_index_path.is_file():
+                raise PagesReleaseError("public alert index missing during history restore")
+            try:
+                alert_index = json.loads(alert_index_path.read_text(encoding="utf-8"))
+            except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+                raise PagesReleaseError(f"public alert index invalid: {type(exc).__name__}") from exc
+            rows = alert_index.get("alerts") if isinstance(alert_index, dict) else None
+            if not isinstance(rows, list):
+                raise PagesReleaseError("public alert index alerts are missing")
+            data_root = staging / "data"
+            data_root_resolved = data_root.resolve()
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                raw_path = row.get("path")
+                expected = row.get("sha256")
+                if not isinstance(raw_path, str) or not raw_path.strip():
+                    continue
+                if not isinstance(expected, str) or len(expected) != 64:
+                    continue
+                relative = Path(raw_path)
+                target = (data_root / relative).resolve()
+                if not target.is_relative_to(data_root_resolved) or raw_path.startswith("/") or ".." in relative.parts:
+                    raise PagesReleaseError("public historical alert path is invalid")
+                url = f"{base}/data/{raw_path.lstrip('/')}"
+                try:
+                    alert_response = requests.get(url, timeout=timeout, headers=headers)
+                    alert_response.raise_for_status()
+                    body = bytes(alert_response.content)
+                except (requests.RequestException, TypeError, ValueError) as exc:
+                    raise PagesReleaseError(
+                        f"public historical alert unavailable: {type(exc).__name__}"
+                    ) from exc
+                if hashlib.sha256(body).hexdigest() != expected:
+                    raise PagesReleaseError("public historical alert hash mismatch")
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(body)
+                historical_alert_paths.append((Path("data") / relative).as_posix())
         data_root = root / "site" / "data"
         data_root.mkdir(parents=True, exist_ok=True)
         for child in data_root.iterdir():
@@ -247,7 +294,8 @@ def restore_public_release(
     restored_bytes: dict[str, bytes] = {}
     site_root = root / "site"
     site_root_resolved = site_root.resolve()
-    for raw_path in paths.values():
+    restore_paths = [*paths.values(), *historical_alert_paths]
+    for raw_path in dict.fromkeys(restore_paths):
         if not isinstance(raw_path, str) or not raw_path.strip():
             raise PagesReleaseError("public manifest path missing during validation")
         target = (site_root / raw_path).resolve()
