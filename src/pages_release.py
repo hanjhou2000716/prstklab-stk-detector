@@ -27,6 +27,8 @@ from typing import Any
 
 import requests
 
+from .release_manifest import verify_release_files
+
 
 class PagesReleaseError(RuntimeError):
     """Raised when the immutable release history cannot be inspected safely."""
@@ -156,6 +158,68 @@ def _validate(root: Path, *, require_production_research: bool) -> tuple[bool, d
     return ready, payload
 
 
+def _fetch_public_manifest(*, public_url: str, timeout: float = 15.0) -> dict[str, Any]:
+    """Fetch the small public manifest used to bind a preserved data tree."""
+    base = public_url.rstrip("/")
+    if not base.startswith("https://"):
+        raise PagesReleaseError("public release URL must use HTTPS")
+    try:
+        response = requests.get(
+            f"{base}/data/release-manifest.json?pages_restore=1",
+            timeout=timeout,
+            headers={
+                "Accept": "application/json",
+                "Cache-Control": "no-cache, no-store",
+                "Pragma": "no-cache",
+                "User-Agent": "PRStK-pages-release",
+            },
+        )
+        response.raise_for_status()
+        manifest = response.json()
+    except (requests.RequestException, ValueError, TypeError) as exc:
+        raise PagesReleaseError(f"public manifest unavailable: {type(exc).__name__}") from exc
+    if not isinstance(manifest, dict) or manifest.get("status") != "ready":
+        raise PagesReleaseError("public manifest status is not ready")
+    return manifest
+
+
+def _restore_matching_data_release(
+    *, root: Path, commit: str, public_url: str, timeout: float = 15.0
+) -> dict[str, Any] | None:
+    """Reuse an exact data-release copy instead of downloading its full history.
+
+    The deploy checkout already contains the append-only data branch.  When its
+    immutable manifest and every declared artifact hash match the currently
+    published manifest, the local tree is byte-bound to the public release.
+    This preserves historical alert files without issuing thousands of Pages
+    requests, while a mismatch still falls back to strict remote restoration.
+    """
+    if not _restore_archive(root, commit):
+        return None
+    manifest_path = root / "site" / "data" / "release-manifest.json"
+    try:
+        local_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError, TypeError):
+        return None
+    if not isinstance(local_manifest, dict) or local_manifest.get("status") != "ready":
+        return None
+    try:
+        public_manifest = _fetch_public_manifest(public_url=public_url, timeout=timeout)
+    except PagesReleaseError:
+        return None
+    for key in ("release_id", "market_snapshot_id", "artifact_paths", "artifact_hashes"):
+        if local_manifest.get(key) != public_manifest.get(key):
+            return None
+    errors = verify_release_files(local_manifest, root=root / "site")
+    if errors:
+        return None
+    return {
+        "release_id": str(local_manifest.get("release_id") or ""),
+        "snapshot_id": str(local_manifest.get("market_snapshot_id") or ""),
+        "artifact_count": len(local_manifest.get("artifact_paths") or {}),
+    }
+
+
 def restore_public_release(
     *, root: Path | str = Path("."), public_url: str, timeout: float = 15.0
 ) -> dict[str, Any]:
@@ -169,26 +233,13 @@ def restore_public_release(
     """
     root = Path(root).resolve()
     base = public_url.rstrip("/")
-    if not base.startswith("https://"):
-        raise PagesReleaseError("public release URL must use HTTPS")
     headers = {
         "Accept": "application/json",
         "Cache-Control": "no-cache, no-store",
         "Pragma": "no-cache",
         "User-Agent": "PRStK-pages-release",
     }
-    try:
-        response = requests.get(
-            f"{base}/data/release-manifest.json?pages_restore=1",
-            timeout=timeout,
-            headers=headers,
-        )
-        response.raise_for_status()
-        manifest = response.json()
-    except (requests.RequestException, ValueError, TypeError) as exc:
-        raise PagesReleaseError(f"public manifest unavailable: {type(exc).__name__}") from exc
-    if not isinstance(manifest, dict) or manifest.get("status") != "ready":
-        raise PagesReleaseError("public manifest status is not ready")
+    manifest = _fetch_public_manifest(public_url=public_url, timeout=timeout)
     paths = manifest.get("artifact_paths")
     hashes = manifest.get("artifact_hashes")
     if not isinstance(paths, dict) or not isinstance(hashes, dict):
@@ -438,6 +489,21 @@ def restore_latest_valid(
             "status": str(manifest.get("status") or "invalid"),
             "validation_errors": list(manifest.get("validation_errors") or [])[:5],
         })
+
+    if preserve_public_url and commits:
+        local_preserved = _restore_matching_data_release(
+            root=root,
+            commit=commits[0],
+            public_url=preserve_public_url,
+        )
+        if local_preserved is not None:
+            return {
+                "publish": True,
+                "preserved_public": True,
+                "reason": "preserved_matching_data_release",
+                **local_preserved,
+                "rejected_count": len(rejected),
+            }
 
     if preserve_public_url:
         try:
