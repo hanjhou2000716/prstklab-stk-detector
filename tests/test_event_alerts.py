@@ -1,4 +1,4 @@
-from src.event_alerts import _impact_confirmation, build_event_snapshot, detect_major_event
+from src.event_alerts import _impact_confirmation, _price_signal_thresholds, build_event_snapshot, detect_major_event
 from src.official_event_monitor import select_official_event
 from src.scheduled_brief import build_brief
 
@@ -37,6 +37,51 @@ def test_snapshot_explains_overseas_price_signal_below_threshold():
         "intraday_threshold": 1.0,
         "taiwan_session": False,
     }]
+
+
+def test_us_index_daily_thresholds_are_two_percent():
+    for ticker in ("SOX", "NASDAQ", "DJIA"):
+        daily, intraday, taiwan_session = _price_signal_thresholds({"ticker": ticker})
+        assert daily == 2.0
+        assert intraday == 1.0
+        assert taiwan_session is False
+
+
+def test_sox_at_two_percent_is_a_market_signal():
+    below = build_event_snapshot({"taiwan": [], "us": []}, [], indices=[{
+        "ticker": "SOX", "name": "費城半導體指數", "price": 100,
+        "change_percent": 1.99, "freshness": "live",
+    }])
+    at_threshold = build_event_snapshot({"taiwan": [], "us": []}, [], indices=[{
+        "ticker": "SOX", "name": "費城半導體指數", "price": 100,
+        "change_percent": 2.0, "freshness": "live",
+    }])
+    assert below["items"] == []
+    assert below["suppressed_signals"][0]["reason"] == "below_threshold"
+    assert at_threshold["items"][0]["instrument"]["ticker"] == "SOX"
+
+
+def test_djia_and_nasdaq_at_two_percent_are_market_signals():
+    snapshot = build_event_snapshot({"taiwan": [], "us": []}, [], indices=[
+        {"ticker": "DJIA", "name": "道瓊工業指數", "price": 100, "change_percent": 2.0, "freshness": "live"},
+        {"ticker": "NASDAQ", "name": "那斯達克綜合指數", "price": 100, "change_percent": 2.0, "freshness": "live"},
+    ])
+    assert {item["instrument"]["ticker"] for item in snapshot["items"]} == {"DJIA", "NASDAQ"}
+    assert "道瓊" in next(item for item in snapshot["items"] if item["instrument"]["ticker"] == "DJIA")["brief_title"]
+
+
+def test_us_index_fifteen_minute_threshold_is_one_percent():
+    for ticker in ("SOX", "NASDAQ", "DJIA"):
+        below = build_event_snapshot({"taiwan": [], "us": []}, [], indices=[{
+            "ticker": ticker, "name": ticker, "price": 100,
+            "change_percent": 0.2, "change_15m_percent": 0.99, "freshness": "live",
+        }])
+        at_threshold = build_event_snapshot({"taiwan": [], "us": []}, [], indices=[{
+            "ticker": ticker, "name": ticker, "price": 100,
+            "change_percent": 0.2, "change_15m_percent": 1.0, "freshness": "live",
+        }])
+        assert below["items"] == []
+        assert at_threshold["items"][0]["instrument"]["ticker"] == ticker
 
 
 def _live_watch_quote(ticker: str, change_percent: float) -> dict[str, object]:

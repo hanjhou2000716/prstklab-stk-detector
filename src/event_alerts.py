@@ -156,8 +156,9 @@ def _related_indices(indices: list[dict[str, Any]], excluded_ticker: str) -> lis
     ticker = excluded_ticker.upper()
     preferred = {
         "TAIEX": ("SOX", "NASDAQ", "NIKKEI", "KOSPI"),
-        "NASDAQ": ("SOX", "S&P 500", "TAIEX"),
-        "SOX": ("NASDAQ", "TAIEX", "S&P 500"),
+        "NASDAQ": ("SOX", "DJIA", "S&P 500", "TAIEX"),
+        "SOX": ("NASDAQ", "DJIA", "TAIEX", "S&P 500"),
+        "DJIA": ("NASDAQ", "S&P 500", "SOX", "TAIEX"),
         "NIKKEI": ("KOSPI", "NASDAQ", "SOX"),
         "KOSPI": ("NIKKEI", "NASDAQ", "SOX"),
         "BRENT": ("GOLD", "WTI", "NASDAQ", "SOX"),
@@ -270,12 +271,16 @@ def _signal_market_context(ticker: str) -> tuple[str, str]:
             "觀察台股權值與電子類股是否與台指期、費半維持同方向。",
         ),
         "NASDAQ": (
-            "可能連動費半、S&P 500 與下一交易日台股科技開盤；以同步報價確認。",
+            "可能連動費半、道瓊、S&P 500 與下一交易日台股科技開盤；以同步報價確認。",
             "觀察美國成長股、半導體權值及台股科技開盤是否出現同步或分歧。",
         ),
         "SOX": (
-            "可能連動 Nasdaq、台股半導體權值與亞洲科技指數；以同步報價確認。",
+            "可能連動 Nasdaq、道瓊、台股半導體權值與亞洲科技指數；以同步報價確認。",
             "觀察半導體上下游、台積電與台股電子權值是否跟隨或出現背離。",
+        ),
+        "DJIA": (
+            "可能連動 Nasdaq、費半與全球風險偏好；以同步報價確認，不預設因果。",
+            "觀察道瓊與 Nasdaq、費半是否同向或分歧，並核對防禦型與成長型權重差異。",
         ),
         "NIKKEI": (
             "可能連動韓股、Nasdaq 與亞洲科技權值；以各市場開收盤報價確認。",
@@ -375,8 +380,9 @@ def _price_signal_thresholds(index: dict[str, Any]) -> tuple[float, float, bool]
             pass
     daily = {
         "TAIEX": 1.5,
-        "SOX": 3.0,
+        "SOX": 2.0,
         "NASDAQ": 2.0,
+        "DJIA": 2.0,
         "WTI": float(threshold_rule("oilDailyAbsoluteMovePercent")),
         "BRENT": float(threshold_rule("oilDailyAbsoluteMovePercent")),
         "GOLD": float(threshold_rule("goldDailyAbsoluteMovePercent")),
@@ -517,6 +523,8 @@ def _price_signal(
         label = "Nasdaq價格訊號觸發"
     elif ticker == "SOX":
         label = "費半價格訊號觸發"
+    elif ticker == "DJIA":
+        label = "道瓊價格訊號觸發"
     else:
         label = f"{ticker}價格訊號觸發"
 
@@ -899,7 +907,7 @@ def build_event_snapshot(
         if (reason := _price_signal_suppression(item))
     ]
     signals = [signal for item in fresh_indices if (signal := _price_signal(item, fresh_indices))]
-    priority = {"TAIEX": 0, "SOX": 1, "NASDAQ": 2}
+    priority = {"TAIEX": 0, "SOX": 1, "NASDAQ": 2, "DJIA": 3}
     signals.sort(key=lambda item: (
         priority.get(str(item["instrument"].get("ticker")), 9),
         -abs(float(item["instrument"].get("change_percent", 0))),

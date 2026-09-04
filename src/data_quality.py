@@ -132,7 +132,7 @@ def score_quote(
         thresholds=config,
     )
     observed_freshness = str(quote.get("freshness") or base["freshness"]).strip().lower()
-    if observed_freshness in {"stale", "unavailable", "unknown"}:
+    if observed_freshness in {"recent_close", "delayed", "stale", "unavailable", "unknown"}:
         base["freshness"] = observed_freshness
         base["data_quality_score"] = 0.0
         base["alert_eligible"] = False

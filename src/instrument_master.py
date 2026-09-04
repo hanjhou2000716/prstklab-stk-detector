@@ -52,6 +52,8 @@ DEFAULT_INSTRUMENTS = (
     Instrument("us:tsm", "TSM", "Taiwan Semiconductor ADR", "us", "equity", "USD", "America/New_York", ("TSM",), ("台積電ADR",)),
     Instrument("us:nvda", "NVDA", "NVIDIA", "us", "equity", "USD", "America/New_York", ("NVDA",)),
     Instrument("us:nasdaq", "NASDAQ", "NASDAQ Composite", "us", "index", "USD", "America/New_York", ("^IXIC",), ("Nasdaq",)),
+    Instrument("us:djia", "DJIA", "Dow Jones Industrial Average", "us", "index", "USD", "America/New_York", ("^DJI",), ("道瓊工業指數", "Dow Jones")),
+    Instrument("us:sox", "SOX", "Philadelphia Semiconductor Index", "us", "index", "USD", "America/New_York", ("^SOX",), ("費城半導體指數", "費半")),
     Instrument("global:btc", "BTC", "Bitcoin", "global", "crypto", "USD", "UTC", ("BTC-USD", "BTCUSDT"), ("比特幣",)),
     Instrument("global:eth", "ETH", "Ethereum", "global", "crypto", "USD", "UTC", ("ETH-USD", "ETHUSDT"), ("以太坊",)),
 )

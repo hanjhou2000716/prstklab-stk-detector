@@ -59,6 +59,22 @@ def test_midday_briefing_includes_japan_korea_and_public_observation_cards():
     assert "美國10年債殖利率" in briefing["observations"][3]["event"]
 
 
+def test_briefing_markets_include_djia_alongside_nasdaq_and_sox():
+    briefing = build_briefing_snapshot({
+        "indices": [
+            {"ticker": "NASDAQ", "name": "那斯達克綜合指數", "price": 100},
+            {"ticker": "SOX", "name": "費城半導體指數", "price": 200},
+            {"ticker": "DJIA", "name": "道瓊工業指數", "price": 300},
+        ],
+        "quotes": [],
+        "macro_quotes": [],
+        "events": {"items": []},
+    }, "us_open")
+    assert {item["ticker"] for item in briefing["markets"]} == {"NASDAQ", "SOX", "DJIA"}
+    us_topic = next(topic for topic in briefing["market_topics"] if topic["title"] == "美股相關")
+    assert {item["ticker"] for item in us_topic["items"]} == {"NASDAQ", "SOX", "DJIA"}
+
+
 def test_midday_briefing_explains_cross_market_move_and_technical_location():
     context = {"window_days": 20, "long_window_days": 60, "low": 100, "high": 120, "long_low": 90, "long_high": 130, "position_pct": 90, "zone": "接近20日壓力區", "as_of": "2026-08-03", "status": "ok"}
     snapshot = {

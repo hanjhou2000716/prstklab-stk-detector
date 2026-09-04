@@ -1,5 +1,7 @@
 from datetime import UTC, datetime
 
+from src.adapters.catalog import build_adapter_catalog
+from src.market_data_adapter import bind_adapter_contract
 from src.production_evidence import (
     bind_market_evidence,
     quality_summary,
@@ -51,6 +53,55 @@ def test_fresh_cross_checked_quote_is_alert_eligible() -> None:
     )
     assert items[0]["alert_eligible"] is True
     assert items[0]["data_quality_score"] == 100
+
+
+def test_cross_checked_us_index_can_alert_through_display_only_yahoo() -> None:
+    quote = {
+        "ticker": "SOX",
+        "name": "費城半導體指數",
+        "market": "us",
+        "price": 12000,
+        "previous_close": 11700,
+        "change_percent": 2.56,
+        "quote_time": "2026-08-05T01:05:00+00:00",
+        "fetched_at": "2026-08-05T01:06:00+00:00",
+        "freshness": "live",
+        "cross_checked": True,
+        "quote_source": "Yahoo Finance public 5-minute quote",
+        "source_label": "Yahoo",
+        "source_url": "https://finance.yahoo.com/quote/%5ESOX",
+        "source_domain": "finance.yahoo.com",
+    }
+    first = bind_market_evidence([quote], now=datetime(2026, 8, 5, 1, 10, tzinfo=UTC))[0]
+    bound = bind_adapter_contract([first], build_adapter_catalog())[0]
+    final = bind_market_evidence([bound], now=datetime(2026, 8, 5, 1, 10, tzinfo=UTC))[0]
+    assert final["adapter_alert_policy"] == "display_only"
+    assert final["adapter_policy_exception"] == "crosschecked_market_index"
+    assert final["alert_eligible"] is True
+
+
+def test_uncross_checked_yahoo_index_remains_closed() -> None:
+    quote = {
+        "ticker": "DJIA",
+        "name": "道瓊工業指數",
+        "market": "us",
+        "price": 40000,
+        "previous_close": 39200,
+        "change_percent": 2.04,
+        "quote_time": "2026-08-05T01:05:00+00:00",
+        "fetched_at": "2026-08-05T01:06:00+00:00",
+        "freshness": "live",
+        "cross_checked": False,
+        "quote_source": "Yahoo Finance public 5-minute quote",
+        "source_label": "Yahoo",
+        "source_url": "https://finance.yahoo.com/quote/%5EDJI",
+        "source_domain": "finance.yahoo.com",
+    }
+    first = bind_market_evidence([quote], now=datetime(2026, 8, 5, 1, 10, tzinfo=UTC))[0]
+    bound = bind_adapter_contract([first], build_adapter_catalog())[0]
+    final = bind_market_evidence([bound], now=datetime(2026, 8, 5, 1, 10, tzinfo=UTC))[0]
+    assert final["alert_eligible"] is False
+    assert "adapter_policy_display_only" in final["quality_reasons"]
 
 
 def test_quality_summary_counts_stale_and_verified_quotes() -> None:
