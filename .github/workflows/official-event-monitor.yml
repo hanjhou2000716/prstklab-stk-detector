@@ -158,7 +158,10 @@ jobs:
             echo "- failed_count: ${FAILED_COUNT:-unknown}"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Persist Telegram delivery receipt
-        if: always() && steps.send.outputs.sent == 'true'
+        # A failed recipient attempt must still reach the receipt backend so
+        # the next run can retry only pending recipients and the dashboard can
+        # distinguish a transport failure from a skipped send.
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped'
         continue-on-error: true
         env:
           RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}

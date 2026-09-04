@@ -60,6 +60,17 @@ def test_production_receipts_bind_release_and_snapshot():
         assert "python -m src.delivery_callback" in workflow
 
 
+def test_failed_notification_attempts_still_persist_receipts():
+    scheduled = _workflow("scheduled-brief.yml")
+    official = _workflow("official-event-monitor.yml")
+    assert "steps.send_brief.outcome != 'skipped'" in scheduled.split(
+        "- name: Persist scheduled-brief delivery receipt", 1
+    )[1].split("- name:", 1)[0]
+    assert "steps.send.outcome != 'skipped'" in official.split(
+        "- name: Persist Telegram delivery receipt", 1
+    )[1].split("- name:", 1)[0]
+
+
 def test_scoped_legacy_photo_input_is_text_only_and_explicitly_single_recipient():
     workflow = _workflow("notify.yml")
     assert "text acceptance requires an explicit single test_chat_id" in workflow

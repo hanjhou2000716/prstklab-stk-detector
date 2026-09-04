@@ -284,7 +284,9 @@ jobs:
             echo "- failed_count: ${FAILED_COUNT:-unknown}"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Persist scheduled-brief delivery receipt
-        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome == 'success'
+        # Persist failed attempts as well as successful attempts.  This keeps
+        # the existing claim/receipt chain aware of retryable recipients.
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped'
         continue-on-error: true
         env:
           DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
