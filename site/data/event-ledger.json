@@ -10455,7 +10455,7 @@
       "location_fingerprint": "",
       "action_fingerprint": "",
       "first_discovered_at": "2026-09-04T08:56:17.754386+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-09-04T08:56:34.851385+00:00",
       "escalated": false,
       "risk_level": "R0",
       "risk_rank": 0,
@@ -10465,9 +10465,97 @@
       "last_title": "Fed Bets Ease on Waller: Stocks Rise Most in Month – US Market Wrap https://features.financialjuice.com/?p=20331&preview=true 📈 StockRocket 自動化新聞監控系統",
       "compound_item_id": null,
       "compound_event_cluster_key": null,
-      "last_decision": null,
-      "decision_history": [],
-      "updated_at": "2026-09-04T08:56:17.754386+00:00"
+      "last_decision": {
+        "recorded_at": "2026-09-04T08:56:33.814952+00:00",
+        "allowed": true,
+        "status": "eligible",
+        "reason": "new_theme",
+        "reasons": [],
+        "notification_theme_key": "financialjuice-cluster:fj-cluster-7329717a002254a3194e95ef",
+        "event_key": "522fb3e3303580a3d5743612a0fc181d",
+        "risk": "R0",
+        "theme_window": 7200,
+        "material_state_changed": true,
+        "last_notified_at": null,
+        "taiwan_priority": 4
+      },
+      "decision_history": [
+        {
+          "recorded_at": "2026-09-04T08:56:33.814952+00:00",
+          "allowed": true,
+          "status": "eligible",
+          "reason": "new_theme",
+          "reasons": [],
+          "notification_theme_key": "financialjuice-cluster:fj-cluster-7329717a002254a3194e95ef",
+          "event_key": "522fb3e3303580a3d5743612a0fc181d",
+          "risk": "R0",
+          "theme_window": 7200,
+          "material_state_changed": true,
+          "last_notified_at": null,
+          "taiwan_priority": 4
+        }
+      ],
+      "updated_at": "2026-09-04T08:56:34.851385+00:00",
+      "delivery_history": [
+        {
+          "event_key": "522fb3e3303580a3d5743612a0fc181d",
+          "notification_id": "fj-item-9b66bf8ce1d8e1f10429",
+          "sent_at": "2026-09-04T08:56:34.851385+00:00",
+          "importance": "R0",
+          "alert_type": "unknown",
+          "lifecycle_state": "pending_confirmation",
+          "reason": "financialjuice_realtime_monitor",
+          "notification_theme_key": "financialjuice-cluster:fj-cluster-7329717a002254a3194e95ef",
+          "risk": "R0",
+          "taiwan_priority": 4,
+          "material_state_changed": true,
+          "release_id": "release-cc8950bc246ceaf3",
+          "snapshot_id": "c807bb8b6cf60d1b",
+          "delivery_status": "delivered",
+          "observation_id_hash": "7e674447840bf626101d3f46f735cb36c6449517dd136318cfde3a15945c8cea",
+          "item_id": "fj-item-9b66bf8ce1d8e1f10429",
+          "event_cluster_key": "fj-cluster-7329717a002254a3194e95ef",
+          "vendor_importance": 10,
+          "prstk_risk": {
+            "prstk_risk_level": "R0",
+            "risk_rank": 0,
+            "risk_reason": "non_material_or_unclassified",
+            "vendor_importance": 10,
+            "official_confirmed": false,
+            "market_sync_confirmed": false,
+            "freshness_blocked": false,
+            "freshness_reason": null,
+            "notification_eligible": false,
+            "high_priority": false
+          },
+          "notification_reason": "vendor_priority_importance_ge_8、risk_threshold_not_reached",
+          "parser_version": "financialjuice-v1",
+          "received_at": "2026-09-04T08:56:17.403838+00:00",
+          "notification_key": "financialjuice:48c8386945593f375c81ad47",
+          "delivery_receipts": [
+            {
+              "notification_key": "financialjuice:48c8386945593f375c81ad47",
+              "recipient_hash": "7a30574fc065",
+              "delivery_status": "delivered",
+              "message_id": 1087,
+              "error_class": null,
+              "release_id": "release-cc8950bc246ceaf3",
+              "snapshot_id": "c807bb8b6cf60d1b",
+              "observation_id": "fj-item-9b66bf8ce1d8e1f10429",
+              "telegram_file_id_hash": null
+            }
+          ],
+          "ingested_at": "2026-09-04T08:56:17.403838+00:00",
+          "candidate_at": "2026-09-04T08:56:17.403846+00:00",
+          "release_ready_at": "2026-09-04T08:56:33.838396+00:00",
+          "telegram_attempted_at": "2026-09-04T08:56:33.840933+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "trace_id": "official-fj-item-9b66bf8ce1d8e1f10429"
+        }
+      ],
+      "last_theme_notification_at": "2026-09-04T08:56:34.851385+00:00",
+      "last_notified_at": "2026-09-04T08:56:34.851385+00:00"
     }
   },
   "delivery_claims": {
@@ -10660,6 +10748,25 @@
       "lease_until": null,
       "run_id_hash": "9c2aff356ba1",
       "updated_at": "2026-09-04T08:17:02.929414+00:00",
+      "failed_recipient_hashes": []
+    },
+    "financialjuice:48c8386945593f375c81ad47": {
+      "notification_key": "financialjuice:48c8386945593f375c81ad47",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "delivered_recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "claimed_at": "2026-09-04T08:56:33.841615+00:00",
+      "lease_until": null,
+      "run_id_hash": "23af8ef708be",
+      "updated_at": "2026-09-04T08:56:34.830517+00:00",
       "failed_recipient_hashes": []
     }
   }
