@@ -30,6 +30,47 @@ def test_scheduled_brief_prioritises_eligible_financialjuice_event() -> None:
     assert scheduled_delivery._pick_event(snapshot, "morning") == event
 
 
+def test_scheduled_selection_skips_fj_without_release_alert_and_uses_next_candidate(monkeypatch) -> None:
+    first = {
+        "source_key": "financialjuice", "notification_status": "eligible",
+        "vendor_priority_notification": True, "notification_id": "missing-alert",
+        "title": "First FJ event",
+    }
+    second = {
+        "source_key": "financialjuice", "notification_status": "eligible",
+        "vendor_priority_notification": True, "notification_id": "published-alert",
+        "title": "Second FJ event",
+    }
+    candidates = iter((first, second))
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args, **_kwargs: next(candidates, None))
+
+    class Ledger:
+        delivery_claims = {}
+
+        @staticmethod
+        def delivery_history():
+            return []
+
+        @staticmethod
+        def theme_decision(_event):
+            return {"allowed": True}
+
+        @staticmethod
+        def record_decision(*_args, **_kwargs):
+            return None
+
+        @staticmethod
+        def save():
+            return None
+
+    event, _budget, reason = scheduled_delivery._select_scheduled_candidate(
+        {"events": {"items": [first, second]}}, "morning", Ledger(),
+        release_alert_ids={"published-alert"},
+    )
+    assert event == second
+    assert reason == "candidate_ready"
+
+
 def test_financialjuice_history_flattens_redacted_recipient_receipts() -> None:
     history = scheduled_delivery._financialjuice_delivery_history([
         {

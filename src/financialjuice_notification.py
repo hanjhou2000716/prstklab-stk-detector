@@ -67,6 +67,12 @@ def _compress_fj_sentence(value: str) -> str:
     )
     text = re.sub(r"(?<=[\u4e00-\u9fff])\s+(?=[A-Za-z0-9])", "", text)
     text = re.sub(r"(?<=[A-Za-z0-9])\s+(?=[\u4e00-\u9fff])", "", text)
+    text = re.sub(
+        r"^(?P<entity>[A-Za-z0-9][\w.-]*)\s*將與\s*(?P<partner>[A-Za-z][\w.-]*)\s*"
+        r"簽署超過\s*(?P<amount>[\d,]+)\s*億美元合約。?$",
+        r"\g<entity>與\g<partner>簽約逾\g<amount>億美元。",
+        text,
+    )
     text = text.replace("其已", "").replace("已超過", "逾")
     text = text.replace("合約營收總額", "合約營收")
     text = text.replace("據報導", "")
@@ -102,8 +108,10 @@ def financialjuice_notification_key(event: dict[str, Any]) -> str:
     return f"financialjuice:{hashlib.sha256(material.encode('utf-8')).hexdigest()[:24]}"
 
 
-def financialjuice_caption(event: dict[str, Any], *, limit: int = MAX_FINANCIALJUICE_CAPTION) -> str:
-    """Build the short caption without turning vendor importance into risk."""
+def financialjuice_public_short_message(
+    event: dict[str, Any], *, limit: int = MAX_FINANCIALJUICE_CAPTION,
+) -> str:
+    """Build the one canonical public FJ message used by every consumer."""
     # The priority projection's canonical ``event`` is the parsed rich
     # semantic fact.  Keep title/brief_title only as legacy fallbacks so a
     # high-importance notification does not collapse into a generic label.
@@ -111,6 +119,13 @@ def financialjuice_caption(event: dict[str, Any], *, limit: int = MAX_FINANCIALJ
     if not headline:
         return ""
     importance = event.get("vendor_importance")
+    if importance in (None, ""):
+        legacy_score = re.search(
+            r"FJ[^0-9]{0,40}(\d+(?:\.\d+)?)\s*/\s*10",
+            _text(event.get("brief_title")), re.IGNORECASE,
+        )
+        if legacy_score:
+            importance = legacy_score.group(1)
     suffix = f"FJ {importance}/10" if importance is not None else "FJ 待核對"
     impact = _text(event.get("possible_impact") or event.get("possible_linkage"))
     content = f"🟣 {suffix}｜{headline}"
@@ -123,6 +138,11 @@ def financialjuice_caption(event: dict[str, Any], *, limit: int = MAX_FINANCIALJ
         prstk_risk_level=canonical_prstk_risk_level(event),
     )
     return _bounded(raw, limit)
+
+
+def financialjuice_caption(event: dict[str, Any], *, limit: int = MAX_FINANCIALJUICE_CAPTION) -> str:
+    """Backward-compatible alias for the canonical public FJ message."""
+    return financialjuice_public_short_message(event, limit=limit)
 
 
 def _history_delivered(
@@ -323,5 +343,6 @@ __all__ = [
     "MAX_FINANCIALJUICE_CAPTION",
     "deliver_financialjuice_event",
     "financialjuice_caption",
+    "financialjuice_public_short_message",
     "financialjuice_notification_key",
 ]

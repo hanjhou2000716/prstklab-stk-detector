@@ -244,6 +244,8 @@ def _select_scheduled_candidate(
     snapshot: dict[str, Any],
     slot: str,
     ledger: EventLedger,
+    *,
+    release_alert_ids: set[str] | None = None,
 ) -> tuple[dict[str, Any] | None, dict[str, Any], str]:
     """Select the first sendable candidate without letting one suppression starve the slot."""
     excluded: set[str] = set()
@@ -261,6 +263,24 @@ def _select_scheduled_candidate(
         if not identity:
             last_reason = "notification_key_missing"
             break
+        if release_alert_ids is not None:
+            alert_id = str(
+                event.get("notification_id")
+                or event.get("alert_id")
+                or event.get("event_cluster_key")
+                or event.get("event_key")
+                or event.get("item_id")
+                or ""
+            ).strip()
+            if not alert_id or alert_id not in release_alert_ids:
+                last_reason = "alert_artifact_missing"
+                if hasattr(ledger, "record_decision"):
+                    ledger.record_decision(event, {
+                        "allowed": False, "status": "suppressed", "reason": last_reason,
+                    })
+                    ledger.save()
+                excluded.add(identity)
+                continue
         if event.get("alert_eligible") is False:
             reasons = event.get("quality_reasons") or event.get("suppression_reasons") or []
             last_reason = str(next((item for item in reasons if str(item).strip()), "quality_gate_blocked"))
@@ -304,6 +324,36 @@ def _select_scheduled_candidate(
             continue
         return event, budget, "candidate_ready"
     return None, {"allowed": True, "reason": last_reason, "event_key": ""}, last_reason
+
+
+def _release_alert_ids(manifest_path: Path, manifest: dict[str, Any]) -> set[str] | None:
+    """Return alert identities proven present in the release-bound index."""
+    paths = manifest.get("artifact_paths")
+    index_name = "alert-index.json"
+    relative = paths.get(index_name) if isinstance(paths, dict) else None
+    if not isinstance(relative, str) or not relative.strip():
+        # Minimal adapter doubles and releases without event artifacts do not
+        # advertise an alert index.  The real release gate always includes it
+        # whenever event delivery is possible.
+        return None
+    site_root = manifest_path.parent.parent if manifest_path.parent.name == "data" else manifest_path.parent
+    path = site_root / relative
+    try:
+        index = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return set()
+    if not isinstance(index, dict) or not isinstance(index.get("alerts"), list):
+        return set()
+    release_id = str(manifest.get("release_id") or "")
+    snapshot_id = str(manifest.get("market_snapshot_id") or "")
+    return {
+        str(row.get("notification_id") or "").strip()
+        for row in index["alerts"]
+        if isinstance(row, dict)
+        and str(row.get("release_id") or "") == release_id
+        and str(row.get("snapshot_id") or snapshot_id) == snapshot_id
+        and str(row.get("notification_id") or "").strip()
+    }
 
 
 def prepare(slot: str, snapshot_path: Path) -> dict:
@@ -500,7 +550,10 @@ def send(
         raise RuntimeError("Telegram configuration is incomplete")
     ledger = EventLedger()
     history = ledger.delivery_history()
-    event, budget, selection_reason = _select_scheduled_candidate(snapshot, slot, ledger)
+    release_alert_ids = _release_alert_ids(manifest_path, gate.manifest)
+    event, budget, selection_reason = _select_scheduled_candidate(
+        snapshot, slot, ledger, release_alert_ids=release_alert_ids,
+    )
     event_risk = canonical_prstk_risk_level(event) if isinstance(event, dict) else ""
     effective_slot_key = str(slot_key or os.getenv("SCHEDULED_SLOT_KEY") or f"{datetime.now().astimezone().date().isoformat()}-{slot}")
     effective_run_id = str(run_id or os.getenv("GITHUB_RUN_ID", ""))

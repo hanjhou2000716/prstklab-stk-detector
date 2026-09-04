@@ -347,7 +347,7 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
   // Older immutable alert artifacts predate the headline aliases.  Fall
   // back to their preserved event text so historical Telegram links never
   // render an "undefined｜undefined" heading.
-  const headline = event.brief_title || event.title || event.event || `${event.short_label || "公開事件"}｜市場事件`;
+  const headline = event.public_short_message || event.brief_title || event.title || event.event || `${event.short_label || "公開事件"}｜市場事件`;
   setText("alert-headline", headline);
   const headlineNode = document.getElementById("alert-headline");
   if (headlineNode) headlineNode.className = `market-signal-title ${movementClass(headline)}`;
@@ -851,6 +851,7 @@ const renderExternalIntelligence = (snapshot) => {
   }
   content.innerHTML = rows.slice(0, 5).map((item) => {
     const source = escapeHtml(item.source || item.content_origin || "外部來源");
+    const isFinancialJuice = String(item.source_key || item.source || item.content_origin || "").toLowerCase() === "financialjuice";
     // Consume the canonical semantic projection.  The remaining fallbacks
     // are only for legacy snapshots; parsing and semantic selection stay
     // upstream in the release-bound event projection.
@@ -858,7 +859,11 @@ const renderExternalIntelligence = (snapshot) => {
     const semanticWhy = item.why_important || item.ai_commentary || item.summary || "目前尚無額外重要性說明，等待後續公開資料核對。";
     const semanticLinkage = item.possible_linkage || item.possible_impact || "尚無足夠公開資料判定連動。";
     const semanticObservation = item.stock_observation || item.watch || "等待官方後續確認，並觀察相關市場是否同步反應。";
-    const title = escapeHtml(item.title || item.headline || item.original_headline || semanticEvent);
+    const title = escapeHtml(
+      isFinancialJuice
+        ? (item.public_short_message || item.brief_title || semanticEvent)
+        : (item.title || item.headline || item.original_headline || semanticEvent),
+    );
     const semanticHtml = `<p><b>事件：</b>${escapeHtml(semanticEvent)}</p><p><b>為何重要：</b>${escapeHtml(semanticWhy)}</p><p><b>可能連動：</b>${escapeHtml(semanticLinkage)}</p><p><b>股市觀察：</b>${escapeHtml(semanticObservation)}</p>`;
     const official = item.official_confirmed === true;
     const synced = item.market_sync_confirmed === true;
@@ -868,7 +873,6 @@ const renderExternalIntelligence = (snapshot) => {
     const priorityText = priorityStatus
       ? `${priorityLabels[priorityStatus] || "供應商優先：待核對"}${priority?.notification_reason ? `｜${escapeHtml(priority.notification_reason)}` : ""}`
       : "供應商優先：尚未產生決策";
-    const isFinancialJuice = String(item.source_key || item.source || item.content_origin || "").toLowerCase() === "financialjuice";
     const vendorImportance = item.vendor_importance ?? priority?.vendor_importance;
     const prstkRisk = item.prstk_risk?.prstk_risk_level || item.risk_level || "R2";
     const evidenceText = official && synced
@@ -1246,6 +1250,29 @@ const applyDeepLink = async (snapshot) => {
     setReleaseHealth("該訊息版本已歸檔或不可用；目前顯示最新安全版本。", "error");
     setText("market-focus", "訊息版本與目前公開 release 不一致，暫不載入其他事件。");
     return;
+  }
+  // Prefer the immutable alert artifact even when the requested release is
+  // current.  The live event list is a projection and may be reordered or
+  // reconciled after delivery; the button must reopen the exact alert that
+  // was sent, with the same title and evidence.
+  if (requestedAlert) {
+    const indexedAlert = (snapshot?.alert_index?.alerts || []).some((item) =>
+      String(item?.notification_id || "") === requestedAlert
+      && String(item?.release_id || "") === requestedRelease,
+    );
+    if (indexedAlert) {
+      try {
+        const archived = await loadArchivedAlert(snapshot, requestedAlert, requestedRelease, requestedSnapshot, requestedObservation);
+        renderAlertCard({ items: [archived] }, archived.created_at || snapshot.generated_at, null, archived.market_evidence || []);
+        setReleaseHealth("已載入本次訊息對應的 immutable alert 詳情。", "ready");
+        setText("market-focus", "此訊息依 notification_id 載入原始 alert，未改為其他事件。");
+        return;
+      } catch (error) {
+        setReleaseHealth(`該訊息版本不可驗證；已安全停止載入（${error.message}）。`, "error");
+        setText("market-focus", "找不到可驗證的原始 alert，暫不替換為其他事件。");
+        return;
+      }
+    }
   }
   const knownSnapshots = [
     window.releaseManifest?.market_snapshot_id,
