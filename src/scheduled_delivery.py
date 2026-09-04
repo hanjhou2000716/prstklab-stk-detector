@@ -560,7 +560,10 @@ def send(
     notification_key = notification_key_for_event(event, slot_key=effective_slot_key)
     send_chat_ids = settings.telegram_chat_ids
     if event is None:
-        if selection_reason != "no_event":
+        if selection_reason not in {"no_event", "same_theme_within_2h", "same_theme_unchanged"}:
+            # Invalid content, missing release artifacts, budget blocks, and
+            # uncertain claims remain fail-closed.  Only a duplicate theme is
+            # safe to represent as a neutral scheduled-slot brief.
             _write_decision_output(
                 {
                     "sent": "false",
@@ -573,6 +576,12 @@ def send(
                 notification_reason=selection_reason,
             )
             return
+        # A scheduled slot is still required to publish one bounded market
+        # brief when every event candidate was filtered by deduplication,
+        # budget, content, or release-artifact checks.  Those candidate-level
+        # decisions remain in EventLedger; the public fallback must not be a
+        # second event notification or a silent skipped slot.
+        selection_reason = "no_trigger"
         notification_key = notification_key_for_event(None, slot_key=effective_slot_key)
         budget = {"allowed": True, "reason": selection_reason or "no_event", "event_key": notification_key}
     if not notification_key:
