@@ -28,3 +28,4 @@ def test_mini_app_verifies_snapshot_and_observation_identity():
     assert "knownSnapshots.includes(requestedSnapshot)" in APP
     assert "event.observation_id" in APP
     assert "canonical_content_hash" in APP
+    assert 'requestedAlert,\n            manifestRelease,\n            "",\n            "",' in APP
