@@ -289,6 +289,62 @@ def test_restore_latest_valid_preserves_public_release_when_data_branch_has_no_v
     assert result["release_id"] == "release-last-good"
 
 
+def test_restore_latest_valid_reuses_exact_data_release_before_history_download(tmp_path, monkeypatch):
+    data_root = tmp_path / "site" / "data"
+    data_root.mkdir(parents=True)
+    artifact_bodies = {
+        "data/market.json": b'{"snapshot_id":"market-last-good"}',
+        "data/research-report.json": b'{}',
+        "data/event-ledger.json": b'{}',
+    }
+    manifest = {
+        "status": "ready",
+        "release_id": "release-last-good",
+        "market_snapshot_id": "market-last-good",
+        "artifact_paths": {Path(path).name: path for path in artifact_bodies},
+        "artifact_hashes": {
+            Path(path).name: hashlib.sha256(body).hexdigest()
+            for path, body in artifact_bodies.items()
+        },
+    }
+    monkeypatch.setattr("src.pages_release._commits", lambda *args, **kwargs: ["latest"])
+
+    def restore_archive(*args, **kwargs):
+        for path, body in artifact_bodies.items():
+            (tmp_path / "site" / path).write_bytes(body)
+        (data_root / "release-manifest.json").write_text(
+            json.dumps(manifest), encoding="utf-8"
+        )
+        return True
+
+    monkeypatch.setattr("src.pages_release._restore_archive", restore_archive)
+    monkeypatch.setattr(
+        "src.pages_release._validate",
+        lambda *args, **kwargs: (False, {"status": "invalid"}),
+    )
+    monkeypatch.setattr(
+        "src.pages_release.restore_public_release",
+        lambda **kwargs: (_ for _ in ()).throw(AssertionError("history download should not run")),
+    )
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return manifest
+
+    monkeypatch.setattr("src.pages_release.requests.get", lambda *args, **kwargs: Response())
+
+    result = restore_latest_valid(root=tmp_path, preserve_public_url="https://example.test")
+
+    assert result["publish"] is True
+    assert result["preserved_public"] is True
+    assert result["reason"] == "preserved_matching_data_release"
+    assert result["release_id"] == "release-last-good"
+    assert (data_root / "market.json").read_bytes() == artifact_bodies["data/market.json"]
+
+
 def test_restore_latest_valid_restores_immutable_manifest_identity_after_validation(tmp_path, monkeypatch):
     data_root = tmp_path / "site" / "data"
     data_root.mkdir(parents=True)
