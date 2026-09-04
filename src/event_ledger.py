@@ -361,6 +361,15 @@ class EventLedger:
         state = _material_state(event)
         facts = fact_fingerprint(event)
         source_url = normalize_source_url(event.get("source_url") or event.get("url"))
+        source_key = str(event.get("source_key") or event.get("source") or "").strip().casefold()
+        if not source_url and source_key == "financialjuice":
+            # FJ is a discovery relay and some reviewed mail has no article
+            # permalink.  Keep the vendor homepage as the already-established
+            # provenance fallback so a delivered event remains valid in the
+            # release-bound ledger without inventing an article URL.
+            from src.financialjuice_contract import FINANCIALJUICE_SOURCE_URL
+
+            source_url = normalize_source_url(FINANCIALJUICE_SOURCE_URL)
         source_domain = (urlsplit(source_url).hostname or "").lower().removeprefix("www.") if source_url else ""
         record = self.records.get(key)
         changed = False

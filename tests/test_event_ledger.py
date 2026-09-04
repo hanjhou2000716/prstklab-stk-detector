@@ -28,6 +28,18 @@ def test_financialjuice_notification_identity_prevents_unrelated_cache_collision
     assert canonical_event_key(first) == canonical_event_key({**first, "title": "replayed title"})
 
 
+def test_financialjuice_delivery_without_article_url_keeps_vendor_provenance(tmp_path):
+    ledger = EventLedger(tmp_path / "ledger.json")
+    ledger.record_delivery({
+        "source_key": "financialjuice",
+        "notification_id": "fj-without-article-url",
+        "title": "FJ event",
+    })
+    record = next(iter(ledger.records.values()))
+    assert record["source_url"] == "https://financialjuice.com/"
+    assert record["source_domain"] == "financialjuice.com"
+
+
 def test_ledger_retains_reminder_fields_and_prunes_after_thirty_days(tmp_path):
     path = tmp_path / "ledger.json"
     ledger = EventLedger(path)
