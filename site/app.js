@@ -680,10 +680,16 @@ const renderEvents = (events) => {
   setText("event-tag", events?.status || "觀察中");
   const container = document.getElementById("event-list");
   if (!container) return;
-  const secondary = events?.items?.slice(1) || [];
+  const secondary = (events?.items || []).slice(1).filter((event) => {
+    const source = String(event?.source_key || event?.source || event?.content_origin || "").toLowerCase();
+    return source !== "financialjuice" || isCanonicalFjSummary(event);
+  });
   if (!secondary.length) { container.innerHTML = '<li class="empty">目前沒有其他同步市場訊號</li>'; }
   else container.innerHTML = `<li class="signal-list-title">同步市場訊號</li>${secondary.map((event) => {
-    const title = event.brief_title || `${event.short_label}｜${event.title}`;
+    const source = String(event?.source_key || event?.source || event?.content_origin || "").toLowerCase();
+    const title = source === "financialjuice"
+      ? canonicalFjSummary(event)
+      : event.brief_title || `${event.short_label}｜${event.title}`;
     return `<li class="signal-card"><b class="${movementClass(title)}">${escapeHtml(title)}</b><small>${escapeHtml(event.source || "公開市場報價")}</small></li>`;
   }).join("")}`;
   const timeline = document.getElementById("event-timeline");
