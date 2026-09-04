@@ -23,7 +23,7 @@ def _enable_test_creator_lane(monkeypatch) -> None:
 
 def test_captions_respect_photo_and_text_limits() -> None:
     assert len(creator_telegram_caption(INSIGHT)) <= 40
-    assert len(creator_text_caption(INSIGHT)) <= 40
+    assert len(creator_text_caption(INSIGHT)) <= 60
     assert "<" not in creator_telegram_caption({**INSIGHT, "episode_title": "x < y"})
 
 

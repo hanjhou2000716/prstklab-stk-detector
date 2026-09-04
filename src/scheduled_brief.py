@@ -45,7 +45,7 @@ def _write_output(values: dict[str, object]) -> None:
 
     The same values are also printed for local runs.  Telegram text remains
     intentionally short; correlation belongs in Actions, Railway and the
-    Mini App snapshot rather than in the 40-character watch message.
+    Mini App snapshot rather than in the bounded watch message.
     """
     lines = []
     for key, value in values.items():
@@ -228,7 +228,7 @@ def _pick_event(
 
 
 def build_brief(snapshot: dict, slot: str) -> str:
-    """Create a 40-character watch brief; detail remains in the Mini App."""
+    """Create a 60-character watch brief; detail remains in the Mini App."""
     from src.event_output import short_event_message
 
     label = SLOT_LABELS[slot]

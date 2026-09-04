@@ -48,7 +48,7 @@ def test_financialjuice_long_english_headline_keeps_discovery_text() -> None:
     assert caption.startswith("🟣 FJ 8/10｜")
     assert "Federal" in caption
     assert "資訊待核對" not in caption
-    assert len(caption) <= 40
+    assert len(caption) <= 60
 
 
 def test_financialjuice_caption_prefers_projected_event_over_generic_title() -> None:
@@ -60,7 +60,7 @@ def test_financialjuice_caption_prefers_projected_event_over_generic_title() -> 
     })
     assert caption.startswith("🟣 FJ 10/10｜某公司據報")
     assert "FinancialJuice 公開快訊" not in caption
-    assert len(caption) <= 40
+    assert len(caption) <= 60
 
 
 def test_financialjuice_public_short_message_is_the_release_headline_contract() -> None:
@@ -74,7 +74,7 @@ def test_financialjuice_public_short_message_is_the_release_headline_contract() 
     message = financialjuice_public_short_message(event)
     assert message == "🟣 FJ 9/10｜Nscale稱Anthropic合約簽約營收逾千億美元。"
     assert financialjuice_caption(event) == message
-    assert len(message) <= 40
+    assert len(message) <= 60
     assert "據《The" not in message
 
 
@@ -113,10 +113,25 @@ def test_financialjuice_compresses_real_nscale_event_to_one_complete_sentence() 
         "vendor_importance": 9,
     })
     assert caption == "🟣 FJ 9/10｜Nscale稱Anthropic合約簽約營收逾千億美元。"
-    assert len(caption) <= 40
+    assert len(caption) <= 60
     assert "據《" not in caption
     assert "…" not in caption and "..." not in caption
     assert caption.count("｜") == 1
+
+
+def test_financialjuice_waller_relay_keeps_the_event_fact_not_livestream_transport() -> None:
+    message = financialjuice_public_short_message({
+        "event": (
+            "聯準會理事沃勒在溫和對談中發表現場談話。直播影片：Fed Governor Christopher Waller "
+            "在 Reuters NEXT Newsmaker 訪談中，討論通膨持續高於聯準會2%目標、勞動市場穩定性，"
+            "以及在主席 Kevin Warsh 領導下的貨幣政策考量。"
+        ),
+        "vendor_importance": 8,
+    })
+    assert message.startswith("🟣 FJ 8/10｜聯準會理事沃勒談通膨")
+    assert "直播影片" not in message
+    assert "Fed." not in message
+    assert len(message) <= 60
 
 
 def test_financialjuice_uses_complete_fallback_when_title_is_truncated() -> None:
@@ -128,7 +143,7 @@ def test_financialjuice_uses_complete_fallback_when_title_is_truncated() -> None
     assert caption.startswith("🟣 FJ 9/10｜Iran says U.S. strikes")
     assert "據《The" not in caption
     assert "U.…" not in caption
-    assert len(caption) <= 40
+    assert len(caption) <= 60
 
 
 def test_financialjuice_delivery_suppresses_incomplete_attribution() -> None:

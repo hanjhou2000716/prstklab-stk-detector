@@ -60,6 +60,32 @@ def _compress_fj_sentence(value: str) -> str:
     if re.fullmatch(r"[🟢🟡🟠🔴⚪⚫🟣\s。！？!?，,、:：|｜()（）\[\]{}]*", text):
         return ""
     text = re.sub(r"\s+", " ", text).strip()
+    # Relay records often append an embedded livestream or the parser's
+    # attribution footer after the actual event.  Keep a substantive topic
+    # from that suffix when it is explicitly present; otherwise drop the
+    # transport wrapper instead of publishing "直播影片：Fed.".
+    text = re.sub(r"\s*(?:📈\s*)?StockRocket[^。！？]*$", "", text, flags=re.IGNORECASE).strip()
+    text = re.sub(r"\s*\[(?:Embed|LIVE)\].*$", "", text, flags=re.IGNORECASE).strip()
+    live_match = re.search(r"(?:直播影片|直播|影片)\s*[:：]\s*", text, flags=re.IGNORECASE)
+    if live_match:
+        prefix = text[:live_match.start()].strip(" ，,。；;:")
+        details = text[live_match.end():].strip()
+        topic_match = re.search(
+            r"(?:討論|談及|談到|addresses?|discuss(?:es)?)\s*(?P<topic>.+)",
+            details,
+            flags=re.IGNORECASE,
+        )
+        if prefix and topic_match:
+            subject_match = re.match(
+                r"(?P<subject>[^，,。；;]+?)(?:在[^，,。；;]+中)?"
+                r"(?:發表|表示|稱|指出|說|談)",
+                prefix,
+            )
+            subject = subject_match.group("subject").strip() if subject_match else prefix
+            topic = topic_match.group("topic").strip()
+            text = f"{subject}談{topic}"
+        else:
+            text = prefix
     text = re.sub(r"\s+-\s+The Information\s*$", "", text, flags=re.IGNORECASE)
     text = re.sub(
         r"^(?P<entity>[A-Za-z][\w-]*)\s+boasts over \$100 billion in contracted revenue"
@@ -173,8 +199,46 @@ def financialjuice_public_short_message(
         content,
         prstk_risk_level=canonical_prstk_risk_level(event),
     )
+
+    prefix = f"🟣 {suffix}｜"
+    if len(content) > limit:
+        # Prefer a complete factual clause before the shared transport
+        # summarizer considers an English word-boundary fallback.  This is
+        # important for long relay text: the first clause can preserve the
+        # actual event while the tail is only an embedded interview wrapper.
+        for clause in re.split(r"(?<=[，,、；;])", headline):
+            candidate = clause.strip(" ，,、；;。")
+            if not candidate or not re.search(
+                r"(?:表示|宣稱|指出|談|攻擊|上升|下降|簽|升|跌|維持|達|高於|低於|發射|宣布|supports|announces|says|claims|reports|raises|cuts)",
+                candidate,
+                flags=re.IGNORECASE,
+            ):
+                continue
+            candidate_message = _bounded(canonical_short_message(prefix + candidate + "。"), limit)
+            if is_valid_public_summary(candidate_message, source="financialjuice"):
+                return candidate_message
+
     bounded = _bounded(raw, limit)
-    return bounded if is_valid_public_summary(bounded, source="financialjuice") else ""
+    if is_valid_public_summary(bounded, source="financialjuice"):
+        return bounded
+
+    # Some parsed FJ records contain a long but complete Chinese sentence.
+    # Keep the first complete fact clause when the whole sentence cannot fit;
+    # this is semantic compression, not a raw character cut.  A clause must
+    # retain an action/fact verb so a noun fragment such as "直播影片" can
+    # never become a public alert by itself.
+    for clause in re.split(r"(?<=[，,、；;])", headline):
+        candidate = clause.strip(" ，,、；;。")
+        if not candidate or not re.search(
+            r"(?:表示|宣稱|指出|談|攻擊|上升|下降|簽|升|跌|維持|達|高於|低於|發射|宣布|supports|announces|says|claims|reports|raises|cuts)",
+            candidate,
+            flags=re.IGNORECASE,
+        ):
+            continue
+        candidate_message = _bounded(canonical_short_message(prefix + candidate + "。"), limit)
+        if is_valid_public_summary(candidate_message, source="financialjuice"):
+            return candidate_message
+    return ""
 
 
 def financialjuice_caption(event: dict[str, Any], *, limit: int = MAX_FINANCIALJUICE_CAPTION) -> str:

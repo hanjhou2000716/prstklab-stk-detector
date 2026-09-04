@@ -37,6 +37,7 @@ ALERT_INDEX_NAME = "alert-index.json"
 ALERT_ARTIFACT_PREFIX = "alerts"
 MAX_ALERT_INDEX_ROWS = 1000
 ALERT_RETENTION_DAYS = 30
+CANONICAL_HASH_VERSION = 2
 
 SOURCE_HEALTH_ARTIFACT = "source-health.json"
 
@@ -91,9 +92,13 @@ def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot
         from src.financialjuice_notification import financialjuice_public_short_message
         from src.telegram_client import is_valid_public_summary
 
-        public_short_message = str(
-            event.get("public_short_message") or financialjuice_public_short_message(event) or ""
-        ).strip()
+        generated_public_short_message = financialjuice_public_short_message(event)
+        stored_public_short_message = str(event.get("public_short_message") or "").strip()
+        public_short_message = (
+            generated_public_short_message
+            if is_valid_public_summary(generated_public_short_message, source="financialjuice")
+            else stored_public_short_message
+        )
         if not is_valid_public_summary(public_short_message, source="financialjuice"):
             raise ValueError("financialjuice event has no valid public summary")
         brief_title = public_short_message
@@ -132,6 +137,7 @@ def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot
         "observation_id": event.get("observation_id"),
         "created_at": created_at,
         "canonical_content_hash": canonical_content_hash,
+        "canonical_hash_version": CANONICAL_HASH_VERSION,
         # Keep the headline aliases required by the Mini App.  Archived alert
         # artifacts are rendered independently of the live market snapshot.
         "title": title,
@@ -169,29 +175,27 @@ def _publish_alert_artifacts(
     alert_dir.mkdir(parents=True, exist_ok=True)
     index_path = root / "site" / "data" / ALERT_INDEX_NAME
     rows: dict[tuple[str, str], dict[str, Any]] = {}
-    try:
-        previous = json.loads(index_path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError):
-        previous = {}
-    for item in previous.get("alerts", []) if isinstance(previous, dict) else []:
-        if isinstance(item, dict) and item.get("notification_id") and item.get("release_id") and item.get("path"):
-            rows[(str(item["notification_id"]), str(item["release_id"]))] = dict(item)
+    # The retained immutable files are the source of truth.  Reusing a stale
+    # index row can keep a deleted/moved artifact addressable and was the
+    # reason historical files existed without a matching current index row.
+    # Rebuild every row from the files on each release instead.
     for path in sorted(alert_dir.glob("*.json")):
         try:
             item = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, UnicodeError, json.JSONDecodeError):
             continue
         if isinstance(item, dict) and item.get("notification_id") and item.get("release_id"):
-            rows.setdefault((str(item["notification_id"]), str(item["release_id"])), {
+            rows[(str(item["notification_id"]), str(item["release_id"]))] = {
                 "notification_id": item["notification_id"],
                 "release_id": item["release_id"],
                 "snapshot_id": item.get("snapshot_id"),
                 "observation_id": item.get("observation_id"),
                 "canonical_content_hash": item.get("canonical_content_hash"),
+                "canonical_hash_version": item.get("canonical_hash_version"),
                 "path": f"{ALERT_ARTIFACT_PREFIX}/{path.name}",
                 "sha256": sha256_file(path),
                 "created_at": item.get("created_at"),
-            })
+            }
     event_block = market.get("events") if isinstance(market, dict) else None
     events = event_block.get("items", []) if isinstance(event_block, dict) else []
     for event in events:
@@ -213,6 +217,7 @@ def _publish_alert_artifacts(
             "snapshot_id": artifact.get("snapshot_id"),
             "observation_id": artifact.get("observation_id"),
             "canonical_content_hash": artifact.get("canonical_content_hash"),
+            "canonical_hash_version": artifact.get("canonical_hash_version"),
             "path": relative,
             "sha256": sha256_file(path),
             "created_at": created_at,

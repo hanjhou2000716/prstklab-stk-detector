@@ -443,7 +443,7 @@ def test_brief_prefers_major_event_category_but_remains_watch_friendly():
     }
     brief = build_brief(snapshot, "intraday")
     assert brief == "盤中｜關稅／政策｜2330📈+1.2%"
-    assert len(brief) <= 40
+    assert len(brief) <= 60
 
 
 def test_brief_uses_compact_event_pattern_and_risk_title():

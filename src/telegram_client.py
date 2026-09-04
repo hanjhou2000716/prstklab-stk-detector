@@ -26,7 +26,10 @@ SEND_ATTEMPTS = 3
 RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 FAILED_RECIPIENT_RETRIES = 1
 MAX_FAILED_RECIPIENT_RETRIES = 3
-PUBLIC_TEXT_MAX_CHARS = 40
+# Public text has enough room for one complete evidence sentence.  Photo
+# captions keep their separate 40-character layout contract in the photo
+# delivery modules.
+PUBLIC_TEXT_MAX_CHARS = 60
 PRSTK_RISK_LEVELS = frozenset({"R0", "R1", "R2", "R3", "R4"})
 _RISK_ICONS = {"R0": "🟢", "R1": "🟢", "R2": "🟡", "R3": "🟠", "R4": "🔴"}
 _RISK_CATEGORIES = {"R0": "市場觀察", "R1": "市場觀察", "R2": "市場觀察", "R3": "市場風險", "R4": "重大風險"}
@@ -225,7 +228,15 @@ def _semantic_excerpt(value: str, limit: int, *, allow_char_cut: bool = True) ->
         return ""
     if len(text) <= limit:
         return text
-    clauses = [part.strip() for part in re.split(r"(?<=[。！？；.!?;])(?:\s+|$)", text) if part.strip()]
+    # Do not mistake the full stop in abbreviations such as ``U.S.`` for a
+    # sentence boundary.  Without this guard a bounded English headline can
+    # lose its subject and start at the word after the abbreviation.
+    protected = re.sub(r"\b([A-Z])\.", r"\1<dot>", text)
+    clauses = [
+        part.replace("<dot>", ".").strip()
+        for part in re.split(r"(?<=[。！？；.!?;])(?:\s+|$)", protected)
+        if part.strip()
+    ]
     for clause in clauses:
         # A period in U.S., Inc., etc. is not a complete sentence boundary.
         if re.search(r"(?:\b[A-Za-z]\.)+$", clause):

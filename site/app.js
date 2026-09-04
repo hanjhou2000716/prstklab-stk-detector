@@ -6,6 +6,7 @@ const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => 
 const formatNumber = (value) => typeof value === "number" ? value.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "—";
 const signedPercent = (value) => value === null || value === undefined ? "—" : `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
 const marketName = (key) => key === "taiwan" ? "台股" : key === "us" ? "美股" : key;
+const PUBLIC_TEXT_MAX_CHARS = 60;
 
 const renderMarkets = (markets) => {
   const text = ["taiwan", "us"].map((key) => {
@@ -265,6 +266,8 @@ const fjFactIsUsable = (value) => {
   if (!body || /…|\.\.\.|undefined|https?:\/\//i.test(body)) return false;
   if (/^(?:[📰🟢🟡🟠🔴⚪⚫🟣]\s*)?(?:financialjuice|morning\s+juice)(?:\s+公開)?(?:新聞|快訊)?(?:\s|[（(]|[-–—]|$)/iu.test(body)) return false;
   if (/(?:關聯市場|資料待更新|報價待取得|資訊待核對)/i.test(body)) return false;
+  if (/(?:直播影片|直播|影片)\s*[:：]\s*(?:Fed\.?|Embed|LIVE|https?:\/\/|$)/i.test(body)) return false;
+  if (/(?:\b(?:Embed|LIVE)\b|StockRocket)/i.test(body)) return false;
   if (/[-–—]\s*\.?$/.test(body)) return false;
   if (/[🟢🟡🟠🔴⚪⚫🟣]\s*[。！？!?，,、:：；;.\s]*$/u.test(body)) return false;
   if (!/[\u4e00-\u9fffA-Za-z0-9]/.test(body)) return false;
@@ -278,11 +281,29 @@ const cleanFjFact = (value) => {
   body = body.replace(/^(?:translation|original headline|headline|event|事件)\s*[:：]\s*/i, "");
   body = body.replace(/^(?:據|根據)\s*[《「"']([^》」"']+)[》」"']\s*(?:報導|指出|稱)?\s*[,，:：]?\s*/u, "");
   body = body.replace(/^[🟣🟡🟠🔴⚪⚫]\s*FJ\s*\d+(?:\.\d+)?\s*\/\s*10\s*[｜|:]\s*/iu, "");
+  body = body.replace(/\s*(?:📈\s*)?StockRocket[^。！？]*$/i, "").trim();
+  body = body.replace(/\s*\[(?:Embed|LIVE)\].*$/i, "").trim();
+  const liveMatch = body.match(/(?:直播影片|直播|影片)\s*[:：]\s*/i);
+  if (liveMatch) {
+    const prefix = body.slice(0, liveMatch.index).trim().replace(/[ ，,。；;:：]+$/u, "");
+    const details = body.slice((liveMatch.index || 0) + liveMatch[0].length).trim();
+    const topicMatch = details.match(/(?:討論|談及|談到|addresses?|discuss(?:es)?)\s*(.+)$/i);
+    if (prefix && topicMatch) {
+      const subjectMatch = prefix.match(/^([^，,。；;]+?)(?:在[^，,。；;]+中)?(?:發表|表示|稱|指出|說|談)/u);
+      const subject = subjectMatch ? subjectMatch[1].trim() : prefix;
+      body = `${subject}談${topicMatch[1].trim()}`;
+    } else {
+      body = prefix;
+    }
+  }
   return body.trim();
 };
 
 const canonicalFjSummary = (item) => {
   if (!item || typeof item !== "object") return "";
+  const stored = String(item.public_short_message || "").replace(/\s+/g, " ").trim();
+  const storedMatch = stored.match(/^🟣\s*FJ\s*(\d+(?:\.\d+)?)\s*\/\s*10｜(.+)$/iu);
+  if (storedMatch && fjFactIsUsable(storedMatch[2]) && [...stored].length <= PUBLIC_TEXT_MAX_CHARS) return stored;
   const importanceMatch = String(item.public_short_message || item.brief_title || item.title || "").match(/FJ\s*(\d+(?:\.\d+)?)\s*\/\s*10/i);
   const importance = item.vendor_importance ?? (importanceMatch ? importanceMatch[1] : "");
   if (importance === "") return "";
@@ -291,7 +312,15 @@ const canonicalFjSummary = (item) => {
   for (const candidate of candidates) {
     const body = cleanFjFact(candidate);
     const message = `${prefix}${body}`;
-    if (fjFactIsUsable(body) && [...message].length <= 40) return message;
+    if (fjFactIsUsable(body) && [...message].length <= PUBLIC_TEXT_MAX_CHARS) return message;
+    if ([...message].length > PUBLIC_TEXT_MAX_CHARS) {
+      for (const clause of body.split(/(?<=[，,、；;])/u)) {
+        const fact = clause.trim().replace(/^[，,、；;。]+|[，,、；;。]+$/gu, "");
+        if (!fact || !/(表示|宣稱|指出|談|攻擊|上升|下降|簽|升|跌|維持|達|高於|低於|發射|宣布|supports|announces|says|claims|reports|raises|cuts)/iu.test(fact)) continue;
+        const compressed = `${prefix}${fact}。`;
+        if (fjFactIsUsable(fact) && [...compressed].length <= PUBLIC_TEXT_MAX_CHARS) return compressed;
+      }
+    }
   }
   return "";
 };
@@ -342,6 +371,11 @@ const sameAlertLineage = (left, right, snapshotId, observationId) => {
 };
 
 const sameCanonicalAlertContent = async (left, right) => {
+  const leftStored = String(left?.canonical_content_hash || "").trim();
+  const rightStored = String(right?.canonical_content_hash || "").trim();
+  // A release-bound stored hash is the identity of an immutable alert.  Do
+  // not invalidate it merely because the current summary rules have evolved.
+  if (leftStored && rightStored) return leftStored === rightStored;
   const leftHash = await canonicalAlertContentHash(left);
   const rightHash = await canonicalAlertContentHash(right);
   return leftHash === rightHash;
@@ -1407,13 +1441,18 @@ const loadArchivedAlert = async (snapshot, notificationId, releaseId, snapshotId
   }
   if (snapshotId && String(alert.snapshot_id || "") !== snapshotId) throw new Error("immutable alert snapshot mismatch");
   if (observationId && String(alert.observation_id || "") !== observationId) throw new Error("immutable alert observation mismatch");
+  const indexedCanonicalHash = String(row.canonical_content_hash || "").trim();
+  const artifactCanonicalHash = String(alert.canonical_content_hash || "").trim();
+  if (indexedCanonicalHash && artifactCanonicalHash && indexedCanonicalHash !== artifactCanonicalHash) {
+    throw new Error("immutable alert canonical content hash mismatch");
+  }
+  // Legacy rows may carry the canonical hash only in alert-index.  Binding it
+  // to the verified artifact keeps latest-release comparison stable without
+  // re-rendering the historical text through today's summarizer.
+  if (indexedCanonicalHash && !artifactCanonicalHash) alert.canonical_content_hash = indexedCanonicalHash;
   const source = String(alert.source_key || alert.source || alert.content_origin || "").toLowerCase();
   if (source === "financialjuice" && !isCanonicalFjSummary(alert)) {
     throw new Error("immutable alert public summary invalid");
-  }
-  const canonicalHash = await canonicalAlertContentHash(alert);
-  if (alert.canonical_content_hash && String(alert.canonical_content_hash) !== canonicalHash) {
-    throw new Error("immutable alert canonical content hash mismatch");
   }
   return alert;
 };
@@ -1426,7 +1465,7 @@ const currentReleaseAlertRow = (snapshot, notificationId, releaseId) => {
 
 const deepLinkFocusText = (alert) => {
   const source = alertSourceKey(alert);
-  if (source === "financialjuice") return canonicalFjSummary(alert);
+  if (source === "financialjuice") return String(alert?.public_short_message || alert?.brief_title || canonicalFjSummary(alert) || "").trim();
   return String(alert?.public_short_message || alert?.brief_title || alert?.event || alert?.title || "").replace(/\s+/g, " ").trim();
 };
 

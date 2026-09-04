@@ -74,7 +74,7 @@ def creator_telegram_caption(insight: dict[str, Any], *, limit: int = MAX_CREATO
 
 
 def creator_text_caption(insight: dict[str, Any]) -> str:
-    """Return the shared 40-character caption used by text-only fallback."""
+    """Return the shared 60-character text-only fallback."""
     creator = _clean(insight.get("creator_name") or insight.get("content_origin") or "Creator")
     title = _clean(insight.get("episode_title") or insight.get("title") or "新內容")
     return summarize_public_message(f"{creator}｜{title}", limit=MAX_CREATOR_TEXT_CAPTION)
@@ -301,7 +301,7 @@ def deliver_creator_episode(
             }
 
     # Missing media or an all-recipient renderer/API failure is explicitly
-    # degraded to the shared text-only 40-character Telegram contract.
+    # degraded to the shared text-only 60-character Telegram contract.
     text_receipts = text_sender(
         token=token,
         chat_ids=chat_ids,

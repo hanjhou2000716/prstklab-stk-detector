@@ -2,7 +2,7 @@
 
 The default mode is a local dry-run: it never calls Telegram or Railway and
 prints only non-secret counts/statuses.  Pass ``--send`` deliberately when a
-real, 40-character smoke message is wanted.
+real, bounded smoke message is wanted.
 """
 
 from __future__ import annotations

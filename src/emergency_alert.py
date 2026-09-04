@@ -65,7 +65,7 @@ def build_emergency_brief(category: str, summary: str) -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="發送稜量重大事件手動快訊")
     parser.add_argument("--category", required=True, choices=CATEGORY_LABELS)
-    parser.add_argument("--summary", required=True, help="含前綴共 40 字內的中立摘要")
+    parser.add_argument("--summary", required=True, help="含前綴共 60 字內的中立摘要")
     return parser.parse_args()
 
 

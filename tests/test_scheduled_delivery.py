@@ -482,7 +482,7 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
     assert "…" not in captured["text"]
     assert "..." not in captured["text"]
     assert str(captured["text"]).count("｜") == 1
-    assert len(captured["text"]) <= 40
+    assert len(captured["text"]) <= 60
 
 
 def test_scheduled_financialjuice_all_recipient_failure_is_fail_closed(tmp_path, monkeypatch):

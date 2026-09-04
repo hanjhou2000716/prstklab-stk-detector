@@ -81,6 +81,34 @@ def test_manifest_publishes_release_specific_immutable_alert_details(tmp_path):
     assert verify_release_files(second, root=tmp_path / "site") == []
 
 
+def test_manifest_rebuilds_alert_index_from_retained_immutable_files(tmp_path):
+    _artifacts(tmp_path)
+    alert_dir = tmp_path / "site" / "data" / "alerts"
+    alert_dir.mkdir()
+    retained = {
+        "notification_id": "fj-retained-1",
+        "release_id": "release-0aeca92fe754083e",
+        "snapshot_id": "snapshot-retained",
+        "observation_id": "observation-retained",
+        "source_key": "financialjuice",
+        "public_short_message": "🟣 FJ 9/10｜伊朗攻擊電信基礎設施。",
+        "canonical_content_hash": "a" * 64,
+        "canonical_hash_version": 1,
+        "created_at": "2026-09-04T10:00:00+00:00",
+    }
+    retained_path = alert_dir / "fj-retained-1-release-0aeca92fe754083e.json"
+    retained_path.write_text(json.dumps(retained, ensure_ascii=False), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+    index = json.loads((tmp_path / "site" / "data" / "alert-index.json").read_text(encoding="utf-8"))
+    row = next(item for item in index["alerts"] if item["release_id"] == retained["release_id"])
+    assert row["path"] == f"alerts/{retained_path.name}"
+    assert row["canonical_content_hash"] == retained["canonical_content_hash"]
+    assert row["canonical_hash_version"] == retained["canonical_hash_version"]
+    assert row["sha256"] == sha256_file(retained_path)
+    assert "alert-index.json" in manifest["artifact_paths"]
+
+
 def test_immutable_alert_projection_keeps_mini_app_headline_aliases():
     artifact = _alert_projection(
         {

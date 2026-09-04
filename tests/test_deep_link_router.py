@@ -65,6 +65,23 @@ def test_deep_link_resolves_latest_release_for_same_event():
     assert result["original_release_id"] == "old"
 
 
+def test_deep_link_prefers_stored_canonical_hash_over_current_projection_rules():
+    link = parse_deep_link(
+        "https://example.test/app?alert=fj-notification-1&release=old&snapshot=s1&observation=o1"
+    )
+    historical = {**_fj_alert(), "canonical_content_hash": "a" * 64, "canonical_hash_version": 1}
+    latest = {**historical, "release_id": "new"}
+    result = resolve_deep_link(
+        link,
+        manifest={"release_id": "new", "market_snapshot_id": "s1"},
+        alerts=[latest],
+        latest_alerts=[latest],
+        historical_alerts=[historical],
+    )
+    assert result["resolution"] == "latest_same_event"
+    assert result["alert"]["canonical_content_hash"] == "a" * 64
+
+
 def test_deep_link_keeps_historical_alert_when_content_changes():
     link = parse_deep_link(
         "https://example.test/app?alert=fj-notification-1&release=old&snapshot=s1&observation=o1"
