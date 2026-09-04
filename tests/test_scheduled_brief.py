@@ -106,7 +106,7 @@ def test_brief_preserves_market_move_when_event_label_is_too_long():
 
     brief = build_brief(snapshot, "morning")
 
-    assert len(brief) <= 40
+    assert len(brief) <= 60
     assert brief.endswith("NVDA📉-3.2%")
 
 

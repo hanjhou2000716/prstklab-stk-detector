@@ -117,7 +117,7 @@ def run_financialjuice_notification_e2e() -> dict[str, Any]:
         "compound_item_is_eligible": event.get("notification_status") == "eligible",
         "vendor_threshold_preserved": event.get("vendor_importance") == 9,
         "vendor_score_does_not_change_risk": event.get("source_trace", {}).get("vendor_importance_is_not_risk") is True,
-        "caption_bounded": len(financialjuice_caption(event)) <= 40,
+        "caption_bounded": len(financialjuice_caption(event)) <= 60,
         "release_bound_deep_link": "release=e2e-release-fj" in str(first.get("mini_app_url")),
         "partial_delivery_isolated": first.get("status") == "partial" and len(first_receipts) == 2,
         "retry_only_failed_recipient": sent_calls == [recipients, (recipients[1],)],

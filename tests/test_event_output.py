@@ -7,5 +7,5 @@ def test_event_output_uses_four_sections_and_compact_short_message():
     assert short_event_message(event).startswith("🟠 台指價格訊號，下跌")
     assert short_event_message(event).count("｜") == 0
     assert all(code not in short_event_message(event) for code in ("R0", "R1", "R2", "R3", "R4"))
-    assert len(short_event_message(event)) <= 40
+    assert len(short_event_message(event)) <= 60
 

@@ -87,6 +87,13 @@ def _same_event_lineage(left: dict[str, Any], right: dict[str, Any], link: DeepL
 
 
 def _same_canonical_content(left: dict[str, Any], right: dict[str, Any]) -> bool:
+    left_stored = str(left.get("canonical_content_hash") or "").strip()
+    right_stored = str(right.get("canonical_content_hash") or "").strip()
+    # Immutable alert artifacts carry the producer's release-bound identity.
+    # Prefer it over re-running a newer summary projection on historical text.
+    if left_stored and right_stored:
+        return left_stored == right_stored
+
     def content_hash(item: dict[str, Any]) -> str:
         return canonical_alert_content_hash(
             item,

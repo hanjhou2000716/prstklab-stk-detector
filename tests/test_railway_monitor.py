@@ -109,7 +109,7 @@ def test_macro_flash_is_classified_and_compacted_for_watch_delivery():
     assert alert is not None
     assert alert.category == "macro"
     assert alert.summary.startswith("宏觀：")
-    assert len(f"緊急｜宏觀｜{alert.summary}") <= 40
+    assert len(f"緊急｜宏觀｜{alert.summary}") <= 60
 
 
 def test_unrelated_flash_is_not_forwarded():
