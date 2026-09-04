@@ -35,6 +35,12 @@ _GENERIC_PUBLIC_LABELS = frozenset({
     "資料待核對", "資訊待核對", "資訊待核對。", "快訊", "價格訊號", "重大事件", "重要事件",
 })
 
+_FJ_INVALID_FACT_PATTERNS = (
+    re.compile(r"^(?:undefined|financialjuice(?:\s+公開)?(?:新聞|快訊)|morning\s+juice)\b", re.IGNORECASE),
+    re.compile(r"(?:關聯市場|資料待更新|報價待取得|資訊待核對)", re.IGNORECASE),
+    re.compile(r"[-–—]\s*\.?$"),
+)
+
 
 def _failed_recipient_retry_count() -> int:
     """Return a bounded retry count for recipients that had transient errors.
@@ -191,6 +197,20 @@ def _clean_public_fragment(value: object) -> str:
     return source.strip(" ｜|,，:：")
 
 
+def _is_usable_financialjuice_fact(value: object) -> bool:
+    """Reject source envelopes and market-status fragments as FJ facts."""
+    text = _clean_public_fragment(value)
+    if not text or "…" in text or "..." in text:
+        return False
+    if re.search(r"https?://|www\.", text, flags=re.IGNORECASE):
+        return False
+    if re.fullmatch(r"[🟢🟡🟠🔴⚪⚫🟣\s。！？!?，,、:：|｜()（）\[\]{}]*", text):
+        return False
+    if any(pattern.search(text) for pattern in _FJ_INVALID_FACT_PATTERNS):
+        return False
+    return bool(re.search(r"[\u4e00-\u9fffA-Za-z0-9]", text))
+
+
 def _semantic_excerpt(value: str, limit: int, *, allow_char_cut: bool = True) -> str:
     """Fit one fact without ellipses or an incomplete English word.
 
@@ -330,7 +350,7 @@ def is_valid_public_summary(text: str, *, source: str = "") -> bool:
             return False
         if body.endswith(("：", ":", "|", "｜")):
             return False
-        return True
+        return _is_usable_financialjuice_fact(body)
     body = re.sub(r"^[🟢🟡🟠🔴⚪⚫🟣]\s*", "", value).strip()
     return bool(body) and body.casefold() not in {label.casefold() for label in _GENERIC_PUBLIC_LABELS}
 

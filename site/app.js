@@ -260,16 +260,37 @@ const externalRiskReasonLabel = (reason) => ({
 // browser-side guard because historical/reconciled snapshots can outlive the
 // producer that created them; an invalid card must never silently fall back to
 // a different event or a generic placeholder.
+const fjFactIsUsable = (value) => {
+  const body = String(value || "").replace(/\s+/g, " ").trim();
+  if (!body || /…|\.\.\.|undefined|https?:\/\//i.test(body)) return false;
+  if (/^(?:financialjuice(?:\s+公開)?(?:新聞|快訊)|morning\s+juice)\b/i.test(body)) return false;
+  if (/(?:關聯市場|資料待更新|報價待取得|資訊待核對)/i.test(body)) return false;
+  if (/[-–—]\s*\.?$/.test(body)) return false;
+  if (!/[\u4e00-\u9fffA-Za-z0-9]/.test(body)) return false;
+  if (/^[🟢🟡🟠🔴⚪⚫🟣\s。！？!?，,、:：|｜()（）\[\]{}]+$/u.test(body)) return false;
+  return true;
+};
+
+const cleanFjFact = (value) => {
+  let body = String(value || "").replace(/\s+/g, " ").trim();
+  body = body.replace(/https?:\/\/\S+/gi, "").trim().replace(/^[｜|,，:：\s]+|[｜|,，:：\s]+$/g, "");
+  body = body.replace(/^(?:translation|original headline|headline|event|事件)\s*[:：]\s*/i, "");
+  body = body.replace(/^(?:據|根據)\s*[《「"']([^》」"']+)[》」"']\s*(?:報導|指出|稱)?\s*[,，:：]?\s*/u, "");
+  body = body.replace(/^[🟣🟡🟠🔴⚪⚫]\s*FJ\s*\d+(?:\.\d+)?\s*\/\s*10\s*[｜|:]\s*/iu, "");
+  return body.trim();
+};
+
 const canonicalFjSummary = (item) => {
   if (!item || typeof item !== "object") return "";
-  const candidates = [item.public_short_message, item.brief_title];
+  const importanceMatch = String(item.public_short_message || item.brief_title || item.title || "").match(/FJ\s*(\d+(?:\.\d+)?)\s*\/\s*10/i);
+  const importance = item.vendor_importance ?? (importanceMatch ? importanceMatch[1] : "");
+  if (importance === "") return "";
+  const prefix = `🟣 FJ ${importance}/10｜`;
+  const candidates = [item.public_short_message, item.brief_title, item.event, item.chinese_translation, item.headline, item.original_headline, item.vendor_original_headline, item.title];
   for (const candidate of candidates) {
-    const text = String(candidate || "").trim();
-    const match = text.match(/^🟣 FJ (?:[0-9]|10)\/10｜([^｜]+)$/);
-    if (!match || [...text].length > 40 || /…|\.\.\.|undefined|https?:\/\//i.test(text)) continue;
-    const body = match[1].trim();
-    if (!body || /^(資訊待核對|資訊待核對。)$/.test(body) || /[：:]$/.test(body)) continue;
-    return text;
+    const body = cleanFjFact(candidate);
+    const message = `${prefix}${body}`;
+    if (fjFactIsUsable(body) && [...message].length <= 40) return message;
   }
   return "";
 };
@@ -290,7 +311,9 @@ const alertPublicSummaryForHash = (item) => {
 };
 
 const alertEventForHash = (item) => normalizedAlertText(
-  item?.event || item?.summary || item?.title || item?.brief_title || "",
+  alertSourceKey(item) === "financialjuice"
+    ? canonicalFjBody(item) || item?.event || item?.summary || item?.title || item?.brief_title || ""
+    : item?.event || item?.summary || item?.title || item?.brief_title || "",
 );
 
 // Keep this payload key order aligned with Python's sort_keys=True hash in
@@ -954,12 +977,13 @@ const renderExternalIntelligence = (snapshot) => {
   const priorityEvents = Array.isArray(snapshot?.financialjuice_priority_events)
     ? snapshot.financialjuice_priority_events : [];
   const rowKey = (item) => {
+    const source = String(item?.source_key || item?.source || item?.content_origin || "").toLowerCase();
     const notificationKey = String(item?.notification_key || "").trim();
-    if (notificationKey) return notificationKey;
-    const summary = String(item?.public_short_message || item?.brief_title || "").trim();
-    if (String(item?.source_key || item?.source || item?.content_origin || "").toLowerCase() === "financialjuice" && summary) {
-      return `summary:${summary}`;
+    if (source === "financialjuice" || notificationKey.toLowerCase().startsWith("financialjuice:")) {
+      const summary = canonicalFjSummary(item);
+      if (summary) return `financialjuice:${summary.toLocaleLowerCase()}`;
     }
+    if (notificationKey) return notificationKey;
     return String(item?.observation_id || item?.item_id || item?.notification_id || "").trim();
   };
   const decisionByKey = new Map(decisions.map((item) => [rowKey(item), item]).filter(([key]) => key));
@@ -1004,7 +1028,9 @@ const renderExternalIntelligence = (snapshot) => {
     // Consume the canonical semantic projection.  The remaining fallbacks
     // are only for legacy snapshots; parsing and semantic selection stay
     // upstream in the release-bound event projection.
-    const semanticEvent = item.event || item.chinese_translation || item.title || item.headline || item.original_headline || "外部市場觀察";
+    const semanticEvent = isFinancialJuice
+      ? (canonicalFjBody(item) || item.event || item.chinese_translation || "")
+      : (item.event || item.chinese_translation || item.title || item.headline || item.original_headline || "外部市場觀察");
     const semanticWhy = item.why_important || item.ai_commentary || item.summary || "目前尚無額外重要性說明，等待後續公開資料核對。";
     const semanticLinkage = item.possible_linkage || item.possible_impact || "尚無足夠公開資料判定連動。";
     const semanticObservation = item.stock_observation || item.watch || "等待官方後續確認，並觀察相關市場是否同步反應。";
@@ -1317,17 +1343,23 @@ const renderCreatorInsights = (creatorRelease) => {
   }).join("");
 };
 
-const render = (snapshot) => {
+const render = (snapshot, { deferAlert = false } = {}) => {
   window.marketSnapshot = snapshot;
   const externalAlert = activeExternalAlert(snapshot.external_alert);
   setText("data-status", snapshot.data_status || "資料更新中");
   setText("updated-at", snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "尚未更新");
-  renderFocus(snapshot.events, externalAlert);
+  if (deferAlert) {
+    renderDeepLinkPending(snapshot);
+  } else {
+    renderFocus(snapshot.events, externalAlert);
+  }
   renderMarkets(snapshot.markets || {});
   renderQuoteList("index-list", snapshot.indices || []);
   renderQuoteList("quote-list", snapshot.quotes || []);
   renderRisk(snapshot.risk);
-  renderAlertCard({ ...(snapshot.events || {}), items: primaryAlertEvents(snapshot) }, snapshot.generated_at, externalAlert, snapshot.indices || [], snapshot.intelligence?.external_event_risk);
+  if (!deferAlert) {
+    renderAlertCard({ ...(snapshot.events || {}), items: primaryAlertEvents(snapshot) }, snapshot.generated_at, externalAlert, snapshot.indices || [], snapshot.intelligence?.external_event_risk);
+  }
   renderEvents(snapshot.events);
   renderSourceHealth(snapshot.source_health, snapshot);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
@@ -1385,6 +1417,28 @@ const currentReleaseAlertRow = (snapshot, notificationId, releaseId) => {
     && String(item?.release_id || "") === releaseId) || null;
 };
 
+const deepLinkFocusText = (alert) => {
+  const source = alertSourceKey(alert);
+  if (source === "financialjuice") return canonicalFjSummary(alert);
+  return String(alert?.public_short_message || alert?.brief_title || alert?.event || alert?.title || "").replace(/\s+/g, " ").trim();
+};
+
+const renderResolvedDeepLink = (snapshot, alert) => {
+  renderAlertCard({ items: [alert] }, alert.created_at || snapshot.generated_at, null, alert.market_evidence || []);
+  const focus = deepLinkFocusText(alert);
+  setText("market-focus", focus || "已載入本次通知事件。");
+};
+
+const renderDeepLinkPending = (snapshot) => {
+  renderAlertCard({ items: [] }, snapshot.generated_at, null, []);
+  setText("market-focus", "正在核對通知事件…");
+};
+
+const renderDeepLinkUnavailable = (snapshot) => {
+  renderAlertCard({ items: [] }, snapshot.generated_at, null, []);
+  setText("market-focus", "此通知無法驗證，未載入其他事件。");
+};
+
 const applyDeepLink = async (snapshot) => {
   const params = new URLSearchParams(window.location.search);
   const requestedRelease = String(params.get("release") || "").trim();
@@ -1411,24 +1465,22 @@ const applyDeepLink = async (snapshot) => {
           );
           if (sameAlertLineage(archived, latest, requestedSnapshot || String(archived.snapshot_id || ""), requestedObservation || String(archived.observation_id || ""))
             && await sameCanonicalAlertContent(archived, latest)) {
-            renderAlertCard({ items: [latest] }, latest.created_at || snapshot.generated_at, null, latest.market_evidence || []);
+            renderResolvedDeepLink(snapshot, latest);
             setReleaseHealth("已載入本次通知對應的最新同事件版本。", "ready");
-            setText("market-focus", "已核對 notification、snapshot、observation 與摘要，顯示同一事件的最新 release。");
             return;
           }
         }
-        renderAlertCard({ items: [archived] }, archived.created_at || snapshot.generated_at, null, archived.market_evidence || []);
+        renderResolvedDeepLink(snapshot, archived);
         setReleaseHealth("已載入本次通知的歷史 immutable alert。", "ready");
-        setText("market-focus", "目前 release 沒有可核對的同事件版本，已保留原始通知內容。");
         return;
       } catch (error) {
+        renderDeepLinkUnavailable(snapshot);
         setReleaseHealth(`該訊息版本不可驗證；已安全停止載入（${error.message}）。`, "error");
-        setText("market-focus", "找不到可驗證的原始 alert，暫不替換為其他事件。");
         return;
       }
     }
+    renderDeepLinkUnavailable(snapshot);
     setReleaseHealth("該訊息版本已歸檔或不可用；目前顯示最新安全版本。", "error");
-    setText("market-focus", "訊息版本與目前公開 release 不一致，暫不載入其他事件。");
     return;
   }
   // Prefer the immutable alert artifact even when the requested release is
@@ -1443,16 +1495,18 @@ const applyDeepLink = async (snapshot) => {
     if (indexedAlert) {
       try {
         const archived = await loadArchivedAlert(snapshot, requestedAlert, requestedRelease, requestedSnapshot, requestedObservation);
-        renderAlertCard({ items: [archived] }, archived.created_at || snapshot.generated_at, null, archived.market_evidence || []);
+        renderResolvedDeepLink(snapshot, archived);
         setReleaseHealth("已載入本次訊息對應的 immutable alert 詳情。", "ready");
-        setText("market-focus", "此訊息依 notification_id 載入原始 alert，未改為其他事件。");
         return;
       } catch (error) {
+        renderDeepLinkUnavailable(snapshot);
         setReleaseHealth(`該訊息版本不可驗證；已安全停止載入（${error.message}）。`, "error");
-        setText("market-focus", "找不到可驗證的原始 alert，暫不替換為其他事件。");
         return;
       }
     }
+    renderDeepLinkUnavailable(snapshot);
+    setReleaseHealth("該訊息未找到可驗證的 immutable alert。", "error");
+    return;
   }
   const knownSnapshots = [
     window.releaseManifest?.market_snapshot_id,
@@ -1460,8 +1514,8 @@ const applyDeepLink = async (snapshot) => {
     window.releaseManifest?.event_snapshot_id,
   ].filter(Boolean).map(String);
   if (requestedSnapshot && knownSnapshots.length && !knownSnapshots.includes(requestedSnapshot)) {
+    renderDeepLinkUnavailable(snapshot);
     setReleaseHealth("該訊息快照不屬於目前 release；暫不載入其他資料。", "error");
-    setText("market-focus", "訊息快照與公開版本不一致，暫不替換為其他事件。");
     return;
   }
   const sectionByView = {
@@ -1489,21 +1543,21 @@ const applyDeepLink = async (snapshot) => {
       item.story_id,
     ].filter(Boolean).some((value) => String(value) === requestedAlert));
     if (!event) {
+      renderDeepLinkUnavailable(snapshot);
       setReleaseHealth("該訊息已歸檔或不可用；未顯示其他事件。", "error");
-      setText("market-focus", "找不到此 alert 的同一 release 證據，暫不替換為其他事件。");
       return;
     }
     if (requestedSnapshot && event.snapshot_id && String(event.snapshot_id) !== requestedSnapshot) {
+      renderDeepLinkUnavailable(snapshot);
       setReleaseHealth("該訊息快照與事件不一致；暫不載入其他事件。", "error");
-      setText("market-focus", "事件與快照核對失敗，暫不替換為其他事件。");
       return;
     }
     if (requestedObservation && event.observation_id && String(event.observation_id) !== requestedObservation) {
+      renderDeepLinkUnavailable(snapshot);
       setReleaseHealth("該訊息觀測 ID 與事件不一致；暫不載入其他事件。", "error");
-      setText("market-focus", "事件與來源觀測核對失敗，暫不替換為其他事件。");
       return;
     }
-    renderAlertCard({ items: [event] }, snapshot.generated_at, null, snapshot.indices || []);
+    renderResolvedDeepLink(snapshot, event);
   }
   if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
 };
@@ -1725,8 +1779,10 @@ const loadPublishedRelease = async () => {
 
 loadPublishedRelease()
   .then((snapshot) => {
-    render(snapshot);
+    const hasAlertDeepLink = Boolean(new URLSearchParams(window.location.search).get("alert"));
+    render(snapshot, { deferAlert: hasAlertDeepLink });
     applyDeepLink(snapshot).catch((error) => {
+      if (hasAlertDeepLink) renderDeepLinkUnavailable(snapshot);
       setReleaseHealth(`訊息連結載入失敗；已安全停止（${error.message}）。`, "error");
     });
     // Healthy is the normal state; keep engineering metadata out of the hero.
