@@ -12,6 +12,8 @@ def _snapshot() -> dict:
             "vendor_priority_notification": True,
             "notification_status": "eligible",
             "release_trace_required": True,
+            "public_signal_eligible": True,
+            "public_short_message": "🟣 FJ 9/10｜Oil supply risk。",
         }],
         "financialjuice_priority_events": [{
             "observation_id": "fj-1",
@@ -19,6 +21,8 @@ def _snapshot() -> dict:
             "notification_status": "eligible",
             "vendor_priority_notification": True,
             "alert_eligible": True,
+            "public_signal_eligible": True,
+            "public_short_message": "🟣 FJ 9/10｜Oil supply risk。",
             "source_trace": {"vendor_importance_is_not_risk": True},
         }],
     }

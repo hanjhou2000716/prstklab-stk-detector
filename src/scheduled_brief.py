@@ -163,7 +163,12 @@ def _pick_event(
     from src.alert_orchestrator import notification_key_for_event
 
     def available(item: dict) -> bool:
-        key = notification_key_for_event(item)
+        key = notification_key_for_event(item) or str(
+            item.get("notification_id")
+            or item.get("item_id")
+            or item.get("observation_id")
+            or ""
+        ).strip()
         return key not in excluded and str(item.get("event_key") or "") not in excluded
 
     # A qualifying FinancialJuice item has its own vendor-priority lane.  It
@@ -171,10 +176,29 @@ def _pick_event(
     # has consumed it; risk still stays in the conservative PRStK state.
     priority_events = snapshot.get("financialjuice_priority_events") or []
     if isinstance(priority_events, list):
-        first_priority = next(
+        def priority_key(item: dict) -> tuple[int, int, float, str]:
+            """Prefer complete, important, recent FJ facts deterministically."""
+            complete = bool(
+                item.get("public_signal_eligible") is not False
+                and item.get("alert_eligible") is not False
+                and str(item.get("notification_status") or "eligible") == "eligible"
+            )
+            try:
+                importance = int(item.get("importance") or item.get("vendor_importance") or 0)
+            except (TypeError, ValueError):
+                importance = 0
+            published = str(item.get("published_at") or item.get("received_at") or "")
+            try:
+                published_score = datetime.fromisoformat(published.replace("Z", "+00:00")).timestamp()
+            except (TypeError, ValueError, OverflowError):
+                published_score = float("-inf")
+            return (0 if complete else 1, -importance, -published_score, notification_key_for_event(item))
+
+        ordered_priority = sorted(
             (item for item in priority_events if isinstance(item, dict) and available(item)),
-            None,
+            key=priority_key,
         )
+        first_priority = ordered_priority[0] if ordered_priority else None
         if first_priority:
             return first_priority
     events = [

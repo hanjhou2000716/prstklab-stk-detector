@@ -32,7 +32,7 @@ _RISK_ICONS = {"R0": "🟢", "R1": "🟢", "R2": "🟡", "R3": "🟠", "R4": "�
 _RISK_CATEGORIES = {"R0": "市場觀察", "R1": "市場觀察", "R2": "市場觀察", "R3": "市場風險", "R4": "重大風險"}
 _GENERIC_PUBLIC_LABELS = frozenset({
     "市場觀察", "市場風險", "重大風險", "市場待核對", "市場資訊待核對",
-    "資料待核對", "快訊", "價格訊號", "重大事件", "重要事件",
+    "資料待核對", "資訊待核對", "資訊待核對。", "快訊", "價格訊號", "重大事件", "重要事件",
 })
 
 
@@ -259,6 +259,8 @@ def summarize_public_message(
         if (
             cleaned
             and cleaned not in _GENERIC_PUBLIC_LABELS
+            and not re.search(r"\bundefined\b", cleaned, flags=re.IGNORECASE)
+            and not re.match(r"^(?:https?://|www\.)", cleaned, flags=re.IGNORECASE)
             and "…" not in cleaned
             and "..." not in cleaned
         ):
@@ -298,6 +300,39 @@ def summarize_public_message(
     if not body or "…" in body or "..." in body:
         return ""
     return head + body
+
+
+def is_valid_public_summary(text: str, *, source: str = "") -> bool:
+    """Return whether text satisfies the public one-sentence contract.
+
+    This validator is intentionally stricter than ``validate_brief``.  The
+    latter is a transport boundary and accepts legacy test/operational text;
+    this function is the content gate used before a release or notification
+    exposes a source event to users.
+    """
+    value = " ".join(str(text or "").split()).strip()
+    if not value or len(value) > PUBLIC_TEXT_MAX_CHARS:
+        return False
+    if any(marker in value for marker in ("…", "...")):
+        return False
+    if re.search(r"\bundefined\b", value, flags=re.IGNORECASE) or re.search(r"https?://|www\.", value, flags=re.IGNORECASE):
+        return False
+    if any(label.casefold() == value.casefold() for label in _GENERIC_PUBLIC_LABELS):
+        return False
+    if source.casefold() == "financialjuice":
+        match = re.match(r"^🟣\s*FJ\s*\d+(?:\.\d+)?\s*/\s*10｜(.+)$", value, flags=re.IGNORECASE)
+        if not match or value.count("｜") != 1:
+            return False
+        body = match.group(1).strip()
+        if not body or body.casefold() in {label.casefold() for label in _GENERIC_PUBLIC_LABELS}:
+            return False
+        if re.fullmatch(r"[🟢🟡🟠🔴⚪⚫🟣\s。！？!?，,、:：|｜]*", body):
+            return False
+        if body.endswith(("：", ":", "|", "｜")):
+            return False
+        return True
+    body = re.sub(r"^[🟢🟡🟠🔴⚪⚫🟣]\s*", "", value).strip()
+    return bool(body) and body.casefold() not in {label.casefold() for label in _GENERIC_PUBLIC_LABELS}
 
 
 def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
@@ -444,6 +479,8 @@ def send_brief(
 ) -> TelegramResult:
     """Send a brief with one dashboard button through Telegram Bot API."""
     validate_brief(text)
+    if not is_valid_public_summary(text):
+        raise ValueError("公開訊息內容不完整，已停止發送。")
     payload_to_send = {
         "chat_id": chat_id,
         "text": text,
@@ -507,6 +544,8 @@ def send_briefs(
     if not chat_ids:
         raise ValueError("至少需要一個 Telegram 收件人。")
     text = canonical_short_message(text, prstk_risk_level=prstk_risk_level)
+    if not is_valid_public_summary(text):
+        raise ValueError("公開訊息內容不完整，已停止發送。")
     deliveries: list[TelegramDelivery] = []
     for chat_id in chat_ids:
         try:
@@ -561,6 +600,8 @@ def send_text_briefs_audited(
     if prstk_risk_level not in PRSTK_RISK_LEVELS:
         raise ValueError("PRStK risk level must be one of R0-R4")
     text = canonical_short_message(text, prstk_risk_level=prstk_risk_level)
+    if not is_valid_public_summary(text):
+        raise ValueError("公開訊息內容不完整，已停止發送。")
     receipts: list[TextDeliveryReceipt] = []
     for chat_id in chat_ids:
         recipient_hash = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]

@@ -19,6 +19,7 @@ from src.telegram_client import (
     TextDeliveryReceipt,
     alert_mini_app_url,
     canonical_prstk_risk_level,
+    is_valid_public_summary,
     send_text_briefs_audited,
 )
 
@@ -45,6 +46,8 @@ def _compress_fj_sentence(value: str) -> str:
 
     text = _clean_public_fragment(value)
     if not text or "…" in text or "..." in text:
+        return ""
+    if re.search(r"\bundefined\b", text, flags=re.IGNORECASE) or re.search(r"https?://|www\.", text, flags=re.IGNORECASE):
         return ""
     text = re.sub(r"\s+", " ", text).strip()
     text = re.sub(r"\s+-\s+The Information\s*$", "", text, flags=re.IGNORECASE)
@@ -91,14 +94,21 @@ def _financialjuice_headline(event: dict[str, Any]) -> str:
         "vendor_original_headline", "original_headline",
     ):
         value = _clean_public_fragment(event.get(field))
+        # A malformed Morning Juice envelope is metadata plus a raw URL/body,
+        # not a usable event headline.  Let a richer parsed field win, or
+        # suppress the item when no such field exists.
+        if re.match(r"^undefined\s*[|｜]", value, flags=re.IGNORECASE):
+            continue
+        if field in {"brief_title", "title"}:
+            value = re.sub(r"^[🟣🟡🟠🔴⚪⚫]\s*FJ\s*\d+(?:\.\d+)?\s*/\s*10\s*[｜|]\s*", "", value, flags=re.IGNORECASE)
         value = _compress_fj_sentence(value)
         if value and value.casefold() not in generic:
             return value
     return ""
 
 
-def financialjuice_notification_key(event: dict[str, Any]) -> str:
-    """Return a stable opaque key for one FJ event/item."""
+def _legacy_financialjuice_notification_key(event: dict[str, Any]) -> str:
+    """Return the pre-convergence key so old delivered rows remain idempotent."""
     material = "|".join(
         _text(event.get(name)).casefold()
         for name in ("event_cluster_key", "item_id", "observation_id", "source_url")
@@ -106,6 +116,25 @@ def financialjuice_notification_key(event: dict[str, Any]) -> str:
     if not material:
         return ""
     return f"financialjuice:{hashlib.sha256(material.encode('utf-8')).hexdigest()[:24]}"
+
+
+def financialjuice_notification_key(event: dict[str, Any]) -> str:
+    """Return a stable key based on normalized facts, not ingress identity."""
+    headline = _financialjuice_headline(event)
+    impact = _text(event.get("possible_impact") or event.get("possible_linkage"))
+    material = "|".join((headline, impact)).casefold().strip("|")
+    if not material:
+        material = _text(event.get("content_hash")).casefold()
+    if not material:
+        return ""
+    return f"financialjuice:{hashlib.sha256(material.encode('utf-8')).hexdigest()[:24]}"
+
+
+def financialjuice_notification_aliases(event: dict[str, Any]) -> tuple[str, ...]:
+    """Return current and legacy identities for replay-safe migration."""
+    current = financialjuice_notification_key(event)
+    legacy = _legacy_financialjuice_notification_key(event)
+    return tuple(dict.fromkeys(item for item in (current, legacy) if item))
 
 
 def financialjuice_public_short_message(
@@ -137,7 +166,8 @@ def financialjuice_public_short_message(
         content,
         prstk_risk_level=canonical_prstk_risk_level(event),
     )
-    return _bounded(raw, limit)
+    bounded = _bounded(raw, limit)
+    return bounded if is_valid_public_summary(bounded, source="financialjuice") else ""
 
 
 def financialjuice_caption(event: dict[str, Any], *, limit: int = MAX_FINANCIALJUICE_CAPTION) -> str:
@@ -146,12 +176,12 @@ def financialjuice_caption(event: dict[str, Any], *, limit: int = MAX_FINANCIALJ
 
 
 def _history_delivered(
-    history: list[dict[str, Any]], notification_key: str, recipient_hash: str,
+    history: list[dict[str, Any]], notification_keys: tuple[str, ...], recipient_hash: str,
 ) -> bool:
     for row in history:
         if not isinstance(row, dict):
             continue
-        if _text(row.get("notification_key")) != notification_key:
+        if _text(row.get("notification_key")) not in set(notification_keys):
             continue
         if _text(row.get("recipient_hash") or row.get("chat_id_hash")) != recipient_hash:
             continue
@@ -184,6 +214,8 @@ def deliver_financialjuice_event(
     retries only recipients that did not already succeed.
     """
     notification_key = financialjuice_notification_key(event)
+    notification_keys = financialjuice_notification_aliases(event)
+    caption = financialjuice_caption(event, limit=MAX_FINANCIALJUICE_CAPTION)
     reasons: list[str] = []
     if _text(event.get("source_key") or event.get("source")).casefold() != "financialjuice":
         reasons.append("source_not_financialjuice")
@@ -191,8 +223,6 @@ def deliver_financialjuice_event(
         reasons.append("vendor_priority_not_eligible")
     if not release_ready:
         reasons.append("release_gate_not_ready")
-    if not notification_key:
-        reasons.append("notification_key_missing")
     if not token or not chat_ids:
         reasons.append("telegram_configuration_missing")
     if reasons:
@@ -205,7 +235,7 @@ def deliver_financialjuice_event(
             "snapshot_id": snapshot_id,
         }
 
-    if not financialjuice_caption(event, limit=MAX_FINANCIALJUICE_CAPTION):
+    if not is_valid_public_summary(caption, source="financialjuice"):
         return {
             "status": "blocked",
             "notification_key": notification_key,
@@ -214,11 +244,20 @@ def deliver_financialjuice_event(
             "release_id": release_id,
             "snapshot_id": snapshot_id,
         }
+    if not notification_key:
+        return {
+            "status": "blocked",
+            "notification_key": notification_key,
+            "reasons": ["notification_key_missing"],
+            "receipts": [],
+            "release_id": release_id,
+            "snapshot_id": snapshot_id,
+        }
 
     history = delivery_history or []
     pending_ids = tuple(
         chat_id for chat_id in chat_ids
-        if not _history_delivered(history, notification_key, _recipient_hash(chat_id))
+        if not _history_delivered(history, notification_keys, _recipient_hash(chat_id))
     )
     claim: dict[str, Any] | None = None
     if ledger is not None and hasattr(ledger, "claim_notification"):
@@ -269,7 +308,7 @@ def deliver_financialjuice_event(
         delivered = sender(
             token=token,
             chat_ids=pending_ids,
-            text=financialjuice_caption(event),
+            text=caption,
             dashboard_url=mini_app_url,
             alert_id=alert_id,
             release_id=release_id,
@@ -345,4 +384,5 @@ __all__ = [
     "financialjuice_caption",
     "financialjuice_public_short_message",
     "financialjuice_notification_key",
+    "financialjuice_notification_aliases",
 ]

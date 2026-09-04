@@ -93,7 +93,7 @@ def test_monitor_selects_threshold_price_signal_when_no_official_release_exists(
     }
     event = select_official_event(snapshot)
     assert event is not None
-    assert build_official_event_brief(event).startswith("🔴 TAIEX，")
+    assert build_official_event_brief(event) == ""
 
 
 def test_monitor_prioritizes_eligible_financialjuice_vendor_priority_event():

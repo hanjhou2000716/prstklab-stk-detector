@@ -25,7 +25,25 @@ def test_financialjuice_notification_identity_prevents_unrelated_cache_collision
         "title": "Nscale Anthropic contract",
     }
     assert canonical_event_key(first) != canonical_event_key(second)
-    assert canonical_event_key(first) == canonical_event_key({**first, "title": "replayed title"})
+    assert canonical_event_key(first) != canonical_event_key({**first, "title": "replayed title"})
+
+
+def test_financialjuice_identity_ignores_ingress_ids_and_urls_when_facts_match():
+    first = {
+        "source_key": "financialjuice",
+        "notification_id": "mail-item-1",
+        "item_id": "mail-item-1",
+        "source_url": "https://one.example/fj/1?utm_source=mail",
+        "event": "Iran telecom infrastructure attack reported。",
+        "possible_impact": "Energy risk may rise。",
+    }
+    replay = {
+        **first,
+        "notification_id": "mail-item-2",
+        "item_id": "mail-item-2",
+        "source_url": "https://two.example/fj/2",
+    }
+    assert canonical_event_key(first) == canonical_event_key(replay)
 
 
 def test_financialjuice_delivery_without_article_url_keeps_vendor_provenance(tmp_path):

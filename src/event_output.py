@@ -63,7 +63,12 @@ def short_event_message(event: dict[str, Any], *, prefix: str = "快訊") -> str
             move = ""
     if not summary:
         direction = str(event.get("market_direction") or "").strip()
-        summary = "｜".join(part for part in (direction, move) if part) or "資訊待核對"
+        summary = "｜".join(part for part in (direction, move) if part)
+        if is_price and not summary:
+            # A ticker alone is not an event fact.  Do not turn missing price
+            # evidence into a misleading public notification.
+            return ""
+        summary = summary or "資訊待核對"
     if topic in {"Fed／貨幣政策", "Fed/貨幣政策"}:
         topic = "Fed"
     risk = canonical_prstk_risk_level(event)

@@ -33,13 +33,13 @@ def test_scheduled_brief_prioritises_eligible_financialjuice_event() -> None:
 def test_scheduled_selection_skips_fj_without_release_alert_and_uses_next_candidate(monkeypatch) -> None:
     first = {
         "source_key": "financialjuice", "notification_status": "eligible",
-        "vendor_priority_notification": True, "notification_id": "missing-alert",
-        "title": "First FJ event",
+        "vendor_priority_notification": True, "vendor_importance": 9,
+        "notification_id": "missing-alert", "event": "First FJ event。",
     }
     second = {
         "source_key": "financialjuice", "notification_status": "eligible",
-        "vendor_priority_notification": True, "notification_id": "published-alert",
-        "title": "Second FJ event",
+        "vendor_priority_notification": True, "vendor_importance": 8,
+        "notification_id": "published-alert", "event": "Second FJ event。",
     }
     candidates = iter((first, second))
     monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args, **_kwargs: next(candidates, None))
@@ -226,9 +226,10 @@ def test_scheduled_market_delivery_does_not_require_fresh_research(tmp_path, mon
     scheduled_delivery.send(snapshot_path, "morning", manifest_path)
     assert captured["require_production_research"] is False
     text = output.read_text(encoding="utf-8")
-    assert "notification_expected=true" in text
-    assert "notification_status=ready" in text
-    assert "notification_reason=no_trigger" in text
+    assert "notification_expected=false" in text
+    assert "notification_status=suppressed" in text
+    assert "notification_reason=no_eligible_candidate" in text
+    assert "sent=true" not in text
 
 
 def test_scheduled_market_delivery_falls_back_after_all_candidates_are_suppressed(tmp_path, monkeypatch):
@@ -244,8 +245,10 @@ def test_scheduled_market_delivery_falls_back_after_all_candidates_are_suppresse
     candidate = {
         "source_key": "financialjuice",
         "notification_status": "eligible",
+        "vendor_priority_notification": True,
+        "vendor_importance": 9,
         "notification_id": "fj-already-covered",
-        "title": "已送達的 FJ 事件",
+        "event": "已送達的 FJ 事件。",
     }
 
     class FakeLedger:
@@ -288,9 +291,9 @@ def test_scheduled_market_delivery_falls_back_after_all_candidates_are_suppresse
 
     scheduled_delivery.send(snapshot_path, "us_open", manifest_path)
     text = output.read_text(encoding="utf-8")
-    assert "sent=true" in text
-    assert "notification_status=ready" in text
-    assert "notification_reason=no_trigger" in text
+    assert "sent=false" in text
+    assert "notification_status=suppressed" in text
+    assert "notification_reason=same_theme_within_2h" in text
 
 
 def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path, monkeypatch):
@@ -436,6 +439,16 @@ def test_scheduled_delivery_records_text_delivery_failure(tmp_path, monkeypatch)
     _patch_ready(monkeypatch, output)
     monkeypatch.setattr(
         scheduled_delivery,
+        "_pick_event",
+        lambda *_args: {
+            "source_key": "official",
+            "event_key": "official-1",
+            "title": "官方事件。",
+            "notification_status": "eligible",
+        },
+    )
+    monkeypatch.setattr(
+        scheduled_delivery,
         "send_text_briefs_audited",
         lambda **_kwargs: (_ for _ in ()).throw(ValueError("text failure")),
     )
@@ -566,14 +579,14 @@ def test_prepare_binds_sanitized_external_observations_to_snapshot(tmp_path, mon
     monkeypatch.setattr(scheduled_delivery, "build_briefing_snapshot", lambda snapshot, _slot: {
         "external_observations": snapshot.get("external_observations"),
     })
-    monkeypatch.setattr(scheduled_delivery, "write_snapshot", lambda snapshot, path: path.write_text(json.dumps(snapshot), encoding="utf-8") is None)
+    monkeypatch.setattr(scheduled_delivery, "write_snapshot", lambda snapshot, path: (path.write_text(json.dumps(snapshot), encoding="utf-8"), True)[1])
     monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: None)
     monkeypatch.setattr(scheduled_delivery, "briefing_correlation", lambda *_args: {"trace_id": "t", "snapshot_id": "m-1", "observation_id": ""})
     monkeypatch.setattr(scheduled_delivery, "merge_published_metadata", lambda *_args, **_kwargs: True)
     scheduled_delivery.prepare("morning", snapshot_path)
     published = json.loads(snapshot_path.read_text(encoding="utf-8"))
-    assert published["external_observations"][0]["observation_id"] == "fj-1"
-    assert published["briefing"]["external_observations"][0]["source"] == "financialjuice"
+    assert published["external_observations"] == []
+    assert published["briefing"]["external_observations"] == []
     assert published["external_source_health"]["status"] == "healthy"
 
 
@@ -662,14 +675,13 @@ def test_prepare_fetches_sanitized_railway_observations_into_release(tmp_path, m
     monkeypatch.setattr(scheduled_delivery, "build_briefing_snapshot", lambda snapshot, _slot: {
         "external_observations": snapshot.get("external_observations"),
     })
-    monkeypatch.setattr(scheduled_delivery, "write_snapshot", lambda snapshot, path: path.write_text(json.dumps(snapshot), encoding="utf-8") is None)
+    monkeypatch.setattr(scheduled_delivery, "write_snapshot", lambda snapshot, path: (path.write_text(json.dumps(snapshot), encoding="utf-8"), True)[1])
     monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: None)
     monkeypatch.setattr(scheduled_delivery, "briefing_correlation", lambda *_args: {"trace_id": "t", "snapshot_id": "m-1", "observation_id": ""})
     monkeypatch.setattr(scheduled_delivery, "merge_published_metadata", lambda *_args, **_kwargs: True)
     scheduled_delivery.prepare("morning", snapshot_path)
     published = json.loads(snapshot_path.read_text(encoding="utf-8"))
-    assert published["external_observations"][0]["observation_id"] == "fj-remote"
-    assert {row["observation_id"] for row in published["external_observations"]} == {"fj-remote", "jenny-remote"}
+    assert [row["observation_id"] for row in published["external_observations"]] == ["jenny-remote"]
     assert [row["observation_id"] for row in published["financialjuice_observations"]] == ["fj-remote"]
     assert published["external_source_health"]["provider_status"] == "ready"
     assert published["external_source_health"]["status"] == "healthy"
@@ -695,12 +707,12 @@ def test_prepare_keeps_local_fallback_when_railway_export_fails(tmp_path, monkey
     monkeypatch.setattr(scheduled_delivery, "build_briefing_snapshot", lambda snapshot, _slot: {
         "external_observations": snapshot.get("external_observations"),
     })
-    monkeypatch.setattr(scheduled_delivery, "write_snapshot", lambda snapshot, path: path.write_text(json.dumps(snapshot), encoding="utf-8") is None)
+    monkeypatch.setattr(scheduled_delivery, "write_snapshot", lambda snapshot, path: (path.write_text(json.dumps(snapshot), encoding="utf-8"), True)[1])
     monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: None)
     monkeypatch.setattr(scheduled_delivery, "briefing_correlation", lambda *_args: {"trace_id": "t", "snapshot_id": "m-1", "observation_id": ""})
     monkeypatch.setattr(scheduled_delivery, "merge_published_metadata", lambda *_args, **_kwargs: True)
     scheduled_delivery.prepare("morning", snapshot_path)
     published = json.loads(snapshot_path.read_text(encoding="utf-8"))
-    assert published["external_observations"][0]["observation_id"] == "fj-local"
+    assert published["external_observations"] == []
     assert published["external_source_health"]["status"] == "partial"
     assert published["external_source_health"]["issues"] == ["http_503"]

@@ -134,8 +134,16 @@ def test_mini_app_renders_financialjuice_evidence_from_release_fixture() -> None
                 "observation_id": "obs-fj-fixture-1",
                 "source_key": "financialjuice",
                 "source": "FinancialJuice",
-                "title": "公開外部事件（測試）",
-                "summary": "等待官方與市場證據核對。",
+                "title": "伊朗：美國攻擊電信和通信基礎設施。",
+                "event": "伊朗：美國攻擊電信和通信基礎設施。",
+                "public_short_message": "🟣 FJ 9/10｜伊朗：美國攻擊電信和通信基礎設施。",
+                "brief_title": "🟣 FJ 9/10｜伊朗：美國攻擊電信和通信基礎設施。",
+                "summary": "來源快訊標示重要度 9/10。",
+                "why_important": "來源快訊標示重要度 9/10；仍待官方與市場證據核對。",
+                "possible_linkage": "可能影響美股與美國利率預期。",
+                "stock_observation": "觀察 NASDAQ、US10Y 是否同步。",
+                "notification_key": "financialjuice:fixture-1",
+                "public_signal_eligible": True,
                 "official_confirmed": False,
                 "market_sync_confirmed": False,
                 "vendor_importance": 9,
@@ -150,9 +158,12 @@ def test_mini_app_renders_financialjuice_evidence_from_release_fixture() -> None
         "financialjuice_priority_decisions": [
             {
                 "observation_id": "obs-fj-fixture-1",
+                "notification_key": "financialjuice:fixture-1",
                 "notification_status": "eligible",
                 "vendor_importance": 9,
                 "notification_reason": "供應商重要度達 8/10",
+                "public_signal_eligible": True,
+                "public_short_message": "🟣 FJ 9/10｜伊朗：美國攻擊電信和通信基礎設施。",
             }
         ],
         "financialjuice_priority_events": [],
@@ -206,14 +217,14 @@ def test_mini_app_renders_financialjuice_evidence_from_release_fixture() -> None
             external = page.locator("#external-intelligence-content .external-insight").first
             rendered = external.text_content() or ""
             for expected in (
-                "公開外部事件（測試）",
+                "伊朗：美國攻擊電信和通信基礎設施。",
                 "FinancialJuice｜等待官方核對／市場同步",
                 "供應商優先：可通知｜供應商重要度達 8/10",
                 "來源重要度：9/10（不等同 PRStK 風險）",
                 "PRStK Risk：R2",
                 "發布鏈：release release-fj-fixture-20260822｜snapshot market-fixture-20260822｜observation obs-fj-fixture-1",
                 "資料時間：",
-                "等待官方與市場證據核對。",
+                "仍待官方與市場證據核對。",
                 "公開來源",
             ):
                 assert expected in rendered
@@ -221,7 +232,7 @@ def test_mini_app_renders_financialjuice_evidence_from_release_fixture() -> None
             alert_text = alert.text_content() or ""
             for expected in (
                 "伊朗：美國攻擊電信和通信基礎設施。",
-                "來源快訊標示重要度 10/10",
+                "來源快訊標示重要度 9/10",
                 "可能影響美股與美國利率預期",
                 "NASDAQ",
                 "US10Y",
@@ -241,7 +252,7 @@ def test_mini_app_renders_financialjuice_evidence_from_release_fixture() -> None
             assert page.locator("#data-status").text_content() == "資料降級"
             assert "目前沿用上一個成功版本" in (page.locator("#market-focus").text_content() or "")
             assert "資料降級" in (page.locator("#release-health").text_content() or "")
-            assert "公開外部事件（測試）" in (page.locator("#external-intelligence-content").text_content() or "")
+            assert "🟣 FJ 9/10｜伊朗：美國攻擊電信和通信基礎設施。" in (page.locator("#external-intelligence-content").text_content() or "")
             browser.close()
     except Exception as exc:
         if "Executable doesn't exist" in str(exc) or "executable doesn't exist" in str(exc):
