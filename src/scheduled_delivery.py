@@ -132,10 +132,10 @@ def _creator_records_from_observations(rows: list[dict]) -> list[dict]:
         if not isinstance(row, dict) or not row.get("public_safe"):
             continue
         provider = str(row.get("content_origin") or row.get("source") or "").strip().casefold()
-        if provider not in creator_ids():
+        if provider not in creator_ids(enabled_only=True):
             continue
         key = str(row.get("episode_key") or row.get("observation_id") or "").strip()
-        if not key or key in seen or str(row.get("parse_status") or "normalized").casefold() in {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}:
+        if not key or key in seen or str(row.get("parse_status") or "normalized").casefold() in {"parse_failed", "unsupported_template", "invalid_source", "duplicate", "retired_source_suppressed"}:
             continue
         record = dict(row)
         record.setdefault("creator_id", provider)
@@ -151,7 +151,7 @@ def _load_creator_records(extra_rows: list[dict] | None = None) -> list[dict]:
     """Load only the optional sanitized creator input outside the Pages tree."""
     path = _creator_records_path()
     safe_records: list[dict] = []
-    blocked_states = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
+    blocked_states = {"parse_failed", "unsupported_template", "invalid_source", "duplicate", "retired_source_suppressed"}
     private_fields = {"body", "raw_body", "local_path", "private_url", "attachments", "data"}
     if path is not None:
         try:
@@ -167,6 +167,9 @@ def _load_creator_records(extra_rows: list[dict] | None = None) -> list[dict]:
                 if any(item.get(field) not in (None, "", [], {}) for field in private_fields):
                     continue
                 if str(item.get("parse_status") or "").strip() in blocked_states:
+                    continue
+                provider = str(item.get("content_origin") or item.get("source") or "").strip().casefold()
+                if provider not in creator_ids(enabled_only=True):
                     continue
                 safe_records.append(item)
     combined = [*safe_records, *(_creator_records_from_observations(extra_rows or []))]
@@ -187,15 +190,15 @@ def _creator_input_failures() -> dict[str, str]:
         return {}
     path = _creator_records_path()
     if path is None:
-        return {provider: "creator_records_unavailable" for provider in creator_ids()}
+        return {provider: "creator_records_unavailable" for provider in creator_ids(enabled_only=True)}
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError):
-        return {provider: "creator_records_parse_failed" for provider in creator_ids()}
+        return {provider: "creator_records_parse_failed" for provider in creator_ids(enabled_only=True)}
     if isinstance(payload, dict):
         payload = payload.get("records")
     if not isinstance(payload, list):
-        return {provider: "creator_records_invalid_shape" for provider in creator_ids()}
+        return {provider: "creator_records_invalid_shape" for provider in creator_ids(enabled_only=True)}
     blocked_states = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
     private_fields = {"body", "raw_body", "local_path", "private_url", "attachments", "data"}
     failures: dict[str, str] = {}
@@ -203,7 +206,7 @@ def _creator_input_failures() -> dict[str, str]:
         if not isinstance(item, dict):
             continue
         provider = str(item.get("content_origin") or item.get("source") or "").strip().lower()
-        if provider not in creator_ids():
+        if provider not in creator_ids(enabled_only=True):
             continue
         if str(item.get("parse_status") or "").strip().lower() in blocked_states:
             failures[provider] = "creator_records_parse_failed"
@@ -483,6 +486,7 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
             enabled=os.getenv("CREATOR_NOTIFICATION_ENABLED", "").strip().lower() == "true",
             configured=_creator_records_path() is not None,
             failures=_creator_input_failures(),
+            providers=creator_ids(enabled_only=True),
         )
         snapshot["source_health"] = merge_creator_sources(snapshot.get("source_health") or {}, creator_rows)
         snapshot["creator_source_health"] = creator_rows

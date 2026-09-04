@@ -24,7 +24,7 @@ except ModuleNotFoundError as error:  # pragma: no cover - exercised in the Rail
         _entries = _bundle.get("providers") if isinstance(_bundle, dict) else None
         if not isinstance(_entries, list) or not _entries:
             raise ValueError("creator provider bundle is empty")
-        _providers: dict[str, tuple[str, ...]] = {}
+        _providers: dict[str, tuple[tuple[str, ...], bool]] = {}
         for _entry in _entries:
             if not isinstance(_entry, dict):
                 raise ValueError("creator provider bundle entry is invalid")
@@ -33,22 +33,26 @@ except ModuleNotFoundError as error:  # pragma: no cover - exercised in the Rail
             _markers = _rules.get("markers") if isinstance(_rules, dict) else None
             if not _creator_id or not isinstance(_markers, list) or not _markers:
                 raise ValueError("creator provider bundle entry is incomplete")
-            _providers[_creator_id] = tuple(str(item).strip().casefold() for item in _markers if str(item).strip())
+            _providers[_creator_id] = (
+                tuple(str(item).strip().casefold() for item in _markers if str(item).strip()),
+                bool(_entry.get("enabled", True)),
+            )
         if len(_providers) != len(_entries):
             raise ValueError("creator provider bundle contains duplicate ids")
     except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
         raise RuntimeError("creator provider bundle unavailable") from exc
 
     class _BundledProvider:
-        def __init__(self, markers: tuple[str, ...]) -> None:
+        def __init__(self, markers: tuple[str, ...], enabled: bool) -> None:
             self.markers = markers
+            self.enabled = enabled
 
     def creator_ids(*, enabled_only: bool = False) -> tuple[str, ...]:
         del enabled_only
         return tuple(_providers)
 
     def get_creator_provider(creator_id: str) -> _BundledProvider | None:
-        return _BundledProvider(_providers[creator_id]) if creator_id in _providers else None
+        return _BundledProvider(*_providers[creator_id]) if creator_id in _providers else None
 
 try:
     # The Railway service normally runs from the repository root.  Keep the
@@ -65,7 +69,7 @@ KNOWN_SOURCES = {"financialjuice", *creator_ids()}
 # and the health projection can report the missing parser dependency.
 DLQ_STATES = {
     "parse_failed", "unsupported_template", "invalid_source", "duplicate",
-    "parser_unavailable",
+    "parser_unavailable", "retired_source_suppressed",
 }
 PARSER_VERSION = "railway-email-router-v1"
 _FINANCIALJUICE_DOMAINS = frozenset({"financialjuice.com"})
@@ -173,6 +177,15 @@ def route_source(*, sender: str, subject: str, body: str, attachments: list[dict
     }
     for provider, markers in registry_signals.items():
         if any(marker in identity_text for marker in markers):
+            provider_config = get_creator_provider(provider)
+            if provider_config is not None and not provider_config.enabled:
+                return {
+                    "source": provider,
+                    "content_type": "creator_analysis",
+                    "parse_status": "retired_source_suppressed",
+                    "failure_reason": "creator_source_retired",
+                    "template_fingerprint": template_fingerprint(subject, body, attachments),
+                }
             trusted_identity = _trusted_identity(
                 markers=markers,
                 sender=sender,

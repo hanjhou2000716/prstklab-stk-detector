@@ -9,6 +9,7 @@ from src.creator_provider_registry import (
     get_creator_provider,
     is_known_creator,
     load_creator_registry,
+    retired_creator_ids,
 )
 
 
@@ -21,6 +22,11 @@ def test_registry_contains_ordered_editorial_providers():
     assert get_creator_provider("gooaye").morning_required is False
     assert is_known_creator("jenny")
     assert not is_known_creator("unknown")
+
+
+def test_all_creator_providers_are_retired_without_erasing_registry_history():
+    assert creator_ids(enabled_only=True) == ()
+    assert retired_creator_ids() == ("haojiao", "jenny", "gooaye")
 
 
 def test_registry_rejects_duplicate_ids(tmp_path):

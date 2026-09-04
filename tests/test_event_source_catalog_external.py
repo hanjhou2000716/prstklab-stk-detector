@@ -5,7 +5,7 @@ def test_external_sources_are_registered_without_alert_authority():
     assert validate_catalog() == []
     assert source_for("financialjuice").can_trigger_alone is False
     assert source_for("gmail").tier == "transport"
-    assert source_for("haojiao").tier == "editorial"
+    assert source_for("haojiao") is None
 
 
 def test_missing_external_source_stays_not_scanned_not_no_event():

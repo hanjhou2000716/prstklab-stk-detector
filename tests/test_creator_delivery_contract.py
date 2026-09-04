@@ -11,7 +11,8 @@ def test_creator_notification_is_idempotent_and_release_gated() -> None:
     assert "already_delivered" in result["reasons"]
 
 
-def test_creator_media_degrades_to_text_only_after_ready_release() -> None:
+def test_creator_media_degrades_to_text_only_after_ready_release(monkeypatch) -> None:
+    monkeypatch.setattr("src.creator_delivery_contract.is_active_creator", lambda _creator: True)
     result = decide_creator_delivery({"episode_key": "haojiao:ep-1", "public_safe": True}, release_ready=True, media_available=False)
     assert result["allowed"] is True
     assert result["media_mode"] == "text_only"

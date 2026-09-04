@@ -35,7 +35,7 @@ EVENT_SOURCES: tuple[EventSource, ...] = (
     EventSource("reuters", "discovery", "https://www.reuters.com/", "discovery", 15, 45, False),
     EventSource("financialjuice", "discovery", "https://www.financialjuice.com/", "discovery", 5, 45, False),
     EventSource("gmail", "transport", "https://gmail.googleapis.com/", "transport", 5, 15, False),
-    *(EventSource(provider, "editorial", "https://www.youtube.com/", "editorial", 15, 180, False) for provider in creator_ids()),
+    *(EventSource(provider, "editorial", "https://www.youtube.com/", "editorial", 15, 180, False) for provider in creator_ids(enabled_only=True)),
 )
 
 _ALLOWED_TIERS = {"official", "public-market", "discovery", "transport", "editorial"}

@@ -133,6 +133,20 @@ class _LatestFinancialJuiceClient(_Client):
         return _Response(_message("m-latest"))
 
 
+class _RetiredCreatorClient(_Client):
+    async def get(self, url, **kwargs):
+        self.calls.append(("GET", url, kwargs))
+        if url.endswith("/history"):
+            return _Response({"historyId": "h1", "history": [{"messagesAdded": [{"message": {"id": "m-retired"}}]}]})
+        message = _message("m-retired")
+        message["payload"]["headers"] = [
+            {"name": "From", "value": "財經皓角 <creator@example.com>"},
+            {"name": "Subject", "value": "財經皓角市場觀察"},
+            {"name": "Date", "value": "Sun, 23 Aug 2026 19:15:42 -0700 (PDT)"},
+        ]
+        return _Response(message)
+
+
 def _config() -> GmailWatchConfig:
     return GmailWatchConfig(
         topic_name="projects/test/topics/gmail",
@@ -205,6 +219,23 @@ def test_sync_history_routes_message_and_saves_public_projection(tmp_path) -> No
     assert health["public_observation_count"] == 1
     assert health["source_health"]["financialjuice"]["parsed_count"] == 1
     assert store.cursor()["last_history_id"] == "h1"
+
+
+def test_sync_history_suppresses_retired_creator_and_advances_cursor(tmp_path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(last_history_id="h0")
+    ingress = GmailIngressService(store, _config())
+    result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_RetiredCreatorClient))
+    assert result == {
+        "status": "healthy",
+        "processed": 1,
+        "failed": 0,
+        "duplicate": 0,
+        "suppressed": 1,
+    }
+    assert store.cursor()["last_history_id"] == "h1"
+    assert store.health()["public_observation_count"] == 0
+    assert store.health()["dlq_count"] == 1
 
 
 def test_sync_history_fetches_text_attachment_before_ingress(tmp_path) -> None:

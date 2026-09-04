@@ -24,7 +24,7 @@ from src.schedule_contract import (
     creator_batch_late_end,
 )
 
-_FAILED = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
+_FAILED = {"parse_failed", "unsupported_template", "invalid_source", "duplicate", "retired_source_suppressed"}
 _DEFAULT_BATCH_TIME = CREATOR_MORNING_BATCH_TIME
 
 
@@ -146,7 +146,7 @@ def build_creator_morning_batch(
     selected.sort(key=lambda item: (_creator_id(item), _episode_key(item)))
     missing = [provider for provider in expected if provider not in {_creator_id(item) for item in selected}]
     count = len(selected)
-    state = "complete" if count == len(expected) else "partial" if count else "no_new_content"
+    state = "no_new_content" if not expected else "complete" if count == len(expected) else "partial" if count else "no_new_content"
     episode_keys = [_episode_key(item) for item in selected]
     batch_key = f"creator-morning:{day.isoformat()}:{_stable_key({'creators': expected, 'episodes': sorted(episode_keys)})}"
     return {

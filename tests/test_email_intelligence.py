@@ -18,7 +18,25 @@ def test_router_separates_transport_from_content_origin() -> None:
 
 def test_creator_source_routing_uses_canonical_registry_markers() -> None:
     result = route_email_source(sender="newsletter@example.com", subject="財經皓角市場觀察")
-    assert result == {"source": "haojiao", "content_type": "creator_analysis", "parse_status": "identified"}
+    assert result == {
+        "source": "haojiao",
+        "content_type": "creator_analysis",
+        "parse_status": "retired_source_suppressed",
+        "failure_reason": "creator_source_retired",
+    }
+
+
+def test_retired_creator_email_observation_is_suppressed_and_schema_valid() -> None:
+    result = normalize_email_observation({
+        "message_id": "retired-1",
+        "sender": "newsletter@example.com",
+        "subject": "財女珍妮財經市場分析",
+        "body": "新的市場觀察內容",
+    })
+    assert result["content_origin"] == "jenny"
+    assert result["parse_status"] == "retired_source_suppressed"
+    schema = json.loads(Path("schemas/email-observation.schema.json").read_text(encoding="utf-8"))
+    assert not list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(result))
 
 
 def test_unknown_email_is_explicit_invalid_source() -> None:

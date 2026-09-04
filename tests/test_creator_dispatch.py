@@ -87,14 +87,37 @@ def _bundle(tmp_path: Path, *, include_morning_batch: bool = False) -> Path:
     return path
 
 
+def _enable_test_creator_lane(monkeypatch) -> None:
+    """Keep delivery mechanics covered without re-enabling production sources."""
+    monkeypatch.setattr("src.creator_dispatch.creator_ids", lambda *, enabled_only=False: ("haojiao", "jenny"))
+    monkeypatch.setattr("src.creator_notification.creator_ids", lambda *, enabled_only=False: ("haojiao", "jenny"))
+    monkeypatch.setattr("src.creator_delivery_contract.is_active_creator", lambda _creator: True)
+
+
 def test_disabled_creator_dispatch_is_noop(tmp_path, monkeypatch):
     monkeypatch.delenv("CREATOR_NOTIFICATION_ENABLED", raising=False)
     result = dispatch(manifest_path=tmp_path / "missing.json", public_url="https://example.test/app")
     assert result["status"] == "disabled"
 
 
+def test_retired_creator_dispatch_never_calls_sender(tmp_path, monkeypatch):
+    monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
+    calls: list[dict] = []
+    monkeypatch.setattr("src.creator_notification.send_briefs", lambda **kwargs: calls.append(kwargs))
+    result = dispatch(
+        manifest_path=tmp_path / "missing.json",
+        public_url="https://example.test/app",
+        token="token",
+        chat_ids=("test-chat",),
+    )
+    assert result["status"] == "disabled"
+    assert result["reasons"] == ["retired_source_suppressed"]
+    assert calls == []
+
+
 def test_creator_dispatch_blocks_invalid_release(tmp_path, monkeypatch):
     monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
+    _enable_test_creator_lane(monkeypatch)
     result = dispatch(manifest_path=tmp_path / "missing.json", public_url="https://example.test/app")
     assert result["status"] == "blocked"
     assert "manifest_unreadable" in result["reasons"]
@@ -102,6 +125,7 @@ def test_creator_dispatch_blocks_invalid_release(tmp_path, monkeypatch):
 
 def test_creator_dispatch_sends_once_and_persists_receipt(tmp_path, monkeypatch):
     monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
+    _enable_test_creator_lane(monkeypatch)
     manifest = _bundle(tmp_path)
     receipt_path = tmp_path / "private" / "receipts.json"
     calls: list[dict] = []
@@ -135,6 +159,7 @@ def test_creator_dispatch_sends_once_and_persists_receipt(tmp_path, monkeypatch)
 
 def test_creator_dispatch_rejects_invalid_media_before_photo_sender(tmp_path, monkeypatch):
     monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
+    _enable_test_creator_lane(monkeypatch)
     manifest = _bundle(tmp_path)
     media_root = tmp_path / "private-media"
     media_root.mkdir()
@@ -180,6 +205,7 @@ def test_creator_dispatch_rejects_invalid_media_before_photo_sender(tmp_path, mo
 
 def test_creator_dispatch_fails_closed_when_configured_remote_history_is_unavailable(tmp_path, monkeypatch):
     monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
+    _enable_test_creator_lane(monkeypatch)
     monkeypatch.setenv("RAILWAY_STATUS_URL", "https://railway.example")
     monkeypatch.setenv("RAILWAY_STATUS_SHARED_SECRET", "secret")
     manifest = _bundle(tmp_path)
@@ -194,6 +220,7 @@ def test_creator_dispatch_fails_closed_when_configured_remote_history_is_unavail
 
 def test_creator_dispatch_prefers_worker_history_and_uses_worker_secret(tmp_path, monkeypatch):
     monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
+    _enable_test_creator_lane(monkeypatch)
     monkeypatch.setenv("RECEIPT_CALLBACK_URL", "https://worker.example/api/delivery-receipt")
     monkeypatch.setenv("DELIVERY_RECEIPT_SHARED_SECRET", "worker-secret")
     monkeypatch.setenv("RAILWAY_STATUS_URL", "https://railway.example")
@@ -213,6 +240,7 @@ def test_creator_dispatch_prefers_worker_history_and_uses_worker_secret(tmp_path
 
 def test_complete_morning_batch_sends_episode_notifications_and_one_digest(tmp_path, monkeypatch):
     monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
+    _enable_test_creator_lane(monkeypatch)
     manifest = _bundle(tmp_path, include_morning_batch=True)
     calls: list[dict] = []
 
@@ -249,6 +277,7 @@ def test_complete_morning_batch_sends_episode_notifications_and_one_digest(tmp_p
 
 def test_morning_digest_is_idempotent_after_receipt_is_persisted(tmp_path, monkeypatch):
     monkeypatch.setenv("CREATOR_NOTIFICATION_ENABLED", "true")
+    _enable_test_creator_lane(monkeypatch)
     manifest = _bundle(tmp_path, include_morning_batch=True)
     receipt_path = tmp_path / "private" / "receipts.json"
     calls: list[dict] = []

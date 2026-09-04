@@ -47,7 +47,7 @@ def test_preserves_financialjuice_vendor_semantics_at_public_boundary(tmp_path):
     assert accepted[0]["vendor_possible_impact"] == "可能影響 AI 伺服器供應鏈"
 
 
-def test_loads_public_safe_creator_rows_without_treating_them_as_financialjuice(tmp_path):
+def test_retired_creator_rows_are_suppressed_at_public_boundary(tmp_path):
     path = tmp_path / "creator.json"
     path.write_text(json.dumps({"observations": [{
         "observation_id": "jenny-1", "source": "jenny", "content_origin": "jenny",
@@ -55,9 +55,8 @@ def test_loads_public_safe_creator_rows_without_treating_them_as_financialjuice(
         "claims": ["A public claim"], "public_safe": True,
     }]}), encoding="utf-8")
     accepted, rejected = load_external_observations(path)
-    assert rejected == 0
-    assert accepted[0]["content_origin"] == "jenny"
-    assert accepted[0]["episode_key"] == "jenny:episode-1"
+    assert accepted == []
+    assert rejected == 1
 
 
 def test_loads_public_safe_financialjuice_compound_envelope_without_transport_id(tmp_path):

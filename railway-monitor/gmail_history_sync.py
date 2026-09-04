@@ -316,7 +316,7 @@ async def sync_gmail_history(
         return {"status": "no_history_cursor", "processed": 0, "failed": 0}
 
     bounded = max(1, min(MAX_PAGE_SIZE, int(max_messages)))
-    processed = failed = duplicate = skipped = 0
+    processed = failed = duplicate = skipped = suppressed = 0
     failure_types: dict[str, int] = {}
     try:
         async with client_factory(timeout=config.timeout_seconds, follow_redirects=True) as client:
@@ -352,6 +352,8 @@ async def sync_gmail_history(
                     processed += 1
                     if result.get("status") == "duplicate":
                         duplicate += 1
+                    elif result.get("status") == "retired_source_suppressed":
+                        suppressed += 1
                 except GmailHistorySyncError as error:
                     if str(error) == "http_404":
                         skipped += 1
@@ -370,22 +372,33 @@ async def sync_gmail_history(
             )
     except (httpx.TimeoutException, httpx.HTTPError) as error:
         store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
-        return {"status": type(error).__name__.lower(), "processed": processed, "failed": failed + 1, "duplicate": duplicate}
+        result = {"status": type(error).__name__.lower(), "processed": processed, "failed": failed + 1, "duplicate": duplicate}
+        if suppressed:
+            result["suppressed"] = suppressed
+        return result
     except GmailHistorySyncError as error:
         if str(error) == "http_404":
             _recover_expired_cursor(store)
-            return {
+            result = {
                 "status": "history_cursor_expired",
                 "processed": processed,
                 "failed": failed + 1,
                 "duplicate": duplicate,
                 "history_gap": True,
             }
+            if suppressed:
+                result["suppressed"] = suppressed
+            return result
         store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
-        return {"status": str(error), "processed": processed, "failed": failed + 1, "duplicate": duplicate}
+        result = {"status": str(error), "processed": processed, "failed": failed + 1, "duplicate": duplicate}
+        if suppressed:
+            result["suppressed"] = suppressed
+        return result
     result = {"status": "healthy" if failed == 0 else "degraded", "processed": processed, "failed": failed, "duplicate": duplicate}
     if skipped:
         result["skipped"] = skipped
+    if suppressed:
+        result["suppressed"] = suppressed
     if failure_types:
         result["failure_types"] = dict(sorted(failure_types.items()))
     return result

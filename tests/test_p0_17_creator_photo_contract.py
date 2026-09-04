@@ -8,7 +8,8 @@ from src.telegram_client import PhotoDeliveryReceipt, TelegramDelivery, Telegram
 INSIGHT = {"episode_key": "creator:photo-17", "creator_name": "Gooaye", "episode_title": "market", "public_safe": True}
 
 
-def test_renderer_failure_does_not_send_blank_photo_and_keeps_receipt(tmp_path: Path):
+def test_renderer_failure_does_not_send_blank_photo_and_keeps_receipt(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr("src.creator_delivery_contract.is_active_creator", lambda _creator: True)
     image = tmp_path / "candidate.png"
     image.write_bytes(b"not-a-valid-render")
     photo_calls: list[dict] = []
@@ -38,7 +39,8 @@ def test_renderer_failure_does_not_send_blank_photo_and_keeps_receipt(tmp_path: 
     assert result["receipts"][0]["delivery_status"] == "delivered"
 
 
-def test_missing_media_is_explicitly_degraded_not_silent():
+def test_missing_media_is_explicitly_degraded_not_silent(monkeypatch):
+    monkeypatch.setattr("src.creator_delivery_contract.is_active_creator", lambda _creator: True)
     calls: list[dict] = []
 
     def text_fallback(**kwargs):

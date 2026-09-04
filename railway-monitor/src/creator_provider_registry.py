@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/creator_provider_registry.py
-# Canonical source SHA256: 4616bcaac4fc5c8a0f399727999db51ecc257b981b2aea4b4b8e0d6a307184e1
+# Canonical source SHA256: 5a6c1baaa0b2e6a146054c7dc796b6525e34328fe1c3e88b2d0434dcac91fe66
 
 """Canonical, fail-closed registry for optional Creator providers.
 
@@ -172,10 +172,22 @@ def editorial_creator_ids(*, enabled_only: bool = False) -> tuple[str, ...]:
     return tuple(item.creator_id for item in creator_providers(enabled_only=enabled_only) if item.source_type == "editorial")
 
 
+def retired_creator_ids() -> tuple[str, ...]:
+    """Return known Creator IDs that are retained for history but no longer active."""
+    return tuple(item.creator_id for item in creator_providers() if not item.enabled)
+
+
+def is_active_creator(creator_id: str) -> bool:
+    """Return whether a Creator may enter new ingestion or delivery lanes."""
+    normalized = str(creator_id or "").strip().casefold()
+    return normalized in creator_ids(enabled_only=True)
+
+
 CREATOR_PROVIDERS = creator_ids()
 
 __all__ = [
     "CREATOR_PROVIDERS", "CreatorProvider", "creator_ids", "creator_providers",
-    "editorial_creator_ids", "get_creator_provider", "is_known_creator",
+    "editorial_creator_ids", "get_creator_provider", "is_active_creator",
+    "is_known_creator", "retired_creator_ids",
     "load_creator_registry",
 ]

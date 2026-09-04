@@ -255,6 +255,7 @@ def run_offline_e2e(
     financialjuice_notification_lane = run_financialjuice_notification_e2e()
     creator_delivery = decide_creator_delivery(
         {
+            "content_origin": "haojiao",
             "episode_key": "production-e2e-creator-episode",
             "notification_type": "initial",
             "public_safe": True,
@@ -287,7 +288,10 @@ def run_offline_e2e(
         "photo_contract": pipeline.get("photo_contract", {}).get("dimensions_valid") is True
         and pipeline.get("photo_contract", {}).get("deep_link_valid") is True
         and bool(pipeline.get("photo_contract", {}).get("observation_id")),
-        "creator_delivery_contract": creator_delivery["allowed"] is True,
+        "creator_delivery_contract": (
+            creator_delivery["allowed"] is False
+            and "retired_source_suppressed" in creator_delivery["reasons"]
+        ),
         "creator_release_contract": creator_release["status"] == "ready"
         and creator_release["parent_release_id"] == bundle["manifest"]["release_id"],
         "financialjuice_compound_lane": financialjuice_lane["ok"] is True,

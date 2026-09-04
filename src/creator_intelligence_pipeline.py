@@ -12,7 +12,10 @@ from src.creator_provider_registry import is_known_creator
 from src.creator_release import build_creator_release
 from src.email_intelligence import normalize_creator_insight
 
-_PARSER_FAILURE_STATES = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
+_PARSER_FAILURE_STATES = {
+    "parse_failed", "unsupported_template", "invalid_source", "duplicate",
+    "retired_source_suppressed",
+}
 
 
 def build_creator_intelligence_release(
@@ -63,8 +66,13 @@ def build_creator_intelligence_release(
         if (record.get("parse_status") or record.get("source_adapter")) and not normalized["episode_title"]:
             dropped.append(f"{index}:missing_episode_title")
             continue
-        if not is_known_creator(normalized["content_origin"]):
-            dropped.append(f"{index}:unknown_creator_source")
+        if not is_known_creator(normalized["content_origin"], enabled_only=True):
+            reason = (
+                "retired_source_suppressed"
+                if is_known_creator(normalized["content_origin"])
+                else "unknown_creator_source"
+            )
+            dropped.append(f"{index}:{reason}")
             continue
         key = str(normalized["episode_key"])
         if key in seen:

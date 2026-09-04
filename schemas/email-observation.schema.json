@@ -20,7 +20,7 @@
     "attachment_count": {"type": "integer", "minimum": 0},
     "attachment_hashes": {"type": "array", "items": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
     "parser_version": {"type": "string", "minLength": 1},
-    "parse_status": {"enum": ["received", "identified", "parsed", "normalized", "routed", "parse_failed", "unsupported_template", "invalid_source", "duplicate"]},
+    "parse_status": {"enum": ["received", "identified", "parsed", "normalized", "routed", "parse_failed", "unsupported_template", "invalid_source", "duplicate", "retired_source_suppressed"]},
     "created_at": {"type": "string", "format": "date-time"},
     "updated_at": {"type": "string", "format": "date-time"},
     "is_public_safe": {"const": true}

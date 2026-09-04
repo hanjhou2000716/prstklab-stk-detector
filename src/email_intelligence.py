@@ -11,13 +11,19 @@ import hashlib
 from datetime import UTC, datetime
 from typing import Any
 
-from src.creator_provider_registry import creator_ids, get_creator_provider, is_known_creator
+from src.creator_provider_registry import (
+    creator_ids,
+    get_creator_provider,
+    is_known_creator,
+    retired_creator_ids,
+)
 
 SOURCE_NAMES = ("financialjuice", *creator_ids())
 CONTENT_TYPES = {"breaking_news", "creator_analysis", "unknown"}
 PARSE_STATES = {
     "received", "identified", "parsed", "normalized", "routed",
     "parse_failed", "unsupported_template", "invalid_source", "duplicate",
+    "retired_source_suppressed",
 }
 VERIFICATION_STATES = {"verified", "partially_verified", "unverified", "contradicted", "not_applicable"}
 
@@ -80,6 +86,13 @@ def route_email_source(*, sender: str = "", subject: str = "", body: str = "") -
     for provider in creator_ids():
         metadata = get_creator_provider(provider)
         if metadata and any(marker in identity_text for marker in metadata.markers):
+            if provider in retired_creator_ids():
+                return {
+                    "source": provider,
+                    "content_type": "creator_analysis",
+                    "parse_status": "retired_source_suppressed",
+                    "failure_reason": "creator_source_retired",
+                }
             return {"source": provider, "content_type": "creator_analysis", "parse_status": "identified"}
     # Creator identities are defined only by creator_providers.json above.
     # Keep this fallback limited to FinancialJuice so a second Creator
@@ -104,6 +117,8 @@ def normalize_email_observation(record: dict[str, Any]) -> dict[str, Any]:
     if source not in SOURCE_NAMES:
         source = routed["source"]
     status = _text(record.get("parse_status")) or routed["parse_status"]
+    if source in retired_creator_ids():
+        status = "retired_source_suppressed"
     if status not in PARSE_STATES:
         status = "parse_failed"
     attachments = record.get("attachments") or []
