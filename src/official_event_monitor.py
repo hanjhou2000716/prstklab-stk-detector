@@ -406,6 +406,7 @@ def write_send_output(
     notification_status: str | None = None,
     delivered_count: int | None = None,
     failed_count: int | None = None,
+    failure_classes: list[str] | tuple[str, ...] | None = None,
     last_telegram_attempt_at: str | None = None,
     last_receipt_status: str | None = None,
 ) -> None:
@@ -430,6 +431,7 @@ def write_send_output(
         f"notification_reason={summary['notification_reason']}",
         f"delivered_count={summary['delivered_count'] if summary['delivered_count'] is not None else ''}",
         f"failed_count={summary['failed_count'] if summary['failed_count'] is not None else ''}",
+        f"failure_classes={','.join(str(item) for item in (failure_classes or []) if str(item).strip())}",
         f"last_processed_at={summary['last_processed_at']}",
         f"last_candidate_at={summary['last_candidate_at'] or ''}",
         f"last_telegram_attempt_at={summary['last_telegram_attempt_at'] or ''}",
@@ -715,13 +717,18 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             failed_count=failed_count, failed_recipient_hashes=failed_hashes,
         )
         if not delivered_count:
+            failure_classes = [str(item) for item in (fj_result.get("failure_classes") or []) if str(item).strip()]
+            failure_reason = "all_recipients_failed"
+            if failure_classes:
+                failure_reason = f"{failure_reason}:{','.join(failure_classes)}"
             write_send_output(
                 False,
-                "all_recipients_failed",
+                failure_reason,
                 event=event,
                 notification_status="failed",
                 delivered_count=delivered_count,
                 failed_count=failed_count,
+                failure_classes=failure_classes,
                 last_receipt_status=delivery_status,
             )
             raise RuntimeError("Telegram FinancialJuice delivery failed for every configured recipient")
@@ -803,13 +810,22 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             failed_recipient_hashes=tuple(item.chat_id_hash for item in deliveries if item.status != "delivered"),
         )
     if not delivered_count:
+        failure_classes = sorted({
+            str(getattr(item, "error_class", "") or "").strip()
+            for item in deliveries
+            if str(getattr(item, "error_class", "") or "").strip()
+        })
+        failure_reason = "all_recipients_failed"
+        if failure_classes:
+            failure_reason = f"{failure_reason}:{','.join(failure_classes)}"
         write_send_output(
             False,
-            "all_recipients_failed",
+            failure_reason,
             event=event,
             notification_status="failed",
             delivered_count=delivered_count,
             failed_count=failed_count,
+            failure_classes=failure_classes,
             last_receipt_status="failed",
         )
         raise RuntimeError("Telegram delivery failed for every configured recipient")

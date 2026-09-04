@@ -5,6 +5,7 @@ from src import telegram_client
 from src.telegram_client import (
     alert_mini_app_url,
     canonical_short_message,
+    classify_telegram_error,
     format_text_brief,
     mini_app_button,
     mini_app_menu_button,
@@ -18,6 +19,13 @@ from src.telegram_client import (
 
 def test_accepts_40_character_brief():
     validate_brief("測" * 40)
+
+
+def test_classifies_telegram_failures_without_exposing_provider_details():
+    assert classify_telegram_error(telegram_client.TelegramError("Bad Request: chat not found")) == "recipient_unavailable"
+    assert classify_telegram_error(telegram_client.TelegramTransientError("HTTP 503")) == "temporary_transport"
+    assert classify_telegram_error(telegram_client.TelegramError("HTTP 429: too many requests")) == "rate_limited"
+    assert classify_telegram_error(telegram_client.TelegramError("Bad Request: malformed payload")) == "telegram_api"
 
 
 def test_text_brief_hides_internal_risk_grade_and_stays_bounded():

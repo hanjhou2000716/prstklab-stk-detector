@@ -676,10 +676,19 @@ def send(
             if str(row.get("delivery_status") or "") != "delivered"
         ]
         if not delivered:
+            failure_classes = sorted({
+                str(row.get("error_class") or "").strip()
+                for row in fj_receipts
+                if str(row.get("error_class") or "").strip()
+            })
+            failure_reason = "recipient_delivery_failed"
+            if failure_classes:
+                failure_reason = f"{failure_reason}:{','.join(failure_classes)}"
             _write_decision_output({
                 "sent": "false",
                 "delivery_status": "failed",
                 "reason": "all_recipients_failed",
+                "failure_classes": ",".join(failure_classes),
                 "release_id": gate.release_id,
                 "snapshot_id": snapshot_id,
                 "alert_id": alert_id,
@@ -691,9 +700,9 @@ def send(
                 "failed_recipient_hashes": ",".join(failed_recipient_hashes),
                 "notification_expected": "true",
                 "notification_status": "failed",
-                "notification_reason": "recipient_delivery_failed",
+                "notification_reason": failure_reason,
                 "risk": event_risk,
-            }, event=event, notification_status="failed", notification_reason="recipient_delivery_failed", delivered_count=0, failed_count=max(failed, len(settings.telegram_chat_ids)), last_receipt_status="failed")
+            }, event=event, notification_status="failed", notification_reason=failure_reason, delivered_count=0, failed_count=max(failed, len(settings.telegram_chat_ids)), last_receipt_status="failed")
             raise RuntimeError("Telegram FinancialJuice delivery failed for every configured recipient")
     else:
         delivered = sum(delivery.status == "delivered" for delivery in deliveries)

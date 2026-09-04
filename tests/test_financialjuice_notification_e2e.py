@@ -165,6 +165,32 @@ def test_financialjuice_delivery_reaches_text_sender_with_alert_deep_link() -> N
     )
 
 
+def test_financialjuice_delivery_returns_safe_failure_classes() -> None:
+    result = deliver_financialjuice_event(
+        {
+            "source_key": "financialjuice",
+            "event_cluster_key": "fj-failed-classification",
+            "vendor_importance": 9,
+            "vendor_priority_notification": True,
+            "notification_status": "eligible",
+            "title": "Oil supply update",
+        },
+        release_id="release-1",
+        snapshot_id="snapshot-1",
+        mini_app_url="https://example.test/app",
+        release_ready=True,
+        token="token",
+        chat_ids=("recipient",),
+        text_sender=lambda **_kwargs: (TextDeliveryReceipt(
+            "alert", "release-1", "snapshot-1", "recipient-hash", "failed",
+            error_class="recipient_unavailable",
+        ),),
+    )
+    assert result["status"] == "failed"
+    assert result["failure_classes"] == ["recipient_unavailable"]
+    assert "recipient-hash" in str(result["receipts"])
+
+
 def test_financialjuice_delivery_prefers_notification_id_for_alert_deep_link() -> None:
     event = {
         "source_key": "financialjuice", "notification_id": "fj-notification-1",

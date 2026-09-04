@@ -286,6 +286,11 @@ def deliver_financialjuice_event(
         })
     delivered_count = sum(row["delivery_status"] == "delivered" for row in receipts)
     failed_count = len(receipts) - delivered_count
+    failure_classes = sorted({
+        _text(row.get("error_class"))
+        for row in receipts
+        if row.get("delivery_status") != "delivered" and _text(row.get("error_class"))
+    })
     status = "delivered" if failed_count == 0 and delivered_count else "partial" if delivered_count else "failed"
     if ledger is not None and hasattr(ledger, "complete_notification_claim"):
         ledger.complete_notification_claim(
@@ -303,6 +308,7 @@ def deliver_financialjuice_event(
         "status": status,
         "notification_key": notification_key,
         "reasons": [] if status == "delivered" else ["recipient_delivery_partial" if delivered_count else "recipient_delivery_failed"],
+        "failure_classes": failure_classes,
         "receipts": receipts,
         "release_id": release_id,
         "snapshot_id": snapshot_id,

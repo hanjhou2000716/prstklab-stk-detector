@@ -399,6 +399,22 @@ def _recipient_unavailable(error: TelegramError) -> bool:
     )
 
 
+def classify_telegram_error(error: BaseException) -> str:
+    """Reduce a transport/API error to a safe operational category.
+
+    Telegram descriptions can contain recipient-specific details.  Delivery
+    receipts and workflow summaries therefore keep only a stable category.
+    """
+    if isinstance(error, TelegramTransientError) or isinstance(error, (OSError, requests.RequestException)):
+        return "temporary_transport"
+    if isinstance(error, TelegramError) and _recipient_unavailable(error):
+        return "recipient_unavailable"
+    description = str(error).casefold()
+    if "429" in description or "rate limit" in description or "too many requests" in description:
+        return "rate_limited"
+    return "telegram_api"
+
+
 def configure_mini_app_menus(*, token: str, chat_ids: tuple[str, ...], mini_app_url: str) -> tuple[TelegramDelivery, ...]:
     """Configure every reachable private-chat Mini App entry.
 
@@ -556,7 +572,7 @@ def send_text_briefs_audited(
         except (TelegramError, OSError, requests.RequestException) as exc:
             receipts.append(TextDeliveryReceipt(
                 alert_id, release_id, snapshot_id, recipient_hash, "failed",
-                error_class=type(exc).__name__.lower(), observation_id=observation_id,
+                error_class=classify_telegram_error(exc), observation_id=observation_id,
                 prstk_risk_level=prstk_risk_level,
             ))
         else:
