@@ -286,7 +286,11 @@ jobs:
       - name: Persist scheduled-brief delivery receipt
         # Persist failed attempts as well as successful attempts.  This keeps
         # the existing claim/receipt chain aware of retryable recipients.
-        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped'
+        # A suppressed/idempotent decision has no Telegram attempt and hence
+        # no trace to persist.  Attempted deliveries always emit trace_id,
+        # including failed attempts, so the receipt callback remains durable
+        # without producing a false callback failure on dedup suppression.
+        if: always() && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.send_brief.outputs.trace_id != ''
         continue-on-error: true
         env:
           DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}

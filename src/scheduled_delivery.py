@@ -631,7 +631,7 @@ def send(
         if event is None or str(event.get("source_key") or event.get("source") or "").strip().casefold() != "financialjuice":
             ledger.complete_notification_claim(notification_key, uncertain=True)
         _write_decision_output(
-            {"sent": "false", "delivery_status": "blocked", "reason": "text_delivery_failed", "error_type": type(exc).__name__, "release_id": gate.release_id, "snapshot_id": snapshot_id, "risk": event_risk},
+            {"sent": "false", "delivery_status": "blocked", "reason": "text_delivery_failed", "error_type": type(exc).__name__, "release_id": gate.release_id, "snapshot_id": snapshot_id, "trace_id": trace_id, "risk": event_risk},
             event=event, notification_status="failed", notification_reason="text_delivery_failed",
         )
         return
@@ -641,18 +641,117 @@ def send(
         failed = len(fj_receipts) - delivered
         fj_status = str(fj_delivery.get("status") or "failed")
         if fj_status == "already_delivered":
+            # The FJ event was already delivered by the immediate lane.  The
+            # scheduled slot still owns one public message, so continue with
+            # the slot-scoped market brief instead of re-sending FJ or leaving
+            # the slot silent.
+            fallback_key = notification_key_for_event(None, slot_key=effective_slot_key)
+            fallback_claim = ledger.claim_notification(
+                fallback_key,
+                slot_key=effective_slot_key,
+                recipient_hashes=tuple(recipient_hash(chat_id) for chat_id in settings.telegram_chat_ids),
+                run_id=effective_run_id,
+            ) if hasattr(ledger, "claim_notification") else {"status": "claimed"}
+            if fallback_claim.get("status") != "claimed":
+                _write_decision_output({
+                    "sent": "false",
+                    "delivery_status": "suppressed",
+                    "reason": f"scheduled_slot_{fallback_claim.get('status', 'blocked')}",
+                    "notification_key": fallback_key,
+                    "release_id": gate.release_id,
+                    "snapshot_id": snapshot_id,
+                    "trace_id": trace_id,
+                    "notification_expected": "true",
+                    "notification_status": "suppressed",
+                    "notification_reason": f"scheduled_slot_{fallback_claim.get('status', 'blocked')}",
+                    "risk": event_risk,
+                }, event=None, notification_status="suppressed", notification_reason=f"scheduled_slot_{fallback_claim.get('status', 'blocked')}", last_receipt_status=str(fallback_claim.get("status") or "blocked"))
+                return
+            pending_hashes = set(str(item) for item in fallback_claim.get("pending_recipient_hashes") or [])
+            fallback_chat_ids = tuple(
+                chat_id for chat_id in settings.telegram_chat_ids
+                if not pending_hashes or recipient_hash(chat_id) in pending_hashes
+            )
+            fallback_url = alert_mini_app_url(
+                settings.dashboard_url,
+                alert_id=fallback_key,
+                release_id=gate.release_id or "",
+                snapshot_id=snapshot_id,
+                observation_id=observation_id,
+            )
+            fallback_attempt_at = datetime.now().astimezone().isoformat()
+            try:
+                fallback_deliveries = send_text_briefs_audited(
+                    token=settings.telegram_bot_token or "",
+                    chat_ids=fallback_chat_ids,
+                    text="市場簡報｜本輪無觸發",
+                    dashboard_url=settings.dashboard_url,
+                    alert_id=fallback_key,
+                    release_id=gate.release_id or "",
+                    snapshot_id=snapshot_id,
+                    observation_id=observation_id,
+                    target_url=fallback_url,
+                    prstk_risk_level="",
+                )
+            except (OSError, ValueError) as exc:
+                ledger.complete_notification_claim(fallback_key, uncertain=True)
+                _write_decision_output({
+                    "sent": "false",
+                    "delivery_status": "blocked",
+                    "reason": "text_delivery_failed",
+                    "error_type": type(exc).__name__,
+                    "release_id": gate.release_id,
+                    "snapshot_id": snapshot_id,
+                    "trace_id": trace_id,
+                    "alert_id": fallback_key,
+                    "notification_key": fallback_key,
+                }, event=None, notification_status="failed", notification_reason="text_delivery_failed")
+                return
+            fallback_delivered = sum(delivery.status == "delivered" for delivery in fallback_deliveries)
+            fallback_failed = len(fallback_deliveries) - fallback_delivered
+            ledger.complete_notification_claim(
+                fallback_key,
+                delivered_recipient_hashes=tuple(delivery.chat_id_hash for delivery in fallback_deliveries if delivery.status == "delivered"),
+                failed_recipient_hashes=tuple(delivery.chat_id_hash for delivery in fallback_deliveries if delivery.status != "delivered"),
+            )
+            fallback_status = "delivered" if not fallback_failed else "partial" if fallback_delivered else "failed"
             _write_decision_output({
-                "sent": "false",
-                "delivery_status": "suppressed",
-                "reason": "financialjuice_already_delivered",
-                "notification_key": fj_delivery.get("notification_key", ""),
+                "sent": "true",
+                "reason": "scheduled_brief_after_financialjuice",
+                "notification_key": fallback_key,
                 "release_id": gate.release_id,
                 "snapshot_id": snapshot_id,
-                "notification_expected": "false",
-                "notification_status": "suppressed",
-                "notification_reason": "financialjuice_already_delivered",
-                "risk": event_risk,
-            }, event=event, notification_status="suppressed", notification_reason="financialjuice_already_delivered", last_receipt_status="already_delivered")
+                "trace_id": trace_id,
+                "alert_id": fallback_key,
+                "delivery_mode": "text",
+                "delivery_status": fallback_status,
+                "delivered_count": fallback_delivered,
+                "failed_count": fallback_failed,
+                "failed_recipient_hashes": ",".join(
+                    delivery.chat_id_hash for delivery in fallback_deliveries if delivery.status != "delivered"
+                ),
+                "notification_expected": "true",
+                "notification_status": "ready" if fallback_status == "delivered" else fallback_status,
+                "notification_reason": "scheduled_brief_after_financialjuice",
+                "risk": "",
+            }, event=None, notification_status="ready" if fallback_status == "delivered" else fallback_status, notification_reason="scheduled_brief_after_financialjuice", notification_expected=True, delivered_count=fallback_delivered, failed_count=fallback_failed, last_telegram_attempt_at=fallback_attempt_at, last_receipt_status=fallback_status)
+            ledger.record_delivery(
+                {
+                    "source_key": "scheduled_brief",
+                    "event_type": "scheduled_brief",
+                    "event_key": fallback_key,
+                    "notification_key": fallback_key,
+                    "notification_theme_key": f"scheduled:{effective_slot_key}",
+                    "title": "市場簡報｜本輪無觸發",
+                    "trace_id": trace_id,
+                    "release_id": gate.release_id,
+                    "snapshot_id": snapshot_id,
+                    "delivery_status": fallback_status,
+                },
+                trace_id=trace_id,
+                reason="scheduled_delivery_after_financialjuice",
+            )
+            ledger.save()
             return
         if fj_status == "blocked" and not fj_receipts:
             _write_decision_output({
@@ -663,6 +762,7 @@ def send(
                 "delivery_reasons": ";".join(str(item) for item in (fj_delivery.get("reasons") or [])),
                 "release_id": gate.release_id,
                 "snapshot_id": snapshot_id,
+                "trace_id": trace_id,
                 "notification_expected": "false",
                 "notification_status": "blocked",
                 "notification_reason": "financialjuice_delivery_blocked",
@@ -692,6 +792,7 @@ def send(
                 "release_id": gate.release_id,
                 "snapshot_id": snapshot_id,
                 "alert_id": alert_id,
+                "trace_id": trace_id,
                 "delivered_count": 0,
                 "failed_count": max(failed, len(settings.telegram_chat_ids)),
                 # This value is written to GITHUB_OUTPUT, where a JSON list
