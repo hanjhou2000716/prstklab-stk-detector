@@ -21,6 +21,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
@@ -241,6 +242,12 @@ def restore_public_release(
                 raise PagesReleaseError("public alert index alerts are missing")
             data_root = staging / "data"
             data_root_resolved = data_root.resolve()
+            core_data_paths = {
+                Path(raw_path).as_posix().removeprefix("data/")
+                for raw_path in paths.values()
+                if isinstance(raw_path, str) and raw_path.startswith("data/")
+            }
+            alert_specs: dict[str, str] = {}
             for row in rows:
                 if not isinstance(row, dict):
                     continue
@@ -254,6 +261,11 @@ def restore_public_release(
                 target = (data_root / relative).resolve()
                 if not target.is_relative_to(data_root_resolved) or raw_path.startswith("/") or ".." in relative.parts:
                     raise PagesReleaseError("public historical alert path is invalid")
+                if relative.as_posix() not in core_data_paths:
+                    alert_specs[relative.as_posix()] = expected
+
+            def fetch_historical_alert(spec: tuple[str, str]) -> tuple[str, bytes]:
+                raw_path, expected_hash = spec
                 url = f"{base}/data/{raw_path.lstrip('/')}"
                 try:
                     alert_response = requests.get(url, timeout=timeout, headers=headers)
@@ -263,11 +275,24 @@ def restore_public_release(
                     raise PagesReleaseError(
                         f"public historical alert unavailable: {type(exc).__name__}"
                     ) from exc
-                if hashlib.sha256(body).hexdigest() != expected:
+                if hashlib.sha256(body).hexdigest() != expected_hash:
                     raise PagesReleaseError("public historical alert hash mismatch")
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(body)
-                historical_alert_paths.append((Path("data") / relative).as_posix())
+                return raw_path, body
+
+            # Keep the worker count bounded: enough parallelism to restore a
+            # large 30-day index promptly, without turning a Pages fallback
+            # into an unbounded request burst.
+            with ThreadPoolExecutor(max_workers=16) as executor:
+                futures = {
+                    executor.submit(fetch_historical_alert, (raw_path, expected)): raw_path
+                    for raw_path, expected in sorted(alert_specs.items())
+                }
+                for future in as_completed(futures):
+                    raw_path, body = future.result()
+                    target = (data_root / raw_path).resolve()
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(body)
+                    historical_alert_paths.append((Path("data") / raw_path).as_posix())
         data_root = root / "site" / "data"
         data_root.mkdir(parents=True, exist_ok=True)
         for child in data_root.iterdir():
