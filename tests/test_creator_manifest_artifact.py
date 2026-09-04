@@ -16,6 +16,14 @@ def _artifacts(tmp_path):
     return {"market.json": site_data / "market.json", "research-report.json": site_data / "research-report.json", "event-ledger.json": site_data / "event-ledger.json"}
 
 
+def _enable_test_creator_lane(monkeypatch):
+    """Exercise artifact mechanics with an explicit synthetic active lane."""
+    monkeypatch.setattr(
+        "src.creator_provider_registry.creator_ids",
+        lambda *, enabled_only=False: ("haojiao", "jenny", "gooaye"),
+    )
+
+
 def test_creator_artifact_is_published_with_manifest_lineage(tmp_path):
     result = build_release_manifest(
         root=tmp_path,
@@ -59,7 +67,8 @@ def test_release_gate_loads_creator_artifact_only_when_parent_release_matches(tm
     assert any("parent release mismatch" in error for error in errors)
 
 
-def test_manifest_can_build_creator_artifact_from_sanitized_records(tmp_path):
+def test_manifest_can_build_creator_artifact_from_sanitized_records(tmp_path, monkeypatch):
+    _enable_test_creator_lane(monkeypatch)
     result = build_release_manifest(
         root=tmp_path,
         artifacts=_artifacts(tmp_path),
@@ -84,7 +93,26 @@ def test_manifest_can_build_creator_artifact_from_sanitized_records(tmp_path):
     assert loaded["creator-release.json"]["status"] == "ready"
 
 
-def test_manifest_creator_correlation_uses_release_bound_snapshots(tmp_path):
+def test_manifest_drops_retired_creator_records_before_public_release_hashing(tmp_path):
+    result = build_release_manifest(
+        root=tmp_path,
+        artifacts=_artifacts(tmp_path),
+        creator_records=[
+            {"content_origin": "haojiao", "episode_key": "retired-hao", "public_safe": True},
+            {"content_origin": "jenny", "episode_key": "retired-jenny", "public_safe": True},
+            {"content_origin": "gooaye", "episode_key": "retired-gooaye", "public_safe": True},
+        ],
+    )
+    assert result["creator_status"] == "not_available"
+    assert result["creator_public_status"] == "not_available"
+    assert "creator-release.json" not in result["artifact_paths"]
+    assert "creator-insights.json" not in result["artifact_paths"]
+    assert not (tmp_path / "site" / "data" / "creator-release.json").exists()
+    assert not (tmp_path / "site" / "data" / "creator-insights.json").exists()
+
+
+def test_manifest_creator_correlation_uses_release_bound_snapshots(tmp_path, monkeypatch):
+    _enable_test_creator_lane(monkeypatch)
     artifacts = _artifacts(tmp_path)
     # Keep the fixture inside the correlation freshness window so this test
     # remains valid as the calendar advances; the production stale gate stays
@@ -123,10 +151,15 @@ def test_manifest_creator_correlation_uses_release_bound_snapshots(tmp_path):
         (tmp_path / "site" / "data" / "creator-insights.json").read_text(encoding="utf-8")
     )
     assert result["creator_status"] == "ready"
-    assert public["creators"] == {}
+    episode = public["creators"]["haojiao"]["episodes"][0]
+    correlation = episode["prstk_correlation"]
+    assert correlation["correlation_state"] == "aligned"
+    assert correlation["matched_tickers"] == ["2330.tw"]
+    assert correlation["market_snapshot_id"] == result["market_snapshot_id"]
 
 
-def test_manifest_binds_morning_batch_to_market_snapshot_when_requested(tmp_path):
+def test_manifest_binds_morning_batch_to_market_snapshot_when_requested(tmp_path, monkeypatch):
+    _enable_test_creator_lane(monkeypatch)
     artifacts = _artifacts(tmp_path)
     result = build_release_manifest(
         root=tmp_path,
@@ -157,7 +190,8 @@ def test_manifest_binds_morning_batch_to_market_snapshot_when_requested(tmp_path
     assert batch["records"] == []
 
 
-def test_manifest_also_publishes_bounded_creator_insights_artifact(tmp_path):
+def test_manifest_also_publishes_bounded_creator_insights_artifact(tmp_path, monkeypatch):
+    _enable_test_creator_lane(monkeypatch)
     result = build_release_manifest(
         root=tmp_path,
         artifacts=_artifacts(tmp_path),
@@ -205,7 +239,8 @@ def test_invalid_public_creator_artifact_does_not_block_core_release(tmp_path):
     assert errors == []
 
 
-def test_creator_input_changes_release_identity(tmp_path):
+def test_creator_input_changes_release_identity(tmp_path, monkeypatch):
+    _enable_test_creator_lane(monkeypatch)
     artifacts = _artifacts(tmp_path)
     first = build_release_manifest(
         root=tmp_path,
@@ -245,6 +280,7 @@ def test_derived_creator_timestamps_do_not_change_release_identity(tmp_path):
 
 
 def test_manifest_cli_accepts_creator_records_file(tmp_path, monkeypatch):
+    _enable_test_creator_lane(monkeypatch)
     _artifacts(tmp_path)
     records_path = tmp_path / "creator-records.json"
     records_path.write_text(json.dumps({"records": [{

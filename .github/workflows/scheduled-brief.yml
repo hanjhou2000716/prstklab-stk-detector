@@ -90,9 +90,10 @@ jobs:
       # Keep it outside site/ so raw ingress material can never be uploaded
       # as part of the Pages artifact.
       CREATOR_RECORDS_PATH: ${{ vars.CREATOR_RECORDS_PATH || 'creator/public-records.json' }}
-      # Creator delivery is opt-in.  It is intentionally disabled until the
-      # operator configures a private media root and a scoped recipient list.
-      CREATOR_NOTIFICATION_ENABLED: ${{ vars.CREATOR_NOTIFICATION_ENABLED }}
+      # Creator feeds are retired.  Keep the variable name for compatibility,
+      # but make the production workflow hard-stop even if a stale repository
+      # variable or an older in-flight run still says true.
+      CREATOR_NOTIFICATION_ENABLED: 'false'
       CREATOR_MEDIA_ROOT: ${{ vars.CREATOR_MEDIA_ROOT }}
       CREATOR_DELIVERY_RECEIPTS_PATH: /tmp/prstk-creator-delivery-receipts.json
       # Railway/Gmail may publish only a reviewed, sanitized observation
@@ -355,7 +356,7 @@ jobs:
           --public-attempts 12
           --public-delay 5
       - name: Send release-gated Creator notifications
-        if: steps.release_gate.outputs.allowed == 'true' && env.CREATOR_NOTIFICATION_ENABLED == 'true' && env.NOTIFY == 'true'
+        if: steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true'
         id: creator_dispatch
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -370,7 +371,7 @@ jobs:
             --public-url "${{ steps.reconciled_deployment.outputs.page_url || steps.deployment.outputs.page_url }}" \
             >> "$GITHUB_OUTPUT"
       - name: Summarize Creator notification decision
-        if: always() && steps.release_gate.outputs.allowed == 'true' && env.CREATOR_NOTIFICATION_ENABLED == 'true' && env.NOTIFY == 'true'
+        if: always() && steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true'
         env:
           CREATOR_STATUS: ${{ steps.creator_dispatch.outputs.creator_status || 'not_run' }}
           CREATOR_SENT: ${{ steps.creator_dispatch.outputs.creator_sent || '0' }}

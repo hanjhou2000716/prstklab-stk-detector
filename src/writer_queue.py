@@ -117,6 +117,42 @@ def _fetch_runs(*, api_url: str, repository: str, token: str) -> list[dict[str, 
     return rows
 
 
+def _fetch_main_revision(*, api_url: str, repository: str, token: str) -> str:
+    """Return the current production ``main`` SHA from GitHub."""
+    if not repository or not token:
+        raise WriterQueueError("GITHUB_REPOSITORY and GITHUB_TOKEN are required for the revision fence")
+    url = f"{api_url.rstrip('/')}/repos/{repository}/commits/main"
+    request = Request(
+        url,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {token}",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "prstk-production-revision-fence",
+        },
+    )
+    try:
+        with urlopen(request, timeout=15) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
+        raise WriterQueueError(f"GitHub production revision lookup failed: {type(exc).__name__}") from exc
+    revision = str(payload.get("sha") or "").strip().lower() if isinstance(payload, Mapping) else ""
+    if not revision:
+        raise WriterQueueError("GitHub production revision lookup returned no SHA")
+    return revision
+
+
+def evaluate_production_revision(*, run_sha: str | None, main_sha: str | None) -> dict[str, object]:
+    """Fail closed when a workflow is no longer running current production code."""
+    run_revision = str(run_sha or "").strip().lower()
+    main_revision = str(main_sha or "").strip().lower()
+    if not run_revision or not main_revision:
+        return {"allowed": False, "reason": "production_revision_unavailable"}
+    if run_revision != main_revision:
+        return {"allowed": False, "reason": "stale_workflow_revision"}
+    return {"allowed": True, "reason": "current_production_revision"}
+
+
 def wait_for_slot(
     *,
     current_run_id: int,
@@ -177,6 +213,19 @@ def main() -> int:
             poll_seconds=max(1, args.poll_seconds),
             settle_seconds=max(0, args.settle_seconds),
         )
+        main_revision = _fetch_main_revision(
+            api_url=os.getenv("GITHUB_API_URL", "https://api.github.com"),
+            repository=os.getenv("GITHUB_REPOSITORY", ""),
+            token=os.getenv("GITHUB_TOKEN", ""),
+        )
+        revision = evaluate_production_revision(
+            run_sha=os.getenv("GITHUB_SHA"),
+            main_sha=main_revision,
+        )
+        if not revision["allowed"]:
+            print(f"::error::{revision['reason']}; Telegram and data publication are blocked")
+            return 1
+        print(json.dumps({"production_revision": revision["reason"]}))
     except WriterQueueError as exc:
         print(f"::error::{exc}")
         return 1
