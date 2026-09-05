@@ -7,6 +7,7 @@ from pathlib import Path
 
 from src.batch_download import batches
 from src.public_download import download_daily_batch
+from src.research_scan_provenance import quote_cutoff_from_records, scan_trading_date
 from src.research_scan_state import classify_scan_state
 from src.taiwan_price_action_scan import rank_records
 from src.taiwan_universe import load_or_fetch_taiwan_universe
@@ -18,7 +19,9 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=50)
     parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--universe-file", default=None, help="同一次工作共用的最新公開台股清單")
+    parser.add_argument("--scan-trading-date", default=None)
     args = parser.parse_args()
+    target_trading_date = scan_trading_date("taiwan", args.scan_trading_date)
     if args.offset < 0:
         raise ValueError("offset 不可小於 0")
     resolved_universe = load_or_fetch_taiwan_universe(args.universe_file)
@@ -52,6 +55,8 @@ def main() -> None:
         "failed": len(failed), "batch_size": args.batch_size, "offset": args.offset,
         "notice": "僅供公開市場結構研究，不構成買賣建議。",
         "scan_state": classify_scan_state(expected=len(universe), completed=len(records), failed=len(failed)),
+        "scan_trading_date": target_trading_date,
+        "quote_cutoff_at": quote_cutoff_from_records(records),
         "status": "可用" if not failed else "部分缺漏",
         "error_details": failed[:20],
     }, ensure_ascii=False, indent=2), encoding="utf-8")

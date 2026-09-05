@@ -592,6 +592,15 @@ def validate_research(document: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: available requires visible_candidates>0")
         if isinstance(candidates, int) and isinstance(formal, int) and formal > candidates:
             errors.append(f"{path}: formal_candidates cannot exceed candidates")
+        if source.get("rule_version") == "tw_value_current_quality_v2":
+            if source.get("mops_calls") not in {0, None}:
+                errors.append(f"{path}: Taiwan current-quality v2 cannot call MOPS")
+            if source.get("mops_history_used") is True:
+                errors.append(f"{path}: Taiwan current-quality v2 cannot use MOPS history")
+            if scan_state == "complete":
+                coverage = _safe_count(source.get("official_financial_coverage"))
+                if requested_count and coverage < requested_count:
+                    errors.append(f"{path}: current-quality v2 financial coverage is incomplete")
     scan_mode = str(document.get("scan_mode") or "")
     if document.get("publish_eligible") is True and scan_mode != "production":
         errors.append("research publish_eligible=true requires scan_mode=production")

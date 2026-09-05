@@ -266,7 +266,10 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                     "history_cached", "history_expected", "history_progress_pct",
                     "history_pending", "history_failure_count", "partial_candidates_allowed",
                     "scan_trading_date", "quote_cutoff_at", "last_successful_generated_at",
-                    "execution_version", "data_hash",
+                    "last_attempted_at", "last_successful_at", "execution_version", "data_hash",
+                    "rule_version", "parameter_hash", "financial_period", "financial_checked_at",
+                    "financial_source", "financial_diagnostics", "official_financial_coverage",
+                    "mops_calls", "mops_history_used", "scan_completeness",
                     "evaluable_records", "blocking_reason", "notice", "selection_diagnostics",
                 )})
             except (OSError, json.JSONDecodeError):
@@ -396,6 +399,7 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
 def merge_previous_strategy_versions(
     report: dict[str, Any], previous: dict[str, Any] | None,
     *, target_market: str = "both",
+    selected_keys: set[tuple[str, str]] | None = None,
 ) -> dict[str, Any]:
     """Keep the last verified rows per strategy without masking this run's gap.
 
@@ -422,7 +426,10 @@ def merge_previous_strategy_versions(
             continue
         key = (str(source.get("market")), str(source.get("strategy")))
         state = str(source.get("scan_state") or "failed")
-        unscanned = target_market in {"taiwan", "us"} and str(source.get("market")) != target_market
+        if selected_keys is None:
+            unscanned = target_market in {"taiwan", "us"} and str(source.get("market")) != target_market
+        else:
+            unscanned = key not in selected_keys
         failed = int(source.get("failed_records", source.get("failed", 0)) or 0)
         current_complete = state == "complete" and failed == 0
         source["scan_attempted_at"] = None if unscanned else report.get("generated_at")

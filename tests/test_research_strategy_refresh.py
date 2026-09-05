@@ -121,3 +121,42 @@ def test_historical_fallback_does_not_invent_slot_data_date():
     source = result["sources"][0]
     assert source["scan_trading_date"] is None
     assert source["quote_cutoff_at"] is None
+
+
+def test_selected_strategy_scope_preserves_unselected_same_market_contract():
+    report = {
+        "generated_at": "2026-09-05T16:00:00+08:00",
+        "sources": [
+            {"market": "taiwan", "strategy": "value", "scan_state": "complete", "candidates": 0},
+            {"market": "taiwan", "strategy": "momentum", "scan_state": "failed", "failed_records": 2},
+        ],
+        "candidates": [],
+    }
+    previous = {
+        "generated_at": "2026-09-04T16:00:00+08:00",
+        "sources": [
+            {"market": "taiwan", "strategy": "momentum", "scan_state": "complete", "candidate_state": "available", "data_hash": "old", "last_successful_generated_at": "2026-09-04T16:00:00+08:00"},
+        ],
+        "candidates": [{"market": "taiwan", "strategy": "momentum", "ticker": "2330", "list_type": "formal"}],
+    }
+    result = merge_previous_strategy_versions(
+        report, previous, target_market="taiwan", selected_keys={("taiwan", "value")},
+    )
+    source = next(item for item in result["sources"] if item["strategy"] == "momentum")
+    assert source["scan_state"] == "complete"
+    assert source["data_hash"] == "old"
+    assert source["last_successful_generated_at"] == "2026-09-04T16:00:00+08:00"
+    assert source["unscanned_in_run"] is True
+    assert source["scan_attempted_at"] is None
+
+
+def test_unscanned_complete_fallback_cannot_unlock_full_production_scope():
+    report = {
+        "sources": [
+            _full_source(market="taiwan", strategy="value"),
+            _full_source(market="us", strategy="value", unscanned_in_run=True, historical_fallback=True),
+        ],
+    }
+    result = attach_scan_contract(report, "production")
+    assert result["publication_state"] == "mixed_strategy"
+    assert result["production_eligible"] is False

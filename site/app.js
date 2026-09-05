@@ -1252,6 +1252,14 @@ const researchScoreParts = (item) => {
 // Research cards remain concise; detailed explainability is available in the
 // backend/Creator report and is intentionally not rendered in the public list.
 const researchExplainability = () => "";
+const researchValueEvidence = (item) => {
+  if (item?.strategy !== "value" || item?.quality_rule_version !== "tw_value_current_quality_v2") return "";
+  const eps = typeof item.eps_ytd === "number" ? item.eps_ytd.toFixed(2) : "資料不足";
+  const quality = typeof item.annualized_quality_ratio === "number"
+    ? `${(item.annualized_quality_ratio * 100).toFixed(2)}%`
+    : item.current_quality_pass === false ? "不合格" : "資料不足";
+  return `<div class="research-quality-evidence"><span>當期基本 EPS ${escapeHtml(eps)}（${item.current_eps_positive === true ? "通過" : "未通過"}）</span><span>年化獲利／期末權益估算 ${escapeHtml(quality)}（${item.current_quality_pass === true ? "通過" : "未通過"}）</span><span>六項條件 ${escapeHtml(String(item.condition_count || "資料不足"))}</span></div>`;
+};
 
 const renderResearchList = (id, items, empty) => {
   const container = document.getElementById(id);
@@ -1292,7 +1300,7 @@ const renderValueResearch = (id, items, empty) => {
     const history = item.research_version_state === "historical" ? `<span class="strategy-chip">歷史版本｜資料日期 ${escapeHtml(String(item.as_of || item.historical_from_generated_at || "—"))}</span>` : "";
     const score = researchScoreParts(item);
     const explanation = researchExplainability(item);
-    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${history}${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}${item.condition_count ? ` · ${escapeHtml(item.condition_count)}` : ""}</strong></div>${explanation}</li>`;
+    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${history}${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}${item.condition_count ? ` · ${escapeHtml(item.condition_count)}` : ""}</strong></div>${researchValueEvidence(item)}${explanation}</li>`;
   }).join("");
   container.innerHTML = `${visibleFormal.length ? `<li class="research-subheading">正式候選（至少 5/6，最多 5 檔）</li>${renderGroup("正式候選", visibleFormal)}` : ""}${visibleObservation.length ? `<li class="research-subheading">觀察名單（3/6 或 4/6，補足至 5 檔）</li>${renderGroup("觀察名單", visibleObservation)}` : ""}`;
 };
@@ -1344,8 +1352,12 @@ const renderResearch = (snapshot) => {
     if (meta) {
       const dateText = date ? `資料日 ${date}` : "資料日期不明";
       const successText = successful ? `｜最後成功 ${researchStamp(successful)}` : "";
+      const financialText = strategy === "value" && source.rule_version === "tw_value_current_quality_v2" && source.financial_period
+        ? `｜財報期間 ${source.financial_period}` : "";
+      const ruleText = strategy === "value" && source.rule_version === "tw_value_current_quality_v2"
+        ? "｜當期品質＋低熱度 v2" : "";
       const reason = source.blocking_reason || source.notice || source.failure_reason || "";
-      meta.innerHTML = `<span class="research-meta-status">${escapeHtml(`${dateText}｜${state}${successText}`)}</span>${reason && ["更新失敗", "建檔中", "資料日期不明"].includes(state) ? `<span class="research-meta-reason">${escapeHtml(String(reason))}</span>` : ""}`;
+      meta.innerHTML = `<span class="research-meta-status">${escapeHtml(`${dateText}｜${state}${successText}${financialText}${ruleText}`)}</span>${reason && ["更新失敗", "建檔中", "資料日期不明"].includes(state) ? `<span class="research-meta-reason">${escapeHtml(String(reason))}</span>` : ""}`;
     }
   });
   const sourceBlocked = (strategy) => {
@@ -1375,8 +1387,10 @@ const renderResearch = (snapshot) => {
   const valueSource = sourceFor("value");
   const valuePending = valueSource?.scan_state === "building";
   const valueDiagnostics = valueSource?.selection_diagnostics || {};
-  const valueMessage = valuePending
-    ? `歷史核對中：已完成 ${valueSource.history_cached ?? 0}/${valueSource.history_expected ?? "—"} 檔（${valueSource.history_progress_pct ?? 0}%）；未完成六項公開資料覆核前不列入正式璞玉價值候選或觀察名單。`
+  const valueMessage = valuePending && valueSource.rule_version === "tw_value_current_quality_v2"
+    ? `官方批次財報核對中：已核對 ${valueSource.official_financial_coverage ?? 0}/${valueSource.universe_expected ?? "—"} 檔；未完成全池資料覆核前不列入完整璞玉價值排名。`
+    : valuePending
+      ? `歷史核對中：已完成 ${valueSource.history_cached ?? 0}/${valueSource.history_expected ?? "—"} 檔（${valueSource.history_progress_pct ?? 0}%）；未完成六項公開資料覆核前不列入正式璞玉價值候選或觀察名單。`
     : valueDiagnostics.records === 0
       ? "本輪沒有可評估的公開資料；請查看來源健康狀態。"
       : valueDiagnostics.complete_records === 0

@@ -7,6 +7,7 @@ from pathlib import Path
 
 from src.batch_download import batches
 from src.public_download import download_daily_batch
+from src.research_scan_provenance import quote_cutoff_from_records, scan_trading_date
 from src.research_scan_state import classify_scan_state
 from src.taiwan_price_action_scan import rank_records
 from src.us_universe import fetch_us_research_universe
@@ -16,7 +17,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="美股大型股裸 K 結構研究掃描")
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--batch-size", type=int, default=50)
+    parser.add_argument("--scan-trading-date", default=None)
     args = parser.parse_args()
+    target_trading_date = scan_trading_date("us", args.scan_trading_date)
     resolved_universe = fetch_us_research_universe()
     universe = resolved_universe
     if args.limit > 0:
@@ -48,6 +51,8 @@ def main() -> None:
         "failed": len(failed), "batch_size": args.batch_size,
         "notice": "美股大型股公開資料研究，不等同 VOO 精確成分股，也不構成買賣建議。",
         "scan_state": classify_scan_state(expected=len(universe), completed=len(records), failed=len(failed)),
+        "scan_trading_date": target_trading_date,
+        "quote_cutoff_at": quote_cutoff_from_records(records),
         "status": "可用" if not failed else "部分缺漏",
         "error_details": failed[:20],
     }, ensure_ascii=False, indent=2), encoding="utf-8")

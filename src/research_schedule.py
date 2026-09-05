@@ -10,11 +10,14 @@ from __future__ import annotations
 
 import argparse
 from datetime import UTC, date, datetime, timedelta
+from datetime import time as clock_time
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pandas_market_calendars as mcal
 
 MARKETS = ("taiwan", "us")
+TAIPEI = ZoneInfo("Asia/Taipei")
 
 
 def _calendar(market: str) -> Any:
@@ -53,7 +56,13 @@ def due_slot(market: str, *, now: datetime | None = None) -> dict[str, Any] | No
     current_session = _session(market, now_utc.date())
     if current_session is not None:
         _opened, closed = current_session
-        due_at = closed if market == "taiwan" else closed + timedelta(hours=1)
+        # XTAI's exchange close is 13:30 Taipei, while the research contract
+        # intentionally starts at 15:30 so all official closing data has time
+        # to settle.  Do not derive this slot from the market-close timestamp.
+        due_at = (
+            datetime.combine(now_utc.date(), clock_time(15, 30), tzinfo=TAIPEI).astimezone(UTC)
+            if market == "taiwan" else closed + timedelta(hours=1)
+        )
         if now_utc < due_at:
             return None
         trading_date = now_utc.date()
@@ -75,7 +84,10 @@ def due_slot(market: str, *, now: datetime | None = None) -> dict[str, Any] | No
         if session is None:
             continue
         _opened, closed = session
-        due_at = closed if market == "taiwan" else closed + timedelta(hours=1)
+        due_at = (
+            datetime.combine(trading_date, clock_time(15, 30), tzinfo=TAIPEI).astimezone(UTC)
+            if market == "taiwan" else closed + timedelta(hours=1)
+        )
         if now_utc < due_at:
             continue
         return {

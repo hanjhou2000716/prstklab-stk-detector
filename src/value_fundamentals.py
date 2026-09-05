@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import time
 from collections.abc import Iterable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta
+from math import isfinite
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +25,26 @@ TWSE_BALANCE_ENDPOINTS = (
     "opendata/t187ap07_L_fh", "opendata/t187ap07_L_ins", "opendata/t187ap07_L_mim",
 )
 TWSE_PE_ENDPOINT = "exchangeReport/BWIBBU_ALL"
+TW_VALUE_RULE_VERSION = "tw_value_current_quality_v2"
+TW_VALUE_PARAMETER_HASH = hashlib.sha256(
+    b"eps_ytd>0|annualized_quality_ratio>=0.17|heat_percentile<90|heat_passes>=3|bars=63|min_valid_bars=40"
+).hexdigest()[:16]
+TWSE_FINANCIAL_PARSE_VERSION = "twse-batch-financial-v1"
+TWSE_FINANCIAL_CACHE_SCHEMA = 1
+TWSE_FINANCIAL_CACHE_MAX_AGE_DAYS = 7
+TWSE_FINANCIAL_PERIOD_MAX_AGE_DAYS = 200
+TWSE_FINANCIAL_RETRIES = 1
+TWSE_FINANCIAL_MAX_WORKERS = 4
+
+# These are intentionally exact regulator field names.  Similar-looking
+# group equity/net-income columns are not interchangeable with the parent
+# owner's columns required by the Taiwan quality rule.
+TWSE_EPS_FIELDS = ("基本每股盈餘（元）", "基本每股盈餘")
+TWSE_PARENT_NET_FIELDS = ("淨利（淨損）歸屬於母公司業主",)
+TWSE_PARENT_EQUITY_FIELDS = (
+    "歸屬於母公司業主之權益合計",
+    "歸屬於母公司業主之權益總額",
+)
 SEC_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 SEC_FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
 SEC_PROJECT_URL = "https://github.com/hanjhou2000716/prstklab-stk-detector"
@@ -65,74 +89,331 @@ def field(row: dict[str, Any], *names: str) -> Any:
     return None
 
 
-def twse_financial_snapshot(
-    tickers: Iterable[str], session: requests.Session | None = None,
-) -> tuple[dict[str, dict[str, Any]], list[str]]:
-    """Return latest TWSE-filed net income, equity and public P/E.
+def _finite_number(value: Any) -> float | None:
+    """Parse a regulator number without allowing NaN/Infinity into a report."""
+    parsed = number(value)
+    return parsed if parsed is not None and isfinite(parsed) else None
 
-    TWSE reports values in thousands of NTD.  A current filing is not silently
-    relabelled as a three-year ROE history; callers receive the source period.
-    """
-    wanted = set(tickers)
-    client = session or requests.Session()
-    client.headers["User-Agent"] = SEC_USER_AGENT
-    income: dict[str, dict[str, Any]] = {}
-    equity: dict[str, dict[str, Any]] = {}
-    pe: dict[str, float | None] = {}
-    errors: list[str] = []
-    for endpoint, target, metric in (
-        *((endpoint, income, "本期淨利（淨損）") for endpoint in TWSE_INCOME_ENDPOINTS),
-        *((endpoint, equity, "權益總額") for endpoint in TWSE_BALANCE_ENDPOINTS),
-    ):
-        try:
-            data = client.get(f"{TWSE_BASE}/{endpoint}", timeout=45).json()
-            for row in data:
-                ticker = str(field(row, "公司代號") or "").strip()
-                if ticker not in wanted:
-                    continue
-                value = number(field(row, metric))
-                if value is None:
-                    continue
-                period = f"{field(row, '年度') or ''}Q{field(row, '季別') or ''}"
-                current = target.get(ticker)
-                if current is None or period > current["period"]:
-                    target[ticker] = {"value": value * 1000, "period": period, "name": field(row, "公司名稱")}
-        except (OSError, ValueError, requests.RequestException) as error:
-            errors.append(f"TWSE {endpoint}：{type(error).__name__}")
+
+def _twse_year(value: Any) -> int | None:
+    text = str(value or "").strip()
     try:
-        for row in client.get(f"{TWSE_BASE}/{TWSE_PE_ENDPOINT}", timeout=30).json():
-            ticker = str(field(row, "Code") or "").strip()
-            if ticker in wanted:
-                pe[ticker] = number(field(row, "PEratio"))
-    except (OSError, ValueError, requests.RequestException) as error:
-        errors.append(f"TWSE {TWSE_PE_ENDPOINT}：{type(error).__name__}")
+        year = int(text)
+    except (TypeError, ValueError):
+        return None
+    return year + 1911 if 90 <= year <= 200 else year if 1900 <= year <= 2200 else None
 
+
+def _twse_quarter(value: Any) -> int | None:
+    text = str(value or "").strip().upper().replace("Q", "")
+    digits = "".join(character for character in text if character.isdigit())
+    try:
+        quarter = int(digits)
+    except (TypeError, ValueError):
+        return None
+    return quarter if 1 <= quarter <= 4 else None
+
+
+def _twse_date(value: Any) -> str | None:
+    text = str(value or "").strip()
+    digits = "".join(character for character in text if character.isdigit())
+    if len(digits) == 7 and 90 <= int(digits[:3]) <= 200:
+        return f"{int(digits[:3]) + 1911:04d}-{digits[3:5]}-{digits[5:7]}"
+    if len(digits) == 8:
+        return f"{digits[:4]}-{digits[4:6]}-{digits[6:8]}"
+    return text or None
+
+
+def _twse_period(row: dict[str, Any]) -> tuple[int, int, str] | None:
+    year = _twse_year(field(row, "年度", "財報年度", "FiscalYear"))
+    quarter = _twse_quarter(field(row, "季別", "季度", "Quarter"))
+    if year is None or quarter is None:
+        return None
+    return year, quarter, f"{year}Q{quarter}"
+
+
+def _twse_response_payload(response: Any) -> tuple[Any, str]:
+    raise_for_status = getattr(response, "raise_for_status", None)
+    if callable(raise_for_status):
+        raise_for_status()
+    payload = response.json()
+    if not isinstance(payload, list) or not payload or not all(isinstance(item, dict) for item in payload):
+        raise ValueError("TWSE response is not a row list")
+    raw = getattr(response, "content", b"")
+    if not raw:
+        raw = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
+    if isinstance(raw, str):
+        raw = raw.encode("utf-8")
+    return payload, hashlib.sha256(raw).hexdigest()
+
+
+def _twse_endpoint_request(
+    endpoint: str, *, session: requests.Session | None, deadline: float | None,
+) -> dict[str, Any]:
+    """Fetch one official batch endpoint with one bounded retry."""
+    client = session or requests.Session()
+    client.headers["User-Agent"] = "PRStK-Lab-public-research/1.0"
+    url = f"{TWSE_BASE}/{endpoint}"
+    last_error: Exception | None = None
+    for attempt in range(TWSE_FINANCIAL_RETRIES + 1):
+        remaining = None if deadline is None else deadline - time.monotonic()
+        if remaining is not None and remaining <= 2:
+            raise TimeoutError("deadline_exceeded")
+        timeout = max(1.0, min(45.0, remaining - 1 if remaining is not None else 45.0))
+        try:
+            response = client.get(url, timeout=timeout)
+            payload, source_hash = _twse_response_payload(response)
+            return {
+                "endpoint": endpoint, "url": url, "rows": payload,
+                "source_sha256": source_hash,
+                "fetched_at": datetime.now(UTC).isoformat(),
+            }
+        except (OSError, ValueError, requests.RequestException, TimeoutError) as error:
+            last_error = error
+            status = getattr(getattr(error, "response", None), "status_code", None)
+            retryable = isinstance(error, (OSError, requests.RequestException, TimeoutError)) and (
+                status is None or status in {429, 500, 502, 503, 504}
+            )
+            if attempt >= TWSE_FINANCIAL_RETRIES or not retryable:
+                break
+            retry_after = getattr(getattr(error, "response", None), "headers", {}).get("Retry-After")
+            try:
+                wait = min(5.0, max(0.25, float(retry_after))) if retry_after else 0.5
+            except (TypeError, ValueError):
+                wait = 0.5
+            if deadline is not None and time.monotonic() + wait >= deadline - 1:
+                break
+            time.sleep(wait)
+    assert last_error is not None
+    raise last_error
+
+
+def _twse_cache_load(path: Path | None) -> dict[str, Any]:
+    if path is None or not path.exists():
+        return {}
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return {}
+    return loaded if isinstance(loaded, dict) else {}
+
+
+def _twse_cache_record_valid(record: Any, *, now: datetime, expected_period: str | None) -> bool:
+    if not isinstance(record, dict) or record.get("parse_version") != TWSE_FINANCIAL_PARSE_VERSION:
+        return False
+    if expected_period and record.get("reporting_period") != expected_period:
+        return False
+    try:
+        fetched = datetime.fromisoformat(str(record.get("last_checked_at")).replace("Z", "+00:00")).astimezone(UTC)
+        period_end = datetime.fromisoformat(str(record.get("period_end")).replace("Z", "+00:00")).astimezone(UTC)
+    except (TypeError, ValueError):
+        return False
+    required = ("eps_ytd", "parent_net_income_ytd", "parent_equity", "source_sha256")
+    if any(_finite_number(record.get(key)) is None for key in required[:3]) or not record.get("source_sha256"):
+        return False
+    return (
+        now - fetched <= timedelta(days=TWSE_FINANCIAL_CACHE_MAX_AGE_DAYS)
+        and now - period_end <= timedelta(days=TWSE_FINANCIAL_PERIOD_MAX_AGE_DAYS)
+    )
+
+
+def _twse_cache_save(path: Path | None, records: dict[str, dict[str, Any]], metadata: dict[str, Any]) -> str | None:
+    if path is None:
+        return None
+    payload = {
+        "schema_version": TWSE_FINANCIAL_CACHE_SCHEMA,
+        "parse_version": TWSE_FINANCIAL_PARSE_VERSION,
+        "saved_at": datetime.now(UTC).isoformat(),
+        "records": records,
+        "endpoint_hashes": metadata.get("endpoint_hashes", {}),
+    }
+    temporary = path.with_name(f".{path.name}.tmp")
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        os.replace(temporary, path)
+    except OSError as error:
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            pass
+        return type(error).__name__
+    return None
+
+
+def twse_current_quality_snapshot(
+    tickers: Iterable[str], session: requests.Session | None = None, *,
+    cache_path: str | Path | None = None, deadline: float | None = None,
+    expected_period: str | None = None,
+) -> tuple[dict[str, dict[str, Any]], list[str], dict[str, Any]]:
+    """Read Taiwan current-quality fundamentals from official TWSE batches.
+
+    The twelve industry endpoints are fetched at most once per run and merged
+    only when the same issuer and fiscal period are present.  Parent-company
+    net income and parent-company equity are required; consolidated totals are
+    deliberately not substituted.  ``session`` is accepted for deterministic
+    tests and uses serial requests, while production uses at most four workers.
+    """
+    wanted = {str(ticker).strip() for ticker in tickers if str(ticker).strip()}
+    endpoints = tuple((item, "income") for item in TWSE_INCOME_ENDPOINTS) + tuple((item, "balance") for item in TWSE_BALANCE_ENDPOINTS)
+    fetched: list[dict[str, Any]] = []
+    endpoint_errors: list[str] = []
+    if session is not None:
+        for endpoint, category in endpoints:
+            try:
+                result = _twse_endpoint_request(endpoint, session=session, deadline=deadline)
+                result["category"] = category
+                fetched.append(result)
+            except Exception as error:
+                endpoint_errors.append(f"TWSE {endpoint}: {type(error).__name__}")
+    else:
+        with ThreadPoolExecutor(max_workers=TWSE_FINANCIAL_MAX_WORKERS) as executor:
+            futures = {
+                executor.submit(_twse_endpoint_request, endpoint, session=None, deadline=deadline): (endpoint, category)
+                for endpoint, category in endpoints
+            }
+            for future in as_completed(futures):
+                endpoint, category = futures[future]
+                try:
+                    result = future.result()
+                    result["category"] = category
+                    fetched.append(result)
+                except Exception as error:
+                    endpoint_errors.append(f"TWSE {endpoint}: {type(error).__name__}")
+
+    # Merge only rows with an explicit fiscal period.  A row from an income
+    # endpoint and a row from a balance endpoint can contribute to one record
+    # only when their issuer and period match exactly.
+    periods: dict[tuple[str, tuple[int, int]], dict[str, Any]] = {}
+    endpoint_hashes: dict[str, str] = {}
+    for result in fetched:
+        endpoint_hashes[result["endpoint"]] = result["source_sha256"]
+        for raw_row in result["rows"]:
+            ticker = str(field(raw_row, "公司代號", "CompanyCode", "Code") or "").strip()
+            period_info = _twse_period(raw_row)
+            if ticker not in wanted or period_info is None:
+                continue
+            year, quarter, period = period_info
+            key = (ticker, (year, quarter))
+            target = periods.setdefault(key, {
+                "ticker": ticker, "name": field(raw_row, "公司名稱", "CompanyName") or ticker,
+                "reporting_period": period, "fiscal_year": year, "quarter": quarter,
+                "period_end": f"{year:04d}-{quarter * 3:02d}-{(31 if quarter in {1, 4} else 30):02d}T00:00:00+00:00",
+                "first_seen_at": datetime.now(UTC).isoformat(),
+                "filing_date": _twse_date(field(raw_row, "出表日期", "資料日期", "Date")),
+                "source_endpoints": [], "source_urls": [], "source_hashes": [],
+            })
+            target["name"] = target.get("name") or field(raw_row, "公司名稱", "CompanyName") or ticker
+            target["source_endpoints"].append(result["endpoint"])
+            target["source_urls"].append(f"{TWSE_BASE}/{result['endpoint']}")
+            target["source_hashes"].append(result["source_sha256"])
+            target["source_url"] = target["source_urls"][0]
+            eps = _finite_number(field(raw_row, *TWSE_EPS_FIELDS))
+            parent_net = _finite_number(field(raw_row, *TWSE_PARENT_NET_FIELDS))
+            parent_equity = _finite_number(field(raw_row, *TWSE_PARENT_EQUITY_FIELDS))
+            if eps is not None:
+                target["eps_ytd"] = eps
+                target["eps_field"] = next(name for name in TWSE_EPS_FIELDS if name in raw_row)
+            if parent_net is not None:
+                target["parent_net_income_ytd"] = parent_net * 1000
+                target["parent_net_income_field"] = next(name for name in TWSE_PARENT_NET_FIELDS if name in raw_row)
+            if parent_equity is not None:
+                target["parent_equity"] = parent_equity * 1000
+                target["parent_equity_field"] = next(name for name in TWSE_PARENT_EQUITY_FIELDS if name in raw_row)
+
+    latest: dict[str, dict[str, Any]] = {}
+    for (ticker, _period_key), period_record in periods.items():
+        current = latest.get(ticker)
+        if current is None or (period_record["fiscal_year"], period_record["quarter"]) > (current["fiscal_year"], current["quarter"]):
+            latest[ticker] = period_record
+    now = datetime.now(UTC)
+    cache_payload = _twse_cache_load(Path(cache_path) if cache_path else None)
+    cache_records = cache_payload.get("records", {}) if isinstance(cache_payload.get("records"), dict) else {}
     output: dict[str, dict[str, Any]] = {}
-    for ticker in wanted:
-        net = income.get(ticker)
-        own = equity.get(ticker)
-        if not net and not own and ticker not in pe:
+    cache_used = 0
+    for ticker in sorted(wanted):
+        record: dict[str, Any] | None = latest.get(ticker)
+        if record is None or any(record.get(key) is None for key in ("eps_ytd", "parent_net_income_ytd", "parent_equity")):
+            cached = cache_records.get(ticker)
+            if isinstance(cached, dict) and _twse_cache_record_valid(cached, now=now, expected_period=expected_period):
+                record = dict(cached)
+                record["financial_source"] = "TWSE official batch (bounded cache)"
+                record["cache_used"] = True
+                cache_used += 1
+            else:
+                if record is None:
+                    continue
+        if expected_period and record.get("reporting_period") != expected_period:
             continue
-        reporting_period = str(net["period"] if net else own["period"] if own else "") or None
-        roe = None
-        if net and own and own["value"]:
-            # This is an annualised latest-period estimate, not a stability claim.
-            quarter = int(str(reporting_period).split("Q")[-1]) if reporting_period and "Q" in str(reporting_period) else 4
-            roe = round((net["value"] / max(quarter, 1) * 4) / own["value"], 6)
-        output[ticker] = {
-            "net_income": net["value"] if net else None,
-            "roe": roe,
-            "pe": pe.get(ticker),
-            # TWSE OpenAPI exposes the latest filing reliably.  The historical
-            # EPS/dividend checks require dated MOPS filings and therefore stay
-            # explicitly unavailable until that source is present.
+        eps = _finite_number(record.get("eps_ytd"))
+        parent_net = _finite_number(record.get("parent_net_income_ytd"))
+        parent_equity = _finite_number(record.get("parent_equity"))
+        quarter = int(record.get("quarter") or 0)
+        quality_ratio = None if parent_net is None or parent_equity is None or parent_equity <= 0 or quarter <= 0 else parent_net * 4 / quarter / parent_equity
+        if parent_equity is None or parent_net is None or quarter <= 0:
+            quality_pass: bool | None = None
+        elif parent_equity <= 0:
+            quality_pass = False
+        else:
+            assert quality_ratio is not None
+            quality_pass = quality_ratio >= 0.17
+        record.update({
+            "eps_ytd": eps, "parent_net_income_ytd": parent_net, "parent_equity": parent_equity,
+            "annualized_quality_ratio": quality_ratio,
+            "current_eps_positive": None if eps is None else eps > 0,
+            "current_quality_pass": quality_pass,
+            "quality_rule_version": TW_VALUE_RULE_VERSION,
+            "parameter_hash": TW_VALUE_PARAMETER_HASH,
+            "quality_basis": "同年度累計歸屬母公司淨利×4÷季別÷同季末歸屬母公司權益",
+            "net_income": parent_net, "roe": quality_ratio,
+            "pe": None, "roe_basis": "年化獲利／期末權益估算（非全年 ROE）",
+            "financial_source": record.get("financial_source") or "TWSE official batch",
+            "financial_parse_version": TWSE_FINANCIAL_PARSE_VERSION,
+            "parse_version": TWSE_FINANCIAL_PARSE_VERSION,
+            "calculation_basis": "parent_net_income_ytd × 4 ÷ quarter ÷ parent_equity",
+            "source_sha256": record.get("source_sha256") or hashlib.sha256(
+                "|".join(sorted(set(record.get("source_hashes", [])))).encode("utf-8")
+            ).hexdigest(),
+            "last_checked_at": record.get("last_checked_at") or now.isoformat(),
+            "amount_unit": "TWD_thousands_normalized_to_TWD",
             "three_year_eps_positive": None,
             "four_quarter_eps_positive": None,
             "three_year_dividend_paid": None,
-            "reporting_period": reporting_period,
-            "roe_basis": "TWSE latest filing annualised estimate" if roe is not None else None,
-            "financial_source": "TWSE OpenAPI",
-        }
+        })
+        output[ticker] = record
+
+    diagnostics = {
+        "rule_version": TW_VALUE_RULE_VERSION,
+        "parse_version": TWSE_FINANCIAL_PARSE_VERSION,
+        "requested_tickers": len(wanted),
+        "valid_records": len(output),
+        "endpoint_count": len(endpoints),
+        "successful_endpoint_count": len(fetched),
+        "endpoint_errors": sorted(endpoint_errors),
+        "endpoint_hashes": endpoint_hashes,
+        "cache_used_count": cache_used,
+        "mops_calls": 0,
+        "mops_history_used": False,
+    }
+    cache_records_out = {ticker: dict(record) for ticker, record in cache_records.items() if isinstance(record, dict)}
+    cache_records_out.update({ticker: {
+        **record, "last_checked_at": record.get("last_checked_at") or now.isoformat(),
+        "parse_version": TWSE_FINANCIAL_PARSE_VERSION,
+    } for ticker, record in output.items() if not record.get("cache_used")})
+    cache_error = _twse_cache_save(Path(cache_path) if cache_path else None, cache_records_out, diagnostics)
+    diagnostics["cache_saved"] = cache_error is None if cache_path else False
+    diagnostics["cache_write_error"] = cache_error
+    errors = list(endpoint_errors)
+    if cache_error:
+        errors.append(f"TWSE cache save: {cache_error}")
+    return output, errors, diagnostics
+
+
+def twse_financial_snapshot(
+    tickers: Iterable[str], session: requests.Session | None = None,
+) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    """Backward-compatible wrapper for callers that only need latest metrics."""
+    output, errors, _diagnostics = twse_current_quality_snapshot(tickers, session=session)
     return output, errors
 
 
