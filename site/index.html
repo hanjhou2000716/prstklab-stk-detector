@@ -4,9 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="稜量速報系統 Telegram Mini App" />
-    <meta name="prstk-api-base" content="__PUBLIC_API_BASE_URL__" />
+    <meta name="prstk-api-base" content="" />
     <title>稜量速報系統</title>
-    <link rel="stylesheet" href="styles.css?v=__ASSET_VERSION__" />
+    <link rel="stylesheet" href="styles.css?v=5eb2f0eacf840b30" />
     <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
   </head>
   <body>
@@ -21,7 +21,7 @@
       </header>
 
       <section class="hero-panel" aria-labelledby="app-title">
-        <img class="hero-prism" src="assets/hero-prism-cover.png?v=__ASSET_VERSION__" alt="" aria-hidden="true" />
+        <img class="hero-prism" src="assets/hero-prism-cover.png?v=5eb2f0eacf840b30" alt="" aria-hidden="true" />
         <p class="eyebrow">D.inv System</p>
         <h1 id="app-title">稜量速報系統</h1>
         <p id="market-focus" class="hero-copy">正在整理最新市場焦點。</p>
@@ -94,10 +94,10 @@
         <div class="research-tabs" role="tablist" aria-label="研究市場切換"><button type="button" class="research-tab active" data-market="taiwan" role="tab" aria-selected="true">台股</button><button type="button" class="research-tab" data-market="us" role="tab" aria-selected="false">美股</button></div>
         <p id="research-notice" class="section-note">掃描時間載入中</p>
         <div class="detail-content research-drawers">
-          <details class="research-drawer" data-strategy="price_action"><summary>裸 K 結構</summary><ul id="research-list" class="research-list"><li class="empty">載入中</li></ul></details>
-          <details class="research-drawer" data-strategy="momentum"><summary>動能狙擊</summary><ul id="momentum-list" class="research-list"><li class="empty">載入中</li></ul></details>
-          <details class="research-drawer" data-strategy="resonance"><summary>三維共振</summary><ul id="resonance-list" class="research-list"><li class="empty">載入中</li></ul></details>
-          <details class="research-drawer" data-strategy="value"><summary>璞玉價值</summary><ul id="value-list" class="research-list"><li class="empty">載入中</li></ul></details>
+          <details class="research-drawer" data-strategy="price_action"><summary>裸 K 結構</summary><ul id="research-list" class="research-list"><li class="empty">載入中</li></ul><div class="research-meta" data-research-meta="price_action" aria-live="polite"></div></details>
+          <details class="research-drawer" data-strategy="momentum"><summary>動能狙擊</summary><ul id="momentum-list" class="research-list"><li class="empty">載入中</li></ul><div class="research-meta" data-research-meta="momentum" aria-live="polite"></div></details>
+          <details class="research-drawer" data-strategy="resonance"><summary>三維共振</summary><ul id="resonance-list" class="research-list"><li class="empty">載入中</li></ul><div class="research-meta" data-research-meta="resonance" aria-live="polite"></div></details>
+          <details class="research-drawer" data-strategy="value"><summary>璞玉價值</summary><ul id="value-list" class="research-list"><li class="empty">載入中</li></ul><div class="research-meta" data-research-meta="value" aria-live="polite"></div></details>
         </div>
       </section>
 
@@ -112,6 +112,6 @@
 
       <footer><p>@2026 PRStK Lab &amp; D.INV | All right reserved.</p></footer>
     </main>
-    <script src="app.js?v=__ASSET_VERSION__"></script>
+    <script src="app.js?v=5eb2f0eacf840b30"></script>
   </body>
 </html>

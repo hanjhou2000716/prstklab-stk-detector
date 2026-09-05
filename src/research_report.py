@@ -485,7 +485,13 @@ def merge_previous_strategy_versions(
                 "candidates": len(unscanned_rows),
                 "formal_candidates": sum(1 for row in unscanned_rows if row.get("list_type") == "formal"),
                 "observation_candidates": sum(1 for row in unscanned_rows if row.get("list_type") == "observation"),
-                "candidate_state": "historical",
+                # ``scan_state=complete`` is the preserved last-successful
+                # contract.  Keep its candidate_state compatible with the
+                # schema and use historical_fallback/strategy_version_state
+                # to tell the UI that these rows were not scanned this run.
+                "candidate_state": prev_source.get("candidate_state") or (
+                    "available" if unscanned_rows else "no_candidates"
+                ),
                 "blocking_reason": "本輪未掃描；沿用最後成功版本並標示歷史資料",
             })
             continue

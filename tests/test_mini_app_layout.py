@@ -46,6 +46,18 @@ def test_mini_app_uses_strategy_drawers_and_places_source_health_after_sentiment
     assert ".source-health-panel { order: 4; }" in styles
 
 
+def test_strategy_drawers_keep_titles_clean_and_put_freshness_after_the_list():
+    page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert 'data-research-meta="price_action"' in page
+    assert 'data-research-meta="momentum"' in page
+    assert 'data-research-meta="resonance"' in page
+    assert 'data-research-meta="value"' in page
+    assert 'summary.textContent = label;' in app
+    assert 'research-meta-status' in app
+    assert '研究抽屜的日期' not in app
+
+
 def test_source_health_is_a_collapsible_card_with_a_warming_state():
     page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")

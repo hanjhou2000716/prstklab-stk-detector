@@ -95,7 +95,9 @@ def test_single_market_run_keeps_other_market_as_historical_without_attempt():
     assert source["historical_fallback"] is True
     assert source["scan_attempted_at"] is None
     assert source["scan_state"] == "complete"
-    assert source.get("candidate_state") != "failed"
+    # Historical fallback is carried by the explicit version flags; a
+    # preserved complete scan must keep a schema-compatible candidate state.
+    assert source["candidate_state"] == "available"
     assert source["scan_trading_date"] == "2026-09-03"
     assert result["candidates"][0]["research_version_state"] == "historical"
 

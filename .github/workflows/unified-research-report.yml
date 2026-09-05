@@ -45,6 +45,22 @@ on:
         description: Optional exchange trading date for a manual catch-up run (YYYY-MM-DD)
         required: false
         default: ''
+      target_strategy:
+        description: Strategy to scan; resume_incomplete selects only incomplete strategies
+        required: false
+        type: choice
+        options: [all, momentum, price_action, resonance, value]
+        default: all
+      research_action:
+        description: Research action for this run
+        required: false
+        type: choice
+        options: [scan, resume_incomplete, repair_state]
+        default: scan
+      repair_source_run_id:
+        description: Validated historical research run used only by repair_state
+        required: false
+        default: '33953751631'
   repository_dispatch:
     types: [unified-research-report]
   schedule:
@@ -85,6 +101,9 @@ jobs:
       BACKTEST_RELEASE_PATH: ${{ inputs.backtest_release_path || github.event.client_payload.backtest_release_path || '' }}
       TARGET_MARKET: ${{ inputs.target_market || github.event.client_payload.target_market || 'auto' }}
       TRADING_DATE: ${{ inputs.trading_date || github.event.client_payload.trading_date || '' }}
+      TARGET_STRATEGY: ${{ inputs.target_strategy || github.event.client_payload.target_strategy || 'all' }}
+      RESEARCH_ACTION: ${{ inputs.research_action || github.event.client_payload.research_action || 'scan' }}
+      REPAIR_SOURCE_RUN_ID: ${{ inputs.repair_source_run_id || github.event.client_payload.repair_source_run_id || '33953751631' }}
       SCHEDULE_CRON: ${{ github.event.schedule || '' }}
       NEWS_CACHE_PATH: site/data/news-cache.json
       SEC_FACTS_CACHE_PATH: data/sec-companyfacts-cache.json
@@ -109,6 +128,40 @@ jobs:
           if [[ -s site/data/research-report.json ]]; then
             cp site/data/research-report.json research-artifacts/research-report-previous.json
           fi
+      - name: Download validated repair source
+        if: env.RESEARCH_ACTION == 'repair_state'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p research-artifacts/repair-source
+          gh run download "$REPAIR_SOURCE_RUN_ID" --name unified-research-report --dir research-artifacts/repair-source
+          python - <<'PY'
+          import json
+          import shutil
+          from pathlib import Path
+          root = Path("research-artifacts/repair-source")
+          candidates = sorted(root.rglob("research-report-latest.json")) + sorted(root.rglob("research-report.json"))
+          if not candidates:
+              raise SystemExit("validated repair source report was not found")
+          source = candidates[0]
+          payload = json.loads(source.read_text(encoding="utf-8"))
+          if not isinstance(payload, dict) or not payload.get("sources"):
+              raise SystemExit("validated repair source report is empty")
+          if payload.get("scan_mode") != "production" or len(payload.get("sources", [])) != 8:
+              raise SystemExit("validated repair source is not the eight-strategy production matrix")
+          from src.production_acceptance import (
+              production_research_contract_errors,
+              production_strategy_matrix_errors,
+          )
+          errors = sorted(set(
+              production_research_contract_errors(payload)
+              + production_strategy_matrix_errors(payload)
+          ))
+          if errors:
+              raise SystemExit("repair source failed production validation: " + "; ".join(errors))
+          shutil.copyfile(source, "research-artifacts/repair-source-report.json")
+          print(f"repair source: {source}")
+          PY
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: { python-version: '3.11' }
       - run: pip install -r requirements.txt
@@ -145,7 +198,54 @@ jobs:
           PY
           echo "RESEARCH_DUE=$(grep '^due=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)" >> "$GITHUB_ENV"
           echo "RESEARCH_SLOT_KEY=$(grep '^slot_key=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2-)" >> "$GITHUB_ENV"
+      - name: Resolve strategy selection
+        if: env.RESEARCH_DUE == 'true'
+        run: |
+          python - "$TARGET_MARKET" "$TARGET_STRATEGY" "$RESEARCH_ACTION" research-artifacts/research-report-previous.json <<'PY'
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          market, requested, action, previous_path = sys.argv[1:]
+          allowed = {"all", "momentum", "price_action", "resonance", "value"}
+          actions = {"scan", "resume_incomplete", "repair_state"}
+          if requested not in allowed:
+              raise SystemExit(f"invalid target_strategy={requested}")
+          if action not in actions:
+              raise SystemExit(f"invalid research_action={action}")
+          markets = {"taiwan", "us"} if market == "both" else {market}
+          run = {name: requested in {"all", name} for name in allowed if name != "all"}
+          if action == "repair_state":
+              run = {name: False for name in run}
+          elif action == "resume_incomplete" and requested == "all":
+              run = {name: False for name in run}
+              try:
+                  previous = json.loads(Path(previous_path).read_text(encoding="utf-8"))
+              except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+                  previous = {}
+              for source in previous.get("sources", []) if isinstance(previous, dict) else []:
+                  if not isinstance(source, dict) or str(source.get("market")) not in markets:
+                      continue
+                  strategy = str(source.get("strategy") or "")
+                  if strategy not in run:
+                      continue
+                  needs_retry = (
+                      source.get("scan_state") != "complete"
+                      or source.get("historical_fallback") is True
+                      or source.get("strategy_version_state") in {"historical", "unavailable"}
+                      or source.get("candidate_state") in {"building", "data_gap", "data_unavailable", "failed"}
+                  )
+                  run[strategy] = run[strategy] or needs_retry
+          for name, enabled in run.items():
+              with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
+                  handle.write(f"RUN_{name.upper()}={'true' if enabled else 'false'}\n")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
+              handle.write(f"RESEARCH_ACTION={action}\nTARGET_STRATEGY={requested}\n")
+          print("strategy selection:", ", ".join(name for name, enabled in run.items() if enabled) or "none")
+          PY
       - name: Clear previous research scan artifacts for target market
+        if: env.RESEARCH_DUE == 'true' && env.RESEARCH_ACTION != 'repair_state'
         run: |
           # Never let a target-market retry reuse its own previous CSV.  The
           # other market is intentionally preserved in the public report as a
@@ -155,37 +255,42 @@ jobs:
           import sys
           from pathlib import Path
           target = sys.argv[1]
-          prefixes = ("taiwan-", "us-") if target == "both" else (f"{target}-",)
+          enabled = ("momentum", "price_action", "resonance", "value")
+          file_stems = {"momentum": "momentum", "price_action": "price-action", "resonance": "resonance", "value": "value"}
+          import os
+          strategies = [name for name in enabled if os.environ.get(f"RUN_{name.upper()}") == "true"]
+          markets = ("taiwan", "us") if target == "both" else (target,)
+          prefixes = tuple(f"{market}-{file_stems[strategy]}-" for market in markets for strategy in strategies)
           for path in Path("data").glob("*"):
               if path.is_file() and any(path.name.startswith(prefix) and ("-scan" in path.name or "-summary" in path.name) for prefix in prefixes):
                   path.unlink()
           PY
           : > research-artifacts/scan-failures.ndjson
       - name: 台股動能研究掃描
-        if: env.RESEARCH_DUE == 'true' && (env.TARGET_MARKET == 'taiwan' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_MOMENTUM == 'true' && (env.TARGET_MARKET == 'taiwan' || env.TARGET_MARKET == 'both')
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy momentum --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_taiwan_momentum_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
       - name: 美股動能研究掃描
-        if: env.RESEARCH_DUE == 'true' && (env.TARGET_MARKET == 'us' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_MOMENTUM == 'true' && (env.TARGET_MARKET == 'us' || env.TARGET_MARKET == 'both')
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy momentum --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_us_momentum_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股裸 K 結構研究掃描
-        if: env.RESEARCH_DUE == 'true' && (env.TARGET_MARKET == 'taiwan' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_PRICE_ACTION == 'true' && (env.TARGET_MARKET == 'taiwan' || env.TARGET_MARKET == 'both')
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy price_action --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_taiwan_price_action_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
       - name: 美股裸 K 結構研究掃描
-        if: env.RESEARCH_DUE == 'true' && (env.TARGET_MARKET == 'us' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_PRICE_ACTION == 'true' && (env.TARGET_MARKET == 'us' || env.TARGET_MARKET == 'both')
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy price_action --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_us_price_action_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股三維共振研究掃描
-        if: env.RESEARCH_DUE == 'true' && (env.TARGET_MARKET == 'taiwan' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_RESONANCE == 'true' && (env.TARGET_MARKET == 'taiwan' || env.TARGET_MARKET == 'both')
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy resonance --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_resonance_scan --market taiwan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
       - name: 美股三維共振研究掃描
-        if: env.RESEARCH_DUE == 'true' && (env.TARGET_MARKET == 'us' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_RESONANCE == 'true' && (env.TARGET_MARKET == 'us' || env.TARGET_MARKET == 'both')
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy resonance --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_resonance_scan --market us --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股品質價值覆核
-        if: env.RESEARCH_DUE == 'true' && (env.TARGET_MARKET == 'taiwan' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_VALUE == 'true' && (env.TARGET_MARKET == 'taiwan' || env.TARGET_MARKET == 'both')
         env:
           WORKER_TIMEOUT_SECONDS: '600'
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy value --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_value_quality_scan --market taiwan --batch-size "$BATCH_SIZE" --mops-max-refresh "$MOPS_MAX_REFRESH" --time-budget-seconds "$VALUE_INTERNAL_BUDGET_SECONDS" --diagnostics-path research-artifacts/taiwan-value-diagnostics.json
       - name: 美股品質價值覆核
-        if: env.RESEARCH_DUE == 'true' && (env.TARGET_MARKET == 'us' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_VALUE == 'true' && (env.TARGET_MARKET == 'us' || env.TARGET_MARKET == 'both')
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy value --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE"
       - name: Build research report with optional backtest identity
         if: env.RESEARCH_DUE == 'true'
@@ -199,10 +304,15 @@ jobs:
             --source-commit-sha "$GITHUB_SHA"
             --previous-report research-artifacts/research-report-previous.json
             --target-market "$TARGET_MARKET"
+            --target-strategy "$TARGET_STRATEGY"
+            --research-action "$RESEARCH_ACTION"
             --slot-key "$RESEARCH_SLOT_KEY"
           )
           if [[ -n "$BACKTEST_RELEASE_PATH" ]]; then
             args+=(--backtest-release "$BACKTEST_RELEASE_PATH")
+          fi
+          if [[ "$RESEARCH_ACTION" == "repair_state" ]]; then
+            args+=(--repair-source-report research-artifacts/repair-source-report.json)
           fi
           python -m src.run_research_report "${args[@]}" --scan-failures research-artifacts/scan-failures.ndjson
       - name: Gate research publication and preserve previous success

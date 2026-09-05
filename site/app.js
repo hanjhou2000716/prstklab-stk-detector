@@ -269,11 +269,14 @@ const externalRiskReasonLabel = (reason) => ({
 const fjFactIsUsable = (value) => {
   const body = String(value || "").replace(/\s+/g, " ").trim();
   if (!body || /…|\.\.\.|undefined|https?:\/\//i.test(body)) return false;
+  if (/^(?:📰\s*)?(?:financialjuice|morning\s+juice)(?:\s*新聞|\s*快訊|\s+公開(?:新聞|快訊)?|\s*\(|$)/iu.test(body)) return false;
   if (/^(?:[📰🟢🟡🟠🔴⚪⚫🟣]\s*)?(?:financialjuice|morning\s+juice)(?:\s+公開)?(?:新聞|快訊)?(?:\s|[（(]|[-–—]|$)/iu.test(body)) return false;
   if (/(?:關聯市場|資料待更新|報價待取得|資訊待核對)/i.test(body)) return false;
   if (/(?:直播影片|直播|影片)\s*[:：]\s*(?:Fed\.?|Embed|LIVE|https?:\/\/|$)/i.test(body)) return false;
   if (/(?:\b(?:Embed|LIVE)\b|StockRocket)/i.test(body)) return false;
   if (/[-–—]\s*\.?$/.test(body)) return false;
+  const conditional = body.match(/(?:如果|若)\s*([^。！？.!?]*)/u);
+  if (conditional && !/(?:則|就|將|會|可能|would|will|then)/iu.test(conditional[1])) return false;
   if (/[🟢🟡🟠🔴⚪⚫🟣]\s*[。！？!?，,、:：；;.\s]*$/u.test(body)) return false;
   if (!/[\u4e00-\u9fffA-Za-z0-9]/.test(body)) return false;
   if (/^[🟢🟡🟠🔴⚪⚫🟣\s。！？!?，,、:：|｜()（）\[\]{}]+$/u.test(body)) return false;
@@ -282,6 +285,10 @@ const fjFactIsUsable = (value) => {
 
 const cleanFjFact = (value) => {
   let body = String(value || "").replace(/\s+/g, " ").trim();
+  // Historical artifacts sometimes contain a vendor dot or a second risk
+  // icon inside the body.  Icons are display decoration, never event facts.
+  body = body.replace(/(?:🟢|🟡|🟠|🔴|⚪️?|⚫️?|🟣|📊|📡|📢|📣|📈|📉|🟰|⚠️?)/gu, " ");
+  body = body.replace(/(?<![A-Za-z0-9])R[0-4](?![A-Za-z0-9])\s*[｜|:]?/giu, " ");
   body = body.replace(/https?:\/\/\S+/gi, "").trim().replace(/^[｜|,，:：\s]+|[｜|,，:：\s]+$/g, "");
   body = body.replace(/^(?:translation|original headline|headline|event|事件)\s*[:：]\s*/i, "");
   body = body.replace(/^(?:據|根據)\s*[《「"']([^》」"']+)[》」"']\s*(?:報導|指出|稱)?\s*[,，:：]?\s*/u, "");
@@ -308,7 +315,11 @@ const canonicalFjSummary = (item) => {
   if (!item || typeof item !== "object") return "";
   const stored = String(item.public_short_message || "").replace(/\s+/g, " ").trim();
   const storedMatch = stored.match(/^🟣\s*FJ\s*(\d+(?:\.\d+)?)\s*\/\s*10｜(.+)$/iu);
-  if (storedMatch && fjFactIsUsable(storedMatch[2]) && [...stored].length <= PUBLIC_TEXT_MAX_CHARS) return stored;
+  if (storedMatch) {
+    const storedBody = cleanFjFact(storedMatch[2]);
+    const canonicalStored = `🟣 FJ ${storedMatch[1]}/10｜${storedBody}`;
+    if (fjFactIsUsable(storedBody) && [...canonicalStored].length <= PUBLIC_TEXT_MAX_CHARS) return canonicalStored;
+  }
   const importanceMatch = String(item.public_short_message || item.brief_title || item.title || "").match(/FJ\s*(\d+(?:\.\d+)?)\s*\/\s*10/i);
   const importance = item.vendor_importance ?? (importanceMatch ? importanceMatch[1] : "");
   if (importance === "") return "";
@@ -316,6 +327,10 @@ const canonicalFjSummary = (item) => {
   const candidates = [item.public_short_message, item.brief_title, item.event, item.chinese_translation, item.headline, item.original_headline, item.vendor_original_headline, item.title];
   for (const candidate of candidates) {
     const body = cleanFjFact(candidate);
+    // A source envelope is metadata, not an event fact.  Do not let a
+    // provider name become a public card merely because it fits the length
+    // limit.
+    if (/(?:financialjuice|morning\s+juice)/iu.test(body)) continue;
     const message = `${prefix}${body}`;
     if (fjFactIsUsable(body) && [...message].length <= PUBLIC_TEXT_MAX_CHARS) return message;
     if ([...message].length > PUBLIC_TEXT_MAX_CHARS) {
@@ -333,6 +348,40 @@ const canonicalFjSummary = (item) => {
 const isCanonicalFjSummary = (item) => Boolean(canonicalFjSummary(item));
 
 const canonicalFjBody = (item) => canonicalFjSummary(item).replace(/^🟣 FJ (?:[0-9]|10)\/10｜/, "").trim();
+
+const displayAlertProjection = (alert) => {
+  if (!alert || typeof alert !== "object") return alert;
+  const source = alertSourceKey(alert);
+  const projected = { ...alert };
+  if (source === "financialjuice") {
+    // This is a display-only projection.  Never write it back to the
+    // immutable artifact or use it for lineage/hash comparison.
+    projected.public_short_message = canonicalFjSummary(alert) || "🟣 歷史摘要不完整，請查看原文";
+    projected.brief_title = projected.public_short_message;
+    return projected;
+  }
+  const kind = String(alert.message_kind || alert.notification_kind || alert.kind || "").toLowerCase();
+  const raw = String(alert.public_short_message || alert.brief_title || alert.event || alert.title || "")
+    .replace(/\s+/g, " ").trim();
+  const isBrief = kind === "scheduled_brief" || source === "scheduled_brief" || source === "market_briefing" || raw.startsWith("📊");
+  const withoutIcons = raw
+    .replace(/(?:🟢|🟡|🟠|🔴|⚪️?|⚫️?|🟣|📊|📡|📢|📣|📈|📉|🟰|⚠️?)/gu, " ")
+    .replace(/(?<![A-Za-z0-9])R[0-4](?![A-Za-z0-9])\s*[｜|:]?/giu, " ")
+    .replace(/\s+/g, " ").trim();
+  if (isBrief) {
+    const parts = withoutIcons.split(/[｜|]/u).map((part) => part.trim()).filter(Boolean);
+    const labels = new Set(["晨報", "台股盤前", "美股盤前", "市場簡報", "盤中", "午報", "午盤", "盤後", "美股開盤"]);
+    const label = parts.length && labels.has(parts[0]) ? parts.shift() : "市場簡報";
+    const body = parts.join("，") || withoutIcons;
+    if (body) projected.public_short_message = `📊 ${label}｜${body}`;
+  } else if (withoutIcons) {
+    const level = String(alert.prstk_risk_level || alert.prstk_risk?.prstk_risk_level || "R2").toUpperCase();
+    const icon = { R0: "🟢", R1: "🟢", R2: "🟡", R3: "🟠", R4: "🔴" }[level] || "🟡";
+    projected.public_short_message = `${icon} ${withoutIcons}`;
+  }
+  projected.brief_title = projected.public_short_message || projected.brief_title;
+  return projected;
+};
 
 const normalizedAlertText = (value) => String(value || "").trim().split(/\s+/).filter(Boolean).join(" ");
 
@@ -436,7 +485,7 @@ const primaryAlertEvents = (snapshot) => {
 
 const renderAlertCard = (events, generatedAt, externalAlert, indices = [], externalRisk = null) => {
   const profile = externalAlert ? externalAlertProfile(externalAlert.category, indices) : null;
-  const event = externalAlert ? {
+  const rawEvent = externalAlert ? {
     kind: "external_alert", risk_level: externalAlert.category === "black_swan" ? "高風險" : "警戒", short_label: externalAlertLabel(externalAlert.category),
     brief_title: `金十｜${externalAlertLabel(externalAlert.category)}`, summary: externalAlert.summary,
     trigger: `事件時間：${externalAlert.occurred_at}`,
@@ -458,6 +507,7 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
       verified_domains: externalAlert.verified_domains || [],
     },
   } : events?.items?.[0];
+  const event = displayAlertProjection(rawEvent);
   const card = document.getElementById("alert-card");
   if (!card) return;
   const pendingNode = document.getElementById("alert-pending");
@@ -1272,14 +1322,31 @@ const renderResearch = (snapshot) => {
   setText("research-notice", mixedNotice || staleNotice || backtestNotice || generatedAt.trim() || "掃描時間暫時無法取得");
   const sourceFor = (strategy) => (report.sources || []).find((item) => item.market === activeResearchMarket && item.strategy === strategy) || {};
   const strategyLabels = { price_action: "裸 K 結構", momentum: "動能狙擊", resonance: "三維共振", value: "璞玉價值" };
+  const researchStamp = (value) => {
+    if (!value) return "";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return String(value).slice(0, 16).replace("T", " ");
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hour12: false,
+    }).formatToParts(parsed).reduce((result, item) => ({ ...result, [item.type]: item.value }), {});
+    return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
+  };
+  const researchDate = (value) => String(value || "").match(/^\d{4}-\d{2}-\d{2}/)?.[0] || "";
   Object.entries(strategyLabels).forEach(([strategy, label]) => {
     const source = sourceFor(strategy);
-    const date = source.scan_trading_date || source.last_successful_at || source.last_successful_generated_at;
+    const date = researchDate(source.scan_trading_date);
     const state = source.freshness_state || (source.historical_fallback === true ? "歷史資料" : source.scan_state === "building" ? "建檔中" : source.scan_state === "failed" ? "更新失敗" : date ? "最近收盤資料" : "資料日期不明");
     const successful = source.last_successful_at || source.last_successful_generated_at;
-    const suffix = `${date ? `｜資料日 ${String(date).slice(0, 10)}` : "｜資料日期不明"}｜${state}${successful ? `｜最後成功 ${String(successful).slice(0, 16).replace("T", " ")}` : ""}`;
     const summary = document.querySelector(`.research-drawer[data-strategy="${strategy}"] summary`);
-    if (summary) summary.textContent = `${label}${suffix}`;
+    if (summary) summary.textContent = label;
+    const meta = document.querySelector(`[data-research-meta="${strategy}"]`);
+    if (meta) {
+      const dateText = date ? `資料日 ${date}` : "資料日期不明";
+      const successText = successful ? `｜最後成功 ${researchStamp(successful)}` : "";
+      const reason = source.blocking_reason || source.notice || source.failure_reason || "";
+      meta.innerHTML = `<span class="research-meta-status">${escapeHtml(`${dateText}｜${state}${successText}`)}</span>${reason && ["更新失敗", "建檔中", "資料日期不明"].includes(state) ? `<span class="research-meta-reason">${escapeHtml(String(reason))}</span>` : ""}`;
+    }
   });
   const sourceBlocked = (strategy) => {
     const source = sourceFor(strategy);
@@ -1498,10 +1565,11 @@ const loadArchivedAlert = async (snapshot, notificationId, releaseId, snapshotId
   // to the verified artifact keeps latest-release comparison stable without
   // re-rendering the historical text through today's summarizer.
   if (indexedCanonicalHash && !artifactCanonicalHash) alert.canonical_content_hash = indexedCanonicalHash;
-  const source = String(alert.source_key || alert.source || alert.content_origin || "").toLowerCase();
-  if (source === "financialjuice" && !isCanonicalFjSummary(alert)) {
-    throw new Error("immutable alert public summary invalid");
-  }
+  // Content quality is a display concern for already authenticated history.
+  // Keep the original bytes/hash and let the display projection show a
+  // neutral incomplete-history message when the old summary cannot be
+  // reconstructed.  Integrity, identity, snapshot and observation checks
+  // above remain fail-closed.
   return alert;
 };
 
@@ -1512,14 +1580,14 @@ const currentReleaseAlertRow = (snapshot, notificationId, releaseId) => {
 };
 
 const deepLinkFocusText = (alert) => {
-  const source = alertSourceKey(alert);
-  if (source === "financialjuice") return String(alert?.public_short_message || alert?.brief_title || canonicalFjSummary(alert) || "").trim();
-  return String(alert?.public_short_message || alert?.brief_title || alert?.event || alert?.title || "").replace(/\s+/g, " ").trim();
+  const projected = displayAlertProjection(alert);
+  return String(projected?.public_short_message || projected?.brief_title || projected?.event || projected?.title || "").replace(/\s+/g, " ").trim();
 };
 
 const renderResolvedDeepLink = (snapshot, alert) => {
-  renderAlertCard({ items: [alert] }, alert.created_at || snapshot.generated_at, null, alert.market_evidence || []);
-  const focus = deepLinkFocusText(alert);
+  const projected = displayAlertProjection(alert);
+  renderAlertCard({ items: [projected] }, alert.created_at || snapshot.generated_at, null, alert.market_evidence || []);
+  const focus = deepLinkFocusText(projected);
   setText("market-focus", focus || "已載入本次通知事件。");
 };
 
