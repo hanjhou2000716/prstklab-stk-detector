@@ -11,6 +11,9 @@
     "policy_version": {"type": "string", "minLength": 1},
     "scan_mode": {"enum": ["production", "smoke", "debug"]},
     "scan_scope": {"enum": ["full", "bounded"]},
+    "publication_state": {"enum": ["production", "mixed_strategy", "diagnostic", "fallback"]},
+    "target_market": {"enum": ["taiwan", "us", "both"]},
+    "research_slot_key": {"type": ["string", "null"]},
     "run_id": {"type": "string", "minLength": 1},
     "source_commit_sha": {"type": ["string", "null"], "minLength": 7},
     "research_run": {
@@ -33,6 +36,23 @@
     "universe_completed": {"type": "integer", "minimum": 0},
     "publish_eligible": {"type": "boolean"},
     "production_eligible": {"type": "boolean"},
+    "strategy_publication": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["market", "strategy", "eligible", "state"],
+        "properties": {
+          "market": {"type": "string", "minLength": 1},
+          "strategy": {"type": "string", "minLength": 1},
+          "eligible": {"type": "boolean"},
+          "state": {"type": "string"},
+          "historical_fallback": {"type": "boolean"},
+          "last_successful_generated_at": {"type": ["string", "null"]},
+          "blocking_reason": {"type": ["string", "null"]}
+        },
+        "additionalProperties": true
+      }
+    },
     "backtest_release_status": {"enum": ["ready", "blocked", "unavailable"]},
     "backtest_release_contract": {
       "type": "object",
@@ -104,7 +124,7 @@
       "type": "object",
       "properties": {
         "scan_state": {"enum": ["complete", "building", "failed"]},
-        "candidate_state": {"enum": ["available", "available_from_completed_records", "no_candidates", "building", "data_gap", "data_unavailable", "failed"]},
+        "candidate_state": {"enum": ["available", "available_from_completed_records", "no_candidates", "building", "data_gap", "data_unavailable", "failed", "historical"]},
         "candidates": {"type": ["integer", "null"], "minimum": 0},
         "visible_candidates": {"type": ["integer", "null"], "minimum": 0},
         "formal_candidates": {"type": ["integer", "null"], "minimum": 0},
@@ -128,6 +148,10 @@
         "source_failure_count": {"type": ["integer", "null"], "minimum": 0},
         "incomplete_record_count": {"type": ["integer", "null"], "minimum": 0},
         "candidates_definition": {"const": "visible_candidates"}
+        ,"strategy_version_state": {"enum": ["current", "historical", "unavailable"]}
+        ,"historical_fallback": {"type": "boolean"}
+        ,"last_successful_generated_at": {"type": ["string", "null"]}
+        ,"scan_attempted_at": {"type": ["string", "null"]}
       },
       "allOf": [
         {

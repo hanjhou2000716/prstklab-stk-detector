@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -177,46 +178,91 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=50)
     parser.add_argument("--mops-max-refresh", type=int, default=50,
                         help="Taiwan MOPS records per run; 0 verifies the complete pool (manual audit only)")
+    parser.add_argument("--time-budget-seconds", type=float, default=None,
+                        help="Shared inner deadline; finished work is published as building when it expires")
+    parser.add_argument("--diagnostics-path", default=None,
+                        help="Optional JSON path for stage timings and safe failure categories")
     args = parser.parse_args()
     data_dir = Path(args.data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
+    started_monotonic = time.monotonic()
+    deadline = started_monotonic + args.time_budget_seconds if args.time_budget_seconds else None
+    diagnostics: dict[str, Any] = {"market": args.market, "started_at": datetime.now(UTC).isoformat(), "stages": []}
 
+    def stage(name: str, started: float, *, processed: int | None = None, errors: list[str] | None = None) -> None:
+        diagnostics["stages"].append({
+            "name": name,
+            "elapsed_seconds": round(time.monotonic() - started, 3),
+            "processed": processed,
+            "error_count": len(errors or []),
+            "error_categories": sorted({str(item).split(":", 1)[-1].strip() for item in (errors or [])})[:8],
+        })
+
+    def expired() -> bool:
+        return deadline is not None and time.monotonic() >= deadline
+
+    def save_diagnostics() -> None:
+        diagnostics["finished_at"] = datetime.now(UTC).isoformat()
+        diagnostics["deadline_exceeded"] = expired()
+        diagnostics["budget_seconds"] = args.time_budget_seconds
+        if args.diagnostics_path:
+            path = Path(args.diagnostics_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(diagnostics, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    timer = time.monotonic()
     candidates, universe_errors = (
         fetch_taiwan_value_universe() if args.market == "taiwan" else fetch_us_value_universe()
     )
+    stage("universe", timer, processed=len(candidates), errors=universe_errors)
     (data_dir / f"runtime-value-{args.market}-universe.json").write_text(
         json.dumps(universe_snapshot(args.market, candidates, universe_errors), ensure_ascii=False, indent=2), encoding="utf-8"
     )
     if args.market == "taiwan":
+        timer = time.monotonic()
         fundamentals, fundamental_errors = twse_financial_snapshot([item["ticker"] for item in candidates])
-        history, history_errors = mops_pristine_history(
-            [item["ticker"] for item in candidates],
-            data_dir / "taiwan-mops-pristine-history.json",
-            max_refresh=args.mops_max_refresh,
-        )
+        stage("fundamentals", timer, processed=len(fundamentals), errors=fundamental_errors)
+        history: dict[str, dict[str, Any]] = {}
+        history_errors: list[str] = []
+        if expired():
+            history_errors.append("history: deadline_exceeded")
+        else:
+            timer = time.monotonic()
+            history, history_errors = mops_pristine_history(
+                [item["ticker"] for item in candidates],
+                data_dir / "taiwan-mops-pristine-history.json",
+                max_refresh=args.mops_max_refresh,
+                deadline=deadline,
+            )
+            stage("mops_history", timer, processed=len(history), errors=history_errors)
         for ticker, values in history.items():
             fundamentals[ticker] = {**fundamentals.get(ticker, {}), **values}
         fundamental_errors.extend(history_errors)
     else:
+        timer = time.monotonic()
         fundamentals, fundamental_errors = sec_fundamentals(
             [item["ticker"] for item in candidates],
             cik_overrides={item["ticker"]: item["cik"] for item in candidates if item.get("cik")},
             cache_path=os.getenv("SEC_FACTS_CACHE_PATH", str(data_dir / "sec-companyfacts-cache.json")),
         )
+        stage("fundamentals", timer, processed=len(fundamentals), errors=fundamental_errors)
     # Turnover-rate is one of the six Pristine conditions for both markets.
     # Use the public float/outstanding-share proxy for US rows too; leaving it
     # null silently made every US row incomplete and guaranteed zero candidates.
     if args.market == "taiwan":
+        timer = time.monotonic()
         share_counts, share_errors = fetch_taiwan_official_share_records(
             candidates,
             cache_path=os.getenv("TAIWAN_SHARE_CACHE_PATH", str(data_dir / "taiwan-issued-share-cache.json")),
         )
     else:
+        timer = time.monotonic()
         share_counts = public_share_count_records(
             candidates,
             cache_path=os.getenv("PUBLIC_SHARE_CACHE_PATH", str(data_dir / "public-share-count-cache.json")),
         )
         share_errors = []
+    stage("shares", timer, processed=len(share_counts), errors=share_errors)
     if args.market == "us":
         # SEC CompanyFacts is the first-party fallback for share counts.  Yahoo
         # may omit floatShares during rate limiting; do not turn that omission
@@ -229,7 +275,12 @@ def main() -> None:
                     "source_tier": "primary", "fetched_at": fundamentals[item["ticker"]].get("sec_data_fetched_at"),
                     "freshness": "fresh",
                 }
+    timer = time.monotonic()
     quotes, quote_errors = public_quotes(candidates, args.batch_size, share_counts)
+    stage("quotes", timer, processed=len(quotes), errors=quote_errors)
+    if expired():
+        diagnostics["deadline_stop_stage"] = "quotes"
+    timer = time.monotonic()
     base_rows = review_public_pool(
         candidates, fundamentals, quotes, args.market, limit=None,
         allow_missing_supplemental=args.market == "taiwan",
@@ -252,8 +303,11 @@ def main() -> None:
     # list that competes with the official shortlist.
     visible_observation_rows = [] if len(formal_rows) >= 5 else observation_rows[: max(0, 5 - len(formal_rows))]
     rows = formal_rows + visible_observation_rows
+    stage("screening", timer, processed=len(rows), errors=[])
 
+    timer = time.monotonic()
     pd.DataFrame(rows).to_csv(data_dir / f"{args.market}-value-scan.csv", index=False, encoding="utf-8-sig")
+    stage("output", timer, processed=len(rows), errors=[])
     failed_total = len(universe_errors) + len(fundamental_errors) + len(quote_errors) + len(share_errors)
     complete_records = len(evaluable_rows)
     if failed_total == 0 and (args.market != "taiwan" or history_complete):
@@ -319,6 +373,9 @@ def main() -> None:
             "shares": share_errors,
         },
         "mops_refresh_limit": args.mops_max_refresh if args.market == "taiwan" else None,
+        "time_budget_seconds": args.time_budget_seconds,
+        "deadline_exceeded": expired(),
+        "stage_diagnostics": diagnostics["stages"],
         "partial_candidates_allowed": args.market == "taiwan" and not history_complete,
         "evaluable_records": len(evaluable_rows) if args.market == "taiwan" else len(base_rows),
         "notice": "璞玉價值池獨立於技術策略；正式候選需達 5/6，觀察名單需達 3/6 或 4/6；僅提供公開財務觀察，不構成投資建議。",
@@ -348,6 +405,12 @@ def main() -> None:
         # not an empty candidate result.  This prevents the UI from implying
         # that the strict pool was evaluated successfully.
         summary["status"] = "資料暫時無法取得"
+    if expired():
+        summary["scan_state"] = "building" if complete_records > 0 else "failed"
+        summary["candidate_state"] = "available_from_completed_records" if rows else "building"
+        summary["status"] = "建檔中"
+        summary["blocking_reason"] = "研究工作者內層期限已到；已保存的個股進度留待下一輪續跑。"
+    save_diagnostics()
     (data_dir / f"{args.market}-value-summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
 
 

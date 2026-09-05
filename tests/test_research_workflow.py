@@ -65,9 +65,10 @@ def test_post_close_brief_is_scheduled_for_1445_taipei_time():
     assert 'cron: "45 6 * * 1-5"' in workflow
 
 
-def test_research_scan_starts_before_post_close_brief_buffer():
+def test_research_scan_uses_exchange_close_slots_instead_of_old_fixed_morning_run():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "unified-research-report.yml").read_text(encoding="utf-8")
-    # 02:00 UTC = 10:00 Asia/Taipei, leaving a buffer for schedule jitter and
-    # the bounded historical value scan before the 14:45 release consumer.
-    assert "cron: '0 2 * * 1-5'" in workflow
-    assert "cron: '30 5 * * 1-5'" not in workflow
+    assert "cron: '30 7 * * 1-5'" in workflow
+    assert "cron: '0 20 * * 1-6'" in workflow
+    assert "cron: '0 21 * * 1-6'" in workflow
+    assert "cron: '0 22 * * 1-6'" in workflow
+    assert "cron: '0 2 * * 1-5'" not in workflow
