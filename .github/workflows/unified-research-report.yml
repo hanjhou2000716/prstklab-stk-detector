@@ -19,7 +19,7 @@ on:
         required: true
         default: '240'
       mops_max_refresh:
-        description: Taiwan MOPS historical records to refresh per run
+        description: Legacy compatibility input; Taiwan current-quality v2 does not call MOPS
         required: true
         # A bounded batch is required in production.  Zero means "verify the
         # complete pool" and can spend the entire job timeout on a cold cache;
@@ -102,7 +102,7 @@ jobs:
       TARGET_MARKET: ${{ inputs.target_market || github.event.client_payload.target_market || 'auto' }}
       TRADING_DATE: ${{ inputs.trading_date || github.event.client_payload.trading_date || '' }}
       TARGET_STRATEGY: ${{ inputs.target_strategy || github.event.client_payload.target_strategy || 'all' }}
-      RESEARCH_ACTION: ${{ inputs.research_action || github.event.client_payload.research_action || 'scan' }}
+      RESEARCH_ACTION: ${{ inputs.research_action || github.event.client_payload.research_action || (github.event_name == 'schedule' && 'resume_incomplete') || 'scan' }}
       REPAIR_SOURCE_RUN_ID: ${{ inputs.repair_source_run_id || github.event.client_payload.repair_source_run_id || '33953751631' }}
       SCHEDULE_CRON: ${{ github.event.schedule || '' }}
       NEWS_CACHE_PATH: site/data/news-cache.json
@@ -121,7 +121,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: python -m src.writer_queue
       - name: Restore last immutable data release
-        run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json
+        run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations --include data/taiwan-mops-pristine-history.json --include data/taiwan-official-financial-cache.json --include data/research-attempts.json --include data/sec-companyfacts-cache.json
       - name: Save last successful research snapshot
         run: |
           mkdir -p research-artifacts
@@ -172,7 +172,7 @@ jobs:
           if [ "$target" = "auto" ]; then
             case "$SCHEDULE_CRON" in
               "30 7 * * 1-5") target="taiwan" ;;
-              "0 18 *"|"0 19 *"|"0 20 *"|"0 21 *"|"0 22 *") target="us" ;;
+              "0 18 * * 1-6"|"0 19 * * 1-6"|"0 20 * * 1-6"|"0 21 * * 1-6"|"0 22 * * 1-6") target="us" ;;
               *) target="both" ;;
             esac
           fi
@@ -224,26 +224,53 @@ jobs:
                   previous = json.loads(Path(previous_path).read_text(encoding="utf-8"))
               except (OSError, UnicodeDecodeError, json.JSONDecodeError):
                   previous = {}
-              for source in previous.get("sources", []) if isinstance(previous, dict) else []:
+              previous_sources = previous.get("sources", []) if isinstance(previous, dict) else []
+              if not isinstance(previous_sources, list) or not previous_sources:
+                  run = {name: True for name in run}
+              for source in previous_sources:
                   if not isinstance(source, dict) or str(source.get("market")) not in markets:
                       continue
                   strategy = str(source.get("strategy") or "")
                   if strategy not in run:
                       continue
+                  requires_current_value_rule = (
+                      str(source.get("market")) == "taiwan"
+                      and strategy == "value"
+                      and source.get("rule_version") != "tw_value_current_quality_v2"
+                  )
                   needs_retry = (
                       source.get("scan_state") != "complete"
                       or source.get("historical_fallback") is True
                       or source.get("strategy_version_state") in {"historical", "unavailable"}
                       or source.get("candidate_state") in {"building", "data_gap", "data_unavailable", "failed"}
+                      or requires_current_value_rule
                   )
                   run[strategy] = run[strategy] or needs_retry
+          if os.getenv("SCAN_MODE", "production") == "production" and action != "repair_state":
+              from src.research_attempts import claim_strategies
+              claim = claim_strategies(
+                  Path("data/research-attempts.json"),
+                  slot_key=os.getenv("RESEARCH_SLOT_KEY", ""),
+                  target_market=market,
+                  strategies=[name for name, enabled in run.items() if enabled],
+              )
+              allowed = set(claim["allowed_strategies"])
+              run = {name: enabled and name in allowed for name, enabled in run.items()}
+              print("research attempt claim:", json.dumps({"allowed": sorted(allowed), "suppressed": claim["suppressed"]}, ensure_ascii=False))
           for name, enabled in run.items():
               with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
                   handle.write(f"RUN_{name.upper()}={'true' if enabled else 'false'}\n")
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
               handle.write(f"RESEARCH_ACTION={action}\nTARGET_STRATEGY={requested}\n")
+              handle.write("SCANNED_STRATEGIES=" + ",".join(name for name, enabled in run.items() if enabled) + "\n")
           print("strategy selection:", ", ".join(name for name, enabled in run.items() if enabled) or "none")
           PY
+      - name: Persist research attempt lease
+        if: env.RESEARCH_DUE == 'true' && env.SCAN_MODE == 'production' && env.RESEARCH_ACTION != 'repair_state'
+        run: |
+          python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" \
+            --include data/research-attempts.json \
+            --message "chore: persist research slot attempt"
       - name: Clear previous research scan artifacts for target market
         if: env.RESEARCH_DUE == 'true' && env.RESEARCH_ACTION != 'repair_state'
         run: |
@@ -307,6 +334,7 @@ jobs:
             --target-strategy "$TARGET_STRATEGY"
             --research-action "$RESEARCH_ACTION"
             --slot-key "$RESEARCH_SLOT_KEY"
+            --selected-strategies "$SCANNED_STRATEGIES"
           )
           if [[ -n "$BACKTEST_RELEASE_PATH" ]]; then
             args+=(--backtest-release "$BACKTEST_RELEASE_PATH")
@@ -396,6 +424,8 @@ jobs:
           # Telegram-eligible release.
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" \
             --include data/taiwan-mops-pristine-history.json \
+            --include data/taiwan-official-financial-cache.json \
+            --include data/research-attempts.json \
             --include data/sec-companyfacts-cache.json \
             --include data/raw-observations \
             --message "chore: persist bounded research caches"
@@ -413,7 +443,7 @@ jobs:
         if: env.SCAN_MODE != 'production' || steps.research_gate.outputs.publish == 'true'
         run: |
           if [[ "$SCAN_MODE" == "production" ]]; then
-            python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations --include data/taiwan-mops-pristine-history.json --include data/sec-companyfacts-cache.json --message "chore: refresh public research report"
+            python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations --include data/taiwan-mops-pristine-history.json --include data/taiwan-official-financial-cache.json --include data/research-attempts.json --include data/sec-companyfacts-cache.json --message "chore: refresh public research report"
           else
             echo "scan_mode=$SCAN_MODE: isolated artifact only; skipping data-release publication"
           fi
@@ -441,6 +471,8 @@ jobs:
             data/*scan*.csv
             data/*summary*.json
             data/taiwan-mops-pristine-history.json
+            data/taiwan-official-financial-cache.json
+            data/research-attempts.json
             data/sec-companyfacts-cache.json
             site/data/research-report.json
             research-artifacts

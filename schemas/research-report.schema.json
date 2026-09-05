@@ -159,6 +159,16 @@
         ,"data_hash": {"type": ["string", "null"]}
         ,"unscanned_in_run": {"type": "boolean"}
         ,"freshness_state": {"enum": ["最近收盤資料", "待更新", "更新失敗", "建檔中", "歷史資料", "資料日期不明"]}
+        ,"rule_version": {"type": ["string", "null"]}
+        ,"parameter_hash": {"type": ["string", "null"]}
+        ,"financial_period": {"type": ["string", "null"]}
+        ,"financial_checked_at": {"type": ["string", "null"]}
+        ,"financial_source": {"type": ["string", "null"]}
+        ,"financial_diagnostics": {"type": ["object", "null"]}
+        ,"official_financial_coverage": {"type": ["integer", "null"], "minimum": 0}
+        ,"mops_calls": {"type": ["integer", "null"], "minimum": 0}
+        ,"mops_history_used": {"type": ["boolean", "null"]}
+        ,"scan_completeness": {"type": ["string", "null"]}
       },
       "allOf": [
         {

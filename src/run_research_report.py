@@ -142,6 +142,30 @@ def default_sources(data_dir: Path) -> list[dict[str, str]]:
     ]
 
 
+def selected_strategy_keys(
+    target_market: str, target_strategy: str, selected_strategies: str | None = None,
+) -> set[tuple[str, str]]:
+    """Resolve the exact market/strategy set scanned in this run.
+
+    The workflow can resume one incomplete strategy in a matrix that still
+    contains eight sources.  Keeping this set explicit prevents untouched
+    strategies from being converted into failures merely because their CSV was
+    intentionally not produced by this run.
+    """
+    markets = ("taiwan", "us") if target_market == "both" else (target_market,)
+    requested = {
+        item.strip() for item in str(selected_strategies or "").split(",") if item.strip()
+    }
+    if requested:
+        strategies = requested
+    elif target_strategy == "all":
+        strategies = {"momentum", "price_action", "resonance", "value"}
+    else:
+        strategies = {target_strategy}
+    allowed = {"momentum", "price_action", "resonance", "value"}
+    return {(market, strategy) for market in markets for strategy in strategies if strategy in allowed}
+
+
 def write_report(report: dict, output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -251,7 +275,8 @@ def attach_scan_contract(report: dict, scan_mode: str) -> dict:
     completed = sum(item["completed"] for item in scopes)
     failed = sum(item["failed"] for item in scopes)
     states = {str(source.get("scan_state") or "failed") for source in sources}
-    full_scope = bool(scopes) and all(item["valid"] for item in scopes) and completed >= requested and failed == 0 and states == {"complete"}
+    untouched = [source for source in sources if isinstance(source, dict) and source.get("unscanned_in_run") is True]
+    full_scope = bool(scopes) and not untouched and all(item["valid"] for item in scopes) and completed >= requested and failed == 0 and states == {"complete"}
     strategy_publication = []
     eligible_count = 0
     for source, source_scope in zip(sources, scopes, strict=True):
@@ -299,14 +324,6 @@ def attach_scan_contract(report: dict, scan_mode: str) -> dict:
 
 def attach_strategy_versions(report: dict[str, Any]) -> dict[str, Any]:
     """Stamp per-strategy freshness and content identity into the report."""
-    slot_dates: dict[str, str] = {}
-    raw_slot = str(report.get("research_slot_key") or "")
-    for token in raw_slot.split(","):
-        parts = token.split(":")
-        if len(parts) >= 3 and parts[0] in {"taiwan", "us"}:
-            slot_dates[parts[0]] = parts[1]
-        elif len(parts) >= 3 and parts[0] == "manual" and parts[1] in {"taiwan", "us"}:
-            slot_dates[parts[1]] = parts[2]
     candidates = report.get("candidates", [])
     for source in report.get("sources", []) if isinstance(report.get("sources"), list) else []:
         if not isinstance(source, dict):
@@ -323,9 +340,12 @@ def attach_strategy_versions(report: dict[str, Any]) -> dict[str, Any]:
             field: row.get(field)
             for field in ("ticker", "rank", "score", "close", "change_percent", "as_of", "data_version", "strategy_version")
         } for row in rows]
-        digest = hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+        digest = hashlib.sha256(json.dumps({
+            "rule_version": source.get("rule_version"),
+            "parameter_hash": source.get("parameter_hash"),
+            "rows": payload,
+        }, ensure_ascii=False, sort_keys=True, default=str).encode("utf-8")).hexdigest()
         historical = source.get("historical_fallback") is True
-        slot_date = slot_dates.get(str(source.get("market")))
         if historical:
             # A slot identifies the attempted run, not the date of a fallback
             # dataset.  Leave the date empty when the previous verified source
@@ -334,13 +354,25 @@ def attach_strategy_versions(report: dict[str, Any]) -> dict[str, Any]:
             scan_date = source.get("scan_trading_date")
             quote_cutoff = source.get("quote_cutoff_at")
         else:
-            scan_date = source.get("scan_trading_date") or (slot_date if not source.get("unscanned_in_run") else None) or (dates[-1] if dates else None)
-            quote_cutoff = source.get("quote_cutoff_at") or scan_date
+            # The slot is the requested session identity, not proof that a
+            # worker scanned that session.  Worker summaries must provide the
+            # scan target explicitly; missing evidence remains unknown.
+            scan_date = source.get("scan_trading_date")
+            # A slot date identifies the requested session, not the newest
+            # quote actually downloaded.  If the worker did not provide
+            # explicit quote evidence, use a candidate bar date when one is
+            # available; never copy the slot date into the quote field.
+            quote_cutoff = source.get("quote_cutoff_at") or (dates[-1] if dates else None)
+        unscanned = source.get("unscanned_in_run") is True
+        attempted_at = source.get("last_attempted_at") if unscanned else report.get("generated_at")
+        successful_at = source.get("last_successful_at") or source.get("last_successful_generated_at")
+        if not unscanned:
+            successful_at = successful_at or (report.get("generated_at") if source.get("scan_state") == "complete" else None)
         source.update({
             "scan_trading_date": scan_date,
             "quote_cutoff_at": quote_cutoff,
-            "last_attempted_at": report.get("generated_at"),
-            "last_successful_at": source.get("last_successful_generated_at") or (report.get("generated_at") if source.get("scan_state") == "complete" else None),
+            "last_attempted_at": attempted_at,
+            "last_successful_at": successful_at,
             "execution_version": source.get("execution_version") if historical else report.get("source_commit_sha") or report.get("research_run", {}).get("source_commit_sha"),
             "data_hash": source.get("data_hash") if historical else digest,
             "scan_completeness": "historical" if historical else "complete" if source.get("scan_state") == "complete" else "partial" if source.get("scan_state") == "building" else "failed",
@@ -373,6 +405,10 @@ def main() -> None:
     parser.add_argument("--research-action", choices=("scan", "resume_incomplete", "repair_state"), default="scan")
     parser.add_argument("--repair-source-report", type=Path, help="validated prior run used only for repair_state")
     parser.add_argument("--slot-key", help="stable market/trading-date close-research identity")
+    parser.add_argument(
+        "--selected-strategies",
+        help="comma-separated strategies actually scanned; untouched matrix entries are preserved",
+    )
     args = parser.parse_args()
     previous: dict[str, Any] | None = None
     if args.previous_report:
@@ -404,7 +440,12 @@ def main() -> None:
         merge_taiwan_scan_fragments(Path(args.data_dir))
         report = build_research_report(default_sources(Path(args.data_dir)))
         apply_scan_failures(report, load_scan_failures(args.scan_failures) if args.scan_failures else [])
-        merge_previous_strategy_versions(report, previous, target_market=args.target_market)
+        merge_previous_strategy_versions(
+            report,
+            previous,
+            target_market=args.target_market,
+            selected_keys=selected_strategy_keys(args.target_market, args.target_strategy, args.selected_strategies),
+        )
         attach_instrument_lineage(report, extend_from_candidates=True)
         attach_backtest_contract(report, args.backtest_release)
         attach_scan_contract(report, args.scan_mode)
@@ -412,6 +453,7 @@ def main() -> None:
     report["target_market"] = args.target_market
     report["target_strategy"] = args.target_strategy
     report["research_action"] = args.research_action
+    report["research_slot_key"] = args.slot_key
     attach_research_run(
         report,
         scan_mode=args.scan_mode,

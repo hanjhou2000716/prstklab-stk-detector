@@ -14,7 +14,6 @@ from typing import Any
 import pandas as pd
 
 from src.batch_download import batches
-from src.mops_history import mops_pristine_history
 from src.pristine_value import (
     heat_metrics,
     pristine_selection_diagnostics,
@@ -23,7 +22,13 @@ from src.pristine_value import (
 )
 from src.public_download import download_daily_batch
 from src.research_contract import latest_quote_context
-from src.value_fundamentals import sec_fundamentals, twse_financial_snapshot
+from src.research_scan_provenance import quote_cutoff_from_mapping, scan_trading_date
+from src.value_fundamentals import (
+    TW_VALUE_PARAMETER_HASH,
+    TW_VALUE_RULE_VERSION,
+    sec_fundamentals,
+    twse_current_quality_snapshot,
+)
 from src.value_review import review_public_pool
 from src.value_universe import (
     fetch_taiwan_official_share_records,
@@ -182,7 +187,10 @@ def main() -> None:
                         help="Shared inner deadline; finished work is published as building when it expires")
     parser.add_argument("--diagnostics-path", default=None,
                         help="Optional JSON path for stage timings and safe failure categories")
+    parser.add_argument("--scan-trading-date", default=None,
+                        help="Explicit target trading date; otherwise read the stable research slot")
     args = parser.parse_args()
+    target_trading_date = scan_trading_date(args.market, args.scan_trading_date)
     data_dir = Path(args.data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
     started_monotonic = time.monotonic()
@@ -220,24 +228,17 @@ def main() -> None:
     )
     if args.market == "taiwan":
         timer = time.monotonic()
-        fundamentals, fundamental_errors = twse_financial_snapshot([item["ticker"] for item in candidates])
+        fundamentals, fundamental_errors, financial_diagnostics = twse_current_quality_snapshot(
+            [item["ticker"] for item in candidates],
+            cache_path=os.getenv("TAIWAN_OFFICIAL_FINANCIAL_CACHE_PATH", str(data_dir / "taiwan-official-financial-cache.json")),
+            deadline=deadline,
+        )
         stage("fundamentals", timer, processed=len(fundamentals), errors=fundamental_errors)
-        history: dict[str, dict[str, Any]] = {}
-        history_errors: list[str] = []
-        if expired():
-            history_errors.append("history: deadline_exceeded")
-        else:
-            timer = time.monotonic()
-            history, history_errors = mops_pristine_history(
-                [item["ticker"] for item in candidates],
-                data_dir / "taiwan-mops-pristine-history.json",
-                max_refresh=args.mops_max_refresh,
-                deadline=deadline,
-            )
-            stage("mops_history", timer, processed=len(history), errors=history_errors)
-        for ticker, values in history.items():
-            fundamentals[ticker] = {**fundamentals.get(ticker, {}), **values}
-        fundamental_errors.extend(history_errors)
+        # Taiwan current-quality v2 deliberately has no MOPS call.  The old
+        # MOPS cache remains available to historical releases, but it must not
+        # decide completeness or silently upgrade this strategy.
+        financial_diagnostics["mops_calls"] = 0
+        financial_diagnostics["mops_history_used"] = False
     else:
         timer = time.monotonic()
         fundamentals, fundamental_errors = sec_fundamentals(
@@ -246,6 +247,7 @@ def main() -> None:
             cache_path=os.getenv("SEC_FACTS_CACHE_PATH", str(data_dir / "sec-companyfacts-cache.json")),
         )
         stage("fundamentals", timer, processed=len(fundamentals), errors=fundamental_errors)
+        financial_diagnostics = {}
     # Turnover-rate is one of the six Pristine conditions for both markets.
     # Use the public float/outstanding-share proxy for US rows too; leaving it
     # null silently made every US row incomplete and guaranteed zero candidates.
@@ -278,26 +280,47 @@ def main() -> None:
     timer = time.monotonic()
     quotes, quote_errors = public_quotes(candidates, args.batch_size, share_counts)
     stage("quotes", timer, processed=len(quotes), errors=quote_errors)
+    quote_cutoff = quote_cutoff_from_mapping(quotes)
+    diagnostics["scan_trading_date"] = target_trading_date
+    diagnostics["scan_trading_date_source"] = (
+        "explicit_argument" if args.scan_trading_date else "research_slot" if target_trading_date else None
+    )
+    diagnostics["quote_cutoff_at"] = quote_cutoff
     if expired():
         diagnostics["deadline_stop_stage"] = "quotes"
     timer = time.monotonic()
     base_rows = review_public_pool(
         candidates, fundamentals, quotes, args.market, limit=None,
-        allow_missing_supplemental=args.market == "taiwan",
+        allow_missing_supplemental=False,
     )
-    # Taiwan history is built incrementally.  A global ``150/150`` gate made a
-    # handful of transient MOPS failures hide every already-verified company.
-    # Evaluate only tickers whose own history record is complete; incomplete
-    # tickers remain blocked and are disclosed in the progress fields below.
-    history_complete = args.market != "taiwan" or len(history) >= len(candidates)
+    required_heat = ("average_turnover", "average_volume", "turnover_rate", "return_3m")
     if args.market == "taiwan":
-        verified_tickers = set(history)
-        evaluable_rows = [row for row in base_rows if str(row.get("ticker", "")) in verified_tickers]
+        for row in base_rows:
+            row["strategy_version"] = TW_VALUE_RULE_VERSION
+            row["parameter_hash"] = TW_VALUE_PARAMETER_HASH
+            row["data_version"] = str(fundamentals.get(str(row.get("ticker")), {}).get("reporting_period") or "")
+        financial_valid = {
+            ticker for ticker, item in fundamentals.items()
+            if item.get("financial_parse_version")
+            and item.get("current_eps_positive") is not None
+            and item.get("current_quality_pass") is not None
+            and item.get("reporting_period")
+        }
+        evaluable_rows = [
+            row for row in base_rows
+            if str(row.get("ticker", "")) in financial_valid
+            and all(row.get(metric) is not None for metric in required_heat)
+        ]
+        formal_rows = review_pristine_pool(evaluable_rows, args.market, rule_version=TW_VALUE_RULE_VERSION)
+        observation_rows = review_pristine_observation_pool(evaluable_rows, args.market, rule_version=TW_VALUE_RULE_VERSION)
+        selection_diagnostics = pristine_selection_diagnostics(evaluable_rows, args.market, rule_version=TW_VALUE_RULE_VERSION)
+        financial_diagnostics["financial_valid_count"] = len(financial_valid)
+        financial_diagnostics["financial_periods"] = sorted({str(item.get("reporting_period")) for item in fundamentals.values() if item.get("reporting_period")})
     else:
         evaluable_rows = base_rows
-    formal_rows = review_pristine_pool(evaluable_rows, args.market)
-    observation_rows = review_pristine_observation_pool(evaluable_rows, args.market)
-    selection_diagnostics = pristine_selection_diagnostics(evaluable_rows, args.market)
+        formal_rows = review_pristine_pool(evaluable_rows, args.market)
+        observation_rows = review_pristine_observation_pool(evaluable_rows, args.market)
+        selection_diagnostics = pristine_selection_diagnostics(evaluable_rows, args.market)
     # The user-facing shortlist is capped at five. Observation rows only fill
     # unused slots; once five formal candidates exist, do not publish a second
     # list that competes with the official shortlist.
@@ -308,9 +331,25 @@ def main() -> None:
     timer = time.monotonic()
     pd.DataFrame(rows).to_csv(data_dir / f"{args.market}-value-scan.csv", index=False, encoding="utf-8-sig")
     stage("output", timer, processed=len(rows), errors=[])
-    failed_total = len(universe_errors) + len(fundamental_errors) + len(quote_errors) + len(share_errors)
     complete_records = len(evaluable_rows)
-    if failed_total == 0 and (args.market != "taiwan" or history_complete):
+    if args.market == "taiwan":
+        # Record-level gaps, rather than endpoint call count, determine scan
+        # completeness.  A bounded, validated financial cache may satisfy a
+        # row while the endpoint outage remains visible in diagnostics.
+        evaluable_tickers = {str(row.get("ticker")) for row in evaluable_rows}
+        missing_tickers = {
+            str(item["ticker"]) for item in candidates if str(item["ticker"]) not in evaluable_tickers
+        }
+        failed_total = len(missing_tickers) + len(universe_errors)
+        financial_errors_for_contract = [] if len(fundamentals) >= len(candidates) and financial_diagnostics.get("cache_used_count", 0) else fundamental_errors
+        scan_complete = (
+            not missing_tickers and not universe_errors and not expired()
+            and not financial_errors_for_contract
+        )
+    else:
+        failed_total = len(universe_errors) + len(fundamental_errors) + len(quote_errors) + len(share_errors)
+        scan_complete = failed_total == 0
+    if scan_complete:
         scan_state = "complete"
     elif complete_records > 0:
         scan_state = "partial"
@@ -320,7 +359,7 @@ def main() -> None:
         candidate_state = "available"
     elif scan_state == "complete" and not share_errors:
         candidate_state = "no_candidates"
-    elif share_errors or quote_errors or fundamental_errors:
+    elif share_errors or quote_errors or fundamental_errors or failed_total:
         candidate_state = "data_unavailable"
     else:
         candidate_state = "building" if args.market == "taiwan" else "data_unavailable"
@@ -332,9 +371,7 @@ def main() -> None:
         "universe_scanned": len(candidates),
         "universe_completed": complete_records,
         "universe_failed": failed_total,
-        # A current TWSE snapshot is not a completed Taiwan Pristine Value
-        # verification until the three-year MOPS history has been cached.
-        "data_complete": len(history) if args.market == "taiwan" else len(fundamentals),
+        "data_complete": complete_records if args.market == "taiwan" else len(fundamentals),
         "candidates": len(rows),
         "formal_candidates": len(formal_rows),
         "observation_candidates": len(visible_observation_rows),
@@ -355,14 +392,17 @@ def main() -> None:
         "complete_records": complete_records,
         "data_gap_counts": {
             "universe": len(universe_errors),
-            "fundamentals": len(fundamental_errors),
+            "fundamentals": max(0, len(candidates) - (len(fundamentals) if args.market == "taiwan" else len(fundamentals))),
             "quotes": len(quote_errors),
             "shares": len(share_errors),
-            "history": len(history_errors) if args.market == "taiwan" else 0,
+            "official_financial_endpoint": (
+                0 if args.market == "taiwan" and len(fundamentals) >= len(candidates) and financial_diagnostics.get("cache_used_count", 0)
+                else len(financial_diagnostics.get("endpoint_errors", [])) if args.market == "taiwan" else 0
+            ),
         },
         "status": "可用" if failed_total == 0 else "部分缺漏",
         "universe_source": "Yuanta 0050+0051 PCF" if args.market == "taiwan" else "Nasdaq-100 + semiconductor/AI core",
-        "financial_source": "TWSE OpenAPI + MOPS historical filings" if args.market == "taiwan" else "SEC EDGAR CompanyFacts",
+        "financial_source": "TWSE official batch" if args.market == "taiwan" else "SEC EDGAR CompanyFacts",
         "sec_cache_hits": sum(1 for item in fundamentals.values() if item.get("sec_cache_used")) if args.market == "us" else 0,
         "sec_data_as_of": max((str(item.get("sec_data_fetched_at", "")) for item in fundamentals.values()), default=None) if args.market == "us" else None,
         "errors": universe_errors + fundamental_errors + quote_errors + share_errors,
@@ -372,35 +412,30 @@ def main() -> None:
             "quotes": quote_errors,
             "shares": share_errors,
         },
-        "mops_refresh_limit": args.mops_max_refresh if args.market == "taiwan" else None,
+        "mops_refresh_limit": None,
+        "mops_calls": 0 if args.market == "taiwan" else None,
+        "mops_history_used": False if args.market == "taiwan" else None,
+        "rule_version": TW_VALUE_RULE_VERSION if args.market == "taiwan" else None,
+        "parameter_hash": TW_VALUE_PARAMETER_HASH if args.market == "taiwan" else None,
+        "scan_trading_date": target_trading_date,
+        "quote_cutoff_at": quote_cutoff,
+        "quote_evidence_count": len(quotes),
+        "financial_diagnostics": financial_diagnostics if args.market == "taiwan" else None,
+        "financial_period": (financial_diagnostics.get("financial_periods") or [None])[0] if args.market == "taiwan" else None,
+        "financial_checked_at": max((str(item.get("last_checked_at", "")) for item in fundamentals.values()), default=None) if args.market == "taiwan" else None,
+        "official_financial_coverage": len(fundamentals) if args.market == "taiwan" else None,
         "time_budget_seconds": args.time_budget_seconds,
         "deadline_exceeded": expired(),
         "stage_diagnostics": diagnostics["stages"],
-        "partial_candidates_allowed": args.market == "taiwan" and not history_complete,
-        "evaluable_records": len(evaluable_rows) if args.market == "taiwan" else len(base_rows),
-        "notice": "璞玉價值池獨立於技術策略；正式候選需達 5/6，觀察名單需達 3/6 或 4/6；僅提供公開財務觀察，不構成投資建議。",
+        "partial_candidates_allowed": args.market == "taiwan" and complete_records < len(candidates),
+        "evaluable_records": complete_records if args.market == "taiwan" else len(base_rows),
+        "notice": "璞玉價值池獨立於技術策略；台股新版以 TWSE 當期批次財報核對 EPS 與年化獲利／期末權益估算，再檢查四項低熱度條件；僅提供公開財務觀察，不構成投資建議。",
     }
-    if args.market == "taiwan":
-        summary["history_cached"] = len(history)
-        summary["history_expected"] = len(candidates)
-        summary["history_progress_pct"] = round(
-            (len(history) / len(candidates) * 100) if candidates else 0.0, 1
-        )
-        summary["history_pending"] = max(len(candidates) - len(history), 0)
-        summary["history_failure_count"] = len(history_errors)
-        summary["history_pending_count"] = summary["history_pending"]
-        if len(history) < len(candidates):
-            summary["scan_state"] = "building"
-            summary["candidate_state"] = "available_from_completed_records" if rows else "building"
-            summary["status"] = "建檔中"
-            summary["notice"] = (
-                f"璞玉價值歷史資料建檔中：已核對 {len(history)}／{len(candidates)} 檔；"
-                "未完成六項公開資料覆核前不列入候選，並非投資結論。"
-            )
-            summary["blocking_reason"] = (
-                "部分 MOPS 歷史資料尚未完成；未完成個股不列入，已完成個股仍可依六項規則評估。"
-            )
-    elif failed_total:
+    if args.market == "taiwan" and complete_records < len(candidates):
+        summary["candidate_state"] = "available_from_completed_records" if rows else "building"
+        summary["status"] = "建檔中" if complete_records else "部分缺漏"
+        summary["blocking_reason"] = "台股官方批次財報、行情或股數仍有個別資料缺漏；已核對紀錄可續用，未完成股票不列入完整排名。"
+    elif args.market == "us" and failed_total:
         # A completed US run with missing SEC/VOO/quote inputs is unavailable,
         # not an empty candidate result.  This prevents the UI from implying
         # that the strict pool was evaluated successfully.

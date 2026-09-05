@@ -8,6 +8,7 @@ from pathlib import Path
 
 from src.batch_download import batches
 from src.public_download import download_daily_batch
+from src.research_scan_provenance import quote_cutoff_from_records, scan_trading_date
 from src.research_scan_state import classify_scan_state
 from src.resonance_universe import rank_records
 from src.taiwan_universe import load_or_fetch_taiwan_universe
@@ -31,7 +32,9 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=50)
     parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--universe-file", default=None)
+    parser.add_argument("--scan-trading-date", default=None)
     args = parser.parse_args()
+    target_trading_date = scan_trading_date(args.market, args.scan_trading_date)
     resolved_universe = universe_for(args.market, args.universe_file)
     universe = resolved_universe[args.offset:]
     if args.limit > 0:
@@ -73,6 +76,8 @@ def main() -> None:
         "benchmark": benchmark_symbol, "benchmark_available": benchmark_bars is not None,
         "minimum_conditions": 3, "priority": "四項共振優先；無四項時顯示三項備選",
         "scan_state": classify_scan_state(expected=len(universe), completed=len(records), failed=len(failed)),
+        "scan_trading_date": target_trading_date,
+        "quote_cutoff_at": quote_cutoff_from_records(records),
         "status": "可用" if not failed else "部分缺漏",
         "error_details": failed[:20],
     }, ensure_ascii=False, indent=2), encoding="utf-8")
