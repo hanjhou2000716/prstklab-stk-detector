@@ -618,6 +618,29 @@ class EventLedger:
                 })
         return rows
 
+    @staticmethod
+    def preflight_delivery(event: dict[str, Any] | None) -> dict[str, Any]:
+        """Validate delivery provenance without claiming or recording delivery.
+
+        The sender must never be the first component to discover that an
+        event cannot be persisted.  This read-only check is intentionally
+        smaller than ``observe``: it does not mutate the ledger, consume an
+        idempotency claim, or create a delivery row.
+        """
+        source_url = event_source_url(event)
+        parsed = urlsplit(source_url)
+        if parsed.scheme != "https" or not parsed.hostname:
+            return {"ok": False, "reason": "ledger_source_url_invalid"}
+        key = canonical_event_key(event)
+        if not key or key == "none":
+            return {"ok": False, "reason": "ledger_event_identity_invalid"}
+        return {
+            "ok": True,
+            "event_key": key,
+            "source_url": source_url,
+            "source_domain": parsed.hostname.lower().removeprefix("www."),
+        }
+
     def record_decision(
         self,
         event: dict[str, Any],
@@ -703,6 +726,7 @@ class EventLedger:
             "notification_reason", "parser_version", "received_at", "notification_key",
             "delivery_receipts", "ingested_at", "candidate_at", "writer_wait_ms",
             "release_ready_at", "telegram_attempted_at", "delivery_result", "delay_reason",
+            "source_url", "source_domain", "workflow_run_id",
         ):
             value = event.get(field)
             if value not in (None, "", [], {}):

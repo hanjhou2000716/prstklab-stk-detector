@@ -201,6 +201,7 @@ def test_scheduled_delivery_uses_text_delivery_after_release_gate(tmp_path, monk
         "observation_id": "observation-1",
         "notification_status": "eligible",
         "title": "官方事件",
+        "source_url": "https://example.test/source/official-1",
     }
     monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: event)
     monkeypatch.setattr(scheduled_delivery, "write_event_lock_key", lambda *_args: None)
@@ -294,6 +295,7 @@ def test_scheduled_market_delivery_falls_back_after_all_candidates_are_suppresse
         "vendor_importance": 9,
         "notification_id": "fj-already-covered",
         "event": "已送達的 FJ 事件。",
+        "source_url": "https://example.test/source/fj-covered",
     }
 
     class FakeLedger:
@@ -343,11 +345,41 @@ def test_scheduled_market_delivery_falls_back_after_all_candidates_are_suppresse
 
 def test_scheduled_delivery_does_not_send_generic_fallback_after_fj_already_delivered(tmp_path, monkeypatch):
     snapshot_path = tmp_path / "market.json"
+    snapshot_path.write_text(
+        json.dumps({"snapshot_id": "market-12345678", "quotes": [], "indices": [], "briefing": {}}),
+        encoding="utf-8",
+    )
+
+
+def test_scheduled_delivery_blocks_missing_source_url_before_sender(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / "market.json"
     manifest_path = tmp_path / "release-manifest.json"
     snapshot_path.write_text(
         json.dumps({"snapshot_id": "market-12345678", "quotes": [], "indices": [], "briefing": {}}),
         encoding="utf-8",
     )
+    manifest_path.write_text("{}", encoding="utf-8")
+    output = tmp_path / "output"
+    _patch_ready(monkeypatch, output)
+    event = {
+        "source_key": "official",
+        "event_cluster_key": "event-without-source",
+        "observation_id": "observation-without-source",
+        "notification_status": "eligible",
+        "title": "官方事件",
+    }
+    monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: event)
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "send_text_briefs_audited",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("sender must not be called")),
+    )
+
+    scheduled_delivery.send(snapshot_path, "morning", manifest_path)
+
+    text = output.read_text(encoding="utf-8")
+    assert "sent=false" in text
+    assert "notification_reason=ledger_source_url_invalid" in text
     manifest_path.write_text("{}", encoding="utf-8")
     output = tmp_path / "output"
     _patch_ready(monkeypatch, output)
@@ -358,6 +390,7 @@ def test_scheduled_delivery_does_not_send_generic_fallback_after_fj_already_deli
         "vendor_importance": 9,
         "notification_id": "fj-already-delivered",
         "event": "已送達的 FJ 事件。",
+        "source_url": "https://example.test/source/fj-delivered",
     }
 
     class FakeLedger:
@@ -433,6 +466,7 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
         "parser_version": "financialjuice-compound-v1",
         "received_at": "2026-08-21T01:01:00+00:00",
         "alert_eligible": True,
+        "source_url": "https://example.test/source/fj-1",
     }
     monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: event)
     monkeypatch.setattr(
@@ -503,6 +537,7 @@ def test_scheduled_financialjuice_all_recipient_failure_is_fail_closed(tmp_path,
         "vendor_priority_notification": True,
         "vendor_importance": 8,
         "title": "Oil supply risk",
+        "source_url": "https://example.test/source/fj-failed",
     }
     monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: event)
     monkeypatch.setattr(
@@ -556,6 +591,7 @@ def test_scheduled_delivery_records_text_delivery_failure(tmp_path, monkeypatch)
             "event_key": "official-1",
             "title": "官方事件。",
             "notification_status": "eligible",
+            "source_url": "https://example.test/source/official-failure",
         },
     )
     monkeypatch.setattr(

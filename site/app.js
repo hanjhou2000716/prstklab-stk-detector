@@ -266,12 +266,16 @@ const externalRiskReasonLabel = (reason) => ({
 // browser-side guard because historical/reconciled snapshots can outlive the
 // producer that created them; an invalid card must never silently fall back to
 // a different event or a generic placeholder.
+const PUBLIC_EMOJI_RE = /(?:[#*0-9]\uFE0F?\u20E3|[\u{1F1E6}-\u{1F1FF}]{2}|[\u{1F000}-\u{1FAFF}\u{2300}-\u{23FF}\u{2600}-\u{27BF}\uFE0E\uFE0F\u200D])/gu;
+const stripPublicIcons = (value) => String(value || "").replace(PUBLIC_EMOJI_RE, " ");
+
 const fjFactIsUsable = (value) => {
-  const body = String(value || "").replace(/\s+/g, " ").trim();
+  const body = stripPublicIcons(value).replace(/\s+/g, " ").trim();
   if (!body || /…|\.\.\.|undefined|https?:\/\//i.test(body)) return false;
   if (/^(?:📰\s*)?(?:financialjuice|morning\s+juice)(?:\s*新聞|\s*快訊|\s+公開(?:新聞|快訊)?|\s*\(|$)/iu.test(body)) return false;
   if (/^(?:[📰🟢🟡🟠🔴⚪⚫🟣]\s*)?(?:financialjuice|morning\s+juice)(?:\s+公開)?(?:新聞|快訊)?(?:\s|[（(]|[-–—]|$)/iu.test(body)) return false;
   if (/(?:關聯市場|資料待更新|報價待取得|資訊待核對)/i.test(body)) return false;
+  if (/^(?:直播影片|直播|影片|embed|live|financialjuice|morning\s+juice)$/iu.test(body)) return false;
   if (/(?:直播影片|直播|影片)\s*[:：]\s*(?:Fed\.?|Embed|LIVE|https?:\/\/|$)/i.test(body)) return false;
   if (/(?:\b(?:Embed|LIVE)\b|StockRocket)/i.test(body)) return false;
   if (/[-–—]\s*\.?$/.test(body)) return false;
@@ -287,7 +291,7 @@ const cleanFjFact = (value) => {
   let body = String(value || "").replace(/\s+/g, " ").trim();
   // Historical artifacts sometimes contain a vendor dot or a second risk
   // icon inside the body.  Icons are display decoration, never event facts.
-  body = body.replace(/(?:🟢|🟡|🟠|🔴|⚪️?|⚫️?|🟣|📊|📡|📢|📣|📈|📉|🟰|⚠️?)/gu, " ");
+  body = stripPublicIcons(body);
   body = body.replace(/(?<![A-Za-z0-9])R[0-4](?![A-Za-z0-9])\s*[｜|:]?/giu, " ");
   body = body.replace(/https?:\/\/\S+/gi, "").trim().replace(/^[｜|,，:：\s]+|[｜|,，:：\s]+$/g, "");
   body = body.replace(/^(?:translation|original headline|headline|event|事件)\s*[:：]\s*/i, "");
@@ -324,7 +328,11 @@ const canonicalFjSummary = (item) => {
   const importance = item.vendor_importance ?? (importanceMatch ? importanceMatch[1] : "");
   if (importance === "") return "";
   const prefix = `🟣 FJ ${importance}/10｜`;
-  const candidates = [item.public_short_message, item.brief_title, item.event, item.chinese_translation, item.headline, item.original_headline, item.vendor_original_headline, item.title];
+  // Prefer a parsed event fact over a legacy transport/title field.  A
+  // historical public_short_message such as "直播影片" is not allowed to
+  // win merely because it is short; a complete fact from the same event
+  // must be used when available.
+  const candidates = [item.event, item.chinese_translation, item.headline, item.original_headline, item.vendor_original_headline, item.public_short_message, item.brief_title, item.title];
   for (const candidate of candidates) {
     const body = cleanFjFact(candidate);
     // A source envelope is metadata, not an event fact.  Do not let a
@@ -365,12 +373,12 @@ const displayAlertProjection = (alert) => {
     .replace(/\s+/g, " ").trim();
   const isBrief = kind === "scheduled_brief" || source === "scheduled_brief" || source === "market_briefing" || raw.startsWith("📊");
   const withoutIcons = raw
-    .replace(/(?:🟢|🟡|🟠|🔴|⚪️?|⚫️?|🟣|📊|📡|📢|📣|📈|📉|🟰|⚠️?)/gu, " ")
+    .replace(PUBLIC_EMOJI_RE, " ")
     .replace(/(?<![A-Za-z0-9])R[0-4](?![A-Za-z0-9])\s*[｜|:]?/giu, " ")
     .replace(/\s+/g, " ").trim();
   if (isBrief) {
     const parts = withoutIcons.split(/[｜|]/u).map((part) => part.trim()).filter(Boolean);
-    const labels = new Set(["晨報", "台股盤前", "美股盤前", "市場簡報", "盤中", "午報", "午盤", "盤後", "美股開盤"]);
+    const labels = new Set(["晨報", "台股盤前", "台股盤中", "台股午盤", "台股收盤前", "台股盤後", "美股盤前", "市場簡報", "盤中", "午報", "午盤", "盤後", "美股開盤"]);
     const label = parts.length && labels.has(parts[0]) ? parts.shift() : "市場簡報";
     const body = parts.join("，") || withoutIcons;
     if (body) projected.public_short_message = `📊 ${label}｜${body}`;
@@ -1253,12 +1261,12 @@ const researchScoreParts = (item) => {
 // backend/Creator report and is intentionally not rendered in the public list.
 const researchExplainability = () => "";
 const researchValueEvidence = (item) => {
-  if (item?.strategy !== "value" || item?.quality_rule_version !== "tw_value_current_quality_v2") return "";
+  if (item?.strategy !== "value" || item?.quality_rule_version !== "tw_value_total_equity_quality_v3") return "";
   const eps = typeof item.eps_ytd === "number" ? item.eps_ytd.toFixed(2) : "資料不足";
   const quality = typeof item.annualized_quality_ratio === "number"
     ? `${(item.annualized_quality_ratio * 100).toFixed(2)}%`
     : item.current_quality_pass === false ? "不合格" : "資料不足";
-  return `<div class="research-quality-evidence"><span>當期基本 EPS ${escapeHtml(eps)}（${item.current_eps_positive === true ? "通過" : "未通過"}）</span><span>年化獲利／期末權益估算 ${escapeHtml(quality)}（${item.current_quality_pass === true ? "通過" : "未通過"}）</span><span>六項條件 ${escapeHtml(String(item.condition_count || "資料不足"))}</span></div>`;
+  return `<div class="research-quality-evidence"><span>當期基本 EPS ${escapeHtml(eps)}（${item.current_eps_positive === true ? "通過" : "未通過"}）</span><span>年化稅後獲利／期末總權益估算 ${escapeHtml(quality)}（${item.current_quality_pass === true ? "通過" : "未通過"}）</span><span>六項條件 ${escapeHtml(String(item.condition_count || "資料不足"))}</span></div>`;
 };
 
 const renderResearchList = (id, items, empty) => {
@@ -1352,10 +1360,10 @@ const renderResearch = (snapshot) => {
     if (meta) {
       const dateText = date ? `資料日 ${date}` : "資料日期不明";
       const successText = successful ? `｜最後成功 ${researchStamp(successful)}` : "";
-      const financialText = strategy === "value" && source.rule_version === "tw_value_current_quality_v2" && source.financial_period
+      const financialText = strategy === "value" && source.rule_version === "tw_value_total_equity_quality_v3" && source.financial_period
         ? `｜財報期間 ${source.financial_period}` : "";
-      const ruleText = strategy === "value" && source.rule_version === "tw_value_current_quality_v2"
-        ? "｜當期品質＋低熱度 v2" : "";
+      const ruleText = strategy === "value" && source.rule_version === "tw_value_total_equity_quality_v3"
+        ? "｜當期總權益品質＋低熱度 v3" : "";
       const reason = source.blocking_reason || source.notice || source.failure_reason || "";
       meta.innerHTML = `<span class="research-meta-status">${escapeHtml(`${dateText}｜${state}${successText}${financialText}${ruleText}`)}</span>${reason && ["更新失敗", "建檔中", "資料日期不明"].includes(state) ? `<span class="research-meta-reason">${escapeHtml(String(reason))}</span>` : ""}`;
     }
@@ -1387,7 +1395,7 @@ const renderResearch = (snapshot) => {
   const valueSource = sourceFor("value");
   const valuePending = valueSource?.scan_state === "building";
   const valueDiagnostics = valueSource?.selection_diagnostics || {};
-  const valueMessage = valuePending && valueSource.rule_version === "tw_value_current_quality_v2"
+  const valueMessage = valuePending && valueSource.rule_version === "tw_value_total_equity_quality_v3"
     ? `官方批次財報核對中：已核對 ${valueSource.official_financial_coverage ?? 0}/${valueSource.universe_expected ?? "—"} 檔；未完成全池資料覆核前不列入完整璞玉價值排名。`
     : valuePending
       ? `歷史核對中：已完成 ${valueSource.history_cached ?? 0}/${valueSource.history_expected ?? "—"} 檔（${valueSource.history_progress_pct ?? 0}%）；未完成六項公開資料覆核前不列入正式璞玉價值候選或觀察名單。`

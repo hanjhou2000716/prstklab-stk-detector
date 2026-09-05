@@ -25,8 +25,8 @@ class _Client:
         self.payload = payload or [{
             "公司代號": "2330", "公司名稱": "台積電", "年度": "115", "季別": "2",
             "出表日期": "1150814", "基本每股盈餘（元）": "1.2",
-            "淨利（淨損）歸屬於母公司業主": "1,000",
-            "歸屬於母公司業主之權益合計": "10,000",
+            "本期淨利（淨損）": "1,000",
+            "權益總計": "10,000",
         }]
         self.error = error
         self.calls = []
@@ -51,18 +51,18 @@ def test_official_batch_reads_all_endpoints_once_and_calculates_current_quality(
     assert record["current_eps_positive"] is True
     assert record["annualized_quality_ratio"] == 0.2
     assert record["current_quality_pass"] is True
-    assert record["parent_net_income_ytd"] == 1_000_000
-    assert record["parent_equity"] == 10_000_000
+    assert record["total_net_income_ytd"] == 1_000_000
+    assert record["total_equity"] == 10_000_000
     assert diagnostics["mops_calls"] == 0
     assert diagnostics["mops_history_used"] is False
     assert json.loads((tmp_path / "official.json").read_text(encoding="utf-8"))["records"]["2330"]["source_sha256"]
 
 
-def test_official_batch_never_substitutes_group_equity_for_parent_equity():
+def test_official_batch_never_substitutes_wrong_equity_column_for_total_equity():
     client = _Client(payload=[{
         "公司代號": "2330", "年度": "115", "季別": "2",
         "基本每股盈餘（元）": "1.2",
-        "淨利（淨損）歸屬於母公司業主": "1,000",
+        "本期淨利（淨損）": "1,000",
         "權益總額": "10,000",
     }])
     records, _errors, _diagnostics = twse_current_quality_snapshot(["2330"], client)

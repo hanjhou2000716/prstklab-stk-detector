@@ -8,13 +8,14 @@ import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from src.alert_budget import decide_alert_budget
 from src.alert_orchestrator import content_is_incomplete, notification_key_for_event, recipient_hash
 from src.briefing_cards import build_briefing_snapshot
 from src.config import get_settings
 from src.creator_provider_registry import creator_ids
-from src.event_ledger import EventLedger
+from src.event_ledger import EventLedger, event_source_url
 from src.external_observation_input import (
     external_observations_path,
     external_source_health,
@@ -684,6 +685,34 @@ def send(
         snapshot_id=snapshot_id,
         observation_id=observation_id,
     )
+    # A scheduled briefing is itself the report source.  Bind that internal
+    # HTTPS deep link before any claim or Telegram attempt so its delivery can
+    # be persisted and replayed without inventing an external news URL.
+    if briefing_event is not None:
+        event["source_url"] = target_url
+        event["source_domain"] = urlsplit(target_url).hostname or ""
+    preflight = (
+        ledger.preflight_delivery(event)
+        if hasattr(ledger, "preflight_delivery")
+        else {"ok": bool(event_source_url(event))}
+    )
+    if not preflight.get("ok"):
+        _write_decision_output(
+            {
+                "sent": "false",
+                "delivery_status": "suppressed",
+                "reason": str(preflight.get("reason") or "ledger_preflight_failed"),
+                "notification_expected": "false",
+                "notification_status": "suppressed",
+                "notification_reason": str(preflight.get("reason") or "ledger_preflight_failed"),
+                "last_receipt_status": "not_attempted",
+            },
+            notification_status="suppressed",
+            notification_reason=str(preflight.get("reason") or "ledger_preflight_failed"),
+            notification_expected=False,
+            last_receipt_status="not_attempted",
+        )
+        return
     if str(event.get("source_key") or event.get("source") or "").strip().casefold() != "financialjuice":
         claim = (
             ledger.claim_notification(

@@ -32,7 +32,15 @@ MAX_FAILED_RECIPIENT_RETRIES = 3
 PUBLIC_TEXT_MAX_CHARS = 60
 PRSTK_RISK_LEVELS = frozenset({"R0", "R1", "R2", "R3", "R4"})
 _RISK_ICONS = {"R0": "🟢", "R1": "🟢", "R2": "🟡", "R3": "🟠", "R4": "🔴"}
-_PUBLIC_ICON_RE = re.compile(r"(?:🟢|🟡|🟠|🔴|⚪\ufe0f?|⚫\ufe0f?|🟣|📊|📡|📢|📣|📈|📉|🟰|⚠️?)")
+# This is intentionally a Unicode-range filter instead of a short list.  A
+# relay can prepend a flag, skin-tone sequence, keycap or a newer pictograph;
+# all of those are decorations and must not become a second public identity.
+_PUBLIC_ICON_RE = re.compile(
+    r"(?:[#*0-9]\ufe0f?\u20e3|[\U0001F1E6-\U0001F1FF]{2}|"
+    r"[\U0001F000-\U0001FAFF\u2300-\u23FF\u2600-\u27BF]"
+    r"(?:\ufe0e|\ufe0f|[\U0001F3FB-\U0001F3FF]|\u200d)*)",
+    flags=re.UNICODE,
+)
 PUBLIC_MESSAGE_KINDS = frozenset({"risk_alert", "financialjuice", "scheduled_brief"})
 _RISK_CATEGORIES = {"R0": "市場觀察", "R1": "市場觀察", "R2": "市場觀察", "R3": "市場風險", "R4": "重大風險"}
 _GENERIC_PUBLIC_LABELS = frozenset({
@@ -215,6 +223,8 @@ def _is_usable_financialjuice_fact(value: object) -> bool:
         return False
     if re.search(r"https?://|www\.", text, flags=re.IGNORECASE):
         return False
+    if text.casefold() in {"直播影片", "直播", "影片", "embed", "live", "financialjuice", "morning juice"}:
+        return False
     if re.fullmatch(r"[🟢🟡🟠🔴⚪⚫🟣\s。！？!?，,、:：|｜()（）\[\]{}]*", text):
         return False
     if any(pattern.search(text) for pattern in _FJ_INVALID_FACT_PATTERNS):
@@ -326,7 +336,7 @@ def summarize_public_message(
         head = f"🟣 {fj_score}｜"
         category = ""
     elif kind == "scheduled_brief":
-        known_labels = {"晨報", "台股盤前", "美股盤前", "盤中", "午報", "午盤", "盤後", "美股開盤", "市場簡報"}
+        known_labels = {"晨報", "台股盤前", "台股盤中", "台股午盤", "台股收盤前", "台股盤後", "美股盤前", "盤中", "午報", "午盤", "盤後", "美股開盤", "市場簡報"}
         scheduled_label = str(label or "").strip()
         if not scheduled_label and segments and segments[0] in known_labels:
             scheduled_label = segments[0]

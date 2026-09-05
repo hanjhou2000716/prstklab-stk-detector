@@ -37,6 +37,8 @@ from src.value_universe import (
     universe_snapshot,
 )
 
+TAIWAN_VALUE_POOL_EXPECTED = 150
+
 
 def load_upstream_candidates(market: str, data_dir: Path, universe_file: str | None) -> list[dict[str, str]]:
     """Legacy compatibility helper; the production value scan no longer calls it."""
@@ -301,7 +303,8 @@ def main() -> None:
             row["data_version"] = str(fundamentals.get(str(row.get("ticker")), {}).get("reporting_period") or "")
         financial_valid = {
             ticker for ticker, item in fundamentals.items()
-            if item.get("financial_parse_version")
+            if item.get("financial_complete") is True
+            and item.get("financial_parse_version")
             and item.get("current_eps_positive") is not None
             and item.get("current_quality_pass") is not None
             and item.get("reporting_period")
@@ -315,6 +318,7 @@ def main() -> None:
         observation_rows = review_pristine_observation_pool(evaluable_rows, args.market, rule_version=TW_VALUE_RULE_VERSION)
         selection_diagnostics = pristine_selection_diagnostics(evaluable_rows, args.market, rule_version=TW_VALUE_RULE_VERSION)
         financial_diagnostics["financial_valid_count"] = len(financial_valid)
+        financial_diagnostics["financial_missing_count"] = max(0, len(candidates) - len(financial_valid))
         financial_diagnostics["financial_periods"] = sorted({str(item.get("reporting_period")) for item in fundamentals.values() if item.get("reporting_period")})
     else:
         evaluable_rows = base_rows
@@ -330,6 +334,41 @@ def main() -> None:
 
     timer = time.monotonic()
     pd.DataFrame(rows).to_csv(data_dir / f"{args.market}-value-scan.csv", index=False, encoding="utf-8-sig")
+    if args.market == "taiwan":
+        evidence_rows = []
+        for candidate in candidates:
+            ticker = str(candidate.get("ticker") or "")
+            financial = fundamentals.get(ticker, {})
+            quote = quotes.get(str(candidate.get("symbol") or ""), {})
+            required_financial = ("eps_ytd", "total_net_income_ytd", "total_equity", "reporting_period")
+            missing_financial = [field for field in required_financial if financial.get(field) is None]
+            required_heat_fields = (*required_heat, "close", "as_of")
+            missing_quote = [field for field in required_heat_fields if quote.get(field) is None]
+            evidence_rows.append({
+                "ticker": ticker,
+                "name": candidate.get("name"),
+                "pool": candidate.get("pool"),
+                "symbol": candidate.get("symbol"),
+                "financial": {
+                    key: financial.get(key) for key in (
+                        "reporting_period", "sector", "output_date", "source_url", "source_sha256",
+                        "source_endpoints", "eps_ytd", "eps_field", "total_net_income_ytd",
+                        "total_net_income_field", "total_equity", "total_equity_field",
+                        "annualized_quality_ratio", "financial_parse_version", "last_checked_at",
+                        "financial_complete", "financial_status",
+                    )
+                },
+                "quote": quote,
+                "scan_trading_date": target_trading_date,
+                "quote_cutoff_at": quote_cutoff,
+                "missing_financial_fields": missing_financial,
+                "missing_quote_fields": missing_quote,
+                "evaluable": not missing_financial and not missing_quote,
+            })
+        (data_dir / f"{args.market}-value-evidence.json").write_text(
+            json.dumps({"schema_version": 1, "rule_version": TW_VALUE_RULE_VERSION, "records": evidence_rows}, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
     stage("output", timer, processed=len(rows), errors=[])
     complete_records = len(evaluable_rows)
     if args.market == "taiwan":
@@ -340,11 +379,12 @@ def main() -> None:
         missing_tickers = {
             str(item["ticker"]) for item in candidates if str(item["ticker"]) not in evaluable_tickers
         }
-        failed_total = len(missing_tickers) + len(universe_errors)
+        failed_total = len(missing_tickers) + len(universe_errors) + len(quote_errors) + len(share_errors)
         financial_errors_for_contract = [] if len(fundamentals) >= len(candidates) and financial_diagnostics.get("cache_used_count", 0) else fundamental_errors
         scan_complete = (
-            not missing_tickers and not universe_errors and not expired()
-            and not financial_errors_for_contract
+            len(candidates) == TAIWAN_VALUE_POOL_EXPECTED
+            and not missing_tickers and not universe_errors and not expired()
+            and not financial_errors_for_contract and not quote_errors and not share_errors
         )
     else:
         failed_total = len(universe_errors) + len(fundamental_errors) + len(quote_errors) + len(share_errors)
@@ -352,7 +392,10 @@ def main() -> None:
     if scan_complete:
         scan_state = "complete"
     elif complete_records > 0:
-        scan_state = "partial"
+        # ``partial`` is a completeness diagnostic, not a public scan state.
+        # The research schema deliberately reserves ``building`` for a run
+        # that has usable rows but has not covered the full pool yet.
+        scan_state = "building"
     else:
         scan_state = "failed"
     if rows:
@@ -368,6 +411,7 @@ def main() -> None:
         "requested_records": len(candidates),
         "universe_mode": "full",
         "universe_expected": len(candidates),
+        "full_pool_expected": TAIWAN_VALUE_POOL_EXPECTED if args.market == "taiwan" else None,
         "universe_scanned": len(candidates),
         "universe_completed": complete_records,
         "universe_failed": failed_total,
@@ -388,11 +432,16 @@ def main() -> None:
         "selection_diagnostics": selection_diagnostics,
         "failed": failed_total,
         "scan_state": scan_state,
+        "scan_completeness": (
+            "complete" if scan_complete
+            else "partial" if complete_records > 0
+            else "failed"
+        ),
         "candidate_state": candidate_state,
         "complete_records": complete_records,
         "data_gap_counts": {
             "universe": len(universe_errors),
-            "fundamentals": max(0, len(candidates) - (len(fundamentals) if args.market == "taiwan" else len(fundamentals))),
+            "fundamentals": max(0, len(candidates) - (len(financial_valid) if args.market == "taiwan" else len(fundamentals))),
             "quotes": len(quote_errors),
             "shares": len(share_errors),
             "official_financial_endpoint": (
@@ -423,7 +472,7 @@ def main() -> None:
         "financial_diagnostics": financial_diagnostics if args.market == "taiwan" else None,
         "financial_period": (financial_diagnostics.get("financial_periods") or [None])[0] if args.market == "taiwan" else None,
         "financial_checked_at": max((str(item.get("last_checked_at", "")) for item in fundamentals.values()), default=None) if args.market == "taiwan" else None,
-        "official_financial_coverage": len(fundamentals) if args.market == "taiwan" else None,
+        "official_financial_coverage": sum(1 for item in fundamentals.values() if item.get("financial_complete") is True) if args.market == "taiwan" else None,
         "time_budget_seconds": args.time_budget_seconds,
         "deadline_exceeded": expired(),
         "stage_diagnostics": diagnostics["stages"],

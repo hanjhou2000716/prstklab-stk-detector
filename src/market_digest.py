@@ -21,10 +21,10 @@ _UNUSABLE_FRESHNESS = frozenset({"stale", "delayed", "unavailable", "unknown", "
 _SLOT_LABELS = {
     "morning": "晨報",
     "pre_open": "台股盤前",
-    "intraday": "盤中",
-    "midday": "午報",
-    "afternoon": "午盤",
-    "post_close": "盤後",
+    "intraday": "台股盤中",
+    "midday": "台股午盤",
+    "afternoon": "台股收盤前",
+    "post_close": "台股盤後",
     "us_premarket": "美股盤前",
     "us_open": "美股開盤",
 }
