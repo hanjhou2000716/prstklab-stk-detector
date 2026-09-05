@@ -1,6 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
-from src.event_ledger import EventLedger, canonical_event_key, normalize_source_url
+from src.artifact_contract import validate_events
+from src.event_ledger import EventLedger, canonical_event_key, event_source_url, normalize_source_url
 
 
 def test_url_normalization_drops_tracking_and_www():
@@ -56,6 +57,28 @@ def test_financialjuice_delivery_without_article_url_keeps_vendor_provenance(tmp
     record = next(iter(ledger.records.values()))
     assert record["source_url"] == "https://financialjuice.com/"
     assert record["source_domain"] == "financialjuice.com"
+
+
+def test_market_event_uses_nested_quote_provenance_for_ledger_contract(tmp_path):
+    event = {
+        "kind": "market_signal",
+        "instrument": {
+            "ticker": "SOX",
+            "source_url": "https://finance.yahoo.com/quote/%5ESOX",
+        },
+    }
+    assert event_source_url(event) == "https://finance.yahoo.com/quote/%5ESOX"
+    ledger = EventLedger(tmp_path / "ledger.json")
+    ledger.observe(event)
+    ledger.save()
+    record = next(iter(ledger.records.values()))
+    assert record["source_url"] == "https://finance.yahoo.com/quote/%5ESOX"
+    assert record["source_domain"] == "finance.yahoo.com"
+    assert validate_events({"schema_version": 1, "retention_days": 30, "events": ledger.records}) == []
+
+
+def test_provider_label_is_not_promoted_to_a_fake_source_url():
+    assert event_source_url({"source": "FinancialJuice", "source_url": "FinancialJuice"}) == ""
 
 
 def test_ledger_retains_reminder_fields_and_prunes_after_thirty_days(tmp_path):

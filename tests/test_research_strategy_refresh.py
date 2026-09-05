@@ -63,3 +63,36 @@ def test_exchange_slot_uses_close_identity_and_actual_session():
 
 def test_exchange_slot_is_not_due_on_weekend():
     assert due_slot("taiwan", now=datetime(2026, 9, 5, 10, tzinfo=UTC)) is None
+
+
+def test_delayed_us_slot_keeps_friday_identity_on_taipei_weekend():
+    result = due_slot("us", now=datetime(2026, 9, 5, 10, tzinfo=UTC))
+    assert result["trading_date"] == "2026-09-04"
+    assert result["slot_key"] == "us:2026-09-04:close-research"
+
+
+def test_single_market_run_keeps_other_market_as_historical_without_attempt():
+    report = {
+        "generated_at": "2026-09-05T16:00:00+08:00",
+        "sources": [
+            _full_source(market="taiwan", scan_state="complete"),
+            _full_source(market="us", scan_state="failed", failed_records=1),
+        ],
+        "candidates": [],
+    }
+    previous = {
+        "generated_at": "2026-09-04T16:00:00+08:00",
+        "sources": [{
+            "market": "us", "strategy": "momentum", "scan_state": "complete",
+            "last_successful_generated_at": "2026-09-04T16:00:00+08:00",
+            "scan_trading_date": "2026-09-03",
+        }],
+        "candidates": [{"market": "us", "strategy": "momentum", "ticker": "NVDA", "list_type": "formal"}],
+    }
+    result = merge_previous_strategy_versions(report, previous, target_market="taiwan")
+    source = next(item for item in result["sources"] if item["market"] == "us")
+    assert source["unscanned_in_run"] is True
+    assert source["historical_fallback"] is True
+    assert source["scan_attempted_at"] is None
+    assert source["scan_trading_date"] == "2026-09-03"
+    assert result["candidates"][0]["research_version_state"] == "historical"

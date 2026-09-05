@@ -42,22 +42,50 @@ def slot_for(market: str, trading_date: date) -> str:
 
 
 def due_slot(market: str, *, now: datetime | None = None) -> dict[str, Any] | None:
-    """Return the due close-research slot, or ``None`` on a non-session day."""
+    """Return the newest due close-research slot, including a delayed run.
+
+    GitHub Actions can start after midnight Taipei time.  Looking only at
+    ``now.date()`` loses the prior US Friday session during the Taiwan
+    weekend, so walk back over recent calendar days and keep the original
+    exchange trading date in the slot identity.
+    """
     now_utc = (now or datetime.now(UTC)).astimezone(UTC)
-    session = _session(market, now_utc.date())
-    if session is None:
+    current_session = _session(market, now_utc.date())
+    if current_session is not None:
+        _opened, closed = current_session
+        due_at = closed if market == "taiwan" else closed + timedelta(hours=1)
+        if now_utc < due_at:
+            return None
+        trading_date = now_utc.date()
+        return {
+            "market": market,
+            "trading_date": trading_date.isoformat(),
+            "slot_key": slot_for(market, trading_date),
+            "due_at": due_at.isoformat(),
+            "market_close": closed.isoformat(),
+        }
+    # The US session commonly becomes due on Saturday in Taipei.  Preserve
+    # that production slot across the local weekend; Taiwan itself has no
+    # weekend close task to resolve here.
+    if market != "us":
         return None
-    _opened, closed = session
-    due_at = closed if market == "taiwan" else closed + timedelta(hours=1)
-    if now_utc < due_at:
-        return None
-    return {
-        "market": market,
-        "trading_date": now_utc.date().isoformat(),
-        "slot_key": slot_for(market, now_utc.date()),
-        "due_at": due_at.isoformat(),
-        "market_close": closed.isoformat(),
-    }
+    for days_back in range(1, 11):
+        trading_date = now_utc.date() - timedelta(days=days_back)
+        session = _session(market, trading_date)
+        if session is None:
+            continue
+        _opened, closed = session
+        due_at = closed if market == "taiwan" else closed + timedelta(hours=1)
+        if now_utc < due_at:
+            continue
+        return {
+            "market": market,
+            "trading_date": trading_date.isoformat(),
+            "slot_key": slot_for(market, trading_date),
+            "due_at": due_at.isoformat(),
+            "market_close": closed.isoformat(),
+        }
+    return None
 
 
 def _cli() -> int:

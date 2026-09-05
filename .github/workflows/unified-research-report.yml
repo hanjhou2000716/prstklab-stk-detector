@@ -41,6 +41,10 @@ on:
         type: choice
         options: [auto, taiwan, us, both]
         default: auto
+      trading_date:
+        description: Optional exchange trading date for a manual catch-up run (YYYY-MM-DD)
+        required: false
+        default: ''
   repository_dispatch:
     types: [unified-research-report]
   schedule:
@@ -80,6 +84,7 @@ jobs:
       SCAN_MODE: ${{ inputs.scan_mode || github.event.client_payload.scan_mode || 'production' }}
       BACKTEST_RELEASE_PATH: ${{ inputs.backtest_release_path || github.event.client_payload.backtest_release_path || '' }}
       TARGET_MARKET: ${{ inputs.target_market || github.event.client_payload.target_market || 'auto' }}
+      TRADING_DATE: ${{ inputs.trading_date || github.event.client_payload.trading_date || '' }}
       SCHEDULE_CRON: ${{ github.event.schedule || '' }}
       NEWS_CACHE_PATH: site/data/news-cache.json
       SEC_FACTS_CACHE_PATH: data/sec-companyfacts-cache.json
@@ -119,28 +124,42 @@ jobs:
             esac
           fi
           echo "TARGET_MARKET=$target" >> "$GITHUB_ENV"
-          python - "$target" "${{ github.event_name }}" <<'PY' >> "$GITHUB_OUTPUT"
+          python - "$target" "${{ github.event_name }}" "$TRADING_DATE" <<'PY' >> "$GITHUB_OUTPUT"
           import sys
-          from datetime import UTC, datetime
+          from datetime import UTC, datetime, date
           from src.research_schedule import due_slot
-          target, event = sys.argv[1:]
+          target, event, requested_date = sys.argv[1:]
           markets = ("taiwan", "us") if target == "both" else (target,)
-          if event == "workflow_dispatch":
-              slots = [{"market": market, "slot_key": f"manual:{market}:{datetime.now(UTC).date().isoformat()}"} for market in markets]
+          if requested_date:
+              date.fromisoformat(requested_date)
+          if event == "workflow_dispatch" and requested_date:
+              slots = [{"market": market, "trading_date": requested_date, "slot_key": f"{market}:{requested_date}:close-research"} for market in markets]
           else:
               slots = [item for market in markets if (item := due_slot(market))]
+              if event == "workflow_dispatch" and not slots:
+                  today = datetime.now(UTC).date().isoformat()
+                  slots = [{"market": market, "trading_date": today, "slot_key": f"{market}:{today}:close-research"} for market in markets]
           print(f"target_market={target}")
           print(f"due={'true' if slots else 'false'}")
           print(f"slot_key={','.join(item['slot_key'] for item in slots)}")
           PY
           echo "RESEARCH_DUE=$(grep '^due=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)" >> "$GITHUB_ENV"
           echo "RESEARCH_SLOT_KEY=$(grep '^slot_key=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2-)" >> "$GITHUB_ENV"
-      - name: Clear previous research scan artifacts
+      - name: Clear previous research scan artifacts for target market
         run: |
-          # Never let a failed/partial scan reuse a CSV or summary from an
-          # earlier release.  Missing outputs are rendered as an explicit
-          # data gap by run_research_report instead of stale candidates.
-          rm -f data/*-scan*.csv data/*-summary*.json
+          # Never let a target-market retry reuse its own previous CSV.  The
+          # other market is intentionally preserved in the public report as a
+          # last-successful historical version when this run is single-market.
+          # Legacy contract: rm -f data/*-scan*.csv data/*-summary*.json
+          python - "$TARGET_MARKET" <<'PY'
+          import sys
+          from pathlib import Path
+          target = sys.argv[1]
+          prefixes = ("taiwan-", "us-") if target == "both" else (f"{target}-",)
+          for path in Path("data").glob("*"):
+              if path.is_file() and any(path.name.startswith(prefix) and ("-scan" in path.name or "-summary" in path.name) for prefix in prefixes):
+                  path.unlink()
+          PY
           : > research-artifacts/scan-failures.ndjson
       - name: 台股動能研究掃描
         if: env.RESEARCH_DUE == 'true' && (env.TARGET_MARKET == 'taiwan' || env.TARGET_MARKET == 'both')
@@ -212,7 +231,7 @@ jobs:
           Path("research-artifacts/research-report-latest.json").write_text(
               json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
           )
-          summary_lines = ["## 研究策略更新", "", f"- publication_state: `{report.get('publication_state')}`", f"- target_market: `{report.get('target_market')}`", "", "| 市場 | 策略 | 本輪狀態 | 發布 | 歷史版本 | 阻擋原因 |", "|---|---|---|---|---|---|"]
+          summary_lines = ["## 研究策略更新", "", f"- publication_state: `{report.get('publication_state')}`", f"- target_market: `{report.get('target_market')}`", "", "| 市場 | 策略 | 狀態 | 發布 | 歷史版本 | 阻擋原因 |", "|---|---|---|---|---|---|"]
           source_by_key = {(str(item.get('market')), str(item.get('strategy'))): item for item in report.get('sources', []) if isinstance(item, dict)}
           for item in report.get('strategy_publication', []):
               key = (str(item.get('market')), str(item.get('strategy')))
@@ -245,6 +264,11 @@ jobs:
                   output.open("a", encoding="utf-8").write("fallback=false\n")
                   print("::warning::research scan is incomplete and no previous successful snapshot exists")
           PY
+      - name: Recheck production revision before persistence
+        if: env.SCAN_MODE == 'production'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -m src.writer_queue --settle-seconds 0 --poll-seconds 10
       - name: Persist incremental research caches
         if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish != 'true'
         run: |

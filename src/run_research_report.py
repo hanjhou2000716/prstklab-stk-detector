@@ -184,7 +184,7 @@ def attach_scan_contract(report: dict, scan_mode: str) -> dict:
         source_completed = source_scope["completed"]
         source_failed = source_scope["failed"]
         source_state = str(source.get("scan_state") or "failed")
-        eligible = scan_mode == "production" and source_scope["valid"] and source_completed >= source_requested and source_failed == 0 and source_state == "complete"
+        eligible = scan_mode == "production" and not source.get("unscanned_in_run") and source_scope["valid"] and source_completed >= source_requested and source_failed == 0 and source_state == "complete"
         eligible_count += int(eligible)
         strategy_publication.append({
             "market": source.get("market"), "strategy": source.get("strategy"),
@@ -224,6 +224,14 @@ def attach_scan_contract(report: dict, scan_mode: str) -> dict:
 
 def attach_strategy_versions(report: dict[str, Any]) -> dict[str, Any]:
     """Stamp per-strategy freshness and content identity into the report."""
+    slot_dates: dict[str, str] = {}
+    raw_slot = str(report.get("research_slot_key") or "")
+    for token in raw_slot.split(","):
+        parts = token.split(":")
+        if len(parts) >= 3 and parts[0] in {"taiwan", "us"}:
+            slot_dates[parts[0]] = parts[1]
+        elif len(parts) >= 3 and parts[0] == "manual" and parts[1] in {"taiwan", "us"}:
+            slot_dates[parts[1]] = parts[2]
     candidates = report.get("candidates", [])
     for source in report.get("sources", []) if isinstance(report.get("sources"), list) else []:
         if not isinstance(source, dict):
@@ -241,15 +249,18 @@ def attach_strategy_versions(report: dict[str, Any]) -> dict[str, Any]:
             for field in ("ticker", "rank", "score", "close", "change_percent", "as_of", "data_version", "strategy_version")
         } for row in rows]
         digest = hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+        historical = source.get("historical_fallback") is True
+        slot_date = slot_dates.get(str(source.get("market")))
+        scan_date = source.get("scan_trading_date") or (slot_date if not source.get("unscanned_in_run") else None) or (dates[-1] if dates else None)
         source.update({
-            "scan_trading_date": dates[-1] if dates else None,
-            "quote_cutoff_at": dates[-1] if dates else None,
+            "scan_trading_date": scan_date,
+            "quote_cutoff_at": source.get("quote_cutoff_at") or scan_date,
             "last_attempted_at": report.get("generated_at"),
             "last_successful_at": source.get("last_successful_generated_at") or (report.get("generated_at") if source.get("scan_state") == "complete" else None),
-            "execution_version": report.get("source_commit_sha") or report.get("research_run", {}).get("source_commit_sha"),
-            "data_hash": digest,
-            "scan_completeness": "complete" if source.get("scan_state") == "complete" else "partial" if source.get("scan_state") == "building" else "failed",
-            "candidate_count": len(rows),
+            "execution_version": source.get("execution_version") if historical else report.get("source_commit_sha") or report.get("research_run", {}).get("source_commit_sha"),
+            "data_hash": source.get("data_hash") if historical else digest,
+            "scan_completeness": "historical" if historical else "complete" if source.get("scan_state") == "complete" else "partial" if source.get("scan_state") == "building" else "failed",
+            "candidate_count": source.get("candidates") if historical else len(rows),
             "blocking_reason": source.get("blocking_reason"),
         })
     return report
@@ -290,7 +301,7 @@ def main() -> None:
             previous = loaded if isinstance(loaded, dict) else None
         except (OSError, UnicodeDecodeError, json.JSONDecodeError):
             previous = None
-    merge_previous_strategy_versions(report, previous)
+    merge_previous_strategy_versions(report, previous, target_market=args.target_market)
     attach_instrument_lineage(report, extend_from_candidates=True)
     attach_backtest_contract(report, args.backtest_release)
     attach_scan_contract(report, args.scan_mode)

@@ -20,6 +20,23 @@ ALLOWED_STRATEGIES = {"momentum", "price_action", "resonance", "value"}
 ALLOWED_MARKETS = {"taiwan", "us"}
 
 
+def _display_freshness_state(source: dict[str, Any], *, expired: bool) -> str:
+    """Expose freshness independently from the legacy scan completion flag."""
+    if source.get("historical_fallback") is True or source.get("strategy_version_state") == "historical":
+        return "歷史資料"
+    if source.get("strategy_version_state") == "unavailable":
+        return "資料日期不明"
+    if source.get("scan_state") in {"building", "partial"} or source.get("status") == "建檔中":
+        return "建檔中"
+    if source.get("scan_state") == "failed" or source.get("status") in {"掃描失敗", "資料暫時無法取得"}:
+        return "更新失敗"
+    if expired:
+        return "待更新"
+    if source.get("scan_trading_date") or source.get("last_successful_at"):
+        return "最近收盤資料"
+    return "資料日期不明"
+
+
 def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None) -> dict[str, Any]:
     """Return only non-actionable fields from the newest research artifact."""
     try:
@@ -60,9 +77,9 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
     for item in raw.get("candidates", []):
         if not isinstance(item, dict) or item.get("strategy") not in ALLOWED_STRATEGIES or item.get("market") not in ALLOWED_MARKETS:
             continue
-        if expired:
+        if expired and item.get("research_version_state") != "historical":
             continue
-        if (str(item.get("market")), str(item.get("strategy"))) in blocked_sources:
+        if (str(item.get("market")), str(item.get("strategy"))) in blocked_sources and item.get("research_version_state") != "historical":
             continue
         candidate = {key: item.get(key) for key in (
             "market", "strategy", "rank", "ticker", "name", "score", "close", "previous_close", "change_percent", "turnover", "as_of", "signal_labels", "volume_ratio", "range_contraction", "breakout_20", "vcp_breakout", "new_high_days", "fgi_score", "fgi_status", "conditions_matched", "condition_count", "structure", "status",
@@ -76,6 +93,7 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
             ,"strategy_registry", "liquidity", "liquidity_metrics", "recent_events", "events",
             "valuation_position", "value_position", "momentum_position", "momentum",
             "quality_position", "quality", "signal_date"
+            ,"research_version_state", "historical_from_generated_at", "historical_reason"
         )}
         binding = bind_strategy_provenance(candidate)
         candidate["strategy_binding"] = binding
@@ -112,10 +130,15 @@ def load_research_cards(path: Path = REPORT_PATH, *, now: datetime | None = None
             "history_pending", "history_failure_count", "blocking_reason", "notice", "error_details",
             "partial_candidates_allowed",
             "selection_diagnostics",
+            "scan_trading_date", "quote_cutoff_at", "last_successful_at", "last_successful_generated_at",
+            "scan_attempted_at", "execution_version", "data_hash", "historical_fallback", "unscanned_in_run",
+            "strategy_version_state", "freshness_state",
         )}
         for source in raw.get("sources", [])
         if isinstance(source, dict) and source.get("strategy") in ALLOWED_STRATEGIES
     ]
+    for source in sources:
+        source["freshness_state"] = _display_freshness_state(source, expired=expired)
     return {
         "status": raw.get("status", "研究報告"),
         "notice": raw.get("notice", "全市場公開資料研究。"),
