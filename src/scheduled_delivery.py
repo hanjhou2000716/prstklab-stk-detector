@@ -62,6 +62,10 @@ def _briefing_delivery_event(snapshot: dict[str, Any], slot: str) -> dict[str, A
     briefing_id = str(briefing.get("briefing_id") or "").strip()
     if not public_message or not briefing_id:
         return None
+    primary = briefing.get("primary_theme")
+    if not isinstance(primary, dict):
+        themes = briefing.get("themes")
+        primary = themes[0] if isinstance(themes, list) and themes and isinstance(themes[0], dict) else {}
     return {
         "kind": "market_briefing",
         "source_key": "scheduled_brief",
@@ -73,7 +77,14 @@ def _briefing_delivery_event(snapshot: dict[str, Any], slot: str) -> dict[str, A
         "public_short_message": public_message,
         "brief_title": public_message,
         "title": public_message,
-        "event": briefing.get("assessment_summary") or briefing.get("overview") or public_message,
+        "event": primary.get("what_happened") or briefing.get("assessment_summary") or briefing.get("overview") or public_message,
+        "why_important": primary.get("why_important"),
+        "possible_linkage": primary.get("market_implication"),
+        "stock_observation": primary.get("stock_observation"),
+        "market_evidence": primary.get("quote_evidence") or briefing.get("quote_evidence") or [],
+        "source_evidence": primary.get("source_evidence") or briefing.get("source_evidence") or [],
+        "canonical_event_key": primary.get("canonical_event_key"),
+        "briefing": briefing,
         "notification_status": "eligible",
         "alert_eligible": True,
         "slot": slot,
