@@ -21,6 +21,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
@@ -464,7 +465,56 @@ def restore_latest_valid(
         except (OSError, UnicodeError, json.JSONDecodeError, TypeError):
             immutable_manifest_bytes = None
             immutable_manifest = None
+        # ``_validate`` runs the manifest builder.  The builder normalizes the
+        # restored tree and rewrites derived alert artifacts, while the
+        # immutable manifest still contains the hashes of the bytes committed
+        # to data-release.  Keep an exact data snapshot around validation so a
+        # selected candidate cannot end up with an old manifest pointing at
+        # newly rebuilt alert files.
+        validation_snapshot: Path | None = None
+        try:
+            validation_snapshot = Path(
+                tempfile.mkdtemp(prefix=".pages-release-validation-", dir=root)
+            )
+            shutil.copytree(
+                root / "site" / "data",
+                validation_snapshot / "data",
+            )
+        except OSError as exc:
+            if validation_snapshot is not None:
+                shutil.rmtree(validation_snapshot, ignore_errors=True)
+            rejected.append({
+                "commit": commit,
+                "reason": f"cannot_snapshot_site_data:{type(exc).__name__}",
+            })
+            continue
+
         ready, manifest = _validate(root, require_production_research=require_production_research)
+        if ready:
+            try:
+                _clear_data(root)
+                shutil.copytree(
+                    validation_snapshot / "data",
+                    root / "site" / "data",
+                    dirs_exist_ok=True,
+                )
+            except OSError as exc:
+                ready = False
+                manifest = {
+                    **manifest,
+                    "status": "invalid",
+                    "validation_errors": sorted({
+                        *list(manifest.get("validation_errors") or []),
+                        f"cannot_restore_site_data:{type(exc).__name__}",
+                    }),
+                }
+            finally:
+                shutil.rmtree(validation_snapshot, ignore_errors=True)
+                validation_snapshot = None
+
+        if validation_snapshot is not None:
+            shutil.rmtree(validation_snapshot, ignore_errors=True)
+
         if ready:
             selected_manifest = manifest
             if isinstance(immutable_manifest, dict) and immutable_manifest.get("status") == "ready":
@@ -477,6 +527,21 @@ def restore_latest_valid(
                     # callers fail closed rather than claiming a preserved
                     # identity that was not actually restored.
                     selected_manifest = manifest
+            if isinstance(selected_manifest.get("artifact_paths"), dict) and isinstance(
+                selected_manifest.get("artifact_hashes"), dict
+            ):
+                restored_errors = verify_release_files(
+                    selected_manifest,
+                    root=root / "site",
+                )
+                if restored_errors:
+                    rejected.append({
+                        "commit": commit,
+                        "release_id": str(selected_manifest.get("release_id") or ""),
+                        "status": "invalid",
+                        "validation_errors": restored_errors[:5],
+                    })
+                    continue
             return {
                 "publish": True,
                 "selected_commit": commit,
