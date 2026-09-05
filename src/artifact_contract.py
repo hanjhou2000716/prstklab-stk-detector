@@ -538,6 +538,7 @@ def validate_research(document: dict[str, Any]) -> list[str]:
         "data_gap",
         "data_unavailable",
         "failed",
+        "historical",
     }
     for index, source in enumerate(document.get("sources", [])):
         if not isinstance(source, dict):

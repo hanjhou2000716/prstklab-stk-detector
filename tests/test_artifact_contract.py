@@ -144,6 +144,15 @@ def test_valid_release_passes_contract():
     assert validate_release(market=_market(), research=research, manifest=_manifest()) == []
 
 
+def test_historical_strategy_fallback_passes_research_contract():
+    research = _research(sources=[{
+        "market": "taiwan", "strategy": "value", "scan_state": "failed",
+        "candidate_state": "historical", "historical_fallback": True,
+        "candidates": 1, "visible_candidates": 1, "formal_candidates": 1,
+    }])
+    assert validate_research(research) == []
+
+
 def test_market_rejects_stale_live_and_source_mismatch():
     market = _market()
     market["indices"][0].update({"stale_used": True, "source_label": "TWSE", "source_url": "https://finance.yahoo.com/quote/%5ETWII"})
