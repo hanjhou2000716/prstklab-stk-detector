@@ -29,7 +29,7 @@ SLOT_LABELS = {
 MAX_BRIEF_LENGTH = PUBLIC_TEXT_MAX_CHARS
 TAIWAN_SESSION_SLOTS = frozenset({"pre_open", "intraday", "midday", "afternoon"})
 CRON_SLOT_MAP = {
-    "0 22 * * 0-4": "morning",
+    "0 22 * * *": "morning",
     "45 0 * * 1-5": "pre_open",
     "0 2 * * 1-5": "intraday",
     "30 2 * * 1-5": "intraday",
@@ -37,6 +37,7 @@ CRON_SLOT_MAP = {
     "15 5 * * 1-5": "afternoon",
     "45 6 * * 1-5": "post_close",
     "0 13 * * 1-5": "us_premarket",
+    "0 14 * * 1-5": "us_premarket",
 }
 
 
@@ -63,13 +64,16 @@ def _write_output(values: dict[str, object]) -> None:
 def briefing_correlation(snapshot: dict, slot: str, event: dict | None = None) -> dict[str, str]:
     """Return the IDs shared by a scheduled report and its Mini App card."""
     snapshot_id = str(snapshot.get("snapshot_id") or "")
+    briefing_raw = snapshot.get("briefing")
+    briefing: dict = briefing_raw if isinstance(briefing_raw, dict) else {}
     item = event or {}
     observation_id = str(
-        item.get("observation_id")
+        briefing.get("observation_id")
+        or item.get("observation_id")
         or (item.get("instrument") or {}).get("observation_id")
         or ""
     )
-    trace_id = f"brief-{snapshot_id}-{slot}" if snapshot_id else f"brief-{slot}"
+    trace_id = str(briefing.get("trace_id") or (f"brief-{snapshot_id}-{slot}" if snapshot_id else f"brief-{slot}"))
     return {"trace_id": trace_id, "snapshot_id": snapshot_id, "observation_id": observation_id}
 
 # External scheduler calls are accepted only around their declared Taiwan-time
@@ -95,6 +99,20 @@ def _strict_slot_at(now: datetime) -> str | None:
     return None
 
 
+def _us_premarket_cron_matches(now: datetime, scheduled_cron: str) -> bool:
+    """Accept only the UTC cron that is 30 minutes before the NYSE open."""
+    if scheduled_cron not in {"0 13 * * 1-5", "0 14 * * 1-5"}:
+        return True
+    new_york_now = now.astimezone(ZoneInfo("America/New_York"))
+    # 09:00 New York is the desired report time.  Derive its UTC hour from
+    # the exchange offset so daylight-saving changes do not produce two
+    # reports or a report 90 minutes before the cash open.
+    offset = new_york_now.utcoffset()
+    expected_utc_hour = 9 - int((offset.total_seconds() if offset else 0) // 3600)
+    cron_hour = int(scheduled_cron.split()[1])
+    return cron_hour == expected_utc_hour and new_york_now.weekday() < 5
+
+
 def resolve_slot(
     value: str,
     now: datetime | None = None,
@@ -108,6 +126,8 @@ def resolve_slot(
     if cron_slot and value in {"auto", cron_slot}:
         # GitHub-hosted schedules can start late.  The cron identity, not the
         # runner start time, is the source of truth for an automatic slot.
+        if cron_slot == "us_premarket" and not _us_premarket_cron_matches(local_now, str(scheduled_cron).strip()):
+            return None
         return cron_slot
     if strict_window:
         matched = _strict_slot_at(local_now)

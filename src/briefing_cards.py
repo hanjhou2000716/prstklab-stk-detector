@@ -439,14 +439,33 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
             batch_as_of=(snapshot.get("fetched_at") or snapshot.get("created_at")) if (slot or "").casefold() == "morning" else None,
         )
         creator_release = creator_result["artifact"]
+    from src.market_digest import build_market_digest
+
+    digest = build_market_digest(snapshot, slot or "morning")
+    digest_overview = digest.get("overview")
+    if not digest_overview and digest.get("status") != "ready":
+        digest_overview = "本輪公開市場證據不足，暫不形成判讀。"
     return {
         "slot": slot or "live",
         "title": SLOT_TITLES.get(slot or "", "即時市場儀表板"),
-        "overview": (
+        "overview": digest_overview or (
             f"{lead.get('brief_title') or lead['title']}｜"
             f"{lead.get('summary') or lead['event']} "
             f"{lead.get('market_context') or lead['market_impact']}"
         ),
+        "assessment_summary": digest.get("assessment_summary", ""),
+        "public_short_message": digest.get("public_short_message", ""),
+        "digest_status": digest.get("status", "suppressed"),
+        "notification_eligible": digest.get("notification_eligible", False),
+        "notification_reason": digest.get("notification_reason", "insufficient_evidence"),
+        "briefing_id": digest.get("briefing_id", ""),
+        "notification_key": digest.get("notification_key", ""),
+        "canonical_content_hash": digest.get("canonical_content_hash", ""),
+        "canonical_hash_version": digest.get("canonical_hash_version", 1),
+        "themes": digest.get("themes", []),
+        "evidence": digest.get("evidence", []),
+        "lookback_hours": digest.get("lookback_hours", 24),
+        "as_of": digest.get("as_of"),
         "markets": cards,
         "market_topics": market_topics,
         "dynamic_markets": dynamic_markets,

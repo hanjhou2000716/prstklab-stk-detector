@@ -58,7 +58,12 @@ const activeExternalAlert = (alert) => {
   return Number.isNaN(expiresAt.getTime()) || expiresAt <= new Date() ? null : alert;
 };
 
-const renderFocus = (events, externalAlert) => {
+const renderFocus = (events, externalAlert, briefing) => {
+  const assessment = String(briefing?.assessment_summary || briefing?.overview || "").trim();
+  if (briefing?.digest_status === "ready" && assessment) {
+    setText("market-focus", assessment);
+    return;
+  }
   if (externalAlert) {
     setText("market-focus", `外部快訊｜${externalAlert.summary}`);
     return;
@@ -921,10 +926,20 @@ const renderSourceHealth = (health, snapshot = {}) => {
 
 const renderBriefing = (briefing, generatedAt) => {
   const report = briefing || {};
-  const observations = report.observations || [];
+  const digestThemes = Array.isArray(report.themes) ? report.themes : [];
+  const observations = digestThemes.length
+    ? digestThemes.map((theme) => ({
+      title: theme.title || "市場主題",
+      event: theme.what_happened || "公開資料已核對。",
+      importance: theme.why_important || "持續核對公開資料。",
+      market_impact: theme.market_implication || "尚無足夠資料判定跨市場連動。",
+      watch: theme.stock_observation || "持續觀察後續市場資料。",
+      source_note: (theme.evidence || []).map((item) => item.source || item.source_key).filter(Boolean).join("；"),
+    }))
+    : (report.observations || []);
   const displayTime = generatedAt ? new Date(generatedAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "公開資料更新中";
   setText("briefing-time", `${displayTime} CST`);
-  setText("briefing-overview", report.overview || "本次以公開市場報價、官方事件與風險資料整理市場脈絡。 ");
+  setText("briefing-overview", report.assessment_summary || report.overview || "本次以公開市場報價、官方事件與風險資料整理市場脈絡。 ");
   setText("briefing-reminder", report.reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
   const correlation = document.getElementById("briefing-correlation");
   if (correlation) {
@@ -1392,7 +1407,7 @@ const render = (snapshot, { deferAlert = false } = {}) => {
   if (deferAlert) {
     renderDeepLinkPending(snapshot);
   } else {
-    renderFocus(snapshot.events, externalAlert);
+    renderFocus(snapshot.events, externalAlert, snapshot.briefing);
   }
   renderMarkets(snapshot.markets || {});
   renderQuoteList("index-list", snapshot.indices || []);
