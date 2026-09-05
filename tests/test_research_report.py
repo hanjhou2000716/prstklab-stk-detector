@@ -66,6 +66,26 @@ def test_empty_source_is_not_replaced_with_old_candidates(tmp_path):
     assert report["sources"][0]["status"] == "本次無研究候選"
 
 
+def test_report_preserves_full_pool_contract_fields(tmp_path):
+    scan = tmp_path / "taiwan-value-scan.csv"
+    pd.DataFrame([{"ticker": "2330", "name": "台積電"}]).to_csv(scan, index=False)
+    summary = tmp_path / "taiwan-value-summary.json"
+    summary.write_text(
+        "{\"requested\":150,\"data_complete\":150,\"full_pool_expected\":150,"
+        "\"scan_state\":\"complete\",\"rule_version\":\"tw_value_total_equity_quality_v3\"}",
+        encoding="utf-8",
+    )
+
+    report = build_research_report([{
+        "path": str(scan),
+        "summary_path": str(summary),
+        "market": "taiwan",
+        "strategy": "value",
+    }])
+
+    assert report["sources"][0]["full_pool_expected"] == 150
+
+
 def test_price_action_report_backfills_structure_match_score_from_existing_labels():
     frame = pd.DataFrame([{
         "ticker": "3037", "name": "欣興", "score": None,
