@@ -50,7 +50,21 @@ def test_market_registry_mismatch_fails_closed() -> None:
     market = _market(rows)
     market["instrument_master"] = InstrumentMaster().artifact()
     rows[0]["instrument_master_id"] = "instrument-0000000000000000"
+    rows[0]["instrument_master_version"] = 999
 
     errors = validate_market(market)
 
     assert any("instrument_master_id does not match" in error for error in errors)
+    assert any("instrument_master_version does not match" in error for error in errors)
+
+
+def test_market_registry_rejects_non_object_and_skips_non_object_quote() -> None:
+    market = _market([None])
+    market["instrument_master"] = []
+    errors = validate_market(market)
+
+    assert "market.instrument_master must be an object" in errors
+
+    market["instrument_master"] = InstrumentMaster().artifact()
+    errors = validate_market(market)
+    assert errors

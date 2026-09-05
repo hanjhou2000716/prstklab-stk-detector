@@ -379,6 +379,34 @@ def test_research_accepts_structured_data_gap_counts_for_partial_scan():
     assert errors == []
 
 
+def test_research_accepts_complete_taiwan_value_v3_only_with_full_pool_evidence():
+    errors = validate_research(_research(sources=[{
+        "market": "taiwan", "strategy": "value", "scan_state": "complete",
+        "candidate_state": "available", "candidates": 5, "visible_candidates": 5,
+        "formal_candidates": 5, "requested_records": 150, "complete_records": 150,
+        "official_financial_coverage": 150, "full_pool_expected": 150,
+        "mops_calls": 0, "mops_history_used": False,
+        "rule_version": "tw_value_total_equity_quality_v3",
+    }]))
+    assert errors == []
+
+
+def test_research_rejects_incomplete_taiwan_value_v3_evidence():
+    errors = validate_research(_research(sources=[{
+        "market": "taiwan", "strategy": "value", "scan_state": "complete",
+        "candidate_state": "available", "candidates": 5, "visible_candidates": 5,
+        "formal_candidates": 5, "requested_records": 149, "complete_records": 148,
+        "official_financial_coverage": 149, "full_pool_expected": 149,
+        "mops_calls": 1, "mops_history_used": True,
+        "rule_version": "tw_value_total_equity_quality_v3",
+    }]))
+    assert any("cannot call MOPS" in error for error in errors)
+    assert any("cannot use MOPS history" in error for error in errors)
+    assert any("requires full_pool_expected=150" in error for error in errors)
+    assert any("requires 150/150 records" in error for error in errors)
+    assert any("financial coverage is incomplete" in error for error in errors)
+
+
 def test_research_publication_flags_require_production_full_scan():
     errors = validate_research(_research(
         scan_mode="smoke", scan_scope="bounded", publish_eligible=True,
