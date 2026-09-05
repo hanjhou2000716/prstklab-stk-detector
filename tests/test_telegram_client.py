@@ -112,9 +112,19 @@ def test_rejects_blank_brief():
 
 def test_mini_app_button_uses_telegram_web_app_field():
     assert mini_app_button("https://example.github.io/app/") == {
-        "text": "📡 開啟稜量速報系統",
+        "text": "開啟稜量速報系統",
         "web_app": {"url": "https://example.github.io/app/"},
     }
+
+
+def test_public_summary_keeps_only_the_structured_scheduled_icon():
+    text = canonical_short_message(
+        "🟡 📊晨報｜🔴 聯準會公布利率決策。",
+        message_kind="scheduled_brief",
+    )
+    assert text == "📊 晨報｜聯準會公布利率決策。"
+    assert text.count("📊") == 1
+    assert all(icon not in text[1:] for icon in ("🟡", "🔴"))
 
 
 def test_mini_app_button_rejects_non_https_url():

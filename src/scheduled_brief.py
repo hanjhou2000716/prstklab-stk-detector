@@ -394,6 +394,7 @@ def main() -> None:
             if (snapshot.get("release_id") or os.environ.get("RELEASE_ID"))
             else None
         ),
+        message_kind="scheduled_brief",
     )
     summary = {
         "delivered": sum(result.delivered for result in results),
