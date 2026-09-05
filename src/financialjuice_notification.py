@@ -37,7 +37,7 @@ def _recipient_hash(chat_id: str) -> str:
 def _bounded(value: str, limit: int) -> str:
     from src.telegram_client import summarize_public_message
 
-    return summarize_public_message(value, limit=limit)
+    return summarize_public_message(value, limit=limit, message_kind="financialjuice")
 
 
 def _compress_fj_sentence(value: str) -> str:
@@ -106,6 +106,11 @@ def _compress_fj_sentence(value: str) -> str:
     )
     text = re.sub(r"(?<=[\u4e00-\u9fff])\s+(?=[A-Za-z0-9])", "", text)
     text = re.sub(r"(?<=[A-Za-z0-9])\s+(?=[\u4e00-\u9fff])", "", text)
+    # Preserve the event while removing only non-material English relay
+    # modifiers when a complete headline otherwise exceeds the public limit.
+    text = re.sub(r"\bemergency\s+(?=liquidity\s+support)", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s+liquidity\s+support\s+measures(?=\.?$)", " liquidity support", text, flags=re.IGNORECASE)
+    text = re.sub(r"\btelecommunications\s+infrastructure\b", "infrastructure", text, flags=re.IGNORECASE)
     text = re.sub(
         r"^(?P<entity>[A-Za-z0-9][\w.-]*)\s*將與\s*(?P<partner>[A-Za-z][\w.-]*)\s*"
         r"簽署超過\s*(?P<amount>[\d,]+)\s*億美元合約。?$",
@@ -387,6 +392,7 @@ def deliver_financialjuice_event(
             observation_id=observation_id,
             target_url=target_url,
             prstk_risk_level=canonical_prstk_risk_level(event),
+            message_kind="financialjuice",
         )
     except Exception as exc:  # transport adapters must fail closed
         if ledger is not None and hasattr(ledger, "complete_notification_claim"):

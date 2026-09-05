@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import re
 import time
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -24,7 +24,7 @@ from src.http_client import configure_public_source_tls
 MOPS_API = "https://mops.twse.com.tw/mops/api/redirectToOld"
 MOPS_OLD = "https://mopsov.twse.com.tw/mops/web"
 USER_AGENT = "Mozilla/5.0 (compatible; PRStK-Lab-public-research/1.0)"
-CACHE_SCHEMA = 2
+CACHE_SCHEMA = 3
 CACHE_MAX_AGE_DAYS = 14
 # Temporarily failing MOPS pages must not pin every later scheduled batch.
 FAILURE_RETRY_HOURS = 6
@@ -362,21 +362,69 @@ def _recent_periods(roc_year: int) -> list[tuple[int, int]]:
 
 def fetch_pristine_history(
     ticker: str, *, client: MopsPublicClient | None = None, as_of: date | None = None,
-    deadline: float | None = None,
+    deadline: float | None = None, progress: dict[str, Any] | None = None,
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     """Fetch the strict MOPS history required for one Taiwan candidate."""
     client = client or MopsPublicClient()
+    progress = progress if isinstance(progress, dict) else {}
     roc_year = (as_of or date.today()).year - 1911
     quarterly: dict[tuple[int, int], float] = {}
     annual: dict[int, float] = {}
     missing_periods: list[str] = []
 
+    def progress_key(api_name: str, parameters: dict[str, str | int | float | None]) -> str:
+        stable_parameters = {key: value for key, value in parameters.items() if key != "deadline"}
+        return f"{ticker}|{api_name}|{json.dumps(stable_parameters, ensure_ascii=False, sort_keys=True, separators=(',', ':'))}"
+
+    def mark_progress(
+        api_name: str, parameters: dict[str, str | int | float | None], status: str, **values: Any,
+    ) -> None:
+        stable_parameters = {key: value for key, value in parameters.items() if key != "deadline"}
+        entry = {
+            "ticker": ticker,
+            "api_name": api_name,
+            "parameters": stable_parameters,
+            "status": status,
+            "checked_at": datetime.now(UTC).isoformat(),
+            **values,
+        }
+        progress[progress_key(api_name, parameters)] = entry
+        if progress_callback is not None:
+            progress_callback(entry)
+
+    def cached_period(api_name: str, parameters: dict[str, str | int | float | None]) -> dict[str, Any] | None:
+        entry = progress.get(progress_key(api_name, parameters))
+        if not isinstance(entry, dict) or entry.get("status") not in {"verified", "missing"}:
+            return None
+        expected = {key: value for key, value in parameters.items() if key != "deadline"}
+        if entry.get("parameters") != expected:
+            return None
+        return entry
+
     # Work backwards: missing future filings are normal, not substituted.
     for year, quarter in _recent_periods(roc_year):
         if deadline is not None and time.monotonic() >= deadline:
             raise MopsDeadlineExceeded(f"MOPS history deadline exceeded for {ticker}")
+        parameters: dict[str, str | int | float | None] = {"year": year, "season": quarter, "dataType": "2"}
+        cached = cached_period("t164sb04", parameters)
+        if cached is not None:
+            current = cached.get("current")
+            prior = cached.get("prior")
+            if isinstance(current, (int, float)):
+                quarterly[(year, quarter)] = float(current)
+                if quarter == 4:
+                    annual[year] = float(current)
+            if isinstance(prior, (int, float)):
+                quarterly[(year - 1, quarter)] = float(prior)
+                if quarter == 4:
+                    annual[year - 1] = float(prior)
+            if cached.get("status") == "missing":
+                missing_periods.append(f"{year}Q{quarter}")
+            if len(quarterly) >= 4 and len(annual) >= 3:
+                break
+            continue
         try:
-            parameters: dict[str, str | int | float | None] = {"year": year, "season": quarter, "dataType": "2"}
             if deadline is not None:
                 parameters["deadline"] = deadline
             report = client.report("t164sb04", ticker, **parameters)
@@ -385,9 +433,12 @@ def fetch_pristine_history(
             # older periods; only a security/transport failure should abort.
             if _is_missing_report(error):
                 missing_periods.append(f"{year}Q{quarter}")
+                mark_progress("t164sb04", parameters, "missing")
                 continue
+            mark_progress("t164sb04", parameters, "failed", error_class=type(error).__name__, detail=str(error)[:240])
             raise
         current, prior = parse_eps_report(report)
+        mark_progress("t164sb04", parameters, "verified", current=current, prior=prior)
         if current is not None:
             quarterly[(year, quarter)] = current
             if quarter == 4:
@@ -411,17 +462,23 @@ def fetch_pristine_history(
     for dividend_year in dividend_history_years:
         if deadline is not None and time.monotonic() >= deadline:
             raise MopsDeadlineExceeded(f"MOPS history deadline exceeded for {ticker}")
+        dividend_parameters: dict[str, str | int | float | None] = {"year": dividend_year}
+        cached_dividend = cached_period("t05st09_1", dividend_parameters)
+        if cached_dividend is not None:
+            dividend_results[dividend_year] = bool(cached_dividend.get("paid"))
+            continue
         try:
-            dividend_parameters: dict[str, str | int | float | None] = {"year": dividend_year}
             if deadline is not None:
                 dividend_parameters["deadline"] = deadline
             dividend_report = client.report("t05st09_1", ticker, **dividend_parameters)
             dividend_results[dividend_year] = bool(parse_dividend_history(dividend_report).get(dividend_year, False))
-        except (RuntimeError, ValueError):
+            mark_progress("t05st09_1", dividend_parameters, "verified", paid=dividend_results[dividend_year])
+        except (RuntimeError, ValueError) as error:
             # Unlike a year-specific HTML page containing "查無資料", an
             # endpoint/transport failure is not evidence of zero dividend.
             # Preserve fail-closed semantics by letting the ticker fail and
             # retry on the next batch.
+            mark_progress("t05st09_1", dividend_parameters, "failed", error_class=type(error).__name__, detail=str(error)[:240])
             raise
     annual_years = sorted(annual, reverse=True)[:3]
     quarter_values = [value for _, value in sorted(quarterly.items(), reverse=True)[:4]]
@@ -454,18 +511,21 @@ def fetch_pristine_history(
 def _load_cache(path: Path) -> dict[str, Any]:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-        if data.get("schema") in {1, CACHE_SCHEMA} and isinstance(data.get("records"), dict):
+        if data.get("schema") in {1, 2, CACHE_SCHEMA} and isinstance(data.get("records"), dict):
             return {
                 "schema": CACHE_SCHEMA,
                 "records": data["records"],
                 "failures": data.get("failures", {}) if isinstance(data.get("failures", {}), dict) else {},
+                "progress": data.get("progress", {}) if isinstance(data.get("progress", {}), dict) else {},
             }
     except (OSError, json.JSONDecodeError, AttributeError):
         pass
-    return {"schema": CACHE_SCHEMA, "records": {}, "failures": {}}
+    return {"schema": CACHE_SCHEMA, "records": {}, "failures": {}, "progress": {}}
 
 
-def _save_cache(path: Path, records: dict[str, Any], failures: dict[str, Any]) -> None:
+def _save_cache(
+    path: Path, records: dict[str, Any], failures: dict[str, Any], progress: dict[str, Any] | None = None,
+) -> None:
     """Persist incremental MOPS progress without exposing a partial JSON file.
 
     A hosted research worker can be terminated by its bounded timeout while a
@@ -478,7 +538,7 @@ def _save_cache(path: Path, records: dict[str, Any], failures: dict[str, Any]) -
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp")
-    payload = {"schema": CACHE_SCHEMA, "records": records, "failures": failures}
+    payload = {"schema": CACHE_SCHEMA, "records": records, "failures": failures, "progress": progress or {}}
     temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     temporary.replace(path)
 
@@ -517,18 +577,27 @@ def mops_pristine_history(
     cache = _load_cache(cache_path)
     records: dict[str, dict[str, Any]] = cache["records"]
     failures: dict[str, dict[str, Any]] = cache["failures"]
+    progress: dict[str, Any] = cache.get("progress", {}) if isinstance(cache.get("progress", {}), dict) else {}
     now = datetime.now(UTC)
     errors: list[str] = []
     attempted = 0
     client = client or MopsPublicClient()
+    progress_save_failed = False
 
     def persist() -> bool:
+        nonlocal progress_save_failed
         try:
-            _save_cache(cache_path, records, failures)
+            _save_cache(cache_path, records, failures, progress)
         except OSError:
             errors.append("cache: write_failed")
+            progress_save_failed = True
             return False
         return True
+
+    def persist_period(entry: dict[str, Any]) -> None:
+        progress_key = f"{entry.get('ticker', '')}|{entry.get('api_name', '')}|{json.dumps(entry.get('parameters', {}), ensure_ascii=False, sort_keys=True, separators=(',', ':'))}"
+        progress[progress_key] = entry
+        persist()
 
     ordered_tickers = list(dict.fromkeys(str(value).strip() for value in tickers if str(value).strip()))
     pending = [
@@ -549,9 +618,22 @@ def mops_pristine_history(
         attempted += 1
         try:
             if deadline is None:
-                record = fetch_pristine_history(ticker, client=client)
+                try:
+                    record = fetch_pristine_history(
+                        ticker, client=client, progress=progress, progress_callback=persist_period,
+                    )
+                except TypeError as error:
+                    if "unexpected keyword argument" not in str(error):
+                        raise
+                    # Keep compatibility with injected legacy test/worker adapters.
+                    record = fetch_pristine_history(ticker, client=client)
             else:
-                record = fetch_pristine_history(ticker, client=client, deadline=deadline)
+                record = fetch_pristine_history(
+                    ticker, client=client, deadline=deadline, progress=progress,
+                    progress_callback=persist_period,
+                )
+            if progress_save_failed:
+                raise OSError("cache_write_failed")
             if not record.get("history_data_complete"):
                 raise IncompleteMopsHistoryError(ticker, record)
             records[ticker] = record

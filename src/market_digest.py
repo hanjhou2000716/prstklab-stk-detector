@@ -13,6 +13,8 @@ import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from src.telegram_client import summarize_public_message
+
 PUBLIC_MESSAGE_MAX_CHARS = 60
 DASHBOARD_SUMMARY_MAX_CHARS = 140
 _UNUSABLE_FRESHNESS = frozenset({"stale", "delayed", "unavailable", "unknown", "failed"})
@@ -318,14 +320,13 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
     if overview == "今日判讀：":
         overview = ""
     message_clauses = facts[:2]
-    public_message = _fit_sentence(f"📊{label}｜", message_clauses, PUBLIC_MESSAGE_MAX_CHARS)
-    if public_message == f"📊{label}｜":
-        public_message = _fit_sentence(f"📊{label}｜", [facts[0]], PUBLIC_MESSAGE_MAX_CHARS)
-    if public_message == f"📊{label}｜":
-        public_message = ""
-    if len(public_message) > PUBLIC_MESSAGE_MAX_CHARS:
-        # Every candidate is a complete clause; if no complete clause fits the
-        # public boundary, fail closed instead of cutting Chinese or English.
+    public_message = summarize_public_message(
+        f"{label}｜" + "｜".join(message_clauses),
+        message_kind="scheduled_brief",
+        label=label,
+        limit=PUBLIC_MESSAGE_MAX_CHARS,
+    )
+    if public_message and not len(public_message) <= PUBLIC_MESSAGE_MAX_CHARS:
         public_message = ""
 
     canonical_material = {

@@ -189,6 +189,51 @@ def test_mops_history_persists_each_ticker_before_later_worker_interrupt(tmp_pat
     assert "1102" not in cached["records"]
 
 
+def test_mops_period_progress_resumes_after_one_report_failure(monkeypatch):
+    """A verified company/report/period is reused after a later period fails."""
+
+    monkeypatch.setattr(mops_history, "REPORT_INTERVAL_SECONDS", 0)
+    monkeypatch.setattr(mops_history, "parse_eps_report", lambda _html: (1.0, 1.0))
+    monkeypatch.setattr(mops_history, "parse_dividend_history", lambda _html: {115: True, 114: True, 113: True})
+
+    class Client:
+        def __init__(self, fail_at: int | None = None):
+            self.calls: list[tuple[str, int, int | None]] = []
+            self.fail_at = fail_at
+
+        def report(self, api_name, company_id, **parameters):
+            year = int(parameters["year"])
+            season = int(parameters.get("season")) if parameters.get("season") is not None else None
+            self.calls.append((api_name, year, season))
+            if self.fail_at is not None and len(self.calls) == self.fail_at:
+                raise RuntimeError("temporary MOPS failure")
+            return "report"
+
+    progress: dict[str, object] = {}
+    first = Client(fail_at=3)
+    try:
+        mops_history.fetch_pristine_history(
+            "2330", client=first, progress=progress, progress_callback=lambda entry: None,
+        )
+    except RuntimeError:
+        pass
+    else:  # pragma: no cover - the injected provider failure must interrupt
+        raise AssertionError("the simulated period failure did not interrupt the first run")
+
+    verified = [entry for entry in progress.values() if isinstance(entry, dict) and entry.get("status") == "verified"]
+    assert len(verified) == 2
+
+    second = Client()
+    record = mops_history.fetch_pristine_history(
+        "2330", client=second, progress=progress, progress_callback=lambda entry: None,
+    )
+    assert record["history_data_complete"] is True
+    # The two already verified periods are read from progress, not requested
+    # again by the resumed run.
+    assert second.calls[0][0] == "t164sb04"
+    assert len(second.calls) < 12
+
+
 def test_mops_client_uses_legacy_public_endpoint_after_redirect_failure():
     client = MopsPublicClient()
     client._report_once = lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("redirect blocked"))

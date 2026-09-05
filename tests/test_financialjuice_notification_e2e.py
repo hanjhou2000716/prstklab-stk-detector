@@ -51,6 +51,15 @@ def test_financialjuice_long_english_headline_keeps_discovery_text() -> None:
     assert len(caption) <= 60
 
 
+def test_financialjuice_public_message_removes_embedded_risk_icon() -> None:
+    caption = financialjuice_caption({
+        "event": "🔴 聯準會理事沃勒表示通膨數據將影響利率決策。",
+        "vendor_importance": 10,
+    })
+    assert caption == "🟣 FJ 10/10｜聯準會理事沃勒表示通膨數據將影響利率決策。"
+    assert "🔴" not in caption
+
+
 def test_financialjuice_caption_prefers_projected_event_over_generic_title() -> None:
     caption = financialjuice_caption({
         "title": "FinancialJuice 公開快訊",

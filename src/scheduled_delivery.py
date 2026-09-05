@@ -736,6 +736,7 @@ def send(
                 observation_id=observation_id,
                 target_url=target_url,
                 prstk_risk_level=canonical_prstk_risk_level(event),
+                message_kind="scheduled_brief",
             )
     except (OSError, ValueError) as exc:
         if event is None or str(event.get("source_key") or event.get("source") or "").strip().casefold() != "financialjuice":

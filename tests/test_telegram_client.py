@@ -7,6 +7,7 @@ from src.telegram_client import (
     canonical_short_message,
     classify_telegram_error,
     format_text_brief,
+    is_valid_public_summary,
     mini_app_button,
     mini_app_menu_button,
     send_brief,
@@ -112,9 +113,43 @@ def test_rejects_blank_brief():
 
 def test_mini_app_button_uses_telegram_web_app_field():
     assert mini_app_button("https://example.github.io/app/") == {
-        "text": "📡 開啟稜量速報系統",
+        "text": "開啟稜量速報系統",
         "web_app": {"url": "https://example.github.io/app/"},
     }
+
+
+def test_public_summary_keeps_only_the_structured_scheduled_icon():
+    text = canonical_short_message(
+        "🟡 📊晨報｜🔴 聯準會公布利率決策。",
+        message_kind="scheduled_brief",
+    )
+    assert text == "📊 晨報｜聯準會公布利率決策。"
+    assert text.count("📊") == 1
+    assert all(icon not in text[1:] for icon in ("🟡", "🔴"))
+
+
+def test_public_summary_rejects_missing_fj_score_and_scheduled_body():
+    assert canonical_short_message("FJ 待核對｜資料待核對", message_kind="financialjuice") == ""
+    assert canonical_short_message("📊 晨報｜", message_kind="scheduled_brief") == ""
+    assert canonical_short_message("聯準會公布決策。", message_kind="scheduled_brief", label="晨報") == "📊 晨報｜聯準會公布決策。"
+
+
+def test_public_summary_validates_scheduled_shape_and_unknown_kind():
+    assert is_valid_public_summary("📊 晨報｜聯準會公布決策。", source="scheduled_brief") is True
+    assert is_valid_public_summary("📊 晨報｜🟡 聯準會公布決策。", source="scheduled_brief") is False
+    assert is_valid_public_summary("📊 晨報｜聯準會|公布決策。", source="scheduled_brief") is False
+    assert canonical_short_message("事件。", message_kind="unknown") == "🟡 事件。"
+
+
+def test_public_summary_rejects_incomplete_conditional_fj_fact():
+    assert canonical_short_message(
+        "🟣 FJ 10/10｜聯準會表示如果通膨過熱。", message_kind="financialjuice",
+    ) == ""
+    accepted = canonical_short_message(
+        "🟣 FJ 10/10｜聯準會表示如果通膨過熱，可能延後降息。",
+        message_kind="financialjuice",
+    )
+    assert accepted.startswith("🟣 FJ 10/10｜")
 
 
 def test_mini_app_button_rejects_non_https_url():

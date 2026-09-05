@@ -75,4 +75,10 @@ def short_event_message(event: dict[str, Any], *, prefix: str = "快訊") -> str
     # ``prefix`` is intentionally ignored when it is the generic scheduler
     # wrapper; the message should answer what happened, not which job ran.
     context = "｜".join(part for part in (topic, summary) if part)
-    return canonical_short_message(context, prstk_risk_level=risk)
+    formatted = canonical_short_message(context, prstk_risk_level=risk)
+    # A topic label by itself is not an event.  When the full fact cannot fit
+    # at a sentence boundary, fail closed instead of publishing a bare
+    # ``Fed``/``能源`` label that looks like a notification.
+    if summary and formatted and formatted[0] in "🟢🟡🟠🔴" and formatted[2:].strip() == topic and summary != topic:
+        return ""
+    return formatted

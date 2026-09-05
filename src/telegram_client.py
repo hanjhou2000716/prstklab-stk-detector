@@ -32,6 +32,8 @@ MAX_FAILED_RECIPIENT_RETRIES = 3
 PUBLIC_TEXT_MAX_CHARS = 60
 PRSTK_RISK_LEVELS = frozenset({"R0", "R1", "R2", "R3", "R4"})
 _RISK_ICONS = {"R0": "🟢", "R1": "🟢", "R2": "🟡", "R3": "🟠", "R4": "🔴"}
+_PUBLIC_ICON_RE = re.compile(r"(?:🟢|🟡|🟠|🔴|⚪\ufe0f?|⚫\ufe0f?|🟣|📊|📡|📢|📣|📈|📉|🟰|⚠️?)")
+PUBLIC_MESSAGE_KINDS = frozenset({"risk_alert", "financialjuice", "scheduled_brief"})
 _RISK_CATEGORIES = {"R0": "市場觀察", "R1": "市場觀察", "R2": "市場觀察", "R3": "市場風險", "R4": "重大風險"}
 _GENERIC_PUBLIC_LABELS = frozenset({
     "市場觀察", "市場風險", "重大風險", "市場待核對", "市場資訊待核對",
@@ -201,6 +203,11 @@ def _clean_public_fragment(value: object) -> str:
     return source.strip(" ｜|,，:：")
 
 
+def _strip_public_icons(value: object) -> str:
+    """Remove caller decorations before the one canonical icon is rebuilt."""
+    return _PUBLIC_ICON_RE.sub(" ", str(value or ""))
+
+
 def _is_usable_financialjuice_fact(value: object) -> bool:
     """Reject source envelopes and market-status fragments as FJ facts."""
     text = _clean_public_fragment(value)
@@ -212,6 +219,14 @@ def _is_usable_financialjuice_fact(value: object) -> bool:
         return False
     if any(pattern.search(text) for pattern in _FJ_INVALID_FACT_PATTERNS):
         return False
+    conditional = re.search(r"(?:如果|若)\s*([^。！？.!?]*)", text)
+    if conditional:
+        condition_tail = conditional.group(1)
+        consequent = re.split(r"[，,]", condition_tail, maxsplit=1)
+        if len(consequent) < 2 or not re.search(
+            r"(?:則|就|將|會|可能|would|will|then)", consequent[1], flags=re.IGNORECASE,
+        ):
+            return False
     return bool(re.search(r"[\u4e00-\u9fffA-Za-z0-9]", text))
 
 
@@ -226,6 +241,15 @@ def _semantic_excerpt(value: str, limit: int, *, allow_char_cut: bool = True) ->
     text = _clean_public_fragment(value)
     if limit <= 0 or not text or "…" in text or "..." in text:
         return ""
+    if len(text) > limit:
+        # These are deterministic relay-word reductions, not a character
+        # slice: the factual subject, action and object remain intact.
+        text = re.sub(r"\bemergency\s+(?=liquidity\s+support)", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"\s+liquidity\s+support\s+measures(?=\.?$)", " liquidity support", text, flags=re.IGNORECASE)
+        text = re.sub(r"\btelecommunications\s+infrastructure\b", "infrastructure", text, flags=re.IGNORECASE)
+        text = " ".join(text.split())
+        if not text or "…" in text or "..." in text:
+            return ""
     if len(text) <= limit:
         return text
     # Do not mistake the full stop in abbreviations such as ``U.S.`` for a
@@ -243,18 +267,8 @@ def _semantic_excerpt(value: str, limit: int, *, allow_char_cut: bool = True) ->
             continue
         if len(clause) <= limit:
             return clause
-    words = text.split()
-    if len(words) > 1:
-        kept: list[str] = []
-        for word in words:
-            candidate = " ".join([*kept, word])
-            if len(candidate) + 1 > limit:
-                break
-            kept.append(word)
-        if kept:
-            # A title without punctuation is treated as a compact sentence;
-            # the terminal full stop makes the one-sentence contract explicit.
-            return " ".join(kept) + "."
+    # Never turn a truncated title into a sentence by appending punctuation.
+    # Callers must provide a complete clause or the content gate suppresses it.
     return ""
 
 
@@ -263,6 +277,8 @@ def summarize_public_message(
     *,
     prstk_risk_level: str = "R2",
     limit: int = PUBLIC_TEXT_MAX_CHARS,
+    message_kind: str = "risk_alert",
+    label: str | None = None,
 ) -> str:
     """Create one deterministic, evidence-grounded public Telegram summary.
 
@@ -277,14 +293,16 @@ def summarize_public_message(
     level = str(prstk_risk_level or "R2").upper()
     if level not in PRSTK_RISK_LEVELS:
         level = "R2"
-    source = " ".join(str(text or "").split())
+    kind = str(message_kind or "risk_alert").strip().casefold()
+    if kind not in PUBLIC_MESSAGE_KINDS:
+        kind = "risk_alert"
+    source = " ".join(_strip_public_icons(text).split())
     # Preserve the vendor score while removing any existing severity token.
     fj_match = re.search(r"FJ\s*\d+(?:\.\d+)?\s*/\s*10", source, flags=re.IGNORECASE)
     # Remove all caller-provided icons and risk tokens before rebuilding the
     # canonical prefix. This guarantees ``R2｜...｜R2`` cannot leak through.
     source = re.sub(r"(?<![A-Za-z0-9])R[0-4](?![A-Za-z0-9])\s*[｜|:]?", "", source, flags=re.IGNORECASE)
-    source = re.sub(r"^[🟢🟡🟠🔴⚪⚫🟣]\s*", "", source)
-    source = re.sub(r"[🟢🟡🟠🔴⚪⚫🟣]?\s*FJ\s*\d+(?:\.\d+)?\s*/\s*10\s*[｜|:]?", "", source, flags=re.IGNORECASE)
+    source = re.sub(r"\s*FJ\s*\d+(?:\.\d+)?\s*/\s*10\s*[｜|:]?", "", source, flags=re.IGNORECASE)
     segments = []
     for part in re.split(r"[｜|]", source):
         cleaned = _clean_public_fragment(part)
@@ -297,11 +315,26 @@ def summarize_public_message(
             and "..." not in cleaned
         ):
             segments.append(cleaned)
-    if fj_match:
+    if kind == "financialjuice" or fj_match:
+        if not fj_match:
+            fj_match = re.search(r"FJ\s*\d+(?:\.\d+)?\s*/\s*10", str(text or ""), flags=re.IGNORECASE)
+        if not fj_match:
+            return ""
         fj_score = re.sub(r"\s+", " ", fj_match.group(0)).strip()
         # FJ's vendor importance is evidence metadata, not a replacement for
         # the PRStK risk grade.  The risk remains in the receipt/audit only.
         head = f"🟣 {fj_score}｜"
+        category = ""
+    elif kind == "scheduled_brief":
+        known_labels = {"晨報", "台股盤前", "美股盤前", "盤中", "午報", "午盤", "盤後", "美股開盤", "市場簡報"}
+        scheduled_label = str(label or "").strip()
+        if not scheduled_label and segments and segments[0] in known_labels:
+            scheduled_label = segments[0]
+        scheduled_label = scheduled_label or "市場簡報"
+        # The label is structured metadata, not a second body fact.
+        if segments and segments[0].casefold() == scheduled_label.casefold():
+            segments = segments[1:]
+        head = f"📊 {scheduled_label}｜"
         category = ""
     else:
         head = f"{_RISK_ICONS[level]} "
@@ -310,7 +343,7 @@ def summarize_public_message(
     if not body_segments:
         # FJ metadata without an event fact is suppression-worthy.  Other
         # legacy callers retain a neutral, bounded fallback.
-        return "" if fj_match else f"{head}資訊待核對。"[:limit]
+        return "" if kind in {"financialjuice", "scheduled_brief"} or fj_match else f"{head}資訊待核對。"[:limit]
 
     # Public text has one body sentence.  Prefer the first event fact and add
     # a second fact only when it can be joined as a complete clause; never
@@ -331,6 +364,9 @@ def summarize_public_message(
         body = _semantic_excerpt(body, limit - len(head), allow_char_cut=False)
     if not body or "…" in body or "..." in body:
         return ""
+    if kind == "financialjuice" or fj_match:
+        if not _is_usable_financialjuice_fact(body):
+            return ""
     return head + body
 
 
@@ -363,21 +399,37 @@ def is_valid_public_summary(text: str, *, source: str = "") -> bool:
         if body.endswith(("：", ":", "|", "｜")):
             return False
         return _is_usable_financialjuice_fact(body)
+    if source.casefold() in {"scheduled_brief", "market_briefing"}:
+        match = re.match(r"^📊\s*[^｜|]+[｜|](.+)$", value)
+        if not match or value.count("｜") + value.count("|") != 1:
+            return False
+        body = match.group(1).strip()
+        return bool(body) and not any(icon in body for icon in ("🟢", "🟡", "🟠", "🔴", "🟣", "📊", "📡"))
     body = re.sub(r"^[🟢🟡🟠🔴⚪⚫🟣]\s*", "", value).strip()
     return bool(body) and body.casefold() not in {label.casefold() for label in _GENERIC_PUBLIC_LABELS}
 
 
-def canonical_short_message(text: str, *, prstk_risk_level: str = "R2") -> str:
+def canonical_short_message(
+    text: str, *, prstk_risk_level: str = "R2", message_kind: str = "risk_alert",
+    label: str | None = None,
+) -> str:
     """Backward-compatible entry point for the shared public summarizer."""
-    return summarize_public_message(text, prstk_risk_level=prstk_risk_level)
+    return summarize_public_message(
+        text, prstk_risk_level=prstk_risk_level, message_kind=message_kind, label=label,
+    )
 
 
-def format_text_brief(text: str, *, prstk_risk_level: str = "R2") -> str:
+def format_text_brief(
+    text: str, *, prstk_risk_level: str = "R2", message_kind: str = "risk_alert",
+    label: str | None = None,
+) -> str:
     """Backward-compatible bounded formatter with the public display policy."""
     level = str(prstk_risk_level or "R2").upper()
     if level not in PRSTK_RISK_LEVELS:
         level = "R2"
-    return canonical_short_message(text, prstk_risk_level=level)
+    return canonical_short_message(
+        text, prstk_risk_level=level, message_kind=message_kind, label=label,
+    )
 
 
 def sanitize_public_photo_caption(caption: str) -> str:
@@ -394,7 +446,7 @@ def mini_app_button(mini_app_url: str) -> dict[str, object]:
     if not mini_app_url.startswith("https://"):
         raise ValueError("Mini App 網址必須使用 HTTPS。")
     return {
-        "text": "📡 開啟稜量速報系統",
+        "text": "開啟稜量速報系統",
         "web_app": {"url": mini_app_url},
     }
 
@@ -565,6 +617,7 @@ def send_brief(
 def send_briefs(
     *, token: str, chat_ids: tuple[str, ...], text: str, dashboard_url: str,
     target_url: str | None = None, prstk_risk_level: str = "R2",
+    message_kind: str = "risk_alert", label: str | None = None,
 ) -> tuple[TelegramDelivery, ...]:
     """Send one identical brief to every reachable configured recipient.
 
@@ -575,8 +628,10 @@ def send_briefs(
     """
     if not chat_ids:
         raise ValueError("至少需要一個 Telegram 收件人。")
-    text = canonical_short_message(text, prstk_risk_level=prstk_risk_level)
-    if not is_valid_public_summary(text):
+    text = canonical_short_message(
+        text, prstk_risk_level=prstk_risk_level, message_kind=message_kind, label=label,
+    )
+    if not is_valid_public_summary(text, source=message_kind):
         raise ValueError("公開訊息內容不完整，已停止發送。")
     deliveries: list[TelegramDelivery] = []
     for chat_id in chat_ids:
@@ -624,15 +679,18 @@ def send_text_briefs_audited(
     *, token: str, chat_ids: tuple[str, ...], text: str, dashboard_url: str,
     alert_id: str, release_id: str, snapshot_id: str,
     observation_id: str = "", target_url: str | None = None,
-    prstk_risk_level: str = "R2",
+    prstk_risk_level: str = "R2", message_kind: str = "risk_alert",
+    label: str | None = None,
 ) -> tuple[TextDeliveryReceipt, ...]:
     """Send one text-only Mini App message per recipient with bounded receipts."""
     if not chat_ids:
         raise ValueError("Telegram recipient list is empty")
     if prstk_risk_level not in PRSTK_RISK_LEVELS:
         raise ValueError("PRStK risk level must be one of R0-R4")
-    text = canonical_short_message(text, prstk_risk_level=prstk_risk_level)
-    if not is_valid_public_summary(text):
+    text = canonical_short_message(
+        text, prstk_risk_level=prstk_risk_level, message_kind=message_kind, label=label,
+    )
+    if not is_valid_public_summary(text, source=message_kind):
         raise ValueError("公開訊息內容不完整，已停止發送。")
     receipts: list[TextDeliveryReceipt] = []
     for chat_id in chat_ids:
