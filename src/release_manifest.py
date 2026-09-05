@@ -201,6 +201,7 @@ def _briefing_projection(
             "slot": briefing.get("slot"),
             "as_of": briefing.get("as_of"),
             "themes": briefing.get("themes") or [],
+            "observations": briefing.get("observations") or [],
             "evidence": briefing.get("evidence") or [],
         },
         "notification_status": briefing.get("status"),

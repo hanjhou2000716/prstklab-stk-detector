@@ -81,6 +81,10 @@ def _attach_observation_provenance(payload: dict) -> None:
                 continue
             instrument = event.get("instrument") if isinstance(event.get("instrument"), dict) else None
             source_item = instrument or event
+            if not event.get("source_url") and not event.get("url") and instrument:
+                promoted_url = instrument.get("source_url") or instrument.get("url")
+                if promoted_url:
+                    event["source_url"] = promoted_url
             observation_id = str(source_item.get("observation_id") or "").strip()
             if not observation_id:
                 observation_id = _observation_id(snapshot_id, source_item, kind=f"event:{event_collection}", ordinal=ordinal)

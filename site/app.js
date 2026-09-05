@@ -936,7 +936,8 @@ const renderBriefing = (briefing, generatedAt) => {
       watch: theme.stock_observation || "持續觀察後續市場資料。",
       source_note: (theme.evidence || []).map((item) => item.source || item.source_key).filter(Boolean).join("；"),
     }))
-    : (report.observations || []);
+    : [];
+  const fixedObservations = Array.isArray(report.observations) ? report.observations : [];
   const displayTime = generatedAt ? new Date(generatedAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "公開資料更新中";
   setText("briefing-time", `${displayTime} CST`);
   setText("briefing-overview", report.assessment_summary || report.overview || "本次以公開市場報價、官方事件與風險資料整理市場脈絡。 ");
@@ -1017,8 +1018,16 @@ const renderBriefing = (briefing, generatedAt) => {
   }
   const container = document.getElementById("briefing-observations");
   if (!container) return;
-  if (!observations.length) { container.innerHTML = '<p class="empty">本次定時報資料暫時無法取得</p>'; return; }
+  if (!observations.length && !fixedObservations.length) { container.innerHTML = '<p class="empty">本次定時報資料暫時無法取得</p>'; return; }
   container.innerHTML = observations.map((item) => `<article class="briefing-observation"><h4>${escapeHtml(item.title || "公開市場觀察")}</h4><p><b>事件：</b>${escapeHtml(item.event || "公開資料更新中。")}</p><p><b>為何重要：</b>${escapeHtml(item.importance || "持續核對公開資料。")}</p><p><b>可能連動：</b>${escapeHtml(item.market_impact || "尚無足夠公開資料判定連動。")}</p><p><b>股市觀察：</b>${escapeHtml(item.watch || "觀察後續公開市場報價。")}</p>${item.source_note ? `<small class="briefing-source">${escapeHtml(item.source_note)}</small>` : ""}</article>`).join("");
+};
+
+const renderFixedBriefingColumns = (report) => {
+  const container = document.getElementById("briefing-observations");
+  const observations = Array.isArray(report?.observations) ? report.observations : [];
+  if (!container || !observations.length) return;
+  const renderObservation = (item) => `<article class="briefing-observation"><h4>${escapeHtml(item.title || "市場固定專欄")}</h4><p><b>事件：</b>${escapeHtml(item.event || "公開資料更新中。")}</p><p><b>為何重要：</b>${escapeHtml(item.importance || "持續核對公開資料。")}</p><p><b>可能連動：</b>${escapeHtml(item.market_impact || "尚無足夠資料判定連動。")}</p><p><b>股市觀察：</b>${escapeHtml(item.watch || "觀察後續公開市場報價。")}</p>${item.data_as_of ? `<small class="briefing-source">資料日期：${escapeHtml(String(item.data_as_of).slice(0, 19).replace("T", " "))}</small>` : ""}${item.source_note ? `<small class="briefing-source">${escapeHtml(item.source_note)}</small>` : ""}</article>`;
+  container.insertAdjacentHTML("beforeend", `<h3 class="briefing-subheading">市場固定專欄</h3>${observations.map(renderObservation).join("")}`);
 };
 
 const renderExternalIntelligence = (snapshot) => {
@@ -1265,9 +1274,10 @@ const renderResearch = (snapshot) => {
   const strategyLabels = { price_action: "裸 K 結構", momentum: "動能狙擊", resonance: "三維共振", value: "璞玉價值" };
   Object.entries(strategyLabels).forEach(([strategy, label]) => {
     const source = sourceFor(strategy);
-    const date = source.scan_trading_date || source.last_successful_at;
-    const state = source.historical_fallback === true ? "歷史版本" : source.scan_state === "complete" ? "本輪完成" : source.scan_state === "building" ? "建檔中" : "更新失敗";
-    const suffix = date ? `｜${state}｜資料日 ${String(date).slice(0, 10)}` : `｜${state}`;
+    const date = source.scan_trading_date || source.last_successful_at || source.last_successful_generated_at;
+    const state = source.freshness_state || (source.historical_fallback === true ? "歷史資料" : source.scan_state === "building" ? "建檔中" : source.scan_state === "failed" ? "更新失敗" : date ? "最近收盤資料" : "資料日期不明");
+    const successful = source.last_successful_at || source.last_successful_generated_at;
+    const suffix = `${date ? `｜資料日 ${String(date).slice(0, 10)}` : "｜資料日期不明"}｜${state}${successful ? `｜最後成功 ${String(successful).slice(0, 16).replace("T", " ")}` : ""}`;
     const summary = document.querySelector(`.research-drawer[data-strategy="${strategy}"] summary`);
     if (summary) summary.textContent = `${label}${suffix}`;
   });
@@ -1441,6 +1451,7 @@ const render = (snapshot, { deferAlert = false } = {}) => {
   renderEvents(snapshot.events);
   renderSourceHealth(snapshot.source_health, snapshot);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
+  renderFixedBriefingColumns(snapshot.briefing);
   renderExternalIntelligence(snapshot);
   renderResearch(snapshot);
   const newsRegistry = snapshot.news?.provider_registry || [];

@@ -327,6 +327,10 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         all_items["TXF"] = {**taifex, "ticker": "TXF", "name": "台指期", "market": "taiwan", "currency": "點"}
     cards = [all_items[ticker] for ticker in GLOBAL_TICKERS if all_items.get(ticker)]
     observations = _market_observations(all_items, risk, events)
+    briefing_data_as_of = snapshot.get("as_of") or snapshot.get("fetched_at") or snapshot.get("created_at")
+    if briefing_data_as_of:
+        for observation in observations:
+            observation["data_as_of"] = briefing_data_as_of
     market_topics, dynamic_markets = _market_topics(all_items, events)
     lead = events[0] if events else observations[0]
     from src.intelligence_pipeline import build_intelligence_context

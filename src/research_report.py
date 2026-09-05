@@ -265,6 +265,8 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
                     "candidate_state", "complete_records", "data_gap_counts",
                     "history_cached", "history_expected", "history_progress_pct",
                     "history_pending", "history_failure_count", "partial_candidates_allowed",
+                    "scan_trading_date", "quote_cutoff_at", "last_successful_generated_at",
+                    "execution_version", "data_hash",
                     "evaluable_records", "blocking_reason", "notice", "selection_diagnostics",
                 )})
             except (OSError, json.JSONDecodeError):
@@ -393,6 +395,7 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
 
 def merge_previous_strategy_versions(
     report: dict[str, Any], previous: dict[str, Any] | None,
+    *, target_market: str = "both",
 ) -> dict[str, Any]:
     """Keep the last verified rows per strategy without masking this run's gap.
 
@@ -419,10 +422,51 @@ def merge_previous_strategy_versions(
             continue
         key = (str(source.get("market")), str(source.get("strategy")))
         state = str(source.get("scan_state") or "failed")
+        unscanned = target_market in {"taiwan", "us"} and str(source.get("market")) != target_market
         failed = int(source.get("failed_records", source.get("failed", 0)) or 0)
         current_complete = state == "complete" and failed == 0
-        source["scan_attempted_at"] = report.get("generated_at")
+        source["scan_attempted_at"] = None if unscanned else report.get("generated_at")
         source["historical_fallback"] = False
+        source["unscanned_in_run"] = unscanned
+        if unscanned:
+            rows = previous_rows.get(key, [])
+            prev_source = previous_sources.get(key, {})
+            if not rows:
+                source["strategy_version_state"] = "unavailable"
+                source["blocking_reason"] = "本輪未掃描且沒有最後成功版本"
+                continue
+            previous_time = (
+                prev_source.get("last_successful_generated_at")
+                or previous.get("generated_at")
+                or prev_source.get("scan_attempted_at")
+            )
+            unscanned_rows: list[dict[str, Any]] = []
+            for row in rows:
+                copied = dict(row)
+                copied["research_version_state"] = "historical"
+                copied["historical_from_generated_at"] = previous_time
+                copied["historical_reason"] = "本輪未掃描；沿用最後成功版本"
+                unscanned_rows.append(copied)
+            candidates.extend(unscanned_rows)
+            historical_count += len(unscanned_rows)
+            source.update({
+                "historical_fallback": True,
+                "strategy_version_state": "historical",
+                "execution_version": prev_source.get("execution_version"),
+                "data_hash": prev_source.get("data_hash"),
+                "last_successful_at": prev_source.get("last_successful_at") or prev_source.get("last_successful_generated_at") or previous_time,
+                "last_successful_generated_at": prev_source.get("last_successful_generated_at") or previous_time,
+                "scan_trading_date": prev_source.get("scan_trading_date"),
+                "quote_cutoff_at": prev_source.get("quote_cutoff_at"),
+                "historical_candidates": len(unscanned_rows),
+                "visible_candidates": len(unscanned_rows),
+                "candidates": len(unscanned_rows),
+                "formal_candidates": sum(1 for row in unscanned_rows if row.get("list_type") == "formal"),
+                "observation_candidates": sum(1 for row in unscanned_rows if row.get("list_type") == "observation"),
+                "candidate_state": "historical",
+                "blocking_reason": "本輪未掃描；沿用最後成功版本並標示歷史資料",
+            })
+            continue
         if current_complete:
             source["last_successful_generated_at"] = report.get("generated_at")
             source["strategy_version_state"] = "current"
@@ -449,6 +493,11 @@ def merge_previous_strategy_versions(
         source.update({
             "historical_fallback": True,
             "strategy_version_state": "historical",
+            "execution_version": prev_source.get("execution_version"),
+            "data_hash": prev_source.get("data_hash"),
+            "scan_trading_date": prev_source.get("scan_trading_date"),
+            "quote_cutoff_at": prev_source.get("quote_cutoff_at"),
+            "last_successful_at": prev_source.get("last_successful_at") or previous_time,
             "last_successful_generated_at": previous_time,
             "historical_candidates": len(historical_rows),
             "visible_candidates": len(historical_rows),

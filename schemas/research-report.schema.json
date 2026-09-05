@@ -152,6 +152,13 @@
         ,"historical_fallback": {"type": "boolean"}
         ,"last_successful_generated_at": {"type": ["string", "null"]}
         ,"scan_attempted_at": {"type": ["string", "null"]}
+        ,"scan_trading_date": {"type": ["string", "null"]}
+        ,"quote_cutoff_at": {"type": ["string", "null"]}
+        ,"last_successful_at": {"type": ["string", "null"]}
+        ,"execution_version": {"type": ["string", "null"]}
+        ,"data_hash": {"type": ["string", "null"]}
+        ,"unscanned_in_run": {"type": "boolean"}
+        ,"freshness_state": {"enum": ["最近收盤資料", "待更新", "更新失敗", "建檔中", "歷史資料", "資料日期不明"]}
       },
       "allOf": [
         {

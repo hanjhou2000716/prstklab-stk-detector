@@ -65,6 +65,33 @@ def normalize_source_url(value: Any) -> str:
     return urlunsplit((parts.scheme.lower() or "https", host + port, path, urlencode(sorted(query)), ""))
 
 
+def event_source_url(event: dict[str, Any] | None) -> str:
+    """Resolve the verifiable public URL carried by an event.
+
+    Market threshold events keep quote provenance on their nested instrument,
+    while news events normally expose it at the top level.  The ledger used
+    to inspect only the latter, so a perfectly valid market notification was
+    persisted with an empty ``source_url`` and failed the release contract on
+    the next write.  This helper only promotes an URL already supplied by the
+    producer; it never invents an external source.
+    """
+    if not isinstance(event, dict):
+        return ""
+    raw = event.get("source_url") or event.get("url")
+    instrument = event.get("instrument")
+    if not raw and isinstance(instrument, dict):
+        raw = instrument.get("source_url") or instrument.get("url")
+    trace = event.get("source_trace")
+    if not raw and isinstance(trace, dict):
+        raw = trace.get("source_url") or trace.get("url")
+    raw_text = str(raw or "").strip()
+    # A provider label such as ``FinancialJuice`` is not a URL.  Do not turn
+    # it into a made-up HTTPS host merely to satisfy the ledger schema.
+    if raw_text and "://" not in raw_text and "." not in raw_text.split("/", 1)[0]:
+        return ""
+    return normalize_source_url(raw_text)
+
+
 def _tokens(value: Any) -> list[str]:
     if value is None:
         return []
@@ -138,7 +165,7 @@ def canonical_event_key(event: dict[str, Any] | None) -> str:
             if fact_key:
                 return hashlib.sha256(fact_key.encode("utf-8")).hexdigest()[:32]
         facts = fact_fingerprint(event)
-        source_url = normalize_source_url(event.get("source_url") or event.get("url"))
+        source_url = event_source_url(event)
         compound_cluster = str(event.get("compound_event_cluster_key") or "").strip()
         if compound_cluster:
             material = f"compound|{compound_cluster}"
@@ -371,7 +398,7 @@ class EventLedger:
         theme_key = notification_theme_key(event)
         state = _material_state(event)
         facts = fact_fingerprint(event)
-        source_url = normalize_source_url(event.get("source_url") or event.get("url"))
+        source_url = event_source_url(event)
         source_key = str(event.get("source_key") or event.get("source") or "").strip().casefold()
         if not source_url and source_key == "financialjuice":
             # FJ is a discovery relay and some reviewed mail has no article
