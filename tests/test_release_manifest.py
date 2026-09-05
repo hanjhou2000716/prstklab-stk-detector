@@ -81,6 +81,38 @@ def test_manifest_publishes_release_specific_immutable_alert_details(tmp_path):
     assert verify_release_files(second, root=tmp_path / "site") == []
 
 
+def test_manifest_publishes_scheduled_briefing_alert_artifact(tmp_path):
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["briefing"] = {
+        "slot": "morning",
+        "briefing_id": "briefing-morning-abc123",
+        "observation_id": "briefing-observation-abc123",
+        "notification_eligible": True,
+        "status": "ready",
+        "notification_reason": "candidate_ready",
+        "public_short_message": "📊晨報｜費半+2.69%；官方數據已公布。",
+        "assessment_summary": "今日判讀：費半+2.69%；官方數據已公布。",
+        "canonical_content_hash": "b" * 64,
+        "canonical_hash_version": 1,
+        "themes": [{"title": "市場價格", "what_happened": "費半+2.69%。"}],
+        "evidence": [{"source": "市場報價", "ticker": "SOX"}],
+    }
+    market_path.write_text(json.dumps(market, ensure_ascii=False), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+    index = json.loads((tmp_path / "site" / "data" / "alert-index.json").read_text(encoding="utf-8"))
+    row = next(item for item in index["alerts"] if item["notification_id"] == "briefing-morning-abc123")
+    artifact = json.loads((tmp_path / "site" / "data" / row["path"]).read_text(encoding="utf-8"))
+
+    assert artifact["kind"] == "market_briefing"
+    assert artifact["public_short_message"] == market["briefing"]["public_short_message"]
+    assert artifact["snapshot_id"] == market["snapshot_id"]
+    assert row["sha256"] == sha256_file(tmp_path / "site" / "data" / row["path"])
+    assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
 def test_manifest_rebuilds_alert_index_from_retained_immutable_files(tmp_path):
     _artifacts(tmp_path)
     alert_dir = tmp_path / "site" / "data" / "alerts"

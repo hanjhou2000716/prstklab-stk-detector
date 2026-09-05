@@ -160,6 +160,54 @@ def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot
     }
 
 
+def _briefing_projection(
+    briefing: dict[str, Any], *, release_id: str, market_snapshot_id: str, created_at: str,
+) -> dict[str, Any]:
+    """Create the immutable alert used by a scheduled multi-source briefing."""
+    briefing_id = str(briefing.get("briefing_id") or "").strip()
+    public_message = str(briefing.get("public_short_message") or "").strip()
+    if not briefing_id or not public_message:
+        raise ValueError("scheduled briefing has no public identity or message")
+    if len(public_message) > 60 or "..." in public_message or "…" in public_message:
+        raise ValueError("scheduled briefing public message violates the text contract")
+    content_hash = str(briefing.get("canonical_content_hash") or "").strip()
+    if not content_hash:
+        raise ValueError("scheduled briefing has no canonical content hash")
+    return {
+        "schema_version": "1.0",
+        "kind": "market_briefing",
+        "source": "PRStK 多來源市場判讀",
+        "source_key": "scheduled_brief",
+        "notification_id": briefing_id,
+        "alert_id": briefing_id,
+        "event_cluster_key": briefing_id,
+        "release_id": release_id,
+        "snapshot_id": str(market_snapshot_id),
+        "observation_id": briefing.get("observation_id"),
+        "created_at": created_at,
+        "canonical_content_hash": content_hash,
+        "canonical_hash_version": briefing.get("canonical_hash_version", 1),
+        "title": public_message,
+        "brief_title": public_message,
+        "public_short_message": public_message,
+        "short_label": "市場判讀",
+        "event": briefing.get("assessment_summary") or briefing.get("overview") or public_message,
+        "why_important": "本次判讀整合最近24小時的公開事件與市場資料。",
+        "possible_linkage": "各市場若分歧，保留分歧，不直接推論跨市場因果。",
+        "stock_observation": "持續核對台美主要指數、利率與相關產業價格。",
+        "market_evidence": [item for item in (briefing.get("evidence") or [])[:6] if isinstance(item, dict)],
+        "source_evidence": [item for item in (briefing.get("evidence") or [])[:6] if isinstance(item, dict)],
+        "briefing": {
+            "slot": briefing.get("slot"),
+            "as_of": briefing.get("as_of"),
+            "themes": briefing.get("themes") or [],
+            "evidence": briefing.get("evidence") or [],
+        },
+        "notification_status": briefing.get("status"),
+        "notification_reason": briefing.get("notification_reason"),
+    }
+
+
 def _publish_alert_artifacts(
     *, root: Path, market: dict[str, Any], release_id: str, created_at: str,
     resolved: dict[str, Path], hashes: dict[str, str],
@@ -213,6 +261,32 @@ def _publish_alert_artifacts(
         relative = f"{ALERT_ARTIFACT_PREFIX}/{filename}"
         rows[(notification_id, release_id)] = {
             "notification_id": notification_id,
+            "release_id": release_id,
+            "snapshot_id": artifact.get("snapshot_id"),
+            "observation_id": artifact.get("observation_id"),
+            "canonical_content_hash": artifact.get("canonical_content_hash"),
+            "canonical_hash_version": artifact.get("canonical_hash_version"),
+            "path": relative,
+            "sha256": sha256_file(path),
+            "created_at": created_at,
+        }
+        resolved[relative] = path
+        hashes[relative] = sha256_file(path)
+    briefing = market.get("briefing") if isinstance(market, dict) else None
+    if isinstance(briefing, dict) and briefing.get("notification_eligible") is True:
+        artifact = _briefing_projection(
+            briefing,
+            release_id=release_id,
+            market_snapshot_id=str(market.get("snapshot_id") or ""),
+            created_at=created_at,
+        )
+        briefing_id = str(artifact["notification_id"])
+        filename = f"{_alert_filename(briefing_id)}-{_alert_filename(release_id)}.json"
+        path = alert_dir / filename
+        _write_normalized_artifact(path, artifact)
+        relative = f"{ALERT_ARTIFACT_PREFIX}/{filename}"
+        rows[(briefing_id, release_id)] = {
+            "notification_id": briefing_id,
             "release_id": release_id,
             "snapshot_id": artifact.get("snapshot_id"),
             "observation_id": artifact.get("observation_id"),

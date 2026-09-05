@@ -63,6 +63,15 @@ def test_delayed_cron_run_uses_declared_slot_instead_of_runner_time():
     ) == "us_premarket"
 
 
+def test_us_premarket_cron_selects_only_the_dst_corrected_slot():
+    summer = datetime(2026, 7, 27, 18, 30, tzinfo=ZoneInfo("Asia/Taipei"))
+    winter = datetime(2026, 1, 22, 18, 30, tzinfo=ZoneInfo("Asia/Taipei"))
+    assert resolve_slot("auto", summer, scheduled_cron="0 13 * * 1-5") == "us_premarket"
+    assert resolve_slot("auto", summer, scheduled_cron="0 14 * * 1-5") is None
+    assert resolve_slot("auto", winter, scheduled_cron="0 14 * * 1-5") == "us_premarket"
+    assert resolve_slot("auto", winter, scheduled_cron="0 13 * * 1-5") is None
+
+
 def test_brief_uses_slot_label_and_market_direction():
     snapshot = {"quotes": [{"ticker": "2330", "change_percent": 1.25}]}
     assert build_brief(snapshot, "intraday") == "盤中｜2330📈+1.2%"

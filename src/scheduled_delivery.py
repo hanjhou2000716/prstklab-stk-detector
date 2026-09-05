@@ -52,6 +52,34 @@ from src.telegram_client import (
 _DEFAULT_CREATOR_RECORDS_PATH = Path("creator/public-records.json")
 
 
+def _briefing_delivery_event(snapshot: dict[str, Any], slot: str) -> dict[str, Any] | None:
+    """Project the shared digest into the existing notification contract."""
+    briefing = snapshot.get("briefing")
+    if not isinstance(briefing, dict) or briefing.get("notification_eligible") is not True:
+        return None
+    public_message = str(briefing.get("public_short_message") or "").strip()
+    briefing_id = str(briefing.get("briefing_id") or "").strip()
+    if not public_message or not briefing_id:
+        return None
+    return {
+        "kind": "market_briefing",
+        "source_key": "scheduled_brief",
+        "source": "PRStK 多來源市場判讀",
+        "notification_id": briefing_id,
+        "alert_id": briefing_id,
+        "event_cluster_key": briefing_id,
+        "observation_id": briefing.get("observation_id"),
+        "public_short_message": public_message,
+        "brief_title": public_message,
+        "title": public_message,
+        "event": briefing.get("assessment_summary") or briefing.get("overview") or public_message,
+        "notification_status": "eligible",
+        "alert_eligible": True,
+        "slot": slot,
+        "notification_key": briefing.get("notification_key"),
+    }
+
+
 def _write_decision_output(
     values: dict[str, Any],
     *,
@@ -494,11 +522,17 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
         snapshot["creator_insights"] = creator_records
     snapshot["briefing"] = build_briefing_snapshot(snapshot, slot)
     event = _pick_event(snapshot, slot)
-    prepared_reason = "candidate_ready" if event else "no_eligible_candidate"
+    briefing_event = _briefing_delivery_event(snapshot, slot)
+    decision_event = briefing_event or event
+    prepared_reason = (
+        "candidate_ready"
+        if decision_event
+        else str((snapshot.get("briefing") or {}).get("notification_reason") or "no_eligible_candidate")
+    )
     prepared_decision = decision_summary(
-        event=event,
+        event=decision_event,
         scan_status="completed",
-        notification_expected=bool(event),
+        notification_expected=bool(decision_event),
         notification_status=prepared_reason,
         notification_reason=prepared_reason,
     )
@@ -508,7 +542,7 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
     if not write_snapshot(snapshot, snapshot_path):
         _write_decision_output(
             {"prepared": "false", "sent": "false", "reason": "snapshot_publish_skipped"},
-            event=event, notification_status="blocked", notification_reason="snapshot_publish_skipped",
+            event=decision_event, notification_status="blocked", notification_reason="snapshot_publish_skipped",
         )
         return snapshot
     correlation = briefing_correlation(snapshot, slot, event)
@@ -526,7 +560,7 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
         return snapshot
     _write_decision_output(
         {"prepared": "true", **metadata},
-        event=event,
+        event=decision_event,
         notification_status=prepared_decision["notification_status"],
         notification_reason=prepared_decision["notification_reason"],
     )
@@ -583,9 +617,23 @@ def send(
     ledger = EventLedger()
     history = ledger.delivery_history()
     release_alert_ids = _release_alert_ids(manifest_path, gate.manifest)
-    event, budget, selection_reason = _select_scheduled_candidate(
-        snapshot, slot, ledger, release_alert_ids=release_alert_ids,
-    )
+    briefing_raw = snapshot.get("briefing")
+    briefing: dict[str, Any] = briefing_raw if isinstance(briefing_raw, dict) else {}
+    briefing_event = _briefing_delivery_event(snapshot, slot)
+    if briefing_event is not None:
+        briefing_id = str(briefing_event.get("notification_id") or "")
+        if release_alert_ids is not None and briefing_id not in release_alert_ids:
+            event, budget, selection_reason = None, {"allowed": False}, "briefing_alert_artifact_missing"
+        else:
+            event = briefing_event
+            budget = decide_alert_budget(event, history)
+            selection_reason = "candidate_ready" if budget.get("allowed", False) else str(budget.get("reason") or "alert_budget_suppressed")
+            if not budget.get("allowed", False):
+                event = None
+    else:
+        event, budget, selection_reason = _select_scheduled_candidate(
+            snapshot, slot, ledger, release_alert_ids=release_alert_ids,
+        )
     if event is None:
         # A scheduled slot with no complete, release-bound candidate is a
         # successful scan with no Telegram attempt.  Do not turn suppression
@@ -618,11 +666,10 @@ def send(
     if not notification_key:
         _write_decision_output({"sent": "false", "delivery_status": "suppressed", "reason": "notification_key_missing"}, notification_status="suppressed", notification_reason="notification_key_missing")
         return
-    briefing = snapshot.get("briefing") or {}
     correlation = briefing_correlation(snapshot, slot, event)
     trace_id = str(briefing.get("trace_id") or correlation["trace_id"])
     observation_id = str(briefing.get("observation_id") or correlation["observation_id"])
-    caption = build_brief(snapshot, slot)
+    caption = str(briefing.get("public_short_message") or "").strip() if briefing_event is not None else build_brief(snapshot, slot)
     alert_id = str(
         (event or {}).get("notification_id")
         or (event or {}).get("event_cluster_key")
