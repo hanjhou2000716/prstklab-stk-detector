@@ -17,7 +17,7 @@ from typing import Any
 SCHEMA_VERSION = 1
 DEFAULT_MAX_ATTEMPTS = 3
 DEFAULT_RETRY_INTERVAL = timedelta(hours=1)
-CURRENT_TW_VALUE_RULE = "tw_value_current_quality_v2"
+CURRENT_TW_VALUE_RULE = "tw_value_total_equity_quality_v3"
 STRATEGIES = ("momentum", "price_action", "resonance", "value")
 
 

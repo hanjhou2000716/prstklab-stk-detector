@@ -14,7 +14,7 @@ def test_taiwan_price_brief_includes_the_current_percent_move():
             "instrument": {"ticker": "TAIEX", "change_percent": -2.1},
         }]},
     }
-    assert build_brief(snapshot, "intraday") == "盤中｜台指 -2.1%｜急跌"
+    assert build_brief(snapshot, "intraday") == "台股盤中｜台指 -2.1%｜急跌"
 
 
 def test_resolves_morning_slot_in_taiwan_time():
@@ -63,18 +63,18 @@ def test_delayed_cron_run_uses_declared_slot_instead_of_runner_time():
     ) == "us_premarket"
 
 
-def test_us_premarket_cron_selects_only_the_dst_corrected_slot():
+def test_us_premarket_cron_accepts_the_fixed_2100_slot_all_year():
     summer = datetime(2026, 7, 27, 18, 30, tzinfo=ZoneInfo("Asia/Taipei"))
     winter = datetime(2026, 1, 22, 18, 30, tzinfo=ZoneInfo("Asia/Taipei"))
     assert resolve_slot("auto", summer, scheduled_cron="0 13 * * 1-5") == "us_premarket"
     assert resolve_slot("auto", summer, scheduled_cron="0 14 * * 1-5") is None
-    assert resolve_slot("auto", winter, scheduled_cron="0 14 * * 1-5") == "us_premarket"
-    assert resolve_slot("auto", winter, scheduled_cron="0 13 * * 1-5") is None
+    assert resolve_slot("auto", winter, scheduled_cron="0 13 * * 1-5") == "us_premarket"
+    assert resolve_slot("auto", winter, scheduled_cron="0 14 * * 1-5") is None
 
 
 def test_brief_uses_slot_label_and_market_direction():
     snapshot = {"quotes": [{"ticker": "2330", "change_percent": 1.25}]}
-    assert build_brief(snapshot, "intraday") == "盤中｜2330📈+1.2%"
+    assert build_brief(snapshot, "intraday") == "台股盤中｜2330📈+1.2%"
 
 
 def test_taiwan_session_uses_taiex_and_does_not_promote_brent_price_signal():
@@ -88,7 +88,7 @@ def test_taiwan_session_uses_taiex_and_does_not_promote_brent_price_signal():
         }]},
     }
 
-    assert build_brief(snapshot, "midday") == "午報｜TAIEX🟰-0.8%"
+    assert build_brief(snapshot, "midday") == "台股午盤｜TAIEX🟰-0.8%"
 
 
 def test_taiwan_session_keeps_verified_international_major_event_when_taiwan_has_no_signal():
@@ -100,7 +100,7 @@ def test_taiwan_session_keeps_verified_international_major_event_when_taiwan_has
         }]},
     }
 
-    assert build_brief(snapshot, "intraday") == "盤中｜Fed／貨幣政策｜重要事件｜觀察"
+    assert build_brief(snapshot, "intraday") == "台股盤中｜Fed／貨幣政策｜重要事件｜觀察"
 
 
 def test_brief_handles_missing_data_neutrally():

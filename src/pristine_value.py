@@ -22,7 +22,7 @@ PRISTINE_QUALITY_FIELDS = (
     "three_year_eps_positive",
     "four_quarter_eps_positive",
 )
-TW_VALUE_RULE_VERSION = "tw_value_current_quality_v2"
+TW_VALUE_RULE_VERSION = "tw_value_total_equity_quality_v3"
 TW_CURRENT_QUALITY_FIELDS = ("current_eps_positive", "current_quality_pass")
 
 

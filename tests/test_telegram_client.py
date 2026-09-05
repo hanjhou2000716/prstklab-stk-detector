@@ -128,10 +128,25 @@ def test_public_summary_keeps_only_the_structured_scheduled_icon():
     assert all(icon not in text[1:] for icon in ("🟡", "🔴"))
 
 
+def test_public_summary_removes_flags_skin_tones_and_keycap_decorations():
+    text = canonical_short_message(
+        "🇺🇸 👍🏽 🟡 📊晨報｜🔴 聯準會公布決策。",
+        message_kind="scheduled_brief",
+    )
+    assert text == "📊 晨報｜聯準會公布決策。"
+    assert len(text) <= 60
+
+
 def test_public_summary_rejects_missing_fj_score_and_scheduled_body():
     assert canonical_short_message("FJ 待核對｜資料待核對", message_kind="financialjuice") == ""
     assert canonical_short_message("📊 晨報｜", message_kind="scheduled_brief") == ""
     assert canonical_short_message("聯準會公布決策。", message_kind="scheduled_brief", label="晨報") == "📊 晨報｜聯準會公布決策。"
+
+
+def test_public_summary_rejects_standalone_fj_transport_fragment():
+    assert canonical_short_message(
+        "🟣 FJ 8/10｜直播影片", message_kind="financialjuice",
+    ) == ""
 
 
 def test_public_summary_validates_scheduled_shape_and_unknown_kind():

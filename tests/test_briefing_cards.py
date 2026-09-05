@@ -50,7 +50,7 @@ def test_midday_briefing_includes_japan_korea_and_public_observation_cards():
 
     briefing = build_briefing_snapshot(snapshot, "midday")
 
-    assert briefing["title"] == "台股午報儀表板"
+    assert briefing["title"] == "台股午盤儀表板"
     assert {item["ticker"] for item in briefing["markets"]} == {"TAIEX", "2330", "NIKKEI", "KOSPI"}
     assert [item["title"] for item in briefing["observations"]] == [
         "台股總經", "台積電／半導體", "科技產業", "利率／匯率／黃金能源", "加密市場", "風險提醒",

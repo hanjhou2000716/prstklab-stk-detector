@@ -442,7 +442,7 @@ def test_brief_prefers_major_event_category_but_remains_watch_friendly():
         "events": {"items": [{"short_label": "關稅／政策"}]},
     }
     brief = build_brief(snapshot, "intraday")
-    assert brief == "盤中｜關稅／政策｜2330📈+1.2%"
+    assert brief == "台股盤中｜關稅／政策｜2330📈+1.2%"
     assert len(brief) <= 60
 
 
@@ -451,4 +451,4 @@ def test_brief_uses_compact_event_pattern_and_risk_title():
         "quotes": [{"ticker": "2330", "change_percent": -2.41}],
         "events": {"items": [{"brief_title": "台指價格訊號觸發｜急跌｜高風險"}]},
     }
-    assert build_brief(snapshot, "intraday") == "盤中｜台指價格訊號觸發｜急跌｜高風險"
+    assert build_brief(snapshot, "intraday") == "台股盤中｜台指價格訊號觸發｜急跌｜高風險"

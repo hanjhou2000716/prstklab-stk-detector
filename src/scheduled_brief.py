@@ -18,26 +18,24 @@ from src.telegram_client import PUBLIC_TEXT_MAX_CHARS, alert_mini_app_url, send_
 
 SLOT_LABELS = {
     "morning": "晨報",
-    "pre_open": "盤前",
-    "intraday": "盤中",
-    "midday": "午報",
-    "afternoon": "午盤",
-    "post_close": "盤後",
+    "pre_open": "台股盤前",
+    "intraday": "台股盤中",
+    "midday": "台股午盤",
+    "afternoon": "台股收盤前",
+    "post_close": "台股盤後",
     "us_premarket": "美股盤前",
     "us_open": "美股開盤",
 }
 MAX_BRIEF_LENGTH = PUBLIC_TEXT_MAX_CHARS
-TAIWAN_SESSION_SLOTS = frozenset({"pre_open", "intraday", "midday", "afternoon"})
+TAIWAN_SESSION_SLOTS = frozenset({"pre_open", "intraday", "midday", "afternoon", "post_close"})
 CRON_SLOT_MAP = {
     "0 22 * * *": "morning",
     "45 0 * * 1-5": "pre_open",
-    "0 2 * * 1-5": "intraday",
     "30 2 * * 1-5": "intraday",
     "45 3 * * 1-5": "midday",
     "15 5 * * 1-5": "afternoon",
     "45 6 * * 1-5": "post_close",
     "0 13 * * 1-5": "us_premarket",
-    "0 14 * * 1-5": "us_premarket",
 }
 
 
@@ -82,10 +80,10 @@ def briefing_correlation(snapshot: dict, slot: str, event: dict | None = None) -
 STRICT_SLOT_WINDOWS = {
     "morning": (5 * 60 + 30, 6 * 60 + 30),
     "pre_open": (8 * 60 + 15, 9 * 60 + 15),
-    "intraday": (9 * 60 + 30, 10 * 60 + 30),
+    "intraday": (10 * 60, 11 * 60),
     "midday": (11 * 60 + 15, 12 * 60 + 15),
     "afternoon": (12 * 60 + 45, 13 * 60 + 45),
-    "post_close": (13 * 60 + 55, 14 * 60 + 55),
+    "post_close": (14 * 60 + 15, 15 * 60 + 15),
     "us_premarket": (20 * 60 + 30, 21 * 60 + 30),
 }
 
@@ -100,17 +98,17 @@ def _strict_slot_at(now: datetime) -> str | None:
 
 
 def _us_premarket_cron_matches(now: datetime, scheduled_cron: str) -> bool:
-    """Accept only the UTC cron that is 30 minutes before the NYSE open."""
-    if scheduled_cron not in {"0 13 * * 1-5", "0 14 * * 1-5"}:
+    """Accept the one fixed 21:00 Asia/Taipei production slot.
+
+    The report is intentionally fixed at 21:00 Taiwan time.  It remains a
+    pre-market report in both New York daylight and standard time, but the
+    message must use the actual exchange calendar rather than claiming a
+    fixed number of minutes before the cash open.
+    """
+    if scheduled_cron != "0 13 * * 1-5":
         return True
-    new_york_now = now.astimezone(ZoneInfo("America/New_York"))
-    # 09:00 New York is the desired report time.  Derive its UTC hour from
-    # the exchange offset so daylight-saving changes do not produce two
-    # reports or a report 90 minutes before the cash open.
-    offset = new_york_now.utcoffset()
-    expected_utc_hour = 9 - int((offset.total_seconds() if offset else 0) // 3600)
-    cron_hour = int(scheduled_cron.split()[1])
-    return cron_hour == expected_utc_hour and new_york_now.weekday() < 5
+    taipei_now = now.astimezone(ZoneInfo("Asia/Taipei"))
+    return taipei_now.weekday() < 5
 
 
 def resolve_slot(
@@ -136,25 +134,22 @@ def resolve_slot(
         return matched
     if value != "auto":
         return value
-    hour = local_now.hour
-    if hour < 8:
+    minute = local_now.hour * 60 + local_now.minute
+    if 5 * 60 + 30 <= minute <= 6 * 60 + 30:
         return "morning"
-    if hour < 10:
+    if 8 * 60 + 15 <= minute <= 9 * 60 + 15:
         return "pre_open"
-    if hour < 11:
+    if 10 * 60 <= minute <= 11 * 60:
         return "intraday"
-    if hour < 13:
+    if 11 * 60 + 15 <= minute <= 12 * 60 + 15:
         return "midday"
-    if hour < 14:
+    if 12 * 60 + 45 <= minute <= 13 * 60 + 45:
         return "afternoon"
-    if hour < 18:
+    if 14 * 60 + 15 <= minute <= 15 * 60 + 15:
         return "post_close"
-    if hour < 21:
+    if 20 * 60 + 30 <= minute <= 21 * 60 + 30:
         return "us_premarket"
-    # This system has one fixed Taiwan-time pre-market report throughout the
-    # year.  The content remains a public market briefing, not a claim that
-    # the US cash session is about to open at the same local clock time.
-    return "us_premarket" if hour == 21 else None
+    return None
 
 
 def _pick_quote(snapshot: dict, slot: str) -> dict | None:
@@ -376,24 +371,50 @@ def main() -> None:
         })
         print(f"Scheduled briefing suppressed by alert budget: {budget['reason']}")
         return
-    write_event_lock_key(event)
     brief = build_brief(snapshot, slot)
+    release_id = str(snapshot.get("release_id") or os.environ.get("RELEASE_ID") or "")
+    target_url = (
+        alert_mini_app_url(
+            settings.dashboard_url,
+            alert_id=str((event or {}).get("notification_id") or (event or {}).get("event_cluster_key") or (event or {}).get("event_key") or trace_id),
+            release_id=release_id,
+            snapshot_id=snapshot_id,
+            observation_id=observation_id,
+        )
+        if release_id
+        else ""
+    )
+    # The direct compatibility entry point follows the same ledger boundary
+    # as the two-phase workflow: without a release-bound HTTPS report link,
+    # persistence is not provable and Telegram must not be attempted.
+    if not target_url:
+        _write_output({
+            "sent": "false",
+            "delivery_status": "suppressed",
+            "reason": "ledger_source_url_invalid",
+            "notification_status": "suppressed",
+            "notification_reason": "ledger_source_url_invalid",
+        })
+        return
+    event_for_delivery = {**event, "source_url": target_url} if event else None
+    if event_for_delivery is not None:
+        preflight = ledger.preflight_delivery(event_for_delivery)
+        if not preflight.get("ok"):
+            _write_output({
+                "sent": "false",
+                "delivery_status": "suppressed",
+                "reason": str(preflight.get("reason") or "ledger_preflight_failed"),
+                "notification_status": "suppressed",
+                "notification_reason": str(preflight.get("reason") or "ledger_preflight_failed"),
+            })
+            return
+        write_event_lock_key(event_for_delivery)
     results = send_briefs(
         token=settings.telegram_bot_token or "",
         chat_ids=settings.telegram_chat_ids,
         text=brief,
         dashboard_url=settings.dashboard_url,
-        target_url=(
-            alert_mini_app_url(
-                settings.dashboard_url,
-                alert_id=str((event or {}).get("notification_id") or (event or {}).get("event_cluster_key") or (event or {}).get("event_key") or trace_id),
-                release_id=str(snapshot.get("release_id") or os.environ.get("RELEASE_ID") or ""),
-                snapshot_id=snapshot_id,
-                observation_id=observation_id,
-            )
-            if (snapshot.get("release_id") or os.environ.get("RELEASE_ID"))
-            else None
-        ),
+        target_url=target_url,
         message_kind="scheduled_brief",
     )
     summary = {
@@ -413,7 +434,8 @@ def main() -> None:
         "alert_budget_reason": budget.get("reason", "budget_available"),
     })
     if event and summary["delivered"]:
-        ledger.mark_reminded({**event, "trace_id": trace_id})
+        assert event_for_delivery is not None
+        ledger.mark_reminded({**event_for_delivery, "trace_id": trace_id})
         ledger.save()
     delivered = summary["delivered"]
     unavailable = [result.chat_id for result in results if not result.delivered]

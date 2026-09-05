@@ -25,26 +25,38 @@ TWSE_BALANCE_ENDPOINTS = (
     "opendata/t187ap07_L_fh", "opendata/t187ap07_L_ins", "opendata/t187ap07_L_mim",
 )
 TWSE_PE_ENDPOINT = "exchangeReport/BWIBBU_ALL"
-TW_VALUE_RULE_VERSION = "tw_value_current_quality_v2"
+TW_VALUE_RULE_VERSION = "tw_value_total_equity_quality_v3"
 TW_VALUE_PARAMETER_HASH = hashlib.sha256(
-    b"eps_ytd>0|annualized_quality_ratio>=0.17|heat_percentile<90|heat_passes>=3|bars=63|min_valid_bars=40"
+    b"eps_ytd>0|annualized_total_equity_ratio>=0.17|heat_percentile<90|heat_passes>=3|bars=63|min_valid_bars=40|full_pool=150"
 ).hexdigest()[:16]
-TWSE_FINANCIAL_PARSE_VERSION = "twse-batch-financial-v1"
-TWSE_FINANCIAL_CACHE_SCHEMA = 1
+TWSE_FINANCIAL_PARSE_VERSION = "twse-batch-financial-v2"
+TWSE_FINANCIAL_CACHE_SCHEMA = 2
 TWSE_FINANCIAL_CACHE_MAX_AGE_DAYS = 7
 TWSE_FINANCIAL_PERIOD_MAX_AGE_DAYS = 200
 TWSE_FINANCIAL_RETRIES = 1
 TWSE_FINANCIAL_MAX_WORKERS = 4
 
-# These are intentionally exact regulator field names.  Similar-looking
-# group equity/net-income columns are not interchangeable with the parent
-# owner's columns required by the Taiwan quality rule.
+# These are intentionally exact regulator field names.  The v3 Taiwan rule
+# uses the same-company total after-tax profit and total equity.  Parent-owner
+# fields are retained nowhere in the v3 calculation: they are a different
+# accounting basis and must not be silently substituted.
 TWSE_EPS_FIELDS = ("基本每股盈餘（元）", "基本每股盈餘")
-TWSE_PARENT_NET_FIELDS = ("淨利（淨損）歸屬於母公司業主",)
-TWSE_PARENT_EQUITY_FIELDS = (
-    "歸屬於母公司業主之權益合計",
-    "歸屬於母公司業主之權益總額",
-)
+TWSE_TOTAL_NET_FIELDS_BY_SECTOR = {
+    "ci": ("本期淨利（淨損）", "本期淨利（損）"),
+    "basi": ("本期淨利（淨損）", "本期淨利（損）"),
+    "bd": ("本期淨利（淨損）", "本期淨利（損）"),
+    "fh": ("本期稅後淨利（淨損）", "本期稅後淨利（損）"),
+    "ins": ("本期淨利（淨損）", "本期淨利（損）"),
+    "mim": ("本期淨利（淨損）", "本期淨利（損）"),
+}
+TWSE_TOTAL_EQUITY_FIELDS_BY_SECTOR = {
+    "ci": ("權益總計",),
+    "basi": ("權益總額",),
+    "bd": ("權益總計",),
+    "fh": ("權益總額",),
+    "ins": ("權益總計",),
+    "mim": ("權益總額",),
+}
 SEC_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 SEC_FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
 SEC_PROJECT_URL = "https://github.com/hanjhou2000716/prstklab-stk-detector"
@@ -208,7 +220,7 @@ def _twse_cache_record_valid(record: Any, *, now: datetime, expected_period: str
         period_end = datetime.fromisoformat(str(record.get("period_end")).replace("Z", "+00:00")).astimezone(UTC)
     except (TypeError, ValueError):
         return False
-    required = ("eps_ytd", "parent_net_income_ytd", "parent_equity", "source_sha256")
+    required = ("eps_ytd", "total_net_income_ytd", "total_equity", "source_sha256")
     if any(_finite_number(record.get(key)) is None for key in required[:3]) or not record.get("source_sha256"):
         return False
     return (
@@ -249,10 +261,11 @@ def twse_current_quality_snapshot(
     """Read Taiwan current-quality fundamentals from official TWSE batches.
 
     The twelve industry endpoints are fetched at most once per run and merged
-    only when the same issuer and fiscal period are present.  Parent-company
-    net income and parent-company equity are required; consolidated totals are
-    deliberately not substituted.  ``session`` is accepted for deterministic
-    tests and uses serial requests, while production uses at most four workers.
+    only when the same issuer and fiscal period are present.  The v3 rule uses
+    explicit sector-specific total after-tax profit and total-equity fields;
+    parent-owner values are never substituted.  ``session`` is accepted for
+    deterministic tests and uses serial requests, while production uses at
+    most four workers.
     """
     wanted = {str(ticker).strip() for ticker in tickers if str(ticker).strip()}
     endpoints = tuple((item, "income") for item in TWSE_INCOME_ENDPOINTS) + tuple((item, "balance") for item in TWSE_BALANCE_ENDPOINTS)
@@ -295,12 +308,21 @@ def twse_current_quality_snapshot(
                 continue
             year, quarter, period = period_info
             key = (ticker, (year, quarter))
+            sector = str(result["endpoint"]).rsplit("_", 1)[-1]
+            target = periods.get(key)
+            # A company must be evaluated from one explicit TWSE batch
+            # category.  Never combine the income column from one category
+            # with the equity column from another just because the mock/API
+            # response happens to repeat the ticker.
+            if target is not None and target.get("sector") != sector:
+                continue
             target = periods.setdefault(key, {
                 "ticker": ticker, "name": field(raw_row, "公司名稱", "CompanyName") or ticker,
                 "reporting_period": period, "fiscal_year": year, "quarter": quarter,
                 "period_end": f"{year:04d}-{quarter * 3:02d}-{(31 if quarter in {1, 4} else 30):02d}T00:00:00+00:00",
                 "first_seen_at": datetime.now(UTC).isoformat(),
-                "filing_date": _twse_date(field(raw_row, "出表日期", "資料日期", "Date")),
+                "sector": sector,
+                "output_date": _twse_date(field(raw_row, "出表日期", "資料日期", "Date")),
                 "source_endpoints": [], "source_urls": [], "source_hashes": [],
             })
             target["name"] = target.get("name") or field(raw_row, "公司名稱", "CompanyName") or ticker
@@ -309,17 +331,19 @@ def twse_current_quality_snapshot(
             target["source_hashes"].append(result["source_sha256"])
             target["source_url"] = target["source_urls"][0]
             eps = _finite_number(field(raw_row, *TWSE_EPS_FIELDS))
-            parent_net = _finite_number(field(raw_row, *TWSE_PARENT_NET_FIELDS))
-            parent_equity = _finite_number(field(raw_row, *TWSE_PARENT_EQUITY_FIELDS))
+            total_net_fields = TWSE_TOTAL_NET_FIELDS_BY_SECTOR.get(sector, ())
+            total_equity_fields = TWSE_TOTAL_EQUITY_FIELDS_BY_SECTOR.get(sector, ())
+            total_net = _finite_number(field(raw_row, *total_net_fields)) if total_net_fields else None
+            total_equity = _finite_number(field(raw_row, *total_equity_fields)) if total_equity_fields else None
             if eps is not None:
                 target["eps_ytd"] = eps
                 target["eps_field"] = next(name for name in TWSE_EPS_FIELDS if name in raw_row)
-            if parent_net is not None:
-                target["parent_net_income_ytd"] = parent_net * 1000
-                target["parent_net_income_field"] = next(name for name in TWSE_PARENT_NET_FIELDS if name in raw_row)
-            if parent_equity is not None:
-                target["parent_equity"] = parent_equity * 1000
-                target["parent_equity_field"] = next(name for name in TWSE_PARENT_EQUITY_FIELDS if name in raw_row)
+            if total_net is not None:
+                target["total_net_income_ytd"] = total_net * 1000
+                target["total_net_income_field"] = next(name for name in total_net_fields if name in raw_row)
+            if total_equity is not None:
+                target["total_equity"] = total_equity * 1000
+                target["total_equity_field"] = next(name for name in total_equity_fields if name in raw_row)
 
     latest: dict[str, dict[str, Any]] = {}
     for (ticker, _period_key), period_record in periods.items():
@@ -333,7 +357,7 @@ def twse_current_quality_snapshot(
     cache_used = 0
     for ticker in sorted(wanted):
         record: dict[str, Any] | None = latest.get(ticker)
-        if record is None or any(record.get(key) is None for key in ("eps_ytd", "parent_net_income_ytd", "parent_equity")):
+        if record is None or any(record.get(key) is None for key in ("eps_ytd", "total_net_income_ytd", "total_equity")):
             cached = cache_records.get(ticker)
             if isinstance(cached, dict) and _twse_cache_record_valid(cached, now=now, expected_period=expected_period):
                 record = dict(cached)
@@ -346,31 +370,31 @@ def twse_current_quality_snapshot(
         if expected_period and record.get("reporting_period") != expected_period:
             continue
         eps = _finite_number(record.get("eps_ytd"))
-        parent_net = _finite_number(record.get("parent_net_income_ytd"))
-        parent_equity = _finite_number(record.get("parent_equity"))
+        total_net = _finite_number(record.get("total_net_income_ytd"))
+        total_equity = _finite_number(record.get("total_equity"))
         quarter = int(record.get("quarter") or 0)
-        quality_ratio = None if parent_net is None or parent_equity is None or parent_equity <= 0 or quarter <= 0 else parent_net * 4 / quarter / parent_equity
-        if parent_equity is None or parent_net is None or quarter <= 0:
+        quality_ratio = None if total_net is None or total_equity is None or total_equity <= 0 or quarter <= 0 else total_net * 4 / quarter / total_equity
+        if total_equity is None or total_net is None or quarter <= 0:
             quality_pass: bool | None = None
-        elif parent_equity <= 0:
+        elif total_equity <= 0:
             quality_pass = False
         else:
             assert quality_ratio is not None
             quality_pass = quality_ratio >= 0.17
         record.update({
-            "eps_ytd": eps, "parent_net_income_ytd": parent_net, "parent_equity": parent_equity,
+            "eps_ytd": eps, "total_net_income_ytd": total_net, "total_equity": total_equity,
             "annualized_quality_ratio": quality_ratio,
             "current_eps_positive": None if eps is None else eps > 0,
             "current_quality_pass": quality_pass,
             "quality_rule_version": TW_VALUE_RULE_VERSION,
             "parameter_hash": TW_VALUE_PARAMETER_HASH,
-            "quality_basis": "同年度累計歸屬母公司淨利×4÷季別÷同季末歸屬母公司權益",
-            "net_income": parent_net, "roe": quality_ratio,
+            "quality_basis": "同年度累計稅後淨利×4÷季別÷同季末總權益",
+            "net_income": total_net, "roe": quality_ratio,
             "pe": None, "roe_basis": "年化獲利／期末權益估算（非全年 ROE）",
             "financial_source": record.get("financial_source") or "TWSE official batch",
             "financial_parse_version": TWSE_FINANCIAL_PARSE_VERSION,
             "parse_version": TWSE_FINANCIAL_PARSE_VERSION,
-            "calculation_basis": "parent_net_income_ytd × 4 ÷ quarter ÷ parent_equity",
+            "calculation_basis": "total_net_income_ytd × 4 ÷ quarter ÷ total_equity",
             "source_sha256": record.get("source_sha256") or hashlib.sha256(
                 "|".join(sorted(set(record.get("source_hashes", [])))).encode("utf-8")
             ).hexdigest(),
@@ -379,6 +403,8 @@ def twse_current_quality_snapshot(
             "three_year_eps_positive": None,
             "four_quarter_eps_positive": None,
             "three_year_dividend_paid": None,
+            "financial_complete": all(record.get(key) is not None for key in ("eps_ytd", "total_net_income_ytd", "total_equity")),
+            "financial_status": "complete" if all(record.get(key) is not None for key in ("eps_ytd", "total_net_income_ytd", "total_equity")) else "missing_required_field",
         })
         output[ticker] = record
 
