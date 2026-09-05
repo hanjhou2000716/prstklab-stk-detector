@@ -76,8 +76,10 @@ const formatAlertQuote = (item) => {
   if (!item) return "";
   const name = item.name || item.ticker || "關聯市場";
   if (item.price === null || item.price === undefined) {
-    const status = item.data_status || (item.freshness === "stale" ? "資料過期" : "報價待取得");
-    return `<div class="alert-quote"><b>${escapeHtml(name)}</b><strong class="flat">報價待取得</strong><small class="flat">${escapeHtml(status)}</small></div>`;
+    const rawStatus = String(item.data_status || item.freshness || "").toLowerCase();
+    const status = item.data_status || (rawStatus === "stale" ? "資料過期" : rawStatus === "unavailable" || rawStatus === "failed" ? "來源失敗" : "報價待取得");
+    const title = rawStatus === "stale" ? "報價已過期" : rawStatus === "unavailable" || rawStatus === "failed" ? "報價無法取得" : "報價待取得";
+    return `<div class="alert-quote"><b>${escapeHtml(name)}</b><strong class="flat">${escapeHtml(title)}</strong><small class="flat">${escapeHtml(status)}</small></div>`;
   }
   const state = item.change_percent > 0 ? "market-up" : item.change_percent < 0 ? "market-down" : "flat";
   const meta = compactQuoteMeta(item);
@@ -96,15 +98,39 @@ const alertLinkedMarketNames = {
   GOLD: "黃金期貨",
 };
 
-const alertMarketEvidence = (event) => {
+const quoteHasValues = (item) => item && item.price !== null && item.price !== undefined
+  && item.change_percent !== null && item.change_percent !== undefined
+  && Number.isFinite(Number(item.price)) && Number.isFinite(Number(item.change_percent));
+
+const quoteHasExplicitFailure = (item) => {
+  const status = String(item?.data_status || item?.freshness || "").toLowerCase();
+  return ["unavailable", "failed", "stale", "delayed"].includes(status)
+    || item?.quote_delayed === true || item?.stale_used === true;
+};
+
+const alertMarketEvidence = (event, snapshot = null) => {
   const evidence = Array.isArray(event?.market_evidence) ? event.market_evidence : [];
   const linked = Array.isArray(event?.linked_markets) ? event.linked_markets : [];
-  const byTicker = new Map(evidence.map((item) => [String(item?.ticker || "").toUpperCase(), item]).filter(([ticker]) => ticker));
-  linked.forEach((ticker) => {
-    const key = String(ticker || "").toUpperCase();
-    if (key && !byTicker.has(key)) byTicker.set(key, { ticker: key, name: alertLinkedMarketNames[key] || key, price: null, data_status: "報價待取得" });
+  // Historical alerts may borrow values only from their exact release-bound
+  // snapshot.  A missing snapshot id is intentionally not enough to hydrate
+  // a legacy ticker-only row with today's market data.
+  const sameSnapshot = snapshot && event?.snapshot_id
+    && String(event.snapshot_id) === String(snapshot.snapshot_id);
+  const snapshotQuotes = sameSnapshot
+    ? [...(snapshot.indices || []), ...(snapshot.quotes || []), ...(snapshot.macro_quotes || [])]
+    : [];
+  const snapshotByTicker = new Map(snapshotQuotes
+    .map((item) => [String(item?.ticker || "").toUpperCase(), item])
+    .filter(([ticker]) => ticker));
+  const byTicker = new Map();
+  [...evidence, ...linked.map((ticker) => ({ ticker }))].forEach((item) => {
+    const key = String(item?.ticker || "").toUpperCase();
+    if (!key || byTicker.has(key)) return;
+    const bound = snapshotByTicker.get(key);
+    byTicker.set(key, bound && !quoteHasValues(item) && !quoteHasExplicitFailure(item)
+      ? { ...bound, ...item } : item);
   });
-  return [...byTicker.values()].slice(0, 2);
+  return [...byTicker.values()].filter((item) => quoteHasValues(item) || quoteHasExplicitFailure(item)).slice(0, 2);
 };
 
 const movementClass = (value) => {
@@ -491,7 +517,7 @@ const primaryAlertEvents = (snapshot) => {
   return [merged, ...items.slice(1)];
 };
 
-const renderAlertCard = (events, generatedAt, externalAlert, indices = [], externalRisk = null) => {
+const renderAlertCard = (events, generatedAt, externalAlert, indices = [], externalRisk = null, snapshot = null) => {
   const profile = externalAlert ? externalAlertProfile(externalAlert.category, indices) : null;
   const rawEvent = externalAlert ? {
     kind: "external_alert", risk_level: externalAlert.category === "black_swan" ? "高風險" : "警戒", short_label: externalAlertLabel(externalAlert.category),
@@ -515,7 +541,19 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
       verified_domains: externalAlert.verified_domains || [],
     },
   } : events?.items?.[0];
-  const event = displayAlertProjection(rawEvent);
+  const projectedEvent = displayAlertProjection(rawEvent);
+  const primaryTheme = projectedEvent?.kind === "market_briefing" && projectedEvent?.briefing?.primary_theme
+    && typeof projectedEvent.briefing.primary_theme === "object"
+    ? projectedEvent.briefing.primary_theme : null;
+  const event = primaryTheme ? {
+    ...projectedEvent,
+    event: primaryTheme.what_happened || projectedEvent.event,
+    why_important: primaryTheme.why_important || projectedEvent.why_important,
+    possible_linkage: primaryTheme.market_implication || projectedEvent.possible_linkage,
+    stock_observation: primaryTheme.stock_observation || projectedEvent.stock_observation,
+    market_evidence: projectedEvent.market_evidence?.length ? projectedEvent.market_evidence : primaryTheme.quote_evidence,
+    canonical_event_key: primaryTheme.canonical_event_key || primaryTheme.event_key || projectedEvent.canonical_event_key,
+  } : projectedEvent;
   const card = document.getElementById("alert-card");
   if (!card) return;
   const pendingNode = document.getElementById("alert-pending");
@@ -606,14 +644,26 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
   setText("alert-context", event.market_impact || event.market_context || event.possible_linkage || event.possible_impact || "已連動市場待後續公開報價確認。");
   setText("alert-stock-observation", event.watch || event.stock_observation || event.follow_up_observation || "觀察已連動市場是否出現可核對的同步變化。");
   setText("alert-reminder", event.friendly_reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
-  const quoteItems = [event.instrument, ...(Array.isArray(event.related) ? event.related : []), ...alertMarketEvidence(event)].filter(Boolean).slice(0, 2);
-  const linkedMarkets = Array.isArray(event.linked_markets) ? event.linked_markets.filter(Boolean).join("、") : "";
+  const quoteItems = [];
+  const quoteTickers = new Set();
+  for (const item of [event.instrument, ...(Array.isArray(event.related) ? event.related : []), ...alertMarketEvidence(event, snapshot)]) {
+    const ticker = String(item?.ticker || "").toUpperCase();
+    if (!quoteHasValues(item) || (ticker && quoteTickers.has(ticker))) continue;
+    if (ticker) quoteTickers.add(ticker);
+    quoteItems.push(item);
+    if (quoteItems.length >= 2) break;
+  }
+  const linkedTickers = [
+    ...(Array.isArray(event.linked_markets) ? event.linked_markets : []),
+    ...(Array.isArray(event.market_evidence) ? event.market_evidence.map((item) => item?.ticker) : []),
+  ].filter(Boolean).map((ticker) => alertLinkedMarketNames[ticker] || ticker);
+  const linkedMarkets = [...new Set(linkedTickers)].join("、");
   const quoteGrid = document.getElementById("alert-quote-grid");
   if (quoteGrid) {
     quoteGrid.innerHTML = quoteItems.length
-      ? quoteItems.map(formatAlertQuote).join("")
-      : linkedMarkets
-        ? `<p class="empty">已連動市場：${escapeHtml(linkedMarkets)}；報價待取得</p>`
+        ? quoteItems.map(formatAlertQuote).join("")
+        : linkedMarkets
+        ? `<p class="empty">已連動市場：${escapeHtml(linkedMarkets)}；報價待取得（此歷史版本未保存可核對的結構化報價）</p>`
         : '<p class="empty">本事件尚無可核對的連動市場</p>';
   }
   renderAlertTrace(event);
@@ -773,20 +823,77 @@ const renderNewsList = (id, stories, providerRegistry = [], health = null, intel
   }).join("");
 };
 
-const renderEvents = (events) => {
+const stableEventKeys = (item) => {
+  if (!item || typeof item !== "object") return [];
+  const values = [
+    item.canonical_event_key, item.event_key, item.event_cluster_key,
+    item.notification_id, item.observation_id, item.item_id,
+    ...(Array.isArray(item.source_event_keys) ? item.source_event_keys : []),
+  ];
+  return [...new Set(values.map((value) => String(value || "").trim()).filter(Boolean))];
+};
+
+const eventKeysOverlap = (left, right) => {
+  const known = new Set(stableEventKeys(right));
+  return stableEventKeys(left).some((key) => known.has(key));
+};
+
+const briefingDisplayRows = (events, briefing) => {
+  const items = Array.isArray(events?.items) ? events.items.filter((item) => item && typeof item === "object") : [];
+  const primary = briefing?.primary_theme && typeof briefing.primary_theme === "object"
+    ? briefing.primary_theme : items[0] || null;
+  const primaryKeys = new Set(stableEventKeys(primary));
+  const configured = Array.isArray(briefing?.secondary_signals) ? briefing.secondary_signals : [];
+  const candidates = configured.length ? configured : items.slice(1);
+  const rows = [];
+  const seen = new Set(primaryKeys);
+  for (const item of candidates) {
+    if (!item || eventKeysOverlap(item, primary)) continue;
+    const keys = stableEventKeys(item);
+    const key = keys[0] || String(item.what_happened || item.event || item.title || "").trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    rows.push(item);
+    if (rows.length >= 3) break;
+  }
+  return { primary, rows };
+};
+
+const displayedEventKeys = (snapshot) => {
+  const briefing = snapshot?.briefing;
+  const hasReleaseProjection = Boolean(
+    briefing && typeof briefing === "object"
+      && (briefing.primary_theme && typeof briefing.primary_theme === "object"
+        || Array.isArray(briefing.displayed_event_keys)
+        || Array.isArray(briefing.secondary_signals)),
+  );
+  // A legacy snapshot without the shared projection has no safe ownership
+  // boundary to apply across sections.  Keep its historical external lane
+  // visible; new release-bound briefings always carry the explicit set.
+  if (!hasReleaseProjection) return [];
+  const selected = briefingDisplayRows(snapshot?.events, snapshot?.briefing);
+  return [...new Set([
+    ...stableEventKeys(selected.primary),
+    ...selected.rows.flatMap(stableEventKeys),
+    ...(Array.isArray(snapshot?.briefing?.displayed_event_keys) ? snapshot.briefing.displayed_event_keys : []),
+  ])];
+};
+
+const renderEvents = (events, briefing = null) => {
   setText("event-tag", events?.status || "觀察中");
   const container = document.getElementById("event-list");
   if (!container) return;
-  const secondary = (events?.items || []).slice(1).filter((event) => {
+  const { primary, rows: secondary } = briefingDisplayRows(events, briefing);
+  const validSecondary = secondary.filter((event) => {
     const source = String(event?.source_key || event?.source || event?.content_origin || "").toLowerCase();
     return source !== "financialjuice" || isCanonicalFjSummary(event);
   });
-  if (!secondary.length) { container.innerHTML = '<li class="empty">目前沒有其他同步市場訊號</li>'; }
-  else container.innerHTML = `<li class="signal-list-title">同步市場訊號</li>${secondary.map((event) => {
+  if (!validSecondary.length) { container.innerHTML = '<li class="empty">目前沒有其他同步市場訊號</li>'; }
+  else container.innerHTML = `<li class="signal-list-title">同步市場訊號（最多三則）</li>${validSecondary.map((event) => {
     const source = String(event?.source_key || event?.source || event?.content_origin || "").toLowerCase();
     const title = source === "financialjuice"
       ? canonicalFjSummary(event)
-      : event.brief_title || `${event.short_label}｜${event.title}`;
+      : event.public_short_message || event.what_happened || event.brief_title || `${event.short_label || "市場訊號"}｜${event.title || event.event || "公開事件"}`;
     return `<li class="signal-card"><b class="${movementClass(title)}">${escapeHtml(title)}</b><small>${escapeHtml(event.source || "公開市場報價")}</small></li>`;
   }).join("")}`;
   const timeline = document.getElementById("event-timeline");
@@ -1088,9 +1195,11 @@ const renderFixedBriefingColumns = (report) => {
   container.insertAdjacentHTML("beforeend", `<h3 class="briefing-subheading">市場固定專欄</h3>${observations.map(renderObservation).join("")}`);
 };
 
-const renderExternalIntelligence = (snapshot) => {
+const renderExternalIntelligence = (snapshot, displayedKeys = null) => {
   const content = document.getElementById("external-intelligence-content");
   if (!content) return;
+  const effectiveDisplayedKeys = displayedKeys === null
+    ? displayedEventKeys(snapshot) : displayedKeys;
   const observations = Array.isArray(snapshot?.external_observations)
     ? snapshot.external_observations
     : Array.isArray(snapshot?.briefing?.external_observations)
@@ -1099,17 +1208,22 @@ const renderExternalIntelligence = (snapshot) => {
     ? snapshot.financialjuice_priority_decisions : [];
   const priorityEvents = Array.isArray(snapshot?.financialjuice_priority_events)
     ? snapshot.financialjuice_priority_events : [];
-  const rowKey = (item) => {
+  const displayed = new Set(effectiveDisplayedKeys.map((key) => String(key || "").trim()).filter(Boolean));
+  const eventRowKeys = (item) => {
     const source = String(item?.source_key || item?.source || item?.content_origin || "").toLowerCase();
     const notificationKey = String(item?.notification_key || "").trim();
+    const keys = stableEventKeys(item);
     if (source === "financialjuice" || notificationKey.toLowerCase().startsWith("financialjuice:")) {
       const summary = canonicalFjSummary(item);
-      if (summary) return `financialjuice:${summary.toLocaleLowerCase()}`;
+      if (summary) keys.push(`financialjuice:${summary.toLocaleLowerCase()}`);
     }
-    if (notificationKey) return notificationKey;
-    return String(item?.observation_id || item?.item_id || item?.notification_id || "").trim();
+    if (notificationKey) keys.push(notificationKey);
+    const fallback = String(item?.observation_id || item?.item_id || item?.notification_id || "").trim();
+    if (fallback) keys.push(fallback);
+    return [...new Set(keys.filter(Boolean))];
   };
-  const decisionByKey = new Map(decisions.map((item) => [rowKey(item), item]).filter(([key]) => key));
+  const decisionByKey = new Map();
+  decisions.forEach((item) => eventRowKeys(item).forEach((key) => decisionByKey.set(key, item)));
   const priorityLabels = {
     eligible: "供應商優先：可通知",
     not_eligible: "供應商優先：未達 8/10",
@@ -1117,29 +1231,30 @@ const renderExternalIntelligence = (snapshot) => {
   };
   const projectedRows = observations.map((item) => ({
     ...item,
-    _priorityDecision: decisionByKey.get(rowKey(item)) || null,
+    _priorityDecision: eventRowKeys(item).map((key) => decisionByKey.get(key)).find(Boolean) || null,
   })).filter((item) => {
     const source = String(item?.source_key || item?.source || item?.content_origin || "").toLowerCase();
-    return source !== "financialjuice" || isCanonicalFjSummary(item);
+    const duplicated = eventRowKeys(item).some((key) => displayed.has(key));
+    return source === "financialjuice" && isCanonicalFjSummary(item) && !duplicated;
   });
   const rows = [];
-  const rowKeys = new Set();
+  const seenRowKeys = new Set();
   for (const item of projectedRows) {
-    const key = rowKey(item);
-    if (key && rowKeys.has(key)) continue;
-    if (key) rowKeys.add(key);
+    const key = eventRowKeys(item)[0] || "";
+    if (key && seenRowKeys.has(key)) continue;
+    if (key) seenRowKeys.add(key);
     rows.push(item);
   }
-  const seen = new Set(rows.map(rowKey).filter(Boolean));
+  const seen = new Set(rows.flatMap(eventRowKeys));
   // Keep release-projected eligible events visible even when the raw source
   // observation was compacted out of the public snapshot.  This is still the
   // same canonical event lane, not a second notification pipeline.
   for (const event of priorityEvents) {
     if (!isCanonicalFjSummary(event)) continue;
-    const key = rowKey(event);
-    if (!key || seen.has(key)) continue;
+    const keys = eventRowKeys(event);
+    if (!keys.length || keys.some((key) => seen.has(key)) || keys.some((key) => displayed.has(key))) continue;
     rows.push({ ...event, _priorityDecision: { notification_status: "eligible" } });
-    seen.add(key);
+    keys.forEach((key) => seen.add(key));
   }
   if (!rows.length) {
     content.innerHTML = '<p class="empty">本輪沒有可公開顯示的外部快訊；來源無事件與掃描失敗分開記錄。</p>';
@@ -1279,9 +1394,8 @@ const renderResearchList = (id, items, empty) => {
     const price = item.close === null || item.close === undefined ? "報價待完整掃描" : `${formatNumber(item.close)} ${currency}`;
     const change = item.change_percent === null || item.change_percent === undefined ? "—" : signedPercent(item.change_percent);
     const tags = researchStrategyTags(item).map((label) => `<span class="strategy-chip">${escapeHtml(label)}</span>`).join("");
-    const history = item.research_version_state === "historical" ? `<span class="strategy-chip">歷史版本｜資料日期 ${escapeHtml(String(item.as_of || item.historical_from_generated_at || "—"))}</span>` : "";
     const score = researchScoreParts(item);
-    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${history}${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}</strong></div>${researchExplainability(item)}</li>`;
+    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}</strong></div>${researchExplainability(item)}</li>`;
   }).join("");
 };
 
@@ -1305,10 +1419,9 @@ const renderValueResearch = (id, items, empty) => {
     const price = item.close === null || item.close === undefined ? "報價待完整掃描" : `${formatNumber(item.close)} ${currency}`;
     const change = item.change_percent === null || item.change_percent === undefined ? "—" : signedPercent(item.change_percent);
     const tags = researchStrategyTags(item).map((label) => `<span class="strategy-chip">${escapeHtml(label)}</span>`).join("");
-    const history = item.research_version_state === "historical" ? `<span class="strategy-chip">歷史版本｜資料日期 ${escapeHtml(String(item.as_of || item.historical_from_generated_at || "—"))}</span>` : "";
     const score = researchScoreParts(item);
     const explanation = researchExplainability(item);
-    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${history}${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}${item.condition_count ? ` · ${escapeHtml(item.condition_count)}` : ""}</strong></div>${researchValueEvidence(item)}${explanation}</li>`;
+    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}${item.condition_count ? ` · ${escapeHtml(item.condition_count)}` : ""}</strong></div>${researchValueEvidence(item)}${explanation}</li>`;
   }).join("");
   container.innerHTML = `${visibleFormal.length ? `<li class="research-subheading">正式候選（至少 5/6，最多 5 檔）</li>${renderGroup("正式候選", visibleFormal)}` : ""}${visibleObservation.length ? `<li class="research-subheading">觀察名單（3/6 或 4/6，補足至 5 檔）</li>${renderGroup("觀察名單", visibleObservation)}` : ""}`;
 };
@@ -1535,9 +1648,9 @@ const render = (snapshot, { deferAlert = false } = {}) => {
   renderQuoteList("quote-list", snapshot.quotes || []);
   renderRisk(snapshot.risk);
   if (!deferAlert) {
-    renderAlertCard({ ...(snapshot.events || {}), items: primaryAlertEvents(snapshot) }, snapshot.generated_at, externalAlert, snapshot.indices || [], snapshot.intelligence?.external_event_risk);
+    renderAlertCard({ ...(snapshot.events || {}), items: primaryAlertEvents(snapshot) }, snapshot.generated_at, externalAlert, snapshot.indices || [], snapshot.intelligence?.external_event_risk, snapshot);
   }
-  renderEvents(snapshot.events);
+  renderEvents(snapshot.events, snapshot.briefing);
   renderSourceHealth(snapshot.source_health, snapshot);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
   renderFixedBriefingColumns(snapshot.briefing);
@@ -1608,7 +1721,7 @@ const deepLinkFocusText = (alert) => {
 
 const renderResolvedDeepLink = (snapshot, alert) => {
   const projected = displayAlertProjection(alert);
-  renderAlertCard({ items: [projected] }, alert.created_at || snapshot.generated_at, null, alert.market_evidence || []);
+  renderAlertCard({ items: [projected] }, alert.created_at || snapshot.generated_at, null, alert.market_evidence || [], null, snapshot);
   const focus = deepLinkFocusText(projected);
   setText("market-focus", focus || "已載入本次通知事件。");
 };

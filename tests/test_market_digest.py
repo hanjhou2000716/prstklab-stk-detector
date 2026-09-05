@@ -56,6 +56,22 @@ def test_digest_prefers_complete_event_over_fragment_title():
     assert "The..." not in result["public_short_message"]
 
 
+def test_digest_drops_conditional_only_waller_fragment_for_complete_fact():
+    result = build_market_digest(
+        {"events": {"items": [{
+            "source_key": "financialjuice",
+            "event": "如果8月通膨數據過熱。",
+            "summary": "沃勒表示通膨與勞動市場仍是利率判斷的重要依據。",
+            "vendor_importance": 10,
+            "observation_id": "fj-waller-fragment",
+        }]}},
+        "us_premarket",
+    )
+
+    assert "沃勒表示通膨與勞動市場" in result["primary_theme"]["what_happened"]
+    assert "如果8月通膨數據過熱" not in result["public_short_message"]
+
+
 def test_digest_reads_existing_reviewed_news_as_evidence():
     result = build_market_digest(
         {
@@ -99,3 +115,96 @@ def test_digest_does_not_hard_cut_an_overlong_single_fact():
     assert result["notification_eligible"] is False
     assert result["public_short_message"] == ""
     assert len(result["overview"]) <= 140
+
+
+def test_digest_keeps_structured_quote_evidence_separate_from_source_evidence():
+    event = {
+        "source_key": "financialjuice",
+        "event": "官方公布半導體出口管制更新，市場等待後續細節",
+        "observation_id": "fj-semi-1",
+        "published_at": "2026-09-04T20:00:00+00:00",
+        "market_evidence": [{
+            "ticker": "SOX",
+            "name": "費半",
+            "price": 11735.26,
+            "change_percent": 3.37,
+            "currency": "點",
+            "quote_date": "2026-09-04",
+            "freshness": "recent_close",
+            "source_url": "https://finance.yahoo.com/quote/%5ESOX",
+        }],
+    }
+    result = build_market_digest(
+        {"generated_at": "2026-09-05T00:00:00+00:00", "events": {"items": [event]}},
+        "us_premarket",
+    )
+
+    primary = result["primary_theme"]
+    assert primary["source_evidence"][0]["source_key"] == "financialjuice"
+    assert primary["quote_evidence"] == [{
+        "ticker": "SOX",
+        "name": "費半",
+        "price": 11735.26,
+        "change_percent": 3.37,
+        "currency": "點",
+        "quote_date": "2026-09-04",
+        "freshness": "recent_close",
+        "source_url": "https://finance.yahoo.com/quote/%5ESOX",
+    }]
+    assert result["quote_evidence"] == primary["quote_evidence"]
+
+    compact_event = {**event, "market_evidence": [{"ticker": "SOX"}]}
+    hydrated = build_market_digest(
+        {
+            "generated_at": "2026-09-05T00:00:00+00:00",
+            "events": {"items": [compact_event]},
+            "indices": [{
+                "ticker": "SOX",
+                "price": 11735.26,
+                "change_percent": 3.37,
+                "freshness": "recent_close",
+                "source_url": "https://finance.yahoo.com/quote/%5ESOX",
+            }],
+        },
+        "us_premarket",
+    )
+    assert hydrated["primary_theme"]["quote_evidence"][0]["ticker"] == "SOX"
+    assert hydrated["primary_theme"]["quote_evidence"][0]["price"] == 11735.26
+
+    changed_quote = {**event, "market_evidence": [{**event["market_evidence"][0], "price": 12000.0, "change_percent": 5.0}]}
+    changed = build_market_digest(
+        {"generated_at": "2026-09-05T00:00:00+00:00", "events": {"items": [changed_quote]}},
+        "us_premarket",
+    )
+    assert changed["briefing_id"] == result["briefing_id"]
+
+
+def test_digest_deduplicates_cross_source_event_and_caps_secondary_signals():
+    items = [{
+        "source_key": "financialjuice",
+        "event": "官方確認能源設施遭到攻擊，後續供應狀況待核對",
+        "published_at": "2026-09-04T23:00:00+00:00",
+        "notification_status": "eligible",
+        "observation_id": "fj-energy",
+    }, {
+        "source_key": "official",
+        "event": "官方確認能源設施遭到攻擊，後續供應狀況待核對",
+        "published_at": "2026-09-04T22:00:00+00:00",
+        "observation_id": "official-energy",
+    }]
+    items.extend({
+        "source_key": "official",
+        "event": f"第{index}項官方市場資料完成更新並等待後續核對",
+        "published_at": f"2026-09-04T{index + 10:02d}:00:00+00:00",
+        "observation_id": f"official-{index}",
+    } for index in range(1, 6))
+    result = build_market_digest(
+        {"generated_at": "2026-09-05T00:00:00+00:00", "events": {"items": items}},
+        "morning",
+    )
+
+    assert len(result["secondary_signals"]) == 3
+    keys = result["displayed_event_keys"]
+    assert len(keys) == len(set(keys))
+    assert not any(signal["canonical_event_key"] == result["primary_theme"]["canonical_event_key"]
+                   for signal in result["secondary_signals"])

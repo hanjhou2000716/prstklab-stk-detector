@@ -113,6 +113,58 @@ def test_manifest_publishes_scheduled_briefing_alert_artifact(tmp_path):
     assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 
+def test_scheduled_briefing_projection_preserves_primary_semantics_and_real_quotes(tmp_path):
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["briefing"] = {
+        "slot": "us_premarket",
+        "briefing_id": "briefing-us-premarket-rich",
+        "observation_id": "briefing-observation-rich",
+        "notification_eligible": True,
+        "status": "ready",
+        "notification_reason": "candidate_ready",
+        "public_short_message": "📊 美股盤前｜能源設施事件已核對。",
+        "assessment_summary": "今日判讀：能源設施事件已核對。",
+        "canonical_content_hash": "c" * 64,
+        "canonical_hash_version": 1,
+        "primary_theme": {
+            "canonical_event_key": "event-energy-1",
+            "what_happened": "能源設施事件已核對。",
+            "why_important": "事件可能影響能源供應觀察。",
+            "market_implication": "等待油價與主要指數後續核對。",
+            "stock_observation": "觀察能源與科技市場是否同步。",
+            "source_evidence": [{"source": "FinancialJuice", "source_key": "financialjuice"}],
+            "quote_evidence": [{
+                "ticker": "NASDAQ",
+                "price": 26506.99,
+                "change_percent": -0.29,
+                "freshness": "recent_close",
+                "source_url": "https://finance.yahoo.com/quote/%5EIXIC",
+            }],
+        },
+        "themes": [{"title": "FinancialJuice", "what_happened": "能源設施事件已核對。"}],
+        "secondary_signals": [{"canonical_event_key": "event-market-2", "what_happened": "市場價格完成核對。"}],
+        "displayed_event_keys": ["event-energy-1", "event-market-2"],
+        "evidence": [{"source": "FinancialJuice"}],
+    }
+    market_path.write_text(json.dumps(market, ensure_ascii=False), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+    index = json.loads((tmp_path / "site" / "data" / "alert-index.json").read_text(encoding="utf-8"))
+    row = next(item for item in index["alerts"] if item["notification_id"] == "briefing-us-premarket-rich")
+    artifact = json.loads((tmp_path / "site" / "data" / row["path"]).read_text(encoding="utf-8"))
+
+    assert artifact["event"] == "能源設施事件已核對。"
+    assert artifact["why_important"] == "事件可能影響能源供應觀察。"
+    assert artifact["possible_linkage"] == "等待油價與主要指數後續核對。"
+    assert artifact["market_evidence"][0]["price"] == 26506.99
+    assert artifact["market_evidence"][0]["change_percent"] == -0.29
+    assert artifact["source_evidence"][0]["source_key"] == "financialjuice"
+    assert artifact["briefing"]["displayed_event_keys"] == ["event-energy-1", "event-market-2"]
+    assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
 def test_manifest_rebuilds_alert_index_from_retained_immutable_files(tmp_path):
     _artifacts(tmp_path)
     alert_dir = tmp_path / "site" / "data" / "alerts"

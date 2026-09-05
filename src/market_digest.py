@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -73,6 +74,9 @@ def _is_fragment(text: str) -> bool:
         return True
     if re.fullmatch(r"https?://\S+", value):
         return True
+    conditional = re.match(r"^(?:如果|若)\s*([^。！？.!?]*)", value)
+    if conditional and not re.search(r"(?:則|就|將|會|可能|因此|would|will|then)", conditional.group(1), flags=re.I):
+        return True
     if re.fullmatch(r"[🔴🟠🟡🟢🟣⚪️\s|｜:：,，。\-–.]+", value):
         return True
     if len(value) < 6 and not re.search(r"[\u4e00-\u9fff]", value):
@@ -118,8 +122,59 @@ def _event_source(event: dict[str, Any]) -> str:
 
 
 def _event_key(event: dict[str, Any], fact: str) -> str:
-    source = str(event.get("source_key") or event.get("source") or "").casefold()
-    return hashlib.sha256(f"{source}|{_normalise(fact).casefold()}".encode()).hexdigest()[:20]
+    existing = str(
+        event.get("canonical_event_key")
+        or event.get("event_cluster_key")
+        or event.get("event_key")
+        or ""
+    ).strip()
+    if existing:
+        return existing
+    # The same public event may be present in FJ, a news feed and an official
+    # lane with different transport identities.  The canonical fact is the
+    # stable fallback; source/observation IDs remain provenance only.
+    return hashlib.sha256(_normalise(fact).casefold().encode("utf-8")).hexdigest()[:20]
+
+
+_QUOTE_EVIDENCE_FIELDS = (
+    "ticker", "name", "market", "instrument_id", "instrument_master_id",
+    "price", "change", "change_percent", "currency", "quote_date",
+    "quote_time", "fetched_at", "freshness", "data_status", "source_label",
+    "quote_source", "source_domain", "source_url", "cross_checked",
+    "quote_delayed", "stale_used",
+)
+
+
+def _quote_evidence(items: Any) -> list[dict[str, Any]]:
+    """Keep only release-bound quotes with enough values for a public card."""
+    if not isinstance(items, list):
+        return []
+    result: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        ticker = str(item.get("ticker") or "").strip().upper()
+        if not ticker or ticker in seen or item.get("price") is None or item.get("change_percent") is None:
+            continue
+        try:
+            if not math.isfinite(float(item["price"])) or not math.isfinite(float(item["change_percent"])):
+                continue
+        except (TypeError, ValueError):
+            continue
+        seen.add(ticker)
+        result.append({key: item[key] for key in _QUOTE_EVIDENCE_FIELDS if key in item})
+    return result
+
+
+def _source_evidence(event: dict[str, Any], source: str) -> list[dict[str, Any]]:
+    return [{
+        "source": source,
+        "source_key": event.get("source_key") or event.get("source"),
+        "observation_id": event.get("observation_id"),
+        "notification_id": event.get("notification_id"),
+        "published_at": event.get("published_at") or event.get("created_at"),
+    }]
 
 
 def _importance_score(event: dict[str, Any]) -> float:
@@ -130,6 +185,19 @@ def _importance_score(event: dict[str, Any]) -> float:
         return float(str(value))
     except (TypeError, ValueError):
         return {"high-risk": 3.0, "warning": 2.0, "normal": 1.0}.get(str(value).casefold(), 0.0)
+
+
+def _risk_score(event: dict[str, Any]) -> int:
+    value = str(event.get("prstk_risk_level") or event.get("risk_level") or "").strip().upper()
+    return {"R4": 4, "R3": 3, "R2": 2, "R1": 1, "R0": 0}.get(value, -1)
+
+
+def _notification_priority(event: dict[str, Any]) -> int:
+    source = str(event.get("source_key") or event.get("source") or event.get("kind") or "").casefold()
+    return int(
+        event.get("notification_status") == "eligible"
+        and source not in {"financialjuice", "news"}
+    )
 
 
 def _quote_clause(item: dict[str, Any]) -> str:
@@ -154,7 +222,12 @@ def _quote_clause(item: dict[str, Any]) -> str:
 
 
 def _usable_quote(item: dict[str, Any]) -> bool:
-    return bool(item.get("change_percent") is not None and item.get("price") is not None)
+    if item.get("change_percent") is None or item.get("price") is None:
+        return False
+    try:
+        return math.isfinite(float(item["price"])) and math.isfinite(float(item["change_percent"]))
+    except (TypeError, ValueError):
+        return False
 
 
 def _theme_for_event(event: dict[str, Any], fact: str) -> dict[str, Any]:
@@ -162,20 +235,35 @@ def _theme_for_event(event: dict[str, Any], fact: str) -> dict[str, Any]:
     why = _clean_text(event.get("why_important") or event.get("importance_detail") or event.get("trigger"))
     impact = _clean_text(event.get("possible_linkage") or event.get("possible_impact") or event.get("market_context"))
     watch = _clean_text(event.get("stock_observation") or event.get("watch") or event.get("follow_up_observation"))
+    source_evidence = _source_evidence(event, source)
+    quote_evidence = _quote_evidence(event.get("market_evidence"))
+    canonical_event_key = _event_key(event, fact)
     return {
         "title": source,
         "what_happened": fact,
         "why_important": why or "事件事實已完成公開來源核對。",
         "market_implication": impact or "等待相關市場價格與後續公開資料核對，不直接推定因果。",
         "stock_observation": watch or "持續觀察台美主要指數、利率與相關產業價格。",
-        "evidence": [{
-            "source": source,
-            "source_key": event.get("source_key") or event.get("source"),
-            "observation_id": event.get("observation_id"),
-            "notification_id": event.get("notification_id"),
-            "published_at": event.get("published_at") or event.get("created_at"),
-        }],
-        "event_key": _event_key(event, fact),
+        "evidence": source_evidence,
+        "source_evidence": source_evidence,
+        "quote_evidence": quote_evidence,
+        "event_key": canonical_event_key,
+        "canonical_event_key": canonical_event_key,
+        "source_event_keys": [
+            str(value).strip()
+            for value in (
+                event.get("notification_key"),
+                event.get("notification_id"),
+                event.get("observation_id"),
+                event.get("event_cluster_key"),
+            )
+            if str(value or "").strip()
+        ],
+        "source": source,
+        "published_at": event.get("published_at") or event.get("created_at") or event.get("received_at"),
+        "notification_status": event.get("notification_status"),
+        "prstk_risk_level": event.get("prstk_risk_level") or event.get("risk_level"),
+        "vendor_importance": event.get("vendor_importance"),
     }
 
 
@@ -184,6 +272,7 @@ def _theme_for_quotes(items: list[dict[str, Any]]) -> dict[str, Any] | None:
     clauses = [value for value in clauses if value]
     if not clauses:
         return None
+    quote_evidence = _quote_evidence(items[:3])
     return {
         "title": "市場價格",
         "what_happened": "、".join(clauses[:3]) + "。",
@@ -196,7 +285,17 @@ def _theme_for_quotes(items: list[dict[str, Any]]) -> dict[str, Any] | None:
             "quote_time": item.get("quote_time") or item.get("quote_date"),
             "freshness": item.get("freshness") or item.get("data_status"),
         } for item in items[:3] if _usable_quote(item)],
+        "source_evidence": [{
+            "source": item.get("source_label") or item.get("quote_source") or "市場報價",
+            "ticker": item.get("ticker"),
+            "quote_time": item.get("quote_time") or item.get("quote_date"),
+            "freshness": item.get("freshness") or item.get("data_status"),
+        } for item in items[:3] if _usable_quote(item)],
+        "quote_evidence": quote_evidence,
         "event_key": hashlib.sha256("|".join(clauses[:3]).encode("utf-8")).hexdigest()[:20],
+        "canonical_event_key": hashlib.sha256("|".join(clauses[:3]).encode("utf-8")).hexdigest()[:20],
+        "source": "市場報價",
+        "published_at": next((item.get("quote_time") or item.get("quote_date") for item in items if _usable_quote(item)), None),
     }
 
 
@@ -274,19 +373,23 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
         seen.add(key)
         candidates.append((event, fact))
 
-    def candidate_sort_key(pair: tuple[dict[str, Any], str]) -> tuple[int, float, float, str]:
+    def candidate_sort_key(pair: tuple[dict[str, Any], str]) -> tuple[int, int, int, float, float, str]:
         timestamp = _event_timestamp(pair[0])
+        event = pair[0]
+        source = str(event.get("source_key") or event.get("source") or "").casefold()
+        sync_rank = int(not (event.get("official_confirmed") is True and event.get("market_sync_confirmed") is True))
         return (
-            0 if pair[0].get("notification_status") == "eligible" else 1,
-            -_importance_score(pair[0]),
+            -_notification_priority(event),
+            -_risk_score(event),
+            sync_rank,
             -(timestamp.timestamp() if timestamp else 0),
-            _event_key(pair[0], pair[1]),
+            -_importance_score(event) if source == "financialjuice" else 0.0,
+            _event_key(event, pair[1]),
         )
 
     candidates.sort(key=candidate_sort_key)
 
-    event_themes = [_theme_for_event(event, fact) for event, fact in candidates[:2]]
-    themes = event_themes[:1]
+    event_themes = [_theme_for_event(event, fact) for event, fact in candidates]
     all_quotes = [
         item for item in [*(snapshot.get("indices") or []), *(snapshot.get("quotes") or []), *(snapshot.get("macro_quotes") or [])]
         if isinstance(item, dict)
@@ -297,12 +400,69 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
         key=lambda item: quote_priority.index(str(item.get("ticker") or "")),
     )
     quote_theme = _theme_for_quotes(quote_items)
-    if quote_theme and len(themes) < 3:
-        themes.append(quote_theme)
-    if len(themes) < 3:
-        themes.extend(event_themes[1:2])
+    primary_theme = event_themes[0] if event_themes else quote_theme
+    if primary_theme is None:
+        return {
+            "status": "suppressed",
+            "notification_eligible": False,
+            "notification_reason": "insufficient_evidence",
+            "assessment_summary": "",
+            "overview": "本輪公開市場證據不足，暫不形成判讀。",
+            "public_short_message": "",
+            "themes": [],
+            "primary_theme": None,
+            "secondary_signals": [],
+            "displayed_event_keys": [],
+            "evidence": [],
+            "source_evidence": [],
+            "quote_evidence": [],
+        }
+    if event_themes and not primary_theme.get("quote_evidence") and quote_theme:
+        # An event may only carry ticker references after the source router
+        # has compacted its payload.  Hydrate the primary theme from the same
+        # release-bound snapshot, never from a different historical snapshot.
+        primary_theme = {
+            **primary_theme,
+            "quote_evidence": list(quote_theme.get("quote_evidence") or [])[:2],
+        }
 
-    facts = [str(theme["what_happened"]).rstrip("。") + "。" for theme in themes]
+    themes = [primary_theme]
+    secondary_themes = [theme for theme in event_themes[1:] if theme.get("canonical_event_key") != primary_theme.get("canonical_event_key")]
+    if quote_theme and quote_theme.get("canonical_event_key") != primary_theme.get("canonical_event_key"):
+        secondary_themes.append(quote_theme)
+    themes.extend(secondary_themes[:2])
+
+    # Prices are evidence attached to the event, not a second copy of the
+    # event's public narrative.  Keep quote-only briefings meaningful, while
+    # preventing a refreshed quote from changing the identity of an event
+    # briefing or making the Telegram summary oscillate between runs.
+    summary_themes = event_themes[:3] if event_themes else [quote_theme]
+
+    secondary_signals: list[dict[str, Any]] = []
+    seen_secondary: set[str] = {str(primary_theme.get("canonical_event_key") or "")}
+    for theme in secondary_themes:
+        key = str(theme.get("canonical_event_key") or "").strip()
+        if not key or key in seen_secondary:
+            continue
+        seen_secondary.add(key)
+        secondary_signals.append({
+            "canonical_event_key": key,
+            "event_key": key,
+            "title": theme.get("title"),
+            "what_happened": theme.get("what_happened"),
+            "public_short_message": theme.get("what_happened"),
+            "source": theme.get("source"),
+            "published_at": theme.get("published_at"),
+            "prstk_risk_level": theme.get("prstk_risk_level"),
+            "notification_status": theme.get("notification_status"),
+            "vendor_importance": theme.get("vendor_importance"),
+            "source_event_keys": theme.get("source_event_keys") or [],
+            "rank_reason": "重要度／核對狀態／發布時間／穩定事件鍵",
+        })
+        if len(secondary_signals) >= 3:
+            break
+
+    facts = [str(theme["what_happened"]).rstrip("。") + "。" for theme in summary_themes if theme]
     if not facts:
         return {
             "status": "suppressed",
@@ -312,7 +472,12 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
             "overview": "本輪公開市場證據不足，暫不形成判讀。",
             "public_short_message": "",
             "themes": [],
+            "primary_theme": None,
+            "secondary_signals": [],
+            "displayed_event_keys": [],
             "evidence": [],
+            "source_evidence": [],
+            "quote_evidence": [],
         }
 
     label = _SLOT_LABELS.get(slot, "市場")
@@ -333,7 +498,14 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
         "slot": slot,
         "overview": overview,
         "public_short_message": public_message,
-        "themes": themes,
+        # Quote hydration is release-bound evidence, not notification
+        # identity.  Keep the values in the artifact, but exclude them from
+        # the content hash so a refreshed quote cannot resend the same event.
+        "themes": [
+            {key: value for key, value in theme.items() if key != "quote_evidence"}
+            for theme in summary_themes
+            if theme
+        ],
     }
     content_hash = hashlib.sha256(
         json.dumps(canonical_material, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -353,7 +525,20 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
         "overview": overview,
         "public_short_message": public_message,
         "themes": themes,
+        "primary_theme": primary_theme,
+        "secondary_signals": secondary_signals,
+        "displayed_event_keys": list(dict.fromkeys(
+            str(key).strip()
+            for theme in [primary_theme, *secondary_signals]
+            for key in [
+                theme.get("canonical_event_key") or theme.get("event_key"),
+                *(theme.get("source_event_keys") or []),
+            ]
+            if str(key or "").strip()
+        )),
         "evidence": [evidence for theme in themes for evidence in theme.get("evidence", [])],
+        "source_evidence": [evidence for theme in themes for evidence in theme.get("source_evidence", [])],
+        "quote_evidence": list(primary_theme.get("quote_evidence") or [])[:2],
         "lookback_hours": 24,
         "as_of": generated or as_of.isoformat(),
         "slot": slot,

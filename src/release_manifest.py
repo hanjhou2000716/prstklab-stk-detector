@@ -173,6 +173,28 @@ def _briefing_projection(
     content_hash = str(briefing.get("canonical_content_hash") or "").strip()
     if not content_hash:
         raise ValueError("scheduled briefing has no canonical content hash")
+    primary = briefing.get("primary_theme")
+    if not isinstance(primary, dict):
+        themes = briefing.get("themes")
+        primary = themes[0] if isinstance(themes, list) and themes and isinstance(themes[0], dict) else {}
+    primary_quote_evidence = [
+        item for item in (primary.get("quote_evidence") or briefing.get("quote_evidence") or [])[:2]
+        if isinstance(item, dict) and item.get("ticker") and item.get("price") is not None and item.get("change_percent") is not None
+    ]
+    source_evidence = [
+        item for item in (primary.get("source_evidence") or briefing.get("source_evidence") or briefing.get("evidence") or [])
+        if isinstance(item, dict)
+    ]
+    themes = briefing.get("themes") or []
+    secondary_signals = briefing.get("secondary_signals") or []
+    displayed_event_keys = list(dict.fromkeys(
+        str(value).strip()
+        for value in (briefing.get("displayed_event_keys") or [])
+        if str(value or "").strip()
+    ))
+    if primary.get("canonical_event_key") and primary["canonical_event_key"] not in displayed_event_keys:
+        displayed_event_keys.insert(0, str(primary["canonical_event_key"]))
+    primary_event = str(primary.get("what_happened") or briefing.get("assessment_summary") or briefing.get("overview") or public_message)
     return {
         "schema_version": "1.0",
         "kind": "market_briefing",
@@ -191,18 +213,24 @@ def _briefing_projection(
         "brief_title": public_message,
         "public_short_message": public_message,
         "short_label": "市場判讀",
-        "event": briefing.get("assessment_summary") or briefing.get("overview") or public_message,
-        "why_important": "本次判讀整合最近24小時的公開事件與市場資料。",
-        "possible_linkage": "各市場若分歧，保留分歧，不直接推論跨市場因果。",
-        "stock_observation": "持續核對台美主要指數、利率與相關產業價格。",
-        "market_evidence": [item for item in (briefing.get("evidence") or [])[:6] if isinstance(item, dict)],
-        "source_evidence": [item for item in (briefing.get("evidence") or [])[:6] if isinstance(item, dict)],
+        "event": primary_event,
+        "linked_markets": [str(item.get("ticker")).strip() for item in primary_quote_evidence if str(item.get("ticker") or "").strip()],
+        "why_important": primary.get("why_important") or "本次事件已完成公開來源核對。",
+        "possible_linkage": primary.get("market_implication") or "等待相關市場價格與後續公開資料核對，不直接推定因果。",
+        "stock_observation": primary.get("stock_observation") or "持續核對台美主要指數、利率與相關產業價格。",
+        "market_evidence": primary_quote_evidence,
+        "source_evidence": source_evidence,
         "briefing": {
             "slot": briefing.get("slot"),
             "as_of": briefing.get("as_of"),
-            "themes": briefing.get("themes") or [],
+            "themes": themes,
+            "primary_theme": primary,
+            "secondary_signals": secondary_signals[:3],
+            "displayed_event_keys": displayed_event_keys,
             "observations": briefing.get("observations") or [],
             "evidence": briefing.get("evidence") or [],
+            "source_evidence": source_evidence,
+            "quote_evidence": primary_quote_evidence,
         },
         "notification_status": briefing.get("status"),
         "notification_reason": briefing.get("notification_reason"),
