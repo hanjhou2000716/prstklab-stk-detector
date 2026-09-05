@@ -1204,8 +1204,9 @@ const renderResearchList = (id, items, empty) => {
     const price = item.close === null || item.close === undefined ? "報價待完整掃描" : `${formatNumber(item.close)} ${currency}`;
     const change = item.change_percent === null || item.change_percent === undefined ? "—" : signedPercent(item.change_percent);
     const tags = researchStrategyTags(item).map((label) => `<span class="strategy-chip">${escapeHtml(label)}</span>`).join("");
+    const history = item.research_version_state === "historical" ? `<span class="strategy-chip">歷史版本｜資料日期 ${escapeHtml(String(item.as_of || item.historical_from_generated_at || "—"))}</span>` : "";
     const score = researchScoreParts(item);
-    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}</strong></div>${researchExplainability(item)}</li>`;
+    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${history}${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}</strong></div>${researchExplainability(item)}</li>`;
   }).join("");
 };
 
@@ -1229,9 +1230,10 @@ const renderValueResearch = (id, items, empty) => {
     const price = item.close === null || item.close === undefined ? "報價待完整掃描" : `${formatNumber(item.close)} ${currency}`;
     const change = item.change_percent === null || item.change_percent === undefined ? "—" : signedPercent(item.change_percent);
     const tags = researchStrategyTags(item).map((label) => `<span class="strategy-chip">${escapeHtml(label)}</span>`).join("");
+    const history = item.research_version_state === "historical" ? `<span class="strategy-chip">歷史版本｜資料日期 ${escapeHtml(String(item.as_of || item.historical_from_generated_at || "—"))}</span>` : "";
     const score = researchScoreParts(item);
     const explanation = researchExplainability(item);
-    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}${item.condition_count ? ` · ${escapeHtml(item.condition_count)}` : ""}</strong></div>${explanation}</li>`;
+    return `<li class="research-item"><div class="research-item-top"><div class="research-identity"><b class="research-ticker">${escapeHtml(item.ticker)}</b><span class="research-company">${escapeHtml(item.name || item.ticker)}</span></div><span class="research-price ${state}"><span class="research-price-label">收盤參考</span><strong>${escapeHtml(price)}</strong><small>${escapeHtml(change)}</small></span></div><div class="research-strategies">${history}${tags}</div><div class="research-item-bottom"><span class="research-score-label">${escapeHtml(score.label)}</span><strong class="research-score">${escapeHtml(score.value)}${item.condition_count ? ` · ${escapeHtml(item.condition_count)}` : ""}</strong></div>${explanation}</li>`;
   }).join("");
   container.innerHTML = `${visibleFormal.length ? `<li class="research-subheading">正式候選（至少 5/6，最多 5 檔）</li>${renderGroup("正式候選", visibleFormal)}` : ""}${visibleObservation.length ? `<li class="research-subheading">觀察名單（3/6 或 4/6，補足至 5 檔）</li>${renderGroup("觀察名單", visibleObservation)}` : ""}`;
 };
@@ -1255,8 +1257,20 @@ const renderResearch = (snapshot) => {
   const backtestNotice = backtestState && backtestState !== "ready"
     ? "正式回測尚未發布；候選僅供研究觀察，不提供操作判斷。"
     : "";
-  setText("research-notice", staleNotice || backtestNotice || generatedAt.trim() || "掃描時間暫時無法取得");
+  const mixedNotice = report.publication_state === "mixed_strategy"
+    ? "本輪各策略獨立更新；未完成策略保留最後成功版本並標示歷史資料。"
+    : "";
+  setText("research-notice", mixedNotice || staleNotice || backtestNotice || generatedAt.trim() || "掃描時間暫時無法取得");
   const sourceFor = (strategy) => (report.sources || []).find((item) => item.market === activeResearchMarket && item.strategy === strategy) || {};
+  const strategyLabels = { price_action: "裸 K 結構", momentum: "動能狙擊", resonance: "三維共振", value: "璞玉價值" };
+  Object.entries(strategyLabels).forEach(([strategy, label]) => {
+    const source = sourceFor(strategy);
+    const date = source.scan_trading_date || source.last_successful_at;
+    const state = source.historical_fallback === true ? "歷史版本" : source.scan_state === "complete" ? "本輪完成" : source.scan_state === "building" ? "建檔中" : "更新失敗";
+    const suffix = date ? `｜${state}｜資料日 ${String(date).slice(0, 10)}` : `｜${state}`;
+    const summary = document.querySelector(`.research-drawer[data-strategy="${strategy}"] summary`);
+    if (summary) summary.textContent = `${label}${suffix}`;
+  });
   const sourceBlocked = (strategy) => {
     const source = sourceFor(strategy);
     const partialCandidatesAllowed = source.partial_candidates_allowed === true;
@@ -1268,7 +1282,10 @@ const renderResearch = (snapshot) => {
   const marketCandidates = candidates.filter((item) => item.market === activeResearchMarket);
   const sourceMessage = (strategy, fallback) => {
     const source = sourceFor(strategy);
-    if (staleNotice) return staleNotice;
+    if (source.historical_fallback === true) {
+      const stamp = source.last_successful_generated_at || "—";
+      return `本輪更新失敗或仍建檔中；顯示最後成功版本（${new Date(stamp).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}），不代表本輪新資料。`;
+    }
     if (source.status === "掃描失敗" || source.scan_state === "failed") {
       const evidence = source.failure_evidence || {};
       const attempts = Number.isFinite(Number(evidence.attempts)) ? `（已重試 ${Number(evidence.attempts)} 次）` : "";
@@ -1290,10 +1307,15 @@ const renderResearch = (snapshot) => {
         : valueDiagnostics.formal_eligible_records === 0 && valueDiagnostics.observation_eligible_records === 0
           ? `本輪 ${valueDiagnostics.complete_records} 檔資料完整，但未達正式 5/6 或觀察 3/6–4/6 門檻。`
           : "本輪沒有同時通過璞玉品質與三月去熱門化公開資料覆核的標的";
-  renderResearchList("research-list", sourceBlocked("price_action") ? [] : marketCandidates.filter((item) => item.strategy === "price_action"), sourceMessage("price_action", "本輪掃描沒有符合裸 K 結構的候選標的"));
-  renderResearchList("momentum-list", sourceBlocked("momentum") ? [] : marketCandidates.filter((item) => item.strategy === "momentum"), sourceMessage("momentum", "本輪掃描沒有符合動能條件的候選標的"));
-  renderResearchList("resonance-list", sourceBlocked("resonance") ? [] : marketCandidates.filter((item) => item.strategy === "resonance"), sourceMessage("resonance", "本輪掃描沒有符合三維共振條件的候選標的"));
-  renderValueResearch("value-list", sourceBlocked("value") ? [] : marketCandidates.filter((item) => item.strategy === "value"), sourceMessage("value", valueMessage));
+  const strategyItems = (strategy) => {
+    const all = marketCandidates.filter((item) => item.strategy === strategy);
+    const current = all.filter((item) => item.research_version_state !== "historical");
+    return current.length ? current : all;
+  };
+  renderResearchList("research-list", sourceBlocked("price_action") ? [] : strategyItems("price_action"), sourceMessage("price_action", "本輪掃描沒有符合裸 K 結構的候選標的"));
+  renderResearchList("momentum-list", sourceBlocked("momentum") ? [] : strategyItems("momentum"), sourceMessage("momentum", "本輪掃描沒有符合動能條件的候選標的"));
+  renderResearchList("resonance-list", sourceBlocked("resonance") ? [] : strategyItems("resonance"), sourceMessage("resonance", "本輪掃描沒有符合三維共振條件的候選標的"));
+  renderValueResearch("value-list", sourceBlocked("value") ? [] : strategyItems("value"), sourceMessage("value", valueMessage));
 };
 
 document.querySelectorAll(".research-tab").forEach((tab) => tab.addEventListener("click", () => {

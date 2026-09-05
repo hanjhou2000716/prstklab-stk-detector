@@ -594,8 +594,8 @@ def validate_research(document: dict[str, Any]) -> list[str]:
     scan_mode = str(document.get("scan_mode") or "")
     if document.get("publish_eligible") is True and scan_mode != "production":
         errors.append("research publish_eligible=true requires scan_mode=production")
-    if document.get("publish_eligible") is True and document.get("scan_scope") != "full":
-        errors.append("research publish_eligible=true requires scan_scope=full")
+    if document.get("publish_eligible") is True and document.get("publication_state") != "mixed_strategy" and document.get("scan_scope") != "full":
+        errors.append("research publish_eligible=true requires scan_scope=full unless publication_state=mixed_strategy")
     if document.get("production_eligible") is True and scan_mode != "production":
         errors.append("research production_eligible=true requires scan_mode=production")
     if document.get("production_eligible") is True and document.get("scan_scope") != "full":

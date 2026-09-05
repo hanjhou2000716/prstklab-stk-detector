@@ -1030,9 +1030,15 @@ def build_release_manifest(
             research_time = _parse_artifact_time(research.get("generated_at"))
             is_production = (
                 research.get("scan_mode") == "production"
-                and research.get("scan_scope") == "full"
+                and (
+                    research.get("scan_scope") == "full"
+                    or research.get("publication_state") == "mixed_strategy"
+                )
                 and research.get("publish_eligible") is True
-                and research.get("production_eligible") is True
+                and (
+                    research.get("production_eligible") is True
+                    or research.get("publication_state") == "mixed_strategy"
+                )
                 and not fallback_applied
             )
             if is_production and market_time is not None and research_time is not None:

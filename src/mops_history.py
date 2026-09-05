@@ -54,6 +54,10 @@ class IncompleteMopsHistoryError(RuntimeError):
         super().__init__(f"MOPS history incomplete for {ticker}")
 
 
+class MopsDeadlineExceeded(RuntimeError):
+    """The shared research-worker deadline was reached before a request finished."""
+
+
 def _is_missing_report(error: Exception) -> bool:
     """Return whether MOPS simply has no report for a requested period.
 
@@ -174,10 +178,23 @@ class MopsPublicClient:
         self.session.headers["User-Agent"] = USER_AGENT
         self.session.headers.setdefault("Accept-Language", "zh-TW,zh;q=0.9,en;q=0.7")
 
-    def _pace(self) -> None:
+    @staticmethod
+    def _remaining(deadline: float | None) -> float | None:
+        if deadline is None:
+            return None
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise MopsDeadlineExceeded("MOPS research deadline exceeded")
+        return remaining
+
+    def _pace(self, deadline: float | None = None) -> None:
+        remaining = self._remaining(deadline)
         elapsed = time.monotonic() - self._last_request_at
         if elapsed < MIN_REQUEST_INTERVAL_SECONDS:
-            time.sleep(MIN_REQUEST_INTERVAL_SECONDS - elapsed)
+            pause = MIN_REQUEST_INTERVAL_SECONDS - elapsed
+            if remaining is not None and pause >= remaining:
+                raise MopsDeadlineExceeded("MOPS research deadline exceeded while pacing")
+            time.sleep(pause)
         self._last_request_at = time.monotonic()
 
     def _rotate_session(self) -> None:
@@ -196,12 +213,16 @@ class MopsPublicClient:
     def _is_security_block(error: Exception) -> bool:
         return "security block" in str(error).lower()
 
-    def report(self, api_name: str, company_id: str, **parameters: str | int) -> str:
+    def report(self, api_name: str, company_id: str, **parameters: str | int | float | None) -> str:
+        deadline = parameters.pop("deadline", None)
+        deadline_value = float(deadline) if deadline is not None else None
         last_error: Exception | None = None
         for attempt in range(REQUEST_RETRIES):
             try:
-                self._pace()
-                return self._report_once(api_name, company_id, parameters)
+                self._pace(deadline_value)
+                return self._report_once(api_name, company_id, parameters, deadline=deadline_value)
+            except MopsDeadlineExceeded:
+                raise
             except (OSError, ValueError, requests.RequestException, RuntimeError) as error:
                 last_error = error
                 # The redirect endpoint is intermittently rate-limited or
@@ -209,25 +230,46 @@ class MopsPublicClient:
                 # public report remains available through the legacy MOPS
                 # endpoint, so try it before spending the next retry window.
                 if self._is_security_block(error):
-                    time.sleep(SECURITY_BLOCK_BACKOFF_SECONDS)
+                    self._deadline_sleep(SECURITY_BLOCK_BACKOFF_SECONDS, deadline_value)
                 try:
-                    self._pace()
-                    return self._legacy_report_once(api_name, company_id, parameters)
+                    self._pace(deadline_value)
+                    return self._legacy_report_once(api_name, company_id, parameters, deadline=deadline_value)
+                except MopsDeadlineExceeded:
+                    raise
                 except (OSError, ValueError, requests.RequestException, RuntimeError) as fallback_error:
                     last_error = fallback_error
                     self._rotate_session()
                     if self._is_security_block(fallback_error):
-                        time.sleep(SECURITY_BLOCK_BACKOFF_SECONDS)
+                        self._deadline_sleep(SECURITY_BLOCK_BACKOFF_SECONDS, deadline_value)
                 if attempt + 1 < REQUEST_RETRIES:
-                    time.sleep(REQUEST_BACKOFF_SECONDS * (attempt + 1))
+                    self._deadline_sleep(REQUEST_BACKOFF_SECONDS * (attempt + 1), deadline_value)
         assert last_error is not None
         raise last_error
 
-    def _report_once(self, api_name: str, company_id: str, parameters: dict[str, str | int]) -> str:
+    @staticmethod
+    def _deadline_sleep(seconds: float, deadline: float | None) -> None:
+        if deadline is not None:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0 or seconds >= remaining:
+                raise MopsDeadlineExceeded("MOPS research deadline exceeded while waiting")
+        time.sleep(seconds)
+
+    @staticmethod
+    def _timeout(default: float, deadline: float | None) -> float:
+        if deadline is None:
+            return default
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise MopsDeadlineExceeded("MOPS research deadline exceeded before request")
+        return max(0.5, min(default, remaining))
+
+    def _report_once(
+        self, api_name: str, company_id: str, parameters: dict[str, str | int | float | None], *, deadline: float | None = None,
+    ) -> str:
         response = self.session.post(
             MOPS_API,
             json={"apiName": api_name, "parameters": {"companyId": company_id, **parameters}},
-            timeout=30,
+            timeout=self._timeout(30, deadline),
         )
         response.raise_for_status()
         try:
@@ -238,7 +280,7 @@ class MopsPublicClient:
         if not url:
             raise RuntimeError(f"MOPS {api_name} did not return a report URL")
         # MOPS sets a short-lived session cookie on the report landing page.
-        landing = self.session.get(url, timeout=30)
+        landing = self.session.get(url, timeout=self._timeout(30, deadline))
         landing.raise_for_status()
         form: dict[str, str] = {
             "encodeURIComponent": "1", "step": "1", "firstin": "true", "off": "1",
@@ -247,7 +289,7 @@ class MopsPublicClient:
             "co_id": company_id,
         }
         if api_name in {"t164sb04", "t164sb03"}:
-            form.update({"year": str(parameters["year"]), "season": f"{int(parameters['season']):02d}"})
+            form.update({"year": str(parameters["year"]), "season": f"{int(str(parameters['season'])):02d}"})
         elif api_name == "t05st09_1":
             # Query one ROC fiscal year at a time.  An explicit "查無資料"
             # response is a valid zero-dividend observation, not a provider
@@ -258,7 +300,7 @@ class MopsPublicClient:
         report = self.session.post(
             f"{MOPS_OLD}/ajax_{api_name}", data=form,
             headers={"Referer": url, "X-Requested-With": "XMLHttpRequest", "Origin": "https://mopsov.twse.com.tw"},
-            timeout=45,
+            timeout=self._timeout(45, deadline),
         )
         report.raise_for_status()
         text = report.content.decode("utf-8", errors="replace")
@@ -270,7 +312,9 @@ class MopsPublicClient:
         self,
         api_name: str,
         company_id: str,
-        parameters: dict[str, str | int],
+        parameters: dict[str, str | int | float | None],
+        *,
+        deadline: float | None = None,
     ) -> str:
         """Fetch a public MOPS report without the redirect/session hop."""
         form: dict[str, str] = {
@@ -280,7 +324,7 @@ class MopsPublicClient:
             "co_id": company_id,
         }
         if api_name in {"t164sb04", "t164sb03"}:
-            form.update({"year": str(parameters["year"]), "season": f"{int(parameters['season']):02d}"})
+            form.update({"year": str(parameters["year"]), "season": f"{int(str(parameters['season'])):02d}"})
         elif api_name == "t05st09_1":
             form["year"] = str(parameters.get("year") or "")
         else:
@@ -293,7 +337,7 @@ class MopsPublicClient:
                 "X-Requested-With": "XMLHttpRequest",
                 "Origin": "https://mopsov.twse.com.tw",
             },
-            timeout=45,
+            timeout=self._timeout(45, deadline),
         )
         response.raise_for_status()
         text = response.content.decode("utf-8", errors="replace")
@@ -318,6 +362,7 @@ def _recent_periods(roc_year: int) -> list[tuple[int, int]]:
 
 def fetch_pristine_history(
     ticker: str, *, client: MopsPublicClient | None = None, as_of: date | None = None,
+    deadline: float | None = None,
 ) -> dict[str, Any]:
     """Fetch the strict MOPS history required for one Taiwan candidate."""
     client = client or MopsPublicClient()
@@ -328,8 +373,13 @@ def fetch_pristine_history(
 
     # Work backwards: missing future filings are normal, not substituted.
     for year, quarter in _recent_periods(roc_year):
+        if deadline is not None and time.monotonic() >= deadline:
+            raise MopsDeadlineExceeded(f"MOPS history deadline exceeded for {ticker}")
         try:
-            report = client.report("t164sb04", ticker, year=year, season=quarter, dataType="2")
+            parameters: dict[str, str | int | float | None] = {"year": year, "season": quarter, "dataType": "2"}
+            if deadline is not None:
+                parameters["deadline"] = deadline
+            report = client.report("t164sb04", ticker, **parameters)
         except (RuntimeError, ValueError) as error:
             # MOPS normally has no current-year Q4 report yet.  Continue to
             # older periods; only a security/transport failure should abort.
@@ -348,6 +398,8 @@ def fetch_pristine_history(
                 annual[year - 1] = prior
         if len(quarterly) >= 4 and len(annual) >= 3:
             break
+        if deadline is not None and time.monotonic() + REPORT_INTERVAL_SECONDS >= deadline:
+            raise MopsDeadlineExceeded(f"MOPS history deadline exceeded for {ticker}")
         time.sleep(REPORT_INTERVAL_SECONDS)
 
     # The unscoped dividend endpoint commonly returns only the latest two
@@ -357,8 +409,13 @@ def fetch_pristine_history(
     dividend_results: dict[int, bool] = {}
     dividend_history_years = [roc_year - offset for offset in range(3)]
     for dividend_year in dividend_history_years:
+        if deadline is not None and time.monotonic() >= deadline:
+            raise MopsDeadlineExceeded(f"MOPS history deadline exceeded for {ticker}")
         try:
-            dividend_report = client.report("t05st09_1", ticker, year=dividend_year)
+            dividend_parameters: dict[str, str | int | float | None] = {"year": dividend_year}
+            if deadline is not None:
+                dividend_parameters["deadline"] = deadline
+            dividend_report = client.report("t05st09_1", ticker, **dividend_parameters)
             dividend_results[dividend_year] = bool(parse_dividend_history(dividend_report).get(dividend_year, False))
         except (RuntimeError, ValueError):
             # Unlike a year-specific HTML page containing "查無資料", an
@@ -445,7 +502,7 @@ def _retry_due(failure: dict[str, Any], now: datetime) -> bool:
 
 def mops_pristine_history(
     tickers: Iterable[str], cache_path: Path, *, max_refresh: int = 0,
-    client: MopsPublicClient | None = None,
+    client: MopsPublicClient | None = None, deadline: float | None = None,
 ) -> tuple[dict[str, dict[str, Any]], list[str]]:
     """Return cached/verified MOPS eligibility observations for a ticker set.
 
@@ -464,6 +521,15 @@ def mops_pristine_history(
     errors: list[str] = []
     attempted = 0
     client = client or MopsPublicClient()
+
+    def persist() -> bool:
+        try:
+            _save_cache(cache_path, records, failures)
+        except OSError:
+            errors.append("cache: write_failed")
+            return False
+        return True
+
     ordered_tickers = list(dict.fromkeys(str(value).strip() for value in tickers if str(value).strip()))
     pending = [
         ticker for ticker in ordered_tickers
@@ -473,6 +539,8 @@ def mops_pristine_history(
     # skipped until their retry window.  This guarantees each run advances.
     pending.sort(key=lambda ticker: (0 if ticker not in failures else (1 if _retry_due(failures[ticker], now) else 2), ticker))
     for ticker in pending:
+        if deadline is not None and time.monotonic() >= deadline:
+            break
         previous_failure = failures.get(ticker)
         if max_refresh and isinstance(previous_failure, dict) and not _retry_due(previous_failure, now):
             continue
@@ -480,14 +548,23 @@ def mops_pristine_history(
             break
         attempted += 1
         try:
-            record = fetch_pristine_history(ticker, client=client)
+            if deadline is None:
+                record = fetch_pristine_history(ticker, client=client)
+            else:
+                record = fetch_pristine_history(ticker, client=client, deadline=deadline)
             if not record.get("history_data_complete"):
                 raise IncompleteMopsHistoryError(ticker, record)
             records[ticker] = record
             failures.pop(ticker, None)
             # Persist each verified ticker immediately.  This keeps progress
             # across the worker's bounded timeout and later scheduled runs.
-            _save_cache(cache_path, records, failures)
+            if not persist():
+                records.pop(ticker, None)
+                failures[ticker] = {
+                    "attempted_at": now.isoformat(),
+                    "error": "cache_write_failed",
+                    "attempts": int(previous_failure.get("attempts", 0)) + 1 if isinstance(previous_failure, dict) else 1,
+                }
         except IncompleteMopsHistoryError as error:
             errors.append(f"{ticker} MOPS history: incomplete")
             failures[ticker] = {
@@ -496,7 +573,7 @@ def mops_pristine_history(
                 "missing_periods": error.record.get("missing_periods", []),
                 "attempts": int(previous_failure.get("attempts", 0)) + 1 if isinstance(previous_failure, dict) else 1,
             }
-            _save_cache(cache_path, records, failures)
+            persist()
         except (OSError, ValueError, requests.RequestException, RuntimeError) as error:
             errors.append(f"{ticker} MOPS history: {type(error).__name__}")
             failures[ticker] = {
@@ -505,8 +582,8 @@ def mops_pristine_history(
                 "detail": str(error)[:240],
                 "attempts": int(previous_failure.get("attempts", 0)) + 1 if isinstance(previous_failure, dict) else 1,
             }
-            _save_cache(cache_path, records, failures)
+            persist()
     # Keep the final write for compatibility with callers that provide an
     # empty pending set; it also normalizes legacy cache files to schema 2.
-    _save_cache(cache_path, records, failures)
+    persist()
     return {ticker: records[ticker] for ticker in tickers if ticker in records}, errors

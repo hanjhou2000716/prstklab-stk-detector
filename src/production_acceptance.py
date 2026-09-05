@@ -118,11 +118,14 @@ def production_research_contract_errors(research: dict[str, Any]) -> list[str]:
                             errors.append(f"research candidate {index} strategy is absent from ready backtest registry")
     if str(research.get("scan_mode") or "") != "production":
         errors.append("research artifact is not a production scan")
+    mixed_strategy = research.get("publication_state") == "mixed_strategy"
     if research.get("publish_eligible") is not True:
         errors.append("production research is not publish_eligible")
-    if research.get("production_eligible") is not True:
+    if not mixed_strategy and research.get("production_eligible") is not True:
         errors.append("production research is not production_eligible")
-    if str(research.get("scan_scope") or "") != "full":
+    if mixed_strategy and research.get("production_eligible") is True:
+        errors.append("mixed strategy research cannot be production_eligible")
+    if not mixed_strategy and str(research.get("scan_scope") or "") != "full":
         errors.append("production research scan scope is not full")
     run = research.get("research_run")
     if not isinstance(run, dict):
@@ -134,8 +137,10 @@ def production_research_contract_errors(research: dict[str, Any]) -> list[str]:
             errors.append("production research source_commit_sha is missing")
         if str(run.get("scan_mode") or "") != "production":
             errors.append("research run scan mode does not match production")
-        if str(run.get("scan_scope") or "") != "full":
+        if not mixed_strategy and str(run.get("scan_scope") or "") != "full":
             errors.append("research run scan scope is not full")
+        if mixed_strategy and str(run.get("scan_scope") or "") not in {"full", "bounded"}:
+            errors.append("mixed strategy research run scan scope is invalid")
         if str(research.get("run_id") or "") != str(run.get("run_id") or ""):
             errors.append("research run_id does not match research_run provenance")
     generated_at = _parse_time(research.get("generated_at"))
@@ -150,27 +155,42 @@ def production_research_contract_errors(research: dict[str, Any]) -> list[str]:
     expected = _count(research.get("universe_expected"))
     scanned = _count(research.get("universe_scanned"))
     completed = _count(research.get("universe_completed"))
-    if expected <= 0 or scanned < expected or completed < expected:
-        errors.append("production research universe is incomplete")
-    if scanned != completed + _count(research.get("universe_failed")):
-        errors.append("production research universe counts are inconsistent")
-    if _count(research.get("universe_failed")):
-        errors.append("production research contains failed universe records")
+    if not mixed_strategy:
+        if expected <= 0 or scanned < expected or completed < expected:
+            errors.append("production research universe is incomplete")
+        if scanned != completed + _count(research.get("universe_failed")):
+            errors.append("production research universe counts are inconsistent")
+        if _count(research.get("universe_failed")):
+            errors.append("production research contains failed universe records")
     for index, source in enumerate(research.get("sources", [])) if isinstance(research.get("sources"), list) else []:
         if not isinstance(source, dict):
             errors.append(f"research source {index} is not an object")
             continue
         scan_state = str(source.get("scan_state") or "")
+        historical = mixed_strategy and source.get("historical_fallback") is True
+        if historical:
+            # The current attempt is intentionally visible as failed/building;
+            # its old rows are validated as historical and never count as a
+            # current complete scan.
+            visible = _count(source.get("visible_candidates", source.get("candidates")))
+            if visible == 0:
+                errors.append(f"research source {index} historical fallback has no rows")
+            continue
+        if mixed_strategy and scan_state in {"failed", "building"}:
+            # A strategy without a last-good version is still represented in
+            # the eight-entry matrix, but it must not block other complete
+            # strategies from publishing this mixed-date research page.
+            continue
         if scan_state != "complete":
             errors.append(f"research source {index} is not complete")
         if scan_state == "complete" and any(
             source.get(key) is True for key in ("source_unavailable", "data_unavailable", "provider_failed")
         ):
             errors.append(f"research source {index} complete state contradicts unavailable source")
-        failed = _count(source.get("failed_records", source.get("failed")))
-        requested = _count(source.get("requested_records", source.get("requested")))
-        completed_source = _count(source.get("complete_records", source.get("data_complete")))
-        scanned_source = _count(source.get("universe_scanned", source.get("requested")))
+        failed = _count(source.get("failed_records", source.get("failed", source.get("universe_failed"))))
+        requested = _count(source.get("requested_records", source.get("requested", source.get("universe_expected"))))
+        completed_source = _count(source.get("complete_records", source.get("data_complete", source.get("universe_completed"))))
+        scanned_source = _count(source.get("universe_scanned", source.get("requested", source.get("universe_expected"))))
         if requested <= 0 or scanned_source < requested or completed_source < requested or failed:
             errors.append(f"research source {index} universe is incomplete")
         if scanned_source != completed_source + failed:
@@ -214,6 +234,16 @@ def production_strategy_matrix_errors(research: dict[str, Any]) -> list[str]:
     unknown = sorted(actual - REQUIRED_RESEARCH_STRATEGIES)
     if unknown:
         errors.append("production research source matrix has unknown entries: " + ", ".join(f"{market}/{strategy}" for market, strategy in unknown))
+    if research.get("publication_state") == "mixed_strategy":
+        rows = research.get("strategy_publication")
+        by_key = {
+            (str(item.get("market")), str(item.get("strategy"))): item
+            for item in rows if isinstance(item, dict)
+        } if isinstance(rows, list) else {}
+        if set(by_key) != REQUIRED_RESEARCH_STRATEGIES:
+            errors.append("mixed strategy publication matrix is incomplete")
+        elif not any(item.get("eligible") is True for item in by_key.values()):
+            errors.append("mixed strategy publication has no eligible strategy")
     return errors
 
 

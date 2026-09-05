@@ -389,3 +389,74 @@ def build_research_report(sources: list[dict[str, str]]) -> dict[str, Any]:
         "candidates": candidates,
         "summary": {"total_candidates": len(candidates), "by_market_strategy": dict(counts)},
     }
+
+
+def merge_previous_strategy_versions(
+    report: dict[str, Any], previous: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Keep the last verified rows per strategy without masking this run's gap.
+
+    A failed strategy is allowed to publish alongside successful strategies,
+    but its rows are explicitly historical.  A completed zero-row scan is a
+    valid current result and therefore never falls back to an older shortlist.
+    """
+    if not isinstance(previous, dict):
+        return report
+    previous_sources = {
+        (str(item.get("market")), str(item.get("strategy"))): item
+        for item in previous.get("sources", [])
+        if isinstance(item, dict)
+    }
+    previous_rows: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for row in previous.get("candidates", []) if isinstance(previous.get("candidates"), list) else []:
+        if isinstance(row, dict):
+            key = (str(row.get("market")), str(row.get("strategy")))
+            previous_rows.setdefault(key, []).append(row)
+    candidates = report.setdefault("candidates", [])
+    historical_count = 0
+    for source in report.get("sources", []) if isinstance(report.get("sources"), list) else []:
+        if not isinstance(source, dict):
+            continue
+        key = (str(source.get("market")), str(source.get("strategy")))
+        state = str(source.get("scan_state") or "failed")
+        failed = int(source.get("failed_records", source.get("failed", 0)) or 0)
+        current_complete = state == "complete" and failed == 0
+        source["scan_attempted_at"] = report.get("generated_at")
+        source["historical_fallback"] = False
+        if current_complete:
+            source["last_successful_generated_at"] = report.get("generated_at")
+            source["strategy_version_state"] = "current"
+            continue
+        rows = previous_rows.get(key, [])
+        if not rows:
+            source["strategy_version_state"] = "unavailable"
+            continue
+        prev_source = previous_sources.get(key, {})
+        previous_time = (
+            prev_source.get("last_successful_generated_at")
+            or previous.get("generated_at")
+            or prev_source.get("scan_attempted_at")
+        )
+        historical_rows: list[dict[str, Any]] = []
+        for row in rows:
+            copied = dict(row)
+            copied["research_version_state"] = "historical"
+            copied["historical_from_generated_at"] = previous_time
+            copied["historical_reason"] = source.get("blocking_reason") or "本輪策略未完成"
+            historical_rows.append(copied)
+        candidates.extend(historical_rows)
+        historical_count += len(historical_rows)
+        source.update({
+            "historical_fallback": True,
+            "strategy_version_state": "historical",
+            "last_successful_generated_at": previous_time,
+            "historical_candidates": len(historical_rows),
+            "visible_candidates": len(historical_rows),
+            "candidates": len(historical_rows),
+            "formal_candidates": sum(1 for row in historical_rows if row.get("list_type") == "formal"),
+            "observation_candidates": sum(1 for row in historical_rows if row.get("list_type") == "observation"),
+            "candidate_state": "historical",
+        })
+    report["historical_candidate_count"] = historical_count
+    report["mixed_date"] = historical_count > 0
+    return report

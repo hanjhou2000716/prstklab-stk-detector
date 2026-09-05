@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
@@ -12,7 +13,7 @@ from src.instrument_master import InstrumentMaster
 from src.release_manifest import content_snapshot_id
 from src.research_fragments import merge_taiwan_scan_fragments
 from src.research_health import assess_research_health
-from src.research_report import build_research_report
+from src.research_report import build_research_report, merge_previous_strategy_versions
 from src.research_run_contract import attach_research_run
 from src.research_scan_failures import apply_scan_failures, load_scan_failures
 
@@ -156,10 +157,18 @@ def attach_scan_contract(report: dict, scan_mode: str) -> dict:
     sources = report.get("sources", [])
     def scope(source: dict) -> dict:
         mode = str(source.get("universe_mode") or "unknown")
-        expected = int(source.get("universe_expected") or source.get("requested") or 0)
-        scanned = int(source.get("universe_scanned") or source.get("requested") or 0)
-        completed = int(source.get("universe_completed") or source.get("complete_records") or source.get("data_complete") or 0)
-        failed = int(source.get("universe_failed") or source.get("failed_records") or source.get("failed") or 0)
+        def count(*values: Any) -> int:
+            for value in values:
+                try:
+                    if value is not None:
+                        return max(0, int(value))
+                except (TypeError, ValueError):
+                    continue
+            return 0
+        expected = count(source.get("universe_expected"), source.get("requested"))
+        scanned = count(source.get("universe_scanned"), source.get("requested"))
+        completed = count(source.get("universe_completed"), source.get("complete_records"), source.get("data_complete"))
+        failed = count(source.get("universe_failed"), source.get("failed_records"), source.get("failed"))
         valid = mode == "full" and expected > 0 and scanned >= expected and completed + failed >= expected
         return {"mode": mode, "expected": expected, "scanned": scanned, "completed": completed, "failed": failed, "valid": valid}
     scopes = [scope(source) for source in sources]
@@ -169,20 +178,28 @@ def attach_scan_contract(report: dict, scan_mode: str) -> dict:
     states = {str(source.get("scan_state") or "failed") for source in sources}
     full_scope = bool(scopes) and all(item["valid"] for item in scopes) and completed >= requested and failed == 0 and states == {"complete"}
     strategy_publication = []
+    eligible_count = 0
     for source, source_scope in zip(sources, scopes, strict=True):
         source_requested = source_scope["expected"]
         source_completed = source_scope["completed"]
         source_failed = source_scope["failed"]
         source_state = str(source.get("scan_state") or "failed")
         eligible = scan_mode == "production" and source_scope["valid"] and source_completed >= source_requested and source_failed == 0 and source_state == "complete"
+        eligible_count += int(eligible)
         strategy_publication.append({
             "market": source.get("market"), "strategy": source.get("strategy"),
             "eligible": eligible, "state": source_state, "universe_mode": source_scope["mode"],
             "universe_expected": source_requested, "universe_scanned": source_scope["scanned"],
+            "historical_fallback": source.get("historical_fallback") is True,
+            "last_successful_generated_at": source.get("last_successful_generated_at"),
             "blocking_reason": None if eligible else (
-                "研究資料尚未完成全市場核對；本策略僅供觀察，不列入正式發布"
+                "本輪策略未完成全市場核對；沿用最後成功版本並標示為歷史資料"
+                if source.get("historical_fallback") is True
+                else "研究資料尚未完成全市場核對；本策略僅供觀察，不列入正式發布"
             ),
         })
+    mixed = scan_mode == "production" and eligible_count > 0 and not full_scope
+    production = scan_mode == "production" and full_scope
     report.update({
         "scan_mode": scan_mode,
         "scan_scope": "full" if full_scope else "bounded",
@@ -192,16 +209,49 @@ def attach_scan_contract(report: dict, scan_mode: str) -> dict:
         # A production-shaped report is not automatically publishable. A
         # partial scan is retained as an explicit diagnostic artifact while
         # the workflow keeps the last successful public research snapshot.
-        "publish_eligible": scan_mode == "production" and full_scope,
-        "production_eligible": scan_mode == "production" and full_scope,
-        "publication_state": "production" if scan_mode == "production" and full_scope else "diagnostic",
+        "publish_eligible": production or mixed,
+        "production_eligible": production,
+        "publication_state": "production" if production else "mixed_strategy" if mixed else "diagnostic",
         "strategy_publication": strategy_publication,
-        "blocking_reason": None if scan_mode == "production" and full_scope else (
+        "blocking_reason": None if production else "部分策略已完成，未完成策略保留最後成功版本並標示歷史資料" if mixed else (
             "smoke/debug scan is isolated from production publishing"
             if scan_mode != "production"
             else "研究掃描 universe 缺少 full 範圍或仍有資料缺口；拒絕正式發布"
         ),
     })
+    return report
+
+
+def attach_strategy_versions(report: dict[str, Any]) -> dict[str, Any]:
+    """Stamp per-strategy freshness and content identity into the report."""
+    candidates = report.get("candidates", [])
+    for source in report.get("sources", []) if isinstance(report.get("sources"), list) else []:
+        if not isinstance(source, dict):
+            continue
+        key = (str(source.get("market")), str(source.get("strategy")))
+        rows = [
+            row for row in candidates
+            if isinstance(row, dict)
+            and (str(row.get("market")), str(row.get("strategy"))) == key
+            and row.get("research_version_state") != "historical"
+        ]
+        dates = sorted({str(row.get("as_of")) for row in rows if row.get("as_of")})
+        payload = [{
+            field: row.get(field)
+            for field in ("ticker", "rank", "score", "close", "change_percent", "as_of", "data_version", "strategy_version")
+        } for row in rows]
+        digest = hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+        source.update({
+            "scan_trading_date": dates[-1] if dates else None,
+            "quote_cutoff_at": dates[-1] if dates else None,
+            "last_attempted_at": report.get("generated_at"),
+            "last_successful_at": source.get("last_successful_generated_at") or (report.get("generated_at") if source.get("scan_state") == "complete" else None),
+            "execution_version": report.get("source_commit_sha") or report.get("research_run", {}).get("source_commit_sha"),
+            "data_hash": digest,
+            "scan_completeness": "complete" if source.get("scan_state") == "complete" else "partial" if source.get("scan_state") == "building" else "failed",
+            "candidate_count": len(rows),
+            "blocking_reason": source.get("blocking_reason"),
+        })
     return report
 
 
@@ -222,14 +272,28 @@ def main() -> None:
     parser.add_argument("--scan-failures", type=Path)
     parser.add_argument("--run-id", help="optional external workflow run identifier")
     parser.add_argument("--source-commit-sha", help="source commit used for the scan")
+    parser.add_argument("--previous-report", type=Path, help="last published report used for per-strategy historical fallback")
+    parser.add_argument("--target-market", choices=("taiwan", "us", "both"), default="both")
+    parser.add_argument("--slot-key", help="stable market/trading-date close-research identity")
     args = parser.parse_args()
     merge_taiwan_scan_fragments(Path(args.data_dir))
     report = build_research_report(default_sources(Path(args.data_dir)))
     apply_scan_failures(report, load_scan_failures(args.scan_failures) if args.scan_failures else [])
-    attach_instrument_lineage(report, extend_from_candidates=True)
-    attach_scan_contract(report, args.scan_mode)
-    attach_backtest_contract(report, args.backtest_release)
     finished_at = datetime.now(UTC)
+    report["generated_at"] = finished_at.astimezone(ZoneInfo("Asia/Taipei")).isoformat()
+    report["target_market"] = args.target_market
+    report["research_slot_key"] = args.slot_key
+    previous: dict[str, Any] | None = None
+    if args.previous_report:
+        try:
+            loaded = json.loads(args.previous_report.read_text(encoding="utf-8"))
+            previous = loaded if isinstance(loaded, dict) else None
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            previous = None
+    merge_previous_strategy_versions(report, previous)
+    attach_instrument_lineage(report, extend_from_candidates=True)
+    attach_backtest_contract(report, args.backtest_release)
+    attach_scan_contract(report, args.scan_mode)
     attach_research_run(
         report,
         scan_mode=args.scan_mode,
@@ -239,7 +303,7 @@ def main() -> None:
         run_id=args.run_id,
         source_commit_sha=args.source_commit_sha,
     )
-    report["generated_at"] = finished_at.astimezone(ZoneInfo("Asia/Taipei")).isoformat()
+    attach_strategy_versions(report)
     report["health"] = assess_research_health(report)
     # Bind research candidates to this exact point-in-time artifact.  The
     # release manifest later uses the ID to prevent mixing old research with
