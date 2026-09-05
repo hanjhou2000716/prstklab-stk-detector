@@ -1,4 +1,6 @@
 import json
+import subprocess
+import sys
 
 from src.run_research_report import attach_backtest_contract, attach_instrument_lineage, default_sources, write_report
 
@@ -72,6 +74,47 @@ def test_write_report_creates_dashboard_json(tmp_path):
     output = tmp_path / "site" / "data" / "research-report.json"
     write_report({"status": "測試"}, output)
     assert json.loads(output.read_text(encoding="utf-8"))["status"] == "測試"
+
+
+def test_repair_state_reuses_verified_report_without_refreshing_success_time(tmp_path):
+    previous = tmp_path / "previous.json"
+    output = tmp_path / "repaired.json"
+    previous.write_text(json.dumps({
+        "generated_at": "2026-09-04T16:00:00+08:00",
+        "source_commit_sha": "scan-sha",
+        "run_id": "github-scan",
+        "scan_mode": "production",
+        "scan_scope": "full",
+        "publication_state": "mixed_strategy",
+        "publish_eligible": True,
+        "production_eligible": False,
+        "sources": [{
+            "market": "taiwan", "strategy": "value", "scan_state": "building",
+            "scan_trading_date": "2026-08-31",
+            "last_successful_generated_at": "2026-08-31T10:46:00+08:00",
+            "execution_version": "old-scan", "data_hash": "old-hash",
+        }],
+        "candidates": [{"market": "taiwan", "strategy": "value", "ticker": "2330", "list_type": "formal"}],
+    }), encoding="utf-8")
+    result = subprocess.run([
+        sys.executable, "-m", "src.run_research_report",
+        "--scan-mode", "production", "--previous-report", str(previous),
+        "--output", str(output), "--target-market", "taiwan",
+        "--target-strategy", "value", "--research-action", "repair_state",
+        "--run-id", "repair-run", "--source-commit-sha", "repair-sha",
+    ], check=True, capture_output=True, text=True)
+    assert "輸出" in result.stdout
+    repaired = json.loads(output.read_text(encoding="utf-8"))
+    source = repaired["sources"][0]
+    assert repaired["research_action"] == "repair_state"
+    assert repaired["target_strategy"] == "value"
+    assert repaired["repair_state"] is True
+    assert source["scan_trading_date"] == "2026-08-31"
+    assert source["last_successful_generated_at"] == "2026-08-31T10:46:00+08:00"
+    assert source["execution_version"] == "old-scan"
+    assert source["data_hash"] == "old-hash"
+    assert source["historical_fallback"] is True
+    assert repaired["candidates"][0]["research_version_state"] == "historical"
 
 
 def test_instrument_lineage_is_stamped_without_guessing_unknown_symbols():
