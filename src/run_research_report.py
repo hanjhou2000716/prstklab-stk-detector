@@ -251,10 +251,19 @@ def attach_strategy_versions(report: dict[str, Any]) -> dict[str, Any]:
         digest = hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str).encode("utf-8")).hexdigest()
         historical = source.get("historical_fallback") is True
         slot_date = slot_dates.get(str(source.get("market")))
-        scan_date = source.get("scan_trading_date") or (slot_date if not source.get("unscanned_in_run") else None) or (dates[-1] if dates else None)
+        if historical:
+            # A slot identifies the attempted run, not the date of a fallback
+            # dataset.  Leave the date empty when the previous verified source
+            # did not carry one; the UI then shows its last successful time
+            # instead of falsely labelling old rows with the new slot date.
+            scan_date = source.get("scan_trading_date")
+            quote_cutoff = source.get("quote_cutoff_at")
+        else:
+            scan_date = source.get("scan_trading_date") or (slot_date if not source.get("unscanned_in_run") else None) or (dates[-1] if dates else None)
+            quote_cutoff = source.get("quote_cutoff_at") or scan_date
         source.update({
             "scan_trading_date": scan_date,
-            "quote_cutoff_at": source.get("quote_cutoff_at") or scan_date,
+            "quote_cutoff_at": quote_cutoff,
             "last_attempted_at": report.get("generated_at"),
             "last_successful_at": source.get("last_successful_generated_at") or (report.get("generated_at") if source.get("scan_state") == "complete" else None),
             "execution_version": source.get("execution_version") if historical else report.get("source_commit_sha") or report.get("research_run", {}).get("source_commit_sha"),

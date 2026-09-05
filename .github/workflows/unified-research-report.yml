@@ -228,6 +228,11 @@ jobs:
               and report.get("publish_eligible") is True
               and not contract_errors
           )
+          cache_required = any(
+              item.get("eligible") is not True and not item.get("unscanned_in_run")
+              for item in report.get("strategy_publication", [])
+              if isinstance(item, dict)
+          )
           Path("research-artifacts/research-report-latest.json").write_text(
               json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
           )
@@ -263,6 +268,9 @@ jobs:
                   output.open("a", encoding="utf-8").write("publish=false\n")
                   output.open("a", encoding="utf-8").write("fallback=false\n")
                   print("::warning::research scan is incomplete and no previous successful snapshot exists")
+          output.open("a", encoding="utf-8").write(f"cache_required={'true' if cache_required else 'false'}\n")
+          if cache_required:
+              print("::warning::incomplete strategy cache must be persisted for the next continuation run")
           PY
       - name: Recheck production revision before persistence
         if: env.SCAN_MODE == 'production'
@@ -270,13 +278,12 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: python -m src.writer_queue --settle-seconds 0 --poll-seconds 10
       - name: Persist incremental research caches
-        if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish != 'true'
+        if: env.SCAN_MODE == 'production' && (steps.research_gate.outputs.publish != 'true' || steps.research_gate.outputs.cache_required == 'true')
         run: |
-          # A bounded Taiwan MOPS run is intentionally not eligible for a
-          # public research release.  Its verified records must nevertheless
-          # survive so the next run advances instead of starting from the same
-          # 150-record cache.  This publishes cache-only data and never writes
-          # site/data or a Telegram-eligible release.
+          # Any incomplete strategy must persist its verified records even when
+          # the other strategies form a valid mixed public release.  This is a
+          # cache-only publication and never writes site/data or a
+          # Telegram-eligible release.
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" \
             --include data/taiwan-mops-pristine-history.json \
             --include data/sec-companyfacts-cache.json \
