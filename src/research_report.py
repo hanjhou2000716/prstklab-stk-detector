@@ -435,6 +435,28 @@ def merge_previous_strategy_versions(
                 source["strategy_version_state"] = "unavailable"
                 source["blocking_reason"] = "本輪未掃描且沒有最後成功版本"
                 continue
+            # A single-market continuation must not turn the untouched market
+            # into a fresh failure.  Carry the last verified source contract
+            # (scan state, candidate state, counts, dates and hash) forward;
+            # the explicit historical/unscanned flags below make it clear that
+            # this is not current-run evidence and keep publication ineligible
+            # for this row.
+            preserved_fields = {
+                key: value
+                for key, value in prev_source.items()
+                if key not in {
+                    "market",
+                    "strategy",
+                    "path",
+                    "scan_attempted_at",
+                    "last_attempted_at",
+                    "unscanned_in_run",
+                    "historical_fallback",
+                    "strategy_version_state",
+                    "blocking_reason",
+                }
+            }
+            source.update(preserved_fields)
             previous_time = (
                 prev_source.get("last_successful_generated_at")
                 or previous.get("generated_at")
