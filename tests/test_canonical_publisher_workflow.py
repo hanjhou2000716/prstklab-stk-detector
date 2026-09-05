@@ -22,6 +22,8 @@ def test_research_publisher_restores_before_writing():
     assert "trading_date" in workflow
     assert "Recheck production revision before persistence" in workflow
     assert "python -m src.writer_queue --settle-seconds 0" in workflow
+    assert "cache_required" in workflow
+    assert "steps.research_gate.outputs.cache_required == 'true'" in workflow
 
 
 def test_public_release_smoke_restores_immutable_data_before_verifying():

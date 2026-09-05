@@ -2,7 +2,7 @@ from datetime import UTC, date, datetime
 
 from src.research_report import merge_previous_strategy_versions
 from src.research_schedule import due_slot, slot_for
-from src.run_research_report import attach_scan_contract
+from src.run_research_report import attach_scan_contract, attach_strategy_versions
 
 
 def _full_source(**overrides):
@@ -96,3 +96,24 @@ def test_single_market_run_keeps_other_market_as_historical_without_attempt():
     assert source["scan_attempted_at"] is None
     assert source["scan_trading_date"] == "2026-09-03"
     assert result["candidates"][0]["research_version_state"] == "historical"
+
+
+def test_historical_fallback_does_not_invent_slot_data_date():
+    report = {
+        "generated_at": "2026-09-05T16:00:00+08:00",
+        "research_slot_key": "taiwan:2026-09-04:close-research",
+        "source_commit_sha": "new-sha",
+        "sources": [{
+            "market": "taiwan", "strategy": "value", "scan_state": "building",
+            "historical_fallback": True, "candidates": 1,
+            "last_successful_generated_at": "2026-08-31T10:46:15+08:00",
+        }],
+        "candidates": [{
+            "market": "taiwan", "strategy": "value", "ticker": "2330",
+            "research_version_state": "historical",
+        }],
+    }
+    result = attach_strategy_versions(report)
+    source = result["sources"][0]
+    assert source["scan_trading_date"] is None
+    assert source["quote_cutoff_at"] is None
