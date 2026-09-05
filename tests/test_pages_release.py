@@ -5,6 +5,7 @@ from pathlib import Path
 import requests
 
 from src.pages_release import PagesReleaseError, _validate, restore_latest_valid, restore_public_release
+from src.release_manifest import verify_release_files
 
 
 def test_validate_requires_ready_manifest_and_zero_exit(monkeypatch):
@@ -373,6 +374,63 @@ def test_restore_latest_valid_restores_immutable_manifest_identity_after_validat
     assert result["publish"] is True
     assert result["release_id"] == "release-immutable"
     assert json.loads(manifest_path.read_text(encoding="utf-8"))["release_id"] == "release-immutable"
+
+
+def test_restore_latest_valid_restores_alert_bytes_after_builder_validation(tmp_path, monkeypatch):
+    data_root = tmp_path / "site" / "data"
+    alert_root = data_root / "alerts"
+    alert_root.mkdir(parents=True)
+    bodies = {
+        "data/market.json": b'{"snapshot_id":"market-1"}',
+        "data/research-report.json": b'{"snapshot_id":"research-1"}',
+        "data/event-ledger.json": b'{"snapshot_id":"event-1"}',
+        "data/alerts/notice-release-immutable.json": b'{"notification_id":"notice","release_id":"release-immutable"}',
+        "data/alert-index.json": b'{"alerts":[]}',
+    }
+    for relative, body in bodies.items():
+        path = tmp_path / "site" / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(body)
+    manifest = {
+        "status": "ready",
+        "release_id": "release-immutable",
+        "market_snapshot_id": "market-1",
+        "artifact_paths": {key.split("/", 1)[1]: key for key in bodies},
+        "artifact_hashes": {
+            key.split("/", 1)[1]: hashlib.sha256(body).hexdigest()
+            for key, body in bodies.items()
+        },
+    }
+    (data_root / "release-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+    monkeypatch.setattr("src.pages_release._commits", lambda *args, **kwargs: ["good"])
+
+    def restore_archive(*args, **kwargs):
+        return True
+
+    monkeypatch.setattr("src.pages_release._restore_archive", restore_archive)
+
+    def validate_and_rebuild(root, **kwargs):
+        (root / "site" / "data" / "alerts" / "notice-release-immutable.json").write_bytes(
+            b'{"notification_id":"notice","release_id":"release-rebuilt"}'
+        )
+        (root / "site" / "data" / "alert-index.json").write_bytes(b'{"alerts":[{"rebuilt":true}]}')
+        (root / "site" / "data" / "release-manifest.json").write_text(
+            json.dumps({"status": "ready", "release_id": "release-derived"}),
+            encoding="utf-8",
+        )
+        return True, {"status": "ready", "release_id": "release-derived"}
+
+    monkeypatch.setattr("src.pages_release._validate", validate_and_rebuild)
+
+    result = restore_latest_valid(root=tmp_path)
+
+    assert result["publish"] is True
+    assert result["release_id"] == "release-immutable"
+    assert (tmp_path / "site" / "data" / "alerts" / "notice-release-immutable.json").read_bytes() == bodies[
+        "data/alerts/notice-release-immutable.json"
+    ]
+    assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 
 def test_restore_latest_valid_remains_fail_closed_when_public_preservation_fails(tmp_path, monkeypatch):
