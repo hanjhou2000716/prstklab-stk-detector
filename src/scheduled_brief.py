@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from src.alert_budget import decide_alert_budget
@@ -87,6 +87,20 @@ STRICT_SLOT_WINDOWS = {
     "us_premarket": (20 * 60 + 30, 21 * 60 + 30),
 }
 
+# Manual runs are named from the most recent fixed report boundary.  These
+# boundaries intentionally cover the whole clock: weekend/holiday content is
+# still labelled by time and must disclose its closed-market context in the
+# report itself.
+MANUAL_SLOT_BOUNDARIES = (
+    (6 * 60, "morning"),
+    (8 * 60 + 45, "pre_open"),
+    (10 * 60 + 30, "intraday"),
+    (11 * 60 + 45, "midday"),
+    (13 * 60 + 15, "afternoon"),
+    (14 * 60 + 45, "post_close"),
+    (21 * 60, "us_premarket"),
+)
+
 
 def _strict_slot_at(now: datetime) -> str | None:
     """Return the one external-scheduler slot permitted at this local time."""
@@ -111,6 +125,129 @@ def _us_premarket_cron_matches(now: datetime, scheduled_cron: str) -> bool:
     return taipei_now.weekday() < 5
 
 
+def _manual_slot_context(now: datetime) -> dict[str, str]:
+    """Resolve a manual run to the latest fixed Taipei-time report slot."""
+    local_now = now.astimezone(ZoneInfo("Asia/Taipei"))
+    minute = local_now.hour * 60 + local_now.minute
+    selected_slot = "us_premarket"
+    for start, candidate in MANUAL_SLOT_BOUNDARIES:
+        if minute >= start:
+            selected_slot = candidate
+    slot_date = local_now.date()
+    # 00:00–05:59 belongs to the previous day's 21:00 US pre-market report.
+    if selected_slot == "us_premarket" and minute < 6 * 60:
+        slot_date = slot_date - timedelta(days=1)
+    return {
+        "requested_slot": "auto",
+        "effective_slot": selected_slot,
+        "slot_date": slot_date.isoformat(),
+        "resolution_reason": "manual_latest_fixed_boundary",
+        "trigger_kind": "workflow_dispatch",
+    }
+
+
+def resolve_slot_context(
+    value: str,
+    now: datetime | None = None,
+    *,
+    strict_window: bool = False,
+    scheduled_cron: str | None = None,
+    trigger_kind: str = "compatibility",
+) -> dict[str, str] | None:
+    """Resolve slot plus identity metadata without trusting stale manual input."""
+    local_now = now or datetime.now(ZoneInfo("Asia/Taipei"))
+    local_now = local_now.astimezone(ZoneInfo("Asia/Taipei"))
+    requested = str(value or "auto").strip() or "auto"
+    trigger = str(trigger_kind or "compatibility").strip().casefold()
+    cron_slot = CRON_SLOT_MAP.get(str(scheduled_cron or "").strip())
+    if cron_slot:
+        if cron_slot == "us_premarket" and not _us_premarket_cron_matches(local_now, str(scheduled_cron).strip()):
+            return None
+        slot_date = local_now.date()
+        # The 13:00 UTC weekday cron is the 21:00 Taipei report.  If GitHub
+        # starts that run after midnight Taipei time, keep the slot identity
+        # on the previous local date instead of creating a second report for
+        # the new calendar day.
+        if cron_slot == "us_premarket" and local_now.hour < 6:
+            slot_date -= timedelta(days=1)
+        return {
+            "requested_slot": requested,
+            "effective_slot": cron_slot,
+            "slot_date": slot_date.isoformat(),
+            "resolution_reason": "trusted_cron_identity",
+            "trigger_kind": "schedule" if trigger == "compatibility" else trigger,
+        }
+    if trigger == "compatibility":
+        if strict_window:
+            matched = _strict_slot_at(local_now)
+            if matched is None or (requested != "auto" and requested != matched):
+                return None
+            return {
+                "requested_slot": requested,
+                "effective_slot": matched,
+                "slot_date": local_now.date().isoformat(),
+                "resolution_reason": "trusted_dispatch_window",
+                "trigger_kind": trigger,
+            }
+        if requested != "auto":
+            return {
+                "requested_slot": requested,
+                "effective_slot": requested,
+                "slot_date": local_now.date().isoformat(),
+                "resolution_reason": "explicit_compatibility_slot",
+                "trigger_kind": trigger,
+            }
+        minute = local_now.hour * 60 + local_now.minute
+        legacy_windows = (
+            (5 * 60 + 30, 6 * 60 + 30, "morning"),
+            (8 * 60 + 15, 9 * 60 + 15, "pre_open"),
+            (10 * 60, 11 * 60, "intraday"),
+            (11 * 60 + 15, 12 * 60 + 15, "midday"),
+            (12 * 60 + 45, 13 * 60 + 45, "afternoon"),
+            (14 * 60 + 15, 15 * 60 + 15, "post_close"),
+            (20 * 60 + 30, 21 * 60 + 30, "us_premarket"),
+        )
+        selected = next((slot for start, end, slot in legacy_windows if start <= minute <= end), None)
+        if not selected:
+            return None
+        return {
+            "requested_slot": requested,
+            "effective_slot": selected,
+            "slot_date": local_now.date().isoformat(),
+            "resolution_reason": "compatibility_clock_window",
+            "trigger_kind": trigger,
+        }
+    if trigger in {"workflow_dispatch", "manual"}:
+        context = _manual_slot_context(local_now)
+        context["requested_slot"] = requested
+        context["trigger_kind"] = trigger
+        return context
+    if strict_window:
+        matched = _strict_slot_at(local_now)
+        if matched is None or (requested != "auto" and requested != matched):
+            return None
+        return {
+            "requested_slot": requested,
+            "effective_slot": matched,
+            "slot_date": local_now.date().isoformat(),
+            "resolution_reason": "trusted_dispatch_window",
+            "trigger_kind": trigger,
+        }
+    if requested != "auto":
+        if requested not in SLOT_LABELS:
+            return None
+        return {
+            "requested_slot": requested,
+            "effective_slot": requested,
+            "slot_date": local_now.date().isoformat(),
+            "resolution_reason": "explicit_compatibility_slot",
+            "trigger_kind": trigger,
+        }
+    # Explicitly named manual/CLI callers use the fixed boundaries above.  An
+    # unknown trigger is deliberately conservative and does not invent a slot.
+    return None
+
+
 def resolve_slot(
     value: str,
     now: datetime | None = None,
@@ -118,38 +255,11 @@ def resolve_slot(
     strict_window: bool = False,
     scheduled_cron: str | None = None,
 ) -> str | None:
-    """Resolve an explicit slot or choose the nearest Taiwan-time briefing slot."""
-    local_now = now or datetime.now(ZoneInfo("Asia/Taipei"))
-    cron_slot = CRON_SLOT_MAP.get(str(scheduled_cron or "").strip())
-    if cron_slot and value in {"auto", cron_slot}:
-        # GitHub-hosted schedules can start late.  The cron identity, not the
-        # runner start time, is the source of truth for an automatic slot.
-        if cron_slot == "us_premarket" and not _us_premarket_cron_matches(local_now, str(scheduled_cron).strip()):
-            return None
-        return cron_slot
-    if strict_window:
-        matched = _strict_slot_at(local_now)
-        if matched is None or (value != "auto" and value != matched):
-            return None
-        return matched
-    if value != "auto":
-        return value
-    minute = local_now.hour * 60 + local_now.minute
-    if 5 * 60 + 30 <= minute <= 6 * 60 + 30:
-        return "morning"
-    if 8 * 60 + 15 <= minute <= 9 * 60 + 15:
-        return "pre_open"
-    if 10 * 60 <= minute <= 11 * 60:
-        return "intraday"
-    if 11 * 60 + 15 <= minute <= 12 * 60 + 15:
-        return "midday"
-    if 12 * 60 + 45 <= minute <= 13 * 60 + 45:
-        return "afternoon"
-    if 14 * 60 + 15 <= minute <= 15 * 60 + 15:
-        return "post_close"
-    if 20 * 60 + 30 <= minute <= 21 * 60 + 30:
-        return "us_premarket"
-    return None
+    """Compatibility API returning only the resolved slot name."""
+    context = resolve_slot_context(
+        value, now, strict_window=strict_window, scheduled_cron=scheduled_cron,
+    )
+    return context["effective_slot"] if context else None
 
 
 def _pick_quote(snapshot: dict, slot: str) -> dict | None:
@@ -311,22 +421,30 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--print-window", action="store_true")
     parser.add_argument("--strict-window", action="store_true")
     parser.add_argument("--scheduled-cron", default="")
+    parser.add_argument("--trigger-kind", default="compatibility")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     now = datetime.now(ZoneInfo("Asia/Taipei"))
-    slot = resolve_slot(
+    context = resolve_slot_context(
         args.slot,
         now,
         strict_window=args.strict_window,
         scheduled_cron=args.scheduled_cron,
+        trigger_kind=args.trigger_kind,
     )
+    slot = context["effective_slot"] if context else None
     if args.print_window:
         print(f"should_run={'true' if slot else 'false'}")
         print(f"slot={slot or 'skip'}")
-        print(f"key={now.date().isoformat()}-{slot or 'skip'}")
+        print(f"requested_slot={(context or {}).get('requested_slot', args.slot)}")
+        print(f"effective_slot={slot or 'skip'}")
+        print(f"slot_date={(context or {}).get('slot_date', now.date().isoformat())}")
+        print(f"resolution_reason={(context or {}).get('resolution_reason', 'outside_window')}")
+        print(f"trigger_kind={(context or {}).get('trigger_kind', args.trigger_kind)}")
+        print(f"key={(context or {}).get('slot_date', now.date().isoformat())}-{slot or 'skip'}")
         return
 
     if slot is None:
@@ -338,6 +456,7 @@ def main() -> None:
         raise RuntimeError("缺少 Telegram 設定，未發送快報。")
     snapshot = build_market_snapshot()
     snapshot["briefing"] = build_briefing_snapshot(snapshot, slot)
+    snapshot["briefing"]["slot_context"] = context
     published = write_snapshot(snapshot)
     if not published:
         _write_output({"sent": "false", "reason": "snapshot_publish_skipped"})

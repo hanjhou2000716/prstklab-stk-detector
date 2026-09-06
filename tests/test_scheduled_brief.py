@@ -2,7 +2,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from src.alert_budget import decide_alert_budget
-from src.scheduled_brief import briefing_correlation, build_brief, resolve_slot
+from src.scheduled_brief import briefing_correlation, build_brief, resolve_slot, resolve_slot_context
 
 
 def test_taiwan_price_brief_includes_the_current_percent_move():
@@ -20,6 +20,25 @@ def test_taiwan_price_brief_includes_the_current_percent_move():
 def test_resolves_morning_slot_in_taiwan_time():
     now = datetime(2026, 7, 23, 6, 0, tzinfo=ZoneInfo("Asia/Taipei"))
     assert resolve_slot("auto", now) == "morning"
+
+
+def test_manual_run_uses_latest_report_name_even_when_stale_slot_is_requested():
+    now = datetime(2026, 9, 6, 16, 58, tzinfo=ZoneInfo("Asia/Taipei"))
+    result = resolve_slot_context("morning", now, trigger_kind="workflow_dispatch")
+    assert result == {
+        "requested_slot": "morning",
+        "effective_slot": "post_close",
+        "slot_date": "2026-09-06",
+        "resolution_reason": "manual_latest_fixed_boundary",
+        "trigger_kind": "workflow_dispatch",
+    }
+
+
+def test_manual_us_premarket_after_midnight_keeps_previous_slot_date():
+    now = datetime(2026, 9, 7, 1, 30, tzinfo=ZoneInfo("Asia/Taipei"))
+    result = resolve_slot_context("auto", now, trigger_kind="workflow_dispatch")
+    assert result["effective_slot"] == "us_premarket"
+    assert result["slot_date"] == "2026-09-06"
 
 
 def test_us_premarket_uses_2100_taiwan_during_new_york_dst():
@@ -70,6 +89,14 @@ def test_us_premarket_cron_accepts_the_fixed_2100_slot_all_year():
     assert resolve_slot("auto", summer, scheduled_cron="0 14 * * 1-5") is None
     assert resolve_slot("auto", winter, scheduled_cron="0 13 * * 1-5") == "us_premarket"
     assert resolve_slot("auto", winter, scheduled_cron="0 14 * * 1-5") is None
+
+
+def test_delayed_us_premarket_cron_keeps_previous_taipei_slot_date():
+    delayed = datetime(2026, 9, 8, 1, 30, tzinfo=ZoneInfo("Asia/Taipei"))
+    context = resolve_slot_context("auto", delayed, scheduled_cron="0 13 * * 1-5")
+    assert context is not None
+    assert context["effective_slot"] == "us_premarket"
+    assert context["slot_date"] == "2026-09-07"
 
 
 def test_brief_uses_slot_label_and_market_direction():

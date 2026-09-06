@@ -57,7 +57,8 @@ def _creator_records() -> list[dict[str, Any]]:
 def _news_records() -> list[dict[str, Any]]:
     return [
         {
-            "title": "TWSE semiconductor filing",
+            "title": "TSMC raises capital spending outlook",
+            "summary": "TSMC announced higher capital spending for semiconductor capacity.",
             "url": "https://www.twse.com.tw/news/semiconductor?utm_source=e2e",
             "published_at": _AS_OF,
             "market": "taiwan",

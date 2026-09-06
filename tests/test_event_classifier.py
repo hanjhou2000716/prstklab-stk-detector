@@ -35,4 +35,30 @@ def test_policy_aliases_cover_trump_steel_and_oil_wording():
         "title": "Chevron CEO urges Trump to lower Iranian oil prices",
         "summary": "Iranian oil and shipping risks remain in focus.",
     })
-    assert oil["category"] in {"policy", "conflict"}
+    assert oil["category"] == "energy"
+
+
+def test_social_crime_story_does_not_become_currency_macro_event():
+    result = classify_event_fields({
+        "title": "29歲台男赴日當詐騙車手 詐老翁2千萬日圓",
+        "metadata": "Fed rate decision NVDA oil",
+        "interest_graph": {"topics": ["日圓", "Fed"]},
+    })
+    assert result["category"] is None
+    assert result["decision_value_eligible"] is False
+    assert "fed" not in result["text"]
+    assert "oil" not in result["text"]
+
+
+def test_bessent_hormuz_opinion_is_not_fed_without_energy_fact():
+    result = classify_event_fields({
+        "title": "貝森特：荷姆茲2年內將被繞過、對石油業毫無價值",
+    })
+    assert result["category"] is None
+
+
+def test_structured_market_fact_requires_subject_and_action():
+    result = classify_event_fields({"title": "US jobs data beats expectations as Nasdaq falls"})
+    assert result["category"] == "macro"
+    assert result["matched_subject"] == "jobs"
+    assert result["matched_action"] == "data"

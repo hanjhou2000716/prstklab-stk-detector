@@ -79,7 +79,8 @@ jobs:
       NOTIFY: ${{ github.event_name == 'schedule' && 'true' || github.event_name == 'repository_dispatch' && 'true' || inputs.notify && 'true' || 'false' }}
       # Automatic runs resolve the slot from github.event.schedule.  The
       # runner start time is not a valid reason to suppress a delayed cron.
-      # Manual runs already require an explicit slot or opt-in notification.
+      # Manual runs resolve to the most recent fixed Taipei-time boundary;
+      # stale workflow inputs must not publish the wrong report name.
       STRICT_WINDOW: 'false'
       NEWS_CACHE_PATH: site/data/news-cache.json
       SNAPSHOT_PATH: site/data/market.json
@@ -122,6 +123,7 @@ jobs:
         id: window
         run: |
           arguments=(--slot "$SLOT" --print-window)
+          arguments+=(--trigger-kind "$GITHUB_EVENT_NAME")
           if [ "$STRICT_WINDOW" = "true" ]; then arguments+=(--strict-window); fi
           if [ -n "$SCHEDULE_CRON" ]; then arguments+=(--scheduled-cron "$SCHEDULE_CRON"); fi
           python -m src.scheduled_brief "${arguments[@]}" >> "$GITHUB_OUTPUT"

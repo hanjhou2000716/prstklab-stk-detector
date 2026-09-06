@@ -406,7 +406,8 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
                 f"http://127.0.0.1:{server.server_port}/index.html?alert=fj-notification-1&release={old_release}&snapshot={old_snapshot}&observation={observation}&view=event",
                 wait_until="domcontentloaded",
             )
-            page.wait_for_function("document.querySelector('#release-health')?.textContent.includes('最新同事件版本')")
+            page.wait_for_function("document.querySelector('#alert-headline')?.textContent.includes('FJ 10/10')")
+            assert page.locator("#release-health").is_hidden()
             assert page.locator("#market-focus").text_content() == public_message
             assert "notification" not in (page.locator("#market-focus").text_content() or "")
             assert page.locator("#alert-headline").text_content() == public_message

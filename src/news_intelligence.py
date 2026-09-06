@@ -149,6 +149,14 @@ _TICKER_LIST_RE = re.compile(
     r"|\b(?:stocks?|tickers?)\s*[:：-]\s*(?:[A-Z]{1,5}(?:\s+|,|/)){2,}",
     re.IGNORECASE,
 )
+_NON_INVESTMENT_CONTENT_RE = re.compile(
+    r"\b(?:i['’]?d\s+buy|stocks?\s+to\s+buy|top\s+pick|in\s+focus|these\s+\d+|"
+    r"could\s+be\s+\d+%\s+undervalued|undervalued|price\s+target|target\s+price|"
+    r"best\s+stocks?|stock\s+tips?|buy\s+now)\b"
+    r"|(?:選股|推薦股票|買進|買股|目標價|低估|押注台積電|押台積電|瘋狂劇本|直奔|"
+    r"詐騙|詐騙車手|犯罪|車手|老翁|命案|綁架|殺人|明星|球賽|旅遊)",
+    re.IGNORECASE,
+)
 _MARKET_MATERIAL_RE = re.compile(
     r"\b(?:rise|rises|fell|fall|higher|lower|surge|surges|jump|jumps|drop|drops|"
     r"rally|rallies|selloff|sell-off|record|records|volatile|volatility|futures|"
@@ -206,13 +214,19 @@ def _public_news_decision(item: dict[str, Any]) -> tuple[bool, str | None, list[
     if _TICKER_LIST_RE.search(title):
         flags.append("ticker_list")
         return False, "listicle_or_selection", flags, "unclassified"
+    if _NON_INVESTMENT_CONTENT_RE.search(title):
+        flags.append("non_investment_content")
+        return False, "non_investment_content", flags, "unclassified"
 
     has_tracked_entity = any(
         reason.startswith(("tracked_ticker:", "research_candidate:", "tracked_sector:"))
         for reason in contextual
     ) or bool(item.get("entities"))
     has_active_topic = any(reason.startswith(("active_event:", "active_topic:")) for reason in contextual)
-    has_category = category in _MATERIAL_CATEGORIES
+    classification = item.get("event_classification")
+    classification = classification if isinstance(classification, dict) else {}
+    has_classified_fact = classification.get("decision_value_eligible") is True
+    has_category = has_classified_fact and category in _MATERIAL_CATEGORIES
     has_market_fact = bool(_MARKET_MATERIAL_RE.search(title))
     has_company_fact = has_tracked_entity and bool(_COMPANY_ACTION_RE.search(title))
     has_specific_index_event = bool(_US_INDEX_RE.search(title) and _SPECIFIC_MARKET_CAUSE_RE.search(title))
@@ -314,9 +328,8 @@ def _event_classification_input(raw: Mapping[str, Any], *, title: str, summary: 
     }
     aliases = (
         "what_happened", "event", "impact", "market_impact", "possible_impact",
-        "watch", "follow_up", "event_type", "category", "topics", "tickers",
-        "market_data", "market_evidence", "related_quotes", "quotes",
-        "price_change", "change_percent", "direction",
+        "watch", "follow_up", "event_type", "category", "brief_summary",
+        "traditional_chinese_summary", "chinese_translation", "market_context",
     )
     for key in aliases:
         value = raw.get(key)
@@ -362,6 +375,11 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         "category": classification.get("category"),
         "reason": str(classification.get("reason") or "keyword_no_match"),
         "matched_terms": [str(item) for item in (classification.get("matched_terms") or []) if str(item).strip()],
+        "decision_value_eligible": classification.get("decision_value_eligible") is True,
+        "classification_evidence": [str(item) for item in (classification.get("classification_evidence") or []) if str(item).strip()],
+        "matched_subject": str(classification.get("matched_subject") or ""),
+        "matched_action": str(classification.get("matched_action") or ""),
+        "matched_market_object": str(classification.get("matched_market_object") or ""),
         "input_fields": classifier_fields,
     }
     selection_lane = str(raw.get("selection_lane") or "current").strip().casefold()
@@ -399,6 +417,11 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         "published_time_bucket": _time_bucket(published),
         "public_safe": safe,
         "public_news_eligible": bool(raw.get("public_news_eligible", safe and market_compatible)),
+        "decision_value_eligible": bool(raw.get("decision_value_eligible", classification.get("decision_value_eligible") is True)),
+        "classification_evidence": [str(item) for item in (classification.get("classification_evidence") or []) if str(item).strip()],
+        "matched_subject": str(classification.get("matched_subject") or ""),
+        "matched_action": str(classification.get("matched_action") or ""),
+        "matched_market_object": str(classification.get("matched_market_object") or ""),
         "decision_value_class": raw.get("decision_value_class", ""),
         "quality_flags": [str(item) for item in (raw.get("quality_flags") or []) if str(item).strip()],
         "eligibility_reasons": [str(item) for item in (raw.get("eligibility_reasons") or []) if str(item).strip()],

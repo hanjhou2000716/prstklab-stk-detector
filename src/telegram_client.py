@@ -367,7 +367,11 @@ def summarize_public_message(
         if second:
             left = body.rstrip("。！？；.!?;，,")
             right = second.lstrip("。！？；.!?;，,")
-            joined = f"{left}，{right}"
+            # Scheduled brief facts may be unrelated events.  A semicolon
+            # keeps them as separate observations instead of implying that
+            # the second fact is caused by the first one.
+            separator = "；" if kind == "scheduled_brief" else "，"
+            joined = f"{left}{separator}{right}"
             if len(head + joined) <= limit:
                 body = joined
     if len(head + body) > limit:

@@ -396,14 +396,31 @@ def _theme_for_quotes(items: list[dict[str, Any]]) -> dict[str, Any] | None:
 
 
 def _news_events(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
-    """Project the existing reviewed news artifact into digest candidates."""
+    """Project only public-gate-approved news into digest candidates.
+
+    ``news.markets`` is a legacy/raw compatibility shape.  New releases use
+    ``news.intelligence`` and fail closed when a story does not explicitly
+    carry ``public_news_eligible=true``.
+    """
     news = snapshot.get("news")
     if not isinstance(news, dict):
         return []
     rows: list[dict[str, Any]] = []
-    markets = news.get("markets") or news.get("intelligence") or news
+    intelligence = news.get("intelligence")
+    if isinstance(intelligence, dict):
+        legacy = False
+        markets = intelligence
+    elif isinstance(news.get("markets"), dict):
+        # Retained reviewed market artifacts remain readable.  Raw top-level
+        # provider arrays are diagnostic-only and cannot enter a digest.
+        legacy = True
+        markets = news["markets"]
+    else:
+        return []
     if isinstance(markets, dict):
-        containers = list(markets.values())
+        containers = [markets.get(key) for key in ("taiwan", "us") if isinstance(markets.get(key), dict)]
+        if not containers and isinstance(markets.get("stories"), list):
+            containers = [markets]
     else:
         containers = [markets]
     for container in containers:
@@ -413,8 +430,11 @@ def _news_events(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
         for story in stories:
             if not isinstance(story, dict):
                 continue
+            if not legacy and story.get("public_news_eligible") is not True:
+                continue
             projected = dict(story)
             projected.setdefault("source_key", "news")
+            projected["_legacy_news_projection"] = legacy
             projected.setdefault("source", story.get("source_name") or "公開市場新聞")
             projected.setdefault("event", story.get("summary") or story.get("description") or story.get("headline") or story.get("title"))
             rows.append(projected)
@@ -457,6 +477,10 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
             continue
         source = str(event.get("source_key") or event.get("source") or event.get("content_origin") or "").casefold()
         if source in {"haojiao", "jenny", "gooaye", "creator"}:
+            continue
+        if source in {"news", "market_news", "public_news"} and not (
+            event.get("public_news_eligible") is True or event.get("_legacy_news_projection") is True
+        ):
             continue
         if not _within_lookback(event, as_of):
             continue

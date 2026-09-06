@@ -79,9 +79,35 @@ def _iter_text(value: Any, key: str = "") -> Iterable[str]:
         yield str(value)
 
 
+_CLASSIFIER_CONTENT_FIELDS = frozenset({
+    "title", "headline", "summary", "description", "brief_summary",
+    "traditional_chinese_summary", "chinese_translation", "event",
+    "what_happened", "impact", "market_impact", "possible_impact",
+    "market_context", "watch", "follow_up", "follow_up_observation",
+    "event_type", "category",
+})
+
+
+def _iter_classifier_content(record: dict[str, Any]) -> Iterable[str]:
+    """Yield only bounded public content fields.
+
+    Provider URLs, source labels, tracked tickers, interest graphs and nested
+    diagnostics are routing/provenance metadata.  They must never turn an
+    otherwise ordinary sentence into a market event classification.
+    """
+    for key in _CLASSIFIER_CONTENT_FIELDS:
+        value = record.get(key)
+        if value in (None, "", [], {}):
+            continue
+        if isinstance(value, (dict, list, tuple, set)):
+            yield from _iter_text(value)
+        else:
+            yield str(value)
+
+
 def build_haystack(record: dict[str, Any] | str) -> str:
-    """Combine all descriptive fields and quote context into one classifier input."""
-    values = [record] if isinstance(record, str) else list(_iter_text(record))
+    """Combine only explicit content fields into one classifier input."""
+    values = [record] if isinstance(record, str) else list(_iter_classifier_content(record))
     return normalize_text(" ".join(values))
 
 
@@ -128,23 +154,130 @@ def has_active_black_swan_context(haystack: str) -> bool:
     return False
 
 
+_FED_SUBJECTS = (
+    "federal reserve", "fed", "fomc", "powell", "jerome powell",
+    "央行", "聯準會", "联准会", "美聯儲", "美联储", "鮑威爾", "鲍威尔",
+    "日本央行", "日本銀行", "日本银行", "boj", "bank of japan",
+)
+_FED_ACTIONS = (
+    "rate", "rates", "rate decision", "monetary policy", "policy statement",
+    "balance sheet", "liquidity", "hawkish", "dovish", "reprice", "repricing",
+    "bets", "pricing", "利率", "決策", "政策", "聲明", "聲明", "升息", "降息",
+    "資產負債表", "流動性", "偏鷹", "偏鴿", "押注", "預期",
+)
+_MACRO_SUBJECTS = (
+    "cpi", "pce", "ppi", "gdp", "payroll", "nonfarm payrolls",
+    "jobs", "employment", "inflation", "unemployment rate", "employment situation", "consumer price",
+    "producer price", "非農", "非农", "失業率", "失业率", "就業報告", "就业报告",
+    "消費者物價", "消费者物价", "生產者物價", "生产者物价", "國內生產毛額", "国内生产总值",
+    "通膨", "通胀", "零售銷售", "零售销售",
+)
+_MACRO_ACTIONS = (
+    "report", "reported", "release", "released", "data", "公布", "發布", "发布",
+    "上升", "下降", "變化", "變動", "高於", "低於", "較前", "月增", "年增",
+    "公布值", "數據", "数据", "預期", "預測", "forecast",
+)
+_CURRENCY_SUBJECTS = ("yen", "japanese yen", "日圓", "日元", "dollar", "美元", "usd")
+_CURRENCY_ACTIONS = (
+    "intervention", "fx intervention", "currency intervention", "exchange rate",
+    "currency", "strengthens", "weakens", "rises", "falls", "匯率", "汇率",
+    "升值", "貶值", "贬值", "干預", "干预", "央行",
+)
+_ENERGY_SUBJECTS = (
+    "wti", "brent", "crude oil", "oil", "opec", "hormuz", "persian gulf",
+    "原油", "油價", "油价", "石油", "能源", "荷姆茲", "霍尔木兹",
+)
+_ENERGY_ACTIONS = (
+    "supply", "production", "output", "shipping", "tanker", "transport", "disruption",
+    "supply cut", "oil price", "attack", "blockade", "interrupt", "供應", "供应", "產量",
+    "产量", "航運", "航运", "運輸", "运输", "中斷", "中断", "油價", "油价", "封鎖", "封锁",
+)
+_CONFLICT_SUBJECTS = (
+    "iran", "iranian", "israel", "ukraine", "russia", "middle east", "hormuz",
+    "伊朗", "以色列", "烏克蘭", "乌克兰", "俄羅斯", "俄罗斯", "中東", "中东", "荷姆茲", "霍尔木兹",
+)
+_CONFLICT_ACTIONS = (
+    "war", "conflict", "attack", "airstrike", "missile", "invasion", "escalation",
+    "ceasefire", "truce", "talks", "negotiation", "agreement", "blockade",
+    "戰爭", "战争", "衝突", "冲突", "攻擊", "攻击", "空襲", "空袭", "入侵", "升級", "升级",
+    "停火", "談判", "谈判", "協議", "协议", "封鎖", "封锁",
+)
+_POLICY_SUBJECTS = (
+    "trump", "donald trump", "white house", "administration", "tariff", "tariffs",
+    "sanction", "sanctions", "export control", "export controls", "關稅", "关税",
+    "制裁", "出口管制", "禁令", "政策",
+)
+_POLICY_ACTIONS = (
+    "tariff", "tariffs", "sanction", "sanctions", "export control", "export controls",
+    "duty", "duties", "ban", "restriction", "announces", "announced", "imposes", "raises",
+    "pauses", "backs down", "walks back", "宣布", "加徵", "加征", "實施", "实施", "暫緩", "暂缓",
+    "延後", "延后", "取消", "撤回",
+)
+_SEMICONDUCTOR_SUBJECTS = (
+    "nvidia", "nvda", "tsmc", "tsm", "asml", "semiconductor", "chip", "ai",
+    "輝達", "台積電", "臺積電", "半導體", "半导体", "晶片", "芯片", "人工智慧",
+)
+_SEMICONDUCTOR_ACTIONS = (
+    "earnings", "guidance", "outlook", "capex", "export control", "restriction", "forecast",
+    "production", "supply", "demand", "orders", "revenue", "profit", "財報", "財測", "展望",
+    "資本支出", "出口管制", "限制", "產能", "产能", "供應", "供应", "需求", "訂單", "订单", "營收", "营收",
+)
+_MARKET_SUBJECTS = ("nasdaq", "s&p 500", "sp500", "sox", "nyse", "dow jones", "那斯達克", "標普", "費半", "道瓊")
+_MARKET_ACTIONS = (
+    "rise", "rises", "fell", "fall", "higher", "lower", "surge", "drop", "rally", "selloff",
+    "record", "volatile", "futures", "上漲", "下跌", "暴漲", "暴跌", "創高", "創低", "期貨",
+)
+
+
+def _pair(haystack: str, subjects: Iterable[str], actions: Iterable[str]) -> tuple[str, str] | None:
+    subject = _first_hit(subjects, haystack)
+    action = _first_hit(actions, haystack)
+    # A repeated noun such as "tariff" is not an action.  Require the
+    # second token to contribute a distinct fact/action so a lone entity or
+    # topic cannot qualify a public story.
+    return (subject, action) if subject and action and normalize_text(subject) != normalize_text(action) else None
+
+
+def _classified(category: str, reason: str, terms: Iterable[str], haystack: str, pair: tuple[str, str] | None) -> dict[str, Any]:
+    subject, action = pair or ("", "")
+    return {
+        "category": category,
+        "reason": reason,
+        "matched_terms": [str(term) for term in terms if str(term).strip()],
+        "text": haystack,
+        "decision_value_eligible": True,
+        "classification_evidence": [item for item in (subject, action) if item],
+        "matched_subject": subject,
+        "matched_action": action,
+        "matched_market_object": subject,
+    }
+
+
+def _unclassified(reason: str, haystack: str, terms: Iterable[str] = ()) -> dict[str, Any]:
+    return {
+        "category": None,
+        "reason": reason,
+        "matched_terms": [str(term) for term in terms if str(term).strip()],
+        "text": haystack,
+        "decision_value_eligible": False,
+        "classification_evidence": [],
+        "matched_subject": "",
+        "matched_action": "",
+        "matched_market_object": "",
+    }
+
+
 def classify_event_fields(record: dict[str, Any] | str) -> dict[str, Any]:
-    """Classify a news story or live flash with matched aliases and reason."""
+    """Classify an event only when a subject is paired with a concrete fact/action."""
     haystack = build_haystack(record)
     # De-escalation must win over generic war/attack aliases.
     positive = _first_hit(MATERIAL_POSITIVE_TERMS, haystack)
     if positive:
-        return {"category": "material_positive", "reason": "material_positive_keyword", "matched_terms": [positive], "text": haystack}
-    # A current oil-production/supply story that merely says "since the war
-    # began" is an energy candidate, not a fresh black-swan escalation.
-    energy = _first_hit(CATEGORY_KEYWORDS.get("energy", ()), haystack)
-    energy_context = _first_hit(tuple(KEYWORD_DATABASE.get("energy_context", ())), haystack)
-    energy_production = _first_hit(ENERGY_PRODUCTION_TERMS, haystack)
-    if energy and energy_context and energy_production and not has_active_black_swan_context(haystack):
-        return {"category": "energy", "reason": "energy_material_keyword", "matched_terms": [energy, energy_context], "text": haystack}
+        return _classified("material_positive", "material_positive_keyword", [positive], haystack, None)
     black = _first_hit(BLACK_SWAN_TERMS, haystack)
-    if black:
-        return {"category": "black_swan", "reason": "black_swan_keyword", "matched_terms": [black], "text": haystack}
+    black_pair = _pair(haystack, _CONFLICT_SUBJECTS, ACTIVE_BLACK_SWAN_CONTEXT_TERMS)
+    if black and black_pair and has_active_black_swan_context(haystack):
+        return _classified("black_swan", "black_swan_subject_action", [black, *black_pair], haystack, black_pair)
     # A Trump mention becomes actionable only with a policy or de-escalation
     # action; the dedicated aliases are kept in the JSON database.
     trump = KEYWORD_DATABASE.get("trump") or {}
@@ -153,21 +286,27 @@ def classify_event_fields(record: dict[str, Any] | str) -> dict[str, Any]:
     taco = tuple(str(item) for item in trump.get("taco", ()) if str(item).strip())
     if _first_hit(taco, haystack):
         hit = _first_hit(taco, haystack)
-        return {"category": "policy", "reason": "trump_taco_keyword", "matched_terms": [hit], "text": haystack}
-    if _first_hit(entities, haystack) and _first_hit(policy_actions, haystack):
+        return _classified("policy", "trump_taco_keyword", [hit], haystack, (_first_hit(entities, haystack), hit))
+    trump_pair = _pair(haystack, entities, policy_actions)
+    if trump_pair:
         hit = _first_hit(policy_actions, haystack)
-        return {"category": "policy", "reason": "trump_policy_keyword", "matched_terms": [hit], "text": haystack}
-    # Policy and conflict are checked before broad energy terms so an Iran /
-    # shipping / supply story is not reduced to an ordinary oil headline.
-    for category in ("conflict", "policy", "fed", "macro", "semiconductor", "market", "energy"):
-        hit = _first_hit(CATEGORY_KEYWORDS.get(category, ()), haystack)
-        if hit:
-            if category == "energy":
-                context = energy_context
-                if not context:
-                    return {"category": None, "reason": "energy_requires_material_context", "matched_terms": [hit], "text": haystack}
-            return {"category": category, "reason": f"{category}_keyword", "matched_terms": [hit], "text": haystack}
-    return {"category": None, "reason": "keyword_no_match", "matched_terms": [], "text": haystack}
+        return _classified("policy", "trump_policy_keyword", [*trump_pair], haystack, trump_pair)
+
+    pairs: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
+        ("conflict", _CONFLICT_SUBJECTS, _CONFLICT_ACTIONS),
+        ("policy", _POLICY_SUBJECTS, _POLICY_ACTIONS),
+        ("fed", _FED_SUBJECTS, _FED_ACTIONS),
+        ("macro", _MACRO_SUBJECTS, _MACRO_ACTIONS),
+        ("macro", _CURRENCY_SUBJECTS, _CURRENCY_ACTIONS),
+        ("energy", _ENERGY_SUBJECTS, _ENERGY_ACTIONS),
+        ("semiconductor", _SEMICONDUCTOR_SUBJECTS, _SEMICONDUCTOR_ACTIONS),
+        ("market", _MARKET_SUBJECTS, _MARKET_ACTIONS),
+    )
+    for category, subjects, actions in pairs:
+        matched = _pair(haystack, subjects, actions)
+        if matched:
+            return _classified(category, f"{category}_subject_action", matched, haystack, matched)
+    return _unclassified("keyword_no_match", haystack)
 
 
 def notification_gate(category: str | None, *, official_confirmed: bool, market_sync_confirmed: bool) -> dict[str, Any]:
