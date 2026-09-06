@@ -1,3 +1,6 @@
+import json
+from datetime import UTC, datetime
+
 import pytest
 
 from src.news_intelligence import build_news_intelligence
@@ -9,6 +12,7 @@ from src.risk_news import (
     _news_from_rss,
     _news_lists_collide,
     _parse_taifex_vix_file,
+    _us_inventory_age,
     build_news_snapshot,
     build_risk_snapshot,
     classify_news_market,
@@ -241,6 +245,58 @@ def test_news_cache_prevents_empty_us_panel_after_transient_outage(monkeypatch, 
     assert second["us"][0]["stale_used"] is True
     us_health = next(item for item in second["source_health"] if item["key"] == "news_us")
     assert us_health["status"] == "stale"
+
+
+def test_us_news_inventory_uses_trading_sessions_and_reaches_five(monkeypatch, tmp_path):
+    cache_path = tmp_path / "news-cache.json"
+    cache_path.write_text(json.dumps({
+        "schema": 1,
+        "markets": {"us": {"eligible_inventory": [
+            {
+                "title": "Nasdaq falls after jobs data",
+                "url": "https://news.google.com/rss/articles/inv-1",
+                "published_at": "2026-09-04T12:00:00+00:00",
+            },
+            {
+                "title": "NVIDIA earnings outlook supports semiconductor shares",
+                "url": "https://news.google.com/rss/articles/inv-2",
+                "published_at": "2026-09-04T12:00:00+00:00",
+            },
+            {
+                "title": "Oil jumps after sanctions disrupt supply",
+                "url": "https://news.google.com/rss/articles/inv-3",
+                "published_at": "2026-09-04T12:00:00+00:00",
+            },
+            {
+                "title": "US Treasury yields rise after payrolls data",
+                "url": "https://news.google.com/rss/articles/inv-4",
+                "published_at": "2026-09-04T12:00:00+00:00",
+            },
+        ]}}}, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setenv("NEWS_CACHE_PATH", str(cache_path))
+    monkeypatch.setattr("src.risk_news.fetch_market_news", lambda market: [
+        {
+            "title": "Fed keeps rates unchanged as inflation cools",
+            "url": "https://www.federalreserve.gov/newsevents/pressreleases/current.htm",
+            "published_at": "2026-09-05T01:00:00+00:00",
+        }
+    ] if market == "us" else [])
+    monkeypatch.setattr("src.risk_news.fetch_market_news_fallback", lambda market: [])
+
+    snapshot = build_news_snapshot()
+    intelligence = snapshot["intelligence"]["us"]
+    assert len(intelligence["stories"]) == 5
+    assert intelligence["stories"][0]["selection_lane"] == "current"
+    assert sum(item["selection_lane"] == "inventory" for item in intelligence["stories"]) == 4
+    assert intelligence["scan_summary"]["current_eligible"] == 1
+    assert intelligence["scan_summary"]["inventory_selected"] == 4
+
+
+def test_us_inventory_age_counts_sessions_over_weekend_and_rejects_old_content():
+    sunday = datetime(2026, 9, 6, tzinfo=UTC)
+    assert _us_inventory_age("2026-09-04T12:00:00+00:00", sunday) == 1
+    assert _us_inventory_age("2026-09-03T12:00:00+00:00", sunday) == 2
+    assert _us_inventory_age("2026-08-28T12:00:00+00:00", sunday) is None
 
 
 def test_taiwan_macro_fgi_is_used_as_taiwan_sentiment(monkeypatch):

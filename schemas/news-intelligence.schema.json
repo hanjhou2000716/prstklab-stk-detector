@@ -24,12 +24,29 @@
         "excluded": {"type": "integer", "minimum": 0},
         "deduped": {"type": "integer", "minimum": 0},
         "publicly_ranked": {"type": "integer", "minimum": 0},
+        "current_eligible": {"type": "integer", "minimum": 0},
+        "inventory_considered": {"type": "integer", "minimum": 0},
+        "inventory_eligible": {"type": "integer", "minimum": 0},
+        "inventory_selected": {"type": "integer", "minimum": 0},
+        "final_public_count": {"type": "integer", "minimum": 0},
         "filtered_story_count": {"type": "integer", "minimum": 0},
         "fetched_story_count": {"type": "integer", "minimum": 0},
         "normalized_story_count": {"type": "integer", "minimum": 0},
         "eligible_story_count": {"type": "integer", "minimum": 0},
         "deduped_story_count": {"type": "integer", "minimum": 0},
         "ranked_story_count": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "inventory": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "retention_trading_sessions": {"type": "integer", "minimum": 1},
+        "max_calendar_days": {"type": "integer", "minimum": 1},
+        "considered": {"type": "integer", "minimum": 0},
+        "eligible": {"type": "integer", "minimum": 0},
+        "selected": {"type": "integer", "minimum": 0}
       },
       "additionalProperties": false
     },
@@ -99,7 +116,12 @@
         "entities": {"type": "array", "items": {"type": "string"}},
         "evidence_state": {"enum": ["official", "observation"]},
         "confirmation_required": {"type": "boolean"},
-        "public_safe": {"type": "boolean"}
+        "public_safe": {"type": "boolean"},
+        "selection_lane": {"enum": ["current", "inventory"]},
+        "inventory_used": {"type": "boolean"},
+        "inventory_age_trading_sessions": {"type": ["integer", "null"], "minimum": 1, "maximum": 3},
+        "inventory_saved_at": {"type": ["string", "null"], "format": "date-time"},
+        "eligibility_ruleset": {"type": "string", "minLength": 1}
       },
       "additionalProperties": true
     }

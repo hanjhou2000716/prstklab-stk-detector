@@ -144,11 +144,22 @@ _LISTICLE_RE = re.compile(
     r"|(?:選股|最受惠|目標價完整看|買進時機|投資早知道)",
     re.IGNORECASE,
 )
+_TICKER_LIST_RE = re.compile(
+    r"^\s*(?:ticker\s+list|watchlist|symbols?)\s*[:：-]"
+    r"|\b(?:stocks?|tickers?)\s*[:：-]\s*(?:[A-Z]{1,5}(?:\s+|,|/)){2,}",
+    re.IGNORECASE,
+)
 _MARKET_MATERIAL_RE = re.compile(
     r"\b(?:rise|rises|fell|fall|higher|lower|surge|surges|jump|jumps|drop|drops|"
     r"rally|rallies|selloff|sell-off|record|records|volatile|volatility|futures|"
     r"yield|yields|rate|rates|jobs|payroll|inflation|tariff|sanction|oil|crude)\b"
     r"|(?:上漲|下跌|暴漲|暴跌|殖利率|利率|通膨|就業|非農|關稅|制裁|原油|油價|能源)",
+    re.IGNORECASE,
+)
+_US_INDEX_RE = re.compile(r"\b(?:nasdaq|s&p\s*500|sp500|sox|nyse|dow\s+jones)\b|(?:那斯達克|標普|費半|道瓊)", re.IGNORECASE)
+_SPECIFIC_MARKET_CAUSE_RE = re.compile(
+    r"\b(?:after|as|due to|because|jobs?|payrolls?|earnings?|inflation|rates?|yield|yields|fed|oil|tariff|sanction|guidance|data|forecast)\b"
+    r"|(?:因|由於|由…|數據|數據|財報|通膨|利率|殖利率|就業|非農|油價|制裁|財測|展望)",
     re.IGNORECASE,
 )
 _COMPANY_ACTION_RE = re.compile(
@@ -158,6 +169,8 @@ _COMPANY_ACTION_RE = re.compile(
     re.IGNORECASE,
 )
 _MATERIAL_CATEGORIES = frozenset({"fed", "macro", "policy", "conflict", "energy", "semiconductor", "market"})
+NEWS_ELIGIBILITY_RULESET = "public_market_news_gate_v2"
+NEWS_SELECTION_LANES = frozenset({"current", "inventory"})
 
 
 def _public_news_decision(item: dict[str, Any]) -> tuple[bool, str | None, list[str], str]:
@@ -190,6 +203,9 @@ def _public_news_decision(item: dict[str, Any]) -> tuple[bool, str | None, list[
     if _LISTICLE_RE.search(title):
         flags.append("listicle_or_selection")
         return False, "listicle_or_selection", flags, "unclassified"
+    if _TICKER_LIST_RE.search(title):
+        flags.append("ticker_list")
+        return False, "listicle_or_selection", flags, "unclassified"
 
     has_tracked_entity = any(
         reason.startswith(("tracked_ticker:", "research_candidate:", "tracked_sector:"))
@@ -199,6 +215,8 @@ def _public_news_decision(item: dict[str, Any]) -> tuple[bool, str | None, list[
     has_category = category in _MATERIAL_CATEGORIES
     has_market_fact = bool(_MARKET_MATERIAL_RE.search(title))
     has_company_fact = has_tracked_entity and bool(_COMPANY_ACTION_RE.search(title))
+    has_specific_index_event = bool(_US_INDEX_RE.search(title) and _SPECIFIC_MARKET_CAUSE_RE.search(title))
+    has_specific_macro_event = bool(_SPECIFIC_MARKET_CAUSE_RE.search(title) and has_market_fact)
 
     if has_category:
         eligibility.append(f"event_category:{category}")
@@ -210,8 +228,10 @@ def _public_news_decision(item: dict[str, Any]) -> tuple[bool, str | None, list[
         eligibility.append("concrete_market_fact")
     if has_company_fact:
         eligibility.append("concrete_company_event")
+    if has_specific_index_event or has_specific_macro_event:
+        eligibility.append("concrete_market_event")
 
-    if not (has_category or has_company_fact or (has_active_topic and has_market_fact)):
+    if not (has_category or has_company_fact or has_specific_index_event or has_specific_macro_event or (has_active_topic and has_market_fact)):
         flags.append("no_material_market_relevance")
         # SEC rows remain available for audit, but a filing without a concrete
         # event fact is the generic-filing class used by legacy diagnostics.
@@ -344,6 +364,15 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         "matched_terms": [str(item) for item in (classification.get("matched_terms") or []) if str(item).strip()],
         "input_fields": classifier_fields,
     }
+    selection_lane = str(raw.get("selection_lane") or "current").strip().casefold()
+    if selection_lane not in NEWS_SELECTION_LANES:
+        selection_lane = "current"
+    inventory_age = raw.get("inventory_age_trading_sessions")
+    try:
+        inventory_age = int(str(inventory_age)) if inventory_age not in (None, "") else None
+    except (TypeError, ValueError):
+        inventory_age = None
+    inventory_saved_at = _published(raw.get("inventory_saved_at"))
     return {
         "story_id": _story_id(provider["provider_id"], url, title),
         "provider": provider["provider_id"],
@@ -381,6 +410,11 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         # stronger state from a provider label.
         "evidence_state": "official" if authority == "official" else "observation",
         "confirmation_required": authority != "official",
+        "selection_lane": selection_lane,
+        "inventory_used": bool(raw.get("inventory_used", selection_lane == "inventory")),
+        "inventory_age_trading_sessions": inventory_age,
+        "inventory_saved_at": inventory_saved_at,
+        "eligibility_ruleset": str(raw.get("eligibility_ruleset") or NEWS_ELIGIBILITY_RULESET),
     }
 
 
@@ -503,6 +537,8 @@ def deduplicate_and_rank(stories: Iterable[dict[str, Any]], *, limit: int = 5, m
         key = item["dedupe_key"] or item["canonical_url"]
         current = next((candidate for candidate in groups if candidate.get("dedupe_key") == key or (
             item.get("event_cluster_key") and candidate.get("event_cluster_key") == item.get("event_cluster_key")
+        ) or (
+            item.get("canonical_url") and candidate.get("canonical_url") == item.get("canonical_url")
         )), None)
         # SEC is authoritative for filings, but authority alone is not topical
         # relevance.  A generic 8-K with only ``market:us`` must not outrank a
@@ -512,7 +548,20 @@ def deduplicate_and_rank(stories: Iterable[dict[str, Any]], *, limit: int = 5, m
             if not str(reason).startswith("market:")
         ]
         generic_sec = item["provider"] == "sec" and not contextual_reasons and not item.get("entities") and not item.get("topics")
-        score = weights.get(item["authority_tier"], 0) + min(20, len(contextual_reasons) * 5) + (5 if item["published_at"] else 0)
+        # Current-run evidence always fills before retained inventory.  The
+        # lane bonus is deliberately larger than authority/relevance weights:
+        # inventory can supplement a sparse run, but it cannot displace a
+        # current eligible story merely because an older provider has a
+        # higher tier label.
+        lane_bonus = 100 if item.get("selection_lane") == "current" else 0
+        inventory_age = item.get("inventory_age_trading_sessions")
+        inventory_penalty = 0
+        if item.get("selection_lane") == "inventory":
+            try:
+                inventory_penalty = min(12, max(0, int(inventory_age or 1) - 1) * 3)
+            except (TypeError, ValueError):
+                inventory_penalty = 12
+        score = lane_bonus + weights.get(item["authority_tier"], 0) + min(20, len(contextual_reasons) * 5) + (5 if item["published_at"] else 0) - inventory_penalty
         if generic_sec:
             score -= 35
             item["relevance_class"] = "generic_official_filing"
@@ -728,8 +777,23 @@ def build_news_intelligence(
     creator_mentions: Iterable[str] = (),
     source_health: Iterable[Mapping[str, Any]] | None = None,
     limit: int = 5,
+    inventory_stories: Iterable[dict[str, Any]] = (),
 ) -> dict[str, Any]:
-    normalized = [normalize_news_story(story, market or story.get("market")) for story in stories]
+    current_raw = [dict(story) for story in stories if isinstance(story, dict)]
+    inventory_raw = [dict(story) for story in inventory_stories if isinstance(story, dict)]
+    if str(market or "").casefold() != "us":
+        inventory_raw = []
+    for story in current_raw:
+        story.setdefault("selection_lane", "current")
+        story.setdefault("inventory_used", False)
+        story.setdefault("eligibility_ruleset", NEWS_ELIGIBILITY_RULESET)
+    for story in inventory_raw:
+        story["selection_lane"] = "inventory"
+        story["inventory_used"] = True
+        story.setdefault("eligibility_ruleset", NEWS_ELIGIBILITY_RULESET)
+    normalized_current = [normalize_news_story(story, market or story.get("market")) for story in current_raw]
+    normalized_inventory = [normalize_news_story(story, market or story.get("market")) for story in inventory_raw]
+    normalized = [*normalized_current, *normalized_inventory]
     graph = build_interest_graph(
         normalized,
         tracked_tickers=tracked_tickers,
@@ -755,15 +819,37 @@ def build_news_intelligence(
         else:
             item["exclusion_reason"] = exclusion_reason
             item["relevance_class"] = exclusion_reason or "excluded"
-    eligible = [item for item in normalized if item.get("public_news_eligible", True)]
-    ranked = deduplicate_and_rank(eligible, limit=limit)
+    eligible = [item for item in normalized_current if item.get("public_news_eligible", True)]
+    inventory_eligible = [item for item in normalized_inventory if item.get("public_news_eligible", True)]
+    ranked_current = deduplicate_and_rank(eligible, limit=limit)
+    ranked_inventory = deduplicate_and_rank(
+        inventory_eligible, limit=max(len(inventory_eligible), 1), max_per_provider=max(len(inventory_eligible), 1),
+    )
+    # Current stories are authoritative for this run.  Inventory only fills
+    # unused slots, and duplicate event/article identities are suppressed.
+    ranked: list[dict[str, Any]] = []
+    seen_identity_keys: set[str] = set()
+    for item in [*ranked_current, *ranked_inventory]:
+        identity_keys = {
+            str(item.get(key) or "").strip()
+            for key in ("event_cluster_key", "dedupe_key", "canonical_url")
+            if str(item.get(key) or "").strip()
+        }
+        if identity_keys & seen_identity_keys:
+            continue
+        ranked.append(item)
+        seen_identity_keys.update(identity_keys)
+        if len(ranked) >= limit:
+            break
     deduped = deduplicate_and_rank(
         eligible,
         limit=max(len(eligible), 1),
         max_per_provider=max(len(eligible), 1),
     )
-    source_diversity = summarize_source_diversity(ranked)
-    excluded = [item for item in normalized if item.get("market_compatible") is False or item.get("public_news_eligible") is False]
+    # Source diversity is evidence about the current scan only.  Retained
+    # inventory must never masquerade as same-run corroboration.
+    source_diversity = summarize_source_diversity(ranked_current)
+    excluded = [item for item in normalized_current if item.get("market_compatible") is False or item.get("public_news_eligible") is False]
     health_rows: list[dict[str, Any]] = []
     for raw_health in source_health or ():
         if not isinstance(raw_health, Mapping):
@@ -787,7 +873,7 @@ def build_news_intelligence(
         row for row in health_rows
         if str(row.get("key") or "") != aggregate_key
     ]
-    observability = _news_provider_observability(normalized, deduped, ranked, provider_health)
+    observability = _news_provider_observability(normalized_current, deduped, ranked_current, provider_health)
     health_by_provider = {
         str(row.get("provider") or "").casefold(): row
         for row in provider_health
@@ -822,15 +908,20 @@ def build_news_intelligence(
         "disabled_provider_count": disabled_count,
         # Keep concise funnel keys for the public audit contract alongside the
         # older *_story_count names consumed by existing readers.
-        "fetched": len(normalized),
-        "normalized": len(normalized),
+        "fetched": len(normalized_current),
+        "normalized": len(normalized_current),
         "eligible": len(eligible),
         "excluded": len(excluded),
         "deduped": len(deduped),
         "publicly_ranked": len(ranked),
+        "current_eligible": len(eligible),
+        "inventory_considered": len(normalized_inventory),
+        "inventory_eligible": len(inventory_eligible),
+        "inventory_selected": sum(1 for item in ranked if item.get("selection_lane") == "inventory"),
+        "final_public_count": len(ranked),
         "filtered_story_count": len(excluded),
-        "fetched_story_count": len(normalized),
-        "normalized_story_count": len(normalized),
+        "fetched_story_count": len(normalized_current),
+        "normalized_story_count": len(normalized_current),
         "eligible_story_count": len(eligible),
         "deduped_story_count": len(deduped),
         "ranked_story_count": len(ranked),
@@ -856,13 +947,21 @@ def build_news_intelligence(
                 if not candidate.get("public_news_eligible", True)
                 and str(candidate.get("exclusion_reason") or "excluded") == str(item.get("exclusion_reason") or "excluded")
             )
-            for item in normalized
+            for item in normalized_current
             if not item.get("public_news_eligible", True)
         }.items())),
         "status": "ready" if ranked else "no_event",
         "collection_state": collection_state,
         "source_failure_count": failure_count,
         "scan_summary": scan_summary,
+        "inventory": {
+            "enabled": str(market or "").casefold() == "us",
+            "retention_trading_sessions": 3,
+            "max_calendar_days": 7,
+            "considered": len(normalized_inventory),
+            "eligible": len(inventory_eligible),
+            "selected": sum(1 for item in ranked if item.get("selection_lane") == "inventory"),
+        },
         "source_health": health_rows,
         "observability": observability,
     }

@@ -15,11 +15,12 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 from xml.etree import ElementTree
+from zoneinfo import ZoneInfo
 
 import requests
 
 from src.news_feed_adapters import fetch_official_market_news
-from src.news_intelligence import build_news_intelligence, provider_registry
+from src.news_intelligence import NEWS_ELIGIBILITY_RULESET, build_news_intelligence, provider_registry
 from src.taiwan_macro_fgi import FGIUnavailableError, calculate_taiwan_macro_fgi
 
 CNN_FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
@@ -61,6 +62,9 @@ NEWS_TERMS = {
 }
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; PRStKInvestmentSystem/1.0)"}
 NEWS_CACHE_MAX_AGE_MINUTES = int(os.getenv("NEWS_CACHE_MAX_AGE_MINUTES", "360"))
+NEWS_INVENTORY_MAX_TRADING_SESSIONS = 3
+NEWS_INVENTORY_MAX_CALENDAR_DAYS = 7
+NEWS_INVENTORY_MAX_ITEMS = 30
 _LAST_OFFICIAL_NEWS_HEALTH: dict[str, dict[str, Any]] = {}
 
 # A provider can return a valid HTTP response containing the wrong regional
@@ -187,6 +191,178 @@ def _save_news_cache(cache: dict[str, Any]) -> None:
     except OSError:
         # News delivery must never fail merely because the optional cache is read-only.
         return
+
+
+def _parse_news_time(value: Any) -> datetime | None:
+    """Parse a release/news timestamp without making a naive time local."""
+    if value in (None, ""):
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    return parsed.replace(tzinfo=parsed.tzinfo or UTC).astimezone(UTC)
+
+
+def _us_inventory_age(published_at: Any, now: datetime | None = None) -> int | None:
+    """Return a US-session age, where the source session is age one.
+
+    Calendar sessions are used instead of 72-hour arithmetic so a Friday
+    story remains eligible on the following weekend and exchange holidays do
+    not consume an artificial session.
+    """
+    published = _parse_news_time(published_at)
+    current = _parse_news_time(now or datetime.now(UTC))
+    if published is None or current is None or published > current:
+        return None
+    if current - published > timedelta(days=NEWS_INVENTORY_MAX_CALENDAR_DAYS):
+        return None
+    try:
+        import pandas_market_calendars as mcal
+
+        nyse = mcal.get_calendar("NYSE")
+        source_day = published.astimezone(ZoneInfo("America/New_York")).date()
+        current_day = current.astimezone(ZoneInfo("America/New_York")).date()
+        if source_day > current_day:
+            return None
+        schedule = nyse.schedule(start_date=source_day, end_date=current_day)
+        sessions = [index.date() for index in schedule.index]
+    except (ImportError, KeyError, TypeError, ValueError, IndexError):
+        return None
+    if not sessions:
+        # A weekend/holiday publication belongs to the most recent completed
+        # session.  Look back one bounded calendar week to find its anchor.
+        try:
+            schedule = nyse.schedule(
+                start_date=source_day - timedelta(days=7), end_date=current_day,
+            )
+            sessions = [index.date() for index in schedule.index]
+        except (TypeError, ValueError, IndexError):
+            return None
+    anchor_candidates = [session for session in sessions if session <= source_day]
+    if not anchor_candidates:
+        return None
+    anchor = anchor_candidates[-1]
+    current_sessions = [session for session in sessions if anchor <= session <= current_day]
+    age = len(current_sessions)
+    return age if 1 <= age <= NEWS_INVENTORY_MAX_TRADING_SESSIONS else None
+
+
+def _story_identity(story: dict[str, Any]) -> tuple[str, ...]:
+    """Return stable identities used to merge current and inventory lanes."""
+    return tuple(
+        value for value in (
+            str(story.get("event_cluster_key") or "").strip(),
+            str(story.get("dedupe_key") or "").strip(),
+            str(story.get("canonical_url") or story.get("url") or "").strip(),
+        ) if value
+    )
+
+
+def _inventory_candidates(
+    cache: dict[str, Any], market: str, now: datetime | None = None,
+) -> list[dict[str, Any]]:
+    """Load only recent candidates; the public gate is reapplied downstream."""
+    if market != "us":
+        return []
+    entry = (cache.get("markets") or {}).get(market)
+    if not isinstance(entry, dict):
+        return []
+    candidates: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    rows: list[Any] = []
+    eligible_inventory = entry.get("eligible_inventory")
+    if isinstance(eligible_inventory, list):
+        rows.extend(eligible_inventory)
+    # Schema-1 cache is migration input only.  It is never trusted as public
+    # inventory until the current gate accepts it again.
+    legacy_rows = entry.get("stories")
+    if isinstance(legacy_rows, list):
+        rows.extend(legacy_rows)
+    checked_at = now or datetime.now(UTC)
+    for raw in rows:
+        if not isinstance(raw, dict):
+            continue
+        item = dict(raw)
+        published = _parse_news_time(item.get("published_at"))
+        age = _us_inventory_age(published, checked_at)
+        if published is None or age is None:
+            continue
+        identity = _story_identity(item)
+        fallback_identity = str(item.get("story_id") or "").strip()
+        identity_set = set(identity) or ({fallback_identity} if fallback_identity else set())
+        if not identity_set or identity_set & seen:
+            continue
+        seen.update(identity_set)
+        item["selection_lane"] = "inventory"
+        item["inventory_used"] = True
+        item["inventory_age_trading_sessions"] = age
+        item["inventory_saved_at"] = item.get("inventory_saved_at") or entry.get("inventory_saved_at")
+        item["eligibility_ruleset"] = NEWS_ELIGIBILITY_RULESET
+        candidates.append(item)
+    return candidates
+
+
+def _update_news_inventory(
+    cache: dict[str, Any], market: str, eligible_stories: Iterable[dict[str, Any]],
+    checked_at: str, now: datetime | None = None,
+) -> None:
+    """Persist only gate-approved canonical stories with original timestamps."""
+    if market != "us":
+        return
+    cache["schema"] = max(2, int(cache.get("schema") or 1))
+    markets = cache.setdefault("markets", {})
+    entry = markets.setdefault(market, {})
+    existing = entry.get("eligible_inventory") if isinstance(entry, dict) else None
+    rows = [dict(row) for row in existing if isinstance(row, dict)] if isinstance(existing, list) else []
+    merged: dict[str, dict[str, Any]] = {}
+
+    def merge_key(row: dict[str, Any]) -> str:
+        identities = set(_story_identity(row))
+        for existing_key, existing_row in merged.items():
+            if identities & set(_story_identity(existing_row)):
+                return existing_key
+        return next(iter(identities), str(row.get("story_id") or "").strip())
+
+    for row in rows:
+        key = merge_key(row)
+        if key:
+            merged[key] = row
+    for story in eligible_stories:
+        if not isinstance(story, dict) or story.get("public_news_eligible") is not True:
+            continue
+        if not _parse_news_time(story.get("published_at")):
+            continue
+        if not _story_identity(story):
+            continue
+        row = dict(story)
+        row["selection_lane"] = "inventory"
+        row["inventory_used"] = True
+        row["inventory_saved_at"] = row.get("inventory_saved_at") or checked_at
+        row["eligibility_ruleset"] = NEWS_ELIGIBILITY_RULESET
+        key = merge_key(row)
+        if key:
+            # Preserve source publication time; saved_at only records the
+            # first time this story entered the accepted inventory.
+            previous = merged.get(key)
+            if previous and previous.get("published_at"):
+                row["published_at"] = previous["published_at"]
+                row["inventory_saved_at"] = previous.get("inventory_saved_at") or row["inventory_saved_at"]
+            merged[key] = row
+    current_time = now or datetime.now(UTC)
+    retained: list[dict[str, Any]] = []
+    for row in merged.values():
+        age = _us_inventory_age(row.get("published_at"), current_time)
+        if age is None:
+            continue
+        row["inventory_age_trading_sessions"] = age
+        retained.append(row)
+    retained.sort(key=lambda item: (str(item.get("published_at") or ""), str(item.get("story_id") or "")), reverse=True)
+    if not isinstance(entry, dict):
+        entry = {}
+        markets[market] = entry
+    entry["eligible_inventory"] = retained[:NEWS_INVENTORY_MAX_ITEMS]
+    entry["inventory_saved_at"] = checked_at
 
 
 def _recent_cached_stories(cache: dict[str, Any], market: str) -> list[dict[str, Any]]:
@@ -992,7 +1168,12 @@ def build_news_snapshot(
                                    "fallback_used": True, "data_gap": None})
             result[market] = stories
             if not any(item.get("stale_used") for item in stories):
-                markets[market] = {"fetched_at": checked_at, "stories": stories}
+                existing_entry = markets.get(market)
+                markets[market] = {
+                    **(existing_entry if isinstance(existing_entry, dict) else {}),
+                    "fetched_at": checked_at,
+                    "stories": stories,
+                }
             continue
 
         # A final category-specific attempt is useful when the primary provider
@@ -1007,7 +1188,12 @@ def build_news_snapshot(
             health.update({"status": "healthy", "item_count": len(fallback),
                            "source_url": _market_news_rss_url(market),
                            "fallback_used": True, "data_gap": None})
-            markets[market] = {"fetched_at": checked_at, "stories": fallback}
+            existing_entry = markets.get(market)
+            markets[market] = {
+                **(existing_entry if isinstance(existing_entry, dict) else {}),
+                "fetched_at": checked_at,
+                "stories": fallback,
+            }
             continue
 
         cached = _filter_market_news(_recent_cached_stories(cache, market), market)
@@ -1031,6 +1217,10 @@ def build_news_snapshot(
     # never linkable by the frontend or considered public-safe.
     for market in ("taiwan", "us"):
         stories = result.get(market) or []
+        current_stories = [
+            story for story in stories
+            if isinstance(story, dict) and not story.get("stale_used")
+        ]
         market_health = [
             row for row in result.get("source_health", [])
             if isinstance(row, dict)
@@ -1047,7 +1237,7 @@ def build_news_snapshot(
         # contract as "available" stories.
         accepted_by_provider: Counter[str] = Counter(
             str(story.get("provider") or "unknown")
-            for story in stories
+            for story in current_stories
             if isinstance(story, dict)
         )
         for row in market_health:
@@ -1066,8 +1256,23 @@ def build_news_snapshot(
             if raw_count > 0 and filtered_count == 0 and row.get("status") == "healthy":
                 row["status"] = "no_event"
                 row["data_gap"] = "filtered_no_market_match"
+        current_intelligence = build_news_intelligence(
+            current_stories,
+            market=market,
+            tracked_tickers=interest_context["tracked_tickers"],
+            research_tickers=interest_context["research_tickers"],
+            tracked_sectors=interest_context["tracked_sectors"],
+            topics=(),
+            active_event_topics=interest_context["active_event_topics"],
+            creator_mentions=interest_context["creator_mentions"],
+            source_health=market_health,
+            limit=max(len(current_stories), 1),
+        )
+        inventory_candidates = _inventory_candidates(
+            cache, market, _parse_news_time(checked_at) or datetime.now(UTC),
+        )
         intelligence = build_news_intelligence(
-            stories,
+            current_stories,
             market=market,
             tracked_tickers=interest_context["tracked_tickers"],
             research_tickers=interest_context["research_tickers"],
@@ -1077,6 +1282,11 @@ def build_news_snapshot(
             creator_mentions=interest_context["creator_mentions"],
             source_health=market_health,
             limit=5,
+            inventory_stories=inventory_candidates,
+        )
+        _update_news_inventory(
+            cache, market, current_intelligence.get("stories", []), checked_at,
+            _parse_news_time(checked_at) or datetime.now(UTC),
         )
         # Reconcile once more after intelligence construction.  The
         # observability builder may receive a legacy provider-health row from
@@ -1095,6 +1305,7 @@ def build_news_snapshot(
             accepted_by_provider = Counter(
                 str(story.get("provider") or "unknown")
                 for story in public_stories
+                if str(story.get("selection_lane") or "current") != "inventory"
             )
             failures = 0
             successes = 0
@@ -1135,6 +1346,8 @@ def build_news_snapshot(
                 summary["failed_provider_count"] = failures
                 summary["successful_provider_count"] = successes
                 summary["ranked_story_count"] = len(public_stories)
+                summary["publicly_ranked"] = len(public_stories)
+                summary["final_public_count"] = len(public_stories)
         result.setdefault("intelligence", {})[market] = intelligence
     result["provider_registry"] = provider_registry()
     result["interest_context"] = interest_context

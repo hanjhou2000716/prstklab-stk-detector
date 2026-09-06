@@ -168,6 +168,84 @@ def test_public_news_ranking_is_capped_at_five_and_funnel_matches_output():
     assert payload["scan_summary"]["publicly_ranked"] == len(payload["stories"]) == 5
 
 
+def _inventory_story(index: int, title: str) -> dict[str, object]:
+    return {
+        "title": title,
+        "url": f"https://news.google.com/rss/articles/inventory-{index}",
+        "published_at": "2026-09-04T12:00:00+00:00",
+        "inventory_age_trading_sessions": 1,
+    }
+
+
+def test_current_news_is_followed_by_qualified_inventory_until_five():
+    payload = build_news_intelligence(
+        [{
+            "title": "Fed keeps rates unchanged as inflation cools",
+            "url": "https://www.federalreserve.gov/newsevents/pressreleases/current.htm",
+            "published_at": "2026-09-05T01:00:00+00:00",
+        }],
+        market="us",
+        inventory_stories=[
+            _inventory_story(1, "Nasdaq falls after jobs data"),
+            _inventory_story(2, "NVIDIA earnings outlook supports semiconductor shares"),
+            _inventory_story(3, "Oil jumps after sanctions disrupt supply"),
+            _inventory_story(4, "US Treasury yields rise after payrolls data"),
+        ],
+    )
+    assert len(payload["stories"]) == 5
+    assert payload["stories"][0]["selection_lane"] == "current"
+    assert all(item["selection_lane"] == "inventory" for item in payload["stories"][1:])
+    assert payload["scan_summary"]["current_eligible"] == 1
+    assert payload["scan_summary"]["inventory_selected"] == 4
+    assert payload["scan_summary"]["final_public_count"] == 5
+    assert payload["scan_summary"]["publicly_ranked"] == payload["scan_summary"]["ranked_story_count"] == 5
+    assert validate_news_intelligence(payload) == []
+
+
+def test_five_current_stories_do_not_add_inventory():
+    current = [
+        {
+            "title": f"Nasdaq falls after jobs data {index}",
+            "url": f"https://news.google.com/rss/articles/current-{index}",
+            "published_at": f"2026-09-05T0{index}:00:00+00:00",
+        }
+        for index in range(1, 6)
+    ]
+    payload = build_news_intelligence(
+        current, market="us", inventory_stories=[_inventory_story(9, "Oil jumps after sanctions disrupt supply")],
+    )
+    assert len(payload["stories"]) == 5
+    assert payload["scan_summary"]["inventory_selected"] == 0
+    assert all(item["selection_lane"] == "current" for item in payload["stories"])
+
+
+def test_current_story_wins_when_inventory_repeats_same_article():
+    current = {
+        "title": "Fed keeps rates unchanged as inflation cools",
+        "url": "https://news.google.com/rss/articles/shared",
+        "published_at": "2026-09-05T01:00:00+00:00",
+    }
+    inventory = dict(current, inventory_age_trading_sessions=1)
+    payload = build_news_intelligence([current], market="us", inventory_stories=[inventory])
+    assert len(payload["stories"]) == 1
+    assert payload["stories"][0]["selection_lane"] == "current"
+    assert payload["scan_summary"]["inventory_selected"] == 0
+
+
+def test_inventory_gate_does_not_fill_with_low_quality_stories():
+    payload = build_news_intelligence(
+        [], market="us", inventory_stories=[
+            _inventory_story(1, "8-K - RIVERVIEW BANCORP INC (0001041368) (Filer)"),
+            _inventory_story(2, "US Stocks In Focus: Top Pick after PPI data"),
+            _inventory_story(3, "Ticker list: NVDA AMD TSM"),
+            _inventory_story(4, "Government appoints a new official"),
+        ],
+    )
+    assert payload["stories"] == []
+    assert payload["scan_summary"]["final_public_count"] == 0
+    assert payload["scan_summary"]["inventory_eligible"] == 0
+
+
 def test_short_macro_token_does_not_classify_top_pick_as_ppi():
     from src.event_classifier import classify_event_fields
 

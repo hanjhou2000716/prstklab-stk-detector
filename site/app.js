@@ -819,9 +819,16 @@ const renderNewsList = (id, stories, providerRegistry = [], health = null, intel
   const diversity = intelligence?.source_diversity;
   const scanSummary = intelligence?.scan_summary || {};
   const observationCount = (stories || []).filter((story) => String(story?.source_tier || story?.authority_tier || "").toLowerCase() !== "official").length;
-  const funnelDetail = Number.isFinite(Number(scanSummary.provider_count))
-    ? `｜來源 ${Number(scanSummary.provider_count)} 個｜可用 ${Number(scanSummary.ranked_story_count) || 0} 則｜排除 ${Number(scanSummary.filtered_story_count) || 0} 則`
-    : "";
+  const hasInventoryFunnel = ["current_eligible", "inventory_selected", "final_public_count"]
+    .some((field) => Object.prototype.hasOwnProperty.call(scanSummary, field));
+  const publicCount = Number.isFinite(Number(scanSummary.final_public_count))
+    ? Number(scanSummary.final_public_count) : (stories || []).length;
+  const inventoryShortfall = hasInventoryFunnel && publicCount < 5 ? "｜合格庫存不足" : "";
+  const funnelDetail = hasInventoryFunnel
+    ? `｜本輪 ${Number(scanSummary.current_eligible) || 0} 則｜近期庫存 ${Number(scanSummary.inventory_selected) || 0} 則｜共 ${publicCount} 則｜排除 ${Number(scanSummary.filtered_story_count) || 0} 則${inventoryShortfall}`
+    : Number.isFinite(Number(scanSummary.provider_count))
+      ? `｜來源 ${Number(scanSummary.provider_count)} 個｜可用 ${Number(scanSummary.ranked_story_count) || 0} 則｜排除 ${Number(scanSummary.filtered_story_count) || 0} 則`
+      : "";
   if (diversityNode) {
     if (!diversity || diversity.status === "no_event") {
       diversityNode.textContent = `來源核對：本輪沒有可用新聞${funnelDetail}`;
@@ -858,7 +865,10 @@ const renderNewsList = (id, stories, providerRegistry = [], health = null, intel
     const source = escapeHtml(story.source || story.provider_name || "公開來源");
     const detailParts = [reasonDetails, eventReason].filter(Boolean).map((item) => escapeHtml(item));
     const detail = detailParts.length ? `<span class="news-reason-detail">${detailParts.join("、")}</span>` : "";
-    return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><div class="news-badges" aria-label="這則新聞的關聯理由">${badges}</div><small>${source}${detail}</small></li>`;
+    const isInventory = story?.selection_lane === "inventory";
+    const inventoryBadge = isInventory ? ' <span class="news-badge news-badge-inventory">近期庫存</span>' : "";
+    const inventoryTime = isInventory && story.published_at ? `｜原發布 ${escapeHtml(traceTime(story.published_at))}` : "";
+    return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><div class="news-badges" aria-label="這則新聞的關聯理由">${badges}${inventoryBadge}</div><small>${source}${detail}${inventoryTime}</small></li>`;
   }).join("");
 };
 
