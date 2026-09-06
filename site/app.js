@@ -59,8 +59,15 @@ const activeExternalAlert = (alert) => {
 };
 
 const renderFocus = (events, externalAlert, briefing) => {
+  const publicHeadline = String(briefing?.public_short_message || briefing?.brief_title || "").trim();
+  if (briefing?.digest_status === "ready" && publicHeadline) {
+    setText("market-focus", publicHeadline);
+    return;
+  }
   const assessment = String(briefing?.assessment_summary || briefing?.overview || "").trim();
   if (briefing?.digest_status === "ready" && assessment) {
+    // Historical releases may not have the shared public headline. Keep the
+    // long-form assessment as a compatibility fallback only.
     setText("market-focus", assessment);
     return;
   }

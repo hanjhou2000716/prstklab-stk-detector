@@ -30,7 +30,8 @@ def test_digest_combines_distinct_events_and_quotes_into_one_shared_message():
     )
 
     assert result["notification_eligible"] is True
-    assert len(result["themes"]) == 3
+    assert 1 <= len(result["themes"]) <= 3
+    assert len({theme["market_topic"] for theme in result["themes"]}) == len(result["themes"])
     assert len(result["public_short_message"]) <= 60
     assert result["public_short_message"]
     assert "..." not in result["public_short_message"]
@@ -305,3 +306,40 @@ def test_digest_deduplicates_cross_source_event_and_caps_secondary_signals():
     assert len(keys) == len(set(keys))
     assert not any(signal["canonical_event_key"] == result["primary_theme"]["canonical_event_key"]
                    for signal in result["secondary_signals"])
+
+
+def test_digest_deduplicates_public_themes_by_market_topic():
+    result = build_market_digest(
+        {
+            "generated_at": "2026-09-05T00:00:00+00:00",
+            "events": {"items": [
+                {
+                    "source_key": "official",
+                    "event": "台積電與半導體供應鏈公布資本支出展望，市場等待後續核對",
+                    "published_at": "2026-09-04T23:00:00+00:00",
+                    "observation_id": "semi-1",
+                },
+                {
+                    "source_key": "news",
+                    "event": "AI半導體需求展望更新，供應鏈等待後續細節",
+                    "public_news_eligible": True,
+                    "normalization_complete": True,
+                    "canonical_url": "https://example.com/semi",
+                    "published_at": "2026-09-04T22:00:00+00:00",
+                    "observation_id": "semi-2",
+                },
+                {
+                    "source_key": "official",
+                    "event": "聯準會公布利率政策聲明，市場等待後續核對",
+                    "published_at": "2026-09-04T21:00:00+00:00",
+                    "observation_id": "rates-1",
+                },
+            ]},
+        },
+        "us_premarket",
+    )
+
+    topics = [theme["market_topic"] for theme in result["themes"]]
+    assert topics == ["semiconductor_ai", "rates_fx"]
+    assert len(topics) == len(set(topics))
+    assert "Yahoo股市" not in result["primary_theme"]["what_happened"]
