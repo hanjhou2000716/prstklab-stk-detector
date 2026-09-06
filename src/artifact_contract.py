@@ -243,6 +243,35 @@ def validate_news_intelligence(document: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: canonical_url is outside provider domains")
         if story.get("public_safe") is not True:
             errors.append(f"{path}: public_safe must be true for published news")
+        lane = story.get("selection_lane")
+        inventory_used = story.get("inventory_used")
+        if lane == "inventory":
+            age = story.get("inventory_age_trading_sessions")
+            if inventory_used is not True:
+                errors.append(f"{path}: inventory stories must set inventory_used=true")
+            if not isinstance(age, int) or not 1 <= age <= 3:
+                errors.append(f"{path}: inventory_age_trading_sessions must be 1..3")
+            if _parse_time(story.get("published_at")) is None:
+                errors.append(f"{path}: inventory stories require published_at")
+        elif inventory_used is True:
+            errors.append(f"{path}: current stories cannot set inventory_used=true")
+        elif lane is not None and lane != "current":
+            errors.append(f"{path}: selection_lane is invalid")
+    summary = document.get("scan_summary")
+    if isinstance(summary, dict):
+        count_fields = ("publicly_ranked", "ranked_story_count", "final_public_count")
+        present = [summary.get(field) for field in count_fields if field in summary]
+        if present and (not all(isinstance(value, int) and value >= 0 for value in present) or len(set(present)) != 1):
+            errors.append("news.scan_summary public counts must agree")
+        if present and isinstance(summary.get("publicly_ranked"), int) and summary["publicly_ranked"] != len(document.get("stories", [])):
+            errors.append("news.scan_summary.publicly_ranked must match stories")
+        for field in ("current_eligible", "inventory_considered", "inventory_eligible", "inventory_selected", "final_public_count"):
+            if field in summary and (not isinstance(summary[field], int) or summary[field] < 0):
+                errors.append(f"news.scan_summary.{field} must be non-negative")
+        inventory = document.get("inventory")
+        if isinstance(inventory, dict) and "selected" in inventory and "inventory_selected" in summary:
+            if inventory.get("selected") != summary.get("inventory_selected"):
+                errors.append("news.inventory.selected must match scan_summary.inventory_selected")
     return errors
 
 

@@ -23,6 +23,9 @@ def test_news_badges_keep_reason_details_escaped_and_source_visible():
     assert 'const reasonDetails = (story.relevance_reasons || []).map(humanNewsReason)' in app
     assert "keyword_no_match" in app
     assert 'const source = escapeHtml(story.source || story.provider_name || "公開來源")' in app
+    assert 'selection_lane === "inventory"' in app
+    assert "原發布" in app
+    assert ".news-badge-inventory" in (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
 
 
 def test_news_cards_render_shared_event_classification_evidence():
