@@ -433,6 +433,22 @@ def _theme_for_quotes(items: list[dict[str, Any]]) -> dict[str, Any] | None:
     }
 
 
+def _dedupe_market_topics(themes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep at most one public theme per investor-facing market topic."""
+    result: list[dict[str, Any]] = []
+    seen_topics: set[str] = set()
+    for theme in themes:
+        if not isinstance(theme, dict):
+            continue
+        topic = str(theme.get("market_topic") or "").strip()
+        if topic and topic in seen_topics:
+            continue
+        if topic:
+            seen_topics.add(topic)
+        result.append(theme)
+    return result
+
+
 def _news_events(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
     """Project only public-gate-approved news into digest candidates.
 
@@ -632,13 +648,13 @@ def build_market_digest(
     secondary_themes = list(event_secondary_themes)
     if quote_theme and not primary_theme.get("quote_evidence"):
         secondary_themes.append(quote_theme)
-    themes.extend(secondary_themes[:2])
+    themes = _dedupe_market_topics([primary_theme, *secondary_themes])[:3]
 
     # Prices are evidence attached to the event, not a second copy of the
     # event's public narrative.  Keep quote-only briefings meaningful, while
     # preventing a refreshed quote from changing the identity of an event
     # briefing or making the Telegram summary oscillate between runs.
-    summary_themes = event_themes[:3] if event_themes else [quote_theme]
+    summary_themes = _dedupe_market_topics(event_themes)[:3] if event_themes else [quote_theme]
 
     secondary_signals: list[dict[str, Any]] = []
     seen_secondary: set[str] = {str(primary_theme.get("canonical_event_key") or "")}

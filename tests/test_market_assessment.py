@@ -15,6 +15,16 @@ def test_storm_headline_removes_byline_publisher_and_normalizes_fact():
     assert result["publisher_removed"] is True
 
 
+def test_news_publisher_suffix_is_removed_from_public_event_fact():
+    result = normalize_headline({
+        "event": "台指期夜盤大漲473點站上4萬7，台股周一迎戰8月營收 AI供應鏈續受關注 - Yahoo股市。",
+    })
+
+    assert result["normalized_fact"].endswith("AI供應鏈續受關注。")
+    assert "Yahoo股市" not in result["normalized_fact"]
+    assert result["publisher_removed"] is True
+
+
 def test_official_person_is_role_only_in_public_fact():
     result = normalize_headline({"title": "沃勒表示通膨與勞動市場仍是利率判斷的重要依據"})
 

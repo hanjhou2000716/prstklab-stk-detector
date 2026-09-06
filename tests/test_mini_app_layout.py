@@ -34,6 +34,13 @@ def test_mini_app_renders_compact_market_risk_cards_without_subscores():
     assert "renderBriefing(snapshot.briefing, snapshot.generated_at)" in app
 
 
+def test_mini_app_hero_prefers_shared_public_headline():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert 'briefing?.public_short_message || briefing?.brief_title' in app
+    assert 'setText("market-focus", publicHeadline)' in app
+
+
 def test_mini_app_uses_strategy_drawers_and_places_source_health_after_sentiment():
     page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
     styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
