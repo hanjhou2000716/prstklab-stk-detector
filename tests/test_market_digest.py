@@ -101,6 +101,7 @@ def test_digest_uses_only_public_gate_stories_from_new_intelligence_envelope():
                         "title": "Fed keeps rates unchanged as inflation cools",
                         "summary": "Fed holds rates while inflation cools.",
                         "public_news_eligible": True,
+                        "normalization_complete": True,
                         "canonical_url": "https://www.federalreserve.gov/a",
                         "published_at": "2026-09-04T20:00:00+00:00",
                     }]},
@@ -111,6 +112,30 @@ def test_digest_uses_only_public_gate_stories_from_new_intelligence_envelope():
     )
     assert any("Fed holds rates" in theme["what_happened"] for theme in result["themes"])
     assert all("不應進入摘要" not in theme["what_happened"] for theme in result["themes"])
+
+
+def test_digest_rejects_legacy_news_event_rows_even_if_they_claim_public_eligibility():
+    result = build_market_digest(
+        {
+            "generated_at": "2026-09-05T00:00:00+00:00",
+            "events": {"items": [{
+                "source": "Google News｜台股線索",
+                "title": "不應繞過 canonical news gate 的舊新聞",
+                "event": "Fed rate decision headline without release-bound evidence",
+                "public_news_eligible": True,
+                "published_at": "2026-09-04T20:00:00+00:00",
+            }]},
+            "indices": [{
+                "ticker": "NASDAQ",
+                "price": 100.0,
+                "change_percent": 1.0,
+                "freshness": "recent_close",
+            }],
+        },
+        "us_premarket",
+    )
+
+    assert all("不應繞過" not in theme.get("what_happened", "") for theme in result["themes"])
 
 
 def test_digest_suppresses_when_all_inputs_are_fragments_or_retired_creators():

@@ -479,6 +479,34 @@ def _news_events(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
     return rows
 
 
+_NEWS_SOURCE_MARKERS = (
+    "google news",
+    "yahoo股市",
+    "yahoo finance",
+    "anue",
+    "cnyes",
+    "公開市場新聞",
+)
+
+
+def _is_news_derived_event(event: dict[str, Any]) -> bool:
+    source_key = str(event.get("source_key") or "").casefold().strip()
+    source = str(event.get("source") or event.get("content_origin") or "").casefold()
+    return source_key in {"news", "market_news", "public_news"} or any(
+        marker in source for marker in _NEWS_SOURCE_MARKERS
+    )
+
+
+def _is_canonical_news_event(event: dict[str, Any]) -> bool:
+    """Require the release-bound intelligence contract for news-derived rows."""
+    if event.get("public_news_eligible") is not True:
+        return False
+    canonical_url = str(event.get("canonical_url") or "").strip().casefold()
+    if not canonical_url.startswith("https://"):
+        return False
+    return event.get("normalization_complete") is True
+
+
 def _fit_sentence(prefix: str, clauses: list[str], limit: int) -> str:
     chosen = prefix
     for clause in clauses:
@@ -520,8 +548,9 @@ def build_market_digest(
         source = str(event.get("source_key") or event.get("source") or event.get("content_origin") or "").casefold()
         if source in {"haojiao", "jenny", "gooaye", "creator"}:
             continue
-        if source in {"news", "market_news", "public_news"} and not (
-            event.get("public_news_eligible") is True or event.get("_legacy_news_projection") is True
+        if _is_news_derived_event(event) and not (
+            event.get("_legacy_news_projection") is True
+            or _is_canonical_news_event(event)
         ):
             continue
         if not _within_lookback(event, as_of):
