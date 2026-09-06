@@ -7,7 +7,8 @@ def test_mini_app_resolves_deep_link_only_with_matching_release():
     assert "new URLSearchParams(window.location.search)" in APP
     assert "requestedRelease !== manifestRelease" in APP
     assert "該訊息版本已歸檔或不可用" in APP
-    assert "latest_same_event" in APP or "最新同事件版本" in APP
+    assert "sameAlertLineage" in APP
+    assert "最新同事件版本" not in APP
 
 
 def test_mini_app_does_not_replace_unknown_alert_with_current_event():

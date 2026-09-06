@@ -88,6 +88,30 @@ def test_digest_reads_existing_reviewed_news_as_evidence():
     assert any("官方資料更新" in theme["what_happened"] for theme in result["themes"])
 
 
+def test_digest_uses_only_public_gate_stories_from_new_intelligence_envelope():
+    result = build_market_digest(
+        {
+            "generated_at": "2026-09-05T00:00:00+00:00",
+            "news": {
+                "us": [{"title": "不應進入摘要的 raw news", "event": "Fed rate decision"}],
+                "intelligence": {
+                    "taiwan": {"stories": []},
+                    "us": {"stories": [{
+                        "title": "Fed keeps rates unchanged as inflation cools",
+                        "summary": "Fed holds rates while inflation cools.",
+                        "public_news_eligible": True,
+                        "canonical_url": "https://www.federalreserve.gov/a",
+                        "published_at": "2026-09-04T20:00:00+00:00",
+                    }]},
+                },
+            },
+        },
+        "morning",
+    )
+    assert any("Fed holds rates" in theme["what_happened"] for theme in result["themes"])
+    assert all("不應進入摘要" not in theme["what_happened"] for theme in result["themes"])
+
+
 def test_digest_suppresses_when_all_inputs_are_fragments_or_retired_creators():
     result = build_market_digest(
         {

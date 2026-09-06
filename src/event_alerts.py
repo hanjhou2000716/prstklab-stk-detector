@@ -20,6 +20,10 @@ EVENT_RULES = (
 )
 SEMICONDUCTOR_TERMS = ("台積電", "2330", "tsm", "nvidia", "nvda", "輝達")
 EARNINGS_TERMS = ("財報", "法說", "展望", "財測", "營收")
+SEMICONDUCTOR_EVENT_TERMS = EARNINGS_TERMS + (
+    "export control", "export controls", "restriction", "restrictions",
+    "capex", "capacity", "供應鏈", "出口管制", "限制", "產能",
+)
 
 # Corporate disclosures have a narrower market scope than macro events. A
 # routine board-meeting date must never inherit the generic Nasdaq/SOX
@@ -111,11 +115,11 @@ def detect_major_event(story: dict[str, str]) -> dict[str, str] | None:
     enriched = {**story, "title": title}
     classification = classify_event_fields(enriched)
     category = classification.get("category")
-    all_text = " ".join(str(value or "") for value in enriched.values()).lower()
+    all_text = str(classification.get("text") or "").lower()
     # A company/sector mention alone is not a material event.  Keep the
     # existing earnings gate so routine semiconductor headlines stay out of
     # the risk card while body text can still trigger a real earnings story.
-    if category == "semiconductor" and not any(term.lower() in all_text for term in EARNINGS_TERMS):
+    if category == "semiconductor" and not any(term.lower() in all_text for term in SEMICONDUCTOR_EVENT_TERMS):
         category = None
     labels = {
         "fed": "Fed／貨幣政策",
@@ -138,6 +142,11 @@ def detect_major_event(story: dict[str, str]) -> dict[str, str] | None:
             "classification_reason": classification.get("reason"),
             "matched_terms": classification.get("matched_terms", []),
         }
+    # A canonical story has already passed the public-news gate.  Do not let
+    # the historical keyword fallback manufacture an event from a producer
+    # field that the canonical classifier rejected.
+    if "public_news_eligible" in story:
+        return None
     # Keep the historical rules as a compatibility fallback for deployments
     # with a temporarily incomplete alias database.
     normalized = title.lower()
@@ -149,6 +158,40 @@ def detect_major_event(story: dict[str, str]) -> dict[str, str] | None:
     ):
         return {**story, "title": title, "short_label": "半導體財報"}
     return None
+
+
+def _public_news_stories(news: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return only release-bound news stories that passed the public gate.
+
+    New snapshots carry ``news.intelligence`` alongside raw provider arrays.
+    The raw arrays remain available for diagnostics, but must not become
+    event evidence.  An absent intelligence envelope therefore produces no
+    news-derived events; historical releases are rendered from their retained
+    immutable artifacts rather than reclassified here.
+    """
+    intelligence = news.get("intelligence")
+    if isinstance(intelligence, dict):
+        containers: list[Any] = [
+            intelligence.get(market)
+            for market in ("taiwan", "us")
+            if isinstance(intelligence.get(market), dict)
+        ]
+        if not containers and isinstance(intelligence.get("stories"), list):
+            containers = [intelligence]
+        rows: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for container in containers:
+            for story in container.get("stories", []):
+                if not isinstance(story, dict) or story.get("public_news_eligible") is not True:
+                    continue
+                key = str(story.get("canonical_url") or story.get("story_id") or story.get("dedupe_key") or "").strip()
+                if key and key in seen:
+                    continue
+                if key:
+                    seen.add(key)
+                rows.append(story)
+        return rows
+    return []
 
 
 def _related_indices(indices: list[dict[str, Any]], excluded_ticker: str) -> list[dict[str, Any]]:
@@ -943,11 +986,10 @@ def build_event_snapshot(
     for signal in watchlist_signals:
         append(signal, f"watchlist:{signal['instrument'].get('ticker')}")
 
-    for market in ("taiwan", "us"):
-        for story in news.get(market, []):
-            event = detect_major_event(story)
-            if event:
-                append(event, event.get("url") or f"news:{event.get('title', '')}")
+    for story in _public_news_stories(news):
+        event = detect_major_event(story)
+        if event:
+            append(event, event.get("url") or f"news:{event.get('title', '')}")
 
     # A representative security is a fallback only; broad index moves take priority.
     for quote in quotes:

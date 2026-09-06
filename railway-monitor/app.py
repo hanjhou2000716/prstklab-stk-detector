@@ -1047,6 +1047,12 @@ def classify_flash_with_reason(flash: Flash) -> tuple[str | None, str]:
     for category, keywords in CATEGORY_KEYWORDS.items():
         if category == "energy":
             continue
+        # A bare Trump mention (including a sentence saying that there was
+        # no policy action) must not become a policy alert through the
+        # legacy keyword loop.  The canonical classifier below still handles
+        # concrete conflict, energy and market facts.
+        if category == "policy" and has_trump and not (has_taco or has_trump_action or has_trump_deescalation):
+            continue
         if any(_keyword_in_text(keyword, haystack, compact) for keyword in keywords):
             return category, f"{category}_keyword"
     # Use the same all-fields classifier as the scheduled news report as a

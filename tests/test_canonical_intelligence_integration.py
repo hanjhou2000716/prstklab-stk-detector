@@ -35,9 +35,10 @@ def test_news_and_live_event_use_the_same_classifier_input_boundary():
     assert story["public_safe"] is True
     assert story["event_classification"]["category"] == live["classification"]["category"]
     assert story["event_classification"]["matched_terms"] == live["classification"]["matched_terms"]
-    assert {"summary", "what_happened", "impact", "market_impact", "related_quotes"}.issubset(
+    assert {"summary", "what_happened", "impact", "market_impact"}.issubset(
         story["event_classification"]["input_fields"]
     )
+    assert "related_quotes" not in story["event_classification"]["input_fields"]
     assert live["notification"]["allowed"] is False
 
 

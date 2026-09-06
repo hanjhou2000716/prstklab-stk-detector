@@ -1833,7 +1833,9 @@ const applyDeepLink = async (snapshot) => {
           if (sameAlertLineage(archived, latest, requestedSnapshot || String(archived.snapshot_id || ""), requestedObservation || String(archived.observation_id || ""))
             && await sameCanonicalAlertContent(archived, latest)) {
             renderResolvedDeepLink(snapshot, latest);
-            setReleaseHealth("已載入本次通知對應的最新同事件版本。", "ready");
+            // Same-event reconciliation is a successful silent projection;
+            // the release-bound alert remains visible above and no extra
+            // technical banner is needed.
             return;
           }
         }

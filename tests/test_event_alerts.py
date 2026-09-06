@@ -196,8 +196,9 @@ def test_high_risk_price_alert_is_downgraded_without_related_market_confirmation
 
 
 def test_major_event_includes_neutral_transmission_and_stock_observation():
+    story = {"title": "美國宣布新一輪關稅措施", "url": "u", "public_news_eligible": True}
     snapshot = build_event_snapshot(
-        {"taiwan": [], "us": [{"title": "美國宣布新一輪關稅措施", "url": "u"}]}, [],
+        {"taiwan": [], "us": [story], "intelligence": {"taiwan": {"stories": []}, "us": {"stories": [story]}}}, [],
     )
     event = snapshot["items"][0]
     assert "供應鏈" in event["why_important"]
@@ -276,14 +277,16 @@ def test_taiwan_corporate_event_uses_taiex_sync_only():
 
 
 def test_news_event_exposes_pending_reasons_when_oil_time_is_unknown():
+    story = {
+        "title": "全球｜美國與伊朗局勢｜重要事件",
+        "summary": "伊朗與美國談判後，原油供應與航運風險受到關注。",
+        "market_impact": "WTI 原油單日 -5.63%。",
+        "source": "Reuters",
+        "url": "https://www.reuters.com/world/",
+        "public_news_eligible": True,
+    }
     snapshot = build_event_snapshot(
-        {"taiwan": [], "us": [{
-            "title": "全球｜美國與伊朗局勢｜重要事件",
-            "summary": "伊朗與美國談判後，原油供應與航運風險受到關注。",
-            "market_impact": "WTI 原油單日 -5.63%。",
-            "source": "Reuters",
-            "url": "https://www.reuters.com/world/",
-        }]},
+        {"taiwan": [], "us": [story], "intelligence": {"taiwan": {"stories": []}, "us": {"stories": [story]}}},
         [],
         indices=[{"ticker": "WTI", "price": 80, "change_percent": -5.63, "quote_time": "2026-08-03T04:21:00+08:00"}],
     )
@@ -323,10 +326,17 @@ def test_market_signal_keeps_quote_provenance_for_mini_app_trace():
 
 
 def test_public_news_enters_realtime_observation_without_high_risk_claim():
-    snapshot = build_event_snapshot({"us": [{
+    story = {
         "title": "Nvidia export control urges policy review",
+        "summary": "Nvidia export controls may restrict chip shipments.",
         "url": "https://www.cnyes.com/news/1",
-    }]}, [], indices=[])
+        "public_news_eligible": True,
+    }
+    snapshot = build_event_snapshot(
+        {"us": [story], "intelligence": {"us": {"stories": [story]}}},
+        [],
+        indices=[],
+    )
     assert len(snapshot["items"]) == 1
     event = snapshot["items"][0]
     assert event["notification_status"] == "eligible"
@@ -335,11 +345,36 @@ def test_public_news_enters_realtime_observation_without_high_risk_claim():
     assert event["official_confirmed"] is False
 
 
+def test_new_event_snapshot_does_not_fallback_to_raw_news_when_gate_is_present():
+    snapshot = build_event_snapshot(
+        {
+            "us": [{
+                "title": "29歲台男赴日當詐騙車手 詐老翁2千萬日圓",
+                "url": "https://news.google.com/articles/scam",
+            }],
+            "intelligence": {
+                "taiwan": {"stories": []},
+                "us": {"stories": []},
+            },
+        },
+        [],
+        indices=[],
+    )
+    assert snapshot["items"] == []
+
+
 def test_google_conflict_observation_stays_pending_without_official_and_sync():
-    snapshot = build_event_snapshot({"us": [{
+    story = {
         "title": "Iran conflict attack rumor spreads",
+        "summary": "Iran conflict attack disrupts regional supply routes.",
         "url": "https://news.google.com/articles/1",
-    }]}, [], indices=[])
+        "public_news_eligible": True,
+    }
+    snapshot = build_event_snapshot(
+        {"us": [story], "intelligence": {"us": {"stories": [story]}}},
+        [],
+        indices=[],
+    )
     assert len(snapshot["items"]) == 1
     event = snapshot["items"][0]
     assert event["notification_status"] == "pending"

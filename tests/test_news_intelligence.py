@@ -246,6 +246,41 @@ def test_inventory_gate_does_not_fill_with_low_quality_stories():
     assert payload["scan_summary"]["inventory_eligible"] == 0
 
 
+def test_public_gate_excludes_social_and_promotional_us_headlines():
+    payload = build_news_intelligence([
+        {
+            "title": "29歲台男赴日當詐騙車手 詐老翁2千萬日圓",
+            "url": "https://news.google.com/rss/articles/scam",
+            "published_at": "2026-09-05T01:00:00+00:00",
+        },
+        {
+            "title": "The S&P 500's Yield Is at Historic Lows. Here Are 3 Dividend Stocks I'd Buy",
+            "url": "https://finance.yahoo.com/news/dividend-stocks",
+            "published_at": "2026-09-05T02:00:00+00:00",
+        },
+        {
+            "title": "Fed keeps rates unchanged as inflation cools",
+            "url": "https://www.federalreserve.gov/newsevents/pressreleases/a.htm",
+            "published_at": "2026-09-05T03:00:00+00:00",
+        },
+    ], market="us")
+    assert len(payload["stories"]) == 1
+    assert payload["stories"][0]["decision_value_eligible"] is True
+    assert payload["scan_summary"]["final_public_count"] == 1
+    assert payload["scan_summary"]["excluded"] == 2
+
+
+def test_classification_metadata_is_auditable_and_nested_context_is_ignored():
+    payload = build_news_intelligence([{
+        "title": "日圓",
+        "url": "https://news.google.com/rss/articles/yen",
+        "published_at": "2026-09-05T01:00:00+00:00",
+        "interest_graph": {"text": "Fed rate decision NVDA oil supply"},
+    }], market="us")
+    assert payload["stories"] == []
+    assert payload["exclusion_reasons"]["insufficient_market_relevance"] == 1
+
+
 def test_short_macro_token_does_not_classify_top_pick_as_ppi():
     from src.event_classifier import classify_event_fields
 
@@ -520,7 +555,7 @@ def test_news_story_uses_shared_classifier_with_full_evidence_fields():
     assert "summary" in classification["input_fields"]
     assert "what_happened" in classification["input_fields"]
     assert "market_impact" in classification["input_fields"]
-    assert "related_quotes" in classification["input_fields"]
+    assert "related_quotes" not in classification["input_fields"]
     assert "text" not in classification
 
 
@@ -539,7 +574,7 @@ def test_news_and_live_event_share_category_and_matched_term():
 
 
 def test_news_intelligence_schema_rejects_provider_domain_mismatch():
-    artifact = build_news_intelligence([{"title": "Fed", "url": "https://www.federalreserve.gov/a"}], market="us")
+    artifact = build_news_intelligence([{"title": "Fed keeps rates unchanged", "url": "https://www.federalreserve.gov/a"}], market="us")
     assert validate_news_intelligence(artifact) == []
     artifact["stories"][0]["canonical_url"] = "https://evil.example/a"
     assert any("outside provider domains" in error for error in validate_news_intelligence(artifact))
