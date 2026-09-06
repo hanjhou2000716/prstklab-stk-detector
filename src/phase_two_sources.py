@@ -1,4 +1,4 @@
-"""Phase 2 public sources: KOFIA, crypto MACD, FRED and EIA.
+"""Phase 2 public sources: KOFIA and crypto MACD.
 
 Every function is read-only and returns a status record instead of raising a
 provider error into the dashboard.  API keys are read only from environment
@@ -8,7 +8,6 @@ variables and are never included in returned data.
 from __future__ import annotations
 
 import math
-import os
 import re
 from collections.abc import Iterable
 from datetime import UTC, datetime
@@ -19,11 +18,8 @@ import requests
 from src.provider_health import classify_provider_error, error_token
 
 KOFIA_URL = "https://freesis.kofia.or.kr/stat/FreeSIS.do?parentDivId=MSIS10000000000000&serviceId=STATSCU0100000070"
-FRED_URL = "https://api.stlouisfed.org/fred/series/observations"
-EIA_URL = "https://api.eia.gov/v2/petroleum/pri/spt/data/"
 BINANCE_KLINES_URL = "https://api.binance.com/api/v3/klines"
 BINANCE_US_KLINES_URL = "https://api.binance.us/api/v3/klines"
-DEFAULT_FRED_SERIES = {"DFF": "effective federal funds rate", "DGS10": "US 10-year Treasury yield", "CPIAUCSL": "US CPI"}
 
 
 def _now() -> str:
@@ -99,52 +95,6 @@ def fetch_kofia_credit_margin(*, timeout: int = 20) -> dict[str, Any]:
                 "health": _health("kofia_margin", "KOFIA 韓國全市場信用融資", KOFIA_URL, "failed", checked_at, item_count=0, data_gap=type(exc).__name__)}
 
 
-def fetch_fred_snapshot(series_ids: dict[str, str] | None = None, *, timeout: int = 20) -> dict[str, Any]:
-    """Fetch selected FRED observations using ``FRED_API_KEY`` only."""
-    checked_at = _now()
-    key = os.getenv("FRED_API_KEY", "").strip()
-    series = series_ids or DEFAULT_FRED_SERIES
-    if not key:
-        return {"status": "missing_api_key", "data": {}, "health": _health("fred", "FRED 官方總經資料", FRED_URL, "missing_api_key", checked_at, item_count=0, data_gap="FRED_API_KEY 未設定")}
-    data: dict[str, Any] = {}
-    errors: list[str] = []
-    for series_id, label in series.items():
-        try:
-            params: dict[str, str | int] = {"api_key": key, "file_type": "json", "series_id": series_id, "sort_order": "desc", "limit": 1}
-            response = requests.get(FRED_URL, params=params, timeout=timeout)
-            response.raise_for_status()
-            observations = response.json().get("observations", [])
-            if not observations or observations[0].get("value") in {None, "."}:
-                raise ValueError("no observation")
-            data[series_id] = {"label": label, "date": observations[0].get("date"), "value": _to_float(observations[0].get("value"))}
-        except Exception as exc:
-            errors.append(error_token("fred", series_id, exc))
-    status = "healthy" if data and not errors else "partial" if data else "failed"
-    return {"status": status, "data": data, "errors": errors, "fetched_at": checked_at,
-            "health": _health("fred", "FRED 官方總經資料", FRED_URL, status, checked_at, item_count=len(data), data_gap=errors or None)}
-
-
-def fetch_eia_snapshot(*, timeout: int = 20) -> dict[str, Any]:
-    """Fetch the latest public EIA spot petroleum observation."""
-    checked_at = _now()
-    key = os.getenv("EIA_API_KEY", "").strip()
-    if not key:
-        return {"status": "missing_api_key", "data": {}, "health": _health("eia", "EIA 官方能源資料", EIA_URL, "missing_api_key", checked_at, item_count=0, data_gap="EIA_API_KEY 未設定")}
-    try:
-        params: dict[str, str | int] = {"api_key": key, "frequency": "weekly", "data[0]": "value", "facets[seriesId][]": "RWTC", "sort[0][column]": "period", "sort[0][direction]": "desc", "length": 1}
-        response = requests.get(EIA_URL, params=params, timeout=timeout)
-        response.raise_for_status()
-        rows = response.json().get("response", {}).get("data", [])
-        if not rows:
-            raise ValueError("no EIA observation")
-        row = rows[0]
-        data = {"series": "RWTC", "period": row.get("period"), "value": _to_float(row.get("value")), "unit": row.get("unit") or "USD per barrel"}
-        return {"status": "ok", "data": data, "fetched_at": checked_at, "health": _health("eia", "EIA 官方能源資料", EIA_URL, "healthy", checked_at, item_count=1, data_gap=None)}
-    except Exception as exc:
-        return {"status": "failed", "data": {}, "data_gap": type(exc).__name__, "fetched_at": checked_at,
-                "health": _health("eia", "EIA 官方能源資料", EIA_URL, "failed", checked_at, item_count=0, data_gap=type(exc).__name__)}
-
-
 def _ema(values: list[float], period: int) -> list[float]:
     alpha = 2 / (period + 1)
     result = [values[0]]
@@ -215,14 +165,10 @@ def build_phase_two_snapshot() -> dict[str, Any]:
     crypto = fetch_crypto_macd()
     crypto_spot = fetch_crypto_spot_snapshot()
     public_market_secondary = fetch_public_market_secondary()
-    fred = fetch_fred_snapshot()
-    eia = fetch_eia_snapshot()
     return {
         "kofia": kofia,
         "crypto_macd": crypto,
         "crypto_spot": crypto_spot,
         "public_market_secondary": public_market_secondary,
-        "fred": fred,
-        "eia": eia,
-        "sources": [item["health"] for item in (kofia, crypto, crypto_spot, public_market_secondary, fred, eia) if item.get("health")],
+        "sources": [item["health"] for item in (kofia, crypto, crypto_spot, public_market_secondary) if item.get("health")],
     }

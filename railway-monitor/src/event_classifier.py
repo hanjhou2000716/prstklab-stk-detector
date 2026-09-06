@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/event_classifier.py
-# Canonical source SHA256: cc4499f1c6b185f3944efb4b4851046740e860d811c2a4d2300e4828619cb563
+# Canonical source SHA256: eb2f2214631f92f516fd927cc0f5eda655d4b1f12ed67e915519695e8dff206e
 
 """Shared, auditable event classification for news and live alerts.
 
@@ -94,6 +94,11 @@ def _contains(term: str, haystack: str) -> bool:
     candidate = normalize_text(term)
     if not candidate:
         return False
+    # Short English indicators such as ``ppi`` or ``ai`` must be complete
+    # tokens.  Substring matching turns ordinary words such as "top pick"
+    # into false macro/AI classifications.
+    if re.fullmatch(r"[a-z0-9]+", candidate):
+        return re.search(rf"(?<![a-z0-9]){re.escape(candidate)}(?![a-z0-9])", haystack) is not None
     if candidate in haystack:
         return True
     # CJK aliases and English phrases are both commonly split by punctuation.

@@ -24,6 +24,14 @@ def test_catalog_declares_independent_secondary_market_sources():
     assert specs["Stooq"]["can_trigger_alert"] is False
 
 
+def test_fred_and_eia_are_retired_but_historically_identifiable():
+    specs = {item["provider"]: item for item in build_adapter_catalog()}
+    assert specs["FRED"]["active"] is False
+    assert specs["EIA"]["active"] is False
+    assert specs["FRED"]["retired_reason"]
+    assert specs["EIA"]["retired_reason"]
+
+
 def test_sec_adapter_uses_repository_identifying_user_agent(monkeypatch):
     monkeypatch.delenv("SEC_USER_AGENT", raising=False)
     adapter = build_adapter("SEC", transport=lambda *args, **kwargs: None)

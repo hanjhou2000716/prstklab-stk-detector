@@ -2,9 +2,8 @@ from urllib.parse import urlparse
 
 from src.phase_two_sources import (
     _macd_state,
+    build_phase_two_snapshot,
     fetch_crypto_macd,
-    fetch_eia_snapshot,
-    fetch_fred_snapshot,
     fetch_kofia_credit_margin,
 )
 
@@ -16,20 +15,18 @@ def test_macd_detects_bearish_cross():
     assert state["label"] == "死叉"
 
 
-def test_fred_never_calls_without_key(monkeypatch):
-    monkeypatch.delenv("FRED_API_KEY", raising=False)
-    result = fetch_fred_snapshot()
-    assert result["status"] == "missing_api_key"
-    assert result["data"] == {}
-    assert result["health"]["state"] == "configuration_required"
+def test_phase_two_does_not_collect_retired_fred_or_eia_sources(monkeypatch):
+    empty = {"status": "healthy", "data": {}, "health": {"key": "x"}}
+    monkeypatch.setattr("src.phase_two_sources.fetch_kofia_credit_margin", lambda: {**empty, "health": {"key": "kofia"}})
+    monkeypatch.setattr("src.phase_two_sources.fetch_crypto_macd", lambda: {**empty, "health": {"key": "crypto"}})
+    monkeypatch.setattr("src.crypto_spot_sources.fetch_crypto_spot_snapshot", lambda: {**empty, "health": {"key": "spot"}})
+    monkeypatch.setattr("src.public_market_secondary.fetch_public_market_secondary", lambda: {**empty, "health": {"key": "secondary"}})
 
+    snapshot = build_phase_two_snapshot()
 
-def test_eia_never_calls_without_key(monkeypatch):
-    monkeypatch.delenv("EIA_API_KEY", raising=False)
-    result = fetch_eia_snapshot()
-    assert result["status"] == "missing_api_key"
-    assert result["data"] == {}
-    assert result["health"]["state"] == "configuration_required"
+    assert "fred" not in snapshot
+    assert "eia" not in snapshot
+    assert {item["key"] for item in snapshot["sources"]} == {"kofia", "crypto", "spot", "secondary"}
 
 
 def test_kofia_reports_unambiguous_gap(monkeypatch):

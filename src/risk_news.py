@@ -1088,10 +1088,13 @@ def build_news_snapshot(
         # collection state authoritative at this final producer boundary.
         intelligence_rows = intelligence.get("source_health", [])
         if isinstance(intelligence_rows, list):
+            public_stories = [
+                story for story in intelligence.get("stories", [])
+                if isinstance(story, dict)
+            ]
             accepted_by_provider = Counter(
                 str(story.get("provider") or "unknown")
-                for story in stories
-                if isinstance(story, dict)
+                for story in public_stories
             )
             failures = 0
             successes = 0
@@ -1117,7 +1120,7 @@ def build_news_snapshot(
                     failures += 1
                 elif status in {"healthy", "no_event", "stale"}:
                     successes += 1
-            if stories:
+            if public_stories:
                 intelligence["collection_state"] = "degraded" if failures else "ready"
                 intelligence["status"] = "ready"
             elif failures:
@@ -1131,7 +1134,7 @@ def build_news_snapshot(
             if isinstance(summary, dict):
                 summary["failed_provider_count"] = failures
                 summary["successful_provider_count"] = successes
-                summary["ranked_story_count"] = len(stories)
+                summary["ranked_story_count"] = len(public_stories)
         result.setdefault("intelligence", {})[market] = intelligence
     result["provider_registry"] = provider_registry()
     result["interest_context"] = interest_context
