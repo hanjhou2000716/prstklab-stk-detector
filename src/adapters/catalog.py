@@ -36,6 +36,8 @@ class AdapterSpec:
     update_frequency: str
     requires_key: bool = False
     user_agent: str = "PRStK-public-readonly/1.0"
+    active: bool = True
+    retired_reason: str | None = None
 
 
 ADAPTER_CATALOG: tuple[AdapterSpec, ...] = (
@@ -44,8 +46,17 @@ ADAPTER_CATALOG: tuple[AdapterSpec, ...] = (
     AdapterSpec("TPEx", "https://www.tpex.org.tw", "official", True, "daily"),
     AdapterSpec("Yahoo", "https://query1.finance.yahoo.com/v8/finance/chart", "public-market", False, "delayed"),
     AdapterSpec("SEC", "https://www.sec.gov/cgi-bin/browse-edgar", "official", True, "event-driven"),
-    AdapterSpec("FRED", "https://api.stlouisfed.org/fred", "official", True, "daily", True),
-    AdapterSpec("EIA", "https://api.eia.gov/v2", "official", True, "daily", True),
+    # Retain these identities so historical artifacts remain understandable,
+    # but do not expose them as active collection sources.  Their numeric
+    # outputs were not consumed by any current report or alert path.
+    AdapterSpec(
+        "FRED", "https://api.stlouisfed.org/fred", "official", True, "daily", True,
+        active=False, retired_reason="unused optional API requires operator key",
+    ),
+    AdapterSpec(
+        "EIA", "https://api.eia.gov/v2", "official", True, "daily", True,
+        active=False, retired_reason="unused optional API requires operator key",
+    ),
     AdapterSpec("Binance", "https://api.binance.com/api/v3", "public-market", False, "intraday"),
     AdapterSpec("CoinGecko", "https://api.coingecko.com/api/v3", "public-market", False, "intraday"),
     AdapterSpec("Binance.US", "https://api.binance.us/api/v3", "public-market", False, "intraday"),

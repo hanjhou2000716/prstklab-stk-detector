@@ -289,18 +289,21 @@ def test_us_news_filter_preserves_later_eligible_providers_before_ranking():
             "url": "https://news.cnyes.com/news/id/us-nvda",
             "provider": "anue",
             "tickers": ["NVDA"],
+            "published_at": "2026-08-25T01:00:00+00:00",
         },
         {
             "title": "NVIDIA outlook lifts US semiconductor shares",
             "url": "https://finance.yahoo.com/news/us-nvda-outlook",
             "provider": "yahoo_finance",
             "tickers": ["NVDA"],
+            "published_at": "2026-08-25T01:01:00+00:00",
         },
         {
             "title": "Nasdaq and NVIDIA earnings outlook",
             "url": "https://news.google.com/rss/articles/us-nvda",
             "provider": "google_news",
             "tickers": ["NVDA"],
+            "published_at": "2026-08-25T01:02:00+00:00",
         },
     ]
 
@@ -342,6 +345,7 @@ def test_us_discovery_success_with_official_failure_is_degraded_not_source_faile
     story = {
         "title": "Nasdaq and Nvidia earnings outlook",
         "url": "https://news.google.com/rss/articles/us-observation",
+        "published_at": "2026-08-25T01:00:00+00:00",
     }
     monkeypatch.setattr("src.risk_news.fetch_market_news", lambda market: [story] if market == "us" else [])
     monkeypatch.setattr("src.risk_news.fetch_market_news_fallback", lambda market: [])

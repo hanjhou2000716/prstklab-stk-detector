@@ -129,13 +129,108 @@ def _headline_key(title: str) -> str:
 
 
 def _alias_matches(text: str, alias: str) -> bool:
-    """Match short Latin aliases as tokens, avoiding false substring hits."""
+    """Match Latin identifiers as tokens, avoiding false substring hits."""
     normalized = str(alias).casefold().strip()
     if not normalized:
         return False
-    if len(normalized) <= 2 and re.fullmatch(r"[a-z0-9]+", normalized):
+    if re.fullmatch(r"[a-z0-9]+", normalized):
         return re.search(rf"(?<![a-z0-9]){re.escape(normalized)}(?![a-z0-9])", text) is not None
     return normalized in text
+
+
+_SEC_FORM_ONLY_RE = re.compile(r"^\s*(?:[1-9]\d*-[A-Z]+|8-K|6-K)\s*[-:]?.*\(\s*filer\s*\)\s*$", re.IGNORECASE)
+_LISTICLE_RE = re.compile(
+    r"\b(?:in\s+focus|top\s+pick|stocks?\s+to\s+buy|these\s+\d+|how\s+to\s+invest|best\s+stocks?)\b"
+    r"|(?:選股|最受惠|目標價完整看|買進時機|投資早知道)",
+    re.IGNORECASE,
+)
+_MARKET_MATERIAL_RE = re.compile(
+    r"\b(?:rise|rises|fell|fall|higher|lower|surge|surges|jump|jumps|drop|drops|"
+    r"rally|rallies|selloff|sell-off|record|records|volatile|volatility|futures|"
+    r"yield|yields|rate|rates|jobs|payroll|inflation|tariff|sanction|oil|crude)\b"
+    r"|(?:上漲|下跌|暴漲|暴跌|殖利率|利率|通膨|就業|非農|關稅|制裁|原油|油價|能源)",
+    re.IGNORECASE,
+)
+_COMPANY_ACTION_RE = re.compile(
+    r"\b(?:announces?|reported?|reports?|earnings?|guidance|outlook|revenue|"
+    r"profit|loss|acquisition|merger|capex|orders?|forecast|results?)\b"
+    r"|(?:財報|財測|展望|營收|獲利|併購|資本支出|訂單|預測|公布)",
+    re.IGNORECASE,
+)
+_MATERIAL_CATEGORIES = frozenset({"fed", "macro", "policy", "conflict", "energy", "semiconductor", "market"})
+
+
+def _public_news_decision(item: dict[str, Any]) -> tuple[bool, str | None, list[str], str]:
+    """Apply the investor-facing US/Taiwan news quality gate.
+
+    Provider authority and a market label are useful evidence, but neither is
+    sufficient public decision value.  Keep the gate deterministic and retain
+    its reason in the release so exclusions can be audited without exposing
+    provider payloads.
+    """
+    title = " ".join(str(item.get(field) or "") for field in ("title", "summary", "description"))
+    provider = str(item.get("provider") or "").casefold()
+    source_tier = str(item.get("source_tier") or "").casefold()
+    category = str((item.get("event_classification") or {}).get("category") or "").casefold()
+    reasons = [str(reason) for reason in item.get("relevance_reasons") or [] if str(reason).strip()]
+    contextual = [reason for reason in reasons if not reason.startswith("market:")]
+    flags: list[str] = []
+    eligibility: list[str] = []
+
+    if not item.get("canonical_url"):
+        return False, "unsafe_url", flags, "unclassified"
+    if not item.get("market_compatible"):
+        return False, "market_scope_mismatch", flags, "unclassified"
+    if not item.get("published_at") and source_tier in {"market", "discovery"}:
+        flags.append("missing_published_at")
+        return False, "missing_published_at", flags, "unclassified"
+    if provider == "sec" and _SEC_FORM_ONLY_RE.search(title):
+        flags.append("sec_form_only")
+        return False, "generic_official_filing", flags, "unclassified"
+    if _LISTICLE_RE.search(title):
+        flags.append("listicle_or_selection")
+        return False, "listicle_or_selection", flags, "unclassified"
+
+    has_tracked_entity = any(
+        reason.startswith(("tracked_ticker:", "research_candidate:", "tracked_sector:"))
+        for reason in contextual
+    ) or bool(item.get("entities"))
+    has_active_topic = any(reason.startswith(("active_event:", "active_topic:")) for reason in contextual)
+    has_category = category in _MATERIAL_CATEGORIES
+    has_market_fact = bool(_MARKET_MATERIAL_RE.search(title))
+    has_company_fact = has_tracked_entity and bool(_COMPANY_ACTION_RE.search(title))
+
+    if has_category:
+        eligibility.append(f"event_category:{category}")
+    if has_tracked_entity:
+        eligibility.append("tracked_entity")
+    if has_active_topic:
+        eligibility.append("active_topic")
+    if has_market_fact:
+        eligibility.append("concrete_market_fact")
+    if has_company_fact:
+        eligibility.append("concrete_company_event")
+
+    if not (has_category or has_company_fact or (has_active_topic and has_market_fact)):
+        flags.append("no_material_market_relevance")
+        # SEC rows remain available for audit, but a filing without a concrete
+        # event fact is the generic-filing class used by legacy diagnostics.
+        reason = "generic_official_filing" if provider == "sec" else "insufficient_market_relevance"
+        return False, reason, flags, "unclassified"
+
+    if category in {"fed", "macro"}:
+        value_class = "macro"
+    elif category == "semiconductor":
+        value_class = "semiconductor_ai"
+    elif category == "energy":
+        value_class = "energy"
+    elif category in {"conflict", "policy"}:
+        value_class = "geopolitics_policy"
+    elif has_company_fact:
+        value_class = "company_event"
+    else:
+        value_class = "market_context"
+    return True, None, flags, value_class
 
 
 def _matched_tickers(title: str, tickers: Iterable[str]) -> set[str]:
@@ -274,7 +369,11 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         "event_cluster_key": _event_cluster_key(entities=entities, topics=topics_normalized, published_at=published),
         "published_time_bucket": _time_bucket(published),
         "public_safe": safe,
-        "public_news_eligible": safe and market_compatible,
+        "public_news_eligible": bool(raw.get("public_news_eligible", safe and market_compatible)),
+        "decision_value_class": raw.get("decision_value_class", ""),
+        "quality_flags": [str(item) for item in (raw.get("quality_flags") or []) if str(item).strip()],
+        "eligibility_reasons": [str(item) for item in (raw.get("eligibility_reasons") or []) if str(item).strip()],
+        "exclusion_reason": raw.get("exclusion_reason"),
         "source": str(raw.get("source") or provider["display_name"]),
         # Public market/discovery headlines are useful observations, but they
         # are never confirmation evidence by themselves.  Keep this explicit
@@ -338,22 +437,22 @@ def build_interest_graph(
         story_tickers = {str(item).upper() for item in story.get("tickers") or []}
         def ticker_hit(ticker: str, haystack: str = text, tagged: set[str] = story_tickers) -> bool:
             aliases = _TICKER_ALIASES.get(ticker, (ticker,))
-            return ticker in tagged or any(alias.casefold() in haystack for alias in aliases)
+            return ticker in tagged or any(_alias_matches(haystack, alias) for alias in aliases)
 
         hit_tickers = sorted(ticker for ticker in ticker_set if ticker_hit(ticker))
         hit_research = sorted(ticker for ticker in research_set if ticker_hit(ticker))
         hit_sectors = sorted(
             item for item in sector_set
             if item in {str(value).casefold() for value in story.get("sectors") or []}
-            or item in text
+            or _alias_matches(text, item)
         )
         hit_topics = sorted(
             item for item in topic_set
             if item in {str(value).casefold() for value in story.get("topics") or []}
-            or item in text
+            or _alias_matches(text, item)
         )
-        hit_events = sorted(item for item in event_set if item in text)
-        hit_creators = sorted(item for item in creator_set if item in text)
+        hit_events = sorted(item for item in event_set if _alias_matches(text, item))
+        hit_creators = sorted(item for item in creator_set if _alias_matches(text, item))
         if hit_tickers:
             reasons.extend(f"tracked_ticker:{item}" for item in hit_tickers)
         if hit_research:
@@ -640,18 +739,22 @@ def build_news_intelligence(
         active_event_topics=active_event_topics,
         creator_mentions=creator_mentions,
     )
-    # Official SEC filings remain useful evidence, but a generic filing with
-    # no tracked/research/event/index/sector relevance is not a public news
-    # candidate. Keep it in diagnostics while excluding it from top-five and
-    # final-fill selection.
-    generic_sec_count = 0
     for item in normalized:
-        contextual = [reason for reason in item.get("relevance_reasons") or [] if not str(reason).startswith("market:")]
-        generic = item.get("provider") == "sec" and not contextual and not item.get("entities") and not item.get("topics")
-        if generic:
-            item["public_news_eligible"] = False
-            item["relevance_class"] = "generic_official_filing"
-            generic_sec_count += 1
+        is_eligible, exclusion_reason, quality_flags, value_class = _public_news_decision(item)
+        item["public_news_eligible"] = is_eligible
+        item["decision_value_class"] = value_class
+        item["quality_flags"] = quality_flags
+        item["eligibility_reasons"] = [
+            str(reason) for reason in item.get("eligibility_reasons") or [] if str(reason).strip()
+        ]
+        if is_eligible:
+            item["eligibility_reasons"] = list(dict.fromkeys([
+                *item["eligibility_reasons"], "public_market_news_gate",
+            ]))
+            item["relevance_class"] = "contextual"
+        else:
+            item["exclusion_reason"] = exclusion_reason
+            item["relevance_class"] = exclusion_reason or "excluded"
     eligible = [item for item in normalized if item.get("public_news_eligible", True)]
     ranked = deduplicate_and_rank(eligible, limit=limit)
     deduped = deduplicate_and_rank(
@@ -717,7 +820,19 @@ def build_news_intelligence(
         "successful_provider_count": success_count,
         "failed_provider_count": failure_count,
         "disabled_provider_count": disabled_count,
+        # Keep concise funnel keys for the public audit contract alongside the
+        # older *_story_count names consumed by existing readers.
+        "fetched": len(normalized),
+        "normalized": len(normalized),
+        "eligible": len(eligible),
+        "excluded": len(excluded),
+        "deduped": len(deduped),
+        "publicly_ranked": len(ranked),
         "filtered_story_count": len(excluded),
+        "fetched_story_count": len(normalized),
+        "normalized_story_count": len(normalized),
+        "eligible_story_count": len(eligible),
+        "deduped_story_count": len(deduped),
         "ranked_story_count": len(ranked),
     }
     if ranked:
@@ -735,10 +850,15 @@ def build_news_intelligence(
         "source_diversity": source_diversity,
         "interest_graph": graph,
         "excluded_count": len(excluded),
-        "exclusion_reasons": {
-            **({"market_scope_mismatch": sum(1 for item in normalized if item.get("market_compatible") is False)} if any(item.get("market_compatible") is False for item in normalized) else {}),
-            **({"generic_official_filing": generic_sec_count} if generic_sec_count else {}),
-        },
+        "exclusion_reasons": dict(sorted({
+            str(item.get("exclusion_reason") or "excluded"): sum(
+                1 for candidate in normalized
+                if not candidate.get("public_news_eligible", True)
+                and str(candidate.get("exclusion_reason") or "excluded") == str(item.get("exclusion_reason") or "excluded")
+            )
+            for item in normalized
+            if not item.get("public_news_eligible", True)
+        }.items())),
         "status": "ready" if ranked else "no_event",
         "collection_state": collection_state,
         "source_failure_count": failure_count,

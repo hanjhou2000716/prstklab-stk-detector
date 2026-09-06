@@ -100,9 +100,104 @@ def test_interest_graph_matches_release_context_in_title_without_entity_tags():
     assert graph["source_interest"]["creator_mentioned"] == {"nvidia": 1}
 
 
+def test_interest_graph_uses_token_boundaries_for_short_research_tickers():
+    story = normalize_news_story(
+        {
+            "title": "8-K - RIVERVIEW BANCORP INC (0001041368) (Filer)",
+            "url": "https://www.sec.gov/Archives/edgar/data/riverview/8-k.htm",
+        },
+        "us",
+    )
+    build_interest_graph([story], research_tickers=["EW", "ADI", "EL"])
+    assert not any(reason.startswith("research_candidate:") for reason in story["relevance_reasons"])
+
+
+def test_public_news_gate_rejects_sec_form_and_stock_selection_headlines():
+    payload = build_news_intelligence(
+        [
+            {
+                "title": "8-K - RIVERVIEW BANCORP INC (0001041368) (Filer)",
+                "url": "https://www.sec.gov/Archives/edgar/data/riverview/8-k.htm",
+            },
+            {
+                "title": "US Stocks In Focus: Top Pick after PPI data",
+                "url": "https://news.google.com/rss/articles/listicle",
+                "published_at": "2026-08-25T01:00:00+00:00",
+            },
+        ],
+        market="us",
+        research_tickers=["EW"],
+    )
+    assert payload["stories"] == []
+    assert payload["exclusion_reasons"] == {
+        "generic_official_filing": 1,
+        "listicle_or_selection": 1,
+    }
+
+
+def test_market_and_discovery_news_without_publish_time_are_excluded():
+    payload = build_news_intelligence(
+        [{
+            "title": "Nasdaq futures rise on semiconductor earnings",
+            "url": "https://news.google.com/rss/articles/no-time",
+        }],
+        market="us",
+    )
+    assert payload["stories"] == []
+    assert payload["exclusion_reasons"] == {"missing_published_at": 1}
+    assert payload["scan_summary"]["fetched_story_count"] == 1
+    assert payload["scan_summary"]["eligible_story_count"] == 0
+    assert payload["scan_summary"]["ranked_story_count"] == 0
+
+
+def test_public_news_ranking_is_capped_at_five_and_funnel_matches_output():
+    stories = [
+        {
+            "title": f"Nasdaq futures rise on semiconductor earnings {index}",
+            "url": f"https://news.google.com/rss/articles/quality-{index}",
+            "published_at": f"2026-08-25T0{index}:00:00+00:00",
+        }
+        for index in range(1, 7)
+    ]
+    payload = build_news_intelligence(stories, market="us", limit=5)
+    assert len(payload["stories"]) == 5
+    assert payload["scan_summary"]["fetched_story_count"] == 6
+    assert payload["scan_summary"]["eligible_story_count"] == 6
+    assert payload["scan_summary"]["deduped_story_count"] == 6
+    assert payload["scan_summary"]["ranked_story_count"] == len(payload["stories"]) == 5
+    assert payload["scan_summary"]["publicly_ranked"] == len(payload["stories"]) == 5
+
+
+def test_short_macro_token_does_not_classify_top_pick_as_ppi():
+    from src.event_classifier import classify_event_fields
+
+    result = classify_event_fields({"title": "Top Pick stocks to buy"})
+    assert result["category"] is None
+
+
+def test_new_public_news_fields_are_schema_valid():
+    artifact = build_news_intelligence(
+        [{
+            "title": "Fed keeps rates unchanged as inflation cools",
+            "url": "https://www.federalreserve.gov/newsevents/pressreleases/a.htm",
+            "published_at": "2026-08-25T01:00:00+00:00",
+        }],
+        market="us",
+    )
+    assert validate_news_intelligence(artifact) == []
+    story = artifact["stories"][0]
+    assert story["public_news_eligible"] is True
+    assert story["decision_value_class"] == "macro"
+    assert "public_market_news_gate" in story["eligibility_reasons"]
+
+
 def test_news_intelligence_exposes_release_interest_context():
     artifact = build_news_intelligence(
-        [{"title": "NVIDIA outlook", "url": "https://www.nasdaq.com/articles/nvda"}],
+        [{
+            "title": "NVIDIA outlook",
+            "url": "https://www.nasdaq.com/articles/nvda",
+            "published_at": "2026-08-25T01:00:00+00:00",
+        }],
         market="us",
         tracked_tickers=["NVDA"],
         research_tickers=["NVDA"],

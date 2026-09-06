@@ -89,6 +89,11 @@ def _contains(term: str, haystack: str) -> bool:
     candidate = normalize_text(term)
     if not candidate:
         return False
+    # Short English indicators such as ``ppi`` or ``ai`` must be complete
+    # tokens.  Substring matching turns ordinary words such as "top pick"
+    # into false macro/AI classifications.
+    if re.fullmatch(r"[a-z0-9]+", candidate):
+        return re.search(rf"(?<![a-z0-9]){re.escape(candidate)}(?![a-z0-9])", haystack) is not None
     if candidate in haystack:
         return True
     # CJK aliases and English phrases are both commonly split by punctuation.

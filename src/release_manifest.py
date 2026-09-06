@@ -438,7 +438,15 @@ def _reconcile_news_health(document: dict[str, Any]) -> dict[str, Any]:
     for market, payload in markets.items():
         if not isinstance(payload, dict):
             continue
-        stories = [item for item in (payload.get("stories") or []) if isinstance(item, dict)]
+        # New releases keep the public ranking under ``intelligence``.  The
+        # top-level stories list is a legacy projection and may still contain
+        # fetched or diagnostic rows.  Keep the fallback so older releases
+        # remain readable without weakening the release-bound gate.
+        intelligence = payload.get("intelligence")
+        if isinstance(intelligence, dict) and isinstance(intelligence.get("stories"), list):
+            stories = [item for item in intelligence["stories"] if isinstance(item, dict)]
+        else:
+            stories = [item for item in (payload.get("stories") or []) if isinstance(item, dict)]
         accepted: dict[str, int] = {}
         for story in stories:
             provider = str(story.get("provider") or "unknown")
