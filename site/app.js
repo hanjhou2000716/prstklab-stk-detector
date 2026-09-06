@@ -517,6 +517,41 @@ const primaryAlertEvents = (snapshot) => {
   return [merged, ...items.slice(1)];
 };
 
+// The scheduled briefing is the primary owner of the market-risk summary.
+// Project it into the existing alert-card contract so the homepage and the
+// release-bound briefing use one event narrative and one quote set.
+const primaryBriefingEvent = (snapshot) => {
+  const briefing = snapshot?.briefing;
+  const primary = briefing?.primary_theme;
+  if (!briefing || briefing.digest_status !== "ready" || !briefing.public_short_message
+    || !primary || typeof primary !== "object" || !Object.keys(primary).length) return null;
+  const quoteEvidence = Array.isArray(primary.quote_evidence) ? primary.quote_evidence : [];
+  return {
+    kind: "market_briefing",
+    source: "PRStK 多來源市場判讀",
+    source_key: "scheduled_brief",
+    notification_id: briefing.briefing_id,
+    alert_id: briefing.briefing_id,
+    event_cluster_key: briefing.briefing_id,
+    release_id: snapshot.release_id,
+    snapshot_id: briefing.snapshot_id || snapshot.snapshot_id || snapshot.market_snapshot_id,
+    observation_id: briefing.observation_id,
+    trace_id: briefing.trace_id,
+    brief_title: briefing.public_short_message,
+    public_short_message: briefing.public_short_message,
+    title: briefing.public_short_message,
+    event: primary.what_happened || briefing.assessment_summary,
+    why_important: primary.why_important,
+    possible_linkage: primary.market_implication,
+    stock_observation: primary.stock_observation,
+    market_evidence: quoteEvidence,
+    source_evidence: primary.source_evidence || briefing.source_evidence || [],
+    canonical_event_key: primary.canonical_event_key || primary.event_key || briefing.briefing_id,
+    notification_status: "eligible",
+    briefing,
+  };
+};
+
 const renderAlertCard = (events, generatedAt, externalAlert, indices = [], externalRisk = null, snapshot = null) => {
   const profile = externalAlert ? externalAlertProfile(externalAlert.category, indices) : null;
   const rawEvent = externalAlert ? {
@@ -551,7 +586,11 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
     why_important: primaryTheme.why_important || projectedEvent.why_important,
     possible_linkage: primaryTheme.market_implication || projectedEvent.possible_linkage,
     stock_observation: primaryTheme.stock_observation || projectedEvent.stock_observation,
-    market_evidence: projectedEvent.market_evidence?.length ? projectedEvent.market_evidence : primaryTheme.quote_evidence,
+    // The primary theme is the release-bound owner of briefing quote
+    // evidence.  Prefer it over a legacy outer ticker-only projection so the
+    // risk card can show the actual same-snapshot values.
+    market_evidence: Array.isArray(primaryTheme.quote_evidence) && primaryTheme.quote_evidence.length
+      ? primaryTheme.quote_evidence : projectedEvent.market_evidence,
     canonical_event_key: primaryTheme.canonical_event_key || primaryTheme.event_key || projectedEvent.canonical_event_key,
   } : projectedEvent;
   const card = document.getElementById("alert-card");
@@ -844,7 +883,15 @@ const briefingDisplayRows = (events, briefing) => {
     ? briefing.primary_theme : items[0] || null;
   const primaryKeys = new Set(stableEventKeys(primary));
   const configured = Array.isArray(briefing?.secondary_signals) ? briefing.secondary_signals : [];
-  const candidates = configured.length ? configured : items.slice(1);
+  // An explicit release projection owns the visible event set.  An empty
+  // secondary_signals array therefore means “no secondary signals”, not
+  // “fall back to the raw event stream”, which would reintroduce the primary
+  // event in the sync list and external-information section.
+  const hasProjection = Boolean(briefing && typeof briefing === "object"
+    && (Object.prototype.hasOwnProperty.call(briefing, "primary_theme")
+      || Object.prototype.hasOwnProperty.call(briefing, "secondary_signals")
+      || Object.prototype.hasOwnProperty.call(briefing, "displayed_event_keys")));
+  const candidates = hasProjection ? configured : items.slice(1);
   const rows = [];
   const seen = new Set(primaryKeys);
   for (const item of candidates) {
@@ -1091,17 +1138,22 @@ const renderSourceHealth = (health, snapshot = {}) => {
 
 const renderBriefing = (briefing, generatedAt) => {
   const report = briefing || {};
-  const digestThemes = Array.isArray(report.themes) ? report.themes : [];
-  const observations = digestThemes.length
-    ? digestThemes.map((theme) => ({
-      title: theme.title || "市場主題",
-      event: theme.what_happened || "公開資料已核對。",
-      importance: theme.why_important || "持續核對公開資料。",
-      market_impact: theme.market_implication || "尚無足夠資料判定跨市場連動。",
-      watch: theme.stock_observation || "持續觀察後續市場資料。",
-      source_note: (theme.evidence || []).map((item) => item.source || item.source_key).filter(Boolean).join("；"),
-    }))
-    : [];
+  // Render the digest primary theme once, then keep the six fixed market
+  // columns as the detailed coverage.  Dynamic themes are supporting data,
+  // not a replacement for those columns.
+  const primaryTheme = report.primary_theme && typeof report.primary_theme === "object"
+    ? report.primary_theme
+    : Array.isArray(report.themes) && report.themes[0] && typeof report.themes[0] === "object"
+      ? report.themes[0] : null;
+  const primaryObservations = primaryTheme && Object.keys(primaryTheme).length ? [{
+    title: primaryTheme.title || "本次重點主題",
+    event: primaryTheme.what_happened || "公開資料已核對。",
+    importance: primaryTheme.why_important || "持續核對公開資料。",
+    market_impact: primaryTheme.market_implication || "尚無足夠資料判定跨市場連動。",
+    watch: primaryTheme.stock_observation || "持續觀察後續市場資料。",
+    source_note: (primaryTheme.source_evidence || primaryTheme.evidence || [])
+      .map((item) => item.source || item.source_key).filter(Boolean).join("；"),
+  }] : [];
   const fixedObservations = Array.isArray(report.observations) ? report.observations : [];
   const displayTime = generatedAt ? new Date(generatedAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "公開資料更新中";
   setText("briefing-time", `${displayTime} CST`);
@@ -1183,8 +1235,12 @@ const renderBriefing = (briefing, generatedAt) => {
   }
   const container = document.getElementById("briefing-observations");
   if (!container) return;
-  if (!observations.length && !fixedObservations.length) { container.innerHTML = '<p class="empty">本次定時報資料暫時無法取得</p>'; return; }
-  container.innerHTML = observations.map((item) => `<article class="briefing-observation"><h4>${escapeHtml(item.title || "公開市場觀察")}</h4><p><b>事件：</b>${escapeHtml(item.event || "公開資料更新中。")}</p><p><b>為何重要：</b>${escapeHtml(item.importance || "持續核對公開資料。")}</p><p><b>可能連動：</b>${escapeHtml(item.market_impact || "尚無足夠公開資料判定連動。")}</p><p><b>股市觀察：</b>${escapeHtml(item.watch || "觀察後續公開市場報價。")}</p>${item.source_note ? `<small class="briefing-source">${escapeHtml(item.source_note)}</small>` : ""}</article>`).join("");
+  if (!primaryObservations.length && !fixedObservations.length) { container.innerHTML = '<p class="empty">本次定時報資料暫時無法取得</p>'; return; }
+  const renderObservation = (item) => `<article class="briefing-observation"><h4>${escapeHtml(item.title || "公開市場觀察")}</h4><p><b>事件：</b>${escapeHtml(item.event || "公開資料更新中。")}</p><p><b>為何重要：</b>${escapeHtml(item.importance || "持續核對公開資料。")}</p><p><b>可能連動：</b>${escapeHtml(item.market_impact || "尚無足夠公開資料判定連動。")}</p><p><b>股市觀察：</b>${escapeHtml(item.watch || "觀察後續公開市場報價。")}</p>${item.data_as_of ? `<small class="briefing-source">資料日期：${escapeHtml(String(item.data_as_of).slice(0, 19).replace("T", " "))}</small>` : ""}${item.source_note ? `<small class="briefing-source">${escapeHtml(item.source_note)}</small>` : ""}</article>`;
+  const sections = [];
+  if (primaryObservations.length) sections.push(`<h3 class="briefing-subheading">本次重點主題</h3>${primaryObservations.map(renderObservation).join("")}`);
+  if (fixedObservations.length) sections.push(`<h3 class="briefing-subheading">市場固定專欄</h3>${fixedObservations.map(renderObservation).join("")}`);
+  container.innerHTML = sections.join("");
 };
 
 const renderFixedBriefingColumns = (report) => {
@@ -1192,7 +1248,10 @@ const renderFixedBriefingColumns = (report) => {
   const observations = Array.isArray(report?.observations) ? report.observations : [];
   if (!container || !observations.length) return;
   const renderObservation = (item) => `<article class="briefing-observation"><h4>${escapeHtml(item.title || "市場固定專欄")}</h4><p><b>事件：</b>${escapeHtml(item.event || "公開資料更新中。")}</p><p><b>為何重要：</b>${escapeHtml(item.importance || "持續核對公開資料。")}</p><p><b>可能連動：</b>${escapeHtml(item.market_impact || "尚無足夠資料判定連動。")}</p><p><b>股市觀察：</b>${escapeHtml(item.watch || "觀察後續公開市場報價。")}</p>${item.data_as_of ? `<small class="briefing-source">資料日期：${escapeHtml(String(item.data_as_of).slice(0, 19).replace("T", " "))}</small>` : ""}${item.source_note ? `<small class="briefing-source">${escapeHtml(item.source_note)}</small>` : ""}</article>`;
-  container.insertAdjacentHTML("beforeend", `<h3 class="briefing-subheading">市場固定專欄</h3>${observations.map(renderObservation).join("")}`);
+  // Compatibility entry point for older callers.  Replacement rendering is
+  // idempotent; the live page renders the primary theme and fixed columns in
+  // one pass via renderBriefing.
+  container.innerHTML = `<h3 class="briefing-subheading">市場固定專欄</h3>${observations.map(renderObservation).join("")}`;
 };
 
 const renderExternalIntelligence = (snapshot, displayedKeys = null) => {
@@ -1648,12 +1707,13 @@ const render = (snapshot, { deferAlert = false } = {}) => {
   renderQuoteList("quote-list", snapshot.quotes || []);
   renderRisk(snapshot.risk);
   if (!deferAlert) {
-    renderAlertCard({ ...(snapshot.events || {}), items: primaryAlertEvents(snapshot) }, snapshot.generated_at, externalAlert, snapshot.indices || [], snapshot.intelligence?.external_event_risk, snapshot);
+    const briefingEvent = primaryBriefingEvent(snapshot);
+    const focusEvents = briefingEvent ? [briefingEvent] : primaryAlertEvents(snapshot);
+    renderAlertCard({ ...(snapshot.events || {}), items: focusEvents }, snapshot.generated_at, externalAlert, snapshot.indices || [], snapshot.intelligence?.external_event_risk, snapshot);
   }
   renderEvents(snapshot.events, snapshot.briefing);
   renderSourceHealth(snapshot.source_health, snapshot);
   renderBriefing(snapshot.briefing, snapshot.generated_at);
-  renderFixedBriefingColumns(snapshot.briefing);
   renderExternalIntelligence(snapshot);
   renderResearch(snapshot);
   const newsRegistry = snapshot.news?.provider_registry || [];

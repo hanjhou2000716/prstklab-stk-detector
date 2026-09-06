@@ -179,6 +179,53 @@ def test_digest_keeps_structured_quote_evidence_separate_from_source_evidence():
     assert changed["briefing_id"] == result["briefing_id"]
 
 
+def test_digest_does_not_attach_unrelated_snapshot_quotes_to_an_event():
+    result = build_market_digest(
+        {
+            "generated_at": "2026-09-05T00:00:00+00:00",
+            "events": {"items": [{
+                "source_key": "financialjuice",
+                "event": "巴林國防軍表示防空系統攔截多次空中攻擊",
+                "vendor_importance": 10,
+                "published_at": "2026-09-04T23:00:00+00:00",
+                "observation_id": "fj-bahrain",
+            }]},
+            "indices": [
+                {"ticker": "NASDAQ", "price": 26586.58, "change_percent": 0.01, "freshness": "recent_close"},
+                {"ticker": "SOX", "price": 11657.87, "change_percent": 2.69, "freshness": "recent_close"},
+            ],
+        },
+        "us_premarket",
+    )
+
+    assert result["primary_theme"]["quote_evidence"] == []
+    assert not any(signal.get("source") == "市場報價" for signal in result["secondary_signals"])
+
+
+def test_digest_only_hydrates_quotes_for_structured_event_tickers():
+    result = build_market_digest(
+        {
+            "generated_at": "2026-09-05T00:00:00+00:00",
+            "events": {"items": [{
+                "source_key": "official",
+                "event": "半導體出口資料完成官方更新並等待後續核對",
+                "market_evidence": [{"ticker": "費半"}],
+                "published_at": "2026-09-04T23:00:00+00:00",
+            }]},
+            "indices": [{
+                "ticker": "SOX",
+                "price": 11657.87,
+                "change_percent": 2.69,
+                "freshness": "recent_close",
+            }],
+        },
+        "us_premarket",
+    )
+
+    assert result["primary_theme"]["quote_evidence"][0]["ticker"] == "SOX"
+    assert result["primary_theme"]["quote_evidence"][0]["price"] == 11657.87
+
+
 def test_digest_deduplicates_cross_source_event_and_caps_secondary_signals():
     items = [{
         "source_key": "financialjuice",

@@ -371,7 +371,13 @@ def main() -> None:
         })
         print(f"Scheduled briefing suppressed by alert budget: {budget['reason']}")
         return
-    brief = build_brief(snapshot, slot)
+    # The published briefing is the single public-text source for Telegram,
+    # immutable alerts and the Mini App.  Keep build_brief as a compatibility
+    # fallback only for sparse legacy snapshots that cannot produce a shared
+    # briefing artifact.
+    briefing = snapshot.get("briefing")
+    briefing_message = str(briefing.get("public_short_message") or "").strip() if isinstance(briefing, dict) else ""
+    brief = briefing_message if briefing_message and len(briefing_message) <= MAX_BRIEF_LENGTH else build_brief(snapshot, slot)
     release_id = str(snapshot.get("release_id") or os.environ.get("RELEASE_ID") or "")
     target_url = (
         alert_mini_app_url(

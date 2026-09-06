@@ -3,6 +3,7 @@ import json
 from src.news_intelligence import build_news_intelligence
 from src.release_manifest import (
     _alert_projection,
+    _briefing_projection,
     _gap_count,
     _normalize_market,
     _normalize_research,
@@ -163,6 +164,34 @@ def test_scheduled_briefing_projection_preserves_primary_semantics_and_real_quot
     assert artifact["source_evidence"][0]["source_key"] == "financialjuice"
     assert artifact["briefing"]["displayed_event_keys"] == ["event-energy-1", "event-market-2"]
     assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
+def test_new_briefing_projection_does_not_fallback_to_generic_top_level_quotes():
+    artifact = _briefing_projection(
+        {
+            "slot": "us_premarket",
+            "briefing_id": "briefing-no-generic-quote",
+            "public_short_message": "📊 美股盤前｜地緣事件已核對。",
+            "canonical_content_hash": "d" * 64,
+            "primary_theme": {
+                "canonical_event_key": "event-geopolitical-1",
+                "what_happened": "地緣事件已核對。",
+                "quote_evidence": [],
+                "source_evidence": [{"source": "FinancialJuice"}],
+            },
+            "quote_evidence": [{
+                "ticker": "NASDAQ",
+                "price": 26586.58,
+                "change_percent": 0.01,
+            }],
+        },
+        release_id="release-test",
+        market_snapshot_id="market-test",
+        created_at="2026-09-05T00:00:00+00:00",
+    )
+
+    assert artifact["market_evidence"] == []
+    assert artifact["briefing"]["quote_evidence"] == []
 
 
 def test_manifest_rebuilds_alert_index_from_retained_immutable_files(tmp_path):

@@ -45,6 +45,21 @@ _TICKER_NAMES = {
     "BTC": "BTC",
     "ETH": "ETH",
 }
+_TICKER_ALIASES = {
+    "NASDAQ綜合指數": "NASDAQ",
+    "那斯達克": "NASDAQ",
+    "那斯達克綜合指數": "NASDAQ",
+    "SOX": "SOX",
+    "費半": "SOX",
+    "費城半導體": "SOX",
+    "費城半導體指數": "SOX",
+    "道瓊": "DJIA",
+    "道瓊工業": "DJIA",
+    "道瓊工業指數": "DJIA",
+    "台股": "TAIEX",
+    "加權指數": "TAIEX",
+    "台灣加權": "TAIEX",
+}
 
 
 def _normalise(value: Any) -> str:
@@ -146,7 +161,12 @@ _QUOTE_EVIDENCE_FIELDS = (
 
 
 def _quote_evidence(items: Any) -> list[dict[str, Any]]:
-    """Keep only release-bound quotes with enough values for a public card."""
+    """Keep release-bound numeric quotes, plus explicitly failed observations.
+
+    A ticker-only reference is not quote evidence.  Explicit failure rows are
+    retained as provenance so the UI can distinguish an unavailable source
+    from a producer that simply forgot to hydrate a quote.
+    """
     if not isinstance(items, list):
         return []
     result: list[dict[str, Any]] = []
@@ -154,27 +174,103 @@ def _quote_evidence(items: Any) -> list[dict[str, Any]]:
     for item in items:
         if not isinstance(item, dict):
             continue
-        ticker = str(item.get("ticker") or "").strip().upper()
-        if not ticker or ticker in seen or item.get("price") is None or item.get("change_percent") is None:
+        ticker = _normalise_ticker(item.get("ticker"))
+        if not ticker or ticker in seen:
             continue
-        try:
-            if not math.isfinite(float(item["price"])) or not math.isfinite(float(item["change_percent"])):
-                continue
-        except (TypeError, ValueError):
+        numeric = item.get("price") is not None and item.get("change_percent") is not None
+        if numeric:
+            try:
+                numeric = math.isfinite(float(item["price"])) and math.isfinite(float(item["change_percent"]))
+            except (TypeError, ValueError):
+                numeric = False
+        freshness = str(item.get("freshness") or item.get("data_status") or "").casefold()
+        explicit_failure = freshness in _UNUSABLE_FRESHNESS or item.get("quote_delayed") is True or item.get("stale_used") is True
+        if not numeric and not explicit_failure:
             continue
         seen.add(ticker)
-        result.append({key: item[key] for key in _QUOTE_EVIDENCE_FIELDS if key in item})
+        row = {key: item[key] for key in _QUOTE_EVIDENCE_FIELDS if key in item}
+        row["ticker"] = ticker
+        result.append(row)
     return result
 
 
+def _normalise_ticker(value: Any) -> str:
+    raw = _normalise(value).upper()
+    return _TICKER_ALIASES.get(raw, raw)
+
+
+def _event_tickers(event: dict[str, Any]) -> list[str]:
+    """Read only structured instrument references; never infer from prose."""
+    values: list[Any] = []
+    for field in ("ticker", "instrument_id", "instrument_master_id"):
+        values.append(event.get(field))
+    for field in ("linked_markets", "tickers"):
+        candidate = event.get(field)
+        values.extend(candidate if isinstance(candidate, list) else [candidate])
+    for field in ("instrument", "market_evidence", "related"):
+        candidate = event.get(field)
+        candidates = candidate if isinstance(candidate, list) else [candidate]
+        values.extend(item.get("ticker") for item in candidates if isinstance(item, dict))
+    result: list[str] = []
+    for value in values:
+        ticker = _normalise_ticker(value)
+        if ticker and ticker in _TICKER_NAMES and ticker not in result:
+            result.append(ticker)
+    return result
+
+
+def _bind_event_quotes(event: dict[str, Any], snapshot_quotes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Bind event quotes to the same release snapshot, without generic fallback."""
+    by_ticker = {
+        _normalise_ticker(item.get("ticker")): item
+        for item in snapshot_quotes
+        if _normalise_ticker(item.get("ticker"))
+    }
+    direct = event.get("market_evidence")
+    direct_rows = direct if isinstance(direct, list) else ([direct] if isinstance(direct, dict) else [])
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for item in direct_rows:
+        if not isinstance(item, dict):
+            continue
+        ticker = _normalise_ticker(item.get("ticker"))
+        if not ticker or ticker in seen:
+            continue
+        bound = by_ticker.get(ticker)
+        # A complete event-specific quote is kept as-is.  A compact
+        # ticker-only reference is hydrated only from this same snapshot.
+        merged = {**bound, **item} if bound and not _usable_quote(item) and str(
+            item.get("freshness") or item.get("data_status") or ""
+        ).casefold() not in _UNUSABLE_FRESHNESS else item
+        if merged is not item:
+            merged["ticker"] = ticker
+        rows.append(merged)
+        seen.add(ticker)
+    for ticker in _event_tickers(event):
+        if ticker in seen or ticker not in by_ticker:
+            continue
+        rows.append(by_ticker[ticker])
+        seen.add(ticker)
+    return _quote_evidence(rows)
+
+
 def _source_evidence(event: dict[str, Any], source: str) -> list[dict[str, Any]]:
-    return [{
+    evidence = {
         "source": source,
         "source_key": event.get("source_key") or event.get("source"),
         "observation_id": event.get("observation_id"),
         "notification_id": event.get("notification_id"),
         "published_at": event.get("published_at") or event.get("created_at"),
-    }]
+    }
+    # Do not add empty provenance fields to legacy themes: otherwise merely
+    # upgrading the projection would change their canonical briefing hash.
+    source_url = event.get("source_url") or event.get("url")
+    source_domain = event.get("source_domain")
+    if source_url:
+        evidence["source_url"] = source_url
+    if source_domain:
+        evidence["source_domain"] = source_domain
+    return [evidence]
 
 
 def _importance_score(event: dict[str, Any]) -> float:
@@ -230,13 +326,13 @@ def _usable_quote(item: dict[str, Any]) -> bool:
         return False
 
 
-def _theme_for_event(event: dict[str, Any], fact: str) -> dict[str, Any]:
+def _theme_for_event(event: dict[str, Any], fact: str, snapshot_quotes: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     source = _event_source(event)
     why = _clean_text(event.get("why_important") or event.get("importance_detail") or event.get("trigger"))
     impact = _clean_text(event.get("possible_linkage") or event.get("possible_impact") or event.get("market_context"))
     watch = _clean_text(event.get("stock_observation") or event.get("watch") or event.get("follow_up_observation"))
     source_evidence = _source_evidence(event, source)
-    quote_evidence = _quote_evidence(event.get("market_evidence"))
+    quote_evidence = _bind_event_quotes(event, snapshot_quotes or [])
     canonical_event_key = _event_key(event, fact)
     return {
         "title": source,
@@ -389,7 +485,6 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
 
     candidates.sort(key=candidate_sort_key)
 
-    event_themes = [_theme_for_event(event, fact) for event, fact in candidates]
     all_quotes = [
         item for item in [*(snapshot.get("indices") or []), *(snapshot.get("quotes") or []), *(snapshot.get("macro_quotes") or [])]
         if isinstance(item, dict)
@@ -400,6 +495,11 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
         key=lambda item: quote_priority.index(str(item.get("ticker") or "")),
     )
     quote_theme = _theme_for_quotes(quote_items)
+    # Quote evidence belongs to an event only when the event carries a
+    # structured ticker reference (or its own market_evidence).  In
+    # particular, a geopolitical/FJ event must not inherit unrelated NASDAQ
+    # and SOX cards merely because they happen to be present in the snapshot.
+    event_themes = [_theme_for_event(event, fact, all_quotes) for event, fact in candidates]
     primary_theme = event_themes[0] if event_themes else quote_theme
     if primary_theme is None:
         return {
@@ -417,18 +517,13 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
             "source_evidence": [],
             "quote_evidence": [],
         }
-    if event_themes and not primary_theme.get("quote_evidence") and quote_theme:
-        # An event may only carry ticker references after the source router
-        # has compacted its payload.  Hydrate the primary theme from the same
-        # release-bound snapshot, never from a different historical snapshot.
-        primary_theme = {
-            **primary_theme,
-            "quote_evidence": list(quote_theme.get("quote_evidence") or [])[:2],
-        }
-
     themes = [primary_theme]
-    secondary_themes = [theme for theme in event_themes[1:] if theme.get("canonical_event_key") != primary_theme.get("canonical_event_key")]
-    if quote_theme and quote_theme.get("canonical_event_key") != primary_theme.get("canonical_event_key"):
+    event_secondary_themes = [
+        theme for theme in event_themes[1:]
+        if theme.get("canonical_event_key") != primary_theme.get("canonical_event_key")
+    ]
+    secondary_themes = list(event_secondary_themes)
+    if quote_theme and not primary_theme.get("quote_evidence"):
         secondary_themes.append(quote_theme)
     themes.extend(secondary_themes[:2])
 
@@ -440,7 +535,10 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
 
     secondary_signals: list[dict[str, Any]] = []
     seen_secondary: set[str] = {str(primary_theme.get("canonical_event_key") or "")}
-    for theme in secondary_themes:
+    # Secondary public signals are events only.  A quote-only theme is
+    # supporting evidence for the briefing and must not become a duplicate
+    # event row in the Mini App.
+    for theme in event_secondary_themes:
         key = str(theme.get("canonical_event_key") or "").strip()
         if not key or key in seen_secondary:
             continue

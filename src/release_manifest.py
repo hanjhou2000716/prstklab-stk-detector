@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 from datetime import UTC, datetime, timedelta
@@ -177,10 +178,30 @@ def _briefing_projection(
     if not isinstance(primary, dict):
         themes = briefing.get("themes")
         primary = themes[0] if isinstance(themes, list) and themes and isinstance(themes[0], dict) else {}
-    primary_quote_evidence = [
-        item for item in (primary.get("quote_evidence") or briefing.get("quote_evidence") or [])[:2]
-        if isinstance(item, dict) and item.get("ticker") and item.get("price") is not None and item.get("change_percent") is not None
-    ]
+    # New release projections bind quote cards exclusively to the primary
+    # theme.  The top-level fallback is retained only for legacy briefings
+    # that predate the primary_theme contract; it prevents a generic quote
+    # lane from being mistaken for event-specific evidence in new releases.
+    quote_rows = primary.get("quote_evidence") or []
+    if "primary_theme" not in briefing and not quote_rows:
+        quote_rows = briefing.get("quote_evidence") or []
+    primary_quote_evidence = []
+    seen_tickers: set[str] = set()
+    for item in quote_rows:
+        if not isinstance(item, dict):
+            continue
+        ticker = str(item.get("ticker") or "").strip().upper()
+        if not ticker or ticker in seen_tickers or item.get("price") is None or item.get("change_percent") is None:
+            continue
+        try:
+            if not math.isfinite(float(item["price"])) or not math.isfinite(float(item["change_percent"])):
+                continue
+        except (TypeError, ValueError):
+            continue
+        seen_tickers.add(ticker)
+        primary_quote_evidence.append(item)
+        if len(primary_quote_evidence) >= 2:
+            break
     source_evidence = [
         item for item in (primary.get("source_evidence") or briefing.get("source_evidence") or briefing.get("evidence") or [])
         if isinstance(item, dict)
