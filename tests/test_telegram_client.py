@@ -1,9 +1,12 @@
+from pathlib import Path
+
 import pytest
 import requests
 
 from src import telegram_client
 from src.telegram_client import (
     alert_mini_app_url,
+    canonical_prstk_risk_level,
     canonical_short_message,
     classify_telegram_error,
     format_text_brief,
@@ -12,7 +15,11 @@ from src.telegram_client import (
     mini_app_menu_button,
     send_brief,
     send_briefs,
+    send_photo_brief,
+    send_text_briefs_audited,
     summarize_deliveries,
+    summarize_photo_deliveries,
+    summarize_public_message,
     validate_brief,
     versioned_mini_app_url,
 )
@@ -484,3 +491,145 @@ def test_send_brief_honors_telegram_retry_after(monkeypatch):
     result = send_brief(token="token", chat_id="100", text="測試訊息", dashboard_url="https://example.test/app")
     assert result.message_id == 9
     assert sleeps == [7]
+
+
+def test_public_summary_handles_zero_limit_and_invalid_risk_level():
+    assert summarize_public_message("事件。", limit=0) == ""
+    assert canonical_short_message("事件。", prstk_risk_level="not-a-risk") == "🟡 事件。"
+
+
+def test_canonical_risk_level_reads_nested_legacy_and_safe_defaults():
+    assert canonical_prstk_risk_level(None) == "R2"
+    assert canonical_prstk_risk_level({"prstk_risk": {"prstk_risk_level": "R4"}}) == "R4"
+    assert canonical_prstk_risk_level({"prstk_risk_level": "R1"}) == "R1"
+    assert canonical_prstk_risk_level({"risk_level": "warning"}) == "R3"
+    assert canonical_prstk_risk_level({"risk_level": "unknown"}) == "R2"
+
+
+@pytest.mark.parametrize(
+    "fact",
+    ["", "…", "https://example.test/story", "直播影片", "🟣", "事件—."],
+)
+def test_financialjuice_fact_gate_rejects_transport_and_incomplete_fragments(fact):
+    assert telegram_client._is_usable_financialjuice_fact(fact) is False
+
+
+def test_public_summary_validator_rejects_transport_noise_and_bad_fj_shapes():
+    assert is_valid_public_summary("這是一段……", source="") is False
+    assert is_valid_public_summary("資訊 https://example.test", source="") is False
+    assert is_valid_public_summary("市場觀察", source="") is False
+    assert is_valid_public_summary("🟣 FJ 9/10｜事件｜另一段", source="financialjuice") is False
+    assert is_valid_public_summary("🟣 FJ 9/10｜市場觀察", source="financialjuice") is False
+    assert is_valid_public_summary("🟣 FJ 9/10｜🟣", source="financialjuice") is False
+    assert is_valid_public_summary("🟣 FJ 9/10｜事件：", source="financialjuice") is False
+
+
+def test_audited_text_delivery_records_success_and_failure_without_fail_fast(monkeypatch):
+    def fake_send_brief(**kwargs):
+        if kwargs["chat_id"] == "offline":
+            raise requests.ConnectionError("connection reset")
+        return telegram_client.TelegramResult(message_id=42)
+
+    monkeypatch.setattr("src.telegram_client.send_brief", fake_send_brief)
+    receipts = send_text_briefs_audited(
+        token="token",
+        chat_ids=("online", "offline"),
+        text="市場事件。",
+        dashboard_url="https://example.test/app",
+        alert_id="alert",
+        release_id="release",
+        snapshot_id="snapshot",
+    )
+    assert [item.status for item in receipts] == ["delivered", "failed"]
+    assert receipts[0].message_id == 42
+    assert receipts[1].error_class == "temporary_transport"
+
+
+def test_audited_text_delivery_rejects_empty_recipients_invalid_risk_and_bad_summary():
+    with pytest.raises(ValueError, match="recipient list"):
+        send_text_briefs_audited(
+            token="token", chat_ids=(), text="事件。", dashboard_url="https://example.test",
+            alert_id="a", release_id="r", snapshot_id="s",
+        )
+    with pytest.raises(ValueError, match="R0-R4"):
+        send_text_briefs_audited(
+            token="token", chat_ids=("1",), text="事件。", dashboard_url="https://example.test",
+            alert_id="a", release_id="r", snapshot_id="s", prstk_risk_level="bad",
+        )
+    with pytest.raises(ValueError, match="不完整"):
+        send_text_briefs_audited(
+            token="token", chat_ids=("1",), text="📊 晨報｜", dashboard_url="https://example.test",
+            alert_id="a", release_id="r", snapshot_id="s", message_kind="scheduled_brief",
+        )
+
+
+def test_photo_delivery_handles_caption_request_and_json_failures(monkeypatch):
+    photo = Path("site/assets/hero-prism-cover.png")
+    with pytest.raises(ValueError, match="1-40"):
+        send_photo_brief(
+            token="token", chat_id="1", caption="x" * 41, photo_path=photo,
+            mini_app_url="https://example.test/app", alert_id="a", release_id="r", snapshot_id="s",
+        )
+
+    def request_error(*args, **kwargs):
+        raise requests.ConnectionError("connection reset")
+
+    monkeypatch.setattr("src.telegram_client.requests.post", request_error)
+    monkeypatch.setattr("src.telegram_client.sleep", lambda _: None)
+    failed_transport = send_photo_brief(
+        token="token", chat_id="1", caption="事件", photo_path=photo,
+        mini_app_url="https://example.test/app", alert_id="a", release_id="r", snapshot_id="s",
+    )
+    assert failed_transport.status == "failed"
+    assert failed_transport.error_class == "temporary_transport"
+
+    class BadJsonResponse:
+        ok = True
+        status_code = 200
+
+        @staticmethod
+        def json():
+            raise ValueError("bad json")
+
+    monkeypatch.setattr("src.telegram_client.requests.post", lambda *args, **kwargs: BadJsonResponse())
+    failed_json = send_photo_brief(
+        token="token", chat_id="1", caption="事件", photo_path=photo,
+        mini_app_url="https://example.test/app", alert_id="a", release_id="r", snapshot_id="s",
+    )
+    assert failed_json.status == "failed"
+    assert failed_json.error_class == "telegram_api"
+
+
+def test_photo_delivery_handles_retry_after_json_failure_and_summary(monkeypatch):
+    calls = 0
+
+    class Response:
+        ok = True
+
+        def __init__(self, status_code):
+            self.status_code = status_code
+
+        def json(self):
+            if self.status_code == 429:
+                raise ValueError("bad retry metadata")
+            return {"ok": True, "result": {"message_id": 8}}
+
+    def fake_post(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return Response(429 if calls == 1 else 200)
+
+    monkeypatch.setattr("src.telegram_client.requests.post", fake_post)
+    monkeypatch.setattr("src.telegram_client.sleep", lambda _: None)
+    delivered = send_photo_brief(
+        token="token", chat_id="1", caption="事件", photo_path=Path("site/assets/hero-prism-cover.png"),
+        mini_app_url="https://example.test/app", alert_id="a", release_id="r", snapshot_id="s",
+    )
+    assert delivered.status == "delivered"
+    assert calls == 2
+    summary = summarize_photo_deliveries([
+        delivered,
+        telegram_client.PhotoDeliveryReceipt("a", "r", "s", "failed-hash", "failed"),
+    ])
+    assert (summary.delivered_count, summary.failed_count) == (1, 1)
+    assert summary.any_delivered
