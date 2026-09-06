@@ -52,7 +52,8 @@ def test_digest_prefers_complete_event_over_fragment_title():
     )
 
     assert result["notification_eligible"] is True
-    assert "沃勒" in result["overview"]
+    assert "Fed官員" in result["primary_theme"]["what_happened"]
+    assert "沃勒" not in result["public_short_message"]
     assert "The..." not in result["public_short_message"]
 
 
@@ -68,7 +69,7 @@ def test_digest_drops_conditional_only_waller_fragment_for_complete_fact():
         "us_premarket",
     )
 
-    assert "沃勒表示通膨與勞動市場" in result["primary_theme"]["what_happened"]
+    assert "Fed官員表示通膨與勞動市場" in result["primary_theme"]["what_happened"]
     assert "如果8月通膨數據過熱" not in result["public_short_message"]
 
 

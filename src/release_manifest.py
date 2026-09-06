@@ -239,6 +239,7 @@ def _briefing_projection(
         "why_important": primary.get("why_important") or "本次事件已完成公開來源核對。",
         "possible_linkage": primary.get("market_implication") or "等待相關市場價格與後續公開資料核對，不直接推定因果。",
         "stock_observation": primary.get("stock_observation") or "持續核對台美主要指數、利率與相關產業價格。",
+        "market_assessment": briefing.get("market_assessment") or {},
         "market_evidence": primary_quote_evidence,
         "source_evidence": source_evidence,
         "briefing": {
@@ -252,6 +253,7 @@ def _briefing_projection(
             "evidence": briefing.get("evidence") or [],
             "source_evidence": source_evidence,
             "quote_evidence": primary_quote_evidence,
+            "market_assessment": briefing.get("market_assessment") or {},
         },
         "notification_status": briefing.get("status"),
         "notification_reason": briefing.get("notification_reason"),
