@@ -22,3 +22,13 @@ def test_mini_app_retries_network_failures_for_manifest_and_artifacts():
     assert ".catch((error) =>" in app
     assert "fetchResponseWithRetry(`data/${relativePath.replace(/^data\\//, \"\")}`)" in app
     assert "const fetchJson = (url) => fetchResponseWithRetry(url).then" in app
+
+
+def test_verified_alert_projection_keeps_release_health_banner_silent():
+    root = Path(__file__).resolve().parents[1]
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert 'if (kind === "ready") {' in app
+    assert "node.hidden = true;" in app
+    assert "node.removeAttribute(\"data-state\");" in app
+    assert 'setReleaseHealth(`該訊息版本不可驗證；已安全停止載入' in app

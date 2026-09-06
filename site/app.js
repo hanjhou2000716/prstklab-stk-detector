@@ -1968,6 +1968,15 @@ const LAST_GOOD_RELEASE_KEY = "prstk.lastGoodRelease.v1";
 const setReleaseHealth = (message, kind = "degraded") => {
   const node = document.getElementById("release-health");
   if (!node) return;
+  // A verified historical/current alert is a successful silent projection,
+  // not a user-facing health condition.  Keep this node reserved for
+  // degraded and error states so a green success banner cannot reappear.
+  if (kind === "ready") {
+    node.hidden = true;
+    node.textContent = "";
+    node.removeAttribute("data-state");
+    return;
+  }
   node.hidden = !message;
   node.textContent = message || "";
   node.dataset.state = kind;
