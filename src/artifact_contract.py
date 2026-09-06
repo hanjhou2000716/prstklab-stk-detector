@@ -192,13 +192,25 @@ def validate_news_intelligence(document: dict[str, Any]) -> list[str]:
                 expected_cross_checked = count >= 2
                 if diversity.get("cross_checked") is not expected_cross_checked:
                     errors.append("news.source_diversity.cross_checked disagrees with source count")
-                if document.get("stories") and status == "no_event":
+                stories = [
+                    item for item in document.get("stories", [])
+                    if isinstance(item, dict)
+                ]
+                inventory_only = (
+                    bool(stories)
+                    and diversity.get("inventory_only") is True
+                    and all(
+                        str(item.get("selection_lane") or "") == "inventory"
+                        for item in stories
+                    )
+                )
+                if document.get("stories") and status == "no_event" and not inventory_only:
                     errors.append("news.source_diversity.no_event conflicts with stories")
                 if not document.get("stories") and status != "no_event":
                     errors.append("news.source_diversity status must be no_event without stories")
                 if count >= 2 and status != "multi_source":
                     errors.append("news.source_diversity status must be multi_source for two sources")
-                if count < 2 and document.get("stories") and status != "single_source":
+                if count < 2 and document.get("stories") and status != "single_source" and not inventory_only:
                     errors.append("news.source_diversity status must be single_source for one source")
     for index, provider in enumerate(registry):
         if not isinstance(provider, dict):
