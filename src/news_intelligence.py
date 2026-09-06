@@ -896,6 +896,25 @@ def build_news_intelligence(
     # Source diversity is evidence about the current scan only.  Retained
     # inventory must never masquerade as same-run corroboration.
     source_diversity = summarize_source_diversity(ranked_current)
+    # Inventory can keep the public feed useful when the current scan has no
+    # eligible story.  It must not masquerade as same-run corroboration, so
+    # retain ``no_event`` for current evidence and mark the release as
+    # inventory-only instead of making the source-diversity contract conflict
+    # with the visible inventory stories.
+    if ranked and not ranked_current:
+        source_diversity.update({
+            "inventory_only": True,
+            "current_story_count": 0,
+            "inventory_story_count": len(ranked),
+        })
+    else:
+        source_diversity.update({
+            "inventory_only": False,
+            "current_story_count": len(ranked_current),
+            "inventory_story_count": sum(
+                1 for item in ranked if item.get("selection_lane") == "inventory"
+            ),
+        })
     excluded = [item for item in normalized_current if item.get("market_compatible") is False or item.get("public_news_eligible") is False]
     health_rows: list[dict[str, Any]] = []
     for raw_health in source_health or ():

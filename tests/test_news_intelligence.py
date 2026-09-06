@@ -492,6 +492,26 @@ def test_source_diversity_contract_rejects_inconsistent_confirmation():
     assert any("cross_checked disagrees" in error for error in errors)
 
 
+def test_inventory_only_public_stories_do_not_masquerade_as_current_crosscheck():
+    artifact = build_news_intelligence(
+        [],
+        market="us",
+        inventory_stories=[{
+            "title": "Fed keeps rates unchanged as inflation cools",
+            "url": "https://www.federalreserve.gov/newsevents/pressreleases/a.htm",
+            "published_at": "2026-09-05T14:00:00+00:00",
+            "inventory_age_trading_sessions": 1,
+            "inventory_saved_at": "2026-09-05T14:01:00+00:00",
+        }],
+    )
+    assert artifact["stories"]
+    assert artifact["stories"][0]["selection_lane"] == "inventory"
+    assert artifact["source_diversity"]["status"] == "no_event"
+    assert artifact["source_diversity"]["inventory_only"] is True
+    assert artifact["source_diversity"]["current_story_count"] == 0
+    assert validate_news_intelligence(artifact) == []
+
+
 def test_dedup_merges_cross_provider_event_with_different_headlines():
     ranked = deduplicate_and_rank([
         {
