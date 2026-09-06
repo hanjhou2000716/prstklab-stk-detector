@@ -12983,7 +12983,7 @@
       "location_fingerprint": "",
       "action_fingerprint": "",
       "first_discovered_at": "2026-09-06T16:12:27.458518+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-09-06T16:12:42.530609+00:00",
       "escalated": false,
       "risk_level": "R0",
       "risk_rank": 0,
@@ -12993,9 +12993,98 @@
       "last_title": "Fed's Waller: Don't want to put a number on it, but if the 3-month number gets to 2.8, that's fine. Fed's Waller: Might see a significant drop in core with revisions. Fed's Waller: Give disinflation a chance; we can wait one meeting.",
       "compound_item_id": null,
       "compound_event_cluster_key": null,
-      "last_decision": null,
-      "decision_history": [],
-      "updated_at": "2026-09-06T16:12:27.458518+00:00"
+      "last_decision": {
+        "recorded_at": "2026-09-06T16:12:41.863107+00:00",
+        "allowed": true,
+        "status": "eligible",
+        "reason": "material_state_change",
+        "reasons": [],
+        "notification_theme_key": "financialjuice-cluster:fj-cluster-623e96a8ab2585dcada7bd60",
+        "event_key": "a96b5d096dcf20615273e4ee4601035b",
+        "risk": "R0",
+        "theme_window": 7200,
+        "material_state_changed": true,
+        "last_notified_at": "2026-09-06T13:07:37.515266+00:00",
+        "taiwan_priority": 4
+      },
+      "decision_history": [
+        {
+          "recorded_at": "2026-09-06T16:12:41.863107+00:00",
+          "allowed": true,
+          "status": "eligible",
+          "reason": "material_state_change",
+          "reasons": [],
+          "notification_theme_key": "financialjuice-cluster:fj-cluster-623e96a8ab2585dcada7bd60",
+          "event_key": "a96b5d096dcf20615273e4ee4601035b",
+          "risk": "R0",
+          "theme_window": 7200,
+          "material_state_changed": true,
+          "last_notified_at": "2026-09-06T13:07:37.515266+00:00",
+          "taiwan_priority": 4
+        }
+      ],
+      "updated_at": "2026-09-06T16:12:42.530609+00:00",
+      "delivery_history": [
+        {
+          "event_key": "a96b5d096dcf20615273e4ee4601035b",
+          "notification_id": "fj-item-a18dcf7d3ef1daddbc78",
+          "sent_at": "2026-09-06T16:12:42.530609+00:00",
+          "importance": "R0",
+          "alert_type": "unknown",
+          "lifecycle_state": "pending_confirmation",
+          "reason": "financialjuice_realtime_monitor",
+          "notification_theme_key": "financialjuice-cluster:fj-cluster-623e96a8ab2585dcada7bd60",
+          "risk": "R0",
+          "taiwan_priority": 4,
+          "material_state_changed": true,
+          "release_id": "release-ca994d36f150ff84",
+          "snapshot_id": "e0d7489094ccee6c",
+          "delivery_status": "delivered",
+          "observation_id_hash": "78efe3ae6b507319cf9150cc87590f275217ae1efa27f344b7237874ebd8a01a",
+          "item_id": "fj-item-a18dcf7d3ef1daddbc78",
+          "event_cluster_key": "fj-cluster-623e96a8ab2585dcada7bd60",
+          "vendor_importance": 10,
+          "prstk_risk": {
+            "prstk_risk_level": "R0",
+            "risk_rank": 0,
+            "risk_reason": "non_material_or_unclassified",
+            "vendor_importance": 10,
+            "official_confirmed": false,
+            "market_sync_confirmed": false,
+            "freshness_blocked": false,
+            "freshness_reason": null,
+            "notification_eligible": false,
+            "high_priority": false
+          },
+          "notification_reason": "vendor_priority_importance_ge_8、risk_threshold_not_reached",
+          "parser_version": "financialjuice-v1",
+          "received_at": "2026-09-06T16:12:27.317552+00:00",
+          "notification_key": "financialjuice:0c01e333008801f779fcb909",
+          "delivery_receipts": [
+            {
+              "notification_key": "financialjuice:0c01e333008801f779fcb909",
+              "recipient_hash": "7a30574fc065",
+              "delivery_status": "delivered",
+              "message_id": 1123,
+              "error_class": null,
+              "release_id": "release-ca994d36f150ff84",
+              "snapshot_id": "e0d7489094ccee6c",
+              "observation_id": "fj-item-a18dcf7d3ef1daddbc78",
+              "telegram_file_id_hash": null
+            }
+          ],
+          "ingested_at": "2026-09-06T16:12:27.317552+00:00",
+          "candidate_at": "2026-09-06T16:12:27.317555+00:00",
+          "release_ready_at": "2026-09-06T16:12:41.883998+00:00",
+          "telegram_attempted_at": "2026-09-06T16:12:41.885876+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "source_url": "https://www.financialjuice.com/",
+          "trace_id": "official-fj-item-a18dcf7d3ef1daddbc78"
+        }
+      ],
+      "last_theme_notification_at": "2026-09-06T16:12:42.530609+00:00",
+      "last_notified_at": "2026-09-06T16:12:42.530609+00:00"
     }
   },
   "delivery_claims": {
@@ -13603,6 +13692,25 @@
       "lease_until": null,
       "run_id_hash": "d5261788341b",
       "updated_at": "2026-09-06T13:07:37.478069+00:00",
+      "failed_recipient_hashes": []
+    },
+    "financialjuice:0c01e333008801f779fcb909": {
+      "notification_key": "financialjuice:0c01e333008801f779fcb909",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "delivered_recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "claimed_at": "2026-09-06T16:12:41.887719+00:00",
+      "lease_until": null,
+      "run_id_hash": "9d9d941f90c1",
+      "updated_at": "2026-09-06T16:12:42.501700+00:00",
       "failed_recipient_hashes": []
     }
   }
