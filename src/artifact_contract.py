@@ -243,6 +243,11 @@ def validate_news_intelligence(document: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: canonical_url is outside provider domains")
         if story.get("public_safe") is not True:
             errors.append(f"{path}: public_safe must be true for published news")
+        if story.get("eligibility_ruleset") == "public_market_news_gate_v2":
+            if story.get("public_news_eligible") is True and story.get("decision_value_eligible") is not True:
+                errors.append(f"{path}: public_news_eligible requires decision_value_eligible=true")
+            if story.get("public_news_eligible") is True and story.get("normalization_complete") is not True:
+                errors.append(f"{path}: published news requires a complete normalized fact")
         lane = story.get("selection_lane")
         inventory_used = story.get("inventory_used")
         if lane == "inventory":

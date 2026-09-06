@@ -14,7 +14,13 @@ import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from src.telegram_client import summarize_public_message
+from src.market_assessment import (
+    build_market_assessment,
+    normalize_headline,
+    project_overview,
+    project_public_message,
+    topic_label,
+)
 
 PUBLIC_MESSAGE_MAX_CHARS = 60
 DASHBOARD_SUMMARY_MAX_CHARS = 140
@@ -99,18 +105,29 @@ def _is_fragment(text: str) -> bool:
     return False
 
 
-def _event_fact(event: dict[str, Any]) -> str:
+def _event_projection(event: dict[str, Any]) -> dict[str, Any]:
     source = str(event.get("source_key") or event.get("source") or "").casefold()
     fields = (
-        ("event", "summary", "chinese_translation", "headline", "original_headline", "title", "public_short_message")
+        ("event", "what_happened", "summary", "brief_summary", "traditional_chinese_summary", "chinese_translation", "headline", "original_headline", "title", "public_short_message")
         if source != "financialjuice"
-        else ("event", "chinese_translation", "headline", "summary", "public_short_message", "original_headline", "title")
+        else ("event", "what_happened", "chinese_translation", "headline", "summary", "brief_summary", "public_short_message", "original_headline", "title")
     )
     for field in fields:
         candidate = _clean_text(event.get(field))
         if not _is_fragment(candidate):
-            return candidate.rstrip("。！？.!?") + "。"
-    return ""
+            normalized = normalize_headline(event, candidate)
+            if normalized.get("normalization_complete"):
+                return normalized
+    return normalize_headline(event, "")
+
+
+def _event_fact(event: dict[str, Any]) -> str:
+    """Select a complete normalized fact without mutating the snapshot."""
+    projection = _event_projection(event)
+    # An event without a subject/action fact is retained for audit but cannot
+    # become a public market theme.  The caller can therefore fail closed
+    # without losing the raw observation.
+    return str(projection.get("normalized_fact") or "") if projection.get("normalization_complete") else ""
 
 
 def _event_timestamp(event: dict[str, Any]) -> datetime | None:
@@ -270,7 +287,11 @@ def _source_evidence(event: dict[str, Any], source: str) -> list[dict[str, Any]]
         evidence["source_url"] = source_url
     if source_domain:
         evidence["source_domain"] = source_domain
-    return [evidence]
+    result = [evidence]
+    supporting = event.get("_supporting_sources")
+    if isinstance(supporting, list):
+        result.extend(item for item in supporting if isinstance(item, dict))
+    return result
 
 
 def _importance_score(event: dict[str, Any]) -> float:
@@ -328,6 +349,9 @@ def _usable_quote(item: dict[str, Any]) -> bool:
 
 def _theme_for_event(event: dict[str, Any], fact: str, snapshot_quotes: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     source = _event_source(event)
+    normalized = _event_projection(event)
+    market_topic = str(normalized.get("market_topic") or "company_industry")
+    public_fact = str(normalized.get("normalized_fact") or fact)
     why = _clean_text(event.get("why_important") or event.get("importance_detail") or event.get("trigger"))
     impact = _clean_text(event.get("possible_linkage") or event.get("possible_impact") or event.get("market_context"))
     watch = _clean_text(event.get("stock_observation") or event.get("watch") or event.get("follow_up_observation"))
@@ -335,8 +359,11 @@ def _theme_for_event(event: dict[str, Any], fact: str, snapshot_quotes: list[dic
     quote_evidence = _bind_event_quotes(event, snapshot_quotes or [])
     canonical_event_key = _event_key(event, fact)
     return {
-        "title": source,
-        "what_happened": fact,
+        # The topic is the public heading; provider identity remains in the
+        # evidence footer so a source name cannot masquerade as the analysis.
+        "title": topic_label(market_topic),
+        "market_topic": market_topic,
+        "what_happened": public_fact,
         "why_important": why or "事件事實已完成公開來源核對。",
         "market_implication": impact or "等待相關市場價格與後續公開資料核對，不直接推定因果。",
         "stock_observation": watch or "持續觀察台美主要指數、利率與相關產業價格。",
@@ -360,6 +387,15 @@ def _theme_for_event(event: dict[str, Any], fact: str, snapshot_quotes: list[dic
         "notification_status": event.get("notification_status"),
         "prstk_risk_level": event.get("prstk_risk_level") or event.get("risk_level"),
         "vendor_importance": event.get("vendor_importance"),
+        "raw_title": normalized.get("raw_title"),
+        "normalized_fact": public_fact,
+        "actor_role": normalized.get("actor_role"),
+        "actor_name": normalized.get("actor_name"),
+        "headline_actor": normalized.get("headline_actor"),
+        "byline_removed": normalized.get("byline_removed", False),
+        "publisher_removed": normalized.get("publisher_removed", False),
+        "normalization_ruleset": normalized.get("normalization_ruleset"),
+        "normalization_complete": normalized.get("normalization_complete", False),
     }
 
 
@@ -371,6 +407,8 @@ def _theme_for_quotes(items: list[dict[str, Any]]) -> dict[str, Any] | None:
     quote_evidence = _quote_evidence(items[:3])
     return {
         "title": "市場價格",
+        "market_topic": "global_market",
+        "normalization_complete": True,
         "what_happened": "、".join(clauses[:3]) + "。",
         "why_important": "價格資料提供目前市場狀態，仍需搭配事件與資料時間判讀。",
         "market_implication": "各市場若同向可作為價格確認；若分歧，暫不推論跨市場因果。",
@@ -450,7 +488,12 @@ def _fit_sentence(prefix: str, clauses: list[str], limit: int) -> str:
     return chosen.rstrip("；，、")
 
 
-def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
+def build_market_digest(
+    snapshot: dict[str, Any],
+    slot: str,
+    *,
+    intelligence: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Build the shared dashboard/Telegram market assessment."""
     generated = str(snapshot.get("generated_at") or snapshot.get("fetched_at") or "")
     try:
@@ -467,8 +510,7 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
     raw_events.extend(item for item in snapshot.get("external_observations", []) if isinstance(item, dict))
     raw_events.extend(_news_events(snapshot))
 
-    candidates: list[tuple[dict[str, Any], str]] = []
-    seen: set[str] = set()
+    candidates_by_key: dict[str, tuple[dict[str, Any], str]] = {}
     for event in raw_events:
         # Threshold market signals remain in the instant-alert lane.  Their
         # verbose machine-formatted event text is not a digest fact; the
@@ -488,10 +530,21 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
         if not fact:
             continue
         key = _event_key(event, fact)
-        if key in seen:
+        if key in candidates_by_key:
+            existing = candidates_by_key[key][0]
+            supporting = existing.setdefault("_supporting_sources", [])
+            if isinstance(supporting, list):
+                supporting.append({
+                    "source": _event_source(event),
+                    "source_key": event.get("source_key") or event.get("source"),
+                    "observation_id": event.get("observation_id"),
+                    "source_url": event.get("source_url") or event.get("url"),
+                    "published_at": event.get("published_at") or event.get("created_at"),
+                })
             continue
-        seen.add(key)
-        candidates.append((event, fact))
+        candidates_by_key[key] = (event, fact)
+
+    candidates = list(candidates_by_key.values())
 
     def candidate_sort_key(pair: tuple[dict[str, Any], str]) -> tuple[int, int, int, float, float, str]:
         timestamp = _event_timestamp(pair[0])
@@ -524,6 +577,7 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
     # particular, a geopolitical/FJ event must not inherit unrelated NASDAQ
     # and SOX cards merely because they happen to be present in the snapshot.
     event_themes = [_theme_for_event(event, fact, all_quotes) for event, fact in candidates]
+    event_themes = [theme for theme in event_themes if theme.get("normalization_complete")]
     primary_theme = event_themes[0] if event_themes else quote_theme
     if primary_theme is None:
         return {
@@ -584,8 +638,8 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
         if len(secondary_signals) >= 3:
             break
 
-    facts = [str(theme["what_happened"]).rstrip("。") + "。" for theme in summary_themes if theme]
-    if not facts:
+    summary_themes = [theme for theme in summary_themes if theme and theme.get("normalization_complete", True)]
+    if not summary_themes:
         return {
             "status": "suppressed",
             "notification_eligible": False,
@@ -603,30 +657,48 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
         }
 
     label = _SLOT_LABELS.get(slot, "市場")
-    overview = _fit_sentence("今日判讀：", facts, DASHBOARD_SUMMARY_MAX_CHARS)
-    if overview == "今日判讀：":
-        overview = ""
-    message_clauses = facts[:2]
-    public_message = summarize_public_message(
-        f"{label}｜" + "｜".join(message_clauses),
-        message_kind="scheduled_brief",
-        label=label,
-        limit=PUBLIC_MESSAGE_MAX_CHARS,
+    assessment = build_market_assessment(
+        slot=slot,
+        as_of=as_of,
+        quotes=quote_items,
+        themes=summary_themes,
+        intelligence=intelligence,
     )
+    overview = project_overview(assessment, DASHBOARD_SUMMARY_MAX_CHARS)
+    public_message = project_public_message(label, assessment, PUBLIC_MESSAGE_MAX_CHARS)
     if public_message and not len(public_message) <= PUBLIC_MESSAGE_MAX_CHARS:
         public_message = ""
 
     canonical_material = {
         "slot": slot,
-        "overview": overview,
+        # The detailed market-highlights sentence is quote hydration.  Keep
+        # the conclusion/risk projection in the identity, but do not let a
+        # refreshed price value create a new alert identity.
+        "overview": "總結｜{summary}。風險｜{risk}。".format(
+            summary=((assessment.get("summary_sections") or {}).get("summary") or ""),
+            risk=((assessment.get("summary_sections") or {}).get("risk") or ""),
+        ),
         "public_short_message": public_message,
         # Quote hydration is release-bound evidence, not notification
         # identity.  Keep the values in the artifact, but exclude them from
         # the content hash so a refreshed quote cannot resend the same event.
+        "market_assessment": {
+            key: value for key, value in assessment.items()
+            if key not in {
+                "evidence_as_of", "factor_count", "evidence_dimensions",
+                "score", "factor_source", "directional_quote_count",
+            } and key != "summary_sections"
+        } | {
+            "summary_sections": {
+                key: value
+                for key, value in (assessment.get("summary_sections") or {}).items()
+                if key != "market_highlights"
+            },
+        },
         "themes": [
             {key: value for key, value in theme.items() if key != "quote_evidence"}
             for theme in summary_themes
-            if theme
+            if theme and theme.get("title") != "市場價格"
         ],
     }
     content_hash = hashlib.sha256(
@@ -642,9 +714,10 @@ def build_market_digest(snapshot: dict[str, Any], slot: str) -> dict[str, Any]:
         "observation_id": f"briefing-observation-{content_hash[:20]}",
         "trace_id": f"briefing-trace-{slot}-{content_hash[:16]}",
         "canonical_content_hash": content_hash,
-        "canonical_hash_version": 1,
+        "canonical_hash_version": 2,
         "assessment_summary": overview,
         "overview": overview,
+        "market_assessment": assessment,
         "public_short_message": public_message,
         "themes": themes,
         "primary_theme": primary_theme,

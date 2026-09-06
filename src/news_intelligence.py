@@ -15,6 +15,7 @@ from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from src.event_classifier import classify_event_fields
+from src.market_assessment import normalize_headline
 
 PROVIDER_REGISTRY: tuple[dict[str, Any], ...] = (
     # ``feed_url``/``feed_kind`` are the canonical adapter contract.  The
@@ -251,6 +252,9 @@ def _public_news_decision(item: dict[str, Any]) -> tuple[bool, str | None, list[
         # event fact is the generic-filing class used by legacy diagnostics.
         reason = "generic_official_filing" if provider == "sec" else "insufficient_market_relevance"
         return False, reason, flags, "unclassified"
+    if item.get("normalization_complete") is not True:
+        flags.append("incomplete_normalized_fact")
+        return False, "incomplete_normalized_fact", flags, "unclassified"
 
     if category in {"fed", "macro"}:
         value_class = "macro"
@@ -348,6 +352,10 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         or ""
     ).split())
     description = " ".join(str(raw.get("description") or raw.get("body") or "").split())
+    headline_projection = normalize_headline(
+        raw,
+        raw.get("event") or raw.get("what_happened") or summary or title,
+    )
     url = canonicalize_url(str(raw.get("canonical_url") or raw.get("url") or ""))
     provider = provider_for_url(url)
     chosen_market = str(market or raw.get("market") or "").strip().lower() or None
@@ -382,6 +390,8 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         "matched_market_object": str(classification.get("matched_market_object") or ""),
         "input_fields": classifier_fields,
     }
+    classification_category = str(classification.get("category") or "").strip()
+    cluster_topics = [*topics_normalized, classification_category] if classification_category else topics_normalized
     selection_lane = str(raw.get("selection_lane") or "current").strip().casefold()
     if selection_lane not in NEWS_SELECTION_LANES:
         selection_lane = "current"
@@ -398,6 +408,16 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         "source_tier": tier,
         "authority_tier": authority,
         "title": title,
+        "raw_title": headline_projection["raw_title"],
+        "normalized_fact": headline_projection["normalized_fact"],
+        "market_topic": headline_projection["market_topic"],
+        "actor_role": headline_projection["actor_role"],
+        "actor_name": headline_projection["actor_name"],
+        "headline_actor": headline_projection["headline_actor"],
+        "byline_removed": headline_projection["byline_removed"],
+        "publisher_removed": headline_projection["publisher_removed"],
+        "normalization_ruleset": headline_projection["normalization_ruleset"],
+        "normalization_complete": headline_projection["normalization_complete"],
         "summary": summary,
         "description": description,
         "canonical_url": url,
@@ -412,8 +432,8 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         "event_classification": event_classification,
         "relevance_reasons": list(dict.fromkeys(str(item) for item in (raw.get("relevance_reasons") or []) if str(item).strip())),
         "freshness": str(raw.get("freshness") or ("published" if published else "unknown")),
-        "dedupe_key": _headline_key(title),
-        "event_cluster_key": _event_cluster_key(entities=entities, topics=topics_normalized, published_at=published),
+        "dedupe_key": _headline_key(headline_projection["normalized_fact"] or title),
+        "event_cluster_key": _event_cluster_key(entities=entities, topics=cluster_topics, published_at=published),
         "published_time_bucket": _time_bucket(published),
         "public_safe": safe,
         "public_news_eligible": bool(raw.get("public_news_eligible", safe and market_compatible)),
@@ -829,6 +849,10 @@ def build_news_intelligence(
     for item in normalized:
         is_eligible, exclusion_reason, quality_flags, value_class = _public_news_decision(item)
         item["public_news_eligible"] = is_eligible
+        # This is the public decision-value result, which may be established
+        # by a concrete market/index fact even when the narrower event
+        # classifier does not assign one of its material categories.
+        item["decision_value_eligible"] = is_eligible
         item["decision_value_class"] = value_class
         item["quality_flags"] = quality_flags
         item["eligibility_reasons"] = [

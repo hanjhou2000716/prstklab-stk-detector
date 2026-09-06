@@ -445,7 +445,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         creator_release = creator_result["artifact"]
     from src.market_digest import build_market_digest
 
-    digest = build_market_digest(snapshot, slot or "morning")
+    digest = build_market_digest(snapshot, slot or "morning", intelligence=intelligence)
     digest_overview = digest.get("overview")
     if not digest_overview and digest.get("status") != "ready":
         digest_overview = "本輪公開市場證據不足，暫不形成判讀。"
@@ -458,6 +458,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
             f"{lead.get('market_context') or lead['market_impact']}"
         ),
         "assessment_summary": digest.get("assessment_summary", ""),
+        "market_assessment": digest.get("market_assessment", {}),
         "public_short_message": digest.get("public_short_message", ""),
         "digest_status": digest.get("status", "suppressed"),
         "notification_eligible": digest.get("notification_eligible", False),
