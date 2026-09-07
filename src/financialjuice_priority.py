@@ -673,7 +673,11 @@ def _event_record(
     record["material_fact_version"] = _first_value(views, "material_fact_version") or record["canonical_fact_key"]
     record["notification_key"] = financialjuice_notification_key(record)
     if record["freshness_status"] != "fresh":
-        record["notification_status"] = "stale_source_event"
+        # Preserve a content failure as the primary audit state while still
+        # recording the precise freshness reason.  Complete legacy facts use
+        # the specific missing/stale/future state directly.
+        if record.get("notification_status") != "content_incomplete":
+            record["notification_status"] = record["freshness_status"]
         record["notification_reasons"] = list(dict.fromkeys([
             *record.get("notification_reasons", []), record["freshness_status"],
         ]))
@@ -757,9 +761,15 @@ def project_financialjuice_priority(
             # its result is authoritative for both the event and the audit
             # decision.  Never leave an ``eligible`` decision beside a
             # suppressed/invalid public summary.
-            if event.get("notification_status") == "content_incomplete":
-                status = "content_incomplete"
-                vendor_notification = False
+            # _event_record applies the final public-content and freshness
+            # gates.  Keep the audit decision in lockstep with that final
+            # event state; otherwise a legacy row without source time can be
+            # published as an ``eligible`` decision beside a stale event and
+            # fail-closed the entire release contract.
+            event_status = str(event.get("notification_status") or status)
+            if event_status != status:
+                status = event_status
+                vendor_notification = bool(event.get("vendor_priority_notification"))
             notification_key = str(event.get("notification_key") or "").strip()
             if status == "eligible" and notification_key in existing_notification_keys:
                 status = "already_cluster_notified"

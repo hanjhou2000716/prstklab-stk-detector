@@ -13,7 +13,15 @@ from typing import Any
 
 from src.telegram_client import is_valid_public_summary
 
-_STATUSES = frozenset({"eligible", "not_eligible", "already_cluster_notified", "content_incomplete"})
+_STATUSES = frozenset({
+    "eligible",
+    "not_eligible",
+    "already_cluster_notified",
+    "content_incomplete",
+    "stale_source_event",
+    "invalid_future_source_timestamp",
+    "missing_source_timestamp",
+})
 
 
 def _rows(value: Any) -> list[dict[str, Any]]:

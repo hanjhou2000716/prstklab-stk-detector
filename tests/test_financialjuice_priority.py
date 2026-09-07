@@ -48,6 +48,7 @@ def test_fj_freshness_uses_source_timestamp_and_fails_closed_when_missing_or_sta
     missing_event = project_financialjuice_priority([missing])["events"][0]
     assert missing_event["freshness_status"] == "missing_source_timestamp"
     assert missing_event["alert_eligible"] is False
+    assert project_financialjuice_priority([missing])["decisions"][0]["notification_status"] == "missing_source_timestamp"
 
     stale = _row(8)
     stale["source_published_at"] = "2026-09-06T00:00:00Z"
@@ -57,6 +58,9 @@ def test_fj_freshness_uses_source_timestamp_and_fails_closed_when_missing_or_sta
     assert stale_event["freshness_status"] == "stale_source_event"
     assert stale_event["notification_status"] == "stale_source_event"
     assert stale_event["vendor_priority_notification"] is False
+    assert project_financialjuice_priority(
+        [stale], now=datetime(2026, 9, 7, 0, 31, tzinfo=UTC),
+    )["decisions"][0]["notification_status"] == "stale_source_event"
 
 
 def test_fj_commentary_replay_keeps_canonical_fact_and_notification_identity():
