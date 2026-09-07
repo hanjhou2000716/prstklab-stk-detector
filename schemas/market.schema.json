@@ -40,6 +40,25 @@
       "type": "array",
       "items": {"$ref": "#/$defs/sourceCatalogItem"}
     },
+    "taiwan_market_statistics": {
+      "type": "object",
+      "required": ["status", "source", "errors", "is_proxy"],
+      "properties": {
+        "status": {"enum": ["complete", "partial", "unavailable"]},
+        "observed_date": {"type": ["string", "null"]},
+        "turnover": {"type": ["object", "null"]},
+        "breadth": {"type": ["object", "null"]},
+        "institutional_flows": {"type": ["object", "null"]},
+        "source": {"type": "string", "minLength": 1},
+        "source_url": {"type": "string", "format": "uri"},
+        "errors": {"type": "array", "items": {"type": "string"}},
+        "is_proxy": {"type": "boolean"},
+        "retry_attempt": {"type": "integer", "minimum": 0},
+        "retry_attempts_configured": {"type": "integer", "minimum": 0},
+        "retry_wait_seconds": {"type": "number", "minimum": 0}
+      },
+      "additionalProperties": true
+    },
     "indices": {"type": "array", "items": {"$ref": "#/$defs/quote"}},
     "quotes": {"type": "array", "items": {"$ref": "#/$defs/quote"}},
     "source_health": {"type": "object"}

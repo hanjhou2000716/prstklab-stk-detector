@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from src.alert_budget import decide_alert_budget
@@ -31,10 +31,7 @@ TAIWAN_SESSION_SLOTS = frozenset({"pre_open", "intraday", "midday", "afternoon",
 CRON_SLOT_MAP = {
     "0 22 * * *": "morning",
     "45 0 * * 1-5": "pre_open",
-    "30 2 * * 1-5": "intraday",
-    "45 3 * * 1-5": "midday",
-    "15 5 * * 1-5": "afternoon",
-    "45 6 * * 1-5": "post_close",
+    "20 6 * * 1-5": "post_close",
     "0 13 * * 1-5": "us_premarket",
 }
 
@@ -93,13 +90,52 @@ STRICT_SLOT_WINDOWS = {
 # report itself.
 MANUAL_SLOT_BOUNDARIES = (
     (6 * 60, "morning"),
-    (8 * 60 + 45, "pre_open"),
-    (10 * 60 + 30, "intraday"),
-    (11 * 60 + 45, "midday"),
-    (13 * 60 + 15, "afternoon"),
-    (14 * 60 + 45, "post_close"),
+    (8 * 60 + 30, "pre_open"),
+    (9 * 60, "intraday"),
+    (11 * 60 + 30, "midday"),
+    (12 * 60 + 45, "afternoon"),
+    (13 * 60 + 30, "post_close"),
     (21 * 60, "us_premarket"),
 )
+
+ANCHOR_SLOTS = frozenset({"morning", "pre_open", "post_close", "us_premarket"})
+MAX_SCHEDULE_DELAY_SECONDS = 30 * 60
+TAIPEI = ZoneInfo("Asia/Taipei")
+
+
+def anchor_market(slot: str) -> str:
+    """Return the market namespace used by scheduled-anchor idempotency."""
+    return "us" if str(slot).strip() == "us_premarket" else "taiwan"
+
+
+def anchor_key(slot: str, slot_date: str) -> str:
+    """Build the stable market/date/anchor identity for a scheduled brief."""
+    return f"{anchor_market(slot)}:{slot_date}:{slot}"
+
+
+def _scheduled_time_for_cron(local_now: datetime, cron: str) -> datetime | None:
+    """Return the Taipei execution time represented by a GitHub UTC cron."""
+    parts = str(cron or "").split()
+    if len(parts) != 5 or parts[2] != "*" or parts[3] != "*" or parts[4] not in {"*", "1-5"}:
+        return None
+    try:
+        minute, hour = int(parts[0]), int(parts[1])
+    except ValueError:
+        return None
+    utc_date = local_now.astimezone(UTC).date()
+    return datetime(utc_date.year, utc_date.month, utc_date.day, hour, minute, tzinfo=UTC).astimezone(TAIPEI)
+
+
+def _phase_at(local_now: datetime) -> tuple[str, str]:
+    """Resolve the actual Taipei market phase and its slot date."""
+    minute = local_now.hour * 60 + local_now.minute
+    if minute < 6 * 60:
+        return "us_premarket", (local_now.date() - timedelta(days=1)).isoformat()
+    selected = "morning"
+    for start, candidate in MANUAL_SLOT_BOUNDARIES:
+        if minute >= start:
+            selected = candidate
+    return selected, local_now.date().isoformat()
 
 
 def _strict_slot_at(now: datetime) -> str | None:
@@ -128,20 +164,18 @@ def _us_premarket_cron_matches(now: datetime, scheduled_cron: str) -> bool:
 def _manual_slot_context(now: datetime) -> dict[str, str]:
     """Resolve a manual run to the latest fixed Taipei-time report slot."""
     local_now = now.astimezone(ZoneInfo("Asia/Taipei"))
-    minute = local_now.hour * 60 + local_now.minute
-    selected_slot = "us_premarket"
-    for start, candidate in MANUAL_SLOT_BOUNDARIES:
-        if minute >= start:
-            selected_slot = candidate
-    slot_date = local_now.date()
-    # 00:00–05:59 belongs to the previous day's 21:00 US pre-market report.
-    if selected_slot == "us_premarket" and minute < 6 * 60:
-        slot_date = slot_date - timedelta(days=1)
+    selected_slot, slot_date = _phase_at(local_now)
     return {
         "requested_slot": "auto",
         "effective_slot": selected_slot,
-        "slot_date": slot_date.isoformat(),
-        "resolution_reason": "manual_latest_fixed_boundary",
+        "scheduled_slot": "",
+        "effective_market_phase": selected_slot,
+        "slot_date": slot_date,
+        "scheduled_for_at": "",
+        "run_started_at": local_now.isoformat(),
+        "delay_seconds": "0",
+        "delivery_intent": "notify_candidate" if selected_slot in ANCHOR_SLOTS else "event_only",
+        "resolution_reason": "manual_actual_market_phase",
         "trigger_kind": "workflow_dispatch",
     }
 
@@ -152,6 +186,7 @@ def resolve_slot_context(
     *,
     strict_window: bool = False,
     scheduled_cron: str | None = None,
+    scheduled_for_at: str | None = None,
     trigger_kind: str = "compatibility",
 ) -> dict[str, str] | None:
     """Resolve slot plus identity metadata without trusting stale manual input."""
@@ -159,10 +194,25 @@ def resolve_slot_context(
     local_now = local_now.astimezone(ZoneInfo("Asia/Taipei"))
     requested = str(value or "auto").strip() or "auto"
     trigger = str(trigger_kind or "compatibility").strip().casefold()
-    cron_slot = CRON_SLOT_MAP.get(str(scheduled_cron or "").strip())
+    cron_text = str(scheduled_cron or "").strip()
+    cron_slot = CRON_SLOT_MAP.get(cron_text)
     if cron_slot:
         if cron_slot == "us_premarket" and not _us_premarket_cron_matches(local_now, str(scheduled_cron).strip()):
             return None
+        scheduled_at = _scheduled_time_for_cron(local_now, cron_text)
+        if scheduled_for_at:
+            try:
+                parsed = datetime.fromisoformat(str(scheduled_for_at).replace("Z", "+00:00"))
+                scheduled_at = parsed.astimezone(TAIPEI)
+            except (TypeError, ValueError):
+                pass
+        if scheduled_at is None:
+            scheduled_at = local_now
+        if cron_slot == "us_premarket" and local_now.hour < 6 and not scheduled_for_at:
+            scheduled_at -= timedelta(days=1)
+        delay_seconds = max(0, int((local_now - scheduled_at).total_seconds()))
+        late = delay_seconds > MAX_SCHEDULE_DELAY_SECONDS
+        actual_phase, actual_date = _phase_at(local_now)
         slot_date = local_now.date()
         # The 13:00 UTC weekday cron is the 21:00 Taipei report.  If GitHub
         # starts that run after midnight Taipei time, keep the slot identity
@@ -170,12 +220,46 @@ def resolve_slot_context(
         # the new calendar day.
         if cron_slot == "us_premarket" and local_now.hour < 6:
             slot_date -= timedelta(days=1)
+        resolved_slot = actual_phase if late else cron_slot
+        resolved_date = actual_date if late else slot_date.isoformat()
         return {
             "requested_slot": requested,
-            "effective_slot": cron_slot,
-            "slot_date": slot_date.isoformat(),
-            "resolution_reason": "trusted_cron_identity",
+            "scheduled_slot": cron_slot,
+            "effective_slot": resolved_slot,
+            "effective_market_phase": resolved_slot,
+            "slot_date": resolved_date,
+            "scheduled_for_at": scheduled_at.isoformat(),
+            "run_started_at": local_now.isoformat(),
+            "delay_seconds": str(delay_seconds),
+            "delivery_intent": "publish_only" if late else "notify_candidate",
+            "resolution_reason": "late_schedule_publish_only" if late else "scheduled_anchor_on_time",
             "trigger_kind": "schedule" if trigger == "compatibility" else trigger,
+        }
+    if trigger == "repository_dispatch":
+        if not scheduled_for_at:
+            return None
+        try:
+            scheduled_at = datetime.fromisoformat(str(scheduled_for_at).replace("Z", "+00:00")).astimezone(TAIPEI)
+        except (TypeError, ValueError):
+            return None
+        declared = requested if requested in SLOT_LABELS else "auto"
+        if declared == "auto":
+            declared, _ = _phase_at(scheduled_at)
+        delay_seconds = max(0, int((local_now - scheduled_at).total_seconds()))
+        late = delay_seconds > MAX_SCHEDULE_DELAY_SECONDS
+        actual_phase, actual_date = _phase_at(local_now)
+        return {
+            "requested_slot": requested,
+            "scheduled_slot": declared,
+            "effective_slot": actual_phase if late else declared,
+            "effective_market_phase": actual_phase if late else declared,
+            "slot_date": actual_date if late else scheduled_at.date().isoformat(),
+            "scheduled_for_at": scheduled_at.isoformat(),
+            "run_started_at": local_now.isoformat(),
+            "delay_seconds": str(delay_seconds),
+            "delivery_intent": "publish_only" if late else "notify_candidate",
+            "resolution_reason": "late_dispatch_publish_only" if late else "dispatch_anchor_on_time",
+            "trigger_kind": trigger,
         }
     if trigger == "compatibility":
         if strict_window:
@@ -185,7 +269,13 @@ def resolve_slot_context(
             return {
                 "requested_slot": requested,
                 "effective_slot": matched,
+                "scheduled_slot": requested if requested != "auto" else matched,
+                "effective_market_phase": matched,
                 "slot_date": local_now.date().isoformat(),
+                "scheduled_for_at": "",
+                "run_started_at": local_now.isoformat(),
+                "delay_seconds": "0",
+                "delivery_intent": "event_only",
                 "resolution_reason": "trusted_dispatch_window",
                 "trigger_kind": trigger,
             }
@@ -193,7 +283,13 @@ def resolve_slot_context(
             return {
                 "requested_slot": requested,
                 "effective_slot": requested,
+                "scheduled_slot": requested,
+                "effective_market_phase": requested,
                 "slot_date": local_now.date().isoformat(),
+                "scheduled_for_at": "",
+                "run_started_at": local_now.isoformat(),
+                "delay_seconds": "0",
+                "delivery_intent": "event_only",
                 "resolution_reason": "explicit_compatibility_slot",
                 "trigger_kind": trigger,
             }
@@ -213,7 +309,13 @@ def resolve_slot_context(
         return {
             "requested_slot": requested,
             "effective_slot": selected,
+            "scheduled_slot": selected,
+            "effective_market_phase": selected,
             "slot_date": local_now.date().isoformat(),
+            "scheduled_for_at": "",
+            "run_started_at": local_now.isoformat(),
+            "delay_seconds": "0",
+            "delivery_intent": "event_only",
             "resolution_reason": "compatibility_clock_window",
             "trigger_kind": trigger,
         }
@@ -229,7 +331,13 @@ def resolve_slot_context(
         return {
             "requested_slot": requested,
             "effective_slot": matched,
+            "scheduled_slot": requested if requested != "auto" else matched,
+            "effective_market_phase": matched,
             "slot_date": local_now.date().isoformat(),
+            "scheduled_for_at": "",
+            "run_started_at": local_now.isoformat(),
+            "delay_seconds": "0",
+            "delivery_intent": "event_only",
             "resolution_reason": "trusted_dispatch_window",
             "trigger_kind": trigger,
         }
@@ -239,7 +347,13 @@ def resolve_slot_context(
         return {
             "requested_slot": requested,
             "effective_slot": requested,
+            "scheduled_slot": requested,
+            "effective_market_phase": requested,
             "slot_date": local_now.date().isoformat(),
+            "scheduled_for_at": "",
+            "run_started_at": local_now.isoformat(),
+            "delay_seconds": "0",
+            "delivery_intent": "event_only",
             "resolution_reason": "explicit_compatibility_slot",
             "trigger_kind": trigger,
         }
@@ -254,10 +368,12 @@ def resolve_slot(
     *,
     strict_window: bool = False,
     scheduled_cron: str | None = None,
+    scheduled_for_at: str | None = None,
 ) -> str | None:
     """Compatibility API returning only the resolved slot name."""
     context = resolve_slot_context(
         value, now, strict_window=strict_window, scheduled_cron=scheduled_cron,
+        scheduled_for_at=scheduled_for_at,
     )
     return context["effective_slot"] if context else None
 
@@ -421,6 +537,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--print-window", action="store_true")
     parser.add_argument("--strict-window", action="store_true")
     parser.add_argument("--scheduled-cron", default="")
+    parser.add_argument("--scheduled-for", default="")
     parser.add_argument("--trigger-kind", default="compatibility")
     return parser.parse_args()
 
@@ -433,6 +550,7 @@ def main() -> None:
         now,
         strict_window=args.strict_window,
         scheduled_cron=args.scheduled_cron,
+        scheduled_for_at=args.scheduled_for,
         trigger_kind=args.trigger_kind,
     )
     slot = context["effective_slot"] if context else None
@@ -440,15 +558,35 @@ def main() -> None:
         print(f"should_run={'true' if slot else 'false'}")
         print(f"slot={slot or 'skip'}")
         print(f"requested_slot={(context or {}).get('requested_slot', args.slot)}")
+        print(f"scheduled_slot={(context or {}).get('scheduled_slot', '')}")
         print(f"effective_slot={slot or 'skip'}")
+        print(f"effective_market_phase={(context or {}).get('effective_market_phase', slot or 'skip')}")
         print(f"slot_date={(context or {}).get('slot_date', now.date().isoformat())}")
+        print(f"scheduled_for_at={(context or {}).get('scheduled_for_at', '')}")
+        print(f"run_started_at={(context or {}).get('run_started_at', now.isoformat())}")
+        print(f"delay_seconds={(context or {}).get('delay_seconds', '0')}")
+        print(f"delivery_intent={(context or {}).get('delivery_intent', 'event_only')}")
         print(f"resolution_reason={(context or {}).get('resolution_reason', 'outside_window')}")
         print(f"trigger_kind={(context or {}).get('trigger_kind', args.trigger_kind)}")
-        print(f"key={(context or {}).get('slot_date', now.date().isoformat())}-{slot or 'skip'}")
+        print(f"key={anchor_key(slot or 'skip', (context or {}).get('slot_date', now.date().isoformat())) if slot else 'skip'}")
+        if context:
+            _write_output({"context_json": context})
         return
 
     if slot is None:
         print("此時段不在已設定的台灣時間快報窗口，略過快報。")
+        return
+
+    delivery_intent = str((context or {}).get("delivery_intent") or "event_only").strip()
+    if delivery_intent != "notify_candidate":
+        _write_output({
+            "sent": "false",
+            "delivery_status": "suppressed",
+            "notification_expected": "false",
+            "notification_status": "suppressed",
+            "notification_reason": str((context or {}).get("resolution_reason") or "delivery_intent_not_notify"),
+        })
+        print("此執行只更新市場資料，不具備例行 Telegram 投遞資格。")
         return
 
     settings = get_settings()

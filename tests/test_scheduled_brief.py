@@ -2,7 +2,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from src.alert_budget import decide_alert_budget
-from src.scheduled_brief import briefing_correlation, build_brief, resolve_slot, resolve_slot_context
+from src.scheduled_brief import anchor_key, briefing_correlation, build_brief, resolve_slot, resolve_slot_context
 
 
 def test_taiwan_price_brief_includes_the_current_percent_move():
@@ -25,13 +25,13 @@ def test_resolves_morning_slot_in_taiwan_time():
 def test_manual_run_uses_latest_report_name_even_when_stale_slot_is_requested():
     now = datetime(2026, 9, 6, 16, 58, tzinfo=ZoneInfo("Asia/Taipei"))
     result = resolve_slot_context("morning", now, trigger_kind="workflow_dispatch")
-    assert result == {
-        "requested_slot": "morning",
-        "effective_slot": "post_close",
-        "slot_date": "2026-09-06",
-        "resolution_reason": "manual_latest_fixed_boundary",
-        "trigger_kind": "workflow_dispatch",
-    }
+    assert result is not None
+    assert result["requested_slot"] == "morning"
+    assert result["effective_slot"] == "post_close"
+    assert result["effective_market_phase"] == "post_close"
+    assert result["slot_date"] == "2026-09-06"
+    assert result["delivery_intent"] == "notify_candidate"
+    assert result["resolution_reason"] == "manual_actual_market_phase"
 
 
 def test_manual_us_premarket_after_midnight_keeps_previous_slot_date():
@@ -39,6 +39,47 @@ def test_manual_us_premarket_after_midnight_keeps_previous_slot_date():
     result = resolve_slot_context("auto", now, trigger_kind="workflow_dispatch")
     assert result["effective_slot"] == "us_premarket"
     assert result["slot_date"] == "2026-09-06"
+
+
+def test_manual_market_phase_boundaries_are_stable():
+    cases = (
+        ("06:00", "morning"),
+        ("08:29", "morning"),
+        ("08:30", "pre_open"),
+        ("08:59", "pre_open"),
+        ("09:00", "intraday"),
+        ("11:29", "intraday"),
+        ("11:30", "midday"),
+        ("12:44", "midday"),
+        ("12:45", "afternoon"),
+        ("13:29", "afternoon"),
+        ("13:30", "post_close"),
+        ("20:59", "post_close"),
+        ("21:00", "us_premarket"),
+    )
+    for clock, expected in cases:
+        hour, minute = (int(value) for value in clock.split(":"))
+        result = resolve_slot_context(
+            "morning", datetime(2026, 9, 7, hour, minute, tzinfo=ZoneInfo("Asia/Taipei")),
+            trigger_kind="workflow_dispatch",
+        )
+        assert result is not None
+        assert result["effective_slot"] == expected
+
+
+def test_repository_dispatch_requires_scheduled_time_and_applies_delay_gate():
+    now = datetime(2026, 9, 7, 15, 28, tzinfo=ZoneInfo("Asia/Taipei"))
+    assert resolve_slot_context("post_close", now, trigger_kind="repository_dispatch") is None
+    result = resolve_slot_context(
+        "intraday", now,
+        trigger_kind="repository_dispatch",
+        scheduled_for_at="2026-09-07T10:30:00+08:00",
+    )
+    assert result is not None
+    assert result["scheduled_slot"] == "intraday"
+    assert result["effective_slot"] == "post_close"
+    assert result["delivery_intent"] == "publish_only"
+    assert result["resolution_reason"] == "late_dispatch_publish_only"
 
 
 def test_us_premarket_uses_2100_taiwan_during_new_york_dst():
@@ -73,13 +114,19 @@ def test_external_dispatch_accepts_the_declared_0845_pre_open_slot():
 
 
 def test_delayed_cron_run_uses_declared_slot_instead_of_runner_time():
-    delayed_runner_time = datetime(2026, 7, 27, 18, 30, tzinfo=ZoneInfo("Asia/Taipei"))
-    assert resolve_slot(
+    delayed_runner_time = datetime(2026, 7, 27, 13, 15, tzinfo=ZoneInfo("Asia/Taipei"))
+    context = resolve_slot_context(
         "auto",
         delayed_runner_time,
-        strict_window=True,
-        scheduled_cron="0 13 * * 1-5",
-    ) == "us_premarket"
+        scheduled_cron="45 0 * * 1-5",
+    )
+    assert context is not None
+    assert context["scheduled_slot"] == "pre_open"
+    assert context["effective_slot"] == "afternoon"
+    assert context["effective_market_phase"] == "afternoon"
+    assert context["delivery_intent"] == "publish_only"
+    assert context["resolution_reason"] == "late_schedule_publish_only"
+    assert int(context["delay_seconds"]) > 30 * 60
 
 
 def test_us_premarket_cron_accepts_the_fixed_2100_slot_all_year():
@@ -97,6 +144,12 @@ def test_delayed_us_premarket_cron_keeps_previous_taipei_slot_date():
     assert context is not None
     assert context["effective_slot"] == "us_premarket"
     assert context["slot_date"] == "2026-09-07"
+    assert context["delivery_intent"] == "publish_only"
+
+
+def test_anchor_key_namespaces_market_and_date():
+    assert anchor_key("post_close", "2026-09-07") == "taiwan:2026-09-07:post_close"
+    assert anchor_key("us_premarket", "2026-09-07") == "us:2026-09-07:us_premarket"
 
 
 def test_brief_uses_slot_label_and_market_direction():

@@ -39,6 +39,7 @@ from src.release_gate import verify_release_for_delivery
 from src.scheduled_brief import (
     _pick_event,
     _write_output,
+    anchor_key,
     briefing_correlation,
     build_brief,
     write_event_lock_key,
@@ -53,10 +54,29 @@ from src.telegram_client import (
 _DEFAULT_CREATOR_RECORDS_PATH = Path("creator/public-records.json")
 
 
+def _briefing_evidence_ready(briefing: dict[str, Any]) -> bool:
+    """Require scheduled Telegram briefs to meet the market evidence floor."""
+    assessment = briefing.get("market_assessment")
+    if not isinstance(assessment, dict):
+        return False
+    if str(assessment.get("confidence") or "").casefold() == "low":
+        return False
+    try:
+        factor_count = int(assessment.get("factor_count") or 0)
+    except (TypeError, ValueError):
+        factor_count = 0
+    dimensions = assessment.get("evidence_dimensions")
+    return factor_count >= 3 and isinstance(dimensions, list) and len(dimensions) >= 2
+
+
 def _briefing_delivery_event(snapshot: dict[str, Any], slot: str) -> dict[str, Any] | None:
     """Project the shared digest into the existing notification contract."""
     briefing = snapshot.get("briefing")
-    if not isinstance(briefing, dict) or briefing.get("notification_eligible") is not True:
+    if (
+        not isinstance(briefing, dict)
+        or briefing.get("notification_eligible") is not True
+        or not _briefing_evidence_ready(briefing)
+    ):
         return None
     public_message = str(briefing.get("public_short_message") or "").strip()
     briefing_id = str(briefing.get("briefing_id") or "").strip()
@@ -66,6 +86,8 @@ def _briefing_delivery_event(snapshot: dict[str, Any], slot: str) -> dict[str, A
     if not isinstance(primary, dict):
         themes = briefing.get("themes")
         primary = themes[0] if isinstance(themes, list) and themes and isinstance(themes[0], dict) else {}
+    assessment_value = briefing.get("market_assessment")
+    assessment: dict[str, Any] = assessment_value if isinstance(assessment_value, dict) else {}
     return {
         "kind": "market_briefing",
         "source_key": "scheduled_brief",
@@ -88,7 +110,18 @@ def _briefing_delivery_event(snapshot: dict[str, Any], slot: str) -> dict[str, A
         "notification_status": "eligible",
         "alert_eligible": True,
         "slot": slot,
+        "alert_lane": "scheduled_brief",
+        "anchor_key": anchor_key(
+            slot,
+            str(((briefing.get("slot_context") or {}).get("slot_date") if isinstance(briefing.get("slot_context"), dict) else "") or datetime.now().astimezone().date().isoformat()),
+        ),
         "notification_key": briefing.get("notification_key"),
+        "decision_fingerprint": briefing.get("decision_fingerprint"),
+        "evidence_fingerprint": briefing.get("evidence_fingerprint"),
+        "market_scope": assessment.get("market_scope"),
+        "material_changes": briefing.get("material_changes") or [],
+        "delivery_eligible": briefing.get("delivery_eligible", True),
+        "suppression_reason": briefing.get("suppression_reason") or "",
     }
 
 
@@ -429,7 +462,40 @@ def _release_alert_ids(manifest_path: Path, manifest: dict[str, Any]) -> set[str
     }
 
 
-def prepare(slot: str, snapshot_path: Path) -> dict:
+def _closed_market_slot_context(
+    snapshot: dict[str, Any], slot: str, context: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Suppress routine non-morning anchors on exchange holidays.
+
+    The clock still determines the report label on a closed day, but only the
+    06:00 morning anchor is a routine delivery.  This check is intentionally
+    applied after the market snapshot is built so the Pages artifact retains
+    the closed-day evidence and the delivery decision remains auditable.
+    """
+    if not isinstance(context, dict) or str(context.get("delivery_intent") or "").strip() != "notify_candidate":
+        return context
+    market_key = "us" if slot == "us_premarket" else "taiwan" if slot in {"pre_open", "post_close"} else ""
+    if not market_key:
+        return context
+    markets = snapshot.get("markets")
+    status = markets.get(market_key) if isinstance(markets, dict) else None
+    slot_date = str(context.get("slot_date") or "").strip()
+    weekend = False
+    try:
+        weekend = datetime.fromisoformat(slot_date).date().weekday() >= 5
+    except ValueError:
+        pass
+    if not weekend and (not isinstance(status, dict) or status.get("is_trading_day") is not False):
+        return context
+    return {
+        **context,
+        "delivery_intent": "publish_only",
+        "suppression_reason": "closed_market_publish_only",
+        "resolution_reason": "closed_market_publish_only",
+    }
+
+
+def prepare(slot: str, snapshot_path: Path, *, slot_context: dict[str, Any] | None = None) -> dict:
     """Create the exact snapshot that will later be deployed and delivered."""
     snapshot = build_market_snapshot()
     external_path = external_observations_path()
@@ -533,18 +599,92 @@ def prepare(slot: str, snapshot_path: Path) -> dict:
     if creator_records:
         snapshot["creator_insights"] = creator_records
     snapshot["briefing"] = build_briefing_snapshot(snapshot, slot)
-    event = _pick_event(snapshot, slot)
-    briefing_event = _briefing_delivery_event(snapshot, slot)
+    effective_context = _closed_market_slot_context(snapshot, slot, slot_context)
+    if isinstance(effective_context, dict):
+        snapshot["briefing"]["slot_context"] = effective_context
+        if str(effective_context.get("delivery_intent") or "").strip() != "notify_candidate":
+            # Keep the full briefing visible on Pages, but do not manufacture
+            # an immutable alert artifact for a publish-only refresh.
+            snapshot["briefing"]["notification_eligible"] = False
+            snapshot["briefing"]["status"] = "suppressed"
+            snapshot["briefing"]["notification_reason"] = str(
+                effective_context.get("suppression_reason")
+                or effective_context.get("resolution_reason")
+                or "delivery_intent_not_notify"
+            )
+    if (
+        isinstance(snapshot.get("briefing"), dict)
+        and str((effective_context or {}).get("delivery_intent") or "notify_candidate") == "notify_candidate"
+        and not _briefing_evidence_ready(snapshot["briefing"])
+    ):
+        # Keep the full evidence record on Pages, but do not turn an
+        # insufficient market state into a generic Telegram placeholder.
+        snapshot["briefing"]["notification_eligible"] = False
+        snapshot["briefing"]["status"] = "suppressed"
+        snapshot["briefing"]["notification_reason"] = "insufficient_market_evidence"
+    # Read the latest delivered decision before publication.  This is a
+    # read-only comparison, so notify=false never consumes the delivery lock.
+    # The result is persisted in the same briefing object that the sender and
+    # Mini App consume.
+    briefing_for_comparison = snapshot.get("briefing")
+    if isinstance(briefing_for_comparison, dict) and isinstance(effective_context, dict):
+        comparison_slot = str(effective_context.get("effective_slot") or slot or "").strip()
+        comparison_date = str(effective_context.get("slot_date") or "").strip()
+        comparison_fingerprint = str(briefing_for_comparison.get("decision_fingerprint") or "").strip()
+        assessment_for_comparison = briefing_for_comparison.get("market_assessment")
+        if (
+            comparison_slot and comparison_date and comparison_fingerprint
+            and isinstance(assessment_for_comparison, dict)
+        ):
+            comparison = EventLedger().scheduled_decision_preview(
+                anchor_key(comparison_slot, comparison_date),
+                decision_fingerprint=comparison_fingerprint,
+                market_scope=str(assessment_for_comparison.get("market_scope") or ""),
+            )
+            briefing_for_comparison.update({
+                "comparison_notification_key": comparison.get("comparison_notification_key") or "",
+                "material_changes": comparison.get("material_changes") or [],
+                "delivery_eligible": comparison.get("delivery_eligible") is True,
+                "suppression_reason": comparison.get("suppression_reason") or "",
+            })
+            if (
+                str(effective_context.get("delivery_intent") or "") == "notify_candidate"
+                and comparison.get("delivery_eligible") is not True
+            ):
+                briefing_for_comparison["notification_eligible"] = False
+                briefing_for_comparison["status"] = "suppressed"
+                briefing_for_comparison["notification_reason"] = str(
+                    comparison.get("suppression_reason") or "same_decision_unchanged"
+                )
+    raw_briefing_record = snapshot.get("briefing")
+    briefing_record: dict[str, Any] = raw_briefing_record if isinstance(raw_briefing_record, dict) else {}
+    briefing_suppressed = bool(
+        briefing_record.get("briefing_id")
+        and briefing_record.get("notification_eligible") is not True
+    )
+    event = None if briefing_suppressed else _pick_event(snapshot, slot)
+    briefing_event = None if briefing_suppressed else _briefing_delivery_event(snapshot, slot)
     decision_event = briefing_event or event
+    context_reason = ""
+    if isinstance(effective_context, dict):
+        context_reason = str(
+            effective_context.get("suppression_reason")
+            or effective_context.get("resolution_reason")
+            or ""
+        ).strip()
+    if briefing_suppressed and not context_reason:
+        context_reason = str(briefing_record.get("notification_reason") or "").strip()
     prepared_reason = (
-        "candidate_ready"
+        context_reason
+        if context_reason and str((effective_context or {}).get("delivery_intent") or "") != "notify_candidate"
+        else "candidate_ready"
         if decision_event
         else str((snapshot.get("briefing") or {}).get("notification_reason") or "no_eligible_candidate")
     )
     prepared_decision = decision_summary(
         event=decision_event,
         scan_status="completed",
-        notification_expected=bool(decision_event),
+        notification_expected=bool(decision_event) and not context_reason,
         notification_status=prepared_reason,
         notification_reason=prepared_reason,
     )
@@ -631,6 +771,45 @@ def send(
     release_alert_ids = _release_alert_ids(manifest_path, gate.manifest)
     briefing_raw = snapshot.get("briefing")
     briefing: dict[str, Any] = briefing_raw if isinstance(briefing_raw, dict) else {}
+    raw_slot_context = briefing.get("slot_context")
+    slot_context: dict[str, Any] = raw_slot_context if isinstance(raw_slot_context, dict) else {}
+    delivery_intent = str(slot_context.get("delivery_intent") or "").strip()
+    if delivery_intent and delivery_intent != "notify_candidate":
+        reason = str(slot_context.get("resolution_reason") or "delivery_intent_not_notify")
+        _write_decision_output(
+            {
+                "sent": "false",
+                "delivery_status": "suppressed",
+                "reason": reason,
+                "notification_expected": "false",
+                "notification_status": "suppressed",
+                "notification_reason": reason,
+                "last_receipt_status": "not_attempted",
+            },
+            notification_status="suppressed",
+            notification_reason=reason,
+            notification_expected=False,
+            last_receipt_status="not_attempted",
+        )
+        return
+    if briefing.get("briefing_id") and briefing.get("notification_eligible") is not True:
+        reason = str(briefing.get("notification_reason") or "briefing_not_eligible")
+        _write_decision_output(
+            {
+                "sent": "false",
+                "delivery_status": "suppressed",
+                "reason": reason,
+                "notification_expected": "false",
+                "notification_status": "suppressed",
+                "notification_reason": reason,
+                "last_receipt_status": "not_attempted",
+            },
+            notification_status="suppressed",
+            notification_reason=reason,
+            notification_expected=False,
+            last_receipt_status="not_attempted",
+        )
+        return
     briefing_event = _briefing_delivery_event(snapshot, slot)
     if briefing_event is not None:
         briefing_id = str(briefing_event.get("notification_id") or "")
@@ -671,9 +850,19 @@ def send(
     if not settings.telegram_ready:
         raise RuntimeError("Telegram configuration is incomplete")
     event_risk = canonical_prstk_risk_level(event)
-    effective_slot_key = str(slot_key or os.getenv("SCHEDULED_SLOT_KEY") or f"{datetime.now().astimezone().date().isoformat()}-{slot}")
+    effective_slot_key = str(
+        slot_key
+        or os.getenv("SCHEDULED_SLOT_KEY")
+        or anchor_key(slot, datetime.now().astimezone().date().isoformat())
+    )
     effective_run_id = str(run_id or os.getenv("GITHUB_RUN_ID", ""))
     notification_key = notification_key_for_event(event, slot_key=effective_slot_key)
+    decision_fingerprint = str(
+        event.get("decision_fingerprint")
+        or briefing.get("decision_fingerprint")
+        or briefing.get("canonical_content_hash")
+        or notification_key
+    ).strip()
     send_chat_ids = settings.telegram_chat_ids
     if not notification_key:
         _write_decision_output({"sent": "false", "delivery_status": "suppressed", "reason": "notification_key_missing"}, notification_status="suppressed", notification_reason="notification_key_missing")
@@ -724,19 +913,45 @@ def send(
             last_receipt_status="not_attempted",
         )
         return
+    claim: dict[str, Any] = {}
     if str(event.get("source_key") or event.get("source") or "").strip().casefold() != "financialjuice":
-        claim = (
-            ledger.claim_notification(
-                notification_key,
-                slot_key=effective_slot_key,
-                recipient_hashes=tuple(recipient_hash(chat_id) for chat_id in settings.telegram_chat_ids),
+        recipient_hashes = tuple(recipient_hash(chat_id) for chat_id in settings.telegram_chat_ids)
+        if hasattr(ledger, "claim_scheduled_brief"):
+            claim = ledger.claim_scheduled_brief(
+                effective_slot_key,
+                decision_fingerprint=decision_fingerprint,
+                market_scope=str((briefing.get("market_assessment") or {}).get("market_scope") or ""),
+                evidence_fingerprint=str(briefing.get("evidence_fingerprint") or ""),
+                material_changes=tuple(
+                    str(item) for item in briefing.get("material_changes") or []
+                    if str(item).strip()
+                ),
+                recipient_hashes=recipient_hashes,
                 run_id=effective_run_id,
             )
-            if hasattr(ledger, "claim_notification") else {"status": "claimed"}
-        )
+        elif hasattr(ledger, "claim_notification"):
+            claim = ledger.claim_notification(
+                notification_key,
+                slot_key=effective_slot_key,
+                recipient_hashes=recipient_hashes,
+                run_id=effective_run_id,
+            )
+        else:
+            # Minimal test/compatibility doubles predate the scheduled-anchor
+            # claim API. The real EventLedger always takes one of the paths.
+            claim = {"status": "claimed", "pending_recipient_hashes": []}
         if claim.get("status") != "claimed":
             _write_decision_output(
-                {"sent": "false", "delivery_status": "suppressed", "reason": f"notification_{claim.get('status', 'blocked')}", "notification_key": notification_key},
+                {
+                    "sent": "false",
+                    "delivery_status": "suppressed",
+                    "reason": f"notification_{claim.get('status', 'blocked')}",
+                    "notification_key": notification_key,
+                    "comparison_notification_key": claim.get("comparison_notification_key") or "",
+                    "material_changes": claim.get("material_changes") or [],
+                    "delivery_eligible": False,
+                    "suppression_reason": claim.get("suppression_reason") or f"notification_{claim.get('status', 'blocked')}",
+                },
                 event=event, notification_status="suppressed", notification_reason=f"notification_{claim.get('status', 'blocked')}", last_receipt_status=str(claim.get("status") or "blocked"),
             )
             return
@@ -780,7 +995,10 @@ def send(
             )
     except (OSError, ValueError) as exc:
         if event is None or str(event.get("source_key") or event.get("source") or "").strip().casefold() != "financialjuice":
-            ledger.complete_notification_claim(notification_key, uncertain=True)
+            ledger.complete_notification_claim(
+                claim.get("notification_key") or notification_key,
+                uncertain=True,
+            )
         _write_decision_output(
             {"sent": "false", "delivery_status": "blocked", "reason": "text_delivery_failed", "error_type": type(exc).__name__, "release_id": gate.release_id, "snapshot_id": snapshot_id, "trace_id": trace_id, "risk": event_risk},
             event=event, notification_status="failed", notification_reason="text_delivery_failed",
@@ -869,7 +1087,7 @@ def send(
         failed_recipient_hashes = [delivery.chat_id_hash for delivery in deliveries if delivery.status != "delivered"]
         if hasattr(ledger, "complete_notification_claim"):
             ledger.complete_notification_claim(
-                notification_key,
+                claim.get("notification_key") or notification_key,
                 delivered_recipient_hashes=tuple(delivery.chat_id_hash for delivery in deliveries if delivery.status == "delivered"),
                 failed_recipient_hashes=tuple(delivery.chat_id_hash for delivery in deliveries if delivery.status != "delivered"),
             )
@@ -893,6 +1111,10 @@ def send(
         "notification_expected": "true",
         "notification_status": ("ready" if delivery_status == "delivered" else delivery_status),
         "notification_reason": ("sent" if delivery_status == "delivered" else "recipient_delivery_partial" if delivery_status == "partial" else "recipient_delivery_failed") if event else "no_trigger",
+        "comparison_notification_key": claim.get("comparison_notification_key") if isinstance(claim, dict) else "",
+        "material_changes": claim.get("material_changes") if isinstance(claim, dict) else [],
+        "delivery_eligible": True,
+        "suppression_reason": "",
         "event_key": alert_id,
         "risk": event_risk,
     }
@@ -950,6 +1172,7 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, default=Path("site/data/release-manifest.json"))
     parser.add_argument("--public-url", default=None)
     parser.add_argument("--slot-key", default=None)
+    parser.add_argument("--slot-context", default=None)
     parser.add_argument(
         "--require-production-research",
         action="store_true",
@@ -959,7 +1182,14 @@ def main() -> int:
     if args.prepare_only == args.send_only:
         parser.error("choose exactly one of --prepare-only or --send-only")
     if args.prepare_only:
-        prepare(args.slot, args.snapshot)
+        context = None
+        if args.slot_context:
+            try:
+                parsed = json.loads(args.slot_context)
+                context = parsed if isinstance(parsed, dict) else None
+            except (TypeError, ValueError):
+                parser.error("--slot-context must be a JSON object")
+        prepare(args.slot, args.snapshot, slot_context=context)
     else:
         send(
             args.snapshot,

@@ -236,14 +236,19 @@ def _briefing_projection(
         "short_label": "市場判讀",
         "event": primary_event,
         "linked_markets": [str(item.get("ticker")).strip() for item in primary_quote_evidence if str(item.get("ticker") or "").strip()],
-        "why_important": primary.get("why_important") or "本次事件已完成公開來源核對。",
-        "possible_linkage": primary.get("market_implication") or "等待相關市場價格與後續公開資料核對，不直接推定因果。",
-        "stock_observation": primary.get("stock_observation") or "持續核對台美主要指數、利率與相關產業價格。",
+        # Quote-led briefings do not have an event narrative.  Do not
+        # manufacture the former generic three-line template in the
+        # immutable projection; the structured briefing is the source of
+        # truth for the current renderer.
+        "why_important": primary.get("why_important") or "",
+        "possible_linkage": primary.get("market_implication") or "",
+        "stock_observation": primary.get("stock_observation") or "",
         "market_assessment": briefing.get("market_assessment") or {},
         "market_evidence": primary_quote_evidence,
         "source_evidence": source_evidence,
         "briefing": {
             "slot": briefing.get("slot"),
+            "slot_context": briefing.get("slot_context") or {},
             "as_of": briefing.get("as_of"),
             "themes": themes,
             "primary_theme": primary,
@@ -255,6 +260,15 @@ def _briefing_projection(
             "source_evidence": source_evidence,
             "quote_evidence": primary_quote_evidence,
             "market_assessment": briefing.get("market_assessment") or {},
+            "decision_fingerprint": briefing.get("decision_fingerprint"),
+            "decision_material": briefing.get("decision_material") or {},
+            "evidence_fingerprint": briefing.get("evidence_fingerprint"),
+            "evidence_material": briefing.get("evidence_material") or {},
+            "summary_facts": briefing.get("summary_facts") or [],
+            "comparison_notification_key": briefing.get("comparison_notification_key") or "",
+            "material_changes": briefing.get("material_changes") or [],
+            "delivery_eligible": briefing.get("delivery_eligible"),
+            "suppression_reason": briefing.get("suppression_reason") or "",
         },
         "notification_status": briefing.get("status"),
         "notification_reason": briefing.get("notification_reason"),

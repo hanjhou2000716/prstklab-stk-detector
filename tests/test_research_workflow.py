@@ -60,9 +60,9 @@ def test_incomplete_research_cannot_publish_data_release_after_market_refresh():
     assert "publish=false" in workflow
 
 
-def test_post_close_brief_is_scheduled_for_1445_taipei_time():
+def test_post_close_brief_is_scheduled_for_1420_taipei_time():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
-    assert 'cron: "45 6 * * 1-5"' in workflow
+    assert 'cron: "20 6 * * 1-5"' in workflow
 
 
 def test_research_scan_uses_exchange_close_slots_instead_of_old_fixed_morning_run():

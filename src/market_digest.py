@@ -52,6 +52,7 @@ _TICKER_NAMES = {
     "ETH": "ETH",
 }
 _TICKER_ALIASES = {
+    "TPEX": "TPEx",
     "NASDAQ綜合指數": "NASDAQ",
     "那斯達克": "NASDAQ",
     "那斯達克綜合指數": "NASDAQ",
@@ -355,6 +356,7 @@ def _theme_for_event(event: dict[str, Any], fact: str, snapshot_quotes: list[dic
     why = _clean_text(event.get("why_important") or event.get("importance_detail") or event.get("trigger"))
     impact = _clean_text(event.get("possible_linkage") or event.get("possible_impact") or event.get("market_context"))
     watch = _clean_text(event.get("stock_observation") or event.get("watch") or event.get("follow_up_observation"))
+    detail_eligible = bool(why and impact and watch)
     source_evidence = _source_evidence(event, source)
     quote_evidence = _bind_event_quotes(event, snapshot_quotes or [])
     canonical_event_key = _event_key(event, fact)
@@ -364,9 +366,10 @@ def _theme_for_event(event: dict[str, Any], fact: str, snapshot_quotes: list[dic
         "title": topic_label(market_topic),
         "market_topic": market_topic,
         "what_happened": public_fact,
-        "why_important": why or "事件事實已完成公開來源核對。",
-        "market_implication": impact or "等待相關市場價格與後續公開資料核對，不直接推定因果。",
-        "stock_observation": watch or "持續觀察台美主要指數、利率與相關產業價格。",
+        "why_important": why,
+        "market_implication": impact,
+        "stock_observation": watch,
+        "detail_eligible": detail_eligible,
         "evidence": source_evidence,
         "source_evidence": source_evidence,
         "quote_evidence": quote_evidence,
@@ -396,6 +399,8 @@ def _theme_for_event(event: dict[str, Any], fact: str, snapshot_quotes: list[dic
         "publisher_removed": normalized.get("publisher_removed", False),
         "normalization_ruleset": normalized.get("normalization_ruleset"),
         "normalization_complete": normalized.get("normalization_complete", False),
+        "official_confirmed": event.get("official_confirmed") is True or event.get("official_confirmation") is True,
+        "market_sync_confirmed": event.get("market_sync_confirmed") is True or event.get("market_confirmation") is True,
     }
 
 
@@ -430,6 +435,7 @@ def _theme_for_quotes(items: list[dict[str, Any]]) -> dict[str, Any] | None:
         "canonical_event_key": hashlib.sha256("|".join(clauses[:3]).encode("utf-8")).hexdigest()[:20],
         "source": "市場報價",
         "published_at": next((item.get("quote_time") or item.get("quote_date") for item in items if _usable_quote(item)), None),
+        "detail_eligible": True,
     }
 
 
@@ -615,10 +621,10 @@ def build_market_digest(
         item for item in [*(snapshot.get("indices") or []), *(snapshot.get("quotes") or []), *(snapshot.get("macro_quotes") or [])]
         if isinstance(item, dict)
     ]
-    quote_priority = ["NASDAQ", "SOX", "DJIA", "TAIEX", "US10Y", "DXY", "GOLD", "WTI"]
+    quote_priority = ["NASDAQ", "SOX", "DJIA", "TAIEX", "TPEx", "US10Y", "DXY", "GOLD", "WTI"]
     quote_items = sorted(
-        [item for item in all_quotes if str(item.get("ticker") or "") in quote_priority],
-        key=lambda item: quote_priority.index(str(item.get("ticker") or "")),
+        [item for item in all_quotes if _normalise_ticker(item.get("ticker")) in quote_priority],
+        key=lambda item: quote_priority.index(_normalise_ticker(item.get("ticker"))),
     )
     quote_theme = _theme_for_quotes(quote_items)
     # Quote evidence belongs to an event only when the event carries a
@@ -627,7 +633,16 @@ def build_market_digest(
     # and SOX cards merely because they happen to be present in the snapshot.
     event_themes = [_theme_for_event(event, fact, all_quotes) for event, fact in candidates]
     event_themes = [theme for theme in event_themes if theme.get("normalization_complete")]
-    primary_theme = event_themes[0] if event_themes else quote_theme
+    # A headline becomes the report's main cause only when it has complete
+    # context and either event-specific price evidence or explicit official
+    # confirmation.  Otherwise the current market quotes own the first
+    # screen and the article remains supporting evidence.
+    lead_event_themes = [
+        theme for theme in event_themes
+        if theme.get("detail_eligible") is True
+        and (theme.get("quote_evidence") or theme.get("official_confirmed") is True)
+    ]
+    primary_theme = lead_event_themes[0] if lead_event_themes else quote_theme or (event_themes[0] if event_themes else None)
     if primary_theme is None:
         return {
             "status": "suppressed",
@@ -645,9 +660,10 @@ def build_market_digest(
             "quote_evidence": [],
         }
     themes = [primary_theme]
+    primary_key = str(primary_theme.get("canonical_event_key") or "")
     event_secondary_themes = [
-        theme for theme in event_themes[1:]
-        if theme.get("canonical_event_key") != primary_theme.get("canonical_event_key")
+        theme for theme in event_themes
+        if str(theme.get("canonical_event_key") or "") != primary_key
     ]
     secondary_themes = list(event_secondary_themes)
     if quote_theme and not primary_theme.get("quote_evidence"):
@@ -658,7 +674,7 @@ def build_market_digest(
     # event's public narrative.  Keep quote-only briefings meaningful, while
     # preventing a refreshed quote from changing the identity of an event
     # briefing or making the Telegram summary oscillate between runs.
-    summary_themes = _dedupe_market_topics(event_themes)[:3] if event_themes else [quote_theme]
+    summary_themes = _dedupe_market_topics([primary_theme, *event_secondary_themes])[:3]
 
     secondary_signals: list[dict[str, Any]] = []
     seen_secondary: set[str] = {str(primary_theme.get("canonical_event_key") or "")}
@@ -681,6 +697,9 @@ def build_market_digest(
             "prstk_risk_level": theme.get("prstk_risk_level"),
             "notification_status": theme.get("notification_status"),
             "vendor_importance": theme.get("vendor_importance"),
+            "detail_eligible": theme.get("detail_eligible") is True,
+            "official_confirmed": theme.get("official_confirmed") is True,
+            "market_sync_confirmed": theme.get("market_sync_confirmed") is True,
             "source_event_keys": theme.get("source_event_keys") or [],
             "rank_reason": "重要度／核對狀態／發布時間／穩定事件鍵",
         })
@@ -712,6 +731,7 @@ def build_market_digest(
         quotes=quote_items,
         themes=summary_themes,
         intelligence=intelligence,
+        market_status=snapshot.get("markets") if isinstance(snapshot.get("markets"), dict) else None,
     )
     overview = project_overview(assessment, DASHBOARD_SUMMARY_MAX_CHARS)
     public_message = project_public_message(label, assessment, PUBLIC_MESSAGE_MAX_CHARS)
@@ -719,6 +739,9 @@ def build_market_digest(
         public_message = ""
 
     canonical_material = {
+        # Slot labels are presentation metadata.  Cross-anchor delivery
+        # coalescing uses ``decision_fingerprint`` below, so changing from
+        # morning to pre-open cannot by itself manufacture a new decision.
         "slot": slot,
         # The detailed market-highlights sentence is quote hydration.  Keep
         # the conclusion/risk projection in the identity, but do not let a
@@ -732,7 +755,11 @@ def build_market_digest(
         # identity.  Keep the values in the artifact, but exclude them from
         # the content hash so a refreshed quote cannot resend the same event.
         "market_assessment": {
-            key: value for key, value in assessment.items()
+            key: (
+                {str(group): sorted(str(sign) for sign in signs) for group, signs in value.items()}
+                if key == "evidence_groups" and isinstance(value, dict)
+                else value
+            ) for key, value in assessment.items()
             if key not in {
                 "evidence_as_of", "factor_count", "evidence_dimensions",
                 "score", "factor_source", "directional_quote_count",
@@ -750,6 +777,71 @@ def build_market_digest(
             if theme and theme.get("title") != "市場價格"
         ],
     }
+    decision_themes: list[dict[str, str]] = []
+    for theme in summary_themes:
+        if not theme:
+            continue
+        if theme.get("title") == "市場價格":
+            decision_themes.append({"market_topic": "global_market", "kind": "quote_state"})
+            continue
+        material_event = theme.get("detail_eligible") is True and (
+            theme.get("official_confirmed") is True
+            or theme.get("market_sync_confirmed") is True
+            or str(theme.get("prstk_risk_level") or "").upper() in {"R3", "R4"}
+        )
+        if material_event:
+            decision_themes.append({
+                "canonical_event_key": str(theme.get("canonical_event_key") or ""),
+                "market_topic": str(theme.get("market_topic") or ""),
+                "kind": "material_event",
+            })
+    decision_material = {
+        "stance": assessment.get("stance"),
+        "market_scope": assessment.get("market_scope"),
+        "dominant_driver": assessment.get("dominant_driver"),
+        "dominant_driver_key": assessment.get("dominant_driver_key"),
+        "conflict_flags": assessment.get("conflict_flags") or [],
+        "supporting_theme_keys": [
+            str(theme.get("canonical_event_key") or theme.get("event_key") or "")
+            for theme in summary_themes
+            if theme.get("detail_eligible") is True
+            and (
+                theme.get("official_confirmed") is True
+                or theme.get("market_sync_confirmed") is True
+                or str(theme.get("prstk_risk_level") or "").upper() in {"R3", "R4"}
+            )
+        ],
+        "evidence_groups": {
+            str(key): sorted(str(value) for value in values)
+            for key, values in (assessment.get("evidence_groups") or {}).items()
+        },
+        "themes": decision_themes,
+    }
+    decision_fingerprint = hashlib.sha256(
+        json.dumps(decision_material, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    evidence_material = {
+        "quotes": [
+            {
+                key: item.get(key)
+                for key in ("ticker", "price", "change_percent", "quote_date", "quote_time", "source_label", "quote_source")
+                if item.get(key) not in (None, "")
+            }
+            for item in sorted(_quote_evidence(quote_items), key=lambda row: str(row.get("ticker") or ""))
+        ],
+        "events": [
+            {
+                "canonical_event_key": theme.get("canonical_event_key"),
+                "published_at": theme.get("published_at"),
+                "source_evidence": theme.get("source_evidence") or [],
+            }
+            for theme in summary_themes
+            if theme and theme.get("detail_eligible") is True
+        ],
+    }
+    evidence_fingerprint = hashlib.sha256(
+        json.dumps(evidence_material, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
     content_hash = hashlib.sha256(
         json.dumps(canonical_material, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
@@ -764,6 +856,10 @@ def build_market_digest(
         "trace_id": f"briefing-trace-{slot}-{content_hash[:16]}",
         "canonical_content_hash": content_hash,
         "canonical_hash_version": 2,
+        "decision_fingerprint": decision_fingerprint,
+        "evidence_fingerprint": evidence_fingerprint,
+        "evidence_material": evidence_material,
+        "decision_material": decision_material,
         "assessment_summary": overview,
         "overview": overview,
         "market_assessment": assessment,

@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 from src.alert_budget import decide_alert_budget
 from src.alert_orchestrator import content_is_incomplete, notification_key_for_event, recipient_hash
 from src.config import get_settings
+from src.event_alert_policy import decide_event_alert_policy, event_market_scope
 from src.event_ledger import (
     EventLedger,
     canonical_event_key,
@@ -631,6 +632,32 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         # Legacy test/adapter doubles may not expose the new arbiter.  Keep
         # their path safe without resurrecting a production cooldown gate.
         _observe_event(event)
+    event_policy = decide_event_alert_policy(event, ledger.delivery_history())
+    if not event_policy.get("allowed", False):
+        policy_event = {
+            **event,
+            "event_key": current_key,
+            "alert_lane": "event",
+            "market_scope": event_policy.get("market_scope") or event_market_scope(event),
+            "event_policy_reason": event_policy.get("reason"),
+        }
+        if hasattr(ledger, "record_decision"):
+            ledger.record_decision(policy_event, {**event_policy, "status": "suppressed", "reasons": [str(event_policy.get("reason") or "event_policy_suppressed")]})
+            ledger.save()
+        write_send_output(
+            False,
+            f"event_policy:{event_policy.get('reason', 'suppressed')}",
+            event=policy_event,
+            notification_status="suppressed",
+        )
+        print(f"Official event suppressed by event policy: {event_policy.get('reason', 'suppressed')}")
+        return False
+    event = {
+        **event,
+        "alert_lane": "event",
+        "market_scope": event_policy.get("market_scope") or event_market_scope(event),
+        "event_policy_reason": event_policy.get("reason"),
+    }
     budget_event = {**event, "event_key": current_key}
     budget = decide_alert_budget(budget_event, ledger.delivery_history())
     if not budget.get("allowed", False):

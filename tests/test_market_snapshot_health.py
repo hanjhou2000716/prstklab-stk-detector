@@ -42,6 +42,10 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
     # preceding MOPS/provenance fixes are merged into main.  This test is
     # scoped to the risk-provider error, not public crypto availability.
     monkeypatch.setattr("src.market_data.apply_crypto_spot_crosscheck", lambda indices, _spot: indices)
+    monkeypatch.setattr("src.taiwan_market_statistics.fetch_twse_market_statistics", lambda **_kwargs: {
+        "status": "complete", "errors": [], "turnover": {}, "breadth": {},
+        "institutional_flows": {}, "observed_date": "2026-09-07", "is_proxy": False,
+    })
     monkeypatch.setattr("src.market_data.apply_crypto_spot_crosscheck", lambda indices, _spot: indices)
     monkeypatch.setattr("src.research_cards.load_research_cards", lambda: {
         "status": "研究報告", "sources": [], "candidates": [{

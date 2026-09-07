@@ -134,6 +134,17 @@ def test_briefing_report_renders_fail_closed_intelligence_context():
     assert ".briefing-intelligence" in styles
 
 
+def test_briefing_cards_use_red_structured_labels_and_expandable_source_summary():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
+
+    assert "briefing-analysis-label" in app
+    assert "briefing-fact-row" in app
+    assert "briefing-evidence" in app
+    assert "來源｜" in app
+    assert "#b42318" in styles
+
+
 def test_event_timeline_and_feedback_are_optional_and_non_policy_mutating():
     page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
