@@ -166,6 +166,44 @@ def test_scheduled_briefing_projection_preserves_primary_semantics_and_real_quot
     assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 
+def test_scheduled_briefing_projection_carries_decision_comparison_contract(tmp_path):
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["briefing"] = {
+        "slot": "morning",
+        "briefing_id": "briefing-comparison-contract",
+        "notification_eligible": True,
+        "status": "ready",
+        "public_short_message": "📊晨報｜市場偏多；台股核心證據同步。",
+        "canonical_content_hash": "e" * 64,
+        "primary_theme": {"title": "市場價格", "what_happened": "台股核心證據同步。"},
+        "decision_fingerprint": "decision-a",
+        "evidence_fingerprint": "evidence-a",
+        "evidence_material": {"quotes": ["TAIEX"]},
+        "summary_facts": [{"label": "市場狀態", "value": "偏多"}],
+        "comparison_notification_key": "scheduled-anchor:taiwan:2026-09-08:morning",
+        "material_changes": ["initial_market_decision"],
+        "delivery_eligible": True,
+        "suppression_reason": "",
+    }
+    market_path.write_text(json.dumps(market, ensure_ascii=False), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+    index = json.loads((tmp_path / "site" / "data" / "alert-index.json").read_text(encoding="utf-8"))
+    row = next(item for item in index["alerts"] if item["notification_id"] == "briefing-comparison-contract")
+    artifact = json.loads((tmp_path / "site" / "data" / row["path"]).read_text(encoding="utf-8"))
+
+    projection = artifact["briefing"]
+    assert projection["decision_fingerprint"] == "decision-a"
+    assert projection["evidence_fingerprint"] == "evidence-a"
+    assert projection["summary_facts"][0]["label"] == "市場狀態"
+    assert projection["comparison_notification_key"].startswith("scheduled-anchor:")
+    assert projection["delivery_eligible"] is True
+    assert projection["suppression_reason"] == ""
+    assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
 def test_new_briefing_projection_does_not_fallback_to_generic_top_level_quotes():
     artifact = _briefing_projection(
         {

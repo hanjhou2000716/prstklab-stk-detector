@@ -117,6 +117,30 @@ def test_digest_uses_only_public_gate_stories_from_new_intelligence_envelope():
     assert all("不應進入摘要" not in theme["what_happened"] for theme in result["themes"])
 
 
+def test_ordinary_news_replacement_does_not_change_scheduled_decision_fingerprint():
+    def snapshot(title):
+        return {
+            "generated_at": "2026-09-07T01:00:00+00:00",
+            "news": {"intelligence": {"us": {"stories": [{
+                "title": title,
+                "summary": "市場新聞更新，尚無完整價格傳導證據。",
+                "canonical_url": "https://news.example/story",
+                "public_news_eligible": True,
+                "normalization_complete": True,
+            }]}}},
+            "indices": [
+                {"ticker": "TAIEX", "price": 26000, "change_percent": 0.8, "quote_date": "2026-09-07"},
+                {"ticker": "TPEx", "price": 300, "change_percent": 0.6, "quote_date": "2026-09-07"},
+                {"ticker": "NASDAQ", "price": 20000, "change_percent": -0.29, "quote_date": "2026-09-04"},
+                {"ticker": "SOX", "price": 5000, "change_percent": 3.37, "quote_date": "2026-09-04"},
+            ],
+        }
+
+    first = build_market_digest(snapshot("普通市場新聞甲"), "morning")
+    second = build_market_digest(snapshot("普通市場新聞乙"), "morning")
+    assert first["decision_fingerprint"] == second["decision_fingerprint"]
+
+
 def test_digest_rejects_legacy_news_event_rows_even_if_they_claim_public_eligibility():
     result = build_market_digest(
         {
@@ -253,7 +277,11 @@ def test_digest_does_not_attach_unrelated_snapshot_quotes_to_an_event():
         "us_premarket",
     )
 
-    assert result["primary_theme"]["quote_evidence"] == []
+    # Without event-specific references, the quote-led market theme owns the
+    # first screen; the unrelated FJ item remains supporting evidence.
+    assert result["primary_theme"]["title"] == "市場價格"
+    event_theme = next(theme for theme in result["themes"] if theme.get("source") == "FinancialJuice")
+    assert event_theme["quote_evidence"] == []
     assert not any(signal.get("source") == "市場報價" for signal in result["secondary_signals"])
 
 

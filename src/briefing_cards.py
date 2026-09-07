@@ -295,6 +295,70 @@ def _morning_confidence(evidence_count: int, missing: bool = False) -> str:
     return "low"
 
 
+def _briefing_summary_facts(
+    digest: dict[str, Any], risk: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Build the compact, structured facts shown above the briefing cards."""
+    assessment_value = digest.get("market_assessment")
+    assessment: dict[str, Any] = assessment_value if isinstance(assessment_value, dict) else {}
+    sections_value = assessment.get("summary_sections")
+    sections: dict[str, Any] = sections_value if isinstance(sections_value, dict) else {}
+    confidence = str(assessment.get("confidence") or "low").strip().casefold()
+    confidence_labels = {"high": "高", "medium": "中", "low": "低"}
+    quote_evidence = [item for item in (digest.get("quote_evidence") or []) if isinstance(item, dict)]
+    primary = digest.get("primary_theme") if isinstance(digest.get("primary_theme"), dict) else {}
+    facts: list[dict[str, Any]] = [
+        {
+            "key": "market_status",
+            "label": "市場狀態",
+            "value": str(assessment.get("stance_label") or "分歧"),
+            "evidence_refs": quote_evidence[:3],
+        },
+        {
+            "key": "confidence",
+            "label": "信心",
+            "value": confidence_labels.get(confidence, confidence or "低"),
+            "raw_value": confidence,
+            "evidence_refs": quote_evidence[:3],
+        },
+    ]
+    highlights = str(sections.get("market_highlights") or "").strip()
+    if highlights:
+        facts.append({
+            "key": "quote_comparison",
+            "label": "行情比較",
+            "value": highlights,
+            "evidence_refs": quote_evidence[:3],
+        })
+    risk_item = risk.get("us") if isinstance(risk, dict) else None
+    risk_sentiment = risk_item.get("sentiment") if isinstance(risk_item, dict) else None
+    risk_label = str(risk_sentiment.get("label") or "").strip() if isinstance(risk_sentiment, dict) else ""
+    if risk_label:
+        facts.append({
+            "key": "us_risk_sentiment",
+            "label": "美股風險情緒",
+            "value": risk_label,
+            "evidence_refs": [],
+        })
+    # A news headline is allowed into the compact summary only when the
+    # canonical theme carries complete decision context.  Quote-led reports
+    # therefore do not force an unrelated article into the reader's first
+    # screen.
+    if (
+        primary
+        and str(primary.get("title") or "") != "市場價格"
+        and primary.get("detail_eligible") is True
+        and str(primary.get("what_happened") or "").strip()
+    ):
+        facts.append({
+            "key": "primary_event",
+            "label": "主要事件",
+            "value": str(primary.get("what_happened") or "").strip(),
+            "evidence_refs": [item for item in (primary.get("source_evidence") or []) if isinstance(item, dict)][:3],
+        })
+    return facts
+
+
 def _morning_analysis(
     items: dict[str, dict[str, Any]],
     risk: dict[str, Any],
@@ -418,6 +482,8 @@ def _morning_analysis(
             semiconductor_evidence.append(evidence)
     primary_theme = themes[0] if themes and isinstance(themes[0], dict) else {}
     theme_fact = str(primary_theme.get("what_happened") or primary_theme.get("normalized_fact") or "").strip()
+    if primary_theme.get("detail_eligible") is not True or str(primary_theme.get("title") or "") == "市場價格":
+        theme_fact = ""
     if theme_fact and str(primary_theme.get("market_topic") or "") == "semiconductor_ai":
         semiconductor_lines.append(f"合格事件：{theme_fact}")
 
@@ -719,6 +785,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         "assessment_summary": digest.get("assessment_summary", ""),
         "market_assessment": digest.get("market_assessment", {}),
         "morning_analysis": morning_analysis,
+        "summary_facts": _briefing_summary_facts(digest, risk),
         "public_short_message": digest.get("public_short_message", ""),
         "digest_status": digest.get("status", "suppressed"),
         "notification_eligible": digest.get("notification_eligible", False),
@@ -728,6 +795,8 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         "canonical_content_hash": digest.get("canonical_content_hash", ""),
         "canonical_hash_version": digest.get("canonical_hash_version", 1),
         "decision_fingerprint": digest.get("decision_fingerprint", ""),
+        "evidence_fingerprint": digest.get("evidence_fingerprint", ""),
+        "evidence_material": digest.get("evidence_material", {}),
         "themes": digest.get("themes", []),
         "primary_theme": digest.get("primary_theme"),
         "secondary_signals": digest.get("secondary_signals", []),

@@ -150,6 +150,77 @@ def test_scheduled_anchor_claim_is_unique_and_coalesces_same_decision(tmp_path):
     assert second.claim_scheduled_brief("taiwan:2026-09-07:morning", decision_fingerprint="decision-1", recipient_hashes=("r",))["status"] == "same_decision"
 
 
+def test_scheduled_decision_compares_only_latest_market_state_for_a_b_a(tmp_path):
+    ledger = EventLedger(tmp_path / "ledger.json")
+    first = datetime(2026, 9, 7, 1, 0, tzinfo=UTC)
+    first_claim = ledger.claim_scheduled_brief(
+        "taiwan:2026-09-07:morning",
+        decision_fingerprint="state-a",
+        market_scope="台股",
+        recipient_hashes=("r",),
+        now=first,
+    )
+    assert first_claim["status"] == "claimed"
+    ledger.complete_notification_claim(
+        first_claim["notification_key"], delivered_recipient_hashes=("r",), now=first,
+    )
+    second_claim = ledger.claim_scheduled_brief(
+        "taiwan:2026-09-07:post_close",
+        decision_fingerprint="state-b",
+        market_scope="台股",
+        recipient_hashes=("r",),
+        now=first.replace(hour=7),
+    )
+    assert second_claim["status"] == "claimed"
+    ledger.complete_notification_claim(
+        second_claim["notification_key"], delivered_recipient_hashes=("r",), now=first.replace(hour=7),
+    )
+    # Returning to A is a new decision relative to the immediately previous
+    # B state; old fingerprints are retained for audit, not permanent bans.
+    third_claim = ledger.claim_scheduled_brief(
+        "taiwan:2026-09-08:morning",
+        decision_fingerprint="state-a",
+        market_scope="台股",
+        recipient_hashes=("r",),
+        now=first.replace(day=8),
+    )
+    assert third_claim["status"] == "claimed"
+
+
+def test_scheduled_decision_preview_is_read_only(tmp_path):
+    ledger = EventLedger(tmp_path / "ledger.json")
+    preview = ledger.scheduled_decision_preview(
+        "taiwan:2026-09-07:morning",
+        decision_fingerprint="state-a",
+        market_scope="台股",
+    )
+    assert preview["delivery_eligible"] is True
+    assert ledger.delivery_claims == {}
+
+
+def test_unreadable_ledger_fails_closed_for_scheduled_preview_and_claim(tmp_path):
+    path = tmp_path / "ledger.json"
+    path.write_text("{not-json", encoding="utf-8")
+    ledger = EventLedger(path)
+
+    preview = ledger.scheduled_decision_preview(
+        "taiwan:2026-09-08:morning",
+        decision_fingerprint="state-a",
+        market_scope="台股",
+    )
+    assert preview["delivery_eligible"] is False
+    assert preview["suppression_reason"] == "ledger_unreadable"
+
+    claim = ledger.claim_scheduled_brief(
+        "taiwan:2026-09-08:morning",
+        decision_fingerprint="state-a",
+        market_scope="台股",
+        recipient_hashes=("r",),
+    )
+    assert claim["status"] == "suppressed"
+    assert claim["suppression_reason"] == "ledger_unreadable"
+
+
 def test_unchanged_theme_stays_suppressed_after_two_hours(tmp_path):
     ledger = EventLedger(tmp_path / "ledger.json")
     event = {

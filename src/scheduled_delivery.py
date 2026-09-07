@@ -86,6 +86,8 @@ def _briefing_delivery_event(snapshot: dict[str, Any], slot: str) -> dict[str, A
     if not isinstance(primary, dict):
         themes = briefing.get("themes")
         primary = themes[0] if isinstance(themes, list) and themes and isinstance(themes[0], dict) else {}
+    assessment_value = briefing.get("market_assessment")
+    assessment: dict[str, Any] = assessment_value if isinstance(assessment_value, dict) else {}
     return {
         "kind": "market_briefing",
         "source_key": "scheduled_brief",
@@ -115,6 +117,11 @@ def _briefing_delivery_event(snapshot: dict[str, Any], slot: str) -> dict[str, A
         ),
         "notification_key": briefing.get("notification_key"),
         "decision_fingerprint": briefing.get("decision_fingerprint"),
+        "evidence_fingerprint": briefing.get("evidence_fingerprint"),
+        "market_scope": assessment.get("market_scope"),
+        "material_changes": briefing.get("material_changes") or [],
+        "delivery_eligible": briefing.get("delivery_eligible", True),
+        "suppression_reason": briefing.get("suppression_reason") or "",
     }
 
 
@@ -615,6 +622,40 @@ def prepare(slot: str, snapshot_path: Path, *, slot_context: dict[str, Any] | No
         snapshot["briefing"]["notification_eligible"] = False
         snapshot["briefing"]["status"] = "suppressed"
         snapshot["briefing"]["notification_reason"] = "insufficient_market_evidence"
+    # Read the latest delivered decision before publication.  This is a
+    # read-only comparison, so notify=false never consumes the delivery lock.
+    # The result is persisted in the same briefing object that the sender and
+    # Mini App consume.
+    briefing_for_comparison = snapshot.get("briefing")
+    if isinstance(briefing_for_comparison, dict) and isinstance(effective_context, dict):
+        comparison_slot = str(effective_context.get("effective_slot") or slot or "").strip()
+        comparison_date = str(effective_context.get("slot_date") or "").strip()
+        comparison_fingerprint = str(briefing_for_comparison.get("decision_fingerprint") or "").strip()
+        assessment_for_comparison = briefing_for_comparison.get("market_assessment")
+        if (
+            comparison_slot and comparison_date and comparison_fingerprint
+            and isinstance(assessment_for_comparison, dict)
+        ):
+            comparison = EventLedger().scheduled_decision_preview(
+                anchor_key(comparison_slot, comparison_date),
+                decision_fingerprint=comparison_fingerprint,
+                market_scope=str(assessment_for_comparison.get("market_scope") or ""),
+            )
+            briefing_for_comparison.update({
+                "comparison_notification_key": comparison.get("comparison_notification_key") or "",
+                "material_changes": comparison.get("material_changes") or [],
+                "delivery_eligible": comparison.get("delivery_eligible") is True,
+                "suppression_reason": comparison.get("suppression_reason") or "",
+            })
+            if (
+                str(effective_context.get("delivery_intent") or "") == "notify_candidate"
+                and comparison.get("delivery_eligible") is not True
+            ):
+                briefing_for_comparison["notification_eligible"] = False
+                briefing_for_comparison["status"] = "suppressed"
+                briefing_for_comparison["notification_reason"] = str(
+                    comparison.get("suppression_reason") or "same_decision_unchanged"
+                )
     raw_briefing_record = snapshot.get("briefing")
     briefing_record: dict[str, Any] = raw_briefing_record if isinstance(raw_briefing_record, dict) else {}
     briefing_suppressed = bool(
@@ -872,12 +913,19 @@ def send(
             last_receipt_status="not_attempted",
         )
         return
+    claim: dict[str, Any] = {}
     if str(event.get("source_key") or event.get("source") or "").strip().casefold() != "financialjuice":
         recipient_hashes = tuple(recipient_hash(chat_id) for chat_id in settings.telegram_chat_ids)
         if hasattr(ledger, "claim_scheduled_brief"):
             claim = ledger.claim_scheduled_brief(
                 effective_slot_key,
                 decision_fingerprint=decision_fingerprint,
+                market_scope=str((briefing.get("market_assessment") or {}).get("market_scope") or ""),
+                evidence_fingerprint=str(briefing.get("evidence_fingerprint") or ""),
+                material_changes=tuple(
+                    str(item) for item in briefing.get("material_changes") or []
+                    if str(item).strip()
+                ),
                 recipient_hashes=recipient_hashes,
                 run_id=effective_run_id,
             )
@@ -894,7 +942,16 @@ def send(
             claim = {"status": "claimed", "pending_recipient_hashes": []}
         if claim.get("status") != "claimed":
             _write_decision_output(
-                {"sent": "false", "delivery_status": "suppressed", "reason": f"notification_{claim.get('status', 'blocked')}", "notification_key": notification_key},
+                {
+                    "sent": "false",
+                    "delivery_status": "suppressed",
+                    "reason": f"notification_{claim.get('status', 'blocked')}",
+                    "notification_key": notification_key,
+                    "comparison_notification_key": claim.get("comparison_notification_key") or "",
+                    "material_changes": claim.get("material_changes") or [],
+                    "delivery_eligible": False,
+                    "suppression_reason": claim.get("suppression_reason") or f"notification_{claim.get('status', 'blocked')}",
+                },
                 event=event, notification_status="suppressed", notification_reason=f"notification_{claim.get('status', 'blocked')}", last_receipt_status=str(claim.get("status") or "blocked"),
             )
             return
@@ -1054,6 +1111,10 @@ def send(
         "notification_expected": "true",
         "notification_status": ("ready" if delivery_status == "delivered" else delivery_status),
         "notification_reason": ("sent" if delivery_status == "delivered" else "recipient_delivery_partial" if delivery_status == "partial" else "recipient_delivery_failed") if event else "no_trigger",
+        "comparison_notification_key": claim.get("comparison_notification_key") if isinstance(claim, dict) else "",
+        "material_changes": claim.get("material_changes") if isinstance(claim, dict) else [],
+        "delivery_eligible": True,
+        "suppression_reason": "",
         "event_key": alert_id,
         "risk": event_risk,
     }

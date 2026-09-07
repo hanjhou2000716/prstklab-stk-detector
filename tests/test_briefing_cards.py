@@ -31,6 +31,27 @@ def test_contagion_inputs_are_bound_to_snapshot_quotes_and_vix():
     assert inputs["usd"]["change_percent"] == 1.1
 
 
+def test_briefing_summary_facts_are_structured_and_quote_led_without_news_event():
+    briefing = build_briefing_snapshot({
+        "generated_at": "2026-09-07T07:00:00+00:00",
+        "indices": [
+            {"ticker": "TAIEX", "price": 26000, "change_percent": 0.8, "quote_date": "2026-09-07", "source_label": "Yahoo"},
+            {"ticker": "TPEx", "price": 300, "change_percent": 0.6, "quote_date": "2026-09-07", "source_label": "Yahoo"},
+            {"ticker": "NASDAQ", "price": 20000, "change_percent": -0.29, "quote_date": "2026-09-04", "source_label": "Yahoo"},
+            {"ticker": "SOX", "price": 5000, "change_percent": 3.37, "quote_date": "2026-09-04", "source_label": "Yahoo"},
+            {"ticker": "DJIA", "price": 45000, "change_percent": -0.51, "quote_date": "2026-09-04", "source_label": "Yahoo"},
+        ],
+        "quotes": [],
+        "macro_quotes": [],
+        "events": {"items": []},
+    }, "morning")
+
+    facts = briefing["summary_facts"]
+    assert [item["label"] for item in facts[:3]] == ["市場狀態", "信心", "行情比較"]
+    assert all(isinstance(item["evidence_refs"], list) for item in facts)
+    assert not any(item["key"] == "primary_event" for item in facts)
+
+
 def test_midday_briefing_includes_japan_korea_and_public_observation_cards():
     snapshot = {
         "indices": [

@@ -355,12 +355,19 @@ def _market_driver(
     else:
         if tech is not None and broad is not None and tech > 0.25 and broad > 0.25:
             return "美股科技與大盤同步偏強", None
+        if tech is not None and tech > 0.25:
+            return "美股科技股偏強", None
         if tech is not None and tech < -0.25:
             return "美股科技股偏弱", None
         if broad is not None and broad < -0.25:
             return "美股大盤偏弱", None
 
     for theme in themes:
+        # The quote theme is already represented by the measured driver
+        # above.  It has a hydration-dependent key and must never become an
+        # event identity in a decision fingerprint.
+        if str(theme.get("title") or "") == "市場價格":
+            continue
         if theme.get("quote_evidence") and theme.get("source_evidence") and theme.get("normalization_complete"):
             return _topic_driver(theme), str(theme.get("canonical_event_key") or theme.get("event_key") or "") or None
     return "市場焦點待價格確認", None
@@ -462,7 +469,15 @@ def build_market_assessment(
         "market_scope": market_scope,
         "dominant_driver": driver,
         "dominant_driver_key": dominant_key,
-        "supporting_theme_keys": [str(theme.get("canonical_event_key") or theme.get("event_key")) for theme in themes if theme.get("canonical_event_key") or theme.get("event_key")],
+        # Market-price themes are hydrated on every release and therefore do
+        # not have a stable event identity.  Only real event themes belong in
+        # the assessment's supporting identity set.
+        "supporting_theme_keys": [
+            str(theme.get("canonical_event_key") or theme.get("event_key"))
+            for theme in themes
+            if str(theme.get("title") or "") != "市場價格"
+            and (theme.get("canonical_event_key") or theme.get("event_key"))
+        ],
         "conflict_flags": ["directional_quote_conflict", *[f"group:{group}" for group in conflict_groups]] if conflict else [],
         "summary_sections": {
             "summary": market_summary,

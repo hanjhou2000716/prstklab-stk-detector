@@ -355,11 +355,19 @@ class EventLedger:
         self.lock_stale_after_seconds = max(1.0, float(lock_stale_after_seconds))
         self.records: dict[str, dict[str, Any]] = {}
         self.delivery_claims: dict[str, dict[str, Any]] = {}
+        self.load_error: str = ""
         self.load()
 
     def load(self) -> None:
+        self.load_error = ""
+        if not self.path.exists():
+            self.records = {}
+            self.delivery_claims = {}
+            return
         try:
-            payload = self._read_payload(self.path)
+            payload = json.loads(self.path.read_text(encoding="utf-8"))
+            if not isinstance(payload, dict):
+                raise TypeError("ledger envelope must be an object")
             rows = payload.get("events", payload) if isinstance(payload, dict) else {}
             if isinstance(rows, dict):
                 self.records = {str(key): dict(value) for key, value in rows.items() if isinstance(value, dict)}
@@ -370,6 +378,7 @@ class EventLedger:
                     if isinstance(value, dict)
                 }
         except (OSError, json.JSONDecodeError, TypeError):
+            self.load_error = "ledger_unreadable"
             self.records = {}
             self.delivery_claims = {}
 
@@ -817,6 +826,17 @@ class EventLedger:
             return {}
 
     @staticmethod
+    def _path_is_readable(path: Path) -> bool:
+        """Treat an existing malformed ledger as unsafe, never as empty."""
+        if not path.exists():
+            return True
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, TypeError):
+            return False
+        return isinstance(payload, dict)
+
+    @staticmethod
     def _payload_metadata(payload: dict[str, Any]) -> dict[str, Any]:
         """Keep envelope metadata without duplicating legacy event rows."""
         if "events" not in payload:
@@ -1030,6 +1050,9 @@ class EventLedger:
         anchor_key: str,
         *,
         decision_fingerprint: str,
+        market_scope: str = "",
+        evidence_fingerprint: str = "",
+        material_changes: tuple[str, ...] = (),
         recipient_hashes: tuple[str, ...] = (),
         now: datetime | None = None,
         run_id: str = "",
@@ -1053,7 +1076,16 @@ class EventLedger:
         now_iso = current.isoformat()
         recipients = tuple(dict.fromkeys(str(item) for item in recipient_hashes if str(item)))
         claim_key = f"scheduled-anchor:{anchor}"
+        market = self._scheduled_market_namespace(anchor, market_scope)
         with self._write_lock():
+            if not self._path_is_readable(self.path):
+                return {
+                    "status": "suppressed",
+                    "notification_key": claim_key,
+                    "delivery_eligible": False,
+                    "suppression_reason": "ledger_unreadable",
+                    "pending_recipient_hashes": [],
+                }
             payload = self._read_payload(self.path)
             records = self._read_records(self.path)
             claims = self._read_claims(self.path)
@@ -1080,25 +1112,28 @@ class EventLedger:
             if any(str(item.get("status") or "") == "delivered" for item in legacy_claims):
                 return {"status": "already_delivered", "notification_key": claim_key, "pending_recipient_hashes": []}
 
-            for other_key, other in claims.items():
-                if other_key == claim_key or not isinstance(other, dict):
-                    continue
-                if str(other.get("kind") or "") != "scheduled_brief":
-                    continue
-                if str(other.get("decision_fingerprint") or "") != fingerprint:
-                    continue
-                if str(other.get("status") or "") == "delivered":
+            latest_key, latest = self._latest_scheduled_claim(claims, market, exclude=claim_key)
+            if latest is not None:
+                if str(latest.get("decision_fingerprint") or "") == fingerprint:
                     return {
                         "status": "same_decision",
                         "notification_key": claim_key,
-                        "same_as": other_key,
+                        "same_as": latest_key,
+                        "comparison_notification_key": latest_key,
+                        "material_changes": [],
+                        "delivery_eligible": False,
+                        "suppression_reason": "same_decision_unchanged",
                         "pending_recipient_hashes": [],
                     }
-                if str(other.get("status") or "") == "in_flight" and self._timestamp(other.get("lease_until")) > current:
+                if str(latest.get("status") or "") == "in_flight" and self._timestamp(latest.get("lease_until")) > current:
                     return {
                         "status": "in_flight",
                         "notification_key": claim_key,
-                        "same_as": other_key,
+                        "same_as": latest_key,
+                        "comparison_notification_key": latest_key,
+                        "material_changes": list(material_changes) or ["previous_delivery_in_flight"],
+                        "delivery_eligible": False,
+                        "suppression_reason": "previous_market_delivery_in_flight",
                         "pending_recipient_hashes": [],
                     }
 
@@ -1113,7 +1148,12 @@ class EventLedger:
                 "notification_key": claim_key,
                 "anchor_key": anchor,
                 "slot_key": anchor,
+                "market_scope": market,
                 "decision_fingerprint": fingerprint,
+                "evidence_fingerprint": str(evidence_fingerprint or "").strip(),
+                "material_changes": list(dict.fromkeys(str(item) for item in material_changes if str(item).strip())),
+                "delivery_eligible": True,
+                "suppression_reason": "",
                 "status": "in_flight",
                 "recipient_hashes": list(configured),
                 "delivered_recipient_hashes": sorted(delivered),
@@ -1126,7 +1166,107 @@ class EventLedger:
             self._write_payload_locked({**self._payload_metadata(payload), "schema_version": 1, "events": records, "delivery_claims": claims})
             self.delivery_claims = claims
             self.records = records
-            return {"status": "claimed", "notification_key": claim_key, "pending_recipient_hashes": pending}
+            return {
+                "status": "claimed",
+                "notification_key": claim_key,
+                "comparison_notification_key": latest_key or "",
+                "material_changes": list(dict.fromkeys(str(item) for item in material_changes if str(item).strip())) or (["decision_fingerprint_changed"] if latest is not None else ["initial_market_decision"]),
+                "delivery_eligible": True,
+                "suppression_reason": "",
+                "pending_recipient_hashes": pending,
+            }
+
+    @staticmethod
+    def _scheduled_market_namespace(anchor: str, market_scope: str = "") -> str:
+        """Normalize a report market so cross-day comparisons stay scoped."""
+        scope = str(market_scope or "").strip().casefold()
+        if scope in {"us", "美股", "us_equity"} or str(anchor).startswith("us:"):
+            return "us"
+        if scope in {"taiwan", "台股", "taiwan_equity"} or str(anchor).startswith("taiwan:"):
+            return "taiwan"
+        return scope or "unknown"
+
+    @classmethod
+    def _latest_scheduled_claim(
+        cls,
+        claims: dict[str, dict[str, Any]],
+        market: str,
+        *,
+        exclude: str = "",
+    ) -> tuple[str, dict[str, Any] | None]:
+        """Return only the most recent delivered/in-flight brief for a market.
+
+        Comparing every historical fingerprint permanently would make a
+        legitimate A→B→A recovery impossible.  The immediately preceding
+        market decision is the comparison baseline; older history remains
+        available for audit and legacy alias checks.
+        """
+        candidates: list[tuple[datetime, str, dict[str, Any]]] = []
+        for key, row in claims.items():
+            if key == exclude or not isinstance(row, dict):
+                continue
+            if str(row.get("kind") or "") != "scheduled_brief":
+                continue
+            row_market = cls._scheduled_market_namespace(
+                str(row.get("anchor_key") or row.get("slot_key") or key),
+                str(row.get("market_scope") or ""),
+            )
+            if row_market != market:
+                continue
+            status = str(row.get("status") or "")
+            if status not in {"delivered", "in_flight"}:
+                continue
+            timestamp = cls._timestamp(row.get("delivered_at") or row.get("updated_at") or row.get("claimed_at"))
+            candidates.append((timestamp, key, row))
+        if not candidates:
+            return "", None
+        _timestamp_value, key, row = max(candidates, key=lambda item: (item[0], item[1]))
+        return key, row
+
+    def scheduled_decision_preview(
+        self,
+        anchor_key: str,
+        *,
+        decision_fingerprint: str,
+        market_scope: str = "",
+    ) -> dict[str, Any]:
+        """Read the scheduled delivery comparison without claiming it."""
+        anchor = str(anchor_key or "").strip()
+        fingerprint = str(decision_fingerprint or "").strip()
+        if not anchor or not fingerprint:
+            return {"delivery_eligible": False, "suppression_reason": "comparison_identity_missing"}
+        if not self._path_is_readable(self.path):
+            return {
+                "delivery_eligible": False,
+                "comparison_notification_key": "",
+                "material_changes": [],
+                "suppression_reason": "ledger_unreadable",
+            }
+        claims = self._read_claims(self.path)
+        claim_key = f"scheduled-anchor:{anchor}"
+        own = claims.get(claim_key) or {}
+        if str(own.get("status") or "") == "delivered":
+            return {
+                "delivery_eligible": False,
+                "comparison_notification_key": claim_key,
+                "material_changes": [],
+                "suppression_reason": "anchor_already_delivered",
+            }
+        market = self._scheduled_market_namespace(anchor, market_scope)
+        latest_key, latest = self._latest_scheduled_claim(claims, market, exclude=claim_key)
+        if latest is not None and str(latest.get("decision_fingerprint") or "") == fingerprint:
+            return {
+                "delivery_eligible": False,
+                "comparison_notification_key": latest_key,
+                "material_changes": [],
+                "suppression_reason": "same_decision_unchanged",
+            }
+        return {
+            "delivery_eligible": True,
+            "comparison_notification_key": latest_key,
+            "material_changes": ["initial_market_decision"] if latest is None else ["decision_fingerprint_changed"],
+            "suppression_reason": "",
+        }
 
     def complete_notification_claim(
         self,
@@ -1152,6 +1292,8 @@ class EventLedger:
             claim["delivered_recipient_hashes"] = sorted(delivered)
             claim["failed_recipient_hashes"] = sorted(set(str(item) for item in failed_recipient_hashes if str(item)))
             claim["status"] = "uncertain" if uncertain else "delivered" if not pending else "retryable"
+            if claim["status"] == "delivered":
+                claim["delivered_at"] = current.isoformat()
             claim["updated_at"] = current.isoformat()
             claim["lease_until"] = None
             claims[key] = claim
