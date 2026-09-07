@@ -1172,6 +1172,18 @@ const renderBriefing = (briefing, generatedAt) => {
       .map((item) => item.source || item.source_key).filter(Boolean).join("；"),
   }] : [];
   const fixedObservations = Array.isArray(report.observations) ? report.observations : [];
+  const reportLabels = {
+    morning: "晨報",
+    pre_open: "台股盤前",
+    intraday: "台股盤中",
+    midday: "台股午盤",
+    afternoon: "台股收盤前",
+    post_close: "台股盤後",
+    us_premarket: "美股盤前",
+    us_open: "美股開盤",
+  };
+  const reportLabel = reportLabels[String(report.slot || "").trim()];
+  if (reportLabel) setText("briefing-report-title", reportLabel);
   const displayTime = generatedAt ? new Date(generatedAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "公開資料更新中";
   setText("briefing-time", `${displayTime} CST`);
   setText("briefing-overview", report.assessment_summary || report.overview || "本次以公開市場報價、官方事件與風險資料整理市場脈絡。 ");

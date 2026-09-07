@@ -66,12 +66,17 @@ def test_scheduled_morning_slot_binds_creator_batch_to_release_manifest():
     assert 'arguments+=(--creator-morning-batch)' in workflow
 
 
-def test_creator_batch_has_dedicated_1030_and_late_recheck_crons():
+def test_scheduled_workflow_has_only_four_fixed_production_anchors():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
-    assert 'cron: "30 2 * * 1-5"' in workflow
-    assert 'creator_schedule="${{ github.event.schedule }}"' in workflow
-    assert '[ "$creator_schedule" = "45 3 * * 1-5" ]' in workflow
-    assert '[ "$creator_schedule" = "15 5 * * 1-5" ]' in workflow
+    assert 'cron: "0 22 * * *"' in workflow
+    assert 'cron: "45 0 * * 1-5"' in workflow
+    assert 'cron: "20 6 * * 1-5"' in workflow
+    assert 'cron: "0 13 * * 1-5"' in workflow
+    assert 'cron: "30 2 * * 1-5"' not in workflow
+    assert 'cron: "45 3 * * 1-5"' not in workflow
+    assert 'cron: "15 5 * * 1-5"' not in workflow
+    assert 'SCHEDULED_FOR_AT' in workflow
+    assert 'steps.window.outputs.delivery_intent == \'notify_candidate\'' in workflow
 
 
 def test_scheduled_workflow_exposes_only_sanitized_external_observations_path():

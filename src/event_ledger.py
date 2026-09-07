@@ -731,7 +731,8 @@ class EventLedger:
             "notification_reason", "parser_version", "received_at", "notification_key",
             "delivery_receipts", "ingested_at", "candidate_at", "writer_wait_ms",
             "release_ready_at", "telegram_attempted_at", "delivery_result", "delay_reason",
-            "source_url", "source_domain", "workflow_run_id",
+            "source_url", "source_domain", "workflow_run_id", "alert_lane", "anchor_key",
+            "market_scope", "decision_fingerprint", "event_policy_reason",
         ):
             value = event.get(field)
             if value not in (None, "", [], {}):
@@ -1023,6 +1024,109 @@ class EventLedger:
             self.delivery_claims = claims
             self.records = records
             return {"status": "claimed", "notification_key": key, "pending_recipient_hashes": pending}
+
+    def claim_scheduled_brief(
+        self,
+        anchor_key: str,
+        *,
+        decision_fingerprint: str,
+        recipient_hashes: tuple[str, ...] = (),
+        now: datetime | None = None,
+        run_id: str = "",
+        lease_seconds: int = DELIVERY_CLAIM_LEASE_SECONDS,
+    ) -> dict[str, Any]:
+        """Atomically claim one scheduled anchor and coalesce unchanged briefs.
+
+        Scheduled brief content is release-bound and may legitimately change
+        when prices are hydrated.  The delivery identity must therefore be
+        the anchor, while the decision fingerprint decides whether a later
+        anchor contains a new market judgment.  This method keeps that
+        distinction inside the same file lock used by all delivery lanes.
+        """
+        anchor = str(anchor_key or "").strip()
+        fingerprint = str(decision_fingerprint or "").strip()
+        if not anchor:
+            return {"status": "blocked", "reason": "anchor_key_missing", "pending_recipient_hashes": []}
+        if not fingerprint:
+            return {"status": "blocked", "reason": "decision_fingerprint_missing", "pending_recipient_hashes": []}
+        current = now or datetime.now(UTC)
+        now_iso = current.isoformat()
+        recipients = tuple(dict.fromkeys(str(item) for item in recipient_hashes if str(item)))
+        claim_key = f"scheduled-anchor:{anchor}"
+        with self._write_lock():
+            payload = self._read_payload(self.path)
+            records = self._read_records(self.path)
+            claims = self._read_claims(self.path)
+            claim = dict(claims.get(claim_key) or {})
+
+            if str(claim.get("status") or "") == "delivered":
+                return {"status": "already_delivered", "notification_key": claim_key, "pending_recipient_hashes": []}
+            lease_until = self._timestamp(claim.get("lease_until"))
+            if str(claim.get("status") or "") == "uncertain":
+                return {"status": "uncertain", "notification_key": claim_key, "pending_recipient_hashes": []}
+            if str(claim.get("status") or "") == "in_flight" and lease_until > current:
+                return {"status": "in_flight", "notification_key": claim_key, "pending_recipient_hashes": []}
+
+            # Legacy claims wrote the plain slot key.  Read them as aliases so
+            # a migration cannot resend an already-delivered report.
+            legacy_aliases = {anchor}
+            anchor_parts = anchor.split(":", 2)
+            if len(anchor_parts) == 3:
+                legacy_aliases.add(f"{anchor_parts[1]}-{anchor_parts[2]}")
+            legacy_claims = [
+                item for item in claims.values()
+                if isinstance(item, dict) and str(item.get("slot_key") or "") in legacy_aliases
+            ]
+            if any(str(item.get("status") or "") == "delivered" for item in legacy_claims):
+                return {"status": "already_delivered", "notification_key": claim_key, "pending_recipient_hashes": []}
+
+            for other_key, other in claims.items():
+                if other_key == claim_key or not isinstance(other, dict):
+                    continue
+                if str(other.get("kind") or "") != "scheduled_brief":
+                    continue
+                if str(other.get("decision_fingerprint") or "") != fingerprint:
+                    continue
+                if str(other.get("status") or "") == "delivered":
+                    return {
+                        "status": "same_decision",
+                        "notification_key": claim_key,
+                        "same_as": other_key,
+                        "pending_recipient_hashes": [],
+                    }
+                if str(other.get("status") or "") == "in_flight" and self._timestamp(other.get("lease_until")) > current:
+                    return {
+                        "status": "in_flight",
+                        "notification_key": claim_key,
+                        "same_as": other_key,
+                        "pending_recipient_hashes": [],
+                    }
+
+            delivered = set(str(item) for item in claim.get("delivered_recipient_hashes") or [] if str(item))
+            configured = tuple(dict.fromkeys(str(item) for item in (claim.get("recipient_hashes") or []) + list(recipients) if str(item)))
+            pending = [item for item in configured if item not in delivered]
+            if not configured:
+                configured = recipients
+                pending = list(recipients)
+            claims[claim_key] = {
+                "kind": "scheduled_brief",
+                "notification_key": claim_key,
+                "anchor_key": anchor,
+                "slot_key": anchor,
+                "decision_fingerprint": fingerprint,
+                "status": "in_flight",
+                "recipient_hashes": list(configured),
+                "delivered_recipient_hashes": sorted(delivered),
+                "attempted_recipient_hashes": pending,
+                "claimed_at": now_iso,
+                "lease_until": (current + timedelta(seconds=max(1, int(lease_seconds)))).isoformat(),
+                "run_id_hash": hashlib.sha256(str(run_id).encode("utf-8")).hexdigest()[:12] if run_id else "",
+                "updated_at": now_iso,
+            }
+            self._write_payload_locked({**self._payload_metadata(payload), "schema_version": 1, "events": records, "delivery_claims": claims})
+            self.delivery_claims = claims
+            self.records = records
+            return {"status": "claimed", "notification_key": claim_key, "pending_recipient_hashes": pending}
 
     def complete_notification_claim(
         self,

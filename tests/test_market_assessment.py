@@ -109,6 +109,21 @@ def test_market_assessment_uses_fixed_three_section_overview_and_weekend_status(
     assert result["public_short_message"].startswith("📊 台股盤後｜")
 
 
+def test_taiwan_stance_does_not_call_nasdaq_softness_a_generic_conflict():
+    result = build_market_digest({
+        "indices": [
+            {"ticker": "TAIEX", "price": 100, "change_percent": 1.2, "freshness": "recent_close"},
+            {"ticker": "TPEx", "price": 100, "change_percent": 1.0, "freshness": "recent_close"},
+            {"ticker": "SOX", "price": 100, "change_percent": 1.1, "freshness": "recent_close"},
+            {"ticker": "NASDAQ", "price": 100, "change_percent": -0.4, "freshness": "recent_close"},
+            {"ticker": "US10Y", "price": 4.0, "change_percent": 0.1, "freshness": "recent_close"},
+        ],
+    }, "post_close")
+
+    assert result["market_assessment"]["stance"] != "divergent"
+    assert "directional_quote_conflict" not in result["market_assessment"]["conflict_flags"]
+
+
 def test_quote_only_briefing_is_not_suppressed_but_empty_inputs_are():
     quote_only = build_market_digest({
         "indices": [
@@ -123,6 +138,31 @@ def test_quote_only_briefing_is_not_suppressed_but_empty_inputs_are():
     assert quote_only["overview"].startswith("總結｜")
     assert empty["notification_eligible"] is False
     assert empty["public_short_message"] == ""
+
+
+def test_tpex_is_counted_as_a_taiwan_core_factor_after_ticker_normalization():
+    result = build_market_digest({
+        "indices": [
+            {"ticker": "TAIEX", "price": 100, "change_percent": 1.0, "freshness": "recent_close"},
+            {"ticker": "TPEx", "price": 100, "change_percent": 0.8, "freshness": "recent_close"},
+            {"ticker": "SOX", "price": 100, "change_percent": 1.0, "freshness": "recent_close"},
+        ],
+    }, "post_close")
+
+    assert result["market_assessment"]["factor_count"] == 3
+    assert "櫃買" in result["market_assessment"]["summary_sections"]["market_highlights"]
+
+
+def test_market_assessment_is_json_serializable_for_snapshot_publication():
+    result = build_market_digest({
+        "indices": [
+            {"ticker": "TAIEX", "price": 100, "change_percent": 1.0, "freshness": "recent_close"},
+            {"ticker": "NASDAQ", "price": 100, "change_percent": 0.8, "freshness": "recent_close"},
+            {"ticker": "US10Y", "price": 4.0, "change_percent": -0.2, "freshness": "recent_close"},
+        ],
+    }, "post_close")
+
+    json.dumps(result, ensure_ascii=False)
 
 
 def test_quote_refresh_with_same_assessment_does_not_change_canonical_identity():

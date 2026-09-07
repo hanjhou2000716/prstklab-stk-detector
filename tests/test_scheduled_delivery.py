@@ -5,7 +5,12 @@ import pytest
 
 from src import scheduled_delivery
 from src.release_gate import ReleaseGateResult
-from src.scheduled_delivery import _creator_records_from_observations, _load_creator_records
+from src.scheduled_delivery import (
+    _briefing_evidence_ready,
+    _closed_market_slot_context,
+    _creator_records_from_observations,
+    _load_creator_records,
+)
 from src.telegram_client import TextDeliveryReceipt, alert_mini_app_url
 
 
@@ -18,6 +23,39 @@ def test_creator_observations_are_projected_into_release_records() -> None:
         "public_safe": False,
     }])
     assert rows == []
+
+
+def test_scheduled_brief_requires_three_factors_and_two_evidence_dimensions() -> None:
+    base = {"market_assessment": {"confidence": "medium", "factor_count": 3, "evidence_dimensions": ["equity", "rates"]}}
+    assert _briefing_evidence_ready(base) is True
+    assert _briefing_evidence_ready({"market_assessment": {"confidence": "low", "factor_count": 5, "evidence_dimensions": ["equity", "rates"]}}) is False
+    assert _briefing_evidence_ready({"market_assessment": {"confidence": "medium", "factor_count": 2, "evidence_dimensions": ["equity", "rates"]}}) is False
+    assert _briefing_evidence_ready({"market_assessment": {"confidence": "medium", "factor_count": 3, "evidence_dimensions": ["equity"]}}) is False
+
+
+def test_closed_non_morning_anchor_is_pages_only() -> None:
+    context = {"delivery_intent": "notify_candidate", "slot_date": "2026-09-07"}
+    result = _closed_market_slot_context(
+        {"markets": {"taiwan": {"is_trading_day": False}}}, "post_close", context,
+    )
+    assert result["delivery_intent"] == "publish_only"
+    assert result["suppression_reason"] == "closed_market_publish_only"
+
+
+def test_weekend_non_morning_anchor_fails_closed_without_market_status() -> None:
+    result = _closed_market_slot_context(
+        {}, "post_close", {"delivery_intent": "notify_candidate", "slot_date": "2026-09-06"},
+    )
+    assert result["delivery_intent"] == "publish_only"
+    assert result["suppression_reason"] == "closed_market_publish_only"
+
+
+def test_open_anchor_keeps_notification_intent() -> None:
+    context = {"delivery_intent": "notify_candidate", "slot_date": "2026-09-07"}
+    result = _closed_market_slot_context(
+        {"markets": {"taiwan": {"is_trading_day": True}}}, "post_close", context,
+    )
+    assert result == context
 
 
 def test_scheduled_brief_prioritises_eligible_financialjuice_event() -> None:
@@ -184,6 +222,39 @@ def test_scheduled_delivery_blocks_when_manifest_is_not_ready(tmp_path, monkeypa
     text = output.read_text(encoding="utf-8")
     assert "sent=false" in text
     assert "reason=release_gate_blocked" in text
+
+
+def test_scheduled_delivery_never_falls_back_to_event_on_publish_only_snapshot(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / "market.json"
+    manifest_path = tmp_path / "release-manifest.json"
+    snapshot_path.write_text(json.dumps({
+        "snapshot_id": "market-12345678",
+        "quotes": [],
+        "indices": [],
+        "briefing": {
+            "briefing_id": "briefing-publish-only",
+            "notification_eligible": False,
+            "notification_reason": "late_schedule_publish_only",
+            "slot_context": {
+                "delivery_intent": "publish_only",
+                "resolution_reason": "late_schedule_publish_only",
+            },
+        },
+    }), encoding="utf-8")
+    manifest_path.write_text("{}", encoding="utf-8")
+    output = tmp_path / "output"
+    _patch_ready(monkeypatch, output)
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "send_text_briefs_audited",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("publish-only snapshot must not send")),
+    )
+
+    scheduled_delivery.send(snapshot_path, "post_close", manifest_path)
+
+    text = output.read_text(encoding="utf-8")
+    assert "sent=false" in text
+    assert "notification_reason=late_schedule_publish_only" in text
 
 
 def test_scheduled_delivery_uses_text_delivery_after_release_gate(tmp_path, monkeypatch):

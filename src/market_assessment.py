@@ -194,31 +194,87 @@ def _parse_time(value: Any) -> datetime | None:
     return parsed.replace(tzinfo=parsed.tzinfo or UTC).astimezone(UTC)
 
 
-def _quote_factors(quotes: Iterable[dict[str, Any]]) -> tuple[dict[str, float], set[str], set[str]]:
-    factors: dict[str, float] = {}
-    dimensions: set[str] = set()
-    positive: set[str] = set()
-    negative: set[str] = set()
+def _quote_factors(
+    quotes: Iterable[dict[str, Any]], *, slot: str = "",
+) -> tuple[dict[str, float], set[str], set[str], dict[str, list[str]], list[str]]:
+    """Build scope-aware factors instead of treating every asset as peers.
+
+    A Nasdaq move and a Taiwan cash-index move are different evidence
+    dimensions.  They can be compared, but one opposite print must not turn
+    an otherwise coherent Taiwan session into a generic ``分歧`` label.
+    """
+    rows: dict[str, dict[str, Any]] = {}
     for item in quotes:
         ticker = _text(item.get("ticker")).upper()
         move = _quote_move(item)
-        if not ticker or move is None:
-            continue
-        if ticker in {"TAIEX", "NASDAQ", "SOX", "DJIA", "NIKKEI", "KOSPI"}:
-            factors[f"equity:{ticker}"] = 1.0 if move > 0.25 else -1.0 if move < -0.25 else 0.0
-            dimensions.add("equity")
-        elif ticker in {"US10Y", "DXY"}:
-            # Rising rates/USD are treated as a defensive valuation pressure
-            # in this descriptive score; the raw quote remains the evidence.
-            factors[f"macro:{ticker}"] = -1.0 if move > 0.25 else 1.0 if move < -0.25 else 0.0
-            dimensions.add("rates_fx")
-        elif ticker in {"WTI", "BRENT", "GOLD"}:
-            factors[f"commodity:{ticker}"] = -1.0 if move > 0.75 else 1.0 if move < -0.75 else 0.0
-            dimensions.add("commodity")
-        value = factors.get(f"equity:{ticker}", factors.get(f"macro:{ticker}", factors.get(f"commodity:{ticker}")))
-        if value is not None:
-            (positive if value > 0 else negative if value < 0 else set()).add(ticker)
-    return factors, dimensions, positive | negative
+        if ticker and move is not None:
+            rows[ticker] = {"move": move, "item": item}
+
+    def sign(move: float, threshold: float = 0.25) -> float:
+        return 1.0 if move > threshold else -1.0 if move < -threshold else 0.0
+
+    groups: dict[str, tuple[str, ...]] = {
+        "taiwan_core": ("TAIEX", "TPEX", "2330"),
+        "us_tech": ("SOX", "NASDAQ"),
+        "us_broad": ("S&P 500", "DJIA"),
+        "asia_tech": ("NIKKEI", "KOSPI"),
+        "rates_fx": ("US10Y", "DXY", "USD/TWD"),
+        "commodities": ("WTI", "BRENT", "GOLD"),
+    }
+    group_values: dict[str, list[float]] = {}
+    group_tickers: dict[str, list[str]] = {}
+    for group, tickers in groups.items():
+        values: list[float] = []
+        names: list[str] = []
+        for ticker in tickers:
+            row = rows.get(ticker)
+            if not row:
+                continue
+            move = float(row["move"])
+            threshold = 0.75 if group == "commodities" else 0.25
+            value = sign(move, threshold)
+            if group in {"rates_fx", "commodities"}:
+                # Rising rates/USD/oil are descriptive headwinds; rising gold
+                # is a defensive signal and does not receive an equity boost.
+                if ticker in {"US10Y", "DXY", "USD/TWD", "WTI", "BRENT"}:
+                    value *= -1.0
+            values.append(value)
+            names.append(ticker)
+        if values:
+            group_values[group] = values
+            group_tickers[group] = names
+
+    # The report scope determines which groups can dominate the conclusion.
+    if slot in {"pre_open", "intraday", "midday", "afternoon", "post_close"}:
+        weights = {"taiwan_core": 2.0, "us_tech": 0.5, "asia_tech": 0.35, "rates_fx": 0.25, "commodities": 0.25}
+    elif slot in {"us_premarket", "us_open"}:
+        weights = {"us_tech": 1.5, "us_broad": 1.25, "asia_tech": 0.5, "rates_fx": 0.5, "commodities": 0.35}
+    else:
+        weights = {"taiwan_core": 1.25, "us_tech": 1.0, "us_broad": 0.75, "asia_tech": 0.5, "rates_fx": 0.5, "commodities": 0.35}
+
+    factors: dict[str, float] = {}
+    valid_dimensions: set[str] = set()
+    positive: set[str] = set()
+    negative: set[str] = set()
+    for group, values in group_values.items():
+        average = sum(values) / len(values)
+        weighted = round(average * weights.get(group, 0.0), 3)
+        factors[f"group:{group}"] = weighted
+        if group == "taiwan_core":
+            valid_dimensions.add("taiwan_equity")
+        elif group in {"us_tech", "us_broad", "asia_tech"}:
+            valid_dimensions.add("us_equity" if group != "asia_tech" else "asia_equity")
+        elif group == "rates_fx":
+            valid_dimensions.add("rates_fx")
+        else:
+            valid_dimensions.add("commodity")
+        if weighted > 0:
+            positive.update(group_tickers[group])
+        elif weighted < 0:
+            negative.update(group_tickers[group])
+
+    recognised_tickers = [ticker for tickers in group_tickers.values() for ticker in tickers]
+    return factors, valid_dimensions, positive | negative, group_tickers, recognised_tickers
 
 
 def _stance(score: float, factor_count: int, dimensions: set[str], conflict: bool) -> tuple[str, str, str]:
@@ -237,22 +293,28 @@ def _stance(score: float, factor_count: int, dimensions: set[str], conflict: boo
 
 def _topic_driver(theme: dict[str, Any] | None) -> str:
     if not isinstance(theme, dict):
-        return "市場主因仍待價格確認"
+        return "市場焦點待價格確認"
     topic = str(theme.get("market_topic") or "company_industry")
     return {
-        "taiwan_market": "台股行情待確認",
-        "semiconductor_ai": "半導體題材待價格確認",
-        "global_market": "外圍股市訊號",
-        "rates_fx": "利率與美元仍待價格確認",
-        "energy_geopolitics": "能源風險待價格確認",
-        "company_industry": "公司事件待價格確認",
-    }.get(topic, "市場主因仍待價格確認")
+        "taiwan_market": "台股盤面焦點",
+        "semiconductor_ai": "半導體與AI焦點",
+        "global_market": "外圍股市焦點",
+        "rates_fx": "利率與美元焦點",
+        "energy_geopolitics": "能源與地緣焦點",
+        "company_industry": "公司與產業焦點",
+    }.get(topic, "市場焦點待價格確認")
 
 
-def _quote_highlights(quotes: list[dict[str, Any]]) -> str:
-    names = {"TAIEX": "台指", "NASDAQ": "Nasdaq", "SOX": "費半", "DJIA": "道瓊", "NIKKEI": "日經", "KOSPI": "韓股"}
+def _quote_highlights(quotes: list[dict[str, Any]], slot: str = "") -> str:
+    names = {"TAIEX": "台指", "TPEX": "櫃買", "NASDAQ": "Nasdaq", "SOX": "費半", "DJIA": "道瓊", "NIKKEI": "日經", "KOSPI": "韓股"}
     parts: list[str] = []
-    for item in quotes:
+    preferred = (
+        ("TAIEX", "TPEX", "2330", "SOX", "NASDAQ", "US10Y", "DXY", "WTI", "GOLD")
+        if slot in {"pre_open", "intraday", "midday", "afternoon", "post_close"}
+        else ("NASDAQ", "SOX", "S&P 500", "DJIA", "TAIEX", "US10Y", "DXY", "WTI", "GOLD")
+    )
+    ordered = sorted(quotes, key=lambda item: preferred.index(_text(item.get("ticker")).upper()) if _text(item.get("ticker")).upper() in preferred else len(preferred))
+    for item in ordered:
         move = _quote_move(item)
         ticker = _text(item.get("ticker")).upper()
         if move is None or ticker not in names:
@@ -263,6 +325,47 @@ def _quote_highlights(quotes: list[dict[str, Any]]) -> str:
     return "、".join(parts[:3]) or "目前缺乏可用行情證據"
 
 
+def _market_driver(
+    slot: str, quotes: list[dict[str, Any]], themes: list[dict[str, Any]],
+    group_tickers: dict[str, list[str]],
+) -> tuple[str, str | None]:
+    """Select one conclusion-compatible driver; news is only a named cause when confirmed."""
+    by_ticker = {_text(item.get("ticker")).upper(): item for item in quotes}
+
+    def average(tickers: tuple[str, ...]) -> float | None:
+        values: list[float] = [
+            value
+            for ticker in tickers
+            if ticker in by_ticker
+            for value in [_quote_move(by_ticker[ticker])]
+            if isinstance(value, (int, float))
+        ]
+        return sum(values) / len(values) if values else None
+
+    taiwan = average(("TAIEX", "TPEX", "2330"))
+    tech = average(("SOX", "NASDAQ"))
+    broad = average(("S&P 500", "DJIA"))
+    if slot in {"pre_open", "intraday", "midday", "afternoon", "post_close"}:
+        if taiwan is not None and tech is not None and taiwan > 0.25 and tech > 0.25:
+            return "台股與半導體同步偏強", None
+        if taiwan is not None and taiwan > 0.25:
+            return "台股核心指數偏強", None
+        if taiwan is not None and taiwan < -0.25:
+            return "台股核心指數偏弱", None
+    else:
+        if tech is not None and broad is not None and tech > 0.25 and broad > 0.25:
+            return "美股科技與大盤同步偏強", None
+        if tech is not None and tech < -0.25:
+            return "美股科技股偏弱", None
+        if broad is not None and broad < -0.25:
+            return "美股大盤偏弱", None
+
+    for theme in themes:
+        if theme.get("quote_evidence") and theme.get("source_evidence") and theme.get("normalization_complete"):
+            return _topic_driver(theme), str(theme.get("canonical_event_key") or theme.get("event_key") or "") or None
+    return "市場焦點待價格確認", None
+
+
 def build_market_assessment(
     *,
     slot: str,
@@ -270,61 +373,97 @@ def build_market_assessment(
     quotes: list[dict[str, Any]],
     themes: list[dict[str, Any]],
     intelligence: dict[str, Any] | None = None,
+    market_status: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a five-level stance with explicit evidence sufficiency."""
-    supplied = intelligence.get("market_assessment") if isinstance(intelligence, dict) else None
-    factors, dimensions, directional = _quote_factors(quotes)
+    factors, dimensions, directional, group_tickers, quote_tickers = _quote_factors(quotes, slot=slot)
     score = sum(factors.values())
-    pos = sum(1 for value in factors.values() if value > 0)
-    neg = sum(1 for value in factors.values() if value < 0)
-    conflict = pos > 0 and neg > 0
+    # Conflict is local to a comparable evidence group.  A rising Taiwan
+    # market alongside a softer Nasdaq is a cross-market relationship to
+    # explain, not proof that Taiwan's own stance is automatically divergent.
+    group_signs: dict[str, set[int]] = {}
+    for group, tickers in group_tickers.items():
+        values = []
+        by_ticker = {_text(item.get("ticker")).upper(): _quote_move(item) for item in quotes}
+        for ticker in tickers:
+            move = by_ticker.get(ticker)
+            if move is not None and abs(move) >= (0.75 if group == "commodities" else 0.25):
+                values.append(1 if move > 0 else -1)
+        group_signs[group] = set(values)
+    if slot in {"pre_open", "intraday", "midday", "afternoon", "post_close"}:
+        # A softer Nasdaq against a stronger Taiwan/semiconductor session is
+        # a cross-market relationship to explain, not a Taiwan-core conflict.
+        relevant_groups = {"taiwan_core"}
+    elif slot in {"us_premarket", "us_open"}:
+        relevant_groups = {"us_tech", "us_broad"}
+    else:
+        relevant_groups = set(group_signs)
+    conflict_groups = [
+        group for group, signs in group_signs.items()
+        if group in relevant_groups and len(signs) > 1
+    ]
+    conflict = bool(conflict_groups)
     factor_source = "quote_factors"
     if isinstance(intelligence, dict):
         regime = intelligence.get("market_regime")
         if isinstance(regime, dict) and isinstance(regime.get("score"), (int, float)):
-            score = float(regime["score"])
-            factor_source = "market_regime"
+            # Use the regime only as an additional bounded factor when its
+            # contract is present.  Never combine its score with a different
+            # conflict model.
+            supplied_score = max(-2.0, min(2.0, float(regime["score"])))
+            score = round((score + supplied_score) / 2, 3)
+            factor_source = "quote_factors+market_regime"
             conflict = conflict or bool(regime.get("conflict_flags"))
-            factor_count = int(regime.get("factor_count") or len(factors))
-        else:
-            factor_count = len(factors)
-    else:
-        factor_count = len(factors)
-    if isinstance(supplied, dict) and supplied.get("stance") in {"bullish", "mildly_bullish", "divergent", "cautious", "bearish"}:
-        stance = str(supplied["stance"])
-        labels = {"bullish": "偏多", "mildly_bullish": "中性偏多", "divergent": "分歧", "cautious": "中性偏謹慎", "bearish": "偏空"}
-        stance_label = str(supplied.get("stance_label") or labels[stance])
-        confidence = str(supplied.get("confidence") or "low")
-    else:
-        stance, stance_label, confidence = _stance(score, factor_count, dimensions, conflict)
+    factor_count = sum(
+        1 for item in quotes
+        if _quote_move(item) is not None and _text(item.get("ticker")).upper() in set(quote_tickers)
+    )
+    # A previously stored assessment is presentation state, not fresh
+    # evidence. Recompute the stance from the same quote/regime inputs for
+    # every release so an old label cannot override current market facts.
+    stance, stance_label, confidence = _stance(score, factor_count, dimensions, conflict)
     taipei = as_of.astimezone(timezone(timedelta(hours=8)))
     weekend = taipei.weekday() >= 5
     taiwan_slot = slot in {"pre_open", "intraday", "midday", "afternoon", "post_close"}
+    taiwan_status = market_status.get("taiwan") if isinstance(market_status, dict) else None
+    us_status = market_status.get("us") if isinstance(market_status, dict) else None
+    taiwan_closed = isinstance(taiwan_status, dict) and taiwan_status.get("is_trading_day") is False
+    us_closed = isinstance(us_status, dict) and us_status.get("is_trading_day") is False
     if taiwan_slot:
         market_scope = "台股"
     elif slot in {"us_premarket", "us_open"}:
         market_scope = "美股"
     else:
         market_scope = "台美市場"
-    if taiwan_slot and weekend:
+    if (weekend or taiwan_closed) and slot != "us_premarket":
         market_summary = "台股休市、外圍訊號分歧"
+    elif (us_closed or (weekend and slot == "us_premarket")) and slot == "us_premarket":
+        market_summary = "美股休市、使用最近收盤資料"
     else:
         market_summary = f"{market_scope}{stance_label}"
-    dominant = next((theme for theme in themes if theme.get("normalization_complete", True)), themes[0] if themes else None)
-    driver = _topic_driver(dominant)
-    highlights = _quote_highlights(quotes)
-    risk = "行情與事件證據仍待後續核對。" if conflict or confidence == "low" else "留意利率、能源與外圍市場變化。"
-    if dominant and not dominant.get("quote_evidence"):
-        risk = f"{driver}。"
+    driver, dominant_key = _market_driver(slot, quotes, themes, group_tickers)
+    highlights = _quote_highlights(quotes, slot)
+    if conflict:
+        risk = "核心證據方向有衝突，等待下一次收盤或官方資料核對。"
+    elif confidence == "low":
+        risk = "有效因子不足，暫不把新聞或單一行情視為方向確認。"
+    else:
+        risk = "留意利率、美元與能源變化是否改變目前市場傳導。"
+    quote_driven = driver in {
+        "台股與半導體同步偏強", "台股核心指數偏強", "台股核心指數偏弱",
+        "美股科技與大盤同步偏強", "美股科技股偏弱", "美股大盤偏弱",
+    }
+    if dominant_key is None and themes and not quote_driven:
+        risk = f"{driver}，仍待價格確認。"
     return {
         "stance": stance,
         "stance_label": stance_label,
         "confidence": confidence,
         "market_scope": market_scope,
         "dominant_driver": driver,
-        "dominant_driver_key": dominant.get("canonical_event_key") if isinstance(dominant, dict) else None,
+        "dominant_driver_key": dominant_key,
         "supporting_theme_keys": [str(theme.get("canonical_event_key") or theme.get("event_key")) for theme in themes if theme.get("canonical_event_key") or theme.get("event_key")],
-        "conflict_flags": ["directional_quote_conflict"] if conflict else [],
+        "conflict_flags": ["directional_quote_conflict", *[f"group:{group}" for group in conflict_groups]] if conflict else [],
         "summary_sections": {
             "summary": market_summary,
             "market_highlights": highlights,
@@ -333,6 +472,7 @@ def build_market_assessment(
         "evidence_as_of": as_of.isoformat(),
         "factor_count": factor_count,
         "evidence_dimensions": sorted(dimensions),
+        "evidence_groups": {key: sorted(signs) for key, signs in group_signs.items() if signs},
         "score": round(score, 3),
         "factor_source": factor_source,
         "weekend_market": weekend and taiwan_slot,

@@ -680,6 +680,27 @@ def build_market_snapshot() -> dict[str, Any]:
         tpex_fallback_fetcher=fetch_tpex_recent_close_fallback,
     )
     errors.extend(crosscheck_errors)
+    from src.taiwan_market_statistics import fetch_twse_market_statistics
+    try:
+        taiwan_market_statistics = fetch_twse_market_statistics(
+            now=datetime.now(ZoneInfo("Asia/Taipei")),
+        )
+    except Exception as exc:
+        taiwan_market_statistics = {
+            "status": "unavailable",
+            "observed_date": None,
+            "turnover": None,
+            "breadth": None,
+            "institutional_flows": None,
+            "source": "TWSE official daily market statistics",
+            "errors": [f"fetch:{type(exc).__name__}"],
+            "is_proxy": False,
+        }
+    if taiwan_market_statistics.get("status") != "complete":
+        errors.extend(
+            {"ticker": "台股盤面統計", "message": issue, "scope": "taiwan_market_statistics"}
+            for issue in taiwan_market_statistics.get("errors", [])
+        )
     # A Yahoo failure is informational only when TPEx has been restored by
     # any validated fallback (TWSE MIS official close or a labelled public
     # recent close).  Do not retain the original provider error as a health
@@ -829,9 +850,11 @@ def build_market_snapshot() -> dict[str, Any]:
         "phase_two": phase_two,
         "macro": macro,
         "macro_quotes": macro_quotes,
+        "taiwan_market_statistics": taiwan_market_statistics,
         "briefing": build_briefing_snapshot({
             "events": events, "indices": indices, "quotes": quotes,
             "macro_quotes": macro_quotes, "risk": risk,
+            "taiwan_market_statistics": taiwan_market_statistics,
         }),
         "research_report": research_report,
         "source_health": source_health,

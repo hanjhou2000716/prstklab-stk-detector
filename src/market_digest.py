@@ -52,6 +52,7 @@ _TICKER_NAMES = {
     "ETH": "ETH",
 }
 _TICKER_ALIASES = {
+    "TPEX": "TPEx",
     "NASDAQ綜合指數": "NASDAQ",
     "那斯達克": "NASDAQ",
     "那斯達克綜合指數": "NASDAQ",
@@ -615,10 +616,10 @@ def build_market_digest(
         item for item in [*(snapshot.get("indices") or []), *(snapshot.get("quotes") or []), *(snapshot.get("macro_quotes") or [])]
         if isinstance(item, dict)
     ]
-    quote_priority = ["NASDAQ", "SOX", "DJIA", "TAIEX", "US10Y", "DXY", "GOLD", "WTI"]
+    quote_priority = ["NASDAQ", "SOX", "DJIA", "TAIEX", "TPEx", "US10Y", "DXY", "GOLD", "WTI"]
     quote_items = sorted(
-        [item for item in all_quotes if str(item.get("ticker") or "") in quote_priority],
-        key=lambda item: quote_priority.index(str(item.get("ticker") or "")),
+        [item for item in all_quotes if _normalise_ticker(item.get("ticker")) in quote_priority],
+        key=lambda item: quote_priority.index(_normalise_ticker(item.get("ticker"))),
     )
     quote_theme = _theme_for_quotes(quote_items)
     # Quote evidence belongs to an event only when the event carries a
@@ -712,6 +713,7 @@ def build_market_digest(
         quotes=quote_items,
         themes=summary_themes,
         intelligence=intelligence,
+        market_status=snapshot.get("markets") if isinstance(snapshot.get("markets"), dict) else None,
     )
     overview = project_overview(assessment, DASHBOARD_SUMMARY_MAX_CHARS)
     public_message = project_public_message(label, assessment, PUBLIC_MESSAGE_MAX_CHARS)
@@ -719,6 +721,9 @@ def build_market_digest(
         public_message = ""
 
     canonical_material = {
+        # Slot labels are presentation metadata.  Cross-anchor delivery
+        # coalescing uses ``decision_fingerprint`` below, so changing from
+        # morning to pre-open cannot by itself manufacture a new decision.
         "slot": slot,
         # The detailed market-highlights sentence is quote hydration.  Keep
         # the conclusion/risk projection in the identity, but do not let a
@@ -732,7 +737,11 @@ def build_market_digest(
         # identity.  Keep the values in the artifact, but exclude them from
         # the content hash so a refreshed quote cannot resend the same event.
         "market_assessment": {
-            key: value for key, value in assessment.items()
+            key: (
+                {str(group): sorted(str(sign) for sign in signs) for group, signs in value.items()}
+                if key == "evidence_groups" and isinstance(value, dict)
+                else value
+            ) for key, value in assessment.items()
             if key not in {
                 "evidence_as_of", "factor_count", "evidence_dimensions",
                 "score", "factor_source", "directional_quote_count",
@@ -750,6 +759,30 @@ def build_market_digest(
             if theme and theme.get("title") != "市場價格"
         ],
     }
+    decision_material = {
+        "stance": assessment.get("stance"),
+        "market_scope": assessment.get("market_scope"),
+        "dominant_driver": assessment.get("dominant_driver"),
+        "dominant_driver_key": assessment.get("dominant_driver_key"),
+        "conflict_flags": assessment.get("conflict_flags") or [],
+        "supporting_theme_keys": assessment.get("supporting_theme_keys") or [],
+        "evidence_groups": {
+            str(key): sorted(str(value) for value in values)
+            for key, values in (assessment.get("evidence_groups") or {}).items()
+        },
+        "themes": [
+            {
+                "canonical_event_key": theme.get("canonical_event_key"),
+                "market_topic": theme.get("market_topic"),
+                "normalization_complete": theme.get("normalization_complete"),
+            }
+            for theme in summary_themes
+            if theme
+        ],
+    }
+    decision_fingerprint = hashlib.sha256(
+        json.dumps(decision_material, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
     content_hash = hashlib.sha256(
         json.dumps(canonical_material, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
@@ -764,6 +797,8 @@ def build_market_digest(
         "trace_id": f"briefing-trace-{slot}-{content_hash[:16]}",
         "canonical_content_hash": content_hash,
         "canonical_hash_version": 2,
+        "decision_fingerprint": decision_fingerprint,
+        "decision_material": decision_material,
         "assessment_summary": overview,
         "overview": overview,
         "market_assessment": assessment,

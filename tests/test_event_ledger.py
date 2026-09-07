@@ -137,6 +137,19 @@ def test_notification_claim_is_atomic_and_retries_only_failed_recipients(tmp_pat
     assert first.claim_notification("fj:event-1", recipient_hashes=("ok", "retry"))["status"] == "already_delivered"
 
 
+def test_scheduled_anchor_claim_is_unique_and_coalesces_same_decision(tmp_path):
+    path = tmp_path / "ledger.json"
+    first = EventLedger(path)
+    second = EventLedger(path)
+    anchor = "taiwan:2026-09-07:post_close"
+    claimed = first.claim_scheduled_brief(anchor, decision_fingerprint="decision-1", recipient_hashes=("r",), run_id="a")
+    assert claimed["status"] == "claimed"
+    assert second.claim_scheduled_brief(anchor, decision_fingerprint="decision-1", recipient_hashes=("r",), run_id="b")["status"] == "in_flight"
+    first.complete_notification_claim("scheduled-anchor:" + anchor, delivered_recipient_hashes=("r",))
+    assert second.claim_scheduled_brief(anchor, decision_fingerprint="decision-1", recipient_hashes=("r",))["status"] == "already_delivered"
+    assert second.claim_scheduled_brief("taiwan:2026-09-07:morning", decision_fingerprint="decision-1", recipient_hashes=("r",))["status"] == "same_decision"
+
+
 def test_unchanged_theme_stays_suppressed_after_two_hours(tmp_path):
     ledger = EventLedger(tmp_path / "ledger.json")
     event = {

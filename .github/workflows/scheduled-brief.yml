@@ -29,10 +29,7 @@ on:
   schedule:
     - cron: "0 22 * * *"
     - cron: "45 0 * * 1-5"
-    - cron: "30 2 * * 1-5"
-    - cron: "45 3 * * 1-5"
-    - cron: "15 5 * * 1-5"
-    - cron: "45 6 * * 1-5"
+    - cron: "20 6 * * 1-5"
     - cron: "0 13 * * 1-5"
 
 permissions:
@@ -69,6 +66,7 @@ jobs:
       PUBLIC_OBSERVATIONS_URL: ${{ vars.PUBLIC_OBSERVATIONS_URL }}
       SLOT: ${{ inputs.slot || github.event.client_payload.slot || 'auto' }}
       SCHEDULE_CRON: ${{ github.event.schedule || '' }}
+      SCHEDULED_FOR_AT: ${{ github.event.client_payload.scheduled_for_at || '' }}
       FORCE: ${{ inputs.force || github.event.client_payload.force || 'false' }}
       # Manual runs publish and verify by default but never send production
       # notifications unless the operator explicitly opts in. Scheduled runs
@@ -126,6 +124,7 @@ jobs:
           arguments+=(--trigger-kind "$GITHUB_EVENT_NAME")
           if [ "$STRICT_WINDOW" = "true" ]; then arguments+=(--strict-window); fi
           if [ -n "$SCHEDULE_CRON" ]; then arguments+=(--scheduled-cron "$SCHEDULE_CRON"); fi
+          if [ -n "$SCHEDULED_FOR_AT" ]; then arguments+=(--scheduled-for "$SCHEDULED_FOR_AT"); fi
           python -m src.scheduled_brief "${arguments[@]}" >> "$GITHUB_OUTPUT"
       - name: Restore scheduled idempotency lock
         if: steps.window.outputs.should_run == 'true' && env.FORCE != 'true'
@@ -143,7 +142,13 @@ jobs:
           # Resolve the scoped export credential without exposing a delivery
           # secret reference to the collection job's static contract checks.
           PUBLIC_OBSERVATIONS_SHARED_SECRET: ${{ secrets['DELIVERY_RECEIPT_SHARED_SECRET'] || secrets['RAILWAY_STATUS_SHARED_SECRET'] || secrets['DELIVERY_STATUS_SHARED_SECRET'] }}
-        run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --prepare-only --snapshot "$SNAPSHOT_PATH" >> "$GITHUB_OUTPUT"
+          SLOT_CONTEXT: ${{ steps.window.outputs.context_json }}
+          # The post-close anchor may start before TWSE has published all
+          # official daily tables. Retry the official endpoints at 10-minute
+          # intervals for 30 minutes; other anchors remain one-pass.
+          TWSE_STATS_RETRY_ATTEMPTS: ${{ steps.window.outputs.slot == 'post_close' && '3' || '0' }}
+          TWSE_STATS_RETRY_WAIT_SECONDS: '600'
+        run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --prepare-only --slot-context "$SLOT_CONTEXT" --snapshot "$SNAPSHOT_PATH" >> "$GITHUB_OUTPUT"
       - name: Build release manifest
         if: steps.prepare.outputs.prepared == 'true'
         run: |
@@ -172,10 +177,7 @@ jobs:
             arguments+=(--creator-records "$CREATOR_RECORDS_PATH")
           fi
           creator_schedule="${{ github.event.schedule }}"
-          if [ "${{ steps.window.outputs.slot }}" = "morning" ] || \
-             [ "$creator_schedule" = "30 2 * * 1-5" ] || \
-             [ "$creator_schedule" = "45 3 * * 1-5" ] || \
-             [ "$creator_schedule" = "15 5 * * 1-5" ]; then
+          if [ "${{ steps.window.outputs.slot }}" = "morning" ]; then
             arguments+=(--creator-morning-batch)
           fi
           python -m src.release_manifest "${arguments[@]}"
@@ -259,7 +261,7 @@ jobs:
         if: inputs.test_chat_id != ''
         run: echo "::add-mask::${{ inputs.test_chat_id }}"
       - name: Send Telegram brief after successful publication
-        if: steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true'
+        if: steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true' && steps.window.outputs.delivery_intent == 'notify_candidate'
         id: send_brief
         env:
           # Notification credentials are scoped to this step; collection and
@@ -357,7 +359,7 @@ jobs:
           --public-attempts 12
           --public-delay 5
       - name: Send release-gated Creator notifications
-        if: steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true'
+        if: steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true' && steps.window.outputs.delivery_intent == 'notify_candidate'
         id: creator_dispatch
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
