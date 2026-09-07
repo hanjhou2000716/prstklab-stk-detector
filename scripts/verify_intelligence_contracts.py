@@ -95,6 +95,7 @@ def run_audit() -> dict[str, Any]:
             "importance": 8,
             "source_url": "https://financialjuice.com/item/acceptance",
             "published_at": "2026-08-24T02:00:00Z",
+            "source_published_at": AS_OF.isoformat(),
             "fetched_at": "2026-08-24T02:01:00Z",
             "public_safe": True,
         },
@@ -102,7 +103,9 @@ def run_audit() -> dict[str, Any]:
         index=0,
     )
     envelope = build_financialjuice_envelope([fj_item], message_id="fj-message-acceptance")
-    projection = project_financialjuice_priority([dict(fj_item, source="financialjuice")])
+    projection = project_financialjuice_priority(
+        [dict(fj_item, source="financialjuice")], now=AS_OF,
+    )
     decision = projection["decisions"][0] if projection["decisions"] else {}
     checks["financialjuice_compound_item_and_priority"] = (
         envelope.to_dict().get("item_count") == 1

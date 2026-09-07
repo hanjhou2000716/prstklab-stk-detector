@@ -54,4 +54,23 @@ def test_financialjuice_release_contract_blocks_vendor_risk_mixup() -> None:
 def test_financialjuice_release_contract_allows_snapshot_without_fj() -> None:
     result = validate_financialjuice_release({"events": {"items": []}})
     assert result["ok"] is True
+
+
+def test_financialjuice_release_contract_allows_audited_stale_legacy_rows() -> None:
+    snapshot = {
+        "financialjuice_observations": [{"observation_id": "fj-stale"}],
+        "financialjuice_priority_decisions": [{
+            "observation_id": "fj-stale",
+            "vendor_importance": 10,
+            "vendor_priority_notification": False,
+            "notification_status": "missing_source_timestamp",
+            "release_trace_required": True,
+            "public_signal_eligible": False,
+            "public_short_message": "",
+        }],
+        "financialjuice_priority_events": [],
+    }
+    result = validate_financialjuice_release(snapshot)
+    assert result["ok"] is True
+    assert result["eligible_count"] == 0
     assert result["status"] == "ready"
