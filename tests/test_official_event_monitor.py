@@ -138,6 +138,7 @@ def test_realtime_external_projection_adds_eligible_fj_to_shared_event_lane(monk
         "importance": 8,
         "source_url": "https://financialjuice.com/item/1",
         "published_at": "2026-08-21T01:00:00Z",
+        "source_published_at": datetime.now(UTC).isoformat(),
         "received_at": "2026-08-21T01:01:00Z",
         "parser_version": "financialjuice-v1",
         "public_safe": True,
@@ -161,6 +162,7 @@ def test_realtime_external_projection_keeps_below_threshold_visible_without_sele
         "original_headline": "Routine market note",
         "importance": 7,
         "source_url": "https://financialjuice.com/item/7",
+        "source_published_at": datetime.now(UTC).isoformat(),
         "public_safe": True,
     }
     monkeypatch.setattr(monitor, "external_observations_path", lambda: source)

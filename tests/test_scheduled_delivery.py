@@ -1,4 +1,5 @@
 import json
+from datetime import UTC, datetime
 
 import pytest
 
@@ -465,6 +466,8 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
         "notification_reason": "vendor_priority_importance_ge_8",
         "parser_version": "financialjuice-compound-v1",
         "received_at": "2026-08-21T01:01:00+00:00",
+        "source_published_at": datetime.now(UTC).isoformat(),
+        "freshness_status": "fresh",
         "alert_eligible": True,
         "source_url": "https://example.test/source/fj-1",
     }
@@ -734,6 +737,7 @@ def test_prepare_projects_qualifying_financialjuice_into_release_event_lane(tmp_
         "observation_id": "fj-8", "item_id": "item-8", "source": "financialjuice",
         "original_headline": "Oil supply risk", "event_type": "energy", "vendor_importance": 8,
         "source_url": "https://financialjuice.com/item/8", "source_identity_verified": True, "public_safe": True,
+        "source_published_at": datetime.now(UTC).isoformat(),
     }]}), encoding="utf-8")
     snapshot_path = tmp_path / "market.json"
     monkeypatch.setenv("EXTERNAL_OBSERVATIONS_PATH", str(records))

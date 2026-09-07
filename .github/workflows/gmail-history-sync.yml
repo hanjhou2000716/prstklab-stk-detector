@@ -67,8 +67,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          processed="$(jq -r 'if (.processed | type) == "number" then .processed else 0 end' gmail-sync-result.json)"
-          if [ "$processed" -gt 0 ]; then
+          material_candidates="$(jq -r 'if (.material_candidate_count | type) == "number" then .material_candidate_count else 0 end' gmail-sync-result.json)"
+          if [ "$material_candidates" -gt 0 ] && [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" != "true" ]; then
             gh api --method POST "repos/$GH_REPO/dispatches" \
               -f event_type=official-event-check \
               -f 'client_payload[reason]=gmail-reviewed-observation'
@@ -86,16 +86,18 @@ jobs:
           status="unavailable"
           if [ -s gmail-sync-result.json ]; then
             processed="$(jq -r 'if (.processed | type) == "number" then .processed else 0 end' gmail-sync-result.json)"
+            accepted_new="$(jq -r 'if (.accepted_new_count | type) == "number" then .accepted_new_count else 0 end' gmail-sync-result.json)"
+            material_candidates="$(jq -r 'if (.material_candidate_count | type) == "number" then .material_candidate_count else 0 end' gmail-sync-result.json)"
             failed="$(jq -r 'if (.failed | type) == "number" then .failed else 0 end' gmail-sync-result.json)"
             status="$(jq -r '.status // "unknown"' gmail-sync-result.json)"
           fi
           {
             echo "## Gmail notification decision"
             echo "- scan_status: ${status}"
-            echo "- candidate_type: $([ "$processed" -gt 0 ] && echo financialjuice_or_creator || echo none)"
-            echo "- notification_expected: $([ "$processed" -gt 0 ] && echo true || echo false)"
+            echo "- candidate_type: $([ "$material_candidates" -gt 0 ] && echo financialjuice_or_creator || echo none)"
+            echo "- notification_expected: $([ "$material_candidates" -gt 0 ] && echo true || echo false)"
             echo "- notification_status: $([ "$DISPATCH_TRIGGERED" = true ] && echo dispatch_requested || ([ "$failed" -gt 0 ] && echo failed || echo no_new_content))"
-            echo "- notification_reason: $([ "$DISPATCH_TRIGGERED" = true ] && echo reviewed_email_processed || ([ "$failed" -gt 0 ] && echo gmail_sync_failed || echo no_new_reviewed_email))"
+            echo "- notification_reason: $([ "$DISPATCH_TRIGGERED" = true ] && echo new_reviewed_email_accepted || ([ "$failed" -gt 0 ] && echo gmail_sync_failed || echo no_new_reviewed_email))"
             echo "- delivered_count: unknown"
             echo "- failed_count: ${failed}"
           } >> "$GITHUB_STEP_SUMMARY"

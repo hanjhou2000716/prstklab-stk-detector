@@ -159,6 +159,11 @@ def canonical_event_key(event: dict[str, Any] | None) -> str:
             # event identities.  Reuse the canonical fact/content key so a
             # replay from another mailbox or URL converges in this same
             # EventLedger.
+            canonical_fact_key = str(event.get("canonical_fact_key") or "").strip()
+            if canonical_fact_key:
+                return hashlib.sha256(
+                    f"financialjuice-fact|{canonical_fact_key.casefold()}".encode()
+                ).hexdigest()[:32]
             from src.financialjuice_notification import financialjuice_notification_key
 
             fact_key = financialjuice_notification_key(event)
@@ -947,6 +952,7 @@ class EventLedger:
         *,
         slot_key: str = "",
         recipient_hashes: tuple[str, ...] = (),
+        aliases: tuple[str, ...] = (),
         now: datetime | None = None,
         run_id: str = "",
         lease_seconds: int = DELIVERY_CLAIM_LEASE_SECONDS,
@@ -963,8 +969,14 @@ class EventLedger:
             records = self._read_records(self.path)
             claims = self._read_claims(self.path)
             claim = dict(claims.get(key) or {})
+            alias_keys = tuple(dict.fromkeys(str(item).strip() for item in aliases if str(item).strip() and str(item).strip() != key))
+            alias_claims = [dict(claims.get(alias) or {}) for alias in alias_keys]
             delivered = self._delivery_hashes(records, key)
             delivered.update(str(item) for item in claim.get("delivered_recipient_hashes") or [] if str(item))
+            for alias in alias_keys:
+                delivered.update(self._delivery_hashes(records, alias))
+            for alias_claim in alias_claims:
+                delivered.update(str(item) for item in alias_claim.get("delivered_recipient_hashes") or [] if str(item))
             configured = tuple(dict.fromkeys(str(item) for item in (claim.get("recipient_hashes") or []) + list(recipients) if str(item)))
             pending = [item for item in configured if item not in delivered]
             if not configured:
@@ -982,6 +994,14 @@ class EventLedger:
                 self.delivery_claims = claims
                 self.records = records
                 return {"status": "already_delivered", "notification_key": key, "pending_recipient_hashes": []}
+            if any(str(item.get("status") or "") == "uncertain" for item in alias_claims):
+                return {"status": "uncertain", "notification_key": key, "pending_recipient_hashes": pending}
+            if any(
+                str(item.get("status") or "") == "in_flight"
+                and self._timestamp(item.get("lease_until")) > current
+                for item in alias_claims
+            ):
+                return {"status": "in_flight", "notification_key": key, "pending_recipient_hashes": pending}
             if str(claim.get("status") or "") == "uncertain":
                 return {"status": "uncertain", "notification_key": key, "pending_recipient_hashes": pending}
             if str(claim.get("status") or "") == "in_flight" and lease_until > current:

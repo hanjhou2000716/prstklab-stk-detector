@@ -211,13 +211,16 @@ def _item_record(block: str) -> dict[str, Any]:
 def _compound_cluster_key(item: dict[str, Any], normalized: dict[str, Any]) -> str:
     """Keep item clusters independent when a vendor omits structured entities."""
     material = "|".join(
-        str(item.get(key) or "") for key in ("candidate_event_type", "original_headline", "chinese_translation")
-    ) + "|" + str(normalized.get("content_hash") or "")
+        str(item.get(key) or "") for key in ("candidate_event_type", "original_headline")
+    ) + "|" + str(normalized.get("canonical_fact_key") or "")
     return "fj-cluster-" + hashlib.sha256(material.encode("utf-8")).hexdigest()[:24]
 
 
 def parse_financialjuice_compound_email(
     *, sender: str, subject: str, body: str, message_id: str = "",
+    source_published_at: str | None = None,
+    transport_received_at: str | None = None,
+    ingested_at: str | None = None,
 ) -> dict[str, Any]:
     """Parse repeated FinancialJuice items with fail-closed compound semantics."""
     body = _plain_text(body)
@@ -240,7 +243,16 @@ def parse_financialjuice_compound_email(
     items: list[dict[str, Any]] = []
     seen_clusters: set[str] = set()
     for index, record in enumerate(records):
-        normalized = normalize_financialjuice_item(record, message_id=message_id, index=index)
+        normalized = normalize_financialjuice_item(
+            {
+                **record,
+                "source_published_at": source_published_at,
+                "transport_received_at": transport_received_at,
+                "ingested_at": ingested_at,
+            },
+            message_id=message_id,
+            index=index,
+        )
         normalized.update(
             {
                 "headline": record["original_headline"],
@@ -272,7 +284,12 @@ def parse_financialjuice_compound_email(
     }
 
 
-def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_id: str = "") -> dict[str, Any]:
+def parse_financialjuice_email(
+    *, sender: str, subject: str, body: str, message_id: str = "",
+    source_published_at: str | None = None,
+    transport_received_at: str | None = None,
+    ingested_at: str | None = None,
+) -> dict[str, Any]:
     """Parse a FinancialJuice relay into attributed, non-directional facts."""
     body = _plain_text(body)
     route = route_email_source(sender=sender, subject=subject, body=body)
@@ -280,6 +297,9 @@ def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_
         return {"parse_status": "invalid_source", "failure_reason": "source_not_financialjuice", "message_id": message_id}
     compound = parse_financialjuice_compound_email(
         sender=sender, subject=subject, body=body, message_id=message_id,
+        source_published_at=source_published_at,
+        transport_received_at=transport_received_at,
+        ingested_at=ingested_at,
     )
     if compound.get("parse_status") == "parsed":
         return compound
@@ -306,6 +326,9 @@ def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_
         "ai_commentary": analysis,
         "possible_impact": impact,
         "source_url": source_url,
+        "source_published_at": source_published_at,
+        "transport_received_at": transport_received_at,
+        "ingested_at": ingested_at,
     }
     identity = normalize_financialjuice_item(
         identity_record, message_id=message_id, index=0,
@@ -335,6 +358,12 @@ def parse_financialjuice_email(*, sender: str, subject: str, body: str, message_
         "attribution": "FinancialJuice",
         "item_id": identity["item_id"],
         "content_hash": identity["content_hash"],
+        "canonical_fact_key": identity["canonical_fact_key"],
+        "material_fact_version": identity["material_fact_version"],
+        "published_at": identity["source_published_at"],
+        "source_published_at": identity["source_published_at"],
+        "transport_received_at": identity["transport_received_at"],
+        "ingested_at": identity["ingested_at"],
         "event_cluster_key": cluster_key,
         "public_safe": True,
     }
@@ -383,7 +412,7 @@ def _parse_creator_email_legacy(*, sender: str, subject: str, body: str, source:
     return insight
 
 
-def parse_creator_email(*, sender: str, subject: str, body: str, source: str | None = None, message_id: str = "") -> dict[str, Any]:
+def parse_creator_email(*, sender: str, subject: str, body: str, source: str | None = None, message_id: str = "", **kwargs: Any) -> dict[str, Any]:
     """Parse a creator template with deterministic adapter and safe fallback."""
     route = route_email_source(sender=sender, subject=subject, body=body)
     origin = source or route["source"]

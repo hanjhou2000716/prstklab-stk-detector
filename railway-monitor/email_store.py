@@ -261,6 +261,7 @@ class EmailStore:
                     ),
                 )
                 return True
+
             try:
                 previous = json.loads(existing[0])
             except (TypeError, json.JSONDecodeError):
@@ -287,6 +288,22 @@ class EmailStore:
             except sqlite3.IntegrityError:
                 return False
             return True
+
+    def public_fact_exists(self, canonical_fact_key: str) -> bool:
+        """Check the sanitized public store for a previously seen fact."""
+        key = str(canonical_fact_key or "").strip()
+        if not key:
+            return False
+        with self._connect() as connection:
+            rows = connection.execute("SELECT payload_json FROM public_observations").fetchall()
+        for row in rows:
+            try:
+                payload = json.loads(str(row[0]))
+            except (TypeError, ValueError, json.JSONDecodeError):
+                continue
+            if isinstance(payload, dict) and str(payload.get("canonical_fact_key") or "").strip() == key:
+                return True
+        return False
 
     def public_observations(self, *, limit: int = 100) -> list[dict[str, Any]]:
         """Return bounded sanitized observations for the scheduled publisher."""

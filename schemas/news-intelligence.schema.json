@@ -29,6 +29,9 @@
         "inventory_eligible": {"type": "integer", "minimum": 0},
         "inventory_selected": {"type": "integer", "minimum": 0},
         "final_public_count": {"type": "integer", "minimum": 0},
+        "target_count": {"type": "integer", "minimum": 0},
+        "shortfall_count": {"type": "integer", "minimum": 0},
+        "shortfall_reason": {"type": ["string", "null"]},
         "filtered_story_count": {"type": "integer", "minimum": 0},
         "fetched_story_count": {"type": "integer", "minimum": 0},
         "normalized_story_count": {"type": "integer", "minimum": 0},
@@ -46,7 +49,9 @@
         "max_calendar_days": {"type": "integer", "minimum": 1},
         "considered": {"type": "integer", "minimum": 0},
         "eligible": {"type": "integer", "minimum": 0},
-        "selected": {"type": "integer", "minimum": 0}
+        "selected": {"type": "integer", "minimum": 0},
+        "target_count": {"type": "integer", "minimum": 0},
+        "shortfall_count": {"type": "integer", "minimum": 0}
       },
       "additionalProperties": false
     },
@@ -135,7 +140,7 @@
         "exclusion_reason": {"type": ["string", "null"]},
         "selection_lane": {"enum": ["current", "inventory"]},
         "inventory_used": {"type": "boolean"},
-        "inventory_age_trading_sessions": {"type": ["integer", "null"], "minimum": 1, "maximum": 3},
+        "inventory_age_trading_sessions": {"type": ["integer", "null"], "minimum": 1, "maximum": 5},
         "inventory_saved_at": {"type": ["string", "null"], "format": "date-time"},
         "eligibility_ruleset": {"type": "string", "minLength": 1}
       },

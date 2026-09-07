@@ -113,6 +113,58 @@ def financialjuice_content_hash(record: dict[str, Any]) -> str:
     return hashlib.sha256(material.encode("utf-8")).hexdigest()
 
 
+def _fact_material(record: dict[str, Any]) -> str:
+    """Return only source facts that identify an event.
+
+    Vendor analysis and linkage are intentionally excluded.  FJ frequently
+    republishes the same headline with revised commentary; those revisions
+    must not create a new notification identity.
+    """
+    headline = _text(
+        record.get("original_headline")
+        or record.get("vendor_original_headline")
+        or record.get("headline")
+        or record.get("title")
+    )
+    category = _text(record.get("event_type") or record.get("candidate_event_type") or record.get("category"))
+    # Preserve explicit material values when a structured parser supplied
+    # them, but never include transport or display metadata.
+    numbers = _text(record.get("material_numbers") or record.get("key_numbers"))
+    # Translation is a presentation layer and may be revised without a new
+    # fact.  Use it only when no original/source headline exists.
+    fallback_translation = _text(record.get("chinese_translation") or record.get("vendor_translation"))
+    return "|".join(
+        value.casefold()
+        for value in (category, headline or fallback_translation, numbers)
+        if value
+    )
+
+
+def financialjuice_canonical_fact_key(record: dict[str, Any]) -> str:
+    """Return a stable FJ identity independent of commentary and ingestion."""
+    material = _fact_material(record)
+    if not material:
+        material = _text(record.get("content_hash")).casefold()
+    if not material:
+        return ""
+    return f"financialjuice-fact:{hashlib.sha256(material.encode('utf-8')).hexdigest()[:32]}"
+
+
+def financialjuice_material_fact_version(record: dict[str, Any]) -> str:
+    """Version only facts or confirmation states that may justify a follow-up."""
+    material = "|".join(
+        value
+        for value in (
+            _fact_material(record),
+            "official=1" if record.get("official_confirmed") else "official=0",
+            "market=1" if record.get("market_sync_confirmed") else "market=0",
+            _text(record.get("event_status") or record.get("material_status")),
+        )
+        if value
+    )
+    return f"financialjuice-fact-version:{hashlib.sha256(material.encode('utf-8')).hexdigest()[:32]}" if material else ""
+
+
 def financialjuice_item_id(message_id: str, index: int, content_hash: str) -> str:
     """Identify a compound item stably across semantic replay enrichment."""
     material = f"{message_id}|{index}" if message_id else f"anonymous|{index}|{content_hash}"
@@ -151,6 +203,9 @@ def normalize_financialjuice(record: dict[str, Any]) -> dict[str, Any]:
         "source_url": source_url,
         "source_domain": _text(record.get("source_domain")) or "financialjuice.com",
         "published_at": _time(record.get("published_at") or record.get("source_published_at")),
+        "source_published_at": _time(record.get("source_published_at")),
+        "transport_received_at": _time(record.get("transport_received_at") or record.get("received_at")),
+        "ingested_at": _time(record.get("ingested_at")),
         "fetched_at": _time(record.get("fetched_at")) or datetime.now(UTC).isoformat(),
         "vendor_importance": vendor_importance,
         "vendor_importance_is_not_risk": True,
@@ -177,6 +232,8 @@ def normalize_financialjuice_item(
             "content_hash": content_hash,
             "published_at": normalized["published_at"],
             "source_url": normalized["source_url"],
+            "canonical_fact_key": financialjuice_canonical_fact_key(normalized),
+            "material_fact_version": financialjuice_material_fact_version(normalized),
         }
     )
     return normalized
@@ -219,6 +276,8 @@ __all__ = [
     "FinancialJuiceEnvelope",
     "build_financialjuice_envelope",
     "financialjuice_content_hash",
+    "financialjuice_canonical_fact_key",
+    "financialjuice_material_fact_version",
     "financialjuice_item_id",
     "financialjuice_notification_state",
     "normalize_financialjuice",

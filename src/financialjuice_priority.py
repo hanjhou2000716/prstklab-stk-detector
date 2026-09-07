@@ -21,6 +21,8 @@ _NEUTRAL_IMPORTANCE = "目前尚無額外重要性說明，等待後續公開資
 _NEUTRAL_LINKAGE = "尚無足夠公開資料判定連動。"
 _INCOMPLETE_EVENT = "資訊待核對"
 _MAX_FIELD_CHARS = 600
+FJ_FRESHNESS_LIMIT_SECONDS = 30 * 60
+FJ_CLOCK_SKEW_SECONDS = 5 * 60
 _GENERIC_EVENT_VALUES = frozenset({
     "financialjuice 公開快訊", "financialjuice|financialjuice 公開快訊",
     "資訊待核對", "information pending", "pending information",
@@ -75,6 +77,36 @@ def _is_metadata_only_analysis(value: Any) -> bool:
 
 def _now() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def _parse_time(value: Any) -> datetime | None:
+    if value in (None, ""):
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    return parsed.replace(tzinfo=parsed.tzinfo or UTC).astimezone(UTC)
+
+
+def _freshness_state(value: Any, *, now: datetime | None = None) -> dict[str, Any]:
+    """Classify FJ freshness from the source timestamp only."""
+    published = _parse_time(value)
+    if published is None:
+        return {"freshness_status": "missing_source_timestamp", "freshness_basis": "source_published_at", "freshness_age_seconds": None}
+    reference = now or datetime.now(UTC)
+    age = (reference - published).total_seconds()
+    if age < -FJ_CLOCK_SKEW_SECONDS:
+        status = "invalid_future_source_timestamp"
+    elif age > FJ_FRESHNESS_LIMIT_SECONDS:
+        status = "stale_source_event"
+    else:
+        status = "fresh"
+    return {
+        "freshness_status": status,
+        "freshness_basis": "source_published_at",
+        "freshness_age_seconds": round(max(0.0, age), 3) if age >= 0 else round(age, 3),
+    }
 
 
 def _source(row: dict[str, Any]) -> str:
@@ -491,6 +523,7 @@ def _event_record(
     result: dict[str, Any], row: dict[str, Any], *, status: str, reasons: list[str],
     vendor_priority_notification: bool, market_snapshot: dict[str, Any] | None,
     material_event_present: bool, public_signal_eligible: bool,
+    now: datetime | None = None,
 ) -> dict[str, Any]:
     risk = _mapping(result.get("risk"))
     cluster = _mapping(result.get("cluster"))
@@ -515,7 +548,10 @@ def _event_record(
     parser_version = str(
         row.get("parser_version") or result.get("parser_version") or result.get("pipeline_version") or ""
     ).strip() or None
-    received_at = row.get("received_at") or row.get("fetched_at") or row.get("published_at") or _now()
+    source_published_at = _first_value(views, "source_published_at")
+    transport_received_at = _first_value(views, "transport_received_at", "received_at")
+    received_at = transport_received_at or row.get("fetched_at") or source_published_at or _now()
+    freshness = _freshness_state(source_published_at, now=now)
     latency = {
         "ingested_at": row.get("ingested_at") or received_at,
         "candidate_at": row.get("candidate_at") or _now(),
@@ -551,6 +587,9 @@ def _event_record(
         "observation_id_hash": observation_hash,
         "item_id": item_id,
         "received_at": received_at,
+        "source_published_at": source_published_at,
+        "transport_received_at": transport_received_at,
+        **freshness,
         **latency,
         "latency": latency,
         "parser_version": parser_version,
@@ -565,7 +604,7 @@ def _event_record(
         "notification_reasons": list(dict.fromkeys([*reasons, *pending])),
         "notification_reason": "、".join(dict.fromkeys([*reasons, *pending])),
         "source_url": source_url,
-        "published_at": _first_value(views, "published_at", "source_published_at"),
+        "published_at": _first_value(views, "published_at") or source_published_at,
         "fetched_at": _first_value(views, "fetched_at") or _now(),
         "source_trace": {
             "source_label": "FinancialJuice",
@@ -581,6 +620,11 @@ def _event_record(
             "event_cluster_key": cluster_key,
             "received_at": received_at,
             "parser_version": parser_version,
+            "source_published_at": source_published_at,
+            "transport_received_at": transport_received_at,
+            "freshness_status": freshness["freshness_status"],
+            "freshness_basis": freshness["freshness_basis"],
+            "freshness_age_seconds": freshness["freshness_age_seconds"],
         },
         "source_evidence": result.get("source_evidence") or [],
         "market_evidence": market["market_evidence"],
@@ -625,8 +669,18 @@ def _event_record(
     record["public_signal_eligible"] = public_signal_eligible
     from src.financialjuice_notification import financialjuice_notification_key
 
+    record["canonical_fact_key"] = _first_value(views, "canonical_fact_key") or ""
+    record["material_fact_version"] = _first_value(views, "material_fact_version") or record["canonical_fact_key"]
     record["notification_key"] = financialjuice_notification_key(record)
-    record["material_fact_version"] = record["notification_key"]
+    if record["freshness_status"] != "fresh":
+        record["notification_status"] = "stale_source_event"
+        record["notification_reasons"] = list(dict.fromkeys([
+            *record.get("notification_reasons", []), record["freshness_status"],
+        ]))
+        record["notification_reason"] = "、".join(record["notification_reasons"])
+        record["vendor_priority_notification"] = False
+        record["alert_eligible"] = False
+        record["public_signal_eligible"] = False
     return record
 
 
@@ -635,6 +689,7 @@ def project_financialjuice_priority(
     *,
     existing_events: list[dict[str, Any]] | None = None,
     market_snapshot: dict[str, Any] | None = None,
+    now: datetime | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
     """Return public event rows and auditable vendor-priority decisions.
 
@@ -696,6 +751,7 @@ def project_financialjuice_priority(
                 market_snapshot=market_snapshot,
                 material_event_present=material_event,
                 public_signal_eligible=identity_verified and material_event,
+                now=now,
             )
             # The public content gate is evaluated after semantic projection;
             # its result is authoritative for both the event and the audit

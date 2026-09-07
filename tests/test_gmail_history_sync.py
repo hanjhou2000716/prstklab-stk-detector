@@ -214,7 +214,15 @@ def test_sync_history_routes_message_and_saves_public_projection(tmp_path) -> No
     store.save_cursor(last_history_id="h0")
     ingress = GmailIngressService(store, _config())
     result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_Client))
-    assert result == {"status": "healthy", "processed": 1, "failed": 0, "duplicate": 0}
+    assert result == {
+        "status": "healthy",
+        "processed": 1,
+        "failed": 0,
+        "duplicate": 0,
+        "duplicate_count": 0,
+        "accepted_new_count": 1,
+        "material_candidate_count": 0,
+    }
     health = store.health()
     assert health["public_observation_count"] == 1
     assert health["source_health"]["financialjuice"]["parsed_count"] == 1
@@ -231,6 +239,9 @@ def test_sync_history_suppresses_retired_creator_and_advances_cursor(tmp_path) -
         "processed": 1,
         "failed": 0,
         "duplicate": 0,
+        "duplicate_count": 0,
+        "accepted_new_count": 0,
+        "material_candidate_count": 0,
         "suppressed": 1,
     }
     assert store.cursor()["last_history_id"] == "h1"
@@ -243,7 +254,15 @@ def test_sync_history_fetches_text_attachment_before_ingress(tmp_path) -> None:
     store.save_cursor(last_history_id="h0")
     ingress = GmailIngressService(store, _config())
     result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_AttachmentClient))
-    assert result == {"status": "healthy", "processed": 1, "failed": 0, "duplicate": 0}
+    assert result == {
+        "status": "healthy",
+        "processed": 1,
+        "failed": 0,
+        "duplicate": 0,
+        "duplicate_count": 0,
+        "accepted_new_count": 1,
+        "material_candidate_count": 0,
+    }
     observation = store.public_observations(limit=1)[0]
     assert "某公司據報正在評估合作" in observation["vendor_translation"]
     assert "可能影響 AI 伺服器供應鏈" in observation["vendor_possible_impact"]
@@ -254,7 +273,15 @@ def test_sync_history_keeps_message_when_optional_text_attachment_is_unavailable
     store.save_cursor(last_history_id="h0")
     ingress = GmailIngressService(store, _config())
     result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_UnavailableAttachmentClient))
-    assert result == {"status": "healthy", "processed": 1, "failed": 0, "duplicate": 0}
+    assert result == {
+        "status": "healthy",
+        "processed": 1,
+        "failed": 0,
+        "duplicate": 0,
+        "duplicate_count": 0,
+        "accepted_new_count": 0,
+        "material_candidate_count": 0,
+    }
 
 
 def test_sync_history_skips_deleted_history_messages(tmp_path) -> None:
@@ -262,7 +289,16 @@ def test_sync_history_skips_deleted_history_messages(tmp_path) -> None:
     store.save_cursor(last_history_id="h0")
     ingress = GmailIngressService(store, _config())
     result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_DeletedMessageClient))
-    assert result == {"status": "healthy", "processed": 0, "failed": 0, "duplicate": 0, "skipped": 1}
+    assert result == {
+        "status": "healthy",
+        "processed": 0,
+        "failed": 0,
+        "duplicate": 0,
+        "duplicate_count": 0,
+        "accepted_new_count": 0,
+        "material_candidate_count": 0,
+        "skipped": 1,
+    }
 
 
 def test_sync_latest_financialjuice_reprocesses_one_message_without_moving_cursor(tmp_path) -> None:
@@ -291,6 +327,9 @@ def test_expired_history_cursor_is_cleared_and_reported_as_gap(tmp_path) -> None
         "processed": 0,
         "failed": 1,
         "duplicate": 0,
+        "duplicate_count": 0,
+        "accepted_new_count": 0,
+        "material_candidate_count": 0,
         "history_gap": True,
     }
     cursor = store.cursor()

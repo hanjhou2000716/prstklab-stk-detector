@@ -270,6 +270,16 @@ def test_public_gate_excludes_social_and_promotional_us_headlines():
     assert payload["scan_summary"]["excluded"] == 2
 
 
+def test_public_gate_excludes_media_year_ahead_forecast_without_formal_company_fact():
+    payload = build_news_intelligence([{
+        "title": "Nvidia's First-Ever Year-Ahead Forecast: The Path to Another Big Rally",
+        "url": "https://finance.yahoo.com/news/nvidia-year-ahead-forecast",
+        "published_at": "2026-09-05T04:00:00+00:00",
+    }], market="us")
+    assert payload["stories"] == []
+    assert payload["exclusion_reasons"]["promotional_forecast"] == 1
+
+
 def test_classification_metadata_is_auditable_and_nested_context_is_ignored():
     payload = build_news_intelligence([{
         "title": "日圓",

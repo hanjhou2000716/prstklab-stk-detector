@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 from src.artifact_contract import validate_events
 from src.event_ledger import EventLedger, canonical_event_key, event_source_url, normalize_source_url
+from src.financialjuice_notification import financialjuice_notification_key
 
 
 def test_url_normalization_drops_tracking_and_www():
@@ -12,6 +13,17 @@ def test_canonical_key_converges_syndicated_event_facts():
     first = {"source_key": "conflict", "title": "Trump statement on Iran", "url": "https://one.example/a", "released_at": "2026-08-01T10:00:00+00:00"}
     second = {"source_key": "conflict", "title": "Iran statement by Trump", "url": "https://two.example/b", "released_at": "2026-08-01T10:10:00+00:00"}
     assert canonical_event_key(first) == canonical_event_key(second)
+
+
+def test_fj_event_identity_stays_on_fact_when_material_version_changes():
+    first = {
+        "source_key": "financialjuice",
+        "canonical_fact_key": "financialjuice-fact:waller-1",
+        "material_fact_version": "financialjuice-fact-version:1",
+    }
+    follow_up = {**first, "material_fact_version": "financialjuice-fact-version:2"}
+    assert canonical_event_key(first) == canonical_event_key(follow_up)
+    assert financialjuice_notification_key(first) != financialjuice_notification_key(follow_up)
 
 
 def test_financialjuice_notification_identity_prevents_unrelated_cache_collision():

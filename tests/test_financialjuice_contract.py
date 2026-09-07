@@ -1,4 +1,40 @@
-from src.financialjuice_contract import financialjuice_notification_state, normalize_financialjuice
+from src.financialjuice_contract import (
+    financialjuice_canonical_fact_key,
+    financialjuice_material_fact_version,
+    financialjuice_notification_state,
+    normalize_financialjuice,
+)
+
+
+def test_fj_fact_identity_excludes_commentary_translation_and_transport_fields() -> None:
+    base = {
+        "original_headline": "Fed keeps rates unchanged as inflation cools",
+        "event_type": "fed",
+        "chinese_translation": "聯準會維持利率不變，通膨降溫",
+        "ai_commentary": "評論版本 A",
+        "possible_impact": "科技股估值仍待觀察",
+        "source_published_at": "2026-09-07T01:00:00Z",
+        "transport_received_at": "2026-09-07T01:01:00Z",
+    }
+    revised = {
+        **base,
+        "chinese_translation": "聯準會維持政策利率，通膨略有放緩",
+        "ai_commentary": "評論版本 B",
+        "possible_impact": "美元與殖利率可能影響科技股",
+        "transport_received_at": "2026-09-07T01:04:00Z",
+    }
+    assert financialjuice_canonical_fact_key(base) == financialjuice_canonical_fact_key(revised)
+    assert financialjuice_material_fact_version(base) == financialjuice_material_fact_version(revised)
+
+
+def test_fj_source_timestamp_is_not_backfilled_from_legacy_published_at() -> None:
+    result = normalize_financialjuice({
+        "original_headline": "Oil supply update",
+        "published_at": "2026-09-07T01:00:00Z",
+        "received_at": "2026-09-07T01:01:00Z",
+    })
+    assert result["published_at"].endswith("+00:00")
+    assert result["source_published_at"] is None
 
 
 def test_vendor_10_does_not_become_r4_without_evidence() -> None:
