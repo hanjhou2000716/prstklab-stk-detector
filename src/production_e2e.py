@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import Any
 
 from src.creator_delivery_contract import decide_creator_delivery
@@ -48,6 +49,8 @@ def _financialjuice_offline_lane() -> dict[str, Any]:
         subject="compound alert",
         body=_FINANCIALJUICE_COMPOUND_FIXTURE,
         message_id="production-e2e-fj-message",
+        source_published_at="2026-08-21T01:00:00Z",
+        transport_received_at="2026-08-21T01:01:00Z",
     )
     raw_items = parsed.get("items")
     items: list[dict[str, Any]] = (
@@ -55,7 +58,9 @@ def _financialjuice_offline_lane() -> dict[str, Any]:
         if isinstance(raw_items, list)
         else []
     )
-    projection = project_financialjuice_priority(items)
+    projection = project_financialjuice_priority(
+        items, now=datetime(2026, 8, 21, 1, 5, tzinfo=UTC),
+    )
     decisions = projection.get("decisions") or []
     events = projection.get("events") or []
     cluster_keys = {
