@@ -47,6 +47,7 @@ def test_digest_prefers_complete_event_over_fragment_title():
                 "title": "據《The...",
                 "event": "沃勒表示通膨與勞動市場仍是利率判斷的重要依據",
                 "observation_id": "fj-waller",
+                "freshness_status": "fresh",
             }]},
         },
         "us_premarket",
@@ -66,6 +67,7 @@ def test_digest_drops_conditional_only_waller_fragment_for_complete_fact():
             "summary": "沃勒表示通膨與勞動市場仍是利率判斷的重要依據。",
             "vendor_importance": 10,
             "observation_id": "fj-waller-fragment",
+            "freshness_status": "fresh",
         }]}},
         "us_premarket",
     )
@@ -174,6 +176,7 @@ def test_digest_keeps_structured_quote_evidence_separate_from_source_evidence():
         "event": "官方公布半導體出口管制更新，市場等待後續細節",
         "observation_id": "fj-semi-1",
         "published_at": "2026-09-04T20:00:00+00:00",
+        "freshness_status": "fresh",
         "market_evidence": [{
             "ticker": "SOX",
             "name": "費半",
@@ -240,6 +243,7 @@ def test_digest_does_not_attach_unrelated_snapshot_quotes_to_an_event():
                 "vendor_importance": 10,
                 "published_at": "2026-09-04T23:00:00+00:00",
                 "observation_id": "fj-bahrain",
+                "freshness_status": "fresh",
             }]},
             "indices": [
                 {"ticker": "NASDAQ", "price": 26586.58, "change_percent": 0.01, "freshness": "recent_close"},

@@ -1,4 +1,5 @@
 import importlib.util
+from datetime import UTC, datetime
 
 from src.financialjuice_notification import (
     deliver_financialjuice_event,
@@ -169,6 +170,7 @@ def test_financialjuice_delivery_suppresses_incomplete_attribution() -> None:
             "vendor_importance": 9,
             "vendor_priority_notification": True,
             "notification_status": "eligible",
+            "freshness_status": "fresh",
             "title": "據《The...",
         },
         release_id="release-1",
@@ -193,6 +195,7 @@ def test_financialjuice_delivery_reaches_text_sender_with_alert_deep_link() -> N
         "vendor_importance": 8,
         "vendor_priority_notification": True,
         "notification_status": "eligible",
+        "freshness_status": "fresh",
         # The generic risk classifier may remain blocked for an R2 discovery;
         # FJ >=8 is the deliberate vendor-priority exception.
         "notification": {"allowed": False, "status": "pending"},
@@ -238,6 +241,7 @@ def test_financialjuice_delivery_returns_safe_failure_classes() -> None:
             "vendor_importance": 9,
             "vendor_priority_notification": True,
             "notification_status": "eligible",
+            "freshness_status": "fresh",
             "title": "Oil supply update",
         },
         release_id="release-1",
@@ -261,7 +265,7 @@ def test_financialjuice_delivery_prefers_notification_id_for_alert_deep_link() -
         "source_key": "financialjuice", "notification_id": "fj-notification-1",
         "event_cluster_key": "fj-cluster-1", "observation_id": "fj-observation-1",
         "vendor_importance": 8, "vendor_priority_notification": True,
-        "notification_status": "eligible", "prstk_risk_level": "R0",
+        "notification_status": "eligible", "freshness_status": "fresh", "prstk_risk_level": "R0",
         "title": "Oil supply update",
     }
     captured: dict[str, object] = {}
@@ -291,6 +295,8 @@ def test_rich_email_to_priority_to_telegram_preserves_semantics() -> None:
             "AI commentary: 若合作成真，可能代表該公司 AI 基礎建設需求進一步提高，但目前仍未正式確認。\n"
             "Possible impact: 可能影響 AI 伺服器、GPU、相關供應鏈個股情緒。"
         ),
+        "source_published_at": datetime.now(UTC).isoformat(),
+        "received_at": datetime.now(UTC).isoformat(),
     })
     from src.financialjuice_priority import project_financialjuice_priority
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -98,7 +99,9 @@ _PUBLIC_FIELDS = {
     # transport identifiers (message/thread IDs, sender and raw bodies) are
     # deliberately absent and are rejected by the storage adapter below.
     "creator_id", "creator_name", "episode_key", "episode_title",
-    "received_at", "markets", "sectors", "key_takeaways",
+    "received_at", "transport_received_at", "ingested_at", "freshness_status",
+    "freshness_basis", "freshness_age_seconds", "canonical_fact_key", "material_fact_version",
+    "markets", "sectors", "key_takeaways",
     "creator_market_view", "creator_strategy_view", "creator_risk_view",
     "key_numbers", "claims", "opinions", "verification_state",
     "evidence_alignment", "prstk_correlation", "summary_image_available",
@@ -282,6 +285,9 @@ def parse_email(record: dict[str, Any]) -> dict[str, Any]:
                 subject=subject,
                 body=body,
                 message_id=message_id,
+                source_published_at=record.get("source_published_at"),
+                transport_received_at=record.get("received_at"),
+                ingested_at=datetime.now(UTC).isoformat(),
             )
         except Exception:  # pragma: no cover - parser failures are DLQ-safe
             derived = {"parse_status": "parse_failed", "failure_reason": "derived_parser_error"}

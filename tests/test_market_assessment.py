@@ -73,7 +73,12 @@ def test_same_event_cluster_keeps_supporting_source_evidence_once():
         "generated_at": "2026-09-05T00:00:00+00:00",
         "events": {"items": [
             {**common, "source_key": "official", "observation_id": "official-1"},
-            {**common, "source_key": "financialjuice", "observation_id": "fj-1"},
+            {
+                **common,
+                "source_key": "financialjuice",
+                "observation_id": "fj-1",
+                "freshness_status": "fresh",
+            },
         ]},
     }, "us_premarket")
 

@@ -250,6 +250,7 @@ def _briefing_projection(
             "secondary_signals": secondary_signals[:3],
             "displayed_event_keys": displayed_event_keys,
             "observations": briefing.get("observations") or [],
+            "morning_analysis": briefing.get("morning_analysis") or {},
             "evidence": briefing.get("evidence") or [],
             "source_evidence": source_evidence,
             "quote_evidence": primary_quote_evidence,

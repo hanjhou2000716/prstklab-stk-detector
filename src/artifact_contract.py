@@ -266,8 +266,8 @@ def validate_news_intelligence(document: dict[str, Any]) -> list[str]:
             age = story.get("inventory_age_trading_sessions")
             if inventory_used is not True:
                 errors.append(f"{path}: inventory stories must set inventory_used=true")
-            if not isinstance(age, int) or not 1 <= age <= 3:
-                errors.append(f"{path}: inventory_age_trading_sessions must be 1..3")
+            if not isinstance(age, int) or not 1 <= age <= 5:
+                errors.append(f"{path}: inventory_age_trading_sessions must be 1..5")
             if _parse_time(story.get("published_at")) is None:
                 errors.append(f"{path}: inventory stories require published_at")
         elif inventory_used is True:

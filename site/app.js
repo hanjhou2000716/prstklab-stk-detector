@@ -1252,6 +1252,23 @@ const renderBriefing = (briefing, generatedAt) => {
   }
   const container = document.getElementById("briefing-observations");
   if (!container) return;
+  const morningAnalysis = report.morning_analysis && typeof report.morning_analysis === "object"
+    ? report.morning_analysis : null;
+  const morningSections = Array.isArray(morningAnalysis?.sections)
+    ? morningAnalysis.sections.filter((item) => item && typeof item === "object") : [];
+  if (morningSections.length) {
+    const renderEvidence = (items) => (Array.isArray(items) ? items : []).slice(0, 3).map((item) => {
+      const source = item.source || item.source_label || "公開資料";
+      const time = item.quote_date || item.quote_time || "";
+      return `<small class="briefing-source">${escapeHtml(String(item.ticker || item.name || "資料"))}｜${escapeHtml(String(source))}${time ? `｜${escapeHtml(String(time))}` : ""}</small>`;
+    }).join("");
+    const renderMorningSection = (item) => {
+      const facts = Array.isArray(item.facts) ? item.facts : [];
+      return `<article class="morning-analysis-section"><div class="morning-analysis-section-heading"><h3>${escapeHtml(item.title || "市場判讀")}</h3><span>${escapeHtml(String(item.confidence || "low"))}</span></div>${facts.slice(0, 5).map((fact) => `<p class="morning-analysis-fact">${escapeHtml(String(fact))}</p>`).join("")}<p><b>為何重要：</b>${escapeHtml(item.why_it_matters || "本輪未取得可核對資料。")}</p><p><b>可能傳導：</b>${escapeHtml(item.transmission || "本輪未取得可核對資料。")}</p><p><b>市場觀察：</b>${escapeHtml(item.market_observation || "本輪未取得可核對資料。")}</p><p><b>下一項催化劑：</b>${escapeHtml(item.next_catalyst || "本輪未取得可核對資料。")}</p>${renderEvidence(item.evidence)}</article>`;
+    };
+    container.innerHTML = `<div class="morning-analysis"><div class="morning-analysis-meta">${escapeHtml(morningAnalysis.market_session_state || "本輪市場時段")}｜整體信心 ${escapeHtml(String(morningAnalysis.confidence || "low"))}</div>${morningSections.slice(0, 4).map(renderMorningSection).join("")}</div>`;
+    return;
+  }
   if (!primaryObservations.length && !fixedObservations.length) { container.innerHTML = '<p class="empty">本次定時報資料暫時無法取得</p>'; return; }
   const renderObservation = (item) => `<article class="briefing-observation"><h4>${escapeHtml(item.title || "公開市場觀察")}</h4><p><b>事件：</b>${escapeHtml(item.event || "公開資料更新中。")}</p><p><b>為何重要：</b>${escapeHtml(item.importance || "持續核對公開資料。")}</p><p><b>可能連動：</b>${escapeHtml(item.market_impact || "尚無足夠公開資料判定連動。")}</p><p><b>股市觀察：</b>${escapeHtml(item.watch || "觀察後續公開市場報價。")}</p>${item.data_as_of ? `<small class="briefing-source">資料日期：${escapeHtml(String(item.data_as_of).slice(0, 19).replace("T", " "))}</small>` : ""}${item.source_note ? `<small class="briefing-source">${escapeHtml(item.source_note)}</small>` : ""}</article>`;
   const sections = [];

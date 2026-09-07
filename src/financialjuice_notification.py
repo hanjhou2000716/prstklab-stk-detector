@@ -160,7 +160,22 @@ def _legacy_financialjuice_notification_key(event: dict[str, Any]) -> str:
 
 
 def financialjuice_notification_key(event: dict[str, Any]) -> str:
-    """Return a stable key based on normalized facts, not ingress identity."""
+    """Return a stable key based on factual event identity only.
+
+    New records carry ``canonical_fact_key``.  The fallback intentionally
+    preserves the previous headline+impact identity for historical records;
+    callers can still match it through the alias set during migration.
+    """
+    canonical = _text(event.get("canonical_fact_key"))
+    if canonical:
+        version = _text(event.get("material_fact_version") or event.get("fact_version"))
+        material = "|".join(value.casefold() for value in (canonical, version) if value)
+        return f"financialjuice:{hashlib.sha256(material.encode('utf-8')).hexdigest()[:24]}"
+    return _legacy_semantic_notification_key(event)
+
+
+def _legacy_semantic_notification_key(event: dict[str, Any]) -> str:
+    """Return the pre-fact-key semantic identity for compatibility lookup."""
     headline = _financialjuice_headline(event)
     impact = _text(event.get("possible_impact") or event.get("possible_linkage"))
     material = "|".join((headline, impact)).casefold().strip("|")
@@ -174,8 +189,9 @@ def financialjuice_notification_key(event: dict[str, Any]) -> str:
 def financialjuice_notification_aliases(event: dict[str, Any]) -> tuple[str, ...]:
     """Return current and legacy identities for replay-safe migration."""
     current = financialjuice_notification_key(event)
+    semantic = _legacy_semantic_notification_key(event)
     legacy = _legacy_financialjuice_notification_key(event)
-    return tuple(dict.fromkeys(item for item in (current, legacy) if item))
+    return tuple(dict.fromkeys(item for item in (current, semantic, legacy) if item))
 
 
 def financialjuice_public_short_message(
@@ -295,6 +311,10 @@ def deliver_financialjuice_event(
     reasons: list[str] = []
     if _text(event.get("source_key") or event.get("source")).casefold() != "financialjuice":
         reasons.append("source_not_financialjuice")
+    if _text(event.get("source_key") or event.get("source")).casefold() == "financialjuice":
+        freshness_status = _text(event.get("freshness_status"))
+        if freshness_status != "fresh":
+            reasons.append(freshness_status or "missing_source_timestamp")
     if _text(event.get("notification_status")) != "eligible" or event.get("vendor_priority_notification") is not True:
         reasons.append("vendor_priority_not_eligible")
     if not release_ready:
@@ -341,6 +361,7 @@ def deliver_financialjuice_event(
             notification_key,
             slot_key=slot_key,
             recipient_hashes=tuple(_recipient_hash(chat_id) for chat_id in chat_ids),
+            aliases=tuple(notification_keys[1:]),
             run_id=run_id,
         )
         claim_status = str(claim.get("status") or "")

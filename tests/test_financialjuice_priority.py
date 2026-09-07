@@ -1,4 +1,5 @@
 import hashlib
+from datetime import UTC, datetime
 
 from src.external_source_parsers import parse_financialjuice_email
 from src.financialjuice_priority import (
@@ -18,6 +19,7 @@ def _row(importance=8):
         "importance": importance,
         "source_url": "https://financialjuice.com/item/1",
         "published_at": "2026-08-21T01:00:00Z",
+        "source_published_at": datetime.now(UTC).isoformat(),
         "received_at": "2026-08-21T01:01:00Z",
         "parser_version": "financialjuice-compound-v1",
         "public_safe": True,
@@ -38,6 +40,37 @@ def test_qualifying_fj_item_becomes_release_bound_vendor_priority_event():
     assert event["observation_id_hash"] == hashlib.sha256(b"fj-observation-1").hexdigest()
     assert event["source_trace"]["observation_id_hash"] == event["observation_id_hash"]
     assert "fj-observation-1" not in event["source_trace"]["observation_id_hash"]
+
+
+def test_fj_freshness_uses_source_timestamp_and_fails_closed_when_missing_or_stale():
+    missing = _row(8)
+    missing.pop("source_published_at")
+    missing_event = project_financialjuice_priority([missing])["events"][0]
+    assert missing_event["freshness_status"] == "missing_source_timestamp"
+    assert missing_event["alert_eligible"] is False
+
+    stale = _row(8)
+    stale["source_published_at"] = "2026-09-06T00:00:00Z"
+    stale_event = project_financialjuice_priority(
+        [stale], now=datetime(2026, 9, 7, 0, 31, tzinfo=UTC),
+    )["events"][0]
+    assert stale_event["freshness_status"] == "stale_source_event"
+    assert stale_event["notification_status"] == "stale_source_event"
+    assert stale_event["vendor_priority_notification"] is False
+
+
+def test_fj_commentary_replay_keeps_canonical_fact_and_notification_identity():
+    first = _row(8)
+    first.update({
+        "canonical_fact_key": "financialjuice-fact:wall-1",
+        "material_fact_version": "financialjuice-fact-version:wall-1",
+        "ai_commentary": "原始評論",
+    })
+    replay = {**first, "ai_commentary": "改寫評論", "item_id": "different-transport-id"}
+    first_event = project_financialjuice_priority([first])["events"][0]
+    replay_event = project_financialjuice_priority([replay])["events"][0]
+    assert first_event["canonical_fact_key"] == replay_event["canonical_fact_key"]
+    assert first_event["notification_key"] == replay_event["notification_key"]
 
 
 def test_fj_missing_article_url_uses_vendor_homepage_source_trace():

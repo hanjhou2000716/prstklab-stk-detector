@@ -1,11 +1,13 @@
 import json
 from datetime import UTC, datetime
+from zoneinfo import ZoneInfo
 
 import pytest
 
 from src.news_intelligence import build_news_intelligence
 from src.risk_news import (
     _filter_market_news,
+    _inventory_age,
     _market_news_rss_url,
     _market_risk,
     _news_from_html,
@@ -297,6 +299,12 @@ def test_us_inventory_age_counts_sessions_over_weekend_and_rejects_old_content()
     assert _us_inventory_age("2026-09-04T12:00:00+00:00", sunday) == 1
     assert _us_inventory_age("2026-09-03T12:00:00+00:00", sunday) == 2
     assert _us_inventory_age("2026-08-28T12:00:00+00:00", sunday) is None
+
+
+def test_taiwan_inventory_age_uses_xtai_sessions_for_weekend_reuse():
+    monday = datetime(2026, 9, 7, 8, 0, tzinfo=ZoneInfo("Asia/Taipei"))
+    assert _inventory_age("2026-09-05T12:00:00+00:00", "taiwan", monday) == 2
+    assert _inventory_age("2026-08-25T12:00:00+00:00", "taiwan", monday) is None
 
 
 def test_taiwan_macro_fgi_is_used_as_taiwan_sentiment(monkeypatch):

@@ -158,6 +158,12 @@ _NON_INVESTMENT_CONTENT_RE = re.compile(
     r"詐騙|詐騙車手|犯罪|車手|老翁|命案|綁架|殺人|明星|球賽|旅遊)",
     re.IGNORECASE,
 )
+_PROMOTIONAL_FORECAST_RE = re.compile(
+    r"\b(?:year[- ]ahead|year[- ]long|annual)\s+forecast\b"
+    r"|(?:首度|首次|第一個|一年展望).{0,24}(?:預測|展望|路徑)"
+    r"|\b(?:path\s+to|on\s+a\s+path)\b",
+    re.IGNORECASE,
+)
 _MARKET_MATERIAL_RE = re.compile(
     r"\b(?:rise|rises|fell|fall|higher|lower|surge|surges|jump|jumps|drop|drops|"
     r"rally|rallies|selloff|sell-off|record|records|volatile|volatility|futures|"
@@ -218,6 +224,14 @@ def _public_news_decision(item: dict[str, Any]) -> tuple[bool, str | None, list[
     if _NON_INVESTMENT_CONTENT_RE.search(title):
         flags.append("non_investment_content")
         return False, "non_investment_content", flags, "unclassified"
+    if _PROMOTIONAL_FORECAST_RE.search(title) and not re.search(
+        r"\b(?:earnings?|reported?|reports?|guidance|results?|revenue|profit|capex)\b"
+        r"|(?:財報|財測|營收|獲利|資本支出|正式公布)",
+        title,
+        re.IGNORECASE,
+    ):
+        flags.append("promotional_forecast")
+        return False, "promotional_forecast", flags, "unclassified"
 
     has_tracked_entity = any(
         reason.startswith(("tracked_ticker:", "research_candidate:", "tracked_sector:"))
@@ -824,8 +838,6 @@ def build_news_intelligence(
 ) -> dict[str, Any]:
     current_raw = [dict(story) for story in stories if isinstance(story, dict)]
     inventory_raw = [dict(story) for story in inventory_stories if isinstance(story, dict)]
-    if str(market or "").casefold() != "us":
-        inventory_raw = []
     for story in current_raw:
         story.setdefault("selection_lane", "current")
         story.setdefault("inventory_used", False)
@@ -985,6 +997,9 @@ def build_news_intelligence(
         "inventory_eligible": len(inventory_eligible),
         "inventory_selected": sum(1 for item in ranked if item.get("selection_lane") == "inventory"),
         "final_public_count": len(ranked),
+        "target_count": limit,
+        "shortfall_count": max(0, limit - len(ranked)),
+        "shortfall_reason": "合格新聞與近期庫存不足" if len(ranked) < limit else None,
         "filtered_story_count": len(excluded),
         "fetched_story_count": len(normalized_current),
         "normalized_story_count": len(normalized_current),
@@ -1021,12 +1036,14 @@ def build_news_intelligence(
         "source_failure_count": failure_count,
         "scan_summary": scan_summary,
         "inventory": {
-            "enabled": str(market or "").casefold() == "us",
-            "retention_trading_sessions": 3,
-            "max_calendar_days": 7,
+            "enabled": str(market or "").casefold() in {"taiwan", "us"},
+            "retention_trading_sessions": 5,
+            "max_calendar_days": 10,
             "considered": len(normalized_inventory),
             "eligible": len(inventory_eligible),
             "selected": sum(1 for item in ranked if item.get("selection_lane") == "inventory"),
+            "target_count": limit,
+            "shortfall_count": max(0, limit - len(ranked)),
         },
         "source_health": health_rows,
         "observability": observability,

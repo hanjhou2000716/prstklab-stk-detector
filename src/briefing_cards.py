@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 SLOT_TITLES = {
     "morning": "投資晨報儀表板",
@@ -267,6 +269,222 @@ def _market_observations(
     ]
 
 
+def _morning_quote_evidence(item: dict[str, Any] | None, name: str) -> tuple[str, dict[str, Any] | None]:
+    """Return one factual quote line and a bounded evidence projection."""
+    if not item or item.get("price") is None or item.get("change_percent") is None:
+        return f"{name}：本輪未取得可核對資料。", None
+    line = _price_move(item, name)
+    evidence = {
+        "ticker": item.get("ticker"),
+        "name": item.get("name") or name,
+        "price": item.get("price"),
+        "change_percent": item.get("change_percent"),
+        "currency": item.get("currency"),
+        "freshness": item.get("freshness") or item.get("data_status"),
+        "quote_date": item.get("quote_date") or item.get("quote_time"),
+        "source": item.get("source_label") or item.get("quote_source") or item.get("source_domain"),
+    }
+    return line, {key: value for key, value in evidence.items() if value not in (None, "")}
+
+
+def _morning_confidence(evidence_count: int, missing: bool = False) -> str:
+    if evidence_count >= 2 and not missing:
+        return "high"
+    if evidence_count >= 1:
+        return "medium"
+    return "low"
+
+
+def _morning_analysis(
+    items: dict[str, dict[str, Any]],
+    risk: dict[str, Any],
+    assessment: dict[str, Any],
+    themes: list[dict[str, Any]],
+    as_of: Any,
+    slot: str,
+) -> dict[str, Any]:
+    """Build the four evidence-driven morning sections.
+
+    This is a projection of the existing quote, risk, event and digest data;
+    it intentionally emits an explicit gap when a requested factor is absent.
+    """
+    quote_specs = {
+        "TAIEX": ("加權指數", "TAIEX"),
+        "TPEx": ("櫃買指數", "TPEx"),
+        "2330": ("台積電", "2330"),
+        "SOX": ("費半", "SOX"),
+        "NASDAQ": ("Nasdaq", "NASDAQ"),
+        "NIKKEI": ("日經225", "NIKKEI"),
+        "KOSPI": ("韓國綜合", "KOSPI"),
+        "US10Y": ("美國10年債殖利率", "US10Y"),
+        "DXY": ("美元指數", "DXY"),
+        "USD/TWD": ("美元兌台幣", "USD/TWD"),
+        "WTI": ("WTI油價", "WTI"),
+        "BRENT": ("Brent油價", "BRENT"),
+        "GOLD": ("黃金", "GOLD"),
+    }
+
+    def quote(ticker: str) -> tuple[str, dict[str, Any] | None]:
+        name, _ = quote_specs[ticker]
+        return _morning_quote_evidence(items.get(ticker), name)
+
+    def section(
+        title: str,
+        facts: list[str],
+        why: str,
+        transmission: str,
+        observation: str,
+        next_catalyst: str,
+        evidence: list[dict[str, Any]],
+        *,
+        missing: bool = False,
+        freshness: str = "本輪資料",
+    ) -> dict[str, Any]:
+        return {
+            "title": title,
+            "facts": facts,
+            "why_it_matters": why,
+            "transmission": transmission,
+            "market_observation": observation,
+            "next_catalyst": next_catalyst,
+            "evidence": evidence,
+            "freshness": freshness,
+            "confidence": _morning_confidence(len(evidence), missing),
+        }
+
+    taiwan_lines: list[str] = []
+    taiwan_evidence: list[dict[str, Any]] = []
+    for ticker in ("TAIEX", "TPEx"):
+        line, evidence = quote(ticker)
+        taiwan_lines.append(line)
+        if evidence:
+            taiwan_evidence.append(evidence)
+    taipei = None
+    try:
+        taipei = datetime.fromisoformat(str(as_of).replace("Z", "+00:00")).astimezone(ZoneInfo("Asia/Taipei"))
+    except (TypeError, ValueError, OverflowError):
+        pass
+    taiwan_slots = {"morning", "pre_open", "intraday", "midday", "afternoon", "post_close"}
+    market_session_state = "本輪市場時段"
+    if taipei is not None:
+        if slot in taiwan_slots and taipei.weekday() >= 5:
+            market_session_state = "台股休市，使用最近收盤資料"
+        elif slot in taiwan_slots:
+            market_session_state = "台股交易時段／最近收盤資料"
+        elif slot in {"us_premarket", "us_open"}:
+            market_session_state = "美股交易時段／最近收盤資料"
+    taiwan_facts = ["、".join(taiwan_lines)]
+    if not taiwan_evidence:
+        taiwan_facts.append("台股成交量、廣度與三大法人：本輪未取得可核對資料。")
+    taiwan_facts.insert(0, f"市場時段：{market_session_state}。")
+
+    semiconductor_lines: list[str] = []
+    semiconductor_evidence: list[dict[str, Any]] = []
+    for ticker in ("2330", "SOX", "NASDAQ"):
+        line, evidence = quote(ticker)
+        semiconductor_lines.append(line)
+        if evidence:
+            semiconductor_evidence.append(evidence)
+    primary_theme = themes[0] if themes and isinstance(themes[0], dict) else {}
+    theme_fact = str(primary_theme.get("what_happened") or primary_theme.get("normalized_fact") or "").strip()
+    if theme_fact and str(primary_theme.get("market_topic") or "") == "semiconductor_ai":
+        semiconductor_lines.append(f"合格事件：{theme_fact}")
+
+    macro_lines: list[str] = []
+    macro_evidence: list[dict[str, Any]] = []
+    for ticker in ("US10Y", "DXY", "USD/TWD"):
+        line, evidence = quote(ticker)
+        macro_lines.append(line)
+        if evidence:
+            macro_evidence.append(evidence)
+    commodity_lines: list[str] = []
+    commodity_evidence: list[dict[str, Any]] = []
+    for ticker in ("WTI", "BRENT", "GOLD"):
+        line, evidence = quote(ticker)
+        commodity_lines.append(line)
+        if evidence:
+            commodity_evidence.append(evidence)
+    external_lines = [*macro_lines, *commodity_lines]
+    external_evidence = [*macro_evidence, *commodity_evidence]
+
+    stance_label = str(assessment.get("stance_label") or "分歧")
+    confidence = str(assessment.get("confidence") or "low")
+    market_highlights = str((assessment.get("summary_sections") or {}).get("market_highlights") or "").strip()
+    dominant_driver = str(assessment.get("dominant_driver") or "市場主因仍待價格確認")
+    risk_item = (risk or {}).get("us") if isinstance(risk, dict) else None
+    risk_label = str((risk_item or {}).get("sentiment", {}).get("label") or "本輪未取得可核對風險情緒資料")
+    event_evidence = [
+        item for item in (primary_theme.get("source_evidence") or primary_theme.get("evidence") or [])
+        if isinstance(item, dict)
+    ][:3]
+    risk_facts = [f"市場狀態：{stance_label}；信心：{confidence}。"]
+    if market_highlights:
+        risk_facts.append(f"行情比較：{market_highlights}。")
+    if risk_label:
+        risk_facts.append(f"美股風險情緒：{risk_label}。")
+    if theme_fact:
+        risk_facts.append(f"主要事件：{theme_fact}")
+    all_risk_evidence = [*event_evidence, *semiconductor_evidence[:1], *taiwan_evidence[:1]]
+    sections = [
+        section(
+            "今日風險判讀",
+            risk_facts,
+            "新聞只用於說明關注主因；市場方向仍須由至少兩個獨立價格面向核對。",
+            f"{dominant_driver}；行情與事件若未同步，維持待確認，不推論因果。",
+            f"目前判讀為{stance_label}，證據完整度為{confidence}。",
+            "本輪未取得明確下一項催化劑資料，持續等待官方事件或價格核對。",
+            all_risk_evidence,
+            missing=len(all_risk_evidence) < 2,
+        ),
+        section(
+            "台股總經與盤面",
+            taiwan_facts,
+            "加權與櫃買可協助分辨權值股與中小型股是否同向；沒有成交量、廣度或籌碼資料時不補寫。",
+            "台股盤面需與美元兌台幣及外圍科技股交叉觀察，單一指數不足以形成市場結論。",
+            "；".join(taiwan_lines),
+            "本輪未取得可核對的成交量、廣度或三大法人下一項資料。",
+            taiwan_evidence,
+            missing=len(taiwan_evidence) < 2,
+        ),
+        section(
+            "台積電／半導體與 AI",
+            semiconductor_lines,
+            "台積電、費半與 Nasdaq 同步時，才較能支持科技風險偏好的共同變化。",
+            "若台積電、費半與 Nasdaq 方向不一致，標示分歧，題材不能取代價格確認。",
+            "；".join(semiconductor_lines),
+            "本輪未取得可核對的半導體或 AI 產業催化劑資料。",
+            semiconductor_evidence,
+            missing=len(semiconductor_evidence) < 2,
+        ),
+        section(
+            "利率、匯率與外部風險",
+            external_lines,
+            "美債殖利率、美元、油價與黃金反映估值、通膨及避險條件，須以同次資料時間核對。",
+            "利率或美元變化可能影響科技估值；能源與地緣事件只有在有價格或官方證據時才形成傳導觀察。",
+            "；".join(external_lines),
+            "本輪未取得可核對的下一項總經或政策催化劑。",
+            external_evidence,
+            missing=len(external_evidence) < 2,
+        ),
+    ]
+    return {
+        "ruleset": "morning_analysis_evidence_v1",
+        "evidence_as_of": as_of,
+        "market_session_state": market_session_state,
+        "overall_stance": assessment.get("stance") or "divergent",
+        "confidence": confidence,
+        "sections": sections,
+        "missing_evidence": [
+            *(["成交量／廣度／三大法人"] if not taiwan_evidence else []),
+            "下一項已知總經或政策催化劑",
+        ],
+        "source_health_notes": [
+            "本分析只使用本輪已載入的公開行情、風險與合格事件。",
+            "缺少的資料不以固定模板或推測補足。",
+        ],
+    }
+
+
 def _placeholder(ticker: str, name: str, currency: str = "") -> dict[str, Any]:
     """Keep a fixed topic card visible when a public quote is unavailable."""
     return {"ticker": ticker, "name": name, "currency": currency, "price": None, "change_percent": None,
@@ -449,6 +667,14 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
     digest_overview = digest.get("overview")
     if not digest_overview and digest.get("status") != "ready":
         digest_overview = "本輪公開市場證據不足，暫不形成判讀。"
+    morning_analysis = _morning_analysis(
+        all_items,
+        risk,
+        digest.get("market_assessment") or {},
+        [item for item in (digest.get("themes") or []) if isinstance(item, dict)],
+        briefing_data_as_of,
+        slot or "morning",
+    )
     return {
         "slot": slot or "live",
         "title": SLOT_TITLES.get(slot or "", "即時市場儀表板"),
@@ -459,6 +685,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         ),
         "assessment_summary": digest.get("assessment_summary", ""),
         "market_assessment": digest.get("market_assessment", {}),
+        "morning_analysis": morning_analysis,
         "public_short_message": digest.get("public_short_message", ""),
         "digest_status": digest.get("status", "suppressed"),
         "notification_eligible": digest.get("notification_eligible", False),

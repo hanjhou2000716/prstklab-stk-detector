@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any
 
 from src.external_source_parsers import parse_financialjuice_email
@@ -30,6 +31,9 @@ def run_financialjuice_notification_e2e() -> dict[str, Any]:
         subject="priority alert",
         body=_FIXTURE,
         message_id="fj-notification-e2e-message",
+        source_published_at=datetime.now(UTC).isoformat(),
+        transport_received_at=datetime.now(UTC).isoformat(),
+        ingested_at=datetime.now(UTC).isoformat(),
     )
     raw_items = parsed.get("items")
     items = [item for item in raw_items if isinstance(item, dict)] if isinstance(raw_items, list) else []

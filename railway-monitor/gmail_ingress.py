@@ -46,6 +46,22 @@ def _message_content_hash(record: Mapping[str, Any]) -> str:
     return hashlib.sha256(material.encode("utf-8")).hexdigest()
 
 
+def _fresh_financialjuice_candidate(row: Mapping[str, Any]) -> bool:
+    """Only a newly received, timestamped FJ fact may wake the monitor."""
+    if str(row.get("content_origin") or row.get("source") or "").casefold() != "financialjuice":
+        return False
+    value = row.get("source_published_at")
+    if not value:
+        return False
+    try:
+        published = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return False
+    published = published.replace(tzinfo=published.tzinfo or UTC).astimezone(UTC)
+    age = (datetime.now(UTC) - published).total_seconds()
+    return -300 <= age <= 1800
+
+
 def _normalize_service_account(value: str) -> str:
     """Normalize documented Pub/Sub identity header variants.
 
@@ -215,6 +231,23 @@ class GmailIngressService:
                 "public_rich_observation_count": public_rich_count,
                 "public_semantic_field_counts": semantic_field_counts,
             }
+        candidate_rows = [
+            row for row in (public_rows if isinstance(public_rows, list) else [])
+            if isinstance(row, Mapping) and _fresh_financialjuice_candidate(row)
+        ]
+        known_fact_keys = {
+            str(row.get("canonical_fact_key") or "").strip()
+            for row in candidate_rows
+            if str(row.get("canonical_fact_key") or "").strip()
+            and self.store.public_fact_exists(str(row.get("canonical_fact_key") or ""))
+        }
+        batch_fact_keys: set[str] = set()
+        material_candidate = False
+        for row in candidate_rows:
+            fact_key = str(row.get("canonical_fact_key") or "").strip()
+            if fact_key and fact_key not in known_fact_keys and fact_key not in batch_fact_keys:
+                material_candidate = True
+                batch_fact_keys.add(fact_key)
         saved_public = 0
         if isinstance(public_rows, list):
             for row in public_rows:
@@ -236,6 +269,7 @@ class GmailIngressService:
             "public_observation_count": saved_public,
             "public_rich_observation_count": public_rich_count,
             "public_semantic_field_counts": semantic_field_counts,
+            "material_candidate": material_candidate,
         }
 
     def health(self) -> dict[str, Any]:

@@ -564,6 +564,10 @@ def build_market_digest(
         source = str(event.get("source_key") or event.get("source") or event.get("content_origin") or "").casefold()
         if source in {"haojiao", "jenny", "gooaye", "creator"}:
             continue
+        if source == "financialjuice" and str(event.get("freshness_status") or "") != "fresh":
+            # Stale or untimestamped FJ remains available to diagnostic/UI
+            # consumers but cannot become a briefing fact or market driver.
+            continue
         if _is_news_derived_event(event) and not (
             event.get("_legacy_news_projection") is True
             or _is_canonical_news_event(event)

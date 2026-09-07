@@ -39,6 +39,19 @@ NEWS_RSS_QUERIES = {
     "taiwan": "台股 OR 台積電 OR 半導體",
     "us": "美股 OR Nasdaq OR Nvidia OR Federal Reserve",
 }
+NEWS_RSS_QUERY_LANES = {
+    "taiwan": (
+        "台股 加權指數 成交量 廣度",
+        "台積電 OR 半導體 OR AI 供應鏈",
+        "台灣 政策 OR 籌碼 OR 外資 投信",
+    ),
+    "us": (
+        "Nasdaq OR S&P 500 OR SOX market driver",
+        "Federal Reserve OR CPI OR payrolls OR Treasury yields",
+        "semiconductor OR AI OR TSMC export controls",
+        "oil OR shipping OR sanctions market impact",
+    ),
+}
 NEWS_TERMS = {
     "taiwan": ("006208", "00685L", "2330", "台積電", "台股", "半導體"),
     "us": ("QQQM", "QLD", "TSM", "NVDA", "NVIDIA", "輝達", "美股", "那斯達克"),
@@ -62,9 +75,9 @@ NEWS_TERMS = {
 }
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; PRStKInvestmentSystem/1.0)"}
 NEWS_CACHE_MAX_AGE_MINUTES = int(os.getenv("NEWS_CACHE_MAX_AGE_MINUTES", "360"))
-NEWS_INVENTORY_MAX_TRADING_SESSIONS = 3
-NEWS_INVENTORY_MAX_CALENDAR_DAYS = 7
-NEWS_INVENTORY_MAX_ITEMS = 30
+NEWS_INVENTORY_MAX_TRADING_SESSIONS = 5
+NEWS_INVENTORY_MAX_CALENDAR_DAYS = 10
+NEWS_INVENTORY_MAX_ITEMS = 50
 _LAST_OFFICIAL_NEWS_HEALTH: dict[str, dict[str, Any]] = {}
 
 # A provider can return a valid HTTP response containing the wrong regional
@@ -204,8 +217,10 @@ def _parse_news_time(value: Any) -> datetime | None:
     return parsed.replace(tzinfo=parsed.tzinfo or UTC).astimezone(UTC)
 
 
-def _us_inventory_age(published_at: Any, now: datetime | None = None) -> int | None:
-    """Return a US-session age, where the source session is age one.
+def _inventory_age(
+    published_at: Any, market: str, now: datetime | None = None,
+) -> int | None:
+    """Return a market-session age, where the source session is age one.
 
     Calendar sessions are used instead of 72-hour arithmetic so a Friday
     story remains eligible on the following weekend and exchange holidays do
@@ -220,20 +235,22 @@ def _us_inventory_age(published_at: Any, now: datetime | None = None) -> int | N
     try:
         import pandas_market_calendars as mcal
 
-        nyse = mcal.get_calendar("NYSE")
-        source_day = published.astimezone(ZoneInfo("America/New_York")).date()
-        current_day = current.astimezone(ZoneInfo("America/New_York")).date()
+        calendar_name = "XTAI" if str(market).casefold() == "taiwan" else "NYSE"
+        local_zone = "Asia/Taipei" if str(market).casefold() == "taiwan" else "America/New_York"
+        exchange = mcal.get_calendar(calendar_name)
+        source_day = published.astimezone(ZoneInfo(local_zone)).date()
+        current_day = current.astimezone(ZoneInfo(local_zone)).date()
         if source_day > current_day:
             return None
-        schedule = nyse.schedule(start_date=source_day, end_date=current_day)
+        schedule = exchange.schedule(start_date=source_day, end_date=current_day)
         sessions = [index.date() for index in schedule.index]
     except (ImportError, KeyError, TypeError, ValueError, IndexError):
         return None
-    if not sessions:
+    if not sessions or not any(session <= source_day for session in sessions):
         # A weekend/holiday publication belongs to the most recent completed
         # session.  Look back one bounded calendar week to find its anchor.
         try:
-            schedule = nyse.schedule(
+            schedule = exchange.schedule(
                 start_date=source_day - timedelta(days=7), end_date=current_day,
             )
             sessions = [index.date() for index in schedule.index]
@@ -246,6 +263,11 @@ def _us_inventory_age(published_at: Any, now: datetime | None = None) -> int | N
     current_sessions = [session for session in sessions if anchor <= session <= current_day]
     age = len(current_sessions)
     return age if 1 <= age <= NEWS_INVENTORY_MAX_TRADING_SESSIONS else None
+
+
+def _us_inventory_age(published_at: Any, now: datetime | None = None) -> int | None:
+    """Backward-compatible NYSE inventory age helper."""
+    return _inventory_age(published_at, "us", now)
 
 
 def _story_identity(story: dict[str, Any]) -> tuple[str, ...]:
@@ -263,8 +285,6 @@ def _inventory_candidates(
     cache: dict[str, Any], market: str, now: datetime | None = None,
 ) -> list[dict[str, Any]]:
     """Load only recent candidates; the public gate is reapplied downstream."""
-    if market != "us":
-        return []
     entry = (cache.get("markets") or {}).get(market)
     if not isinstance(entry, dict):
         return []
@@ -285,7 +305,7 @@ def _inventory_candidates(
             continue
         item = dict(raw)
         published = _parse_news_time(item.get("published_at"))
-        age = _us_inventory_age(published, checked_at)
+        age = _inventory_age(published, market, checked_at)
         if published is None or age is None:
             continue
         identity = _story_identity(item)
@@ -308,8 +328,6 @@ def _update_news_inventory(
     checked_at: str, now: datetime | None = None,
 ) -> None:
     """Persist only gate-approved canonical stories with original timestamps."""
-    if market != "us":
-        return
     cache["schema"] = max(2, int(cache.get("schema") or 1))
     markets = cache.setdefault("markets", {})
     entry = markets.setdefault(market, {})
@@ -352,7 +370,7 @@ def _update_news_inventory(
     current_time = now or datetime.now(UTC)
     retained: list[dict[str, Any]] = []
     for row in merged.values():
-        age = _us_inventory_age(row.get("published_at"), current_time)
+        age = _inventory_age(row.get("published_at"), market, current_time)
         if age is None:
             continue
         row["inventory_age_trading_sessions"] = age
@@ -726,22 +744,37 @@ def fetch_market_news(market: str) -> list[dict[str, str]]:
             else YAHOO_NEWS_RSS_URLS[market] if provider == "yahoo_finance"
             else _market_news_rss_url(market)
         )
+        source_urls = _market_news_rss_urls(market) if provider == "google_news" else [source_url]
+        found_all: list[dict[str, Any]] = []
+        failed_urls = 0
         try:
-            response = requests.get(source_url, headers=HEADERS, timeout=15)
-            response.raise_for_status()
-            if provider == "anue":
-                found = _news_from_html(response.text, market, limit=10)
-            elif provider == "yahoo_finance":
-                found = _news_from_yahoo_rss(response.text, market, limit=10)
-            else:
-                found = _news_from_rss(response.text, market, limit=10)
+            for candidate_url in source_urls:
+                try:
+                    response = requests.get(candidate_url, headers=HEADERS, timeout=15)
+                    response.raise_for_status()
+                    if provider == "anue":
+                        found = _news_from_html(response.text, market, limit=10)
+                    elif provider == "yahoo_finance":
+                        found = _news_from_yahoo_rss(response.text, market, limit=10)
+                    else:
+                        found = _news_from_rss(response.text, market, limit=10)
+                    found_all.extend(found)
+                except Exception as exc:
+                    failed_urls += 1
+                    errors.append({"provider": provider, "error": type(exc).__name__})
+            found = list({
+                str(item.get("url") or item.get("title")): item
+                for item in found_all
+                if isinstance(item, dict)
+            }.values())
             for story in found:
                 # Keep provider identity on every discovery story so the
                 # post-filter funnel can distinguish accepted from rejected
                 # items without guessing from display labels or URLs.
                 story.setdefault("provider", provider)
             stories.extend(found)
-            health.append({"provider": provider, "status": "healthy" if found else "no_event",
+            status = "failed" if not found and failed_urls == len(source_urls) else "healthy" if found else "no_event"
+            health.append({"provider": provider, "status": status,
                            "source_url": source_url, "item_count": len(found),
                            "checked_at": datetime.now(UTC).isoformat(), "market": market,
                            "source_tier": "discovery" if provider == "google_news" else "market"})
@@ -757,7 +790,7 @@ def fetch_market_news(market: str) -> list[dict[str, str]]:
     return stories
 
 
-def _market_news_rss_url(market: str) -> str:
+def _market_news_rss_url(market: str, query: str | None = None) -> str:
     """Build a market-specific Google News RSS discovery URL.
 
     This is a discovery fallback only.  It is deliberately queried with a
@@ -766,19 +799,28 @@ def _market_news_rss_url(market: str) -> str:
     """
     if market == "us":
         params = {
-            "q": "Nasdaq OR S&P 500 OR Federal Reserve OR Nvidia OR US stocks",
+            "q": query or NEWS_RSS_QUERIES["us"],
             "hl": "en-US",
             "gl": "US",
             "ceid": "US:en",
         }
     else:
         params = {
-            "q": NEWS_RSS_QUERIES[market],
+            "q": query or NEWS_RSS_QUERIES[market],
             "hl": "zh-TW",
             "gl": "TW",
             "ceid": "TW:zh-Hant",
         }
     return "https://news.google.com/rss/search?" + urlencode(params)
+
+
+def _market_news_rss_urls(market: str) -> list[str]:
+    """Build bounded topic-lane discovery URLs for candidate collection."""
+    lanes = NEWS_RSS_QUERY_LANES.get(market) or (NEWS_RSS_QUERIES[market],)
+    return [
+        _market_news_rss_url(market, query=query)
+        for query in lanes
+    ]
 
 
 def _rss_published_at(value: Any) -> str | None:
@@ -839,10 +881,21 @@ def _news_from_yahoo_rss(xml: str, market: str, limit: int = 10) -> list[dict[st
 
 
 def fetch_market_news_fallback(market: str) -> list[dict[str, Any]]:
-    """Fetch a category-specific discovery fallback when the primary feeds collide."""
-    response = requests.get(_market_news_rss_url(market), headers=HEADERS, timeout=15)
-    response.raise_for_status()
-    return _news_from_rss(response.text, market)
+    """Fetch bounded topic lanes when the primary feeds are sparse/colliding."""
+    stories: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for url in _market_news_rss_urls(market):
+        try:
+            response = requests.get(url, headers=HEADERS, timeout=15)
+            response.raise_for_status()
+            for story in _news_from_rss(response.text, market):
+                identity = str(story.get("url") or story.get("title") or "")
+                if identity and identity not in seen:
+                    seen.add(identity)
+                    stories.append(story)
+        except Exception:
+            continue
+    return stories
 
 
 def _filter_market_news(stories: list[dict[str, Any]], market: str) -> list[dict[str, Any]]:
