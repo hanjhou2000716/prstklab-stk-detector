@@ -522,10 +522,17 @@ def _schedule_decision_category(
     if contract_status == "invalid":
         reason = str(ctx.get("resolution_reason") or "invalid_schedule_context")
         return "contract_error", reason
-    context_reason = str(
-        ctx.get("suppression_reason") or ctx.get("resolution_reason") or ""
-    ).strip()
-    if notification_requested is False and not context_reason:
+    context_suppression = str(ctx.get("suppression_reason") or "").strip()
+    context_reason = context_suppression
+    if (
+        not context_reason
+        and str(ctx.get("delivery_intent") or "").strip() != "notify_candidate"
+    ):
+        context_reason = str(ctx.get("resolution_reason") or "").strip()
+    if notification_requested is False and not context_suppression and (
+        str(ctx.get("delivery_intent") or "notify_candidate").strip()
+        == "notify_candidate"
+    ):
         return "not_requested", "manual_notification_opt_in_required"
     reason = str(
         ctx.get("suppression_reason")
