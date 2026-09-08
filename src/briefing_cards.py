@@ -261,8 +261,8 @@ def _market_observations(
             event_market_context = _supporting_event_context(events) or event_market_context
     else:
         primary_event = events[0] if events else {}
-        event_title = primary_event.get("brief_title") or "今日無重大市場事件，持續觀察"
-        event_text = primary_event.get("summary") or "本次未出現符合重大門檻的公開事件。"
+        event_title = str(primary_event.get("brief_title") or "今日無重大市場事件，持續觀察")
+        event_text = str(primary_event.get("summary") or "本次未出現符合重大門檻的公開事件。")
         event_market_context = str(primary_event.get("market_context") or "").strip()
 
     return [
@@ -309,9 +309,9 @@ def _market_observations(
         _card(
             "風險提醒",
             f"本次焦點：{event_title}。{event_text} 美股風險：{_risk_line(risk, 'us')}",
-            primary_event.get("why_important") or primary_event.get("trigger") or "目前以最新公開報價、官方資料與重大事件門檻持續核對。",
-            primary_event.get("market_context") or "沒有重大事件時，不將短期價格變動視為明確因果。",
-            primary_event.get("stock_observation") or "觀察主要市場、能源與利率是否出現同步且持續的價格變化。",
+            str(primary_event.get("why_important") or primary_event.get("trigger") or "目前以最新公開報價、官方資料與重大事件門檻持續核對。"),
+            str(primary_event.get("market_context") or "沒有重大事件時，不將短期價格變動視為明確因果。"),
+            str(primary_event.get("stock_observation") or "觀察主要市場、能源與利率是否出現同步且持續的價格變化。"),
             source_note=_source_note(primary_event),
         ),
     ]
