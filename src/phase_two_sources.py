@@ -8,7 +8,6 @@ variables and are never included in returned data.
 from __future__ import annotations
 
 import math
-import re
 from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import Any
@@ -56,43 +55,31 @@ def _to_float(value: Any) -> float | None:
 
 
 def fetch_kofia_credit_margin(*, timeout: int = 20) -> dict[str, Any]:
-    """Read the public KOFIA FreeSIS credit-balance table when available.
+    """Return the retired KOFIA source without making a network request.
 
-    FreeSIS has changed its HTML/JSON shape over time, so parsing is defensive:
-    a successful HTTP response with no unambiguous balance is reported as a
-    data gap, never as a guessed value.
+    The former FreeSIS endpoint has not provided a stable, verifiable series
+    for this product.  Keeping a diagnostic-shaped return value preserves old
+    readers while ensuring the disabled provider cannot affect analysis or
+    appear as an active source-health failure.
     """
     checked_at = _now()
-    try:
-        response = requests.get(KOFIA_URL, headers={"User-Agent": "PRStK Lab public research"}, timeout=timeout)
-        response.raise_for_status()
-        text = response.text
-        candidates: list[tuple[str, float]] = []
-        date_pattern = re.compile(r"(20\d{2}[./-]\d{1,2}[./-]\d{1,2})")
-        number_pattern = re.compile(r"[-+]?\d[\d,]*(?:\.\d+)?")
-        for row in re.split(r"<tr|\n", text, flags=re.I):
-            date_match = date_pattern.search(row)
-            if not date_match or not any(token in row for token in ("신용", "융자", "잔고", "credit", "margin")):
-                continue
-            numbers = [_to_float(value) for value in number_pattern.findall(row)]
-            numbers = [value for value in numbers if value is not None]
-            if numbers:
-                value = numbers[-1]
-                assert value is not None
-                candidates.append((date_match.group(1).replace(".", "-"), float(value)))
-        if not candidates:
-            return {"status": "data_gap", "data_gap": "KOFIA response has no unambiguous balance", "health": _health("kofia_margin", "KOFIA 韓國全市場信用融資", KOFIA_URL, "partial", checked_at)}
-        candidates.sort(key=lambda item: item[0])
-        latest_date, latest_value = candidates[-1]
-        percentile = _percentile((value for _, value in candidates[-20:]), latest_value)
-        level = "高位" if percentile is not None and percentile >= 75 else "低位" if percentile is not None and percentile <= 25 else "中位"
-        return {"status": "ok", "source_label": "KOFIA 韓國全市場信用融資", "source_url": KOFIA_URL,
-                "date": latest_date, "balance": latest_value, "unit": "兆韓元", "sample_days": len(candidates),
-                "percentile": percentile, "level": level, "fetched_at": checked_at,
-                "health": _health("kofia_margin", "KOFIA 韓國全市場信用融資", KOFIA_URL, "healthy", checked_at, item_count=len(candidates), data_gap=None)}
-    except Exception as exc:
-        return {"status": "failed", "data_gap": type(exc).__name__, "fetched_at": checked_at,
-                "health": _health("kofia_margin", "KOFIA 韓國全市場信用融資", KOFIA_URL, "failed", checked_at, item_count=0, data_gap=type(exc).__name__)}
+    health = _health(
+        "kofia_margin", "KOFIA 韓國全市場信用融資", KOFIA_URL,
+        "partial", checked_at, item_count=0,
+        data_gap="retired_unstable_public_source",
+    )
+    health.update({
+        "disabled": True,
+        "disabled_reason": "沒有穩定且可驗證的公開信用融資資料入口",
+    })
+    return {
+        "status": "data_gap",
+        "disabled": True,
+        "disabled_reason": "沒有穩定且可驗證的公開信用融資資料入口",
+        "data_gap": "source_retired",
+        "fetched_at": checked_at,
+        "health": health,
+    }
 
 
 def _ema(values: list[float], period: int) -> list[float]:
@@ -170,5 +157,11 @@ def build_phase_two_snapshot() -> dict[str, Any]:
         "crypto_macd": crypto,
         "crypto_spot": crypto_spot,
         "public_market_secondary": public_market_secondary,
-        "sources": [item["health"] for item in (kofia, crypto, crypto_spot, public_market_secondary) if item.get("health")],
+        # A retired source remains available in the diagnostic payload for
+        # audit compatibility, but is not an active source-health row and is
+        # not counted as a runtime failure.
+        "sources": [
+            item["health"] for item in (kofia, crypto, crypto_spot, public_market_secondary)
+            if item.get("health") and item.get("disabled") is not True
+        ],
     }

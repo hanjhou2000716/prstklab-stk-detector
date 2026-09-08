@@ -94,6 +94,11 @@ const formatAlertQuote = (item) => {
 };
 
 const alertLinkedMarketNames = {
+  TAIEX: "台股加權指數",
+  TPEx: "櫃買指數",
+  TXF: "台指期",
+  "6505": "台塑化（6505）",
+  "2330": "台積電（2330）",
   NASDAQ: "那斯達克綜合指數",
   SOX: "費城半導體指數",
   "S&P 500": "標普 500",
@@ -552,6 +557,8 @@ const primaryBriefingEvent = (snapshot) => {
     possible_linkage: primary.market_implication,
     stock_observation: primary.stock_observation,
     market_evidence: quoteEvidence,
+    linked_markets: Array.isArray(primary.linked_markets) ? primary.linked_markets : [],
+    linked_market_details: Array.isArray(primary.linked_market_details) ? primary.linked_market_details : [],
     source_evidence: primary.source_evidence || briefing.source_evidence || [],
     canonical_event_key: primary.canonical_event_key || primary.event_key || briefing.briefing_id,
     notification_status: "eligible",
@@ -692,7 +699,14 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
   setText("alert-reminder", event.friendly_reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
   const quoteItems = [];
   const quoteTickers = new Set();
-  for (const item of [event.instrument, ...(Array.isArray(event.related) ? event.related : []), ...alertMarketEvidence(event, snapshot)]) {
+  const linkagePlaceholders = Array.isArray(event.linked_market_details)
+    ? event.linked_market_details.map((detail) => ({
+      ...detail,
+      ticker: detail.ticker,
+      name: alertLinkedMarketNames[String(detail.ticker || "").toUpperCase()] || detail.ticker,
+      data_status: detail.quote_available ? undefined : "unavailable",
+    })) : [];
+  for (const item of [event.instrument, ...(Array.isArray(event.related) ? event.related : []), ...alertMarketEvidence(event, snapshot), ...linkagePlaceholders]) {
     const ticker = String(item?.ticker || "").toUpperCase();
     if (!quoteHasValues(item) || (ticker && quoteTickers.has(ticker))) continue;
     if (ticker) quoteTickers.add(ticker);
@@ -702,6 +716,7 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
   const linkedTickers = [
     ...(Array.isArray(event.linked_markets) ? event.linked_markets : []),
     ...(Array.isArray(event.market_evidence) ? event.market_evidence.map((item) => item?.ticker) : []),
+    ...(Array.isArray(event.linked_market_details) ? event.linked_market_details.map((item) => item?.ticker) : []),
   ].filter(Boolean).map((ticker) => alertLinkedMarketNames[ticker] || ticker);
   const linkedMarkets = [...new Set(linkedTickers)].join("、");
   const quoteGrid = document.getElementById("alert-quote-grid");
@@ -1022,6 +1037,7 @@ const renderSourceHealth = (health, snapshot = {}) => {
     return;
   }
   const degradedStates = ["critical", "critical_gap", "failed", "degraded_with_fallback", "fallback_active", "partial", "data_gap", "stale", "configuration_missing", "configuration_required"];
+  const visibleSources = health.sources.filter((source) => source && source.disabled !== true && source.status !== "disabled");
   const sourceState = (source) => source.semantic_state || source.state || source.status;
   // The backend emits the canonical semantic gap count.  Older snapshots may
   // not have it, so retain a deterministic compatibility fallback; current
@@ -1029,9 +1045,9 @@ const renderSourceHealth = (health, snapshot = {}) => {
   const declaredMissing = Number(health.missing_source_count);
   const missing = Number.isFinite(declaredMissing) && declaredMissing >= 0
     ? Math.trunc(declaredMissing)
-    : health.sources.filter((source) => degradedStates.includes(sourceState(source))).length;
+    : visibleSources.filter((source) => degradedStates.includes(sourceState(source))).length;
   const declaredRuntimeFailure = Number(health.runtime_failure_count);
-  const critical = health.sources.filter((source) => ["critical", "critical_gap", "failed", "configuration_missing", "configuration_required"].includes(sourceState(source))).length;
+  const critical = visibleSources.filter((source) => ["critical", "critical_gap", "failed", "configuration_missing", "configuration_required"].includes(sourceState(source))).length;
   // Keep optional credential gaps in engineering rows, but show investors the
   // canonical runtime degradation count rather than implying an outage for
   // an unconfigured enrichment provider.
@@ -1076,7 +1092,7 @@ const renderSourceHealth = (health, snapshot = {}) => {
   ].filter(Boolean).join("｜");
   event.textContent = `${scan.label || "事件掃描"}｜${scanStateLabel}${scan.detail ? `｜${scan.detail}` : ""}${healthMetricParts ? `｜${healthMetricParts}` : ""}`;
   event.dataset.status = scan.status || "partial";
-  list.innerHTML = health.sources.map((source) => {
+  list.innerHTML = visibleSources.map((source) => {
     // Use the canonical semantic state for both the aggregate count and the
     // row label; legacy state/status fields are only compatibility fallbacks.
     const state = source.semantic_state || source.state || source.status;
@@ -1122,6 +1138,9 @@ const renderSourceHealth = (health, snapshot = {}) => {
       Number.isFinite(Number(source.consecutive_failures)) ? `連續失敗 ${Number(source.consecutive_failures)} 次` : "",
       Number.isFinite(Number(source.crosscheck_rate)) ? `核對率 ${Number(source.crosscheck_rate).toFixed(1)}%` : "",
     ].filter(Boolean).join("｜");
+    const providerSummary = Array.isArray(source.provider_results)
+      ? source.provider_results.map((item) => `${item.provider} ${item.status === "healthy" ? "本輪有回應／有效" : item.status === "degraded_with_fallback" ? "備援成功" : "本輪不可用"}`).join("；")
+      : "";
     const external = source.key === "external_financialjuice" && source.observability && typeof source.observability === "object"
       ? [
         source.observability.last_received_at ? `最近收到 ${traceTime(source.observability.last_received_at)}` : "",
@@ -1147,7 +1166,7 @@ const renderSourceHealth = (health, snapshot = {}) => {
         source.observability.last_telegram_delivery_status ? `Telegram ${source.observability.last_telegram_delivery_status}` : "",
         source.observability.last_importance_gte_8_at ? `>=8 最近 ${traceTime(source.observability.last_importance_gte_8_at)}` : "",
       ].filter(Boolean).join("｜") : "";
-    const detail = [issue, candidateNote, provenance, quality, freshness.join("｜"), external, creator, lineage].filter(Boolean).join("｜");
+    const detail = [issue, candidateNote, providerSummary, provenance, quality, freshness.join("｜"), external, creator, lineage].filter(Boolean).join("｜");
     return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${escapeHtml(state || "partial")}">${status}</em></li>`;
   }).join("");
   if (card) card.open = false;
@@ -1274,10 +1293,24 @@ const renderBriefing = (briefing, generatedAt) => {
       item?.observed_date || item?.data_as_of || item?.quote_date || item?.quote_time
       || item?.published_at || item?.source_published_at || ""
     ).slice(0, 19).replace("T", " ");
-    const evidenceSource = (item) => String(
+    const rawEvidenceSource = (item) => String(
       item?.source_label || item?.source_name || item?.source || item?.quote_source
       || item?.source_domain || "公開資料"
     ).trim();
+    const evidenceSource = (item) => {
+      const raw = rawEvidenceSource(item);
+      const lower = raw.toLowerCase();
+      if (lower.includes("twse")) return "TWSE";
+      if (lower.includes("tpex")) return "TPEx";
+      if (lower.includes("taifex")) return "TAIFEX";
+      if (lower.includes("yahoo")) return "Yahoo";
+      if (lower.includes("stooq")) return "Stooq";
+      if (lower.includes("nasdaq")) return "Nasdaq";
+      if (lower.includes("binance")) return "Binance";
+      if (lower.includes("coingecko")) return "CoinGecko";
+      if (lower.includes("google news")) return "Google News";
+      return raw;
+    };
     const renderEvidence = (items) => {
       const rows = (Array.isArray(items) ? items : []).filter((item) => item && typeof item === "object").slice(0, 5);
       if (!rows.length) return "";
@@ -1286,7 +1319,7 @@ const renderBriefing = (briefing, generatedAt) => {
       const summary = `來源｜${sources.join("、") || "公開資料"}${dates.length ? `；資料日 ${dates.join("、")}` : ""}｜查看證據`;
       const detailRows = rows.map((item) => {
         const identity = String(item.ticker || item.name || item.kind || "資料");
-        const source = evidenceSource(item);
+        const source = rawEvidenceSource(item);
         const time = evidenceTime(item);
         const proxy = item.is_proxy === true ? "代理資料" : item.is_proxy === false ? "官方／原始資料" : "";
         const url = String(item.source_url || item.url || "").trim();
@@ -1306,14 +1339,38 @@ const renderBriefing = (briefing, generatedAt) => {
       ? `<p><b class="briefing-analysis-label">${escapeHtml(label)}：</b>${escapeHtml(String(value))}</p>` : "";
     const renderMorningSection = (item, index) => {
       const facts = Array.isArray(item.facts) ? item.facts : [];
+      const structuredFacts = Array.isArray(item.facts_structured) ? item.facts_structured : [];
+      const renderStructuredFacts = () => structuredFacts.slice(0, 6).map((fact) => {
+        const quote = fact && fact.quote && typeof fact.quote === "object" ? fact.quote : null;
+        const movement = quote && Number.isFinite(Number(quote.change_percent))
+          ? Number(quote.change_percent) > 0 ? "market-up" : Number(quote.change_percent) < 0 ? "market-down" : "flat"
+          : "flat";
+        return `<p class="morning-analysis-fact ${movement}">${escapeHtml(String(fact?.text || ""))}</p>`;
+      }).join("");
       const factsMarkup = index === 0 && summaryFacts.length
         ? renderSummaryFacts()
-        : facts.slice(0, 5).map((fact) => `<p class="morning-analysis-fact">${escapeHtml(String(fact))}</p>`).join("");
+        : structuredFacts.length ? renderStructuredFacts() : facts.slice(0, 5).map((fact) => `<p class="morning-analysis-fact">${escapeHtml(String(fact))}</p>`).join("");
       return `<article class="morning-analysis-section"><div class="morning-analysis-section-heading"><h3>${escapeHtml(item.title || "市場判讀")}</h3></div>${factsMarkup}${renderLabeledValue("為何重要", item.why_it_matters)}${renderLabeledValue("可能傳導", item.transmission)}${renderLabeledValue("市場觀察", item.market_observation)}${renderLabeledValue("下一項催化劑", item.next_catalyst)}${renderEvidence(item.evidence)}</article>`;
     };
-    container.innerHTML = `<div class="morning-analysis"><div class="morning-analysis-meta">${escapeHtml(morningAnalysis.market_session_state || "本輪市場時段")}</div>${morningSections.slice(0, 4).map(renderMorningSection).join("")}</div>`;
+    const sessionState = String(morningAnalysis.market_session_state || "").trim();
+    const sessionMeta = sessionState && sessionState !== "本輪市場時段"
+      ? `<div class="morning-analysis-meta">${escapeHtml(sessionState)}</div>` : "";
+    const systemAnalysis = document.getElementById("briefing-morning-system-analysis");
+    if (systemAnalysis) {
+      const gaps = [...new Set([
+        ...(Array.isArray(morningAnalysis.missing_evidence) ? morningAnalysis.missing_evidence : []),
+        ...(Array.isArray(morningAnalysis.system_analysis?.data_gaps) ? morningAnalysis.system_analysis.data_gaps : []),
+      ].map((item) => String(item || "").trim()).filter(Boolean))];
+      const note = String(morningAnalysis.system_analysis?.note || "").trim();
+      systemAnalysis.innerHTML = gaps.length || note
+        ? `<p><b>資料缺口：</b>${escapeHtml(gaps.length ? gaps.join("、") : "無")}</p>${note ? `<p>${escapeHtml(note)}</p>` : ""}`
+        : '<p class="empty">本輪沒有額外系統分析資料。</p>';
+    }
+    container.innerHTML = `<div class="morning-analysis">${sessionMeta}${morningSections.slice(0, 4).map(renderMorningSection).join("")}</div>`;
     return;
   }
+  const systemAnalysis = document.getElementById("briefing-morning-system-analysis");
+  if (systemAnalysis) systemAnalysis.innerHTML = '<p class="empty">本輪沒有新的結構化晨報資料。</p>';
   if (!primaryObservations.length && !fixedObservations.length) { container.innerHTML = '<p class="empty">本次定時報資料暫時無法取得</p>'; return; }
   const renderObservation = (item) => `<article class="briefing-observation"><h4>${escapeHtml(item.title || "公開市場觀察")}</h4><p><b>事件：</b>${escapeHtml(item.event || "公開資料更新中。")}</p><p><b>為何重要：</b>${escapeHtml(item.importance || "持續核對公開資料。")}</p><p><b>可能連動：</b>${escapeHtml(item.market_impact || "尚無足夠公開資料判定連動。")}</p><p><b>股市觀察：</b>${escapeHtml(item.watch || "觀察後續公開市場報價。")}</p>${item.data_as_of ? `<small class="briefing-source">資料日期：${escapeHtml(String(item.data_as_of).slice(0, 19).replace("T", " "))}</small>` : ""}${item.source_note ? `<small class="briefing-source">${escapeHtml(item.source_note)}</small>` : ""}</article>`;
   const sections = [];

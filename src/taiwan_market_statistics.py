@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import time
 from datetime import date, datetime
 from typing import Any
@@ -27,27 +28,66 @@ def _date(value: Any) -> str | None:
     raw = str(value or "").strip()
     if not raw:
         return None
-    # TWSE often publishes ROC dates with slashes (for example 115/09/07).
-    # Convert that form before the Gregorian parser can interpret year 115.
-    parts = raw.split("/")
-    if len(parts) == 3 and len(parts[0]) == 3 and all(part.isdigit() for part in parts):
+    # Seven-digit ROC dates must be recognized before any Gregorian parser.
+    # Otherwise a malformed value such as ``1150-09-07`` can look like a
+    # valid year 1150 date and enter the public report.
+    compact = raw.replace("/", "").replace("-", "")
+    if len(compact) == 7 and compact.isdigit():
         try:
-            return date(int(parts[0]) + 1911, int(parts[1]), int(parts[2])).isoformat()
+            return date(int(compact[:3]) + 1911, int(compact[3:5]), int(compact[5:7])).isoformat()
         except ValueError:
+            return None
+    parts = re.split(r"[/-]", raw)
+    if len(parts) == 3 and all(part.isdigit() for part in parts):
+        year = int(parts[0])
+        if len(parts[0]) == 3:
+            try:
+                return date(year + 1911, int(parts[1]), int(parts[2])).isoformat()
+            except ValueError:
+                return None
+        # A Gregorian year before the ROC epoch is not a plausible TWSE
+        # observation and is treated as malformed input.
+        if len(parts[0]) != 4 or year < 1911:
             return None
     for fmt in ("%Y%m%d", "%Y/%m/%d", "%Y-%m-%d"):
         try:
-            return datetime.strptime(raw, fmt).date().isoformat()
+            parsed = datetime.strptime(raw, fmt).date()
+            return parsed.isoformat() if parsed.year >= 1911 else None
         except ValueError:
             continue
-    # TWSE OpenAPI dates are often Republic of China years, e.g. 1150907.
-    if len(raw) == 7 and raw.isdigit():
-        try:
-            year = int(raw[:3]) + 1911
-            return date(year, int(raw[3:5]), int(raw[5:7])).isoformat()
-        except ValueError:
-            return None
     return None
+
+
+def _dated_row(rows: Any, date_fields: tuple[str, ...], target_date: str | None) -> dict[str, Any] | None:
+    candidates: list[tuple[str, dict[str, Any]]] = []
+    for item in rows if isinstance(rows, list) else []:
+        if not isinstance(item, dict):
+            continue
+        observed = next((_date(item.get(field)) for field in date_fields if item.get(field)), None)
+        if observed:
+            candidates.append((observed, item))
+    if target_date:
+        target = _date(target_date)
+        if not target:
+            return None
+        exact = [item for observed, item in candidates if observed == target]
+        return exact[0] if exact else None
+    return max(candidates, key=lambda pair: pair[0])[1] if candidates else None
+
+
+def _breadth_scope(row: dict[str, Any]) -> tuple[str, bool]:
+    raw = " ".join(
+        str(row.get(key) or "").strip()
+        for key in ("統計範圍", "統計口徑", "證券種類", "市場範圍", "類型", "Type")
+    )
+    if "股票" in raw and not any(term in raw for term in ("權證", "受益證券", "債券")):
+        return raw, True
+    # TWSE's ``整體市場`` row is the stock-market breadth row in this
+    # endpoint.  Still retain the source label and a sanity bound so a
+    # mixed-securities response cannot be presented as stock breadth.
+    if raw in {"整體市場", "All"}:
+        return raw, True
+    return raw or "統計範圍未提供", False
 
 
 def parse_twse_market_statistics(
@@ -63,17 +103,17 @@ def parse_twse_market_statistics(
     breadth: dict[str, Any] | None = None
     institutional: dict[str, Any] | None = None
 
+    normalized_target = _date(target_date) if target_date else None
     rows = turnover_rows if isinstance(turnover_rows, list) else []
-    row = next((item for item in reversed(rows) if isinstance(item, dict)), None)
+    row = _dated_row(rows, ("Date", "日期"), normalized_target)
     if row:
         observed = _date(row.get("Date") or row.get("日期"))
-        if target_date and observed and observed != target_date:
-            row = None
-        else:
+        trade_value = _number(row.get("TradeValue"))
+        if observed and trade_value is not None:
             turnover = {
                 "observed_date": observed,
                 "trade_volume": _number(row.get("TradeVolume")),
-                "trade_value": _number(row.get("TradeValue")),
+                "trade_value": trade_value,
                 "transactions": _number(row.get("Transaction")),
                 "taiex": row.get("TAIEX"),
                 "change": row.get("Change"),
@@ -85,24 +125,36 @@ def parse_twse_market_statistics(
         errors.append("turnover_unavailable")
 
     breadth_list = breadth_rows if isinstance(breadth_rows, list) else []
-    breadth_row = next(
-        (item for item in reversed(breadth_list) if isinstance(item, dict) and str(item.get("類型") or item.get("Type") or "") in {"整體市場", "All"}),
-        None,
-    )
+    breadth_candidates = [
+        item for item in breadth_list
+        if isinstance(item, dict) and str(item.get("類型") or item.get("Type") or "") in {"整體市場", "All"}
+    ]
+    breadth_row = _dated_row(breadth_candidates, ("出表日期", "Date"), normalized_target)
     if breadth_row:
         observed = _date(breadth_row.get("出表日期") or breadth_row.get("Date"))
-        breadth = {
-            "observed_date": observed,
+        scope, scope_verified = _breadth_scope(breadth_row)
+        values = {
             "advancing": _number(breadth_row.get("上漲") or breadth_row.get("Advancing")),
             "limit_up": _number(breadth_row.get("漲停") or breadth_row.get("LimitUp")),
             "declining": _number(breadth_row.get("下跌") or breadth_row.get("Declining")),
             "limit_down": _number(breadth_row.get("跌停") or breadth_row.get("LimitDown")),
             "unchanged": _number(breadth_row.get("持平") or breadth_row.get("Unchanged")),
             "untraded": _number(breadth_row.get("未成交") or breadth_row.get("Untraded")),
-            "source": "TWSE official market breadth",
-            "source_url": TWSE_BREADTH_URL,
-            "is_proxy": False,
         }
+        breadth_total = sum(value for value in values.values() if value is not None)
+        reasonable = breadth_total <= 5_000 and values["advancing"] is not None and values["declining"] is not None
+        if observed and reasonable:
+            breadth = {
+                "observed_date": observed,
+                **values,
+                "scope": scope,
+                "scope_verified": scope_verified,
+                "source": "TWSE official market breadth",
+                "source_url": TWSE_BREADTH_URL,
+                "is_proxy": False,
+            }
+        else:
+            errors.append("breadth_invalid_values")
     else:
         errors.append("breadth_unavailable")
 
@@ -118,16 +170,22 @@ def parse_twse_market_statistics(
             index = names.get("買賣差額")
             return _number(record[index]) if index is not None and index < len(record) else None
 
-        institutional = {
-            "observed_date": _date(institution_payload.get("date")),
-            "foreign_net": row_value("外資及陸資(不含外資自營商)"),
-            "investment_trust_net": row_value("投信"),
-            "dealer_net": row_value("自營商(自行買賣)"),
-            "total_net": row_value("合計"),
-            "source": "TWSE BFI82U official institution trading statistics",
-            "source_url": f"{TWSE_INSTITUTION_URL}?dayDate={institution_payload.get('date')}&response=json",
-            "is_proxy": False,
-        }
+        institutional_date = _date(institution_payload.get("date"))
+        if normalized_target and institutional_date != normalized_target:
+            institutional_date = None
+        if institutional_date and row_value("合計") is not None:
+            institutional = {
+                "observed_date": institutional_date,
+                "foreign_net": row_value("外資及陸資(不含外資自營商)"),
+                "investment_trust_net": row_value("投信"),
+                "dealer_net": row_value("自營商(自行買賣)"),
+                "total_net": row_value("合計"),
+                "source": "TWSE BFI82U official institution trading statistics",
+                "source_url": f"{TWSE_INSTITUTION_URL}?dayDate={institution_payload.get('date')}&response=json",
+                "is_proxy": False,
+            }
+        else:
+            errors.append("institutional_flow_invalid_date_or_value")
     else:
         errors.append("institutional_flow_unavailable")
 
@@ -195,7 +253,7 @@ def fetch_twse_market_statistics(
             turnover_rows=payloads.get("turnover"),
             breadth_rows=payloads.get("breadth"),
             institution_payload=payloads.get("institution"),
-            target_date=None,
+            target_date=target,
         )
         parsed["errors"] = list(dict.fromkeys([*parsed.get("errors", []), *errors]))
         parsed["retry_attempt"] = attempt

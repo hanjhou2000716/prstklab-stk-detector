@@ -444,7 +444,7 @@ h1 { font-size: clamp(1.1rem, 5.2vw, 1.55rem); }
    collapsed, auditable evidence row. */
 .briefing-analysis-label,
 .morning-analysis-section b,
-.briefing-observation b { color: #b42318; font-weight: 800; }
+.briefing-observation b { color: var(--orange); font-weight: 800; }
 .briefing-fact-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: baseline; }
 .briefing-fact-row span { color: #263f57; font-weight: 700; }
 .briefing-evidence { margin-top: 9px; border-top: 1px solid #e2e4df; padding-top: 7px; }
@@ -452,3 +452,7 @@ h1 { font-size: clamp(1.1rem, 5.2vw, 1.55rem); }
 .briefing-evidence ul { margin: 6px 0 0; padding-left: 18px; }
 .briefing-evidence li { margin: 3px 0; color: var(--muted); font-size: .64rem; line-height: 1.4; overflow-wrap: anywhere; }
 .briefing-evidence a { color: var(--accent); }
+.briefing-morning-system-analysis b { color: var(--orange); }
+.morning-analysis-fact.market-up { color: var(--negative) !important; }
+.morning-analysis-fact.market-down { color: var(--positive) !important; }
+.morning-analysis-fact.flat { color: #263f57 !important; }
