@@ -124,6 +124,7 @@ def detect_major_event(story: dict[str, str]) -> dict[str, str] | None:
     labels = {
         "fed": "Fed／貨幣政策",
         "macro": "重大經濟數據",
+        "currency": "匯率／美元",
         "policy": "關稅／政策",
         "conflict": "地緣衝突",
         "black_swan": "黑天鵝／重大災害",
@@ -397,6 +398,11 @@ def _event_market_context(label: str) -> tuple[str, str, str]:
             "財報與展望可能改變 AI／半導體需求預期，但單一公司消息不代表整體產業。",
             "可能連動費半、Nasdaq、台積電與台股半導體權值。",
             "觀察費半與台美半導體權值是否以成交與價格同步確認趨勢。",
+        ),
+        "匯率／美元": (
+            "匯率干預或美元變化會改變資金成本與進出口換算，需區分官方行動與市場推測。",
+            "可能連動美元、日圓、美債與亞洲股市；台股反應以實際匯率與股價核對。",
+            "觀察美元／日圓、美元兌台幣與台股權值是否出現同步價格變化。",
         ),
     }
     # Unknown categories have no defensible transmission mechanism.  Do not

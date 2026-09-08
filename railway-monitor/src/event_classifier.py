@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/event_classifier.py
-# Canonical source SHA256: 4f4ab528180c71a338ce40d93238a3d435f9d6deb076a3da3bc7ec365ba6a022
+# Canonical source SHA256: a36592194ca6b92d785526317f61d5acfa03170419e3d42a90dd532139a45b7a
 
 """Shared, auditable event classification for news and live alerts.
 
@@ -302,7 +302,7 @@ def classify_event_fields(record: dict[str, Any] | str) -> dict[str, Any]:
         ("policy", _POLICY_SUBJECTS, _POLICY_ACTIONS),
         ("fed", _FED_SUBJECTS, _FED_ACTIONS),
         ("macro", _MACRO_SUBJECTS, _MACRO_ACTIONS),
-        ("macro", _CURRENCY_SUBJECTS, _CURRENCY_ACTIONS),
+        ("currency", _CURRENCY_SUBJECTS, _CURRENCY_ACTIONS),
         ("energy", _ENERGY_SUBJECTS, _ENERGY_ACTIONS),
         ("semiconductor", _SEMICONDUCTOR_SUBJECTS, _SEMICONDUCTOR_ACTIONS),
         ("market", _MARKET_SUBJECTS, _MARKET_ACTIONS),

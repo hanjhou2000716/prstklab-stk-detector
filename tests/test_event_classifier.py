@@ -57,6 +57,16 @@ def test_bessent_hormuz_opinion_is_not_fed_without_energy_fact():
     assert result["category"] is None
 
 
+def test_yen_intervention_is_currency_not_generic_macro_data():
+    result = classify_event_fields({
+        "title": "日本為穩日圓拋售近900億美元美債，創紀錄干預匯市",
+    })
+
+    assert result["category"] == "currency"
+    assert result["matched_subject"] == "日圓"
+    assert result["matched_action"] == "干預"
+
+
 def test_structured_market_fact_requires_subject_and_action():
     result = classify_event_fields({"title": "US jobs data beats expectations as Nasdaq falls"})
     assert result["category"] == "macro"
