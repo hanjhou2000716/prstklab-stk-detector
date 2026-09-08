@@ -265,8 +265,9 @@ def resolve_schedule_diagnostic(
             now=now,
             contract_version=SCHEDULE_CONTRACT_VERSION if contract_version is None else contract_version,
             time_zone=SCHEDULE_TIMEZONE if time_zone is None else time_zone,
-            dispatch_unix=dispatch_unix,
-        )
+        dispatch_unix=dispatch_unix,
+        dispatch_trace_id=dispatch_trace_id,
+    )
         reason = str(check.get("reason") or "invalid_schedule_context:slot_resolution_failed")
         blocked = _invalid_dispatch_context(
             requested,
