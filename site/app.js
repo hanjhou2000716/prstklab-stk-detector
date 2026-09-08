@@ -1362,8 +1362,28 @@ const renderBriefing = (briefing, generatedAt) => {
         ...(Array.isArray(morningAnalysis.system_analysis?.data_gaps) ? morningAnalysis.system_analysis.data_gaps : []),
       ].map((item) => String(item || "").trim()).filter(Boolean))];
       const note = String(morningAnalysis.system_analysis?.note || "").trim();
-      systemAnalysis.innerHTML = gaps.length || note
-        ? `<p><b>資料缺口：</b>${escapeHtml(gaps.length ? gaps.join("、") : "無")}</p>${note ? `<p>${escapeHtml(note)}</p>` : ""}`
+      const decisionLabels = {
+        notification_candidate: "可進入通知判定",
+        no_material_change: "正常無實質變化",
+        market_closed: "休市",
+        data_insufficient: "資料不足",
+        late_schedule: "排程過期",
+        contract_error: "排程契約錯誤",
+        suppressed: "通知抑制",
+      };
+      const decisions = Array.isArray(morningAnalysis.system_analysis?.schedule_decisions)
+        ? morningAnalysis.system_analysis.schedule_decisions
+          .filter((item) => item && typeof item === "object").slice(-4).reverse() : [];
+      const scheduleMarkup = decisions.length
+        ? `<p><b>最近錨點決策：</b>${decisions.map((item) => {
+          const label = decisionLabels[String(item.notification_status || "")] || String(item.notification_status || "未知");
+          const slot = String(item.scheduled_slot || item.effective_market_phase || "錨點");
+          const date = String(item.slot_date || "");
+          const reason = String(item.suppression_reason || (item.delivery_eligible ? "可進入通知判定" : "未取得通知資格"));
+          return `${escapeHtml(`${slot}${date ? ` ${date}` : ""}：${label}（${reason}）`)}`;
+        }).join("；")}</p>` : "";
+      systemAnalysis.innerHTML = gaps.length || note || scheduleMarkup
+        ? `${scheduleMarkup}${gaps.length ? `<p><b>資料缺口：</b>${escapeHtml(gaps.join("、"))}</p>` : ""}${note ? `<p>${escapeHtml(note)}</p>` : ""}`
         : '<p class="empty">本輪沒有額外系統分析資料。</p>';
     }
     container.innerHTML = `<div class="morning-analysis">${sessionMeta}${morningSections.slice(0, 4).map(renderMorningSection).join("")}</div>`;

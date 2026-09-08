@@ -8,7 +8,7 @@ on:
         required: false
         default: auto
         type: choice
-        options: [auto, morning, pre_open, intraday, midday, afternoon, post_close, us_premarket, us_open]
+        options: [auto, morning, pre_open, post_close, us_premarket]
       force:
         description: Force a duplicate slot run
         required: false
@@ -64,9 +64,11 @@ jobs:
       RAILWAY_OBSERVATIONS_URL: ${{ vars.RAILWAY_OBSERVATIONS_URL }}
       # Canonical zero-cost replacement; takes precedence over Railway.
       PUBLIC_OBSERVATIONS_URL: ${{ vars.PUBLIC_OBSERVATIONS_URL }}
-      SLOT: ${{ inputs.slot || github.event.client_payload.slot || 'auto' }}
+      SLOT: ${{ inputs.slot || github.event.client_payload.scheduled_slot || github.event.client_payload.slot || 'auto' }}
       SCHEDULE_CRON: ${{ github.event.schedule || '' }}
       SCHEDULED_FOR_AT: ${{ github.event.client_payload.scheduled_for_at || '' }}
+      SCHEDULE_CONTRACT_VERSION: ${{ github.event.client_payload.schedule_contract_version || github.event.client_payload.contract_version || '' }}
+      SCHEDULE_TIME_ZONE: ${{ github.event.client_payload.time_zone || '' }}
       FORCE: ${{ inputs.force || github.event.client_payload.force || 'false' }}
       # Manual runs publish and verify by default but never send production
       # notifications unless the operator explicitly opts in. Scheduled runs
@@ -125,6 +127,7 @@ jobs:
           if [ "$STRICT_WINDOW" = "true" ]; then arguments+=(--strict-window); fi
           if [ -n "$SCHEDULE_CRON" ]; then arguments+=(--scheduled-cron "$SCHEDULE_CRON"); fi
           if [ -n "$SCHEDULED_FOR_AT" ]; then arguments+=(--scheduled-for "$SCHEDULED_FOR_AT"); fi
+          arguments+=(--schedule-contract-version "$SCHEDULE_CONTRACT_VERSION" --time-zone "$SCHEDULE_TIME_ZONE")
           python -m src.scheduled_brief "${arguments[@]}" >> "$GITHUB_OUTPUT"
       - name: Restore scheduled idempotency lock
         if: steps.window.outputs.should_run == 'true' && env.FORCE != 'true'
@@ -272,21 +275,80 @@ jobs:
       - name: Publish scheduled notification decision
         if: always()
         env:
-          SCAN_STATUS: ${{ steps.prepare.outcome }}
+          PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
           CANDIDATE_TYPE: ${{ steps.prepare.outputs.candidate_type || 'none' }}
           NOTIFICATION_EXPECTED: ${{ steps.prepare.outputs.notification_expected || 'false' }}
-          NOTIFICATION_STATUS: ${{ steps.send_brief.outputs.notification_status || (env.NOTIFY == 'true' && 'not_attempted' || 'not_requested') }}
-          NOTIFICATION_REASON: ${{ steps.send_brief.outputs.reason || (env.NOTIFY == 'true' && 'send_step_not_run' || 'manual_notification_opt_in_required') }}
+          SEND_STATUS: ${{ steps.send_brief.outputs.notification_status || '' }}
+          SEND_REASON: ${{ steps.send_brief.outputs.reason || '' }}
+          WINDOW_CONTRACT_STATUS: ${{ steps.window.outputs.contract_status || 'not_applicable' }}
+          WINDOW_NOTIFICATION_STATUS: ${{ steps.window.outputs.notification_status || '' }}
+          WINDOW_NOTIFICATION_REASON: ${{ steps.window.outputs.notification_reason || '' }}
+          WINDOW_RESOLUTION_REASON: ${{ steps.window.outputs.resolution_reason || '' }}
+          SCHEDULE_CONTRACT_VERSION: ${{ steps.window.outputs.schedule_contract_version || '' }}
+          SCHEDULED_SLOT: ${{ steps.window.outputs.scheduled_slot || '' }}
+          EFFECTIVE_MARKET_PHASE: ${{ steps.window.outputs.effective_market_phase || '' }}
+          SCHEDULED_FOR_AT: ${{ steps.window.outputs.scheduled_for_at || '' }}
+          RUN_STARTED_AT: ${{ steps.window.outputs.run_started_at || '' }}
+          DELAY_SECONDS: ${{ steps.window.outputs.delay_seconds || '0' }}
+          TRIGGER_KIND: ${{ steps.window.outputs.trigger_kind || github.event_name }}
           DELIVERED_COUNT: ${{ steps.send_brief.outputs.delivered_count || '' }}
           FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count || '' }}
         run: |
+          scan_status="unknown"
+          if [ "$PREPARE_OUTCOME" = "success" ]; then
+            scan_status="completed"
+          elif [ "$PREPARE_OUTCOME" = "failure" ]; then
+            scan_status="production_failed"
+          elif [ "$WINDOW_CONTRACT_STATUS" = "invalid" ]; then
+            scan_status="contract_error"
+          elif [ "$PREPARE_OUTCOME" = "skipped" ]; then
+            scan_status="not_run"
+          fi
+          notification_status="$SEND_STATUS"
+          notification_reason="$SEND_REASON"
+          if [ -z "$notification_status" ]; then
+            if [ "$WINDOW_CONTRACT_STATUS" = "invalid" ]; then
+              notification_status="blocked"
+            elif [ "$PREPARE_OUTCOME" = "failure" ]; then
+              notification_status="failed"
+            elif [ -n "$WINDOW_NOTIFICATION_STATUS" ]; then
+              notification_status="$WINDOW_NOTIFICATION_STATUS"
+            elif [ "$NOTIFY" = "true" ]; then
+              notification_status="not_attempted"
+            else
+              notification_status="not_requested"
+            fi
+          fi
+          if [ -z "$notification_reason" ]; then
+            if [ "$WINDOW_CONTRACT_STATUS" = "invalid" ]; then
+              notification_reason="$WINDOW_NOTIFICATION_REASON"
+            elif [ "$PREPARE_OUTCOME" = "failure" ]; then
+              notification_reason="production_failed"
+            elif [ -n "$WINDOW_NOTIFICATION_REASON" ]; then
+              notification_reason="$WINDOW_NOTIFICATION_REASON"
+            elif [ -n "$WINDOW_RESOLUTION_REASON" ]; then
+              notification_reason="$WINDOW_RESOLUTION_REASON"
+            elif [ "$NOTIFY" = "true" ]; then
+              notification_reason="not_attempted"
+            else
+              notification_reason="manual_notification_opt_in_required"
+            fi
+          fi
           {
             echo "## Scheduled brief notification decision"
-            echo "- scan_status: ${SCAN_STATUS:-unknown}"
+            echo "- scan_status: ${scan_status}"
             echo "- candidate_type: ${CANDIDATE_TYPE:-none}"
             echo "- notification_expected: ${NOTIFICATION_EXPECTED:-false}"
-            echo "- notification_status: ${NOTIFICATION_STATUS:-not_attempted}"
-            echo "- notification_reason: ${NOTIFICATION_REASON:-not_attempted}"
+            echo "- notification_status: ${notification_status}"
+            echo "- notification_reason: ${notification_reason:-unknown}"
+            echo "- schedule_contract_status: ${WINDOW_CONTRACT_STATUS:-unknown}"
+            echo "- schedule_contract_version: ${SCHEDULE_CONTRACT_VERSION:-unknown}"
+            echo "- scheduled_slot: ${SCHEDULED_SLOT:-unknown}"
+            echo "- effective_market_phase: ${EFFECTIVE_MARKET_PHASE:-unknown}"
+            echo "- scheduled_for_at: ${SCHEDULED_FOR_AT:-unknown}"
+            echo "- run_started_at: ${RUN_STARTED_AT:-unknown}"
+            echo "- delay_seconds: ${DELAY_SECONDS:-unknown}"
+            echo "- trigger_kind: ${TRIGGER_KIND:-unknown}"
             echo "- delivered_count: ${DELIVERED_COUNT:-unknown}"
             echo "- failed_count: ${FAILED_COUNT:-unknown}"
           } >> "$GITHUB_STEP_SUMMARY"
@@ -434,5 +496,11 @@ jobs:
         with:
           path: .scheduled-brief-lock
           key: scheduled-brief-${{ steps.window.outputs.key }}
+
+      - name: Fail closed for invalid schedule context
+        if: always() && steps.window.outputs.contract_status == 'invalid'
+        run: |
+          echo "Invalid scheduled-brief contract: ${{ steps.window.outputs.resolution_reason || steps.window.outputs.notification_reason }}"
+          exit 1
 
 # - name: 設定 GitHub Pages

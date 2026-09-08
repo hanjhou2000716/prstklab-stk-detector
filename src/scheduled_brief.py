@@ -14,6 +14,9 @@ from src.config import get_settings
 from src.event_ledger import EventLedger, is_secondary_commentary, taiwan_investor_priority
 from src.market_data import build_market_snapshot
 from src.refresh_market_data import merge_published_metadata, write_snapshot
+from src.schedule_contract import ANCHOR_SLOTS as CONTRACT_ANCHOR_SLOTS
+from src.schedule_contract import MAX_SCHEDULE_DELAY_SECONDS as CONTRACT_MAX_SCHEDULE_DELAY_SECONDS
+from src.schedule_contract import SCHEDULE_CONTRACT_VERSION, SCHEDULE_TIMEZONE, validate_scheduled_context
 from src.telegram_client import PUBLIC_TEXT_MAX_CHARS, alert_mini_app_url, send_briefs, summarize_public_message
 
 SLOT_LABELS = {
@@ -98,8 +101,8 @@ MANUAL_SLOT_BOUNDARIES = (
     (21 * 60, "us_premarket"),
 )
 
-ANCHOR_SLOTS = frozenset({"morning", "pre_open", "post_close", "us_premarket"})
-MAX_SCHEDULE_DELAY_SECONDS = 30 * 60
+ANCHOR_SLOTS = CONTRACT_ANCHOR_SLOTS
+MAX_SCHEDULE_DELAY_SECONDS = CONTRACT_MAX_SCHEDULE_DELAY_SECONDS
 TAIPEI = ZoneInfo("Asia/Taipei")
 
 
@@ -173,11 +176,92 @@ def _manual_slot_context(now: datetime) -> dict[str, str]:
         "slot_date": slot_date,
         "scheduled_for_at": "",
         "run_started_at": local_now.isoformat(),
+        "arrival_at": local_now.isoformat(),
         "delay_seconds": "0",
         "delivery_intent": "notify_candidate" if selected_slot in ANCHOR_SLOTS else "event_only",
         "resolution_reason": "manual_actual_market_phase",
         "trigger_kind": "workflow_dispatch",
+        "schedule_contract_version": SCHEDULE_CONTRACT_VERSION,
+        "time_zone": SCHEDULE_TIMEZONE,
+        "contract_status": "manual_compatibility",
     }
+
+
+def _invalid_dispatch_context(
+    requested: str,
+    now: datetime,
+    *,
+    reason: str,
+    trigger_kind: str,
+) -> dict[str, str]:
+    """Create a publish-only context so a bad dispatch is visible on Pages."""
+    local_now = now.astimezone(TAIPEI)
+    effective_slot, slot_date = _phase_at(local_now)
+    return {
+        "requested_slot": requested,
+        "scheduled_slot": requested if requested in SLOT_LABELS else "",
+        "effective_slot": effective_slot,
+        "effective_market_phase": effective_slot,
+        "slot_date": slot_date,
+        "scheduled_for_at": "",
+        "run_started_at": local_now.isoformat(),
+        "arrival_at": local_now.isoformat(),
+        "delay_seconds": "0",
+        "delivery_intent": "publish_only",
+        "resolution_reason": reason,
+        "suppression_reason": reason,
+        "trigger_kind": trigger_kind,
+        "schedule_contract_version": SCHEDULE_CONTRACT_VERSION,
+        "time_zone": SCHEDULE_TIMEZONE,
+        "contract_status": "invalid",
+    }
+
+
+def resolve_schedule_diagnostic(
+    value: str,
+    now: datetime,
+    *,
+    strict_window: bool = False,
+    scheduled_cron: str | None = None,
+    scheduled_for_at: str | None = None,
+    trigger_kind: str = "compatibility",
+    contract_version: str | None = None,
+    time_zone: str | None = None,
+) -> dict[str, object]:
+    """Resolve a scheduled run and retain a diagnostic for invalid context.
+
+    ``resolve_slot_context`` remains a compatibility API returning ``None``
+    for invalid dispatches.  The workflow uses this richer result so a
+    malformed backup request still publishes a diagnostic snapshot and then
+    fails the job explicitly instead of looking like normal deduplication.
+    """
+    context = resolve_slot_context(
+        value,
+        now,
+        strict_window=strict_window,
+        scheduled_cron=scheduled_cron,
+        scheduled_for_at=scheduled_for_at,
+        trigger_kind=trigger_kind,
+        contract_version=contract_version,
+        time_zone=time_zone,
+    )
+    if context is not None:
+        return {"context": context, "valid": context.get("contract_status") != "invalid", "reason": context.get("resolution_reason", "")}
+    trigger = str(trigger_kind or "compatibility").strip().casefold()
+    if trigger == "repository_dispatch":
+        requested = str(value or "auto").strip() or "auto"
+        declared = requested if requested in SLOT_LABELS else ""
+        check = validate_scheduled_context(
+            slot=declared,
+            scheduled_for_at=scheduled_for_at,
+            now=now,
+            contract_version=SCHEDULE_CONTRACT_VERSION if contract_version is None else contract_version,
+            time_zone=SCHEDULE_TIMEZONE if time_zone is None else time_zone,
+        )
+        reason = str(check.get("reason") or "invalid_schedule_context:slot_resolution_failed")
+        blocked = _invalid_dispatch_context(requested, now, reason=reason, trigger_kind=trigger)
+        return {"context": blocked, "valid": False, "reason": reason}
+    return {"context": None, "valid": False, "reason": "outside_window"}
 
 
 def resolve_slot_context(
@@ -188,6 +272,8 @@ def resolve_slot_context(
     scheduled_cron: str | None = None,
     scheduled_for_at: str | None = None,
     trigger_kind: str = "compatibility",
+    contract_version: str | None = None,
+    time_zone: str | None = None,
 ) -> dict[str, str] | None:
     """Resolve slot plus identity metadata without trusting stale manual input."""
     local_now = now or datetime.now(ZoneInfo("Asia/Taipei"))
@@ -208,8 +294,6 @@ def resolve_slot_context(
                 pass
         if scheduled_at is None:
             scheduled_at = local_now
-        if cron_slot == "us_premarket" and local_now.hour < 6 and not scheduled_for_at:
-            scheduled_at -= timedelta(days=1)
         delay_seconds = max(0, int((local_now - scheduled_at).total_seconds()))
         late = delay_seconds > MAX_SCHEDULE_DELAY_SECONDS
         actual_phase, actual_date = _phase_at(local_now)
@@ -230,21 +314,27 @@ def resolve_slot_context(
             "slot_date": resolved_date,
             "scheduled_for_at": scheduled_at.isoformat(),
             "run_started_at": local_now.isoformat(),
+            "arrival_at": local_now.isoformat(),
             "delay_seconds": str(delay_seconds),
             "delivery_intent": "publish_only" if late else "notify_candidate",
             "resolution_reason": "late_schedule_publish_only" if late else "scheduled_anchor_on_time",
             "trigger_kind": "schedule" if trigger == "compatibility" else trigger,
+            "schedule_contract_version": SCHEDULE_CONTRACT_VERSION,
+            "time_zone": SCHEDULE_TIMEZONE,
+            "contract_status": "valid",
         }
     if trigger == "repository_dispatch":
-        if not scheduled_for_at:
+        declared = requested if requested in SLOT_LABELS else ""
+        check = validate_scheduled_context(
+            slot=declared,
+            scheduled_for_at=scheduled_for_at,
+            now=local_now,
+            contract_version=SCHEDULE_CONTRACT_VERSION if contract_version is None else contract_version,
+            time_zone=SCHEDULE_TIMEZONE if time_zone is None else time_zone,
+        )
+        if check.get("contract_status") != "valid":
             return None
-        try:
-            scheduled_at = datetime.fromisoformat(str(scheduled_for_at).replace("Z", "+00:00")).astimezone(TAIPEI)
-        except (TypeError, ValueError):
-            return None
-        declared = requested if requested in SLOT_LABELS else "auto"
-        if declared == "auto":
-            declared, _ = _phase_at(scheduled_at)
+        scheduled_at = check["scheduled"]
         delay_seconds = max(0, int((local_now - scheduled_at).total_seconds()))
         late = delay_seconds > MAX_SCHEDULE_DELAY_SECONDS
         actual_phase, actual_date = _phase_at(local_now)
@@ -256,10 +346,14 @@ def resolve_slot_context(
             "slot_date": actual_date if late else scheduled_at.date().isoformat(),
             "scheduled_for_at": scheduled_at.isoformat(),
             "run_started_at": local_now.isoformat(),
+            "arrival_at": local_now.isoformat(),
             "delay_seconds": str(delay_seconds),
             "delivery_intent": "publish_only" if late else "notify_candidate",
             "resolution_reason": "late_dispatch_publish_only" if late else "dispatch_anchor_on_time",
             "trigger_kind": trigger,
+            "schedule_contract_version": SCHEDULE_CONTRACT_VERSION,
+            "time_zone": SCHEDULE_TIMEZONE,
+            "contract_status": "valid",
         }
     if trigger == "compatibility":
         if strict_window:
@@ -278,6 +372,9 @@ def resolve_slot_context(
                 "delivery_intent": "event_only",
                 "resolution_reason": "trusted_dispatch_window",
                 "trigger_kind": trigger,
+                "schedule_contract_version": SCHEDULE_CONTRACT_VERSION,
+                "time_zone": SCHEDULE_TIMEZONE,
+                "contract_status": "compatibility",
             }
         if requested != "auto":
             return {
@@ -292,6 +389,9 @@ def resolve_slot_context(
                 "delivery_intent": "event_only",
                 "resolution_reason": "explicit_compatibility_slot",
                 "trigger_kind": trigger,
+                "schedule_contract_version": SCHEDULE_CONTRACT_VERSION,
+                "time_zone": SCHEDULE_TIMEZONE,
+                "contract_status": "compatibility",
             }
         minute = local_now.hour * 60 + local_now.minute
         legacy_windows = (
@@ -318,6 +418,9 @@ def resolve_slot_context(
             "delivery_intent": "event_only",
             "resolution_reason": "compatibility_clock_window",
             "trigger_kind": trigger,
+            "schedule_contract_version": SCHEDULE_CONTRACT_VERSION,
+            "time_zone": SCHEDULE_TIMEZONE,
+            "contract_status": "compatibility",
         }
     if trigger in {"workflow_dispatch", "manual"}:
         context = _manual_slot_context(local_now)
@@ -539,21 +642,27 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--scheduled-cron", default="")
     parser.add_argument("--scheduled-for", default="")
     parser.add_argument("--trigger-kind", default="compatibility")
+    parser.add_argument("--schedule-contract-version", default="")
+    parser.add_argument("--time-zone", default="")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     now = datetime.now(ZoneInfo("Asia/Taipei"))
-    context = resolve_slot_context(
+    diagnostic = resolve_schedule_diagnostic(
         args.slot,
         now,
         strict_window=args.strict_window,
         scheduled_cron=args.scheduled_cron,
         scheduled_for_at=args.scheduled_for,
         trigger_kind=args.trigger_kind,
+        contract_version=args.schedule_contract_version,
+        time_zone=args.time_zone,
     )
-    slot = context["effective_slot"] if context else None
+    raw_context = diagnostic.get("context")
+    context: dict[str, str] | None = raw_context if isinstance(raw_context, dict) else None
+    slot = context.get("effective_slot") if context else None
     if args.print_window:
         print(f"should_run={'true' if slot else 'false'}")
         print(f"slot={slot or 'skip'}")
@@ -568,6 +677,11 @@ def main() -> None:
         print(f"delivery_intent={(context or {}).get('delivery_intent', 'event_only')}")
         print(f"resolution_reason={(context or {}).get('resolution_reason', 'outside_window')}")
         print(f"trigger_kind={(context or {}).get('trigger_kind', args.trigger_kind)}")
+        print(f"contract_status={(context or {}).get('contract_status', 'not_applicable')}")
+        print(f"schedule_contract_version={(context or {}).get('schedule_contract_version', SCHEDULE_CONTRACT_VERSION)}")
+        print(f"time_zone={(context or {}).get('time_zone', SCHEDULE_TIMEZONE)}")
+        print(f"notification_status={(context or {}).get('notification_status', 'blocked' if not diagnostic.get('valid', False) and slot else 'not_attempted')}")
+        print(f"notification_reason={(context or {}).get('suppression_reason') or diagnostic.get('reason') or ('outside_window' if not slot else '')}")
         print(f"key={anchor_key(slot or 'skip', (context or {}).get('slot_date', now.date().isoformat())) if slot else 'skip'}")
         if context:
             _write_output({"context_json": context})
@@ -584,7 +698,11 @@ def main() -> None:
             "delivery_status": "suppressed",
             "notification_expected": "false",
             "notification_status": "suppressed",
-            "notification_reason": str((context or {}).get("resolution_reason") or "delivery_intent_not_notify"),
+            "notification_reason": str(
+                (context or {}).get("suppression_reason")
+                or (context or {}).get("resolution_reason")
+                or "delivery_intent_not_notify"
+            ),
         })
         print("此執行只更新市場資料，不具備例行 Telegram 投遞資格。")
         return

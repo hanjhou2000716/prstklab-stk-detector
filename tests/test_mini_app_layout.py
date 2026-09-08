@@ -288,6 +288,13 @@ def test_mini_app_keeps_morning_data_gaps_in_system_analysis():
     assert "資料缺口" in app
 
 
+def test_mini_app_exposes_recent_anchor_decisions_in_system_analysis():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert "schedule_decisions" in app
+    assert "最近錨點決策" in app
+    assert "contract_error" in app
+
+
 def test_research_ui_discloses_unpublished_backtest_state():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert "backtest_publication_state" in app

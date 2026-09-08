@@ -147,7 +147,8 @@ flowchart LR
 | 類別 | 目標時間／頻率 | 工作內容 |
 |---|---|---|
 | 晨報 | 工作日 06:00 | 隔夜市場、總經／風險脈絡與代表標的公開快照 |
-| 台股盤前／盤中／午盤／收盤前／盤後 | 工作日 08:45、10:30、11:45、13:15、14:45 | 依固定報別檢視台指／台股盤勢與其連動市場 |
+| 台股盤前 | 工作日 08:45 | 依台股開盤前最新證據檢視台指／台股盤勢與其連動市場 |
+| 台股盤後 | 工作日 14:20 | 依官方收盤資料檢視台股盤面與其連動市場 |
 | 全市場量化研究 | 工作日 13:30 | 掃描台美研究母體；工作流程最長容許 55 分鐘 |
 | 美股盤前 | 工作日 21:00，全年固定 | 台股回顧、美股盤前與國際風險快照；不因夏令時間改名或移到 22:00 |
 | 官方／價格訊號 | 工作日每 5 分鐘 | 官方事件候選與固定價格門檻；只有符合規則才推播 |
@@ -279,7 +280,15 @@ Railway 保持為 rollback 路徑，不刪除既有資料，也不把離線測�
 
 ### cron-job.org 備援
 
-cron-job.org 可透過 GitHub Repository Dispatch 備援定時快報、量化研究與 **Official macro and price monitor** 官方／價格檢查。其事件類型為 `official-event-check`；外部請求只觸發工作流程，是否送出仍取決於 GitHub 的時段／事件去重鎖。完整 Header、payload 與 slot 設定請見 [金十 Token 與外部快訊安全設定](docs/JIN10_RAILWAY_SETUP.md)。
+cron-job.org 可透過 GitHub Repository Dispatch 備援四個定時快報錨點。定時
+快報只能使用 `morning`（06:00）、`pre_open`（08:45）、`post_close`
+（14:20）與 `us_premarket`（21:00）；舊的盤中、午盤、收盤前與美股開盤
+例行入口已退休。備援 payload 必須帶原始排程時間、`Asia/Taipei` 及契約
+版本，格式請見 [Scheduled brief dispatch contract](docs/scheduled-brief-dispatch-contract.md)。
+每次執行仍會先通過時效、證據、實質變化與投遞鎖；延遲或無變化只更新
+Pages，不會為了增加訊息數發送 Telegram。
+官方／價格監控仍可使用既有的 `official-event-check` dispatch；它與四個
+定時快報錨點是不同的事件監控路徑。
 
 ## 設定總表（哪些值放在哪裡）
 
@@ -308,13 +317,13 @@ cron-job.org 可透過 GitHub Repository Dispatch 備援定時快報、量化研
 | Action | 何時使用 | 會不會送 Telegram |
 |---|---|---|
 | **Refresh market dashboard** | 只想重新抓行情、修正 Mini App 快照 | 否 |
-| **Scheduled market brief** | 測試晨報／台股盤前／台股盤中／台股午盤／台股收盤前／台股盤後／美股盤前 | 測試及正式流程共用同一報別規則 |
+| **Scheduled market brief** | 測試晨報／台股盤前／台股盤後／美股盤前；僅四個固定錨點 | 測試及正式流程共用同一報別規則 |
 | **Official macro and price monitor** | 立即檢查官方事件與價格門檻 | 只有新事件或新價格級距且通過去重才會送 |
 | **Unified Taiwan-US research report** | 全市場量化掃描；正式排程為工作日 13:30 | 否，會更新研究與行情快照 |
 | **Configure Telegram Mini App** | 首次設定或變更 Bot 選單 | 否 |
 | **Four-strategy walk-forward backtest** | 使用 point-in-time 資料驗證策略 | 否，僅產生回測報告 |
 
-建議驗證順序：先跑 `Refresh market dashboard`，確認 `site/data/market.json` 有新的 `updated_at`；再跑研究工作流程，確認研究報表狀態；最後才用 `Scheduled market brief` 的 `force=true` 測試 Telegram。不要用重複的 slot 反覆 force，否則會刻意繞過同時段防重複鎖。
+建議驗證順序：先跑 `Refresh market dashboard`，確認 `site/data/market.json` 有新的 `updated_at`；再跑研究工作流程，確認研究報表狀態；最後才用 `Scheduled market brief` 的 `notify=false` 驗證產製與決策。`force` 也不能繞過實質變化、排程時效或投遞鎖。
 
 ## 快速驗收指令
 
