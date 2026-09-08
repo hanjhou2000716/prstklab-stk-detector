@@ -140,6 +140,7 @@ def validate_scheduled_context(
     contract_version: Any = SCHEDULE_CONTRACT_VERSION,
     time_zone: Any = SCHEDULE_TIMEZONE,
     dispatch_unix: Any = None,
+    dispatch_trace_id: Any = None,
 ) -> dict[str, Any]:
     """Validate a backup/dispatch schedule context without making it sendable."""
     name = str(slot or "").strip()
@@ -150,6 +151,7 @@ def validate_scheduled_context(
         "reason": "",
         "scheduled_slot": name,
         "dispatch_unix": str(dispatch_unix or ""),
+        "dispatch_trace_id": str(dispatch_trace_id or "").strip(),
     }
     if name in RETIRED_ROUTINE_SLOTS:
         result["reason"] = "invalid_schedule_context:retired_routine_slot"
@@ -173,6 +175,9 @@ def validate_scheduled_context(
                 if dispatch_unix in (None, "")
                 else "invalid_schedule_context:invalid_dispatch_unix"
             )
+            return result
+        if not str(dispatch_trace_id or "").strip():
+            result["reason"] = "invalid_schedule_context:missing_trace_id"
             return result
         scheduled = fixed_scheduled_for(name, slot_date_for(name, dispatch_at))
     elif version == LEGACY_SCHEDULE_CONTRACT_VERSION:

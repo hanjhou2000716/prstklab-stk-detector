@@ -167,6 +167,7 @@ def test_v3_dispatch_reconstructs_the_fixed_anchor(slot, dispatch, expected):
         slot=slot,
         scheduled_for_at="",
         dispatch_unix=str(int(dispatch_at.timestamp())),
+        dispatch_trace_id="test-trace",
         now=dispatch_at,
         contract_version=SCHEDULE_CONTRACT_VERSION,
         time_zone=SCHEDULE_TIMEZONE,
@@ -185,6 +186,7 @@ def test_v3_late_dispatch_is_publish_only_and_uses_anchor_delay():
         slot="morning",
         scheduled_for_at="",
         dispatch_unix=str(int(dispatch_at.timestamp())),
+        dispatch_trace_id="test-trace",
         now=dispatch_at,
         contract_version=SCHEDULE_CONTRACT_VERSION,
         time_zone=SCHEDULE_TIMEZONE,
@@ -203,6 +205,7 @@ def test_v3_us_premarket_after_midnight_keeps_the_previous_slot_date():
         slot="us_premarket",
         scheduled_for_at="",
         dispatch_unix=str(int(dispatch_at.timestamp())),
+        dispatch_trace_id="test-trace",
         now=dispatch_at,
         contract_version=SCHEDULE_CONTRACT_VERSION,
         time_zone=SCHEDULE_TIMEZONE,
@@ -221,9 +224,26 @@ def test_v3_dispatch_after_the_next_anchor_is_rejected():
         slot="morning",
         scheduled_for_at="",
         dispatch_unix=str(int(dispatch_at.timestamp())),
+        dispatch_trace_id="test-trace",
         now=dispatch_at,
         contract_version=SCHEDULE_CONTRACT_VERSION,
         time_zone=SCHEDULE_TIMEZONE,
     )
 
     assert result["reason"] == "invalid_schedule_context:dispatch_outside_anchor_window"
+
+
+def test_v3_dispatch_requires_trace_id_after_timestamp_validation():
+    from datetime import datetime
+
+    dispatch_at = datetime.fromisoformat("2026-09-09T06:00:30+08:00")
+    result = validate_scheduled_context(
+        slot="morning",
+        scheduled_for_at="",
+        dispatch_unix=str(int(dispatch_at.timestamp())),
+        now=dispatch_at,
+        contract_version=SCHEDULE_CONTRACT_VERSION,
+        time_zone=SCHEDULE_TIMEZONE,
+    )
+
+    assert result["reason"] == "invalid_schedule_context:missing_trace_id"
