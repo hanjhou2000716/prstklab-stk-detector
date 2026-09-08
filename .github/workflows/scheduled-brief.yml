@@ -278,9 +278,11 @@ jobs:
           PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
           CANDIDATE_TYPE: ${{ steps.prepare.outputs.candidate_type || 'none' }}
           NOTIFICATION_EXPECTED: ${{ steps.prepare.outputs.notification_expected || 'false' }}
+          NOTIFICATION_REQUESTED: ${{ env.NOTIFY }}
           SEND_STATUS: ${{ steps.send_brief.outputs.notification_status || '' }}
           SEND_REASON: ${{ steps.send_brief.outputs.reason || '' }}
           WINDOW_CONTRACT_STATUS: ${{ steps.window.outputs.contract_status || 'not_applicable' }}
+          WINDOW_DELIVERY_INTENT: ${{ steps.window.outputs.delivery_intent || '' }}
           WINDOW_NOTIFICATION_STATUS: ${{ steps.window.outputs.notification_status || '' }}
           WINDOW_NOTIFICATION_REASON: ${{ steps.window.outputs.notification_reason || '' }}
           WINDOW_RESOLUTION_REASON: ${{ steps.window.outputs.resolution_reason || '' }}
@@ -306,11 +308,17 @@ jobs:
           fi
           notification_status="$SEND_STATUS"
           notification_reason="$SEND_REASON"
+          notification_expected="$NOTIFICATION_EXPECTED"
+          if [ "$NOTIFICATION_REQUESTED" != "true" ]; then
+            notification_expected="false"
+          fi
           if [ -z "$notification_status" ]; then
             if [ "$WINDOW_CONTRACT_STATUS" = "invalid" ]; then
               notification_status="blocked"
             elif [ "$PREPARE_OUTCOME" = "failure" ]; then
               notification_status="failed"
+            elif [ "$NOTIFICATION_REQUESTED" != "true" ] && [ "$WINDOW_DELIVERY_INTENT" = "notify_candidate" ]; then
+              notification_status="not_requested"
             elif [ -n "$WINDOW_NOTIFICATION_STATUS" ]; then
               notification_status="$WINDOW_NOTIFICATION_STATUS"
             elif [ "$NOTIFY" = "true" ]; then
@@ -324,6 +332,8 @@ jobs:
               notification_reason="$WINDOW_NOTIFICATION_REASON"
             elif [ "$PREPARE_OUTCOME" = "failure" ]; then
               notification_reason="production_failed"
+            elif [ "$NOTIFICATION_REQUESTED" != "true" ] && [ "$WINDOW_DELIVERY_INTENT" = "notify_candidate" ]; then
+              notification_reason="manual_notification_opt_in_required"
             elif [ -n "$WINDOW_NOTIFICATION_REASON" ]; then
               notification_reason="$WINDOW_NOTIFICATION_REASON"
             elif [ -n "$WINDOW_RESOLUTION_REASON" ]; then
@@ -338,7 +348,7 @@ jobs:
             echo "## Scheduled brief notification decision"
             echo "- scan_status: ${scan_status}"
             echo "- candidate_type: ${CANDIDATE_TYPE:-none}"
-            echo "- notification_expected: ${NOTIFICATION_EXPECTED:-false}"
+            echo "- notification_expected: ${notification_expected:-false}"
             echo "- notification_status: ${notification_status}"
             echo "- notification_reason: ${notification_reason:-unknown}"
             echo "- schedule_contract_status: ${WINDOW_CONTRACT_STATUS:-unknown}"
