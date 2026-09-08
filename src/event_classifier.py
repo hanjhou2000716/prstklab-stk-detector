@@ -297,7 +297,7 @@ def classify_event_fields(record: dict[str, Any] | str) -> dict[str, Any]:
         ("policy", _POLICY_SUBJECTS, _POLICY_ACTIONS),
         ("fed", _FED_SUBJECTS, _FED_ACTIONS),
         ("macro", _MACRO_SUBJECTS, _MACRO_ACTIONS),
-        ("macro", _CURRENCY_SUBJECTS, _CURRENCY_ACTIONS),
+        ("currency", _CURRENCY_SUBJECTS, _CURRENCY_ACTIONS),
         ("energy", _ENERGY_SUBJECTS, _ENERGY_ACTIONS),
         ("semiconductor", _SEMICONDUCTOR_SUBJECTS, _SEMICONDUCTOR_ACTIONS),
         ("market", _MARKET_SUBJECTS, _MARKET_ACTIONS),
