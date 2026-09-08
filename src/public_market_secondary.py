@@ -53,6 +53,8 @@ def _parse_row(text: str, ticker: str) -> dict[str, Any]:
     quote_time = f"{date}T{time}+00:00" if date and time and time != "N/D" else None
     return {
         "ticker": ticker,
+        "provider": "Stooq",
+        "source_provider": "Stooq",
         "price": float(close),
         "quote_date": date if date and date != "N/D" else None,
         "quote_time": quote_time,
@@ -75,6 +77,8 @@ def _parse_nasdaq_quote(payload: dict[str, Any], ticker: str) -> dict[str, Any]:
         raise ValueError("missing nasdaq price")
     return {
         "ticker": ticker,
+        "provider": "Nasdaq",
+        "source_provider": "Nasdaq",
         "price": float(raw_price),
         "change_percent": float(raw_change) if raw_change else None,
         "quote_date": str(data.get("timeAsOf") or "") or None,
@@ -96,6 +100,7 @@ def fetch_public_market_secondary(
     errors: list[str] = []
     error_details: list[dict[str, Any]] = []
     fallback_used = False
+    item_health: dict[str, dict[str, Any]] = {}
     for ticker, symbol in SYMBOLS.items():
         try:
             response = requester(
@@ -106,6 +111,10 @@ def fetch_public_market_secondary(
             )
             response.raise_for_status()
             quotes[ticker] = _parse_row(response.text, ticker)
+            item_health[ticker] = {
+                "ticker": ticker, "provider": "Stooq", "status": "healthy",
+                "source_url": quotes[ticker].get("source_url"),
+            }
         except Exception as exc:
             # Stooq intermittently blocks public requests.  Nasdaq publishes
             # the composite and semiconductor indexes via a separate public
@@ -123,14 +132,29 @@ def fetch_public_market_secondary(
                     quotes[ticker] = _parse_nasdaq_quote(fallback.json(), ticker)
                     quotes[ticker]["fallback_used"] = True
                     fallback_used = True
+                    item_health[ticker] = {
+                        "ticker": ticker, "provider": "Nasdaq", "fallback_from": "Stooq",
+                        "status": "degraded_with_fallback",
+                        "source_url": quotes[ticker].get("source_url"),
+                    }
                     continue
                 except Exception as fallback_exc:
                     errors.append(f"{ticker}:{classify_provider_error(fallback_exc)['code']}")
                     error_details.append({"provider": "nasdaq", "item": ticker, **classify_provider_error(fallback_exc)})
+                    item_health[ticker] = {
+                        "ticker": ticker, "provider": "Stooq／Nasdaq", "status": "failed",
+                        "failure": "secondary providers unavailable",
+                    }
                     continue
             errors.append(f"{ticker}:{classify_provider_error(exc)['code']}")
             error_details.append({"provider": "stooq", "item": ticker, **classify_provider_error(exc)})
+            item_health[ticker] = {
+                "ticker": ticker, "provider": "Stooq", "status": "failed",
+                "failure": classify_provider_error(exc)["code"],
+            }
     status = "healthy" if quotes and not errors else "partial" if quotes else "failed"
+    health_status = "degraded_with_fallback" if fallback_used else "healthy" if status == "healthy" else "partial"
+    health_state = "degraded_with_fallback" if fallback_used else "healthy" if status == "healthy" else "critical_gap"
     return {
         "status": status,
         "quotes": quotes,
@@ -140,15 +164,31 @@ def fetch_public_market_secondary(
         "fetched_at": checked_at,
         "health": {
             "key": "public_market_secondary",
-            "label": "Stooq 海外／商品第二行情來源",
+            "label": "海外／商品第二行情來源",
             "source_tier": "public-market",
             "source_url": STOOQ_URL,
-            "status": "healthy" if status == "healthy" else "partial",
+            "status": health_status,
+            "state": health_state,
+            "semantic_state": "fallback_active" if fallback_used else "healthy" if status == "healthy" else "partial",
             "provider_status": status,
             "checked_at": checked_at,
             "item_count": len(quotes),
             "data_gap": errors or None,
             "error_details": error_details or None,
             "fallback_used": fallback_used,
+            "provider_results": [
+                {
+                    "provider": provider,
+                    "status": (
+                        "healthy" if any(item.get("provider") == provider and item.get("status") == "healthy" for item in item_health.values())
+                        else "degraded_with_fallback" if any(item.get("provider") == provider and item.get("status") == "degraded_with_fallback" for item in item_health.values())
+                        else "failed"
+                    ),
+                    "item_count": sum(item.get("provider") == provider and item.get("status") in {"healthy", "degraded_with_fallback"} for item in item_health.values()),
+                }
+                for provider in ("Stooq", "Nasdaq")
+                if any(item.get("provider") == provider or item.get("fallback_from") == provider for item in item_health.values())
+            ],
+            "item_health": item_health,
         },
     }

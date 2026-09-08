@@ -11,6 +11,7 @@ from src.event_classifier import classify_event_fields, notification_gate
 from src.event_crosscheck import cross_check_event_records
 from src.finance_intel_policy import threshold_rule
 from src.intel_contract import normalize_event_record
+from src.market_linkage import linked_market_quotes, resolve_event_market_links
 
 EVENT_RULES = (
     ("Fed／貨幣政策", ("fomc", "fed", "聯準會", "升息", "降息")),
@@ -219,19 +220,35 @@ def _related_indices(indices: list[dict[str, Any]], excluded_ticker: str) -> lis
     return related[:2]
 
 
-def _corporate_event_scope(event: dict[str, Any], indices: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Return only same-market references for a corporate disclosure."""
+def _corporate_event_scope(
+    event: dict[str, Any], indices: list[dict[str, Any]],
+    *, linkage: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Return only resolved same-market references for a corporate disclosure."""
     issuer = str(event.get("issuer_ticker") or event.get("ticker") or "").upper()
-    allowed = {ticker.upper() for ticker in _TAIWAN_CORPORATE_MARKETS}
+    # A Taiwan company defaults to the broad index and TXF baseline.  TPEx is
+    # added only when the resolver has explicit evidence that the issuer is an
+    # OTC company; otherwise a routine TWSE disclosure could borrow an
+    # unrelated small-cap index move.
+    allowed = {"TAIEX", "TXF"}
     if issuer:
         allowed.add(issuer)
-    return [
+    resolved = linkage or resolve_event_market_links(event, indices)
+    allowed.update(str(value).upper() for value in resolved.get("linked_markets", []))
+    related = [
         item for item in indices
         if str(item.get("ticker") or "").upper() in allowed
         and item.get("price") is not None
         and not item.get("quote_delayed")
         and str(item.get("freshness") or "").lower() not in {"stale", "expired"}
     ]
+    # TXF is commonly retained only inside the existing TAIEX cross-check
+    # record.  Reuse that same snapshot; do not create a second quote fetch.
+    if "TXF" in allowed and not any(str(item.get("ticker")) == "TXF" for item in related):
+        txf = next((item for item in linked_market_quotes(event, indices) if item.get("ticker") == "TXF"), None)
+        if txf and txf.get("price") is not None:
+            related.append(txf)
+    return related
 
 
 def _is_routine_corporate_event(event: dict[str, Any]) -> bool:
@@ -722,10 +739,11 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         or raw_event.get("corporate_event")
         or source_key in _CORPORATE_SOURCE_KEYS
     )
+    market_linkage = resolve_event_market_links({**raw_event, **event}, indices)
     # A corporate disclosure must not borrow unrelated overseas moves. Keep
     # the generic cross-market fallback for macro/geopolitical events only.
     related = (
-        _corporate_event_scope({**raw_event, **event}, indices)
+        _corporate_event_scope({**raw_event, **event}, indices, linkage=market_linkage)
         if is_corporate
         else event.get("related") or _related_indices(indices, "")
     )
@@ -856,7 +874,20 @@ def _detail_event(event: dict[str, Any], indices: list[dict[str, Any]]) -> dict[
         "market_direction": market_direction,
         "market_move": market_move,
         "related": related,
+        # Market resolution is contextual evidence only.  It must never by
+        # itself promote an event to a Telegram-eligible risk level.
+        "linked_markets": list(dict.fromkeys([
+            *((event.get("linked_markets") or []) if isinstance(event.get("linked_markets"), list) else []),
+            *market_linkage.get("linked_markets", []),
+        ])),
+        "linked_market_details": market_linkage.get("linked_market_details", []),
+        "market_linkage_basis": market_linkage.get("market_linkage_basis", []),
+        "market_linkage_status": market_linkage.get("market_linkage_status", "unresolved"),
+        "market_linkage_diagnostics": market_linkage.get("diagnostics", []),
         "impact_confirmation": impact_confirmation,
+        # Keep this explicit distinction: a resolved market is not a market
+        # reaction.  Only the existing impact gate can set this to true.
+        "market_sync_confirmed": bool(impact_confirmation.get("confirmed")),
         "source_trace": trace,
         "official_confirmed": official_verified,
         "high_risk_eligible": bool(strict_confirmation) if is_black_swan else True,

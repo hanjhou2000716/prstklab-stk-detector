@@ -57,6 +57,36 @@ def test_parse_twse_statistics_is_explicitly_partial_when_one_endpoint_is_missin
     assert "institutional_flow_unavailable" in result["errors"]
 
 
+def test_twse_rejects_malformed_gregorian_year_and_uses_date_not_array_position() -> None:
+    result = parse_twse_market_statistics(
+        turnover_rows=[
+            {"Date": "20260906", "TradeValue": "100"},
+            {"Date": "1150907", "TradeValue": "200"},
+        ],
+        breadth_rows=[], institution_payload=None, target_date="2026-09-07",
+    )
+    assert result["turnover"]["observed_date"] == "2026-09-07"
+    assert result["turnover"]["trade_value"] == 200
+    malformed = parse_twse_market_statistics(
+        turnover_rows=[{"Date": "1150-09-07", "TradeValue": "200"}],
+        breadth_rows=[], institution_payload=None,
+    )
+    assert malformed["turnover"] is None
+
+
+def test_twse_does_not_publish_unreasonable_or_unverified_breadth() -> None:
+    result = parse_twse_market_statistics(
+        turnover_rows=[],
+        breadth_rows=[{
+            "類型": "整體市場", "出表日期": "20260907",
+            "上漲": "3144", "下跌": "9578", "持平": "2",
+        }],
+        institution_payload=None,
+    )
+    assert result["breadth"] is None
+    assert "breadth_invalid_values" in result["errors"]
+
+
 def test_fetch_retries_incomplete_official_payload_without_refreshing_data_time(monkeypatch) -> None:
     class Response:
         def __init__(self, payload):

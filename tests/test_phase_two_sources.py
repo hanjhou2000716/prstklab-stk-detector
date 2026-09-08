@@ -29,15 +29,14 @@ def test_phase_two_does_not_collect_retired_fred_or_eia_sources(monkeypatch):
     assert {item["key"] for item in snapshot["sources"]} == {"kofia", "crypto", "spot", "secondary"}
 
 
-def test_kofia_reports_unambiguous_gap(monkeypatch):
-    class Response:
-        text = "<html>public page without a data table</html>"
-        def raise_for_status(self):
-            return None
+def test_kofia_is_retired_without_a_network_request(monkeypatch):
+    def forbidden_request(*_args, **_kwargs):
+        raise AssertionError("retired KOFIA source must not be requested")
 
-    monkeypatch.setattr("src.phase_two_sources.requests.get", lambda *args, **kwargs: Response())
+    monkeypatch.setattr("src.phase_two_sources.requests.get", forbidden_request)
     result = fetch_kofia_credit_margin()
     assert result["status"] == "data_gap"
+    assert result["disabled"] is True
     assert result["health"]["status"] == "partial"
     assert result["health"]["state"] == "optional_degraded"
 

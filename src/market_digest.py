@@ -38,6 +38,7 @@ _SLOT_LABELS = {
 _TICKER_NAMES = {
     "TAIEX": "台指",
     "TPEx": "櫃買",
+    "TXF": "台指期",
     "NASDAQ": "那斯達克",
     "SOX": "費半",
     "DJIA": "道瓊",
@@ -409,6 +410,9 @@ def _theme_for_event(event: dict[str, Any], fact: str, snapshot_quotes: list[dic
         "vendor_importance": event.get("vendor_importance"),
         "raw_title": normalized.get("raw_title"),
         "normalized_fact": public_fact,
+        "linked_markets": list(normalized.get("linked_markets") or event.get("linked_markets") or []),
+        "linked_market_details": list(normalized.get("linked_market_details") or event.get("linked_market_details") or []),
+        "market_linkage_status": normalized.get("market_linkage_status") or event.get("market_linkage_status") or "unresolved",
         "actor_role": normalized.get("actor_role"),
         "actor_name": normalized.get("actor_name"),
         "headline_actor": normalized.get("headline_actor"),

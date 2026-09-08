@@ -134,7 +134,7 @@ def test_briefing_report_renders_fail_closed_intelligence_context():
     assert ".briefing-intelligence" in styles
 
 
-def test_briefing_cards_use_red_structured_labels_and_expandable_source_summary():
+def test_briefing_cards_use_orange_structured_labels_and_expandable_source_summary():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
 
@@ -142,7 +142,7 @@ def test_briefing_cards_use_red_structured_labels_and_expandable_source_summary(
     assert "briefing-fact-row" in app
     assert "briefing-evidence" in app
     assert "來源｜" in app
-    assert "#b42318" in styles
+    assert "color: var(--orange)" in styles
 
 
 def test_event_timeline_and_feedback_are_optional_and_non_policy_mutating():
@@ -277,6 +277,15 @@ def test_mini_app_consumes_release_bound_source_health_artifact():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert 'healthEnvelope.snapshot_id || "") !== `${manifest.market_snapshot_id}-health`' in app
     assert "snapshot.source_health = healthEnvelope.source_health" in app
+
+
+def test_mini_app_keeps_morning_data_gaps_in_system_analysis():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+
+    assert 'id="briefing-morning-system-analysis"' in page
+    assert "morningAnalysis.missing_evidence" in app
+    assert "資料缺口" in app
 
 
 def test_research_ui_discloses_unpublished_backtest_state():

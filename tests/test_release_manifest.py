@@ -283,6 +283,29 @@ def test_immutable_alert_projection_keeps_mini_app_headline_aliases():
     assert artifact["linked_markets"] == ["US10Y", "SOX"]
 
 
+def test_immutable_alert_projection_preserves_market_linkage_contract():
+    artifact = _alert_projection(
+        {
+            "kind": "external_event",
+            "source": "MOPS",
+            "title": "6505 台塑化公告",
+            "event": "台塑化公告營業額。",
+            "linked_markets": ["6505", "TAIEX", "TXF"],
+            "linked_market_details": [{"ticker": "TAIEX", "role": "market_index", "quote_available": True}],
+            "market_linkage_basis": ["headline_company_code"],
+            "market_linkage_status": "resolved",
+            "market_sync_confirmed": False,
+        },
+        release_id="release-test",
+        market_snapshot_id="market-test",
+        created_at="2026-09-08T00:00:00+00:00",
+    )
+
+    assert artifact["linked_market_details"][0]["ticker"] == "TAIEX"
+    assert artifact["market_linkage_status"] == "resolved"
+    assert artifact["market_sync_confirmed"] is False
+
+
 def test_manifest_publishes_release_bound_news_intelligence(tmp_path):
     _artifacts(tmp_path)
     market_path = tmp_path / "site" / "data" / "market.json"

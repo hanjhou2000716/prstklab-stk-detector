@@ -326,11 +326,14 @@ def _morning_quote_evidence(item: dict[str, Any] | None, name: str) -> tuple[str
         "ticker": item.get("ticker"),
         "name": item.get("name") or name,
         "price": item.get("price"),
+        "change": item.get("change"),
         "change_percent": item.get("change_percent"),
         "currency": item.get("currency"),
         "freshness": item.get("freshness") or item.get("data_status"),
         "quote_date": item.get("quote_date") or item.get("quote_time"),
         "source": item.get("source_label") or item.get("quote_source") or item.get("source_domain"),
+        "source_url": item.get("source_url"),
+        "is_proxy": item.get("is_proxy"),
     }
     return line, {key: value for key, value in evidence.items() if value not in (None, "")}
 
@@ -442,6 +445,16 @@ def _morning_analysis(
         name, _ = quote_specs[ticker]
         return _morning_quote_evidence(items.get(ticker), name)
 
+    def structured_facts(
+        facts: list[str], quote_facts: list[tuple[str, dict[str, Any]]],
+    ) -> list[dict[str, Any]]:
+        """Keep quote direction structured so the UI never guesses by regex."""
+        by_text = {text: evidence for text, evidence in quote_facts}
+        return [
+            {"text": text, **({"quote": by_text[text]} if text in by_text else {})}
+            for text in facts
+        ]
+
     def section(
         title: str,
         facts: list[str],
@@ -453,10 +466,12 @@ def _morning_analysis(
         *,
         missing: bool = False,
         freshness: str = "本輪資料",
+        quote_facts: list[tuple[str, dict[str, Any]]] | None = None,
     ) -> dict[str, Any]:
         return {
             "title": title,
             "facts": facts,
+            "facts_structured": structured_facts(facts, quote_facts or []),
             "why_it_matters": why,
             "transmission": transmission,
             "market_observation": observation,
@@ -467,11 +482,13 @@ def _morning_analysis(
         }
 
     taiwan_lines: list[str] = []
+    taiwan_quote_facts: list[tuple[str, dict[str, Any]]] = []
     taiwan_evidence: list[dict[str, Any]] = []
     for ticker in ("TAIEX", "TPEx"):
         line, evidence = quote(ticker)
         taiwan_lines.append(line)
         if evidence:
+            taiwan_quote_facts.append((line, evidence))
             taiwan_evidence.append(evidence)
     taipei = None
     try:
@@ -493,7 +510,7 @@ def _morning_analysis(
             market_session_state = "美股休市，使用最近收盤資料"
         elif slot in {"us_premarket", "us_open"}:
             market_session_state = "美股交易時段／最近收盤資料"
-    taiwan_facts = ["、".join(taiwan_lines)]
+    taiwan_facts = list(taiwan_lines)
     statistics = taiwan_market_statistics if isinstance(taiwan_market_statistics, dict) else {}
     statistics_missing: list[str] = []
     turnover = statistics.get("turnover") if isinstance(statistics.get("turnover"), dict) else None
@@ -505,28 +522,34 @@ def _morning_analysis(
         taiwan_evidence.append({"kind": "turnover", **turnover})
     else:
         statistics_missing.append("成交值")
-    if breadth and breadth.get("advancing") is not None and breadth.get("declining") is not None:
+    if (
+        breadth and breadth.get("scope_verified") is True
+        and breadth.get("advancing") is not None and breadth.get("declining") is not None
+    ):
         observed = breadth.get("observed_date") or "資料日未提供"
         taiwan_facts.append(f"TWSE漲跌家數 上漲{breadth['advancing']}、下跌{breadth['declining']}（{observed}）。")
         taiwan_evidence.append({"kind": "breadth", **breadth})
     else:
-        statistics_missing.append("漲跌家數")
+        statistics_missing.append(
+            "市場廣度（統計範圍未確認）" if breadth else "市場廣度"
+        )
     if institution and institution.get("total_net") is not None:
         observed = institution.get("observed_date") or "資料日未提供"
         taiwan_facts.append(f"三大法人合計買賣超 {float(institution['total_net']) / 100_000_000:+.1f}億元（{observed}）。")
         taiwan_evidence.append({"kind": "institutional_flows", **institution})
     else:
         statistics_missing.append("三大法人")
-    if statistics_missing:
-        taiwan_facts.append("官方盤面缺口：" + "、".join(statistics_missing) + "，本輪未取得可核對資料。")
-    taiwan_facts.insert(0, f"市場時段：{market_session_state}。")
+    if market_session_state and "休市" in market_session_state:
+        taiwan_facts.insert(0, f"{market_session_state}。")
 
     semiconductor_lines: list[str] = []
+    semiconductor_quote_facts: list[tuple[str, dict[str, Any]]] = []
     semiconductor_evidence: list[dict[str, Any]] = []
     for ticker in ("2330", "SOX", "NASDAQ"):
         line, evidence = quote(ticker)
         semiconductor_lines.append(line)
         if evidence:
+            semiconductor_quote_facts.append((line, evidence))
             semiconductor_evidence.append(evidence)
     primary_theme = themes[0] if themes and isinstance(themes[0], dict) else {}
     theme_fact = str(primary_theme.get("what_happened") or primary_theme.get("normalized_fact") or "").strip()
@@ -536,18 +559,22 @@ def _morning_analysis(
         semiconductor_lines.append(f"合格事件：{theme_fact}")
 
     macro_lines: list[str] = []
+    macro_quote_facts: list[tuple[str, dict[str, Any]]] = []
     macro_evidence: list[dict[str, Any]] = []
     for ticker in ("US10Y", "DXY", "USD/TWD"):
         line, evidence = quote(ticker)
         macro_lines.append(line)
         if evidence:
+            macro_quote_facts.append((line, evidence))
             macro_evidence.append(evidence)
     commodity_lines: list[str] = []
+    commodity_quote_facts: list[tuple[str, dict[str, Any]]] = []
     commodity_evidence: list[dict[str, Any]] = []
     for ticker in ("WTI", "BRENT", "GOLD"):
         line, evidence = quote(ticker)
         commodity_lines.append(line)
         if evidence:
+            commodity_quote_facts.append((line, evidence))
             commodity_evidence.append(evidence)
     external_lines = [*macro_lines, *commodity_lines]
     external_evidence = [*macro_evidence, *commodity_evidence]
@@ -580,6 +607,7 @@ def _morning_analysis(
             "本輪未取得明確下一項催化劑資料，持續等待官方事件或價格核對。",
             all_risk_evidence,
             missing=len(all_risk_evidence) < 2,
+            quote_facts=semiconductor_quote_facts[:1] + macro_quote_facts[:1],
         ),
         section(
             "台股總經與盤面",
@@ -590,6 +618,7 @@ def _morning_analysis(
             "本輪未取得可核對的成交量、廣度或三大法人下一項資料。",
             taiwan_evidence,
             missing=bool(statistics_missing) or len(taiwan_evidence) < 2,
+            quote_facts=taiwan_quote_facts,
         ),
         section(
             "台積電／半導體與 AI",
@@ -600,6 +629,7 @@ def _morning_analysis(
             "本輪未取得可核對的半導體或 AI 產業催化劑資料。",
             semiconductor_evidence,
             missing=len(semiconductor_evidence) < 2,
+            quote_facts=semiconductor_quote_facts,
         ),
         section(
             "利率、匯率與外部風險",
@@ -610,19 +640,27 @@ def _morning_analysis(
             "本輪未取得可核對的下一項總經或政策催化劑。",
             external_evidence,
             missing=len(external_evidence) < 2,
+            quote_facts=macro_quote_facts + commodity_quote_facts,
         ),
     ]
     return {
         "ruleset": "morning_analysis_evidence_v1",
         "evidence_as_of": as_of,
-        "market_session_state": market_session_state,
+        # Kept as an additive field for old readers, but blank for current
+        # releases so the UI cannot render a meaningless meta strip.  Real
+        # closed-market information remains a fact in the Taiwan section.
+        "market_session_state": "",
         "overall_stance": assessment.get("stance") or "divergent",
         "confidence": confidence,
         "sections": sections,
         "missing_evidence": [
-            *(statistics_missing),
+            *dict.fromkeys(statistics_missing),
             "下一項已知總經或政策催化劑",
         ],
+        "system_analysis": {
+            "data_gaps": list(dict.fromkeys(statistics_missing)),
+            "note": "公開卡片只呈現已核對事實；資料缺口保留於系統分析資料。",
+        },
         "source_health_notes": [
             "本分析只使用本輪已載入的公開行情、風險與合格事件。",
             "缺少的資料不以固定模板或推測補足。",
