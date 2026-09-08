@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -22,6 +23,15 @@ SLOT_TITLES = {
 # layout and can add event-related instruments separately.
 GLOBAL_TICKERS = ("TAIEX", "2330", "NIKKEI", "KOSPI", "NASDAQ", "SOX", "DJIA", "BRENT", "WTI", "GOLD", "BTC", "ETH")
 _UNUSABLE_FRESHNESS = frozenset({"stale", "delayed", "unavailable", "unknown", "failed"})
+_GENERIC_EVENT_CONTEXT = frozenset({
+    "此公開事件可能影響市場預期",
+    "可能連動主要股市、利率或商品市場",
+    "觀察主要市場是否出現持續、同步且可核對的價格變化",
+})
+_MEDIA_CONTEXT_TAIL_RE = re.compile(
+    r"\s*[-–—]\s*(?:Storm\.mg|Reuters|Bloomberg|Yahoo Finance|Yahoo股市|Yahoo新聞|Google News|CNBC|Financial Times|UDN|聯合新聞網|news\.cnyes\.com|鉅亨網|CMoney投資網誌|CMoney|財經焦點情報站)+\s*[。.!?]?\s*$",
+    re.IGNORECASE,
+)
 
 
 def _usable_change(item: dict[str, Any] | None) -> float | None:
@@ -119,6 +129,17 @@ def _source_note(*items: dict[str, Any] | None) -> str:
     return "資料來源：" + "；".join(unique[:2]) if unique else ""
 
 
+def _supporting_event_context(events: list[dict[str, Any]]) -> str:
+    """Keep only specific context text for non-primary market cards."""
+    for event in events:
+        for key in ("market_context", "possible_linkage", "possible_impact"):
+            value = str(event.get(key) or "").strip()
+            if not value or any(marker in value for marker in _GENERIC_EVENT_CONTEXT):
+                continue
+            return _MEDIA_CONTEXT_TAIL_RE.sub("", value).strip()
+    return ""
+
+
 def _technical_line(item: dict[str, Any] | None, name: str) -> str:
     """Describe recent range location; never turn it into trade advice."""
     context = (item or {}).get("technical_context") or {}
@@ -196,6 +217,7 @@ def _pair_relation(
 
 def _market_observations(
     items: dict[str, dict[str, Any]], risk: dict[str, Any] | None, events: list[dict[str, Any]],
+    *, primary_theme: dict[str, Any] | None = None,
 ) -> list[dict[str, str]]:
     """Build the six fixed, detailed public-observation cards for every slot."""
     taiwan = items.get("TAIEX")
@@ -212,10 +234,36 @@ def _market_observations(
     gold = items.get("GOLD")
     btc = items.get("BTC")
     eth = items.get("ETH")
-    primary_event = events[0] if events else {}
-    event_title = primary_event.get("brief_title") or "今日無重大市場事件，持續觀察"
-    event_text = primary_event.get("summary") or "本次未出現符合重大門檻的公開事件。"
-    event_market_context = str(primary_event.get("market_context") or "").strip()
+    if primary_theme is not None:
+        # The digest is the single public decision source.  Do not let this
+        # legacy card reach back into ``events[0]``: that bypass used to
+        # reintroduce unqualified publisher tails and unrelated news after
+        # the first-screen summary had correctly become quote-led.
+        theme_title = str(primary_theme.get("title") or "").strip()
+        is_quote_led = theme_title == "市場價格"
+        primary_event = {
+            "brief_title": "行情主導" if is_quote_led else theme_title,
+            "summary": primary_theme.get("what_happened") if not is_quote_led else "",
+            "why_important": primary_theme.get("why_important"),
+            "market_context": primary_theme.get("market_implication"),
+            "stock_observation": primary_theme.get("stock_observation"),
+            "source_evidence": primary_theme.get("source_evidence") or [],
+        }
+        event_title = str(primary_event.get("brief_title") or "行情主導")
+        event_text = str(primary_event.get("summary") or "")
+        if is_quote_led:
+            event_text = str(primary_theme.get("what_happened") or "本輪行情證據已載入。")
+        event_market_context = str(primary_event.get("market_context") or "").strip()
+        if is_quote_led:
+            # A quote-led report may still use a specific, non-primary event
+            # explanation in the semiconductor card.  It must never replace
+            # the quote-led risk card or carry a raw headline/publisher tail.
+            event_market_context = _supporting_event_context(events) or event_market_context
+    else:
+        primary_event = events[0] if events else {}
+        event_title = primary_event.get("brief_title") or "今日無重大市場事件，持續觀察"
+        event_text = primary_event.get("summary") or "本次未出現符合重大門檻的公開事件。"
+        event_market_context = str(primary_event.get("market_context") or "").strip()
 
     return [
         _card(
@@ -761,6 +809,11 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
     from src.market_digest import build_market_digest
 
     digest = build_market_digest(snapshot, slot or "morning", intelligence=intelligence)
+    # Re-project the fixed observation cards from the same digest used by
+    # Telegram and the top summary.  Passing an empty theme intentionally
+    # suppresses raw/unqualified events when the digest is unavailable.
+    digest_theme = digest.get("primary_theme") if isinstance(digest.get("primary_theme"), dict) else {}
+    observations = _market_observations(all_items, risk, events, primary_theme=digest_theme)
     digest_overview = digest.get("overview")
     if not digest_overview and digest.get("status") != "ready":
         digest_overview = "本輪公開市場證據不足，暫不形成判讀。"

@@ -52,6 +52,30 @@ def test_briefing_summary_facts_are_structured_and_quote_led_without_news_event(
     assert not any(item["key"] == "primary_event" for item in facts)
 
 
+def test_observation_cards_follow_quote_led_digest_without_raw_publisher_tail():
+    briefing = build_briefing_snapshot({
+        "generated_at": "2026-09-07T07:00:00+00:00",
+        "indices": [
+            {"ticker": "TAIEX", "price": 26000, "change_percent": 0.8},
+            {"ticker": "NASDAQ", "price": 20000, "change_percent": -0.29},
+            {"ticker": "SOX", "price": 5000, "change_percent": 3.37},
+            {"ticker": "DJIA", "price": 45000, "change_percent": -0.51},
+        ],
+        "quotes": [],
+        "macro_quotes": [],
+        "events": {"items": [{
+            "event": "全球半導體產值上看2兆美元，亞洲AI供應鏈成焦點，台積電曝量產優勢-財經焦點情報站 - CMoney投資網誌。",
+        }]},
+    }, "morning")
+
+    observation_text = " ".join(
+        value for card in briefing["observations"] for value in card.values()
+    )
+    assert "CMoney" not in observation_text
+    assert "財經焦點情報站" not in observation_text
+    assert "行情主導" in briefing["observations"][-1]["event"]
+
+
 def test_midday_briefing_includes_japan_korea_and_public_observation_cards():
     snapshot = {
         "indices": [
