@@ -88,6 +88,23 @@ def _clean_text(value: Any) -> str:
     return text.strip(" ｜|:：,，")
 
 
+_GENERIC_DETAIL_MARKERS = (
+    "此公開事件可能影響市場預期",
+    "可能連動主要股市、利率或商品市場",
+    "觀察主要市場是否出現持續、同步且可核對的價格變化",
+    "持續核對公開資料",
+    "等待相關市場價格與後續公開資料核對",
+)
+
+
+def _specific_detail(value: Any) -> str:
+    """Keep event detail only when it contains an event-specific explanation."""
+    text = _clean_text(value)
+    if not text or any(marker in text for marker in _GENERIC_DETAIL_MARKERS):
+        return ""
+    return text
+
+
 def _is_fragment(text: str) -> bool:
     value = _clean_text(text)
     if not value or value.lower() in {"undefined", "null", "nan", "the", "financialjuice"}:
@@ -353,9 +370,9 @@ def _theme_for_event(event: dict[str, Any], fact: str, snapshot_quotes: list[dic
     normalized = _event_projection(event)
     market_topic = str(normalized.get("market_topic") or "company_industry")
     public_fact = str(normalized.get("normalized_fact") or fact)
-    why = _clean_text(event.get("why_important") or event.get("importance_detail") or event.get("trigger"))
-    impact = _clean_text(event.get("possible_linkage") or event.get("possible_impact") or event.get("market_context"))
-    watch = _clean_text(event.get("stock_observation") or event.get("watch") or event.get("follow_up_observation"))
+    why = _specific_detail(event.get("why_important") or event.get("importance_detail") or event.get("trigger"))
+    impact = _specific_detail(event.get("possible_linkage") or event.get("possible_impact") or event.get("market_context"))
+    watch = _specific_detail(event.get("stock_observation") or event.get("watch") or event.get("follow_up_observation"))
     detail_eligible = bool(why and impact and watch)
     source_evidence = _source_evidence(event, source)
     quote_evidence = _bind_event_quotes(event, snapshot_quotes or [])
@@ -510,6 +527,23 @@ _NEWS_SOURCE_MARKERS = (
     "公開市場新聞",
 )
 
+_EVENT_DETAIL_FIELDS = (
+    "why_important",
+    "importance_detail",
+    "trigger",
+    "possible_linkage",
+    "possible_impact",
+    "market_context",
+    "stock_observation",
+    "watch",
+    "follow_up_observation",
+)
+
+
+def _has_event_detail_input(event: dict[str, Any]) -> bool:
+    """Tell legacy rows from rows that explicitly supplied a generic fallback."""
+    return any(_normalise(event.get(field)) for field in _EVENT_DETAIL_FIELDS)
+
 
 def _is_news_derived_event(event: dict[str, Any]) -> bool:
     source_key = str(event.get("source_key") or "").casefold().strip()
@@ -631,8 +665,14 @@ def build_market_digest(
     # structured ticker reference (or its own market_evidence).  In
     # particular, a geopolitical/FJ event must not inherit unrelated NASDAQ
     # and SOX cards merely because they happen to be present in the snapshot.
-    event_themes = [_theme_for_event(event, fact, all_quotes) for event, fact in candidates]
-    event_themes = [theme for theme in event_themes if theme.get("normalization_complete")]
+    event_themes_with_input = [
+        (_theme_for_event(event, fact, all_quotes), _has_event_detail_input(event))
+        for event, fact in candidates
+    ]
+    event_themes = [
+        theme for theme, _has_detail_input in event_themes_with_input
+        if theme.get("normalization_complete")
+    ]
     # A headline becomes the report's main cause only when it has complete
     # context and either event-specific price evidence or explicit official
     # confirmation.  Otherwise the current market quotes own the first
@@ -642,7 +682,15 @@ def build_market_digest(
         if theme.get("detail_eligible") is True
         and (theme.get("quote_evidence") or theme.get("official_confirmed") is True)
     ]
-    primary_theme = lead_event_themes[0] if lead_event_themes else quote_theme or (event_themes[0] if event_themes else None)
+    fallback_event = next(
+        (
+            theme for theme, has_detail_input in event_themes_with_input
+            if theme.get("normalization_complete")
+            and (theme.get("detail_eligible") is True or not has_detail_input)
+        ),
+        None,
+    )
+    primary_theme = lead_event_themes[0] if lead_event_themes else quote_theme or fallback_event
     if primary_theme is None:
         return {
             "status": "suppressed",
