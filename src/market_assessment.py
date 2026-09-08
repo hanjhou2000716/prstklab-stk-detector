@@ -46,7 +46,7 @@ _PUBLISHER_TAIL_RE = re.compile(
     re.IGNORECASE,
 )
 _MEDIA_TAIL_RE = re.compile(
-    r"\s*[-–—]\s*(?:Storm\.mg|Reuters|Bloomberg|Yahoo Finance|Yahoo股市|Yahoo新聞|Google News|CNBC|Financial Times|UDN|聯合新聞網|news\.cnyes\.com|鉅亨網)\s*[。.!?]?\s*$",
+    r"(?:\s*[-–—]\s*(?:Storm\.mg|Reuters|Bloomberg|Yahoo Finance|Yahoo股市|Yahoo新聞|Google News|CNBC|Financial Times|UDN|聯合新聞網|news\.cnyes\.com|鉅亨網|CMoney投資網誌|CMoney|財經焦點情報站))+\s*[。.!?]?\s*$",
     re.IGNORECASE,
 )
 _BYLINE_MARKER_RE = re.compile(r"(?:記者|作者|編輯|編譯|新聞\s*[-–—:]|\b(?:by|reporting by)\b)", re.IGNORECASE)

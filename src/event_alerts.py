@@ -399,11 +399,10 @@ def _event_market_context(label: str) -> tuple[str, str, str]:
             "觀察費半與台美半導體權值是否以成交與價格同步確認趨勢。",
         ),
     }
-    return contexts.get(label, (
-        "此公開事件可能影響市場預期；應以後續可核對的價格與官方資訊確認。",
-        "可能連動主要股市、利率或商品市場，實際傳導範圍仍待公開資料驗證。",
-        "觀察主要市場是否出現持續、同步且可核對的價格變化。",
-    ))
+    # Unknown categories have no defensible transmission mechanism.  Do not
+    # manufacture generic prose that can make an incomplete event look
+    # decision-ready; the caller will retain the raw event for audit only.
+    return contexts.get(label, ("", "", ""))
 
 
 def _price_signal_thresholds(index: dict[str, Any]) -> tuple[float, float, bool]:

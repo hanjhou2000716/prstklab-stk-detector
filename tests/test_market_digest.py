@@ -375,3 +375,35 @@ def test_digest_deduplicates_public_themes_by_market_topic():
     assert topics == ["semiconductor_ai", "rates_fx"]
     assert len(topics) == len(set(topics))
     assert "Yahoo股市" not in result["primary_theme"]["what_happened"]
+
+
+def test_generic_event_detail_cannot_become_primary_event():
+    result = build_market_digest(
+        {
+            "events": {"items": [{
+                "source_key": "news",
+                "event": "全球半導體產值上看2兆美元，亞洲AI供應鏈成焦點，台積電曝量產優勢-財經焦點情報站 - CMoney投資網誌。",
+                "why_important": "此公開事件可能影響市場預期；應以後續可核對的價格與官方資訊確認。",
+                "possible_linkage": "可能連動主要股市、利率或商品市場，實際傳導範圍仍待公開資料驗證。",
+                "stock_observation": "觀察主要市場是否出現持續、同步且可核對的價格變化。",
+                "published_at": "2026-09-07T00:00:00+00:00",
+                "canonical_url": "https://news.example/story",
+                "public_news_eligible": True,
+                "normalization_complete": True,
+            }]},
+            "indices": [
+                {"ticker": "NASDAQ", "price": 100, "change_percent": -0.3, "freshness": "recent_close"},
+                {"ticker": "SOX", "price": 100, "change_percent": 3.3, "freshness": "recent_close"},
+                {"ticker": "DJIA", "price": 100, "change_percent": -0.5, "freshness": "recent_close"},
+            ],
+        },
+        "morning",
+    )
+
+    assert result["primary_theme"]["title"] == "市場價格"
+    assert result["primary_theme"]["detail_eligible"] is True
+    assert "CMoney" not in result["primary_theme"]["what_happened"]
+    assert all(
+        "此公開事件可能影響市場預期" not in theme.get("why_important", "")
+        for theme in result["themes"]
+    )

@@ -25,6 +25,15 @@ def test_news_publisher_suffix_is_removed_from_public_event_fact():
     assert result["publisher_removed"] is True
 
 
+def test_chained_news_publisher_suffixes_are_removed_from_public_event_fact():
+    result = normalize_headline({
+        "title": "全球半導體產值上看2兆美元，亞洲AI供應鏈成焦點，台積電曝量產優勢-財經焦點情報站 - CMoney投資網誌。",
+    })
+
+    assert result["normalized_fact"] == "全球半導體產值上看2兆美元，亞洲AI供應鏈成焦點，台積電曝量產優勢。"
+    assert result["publisher_removed"] is True
+
+
 def test_official_person_is_role_only_in_public_fact():
     result = normalize_headline({"title": "沃勒表示通膨與勞動市場仍是利率判斷的重要依據"})
 
