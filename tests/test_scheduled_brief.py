@@ -67,7 +67,7 @@ def test_manual_market_phase_boundaries_are_stable():
         assert result["effective_slot"] == expected
 
 
-def test_repository_dispatch_requires_scheduled_time_and_applies_delay_gate():
+def test_repository_dispatch_requires_scheduled_time_and_retires_old_routine_slots():
     now = datetime(2026, 9, 7, 15, 28, tzinfo=ZoneInfo("Asia/Taipei"))
     assert resolve_slot_context("post_close", now, trigger_kind="repository_dispatch") is None
     result = resolve_slot_context(
@@ -75,11 +75,7 @@ def test_repository_dispatch_requires_scheduled_time_and_applies_delay_gate():
         trigger_kind="repository_dispatch",
         scheduled_for_at="2026-09-07T10:30:00+08:00",
     )
-    assert result is not None
-    assert result["scheduled_slot"] == "intraday"
-    assert result["effective_slot"] == "post_close"
-    assert result["delivery_intent"] == "publish_only"
-    assert result["resolution_reason"] == "late_dispatch_publish_only"
+    assert result is None
 
 
 def test_us_premarket_uses_2100_taiwan_during_new_york_dst():

@@ -19,6 +19,17 @@ def test_automatic_scheduled_dispatch_enables_notification_but_manual_stays_opt_
     assert "inputs.notify && 'true'" in workflow
 
 
+def test_workflow_has_only_four_routine_anchors_and_never_masks_contract_errors():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
+    ).read_text(encoding="utf-8")
+    assert "options: [auto, morning, pre_open, post_close, us_premarket]" in workflow
+    assert "send_step_not_run" not in workflow
+    assert "Fail closed for invalid schedule context" in workflow
+    assert "schedule_contract_version" in workflow
+    assert "scheduled_for_at" in workflow
+
+
 def test_release_policy_writes_outputs_without_corrupting_github_output():
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"

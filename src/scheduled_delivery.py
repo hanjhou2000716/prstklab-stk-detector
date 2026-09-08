@@ -495,8 +495,122 @@ def _closed_market_slot_context(
     }
 
 
+def _load_schedule_decision_history(snapshot_path: Path) -> list[dict[str, Any]]:
+    """Load only the bounded, public decision trail from the prior release."""
+    try:
+        previous = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return []
+    rows = previous.get("scheduled_decision_history") if isinstance(previous, dict) else None
+    if not isinstance(rows, list):
+        return []
+    return [dict(row) for row in rows[-7:] if isinstance(row, dict)]
+
+
+def _schedule_decision_category(
+    context: dict[str, Any] | None,
+    *,
+    briefing: dict[str, Any],
+    decision_event: dict[str, Any] | None,
+    delivery_eligible: bool,
+    comparison_reason: str,
+) -> tuple[str, str]:
+    """Map a run to an auditable operational outcome."""
+    ctx = context or {}
+    contract_status = str(ctx.get("contract_status") or "").strip()
+    if contract_status == "invalid":
+        reason = str(ctx.get("resolution_reason") or "invalid_schedule_context")
+        return "contract_error", reason
+    reason = str(
+        ctx.get("suppression_reason")
+        or comparison_reason
+        or briefing.get("notification_reason")
+        or ""
+    ).strip()
+    if reason.startswith("closed_market"):
+        return "market_closed", reason
+    if reason.startswith("late_schedule") or reason.startswith("late_dispatch"):
+        return "late_schedule", reason
+    if reason in {"insufficient_market_evidence", "data_insufficient", "no_eligible_candidate"}:
+        return "data_insufficient", reason
+    if delivery_eligible and decision_event is not None:
+        return "notification_candidate", "candidate_ready"
+    if reason in {"same_decision_unchanged", "anchor_already_delivered", "no_material_change"}:
+        return "no_material_change", reason
+    if not decision_event:
+        return "data_insufficient", reason or "no_eligible_candidate"
+    return "suppressed", reason or "notification_not_eligible"
+
+
+def _attach_schedule_decision(
+    snapshot: dict[str, Any],
+    *,
+    snapshot_path: Path,
+    slot: str,
+    context: dict[str, Any] | None,
+    production_started_at: str,
+    completed_at: str,
+    decision_event: dict[str, Any] | None,
+    briefing: dict[str, Any],
+    comparison_notification_key: str = "",
+    material_changes: list[Any] | None = None,
+    delivery_eligible: bool = False,
+    comparison_reason: str = "",
+    production_status: str = "ready",
+) -> dict[str, Any]:
+    """Persist the latest anchor production/notification decision in Pages."""
+    ctx = context if isinstance(context, dict) else {}
+    status, reason = _schedule_decision_category(
+        ctx,
+        briefing=briefing,
+        decision_event=decision_event,
+        delivery_eligible=delivery_eligible,
+        comparison_reason=comparison_reason,
+    )
+    row: dict[str, Any] = {
+        "anchor_key": anchor_key(
+            str(ctx.get("effective_slot") or slot),
+            str(ctx.get("slot_date") or datetime.now().astimezone().date().isoformat()),
+        ),
+        "scheduled_slot": str(ctx.get("scheduled_slot") or slot),
+        "effective_market_phase": str(ctx.get("effective_market_phase") or ctx.get("effective_slot") or slot),
+        "slot_date": str(ctx.get("slot_date") or ""),
+        "scheduled_for_at": str(ctx.get("scheduled_for_at") or ""),
+        "arrival_at": str(ctx.get("arrival_at") or ctx.get("run_started_at") or ""),
+        "run_started_at": str(ctx.get("run_started_at") or production_started_at),
+        "production_started_at": production_started_at,
+        "completed_at": completed_at,
+        "delay_seconds": int(str(ctx.get("delay_seconds") or "0")),
+        "trigger_kind": str(ctx.get("trigger_kind") or "unknown"),
+        "schedule_contract_version": str(ctx.get("schedule_contract_version") or ""),
+        "time_zone": str(ctx.get("time_zone") or ""),
+        "contract_status": str(ctx.get("contract_status") or "unknown"),
+        "production_status": production_status,
+        "comparison_notification_key": comparison_notification_key,
+        "material_changes": list(material_changes or []),
+        "delivery_eligible": bool(delivery_eligible),
+        "notification_status": status,
+        "suppression_reason": reason if status != "notification_candidate" else "",
+        "decision_fingerprint": str(briefing.get("decision_fingerprint") or ""),
+        "evidence_fingerprint": str(briefing.get("evidence_fingerprint") or ""),
+    }
+    history = [*_load_schedule_decision_history(snapshot_path), row]
+    history = history[-8:]
+    snapshot["scheduled_decision_history"] = history
+    morning = snapshot.get("briefing", {}).get("morning_analysis")
+    if isinstance(morning, dict):
+        system = morning.get("system_analysis")
+        if not isinstance(system, dict):
+            system = {}
+            morning["system_analysis"] = system
+        system["schedule_decisions"] = history
+    snapshot.setdefault("briefing", {})["schedule_decision"] = row
+    return row
+
+
 def prepare(slot: str, snapshot_path: Path, *, slot_context: dict[str, Any] | None = None) -> dict:
     """Create the exact snapshot that will later be deployed and delivered."""
+    production_started_at = datetime.now(UTC).isoformat()
     snapshot = build_market_snapshot()
     external_path = external_observations_path()
     local_observations, local_rejected = load_external_observations(external_path)
@@ -627,6 +741,10 @@ def prepare(slot: str, snapshot_path: Path, *, slot_context: dict[str, Any] | No
     # The result is persisted in the same briefing object that the sender and
     # Mini App consume.
     briefing_for_comparison = snapshot.get("briefing")
+    comparison_notification_key = ""
+    comparison_material_changes: list[Any] = []
+    comparison_delivery_eligible = False
+    comparison_reason = ""
     if isinstance(briefing_for_comparison, dict) and isinstance(effective_context, dict):
         comparison_slot = str(effective_context.get("effective_slot") or slot or "").strip()
         comparison_date = str(effective_context.get("slot_date") or "").strip()
@@ -647,6 +765,10 @@ def prepare(slot: str, snapshot_path: Path, *, slot_context: dict[str, Any] | No
                 "delivery_eligible": comparison.get("delivery_eligible") is True,
                 "suppression_reason": comparison.get("suppression_reason") or "",
             })
+            comparison_notification_key = str(comparison.get("comparison_notification_key") or "")
+            comparison_material_changes = list(comparison.get("material_changes") or [])
+            comparison_delivery_eligible = comparison.get("delivery_eligible") is True
+            comparison_reason = str(comparison.get("suppression_reason") or "")
             if (
                 str(effective_context.get("delivery_intent") or "") == "notify_candidate"
                 and comparison.get("delivery_eligible") is not True
@@ -681,12 +803,33 @@ def prepare(slot: str, snapshot_path: Path, *, slot_context: dict[str, Any] | No
         if decision_event
         else str((snapshot.get("briefing") or {}).get("notification_reason") or "no_eligible_candidate")
     )
+    delivery_eligible = bool(
+        comparison_delivery_eligible
+        or briefing_record.get("delivery_eligible") is True
+    )
+    if str((effective_context or {}).get("delivery_intent") or "") != "notify_candidate":
+        delivery_eligible = False
+    completed_at = datetime.now(UTC).isoformat()
+    schedule_decision = _attach_schedule_decision(
+        snapshot,
+        snapshot_path=snapshot_path,
+        slot=slot,
+        context=effective_context,
+        production_started_at=production_started_at,
+        completed_at=completed_at,
+        decision_event=decision_event,
+        briefing=briefing_record,
+        comparison_notification_key=comparison_notification_key,
+        material_changes=comparison_material_changes,
+        delivery_eligible=delivery_eligible,
+        comparison_reason=comparison_reason,
+    )
     prepared_decision = decision_summary(
         event=decision_event,
         scan_status="completed",
-        notification_expected=bool(decision_event) and not context_reason,
-        notification_status=prepared_reason,
-        notification_reason=prepared_reason,
+        notification_expected=bool(decision_event) and delivery_eligible,
+        notification_status=str(schedule_decision["notification_status"]),
+        notification_reason=str(schedule_decision["suppression_reason"] or prepared_reason),
     )
     snapshot["source_health"] = merge_decision_health(
         snapshot.get("source_health"), "scheduled_brief", prepared_decision,
@@ -711,7 +854,23 @@ def prepare(slot: str, snapshot_path: Path, *, slot_context: dict[str, Any] | No
         )
         return snapshot
     _write_decision_output(
-        {"prepared": "true", **metadata},
+        {
+            "prepared": "true",
+            "production_status": schedule_decision["production_status"],
+            "schedule_contract_status": schedule_decision["contract_status"],
+            "scheduled_slot": schedule_decision["scheduled_slot"],
+            "effective_market_phase": schedule_decision["effective_market_phase"],
+            "scheduled_for_at": schedule_decision["scheduled_for_at"],
+            "run_started_at": schedule_decision["run_started_at"],
+            "completed_at": schedule_decision["completed_at"],
+            "delay_seconds": schedule_decision["delay_seconds"],
+            "trigger_kind": schedule_decision["trigger_kind"],
+            "comparison_notification_key": schedule_decision["comparison_notification_key"],
+            "material_changes": schedule_decision["material_changes"],
+            "delivery_eligible": schedule_decision["delivery_eligible"],
+            "suppression_reason": schedule_decision["suppression_reason"],
+            **metadata,
+        },
         event=decision_event,
         notification_status=prepared_decision["notification_status"],
         notification_reason=prepared_decision["notification_reason"],
