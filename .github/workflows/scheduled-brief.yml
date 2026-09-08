@@ -151,7 +151,7 @@ jobs:
           # intervals for 30 minutes; other anchors remain one-pass.
           TWSE_STATS_RETRY_ATTEMPTS: ${{ steps.window.outputs.slot == 'post_close' && '3' || '0' }}
           TWSE_STATS_RETRY_WAIT_SECONDS: '600'
-        run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --prepare-only --slot-context "$SLOT_CONTEXT" --snapshot "$SNAPSHOT_PATH" >> "$GITHUB_OUTPUT"
+        run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --prepare-only --slot-context "$SLOT_CONTEXT" --notification-requested "$NOTIFY" --snapshot "$SNAPSHOT_PATH" >> "$GITHUB_OUTPUT"
       - name: Build release manifest
         if: steps.prepare.outputs.prepared == 'true'
         run: |

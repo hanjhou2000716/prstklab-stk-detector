@@ -58,6 +58,45 @@ def test_open_anchor_keeps_notification_intent() -> None:
     assert result == context
 
 
+def test_manual_notify_false_is_a_public_not_requested_decision() -> None:
+    status, reason = scheduled_delivery._schedule_decision_category(
+        {},
+        briefing={},
+        decision_event=None,
+        delivery_eligible=False,
+        comparison_reason="",
+        notification_requested=False,
+    )
+    assert status == "not_requested"
+    assert reason == "manual_notification_opt_in_required"
+
+
+def test_manual_notify_false_is_persisted_in_schedule_decision(tmp_path) -> None:
+    snapshot = {
+        "briefing": {"morning_analysis": {"system_analysis": {}}},
+    }
+    row = scheduled_delivery._attach_schedule_decision(
+        snapshot,
+        snapshot_path=tmp_path / "market.json",
+        slot="us_premarket",
+        context={
+            "effective_slot": "us_premarket",
+            "scheduled_slot": "us_premarket",
+            "slot_date": "2026-09-08",
+            "delivery_intent": "notify_candidate",
+        },
+        production_started_at="2026-09-08T14:00:00+00:00",
+        completed_at="2026-09-08T14:01:00+00:00",
+        decision_event=None,
+        briefing={},
+        notification_requested=False,
+    )
+    assert row["notification_status"] == "not_requested"
+    assert row["notification_requested"] is False
+    assert row["suppression_reason"] == "manual_notification_opt_in_required"
+    assert snapshot["briefing"]["schedule_decision"] == row
+
+
 def test_scheduled_brief_prioritises_eligible_financialjuice_event() -> None:
     event = {"source_key": "financialjuice", "notification_status": "eligible", "title": "FJ"}
     snapshot = {
