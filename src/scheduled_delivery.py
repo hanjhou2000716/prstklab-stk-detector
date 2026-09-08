@@ -514,6 +514,7 @@ def _schedule_decision_category(
     decision_event: dict[str, Any] | None,
     delivery_eligible: bool,
     comparison_reason: str,
+    notification_requested: bool | None = None,
 ) -> tuple[str, str]:
     """Map a run to an auditable operational outcome."""
     ctx = context or {}
@@ -521,6 +522,11 @@ def _schedule_decision_category(
     if contract_status == "invalid":
         reason = str(ctx.get("resolution_reason") or "invalid_schedule_context")
         return "contract_error", reason
+    context_reason = str(
+        ctx.get("suppression_reason") or ctx.get("resolution_reason") or ""
+    ).strip()
+    if notification_requested is False and not context_reason:
+        return "not_requested", "manual_notification_opt_in_required"
     reason = str(
         ctx.get("suppression_reason")
         or comparison_reason
@@ -557,6 +563,7 @@ def _attach_schedule_decision(
     delivery_eligible: bool = False,
     comparison_reason: str = "",
     production_status: str = "ready",
+    notification_requested: bool | None = None,
 ) -> dict[str, Any]:
     """Persist the latest anchor production/notification decision in Pages."""
     ctx = context if isinstance(context, dict) else {}
@@ -566,6 +573,7 @@ def _attach_schedule_decision(
         decision_event=decision_event,
         delivery_eligible=delivery_eligible,
         comparison_reason=comparison_reason,
+        notification_requested=notification_requested,
     )
     row: dict[str, Any] = {
         "anchor_key": anchor_key(
@@ -589,6 +597,7 @@ def _attach_schedule_decision(
         "comparison_notification_key": comparison_notification_key,
         "material_changes": list(material_changes or []),
         "delivery_eligible": bool(delivery_eligible),
+        "notification_requested": notification_requested,
         "notification_status": status,
         "suppression_reason": reason if status != "notification_candidate" else "",
         "decision_fingerprint": str(briefing.get("decision_fingerprint") or ""),
@@ -608,7 +617,13 @@ def _attach_schedule_decision(
     return row
 
 
-def prepare(slot: str, snapshot_path: Path, *, slot_context: dict[str, Any] | None = None) -> dict:
+def prepare(
+    slot: str,
+    snapshot_path: Path,
+    *,
+    slot_context: dict[str, Any] | None = None,
+    notification_requested: bool | None = None,
+) -> dict:
     """Create the exact snapshot that will later be deployed and delivered."""
     production_started_at = datetime.now(UTC).isoformat()
     snapshot = build_market_snapshot()
@@ -727,6 +742,21 @@ def prepare(slot: str, snapshot_path: Path, *, slot_context: dict[str, Any] | No
                 or "delivery_intent_not_notify"
             )
     if (
+        notification_requested is False
+        and isinstance(snapshot.get("briefing"), dict)
+        and not str(
+            (effective_context or {}).get("suppression_reason")
+            or (effective_context or {}).get("resolution_reason")
+            or ""
+        ).strip()
+    ):
+        # A manual notify=false refresh is a real production publication, but
+        # it is not a notification attempt. Persist that policy decision in
+        # the public audit row instead of leaving a misleading candidate.
+        snapshot["briefing"]["notification_eligible"] = False
+        snapshot["briefing"]["status"] = "suppressed"
+        snapshot["briefing"]["notification_reason"] = "manual_notification_opt_in_required"
+    if (
         isinstance(snapshot.get("briefing"), dict)
         and str((effective_context or {}).get("delivery_intent") or "notify_candidate") == "notify_candidate"
         and not _briefing_evidence_ready(snapshot["briefing"])
@@ -770,7 +800,8 @@ def prepare(slot: str, snapshot_path: Path, *, slot_context: dict[str, Any] | No
             comparison_delivery_eligible = comparison.get("delivery_eligible") is True
             comparison_reason = str(comparison.get("suppression_reason") or "")
             if (
-                str(effective_context.get("delivery_intent") or "") == "notify_candidate"
+                notification_requested is not False
+                and str(effective_context.get("delivery_intent") or "") == "notify_candidate"
                 and comparison.get("delivery_eligible") is not True
             ):
                 briefing_for_comparison["notification_eligible"] = False
@@ -809,6 +840,8 @@ def prepare(slot: str, snapshot_path: Path, *, slot_context: dict[str, Any] | No
     )
     if str((effective_context or {}).get("delivery_intent") or "") != "notify_candidate":
         delivery_eligible = False
+    if notification_requested is False:
+        delivery_eligible = False
     completed_at = datetime.now(UTC).isoformat()
     schedule_decision = _attach_schedule_decision(
         snapshot,
@@ -823,6 +856,7 @@ def prepare(slot: str, snapshot_path: Path, *, slot_context: dict[str, Any] | No
         material_changes=comparison_material_changes,
         delivery_eligible=delivery_eligible,
         comparison_reason=comparison_reason,
+        notification_requested=notification_requested,
     )
     prepared_decision = decision_summary(
         event=decision_event,
@@ -1333,6 +1367,12 @@ def main() -> int:
     parser.add_argument("--slot-key", default=None)
     parser.add_argument("--slot-context", default=None)
     parser.add_argument(
+        "--notification-requested",
+        choices=("true", "false"),
+        default=None,
+        help="record whether this run was explicitly allowed to notify",
+    )
+    parser.add_argument(
         "--require-production-research",
         action="store_true",
         help="require a fresh production research artifact for research-only delivery",
@@ -1348,7 +1388,17 @@ def main() -> int:
                 context = parsed if isinstance(parsed, dict) else None
             except (TypeError, ValueError):
                 parser.error("--slot-context must be a JSON object")
-        prepare(args.slot, args.snapshot, slot_context=context)
+        notification_requested = (
+            None
+            if args.notification_requested is None
+            else args.notification_requested == "true"
+        )
+        prepare(
+            args.slot,
+            args.snapshot,
+            slot_context=context,
+            notification_requested=notification_requested,
+        )
     else:
         send(
             args.snapshot,
