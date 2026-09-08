@@ -193,6 +193,8 @@ def _invalid_dispatch_context(
     *,
     reason: str,
     trigger_kind: str,
+    dispatch_unix: str | None = None,
+    dispatch_trace_id: str | None = None,
 ) -> dict[str, str]:
     """Create a publish-only context so a bad dispatch is visible on Pages."""
     local_now = now.astimezone(TAIPEI)
@@ -204,6 +206,8 @@ def _invalid_dispatch_context(
         "effective_market_phase": effective_slot,
         "slot_date": slot_date,
         "scheduled_for_at": "",
+        "dispatch_unix": str(dispatch_unix or ""),
+        "dispatch_trace_id": str(dispatch_trace_id or ""),
         "run_started_at": local_now.isoformat(),
         "arrival_at": local_now.isoformat(),
         "delay_seconds": "0",
@@ -227,6 +231,8 @@ def resolve_schedule_diagnostic(
     trigger_kind: str = "compatibility",
     contract_version: str | None = None,
     time_zone: str | None = None,
+    dispatch_unix: str | None = None,
+    dispatch_trace_id: str | None = None,
 ) -> dict[str, object]:
     """Resolve a scheduled run and retain a diagnostic for invalid context.
 
@@ -244,6 +250,8 @@ def resolve_schedule_diagnostic(
         trigger_kind=trigger_kind,
         contract_version=contract_version,
         time_zone=time_zone,
+        dispatch_unix=dispatch_unix,
+        dispatch_trace_id=dispatch_trace_id,
     )
     if context is not None:
         return {"context": context, "valid": context.get("contract_status") != "invalid", "reason": context.get("resolution_reason", "")}
@@ -257,9 +265,17 @@ def resolve_schedule_diagnostic(
             now=now,
             contract_version=SCHEDULE_CONTRACT_VERSION if contract_version is None else contract_version,
             time_zone=SCHEDULE_TIMEZONE if time_zone is None else time_zone,
+            dispatch_unix=dispatch_unix,
         )
         reason = str(check.get("reason") or "invalid_schedule_context:slot_resolution_failed")
-        blocked = _invalid_dispatch_context(requested, now, reason=reason, trigger_kind=trigger)
+        blocked = _invalid_dispatch_context(
+            requested,
+            now,
+            reason=reason,
+            trigger_kind=trigger,
+            dispatch_unix=dispatch_unix,
+            dispatch_trace_id=dispatch_trace_id,
+        )
         return {"context": blocked, "valid": False, "reason": reason}
     return {"context": None, "valid": False, "reason": "outside_window"}
 
@@ -274,6 +290,8 @@ def resolve_slot_context(
     trigger_kind: str = "compatibility",
     contract_version: str | None = None,
     time_zone: str | None = None,
+    dispatch_unix: str | None = None,
+    dispatch_trace_id: str | None = None,
 ) -> dict[str, str] | None:
     """Resolve slot plus identity metadata without trusting stale manual input."""
     local_now = now or datetime.now(ZoneInfo("Asia/Taipei"))
@@ -331,6 +349,7 @@ def resolve_slot_context(
             now=local_now,
             contract_version=SCHEDULE_CONTRACT_VERSION if contract_version is None else contract_version,
             time_zone=SCHEDULE_TIMEZONE if time_zone is None else time_zone,
+            dispatch_unix=dispatch_unix,
         )
         if check.get("contract_status") != "valid":
             return None
@@ -345,6 +364,8 @@ def resolve_slot_context(
             "effective_market_phase": actual_phase if late else declared,
             "slot_date": actual_date if late else scheduled_at.date().isoformat(),
             "scheduled_for_at": scheduled_at.isoformat(),
+            "dispatch_unix": str(dispatch_unix or ""),
+            "dispatch_trace_id": str(dispatch_trace_id or ""),
             "run_started_at": local_now.isoformat(),
             "arrival_at": local_now.isoformat(),
             "delay_seconds": str(delay_seconds),
@@ -644,6 +665,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--trigger-kind", default="compatibility")
     parser.add_argument("--schedule-contract-version", default="")
     parser.add_argument("--time-zone", default="")
+    parser.add_argument("--dispatch-unix", default="")
+    parser.add_argument("--dispatch-trace-id", default="")
     return parser.parse_args()
 
 
@@ -659,6 +682,8 @@ def main() -> None:
         trigger_kind=args.trigger_kind,
         contract_version=args.schedule_contract_version,
         time_zone=args.time_zone,
+        dispatch_unix=args.dispatch_unix,
+        dispatch_trace_id=args.dispatch_trace_id,
     )
     raw_context = diagnostic.get("context")
     context: dict[str, str] | None = raw_context if isinstance(raw_context, dict) else None
@@ -672,6 +697,8 @@ def main() -> None:
         print(f"effective_market_phase={(context or {}).get('effective_market_phase', slot or 'skip')}")
         print(f"slot_date={(context or {}).get('slot_date', now.date().isoformat())}")
         print(f"scheduled_for_at={(context or {}).get('scheduled_for_at', '')}")
+        print(f"dispatch_unix={(context or {}).get('dispatch_unix', '')}")
+        print(f"dispatch_trace_id={(context or {}).get('dispatch_trace_id', '')}")
         print(f"run_started_at={(context or {}).get('run_started_at', now.isoformat())}")
         print(f"delay_seconds={(context or {}).get('delay_seconds', '0')}")
         print(f"delivery_intent={(context or {}).get('delivery_intent', 'event_only')}")

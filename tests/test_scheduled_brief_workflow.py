@@ -15,8 +15,10 @@ def test_automatic_scheduled_dispatch_enables_notification_but_manual_stays_opt_
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
     ).read_text(encoding="utf-8")
-    assert "github.event_name == 'repository_dispatch' && 'true'" in workflow
-    assert "inputs.notify && 'true'" in workflow
+    assert "github.event_name == 'repository_dispatch' && github.event.client_payload.notify == true" in workflow
+    assert "inputs.notify == true && 'true'" in workflow
+    assert "dispatch_unix" in workflow
+    assert "dispatch-trace-id" in workflow
 
 
 def test_workflow_has_only_four_routine_anchors_and_never_masks_contract_errors():
