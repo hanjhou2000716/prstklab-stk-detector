@@ -67,6 +67,8 @@ jobs:
       SLOT: ${{ inputs.slot || github.event.client_payload.scheduled_slot || github.event.client_payload.slot || 'auto' }}
       SCHEDULE_CRON: ${{ github.event.schedule || '' }}
       SCHEDULED_FOR_AT: ${{ github.event.client_payload.scheduled_for_at || '' }}
+      DISPATCH_UNIX: ${{ github.event.client_payload.dispatch_unix || '' }}
+      DISPATCH_TRACE_ID: ${{ github.event.client_payload.trace_id || '' }}
       SCHEDULE_CONTRACT_VERSION: ${{ github.event.client_payload.schedule_contract_version || github.event.client_payload.contract_version || '' }}
       SCHEDULE_TIME_ZONE: ${{ github.event.client_payload.time_zone || '' }}
       FORCE: ${{ inputs.force || github.event.client_payload.force || 'false' }}
@@ -76,7 +78,7 @@ jobs:
       # Scheduled cron and trusted backup repository_dispatch runs are both
       # automatic notification intents.  Manual workflow_dispatch remains
       # opt-in through inputs.notify.
-      NOTIFY: ${{ github.event_name == 'schedule' && 'true' || github.event_name == 'repository_dispatch' && 'true' || inputs.notify && 'true' || 'false' }}
+      NOTIFY: ${{ github.event_name == 'schedule' && 'true' || github.event_name == 'repository_dispatch' && github.event.client_payload.notify == true && 'true' || inputs.notify == true && 'true' || 'false' }}
       # Automatic runs resolve the slot from github.event.schedule.  The
       # runner start time is not a valid reason to suppress a delayed cron.
       # Manual runs resolve to the most recent fixed Taipei-time boundary;
@@ -127,6 +129,8 @@ jobs:
           if [ "$STRICT_WINDOW" = "true" ]; then arguments+=(--strict-window); fi
           if [ -n "$SCHEDULE_CRON" ]; then arguments+=(--scheduled-cron "$SCHEDULE_CRON"); fi
           if [ -n "$SCHEDULED_FOR_AT" ]; then arguments+=(--scheduled-for "$SCHEDULED_FOR_AT"); fi
+          if [ -n "$DISPATCH_UNIX" ]; then arguments+=(--dispatch-unix "$DISPATCH_UNIX"); fi
+          if [ -n "$DISPATCH_TRACE_ID" ]; then arguments+=(--dispatch-trace-id "$DISPATCH_TRACE_ID"); fi
           arguments+=(--schedule-contract-version "$SCHEDULE_CONTRACT_VERSION" --time-zone "$SCHEDULE_TIME_ZONE")
           python -m src.scheduled_brief "${arguments[@]}" >> "$GITHUB_OUTPUT"
       - name: Restore scheduled idempotency lock

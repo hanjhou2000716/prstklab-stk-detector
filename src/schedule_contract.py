@@ -8,16 +8,18 @@ the existing briefing evidence and EventLedger gates.
 
 from __future__ import annotations
 
-from datetime import date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-SCHEDULE_CONTRACT_VERSION = "2"
+SCHEDULE_CONTRACT_VERSION = "3"
+LEGACY_SCHEDULE_CONTRACT_VERSION = "2"
 SCHEDULE_TIMEZONE = "Asia/Taipei"
 TAIPEI_TIMEZONE = SCHEDULE_TIMEZONE
 TAIPEI = ZoneInfo(SCHEDULE_TIMEZONE)
 MAX_SCHEDULE_DELAY_SECONDS = 30 * 60
 MAX_CLOCK_SKEW_SECONDS = 5 * 60
+CRON_JOB_ORG_DISPATCH_FIELD = "dispatch_unix"
 
 # Creator's 10:30 batch is a separate, non-Telegram content lane.  Preserve
 # its original contract here so introducing scheduled-brief validation cannot
@@ -73,6 +75,26 @@ def parse_scheduled_for(value: Any) -> datetime | None:
     return parsed.astimezone(TAIPEI)
 
 
+def parse_dispatch_unix(value: Any) -> datetime | None:
+    """Parse cron-job.org's execution timestamp as an aware Taipei time.
+
+    cron-job.org expands ``%cjo:unixtime%`` in the request body immediately
+    before sending the request.  It is intentionally kept separate from
+    ``scheduled_for_at``: the former records when the backup actually arrived,
+    while the latter is the fixed production anchor derived below.
+    """
+    if value in (None, "") or isinstance(value, bool):
+        return None
+    text = str(value).strip()
+    if not text or not text.isdigit():
+        return None
+    try:
+        parsed = datetime.fromtimestamp(int(text), tz=UTC)
+    except (OverflowError, OSError, ValueError):
+        return None
+    return parsed.astimezone(TAIPEI)
+
+
 def fixed_scheduled_for(slot: str, slot_date: date | str) -> datetime:
     """Return the canonical Taipei timestamp for an anchor/date."""
     name = str(slot).strip()
@@ -95,6 +117,21 @@ def slot_date_for(slot: str, at: datetime) -> str:
     return day.isoformat()
 
 
+def _next_anchor_after(slot: str, scheduled: datetime) -> datetime:
+    """Return the next fixed anchor after a canonical slot timestamp."""
+    ordered = sorted(
+        (time(hour, minute), name)
+        for name, (hour, minute, _market) in FIXED_ANCHORS.items()
+    )
+    current = scheduled.timetz().replace(tzinfo=None)
+    for anchor_time, _name in ordered:
+        if anchor_time > current:
+            return datetime.combine(scheduled.date(), anchor_time, tzinfo=TAIPEI)
+    next_day = scheduled.date() + timedelta(days=1)
+    first_time, _first_name = ordered[0]
+    return datetime.combine(next_day, first_time, tzinfo=TAIPEI)
+
+
 def validate_scheduled_context(
     *,
     slot: str,
@@ -102,6 +139,7 @@ def validate_scheduled_context(
     now: datetime,
     contract_version: Any = SCHEDULE_CONTRACT_VERSION,
     time_zone: Any = SCHEDULE_TIMEZONE,
+    dispatch_unix: Any = None,
 ) -> dict[str, Any]:
     """Validate a backup/dispatch schedule context without making it sendable."""
     name = str(slot or "").strip()
@@ -111,6 +149,7 @@ def validate_scheduled_context(
         "contract_status": "invalid",
         "reason": "",
         "scheduled_slot": name,
+        "dispatch_unix": str(dispatch_unix or ""),
     }
     if name in RETIRED_ROUTINE_SLOTS:
         result["reason"] = "invalid_schedule_context:retired_routine_slot"
@@ -118,26 +157,58 @@ def validate_scheduled_context(
     if name not in ANCHOR_SLOTS:
         result["reason"] = "invalid_schedule_context:unknown_scheduled_slot"
         return result
-    scheduled = parse_scheduled_for(scheduled_for_at)
-    if scheduled is None:
-        result["reason"] = (
-            "invalid_schedule_context:missing_scheduled_for_at"
-            if scheduled_for_at in (None, "")
-            else "invalid_schedule_context:invalid_scheduled_for_at"
-        )
-        return result
-    if str(contract_version or "") != SCHEDULE_CONTRACT_VERSION:
+    version = str(contract_version or "")
+    if version not in {SCHEDULE_CONTRACT_VERSION, LEGACY_SCHEDULE_CONTRACT_VERSION}:
         result["reason"] = "invalid_schedule_context:unsupported_contract_version"
         return result
     if str(time_zone or "") != SCHEDULE_TIMEZONE:
         result["reason"] = "invalid_schedule_context:invalid_time_zone"
         return result
+    dispatch_at = parse_dispatch_unix(dispatch_unix)
+    scheduled: datetime
+    if version == SCHEDULE_CONTRACT_VERSION:
+        if dispatch_at is None:
+            result["reason"] = (
+                "invalid_schedule_context:missing_dispatch_unix"
+                if dispatch_unix in (None, "")
+                else "invalid_schedule_context:invalid_dispatch_unix"
+            )
+            return result
+        scheduled = fixed_scheduled_for(name, slot_date_for(name, dispatch_at))
+    elif version == LEGACY_SCHEDULE_CONTRACT_VERSION:
+        parsed_scheduled = parse_scheduled_for(scheduled_for_at)
+        if parsed_scheduled is None:
+            result["reason"] = (
+                "invalid_schedule_context:missing_scheduled_for_at"
+                if scheduled_for_at in (None, "")
+                else "invalid_schedule_context:invalid_scheduled_for_at"
+            )
+            return result
+        scheduled = parsed_scheduled
+    else:  # guarded above; keeps type checkers aware that scheduled is assigned
+        raise AssertionError("unreachable schedule contract version")
     local_now = now.astimezone(TAIPEI)
     if scheduled - local_now > timedelta(seconds=MAX_CLOCK_SKEW_SECONDS):
         result["reason"] = "invalid_schedule_context:future_scheduled_for_at"
         return result
     expected = fixed_scheduled_for(name, scheduled.date())
-    if abs((scheduled - expected).total_seconds()) > MAX_CLOCK_SKEW_SECONDS:
+    if version == SCHEDULE_CONTRACT_VERSION:
+        assert dispatch_at is not None
+        if dispatch_at - local_now > timedelta(seconds=MAX_CLOCK_SKEW_SECONDS):
+            result["reason"] = "invalid_schedule_context:future_dispatch_unix"
+            return result
+        if dispatch_at < expected - timedelta(seconds=MAX_CLOCK_SKEW_SECONDS):
+            result["reason"] = "invalid_schedule_context:dispatch_before_anchor"
+            return result
+        if dispatch_at > _next_anchor_after(name, expected) - timedelta(seconds=MAX_CLOCK_SKEW_SECONDS):
+            result["reason"] = "invalid_schedule_context:dispatch_outside_anchor_window"
+            return result
+        if scheduled_for_at not in (None, ""):
+            declared = parse_scheduled_for(scheduled_for_at)
+            if declared is None or abs((declared - expected).total_seconds()) > MAX_CLOCK_SKEW_SECONDS:
+                result["reason"] = "invalid_schedule_context:slot_mismatch"
+                return result
+    elif abs((scheduled - expected).total_seconds()) > MAX_CLOCK_SKEW_SECONDS:
         result["reason"] = "invalid_schedule_context:slot_mismatch"
         return result
     delay = max(0, int((local_now - scheduled).total_seconds()))
@@ -145,6 +216,7 @@ def validate_scheduled_context(
         "contract_status": "valid",
         "reason": "late_schedule_publish_only" if delay > MAX_SCHEDULE_DELAY_SECONDS else "dispatch_anchor_on_time",
         "scheduled": scheduled,
+        "dispatch_at": dispatch_at,
         "delay_seconds": delay,
         "slot_date": slot_date_for(name, scheduled),
     })
@@ -167,6 +239,8 @@ def build_scheduled_dispatch_payload(
         slot=slot,
         scheduled_for_at=scheduled_for_at,
         now=parsed,
+        contract_version=LEGACY_SCHEDULE_CONTRACT_VERSION,
+        time_zone=SCHEDULE_TIMEZONE,
     )
     if check["contract_status"] != "valid":
         raise ValueError(str(check["reason"]))
@@ -175,7 +249,10 @@ def build_scheduled_dispatch_payload(
         "scheduled_slot": slot,
         "scheduled_for_at": parsed.isoformat(),
         "time_zone": SCHEDULE_TIMEZONE,
-        "schedule_contract_version": SCHEDULE_CONTRACT_VERSION,
+        # This helper preserves the explicit-timestamp v2 wire format for
+        # callers that already have the original anchor.  New cron-job.org
+        # jobs should use build_cron_job_dispatch_payload below.
+        "schedule_contract_version": LEGACY_SCHEDULE_CONTRACT_VERSION,
         "trigger_kind": trigger_kind,
         "force": bool(force),
     }
@@ -184,12 +261,45 @@ def build_scheduled_dispatch_payload(
     return {"event_type": "scheduled-brief", "client_payload": payload}
 
 
+def build_cron_job_dispatch_payload(
+    slot: str,
+    *,
+    force: bool = False,
+    notify: bool = True,
+    trace_placeholder: str = "%cjo:uuid4%",
+) -> dict[str, Any]:
+    """Build the v3 body to paste into a cron-job.org request.
+
+    The timestamp placeholder is expanded by cron-job.org at send time, so
+    this function intentionally returns a template rather than pretending to
+    validate the literal placeholder as a Unix timestamp.
+    """
+    if str(slot).strip() not in ANCHOR_SLOTS:
+        raise ValueError(f"unknown scheduled anchor: {slot}")
+    return {
+        "event_type": "scheduled-brief",
+        "client_payload": {
+            "slot": str(slot).strip(),
+            "scheduled_slot": str(slot).strip(),
+            "dispatch_unix": "%cjo:unixtime%",
+            "trace_id": trace_placeholder,
+            "time_zone": SCHEDULE_TIMEZONE,
+            "schedule_contract_version": SCHEDULE_CONTRACT_VERSION,
+            "trigger_kind": "cron-job.org",
+            "notify": bool(notify),
+            "force": bool(force),
+        },
+    }
+
+
 __all__ = [
     "ANCHOR_SLOTS",
     "CREATOR_BATCH_CRON_SCHEDULES",
     "CREATOR_MORNING_BATCH_TIME",
     "CREATOR_MORNING_LATE_GRACE_MINUTES",
+    "CRON_JOB_ORG_DISPATCH_FIELD",
     "FIXED_ANCHORS",
+    "LEGACY_SCHEDULE_CONTRACT_VERSION",
     "MAX_CLOCK_SKEW_SECONDS",
     "MAX_SCHEDULE_DELAY_SECONDS",
     "RETIRED_ROUTINE_SLOTS",
@@ -197,10 +307,12 @@ __all__ = [
     "SCHEDULE_TIMEZONE",
     "TAIPEI_TIMEZONE",
     "build_scheduled_dispatch_payload",
+    "build_cron_job_dispatch_payload",
     "creator_batch_cutoff",
     "creator_batch_late_end",
     "fixed_scheduled_for",
     "parse_scheduled_for",
+    "parse_dispatch_unix",
     "slot_date_for",
     "validate_scheduled_context",
 ]
