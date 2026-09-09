@@ -34,6 +34,8 @@ _PUBLIC_FIELD_TYPES: dict[str, dict[str, str]] = {
     },
     "financialjuice": {
         "status": "text",
+        "last_sync_at": "timestamp",
+        "last_sync_diagnostics": "diagnostics",
         "received_count": "counter",
         "parsed_count": "counter",
         "failed_count": "counter",
@@ -92,6 +94,29 @@ def _project_value(value: Any, kind: str) -> Any:
             if reason is not None and parsed is not None:
                 projected[reason] = parsed
         return projected
+    if kind == "diagnostics":
+        if not isinstance(value, dict):
+            return None
+        raw_counts = value.get("candidate_diagnostics")
+        raw_counts = raw_counts.get("counts") if isinstance(raw_counts, dict) else None
+        counts: dict[str, int] = {}
+        if isinstance(raw_counts, dict):
+            for key, count in raw_counts.items():
+                reason = _bounded_text(str(key))
+                parsed = _counter(count)
+                if reason is not None and parsed is not None:
+                    counts[reason] = parsed
+        reason = _bounded_text(value.get("candidate_diagnostics", {}).get("primary_reason")) if isinstance(value.get("candidate_diagnostics"), dict) else None
+        return {
+            "recorded_at": _bounded_text(value.get("recorded_at")),
+            "status": _bounded_text(value.get("status")),
+            "processed": _counter(value.get("processed")) or 0,
+            "accepted_new_count": _counter(value.get("accepted_new_count")) or 0,
+            "material_candidate_count": _counter(value.get("material_candidate_count")) or 0,
+            "duplicate_count": _counter(value.get("duplicate_count")) or 0,
+            "failed": _counter(value.get("failed")) or 0,
+            "candidate_diagnostics": {"counts": counts, "primary_reason": reason or ""},
+        }
     # Timestamps are intentionally treated as bounded text here.  The health
     # endpoint is diagnostic, while timestamp semantics are validated by the
     # producer and release contracts; keeping this adapter dependency-free is

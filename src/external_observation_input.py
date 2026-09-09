@@ -318,6 +318,39 @@ def external_source_health_from_remote(
         "observability": _observability(accepted, rejected),
         "issues": list(dict.fromkeys(issues)),
     }
+    sync_diagnostics = remote_health.get("sync_diagnostics")
+    if isinstance(sync_diagnostics, dict):
+        nested = sync_diagnostics.get("candidate_diagnostics")
+        raw_counts = nested.get("counts") if isinstance(nested, dict) else None
+        counts: dict[str, int] = {}
+        if isinstance(raw_counts, dict):
+            for key, value in raw_counts.items():
+                try:
+                    parsed = int(value)
+                except (TypeError, ValueError, OverflowError):
+                    continue
+                if isinstance(key, str) and key and 0 <= parsed <= 1_000_000_000:
+                    counts[key[:80]] = parsed
+        def bounded_count(raw: Any) -> int:
+            try:
+                parsed = int(raw or 0)
+            except (TypeError, ValueError, OverflowError):
+                return 0
+            return max(0, min(1_000_000_000, parsed))
+
+        row["sync_diagnostics"] = {
+            "recorded_at": str(sync_diagnostics.get("recorded_at") or "")[:80],
+            "status": str(sync_diagnostics.get("status") or "unknown")[:80],
+            "processed": bounded_count(sync_diagnostics.get("processed")),
+            "accepted_new_count": bounded_count(sync_diagnostics.get("accepted_new_count")),
+            "material_candidate_count": bounded_count(sync_diagnostics.get("material_candidate_count")),
+            "duplicate_count": bounded_count(sync_diagnostics.get("duplicate_count")),
+            "failed": bounded_count(sync_diagnostics.get("failed")),
+            "candidate_diagnostics": {
+                "counts": counts,
+                "primary_reason": str(nested.get("primary_reason") or "")[:80] if isinstance(nested, dict) else "",
+            },
+        }
     if state in {"healthy", "no_event"} and raw_status in success_statuses | no_event_statuses:
         row["last_success_at"] = checked_at.isoformat()
     return row

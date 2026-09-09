@@ -31,7 +31,24 @@ def test_source_health_projection_keeps_only_public_creator_and_fj_fields() -> N
                     },
                     "last_failure_reason": "known_source_template_not_matched",
                 },
-                "financialjuice": {"status": "no_new_content", "importance_gte_8_count": 0},
+                "financialjuice": {
+                    "status": "no_new_content",
+                    "importance_gte_8_count": 0,
+                    "last_sync_at": "2026-09-09T06:00:00Z",
+                    "last_sync_diagnostics": {
+                        "recorded_at": "2026-09-09T06:00:00Z",
+                        "status": "healthy",
+                        "processed": 9,
+                        "accepted_new_count": 1,
+                        "material_candidate_count": 0,
+                        "duplicate_count": 8,
+                        "failed": 0,
+                        "candidate_diagnostics": {
+                            "counts": {"stale_source_event": 1},
+                            "primary_reason": "stale_source_event",
+                        },
+                    },
+                },
                 "news": {"body": "must not be projected"},
             },
             "raw_body": "never copy",
@@ -45,6 +62,8 @@ def test_source_health_projection_keeps_only_public_creator_and_fj_fields() -> N
     assert result["creator"]["last_telegram_delivery_status"] == "delivered"
     assert result["creator"]["failure_reason_counts"]["known_source_template_not_matched"] == 3
     assert result["creator"]["last_failure_reason"] == "known_source_template_not_matched"
+    assert result["financialjuice"]["last_sync_at"].endswith("Z")
+    assert result["financialjuice"]["last_sync_diagnostics"]["candidate_diagnostics"]["primary_reason"] == "stale_source_event"
     assert "raw_body" not in result
     assert "gmail_message_id" not in result["creator"]
 

@@ -48,18 +48,93 @@ def _message_content_hash(record: Mapping[str, Any]) -> str:
 
 def _fresh_financialjuice_candidate(row: Mapping[str, Any]) -> bool:
     """Only a newly received, timestamped FJ fact may wake the monitor."""
-    if str(row.get("content_origin") or row.get("source") or "").casefold() != "financialjuice":
-        return False
+    return _financialjuice_candidate_reason(row) == ""
+
+
+def _financialjuice_candidate_reason(
+    row: Mapping[str, Any],
+    *,
+    now: datetime | None = None,
+) -> str:
+    """Explain why one sanitized FJ row cannot wake the event monitor.
+
+    This classifier deliberately uses the source publication time only.  It
+    is also kept content-free so the reason can safely be projected to the
+    Actions summary and the public health diagnostics.
+    """
+    if str(row.get("content_origin") or row.get("source") or "").strip().casefold() != "financialjuice":
+        return "not_financialjuice"
     value = row.get("source_published_at")
     if not value:
-        return False
+        return "missing_source_time"
     try:
         published = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
     except (TypeError, ValueError):
-        return False
+        return "invalid_source_time"
     published = published.replace(tzinfo=published.tzinfo or UTC).astimezone(UTC)
-    age = (datetime.now(UTC) - published).total_seconds()
-    return -300 <= age <= 1800
+    age = ((now or datetime.now(UTC)).astimezone(UTC) - published).total_seconds()
+    if age < -300:
+        return "future_source_time"
+    if age > 1800:
+        return "stale_source_event"
+    return ""
+
+
+_CANDIDATE_DIAGNOSTIC_KEYS = (
+    "new_event_eligible", "duplicate_message", "duplicate_fact", "stale_source_event",
+    "missing_source_time", "invalid_source_time", "future_source_time", "incomplete_parse",
+    "below_notification_gate", "manual_replay", "downstream_dispatch_failure",
+)
+
+
+def _candidate_diagnostics(
+    rows: list[Mapping[str, Any]],
+    store: EmailStore,
+    *,
+    source_is_financialjuice: bool = True,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Return bounded per-message candidate counts and a primary reason."""
+    counts = {key: 0 for key in _CANDIDATE_DIAGNOSTIC_KEYS}
+    batch_fact_keys: set[str] = set()
+    saw_financialjuice = False
+    for row in rows:
+        if not isinstance(row, Mapping):
+            continue
+        if str(row.get("content_origin") or row.get("source") or "").strip().casefold() != "financialjuice":
+            continue
+        saw_financialjuice = True
+        freshness_reason = _financialjuice_candidate_reason(row, now=now)
+        if freshness_reason:
+            counts[freshness_reason] += 1
+            continue
+        if row.get("source_identity_verified") is False:
+            counts["incomplete_parse"] += 1
+            continue
+        try:
+            importance = float(row.get("vendor_importance"))
+        except (TypeError, ValueError, OverflowError):
+            importance = 0.0
+        if importance < 8:
+            counts["below_notification_gate"] += 1
+            continue
+        fact_key = str(row.get("canonical_fact_key") or "").strip()
+        if not fact_key:
+            counts["incomplete_parse"] += 1
+        elif fact_key in batch_fact_keys or store.public_fact_exists(fact_key):
+            counts["duplicate_fact"] += 1
+        else:
+            counts["new_event_eligible"] += 1
+            batch_fact_keys.add(fact_key)
+    if source_is_financialjuice and not saw_financialjuice:
+        counts["incomplete_parse"] += 1
+    priority = (
+        "stale_source_event", "missing_source_time", "invalid_source_time",
+        "incomplete_parse", "duplicate_fact", "future_source_time",
+        "below_notification_gate", "manual_replay", "downstream_dispatch_failure",
+    )
+    primary = next((key for key in priority if counts[key]), "")
+    return {"counts": counts, "primary_reason": primary}
 
 
 def _normalize_service_account(value: str) -> str:
@@ -197,6 +272,14 @@ class GmailIngressService:
             "public_rich_observation_count": public_rich_count,
             "public_semantic_field_counts": semantic_field_counts,
         }
+        source_is_financialjuice = str(parsed["content_origin"] or "").strip().casefold() == "financialjuice"
+        public_rows_for_diagnostics = public_rows if isinstance(public_rows, list) else []
+        diagnostics = _candidate_diagnostics(
+            [row for row in public_rows_for_diagnostics if isinstance(row, Mapping)],
+            self.store,
+            source_is_financialjuice=source_is_financialjuice,
+        )
+        observation["candidate_diagnostics"] = diagnostics
         if parsed["parse_status"] in DLQ_STATES:
             self.store.record_dlq(
                 message_id=message_id or "unknown",
@@ -207,7 +290,10 @@ class GmailIngressService:
                 failure_reason=str(parsed.get("failure_reason") or "parse_failed"),
                 metadata={"content_origin": parsed["content_origin"]},
             )
-            return {"accepted": False, "status": parsed["parse_status"], "observation": observation}
+            return {
+                "accepted": False, "status": parsed["parse_status"], "observation": observation,
+                "candidate_diagnostics": diagnostics,
+            }
         claimed = self.store.claim_observation(observation)
         if not claimed:
             # A replay can carry a richer MIME part after a parser or Gmail
@@ -230,24 +316,10 @@ class GmailIngressService:
                 "public_observation_count": refreshed_public,
                 "public_rich_observation_count": public_rich_count,
                 "public_semantic_field_counts": semantic_field_counts,
+                "candidate_diagnostics": {"counts": {**diagnostics["counts"], "new_event_eligible": 0, "duplicate_message": 1, "duplicate_fact": 0}, "primary_reason": "duplicate_message"},
             }
-        candidate_rows = [
-            row for row in (public_rows if isinstance(public_rows, list) else [])
-            if isinstance(row, Mapping) and _fresh_financialjuice_candidate(row)
-        ]
-        known_fact_keys = {
-            str(row.get("canonical_fact_key") or "").strip()
-            for row in candidate_rows
-            if str(row.get("canonical_fact_key") or "").strip()
-            and self.store.public_fact_exists(str(row.get("canonical_fact_key") or ""))
-        }
-        batch_fact_keys: set[str] = set()
-        material_candidate = False
-        for row in candidate_rows:
-            fact_key = str(row.get("canonical_fact_key") or "").strip()
-            if fact_key and fact_key not in known_fact_keys and fact_key not in batch_fact_keys:
-                material_candidate = True
-                batch_fact_keys.add(fact_key)
+        diagnostic_counts = diagnostics["counts"]
+        material_candidate = diagnostic_counts["new_event_eligible"] > 0
         saved_public = 0
         if isinstance(public_rows, list):
             for row in public_rows:
@@ -270,6 +342,7 @@ class GmailIngressService:
             "public_rich_observation_count": public_rich_count,
             "public_semantic_field_counts": semantic_field_counts,
             "material_candidate": material_candidate,
+            "candidate_diagnostics": diagnostics,
         }
 
     def health(self) -> dict[str, Any]:

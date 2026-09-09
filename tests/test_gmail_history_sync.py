@@ -1,6 +1,8 @@
 import asyncio
 import base64
 import sys
+from datetime import UTC, datetime, timedelta
+from email.utils import format_datetime
 from pathlib import Path
 
 RAILWAY_MODULES = Path(__file__).parents[1] / "railway-monitor"
@@ -17,6 +19,15 @@ from gmail_history_sync import (  # noqa: E402
 from gmail_watch import GmailWatchConfig  # noqa: E402
 
 from gmail_ingress import GmailIngressService  # noqa: E402
+
+
+def _candidate_diagnostics(primary: str = "", **counts: int) -> dict:
+    keys = (
+        "new_event_eligible", "duplicate_message", "duplicate_fact", "stale_source_event",
+        "missing_source_time", "invalid_source_time", "future_source_time", "incomplete_parse",
+        "below_notification_gate", "manual_replay", "downstream_dispatch_failure",
+    )
+    return {"counts": {key: counts.get(key, 0) for key in keys}, "primary_reason": primary}
 
 
 def _encoded(value: str) -> str:
@@ -147,6 +158,57 @@ class _RetiredCreatorClient(_Client):
         return _Response(message)
 
 
+class _MissingSourceDateClient(_Client):
+    async def get(self, url, **kwargs):
+        response = await super().get(url, **kwargs)
+        if url.endswith("/messages/m-1"):
+            message = response.json()
+            message["payload"]["headers"] = [
+                header for header in message["payload"]["headers"]
+                if header["name"].casefold() != "date"
+            ]
+            return _Response(message)
+        return response
+
+
+class _FreshFinancialJuiceClient(_Client):
+    async def get(self, url, **kwargs):
+        self.calls.append(("GET", url, kwargs))
+        if url.endswith("/history"):
+            return _Response({"historyId": "h-fresh", "history": [{"messagesAdded": [{"message": {"id": "m-fresh"}}]}]})
+        message = _message("m-fresh")
+        message["payload"]["headers"] = [
+            header
+            for header in message["payload"]["headers"]
+            if header["name"].casefold() != "date"
+        ] + [{
+            "name": "Date",
+            "value": format_datetime(datetime.now(UTC) - timedelta(minutes=2)),
+        }]
+        return _Response(message)
+
+
+class _PaginatedClient(_Client):
+    async def get(self, url, **kwargs):
+        self.calls.append(("GET", url, kwargs))
+        if url.endswith("/history"):
+            token = (kwargs.get("params") or {}).get("pageToken")
+            if token == "page-2":
+                return _Response({"historyId": "h2", "history": [{"messagesAdded": [{"message": {"id": "m-2"}}]}]})
+            return _Response({
+                "historyId": "h1",
+                "nextPageToken": "page-2",
+                "history": [{"messagesAdded": [{"message": {"id": "m-1"}}]}],
+            })
+        message_id = url.rsplit("/", 1)[-1]
+        return _Response(_message(message_id))
+
+
+class _FailingIngress:
+    def accept_email(self, _record):
+        raise RuntimeError("public_fact_lookup_failed")
+
+
 def _config() -> GmailWatchConfig:
     return GmailWatchConfig(
         topic_name="projects/test/topics/gmail",
@@ -222,11 +284,16 @@ def test_sync_history_routes_message_and_saves_public_projection(tmp_path) -> No
         "duplicate_count": 0,
         "accepted_new_count": 1,
         "material_candidate_count": 0,
+        "candidate_diagnostics": _candidate_diagnostics("stale_source_event", stale_source_event=1),
     }
     health = store.health()
     assert health["public_observation_count"] == 1
     assert health["source_health"]["financialjuice"]["parsed_count"] == 1
     assert store.cursor()["last_history_id"] == "h1"
+    persisted = store.cursor()["last_sync_diagnostics"]
+    assert persisted["material_candidate_count"] == 0
+    assert persisted["candidate_diagnostics"]["counts"]["stale_source_event"] == 1
+    assert persisted["candidate_diagnostics"]["primary_reason"] == "stale_source_event"
 
 
 def test_sync_history_suppresses_retired_creator_and_advances_cursor(tmp_path) -> None:
@@ -243,6 +310,7 @@ def test_sync_history_suppresses_retired_creator_and_advances_cursor(tmp_path) -
         "accepted_new_count": 0,
         "material_candidate_count": 0,
         "suppressed": 1,
+        "candidate_diagnostics": _candidate_diagnostics(),
     }
     assert store.cursor()["last_history_id"] == "h1"
     assert store.health()["public_observation_count"] == 0
@@ -262,6 +330,7 @@ def test_sync_history_fetches_text_attachment_before_ingress(tmp_path) -> None:
         "duplicate_count": 0,
         "accepted_new_count": 1,
         "material_candidate_count": 0,
+        "candidate_diagnostics": _candidate_diagnostics("stale_source_event", stale_source_event=1),
     }
     observation = store.public_observations(limit=1)[0]
     assert "某公司據報正在評估合作" in observation["vendor_translation"]
@@ -281,7 +350,50 @@ def test_sync_history_keeps_message_when_optional_text_attachment_is_unavailable
         "duplicate_count": 0,
         "accepted_new_count": 0,
         "material_candidate_count": 0,
+        "candidate_diagnostics": _candidate_diagnostics("incomplete_parse", incomplete_parse=1),
     }
+
+
+def test_sync_history_reports_missing_source_time_without_candidate(tmp_path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(last_history_id="h0")
+    ingress = GmailIngressService(store, _config())
+    result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_MissingSourceDateClient))
+    assert result["accepted_new_count"] == 1
+    assert result["material_candidate_count"] == 0
+    assert result["candidate_diagnostics"]["counts"]["missing_source_time"] == 1
+    assert result["candidate_diagnostics"]["primary_reason"] == "missing_source_time"
+
+
+def test_sync_history_routes_fresh_high_importance_fj_as_material_candidate(tmp_path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(last_history_id="h0")
+    ingress = GmailIngressService(store, _config())
+    result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_FreshFinancialJuiceClient))
+    assert result["accepted_new_count"] == 1
+    assert result["material_candidate_count"] == 1
+    assert result["candidate_diagnostics"]["counts"]["new_event_eligible"] == 1
+    assert result["candidate_diagnostics"]["primary_reason"] == ""
+    assert store.cursor()["last_history_id"] == "h-fresh"
+
+
+def test_sync_history_processes_all_history_pages_before_advancing_cursor(tmp_path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(last_history_id="h0")
+    ingress = GmailIngressService(store, _config())
+    result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_PaginatedClient))
+    assert result["processed"] == 2
+    assert result["history_pages"] == 2
+    assert store.cursor()["last_history_id"] == "h2"
+
+
+def test_sync_history_does_not_advance_cursor_after_candidate_lookup_failure(tmp_path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(last_history_id="h0")
+    result = asyncio.run(sync_gmail_history(_config(), store, _FailingIngress(), client_factory=_Client))
+    assert result["failed"] == 1
+    assert result["failure_types"] == {"RuntimeError": 1}
+    assert store.cursor()["last_history_id"] == "h0"
 
 
 def test_sync_history_skips_deleted_history_messages(tmp_path) -> None:
@@ -298,6 +410,7 @@ def test_sync_history_skips_deleted_history_messages(tmp_path) -> None:
         "accepted_new_count": 0,
         "material_candidate_count": 0,
         "skipped": 1,
+        "candidate_diagnostics": _candidate_diagnostics(),
     }
 
 
@@ -331,6 +444,7 @@ def test_expired_history_cursor_is_cleared_and_reported_as_gap(tmp_path) -> None
         "accepted_new_count": 0,
         "material_candidate_count": 0,
         "history_gap": True,
+        "candidate_diagnostics": _candidate_diagnostics(),
     }
     cursor = store.cursor()
     assert cursor["last_history_id"] is None

@@ -81,6 +81,7 @@ class EmailStore:
                     last_sync_at TEXT,
                     last_full_sync_at TEXT,
                     last_message_id TEXT,
+                    last_sync_diagnostics TEXT,
                     updated_at TEXT NOT NULL
                 );
                 CREATE TABLE IF NOT EXISTS email_observations (
@@ -126,7 +127,7 @@ class EmailStore:
             # Existing Railway volumes predate the watch lease observability
             # columns.  Migrate in place without dropping the durable cursor.
             columns = {str(row[1]) for row in connection.execute("PRAGMA table_info(gmail_cursor)")}
-            for name in ("watch_last_renewed_at", "watch_error", "watch_error_at"):
+            for name in ("watch_last_renewed_at", "watch_error", "watch_error_at", "last_sync_diagnostics"):
                 if name not in columns:
                     connection.execute(f"ALTER TABLE gmail_cursor ADD COLUMN {name} TEXT")
 
@@ -144,8 +145,17 @@ class EmailStore:
                 "last_sync_at": None,
                 "last_full_sync_at": None,
                 "last_message_id": None,
+                "last_sync_diagnostics": None,
             }
-        return {key: row[key] for key in row.keys() if key != "id" and key != "updated_at"}
+        result = {key: row[key] for key in row.keys() if key != "id" and key != "updated_at"}
+        raw_diagnostics = result.get("last_sync_diagnostics")
+        if isinstance(raw_diagnostics, str) and raw_diagnostics:
+            try:
+                decoded = json.loads(raw_diagnostics)
+            except (TypeError, json.JSONDecodeError):
+                decoded = None
+            result["last_sync_diagnostics"] = decoded if isinstance(decoded, dict) else None
+        return result
 
     def save_cursor(self, **values: Any) -> dict[str, Any]:
         current = self.cursor()
@@ -155,8 +165,8 @@ class EmailStore:
                 """INSERT INTO gmail_cursor(id, watch_expiration, watch_last_renewed_at,
                    watch_error, watch_error_at, last_history_id,
                    last_notification_at, last_sync_at, last_full_sync_at,
-                   last_message_id, updated_at)
-                   VALUES(1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   last_message_id, last_sync_diagnostics, updated_at)
+                   VALUES(1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                    ON CONFLICT(id) DO UPDATE SET watch_expiration=excluded.watch_expiration,
                    watch_last_renewed_at=excluded.watch_last_renewed_at,
                    watch_error=excluded.watch_error,
@@ -166,12 +176,16 @@ class EmailStore:
                    last_sync_at=excluded.last_sync_at,
                    last_full_sync_at=excluded.last_full_sync_at,
                    last_message_id=excluded.last_message_id,
+                   last_sync_diagnostics=excluded.last_sync_diagnostics,
                    updated_at=excluded.updated_at""",
                 (
                     current["watch_expiration"], current["watch_last_renewed_at"],
                     current["watch_error"], current["watch_error_at"], current["last_history_id"],
                     current["last_notification_at"], current["last_sync_at"],
-                    current["last_full_sync_at"], current["last_message_id"], _now(),
+                    current["last_full_sync_at"], current["last_message_id"],
+                    json.dumps(current["last_sync_diagnostics"], ensure_ascii=False, sort_keys=True)
+                    if isinstance(current.get("last_sync_diagnostics"), dict) else None,
+                    _now(),
                 ),
             )
         return current
@@ -382,8 +396,16 @@ class EmailStore:
                 "last_telegram_delivery_at": None,
                 "last_telegram_delivery_status": "not_checked",
                 "failure_reason_counts": {}, "last_failure_reason": None,
+                "last_sync_at": None, "last_sync_diagnostics": None,
             },
         }
+
+        cursor = self.cursor()
+        fj_cursor_diagnostics = cursor.get("last_sync_diagnostics")
+        if isinstance(cursor.get("last_sync_at"), str):
+            sources["financialjuice"]["last_sync_at"] = cursor["last_sync_at"]
+        if isinstance(fj_cursor_diagnostics, dict):
+            sources["financialjuice"]["last_sync_diagnostics"] = fj_cursor_diagnostics
 
         def bucket(source: Any) -> str | None:
             value = str(source or "").strip().casefold()

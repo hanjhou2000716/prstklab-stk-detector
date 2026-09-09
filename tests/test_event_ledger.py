@@ -150,6 +150,56 @@ def test_scheduled_anchor_claim_is_unique_and_coalesces_same_decision(tmp_path):
     assert second.claim_scheduled_brief("taiwan:2026-09-07:morning", decision_fingerprint="decision-1", recipient_hashes=("r",))["status"] == "same_decision"
 
 
+def test_scheduled_anchor_policy_sends_each_eligible_anchor_with_same_decision(tmp_path):
+    ledger = EventLedger(tmp_path / "ledger.json")
+    first = ledger.claim_scheduled_brief(
+        "taiwan:2026-09-07:morning",
+        decision_fingerprint="decision-1",
+        market_scope="台股",
+        delivery_policy="scheduled_anchor",
+        recipient_hashes=("r",),
+    )
+    assert first["status"] == "claimed"
+    ledger.complete_notification_claim(first["notification_key"], delivered_recipient_hashes=("r",))
+
+    second = ledger.claim_scheduled_brief(
+        "taiwan:2026-09-07:post_close",
+        decision_fingerprint="decision-1",
+        market_scope="台股",
+        delivery_policy="scheduled_anchor",
+        recipient_hashes=("r",),
+    )
+    assert second["status"] == "claimed"
+    assert second["notification_key"] != first["notification_key"]
+
+
+def test_scheduled_anchor_preview_policy_does_not_coalesce_same_decision(tmp_path):
+    ledger = EventLedger(tmp_path / "ledger.json")
+    first = ledger.claim_scheduled_brief(
+        "us:2026-09-07:us_premarket",
+        decision_fingerprint="decision-1",
+        market_scope="美股",
+        delivery_policy="scheduled_anchor",
+        recipient_hashes=("r",),
+    )
+    ledger.complete_notification_claim(first["notification_key"], delivered_recipient_hashes=("r",))
+    preview = ledger.scheduled_decision_preview(
+        "us:2026-09-07:us_premarket",
+        decision_fingerprint="decision-1",
+        market_scope="美股",
+        delivery_policy="scheduled_anchor",
+    )
+    assert preview["suppression_reason"] == "anchor_already_delivered"
+
+    next_preview = ledger.scheduled_decision_preview(
+        "us:2026-09-08:us_premarket",
+        decision_fingerprint="decision-1",
+        market_scope="美股",
+        delivery_policy="scheduled_anchor",
+    )
+    assert next_preview["delivery_eligible"] is True
+
+
 def test_scheduled_decision_compares_only_latest_market_state_for_a_b_a(tmp_path):
     ledger = EventLedger(tmp_path / "ledger.json")
     first = datetime(2026, 9, 7, 1, 0, tzinfo=UTC)

@@ -46,6 +46,12 @@ def main() -> int:
         # The operator replay is diagnostic-only.  It may refresh a sanitized
         # observation, but it must never wake the realtime event monitor.
         result["material_candidate_count"] = 0
+        diagnostics = result.get("candidate_diagnostics")
+        if isinstance(diagnostics, dict):
+            counts = diagnostics.setdefault("counts", {})
+            counts["new_event_eligible"] = 0
+            counts["manual_replay"] = 1
+            diagnostics["primary_reason"] = "manual_replay"
     else:
         result = asyncio.run(sync_gmail_history(config, store, ingress, max_messages=args.max_messages))
     if result.get("status") in {"healthy", "no_history_cursor"}:
@@ -53,7 +59,7 @@ def main() -> int:
     safe = {key: result[key] for key in (
         "status", "processed", "failed", "duplicate", "duplicate_count", "accepted_new_count",
         "material_candidate_count", "skipped", "history_gap", "failure_types",
-        "latest_financialjuice_diagnostics",
+        "latest_financialjuice_diagnostics", "candidate_diagnostics",
     ) if key in result}
     print(json.dumps(safe, ensure_ascii=False, sort_keys=True))
     return 0 if result.get("failed", 0) == 0 else 1

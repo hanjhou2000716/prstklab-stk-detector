@@ -32,10 +32,96 @@ MESSAGE_LIST_URL = MESSAGE_URL
 LATEST_FINANCIALJUICE_QUERY = "{from:financialjuice subject:FinancialJuice}"
 DEFAULT_MAX_MESSAGES = 50
 MAX_PAGE_SIZE = 100
+MAX_HISTORY_PAGES = 20
 
 
 class GmailHistorySyncError(RuntimeError):
     """Bounded, non-sensitive synchronisation failure."""
+
+
+_CANDIDATE_DIAGNOSTIC_KEYS = (
+    "new_event_eligible", "duplicate_message", "duplicate_fact", "stale_source_event",
+    "missing_source_time", "invalid_source_time", "future_source_time", "incomplete_parse",
+    "below_notification_gate", "manual_replay", "downstream_dispatch_failure",
+)
+
+
+def _empty_candidate_diagnostics() -> dict[str, Any]:
+    return {"counts": {key: 0 for key in _CANDIDATE_DIAGNOSTIC_KEYS}, "primary_reason": ""}
+
+
+def _merge_candidate_diagnostics(total: dict[str, Any], value: Any) -> None:
+    if not isinstance(value, Mapping):
+        return
+    counts = value.get("counts")
+    if isinstance(counts, Mapping):
+        target = total.setdefault("counts", {})
+        for key in _CANDIDATE_DIAGNOSTIC_KEYS:
+            try:
+                target[key] = int(target.get(key) or 0) + max(0, int(counts.get(key) or 0))
+            except (TypeError, ValueError, OverflowError):
+                continue
+    reason = str(value.get("primary_reason") or "").strip()
+    if reason and not str(total.get("primary_reason") or "").strip():
+        total["primary_reason"] = reason
+
+
+def _with_candidate_diagnostics(result: dict[str, Any], diagnostics: dict[str, Any]) -> dict[str, Any]:
+    result["candidate_diagnostics"] = diagnostics
+    return result
+
+
+def _sync_diagnostics_record(result: Mapping[str, Any], diagnostics: Mapping[str, Any]) -> dict[str, Any]:
+    """Build the bounded record exposed to operators and the release export."""
+    def counter(key: str) -> int:
+        try:
+            return max(0, min(1_000_000_000, int(result.get(key) or 0)))
+        except (TypeError, ValueError, OverflowError):
+            return 0
+
+    counts = diagnostics.get("counts") if isinstance(diagnostics, Mapping) else None
+    safe_counts: dict[str, int] = {}
+    for key in _CANDIDATE_DIAGNOSTIC_KEYS:
+        try:
+            safe_counts[key] = max(0, min(1_000_000_000, int(counts.get(key) or 0))) if isinstance(counts, Mapping) else 0
+        except (TypeError, ValueError, OverflowError):
+            safe_counts[key] = 0
+    return {
+        "recorded_at": datetime.now(UTC).isoformat(),
+        "status": str(result.get("status") or "unknown")[:80],
+        "processed": counter("processed"),
+        "accepted_new_count": counter("accepted_new_count"),
+        "material_candidate_count": counter("material_candidate_count"),
+        "duplicate_count": counter("duplicate_count"),
+        "failed": counter("failed"),
+        "candidate_diagnostics": {
+            "counts": safe_counts,
+            "primary_reason": str(diagnostics.get("primary_reason") or "")[:80],
+        },
+    }
+
+
+def _persist_sync_diagnostics(store: EmailStore, result: Mapping[str, Any], diagnostics: Mapping[str, Any]) -> None:
+    """Persist only counters/reasons; diagnostics must never contain mail data."""
+    try:
+        store.save_cursor(last_sync_diagnostics=_sync_diagnostics_record(result, diagnostics))
+    except Exception:  # pragma: no cover - storage failure is already reflected by the sync result
+        return
+
+
+def _manual_replay_result(
+    store: EmailStore,
+    result: dict[str, Any],
+    diagnostics: dict[str, Any],
+) -> dict[str, Any]:
+    """Make the latest-message diagnostic path permanently non-sendable."""
+    counts = diagnostics.setdefault("counts", {})
+    counts["manual_replay"] = max(1, int(counts.get("manual_replay") or 0))
+    counts["new_event_eligible"] = 0
+    diagnostics["primary_reason"] = "manual_replay"
+    result["material_candidate_count"] = 0
+    _persist_sync_diagnostics(store, result, diagnostics)
+    return _with_candidate_diagnostics(result, diagnostics)
 
 
 def _recover_expired_cursor(store: EmailStore) -> None:
@@ -305,43 +391,64 @@ async def sync_gmail_history(
     max_messages: int = DEFAULT_MAX_MESSAGES,
 ) -> dict[str, Any]:
     """Process bounded ``messageAdded`` history and return safe counters."""
+    diagnostics = _empty_candidate_diagnostics()
     if config.missing:
-        return {"status": "configuration_missing", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "duplicate": 0, "duplicate_count": 0, "failed": 0}
+        return _with_candidate_diagnostics({"status": "configuration_missing", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "duplicate": 0, "duplicate_count": 0, "failed": 0}, diagnostics)
     if config.oauth_missing:
-        return {"status": "configuration_missing", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "duplicate": 0, "duplicate_count": 0, "failed": 0}
+        return _with_candidate_diagnostics({"status": "configuration_missing", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "duplicate": 0, "duplicate_count": 0, "failed": 0}, diagnostics)
     cursor = store.cursor()
     history_id = str(cursor.get("last_history_id") or "").strip()
     if not history_id:
+        result = {"status": "no_history_cursor", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "duplicate": 0, "duplicate_count": 0, "failed": 0}
         store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
-        return {"status": "no_history_cursor", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "duplicate": 0, "duplicate_count": 0, "failed": 0}
+        _persist_sync_diagnostics(store, result, diagnostics)
+        return _with_candidate_diagnostics(result, diagnostics)
 
     bounded = max(1, min(MAX_PAGE_SIZE, int(max_messages)))
     processed = accepted_new = material_candidates = failed = duplicate = skipped = suppressed = 0
     failure_types: dict[str, int] = {}
+    result: dict[str, Any] = {}
     try:
         async with client_factory(timeout=config.timeout_seconds, follow_redirects=True) as client:
             token = await _access_token(config, client)
-            history = await _get_json(
-                client,
-                HISTORY_URL,
-                token,
-                {"startHistoryId": history_id, "historyTypes": "messageAdded", "maxResults": bounded},
-            )
             message_ids: list[str] = []
-            for row in history.get("history") or ():
-                if not isinstance(row, Mapping):
-                    continue
-                for added in row.get("messagesAdded") or ():
-                    if not isinstance(added, Mapping):
+            history_page_token = ""
+            history_pages = 0
+            latest_history = history_id
+            pagination_complete = False
+            while history_pages < MAX_HISTORY_PAGES:
+                params: dict[str, Any] = {
+                    "startHistoryId": history_id,
+                    "historyTypes": "messageAdded",
+                    "maxResults": min(MAX_PAGE_SIZE, max(1, bounded - len(message_ids))),
+                }
+                if history_page_token:
+                    params["pageToken"] = history_page_token
+                history = await _get_json(client, HISTORY_URL, token, params)
+                history_pages += 1
+                latest_history = str(history.get("historyId") or latest_history).strip() or latest_history
+                for row in history.get("history") or ():
+                    if not isinstance(row, Mapping):
                         continue
-                    message = added.get("message")
-                    message_id = str(message.get("id") or "").strip() if isinstance(message, Mapping) else ""
-                    if message_id and message_id not in message_ids:
-                        message_ids.append(message_id)
+                    for added in row.get("messagesAdded") or ():
+                        if not isinstance(added, Mapping):
+                            continue
+                        message = added.get("message")
+                        message_id = str(message.get("id") or "").strip() if isinstance(message, Mapping) else ""
+                        if message_id and message_id not in message_ids:
+                            message_ids.append(message_id)
+                        if len(message_ids) >= bounded:
+                            break
                     if len(message_ids) >= bounded:
                         break
-                if len(message_ids) >= bounded:
+                history_page_token = str(history.get("nextPageToken") or "").strip()
+                if not history_page_token or len(message_ids) >= bounded:
+                    pagination_complete = not history_page_token or len(message_ids) >= bounded
                     break
+            if history_page_token and history_pages >= MAX_HISTORY_PAGES:
+                raise GmailHistorySyncError("history_pagination_limit")
+            if not pagination_complete:
+                raise GmailHistorySyncError("history_pagination_incomplete")
             for message_id in message_ids:
                 try:
                     message = await _get_json(client, f"{MESSAGE_URL}/{message_id}", token, {"format": "full"})
@@ -350,6 +457,7 @@ async def sync_gmail_history(
                     record["body"] = await _message_body(client, token, message_id, payload)
                     result = ingress.accept_email(record)
                     processed += 1
+                    _merge_candidate_diagnostics(diagnostics, result.get("candidate_diagnostics"))
                     if result.get("status") == "duplicate":
                         duplicate += 1
                     elif result.get("accepted") is True:
@@ -364,21 +472,60 @@ async def sync_gmail_history(
                     failed += 1
                     failure_type = type(error).__name__
                     failure_types[failure_type] = failure_types.get(failure_type, 0) + 1
-                except (ValueError, TypeError, KeyError) as error:
+                except (ValueError, TypeError, KeyError, RuntimeError) as error:
                     failed += 1
                     failure_type = type(error).__name__
                     failure_types[failure_type] = failure_types.get(failure_type, 0) + 1
-            latest_history = str(history.get("historyId") or "").strip()
-            store.save_cursor(
-                last_history_id=latest_history or history_id,
-                last_full_sync_at=datetime.now(UTC).isoformat(),
-            )
+            # Do not acknowledge a Gmail history page when any message failed
+            # after fetch.  Keeping the old cursor makes the failed message
+            # retryable; already completed messages are idempotent on replay.
+            if failed == 0:
+                result = {
+                    "status": "healthy", "processed": processed,
+                    "accepted_new_count": accepted_new,
+                    "material_candidate_count": material_candidates,
+                    "failed": failed, "duplicate": duplicate,
+                    "duplicate_count": duplicate,
+                }
+                if skipped:
+                    result["skipped"] = skipped
+                if suppressed:
+                    result["suppressed"] = suppressed
+                if failure_types:
+                    result["failure_types"] = dict(sorted(failure_types.items()))
+                if history_pages > 1:
+                    result["history_pages"] = history_pages
+                store.save_cursor(
+                    last_history_id=latest_history or history_id,
+                    last_full_sync_at=datetime.now(UTC).isoformat(),
+                    last_sync_diagnostics=_sync_diagnostics_record(result, diagnostics),
+                )
+            else:
+                result = {
+                    "status": "degraded", "processed": processed,
+                    "accepted_new_count": accepted_new,
+                    "material_candidate_count": material_candidates,
+                    "failed": failed, "duplicate": duplicate,
+                    "duplicate_count": duplicate,
+                }
+                if skipped:
+                    result["skipped"] = skipped
+                if suppressed:
+                    result["suppressed"] = suppressed
+                if failure_types:
+                    result["failure_types"] = dict(sorted(failure_types.items()))
+                if history_pages > 1:
+                    result["history_pages"] = history_pages
+                store.save_cursor(
+                    last_full_sync_at=datetime.now(UTC).isoformat(),
+                    last_sync_diagnostics=_sync_diagnostics_record(result, diagnostics),
+                )
     except (httpx.TimeoutException, httpx.HTTPError) as error:
-        store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
         result = {"status": type(error).__name__.lower(), "processed": processed, "accepted_new_count": accepted_new, "material_candidate_count": material_candidates, "failed": failed + 1, "duplicate": duplicate, "duplicate_count": duplicate}
         if suppressed:
             result["suppressed"] = suppressed
-        return result
+        store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat(), last_sync_diagnostics=_sync_diagnostics_record(result, diagnostics))
+        return _with_candidate_diagnostics(result, diagnostics)
     except GmailHistorySyncError as error:
         if str(error) == "http_404":
             _recover_expired_cursor(store)
@@ -394,28 +541,14 @@ async def sync_gmail_history(
             }
             if suppressed:
                 result["suppressed"] = suppressed
-            return result
-        store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
+            _persist_sync_diagnostics(store, result, diagnostics)
+            return _with_candidate_diagnostics(result, diagnostics)
         result = {"status": str(error), "processed": processed, "accepted_new_count": accepted_new, "material_candidate_count": material_candidates, "failed": failed + 1, "duplicate": duplicate, "duplicate_count": duplicate}
         if suppressed:
             result["suppressed"] = suppressed
-        return result
-    result = {
-        "status": "healthy" if failed == 0 else "degraded",
-        "processed": processed,
-        "accepted_new_count": accepted_new,
-        "material_candidate_count": material_candidates,
-        "failed": failed,
-        "duplicate": duplicate,
-        "duplicate_count": duplicate,
-    }
-    if skipped:
-        result["skipped"] = skipped
-    if suppressed:
-        result["suppressed"] = suppressed
-    if failure_types:
-        result["failure_types"] = dict(sorted(failure_types.items()))
-    return result
+        store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat(), last_sync_diagnostics=_sync_diagnostics_record(result, diagnostics))
+        return _with_candidate_diagnostics(result, diagnostics)
+    return _with_candidate_diagnostics(result, diagnostics)
 
 
 async def sync_latest_financialjuice(
@@ -426,8 +559,9 @@ async def sync_latest_financialjuice(
     client_factory: Callable[..., Any] = httpx.AsyncClient,
 ) -> dict[str, Any]:
     """Reprocess exactly the newest FinancialJuice mail without moving the cursor."""
+    diagnostics = _empty_candidate_diagnostics()
     if config.missing or config.oauth_missing:
-        return {"status": "configuration_missing", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "failed": 0, "duplicate": 0, "duplicate_count": 0}
+        return _manual_replay_result(store, {"status": "configuration_missing", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "failed": 0, "duplicate": 0, "duplicate_count": 0}, diagnostics)
     processed = accepted_new = material_candidates = failed = duplicate = 0
     body_summary: dict[str, Any] = {}
     try:
@@ -442,13 +576,14 @@ async def sync_latest_financialjuice(
             if isinstance(messages, list) and messages and isinstance(messages[0], Mapping):
                 message_id = str(messages[0].get("id") or "").strip()
             if not message_id:
-                return {"status": "no_financialjuice_message", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "failed": 0, "duplicate": 0, "duplicate_count": 0}
+                return _manual_replay_result(store, {"status": "no_financialjuice_message", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "failed": 0, "duplicate": 0, "duplicate_count": 0}, diagnostics)
             message = await _get_json(client, f"{MESSAGE_URL}/{message_id}", token, {"format": "full"})
             record = message_record(message)
             payload = message.get("payload") if isinstance(message.get("payload"), Mapping) else {}
             parts = _walk_text(payload)
             record["body"] = await _message_body(client, token, message_id, payload)
             result = ingress.accept_email(record)
+            _merge_candidate_diagnostics(diagnostics, result.get("candidate_diagnostics"))
             processed = 1
             accepted_new = int(result.get("accepted") is True)
             material_candidates = int(result.get("material_candidate") is True)
@@ -458,15 +593,15 @@ async def sync_latest_financialjuice(
             body_summary["sender_domain"] = _sender_domain(record.get("sender"))
     except GmailHistorySyncError as error:
         failed = 1
-        return {"status": str(error), "processed": processed, "accepted_new_count": accepted_new, "material_candidate_count": material_candidates, "failed": failed, "duplicate": duplicate, "duplicate_count": duplicate}
+        return _manual_replay_result(store, {"status": str(error), "processed": processed, "accepted_new_count": accepted_new, "material_candidate_count": material_candidates, "failed": failed, "duplicate": duplicate, "duplicate_count": duplicate}, diagnostics)
     except (httpx.TimeoutException, httpx.HTTPError, ValueError, TypeError, KeyError) as error:
         failed = 1
-        return {"status": type(error).__name__.lower(), "processed": processed, "accepted_new_count": accepted_new, "material_candidate_count": material_candidates, "failed": failed, "duplicate": duplicate, "duplicate_count": duplicate}
-    return {
+        return _manual_replay_result(store, {"status": type(error).__name__.lower(), "processed": processed, "accepted_new_count": accepted_new, "material_candidate_count": material_candidates, "failed": failed, "duplicate": duplicate, "duplicate_count": duplicate}, diagnostics)
+    return _manual_replay_result(store, {
         "status": "healthy", "processed": processed, "accepted_new_count": accepted_new,
         "material_candidate_count": material_candidates, "failed": failed, "duplicate": duplicate, "duplicate_count": duplicate,
         "latest_financialjuice_diagnostics": body_summary,
-    }
+    }, diagnostics)
 
 
 __all__ = ["GmailHistorySyncError", "message_record", "sync_gmail_history", "sync_latest_financialjuice"]
