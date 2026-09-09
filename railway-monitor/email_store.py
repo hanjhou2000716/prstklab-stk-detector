@@ -453,8 +453,8 @@ class EmailStore:
         sync_status = str(cursor.get("last_sync_status") or "").strip().casefold()
         sync_error = str(cursor.get("last_sync_error") or "").strip()
         sync_state = (
-            "degraded" if sync_status in {"degraded", "failed", "history_cursor_expired"} or sync_error
-            else "healthy" if cursor.get("last_sync_completed_at") or cursor.get("last_sync_at")
+            "degraded" if sync_status in {"degraded", "failed", "history_cursor_expired", "running"} or sync_error
+            else "healthy" if cursor.get("last_sync_completed_at")
             else "no_new_content"
         )
         sources = {
@@ -482,10 +482,13 @@ class EmailStore:
                 "last_telegram_delivery_at": None,
                 "last_telegram_delivery_status": "not_checked",
                 "failure_reason_counts": {}, "last_failure_reason": None,
-                "push_delivery_verified": bool(cursor.get("last_push_received_at") or cursor.get("last_notification_at")),
-                "last_push_received_at": cursor.get("last_push_received_at") or cursor.get("last_notification_at"),
+                # The legacy last_notification_at was also written by the old
+                # parser.  It is retained for readers but can never prove a
+                # real Pub/Sub push.
+                "push_delivery_verified": bool(cursor.get("last_push_received_at")),
+                "last_push_received_at": cursor.get("last_push_received_at"),
                 "last_sync_started_at": cursor.get("last_sync_started_at"),
-                "last_sync_completed_at": cursor.get("last_sync_completed_at") or cursor.get("last_sync_at"),
+                "last_sync_completed_at": cursor.get("last_sync_completed_at"),
                 "last_sync_status": sync_status or "not_checked",
                 "last_sync_error": sync_error or None,
                 "last_sync_at": None, "last_sync_diagnostics": None,
@@ -646,6 +649,10 @@ class EmailStore:
             else:
                 item["status"] = "no_new_content"
         fj = sources["financialjuice"]
+        # Do not let historical parsed/public rows overwrite a current sync
+        # failure or an in-flight sync state.
+        if sync_state == "degraded":
+            fj["status"] = "degraded"
         if fj["public_observation_count"]:
             if fj["qualifying_item_count"]:
                 fj["decision"] = "priority_items_ready_for_release_review"

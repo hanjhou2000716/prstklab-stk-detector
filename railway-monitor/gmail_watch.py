@@ -346,8 +346,8 @@ def health(
             return 0
         return max(0, parsed)
 
-    push_received = timestamp("last_push_received_at", "last_notification_at")
-    sync_completed = timestamp("last_sync_completed_at", "last_sync_at")
+    push_received = timestamp("last_push_received_at")
+    sync_completed = timestamp("last_sync_completed_at")
     source_health = store.get("source_health") if isinstance(store.get("source_health"), Mapping) else {}
     fj_health = source_health.get("financialjuice") if isinstance(source_health, Mapping) else {}
     parsed_at = (

@@ -402,6 +402,8 @@ def test_sync_history_does_not_advance_cursor_after_candidate_lookup_failure(tmp
     assert store.cursor()["last_sync_status"] == "degraded"
     assert store.cursor()["last_sync_error"] == "degraded"
     assert store.cursor()["last_sync_at"] is None
+    assert store.health()["status"] == "degraded"
+    assert store.health()["source_health"]["financialjuice"]["status"] == "degraded"
 
 
 def test_sync_history_skips_deleted_history_messages(tmp_path) -> None:

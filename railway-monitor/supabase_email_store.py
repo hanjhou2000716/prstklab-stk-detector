@@ -328,20 +328,20 @@ class SupabaseEmailStore:
         sync_status = str(cursor.get("last_sync_status") or "").strip().casefold()
         sync_error = str(cursor.get("last_sync_error") or "").strip()
         status = (
-            "degraded" if sync_status in {"degraded", "failed", "history_cursor_expired"} or sync_error
-            else "healthy" if cursor.get("last_sync_completed_at") or cursor.get("last_sync_at")
+            "degraded" if sync_status in {"degraded", "failed", "history_cursor_expired", "running"} or sync_error
+            else "healthy" if cursor.get("last_sync_completed_at")
             else "no_new_content"
         )
         return {
             "financialjuice": {
                 "status": status,
                 "last_sync_at": cursor.get("last_sync_at"),
-                "last_push_received_at": cursor.get("last_push_received_at") or cursor.get("last_notification_at"),
+                "last_push_received_at": cursor.get("last_push_received_at"),
                 "last_sync_started_at": cursor.get("last_sync_started_at"),
-                "last_sync_completed_at": cursor.get("last_sync_completed_at") or cursor.get("last_sync_at"),
+                "last_sync_completed_at": cursor.get("last_sync_completed_at"),
                 "last_sync_status": sync_status or "not_checked",
                 "last_sync_error": sync_error or None,
-                "push_delivery_verified": bool(cursor.get("last_push_received_at") or cursor.get("last_notification_at")),
+                "push_delivery_verified": bool(cursor.get("last_push_received_at")),
                 "last_sync_diagnostics": diagnostics,
             }
         }
