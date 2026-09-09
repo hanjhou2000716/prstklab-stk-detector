@@ -549,7 +549,9 @@ def _schedule_decision_category(
         return "data_insufficient", reason
     if delivery_eligible and decision_event is not None:
         return "notification_candidate", "candidate_ready"
-    if reason in {"same_decision_unchanged", "anchor_already_delivered", "no_material_change"}:
+    if reason == "anchor_already_delivered":
+        return "already_delivered", reason
+    if reason in {"same_decision_unchanged", "no_material_change"}:
         return "no_material_change", reason
     if not decision_event:
         return "data_insufficient", reason or "no_eligible_candidate"

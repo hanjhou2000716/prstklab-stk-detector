@@ -335,7 +335,6 @@ class GmailIngressService:
                     # health projection rather than dropping the whole batch.
                     continue
         observation["public_observation_count"] = saved_public
-        self.store.save_cursor(last_message_id=message_id, last_notification_at=_now(), last_sync_at=_now())
         return {
             "accepted": True, "status": parsed["parse_status"], "observation": observation,
             "public_observation_count": saved_public,
@@ -366,11 +365,21 @@ class GmailIngressService:
         history_id = str(notification.get("history_id") or "").strip()
         if not history_id:
             raise GmailIngressError("gmail_history_id_missing")
+        received_at = _now()
+        # A Pub/Sub history cursor is a notification hint, not an acknowledged
+        # Gmail sync cursor.  Keep it pending until the bounded history worker
+        # completes; advancing last_history_id here can permanently skip mail
+        # when the downstream dispatch or runner fails.
         current = self.store.save_cursor(
-            last_history_id=history_id,
-            last_notification_at=_now(),
-            last_sync_at=_now(),
+            pending_history_id=history_id,
+            last_push_received_at=received_at,
+            # Keep the legacy field populated for old health readers.  New
+            # readers must use last_push_received_at.
+            last_notification_at=received_at,
         )
+        record_event = getattr(self.store, "record_pubsub_event", None)
+        if callable(record_event):
+            record_event(history_id, received_at=received_at)
         return {"accepted": True, "history_id": history_id, "cursor": current}
 
 

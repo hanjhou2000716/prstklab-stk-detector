@@ -258,7 +258,10 @@ class GmailWatchManager:
                 "watch_error": None,
                 "watch_error_at": None,
             }
-            if history_id:
+            # Do not replace a valid sync baseline merely because Watch was
+            # renewed.  A pending Pub/Sub hint may refer to mail after that
+            # baseline and must be reconciled first.
+            if history_id and not str(cursor.get("last_history_id") or "").strip():
                 values["last_history_id"] = history_id
             self.store.save_cursor(**values)
             return {"status": "healthy", "renewed": True, "watch_expiration": expires_at}
@@ -303,16 +306,20 @@ def health(
         if not watch_active:
             state = "stale"
 
+    def timestamp_value(value: Any) -> str | None:
+        if not value:
+            return None
+        try:
+            parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        return parsed.astimezone(UTC).isoformat()
+
     def timestamp(*keys: str) -> str | None:
         for key in keys:
-            value = cursor.get(key)
-            if not value:
-                continue
-            try:
-                parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-            except ValueError:
-                continue
-            return parsed.astimezone(UTC).isoformat()
+            parsed = timestamp_value(cursor.get(key))
+            if parsed:
+                return parsed
         return None
 
     def count(*keys: str) -> int:
@@ -339,18 +346,42 @@ def health(
             return 0
         return max(0, parsed)
 
+    push_received = timestamp("last_push_received_at", "last_notification_at")
+    sync_completed = timestamp("last_sync_completed_at", "last_sync_at")
+    source_health = store.get("source_health") if isinstance(store.get("source_health"), Mapping) else {}
+    fj_health = source_health.get("financialjuice") if isinstance(source_health, Mapping) else {}
+    parsed_at = (
+        timestamp_value(fj_health.get("last_parsed_at"))
+        if isinstance(fj_health, Mapping) and fj_health.get("last_parsed_at")
+        else timestamp("last_parsed_at", "last_parse_at")
+    )
+    sync_status = str(cursor.get("last_sync_status") or "").strip().casefold()
+    if state not in {"configuration_missing", "stale"} and (
+        sync_status in {"degraded", "failed", "history_cursor_expired"} or cursor.get("last_sync_error")
+    ):
+        state = "degraded"
+    elif state not in {"configuration_missing", "stale"} and not push_received and watch_active:
+        # A valid Watch lease is not evidence that Pub/Sub delivered a push.
+        # Keep the state non-healthy until an actual push is observed.
+        state = "no_new_content"
     observability = {
         "observations": count("observation_count", "observations"),
-        "last_received_at": timestamp("last_notification_at", "received_at"),
-        "last_parsed_at": timestamp("last_parsed_at", "last_parse_at", "last_sync_at"),
+        "last_received_at": push_received,
+        "last_parsed_at": parsed_at,
         "parser_error_count": count("parser_error_count", "dlq_count"),
         "last_delivery_at": timestamp("last_delivery_at", "last_receipt_at"),
         "state": state,
         # Counts and timestamps only; Gmail history/message IDs stay private.
         "queue_pending_count": store_count("queue_pending_count") or count("queue_pending_count", "pending_count"),
         "dead_letter_count": store_count("dead_letter_count") or count("dead_letter_count", "dlq_count"),
-        "last_ingress_at": timestamp("last_notification_at"),
-        "last_sync_at": timestamp("last_sync_at"),
+        "last_ingress_at": push_received,
+        "last_push_received_at": push_received,
+        "last_sync_started_at": timestamp("last_sync_started_at"),
+        "last_sync_completed_at": sync_completed,
+        "last_sync_status": str(cursor.get("last_sync_status") or "not_checked")[:40],
+        "last_sync_error": str(cursor.get("last_sync_error") or "")[:80] or None,
+        "last_sync_at": sync_completed,
+        "push_delivery_verified": bool(push_received),
         "history_cursor_present": bool(str(cursor.get("last_history_id") or "").strip()),
         "history_cursor_hash": (
             hashlib.sha256(str(cursor["last_history_id"]).encode("utf-8")).hexdigest()[:16]

@@ -305,9 +305,26 @@ async function dispatchGmailHistorySync(env: Env, historyId: string): Promise<vo
       "User-Agent": "PRStK-Cloudflare-Worker",
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ ref: "main", inputs: { history_id: historyId } }),
+    body: JSON.stringify({ ref: "main", inputs: { history_id: historyId, notify: "true" } }),
   });
   if (!response.ok) throw new Error(`gmail sync dispatch failed (${response.status})`);
+}
+
+async function claimGmailDispatch(env: Env, historyId: string, now: string): Promise<boolean> {
+  const encoded = encodeURIComponent(historyId);
+  const update = { dispatch_status: "dispatching", dispatch_requested_at: now, dispatch_error: null };
+  for (const previous of ["pending", "failed"]) {
+    const rows = await supabase(
+      env,
+      "PATCH",
+      "gmail_pubsub_events",
+      `?history_id=eq.${encoded}&dispatch_status=eq.${previous}`,
+      update,
+      "return=representation",
+    );
+    if (rows.length > 0) return true;
+  }
+  return false;
 }
 
 async function recipientHash(chatId: string): Promise<string> {
@@ -423,22 +440,32 @@ async function handle(request: Request, env: Env): Promise<Response> {
     const body = await request.json().catch(() => null);
     const notification = await gmailNotification(body);
     if (!notification) return json({ ok: false, error: "INVALID_GMAIL_NOTIFICATION" }, 400);
+    const receivedAt = new Date().toISOString();
     const rows = await supabase(env, "POST", "gmail_pubsub_events", "?on_conflict=history_id", {
       history_id: notification.historyId,
       gmail_address_hash: notification.emailHash,
       dispatch_status: "pending",
+      received_at: receivedAt,
     }, "resolution=ignore-duplicates,return=representation");
+    const encodedHistoryId = encodeURIComponent(notification.historyId);
     if (rows.length === 0) {
-      const existing = await supabase(env, "GET", "gmail_pubsub_events", `?history_id=eq.${encodeURIComponent(notification.historyId)}&select=dispatch_status&limit=1`);
-      if (String(existing[0]?.dispatch_status || "pending") === "dispatched") return new Response(null, { status: 204 });
+      const existing = await supabase(env, "GET", "gmail_pubsub_events", `?history_id=eq.${encodedHistoryId}&select=dispatch_status&limit=1`);
+      const status = String(existing[0]?.dispatch_status || "pending");
+      if (["dispatching", "dispatch_requested", "processing", "completed", "dispatched"].includes(status)) {
+        return new Response(null, { status: 202 });
+      }
     }
+    const claimed = await claimGmailDispatch(env, notification.historyId, receivedAt);
+    if (!claimed) return new Response(null, { status: 202 });
     try {
       await dispatchGmailHistorySync(env, notification.historyId);
-      await supabase(env, "PATCH", "gmail_pubsub_events", `?history_id=eq.${encodeURIComponent(notification.historyId)}`, { dispatch_status: "dispatched", processed_at: new Date().toISOString(), dispatch_error: null }, "return=minimal");
-      await supabase(env, "POST", "gmail_watch_state", "?on_conflict=id", { id: "primary", pending_history_id: notification.historyId, last_notification_at: new Date().toISOString() }, "resolution=merge-duplicates,return=minimal");
+      await supabase(env, "PATCH", "gmail_pubsub_events", `?history_id=eq.${encodedHistoryId}`, { dispatch_status: "dispatch_requested", dispatch_requested_at: new Date().toISOString(), dispatch_error: null }, "return=minimal");
+      await supabase(env, "POST", "gmail_watch_state", "?on_conflict=id", { id: "primary", pending_history_id: notification.historyId, last_push_received_at: receivedAt, last_notification_at: receivedAt }, "resolution=merge-duplicates,return=minimal");
       return new Response(null, { status: 204 });
-    } catch (_) {
-      await supabase(env, "PATCH", "gmail_pubsub_events", `?history_id=eq.${encodeURIComponent(notification.historyId)}`, { dispatch_status: "failed", dispatch_error: "dispatch_failed" }, "return=minimal").catch(() => undefined);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "unknown_error";
+      const safeError = detail.replace(/[^a-zA-Z0-9_(). -]/g, "").slice(0, 120) || "dispatch_failed";
+      await supabase(env, "PATCH", "gmail_pubsub_events", `?history_id=eq.${encodedHistoryId}`, { dispatch_status: "failed", dispatch_error: safeError }, "return=minimal").catch(() => undefined);
       return json({ ok: false, error: "GMAIL_SYNC_DISPATCH_FAILED" }, 503);
     }
   }

@@ -92,7 +92,13 @@ def gmail_health_fields(diagnostics: Any) -> dict[str, Any]:
         "queue_pending_count": "counter",
         "dead_letter_count": "counter",
         "last_ingress_at": "timestamp",
+        "last_push_received_at": "timestamp",
+        "last_sync_started_at": "timestamp",
+        "last_sync_completed_at": "timestamp",
         "last_sync_at": "timestamp",
+        "last_sync_status": "text",
+        "last_sync_error": "text",
+        "push_delivery_verified": "bool",
         "history_cursor_present": "bool",
         "history_cursor_hash": "hash",
     }

@@ -91,6 +91,24 @@ def test_renews_and_persists_cursor(tmp_path: Path) -> None:
     assert client.calls[1][1]["headers"] == {"Authorization": "Bearer token"}
 
 
+def test_renewal_does_not_replace_existing_sync_baseline_with_watch_cursor(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(
+        watch_expiration="2020-01-01T00:00:00+00:00",
+        last_history_id="history-baseline",
+        pending_history_id="history-pending",
+    )
+    client = _Client([
+        _Response(200, {"access_token": "token"}),
+        _Response(200, {"expiration": "1780000000000", "historyId": "history-new-watch"}),
+    ])
+    result = _run(renew_watch_if_due(_config(), store, force=True, client_factory=lambda **_kwargs: client))
+    assert result["watch_status"] == "active"
+    cursor = store.cursor()
+    assert cursor["last_history_id"] == "history-baseline"
+    assert cursor["pending_history_id"] == "history-pending"
+
+
 def test_http_403_is_reported_without_leaking_response(tmp_path: Path) -> None:
     store = EmailStore(tmp_path / "mail.sqlite3")
     client = _Client([_Response(200, {"access_token": "token"}), _Response(403, {"error": "private"})])

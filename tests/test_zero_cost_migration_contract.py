@@ -51,6 +51,23 @@ def test_worker_has_security_boundary_and_required_routes() -> None:
     assert "RECEIPT_HISTORY_UNAVAILABLE" in worker
 
 
+def test_gmail_realtime_migration_and_worker_keep_push_separate_from_sync() -> None:
+    migration = (ROOT / "supabase/migrations/202609100001_gmail_realtime_processing.sql").read_text(encoding="utf-8")
+    for field in (
+        "last_push_received_at", "last_sync_started_at", "last_sync_completed_at",
+        "last_sync_status", "last_sync_error", "candidate_decided_at",
+    ):
+        assert field in migration
+    assert "'dispatch_requested'" in migration
+    assert "'processing'" in migration
+    assert "'completed'" in migration
+    worker = (ROOT / "worker/src/index.ts").read_text(encoding="utf-8")
+    assert "dispatch_status: \"dispatching\"" in worker
+    assert "dispatch_status: \"dispatch_requested\"" in worker
+    assert "inputs: { history_id: historyId, notify: \"true\" }" in worker
+    assert "last_push_received_at: receivedAt" in worker
+
+
 def test_receipt_events_migration_is_idempotent_and_privacy_safe() -> None:
     migration = (ROOT / "supabase/migrations/202608280001_delivery_receipt_events.sql").read_text(encoding="utf-8")
     assert "public.delivery_receipt_events" in migration

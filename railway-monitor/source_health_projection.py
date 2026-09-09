@@ -35,6 +35,12 @@ _PUBLIC_FIELD_TYPES: dict[str, dict[str, str]] = {
     "financialjuice": {
         "status": "text",
         "last_sync_at": "timestamp",
+        "last_push_received_at": "timestamp",
+        "last_sync_started_at": "timestamp",
+        "last_sync_completed_at": "timestamp",
+        "last_sync_status": "text",
+        "last_sync_error": "text",
+        "push_delivery_verified": "bool",
         "last_sync_diagnostics": "diagnostics",
         "received_count": "counter",
         "parsed_count": "counter",
@@ -82,6 +88,8 @@ def _counter(value: Any) -> int | None:
 
 
 def _project_value(value: Any, kind: str) -> Any:
+    if kind == "bool":
+        return value if isinstance(value, bool) else None
     if kind == "counter":
         return _counter(value)
     if kind == "mapping":

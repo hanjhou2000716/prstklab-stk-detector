@@ -294,6 +294,11 @@ def test_sync_history_routes_message_and_saves_public_projection(tmp_path) -> No
     assert persisted["material_candidate_count"] == 0
     assert persisted["candidate_diagnostics"]["counts"]["stale_source_event"] == 1
     assert persisted["candidate_diagnostics"]["primary_reason"] == "stale_source_event"
+    cursor = store.cursor()
+    assert cursor["last_sync_started_at"]
+    assert cursor["last_sync_completed_at"]
+    assert cursor["last_sync_status"] == "healthy"
+    assert cursor["last_sync_error"] is None
 
 
 def test_sync_history_suppresses_retired_creator_and_advances_cursor(tmp_path) -> None:
@@ -394,6 +399,9 @@ def test_sync_history_does_not_advance_cursor_after_candidate_lookup_failure(tmp
     assert result["failed"] == 1
     assert result["failure_types"] == {"RuntimeError": 1}
     assert store.cursor()["last_history_id"] == "h0"
+    assert store.cursor()["last_sync_status"] == "degraded"
+    assert store.cursor()["last_sync_error"] == "degraded"
+    assert store.cursor()["last_sync_at"] is None
 
 
 def test_sync_history_skips_deleted_history_messages(tmp_path) -> None:

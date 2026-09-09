@@ -18,7 +18,9 @@ import requests
 
 CURSOR_FIELDS = (
     "watch_expiration", "watch_last_renewed_at", "watch_error", "watch_error_at",
-    "last_history_id", "pending_history_id", "last_notification_at", "last_sync_at",
+    "last_history_id", "pending_history_id", "last_push_received_at",
+    "last_notification_at", "last_sync_at", "last_sync_started_at",
+    "last_sync_completed_at", "last_sync_status", "last_sync_error",
     "last_full_sync_at", "last_message_id", "last_sync_diagnostics",
 )
 DEFAULT_CURSOR = {key: None for key in CURSOR_FIELDS}
@@ -161,6 +163,36 @@ class SupabaseEmailStore:
             return False
         return isinstance(payload, list) and bool(payload)
 
+    def update_pubsub_event(self, history_id: str, **values: Any) -> bool:
+        """Update private Pub/Sub processing state after an atomic ingress claim."""
+        key = str(history_id or "").strip()
+        if not key:
+            return False
+        allowed = {
+            "dispatch_status", "dispatch_requested_at", "sync_started_at",
+            "sync_completed_at", "candidate_decided_at", "dispatch_error",
+        }
+        updates = {name: value for name, value in values.items() if name in allowed}
+        if not updates:
+            return False
+        _status, payload = self._request(
+            "PATCH", "gmail_pubsub_events", f"?history_id=eq.{key}",
+            updates, prefer="return=representation",
+        )
+        return isinstance(payload, list) and bool(payload)
+
+    def record_pubsub_event(self, history_id: str, *, received_at: str | None = None) -> bool:
+        """Insert one private Pub/Sub event idempotently for reconciliation."""
+        key = str(history_id or "").strip()
+        if not key:
+            return False
+        _status, payload = self._request(
+            "POST", "gmail_pubsub_events", "?on_conflict=history_id",
+            {"history_id": key, "received_at": received_at or _now()},
+            prefer="resolution=ignore-duplicates,return=representation",
+        )
+        return isinstance(payload, list) and bool(payload)
+
     def record_dlq(self, *, message_id: str, parser_name: str, parser_version: str, template_fingerprint: str,
                    parse_status: str, failure_reason: str, metadata: dict[str, Any] | None = None) -> None:
         safe = {key: value for key, value in (metadata or {}).items() if key not in BLOCKED_FIELDS}
@@ -271,8 +303,13 @@ class SupabaseEmailStore:
             # the stable cursor state still tells operators whether ingress is
             # live, and no provider response body is exposed.
             pass
+        fj_status = str(
+            ((self.source_health().get("financialjuice") or {}).get("status") or "no_new_content")
+        )
         return {
-            "status": "healthy" if cursor.get("last_sync_at") else "no_new_content",
+            # last_sync_at is retained for old readers, but health must follow
+            # the latest completed-sync status and expose a later failure.
+            "status": fj_status,
             "observation_count": observation_count,
             "dlq_count": dlq_count,
             "queue_pending_count": 0,
@@ -288,10 +325,23 @@ class SupabaseEmailStore:
         diagnostics = cursor.get("last_sync_diagnostics")
         if not isinstance(diagnostics, dict):
             diagnostics = None
+        sync_status = str(cursor.get("last_sync_status") or "").strip().casefold()
+        sync_error = str(cursor.get("last_sync_error") or "").strip()
+        status = (
+            "degraded" if sync_status in {"degraded", "failed", "history_cursor_expired"} or sync_error
+            else "healthy" if cursor.get("last_sync_completed_at") or cursor.get("last_sync_at")
+            else "no_new_content"
+        )
         return {
             "financialjuice": {
-                "status": "healthy" if cursor.get("last_sync_at") else "no_new_content",
+                "status": status,
                 "last_sync_at": cursor.get("last_sync_at"),
+                "last_push_received_at": cursor.get("last_push_received_at") or cursor.get("last_notification_at"),
+                "last_sync_started_at": cursor.get("last_sync_started_at"),
+                "last_sync_completed_at": cursor.get("last_sync_completed_at") or cursor.get("last_sync_at"),
+                "last_sync_status": sync_status or "not_checked",
+                "last_sync_error": sync_error or None,
+                "push_delivery_verified": bool(cursor.get("last_push_received_at") or cursor.get("last_notification_at")),
                 "last_sync_diagnostics": diagnostics,
             }
         }
