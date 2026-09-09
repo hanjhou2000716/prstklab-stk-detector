@@ -1053,18 +1053,21 @@ class EventLedger:
         market_scope: str = "",
         evidence_fingerprint: str = "",
         material_changes: tuple[str, ...] = (),
+        delivery_policy: str = "material_event",
         recipient_hashes: tuple[str, ...] = (),
         now: datetime | None = None,
         run_id: str = "",
         lease_seconds: int = DELIVERY_CLAIM_LEASE_SECONDS,
     ) -> dict[str, Any]:
-        """Atomically claim one scheduled anchor and coalesce unchanged briefs.
+        """Atomically claim one scheduled anchor under the selected policy.
 
         Scheduled brief content is release-bound and may legitimately change
         when prices are hydrated.  The delivery identity must therefore be
-        the anchor, while the decision fingerprint decides whether a later
-        anchor contains a new market judgment.  This method keeps that
-        distinction inside the same file lock used by all delivery lanes.
+        the anchor.  ``material_event`` keeps the historical coalescing policy
+        for callers that use this API for event-like delivery; the production
+        fixed-anchor lane uses ``scheduled_anchor`` and sends each eligible
+        anchor once even when the decision is unchanged.  This method keeps
+        that distinction inside the same file lock used by all delivery lanes.
         """
         anchor = str(anchor_key or "").strip()
         fingerprint = str(decision_fingerprint or "").strip()
@@ -1072,6 +1075,9 @@ class EventLedger:
             return {"status": "blocked", "reason": "anchor_key_missing", "pending_recipient_hashes": []}
         if not fingerprint:
             return {"status": "blocked", "reason": "decision_fingerprint_missing", "pending_recipient_hashes": []}
+        policy = str(delivery_policy or "material_event").strip().casefold()
+        if policy not in {"scheduled_anchor", "material_event"}:
+            return {"status": "blocked", "reason": "delivery_policy_invalid", "pending_recipient_hashes": []}
         current = now or datetime.now(UTC)
         now_iso = current.isoformat()
         recipients = tuple(dict.fromkeys(str(item) for item in recipient_hashes if str(item)))
@@ -1114,7 +1120,7 @@ class EventLedger:
 
             latest_key, latest = self._latest_scheduled_claim(claims, market, exclude=claim_key)
             if latest is not None:
-                if str(latest.get("decision_fingerprint") or "") == fingerprint:
+                if policy != "scheduled_anchor" and str(latest.get("decision_fingerprint") or "") == fingerprint:
                     return {
                         "status": "same_decision",
                         "notification_key": claim_key,
@@ -1151,6 +1157,7 @@ class EventLedger:
                 "market_scope": market,
                 "decision_fingerprint": fingerprint,
                 "evidence_fingerprint": str(evidence_fingerprint or "").strip(),
+                "delivery_policy": policy,
                 "material_changes": list(dict.fromkeys(str(item) for item in material_changes if str(item).strip())),
                 "delivery_eligible": True,
                 "suppression_reason": "",
@@ -1229,12 +1236,16 @@ class EventLedger:
         *,
         decision_fingerprint: str,
         market_scope: str = "",
+        delivery_policy: str = "material_event",
     ) -> dict[str, Any]:
         """Read the scheduled delivery comparison without claiming it."""
         anchor = str(anchor_key or "").strip()
         fingerprint = str(decision_fingerprint or "").strip()
         if not anchor or not fingerprint:
             return {"delivery_eligible": False, "suppression_reason": "comparison_identity_missing"}
+        policy = str(delivery_policy or "material_event").strip().casefold()
+        if policy not in {"scheduled_anchor", "material_event"}:
+            return {"delivery_eligible": False, "suppression_reason": "delivery_policy_invalid"}
         if not self._path_is_readable(self.path):
             return {
                 "delivery_eligible": False,
@@ -1254,7 +1265,7 @@ class EventLedger:
             }
         market = self._scheduled_market_namespace(anchor, market_scope)
         latest_key, latest = self._latest_scheduled_claim(claims, market, exclude=claim_key)
-        if latest is not None and str(latest.get("decision_fingerprint") or "") == fingerprint:
+        if policy != "scheduled_anchor" and latest is not None and str(latest.get("decision_fingerprint") or "") == fingerprint:
             return {
                 "delivery_eligible": False,
                 "comparison_notification_key": latest_key,

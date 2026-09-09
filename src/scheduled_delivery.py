@@ -122,6 +122,7 @@ def _briefing_delivery_event(snapshot: dict[str, Any], slot: str) -> dict[str, A
         "material_changes": briefing.get("material_changes") or [],
         "delivery_eligible": briefing.get("delivery_eligible", True),
         "suppression_reason": briefing.get("suppression_reason") or "",
+        "delivery_policy": "scheduled_anchor",
     }
 
 
@@ -571,6 +572,7 @@ def _attach_schedule_decision(
     comparison_reason: str = "",
     production_status: str = "ready",
     notification_requested: bool | None = None,
+    delivery_policy: str = "scheduled_anchor",
 ) -> dict[str, Any]:
     """Persist the latest anchor production/notification decision in Pages."""
     ctx = context if isinstance(context, dict) else {}
@@ -607,6 +609,7 @@ def _attach_schedule_decision(
         "material_changes": list(material_changes or []),
         "delivery_eligible": bool(delivery_eligible),
         "notification_requested": notification_requested,
+        "delivery_policy": delivery_policy,
         "notification_status": status,
         "suppression_reason": reason if status != "notification_candidate" else "",
         "decision_fingerprint": str(briefing.get("decision_fingerprint") or ""),
@@ -737,6 +740,7 @@ def prepare(
     if creator_records:
         snapshot["creator_insights"] = creator_records
     snapshot["briefing"] = build_briefing_snapshot(snapshot, slot)
+    snapshot["briefing"]["delivery_policy"] = "scheduled_anchor"
     effective_context = _closed_market_slot_context(snapshot, slot, slot_context)
     if isinstance(effective_context, dict):
         snapshot["briefing"]["slot_context"] = effective_context
@@ -797,6 +801,7 @@ def prepare(
                 anchor_key(comparison_slot, comparison_date),
                 decision_fingerprint=comparison_fingerprint,
                 market_scope=str(assessment_for_comparison.get("market_scope") or ""),
+                delivery_policy="scheduled_anchor",
             )
             briefing_for_comparison.update({
                 "comparison_notification_key": comparison.get("comparison_notification_key") or "",
@@ -866,6 +871,7 @@ def prepare(
         delivery_eligible=delivery_eligible,
         comparison_reason=comparison_reason,
         notification_requested=notification_requested,
+        delivery_policy="scheduled_anchor",
     )
     prepared_decision = decision_summary(
         event=decision_event,
@@ -914,6 +920,7 @@ def prepare(
             "material_changes": schedule_decision["material_changes"],
             "delivery_eligible": schedule_decision["delivery_eligible"],
             "suppression_reason": schedule_decision["suppression_reason"],
+            "delivery_policy": schedule_decision["delivery_policy"],
             **metadata,
         },
         event=decision_event,
@@ -1130,6 +1137,7 @@ def send(
                     str(item) for item in briefing.get("material_changes") or []
                     if str(item).strip()
                 ),
+                delivery_policy="scheduled_anchor",
                 recipient_hashes=recipient_hashes,
                 run_id=effective_run_id,
             )

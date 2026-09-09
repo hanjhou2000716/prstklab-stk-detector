@@ -23,6 +23,42 @@ _BLOCKED_FIELDS = {
 }
 
 
+def _safe_sync_diagnostics(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, dict):
+        return None
+    nested = value.get("candidate_diagnostics")
+    raw_counts = nested.get("counts") if isinstance(nested, dict) else None
+    counts: dict[str, int] = {}
+    if isinstance(raw_counts, dict):
+        for key, count in raw_counts.items():
+            try:
+                parsed = int(count)
+            except (TypeError, ValueError, OverflowError):
+                continue
+            if isinstance(key, str) and key and 0 <= parsed <= 1_000_000_000:
+                counts[key[:80]] = parsed
+    def bounded_count(raw: Any) -> int:
+        try:
+            parsed = int(raw or 0)
+        except (TypeError, ValueError, OverflowError):
+            return 0
+        return max(0, min(1_000_000_000, parsed))
+
+    return {
+        "recorded_at": str(value.get("recorded_at") or "")[:80],
+        "status": str(value.get("status") or "unknown")[:80],
+        "processed": bounded_count(value.get("processed")),
+        "accepted_new_count": bounded_count(value.get("accepted_new_count")),
+        "material_candidate_count": bounded_count(value.get("material_candidate_count")),
+        "duplicate_count": bounded_count(value.get("duplicate_count")),
+        "failed": bounded_count(value.get("failed")),
+        "candidate_diagnostics": {
+            "counts": counts,
+            "primary_reason": str(nested.get("primary_reason") or "")[:80] if isinstance(nested, dict) else "",
+        },
+    }
+
+
 def observation_export_url(configured_url: str | None = None) -> str:
     """Return the configured sanitized export endpoint.
 
@@ -146,7 +182,11 @@ def load_railway_observations(
         safe.append(normalized)
     status_value = payload.get("status") or ("ready" if safe else "no_event")
     status = str(status_value)
-    return safe, {"status": status, "count": len(safe), "rejected_count": rejected, "attempts": retry_count + 1, "retry_count": retry_count}
+    health: dict[str, Any] = {"status": status, "count": len(safe), "rejected_count": rejected, "attempts": retry_count + 1, "retry_count": retry_count}
+    sync_diagnostics = _safe_sync_diagnostics(payload.get("sync_diagnostics")) if isinstance(payload, dict) else None
+    if sync_diagnostics is not None:
+        health["sync_diagnostics"] = sync_diagnostics
+    return safe, health
 
 
 def _sleep_before_retry(response: Any, attempt: int) -> None:

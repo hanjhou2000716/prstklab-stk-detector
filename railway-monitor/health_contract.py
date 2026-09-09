@@ -146,22 +146,33 @@ def gmail_notification_health(result: Any, *, now: datetime | None = None) -> di
     processed = counter("processed")
     duplicate = min(processed, counter("duplicate"))
     failed = counter("failed")
-    new_items = max(0, processed - duplicate)
+    # New transport records and notification candidates are different
+    # states.  A fresh email can be stale, incomplete, or a repeated fact;
+    # only the explicit candidate count may request the monitor.  Keep the
+    # old fallback for pre-diagnostics callers that do not send the field.
+    has_candidate_count = "material_candidate_count" in values
+    candidate_count = counter("material_candidate_count") if has_candidate_count else max(0, processed - duplicate)
+    new_items = counter("accepted_new_count") if "accepted_new_count" in values else max(0, processed - duplicate)
     status = str(values.get("status") or "unknown").strip()[:80] or "unknown"
     timestamp = (now or datetime.now(UTC)).astimezone(UTC).isoformat()
     if failed:
-        notification_status = "failed" if not new_items else "dispatch_requested"
-        reason = "gmail_sync_failed" if not new_items else "new_reviewed_email_with_sync_errors"
-    elif new_items:
+        notification_status = "failed" if not candidate_count else "dispatch_requested"
+        reason = "gmail_sync_failed" if not candidate_count else "new_reviewed_email_with_sync_errors"
+    elif candidate_count:
         notification_status = "dispatch_requested"
         reason = "new_reviewed_email"
+    elif new_items and has_candidate_count:
+        diagnostics = values.get("candidate_diagnostics")
+        primary = diagnostics.get("primary_reason") if isinstance(diagnostics, dict) else None
+        reason = f"accepted_new_but_candidate_rejected:{str(primary).strip() or 'unspecified'}"
+        notification_status = "no_candidate"
     else:
         notification_status = "no_new_content"
         reason = "duplicate_email" if duplicate else "no_new_reviewed_email"
     projection: dict[str, Any] = {
         "scan_status": "failed" if failed and not processed else "completed",
-        "candidate_type": "financialjuice_or_creator" if new_items else "none",
-        "notification_expected": bool(new_items),
+        "candidate_type": "financialjuice_or_creator" if candidate_count else "none",
+        "notification_expected": bool(candidate_count),
         "notification_status": notification_status,
         "notification_reason": reason,
         "delivered_count": None,
@@ -172,6 +183,19 @@ def gmail_notification_health(result: Any, *, now: datetime | None = None) -> di
     }
     if processed:
         projection["last_processed_at"] = timestamp
-    if new_items:
+    if candidate_count:
         projection["last_candidate_at"] = timestamp
+    if has_candidate_count:
+        diagnostics = values.get("candidate_diagnostics")
+        if isinstance(diagnostics, dict):
+            counts = diagnostics.get("counts")
+            if isinstance(counts, dict):
+                projection["candidate_diagnostics"] = {
+                    "counts": {
+                        str(key): non_negative_int(value) or 0
+                        for key, value in counts.items()
+                        if non_negative_int(value) is not None
+                    },
+                    "primary_reason": str(diagnostics.get("primary_reason") or "")[:80],
+                }
     return projection

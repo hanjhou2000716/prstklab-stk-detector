@@ -21,6 +21,16 @@ def test_automatic_scheduled_dispatch_enables_notification_but_manual_stays_opt_
     assert "dispatch-trace-id" in workflow
 
 
+def test_gmail_workflow_reports_candidate_rejection_reason_instead_of_no_new_content():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "gmail-history-sync.yml"
+    ).read_text(encoding="utf-8")
+    assert "accepted_new_but_candidate_rejected:${candidate_reason:-unspecified}" in workflow
+    assert "candidate_diagnostics" in workflow
+    assert "manual_replay" in workflow
+    assert "downstream_dispatch_failure" in workflow
+
+
 def test_workflow_has_only_four_routine_anchors_and_never_masks_contract_errors():
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"

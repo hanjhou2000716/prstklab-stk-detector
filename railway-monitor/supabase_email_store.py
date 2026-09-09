@@ -19,7 +19,7 @@ import requests
 CURSOR_FIELDS = (
     "watch_expiration", "watch_last_renewed_at", "watch_error", "watch_error_at",
     "last_history_id", "pending_history_id", "last_notification_at", "last_sync_at",
-    "last_full_sync_at", "last_message_id",
+    "last_full_sync_at", "last_message_id", "last_sync_diagnostics",
 )
 DEFAULT_CURSOR = {key: None for key in CURSOR_FIELDS}
 BLOCKED_FIELDS = {
@@ -222,6 +222,28 @@ class SupabaseEmailStore:
         rows = payload if isinstance(payload, list) else []
         return [row["payload_json"] for row in rows if isinstance(row, dict) and isinstance(row.get("payload_json"), dict) and row["payload_json"].get("public_safe") is True]
 
+    def public_fact_exists(self, canonical_fact_key: str) -> bool:
+        """Check the sanitized Supabase projection before waking the monitor.
+
+        Fact identity is stored inside the public-safe JSON projection rather
+        than in a second index.  A read failure is intentionally raised so a
+        Gmail history batch can retry without acknowledging the message or
+        moving its cursor past an unverified dedupe decision.
+        """
+        key = str(canonical_fact_key or "").strip()
+        if not key:
+            return False
+        _status, payload = self._request(
+            "GET", "gmail_public_observations",
+            "?select=payload_json&limit=500",
+        )
+        rows = payload if isinstance(payload, list) else []
+        for row in rows:
+            value = row.get("payload_json") if isinstance(row, dict) else None
+            if isinstance(value, dict) and str(value.get("canonical_fact_key") or "").strip() == key:
+                return True
+        return False
+
     def health(self) -> dict[str, Any]:
         cursor = self.cursor()
         observation_count = 0
@@ -262,7 +284,17 @@ class SupabaseEmailStore:
         }
 
     def source_health(self) -> dict[str, dict[str, Any]]:
-        return {}
+        cursor = self.cursor()
+        diagnostics = cursor.get("last_sync_diagnostics")
+        if not isinstance(diagnostics, dict):
+            diagnostics = None
+        return {
+            "financialjuice": {
+                "status": "healthy" if cursor.get("last_sync_at") else "no_new_content",
+                "last_sync_at": cursor.get("last_sync_at"),
+                "last_sync_diagnostics": diagnostics,
+            }
+        }
 
 
 __all__ = ["SupabaseEmailStore"]

@@ -40,6 +40,36 @@ def test_loader_keeps_only_public_safe_rows(monkeypatch) -> None:
     assert seen["headers"]["X-PRSTK-Signature"].startswith("sha256=")
 
 
+def test_loader_preserves_bounded_fj_sync_diagnostics(monkeypatch) -> None:
+    class Response:
+        status_code = 200
+
+        def json(self):
+            return {
+                "status": "no_event",
+                "observations": [],
+                "sync_diagnostics": {
+                    "recorded_at": "2026-09-09T06:00:00+00:00",
+                    "status": "healthy",
+                    "processed": 9,
+                    "accepted_new_count": 1,
+                    "material_candidate_count": 0,
+                    "duplicate_count": 8,
+                    "failed": 0,
+                    "candidate_diagnostics": {
+                        "counts": {"stale_source_event": 1},
+                        "primary_reason": "stale_source_event",
+                    },
+                },
+            }
+
+    monkeypatch.setattr(client.httpx, "get", lambda *_args, **_kwargs: Response())
+    rows, health = client.load_railway_observations(url="https://railway.example/health", secret="secret")
+    assert rows == []
+    assert health["sync_diagnostics"]["material_candidate_count"] == 0
+    assert health["sync_diagnostics"]["candidate_diagnostics"]["primary_reason"] == "stale_source_event"
+
+
 def test_loader_rejects_retired_creator_projection(monkeypatch) -> None:
     class Response:
         status_code = 200

@@ -159,6 +159,18 @@ def test_public_projection_does_not_replace_rich_semantics_with_sparse_replay(mo
     assert calls == ["GET"]
 
 
+def test_public_fact_exists_reads_sanitized_projection(monkeypatch: pytest.MonkeyPatch) -> None:
+    def request(method: str, url: str, **kwargs: Any) -> _Response:
+        assert method == "GET"
+        assert url.endswith("gmail_public_observations?select=payload_json&limit=500")
+        return _Response(200, [{"payload_json": {"canonical_fact_key": "fj:fact-1"}}])
+
+    monkeypatch.setattr("supabase_email_store.requests.request", request)
+    store = SupabaseEmailStore("https://example.supabase.co", "key")
+    assert store.public_fact_exists("fj:fact-1") is True
+    assert store.public_fact_exists("fj:fact-2") is False
+
+
 def test_public_projection_prefers_cleaner_equal_width_semantics(monkeypatch: pytest.MonkeyPatch) -> None:
     requests_seen: list[tuple[str, str, dict[str, Any]]] = []
     previous = {

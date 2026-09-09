@@ -80,24 +80,59 @@ jobs:
         if: always()
         env:
           DISPATCH_TRIGGERED: ${{ steps.dispatch.outputs.triggered || 'false' }}
+          DISPATCH_OUTCOME: ${{ steps.dispatch.outcome || 'skipped' }}
         run: |
           processed="0"
+          accepted_new="0"
+          material_candidates="0"
+          duplicate="0"
+          candidate_reason=""
+          manual_replay="0"
           failed="0"
           status="unavailable"
           if [ -s gmail-sync-result.json ]; then
             processed="$(jq -r 'if (.processed | type) == "number" then .processed else 0 end' gmail-sync-result.json)"
             accepted_new="$(jq -r 'if (.accepted_new_count | type) == "number" then .accepted_new_count else 0 end' gmail-sync-result.json)"
             material_candidates="$(jq -r 'if (.material_candidate_count | type) == "number" then .material_candidate_count else 0 end' gmail-sync-result.json)"
+            duplicate="$(jq -r 'if (.duplicate_count | type) == "number" then .duplicate_count elif (.duplicate | type) == "number" then .duplicate else 0 end' gmail-sync-result.json)"
+            candidate_reason="$(jq -r '.candidate_diagnostics.primary_reason // ""' gmail-sync-result.json)"
+            manual_replay="$(jq -r 'if ((.candidate_diagnostics.counts.manual_replay // 0) | type) == "number" then (.candidate_diagnostics.counts.manual_replay // 0) else 0 end' gmail-sync-result.json)"
             failed="$(jq -r 'if (.failed | type) == "number" then .failed else 0 end' gmail-sync-result.json)"
             status="$(jq -r '.status // "unknown"' gmail-sync-result.json)"
+          fi
+          if [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" = "true" ] || [ "$manual_replay" -gt 0 ]; then
+            notification_status="diagnostic_only"
+            notification_reason="manual_replay"
+          elif [ "$DISPATCH_TRIGGERED" = true ]; then
+            notification_status="dispatch_requested"
+            notification_reason="new_reviewed_email_accepted"
+          elif [ "$failed" -gt 0 ]; then
+            notification_status="failed"
+            notification_reason="gmail_sync_failed"
+          elif [ "$material_candidates" -gt 0 ] && [ "$DISPATCH_OUTCOME" != "success" ]; then
+            notification_status="failed"
+            notification_reason="downstream_dispatch_failure"
+          elif [ "$accepted_new" -gt 0 ] && [ "$material_candidates" -eq 0 ]; then
+            notification_status="no_candidate"
+            notification_reason="accepted_new_but_candidate_rejected:${candidate_reason:-unspecified}"
+          elif [ "$duplicate" -gt 0 ]; then
+            notification_status="no_new_content"
+            notification_reason="duplicate_email"
+          else
+            notification_status="no_new_content"
+            notification_reason="no_new_reviewed_email"
           fi
           {
             echo "## Gmail notification decision"
             echo "- scan_status: ${status}"
             echo "- candidate_type: $([ "$material_candidates" -gt 0 ] && echo financialjuice_or_creator || echo none)"
             echo "- notification_expected: $([ "$material_candidates" -gt 0 ] && echo true || echo false)"
-            echo "- notification_status: $([ "$DISPATCH_TRIGGERED" = true ] && echo dispatch_requested || ([ "$failed" -gt 0 ] && echo failed || echo no_new_content))"
-            echo "- notification_reason: $([ "$DISPATCH_TRIGGERED" = true ] && echo new_reviewed_email_accepted || ([ "$failed" -gt 0 ] && echo gmail_sync_failed || echo no_new_reviewed_email))"
+            echo "- notification_status: ${notification_status}"
+            echo "- notification_reason: ${notification_reason}"
+            echo "- accepted_new_count: ${accepted_new}"
+            echo "- material_candidate_count: ${material_candidates}"
+            echo "- duplicate_count: ${duplicate}"
+            echo "- candidate_diagnostics: $(jq -c '.candidate_diagnostics // {}' gmail-sync-result.json 2>/dev/null || echo '{}')"
             echo "- delivered_count: unknown"
             echo "- failed_count: ${failed}"
           } >> "$GITHUB_STEP_SUMMARY"

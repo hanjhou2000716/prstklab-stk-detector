@@ -69,3 +69,26 @@ def test_gmail_reconciliation_distinguishes_duplicate_from_new_candidate() -> No
     assert fresh["candidate_type"] == "financialjuice_or_creator"
     assert fresh["notification_expected"] is True
     assert fresh["notification_status"] == "dispatch_requested"
+
+
+def test_gmail_reconciliation_explains_accepted_but_stale_candidate() -> None:
+    module_path = Path(__file__).parents[1] / "railway-monitor" / "health_contract.py"
+    spec = importlib.util.spec_from_file_location("railway_health_contract_candidate_reason", module_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    result = module.gmail_notification_health({
+        "status": "healthy",
+        "processed": 1,
+        "accepted_new_count": 1,
+        "material_candidate_count": 0,
+        "duplicate": 0,
+        "failed": 0,
+        "candidate_diagnostics": {
+            "counts": {"stale_source_event": 1},
+            "primary_reason": "stale_source_event",
+        },
+    }, now=datetime(2026, 9, 9, tzinfo=UTC))
+    assert result["notification_status"] == "no_candidate"
+    assert result["notification_reason"] == "accepted_new_but_candidate_rejected:stale_source_event"
+    assert result["candidate_diagnostics"]["counts"]["stale_source_event"] == 1

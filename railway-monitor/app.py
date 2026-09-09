@@ -1890,6 +1890,44 @@ def _gmail_health_fields(diagnostics: Any) -> dict[str, Any]:
     return gmail_health_fields(diagnostics)
 
 
+def _public_sync_diagnostics(value: Any) -> dict[str, Any] | None:
+    """Keep the external export to bounded counters and reason labels."""
+    if not isinstance(value, dict):
+        return None
+    nested = value.get("candidate_diagnostics")
+    raw_counts = nested.get("counts") if isinstance(nested, dict) else None
+    counts: dict[str, int] = {}
+    if isinstance(raw_counts, dict):
+        for key, count in raw_counts.items():
+            try:
+                parsed = int(count)
+            except (TypeError, ValueError, OverflowError):
+                continue
+            if isinstance(key, str) and key and 0 <= parsed <= 1_000_000_000:
+                counts[key[:80]] = parsed
+    def bounded_count(raw: Any) -> int:
+        try:
+            parsed = int(raw or 0)
+        except (TypeError, ValueError, OverflowError):
+            return 0
+        return max(0, min(1_000_000_000, parsed))
+
+    result: dict[str, Any] = {
+        "recorded_at": str(value.get("recorded_at") or "")[:80],
+        "status": str(value.get("status") or "unknown")[:80],
+        "processed": bounded_count(value.get("processed")),
+        "accepted_new_count": bounded_count(value.get("accepted_new_count")),
+        "material_candidate_count": bounded_count(value.get("material_candidate_count")),
+        "duplicate_count": bounded_count(value.get("duplicate_count")),
+        "failed": bounded_count(value.get("failed")),
+        "candidate_diagnostics": {
+            "counts": counts,
+            "primary_reason": str(nested.get("primary_reason") or "")[:80] if isinstance(nested, dict) else "",
+        },
+    }
+    return result
+
+
 def configure_gmail_ingress() -> None:
     """Attach the bounded Gmail Pub/Sub ingress when the Railway worker starts."""
     global EMAIL_INGRESS
@@ -1972,10 +2010,21 @@ class HealthHandler(BaseHTTPRequestHandler):
                 limit = max(1, min(500, int(values.get("limit", "100"))))
                 store = getattr(EMAIL_INGRESS, "store", None)
                 rows = store.public_observations(limit=limit) if store is not None else []
+                cursor = store.cursor() if store is not None else {}
+                sync_diagnostics = _public_sync_diagnostics(cursor.get("last_sync_diagnostics")) if isinstance(cursor, dict) else None
+                sync_status = sync_diagnostics.get("status") if isinstance(sync_diagnostics, dict) else ""
+                sync_failed = bool(isinstance(sync_diagnostics, dict) and (sync_diagnostics.get("failed") or 0))
+                if sync_failed:
+                    export_status = "degraded" if rows else "failed"
+                elif sync_status in {"degraded", "history_cursor_expired", "history_pagination_limit", "history_pagination_incomplete"}:
+                    export_status = sync_status
+                else:
+                    export_status = "ready" if rows else "no_event"
                 body = (json.dumps({
-                    "status": "ready" if rows else "no_event",
+                    "status": export_status,
                     "observations": rows,
                     "count": len(rows),
+                    "sync_diagnostics": sync_diagnostics,
                 }, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
