@@ -15107,7 +15107,7 @@
       "location_fingerprint": "",
       "action_fingerprint": "",
       "first_discovered_at": "2026-09-09T21:29:07.900277+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-09-09T21:29:26.396901+00:00",
       "escalated": false,
       "risk_level": "持續觀察",
       "risk_rank": 0,
@@ -15117,9 +15117,72 @@
       "last_title": "GDACS Red cyclone alert",
       "compound_item_id": null,
       "compound_event_cluster_key": null,
-      "last_decision": null,
-      "decision_history": [],
-      "updated_at": "2026-09-09T21:29:07.900277+00:00"
+      "last_decision": {
+        "recorded_at": "2026-09-09T21:29:25.646155+00:00",
+        "allowed": true,
+        "status": "eligible",
+        "reason": "new_theme",
+        "reasons": [],
+        "notification_theme_key": "gdacs-b260525373",
+        "event_key": "fbbbb2479dcefcff081131e27f29771c",
+        "risk": "R1",
+        "theme_window": 7200,
+        "material_state_changed": true,
+        "last_notified_at": null,
+        "taiwan_priority": 4
+      },
+      "decision_history": [
+        {
+          "recorded_at": "2026-09-09T21:29:25.646155+00:00",
+          "allowed": true,
+          "status": "eligible",
+          "reason": "new_theme",
+          "reasons": [],
+          "notification_theme_key": "gdacs-b260525373",
+          "event_key": "fbbbb2479dcefcff081131e27f29771c",
+          "risk": "R1",
+          "theme_window": 7200,
+          "material_state_changed": true,
+          "last_notified_at": null,
+          "taiwan_priority": 4
+        }
+      ],
+      "updated_at": "2026-09-09T21:29:26.396901+00:00",
+      "delivery_history": [
+        {
+          "event_key": "fbbbb2479dcefcff081131e27f29771c",
+          "notification_id": "fbbbb2479dcefcff081131e27f29771c",
+          "sent_at": "2026-09-09T21:29:26.396901+00:00",
+          "importance": "high-risk",
+          "alert_type": "disaster",
+          "lifecycle_state": "confirmed",
+          "reason": "official_event_monitor",
+          "notification_theme_key": "gdacs-b260525373",
+          "risk": "R1",
+          "taiwan_priority": 4,
+          "material_state_changed": true,
+          "release_id": "release-624012b68c237bc7",
+          "snapshot_id": "5cba36ff09f144e4",
+          "delivery_status": "delivered",
+          "event_cluster_key": "evt-bf82399d0748b5e9c2e9a1c6",
+          "prstk_risk": {
+            "prstk_risk_level": "R1",
+            "source": "event_alerts"
+          },
+          "release_ready_at": "2026-09-09T21:29:25.673848+00:00",
+          "telegram_attempted_at": "2026-09-09T21:29:25.707640+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "source_url": "https://www.gdacs.org/report.aspx?eventtype=TC&eventid=1001320",
+          "source_domain": "gdacs.org",
+          "alert_lane": "event",
+          "market_scope": "global",
+          "event_policy_reason": "event_materiality_available",
+          "trace_id": "official-39838b6d00be101f"
+        }
+      ],
+      "last_theme_notification_at": "2026-09-09T21:29:26.396901+00:00",
+      "last_notified_at": "2026-09-09T21:29:26.396901+00:00"
     }
   },
   "delivery_claims": {
@@ -16253,6 +16316,26 @@
       "updated_at": "2026-09-09T13:03:46.358453+00:00",
       "failed_recipient_hashes": [],
       "delivered_at": "2026-09-09T13:03:46.358453+00:00"
+    },
+    "fbbbb2479dcefcff081131e27f29771c": {
+      "notification_key": "fbbbb2479dcefcff081131e27f29771c",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "delivered_recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "claimed_at": "2026-09-09T21:29:25.676414+00:00",
+      "lease_until": null,
+      "run_id_hash": "1db8f17f78aa",
+      "updated_at": "2026-09-09T21:29:26.372380+00:00",
+      "failed_recipient_hashes": [],
+      "delivered_at": "2026-09-09T21:29:26.372380+00:00"
     }
   }
 }
