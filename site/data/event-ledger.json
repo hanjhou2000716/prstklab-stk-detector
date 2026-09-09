@@ -14947,7 +14947,7 @@
       "location_fingerprint": "",
       "action_fingerprint": "",
       "first_discovered_at": "2026-09-09T07:01:32.716339+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-09-09T07:02:06.426566+00:00",
       "escalated": false,
       "risk_level": "持續觀察",
       "risk_rank": 0,
@@ -14957,9 +14957,72 @@
       "last_title": "GDACS Red flood alert",
       "compound_item_id": null,
       "compound_event_cluster_key": null,
-      "last_decision": null,
-      "decision_history": [],
-      "updated_at": "2026-09-09T07:01:32.716339+00:00"
+      "last_decision": {
+        "recorded_at": "2026-09-09T07:02:05.723475+00:00",
+        "allowed": true,
+        "status": "eligible",
+        "reason": "new_theme",
+        "reasons": [],
+        "notification_theme_key": "gdacs-665e26e7b3",
+        "event_key": "be2e87eed2f39581653818f2817a39a3",
+        "risk": "R1",
+        "theme_window": 7200,
+        "material_state_changed": true,
+        "last_notified_at": null,
+        "taiwan_priority": 4
+      },
+      "decision_history": [
+        {
+          "recorded_at": "2026-09-09T07:02:05.723475+00:00",
+          "allowed": true,
+          "status": "eligible",
+          "reason": "new_theme",
+          "reasons": [],
+          "notification_theme_key": "gdacs-665e26e7b3",
+          "event_key": "be2e87eed2f39581653818f2817a39a3",
+          "risk": "R1",
+          "theme_window": 7200,
+          "material_state_changed": true,
+          "last_notified_at": null,
+          "taiwan_priority": 4
+        }
+      ],
+      "updated_at": "2026-09-09T07:02:06.426566+00:00",
+      "delivery_history": [
+        {
+          "event_key": "be2e87eed2f39581653818f2817a39a3",
+          "notification_id": "be2e87eed2f39581653818f2817a39a3",
+          "sent_at": "2026-09-09T07:02:06.426566+00:00",
+          "importance": "high-risk",
+          "alert_type": "disaster",
+          "lifecycle_state": "confirmed",
+          "reason": "official_event_monitor",
+          "notification_theme_key": "gdacs-665e26e7b3",
+          "risk": "R1",
+          "taiwan_priority": 4,
+          "material_state_changed": true,
+          "release_id": "release-d341b178f9ea0070",
+          "snapshot_id": "0a199620d311b7b2",
+          "delivery_status": "delivered",
+          "event_cluster_key": "evt-4dc6eea7c17d679385ea46d9",
+          "prstk_risk": {
+            "prstk_risk_level": "R1",
+            "source": "event_alerts"
+          },
+          "release_ready_at": "2026-09-09T07:02:05.758867+00:00",
+          "telegram_attempted_at": "2026-09-09T07:02:05.799244+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "source_url": "https://www.gdacs.org/report.aspx?eventtype=FL&eventid=1104146",
+          "source_domain": "gdacs.org",
+          "alert_lane": "event",
+          "market_scope": "global",
+          "event_policy_reason": "event_materiality_available",
+          "trace_id": "official-6f8afb2a0a0744d4"
+        }
+      ],
+      "last_theme_notification_at": "2026-09-09T07:02:06.426566+00:00",
+      "last_notified_at": "2026-09-09T07:02:06.426566+00:00"
     }
   },
   "delivery_claims": {
@@ -16042,6 +16105,26 @@
       "updated_at": "2026-09-09T06:58:28.122868+00:00",
       "failed_recipient_hashes": [],
       "delivered_at": "2026-09-09T06:58:28.122868+00:00"
+    },
+    "be2e87eed2f39581653818f2817a39a3": {
+      "notification_key": "be2e87eed2f39581653818f2817a39a3",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "delivered_recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "claimed_at": "2026-09-09T07:02:05.762103+00:00",
+      "lease_until": null,
+      "run_id_hash": "69bd188efb41",
+      "updated_at": "2026-09-09T07:02:06.396226+00:00",
+      "failed_recipient_hashes": [],
+      "delivered_at": "2026-09-09T07:02:06.396226+00:00"
     }
   }
 }
