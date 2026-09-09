@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "0a199620d311b7b2",
-  "snapshot_id": "news-ff8f05bcfe36f454",
+  "market_snapshot_id": "26c185a2830ba2d6",
+  "snapshot_id": "news-6260a06406256440",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -902,20 +902,19 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 16,
-          "TSM": 16,
+          "2330": 14,
+          "TSM": 14,
           "3017": 1,
           "NVDA": 4
         },
         "sector_interest": {},
         "topic_interest": {
-          "伊朗": 2,
-          "原油": 1,
-          "石油": 1,
+          "石油": 2,
+          "荷姆茲": 1,
           "黃金": 2
         },
         "market_interest": {
-          "taiwan": 107
+          "taiwan": 106
         },
         "context": {
           "tracked_tickers": [
@@ -991,8 +990,8 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 16,
-            "TSM": 16,
+            "2330": 14,
+            "TSM": 14,
             "NVDA": 4
           },
           "research_candidate": {
@@ -1000,20 +999,20 @@
           },
           "tracked_sector": {},
           "active_event": {
-            "伊朗": 2,
-            "原油": 1,
-            "石油": 1,
+            "石油": 2,
+            "荷姆茲": 1,
             "黃金": 2
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 34,
+      "excluded_count": 33,
       "exclusion_reasons": {
-        "insufficient_market_relevance": 41,
+        "incomplete_normalized_fact": 2,
+        "insufficient_market_relevance": 37,
         "listicle_or_selection": 3,
-        "market_scope_mismatch": 2,
-        "missing_published_at": 2,
+        "market_scope_mismatch": 4,
+        "missing_published_at": 1,
         "non_investment_content": 1
       },
       "status": "ready",
@@ -1024,10 +1023,10 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 42,
-        "normalized": 42,
+        "fetched": 41,
+        "normalized": 41,
         "eligible": 8,
-        "excluded": 34,
+        "excluded": 33,
         "deduped": 7,
         "publicly_ranked": 5,
         "current_eligible": 8,
@@ -1038,9 +1037,9 @@
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 34,
-        "fetched_story_count": 42,
-        "normalized_story_count": 42,
+        "filtered_story_count": 33,
+        "fetched_story_count": 41,
+        "normalized_story_count": 41,
         "eligible_story_count": 8,
         "deduped_story_count": 7,
         "ranked_story_count": 5
@@ -1062,8 +1061,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 42,
-          "checked_at": "2026-09-09T07:00:26.873008+00:00"
+          "item_count": 41,
+          "checked_at": "2026-09-09T07:34:20.803515+00:00"
         },
         {
           "provider": "twse",
@@ -1074,10 +1073,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-09-09T07:00:26.873008+00:00",
+          "checked_at": "2026-09-09T07:34:20.803515+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+          "last_success_at": "2026-09-09T07:34:20.803515+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -1102,10 +1101,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-09-09T07:00:26.873008+00:00",
+          "checked_at": "2026-09-09T07:34:20.803515+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+          "last_success_at": "2026-09-09T07:34:20.803515+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -1130,24 +1129,24 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 0,
-          "checked_at": "2026-09-09T07:00:26.873008+00:00",
+          "checked_at": "2026-09-09T07:34:20.803515+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+          "last_success_at": "2026-09-09T07:34:20.803515+00:00",
           "last_failure_at": null,
-          "stories_ingested": 2,
+          "stories_ingested": 1,
           "stories_deduped": 0,
           "ranked_count": 0,
           "relevance_distribution": {
-            "active_event": 2,
-            "market": 2
+            "active_event": 1,
+            "market": 1
           },
           "funnel": {
-            "fetched_count": 2,
-            "normalized_count": 2,
-            "market_compatible_count": 2,
+            "fetched_count": 1,
+            "normalized_count": 1,
+            "market_compatible_count": 1,
             "eligible_count": 0,
-            "excluded_count": 2,
+            "excluded_count": 1,
             "deduped_count": 0,
             "ranked_count": 0
           },
@@ -1162,24 +1161,23 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 0,
-          "checked_at": "2026-09-09T07:00:26.873008+00:00",
+          "checked_at": "2026-09-09T07:34:20.803515+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+          "last_success_at": "2026-09-09T07:34:20.803515+00:00",
           "last_failure_at": null,
-          "stories_ingested": 9,
+          "stories_ingested": 8,
           "stories_deduped": 0,
           "ranked_count": 0,
           "relevance_distribution": {
-            "market": 9,
-            "tracked_ticker": 1
+            "market": 8
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 9,
-            "market_compatible_count": 9,
+            "normalized_count": 8,
+            "market_compatible_count": 8,
             "eligible_count": 0,
-            "excluded_count": 9,
+            "excluded_count": 8,
             "deduped_count": 0,
             "ranked_count": 0
           },
@@ -1194,10 +1192,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 5,
-          "checked_at": "2026-09-09T07:00:26.873008+00:00",
+          "checked_at": "2026-09-09T07:34:20.803515+00:00",
           "raw_item_count": 30,
           "filtered_item_count": 5,
-          "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+          "last_success_at": "2026-09-09T07:34:20.803515+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 7,
@@ -1219,34 +1217,34 @@
         }
       ],
       "observability": {
-        "stories_ingested": 42,
+        "stories_ingested": 41,
         "stories_deduped": 7,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 2,
-          "market": 42,
+          "active_event": 1,
+          "market": 41,
           "research_candidate": 1,
-          "tracked_ticker": 6
+          "tracked_ticker": 5
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+            "last_success_at": "2026-09-09T07:34:20.803515+00:00",
             "last_failure_at": null,
-            "stories_ingested": 2,
+            "stories_ingested": 1,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "active_event": 2,
-              "market": 2
+              "active_event": 1,
+              "market": 1
             },
             "funnel": {
-              "fetched_count": 2,
-              "normalized_count": 2,
-              "market_compatible_count": 2,
+              "fetched_count": 1,
+              "normalized_count": 1,
+              "market_compatible_count": 1,
               "eligible_count": 0,
-              "excluded_count": 2,
+              "excluded_count": 1,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -1254,7 +1252,7 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+            "last_success_at": "2026-09-09T07:34:20.803515+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 7,
@@ -1277,7 +1275,7 @@
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+            "last_success_at": "2026-09-09T07:34:20.803515+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -1296,7 +1294,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+            "last_success_at": "2026-09-09T07:34:20.803515+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -1317,18 +1315,18 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 1,
+            "stories_ingested": 2,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 1
+              "market": 2
             },
             "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
+              "fetched_count": 2,
+              "normalized_count": 2,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 1,
+              "excluded_count": 2,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -1336,21 +1334,20 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+            "last_success_at": "2026-09-09T07:34:20.803515+00:00",
             "last_failure_at": null,
-            "stories_ingested": 9,
+            "stories_ingested": 8,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 9,
-              "tracked_ticker": 1
+              "market": 8
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 9,
-              "market_compatible_count": 9,
+              "normalized_count": 8,
+              "market_compatible_count": 8,
               "eligible_count": 0,
-              "excluded_count": 9,
+              "excluded_count": 8,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -1831,15 +1828,15 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-64ea5774141ac2e7e64a",
+          "story_id": "news-5a1216b25cd7c018e176",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "New US export controls reportedly target Chinese access to remote AI servers — Trump admin's cut-down AI diffusion rule could be shared with industry as soon as September - tomshardware.com",
-          "raw_title": "New US export controls reportedly target Chinese access to remote AI servers — Trump admin's cut-down AI diffusion rule could be shared with industry as soon as September - tomshardware.com",
-          "normalized_fact": "New US export controls reportedly target Chinese access to remote AI servers — Trump admin's cut-down AI diffusion rule could be shared with industry as soon as September - tomshardware.com。",
-          "market_topic": "company_industry",
+          "title": "Upcoming inflation data could determine if the Federal Reserve hikes interest rates soon, leaving Wall Street on edge - Fortune",
+          "raw_title": "Upcoming inflation data could determine if the Federal Reserve hikes interest rates soon, leaving Wall Street on edge - Fortune",
+          "normalized_fact": "Upcoming inflation data could determine if the Federal Reserve hikes interest rates soon, leaving Wall Street on edge - Fortune。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -1849,34 +1846,32 @@
           "normalization_complete": true,
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMivgJBVV95cUxNV3RGYmw3MU9Ua3ltUW91dXBjSURjWlhYcnIxZ3A0Nkx5cVJJUEZtam1hak8zazhDeS1jRExGYzhvcHVTUmNRT3AzV2JnVjh1R09GdUlRaXgwbElHdHdxRWZ3RUREbDVHSVpYVjZOVXV3SENsWFpqSG9PQ1h0b1dVT19CaEdhbHpDSklSbmRmNC1KeWJ3Z1ZtaFhWekhpY0pBTGFPSGtmbDFqenFNVmF2NThpNm9lMWtDdmU0UHFtcEhFUnRjTmw4U1RvdVFDWVdsNTZmcmljdGlMbHB6bmM4QUJ6OXJ3VlNabU04MmVzMlUtck52ZlhFdF9CTFI0aTVTU0xNQXpKVmlwMVEzdy1pYUhBb2YyZmFBY2NTTHBaR1lfM0RwQ3gwY0NGZHc2TVBTbzFqRXdFaFgtclVpTUE",
-          "url": "https://news.google.com/rss/articles/CBMivgJBVV95cUxNV3RGYmw3MU9Ua3ltUW91dXBjSURjWlhYcnIxZ3A0Nkx5cVJJUEZtam1hak8zazhDeS1jRExGYzhvcHVTUmNRT3AzV2JnVjh1R09GdUlRaXgwbElHdHdxRWZ3RUREbDVHSVpYVjZOVXV3SENsWFpqSG9PQ1h0b1dVT19CaEdhbHpDSklSbmRmNC1KeWJ3Z1ZtaFhWekhpY0pBTGFPSGtmbDFqenFNVmF2NThpNm9lMWtDdmU0UHFtcEhFUnRjTmw4U1RvdVFDWVdsNTZmcmljdGlMbHB6bmM4QUJ6OXJ3VlNabU04MmVzMlUtck52ZlhFdF9CTFI0aTVTU0xNQXpKVmlwMVEzdy1pYUhBb2YyZmFBY2NTTHBaR1lfM0RwQ3gwY0NGZHc2TVBTbzFqRXdFaFgtclVpTUE",
-          "published_at": "2026-08-28T07:00:00+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxNdmdaT3E5TjNKcU53Z0FXbDRKeGl0a2s5ZFFwNUVyaGFCUE1pODBBWU03REFMYzJyR2VhNWxzWDdTU09VdTFWVENmVzZNV2stYW11clZiNTVXRG8yQkVJRTZyZmJodk44Vl96bzd5OFRtck4wQXFWYlRSN29aRG4tZkk4WUlaSURDRUVyWWU4XzNjWUphdlRzNWljYw",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxNdmdaT3E5TjNKcU53Z0FXbDRKeGl0a2s5ZFFwNUVyaGFCUE1pODBBWU03REFMYzJyR2VhNWxzWDdTU09VdTFWVENmVzZNV2stYW11clZiNTVXRG8yQkVJRTZyZmJodk44Vl96bzd5OFRtck4wQXFWYlRSN29aRG4tZkk4WUlaSURDRUVyWWU4XzNjWUphdlRzNWljYw",
+          "published_at": "2026-09-06T15:03:00+00:00",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
           "entities": [],
           "sectors": [],
-          "topics": [
-            "ai"
-          ],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "policy",
-            "reason": "trump_policy_keyword",
+            "category": "fed",
+            "reason": "fed_subject_action",
             "matched_terms": [
-              "trump",
-              "export control"
+              "federal reserve",
+              "rates"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "trump",
-              "export control"
+              "federal reserve",
+              "rates"
             ],
-            "matched_subject": "trump",
-            "matched_action": "export control",
-            "matched_market_object": "trump",
+            "matched_subject": "federal reserve",
+            "matched_action": "rates",
+            "matched_market_object": "federal reserve",
             "input_fields": [
               "description",
               "summary",
@@ -1887,20 +1882,20 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "newusexportcontrolsreportedlytargetchineseaccesstoremoteaiserverstrumpadminscutdownaidiffusionrulecouldbesharedwithindustryassoonasseptembertomshardwarecom",
-          "event_cluster_key": "event-d40d5da52c68bc7ea142",
-          "published_time_bucket": "2026-08-28T07:00:00+00:00",
+          "dedupe_key": "upcominginflationdatacoulddetermineifthefederalreservehikesinterestratessoonleavingwallstreetonedgefortune",
+          "event_cluster_key": "event-d369f654cd262bc9c63c",
+          "published_time_bucket": "2026-09-06T15:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "trump",
-            "export control"
+            "federal reserve",
+            "rates"
           ],
-          "matched_subject": "trump",
-          "matched_action": "export control",
-          "matched_market_object": "trump",
-          "decision_value_class": "geopolitics_policy",
+          "matched_subject": "federal reserve",
+          "matched_action": "rates",
+          "matched_market_object": "federal reserve",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -1918,52 +1913,52 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-83f740cdbebdb7fa2b58",
+          "story_id": "news-8d52974f25f06994644f",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "Commerce Department Extends Export Controls to Advanced AI Models; Authorizes Release to Specific Trusted Partners - Mayer Brown",
-          "raw_title": "Commerce Department Extends Export Controls to Advanced AI Models; Authorizes Release to Specific Trusted Partners - Mayer Brown",
-          "normalized_fact": "Commerce Department Extends Export Controls to Advanced AI Models; Authorizes Release to Specific Trusted Partners - Mayer Brown。",
-          "market_topic": "semiconductor_ai",
+          "title": "Treasury yields fall after top Fed official signals support for rate hold - Financial Times",
+          "raw_title": "Treasury yields fall after top Fed official signals support for rate hold - Financial Times",
+          "normalized_fact": "Treasury yields fall after top Fed official signals support for rate hold。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
           "byline_removed": false,
-          "publisher_removed": false,
+          "publisher_removed": true,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMigwJBVV95cUxOWTQzZjJ5VGNUaGtJY3dTaTVwb0dWN01yWFY2RGtZX0gwZEpFVHM5NTZZQWRRZ04yZk1Hc2tCcFplcTg2VkxPZzVyUDhBeElfM21Id25YX3NpSXpRSmpLRVlkdXdkRWUyU1NMVXRydklfYmI4eWFrS1BqdnpNTlFmSnZ0RkZZeG9zYXRBRmdDYWIxOVA3R3E2aENra054OHl6WjhkTDVuWUY3eDdtc0J4WmVSR0lKbXNXaUNlaF9obXV5ajUwU0RNR3pLdjhlbGJYdllmNnZwZjNISUlvZFVUUkRGNTNoRWEyODgtVUQ3WXVKeDRUbHNYMEJXNnNQQWFyVGZN",
-          "url": "https://news.google.com/rss/articles/CBMigwJBVV95cUxOWTQzZjJ5VGNUaGtJY3dTaTVwb0dWN01yWFY2RGtZX0gwZEpFVHM5NTZZQWRRZ04yZk1Hc2tCcFplcTg2VkxPZzVyUDhBeElfM21Id25YX3NpSXpRSmpLRVlkdXdkRWUyU1NMVXRydklfYmI4eWFrS1BqdnpNTlFmSnZ0RkZZeG9zYXRBRmdDYWIxOVA3R3E2aENra054OHl6WjhkTDVuWUY3eDdtc0J4WmVSR0lKbXNXaUNlaF9obXV5ajUwU0RNR3pLdjhlbGJYdllmNnZwZjNISUlvZFVUUkRGNTNoRWEyODgtVUQ3WXVKeDRUbHNYMEJXNnNQQWFyVGZN",
-          "published_at": "2026-06-30T07:00:00+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxONV9sN1lwMEpHa3MwdV9WQWRFQ1UwZzJycnNxM25DZU45WVhEZGdqN3EyU3pBYkw3WnlvS1FkekplTFdUNUdHel9xa0JBeGJWOS1IdlE5OEdKNzhFc0VOb3F1dHF4RURUMWZhektSemRTVzZ2V3U2OEttVTA5aVlQbHJGc04",
+          "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxONV9sN1lwMEpHa3MwdV9WQWRFQ1UwZzJycnNxM25DZU45WVhEZGdqN3EyU3pBYkw3WnlvS1FkekplTFdUNUdHel9xa0JBeGJWOS1IdlE5OEdKNzhFc0VOb3F1dHF4RURUMWZhektSemRTVzZ2V3U2OEttVTA5aVlQbHJGc04",
+          "published_at": "2026-09-03T12:30:23+00:00",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
           "entities": [],
           "sectors": [],
           "topics": [
-            "ai"
+            "rates"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
+            "category": "fed",
+            "reason": "fed_subject_action",
             "matched_terms": [
-              "ai",
-              "export control"
+              "fed",
+              "rate"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "ai",
-              "export control"
+              "fed",
+              "rate"
             ],
-            "matched_subject": "ai",
-            "matched_action": "export control",
-            "matched_market_object": "ai",
+            "matched_subject": "fed",
+            "matched_action": "rate",
+            "matched_market_object": "fed",
             "input_fields": [
               "description",
               "summary",
@@ -1974,20 +1969,20 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "commercedepartmentextendsexportcontrolstoadvancedaimodelsauthorizesreleasetospecifictrustedpartnersmayerbrown",
-          "event_cluster_key": "event-a4658e4eec2e323f3ec8",
-          "published_time_bucket": "2026-06-30T07:00:00+00:00",
+          "dedupe_key": "treasuryyieldsfallaftertopfedofficialsignalssupportforratehold",
+          "event_cluster_key": "event-cce7e9a5ef33cafbeb93",
+          "published_time_bucket": "2026-09-03T12:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "ai",
-            "export control"
+            "fed",
+            "rate"
           ],
-          "matched_subject": "ai",
-          "matched_action": "export control",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
+          "matched_subject": "fed",
+          "matched_action": "rate",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -2025,21 +2020,21 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "NVDA": 13,
+          "NVDA": 12,
           "TSM": 4,
           "DELL": 4
         },
         "sector_interest": {},
         "topic_interest": {
           "oil": 19,
-          "伊朗": 2,
+          "伊朗": 1,
           "原油": 1,
           "iran": 8,
           "war": 3,
           "hormuz": 1
         },
         "market_interest": {
-          "us": 130
+          "us": 127
         },
         "context": {
           "tracked_tickers": [
@@ -2115,7 +2110,7 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "NVDA": 13,
+            "NVDA": 12,
             "TSM": 4
           },
           "research_candidate": {
@@ -2124,7 +2119,7 @@
           "tracked_sector": {},
           "active_event": {
             "oil": 19,
-            "伊朗": 2,
+            "伊朗": 1,
             "原油": 1,
             "iran": 8,
             "war": 3,
@@ -2133,14 +2128,14 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 52,
+      "excluded_count": 50,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 25,
-        "insufficient_market_relevance": 28,
+        "incomplete_normalized_fact": 21,
+        "insufficient_market_relevance": 30,
         "listicle_or_selection": 4,
         "market_scope_mismatch": 10,
-        "missing_published_at": 4
+        "missing_published_at": 3
       },
       "status": "ready",
       "collection_state": "degraded",
@@ -2150,23 +2145,23 @@
         "successful_provider_count": 4,
         "failed_provider_count": 1,
         "disabled_provider_count": 1,
-        "fetched": 60,
-        "normalized": 60,
+        "fetched": 58,
+        "normalized": 58,
         "eligible": 8,
-        "excluded": 52,
+        "excluded": 50,
         "deduped": 8,
         "publicly_ranked": 5,
         "current_eligible": 8,
-        "inventory_considered": 70,
+        "inventory_considered": 69,
         "inventory_eligible": 28,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 52,
-        "fetched_story_count": 60,
-        "normalized_story_count": 60,
+        "filtered_story_count": 50,
+        "fetched_story_count": 58,
+        "normalized_story_count": 58,
         "eligible_story_count": 8,
         "deduped_story_count": 8,
         "ranked_story_count": 5
@@ -2175,7 +2170,7 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 70,
+        "considered": 69,
         "eligible": 28,
         "selected": 0,
         "target_count": 5,
@@ -2188,8 +2183,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 60,
-          "checked_at": "2026-09-09T07:00:26.873008+00:00"
+          "item_count": 58,
+          "checked_at": "2026-09-09T07:34:20.803515+00:00"
         },
         {
           "provider": "sec",
@@ -2200,10 +2195,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-09-09T07:00:26.873008+00:00",
+          "checked_at": "2026-09-09T07:34:20.803515+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+          "last_success_at": "2026-09-09T07:34:20.803515+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -2232,12 +2227,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-09-09T07:00:26.873008+00:00",
+          "checked_at": "2026-09-09T07:34:20.803515+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-09-09T07:00:26.873008+00:00",
+          "last_failure_at": "2026-09-09T07:34:20.803515+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -2260,10 +2255,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-09-09T07:00:26.873008+00:00",
+          "checked_at": "2026-09-09T07:34:20.803515+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+          "last_success_at": "2026-09-09T07:34:20.803515+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -2288,24 +2283,24 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 0,
-          "checked_at": "2026-09-09T07:00:26.873008+00:00",
+          "checked_at": "2026-09-09T07:34:20.803515+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+          "last_success_at": "2026-09-09T07:34:20.803515+00:00",
           "last_failure_at": null,
-          "stories_ingested": 4,
+          "stories_ingested": 3,
           "stories_deduped": 0,
           "ranked_count": 0,
           "relevance_distribution": {
-            "active_event": 2,
-            "market": 4
+            "active_event": 1,
+            "market": 3
           },
           "funnel": {
-            "fetched_count": 4,
-            "normalized_count": 4,
-            "market_compatible_count": 4,
+            "fetched_count": 3,
+            "normalized_count": 3,
+            "market_compatible_count": 3,
             "eligible_count": 0,
-            "excluded_count": 4,
+            "excluded_count": 3,
             "deduped_count": 0,
             "ranked_count": 0
           },
@@ -2320,23 +2315,21 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 0,
-          "checked_at": "2026-09-09T07:00:26.873008+00:00",
+          "checked_at": "2026-09-09T07:34:20.803515+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+          "last_success_at": "2026-09-09T07:34:20.803515+00:00",
           "last_failure_at": null,
-          "stories_ingested": 1,
+          "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
-          "relevance_distribution": {
-            "market": 1
-          },
+          "relevance_distribution": {},
           "funnel": {
-            "fetched_count": 6,
-            "normalized_count": 1,
-            "market_compatible_count": 1,
+            "fetched_count": 5,
+            "normalized_count": 0,
+            "market_compatible_count": 0,
             "eligible_count": 0,
-            "excluded_count": 1,
+            "excluded_count": 0,
             "deduped_count": 0,
             "ranked_count": 0
           },
@@ -2351,10 +2344,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 5,
-          "checked_at": "2026-09-09T07:00:26.873008+00:00",
+          "checked_at": "2026-09-09T07:34:20.803515+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 5,
-          "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+          "last_success_at": "2026-09-09T07:34:20.803515+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 8,
@@ -2377,34 +2370,34 @@
         }
       ],
       "observability": {
-        "stories_ingested": 60,
+        "stories_ingested": 58,
         "stories_deduped": 8,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 15,
-          "market": 60,
+          "active_event": 14,
+          "market": 58,
           "research_candidate": 2,
-          "tracked_ticker": 6
+          "tracked_ticker": 5
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+            "last_success_at": "2026-09-09T07:34:20.803515+00:00",
             "last_failure_at": null,
-            "stories_ingested": 4,
+            "stories_ingested": 3,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "active_event": 2,
-              "market": 4
+              "active_event": 1,
+              "market": 3
             },
             "funnel": {
-              "fetched_count": 4,
-              "normalized_count": 4,
-              "market_compatible_count": 4,
+              "fetched_count": 3,
+              "normalized_count": 3,
+              "market_compatible_count": 3,
               "eligible_count": 0,
-              "excluded_count": 4,
+              "excluded_count": 3,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -2413,7 +2406,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-09-09T07:00:26.873008+00:00",
+            "last_failure_at": "2026-09-09T07:34:20.803515+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -2431,7 +2424,7 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+            "last_success_at": "2026-09-09T07:34:20.803515+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 8,
@@ -2455,7 +2448,7 @@
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+            "last_success_at": "2026-09-09T07:34:20.803515+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -2474,7 +2467,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+            "last_success_at": "2026-09-09T07:34:20.803515+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -2503,7 +2496,7 @@
             "ranked_count": 0,
             "relevance_distribution": {
               "market": 5,
-              "tracked_ticker": 5
+              "tracked_ticker": 4
             },
             "funnel": {
               "fetched_count": 5,
@@ -2518,20 +2511,18 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-09-09T07:00:26.873008+00:00",
+            "last_success_at": "2026-09-09T07:34:20.803515+00:00",
             "last_failure_at": null,
-            "stories_ingested": 1,
+            "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
-            "relevance_distribution": {
-              "market": 1
-            },
+            "relevance_distribution": {},
             "funnel": {
-              "fetched_count": 6,
-              "normalized_count": 1,
-              "market_compatible_count": 1,
+              "fetched_count": 5,
+              "normalized_count": 0,
+              "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 1,
+              "excluded_count": 0,
               "deduped_count": 0,
               "ranked_count": 0
             }
