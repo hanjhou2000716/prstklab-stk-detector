@@ -53,6 +53,19 @@ FIXED_ANCHORS: dict[str, tuple[int, int, str]] = {
 RETIRED_ROUTINE_SLOTS = frozenset({"intraday", "midday", "afternoon", "us_open"})
 ANCHOR_SLOTS = frozenset(FIXED_ANCHORS)
 
+# A market-only refresh still needs a real display phase.  Keep this separate
+# from ``FIXED_ANCHORS``: intraday/midday/afternoon are valid Pages views, but
+# they are retired as routine Telegram anchors.
+LIVE_PHASE_BOUNDARIES: tuple[tuple[int, str], ...] = (
+    (6 * 60, "morning"),
+    (8 * 60 + 30, "pre_open"),
+    (9 * 60, "intraday"),
+    (11 * 60 + 30, "midday"),
+    (12 * 60 + 45, "afternoon"),
+    (13 * 60 + 30, "post_close"),
+    (21 * 60, "us_premarket"),
+)
+
 
 def parse_scheduled_for(value: Any) -> datetime | None:
     """Parse an ISO timestamp only when it carries an explicit offset.
@@ -115,6 +128,26 @@ def slot_date_for(slot: str, at: datetime) -> str:
     local = at.astimezone(TAIPEI)
     day = _anchor_date_for_us_premarket(local) if slot == "us_premarket" else local.date()
     return day.isoformat()
+
+
+def live_market_phase_at(at: datetime) -> tuple[str, str]:
+    """Return the display phase for a market-only refresh.
+
+    ``build_market_snapshot`` is also used by the Pages-only refresh workflow,
+    where there is no scheduled anchor input.  Falling back to ``morning`` in
+    that path makes an afternoon snapshot look like a stale morning report.
+    This resolver is display metadata only; it does not grant notification
+    eligibility to retired routine phases.
+    """
+    local = at.astimezone(TAIPEI)
+    minute = local.hour * 60 + local.minute
+    if minute < LIVE_PHASE_BOUNDARIES[0][0]:
+        return "us_premarket", (local.date() - timedelta(days=1)).isoformat()
+    selected = LIVE_PHASE_BOUNDARIES[0][1]
+    for start, candidate in LIVE_PHASE_BOUNDARIES:
+        if minute >= start:
+            selected = candidate
+    return selected, local.date().isoformat()
 
 
 def _next_anchor_after(slot: str, scheduled: datetime) -> datetime:

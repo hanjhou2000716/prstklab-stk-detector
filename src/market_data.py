@@ -720,6 +720,7 @@ def build_market_snapshot() -> dict[str, Any]:
         raw_observation_store_summary,
         record_market_snapshot_observation,
     )
+    from src.schedule_contract import live_market_phase_at
 
     quotes = bind_market_evidence(quotes)
     indices = bind_market_evidence(indices)
@@ -827,6 +828,7 @@ def build_market_snapshot() -> dict[str, Any]:
     # registry artifact in the same snapshot prevents a later registry change
     # from silently reinterpreting historical symbols.
     instrument_master_artifact = InstrumentMaster().artifact()
+    live_phase, _live_slot_date = live_market_phase_at(scan_completed_at)
     snapshot = {
         "generated_at": scan_completed_at.isoformat(),
         "scan": {
@@ -858,7 +860,7 @@ def build_market_snapshot() -> dict[str, Any]:
             "markets": markets,
             "as_of": scan_completed_at.isoformat(),
             "fetched_at": scan_completed_at.isoformat(),
-        }),
+        }, live_phase),
         "research_report": research_report,
         "source_health": source_health,
         "source_catalog": source_catalog,

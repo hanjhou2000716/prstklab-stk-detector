@@ -1,4 +1,37 @@
+from datetime import datetime
+
 from src.briefing_cards import _contagion_inputs, _regime_factors, build_briefing_snapshot
+from src.schedule_contract import live_market_phase_at
+
+
+def test_live_market_phase_uses_current_taipei_phase_for_pages_refreshes():
+    assert live_market_phase_at(datetime.fromisoformat("2026-09-10T14:54:59+08:00")) == (
+        "post_close",
+        "2026-09-10",
+    )
+
+
+def test_live_market_briefing_does_not_fall_back_to_morning_label():
+    briefing = build_briefing_snapshot(
+        {
+            "generated_at": "2026-09-10T06:54:59+00:00",
+            "indices": [
+                {"ticker": "TAIEX", "price": 26000, "change_percent": 0.8},
+                {"ticker": "TPEx", "price": 300, "change_percent": 0.6},
+                {"ticker": "NASDAQ", "price": 20000, "change_percent": -0.29},
+                {"ticker": "SOX", "price": 5000, "change_percent": 0.37},
+                {"ticker": "DJIA", "price": 45000, "change_percent": -0.51},
+            ],
+            "quotes": [],
+            "macro_quotes": [],
+            "events": {"items": []},
+        },
+        "post_close",
+    )
+
+    assert briefing["slot"] == "post_close"
+    assert briefing["title"] == "台股盤後儀表板"
+    assert "晨報" not in briefing["public_short_message"]
 
 
 def test_regime_factors_omit_stale_quotes_and_expose_partial_evidence():
