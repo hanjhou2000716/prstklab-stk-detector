@@ -19,6 +19,9 @@ def test_pages_deploy_wrapper_retries_and_reports_degraded_status():
     assert 'default: "github-pages"' in action
     assert "available:" in action
     assert "pages_deployment_unavailable" in action
+    assert 'deployed_url="${RETRY_URL:-${FIRST_URL:-}}"' in action
+    assert 'available=%s' in action
+    assert 'deployed_url" ] && echo true || echo false' in action
     assert "exit 1" not in action
 
 
