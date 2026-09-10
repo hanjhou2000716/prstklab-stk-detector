@@ -30,35 +30,62 @@ jobs:
         with:
           fetch-depth: 0
       - name: Wait for production writer queue
+        id: writer_queue
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python -m src.writer_queue
       - name: Restore last immutable data release
+        if: steps.writer_queue.outputs.should_continue == 'true'
         run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        if: steps.writer_queue.outputs.should_continue == 'true'
         with:
           python-version: "3.11"
       - name: Install dependencies
+        if: steps.writer_queue.outputs.should_continue == 'true'
         run: pip install -r requirements.txt
       - name: Merge Railway diagnostics
+        if: steps.writer_queue.outputs.should_continue == 'true'
         run: python -m src.monitor_health --payload "$MONITOR_HEALTH_PAYLOAD" --snapshot site/data/market.json --state site/data/monitor-health.json
       - name: Commit monitor diagnostics
+        if: steps.writer_queue.outputs.should_continue == 'true'
         run: |
           python -m src.release_manifest \
             --allow-stale-research \
             --research-fallback-reason "research scan incomplete; preserving last-known-good research snapshot"
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --message "chore: publish monitor health diagnostics"
       - name: Build and validate cache-busted static assets
+        if: steps.writer_queue.outputs.should_continue == 'true'
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
           python -m src.asset_contract --root site
       - name: Configure GitHub Pages
+        if: steps.writer_queue.outputs.should_continue == 'true'
         id: pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
       - name: Upload Pages artifact
+        if: steps.writer_queue.outputs.should_continue == 'true'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           path: site
       - name: Deploy GitHub Pages
+        if: steps.writer_queue.outputs.should_continue == 'true'
         id: deployment
         uses: ./.github/actions/deploy-pages-retry
+      - name: Publish writer queue decision
+        if: always()
+        env:
+          QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'failed_or_unavailable' }}
+          QUEUE_REASON: ${{ steps.writer_queue.outputs.reason || 'queue_step_failed' }}
+        run: |
+          {
+            echo "## Writer queue decision"
+            echo "- queue_status: ${QUEUE_STATUS}"
+            echo "- reason: ${QUEUE_REASON}"
+            if [ "${QUEUE_STATUS}" = "superseded" ]; then
+              echo "- notification_status: suppressed"
+              echo "- notification_reason: stale_workflow_superseded"
+            else
+              echo "- notification_status: not_applicable"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

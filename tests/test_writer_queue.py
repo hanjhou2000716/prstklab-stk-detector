@@ -63,6 +63,38 @@ def test_wait_for_slot_fails_closed_when_lookup_fails():
         )
 
 
+def test_wait_for_slot_supersedes_as_soon_as_main_moves():
+    responses = [[_run(10)], [_run(10)]]
+    revisions = iter(["same-sha", "same-sha", "new-sha"])
+    sleeps: list[int] = []
+
+    def fetcher(**_kwargs):
+        return responses.pop(0)
+
+    def revision_fetcher(**_kwargs):
+        return next(revisions)
+
+    result = wait_for_slot(
+        current_run_id=11,
+        api_url="https://api.github.test",
+        repository="owner/repo",
+        token="token",
+        timeout_seconds=30,
+        poll_seconds=2,
+        settle_seconds=0,
+        fetcher=fetcher,
+        sleeper=sleeps.append,
+        run_sha="same-sha",
+        revision_fetcher=revision_fetcher,
+    )
+
+    assert result.status == "superseded"
+    assert result.reason == "stale_workflow_revision"
+    assert result.blockers == (10,)
+    assert result.main_sha == "new-sha"
+    assert sleeps == [2]
+
+
 def test_production_revision_fence_allows_current_main():
     assert evaluate_production_revision(run_sha="abc123", main_sha="ABC123") == {
         "allowed": True,
@@ -84,7 +116,7 @@ def test_production_revision_fence_blocks_missing_revision():
     }
 
 
-def test_writer_queue_cli_stops_before_publication_when_main_moves(monkeypatch, capsys):
+def test_writer_queue_cli_stops_before_publication_when_main_moves(monkeypatch, capsys, tmp_path):
     monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
     monkeypatch.setenv("GITHUB_TOKEN", "token")
     monkeypatch.setenv("GITHUB_SHA", "old-sha")
@@ -92,5 +124,11 @@ def test_writer_queue_cli_stops_before_publication_when_main_moves(monkeypatch, 
     monkeypatch.setattr("src.writer_queue._fetch_main_revision", lambda **_kwargs: "new-sha")
     monkeypatch.setattr(sys, "argv", ["writer_queue", "--run-id", "11", "--settle-seconds", "0"])
 
-    assert main() == 1
-    assert "stale_workflow_revision" in capsys.readouterr().out
+    output_path = tmp_path / "github-output"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output_path))
+
+    assert main() == 0
+    output = capsys.readouterr().out
+    assert "stale_workflow_superseded" in output
+    assert "queue_status=superseded" in output_path.read_text(encoding="utf-8")
+    assert "should_continue=false" in output_path.read_text(encoding="utf-8")
