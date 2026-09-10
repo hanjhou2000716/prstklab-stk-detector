@@ -19,6 +19,7 @@ from gmail_history_sync import (  # noqa: E402
 from gmail_watch import GmailWatchConfig  # noqa: E402
 
 from gmail_ingress import GmailIngressService  # noqa: E402
+from scripts.sync_gmail_supabase import build_safe_sync_result  # noqa: E402
 
 
 def _candidate_diagnostics(primary: str = "", **counts: int) -> dict:
@@ -382,9 +383,38 @@ def test_sync_history_routes_fresh_high_importance_fj_as_material_candidate(tmp_
     result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_FreshFinancialJuiceClient))
     assert result["accepted_new_count"] == 1
     assert result["material_candidate_count"] == 1
+    assert result["priority_candidate_count"] == 1
     assert result["candidate_diagnostics"]["counts"]["new_event_eligible"] == 1
     assert result["candidate_diagnostics"]["primary_reason"] == ""
     assert store.cursor()["last_history_id"] == "h-fresh"
+
+
+def test_sync_result_contract_preserves_priority_candidate_count() -> None:
+    result = build_safe_sync_result(
+        {
+            "status": "healthy",
+            "processed": 1,
+            "failed": 0,
+            "accepted_new_count": 1,
+            "material_candidate_count": 1,
+            "priority_candidate_count": 1,
+            "candidate_diagnostics": _candidate_diagnostics(),
+        },
+        notification_requested=True,
+        sync_started_at="2026-09-10T08:00:00+00:00",
+        sync_completed_at="2026-09-10T08:00:01+00:00",
+    )
+    assert result["priority_candidate_count"] == 1
+    assert result["notification_requested"] is True
+
+
+def test_pending_cursor_is_cleared_only_when_it_is_the_consumed_cursor(tmp_path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(pending_history_id="newer")
+    assert store.clear_pending_history_if_matches("older") is False
+    assert store.cursor()["pending_history_id"] == "newer"
+    assert store.clear_pending_history_if_matches("newer") is True
+    assert store.cursor()["pending_history_id"] is None
 
 
 def test_sync_history_processes_all_history_pages_before_advancing_cursor(tmp_path) -> None:

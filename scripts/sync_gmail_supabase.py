@@ -22,6 +22,28 @@ from supabase_email_store import SupabaseEmailStore  # noqa: E402
 
 from gmail_ingress import GmailIngressService  # noqa: E402
 
+SYNC_RESULT_KEYS = (
+    "status", "processed", "failed", "duplicate", "duplicate_count", "accepted_new_count",
+    "material_candidate_count", "priority_candidate_count", "skipped", "history_gap",
+    "failure_types", "latest_financialjuice_diagnostics", "candidate_diagnostics",
+    "notification_requested", "sync_started_at", "sync_completed_at",
+)
+
+
+def build_safe_sync_result(
+    result: dict[str, Any],
+    *,
+    notification_requested: bool,
+    sync_started_at: str,
+    sync_completed_at: str,
+) -> dict[str, Any]:
+    """Project the sync result into the workflow's stable, public-safe contract."""
+    safe = {key: result[key] for key in SYNC_RESULT_KEYS if key in result}
+    safe["notification_requested"] = notification_requested
+    safe["sync_started_at"] = sync_started_at
+    safe["sync_completed_at"] = sync_completed_at
+    return safe
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -45,14 +67,13 @@ def main() -> int:
         # invokes this workflow before the first renewal persisted it, use the
         # notification cursor as a fail-closed baseline (no historical replay).
         store.save_cursor(last_history_id=pending)
-    elif pending and pending == baseline:
-        store.save_cursor(pending_history_id=None)
     ingress = GmailIngressService(store, config)
     if args.latest_financialjuice:
         result = asyncio.run(sync_latest_financialjuice(config, store, ingress))
         # The operator replay is diagnostic-only.  It may refresh a sanitized
         # observation, but it must never wake the realtime event monitor.
         result["material_candidate_count"] = 0
+        result["priority_candidate_count"] = 0
         diagnostics = result.get("candidate_diagnostics")
         if isinstance(diagnostics, dict):
             counts = diagnostics.setdefault("counts", {})
@@ -73,16 +94,20 @@ def main() -> int:
             candidate_decided_at=sync_completed_at,
             dispatch_error=None if failed == 0 else status[:120],
         )
-    if result.get("status") in {"healthy", "no_history_cursor"}:
-        store.save_cursor(pending_history_id=None)
-    safe = {key: result[key] for key in (
-        "status", "processed", "failed", "duplicate", "duplicate_count", "accepted_new_count",
-        "material_candidate_count", "skipped", "history_gap", "failure_types",
-        "latest_financialjuice_diagnostics", "candidate_diagnostics",
-        "notification_requested", "sync_started_at", "sync_completed_at",
-    ) if key in result}
-    safe["sync_started_at"] = sync_started_at
-    safe["sync_completed_at"] = sync_completed_at
+    if pending and result.get("status") in {"healthy", "no_history_cursor"}:
+        # A new Pub/Sub notification can arrive while this run is processing.
+        # Clear only the exact hint this run consumed; never overwrite a newer
+        # pending cursor with a blind save_cursor(...=None).
+        clear_pending = getattr(store, "clear_pending_history_if_matches", None)
+        if not callable(clear_pending):
+            raise RuntimeError("cursor_contract_missing:clear_pending_history_if_matches")
+        clear_pending(pending)
+    safe = build_safe_sync_result(
+        result,
+        notification_requested=args.notify == "true",
+        sync_started_at=sync_started_at,
+        sync_completed_at=sync_completed_at,
+    )
     print(json.dumps(safe, ensure_ascii=False, sort_keys=True))
     return 0 if result.get("failed", 0) == 0 else 1
 

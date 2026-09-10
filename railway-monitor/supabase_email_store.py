@@ -13,6 +13,7 @@ import os
 import re
 from datetime import UTC, datetime
 from typing import Any
+from urllib.parse import quote
 
 import requests
 
@@ -130,6 +131,21 @@ class SupabaseEmailStore:
         current.pop("id", None)
         current.pop("updated_at", None)
         return current
+
+    def clear_pending_history_if_matches(self, expected_history_id: str) -> bool:
+        """Atomically acknowledge only the pending cursor consumed by a run."""
+        expected = str(expected_history_id or "").strip()
+        if not expected:
+            return False
+        encoded = quote(expected, safe="")
+        _status, payload = self._request(
+            "PATCH",
+            "gmail_watch_state",
+            f"?id=eq.primary&pending_history_id=eq.{encoded}",
+            {"pending_history_id": None},
+            prefer="return=representation",
+        )
+        return isinstance(payload, list) and bool(payload)
 
     def claim_observation(self, observation: dict[str, Any]) -> bool:
         message_id = str(observation.get("gmail_message_id") or "").strip()
@@ -304,7 +320,7 @@ class SupabaseEmailStore:
             # live, and no provider response body is exposed.
             pass
         fj_status = str(
-            ((self.source_health().get("financialjuice") or {}).get("status") or "no_new_content")
+            (self.source_health().get("financialjuice") or {}).get("status") or "no_new_content"
         )
         return {
             # last_sync_at is retained for old readers, but health must follow
