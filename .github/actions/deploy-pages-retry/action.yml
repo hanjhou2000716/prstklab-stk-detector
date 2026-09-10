@@ -66,7 +66,13 @@ runs:
         FALLBACK_URL: ${{ inputs.fallback_url }}
       run: |
         set -euo pipefail
-        deployed_url="${RETRY_URL:-${FIRST_URL:-}}"
+        if [ "${RETRY_OUTCOME:-}" = "success" ]; then
+          deployed_url="$RETRY_URL"
+        elif [ "${FIRST_OUTCOME:-}" = "success" ]; then
+          deployed_url="$FIRST_URL"
+        else
+          deployed_url=""
+        fi
         page_url="${deployed_url:-$FALLBACK_URL}"
         if [ -z "$deployed_url" ]; then
           reason="pages_deployment_unavailable"
