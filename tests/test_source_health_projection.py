@@ -84,7 +84,7 @@ def test_source_health_projection_rejects_nested_or_unbounded_values() -> None:
                 },
                 "financialjuice": {
                     "importance_gte_8_count": "3",
-                    "last_importance_gte_8_at": "2026-08-21T00:00:00Z",
+                    "last_importance_gte_9_at": "2026-08-21T00:00:00Z",
                 },
             }
         }
@@ -92,4 +92,4 @@ def test_source_health_projection_rejects_nested_or_unbounded_values() -> None:
     result = project_source_health(diagnostics)
     assert result["creator"] == {}
     assert result["financialjuice"]["importance_gte_8_count"] == 3
-    assert result["financialjuice"]["last_importance_gte_8_at"].endswith("Z")
+    assert result["financialjuice"]["last_importance_gte_9_at"].endswith("Z")

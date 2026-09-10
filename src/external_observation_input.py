@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from src.creator_provider_registry import creator_ids
+from src.external_observability_contract import CANONICAL_IMPORTANCE_AT_FIELD
 from src.financialjuice_contract import VENDOR_PRIORITY_THRESHOLD
 
 # Only active Creator providers may cross the public observation boundary.
@@ -195,11 +196,7 @@ def _observability(accepted: list[dict[str, Any]], rejected: int) -> dict[str, A
         "last_received_at": max(received, default=(None, None))[1],
         "last_parsed_at": max(parsed, default=(None, None))[1],
         "parser_error_count": rejected,
-        "last_importance_ge9_at": max(qualifying_times, default=(None, None))[1],
-        # Retain the old field as a read-compatible alias.  It deliberately
-        # carries the new >=9 population so old consumers cannot silently
-        # re-open the retired 8/10 priority lane.
-        "last_importance_ge8_at": max(qualifying_times, default=(None, None))[1],
+        CANONICAL_IMPORTANCE_AT_FIELD: max(qualifying_times, default=(None, None))[1],
         "qualifying_item_count": len(qualifying),
         "pending_cluster_count": len(pending_clusters),
         "last_notification_decision": decision,

@@ -57,7 +57,6 @@ _PUBLIC_FIELD_TYPES: dict[str, dict[str, str]] = {
         "last_failure_reason": "text",
         "failure_reason_counts": "mapping",
         "last_importance_gte_9_at": "timestamp",
-        "last_importance_gte_8_at": "timestamp",  # read-compatible alias
         "decision": "text",
         "last_release_id": "text",
         "last_snapshot_id": "text",

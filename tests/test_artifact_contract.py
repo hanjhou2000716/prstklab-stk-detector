@@ -291,6 +291,7 @@ def test_source_health_accepts_external_observability_contract():
             "last_received_at": "2026-08-14T01:02:03+00:00",
             "last_parsed_at": "2026-08-14T01:02:03+00:00",
             "parser_error_count": 1,
+            "last_importance_gte_9_at": "2026-08-14T01:02:03+00:00",
             "last_importance_ge8_at": "2026-08-14T01:02:03+00:00",
             "qualifying_item_count": 1,
             "pending_cluster_count": 1,

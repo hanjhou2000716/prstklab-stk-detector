@@ -31,6 +31,30 @@ def _artifacts(tmp_path):
     (site_data / "event-ledger.json").write_text(json.dumps({"schema_version": 1, "retention_days": 30, "events": {}}), encoding="utf-8")
 
 
+def _market_with_source_health(tmp_path, observability, *, core=False):
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    source = {
+        "key": "market_quotes" if core else "external_financialjuice",
+        "label": "市場報價" if core else "FinancialJuice sanitized ingress",
+        "status": "healthy" if core else "partial",
+        "semantic_state": "healthy" if core else "partial",
+        "role": "required_for_core" if core else "optional",
+        "issues": [],
+        "observability": observability,
+    }
+    market["source_health"] = {
+        "status": "healthy" if core else "partial",
+        "sources": [source],
+        "event_scan": {"status": "no_event"},
+        "missing_source_count": 0 if core else 1,
+        "runtime_failure_count": 0 if core else 1,
+        "configuration_missing_count": 0,
+    }
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+    return market_path
+
+
 def test_manifest_is_ready_and_hashes_are_verifiable(tmp_path):
     _artifacts(tmp_path)
     manifest = build_release_manifest(root=tmp_path)
@@ -112,6 +136,86 @@ def test_manifest_publishes_scheduled_briefing_alert_artifact(tmp_path):
     assert artifact["snapshot_id"] == market["snapshot_id"]
     assert row["sha256"] == sha256_file(tmp_path / "site" / "data" / row["path"])
     assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
+def test_manifest_normalizes_legacy_fj_priority_timestamp_alias(tmp_path):
+    _artifacts(tmp_path)
+    _market_with_source_health(tmp_path, {
+        "last_received_at": "2026-09-10T12:39:48+00:00",
+        "last_parsed_at": None,
+        "parser_error_count": 5,
+        "last_importance_ge9_at": "2026-09-10T12:39:48+00:00",
+        "last_importance_ge8_at": "2026-09-10T12:39:48+00:00",
+        "qualifying_item_count": 31,
+        "pending_cluster_count": 31,
+        "last_notification_decision": "eligible",
+        "last_delivery_at": None,
+    })
+
+    manifest = build_release_manifest(root=tmp_path)
+
+    assert manifest["status"] == "ready"
+    market = json.loads((tmp_path / "site" / "data" / "market.json").read_text(encoding="utf-8"))
+    source = market["source_health"]["sources"][0]
+    observability = source["observability"]
+    assert observability["last_importance_gte_9_at"] == "2026-09-10T12:39:48+00:00"
+    assert "last_importance_ge9_at" not in observability
+    assert "last_importance_ge8_at" not in observability
+
+
+def test_manifest_isolates_unknown_optional_observability_and_keeps_core_release_ready(tmp_path):
+    _artifacts(tmp_path)
+    _market_with_source_health(tmp_path, {
+        "last_received_at": "2026-09-10T12:39:48+00:00",
+        "qualifying_item_count": 1,
+        "unexpected_metric": "private-runtime-value",
+    })
+
+    manifest = build_release_manifest(root=tmp_path)
+
+    assert manifest["status"] == "ready"
+    market = json.loads((tmp_path / "site" / "data" / "market.json").read_text(encoding="utf-8"))
+    source = market["source_health"]["sources"][0]
+    assert "observability" not in source
+    assert source["observability_contract_status"] == "isolated"
+    assert source["observability_contract_errors"] == ["unknown_observability_field"]
+    assert source["observability_contract_fields"] == ["unexpected_metric"]
+    assert "optional_observability_contract_invalid" in source["issues"]
+
+
+def test_manifest_preserves_creator_observability_contract(tmp_path):
+    _artifacts(tmp_path)
+    _market_with_source_health(tmp_path, {
+        "observations": 2,
+        "last_parsed_at": "2026-09-10T12:39:48+00:00",
+        "morning_batch_state": "ready",
+        "state": "healthy",
+    })
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["source_health"]["sources"][0].update({
+        "key": "creator_public",
+        "label": "Creator public",
+    })
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+
+    assert manifest["status"] == "ready"
+    normalized = json.loads(market_path.read_text(encoding="utf-8"))
+    source = normalized["source_health"]["sources"][0]
+    assert source["observability"]["observations"] == 2
+    assert "optional_observability_contract_invalid" not in source.get("issues", [])
+
+
+def test_manifest_does_not_isolate_observability_for_core_source(tmp_path):
+    _artifacts(tmp_path)
+    _market_with_source_health(tmp_path, {"unexpected_metric": 1}, core=True)
+
+    manifest = build_release_manifest(root=tmp_path)
+
+    assert manifest["status"] == "invalid"
+    assert any("observability" in error for error in manifest["validation_errors"])
 
 
 def test_scheduled_briefing_projection_preserves_primary_semantics_and_real_quotes(tmp_path):

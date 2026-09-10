@@ -41,6 +41,8 @@ def test_mini_app_exposes_release_bound_external_intelligence():
     assert "等待官方核對／市場同步" in app
     assert "qualifying_item_count" in app
     assert "pending_cluster_count" in app
+    assert "last_importance_gte_9_at" in app
+    assert "last_importance_ge9_at" in app
     assert "最近解析" in app
     assert "financialjuice_priority_decisions" in app
     assert "供應商優先：未達 8/10" in app

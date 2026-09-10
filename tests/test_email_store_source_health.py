@@ -51,7 +51,8 @@ def test_financialjuice_health_projects_priority_and_lineage_without_private_ids
     assert health["last_release_id"] == "release-1"
     assert health["last_snapshot_id"] == "snapshot-1"
     assert health["last_observation_id"] == "obs-1"
-    assert health["last_importance_gte_8_at"] == "2026-08-24T01:59:00+00:00"
+    assert health["last_importance_gte_9_at"] == "2026-08-24T01:59:00+00:00"
+    assert "last_importance_gte_8_at" not in health
     assert "gmail_message_id" not in health
 
 
