@@ -37,6 +37,9 @@
         "issues": {"type": "array", "items": {"type": "string"}},
         "no_event": {"type": "boolean"},
         "pending_count": {"type": "integer", "minimum": 0},
+        "observability_contract_status": {"enum": ["ok", "degraded", "isolated"]},
+        "observability_contract_errors": {"type": "array", "items": {"type": "string", "maxLength": 80}},
+        "observability_contract_fields": {"type": "array", "items": {"type": "string", "maxLength": 80}},
         "observability": {
           "oneOf": [
             {"$ref": "#/$defs/externalObservability"},
@@ -132,7 +135,9 @@
         "last_received_at": {"type": ["string", "null"], "format": "date-time"},
         "last_parsed_at": {"type": ["string", "null"], "format": "date-time"},
         "parser_error_count": {"type": "integer", "minimum": 0},
+        "last_importance_ge9_at": {"type": ["string", "null"], "format": "date-time"},
         "last_importance_ge8_at": {"type": ["string", "null"], "format": "date-time"},
+        "last_importance_gte_9_at": {"type": ["string", "null"], "format": "date-time"},
         "qualifying_item_count": {"type": "integer", "minimum": 0},
         "pending_cluster_count": {"type": "integer", "minimum": 0},
         "last_notification_decision": {"enum": ["eligible", "pending_confirmation", "no_event"]},

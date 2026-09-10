@@ -499,8 +499,7 @@ class EmailStore:
                 "importance_gte_8_count": 0,
                 "qualifying_item_count": 0, "pending_cluster_count": 0,
                 "last_importance_gte_9_at": None,
-                # Read-compatible alias; never represents 8/10 items anymore.
-                "last_importance_gte_8_at": None, "last_received_at": None,
+                "last_received_at": None,
                 "last_parsed_at": None, "last_failure_at": None,
                 "decision": "not_checked", "last_release_id": None,
                 "last_snapshot_id": None, "last_observation_id": None,
@@ -614,11 +613,6 @@ class EmailStore:
                         note(
                             source_name,
                             "last_importance_gte_9_at",
-                            payload.get("published_at") or row[2],
-                        )
-                        note(
-                            source_name,
-                            "last_importance_gte_8_at",
                             payload.get("published_at") or row[2],
                         )
                 except (TypeError, ValueError):

@@ -193,6 +193,9 @@ def test_external_health_exposes_financialjuice_observability_without_private_fi
     assert metrics["last_notification_decision"] == "eligible"
     assert metrics["parser_error_count"] == 2
     assert metrics["last_delivery_at"] is None
+    assert metrics["last_importance_gte_9_at"] == "2026-08-14T01:02:03+00:00"
+    assert "last_importance_ge9_at" not in metrics
+    assert "last_importance_ge8_at" not in metrics
     assert "observation_id" not in metrics
 
 

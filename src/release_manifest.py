@@ -18,10 +18,15 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from src.artifact_contract import validate_release
+from src.artifact_contract import validate_release, validate_source_health
 from src.atomic_file import replace_with_retry
 from src.creator_artifact import validate_creator_artifact
 from src.creator_release import validate_creator_release
+from src.external_observability_contract import (
+    CREATOR_OBSERVABILITY_FIELDS,
+    EXTERNAL_OBSERVABILITY_FIELDS,
+    normalize_external_observability,
+)
 from src.production_acceptance import (
     production_research_contract_errors,
     validate_production_bundle,
@@ -639,6 +644,81 @@ def _normalize_market(value: dict[str, Any]) -> list[str]:
     return notes
 
 
+def _optional_observability_source(source: dict[str, Any]) -> bool:
+    key = str(source.get("key") or "").strip().casefold()
+    role = str(source.get("role") or "").strip().casefold()
+    return role == "optional" or key == "external_financialjuice" or key.startswith("creator_")
+
+
+def _observability_schema_errors(document: dict[str, Any], index: int) -> list[str]:
+    marker = f"$.sources[{index}].observability"
+    return [
+        error for error in validate_source_health(document)
+        if error.startswith("schema:") and marker in error
+    ]
+
+
+def _normalize_optional_observability(value: dict[str, Any]) -> list[str]:
+    """Canonicalize optional health telemetry and quarantine only its errors."""
+    health = value.get("source_health")
+    if not isinstance(health, dict):
+        return []
+    sources = health.get("sources")
+    if not isinstance(sources, list):
+        return []
+    notes: list[str] = []
+    for index, source in enumerate(sources):
+        if not isinstance(source, dict) or not _optional_observability_source(source):
+            continue
+        if "observability" not in source:
+            continue
+        source_key = str(source.get("key") or "").strip().casefold()
+        if source_key == "external_financialjuice":
+            normalized, aliases = normalize_external_observability(source.get("observability"))
+            allowed_fields = EXTERNAL_OBSERVABILITY_FIELDS
+        elif isinstance(source.get("observability"), dict):
+            normalized, aliases = dict(source["observability"]), []
+            allowed_fields = CREATOR_OBSERVABILITY_FIELDS
+        else:
+            normalized, aliases = None, ["observability_not_object"]
+            allowed_fields = CREATOR_OBSERVABILITY_FIELDS
+        for alias_note in aliases:
+            notes.append(f"source_health.sources[{index}].observability.{alias_note}")
+        if normalized is None:
+            source.pop("observability", None)
+            source["observability_contract_status"] = "isolated"
+            source["observability_contract_errors"] = ["observability_not_object"]
+            _append_observability_issue(source)
+            notes.append(f"source_health.sources[{index}].observability=isolated")
+            continue
+        source["observability"] = normalized
+        schema_errors = _observability_schema_errors(health, index)
+        if not schema_errors:
+            continue
+        unknown_fields = sorted(set(normalized) - allowed_fields)
+        source.pop("observability", None)
+        source["observability_contract_status"] = "isolated"
+        source["observability_contract_errors"] = [
+            "unknown_observability_field" if unknown_fields else "observability_schema_invalid"
+        ]
+        source["observability_contract_fields"] = unknown_fields
+        _append_observability_issue(source)
+        notes.append(
+            f"source_health.sources[{index}].observability=isolated"
+            f" ({source['observability_contract_errors'][0]})"
+        )
+    return notes
+
+
+def _append_observability_issue(source: dict[str, Any]) -> None:
+    issues = source.get("issues")
+    if not isinstance(issues, list):
+        issues = []
+    if "optional_observability_contract_invalid" not in issues:
+        issues.append("optional_observability_contract_invalid")
+    source["issues"] = issues
+
+
 def _gap_count(value: Any) -> int | None:
     if value is None:
         return None
@@ -732,6 +812,7 @@ def _normalize_artifacts(loaded: dict[str, dict[str, Any]]) -> list[str]:
     market = loaded.get("market.json")
     if market:
         notes.extend(f"market: {item}" for item in _normalize_market(market))
+        notes.extend(f"market: {item}" for item in _normalize_optional_observability(market))
     research = loaded.get("research-report.json")
     if research:
         notes.extend(f"research: {item}" for item in _normalize_research(research))

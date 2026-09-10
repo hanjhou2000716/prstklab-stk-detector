@@ -60,7 +60,7 @@ HEALTH_STATE: dict[str, Any] = {
         "importance_gte_8_count": 0,  # read-compatible alias for >=9
         "pending_cluster_count": 0, "last_received_at": None,
         "last_parsed_at": None, "last_failure_at": None,
-        "last_importance_gte_9_at": None, "last_importance_gte_8_at": None,
+        "last_importance_gte_9_at": None,
         "decision": "not_checked",
         "last_release_id": None, "last_snapshot_id": None,
         "last_observation_id": None, "last_telegram_delivery_at": None,

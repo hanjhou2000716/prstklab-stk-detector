@@ -39,6 +39,7 @@ SAFE_HEALTH_KEYS = {
     "queue_pending_count", "dead_letter_count", "history_cursor_present",
     "received_count", "parsed_count", "failed_count", "duplicate_count",
     "public_observation_count", "importance_gte_9_count", "importance_gte_8_count", "pending_cluster_count",
+    "last_importance_gte_9_at", "last_importance_gte_8_at",
     "last_importance_ge9_at", "last_importance_ge8_at",
     "decision", "coverage_status", "morning_batch_state", "consensus_status",
     "last_release_id", "last_snapshot_id", "last_observation_id",

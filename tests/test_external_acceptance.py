@@ -6,7 +6,7 @@ import json
 import pytest
 import requests
 
-from src.external_acceptance import capture
+from src.external_acceptance import _safe_health, capture
 
 
 class _Response:
@@ -55,6 +55,18 @@ def _manifest():
         "artifact_paths": {"market.json": "data/market.json"},
         "_artifact_fixture": artifact,
     }
+
+
+def test_safe_health_preserves_canonical_fj_priority_timestamp() -> None:
+    projected = _safe_health({
+        "financialjuice": {
+            "last_importance_gte_9_at": "2026-09-10T12:39:48+00:00",
+            "private_token": "must not be copied",
+        },
+    })
+
+    assert projected["financialjuice"]["last_importance_gte_9_at"] == "2026-09-10T12:39:48+00:00"
+    assert "private_token" not in projected["financialjuice"]
 
 
 def test_capture_is_read_only_and_redacts_health_payload() -> None:
