@@ -15596,7 +15596,7 @@
       "location_fingerprint": "",
       "action_fingerprint": "",
       "first_discovered_at": "2026-09-10T18:38:38.417208+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-09-10T18:39:05.917946+00:00",
       "escalated": false,
       "risk_level": "R0",
       "risk_rank": 0,
@@ -15606,9 +15606,101 @@
       "last_title": "NYMEX WTI Crude Oct. futures settle at $102.48 a barrel up $6.43, 6.69% 📈 StockRocket 自動化新聞監控系統",
       "compound_item_id": null,
       "compound_event_cluster_key": null,
-      "last_decision": null,
-      "decision_history": [],
-      "updated_at": "2026-09-10T18:38:38.417208+00:00"
+      "last_decision": {
+        "recorded_at": "2026-09-10T18:39:05.221869+00:00",
+        "allowed": true,
+        "status": "eligible",
+        "reason": "new_theme",
+        "reasons": [],
+        "notification_theme_key": "financialjuice-cluster:fj-cluster-e00b961aac3949e9722781ef",
+        "event_key": "1554595f7c4437f82308d94c5b56637e",
+        "risk": "R0",
+        "theme_window": 7200,
+        "material_state_changed": true,
+        "last_notified_at": null,
+        "taiwan_priority": 4
+      },
+      "decision_history": [
+        {
+          "recorded_at": "2026-09-10T18:39:05.221869+00:00",
+          "allowed": true,
+          "status": "eligible",
+          "reason": "new_theme",
+          "reasons": [],
+          "notification_theme_key": "financialjuice-cluster:fj-cluster-e00b961aac3949e9722781ef",
+          "event_key": "1554595f7c4437f82308d94c5b56637e",
+          "risk": "R0",
+          "theme_window": 7200,
+          "material_state_changed": true,
+          "last_notified_at": null,
+          "taiwan_priority": 4
+        }
+      ],
+      "updated_at": "2026-09-10T18:39:05.917946+00:00",
+      "delivery_history": [
+        {
+          "event_key": "1554595f7c4437f82308d94c5b56637e",
+          "notification_id": "fj-item-527ba3d43fcf66cea70c",
+          "sent_at": "2026-09-10T18:39:05.917946+00:00",
+          "importance": "R0",
+          "alert_type": "unknown",
+          "lifecycle_state": "pending_confirmation",
+          "reason": "financialjuice_realtime_monitor",
+          "notification_theme_key": "financialjuice-cluster:fj-cluster-e00b961aac3949e9722781ef",
+          "risk": "R0",
+          "taiwan_priority": 4,
+          "material_state_changed": true,
+          "release_id": "release-3ded6623caf6ac2e",
+          "snapshot_id": "5941af2182b8d10b",
+          "delivery_status": "delivered",
+          "observation_id_hash": "9be71ec7d4e71b16917a91db704f64eed9878054f1130310c69bfad4a8b2989c",
+          "item_id": "fj-item-527ba3d43fcf66cea70c",
+          "event_cluster_key": "fj-cluster-e00b961aac3949e9722781ef",
+          "vendor_importance": 10,
+          "prstk_risk": {
+            "prstk_risk_level": "R0",
+            "risk_rank": 0,
+            "risk_reason": "non_material_or_unclassified",
+            "vendor_importance": 10,
+            "official_confirmed": false,
+            "market_sync_confirmed": false,
+            "freshness_blocked": false,
+            "freshness_reason": null,
+            "notification_eligible": false,
+            "high_priority": false
+          },
+          "notification_reason": "vendor_priority_importance_ge_9、risk_threshold_not_reached",
+          "parser_version": "financialjuice-v1",
+          "received_at": "2026-09-10T18:32:57+00:00",
+          "notification_key": "financialjuice:f3603c680400be5edf061680",
+          "delivery_receipts": [
+            {
+              "notification_key": "financialjuice:f3603c680400be5edf061680",
+              "recipient_hash": "7a30574fc065",
+              "delivery_status": "delivered",
+              "message_id": 1164,
+              "error_class": null,
+              "release_id": "release-3ded6623caf6ac2e",
+              "snapshot_id": "5941af2182b8d10b",
+              "observation_id": "fj-item-527ba3d43fcf66cea70c",
+              "telegram_file_id_hash": null
+            }
+          ],
+          "ingested_at": "2026-09-10T18:35:54.192045+00:00",
+          "candidate_at": "2026-09-10T18:38:38.020964+00:00",
+          "release_ready_at": "2026-09-10T18:39:05.258784+00:00",
+          "telegram_attempted_at": "2026-09-10T18:39:05.917661+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "source_url": "https://www.financialjuice.com/",
+          "alert_lane": "event",
+          "market_scope": "global",
+          "event_policy_reason": "event_materiality_available",
+          "trace_id": "official-fj-item-527ba3d43fcf66cea70c"
+        }
+      ],
+      "last_theme_notification_at": "2026-09-10T18:39:05.917946+00:00",
+      "last_notified_at": "2026-09-10T18:39:05.917946+00:00"
     }
   },
   "delivery_claims": {
@@ -16844,6 +16936,26 @@
       "updated_at": "2026-09-10T16:43:55.495479+00:00",
       "failed_recipient_hashes": [],
       "delivered_at": "2026-09-10T16:43:55.495479+00:00"
+    },
+    "financialjuice:f3603c680400be5edf061680": {
+      "notification_key": "financialjuice:f3603c680400be5edf061680",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "delivered_recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065"
+      ],
+      "claimed_at": "2026-09-10T18:39:05.264023+00:00",
+      "lease_until": null,
+      "run_id_hash": "3ce09bb59978",
+      "updated_at": "2026-09-10T18:39:05.884268+00:00",
+      "failed_recipient_hashes": [],
+      "delivered_at": "2026-09-10T18:39:05.884268+00:00"
     }
   }
 }
