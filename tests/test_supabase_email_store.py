@@ -43,6 +43,22 @@ def test_cursor_round_trip_uses_singleton_and_hides_key(monkeypatch: pytest.Monk
     assert "service-role-secret" not in repr(saved)
 
 
+def test_pending_cursor_clear_uses_atomic_match(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[dict[str, Any]] = []
+
+    def request(method: str, url: str, **kwargs: Any) -> _Response:
+        calls.append({"method": method, "url": url, "kwargs": kwargs})
+        return _Response(200, [{"id": "primary"}])
+
+    monkeypatch.setattr("supabase_email_store.requests.request", request)
+    store = SupabaseEmailStore("https://example.supabase.co", "key")
+    assert store.clear_pending_history_if_matches("history/new") is True
+    assert calls[0]["method"] == "PATCH"
+    assert "id=eq.primary" in calls[0]["url"]
+    assert "pending_history_id=eq.history%2Fnew" in calls[0]["url"]
+    assert calls[0]["kwargs"]["json"] == {"pending_history_id": None}
+
+
 def test_public_projection_rejects_private_mail_fields(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("supabase_email_store.requests.request", lambda *_args, **_kwargs: _Response(201, [{"ok": True}]))
     store = SupabaseEmailStore("https://example.supabase.co", "key")

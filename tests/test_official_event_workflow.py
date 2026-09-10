@@ -26,3 +26,11 @@ def test_gmail_history_dispatches_realtime_monitor_after_new_reviewed_rows():
     assert "gmail-sync-result.json" in workflow
     assert "official-event-check" in workflow
     assert "processed" in workflow
+    assert "Validate Gmail sync result contract" in workflow
+    assert "priority_candidate_count" in workflow
+
+
+def test_worker_deploy_publishes_revision_for_health_reconciliation():
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github" / "workflows" / "deploy-worker.yml").read_text(encoding="utf-8")
+    assert '--var "VERSION:${GITHUB_SHA}"' in workflow

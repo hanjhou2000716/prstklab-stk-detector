@@ -67,6 +67,21 @@ jobs:
           if [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" = "true" ]; then args+=(--latest-financialjuice); fi
           args+=(--notify "$NOTIFY")
           python scripts/sync_gmail_supabase.py "${args[@]}" | tee gmail-sync-result.json
+      - name: Validate Gmail sync result contract
+        if: success()
+        id: contract
+        run: |
+          test -s gmail-sync-result.json
+          jq -e '
+            type == "object" and
+            (.status | type) == "string" and
+            (.processed | type) == "number" and
+            (.failed | type) == "number" and
+            (.accepted_new_count | type) == "number" and
+            (.material_candidate_count | type) == "number" and
+            (.priority_candidate_count | type) == "number" and
+            (.candidate_diagnostics | type) == "object"
+          ' gmail-sync-result.json >/dev/null
       - name: Trigger realtime event monitor for new reviewed email
         if: success()
         id: dispatch
@@ -92,6 +107,7 @@ jobs:
         env:
           DISPATCH_TRIGGERED: ${{ steps.dispatch.outputs.triggered || 'false' }}
           DISPATCH_OUTCOME: ${{ steps.dispatch.outcome || 'skipped' }}
+          RESULT_CONTRACT_OUTCOME: ${{ steps.contract.outcome || 'skipped' }}
         run: |
           processed="0"
           accepted_new="0"
@@ -113,7 +129,10 @@ jobs:
             failed="$(jq -r 'if (.failed | type) == "number" then .failed else 0 end' gmail-sync-result.json)"
             status="$(jq -r '.status // "unknown"' gmail-sync-result.json)"
           fi
-          if [ "$NOTIFY" != "true" ]; then
+          if [ "$RESULT_CONTRACT_OUTCOME" = "failure" ]; then
+            notification_status="failed"
+            notification_reason="sync_result_contract_invalid"
+          elif [ "$NOTIFY" != "true" ]; then
             notification_status="not_requested"
             notification_reason="manual_notification_opt_in_required"
           elif [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" = "true" ] || [ "$manual_replay" -gt 0 ]; then

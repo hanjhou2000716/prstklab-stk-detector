@@ -36,4 +36,6 @@ jobs:
           # Wrangler v4 reads the account from CLOUDFLARE_ACCOUNT_ID; the
           # removed --account-id CLI flag is no longer accepted by v4.127.0.
           # Keep dashboard-managed vars while deploying the canonical bundle.
-          npx --yes wrangler@4.127.0 deploy --keep-vars
+          # Expose the exact deployed source revision through /health so an
+          # accepted Gmail push can be tied to the Worker actually serving it.
+          npx --yes wrangler@4.127.0 deploy --keep-vars --var "VERSION:${GITHUB_SHA}"

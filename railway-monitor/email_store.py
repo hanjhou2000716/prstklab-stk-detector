@@ -235,6 +235,20 @@ class EmailStore:
             )
         return current
 
+    def clear_pending_history_if_matches(self, expected_history_id: str) -> bool:
+        """Atomically acknowledge only the pending cursor consumed by a run."""
+        expected = str(expected_history_id or "").strip()
+        if not expected:
+            return False
+        with self._connect() as connection:
+            result = connection.execute(
+                """UPDATE gmail_cursor
+                   SET pending_history_id = NULL, updated_at = ?
+                   WHERE id = 1 AND pending_history_id = ?""",
+                (_now(), expected),
+            )
+            return result.rowcount == 1
+
     def claim_observation(self, observation: dict[str, Any]) -> bool:
         """Atomically claim one Gmail message; return False on replay/dedupe."""
         message_id = str(observation.get("gmail_message_id") or "").strip()
