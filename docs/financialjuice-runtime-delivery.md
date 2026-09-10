@@ -7,7 +7,8 @@ observation into the release event lane, then delegates qualifying items to
 
 The boundary is intentionally conservative:
 
-- vendor importance `>= 8` enables vendor-priority notification only; it never
+- vendor importance `>= 9` enables the independent vendor-priority notification
+  lane only; `8/10` and below use the ordinary event policy and it never
   changes the PRStK risk level;
 - the release gate must be ready before rendering or sending;
 - the event ledger stores the notification key and redacted per-recipient

@@ -85,7 +85,7 @@ Telegram dry-run；外部服務未提供證據時，README 只標示「待驗證
 | 研究與候選 | 動能狙擊、三維共振、裸 K、璞玉價值；Strategy Registry／Explainability／Advice Gate | 候選、觀察、掃描失敗與部分母體分開；未通過 Advice Gate 不會產生買賣指令 |
 | 發布與回溯 | `data-release`、release manifest、snapshot／artifact hash、Pages release gate | invalid 或 hash 不一致的 release 不會覆蓋公開版本；可回到上一個 last-known-good release |
 | 通知與回執 | Telegram client、Alert Budget、逐收件人 retry、Railway／Worker receipt | 每次送出都有 trace、release、snapshot、policy 與結果；單一收件人失敗不阻塞其他人 |
-| 即時覆蓋 | Watchlist 價格速報（絕對變動 >1.5%）、官方／公開新聞與 FinancialJuice ≥8 優先通知 | 共用 EventLedger、Alert Budget 與同一 release gate；stale／delayed／未核對資料只保留觀察 |
+| 即時覆蓋 | Watchlist 價格速報（絕對變動 >1.5%）、官方／公開新聞與 FinancialJuice ≥9 優先通知 | 共用 EventLedger、Alert Budget 與同一 release gate；stale／delayed／未核對資料只保留觀察 |
 | 零成本替代路徑 | Cloudflare Worker + Pages、Supabase job/report contract、GitHub Actions worker | 可在既有 Railway 路徑旁執行 canary；Railway 保留為可選 rollback，直到外部驗收證據完整 |
 
 ### 各介面看到的內容

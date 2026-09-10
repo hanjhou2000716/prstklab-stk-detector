@@ -1,7 +1,7 @@
 import base64
 import json
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import parse_qs
 
@@ -269,6 +269,27 @@ def test_ingress_accepts_replay_safe_observation_and_dedupes(tmp_path: Path) -> 
     assert first["accepted"] is True
     assert second["status"] == "duplicate"
     assert store.health()["raw_content_stored"] is False
+
+
+def test_existing_public_high_score_fact_still_wakes_priority_candidate(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    service = GmailIngressService(store, _config())
+    base = {
+        "sender": "alerts@financialjuice.com",
+        "subject": "FinancialJuice breaking news",
+        "source_published_at": datetime.now(UTC).isoformat(),
+        "body": "Importance: 10/10\nOriginal headline: Oil supply update",
+    }
+    first = service.accept_email({**base, "gmail_message_id": "m-priority-first"})
+    replay = service.accept_email({**base, "gmail_message_id": "m-priority-replay"})
+
+    assert first["accepted"] is True
+    assert replay["accepted"] is False
+    assert replay["status"] == "duplicate"
+    assert replay["material_candidate"] is True
+    assert replay["priority_candidate"] is True
+    assert replay["candidate_diagnostics"]["counts"]["duplicate_fact"] == 1
+    assert replay["candidate_diagnostics"]["counts"]["priority_event_eligible"] == 1
 
 
 def test_duplicate_replay_enriches_public_projection_without_second_event(tmp_path: Path) -> None:

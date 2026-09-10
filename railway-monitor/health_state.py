@@ -56,10 +56,12 @@ HEALTH_STATE: dict[str, Any] = {
     "financialjuice": {
         "status": "not_checked", "received_count": 0, "parsed_count": 0,
         "failed_count": 0, "duplicate_count": 0,
-        "public_observation_count": 0, "importance_gte_8_count": 0,
+        "public_observation_count": 0, "importance_gte_9_count": 0,
+        "importance_gte_8_count": 0,  # read-compatible alias for >=9
         "pending_cluster_count": 0, "last_received_at": None,
         "last_parsed_at": None, "last_failure_at": None,
-        "last_importance_gte_8_at": None, "decision": "not_checked",
+        "last_importance_gte_9_at": None, "last_importance_gte_8_at": None,
+        "decision": "not_checked",
         "last_release_id": None, "last_snapshot_id": None,
         "last_observation_id": None, "last_telegram_delivery_at": None,
         "last_telegram_delivery_status": "not_checked",

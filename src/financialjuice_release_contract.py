@@ -3,14 +3,16 @@
 The parser and priority projector already produce the canonical FinancialJuice
 rows.  This module is the final producer/consumer contract: it verifies that
 the rows published in one market snapshot are the rows referenced by the
-priority decisions and that an eligible item still satisfies the vendor
-threshold without turning vendor importance into PRStK risk.
+priority decisions and that an eligible item uses the correct delivery policy
+without turning vendor importance into PRStK risk.
 """
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
+from src.financialjuice_contract import VENDOR_PRIORITY_THRESHOLD
 from src.telegram_client import is_valid_public_summary
 
 _STATUSES = frozenset({
@@ -68,10 +70,17 @@ def validate_financialjuice_release(snapshot: dict[str, Any]) -> dict[str, Any]:
                 importance = float(raw_importance) if raw_importance is not None else -1
             except (TypeError, ValueError):
                 importance = -1
-            if importance < 8:
-                errors.append(f"decision[{index}]:eligible_below_vendor_threshold")
-            if decision.get("vendor_priority_notification") is not True:
-                errors.append(f"decision[{index}]:eligible_without_priority_flag")
+            policy = str(decision.get("delivery_policy") or "").strip().casefold()
+            if policy == "fj_priority":
+                if not math.isfinite(importance) or importance < VENDOR_PRIORITY_THRESHOLD:
+                    errors.append(f"decision[{index}]:priority_below_vendor_threshold")
+                if decision.get("vendor_priority_notification") is not True:
+                    errors.append(f"decision[{index}]:priority_without_priority_flag")
+            elif policy == "material_event":
+                if decision.get("vendor_priority_notification") is True:
+                    errors.append(f"decision[{index}]:material_event_has_priority_flag")
+            else:
+                errors.append(f"decision[{index}]:missing_delivery_policy")
             if decision.get("public_signal_eligible") is not True:
                 errors.append(f"decision[{index}]:eligible_without_public_signal")
             if not is_valid_public_summary(str(decision.get("public_short_message") or ""), source="financialjuice"):
@@ -106,8 +115,20 @@ def validate_financialjuice_release(snapshot: dict[str, Any]) -> dict[str, Any]:
         if event.get("source_trace", {}).get("vendor_importance_is_not_risk") is not True:
             errors.append(f"event[{index}]:vendor_risk_separation_missing")
         if event.get("notification_status") == "eligible":
-            if event.get("vendor_priority_notification") is not True:
-                errors.append(f"event[{index}]:eligible_without_priority_flag")
+            policy = str(event.get("delivery_policy") or "").strip().casefold()
+            if policy == "fj_priority":
+                try:
+                    importance = float(str(event.get("vendor_importance")))
+                except (TypeError, ValueError, OverflowError):
+                    importance = -1
+                if not math.isfinite(importance) or importance < VENDOR_PRIORITY_THRESHOLD:
+                    errors.append(f"event[{index}]:priority_below_vendor_threshold")
+                if event.get("vendor_priority_notification") is not True:
+                    errors.append(f"event[{index}]:priority_without_priority_flag")
+            if policy == "material_event" and event.get("vendor_priority_notification") is True:
+                errors.append(f"event[{index}]:material_event_has_priority_flag")
+            if policy not in {"fj_priority", "material_event"}:
+                errors.append(f"event[{index}]:missing_delivery_policy")
             if event.get("alert_eligible") is not True:
                 errors.append(f"event[{index}]:eligible_without_alert_flag")
             public_message = event.get("public_short_message") or event.get("brief_title") or ""

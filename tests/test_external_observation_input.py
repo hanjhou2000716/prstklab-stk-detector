@@ -174,7 +174,7 @@ def test_external_health_exposes_financialjuice_observability_without_private_fi
         accepted=[
             {
                 "observation_id": "fj-1", "source": "financialjuice", "public_safe": True,
-                "vendor_importance": 8, "fetched_at": "2026-08-14T01:02:03Z",
+                    "vendor_importance": 9, "fetched_at": "2026-08-14T01:02:03Z",
                 "event_cluster_key": "cluster-1", "official_confirmed": False,
                 "market_sync_confirmed": False,
             },

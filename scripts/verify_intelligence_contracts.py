@@ -92,7 +92,7 @@ def run_audit() -> dict[str, Any]:
         {
             "original_headline": "Oil supply watch",
             "event_type": "energy",
-            "importance": 8,
+            "importance": 9,
             "source_url": "https://financialjuice.com/item/acceptance",
             "published_at": "2026-08-24T02:00:00Z",
             "source_published_at": AS_OF.isoformat(),

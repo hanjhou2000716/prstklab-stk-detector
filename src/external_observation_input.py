@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from src.creator_provider_registry import creator_ids
+from src.financialjuice_contract import VENDOR_PRIORITY_THRESHOLD
 
 # Only active Creator providers may cross the public observation boundary.
 # The full registry remains available to historical validation, but retired
@@ -175,7 +176,7 @@ def _observability(accepted: list[dict[str, Any]], rejected: int) -> dict[str, A
     """Summarize FJ operational state without raw content or private IDs."""
     received = [item for item in (_timestamp(row, "fetched_at", "published_at", "source_published_at") for row in accepted) if item]
     parsed = [item for item in (_timestamp(row, "fetched_at") for row in accepted) if item]
-    qualifying = [row for row in accepted if (_importance(row) or 0) >= 8]
+    qualifying = [row for row in accepted if (_importance(row) or 0) >= VENDOR_PRIORITY_THRESHOLD]
     qualifying_times = [item for item in (_timestamp(row, "fetched_at", "published_at") for row in qualifying) if item]
     pending_clusters = {
         str(row.get("event_cluster_key") or row.get("observation_id") or "").strip()
@@ -183,7 +184,7 @@ def _observability(accepted: list[dict[str, Any]], rejected: int) -> dict[str, A
         if not (row.get("official_confirmed") is True and row.get("market_sync_confirmed") is True)
     }
     pending_clusters.discard("")
-    # FJ importance>=8 is the explicit vendor-priority exception.  Keep
+    # FJ importance>=9 is the explicit vendor-priority exception.  Keep
     # pending cluster counts so the Mini App still shows missing corroboration,
     # but expose the delivery-lane decision as eligible.  The downstream
     # release gate, freshness gate, deduplication, and recipient checks remain
@@ -194,6 +195,10 @@ def _observability(accepted: list[dict[str, Any]], rejected: int) -> dict[str, A
         "last_received_at": max(received, default=(None, None))[1],
         "last_parsed_at": max(parsed, default=(None, None))[1],
         "parser_error_count": rejected,
+        "last_importance_ge9_at": max(qualifying_times, default=(None, None))[1],
+        # Retain the old field as a read-compatible alias.  It deliberately
+        # carries the new >=9 population so old consumers cannot silently
+        # re-open the retired 8/10 priority lane.
         "last_importance_ge8_at": max(qualifying_times, default=(None, None))[1],
         "qualifying_item_count": len(qualifying),
         "pending_cluster_count": len(pending_clusters),

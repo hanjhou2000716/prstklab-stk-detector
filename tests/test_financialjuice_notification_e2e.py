@@ -192,12 +192,13 @@ def test_financialjuice_delivery_reaches_text_sender_with_alert_deep_link() -> N
         "event_cluster_key": "fj-cluster-1",
         "observation_id": "fj-observation-1",
         "item_id": "fj-item-1",
-        "vendor_importance": 8,
+        "vendor_importance": 9,
         "vendor_priority_notification": True,
+        "delivery_policy": "fj_priority",
         "notification_status": "eligible",
         "freshness_status": "fresh",
         # The generic risk classifier may remain blocked for an R2 discovery;
-        # FJ >=8 is the deliberate vendor-priority exception.
+        # FJ >=9 is the deliberate vendor-priority exception.
         "notification": {"allowed": False, "status": "pending"},
         "prstk_risk": {"prstk_risk_level": "R2"},
         "title": "Oil supply update",
@@ -233,6 +234,38 @@ def test_financialjuice_delivery_reaches_text_sender_with_alert_deep_link() -> N
     )
 
 
+def test_financialjuice_eight_score_does_not_enter_priority_sender_lane() -> None:
+    calls: list[dict[str, object]] = []
+
+    def sender(**kwargs: object) -> tuple[TextDeliveryReceipt, ...]:
+        calls.append(kwargs)
+        return ()
+
+    result = deliver_financialjuice_event(
+        {
+            "source_key": "financialjuice",
+            "event_cluster_key": "fj-ordinary-8",
+            "vendor_importance": 8,
+            "vendor_priority_notification": True,
+            "delivery_policy": "fj_priority",
+            "notification_status": "eligible",
+            "freshness_status": "fresh",
+            "title": "Ordinary discovery update",
+        },
+        release_id="release-1",
+        snapshot_id="snapshot-1",
+        mini_app_url="https://example.test/app",
+        release_ready=True,
+        token="token",
+        chat_ids=("recipient",),
+        text_sender=sender,
+    )
+
+    assert result["status"] == "blocked"
+    assert "fj_priority_threshold_not_met" in result["reasons"]
+    assert calls == []
+
+
 def test_financialjuice_delivery_returns_safe_failure_classes() -> None:
     result = deliver_financialjuice_event(
         {
@@ -264,7 +297,8 @@ def test_financialjuice_delivery_prefers_notification_id_for_alert_deep_link() -
     event = {
         "source_key": "financialjuice", "notification_id": "fj-notification-1",
         "event_cluster_key": "fj-cluster-1", "observation_id": "fj-observation-1",
-        "vendor_importance": 8, "vendor_priority_notification": True,
+        "vendor_importance": 9, "vendor_priority_notification": True,
+        "delivery_policy": "fj_priority",
         "notification_status": "eligible", "freshness_status": "fresh", "prstk_risk_level": "R0",
         "title": "Oil supply update",
     }

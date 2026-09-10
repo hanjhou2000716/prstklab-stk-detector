@@ -25,7 +25,8 @@ def _candidate_diagnostics(primary: str = "", **counts: int) -> dict:
     keys = (
         "new_event_eligible", "duplicate_message", "duplicate_fact", "stale_source_event",
         "missing_source_time", "invalid_source_time", "future_source_time", "incomplete_parse",
-        "below_notification_gate", "manual_replay", "downstream_dispatch_failure",
+        "below_notification_gate", "below_priority_gate", "priority_event_eligible",
+        "manual_replay", "downstream_dispatch_failure",
     )
     return {"counts": {key: counts.get(key, 0) for key in keys}, "primary_reason": primary}
 
@@ -284,6 +285,7 @@ def test_sync_history_routes_message_and_saves_public_projection(tmp_path) -> No
         "duplicate_count": 0,
         "accepted_new_count": 1,
         "material_candidate_count": 0,
+        "priority_candidate_count": 0,
         "candidate_diagnostics": _candidate_diagnostics("stale_source_event", stale_source_event=1),
     }
     health = store.health()
@@ -314,6 +316,7 @@ def test_sync_history_suppresses_retired_creator_and_advances_cursor(tmp_path) -
         "duplicate_count": 0,
         "accepted_new_count": 0,
         "material_candidate_count": 0,
+        "priority_candidate_count": 0,
         "suppressed": 1,
         "candidate_diagnostics": _candidate_diagnostics(),
     }
@@ -335,6 +338,7 @@ def test_sync_history_fetches_text_attachment_before_ingress(tmp_path) -> None:
         "duplicate_count": 0,
         "accepted_new_count": 1,
         "material_candidate_count": 0,
+        "priority_candidate_count": 0,
         "candidate_diagnostics": _candidate_diagnostics("stale_source_event", stale_source_event=1),
     }
     observation = store.public_observations(limit=1)[0]
@@ -355,6 +359,7 @@ def test_sync_history_keeps_message_when_optional_text_attachment_is_unavailable
         "duplicate_count": 0,
         "accepted_new_count": 0,
         "material_candidate_count": 0,
+        "priority_candidate_count": 0,
         "candidate_diagnostics": _candidate_diagnostics("incomplete_parse", incomplete_parse=1),
     }
 
@@ -419,6 +424,7 @@ def test_sync_history_skips_deleted_history_messages(tmp_path) -> None:
         "duplicate_count": 0,
         "accepted_new_count": 0,
         "material_candidate_count": 0,
+        "priority_candidate_count": 0,
         "skipped": 1,
         "candidate_diagnostics": _candidate_diagnostics(),
     }
@@ -453,6 +459,7 @@ def test_expired_history_cursor_is_cleared_and_reported_as_gap(tmp_path) -> None
         "duplicate_count": 0,
         "accepted_new_count": 0,
         "material_candidate_count": 0,
+        "priority_candidate_count": 0,
         "history_gap": True,
         "candidate_diagnostics": _candidate_diagnostics(),
     }

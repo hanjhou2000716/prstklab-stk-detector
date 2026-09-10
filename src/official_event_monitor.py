@@ -29,6 +29,7 @@ from src.external_observation_input import (
 )
 from src.financialjuice_notification import deliver_financialjuice_event
 from src.financialjuice_priority import (
+    is_financialjuice_priority_event,
     project_financialjuice_priority,
     public_financialjuice_observations,
     replace_financialjuice_event_lane,
@@ -349,7 +350,11 @@ def write_status_output(
 ) -> None:
     """Write GitHub Actions outputs without mixing provider diagnostics into them."""
     ledger_record = _observe_event(event)
-    should_send = bool(event and ledger_record.get("should_remind", True))
+    # A fresh, complete FJ 9/10+ event is its own delivery policy.  It must not
+    # be starved by the generic event-theme cooldown; the final recipient claim
+    # still provides replay safety.
+    priority_event = is_financialjuice_priority_event(event)
+    should_send = bool(event and (priority_event or ledger_record.get("should_remind", True)))
     suppressed_candidates = 0
     # The durable ledger is authoritative, but the first selected candidate
     # can already be known and suppressed while a later candidate is new. Do
@@ -365,7 +370,8 @@ def write_status_output(
             next_record = _observe_event(next_event)
             event = next_event
             ledger_record = next_record
-            should_send = bool(next_record.get("should_remind", True))
+            priority_event = is_financialjuice_priority_event(next_event)
+            should_send = bool(priority_event or next_record.get("should_remind", True))
             excluded.add(event_key(next_event))
             if should_send:
                 break
@@ -587,7 +593,8 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
     # priority candidate is an unchanged duplicate, exclude only that
     # candidate and continue the same queue so a later valid event is not
     # starved by a stale FJ/vendor-priority row.
-    if hasattr(ledger, "theme_decision"):
+    fj_priority = is_financialjuice_priority_event(event)
+    if hasattr(ledger, "theme_decision") and not fj_priority:
         excluded: set[str] = set()
         while True:
             claim_key = notification_key_for_event(event)
@@ -632,7 +639,11 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         # Legacy test/adapter doubles may not expose the new arbiter.  Keep
         # their path safe without resurrecting a production cooldown gate.
         _observe_event(event)
-    event_policy = decide_event_alert_policy(event, ledger.delivery_history())
+    event_policy = (
+        {"allowed": True, "reason": "fj_priority_independent", "market_scope": event_market_scope(event)}
+        if fj_priority
+        else decide_event_alert_policy(event, ledger.delivery_history())
+    )
     if not event_policy.get("allowed", False):
         policy_event = {
             **event,
@@ -657,9 +668,21 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         "alert_lane": "event",
         "market_scope": event_policy.get("market_scope") or event_market_scope(event),
         "event_policy_reason": event_policy.get("reason"),
+        # The FJ sender re-checks this marker for ordinary (<=8/10) events.
+        # High-priority FJ is independent of this gate, but retaining the
+        # marker makes the shared sender contract explicit for both lanes.
+        "event_policy_allowed": bool(event_policy.get("allowed")),
     }
-    budget_event = {**event, "event_key": current_key}
-    budget = decide_alert_budget(budget_event, ledger.delivery_history())
+    budget_event = {
+        **event,
+        "event_key": current_key,
+        "event_policy_allowed": bool(event_policy.get("allowed")),
+    }
+    budget = (
+        {"allowed": True, "reason": "fj_priority_independent", "event_key": current_key}
+        if fj_priority
+        else decide_alert_budget(budget_event, ledger.delivery_history())
+    )
     if not budget.get("allowed", False):
         if hasattr(ledger, "record_decision"):
             ledger.record_decision(budget_event, {**budget, "status": "suppressed", "reasons": [str(budget.get("reason") or "suppressed")]})
@@ -695,8 +718,6 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         # FinancialJuice uses the same release-gated event lane but its
         # vendor-priority contract adds recipient-level replay protection and
         # keeps FJ importance separate from the PRStK risk grade.
-        telegram_attempted_at = datetime.now().astimezone().isoformat()
-        event = {**event, "telegram_attempted_at": telegram_attempted_at}
         fj_result = deliver_financialjuice_event(
             event,
             release_id=release_id,
@@ -714,6 +735,8 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         delivered_count = sum(str(row.get("delivery_status") or "") == "delivered" for row in fj_receipts)
         failed_count = len(fj_receipts) - delivered_count
         fj_status = str(fj_result.get("status") or "failed")
+        if fj_status not in {"blocked", "already_delivered"}:
+            event = {**event, "telegram_attempted_at": datetime.now().astimezone().isoformat()}
         if fj_status == "already_delivered":
             _write_delivery_output(
                 trace_id=trace_id, deliveries=(), event={**event, "snapshot_id": snapshot_id}, budget=budget,

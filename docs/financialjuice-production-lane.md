@@ -13,17 +13,20 @@ Railway/Gmail review
   -> scheduled photo delivery
 ```
 
-`vendor_importance >= 8` produces `vendor_priority_notification=eligible`.
+`vendor_importance >= 9` produces the independent `fj_priority` delivery
+policy.  `8/10` and below remain in the ordinary `material_event` policy.
 This is a delivery-priority decision only; it never changes the PRStK risk
 level.  The event remains `R2`/pending until the official-source and
-market-synchronisation gates are independently satisfied.
+market-synchronisation gates are independently satisfied unless the explicit
+FJ priority sender contract is satisfied.
 
 Every item exposes an auditable decision in
 `financialjuice_priority_decisions`, including `observation_id`, `item_id`,
 `event_cluster_key`, vendor importance, PRStK risk, and the reason it was sent,
 held, or deduplicated.  A matching cluster is marked
 `already_cluster_notified` rather than sending a duplicate full alert.  Items
-below 8 remain visible as `not_eligible`; they are not silently dropped.
+below 9 remain ordinary discovery evidence unless the shared event policy
+allows them; they are not silently dropped.
 
 Before `write_snapshot`, `src/financialjuice_release_contract.py` verifies
 that every reviewed observation has one decision and that every eligible item

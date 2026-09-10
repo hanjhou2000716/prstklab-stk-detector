@@ -15,6 +15,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+# This is intentionally local to the standalone Railway bundle.  The
+# canonical parser and the GitHub projection both use the same 9/10 policy;
+# keeping the value here prevents the ingress health projection from falling
+# back to the retired 8/10 lane when imported independently in the worker.
+FJ_VENDOR_PRIORITY_THRESHOLD = 9
+
 
 def _now() -> str:
     return datetime.now(UTC).isoformat()
@@ -425,7 +431,7 @@ class EmailStore:
             ).fetchone()[0]
         cursor = self.cursor()
         fj_status = str(
-            ((self.source_health().get("financialjuice") or {}).get("status") or "no_new_content")
+            (self.source_health().get("financialjuice") or {}).get("status") or "no_new_content"
         )
         return {
             # Do not derive the overall Gmail health from the legacy
@@ -473,8 +479,13 @@ class EmailStore:
             "financialjuice": {
                 "status": sync_state, "received_count": 0,
                 "parsed_count": 0, "failed_count": 0, "duplicate_count": 0,
-                "public_observation_count": 0, "importance_gte_8_count": 0,
+                "public_observation_count": 0,
+                "importance_gte_9_count": 0,
+                # Read-compatible alias; populated with the new >=9 count.
+                "importance_gte_8_count": 0,
                 "qualifying_item_count": 0, "pending_cluster_count": 0,
+                "last_importance_gte_9_at": None,
+                # Read-compatible alias; never represents 8/10 items anymore.
                 "last_importance_gte_8_at": None, "last_received_at": None,
                 "last_parsed_at": None, "last_failure_at": None,
                 "decision": "not_checked", "last_release_id": None,
@@ -582,9 +593,15 @@ class EmailStore:
             if source_name == "financialjuice" and isinstance(payload, dict):
                 is_priority = False
                 try:
-                    is_priority = float(payload.get("vendor_importance")) >= 8
+                    is_priority = float(payload.get("vendor_importance")) >= FJ_VENDOR_PRIORITY_THRESHOLD
                     if is_priority:
+                        item["importance_gte_9_count"] += 1
                         item["importance_gte_8_count"] += 1
+                        note(
+                            source_name,
+                            "last_importance_gte_9_at",
+                            payload.get("published_at") or row[2],
+                        )
                         note(
                             source_name,
                             "last_importance_gte_8_at",
@@ -600,7 +617,7 @@ class EmailStore:
                 ):
                     item["qualifying_item_count"] += 1
                 cluster = str(payload.get("event_cluster_key") or "").strip()
-                # The decision is for the >=8 vendor-priority lane.  A
+                # The decision is for the >=9 vendor-priority lane.  A
                 # routine low-importance cluster must not make that lane look
                 # like it is waiting for confirmation.
                 if is_priority and cluster and not bool(payload.get("official_confirmed")):
@@ -658,8 +675,8 @@ class EmailStore:
                 fj["decision"] = "priority_items_ready_for_release_review"
             elif fj["pending_cluster_count"]:
                 fj["decision"] = "awaiting_confirmation"
-            elif fj["importance_gte_8_count"]:
-                # A vendor importance score of >=8 is evidence that the item
+            elif fj["importance_gte_9_count"]:
+                # A vendor importance score of >=9 is evidence that the item
                 # is high-priority for the separate FinancialJuice lane.  It
                 # is not evidence that the explicit notification flag or
                 # release gate passed.  Do not mislabel this state as

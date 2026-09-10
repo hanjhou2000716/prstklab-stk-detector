@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/financialjuice_contract.py
-# Canonical source SHA256: 450320becfb8e862c598dbda524fac40df2fe9961d3401f67b3613a5e371acb1
+# Canonical source SHA256: c7e8e43c1dfacb67ef65fc4aac89e4fd5ccc10720fbb6850bad90d5245b28f06
 
 """FinancialJuice observation contract and conservative PRStK risk mapping.
 
@@ -23,7 +23,9 @@ from src.external_event_risk import score_prstk_risk
 
 VENDOR_IMPORTANCE_MAX = 10
 PARSER_VERSION = "financialjuice-contract-v2"
-VENDOR_PRIORITY_THRESHOLD = 8
+# A vendor score is only a delivery-policy input.  Scores below this floor
+# remain ordinary discovery evidence and must use the normal event gates.
+VENDOR_PRIORITY_THRESHOLD = 9
 FINANCIALJUICE_SOURCE_URL = "https://www.financialjuice.com/"
 
 
@@ -247,7 +249,7 @@ def normalize_financialjuice_item(
 def financialjuice_notification_state(record: dict[str, Any]) -> dict[str, Any]:
     """Expose the FJ lane decision without changing the PRStK risk gate.
 
-    ``importance>=8`` is an explicit vendor-priority exception: it authorizes
+    ``importance>=9`` is an explicit vendor-priority exception: it authorizes
     the release-bound FJ notification lane even while the generic risk
     decision remains pending for missing official or market confirmation.
     The release gate, freshness checks, deduplication, and recipient-level
@@ -264,11 +266,12 @@ def financialjuice_notification_state(record: dict[str, Any]) -> dict[str, Any]:
         "status": "eligible" if eligible or vendor_priority else "pending_confirmation",
         "vendor_priority_notification": vendor_priority,
         "vendor_priority_exception": vendor_exception,
+        "delivery_policy": "fj_priority" if vendor_priority else "material_event" if eligible else "none",
         "delivery_authorized": bool(eligible or vendor_priority),
         "vendor_priority_reason": (
-            "vendor_importance_at_or_above_8"
+            "vendor_importance_ge_9"
             if vendor_priority
-            else "vendor_importance_below_8_or_missing"
+            else "vendor_importance_below_9_or_missing"
         ),
         "risk_level": risk["prstk_risk_level"],
         "reasons": list(normalized["pending_reasons"]),
