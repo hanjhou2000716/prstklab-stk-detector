@@ -13,7 +13,7 @@ import argparse
 import json
 import os
 import time
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from urllib.error import HTTPError, URLError
@@ -41,6 +41,10 @@ class QueueResult:
     waited_seconds: int
     checks: int
     blockers: tuple[int, ...]
+    status: str = "acquired"
+    reason: str = "queue_acquired"
+    run_sha: str = ""
+    main_sha: str = ""
 
 
 def _created_at(run: Mapping[str, object]) -> datetime | None:
@@ -153,6 +157,65 @@ def evaluate_production_revision(*, run_sha: str | None, main_sha: str | None) -
     return {"allowed": True, "reason": "current_production_revision"}
 
 
+def _run_ids(runs: Iterable[Mapping[str, object]]) -> tuple[int, ...]:
+    ids: list[int] = []
+    for run in runs:
+        run_id = _run_id(run)
+        if run_id is not None:
+            ids.append(run_id)
+    return tuple(ids)
+
+
+def _queue_revision(
+    *,
+    run_sha: str | None,
+    api_url: str,
+    repository: str,
+    token: str,
+    revision_fetcher: Callable[..., str] | None,
+    waited_seconds: int,
+    checks: int,
+    blockers: tuple[int, ...] = (),
+) -> QueueResult | None:
+    """Return a terminal superseded result when main moved during the wait.
+
+    A workflow that no longer runs the current production revision must never
+    publish.  It is nevertheless a normal, successful no-op: treating this
+    expected race as a failed job produces misleading GitHub failure alerts.
+    Infrastructure failures remain exceptions and therefore keep the
+    fail-closed behavior.
+    """
+    if not run_sha or revision_fetcher is None:
+        return None
+    main_sha = revision_fetcher(api_url=api_url, repository=repository, token=token)
+    verdict = evaluate_production_revision(run_sha=run_sha, main_sha=main_sha)
+    if verdict["allowed"]:
+        return None
+    reason = str(verdict["reason"])
+    if reason != "stale_workflow_revision":
+        raise WriterQueueError(reason)
+    result = QueueResult(
+        waited_seconds,
+        checks,
+        blockers,
+        status="superseded",
+        reason=reason,
+        run_sha=str(run_sha),
+        main_sha=str(main_sha),
+    )
+    print(json.dumps({
+        "writer_queue": result.status,
+        "reason": result.reason,
+        "should_continue": False,
+        "waited_seconds": result.waited_seconds,
+        "checks": result.checks,
+        "blockers": list(result.blockers),
+        "run_sha": result.run_sha,
+        "main_sha": result.main_sha,
+    }))
+    return result
+
+
 def wait_for_slot(
     *,
     current_run_id: int,
@@ -165,31 +228,65 @@ def wait_for_slot(
     settle_seconds: int = 10,
     fetcher=_fetch_runs,
     sleeper=time.sleep,
+    run_sha: str | None = None,
+    revision_fetcher: Callable[..., str] | None = None,
 ) -> QueueResult:
     """Wait until all older production writer runs have left active states."""
-    api_url = api_url or os.getenv("GITHUB_API_URL", "https://api.github.com")
-    repository = repository or os.getenv("GITHUB_REPOSITORY", "")
-    token = token or os.getenv("GITHUB_TOKEN", "")
+    resolved_api_url: str = api_url or os.getenv("GITHUB_API_URL") or "https://api.github.com"
+    resolved_repository: str = repository or os.getenv("GITHUB_REPOSITORY") or ""
+    resolved_token: str = token or os.getenv("GITHUB_TOKEN") or ""
     started = time.monotonic()
     checks = 0
+    run_sha = str(run_sha or "").strip().lower()
+    if revision_fetcher is not None:
+        early_revision = _queue_revision(
+            run_sha=run_sha,
+            api_url=resolved_api_url,
+            repository=resolved_repository,
+            token=resolved_token,
+            revision_fetcher=revision_fetcher,
+            waited_seconds=0,
+            checks=0,
+        )
+        if early_revision is not None:
+            return early_revision
     if settle_seconds > 0:
         sleeper(min(settle_seconds, max(timeout_seconds, 0)))
     while True:
         checks += 1
         blockers = blocking_runs(
-            fetcher(api_url=api_url, repository=repository, token=token),
+            fetcher(api_url=resolved_api_url, repository=resolved_repository, token=resolved_token),
             current_run_id=current_run_id,
             current_created_at=current_created_at,
         )
         elapsed = int(max(0, time.monotonic() - started))
+        revision = _queue_revision(
+            run_sha=run_sha,
+            api_url=resolved_api_url,
+            repository=resolved_repository,
+            token=resolved_token,
+            revision_fetcher=revision_fetcher,
+            waited_seconds=elapsed,
+            checks=checks,
+            blockers=_run_ids(blockers),
+        )
+        if revision is not None:
+            return revision
         if not blockers:
             print(json.dumps({"writer_queue": "acquired", "waited_seconds": elapsed, "checks": checks}))
-            return QueueResult(elapsed, checks, ())
+            return QueueResult(
+                elapsed,
+                checks,
+                (),
+                status="acquired",
+                reason="queue_acquired",
+                run_sha=run_sha,
+            )
         remaining = timeout_seconds - elapsed
         if remaining <= 0:
-            ids = tuple(_run_id(item) for item in blockers if _run_id(item) is not None)
+            ids = _run_ids(blockers)
             raise WriterQueueError(f"writer queue timed out; active blockers={','.join(map(str, ids))}")
-        ids = tuple(_run_id(item) for item in blockers if _run_id(item) is not None)
+        ids = _run_ids(blockers)
         print(json.dumps({"writer_queue": "waiting", "blockers": ids, "waited_seconds": elapsed}))
         sleeper(min(max(1, poll_seconds), remaining))
 
@@ -205,28 +302,83 @@ def main() -> int:
         raise SystemExit("GITHUB_RUN_ID is required")
     created_raw = os.getenv("GITHUB_RUN_ATTEMPT_CREATED_AT")
     created = _created_at({"created_at": created_raw}) if created_raw else None
+    run_sha = os.getenv("GITHUB_SHA", "").strip().lower()
+
+    def write_outputs(values: Mapping[str, object]) -> None:
+        destination = os.getenv("GITHUB_OUTPUT", "").strip()
+        if not destination:
+            return
+        with open(destination, "a", encoding="utf-8") as handle:
+            for key, value in values.items():
+                handle.write(f"{key}={value}\n")
+
     try:
-        wait_for_slot(
+        result = wait_for_slot(
             current_run_id=args.run_id,
             current_created_at=created,
             timeout_seconds=max(0, args.timeout_seconds),
             poll_seconds=max(1, args.poll_seconds),
             settle_seconds=max(0, args.settle_seconds),
+            run_sha=run_sha,
+            revision_fetcher=_fetch_main_revision,
         )
-        main_revision = _fetch_main_revision(
+        if result is not None and result.status == "superseded":
+            write_outputs({
+                "queue_status": result.status,
+                "should_continue": "false",
+                "reason": result.reason,
+                "waited_seconds": result.waited_seconds,
+                "blocker_run_ids": ",".join(str(item) for item in result.blockers),
+                "run_sha": result.run_sha,
+                "main_sha": result.main_sha,
+            })
+            print("::notice::stale_workflow_superseded; Telegram and data publication skipped")
+            return 0
+        waited_seconds = result.waited_seconds if result is not None else 0
+        main_revision = (result.main_sha if result is not None else "") or _fetch_main_revision(
             api_url=os.getenv("GITHUB_API_URL", "https://api.github.com"),
             repository=os.getenv("GITHUB_REPOSITORY", ""),
             token=os.getenv("GITHUB_TOKEN", ""),
         )
         revision = evaluate_production_revision(
-            run_sha=os.getenv("GITHUB_SHA"),
+            run_sha=run_sha,
             main_sha=main_revision,
         )
         if not revision["allowed"]:
-            print(f"::error::{revision['reason']}; Telegram and data publication are blocked")
-            return 1
+            reason = str(revision["reason"])
+            if reason == "stale_workflow_revision":
+                write_outputs({
+                    "queue_status": "superseded",
+                    "should_continue": "false",
+                    "reason": reason,
+                    "waited_seconds": waited_seconds,
+                    "blocker_run_ids": "",
+                    "run_sha": run_sha,
+                    "main_sha": main_revision,
+                })
+                print("::notice::stale_workflow_superseded; Telegram and data publication skipped")
+                return 0
+            raise WriterQueueError(reason)
+        write_outputs({
+            "queue_status": "acquired",
+            "should_continue": "true",
+            "reason": "current_production_revision",
+            "waited_seconds": waited_seconds,
+            "blocker_run_ids": "",
+            "run_sha": run_sha,
+            "main_sha": main_revision,
+        })
         print(json.dumps({"production_revision": revision["reason"]}))
     except WriterQueueError as exc:
+        write_outputs({
+            "queue_status": "failed",
+            "should_continue": "false",
+            "reason": str(exc).replace("\n", " "),
+            "waited_seconds": "",
+            "blocker_run_ids": "",
+            "run_sha": run_sha,
+            "main_sha": "",
+        })
         print(f"::error::{exc}")
         return 1
     return 0

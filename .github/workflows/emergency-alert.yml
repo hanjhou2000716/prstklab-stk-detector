@@ -61,20 +61,25 @@ jobs:
         with:
           fetch-depth: 0
       - name: Wait for production writer queue
+        id: writer_queue
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python -m src.writer_queue
       - name: Restore last immutable data release
+        if: steps.writer_queue.outputs.should_continue == 'true'
         run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        if: steps.writer_queue.outputs.should_continue == 'true'
         with:
           python-version: "3.11"
       - run: pip install -r requirements-production.txt
+        if: steps.writer_queue.outputs.should_continue == 'true'
       - name: Install Chromium for formal card renderer
+        if: steps.writer_queue.outputs.should_continue == 'true'
         run: python -m playwright install --with-deps chromium
       - name: Validate signed external alert
         id: external
-        if: github.event_name == 'repository_dispatch'
+        if: steps.writer_queue.outputs.should_continue == 'true' && github.event_name == 'repository_dispatch'
         run: >
           python -m src.external_alert
           --category "$CATEGORY"
@@ -88,17 +93,17 @@ jobs:
           >> "$GITHUB_OUTPUT"
       - name: Restore external event lock
         id: idempotency
-        if: github.event_name == 'repository_dispatch'
+        if: steps.writer_queue.outputs.should_continue == 'true' && github.event_name == 'repository_dispatch'
         # actions/cache/restore@v4 (pinned SHA below)
         uses: actions/cache/restore@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: .external-alert-lock
           key: external-alert-${{ steps.external.outputs.event_key }}
       - name: Refresh public market snapshot
-        if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true')
         run: python -m src.refresh_market_data
       - name: Add verified external alert to Mini App data
-        if: github.event_name == 'repository_dispatch' && steps.idempotency.outputs.cache-hit != 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && github.event_name == 'repository_dispatch' && steps.idempotency.outputs.cache-hit != 'true'
         run: >
           python -m src.external_alert
           --category "$CATEGORY"
@@ -111,7 +116,7 @@ jobs:
           --shared-secret "$EXTERNAL_ALERT_SHARED_SECRET"
           --snapshot site/data/market.json
       - name: Commit refreshed Mini App data
-        if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true')
         run: |
           python -m src.release_manifest \
             --allow-stale-research \
@@ -119,26 +124,26 @@ jobs:
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations \
             --message "chore: refresh emergency market alert"
       - name: Build and validate cache-busted static assets
-        if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true')
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
           python -m src.asset_contract --root site
       - name: Configure GitHub Pages
-        if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true')
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
       - name: Upload Pages artifact
-        if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true')
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           path: site
       - name: Deploy Pages
-        if: github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true')
         id: deployment
         uses: ./.github/actions/deploy-pages-retry
         with:
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Verify deployed release before emergency delivery
-        if: (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true') && steps.deployment.outputs.available == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true') && steps.deployment.outputs.available == 'true'
         id: release_gate
         run: |
           python -m src.release_gate \
@@ -148,10 +153,10 @@ jobs:
             --public-delay 5 \
             >> "$GITHUB_OUTPUT"
       - name: Record delivery gate when Pages is unavailable
-        if: (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true') && steps.deployment.outputs.available != 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true') && steps.deployment.outputs.available != 'true'
         run: echo "Pages unavailable; Telegram delivery intentionally skipped (fail closed)."
       - name: Send Telegram emergency alert
-        if: steps.release_gate.outputs.allowed == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release_gate.outputs.allowed == 'true'
         id: send
         env:
           TRACE_ID: ${{ github.event.client_payload.trace_id || format('manual-{0}', github.run_id) }}
@@ -159,13 +164,13 @@ jobs:
           SNAPSHOT_ID: ${{ steps.release_gate.outputs.snapshot_id }}
         run: python -m src.emergency_alert --category "$CATEGORY" --summary "$SUMMARY"
       - name: Report Telegram delivery outcome
-        if: always() && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true')
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true')
         run: |
           echo "trace_id=${{ steps.send.outputs.trace_id }}"
           echo "delivery_status=${{ steps.send.outputs.delivery_status }}"
           echo "delivered_count=${{ steps.send.outputs.delivered_count }} failed_count=${{ steps.send.outputs.failed_count }}"
       - name: Persist Telegram delivery receipt
-        if: always() && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true')
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true')
         continue-on-error: true
         env:
           RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
@@ -183,11 +188,30 @@ jobs:
           FAILED_RECIPIENT_HASHES: ${{ steps.send.outputs.failed_recipient_hashes }}
         run: python -m src.delivery_callback
       - name: Mark verified external event as sent
-        if: success() && github.event_name == 'repository_dispatch' && steps.idempotency.outputs.cache-hit != 'true'
+        if: success() && steps.writer_queue.outputs.should_continue == 'true' && github.event_name == 'repository_dispatch' && steps.idempotency.outputs.cache-hit != 'true'
         run: touch .external-alert-lock
       - name: Save external event lock
-        if: success() && github.event_name == 'repository_dispatch' && steps.idempotency.outputs.cache-hit != 'true'
+        if: success() && steps.writer_queue.outputs.should_continue == 'true' && github.event_name == 'repository_dispatch' && steps.idempotency.outputs.cache-hit != 'true'
         uses: actions/cache/save@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: .external-alert-lock
           key: external-alert-${{ steps.external.outputs.event_key }}
+      - name: Publish writer queue decision
+        if: always()
+        env:
+          QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'failed_or_unavailable' }}
+          QUEUE_REASON: ${{ steps.writer_queue.outputs.reason || 'queue_step_failed' }}
+          WAITED_SECONDS: ${{ steps.writer_queue.outputs.waited_seconds || 'unknown' }}
+        run: |
+          {
+            echo "## Writer queue decision"
+            echo "- queue_status: ${QUEUE_STATUS}"
+            echo "- reason: ${QUEUE_REASON}"
+            echo "- waited_seconds: ${WAITED_SECONDS}"
+            if [ "${QUEUE_STATUS}" = "superseded" ]; then
+              echo "- notification_status: suppressed"
+              echo "- notification_reason: stale_workflow_superseded"
+            else
+              echo "- notification_status: not_applicable"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

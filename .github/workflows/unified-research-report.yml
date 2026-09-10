@@ -116,12 +116,13 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
-      - name: Wait for production writer queue
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: python -m src.writer_queue
       - name: Restore last immutable data release
         run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations --include data/taiwan-mops-pristine-history.json --include data/taiwan-official-financial-cache.json --include data/research-attempts.json --include data/sec-companyfacts-cache.json
+      - name: Capture prepared release base
+        id: prepared_base
+        run: |
+          git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          echo "data_release_sha=$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")" >> "$GITHUB_OUTPUT"
       - name: Save last successful research snapshot
         run: |
           mkdir -p research-artifacts
@@ -265,12 +266,6 @@ jobs:
               handle.write("SCANNED_STRATEGIES=" + ",".join(name for name, enabled in run.items() if enabled) + "\n")
           print("strategy selection:", ", ".join(name for name, enabled in run.items() if enabled) or "none")
           PY
-      - name: Persist research attempt lease
-        if: env.RESEARCH_DUE == 'true' && env.SCAN_MODE == 'production' && env.RESEARCH_ACTION != 'repair_state'
-        run: |
-          python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" \
-            --include data/research-attempts.json \
-            --message "chore: persist research slot attempt"
       - name: Clear previous research scan artifacts for target market
         if: env.RESEARCH_DUE == 'true' && env.RESEARCH_ACTION != 'repair_state'
         run: |
@@ -410,13 +405,37 @@ jobs:
           if cache_required:
               print("::warning::incomplete strategy cache must be persisted for the next continuation run")
           PY
+      - name: Refresh market data for prepared release
+        if: env.SCAN_MODE == 'production'
+        run: python -m src.refresh_market_data
       - name: Recheck production revision before persistence
+        id: writer_queue
         if: env.SCAN_MODE == 'production'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python -m src.writer_queue --settle-seconds 0 --poll-seconds 10
+      - name: Revalidate prepared release base
+        id: prepared_release
+        if: steps.writer_queue.outputs.should_continue == 'true'
+        run: |
+          git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          current_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
+          if [ "$current_sha" != "${{ steps.prepared_base.outputs.data_release_sha }}" ]; then
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "reason=stale_prepared_release" >> "$GITHUB_OUTPUT"
+            echo "::notice::Prepared research snapshot was based on an older immutable release; publication deferred to the next run."
+          else
+            echo "current=true" >> "$GITHUB_OUTPUT"
+            echo "reason=prepared_release_current" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Persist research attempt lease
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.RESEARCH_DUE == 'true' && env.SCAN_MODE == 'production' && env.RESEARCH_ACTION != 'repair_state'
+        run: |
+          python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" \
+            --include data/research-attempts.json \
+            --message "chore: persist research slot attempt"
       - name: Persist incremental research caches
-        if: env.SCAN_MODE == 'production' && (steps.research_gate.outputs.publish != 'true' || steps.research_gate.outputs.cache_required == 'true')
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.SCAN_MODE == 'production' && (steps.research_gate.outputs.publish != 'true' || steps.research_gate.outputs.cache_required == 'true')
         run: |
           # Any incomplete strategy must persist its verified records even when
           # the other strategies form a valid mixed public release.  This is a
@@ -429,9 +448,8 @@ jobs:
             --include data/sec-companyfacts-cache.json \
             --include data/raw-observations \
             --message "chore: persist bounded research caches"
-      - run: python -m src.refresh_market_data
       - name: Build release manifest
-        if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
         run: |
           if [[ "${{ steps.research_gate.outputs.fallback }}" == "true" ]]; then
             args=(--allow-stale-research --research-fallback-reason "research scan incomplete; stale fallback")
@@ -440,7 +458,7 @@ jobs:
           fi
           python -m src.release_manifest "${args[@]}"
       - name: 保存最新公開研究摘要
-        if: env.SCAN_MODE != 'production' || steps.research_gate.outputs.publish == 'true'
+        if: env.SCAN_MODE != 'production' || (steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.research_gate.outputs.publish == 'true')
         run: |
           if [[ "$SCAN_MODE" == "production" ]]; then
             python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations --include data/taiwan-mops-pristine-history.json --include data/taiwan-official-financial-cache.json --include data/research-attempts.json --include data/sec-companyfacts-cache.json --message "chore: refresh public research report"
@@ -448,23 +466,24 @@ jobs:
             echo "scan_mode=$SCAN_MODE: isolated artifact only; skipping data-release publication"
           fi
       - name: Build and validate cache-busted static assets
-        if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
           python -m src.asset_contract --root site
       - name: Configure GitHub Pages
-        if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
       - name: Upload Pages artifact
-        if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           path: site
       - name: Deploy Pages
         id: deployment
-        if: env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
         uses: ./.github/actions/deploy-pages-retry
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
         with:
           name: unified-research-report
           path: |
@@ -476,3 +495,27 @@ jobs:
             data/sec-companyfacts-cache.json
             site/data/research-report.json
             research-artifacts
+      - name: Publish writer queue decision
+        if: always()
+        env:
+          QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
+          QUEUE_REASON: ${{ steps.writer_queue.outputs.reason || 'not_required' }}
+          PREPARED_RELEASE_STATUS: ${{ steps.prepared_release.outputs.reason || 'not_required' }}
+        run: |
+          notification_status="not_applicable"
+          notification_reason="${QUEUE_REASON}"
+          if [ "${QUEUE_STATUS}" = "superseded" ]; then
+            notification_status="suppressed"
+            notification_reason="stale_workflow_superseded"
+          elif [ "${PREPARED_RELEASE_STATUS}" = "stale_prepared_release" ]; then
+            notification_status="suppressed"
+            notification_reason="stale_prepared_release"
+          fi
+          {
+            echo "## Writer queue decision"
+            echo "- queue_status: ${QUEUE_STATUS}"
+            echo "- reason: ${QUEUE_REASON}"
+            echo "- prepared_release_status: ${PREPARED_RELEASE_STATUS}"
+            echo "- notification_status: ${notification_status}"
+            echo "- notification_reason: ${notification_reason}"
+          } >> "$GITHUB_STEP_SUMMARY"
