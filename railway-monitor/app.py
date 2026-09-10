@@ -1920,6 +1920,8 @@ def _public_sync_diagnostics(value: Any) -> dict[str, Any] | None:
         "material_candidate_count": bounded_count(value.get("material_candidate_count")),
         "duplicate_count": bounded_count(value.get("duplicate_count")),
         "failed": bounded_count(value.get("failed")),
+        "sync_started_at": str(value.get("sync_started_at") or "")[:80] or None,
+        "sync_completed_at": str(value.get("sync_completed_at") or "")[:80] or None,
         "candidate_diagnostics": {
             "counts": counts,
             "primary_reason": str(nested.get("primary_reason") or "")[:80] if isinstance(nested, dict) else "",
@@ -1962,12 +1964,22 @@ async def sync_gmail_history() -> dict[str, Any]:
         update_health("gmail", **gmail_notification_health(result))
         return result
     try:
+        # Pub/Sub only advances the pending hint.  The durable Gmail history
+        # cursor is advanced after a complete reconciliation, so an ingress
+        # acknowledgement or a worker restart cannot skip messages.
+        cursor = EMAIL_INGRESS.store.cursor()
+        pending = str(cursor.get("pending_history_id") or "").strip()
+        baseline = str(cursor.get("last_history_id") or "").strip()
+        if pending and not baseline:
+            EMAIL_INGRESS.store.save_cursor(last_history_id=pending)
         result = await sync_gmail_history_records(
             EMAIL_INGRESS.config,
             EMAIL_INGRESS.store,
             EMAIL_INGRESS,
             max_messages=max(1, int(os.environ.get("GMAIL_HISTORY_MAX_MESSAGES", "50"))),
         )
+        if result.get("status") in {"healthy", "no_history_cursor"} and result.get("failed", 0) == 0:
+            EMAIL_INGRESS.store.save_cursor(pending_history_id=None)
         sync_external_source_health(EMAIL_INGRESS.health())
         update_health("gmail", **gmail_notification_health(result))
         return result

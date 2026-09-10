@@ -8,8 +8,10 @@ successfully parsed or delivered intelligence item.
 
 - `gmail`: watch, cursor and ingress transport only.
 - `creator`: sanitized Creator observations and parse/DLQ counters.
-- `financialjuice`: sanitized FinancialJuice observations, importance `>=8`
-  count, pending cluster count and release decision state.
+- `financialjuice`: sanitized FinancialJuice observations, importance `>=9`
+  count, pending cluster count and release decision state. The historical
+  `importance_gte_8_*` fields remain read-compatible aliases whose values also
+  use the current >=9 population.
 - `news`: the Actions-plane news producer status. Railway reports
   `not_checked` until a release snapshot supplies its provider health; it does
   not invent a live news result.
@@ -27,12 +29,12 @@ The source states are intentionally distinct:
 - `not_checked`: no source evidence has been evaluated yet.
 
 `financialjuice.decision` is `awaiting_confirmation` while priority (vendor
-importance `>=8`) public items still lack official confirmation. Routine
+importance `>=9`) public items still lack official confirmation. Routine
 lower-importance clusters do not block this priority lane. It is not a
 Telegram risk decision and does not override the release gate or
 market-synchronisation policy.
 
-When a sanitized item has vendor importance `>=8` but is missing the explicit
+When a sanitized item has vendor importance `>=9` but is missing the explicit
 priority-notification flag, the decision is
 `priority_items_blocked_by_notification_gate`.  This is intentionally
 different from `parsed_below_priority_threshold`: the former identifies a

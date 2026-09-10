@@ -1,7 +1,7 @@
 import base64
 import json
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import parse_qs
 
@@ -271,6 +271,27 @@ def test_ingress_accepts_replay_safe_observation_and_dedupes(tmp_path: Path) -> 
     assert store.health()["raw_content_stored"] is False
 
 
+def test_existing_public_high_score_fact_still_wakes_priority_candidate(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    service = GmailIngressService(store, _config())
+    base = {
+        "sender": "alerts@financialjuice.com",
+        "subject": "FinancialJuice breaking news",
+        "source_published_at": datetime.now(UTC).isoformat(),
+        "body": "Importance: 10/10\nOriginal headline: Oil supply update",
+    }
+    first = service.accept_email({**base, "gmail_message_id": "m-priority-first"})
+    replay = service.accept_email({**base, "gmail_message_id": "m-priority-replay"})
+
+    assert first["accepted"] is True
+    assert replay["accepted"] is False
+    assert replay["status"] == "duplicate"
+    assert replay["material_candidate"] is True
+    assert replay["priority_candidate"] is True
+    assert replay["candidate_diagnostics"]["counts"]["duplicate_fact"] == 1
+    assert replay["candidate_diagnostics"]["counts"]["priority_event_eligible"] == 1
+
+
 def test_duplicate_replay_enriches_public_projection_without_second_event(tmp_path: Path) -> None:
     store = EmailStore(tmp_path / "mail.sqlite3")
     service = GmailIngressService(store, _config())
@@ -342,9 +363,28 @@ def test_push_advances_durable_cursor_without_storing_message_body(tmp_path: Pat
     assert result["accepted"] is True
     assert result["history_id"] == "123"
     cursor = store.cursor()
-    assert cursor["last_history_id"] == "123"
+    assert cursor["last_history_id"] is None
+    assert cursor["pending_history_id"] == "123"
+    assert cursor["last_push_received_at"]
     assert cursor["last_notification_at"]
     assert store.health()["raw_content_stored"] is False
+
+
+def test_push_only_records_pending_cursor_until_history_sync_completes(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    service = GmailIngressService(store, _config())
+    service.accept_push(_push(), _headers())
+    cursor = store.cursor()
+    assert cursor["last_history_id"] is None
+    assert cursor["pending_history_id"] == "123"
+    assert cursor["last_sync_at"] is None
+    assert cursor["last_push_received_at"]
+    with store._connect() as connection:
+        row = connection.execute(
+            "SELECT dispatch_status FROM gmail_pubsub_events WHERE history_id = ?",
+            ("123",),
+        ).fetchone()
+    assert row[0] == "pending"
 
 
 def test_known_source_template_failure_enters_dlq(tmp_path: Path) -> None:
@@ -473,8 +513,8 @@ def test_health_exposes_privacy_safe_observability(tmp_path: Path) -> None:
             "watch_expiration": "2099-01-01T00:00:00Z",
             "last_history_id": "private-history-id",
             "last_message_id": "private-message-id",
-            "last_notification_at": "2026-08-13T00:00:00Z",
-            "last_sync_at": "2026-08-13T00:01:00Z",
+            "last_push_received_at": "2026-08-13T00:00:00Z",
+            "last_sync_completed_at": "2026-08-13T00:01:00Z",
             "dlq_count": 2,
             "last_receipt_at": "2026-08-13T00:02:00Z",
         },
@@ -483,7 +523,7 @@ def test_health_exposes_privacy_safe_observability(tmp_path: Path) -> None:
     observability = result["observability"]
     assert observability["observations"] == 0
     assert observability["last_received_at"] == "2026-08-13T00:00:00+00:00"
-    assert observability["last_parsed_at"] == "2026-08-13T00:01:00+00:00"
+    assert observability["last_parsed_at"] is None
     assert observability["parser_error_count"] == 2
     assert observability["last_delivery_at"] == "2026-08-13T00:02:00+00:00"
     assert observability["state"] == "healthy"
@@ -493,6 +533,21 @@ def test_health_exposes_privacy_safe_observability(tmp_path: Path) -> None:
     assert observability["dead_letter_count"] == 2
     assert "last_history_id" not in result
     assert "last_message_id" not in result
+
+
+def test_watch_health_does_not_call_an_active_lease_a_verified_push(tmp_path: Path) -> None:
+    result = health(
+        _config(),
+        {
+            "watch_expiration": "2099-01-01T00:00:00+00:00",
+            "last_sync_status": "healthy",
+            "last_sync_completed_at": "2026-08-13T00:01:00Z",
+        },
+    )
+    assert result["watch_active"] is True
+    assert result["status"] == "no_new_content"
+    assert result["observability"]["state"] == "no_new_content"
+    assert result["observability"]["push_delivery_verified"] is False
 
 
 def test_gmail_watch_health_exposes_cursor_fingerprint_only(tmp_path: Path) -> None:

@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from src.external_event_pipeline import build_external_events
+from src.financialjuice_contract import VENDOR_PRIORITY_THRESHOLD
 
 _NEUTRAL_STOCK_OBSERVATION = "等待官方後續確認，並觀察相關市場是否同步反應。"
 _NEUTRAL_IMPORTANCE = "目前尚無額外重要性說明，等待後續公開資料核對。"
@@ -23,6 +24,10 @@ _INCOMPLETE_EVENT = "資訊待核對"
 _MAX_FIELD_CHARS = 600
 FJ_FRESHNESS_LIMIT_SECONDS = 30 * 60
 FJ_CLOCK_SKEW_SECONDS = 5 * 60
+# Keep the delivery lane on the same threshold as the canonical parser.  A
+# second literal here previously allowed one stage to treat 8/10 as priority
+# while another stage required 9/10.
+FJ_PRIORITY_MIN_IMPORTANCE = VENDOR_PRIORITY_THRESHOLD
 _GENERIC_EVENT_VALUES = frozenset({
     "financialjuice 公開快訊", "financialjuice|financialjuice 公開快訊",
     "資訊待核對", "information pending", "pending information",
@@ -355,6 +360,44 @@ def _number(value: Any) -> float | None:
         return None
 
 
+def financialjuice_vendor_importance(value: Any) -> float | None:
+    """Parse the provider score without treating malformed text as high priority."""
+    if value in (None, ""):
+        return None
+    try:
+        score = float(str(value).split("/", 1)[0].strip())
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return score if score == score and abs(score) != float("inf") else None
+
+
+def is_financialjuice_priority_event(event: dict[str, Any] | None) -> bool:
+    """Return whether an already-projected FJ event uses the independent lane.
+
+    This is deliberately narrower than ``importance >= 9``.  The projection
+    must have already proved freshness, trusted identity, complete public
+    content and a stable fact key.  The final sender repeats those checks so a
+    hand-edited or stale snapshot cannot turn the score into a bypass.
+    """
+    if not isinstance(event, dict):
+        return False
+    source = str(event.get("source_key") or event.get("source") or "").strip().casefold()
+    policy = str(event.get("delivery_policy") or "").strip().casefold()
+    importance = financialjuice_vendor_importance(event.get("vendor_importance"))
+    return bool(
+        source == "financialjuice"
+        and (policy == "fj_priority" or (not policy and event.get("vendor_priority_notification") is True))
+        and event.get("vendor_priority_notification") is True
+        and importance is not None
+        and importance >= FJ_PRIORITY_MIN_IMPORTANCE
+        and str(event.get("notification_status") or "").strip().casefold() in {"eligible", "ready"}
+        and str(event.get("freshness_status") or "").strip().casefold() == "fresh"
+        and bool(str(event.get("canonical_fact_key") or "").strip())
+        and event.get("source_identity_verified") is not False
+        and event.get("public_signal_eligible") is not False
+    )
+
+
 def _market_intelligence(result: dict[str, Any], row: dict[str, Any], snapshot: dict[str, Any] | None) -> dict[str, Any]:
     """Link one FJ event to at most two scored, registry-backed market rows."""
     views = _source_views(result, row)
@@ -522,11 +565,12 @@ def _semantic_projection(result: dict[str, Any], row: dict[str, Any]) -> dict[st
 def _event_record(
     result: dict[str, Any], row: dict[str, Any], *, status: str, reasons: list[str],
     vendor_priority_notification: bool, market_snapshot: dict[str, Any] | None,
-    material_event_present: bool, public_signal_eligible: bool,
+    material_event_present: bool, public_signal_eligible: bool, delivery_policy: str,
     now: datetime | None = None,
 ) -> dict[str, Any]:
     risk = _mapping(result.get("risk"))
     cluster = _mapping(result.get("cluster"))
+    identity_verified = row.get("source_identity_verified") is not False
     views = _source_views(result, row)
     semantic = _semantic_projection(result, row)
     market = _market_intelligence(result, row, market_snapshot)
@@ -600,6 +644,8 @@ def _event_record(
         "prstk_risk": risk,
         "vendor_importance": importance,
         "vendor_priority_notification": vendor_priority_notification,
+        "delivery_policy": delivery_policy,
+        "source_identity_verified": identity_verified,
         "notification_status": status,
         "notification_reasons": list(dict.fromkeys([*reasons, *pending])),
         "notification_reason": "、".join(dict.fromkeys([*reasons, *pending])),
@@ -633,7 +679,8 @@ def _event_record(
         "market_sync_confirmed": market["market_sync_confirmed"],
         "market_direction": None,
         "market_move": None,
-        "alert_eligible": status == "eligible" and vendor_priority_notification,
+        "alert_eligible": status == "eligible" and bool(vendor_priority_notification or delivery_policy == "material_event"),
+        "delivery_eligible": status == "eligible",
         "public_signal_eligible": public_signal_eligible,
         "content_gate": {
             "material_event_present": material_event_present,
@@ -664,6 +711,7 @@ def _event_record(
             "material_event_present": material_event_present,
             "blocked_reason": "content_incomplete",
         }
+        record["delivery_eligible"] = False
     record["public_short_message"] = public_short_message
     record["brief_title"] = public_short_message
     record["public_signal_eligible"] = public_signal_eligible
@@ -684,6 +732,7 @@ def _event_record(
         record["notification_reason"] = "、".join(record["notification_reasons"])
         record["vendor_priority_notification"] = False
         record["alert_eligible"] = False
+        record["delivery_eligible"] = False
         record["public_signal_eligible"] = False
     return record
 
@@ -697,14 +746,24 @@ def project_financialjuice_priority(
 ) -> dict[str, list[dict[str, Any]]]:
     """Return public event rows and auditable vendor-priority decisions.
 
-    Items below 8/10 remain visible as ``not_eligible``.  Qualifying items
+    Items below 9/10 remain ordinary discovery evidence unless the shared
+    event decision is independently eligible.  Qualifying items
     sharing a cluster with an already delivered event become
     ``already_cluster_notified`` rather than creating a duplicate alert.
     """
+    # A projected ``eligible`` row is an observation, not a delivery receipt.
+    # Only explicit delivery evidence may suppress a new observation here;
+    # the atomic EventLedger claim remains the final replay guard.
     existing_keys = {
         str(item.get("event_cluster_key") or "").strip()
         for item in (existing_events or [])
-        if isinstance(item, dict) and item.get("event_cluster_key")
+        if isinstance(item, dict)
+        and item.get("event_cluster_key")
+        and (
+            str(item.get("notification_status") or "").casefold() == "already_cluster_notified"
+            or str(item.get("delivery_status") or item.get("status") or "").casefold() in {"delivered", "partial"}
+            or item.get("delivered_at")
+        )
     }
     from src.financialjuice_notification import financialjuice_notification_key
 
@@ -713,6 +772,11 @@ def project_financialjuice_priority(
         for item in (existing_events or [])
         if isinstance(item, dict)
         and _source(item) == "financialjuice"
+        and (
+            str(item.get("notification_status") or "").casefold() == "already_cluster_notified"
+            or str(item.get("delivery_status") or item.get("status") or "").casefold() in {"delivered", "partial"}
+            or item.get("delivered_at")
+        )
         and financialjuice_notification_key(item)
     }
     events: list[dict[str, Any]] = []
@@ -722,7 +786,8 @@ def project_financialjuice_priority(
             continue
         for result in build_external_events(row):
             vendor = _mapping(result.get("vendor_priority"))
-            qualifying = bool(vendor.get("vendor_priority_notification"))
+            priority_qualifying = bool(vendor.get("vendor_priority_notification"))
+            generic_qualifying = bool(_mapping(result.get("notification")).get("allowed"))
             # A reviewed provider item may carry a canonical cluster assigned
             # by the upstream ledger.  Preserve it over the locally derived
             # fallback so cross-provider deduplication remains stable.
@@ -731,30 +796,44 @@ def project_financialjuice_priority(
                 result["event_cluster_key"] = cluster_key
             material_event = bool(_material_event_text(_source_views(result, row)))
             identity_verified = row.get("source_identity_verified") is not False
-            if not qualifying:
-                status, reasons = "not_eligible", ["vendor_importance_below_8_or_missing"]
+            if not priority_qualifying and not generic_qualifying:
+                status, reasons = "not_eligible", [
+                    "vendor_importance_below_9_or_missing"
+                    if (financialjuice_vendor_importance(_first_value(_source_views(result, row), "vendor_importance", "importance")) or 0) < FJ_PRIORITY_MIN_IMPORTANCE
+                    else "vendor_priority_below_9_and_material_event_gate",
+                ]
                 vendor_notification = False
+                delivery_policy = "material_event"
             elif not identity_verified:
                 status, reasons = "content_incomplete", ["content_incomplete", "source_identity_unverified"]
                 vendor_notification = False
+                delivery_policy = "fj_priority" if priority_qualifying else "material_event"
             elif not material_event:
                 # Importance alone is not a public event.  Keep a complete
                 # decision/event row for audit and lineage, but block both
                 # release publication and Telegram eligibility.
                 status, reasons = "content_incomplete", ["content_incomplete", "missing_material_event"]
                 vendor_notification = False
+                delivery_policy = "fj_priority" if priority_qualifying else "material_event"
             elif cluster_key and cluster_key in existing_keys:
                 status, reasons = "already_cluster_notified", ["already_cluster_notified"]
-                vendor_notification = True
+                vendor_notification = priority_qualifying
+                delivery_policy = "fj_priority" if priority_qualifying else "material_event"
             else:
-                status, reasons = "eligible", ["vendor_priority_importance_ge_8"]
-                vendor_notification = True
+                status, reasons = (
+                    ("eligible", ["vendor_priority_importance_ge_9"])
+                    if priority_qualifying
+                    else ("eligible", ["material_event_eligible"])
+                )
+                vendor_notification = priority_qualifying
+                delivery_policy = "fj_priority" if priority_qualifying else "material_event"
             event = _event_record(
                 result, row, status=status, reasons=reasons,
                 vendor_priority_notification=vendor_notification,
                 market_snapshot=market_snapshot,
                 material_event_present=material_event,
                 public_signal_eligible=identity_verified and material_event,
+                delivery_policy=delivery_policy,
                 now=now,
             )
             # The public content gate is evaluated after semantic projection;
@@ -773,11 +852,12 @@ def project_financialjuice_priority(
             notification_key = str(event.get("notification_key") or "").strip()
             if status == "eligible" and notification_key in existing_notification_keys:
                 status = "already_cluster_notified"
-                vendor_notification = True
+                vendor_notification = priority_qualifying
                 event["notification_status"] = status
                 event["notification_reason"] = "already_cluster_notified"
                 event["notification_reasons"] = ["already_cluster_notified"]
                 event["alert_eligible"] = False
+                event["delivery_eligible"] = False
             elif status == "eligible" and notification_key:
                 existing_notification_keys.add(notification_key)
             events.append(event)
@@ -788,6 +868,8 @@ def project_financialjuice_priority(
                 "event_cluster_key": cluster_key or None,
                 "vendor_importance": event.get("vendor_importance"),
                 "vendor_priority_notification": vendor_notification,
+                "delivery_policy": event.get("delivery_policy") or delivery_policy,
+                "delivery_eligible": event.get("delivery_eligible") is True,
                 "notification_status": status,
                 "notification_reason": event["notification_reason"],
                 "public_short_message": event.get("public_short_message") or "",
@@ -948,6 +1030,8 @@ def replace_financialjuice_event_lane(
 
 
 __all__ = [
-    "bind_financialjuice_semantic_views", "project_financialjuice_priority",
+    "FJ_PRIORITY_MIN_IMPORTANCE", "bind_financialjuice_semantic_views",
+    "financialjuice_vendor_importance", "is_financialjuice_priority_event",
+    "project_financialjuice_priority",
     "public_financialjuice_observations", "replace_financialjuice_event_lane",
 ]

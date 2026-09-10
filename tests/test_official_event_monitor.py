@@ -135,7 +135,7 @@ def test_realtime_external_projection_adds_eligible_fj_to_shared_event_lane(monk
         "source": "financialjuice",
         "original_headline": "Oil supply risk",
         "event_type": "energy",
-        "importance": 8,
+        "importance": 9,
         "source_url": "https://financialjuice.com/item/1",
         "published_at": "2026-08-21T01:00:00Z",
         "source_published_at": datetime.now(UTC).isoformat(),
@@ -147,7 +147,7 @@ def test_realtime_external_projection_adds_eligible_fj_to_shared_event_lane(monk
     monkeypatch.setattr(monitor, "_external_observations_configured", lambda: False)
     snapshot = {"events": {"items": []}, "source_health": {"sources": []}}
     result = monitor._attach_realtime_external_events(snapshot)
-    assert result["financialjuice_priority_events"][0]["vendor_importance"] == 8
+    assert result["financialjuice_priority_events"][0]["vendor_importance"] == 9
     assert result["financialjuice_priority_events"][0]["notification_status"] == "eligible"
     assert result["events"]["items"][0]["source_key"] == "financialjuice"
     assert result["financialjuice_release_contract"]["ok"] is True
@@ -290,7 +290,7 @@ def test_financialjuice_event_uses_immediate_text_lane_and_records_receipt(monke
         "vendor_importance": 9,
         "vendor_priority_notification": True,
         "notification_status": "eligible",
-        "notification_reason": "vendor_priority_importance_ge_8",
+        "notification_reason": "vendor_priority_importance_ge_9",
         "prstk_risk": {"prstk_risk_level": "R2"},
         "title": "Oil supply risk",
     }
@@ -329,6 +329,65 @@ def test_financialjuice_event_uses_immediate_text_lane_and_records_receipt(monke
     assert "delivered_count=1" in text
     assert "risk=R2" in text
     assert recorded["delivery_status"] == "delivered"
+
+
+def test_high_priority_financialjuice_bypasses_generic_cooldown_and_budget(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    event = {
+        "source_key": "financialjuice",
+        "source": "FinancialJuice",
+        "event_cluster_key": "fj-priority-cluster",
+        "canonical_fact_key": "financialjuice-fact:priority",
+        "observation_id": "fj-priority-observation",
+        "vendor_importance": 10,
+        "vendor_priority_notification": True,
+        "delivery_policy": "fj_priority",
+        "notification_status": "eligible",
+        "freshness_status": "fresh",
+        "source_identity_verified": True,
+        "public_signal_eligible": True,
+        "prstk_risk": {"prstk_risk_level": "R2"},
+        "title": "Verified oil supply disruption",
+    }
+    snapshot = {"snapshot_id": "snap-priority", "events": {"items": [event]}}
+    monkeypatch.setattr(monitor, "prepare_snapshot", lambda: (snapshot, event))
+    monkeypatch.setattr(monitor, "event_key", lambda _event: "fj-priority-key")
+    monkeypatch.setattr(monitor, "verify_release_for_delivery", lambda **_kwargs: ReleaseGateResult(True, release_id="release-1", snapshot_id="snap-priority"))
+    monkeypatch.setattr(monitor, "_observe_event", lambda *_args, **_kwargs: {"should_remind": False})
+    monkeypatch.setattr(monitor, "get_settings", lambda: type("Settings", (), {
+        "telegram_ready": True, "telegram_bot_token": "token", "telegram_chat_ids": ("test",),
+        "dashboard_url": "https://example.test/app",
+    })())
+    monkeypatch.setattr(monitor, "decide_event_alert_policy", lambda *_args: {"allowed": False, "reason": "cooldown"})
+    monkeypatch.setattr(monitor, "decide_alert_budget", lambda *_args: {"allowed": False, "reason": "hourly_limit"})
+
+    class FakeLedger:
+        def delivery_history(self):
+            return []
+
+        def theme_decision(self, _event):
+            return {"allowed": False, "reason": "same_theme_unchanged"}
+
+        def record_delivery(self, _payload, **_kwargs):
+            return None
+
+        def save(self):
+            return None
+
+    monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
+    calls = {"delivered": 0}
+
+    def deliver(*_args, **_kwargs):
+        calls["delivered"] += 1
+        return {"status": "delivered", "notification_key": "financialjuice:priority", "receipts": [{
+            "recipient_hash": "hash", "delivery_status": "delivered", "message_id": 1,
+        }]}
+
+    monkeypatch.setattr(monitor, "deliver_financialjuice_event", deliver)
+    assert monitor.send_current_event() is True
+    assert calls["delivered"] == 1
+    assert "reason=sent" in output.read_text(encoding="utf-8")
 
 
 def test_official_text_lane_passes_alert_deep_link(monkeypatch, tmp_path):

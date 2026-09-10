@@ -2,6 +2,12 @@ name: Official macro and price monitor
 
 on:
   workflow_dispatch:
+    inputs:
+      notify:
+        description: Allow Telegram delivery for this monitor run
+        required: false
+        default: false
+        type: boolean
   repository_dispatch:
     types: [official-event-check]
   schedule:
@@ -42,6 +48,7 @@ jobs:
       NEWS_CACHE_PATH: site/data/news-cache.json
       MANIFEST_PATH: site/data/release-manifest.json
       DATA_RELEASE_BRANCH: data-release
+      NOTIFY: ${{ github.event_name == 'workflow_dispatch' && (inputs.notify == true && 'true' || 'false') || github.event_name == 'repository_dispatch' && (github.event.client_payload.notify == false || github.event.client_payload.notify == 'false') && 'false' || 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -130,7 +137,7 @@ jobs:
         if: steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true' && steps.deployment.outputs.available != 'true'
         run: echo "Pages unavailable; Telegram delivery intentionally skipped (fail closed)."
       - name: Send new official event
-        if: steps.release_gate.outputs.allowed == 'true'
+        if: steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true'
         id: send
         env:
           PUBLIC_RELEASE_URL: ${{ steps.deployment.outputs.page_url }}
@@ -140,6 +147,7 @@ jobs:
         if: always()
         env:
           SCAN_STATUS: ${{ steps.status.outcome }}
+          NOTIFICATION_REQUESTED: ${{ env.NOTIFY }}
           CANDIDATE_TYPE: ${{ steps.status.outputs.candidate_type || 'none' }}
           NOTIFICATION_EXPECTED: ${{ steps.status.outputs.notification_expected || 'false' }}
           NOTIFICATION_STATUS: ${{ steps.send.outputs.notification_status || steps.status.outputs.notification_status || 'not_attempted' }}
@@ -151,9 +159,15 @@ jobs:
             echo "## Official event / price notification decision"
             echo "- scan_status: ${SCAN_STATUS:-unknown}"
             echo "- candidate_type: ${CANDIDATE_TYPE:-none}"
-            echo "- notification_expected: ${NOTIFICATION_EXPECTED:-false}"
-            echo "- notification_status: ${NOTIFICATION_STATUS:-not_attempted}"
-            echo "- notification_reason: ${NOTIFICATION_REASON:-not_attempted}"
+            if [ "${NOTIFICATION_REQUESTED:-false}" != "true" ]; then
+              echo "- notification_expected: false"
+              echo "- notification_status: not_requested"
+              echo "- notification_reason: manual_notification_opt_in_required"
+            else
+              echo "- notification_expected: ${NOTIFICATION_EXPECTED:-false}"
+              echo "- notification_status: ${NOTIFICATION_STATUS:-not_attempted}"
+              echo "- notification_reason: ${NOTIFICATION_REASON:-not_attempted}"
+            fi
             echo "- delivered_count: ${DELIVERED_COUNT:-unknown}"
             echo "- failed_count: ${FAILED_COUNT:-unknown}"
           } >> "$GITHUB_STEP_SUMMARY"

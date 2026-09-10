@@ -53,7 +53,11 @@ def test_p0_19_accept_push_is_cursor_only_and_restart_safe(tmp_path: Path) -> No
     replay = service.accept_push(_push("100"), _headers())
     assert first["accepted"] is True
     assert replay["accepted"] is True
-    assert store.cursor()["last_history_id"] == "100"
+    # Pub/Sub receipt is only a pending hint.  The bounded history worker
+    # advances last_history_id after the page and all message fetches succeed.
+    assert store.cursor()["last_history_id"] is None
+    assert store.cursor()["pending_history_id"] == "100"
+    assert store.cursor()["last_push_received_at"]
     assert store.health()["raw_content_stored"] is False
 
 

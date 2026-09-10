@@ -1,7 +1,7 @@
 # FinancialJuice delivery trace contract
 
-Qualifying FinancialJuice items (`vendor_importance >= 8`) remain separate from
-PRStK risk.  The scheduled delivery path now carries an allow-listed trace from
+Qualifying FinancialJuice items (`vendor_importance >= 9`) remain separate from
+PRStK risk. Items at 8/10 and below use the ordinary event policy. The scheduled delivery path now carries an allow-listed trace from
 the release-bound event into the Railway delivery receipt:
 
 `received_at` → `parser_version` → `observation_id_hash` → `item_id` →

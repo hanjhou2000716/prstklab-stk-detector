@@ -35,13 +35,20 @@ _PUBLIC_FIELD_TYPES: dict[str, dict[str, str]] = {
     "financialjuice": {
         "status": "text",
         "last_sync_at": "timestamp",
+        "last_push_received_at": "timestamp",
+        "last_sync_started_at": "timestamp",
+        "last_sync_completed_at": "timestamp",
+        "last_sync_status": "text",
+        "last_sync_error": "text",
+        "push_delivery_verified": "bool",
         "last_sync_diagnostics": "diagnostics",
         "received_count": "counter",
         "parsed_count": "counter",
         "failed_count": "counter",
         "duplicate_count": "counter",
         "public_observation_count": "counter",
-        "importance_gte_8_count": "counter",
+        "importance_gte_9_count": "counter",
+        "importance_gte_8_count": "counter",  # read-compatible alias
         "qualifying_item_count": "counter",
         "pending_cluster_count": "counter",
         "last_received_at": "timestamp",
@@ -49,7 +56,8 @@ _PUBLIC_FIELD_TYPES: dict[str, dict[str, str]] = {
         "last_failure_at": "timestamp",
         "last_failure_reason": "text",
         "failure_reason_counts": "mapping",
-        "last_importance_gte_8_at": "timestamp",
+        "last_importance_gte_9_at": "timestamp",
+        "last_importance_gte_8_at": "timestamp",  # read-compatible alias
         "decision": "text",
         "last_release_id": "text",
         "last_snapshot_id": "text",
@@ -82,6 +90,8 @@ def _counter(value: Any) -> int | None:
 
 
 def _project_value(value: Any, kind: str) -> Any:
+    if kind == "bool":
+        return value if isinstance(value, bool) else None
     if kind == "counter":
         return _counter(value)
     if kind == "mapping":

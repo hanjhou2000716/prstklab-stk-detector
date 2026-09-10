@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from email_router import DLQ_STATES, parse_email
-from email_store import EmailStore
+from email_store import FJ_VENDOR_PRIORITY_THRESHOLD, EmailStore
 from gmail_watch import GmailWatchConfig, GmailWatchManager
 from gmail_watch import health as watch_health
 
@@ -83,7 +83,8 @@ def _financialjuice_candidate_reason(
 _CANDIDATE_DIAGNOSTIC_KEYS = (
     "new_event_eligible", "duplicate_message", "duplicate_fact", "stale_source_event",
     "missing_source_time", "invalid_source_time", "future_source_time", "incomplete_parse",
-    "below_notification_gate", "manual_replay", "downstream_dispatch_failure",
+    "below_notification_gate", "below_priority_gate", "priority_event_eligible",
+    "manual_replay", "downstream_dispatch_failure",
 )
 
 
@@ -115,15 +116,33 @@ def _candidate_diagnostics(
             importance = float(row.get("vendor_importance"))
         except (TypeError, ValueError, OverflowError):
             importance = 0.0
-        if importance < 8:
+        # Scores below the priority floor may still enter the ordinary event
+        # lane when the fact is complete.  Only a missing/invalid score uses
+        # the legacy notification-gate diagnostic below.
+        if importance <= 0:
             counts["below_notification_gate"] += 1
             continue
+        if importance < FJ_VENDOR_PRIORITY_THRESHOLD:
+            counts["below_priority_gate"] += 1
         fact_key = str(row.get("canonical_fact_key") or "").strip()
         if not fact_key:
             counts["incomplete_parse"] += 1
-        elif fact_key in batch_fact_keys or store.public_fact_exists(fact_key):
+        elif fact_key in batch_fact_keys:
             counts["duplicate_fact"] += 1
         else:
+            # Public observation storage is not a delivery receipt.  A fact
+            # already saved by an earlier sync may still have no Telegram
+            # receipt (for example when the old 8/10 gate rejected it).  Let
+            # the shared notification claim decide whether this is a true
+            # replay, while keeping the fact duplicate visible in diagnostics.
+            try:
+                already_observed = store.public_fact_exists(fact_key)
+            except Exception:
+                already_observed = False
+            if already_observed:
+                counts["duplicate_fact"] += 1
+            if importance >= FJ_VENDOR_PRIORITY_THRESHOLD:
+                counts["priority_event_eligible"] += 1
             counts["new_event_eligible"] += 1
             batch_fact_keys.add(fact_key)
     if source_is_financialjuice and not saw_financialjuice:
@@ -131,7 +150,8 @@ def _candidate_diagnostics(
     priority = (
         "stale_source_event", "missing_source_time", "invalid_source_time",
         "incomplete_parse", "duplicate_fact", "future_source_time",
-        "below_notification_gate", "manual_replay", "downstream_dispatch_failure",
+        "below_notification_gate", "below_priority_gate", "manual_replay",
+        "downstream_dispatch_failure",
     )
     primary = next((key for key in priority if counts[key]), "")
     return {"counts": counts, "primary_reason": primary}
@@ -311,15 +331,25 @@ class GmailIngressService:
                     continue
             observation["parse_status"] = "duplicate"
             observation["public_observation_count"] = refreshed_public
+            # A content-duplicate high-priority mail can still represent the
+            # only durable trigger for a previously parsed-but-not-delivered
+            # fact.  Re-enter the shared monitor; EventLedger and the sender
+            # claim remain the final exactly-once guard.
+            priority_candidate = diagnostics["counts"]["priority_event_eligible"] > 0
             return {
                 "accepted": False, "status": "duplicate", "observation": observation,
                 "public_observation_count": refreshed_public,
                 "public_rich_observation_count": public_rich_count,
                 "public_semantic_field_counts": semantic_field_counts,
-                "candidate_diagnostics": {"counts": {**diagnostics["counts"], "new_event_eligible": 0, "duplicate_message": 1, "duplicate_fact": 0}, "primary_reason": "duplicate_message"},
+                "material_candidate": priority_candidate,
+                "priority_candidate": priority_candidate,
+                "candidate_diagnostics": {"counts": {**diagnostics["counts"], "new_event_eligible": 0, "duplicate_message": 1}, "primary_reason": "duplicate_message"},
             }
         diagnostic_counts = diagnostics["counts"]
-        material_candidate = diagnostic_counts["new_event_eligible"] > 0
+        material_candidate = bool(
+            diagnostic_counts["new_event_eligible"] > 0
+            or diagnostic_counts["priority_event_eligible"] > 0
+        )
         saved_public = 0
         if isinstance(public_rows, list):
             for row in public_rows:
@@ -335,13 +365,13 @@ class GmailIngressService:
                     # health projection rather than dropping the whole batch.
                     continue
         observation["public_observation_count"] = saved_public
-        self.store.save_cursor(last_message_id=message_id, last_notification_at=_now(), last_sync_at=_now())
         return {
             "accepted": True, "status": parsed["parse_status"], "observation": observation,
             "public_observation_count": saved_public,
             "public_rich_observation_count": public_rich_count,
             "public_semantic_field_counts": semantic_field_counts,
             "material_candidate": material_candidate,
+            "priority_candidate": diagnostic_counts["priority_event_eligible"] > 0,
             "candidate_diagnostics": diagnostics,
         }
 
@@ -366,11 +396,21 @@ class GmailIngressService:
         history_id = str(notification.get("history_id") or "").strip()
         if not history_id:
             raise GmailIngressError("gmail_history_id_missing")
+        received_at = _now()
+        # A Pub/Sub history cursor is a notification hint, not an acknowledged
+        # Gmail sync cursor.  Keep it pending until the bounded history worker
+        # completes; advancing last_history_id here can permanently skip mail
+        # when the downstream dispatch or runner fails.
         current = self.store.save_cursor(
-            last_history_id=history_id,
-            last_notification_at=_now(),
-            last_sync_at=_now(),
+            pending_history_id=history_id,
+            last_push_received_at=received_at,
+            # Keep the legacy field populated for old health readers.  New
+            # readers must use last_push_received_at.
+            last_notification_at=received_at,
         )
+        record_event = getattr(self.store, "record_pubsub_event", None)
+        if callable(record_event):
+            record_event(history_id, received_at=received_at)
         return {"accepted": True, "history_id": history_id, "cursor": current}
 
 

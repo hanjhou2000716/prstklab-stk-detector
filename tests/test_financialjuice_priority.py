@@ -27,7 +27,7 @@ def _row(importance=8):
 
 
 def test_qualifying_fj_item_becomes_release_bound_vendor_priority_event():
-    projection = project_financialjuice_priority([_row(8)])
+    projection = project_financialjuice_priority([_row(9)])
     assert projection["decisions"][0]["notification_status"] == "eligible"
     event = projection["events"][0]
     assert event["vendor_priority_notification"] is True
@@ -95,14 +95,14 @@ def test_fj_below_threshold_is_visible_but_not_eligible():
 
 
 def test_fj_same_cluster_is_not_sent_twice():
-    projection = project_financialjuice_priority([_row(8)], existing_events=[{"event_cluster_key": ""}])
+    projection = project_financialjuice_priority([_row(9)], existing_events=[{"event_cluster_key": ""}])
     # Without a cluster key, this is a new auditable item; the absence of a
     # key must not silently suppress a qualifying notification.
     assert projection["decisions"][0]["notification_status"] == "eligible"
 
-    row = _row(8)
+    row = _row(9)
     row["event_cluster_key"] = "cluster-1"
-    projection = project_financialjuice_priority([row], existing_events=[{"event_cluster_key": "cluster-1"}])
+    projection = project_financialjuice_priority([row], existing_events=[{"event_cluster_key": "cluster-1", "notification_status": "already_cluster_notified"}])
     assert projection["decisions"][0]["notification_status"] == "already_cluster_notified"
     assert "already_cluster_notified" in projection["decisions"][0]["notification_reason"]
 

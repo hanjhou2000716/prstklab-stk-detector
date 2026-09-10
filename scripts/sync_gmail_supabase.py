@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import json
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +26,7 @@ from gmail_ingress import GmailIngressService  # noqa: E402
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--max-messages", type=int, default=50)
+    parser.add_argument("--notify", choices=("true", "false"), default="true", help="Allow downstream event notification for this sync")
     parser.add_argument("--history-id", default=None, help="Pub/Sub cursor supplied by the Worker")
     parser.add_argument("--latest-financialjuice", action="store_true", help="Reprocess only the newest FJ mail without moving the cursor")
     args = parser.parse_args()
@@ -33,6 +35,11 @@ def main() -> int:
     cursor = store.cursor()
     pending = str(args.history_id or cursor.get("pending_history_id") or "").strip()
     baseline = str(cursor.get("last_history_id") or "").strip()
+    event_history_id = "" if args.latest_financialjuice else pending
+    sync_started_at = datetime.now(UTC).isoformat()
+    update_event = getattr(store, "update_pubsub_event", None)
+    if event_history_id and callable(update_event):
+        update_event(event_history_id, dispatch_status="processing", sync_started_at=sync_started_at, dispatch_error=None)
     if not baseline and pending:
         # A freshly-created Watch returns a baseline cursor.  If an operator
         # invokes this workflow before the first renewal persisted it, use the
@@ -54,13 +61,28 @@ def main() -> int:
             diagnostics["primary_reason"] = "manual_replay"
     else:
         result = asyncio.run(sync_gmail_history(config, store, ingress, max_messages=args.max_messages))
+    result["notification_requested"] = args.notify == "true"
+    sync_completed_at = datetime.now(UTC).isoformat()
+    if event_history_id and callable(update_event):
+        failed = int(result.get("failed") or 0)
+        status = str(result.get("status") or "unknown")
+        update_event(
+            event_history_id,
+            dispatch_status="completed" if failed == 0 and status in {"healthy", "no_history_cursor"} else "failed",
+            sync_completed_at=sync_completed_at,
+            candidate_decided_at=sync_completed_at,
+            dispatch_error=None if failed == 0 else status[:120],
+        )
     if result.get("status") in {"healthy", "no_history_cursor"}:
         store.save_cursor(pending_history_id=None)
     safe = {key: result[key] for key in (
         "status", "processed", "failed", "duplicate", "duplicate_count", "accepted_new_count",
         "material_candidate_count", "skipped", "history_gap", "failure_types",
         "latest_financialjuice_diagnostics", "candidate_diagnostics",
+        "notification_requested", "sync_started_at", "sync_completed_at",
     ) if key in result}
+    safe["sync_started_at"] = sync_started_at
+    safe["sync_completed_at"] = sync_completed_at
     print(json.dumps(safe, ensure_ascii=False, sort_keys=True))
     return 0 if result.get("failed", 0) == 0 else 1
 

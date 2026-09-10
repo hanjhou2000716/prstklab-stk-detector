@@ -11,12 +11,17 @@ on:
         description: Reprocess exactly the newest FinancialJuice mail without moving the cursor
         required: false
         type: boolean
+      notify:
+        description: Allow fresh eligible observations to trigger the official event monitor
+        required: false
+        default: false
+        type: boolean
   repository_dispatch:
     types: [gmail-history-sync]
   schedule:
     # Pub/Sub remains the low-latency path. This bounded cursor reconciliation
     # catches a missed webhook without creating a second parser or ledger.
-    - cron: "*/10 * * * *"
+    - cron: "*/5 * * * *"
 
 permissions:
   contents: write
@@ -40,6 +45,7 @@ jobs:
       GMAIL_OAUTH_CLIENT_ID: ${{ secrets.GMAIL_OAUTH_CLIENT_ID }}
       GMAIL_OAUTH_CLIENT_SECRET: ${{ secrets.GMAIL_OAUTH_CLIENT_SECRET }}
       GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+      NOTIFY: ${{ github.event_name == 'workflow_dispatch' && (inputs.notify == true && 'true' || 'false') || github.event_name == 'repository_dispatch' && (github.event.client_payload.notify == false || github.event.client_payload.notify == 'false') && 'false' || 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -59,6 +65,7 @@ jobs:
           args=()
           if [ -n "${HISTORY_ID:-}" ]; then args+=(--history-id "$HISTORY_ID"); fi
           if [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" = "true" ]; then args+=(--latest-financialjuice); fi
+          args+=(--notify "$NOTIFY")
           python scripts/sync_gmail_supabase.py "${args[@]}" | tee gmail-sync-result.json
       - name: Trigger realtime event monitor for new reviewed email
         if: success()
@@ -68,10 +75,14 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           material_candidates="$(jq -r 'if (.material_candidate_count | type) == "number" then .material_candidate_count else 0 end' gmail-sync-result.json)"
-          if [ "$material_candidates" -gt 0 ] && [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" != "true" ]; then
+          priority_candidates="$(jq -r 'if (.priority_candidate_count | type) == "number" then .priority_candidate_count else 0 end' gmail-sync-result.json)"
+          candidate_ready="false"
+          if [ "$material_candidates" -gt 0 ] || [ "$priority_candidates" -gt 0 ]; then candidate_ready="true"; fi
+          if [ "$candidate_ready" = "true" ] && [ "$NOTIFY" = "true" ] && [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" != "true" ]; then
             gh api --method POST "repos/$GH_REPO/dispatches" \
               -f event_type=official-event-check \
-              -f 'client_payload[reason]=gmail-reviewed-observation'
+              -f 'client_payload[reason]=gmail-reviewed-observation' \
+              -f 'client_payload[notify]=true'
             echo "triggered=true" >> "$GITHUB_OUTPUT"
           else
             echo "triggered=false" >> "$GITHUB_OUTPUT"
@@ -85,6 +96,7 @@ jobs:
           processed="0"
           accepted_new="0"
           material_candidates="0"
+          priority_candidates="0"
           duplicate="0"
           candidate_reason=""
           manual_replay="0"
@@ -94,13 +106,17 @@ jobs:
             processed="$(jq -r 'if (.processed | type) == "number" then .processed else 0 end' gmail-sync-result.json)"
             accepted_new="$(jq -r 'if (.accepted_new_count | type) == "number" then .accepted_new_count else 0 end' gmail-sync-result.json)"
             material_candidates="$(jq -r 'if (.material_candidate_count | type) == "number" then .material_candidate_count else 0 end' gmail-sync-result.json)"
+            priority_candidates="$(jq -r 'if (.priority_candidate_count | type) == "number" then .priority_candidate_count else 0 end' gmail-sync-result.json)"
             duplicate="$(jq -r 'if (.duplicate_count | type) == "number" then .duplicate_count elif (.duplicate | type) == "number" then .duplicate else 0 end' gmail-sync-result.json)"
             candidate_reason="$(jq -r '.candidate_diagnostics.primary_reason // ""' gmail-sync-result.json)"
             manual_replay="$(jq -r 'if ((.candidate_diagnostics.counts.manual_replay // 0) | type) == "number" then (.candidate_diagnostics.counts.manual_replay // 0) else 0 end' gmail-sync-result.json)"
             failed="$(jq -r 'if (.failed | type) == "number" then .failed else 0 end' gmail-sync-result.json)"
             status="$(jq -r '.status // "unknown"' gmail-sync-result.json)"
           fi
-          if [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" = "true" ] || [ "$manual_replay" -gt 0 ]; then
+          if [ "$NOTIFY" != "true" ]; then
+            notification_status="not_requested"
+            notification_reason="manual_notification_opt_in_required"
+          elif [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" = "true" ] || [ "$manual_replay" -gt 0 ]; then
             notification_status="diagnostic_only"
             notification_reason="manual_replay"
           elif [ "$DISPATCH_TRIGGERED" = true ]; then
@@ -109,10 +125,15 @@ jobs:
           elif [ "$failed" -gt 0 ]; then
             notification_status="failed"
             notification_reason="gmail_sync_failed"
-          elif [ "$material_candidates" -gt 0 ] && [ "$DISPATCH_OUTCOME" != "success" ]; then
-            notification_status="failed"
-            notification_reason="downstream_dispatch_failure"
-          elif [ "$accepted_new" -gt 0 ] && [ "$material_candidates" -eq 0 ]; then
+          elif [ "$material_candidates" -gt 0 ] || [ "$priority_candidates" -gt 0 ]; then
+            if [ "$DISPATCH_OUTCOME" != "success" ]; then
+              notification_status="failed"
+              notification_reason="downstream_dispatch_failure"
+            else
+              notification_status="dispatch_requested"
+              notification_reason="new_reviewed_email_accepted"
+            fi
+          elif [ "$accepted_new" -gt 0 ] && [ "$material_candidates" -eq 0 ] && [ "$priority_candidates" -eq 0 ]; then
             notification_status="no_candidate"
             notification_reason="accepted_new_but_candidate_rejected:${candidate_reason:-unspecified}"
           elif [ "$duplicate" -gt 0 ]; then
@@ -122,15 +143,23 @@ jobs:
             notification_status="no_new_content"
             notification_reason="no_new_reviewed_email"
           fi
+          if [ "$material_candidates" -gt 0 ] || [ "$priority_candidates" -gt 0 ]; then
+            candidate_type="financialjuice_or_creator"
+            notification_expected="true"
+          else
+            candidate_type="none"
+            notification_expected="false"
+          fi
           {
             echo "## Gmail notification decision"
             echo "- scan_status: ${status}"
-            echo "- candidate_type: $([ "$material_candidates" -gt 0 ] && echo financialjuice_or_creator || echo none)"
-            echo "- notification_expected: $([ "$material_candidates" -gt 0 ] && echo true || echo false)"
+            echo "- candidate_type: ${candidate_type}"
+            echo "- notification_expected: ${notification_expected}"
             echo "- notification_status: ${notification_status}"
             echo "- notification_reason: ${notification_reason}"
             echo "- accepted_new_count: ${accepted_new}"
             echo "- material_candidate_count: ${material_candidates}"
+            echo "- priority_candidate_count: ${priority_candidates}"
             echo "- duplicate_count: ${duplicate}"
             echo "- candidate_diagnostics: $(jq -c '.candidate_diagnostics // {}' gmail-sync-result.json 2>/dev/null || echo '{}')"
             echo "- delivered_count: unknown"

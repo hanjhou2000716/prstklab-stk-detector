@@ -78,7 +78,7 @@ jobs:
       # Scheduled cron and trusted backup repository_dispatch runs are both
       # automatic notification intents.  Manual workflow_dispatch remains
       # opt-in through inputs.notify.
-      NOTIFY: ${{ github.event_name == 'schedule' && 'true' || github.event_name == 'repository_dispatch' && github.event.client_payload.notify == true && 'true' || inputs.notify == true && 'true' || 'false' }}
+      NOTIFY: ${{ github.event_name == 'workflow_dispatch' && (inputs.notify == true && 'true' || 'false') || github.event_name == 'repository_dispatch' && (github.event.client_payload.notify == false || github.event.client_payload.notify == 'false') && 'false' || 'true' }}
       # Automatic runs resolve the slot from github.event.schedule.  The
       # runner start time is not a valid reason to suppress a delayed cron.
       # Manual runs resolve to the most recent fixed Taipei-time boundary;

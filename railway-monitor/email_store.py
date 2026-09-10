@@ -15,6 +15,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+# This is intentionally local to the standalone Railway bundle.  The
+# canonical parser and the GitHub projection both use the same 9/10 policy;
+# keeping the value here prevents the ingress health projection from falling
+# back to the retired 8/10 lane when imported independently in the worker.
+FJ_VENDOR_PRIORITY_THRESHOLD = 9
+
 
 def _now() -> str:
     return datetime.now(UTC).isoformat()
@@ -77,8 +83,14 @@ class EmailStore:
                     watch_error TEXT,
                     watch_error_at TEXT,
                     last_history_id TEXT,
+                    pending_history_id TEXT,
+                    last_push_received_at TEXT,
                     last_notification_at TEXT,
                     last_sync_at TEXT,
+                    last_sync_started_at TEXT,
+                    last_sync_completed_at TEXT,
+                    last_sync_status TEXT,
+                    last_sync_error TEXT,
                     last_full_sync_at TEXT,
                     last_message_id TEXT,
                     last_sync_diagnostics TEXT,
@@ -122,12 +134,28 @@ class EmailStore:
                 );
                 CREATE INDEX IF NOT EXISTS idx_public_observations_created
                     ON public_observations(created_at);
+                CREATE TABLE IF NOT EXISTS gmail_pubsub_events (
+                    history_id TEXT PRIMARY KEY,
+                    gmail_address_hash TEXT,
+                    received_at TEXT NOT NULL,
+                    dispatch_status TEXT NOT NULL DEFAULT 'pending',
+                    dispatch_requested_at TEXT,
+                    sync_started_at TEXT,
+                    sync_completed_at TEXT,
+                    candidate_decided_at TEXT,
+                    dispatch_error TEXT
+                );
                 """
             )
             # Existing Railway volumes predate the watch lease observability
             # columns.  Migrate in place without dropping the durable cursor.
             columns = {str(row[1]) for row in connection.execute("PRAGMA table_info(gmail_cursor)")}
-            for name in ("watch_last_renewed_at", "watch_error", "watch_error_at", "last_sync_diagnostics"):
+            for name in (
+                "watch_last_renewed_at", "watch_error", "watch_error_at",
+                "pending_history_id", "last_push_received_at",
+                "last_sync_started_at", "last_sync_completed_at",
+                "last_sync_status", "last_sync_error", "last_sync_diagnostics",
+            ):
                 if name not in columns:
                     connection.execute(f"ALTER TABLE gmail_cursor ADD COLUMN {name} TEXT")
 
@@ -141,8 +169,14 @@ class EmailStore:
                 "watch_error": None,
                 "watch_error_at": None,
                 "last_history_id": None,
+                "pending_history_id": None,
+                "last_push_received_at": None,
                 "last_notification_at": None,
                 "last_sync_at": None,
+                "last_sync_started_at": None,
+                "last_sync_completed_at": None,
+                "last_sync_status": None,
+                "last_sync_error": None,
                 "last_full_sync_at": None,
                 "last_message_id": None,
                 "last_sync_diagnostics": None,
@@ -163,17 +197,25 @@ class EmailStore:
         with self._connect() as connection:
             connection.execute(
                 """INSERT INTO gmail_cursor(id, watch_expiration, watch_last_renewed_at,
-                   watch_error, watch_error_at, last_history_id,
-                   last_notification_at, last_sync_at, last_full_sync_at,
-                   last_message_id, last_sync_diagnostics, updated_at)
-                   VALUES(1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   watch_error, watch_error_at, last_history_id, pending_history_id,
+                   last_push_received_at, last_notification_at, last_sync_at,
+                   last_sync_started_at, last_sync_completed_at, last_sync_status,
+                   last_sync_error, last_full_sync_at, last_message_id,
+                   last_sync_diagnostics, updated_at)
+                   VALUES(1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                    ON CONFLICT(id) DO UPDATE SET watch_expiration=excluded.watch_expiration,
                    watch_last_renewed_at=excluded.watch_last_renewed_at,
                    watch_error=excluded.watch_error,
                    watch_error_at=excluded.watch_error_at,
                    last_history_id=excluded.last_history_id,
+                   pending_history_id=excluded.pending_history_id,
+                   last_push_received_at=excluded.last_push_received_at,
                    last_notification_at=excluded.last_notification_at,
                    last_sync_at=excluded.last_sync_at,
+                   last_sync_started_at=excluded.last_sync_started_at,
+                   last_sync_completed_at=excluded.last_sync_completed_at,
+                   last_sync_status=excluded.last_sync_status,
+                   last_sync_error=excluded.last_sync_error,
                    last_full_sync_at=excluded.last_full_sync_at,
                    last_message_id=excluded.last_message_id,
                    last_sync_diagnostics=excluded.last_sync_diagnostics,
@@ -181,7 +223,10 @@ class EmailStore:
                 (
                     current["watch_expiration"], current["watch_last_renewed_at"],
                     current["watch_error"], current["watch_error_at"], current["last_history_id"],
+                    current["pending_history_id"], current["last_push_received_at"],
                     current["last_notification_at"], current["last_sync_at"],
+                    current["last_sync_started_at"], current["last_sync_completed_at"],
+                    current["last_sync_status"], current["last_sync_error"],
                     current["last_full_sync_at"], current["last_message_id"],
                     json.dumps(current["last_sync_diagnostics"], ensure_ascii=False, sort_keys=True)
                     if isinstance(current.get("last_sync_diagnostics"), dict) else None,
@@ -217,6 +262,39 @@ class EmailStore:
             except sqlite3.IntegrityError:
                 return False
         return True
+
+    def update_pubsub_event(self, history_id: str, **values: Any) -> bool:
+        """Update private Pub/Sub processing state without exposing the cursor."""
+        key = str(history_id or "").strip()
+        if not key:
+            return False
+        allowed = {
+            "dispatch_status", "dispatch_requested_at", "sync_started_at",
+            "sync_completed_at", "candidate_decided_at", "dispatch_error",
+        }
+        updates = {name: value for name, value in values.items() if name in allowed}
+        if not updates:
+            return False
+        assignments = ", ".join(f"{name} = ?" for name in updates)
+        with self._connect() as connection:
+            cursor = connection.execute(
+                f"UPDATE gmail_pubsub_events SET {assignments} WHERE history_id = ?",
+                (*updates.values(), key),
+            )
+            return cursor.rowcount > 0
+
+    def record_pubsub_event(self, history_id: str, *, received_at: str | None = None) -> bool:
+        """Insert one private Pub/Sub cursor idempotently for local tests/replay."""
+        key = str(history_id or "").strip()
+        if not key:
+            return False
+        with self._connect() as connection:
+            cursor = connection.execute(
+                """INSERT OR IGNORE INTO gmail_pubsub_events(
+                   history_id, received_at) VALUES(?, ?)""",
+                (key, received_at or _now()),
+            )
+            return cursor.rowcount > 0
 
     def record_dlq(self, *, message_id: str, parser_name: str, parser_version: str,
                    template_fingerprint: str, parse_status: str, failure_reason: str,
@@ -352,8 +430,14 @@ class EmailStore:
                 "WHERE parse_status IN ('received', 'queued', 'pending')"
             ).fetchone()[0]
         cursor = self.cursor()
+        fj_status = str(
+            (self.source_health().get("financialjuice") or {}).get("status") or "no_new_content"
+        )
         return {
-            "status": "healthy" if cursor["last_sync_at"] else "no_new_content",
+            # Do not derive the overall Gmail health from the legacy
+            # last_sync_at field alone: a later failed sync must not continue
+            # to look healthy because an older sync once completed.
+            "status": fj_status,
             "observation_count": int(observation_count),
             "dlq_count": int(dlq_count),
             "queue_pending_count": int(pending_count),
@@ -371,6 +455,14 @@ class EmailStore:
         derive the projection from sanitized metadata only; message bodies,
         transport IDs and sender addresses never leave the private store.
         """
+        cursor = self.cursor()
+        sync_status = str(cursor.get("last_sync_status") or "").strip().casefold()
+        sync_error = str(cursor.get("last_sync_error") or "").strip()
+        sync_state = (
+            "degraded" if sync_status in {"degraded", "failed", "history_cursor_expired", "running"} or sync_error
+            else "healthy" if cursor.get("last_sync_completed_at")
+            else "no_new_content"
+        )
         sources = {
             "creator": {
                 "status": "not_checked", "received_count": 0,
@@ -385,10 +477,15 @@ class EmailStore:
                 "failure_reason_counts": {}, "last_failure_reason": None,
             },
             "financialjuice": {
-                "status": "not_checked", "received_count": 0,
+                "status": sync_state, "received_count": 0,
                 "parsed_count": 0, "failed_count": 0, "duplicate_count": 0,
-                "public_observation_count": 0, "importance_gte_8_count": 0,
+                "public_observation_count": 0,
+                "importance_gte_9_count": 0,
+                # Read-compatible alias; populated with the new >=9 count.
+                "importance_gte_8_count": 0,
                 "qualifying_item_count": 0, "pending_cluster_count": 0,
+                "last_importance_gte_9_at": None,
+                # Read-compatible alias; never represents 8/10 items anymore.
                 "last_importance_gte_8_at": None, "last_received_at": None,
                 "last_parsed_at": None, "last_failure_at": None,
                 "decision": "not_checked", "last_release_id": None,
@@ -396,11 +493,19 @@ class EmailStore:
                 "last_telegram_delivery_at": None,
                 "last_telegram_delivery_status": "not_checked",
                 "failure_reason_counts": {}, "last_failure_reason": None,
+                # The legacy last_notification_at was also written by the old
+                # parser.  It is retained for readers but can never prove a
+                # real Pub/Sub push.
+                "push_delivery_verified": bool(cursor.get("last_push_received_at")),
+                "last_push_received_at": cursor.get("last_push_received_at"),
+                "last_sync_started_at": cursor.get("last_sync_started_at"),
+                "last_sync_completed_at": cursor.get("last_sync_completed_at"),
+                "last_sync_status": sync_status or "not_checked",
+                "last_sync_error": sync_error or None,
                 "last_sync_at": None, "last_sync_diagnostics": None,
             },
         }
 
-        cursor = self.cursor()
         fj_cursor_diagnostics = cursor.get("last_sync_diagnostics")
         if isinstance(cursor.get("last_sync_at"), str):
             sources["financialjuice"]["last_sync_at"] = cursor["last_sync_at"]
@@ -488,9 +593,15 @@ class EmailStore:
             if source_name == "financialjuice" and isinstance(payload, dict):
                 is_priority = False
                 try:
-                    is_priority = float(payload.get("vendor_importance")) >= 8
+                    is_priority = float(payload.get("vendor_importance")) >= FJ_VENDOR_PRIORITY_THRESHOLD
                     if is_priority:
+                        item["importance_gte_9_count"] += 1
                         item["importance_gte_8_count"] += 1
+                        note(
+                            source_name,
+                            "last_importance_gte_9_at",
+                            payload.get("published_at") or row[2],
+                        )
                         note(
                             source_name,
                             "last_importance_gte_8_at",
@@ -506,7 +617,7 @@ class EmailStore:
                 ):
                     item["qualifying_item_count"] += 1
                 cluster = str(payload.get("event_cluster_key") or "").strip()
-                # The decision is for the >=8 vendor-priority lane.  A
+                # The decision is for the >=9 vendor-priority lane.  A
                 # routine low-importance cluster must not make that lane look
                 # like it is waiting for confirmation.
                 if is_priority and cluster and not bool(payload.get("official_confirmed")):
@@ -555,13 +666,17 @@ class EmailStore:
             else:
                 item["status"] = "no_new_content"
         fj = sources["financialjuice"]
+        # Do not let historical parsed/public rows overwrite a current sync
+        # failure or an in-flight sync state.
+        if sync_state == "degraded":
+            fj["status"] = "degraded"
         if fj["public_observation_count"]:
             if fj["qualifying_item_count"]:
                 fj["decision"] = "priority_items_ready_for_release_review"
             elif fj["pending_cluster_count"]:
                 fj["decision"] = "awaiting_confirmation"
-            elif fj["importance_gte_8_count"]:
-                # A vendor importance score of >=8 is evidence that the item
+            elif fj["importance_gte_9_count"]:
+                # A vendor importance score of >=9 is evidence that the item
                 # is high-priority for the separate FinancialJuice lane.  It
                 # is not evidence that the explicit notification flag or
                 # release gate passed.  Do not mislabel this state as

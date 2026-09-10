@@ -20,7 +20,7 @@ def test_financialjuice_priority_is_exposed_without_overriding_risk() -> None:
         "source": "financialjuice",
         "original_headline": "Oil supply risk",
         "event_type": "energy",
-        "importance": 8,
+        "importance": 9,
     })
     assert result["vendor_priority"]["vendor_priority_notification"] is True
     assert result["risk"]["prstk_risk_level"] == "R2"

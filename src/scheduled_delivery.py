@@ -25,6 +25,7 @@ from src.external_observation_input import (
 )
 from src.financialjuice_notification import deliver_financialjuice_event, financialjuice_caption
 from src.financialjuice_priority import (
+    is_financialjuice_priority_event,
     project_financialjuice_priority,
     public_financialjuice_observations,
     replace_financialjuice_event_lane,
@@ -341,6 +342,7 @@ def _select_scheduled_candidate(
             event = _pick_event(snapshot, slot)
         if not isinstance(event, dict):
             break
+        fj_priority = is_financialjuice_priority_event(event)
         identity = notification_key_for_event(event)
         if not identity:
             last_reason = "notification_key_missing"
@@ -379,7 +381,7 @@ def _select_scheduled_candidate(
                 ledger.save()
             excluded.add(identity)
             continue
-        if hasattr(ledger, "theme_decision"):
+        if hasattr(ledger, "theme_decision") and not fj_priority:
             claim_state = getattr(ledger, "delivery_claims", {}).get(identity, {})
             claim_status = str(claim_state.get("status") or "")
             if claim_status == "delivered":
@@ -398,10 +400,7 @@ def _select_scheduled_candidate(
                     excluded.add(identity)
                     continue
         source = str(event.get("source_key") or event.get("source") or "").strip().casefold()
-        if source == "financialjuice" and (
-            str(event.get("notification_status") or "") != "eligible"
-            or event.get("vendor_priority_notification") is not True
-        ):
+        if source == "financialjuice" and not fj_priority:
             last_reason = "vendor_priority_not_eligible"
             if hasattr(ledger, "record_decision"):
                 ledger.record_decision(event, {"allowed": False, "status": "suppressed", "reason": last_reason})
@@ -421,7 +420,11 @@ def _select_scheduled_candidate(
                 ledger.save()
             excluded.add(identity)
             continue
-        budget = decide_alert_budget(event, ledger.delivery_history())
+        budget = (
+            {"allowed": True, "reason": "fj_priority_independent", "event_key": identity}
+            if fj_priority
+            else decide_alert_budget(event, ledger.delivery_history())
+        )
         if not budget.get("allowed", False):
             last_reason = str(budget.get("reason") or "alert_budget_suppressed")
             if hasattr(ledger, "record_decision"):
@@ -549,7 +552,9 @@ def _schedule_decision_category(
         return "data_insufficient", reason
     if delivery_eligible and decision_event is not None:
         return "notification_candidate", "candidate_ready"
-    if reason in {"same_decision_unchanged", "anchor_already_delivered", "no_material_change"}:
+    if reason == "anchor_already_delivered":
+        return "already_delivered", reason
+    if reason in {"same_decision_unchanged", "no_material_change"}:
         return "no_material_change", reason
     if not decision_event:
         return "data_insufficient", reason or "no_eligible_candidate"

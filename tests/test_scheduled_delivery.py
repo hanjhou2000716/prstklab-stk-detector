@@ -114,7 +114,9 @@ def test_scheduled_selection_skips_fj_without_release_alert_and_uses_next_candid
     }
     second = {
         "source_key": "financialjuice", "notification_status": "eligible",
-        "vendor_priority_notification": True, "vendor_importance": 8,
+        "vendor_priority_notification": True, "vendor_importance": 9,
+        "delivery_policy": "fj_priority", "canonical_fact_key": "financialjuice-fact:second",
+        "source_identity_verified": True, "public_signal_eligible": True, "freshness_status": "fresh",
         "notification_id": "published-alert", "event": "Second FJ event。",
     }
     candidates = iter((first, second))
@@ -157,7 +159,9 @@ def test_scheduled_selection_skips_claimed_fj_and_uses_next_candidate(monkeypatc
     }
     second = {
         "source_key": "financialjuice", "notification_status": "eligible",
-        "vendor_priority_notification": True, "vendor_importance": 8,
+        "vendor_priority_notification": True, "vendor_importance": 9,
+        "delivery_policy": "fj_priority", "canonical_fact_key": "financialjuice-fact:next",
+        "source_identity_verified": True, "public_signal_eligible": True, "freshness_status": "fresh",
         "notification_id": "next-event", "event": "Second FJ event。",
     }
     candidates = iter((first, second))
@@ -497,9 +501,14 @@ def test_scheduled_delivery_blocks_missing_source_url_before_sender(tmp_path, mo
     candidate = {
         "source_key": "financialjuice",
         "notification_status": "eligible",
-        "vendor_priority_notification": True,
-        "vendor_importance": 9,
-        "notification_id": "fj-already-delivered",
+            "vendor_priority_notification": True,
+            "vendor_importance": 9,
+            "delivery_policy": "fj_priority",
+            "notification_id": "fj-already-delivered",
+            "canonical_fact_key": "financialjuice-fact:delivered",
+            "source_identity_verified": True,
+            "public_signal_eligible": True,
+            "freshness_status": "fresh",
         "event": "已送達的 FJ 事件。",
         "source_url": "https://example.test/source/fj-delivered",
     }
@@ -569,11 +578,15 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
         "item_id": "item-1",
         "title": "據《The...",
         "vendor_original_headline": "Iran says U.S. strikes telecommunications infrastructure.",
-        "vendor_importance": 8,
+        "vendor_importance": 9,
         "notification_status": "eligible",
         "vendor_priority_notification": True,
+        "delivery_policy": "fj_priority",
+        "canonical_fact_key": "financialjuice-fact:trace",
+        "source_identity_verified": True,
+        "public_signal_eligible": True,
         "prstk_risk": {"prstk_risk_level": "R2"},
-        "notification_reason": "vendor_priority_importance_ge_8",
+        "notification_reason": "vendor_priority_importance_ge_9",
         "parser_version": "financialjuice-compound-v1",
         "received_at": "2026-08-21T01:01:00+00:00",
         "source_published_at": datetime.now(UTC).isoformat(),
@@ -648,8 +661,13 @@ def test_scheduled_financialjuice_all_recipient_failure_is_fail_closed(tmp_path,
         "observation_id": "fj-observation-failed",
         "notification_status": "eligible",
         "vendor_priority_notification": True,
-        "vendor_importance": 8,
+        "vendor_importance": 9,
         "title": "Oil supply risk",
+        "delivery_policy": "fj_priority",
+        "canonical_fact_key": "financialjuice-fact:failed",
+        "source_identity_verified": True,
+        "public_signal_eligible": True,
+        "freshness_status": "fresh",
         "source_url": "https://example.test/source/fj-failed",
     }
     monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args: event)
@@ -844,9 +862,9 @@ def test_prepare_binds_sanitized_external_observations_to_snapshot(tmp_path, mon
 def test_prepare_projects_qualifying_financialjuice_into_release_event_lane(tmp_path, monkeypatch):
     records = tmp_path / "external.json"
     records.write_text(json.dumps({"observations": [{
-        "observation_id": "fj-8", "item_id": "item-8", "source": "financialjuice",
-        "original_headline": "Oil supply risk", "event_type": "energy", "vendor_importance": 8,
-        "source_url": "https://financialjuice.com/item/8", "source_identity_verified": True, "public_safe": True,
+        "observation_id": "fj-9", "item_id": "item-9", "source": "financialjuice",
+        "original_headline": "Oil supply risk", "event_type": "energy", "vendor_importance": 9,
+        "source_url": "https://financialjuice.com/item/9", "source_identity_verified": True, "public_safe": True,
         "source_published_at": datetime.now(UTC).isoformat(),
     }]}), encoding="utf-8")
     snapshot_path = tmp_path / "market.json"

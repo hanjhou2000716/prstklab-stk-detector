@@ -42,7 +42,8 @@ class GmailHistorySyncError(RuntimeError):
 _CANDIDATE_DIAGNOSTIC_KEYS = (
     "new_event_eligible", "duplicate_message", "duplicate_fact", "stale_source_event",
     "missing_source_time", "invalid_source_time", "future_source_time", "incomplete_parse",
-    "below_notification_gate", "manual_replay", "downstream_dispatch_failure",
+    "below_notification_gate", "below_priority_gate", "priority_event_eligible",
+    "manual_replay", "downstream_dispatch_failure",
 )
 
 
@@ -68,10 +69,22 @@ def _merge_candidate_diagnostics(total: dict[str, Any], value: Any) -> None:
 
 def _with_candidate_diagnostics(result: dict[str, Any], diagnostics: dict[str, Any]) -> dict[str, Any]:
     result["candidate_diagnostics"] = diagnostics
+    counts = diagnostics.get("counts") if isinstance(diagnostics, Mapping) else None
+    if "priority_candidate_count" not in result:
+        try:
+            result["priority_candidate_count"] = max(0, int((counts or {}).get("priority_event_eligible") or 0))
+        except (TypeError, ValueError, OverflowError):
+            result["priority_candidate_count"] = 0
     return result
 
 
-def _sync_diagnostics_record(result: Mapping[str, Any], diagnostics: Mapping[str, Any]) -> dict[str, Any]:
+def _sync_diagnostics_record(
+    result: Mapping[str, Any],
+    diagnostics: Mapping[str, Any],
+    *,
+    sync_started_at: str | None = None,
+    sync_completed_at: str | None = None,
+) -> dict[str, Any]:
     """Build the bounded record exposed to operators and the release export."""
     def counter(key: str) -> int:
         try:
@@ -86,12 +99,13 @@ def _sync_diagnostics_record(result: Mapping[str, Any], diagnostics: Mapping[str
             safe_counts[key] = max(0, min(1_000_000_000, int(counts.get(key) or 0))) if isinstance(counts, Mapping) else 0
         except (TypeError, ValueError, OverflowError):
             safe_counts[key] = 0
-    return {
+    record = {
         "recorded_at": datetime.now(UTC).isoformat(),
         "status": str(result.get("status") or "unknown")[:80],
         "processed": counter("processed"),
         "accepted_new_count": counter("accepted_new_count"),
         "material_candidate_count": counter("material_candidate_count"),
+        "priority_candidate_count": counter("priority_candidate_count"),
         "duplicate_count": counter("duplicate_count"),
         "failed": counter("failed"),
         "candidate_diagnostics": {
@@ -99,14 +113,60 @@ def _sync_diagnostics_record(result: Mapping[str, Any], diagnostics: Mapping[str
             "primary_reason": str(diagnostics.get("primary_reason") or "")[:80],
         },
     }
+    if sync_started_at:
+        record["sync_started_at"] = str(sync_started_at)
+    if sync_completed_at:
+        record["sync_completed_at"] = str(sync_completed_at)
+    return record
 
 
-def _persist_sync_diagnostics(store: EmailStore, result: Mapping[str, Any], diagnostics: Mapping[str, Any]) -> None:
+def _persist_sync_diagnostics(
+    store: EmailStore,
+    result: Mapping[str, Any],
+    diagnostics: Mapping[str, Any],
+    *,
+    sync_started_at: str | None = None,
+    complete: bool = False,
+) -> None:
     """Persist only counters/reasons; diagnostics must never contain mail data."""
     try:
-        store.save_cursor(last_sync_diagnostics=_sync_diagnostics_record(result, diagnostics))
+        completed_at = datetime.now(UTC).isoformat() if complete else None
+        values: dict[str, Any] = {
+            "last_sync_diagnostics": _sync_diagnostics_record(
+                result,
+                diagnostics,
+                sync_started_at=sync_started_at,
+                sync_completed_at=completed_at,
+            ),
+        }
+        if complete:
+            status = str(result.get("status") or "unknown")
+            failed = int(result.get("failed") or 0)
+            values.update({
+                "last_sync_completed_at": completed_at,
+                "last_sync_status": status,
+                "last_sync_error": None if failed == 0 and status in {"healthy", "no_history_cursor"} else status[:80],
+            })
+            if failed == 0 and status in {"healthy", "no_history_cursor"}:
+                # Compatibility readers use last_sync_at; it now means a
+                # completed sync only, never a message parse or Pub/Sub push.
+                values["last_sync_at"] = completed_at
+        store.save_cursor(**values)
     except Exception:  # pragma: no cover - storage failure is already reflected by the sync result
         return
+
+
+def _mark_sync_started(store: EmailStore) -> str:
+    started_at = datetime.now(UTC).isoformat()
+    try:
+        store.save_cursor(
+            last_sync_started_at=started_at,
+            last_sync_status="running",
+            last_sync_error=None,
+        )
+    except Exception:  # pragma: no cover - the sync itself will report the failure
+        pass
+    return started_at
 
 
 def _manual_replay_result(
@@ -120,6 +180,7 @@ def _manual_replay_result(
     counts["new_event_eligible"] = 0
     diagnostics["primary_reason"] = "manual_replay"
     result["material_candidate_count"] = 0
+    result["priority_candidate_count"] = 0
     _persist_sync_diagnostics(store, result, diagnostics)
     return _with_candidate_diagnostics(result, diagnostics)
 
@@ -391,21 +452,26 @@ async def sync_gmail_history(
     max_messages: int = DEFAULT_MAX_MESSAGES,
 ) -> dict[str, Any]:
     """Process bounded ``messageAdded`` history and return safe counters."""
+    sync_started_at = _mark_sync_started(store)
     diagnostics = _empty_candidate_diagnostics()
     if config.missing:
-        return _with_candidate_diagnostics({"status": "configuration_missing", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "duplicate": 0, "duplicate_count": 0, "failed": 0}, diagnostics)
+        result = {"status": "configuration_missing", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "duplicate": 0, "duplicate_count": 0, "failed": 0}
+        _persist_sync_diagnostics(store, result, diagnostics, sync_started_at=sync_started_at, complete=True)
+        return _with_candidate_diagnostics(result, diagnostics)
     if config.oauth_missing:
-        return _with_candidate_diagnostics({"status": "configuration_missing", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "duplicate": 0, "duplicate_count": 0, "failed": 0}, diagnostics)
+        result = {"status": "configuration_missing", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "duplicate": 0, "duplicate_count": 0, "failed": 0}
+        _persist_sync_diagnostics(store, result, diagnostics, sync_started_at=sync_started_at, complete=True)
+        return _with_candidate_diagnostics(result, diagnostics)
     cursor = store.cursor()
     history_id = str(cursor.get("last_history_id") or "").strip()
     if not history_id:
         result = {"status": "no_history_cursor", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "duplicate": 0, "duplicate_count": 0, "failed": 0}
         store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
-        _persist_sync_diagnostics(store, result, diagnostics)
+        _persist_sync_diagnostics(store, result, diagnostics, sync_started_at=sync_started_at, complete=True)
         return _with_candidate_diagnostics(result, diagnostics)
 
     bounded = max(1, min(MAX_PAGE_SIZE, int(max_messages)))
-    processed = accepted_new = material_candidates = failed = duplicate = skipped = suppressed = 0
+    processed = accepted_new = material_candidates = priority_candidates = failed = duplicate = skipped = suppressed = 0
     failure_types: dict[str, int] = {}
     result: dict[str, Any] = {}
     try:
@@ -460,9 +526,12 @@ async def sync_gmail_history(
                     _merge_candidate_diagnostics(diagnostics, result.get("candidate_diagnostics"))
                     if result.get("status") == "duplicate":
                         duplicate += 1
+                        material_candidates += int(result.get("material_candidate") is True)
+                        priority_candidates += int(result.get("priority_candidate") is True)
                     elif result.get("accepted") is True:
                         accepted_new += 1
                         material_candidates += int(result.get("material_candidate") is True)
+                        priority_candidates += int(result.get("priority_candidate") is True)
                     elif result.get("status") == "retired_source_suppressed":
                         suppressed += 1
                 except GmailHistorySyncError as error:
@@ -484,6 +553,7 @@ async def sync_gmail_history(
                     "status": "healthy", "processed": processed,
                     "accepted_new_count": accepted_new,
                     "material_candidate_count": material_candidates,
+                    "priority_candidate_count": priority_candidates,
                     "failed": failed, "duplicate": duplicate,
                     "duplicate_count": duplicate,
                 }
@@ -498,13 +568,14 @@ async def sync_gmail_history(
                 store.save_cursor(
                     last_history_id=latest_history or history_id,
                     last_full_sync_at=datetime.now(UTC).isoformat(),
-                    last_sync_diagnostics=_sync_diagnostics_record(result, diagnostics),
                 )
+                _persist_sync_diagnostics(store, result, diagnostics, sync_started_at=sync_started_at, complete=True)
             else:
                 result = {
                     "status": "degraded", "processed": processed,
                     "accepted_new_count": accepted_new,
                     "material_candidate_count": material_candidates,
+                    "priority_candidate_count": priority_candidates,
                     "failed": failed, "duplicate": duplicate,
                     "duplicate_count": duplicate,
                 }
@@ -518,13 +589,14 @@ async def sync_gmail_history(
                     result["history_pages"] = history_pages
                 store.save_cursor(
                     last_full_sync_at=datetime.now(UTC).isoformat(),
-                    last_sync_diagnostics=_sync_diagnostics_record(result, diagnostics),
                 )
+                _persist_sync_diagnostics(store, result, diagnostics, sync_started_at=sync_started_at, complete=True)
     except (httpx.TimeoutException, httpx.HTTPError) as error:
-        result = {"status": type(error).__name__.lower(), "processed": processed, "accepted_new_count": accepted_new, "material_candidate_count": material_candidates, "failed": failed + 1, "duplicate": duplicate, "duplicate_count": duplicate}
+        result = {"status": type(error).__name__.lower(), "processed": processed, "accepted_new_count": accepted_new, "material_candidate_count": material_candidates, "priority_candidate_count": priority_candidates, "failed": failed + 1, "duplicate": duplicate, "duplicate_count": duplicate}
         if suppressed:
             result["suppressed"] = suppressed
-        store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat(), last_sync_diagnostics=_sync_diagnostics_record(result, diagnostics))
+        store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
+        _persist_sync_diagnostics(store, result, diagnostics, sync_started_at=sync_started_at, complete=True)
         return _with_candidate_diagnostics(result, diagnostics)
     except GmailHistorySyncError as error:
         if str(error) == "http_404":
@@ -534,6 +606,7 @@ async def sync_gmail_history(
                 "processed": processed,
                 "accepted_new_count": accepted_new,
                 "material_candidate_count": material_candidates,
+                "priority_candidate_count": priority_candidates,
                 "failed": failed + 1,
                 "duplicate": duplicate,
                 "duplicate_count": duplicate,
@@ -541,12 +614,13 @@ async def sync_gmail_history(
             }
             if suppressed:
                 result["suppressed"] = suppressed
-            _persist_sync_diagnostics(store, result, diagnostics)
+            _persist_sync_diagnostics(store, result, diagnostics, sync_started_at=sync_started_at, complete=True)
             return _with_candidate_diagnostics(result, diagnostics)
-        result = {"status": str(error), "processed": processed, "accepted_new_count": accepted_new, "material_candidate_count": material_candidates, "failed": failed + 1, "duplicate": duplicate, "duplicate_count": duplicate}
+        result = {"status": str(error), "processed": processed, "accepted_new_count": accepted_new, "material_candidate_count": material_candidates, "priority_candidate_count": priority_candidates, "failed": failed + 1, "duplicate": duplicate, "duplicate_count": duplicate}
         if suppressed:
             result["suppressed"] = suppressed
-        store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat(), last_sync_diagnostics=_sync_diagnostics_record(result, diagnostics))
+        store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
+        _persist_sync_diagnostics(store, result, diagnostics, sync_started_at=sync_started_at, complete=True)
         return _with_candidate_diagnostics(result, diagnostics)
     return _with_candidate_diagnostics(result, diagnostics)
 

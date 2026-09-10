@@ -22,6 +22,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+from src.financialjuice_contract import VENDOR_PRIORITY_THRESHOLD
+
 TRACKING_QUERY_KEYS = {"fbclid", "gclid", "dclid", "mc_cid", "mc_eid", "ref", "ref_src"}
 FACT_FIELDS = {
     "person": ("person", "persons", "people", "entities", "actors"),
@@ -331,7 +333,7 @@ def is_secondary_commentary(event: dict[str, Any] | None) -> bool:
     watchlist = bool(event.get("watchlist_trigger") or event.get("kind") == "market_signal")
     fj = event.get("vendor_importance")
     try:
-        fj_priority = float(str(fj)) >= 8
+        fj_priority = float(str(fj)) >= VENDOR_PRIORITY_THRESHOLD
     except (TypeError, ValueError):
         fj_priority = False
     return bool(commentary or (discovery and not official and not market_sync and not watchlist and not fj_priority))

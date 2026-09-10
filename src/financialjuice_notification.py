@@ -1,6 +1,6 @@
-"""Release-gated FinancialJuice priority notification delivery.
+"""Release-gated FinancialJuice notification delivery.
 
-FinancialJuice is a discovery/relay source.  A vendor score of 8/10 or more
+FinancialJuice is a discovery/relay source.  A vendor score of 9/10 or more
 authorizes a vendor-priority notification, but it never changes the PRStK
 risk level.  This module keeps that boundary explicit and provides a
 recipient-scoped, replay-safe delivery plan for the production sender.
@@ -14,6 +14,10 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from src.financialjuice_priority import (
+    FJ_PRIORITY_MIN_IMPORTANCE,
+    financialjuice_vendor_importance,
+)
 from src.telegram_client import (
     PUBLIC_TEXT_MAX_CHARS,
     TextDeliveryReceipt,
@@ -315,8 +319,29 @@ def deliver_financialjuice_event(
         freshness_status = _text(event.get("freshness_status"))
         if freshness_status != "fresh":
             reasons.append(freshness_status or "missing_source_timestamp")
-    if _text(event.get("notification_status")) != "eligible" or event.get("vendor_priority_notification") is not True:
-        reasons.append("vendor_priority_not_eligible")
+    status = _text(event.get("notification_status")).casefold()
+    policy = _text(event.get("delivery_policy")).casefold()
+    importance = financialjuice_vendor_importance(event.get("vendor_importance"))
+    explicit_priority = policy == "fj_priority"
+    legacy_priority = (
+        not policy
+        and event.get("vendor_priority_notification") is True
+        and importance is not None
+        and importance >= FJ_PRIORITY_MIN_IMPORTANCE
+    )
+    if status != "eligible":
+        reasons.append("notification_status_not_eligible")
+    elif explicit_priority or legacy_priority:
+        if event.get("vendor_priority_notification") is not True or importance is None or importance < FJ_PRIORITY_MIN_IMPORTANCE:
+            reasons.append("fj_priority_threshold_not_met")
+    elif policy == "material_event":
+        # The official monitor marks this only after the normal event policy
+        # and budget gates pass.  It prevents a low-score discovery row from
+        # accidentally entering the vendor-priority sender directly.
+        if event.get("event_policy_allowed") is not True:
+            reasons.append("material_event_policy_not_verified")
+    else:
+        reasons.append("financialjuice_delivery_policy_missing")
     if not release_ready:
         reasons.append("release_gate_not_ready")
     if not token or not chat_ids:

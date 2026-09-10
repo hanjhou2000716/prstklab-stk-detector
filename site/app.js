@@ -1144,7 +1144,7 @@ const renderSourceHealth = (health, snapshot = {}) => {
     const external = source.key === "external_financialjuice" && source.observability && typeof source.observability === "object"
       ? [
         source.observability.last_received_at ? `最近收到 ${traceTime(source.observability.last_received_at)}` : "",
-        Number.isFinite(Number(source.observability.qualifying_item_count)) ? `>=8 ${Number(source.observability.qualifying_item_count)} 筆` : "",
+        Number.isFinite(Number(source.observability.qualifying_item_count)) ? `>=9 ${Number(source.observability.qualifying_item_count)} 筆` : "",
         Number.isFinite(Number(source.observability.pending_cluster_count)) ? `待核對群組 ${Number(source.observability.pending_cluster_count)}` : "",
         Number.isFinite(Number(source.observability.parser_error_count)) ? `解析失敗 ${Number(source.observability.parser_error_count)} 筆` : "",
         source.observability.last_notification_decision === "eligible" ? "通知資格：已具備" : source.observability.last_notification_decision === "pending_confirmation" ? "通知資格：待核對" : "",
@@ -1164,7 +1164,11 @@ const renderSourceHealth = (health, snapshot = {}) => {
         source.observability.last_snapshot_id ? `快照 ${source.observability.last_snapshot_id}` : "",
         source.observability.last_observation_id ? `觀測 ${source.observability.last_observation_id}` : "",
         source.observability.last_telegram_delivery_status ? `Telegram ${source.observability.last_telegram_delivery_status}` : "",
-        source.observability.last_importance_gte_8_at ? `>=8 最近 ${traceTime(source.observability.last_importance_gte_8_at)}` : "",
+        source.observability.last_importance_gte_9_at
+          ? `>=9 最近 ${traceTime(source.observability.last_importance_gte_9_at)}`
+          : source.observability.last_importance_gte_8_at
+            ? `>=9 最近 ${traceTime(source.observability.last_importance_gte_8_at)}`
+            : "",
       ].filter(Boolean).join("｜") : "";
     const detail = [issue, candidateNote, providerSummary, provenance, quality, freshness.join("｜"), external, creator, lineage].filter(Boolean).join("｜");
     return `<li><span><b>${escapeHtml(source.label || source.key)}</b><small>${escapeHtml(detail)}</small></span><em class="source-status ${escapeHtml(state || "partial")}">${status}</em></li>`;
