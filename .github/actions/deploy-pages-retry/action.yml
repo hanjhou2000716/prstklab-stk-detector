@@ -66,19 +66,20 @@ runs:
         FALLBACK_URL: ${{ inputs.fallback_url }}
       run: |
         set -euo pipefail
-        page_url="${RETRY_URL:-${FIRST_URL:-$FALLBACK_URL}}"
-        if [ -z "$page_url" ]; then
+        deployed_url="${RETRY_URL:-${FIRST_URL:-}}"
+        page_url="${deployed_url:-$FALLBACK_URL}"
+        if [ -z "$deployed_url" ]; then
           reason="pages_deployment_unavailable"
           echo "::warning::Neither Pages deployment attempt returned a public URL; downstream delivery is gated."
         else
           reason="available"
         fi
         printf 'page_url=%s\n' "$page_url" >> "$GITHUB_OUTPUT"
-        printf 'available=%s\n' "$([ -n "$page_url" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+        printf 'available=%s\n' "$([ -n "$deployed_url" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
         printf 'reason=%s\n' "$reason" >> "$GITHUB_OUTPUT"
         echo "pages_deploy_first_outcome=${FIRST_OUTCOME}"
         echo "pages_deploy_retry_outcome=${RETRY_OUTCOME:-skipped}"
-        echo "pages_deploy_available=$([ -n "$page_url" ] && echo true || echo false)"
+        echo "pages_deploy_available=$([ -n "$deployed_url" ] && echo true || echo false)"
 
     - name: Record degraded Pages status
       if: steps.select-url.outputs.available != 'true'
