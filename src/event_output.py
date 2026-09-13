@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.telegram_client import canonical_prstk_risk_level, canonical_short_message
+from src.telegram_client import (
+    canonical_prstk_risk_level,
+    canonical_short_message,
+    structured_public_fact,
+)
 
 SECTION_KEYS = ("event", "importance", "market_impact", "watch")
 SECTION_LABELS = ("事件", "為何重要", "可能連動", "股市觀察")
@@ -46,11 +50,14 @@ def short_event_message(event: dict[str, Any], *, prefix: str = "快訊") -> str
             ) if part
         )
     else:
-        summary = str(next(
-            (event.get(key) for key in ("brief_summary", "summary", "title", "event", "verified_fact", "brief_title")
-         if str(event.get(key) or "").strip()),
-            "",
-        ) or "")
+        structured = structured_public_fact(event)
+        summary = str(structured.get("text") or "") if structured.get("complete") is True else ""
+        if not summary:
+            summary = str(next(
+                (event.get(key) for key in ("brief_summary", "summary", "title", "event", "verified_fact", "brief_title")
+             if str(event.get(key) or "").strip()),
+                "",
+            ) or "")
     summary = " ".join(str(summary).split())
     generic = {"市場觀察", "市場風險", "重大風險", "市場待核對", "資料待核對", "價格訊號"}
     if summary in generic:

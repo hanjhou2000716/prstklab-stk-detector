@@ -89,6 +89,7 @@ _PUBLIC_FIELDS = {
     "content_origin", "content_type", "event_type", "category", "title",
     "headline", "original_headline", "vendor_original_headline", "summary", "chinese_translation",
     "vendor_translation", "ai_commentary", "possible_impact",
+    "structured_fact",
     "vendor_analysis", "vendor_possible_impact", "vendor_importance",
     "vendor_importance_present", "published_at", "source_published_at",
     "source_url", "source_domain", "source_tier", "official_confirmed",

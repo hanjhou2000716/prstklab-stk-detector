@@ -174,6 +174,32 @@ def test_public_summary_rejects_incomplete_conditional_fj_fact():
     assert accepted.startswith("🟣 FJ 10/10｜")
 
 
+def test_public_summary_keeps_unless_condition_and_consequence_together():
+    accepted = canonical_short_message(
+        "🟣 FJ 10/10｜除非通膨降溫，否則聯準會可能維持高利率。",
+        message_kind="financialjuice",
+    )
+    assert accepted == "🟣 FJ 10/10｜除非通膨降溫，否則聯準會可能維持高利率。"
+    assert canonical_short_message(
+        "🟣 FJ 10/10｜除非通膨降溫。",
+        message_kind="financialjuice",
+    ) == ""
+
+
+def test_structured_public_fact_preserves_subject_action_object_and_number():
+    event = {
+        "structured_fact": {
+            "subject": "聯準會",
+            "action": "表示",
+            "object": "將維持高利率",
+            "key_numbers": ["4.5%"],
+        }
+    }
+    projection = telegram_client.structured_public_fact(event)
+    assert projection["complete"] is True
+    assert projection["text"] == "聯準會表示將維持高利率4.5%"
+
+
 def test_mini_app_button_rejects_non_https_url():
     with pytest.raises(ValueError, match="HTTPS"):
         mini_app_button("http://example.test/app")

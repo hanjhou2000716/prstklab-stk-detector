@@ -9,3 +9,19 @@ def test_event_output_uses_four_sections_and_compact_short_message():
     assert all(code not in short_event_message(event) for code in ("R0", "R1", "R2", "R3", "R4"))
     assert len(short_event_message(event)) <= 60
 
+
+def test_event_output_uses_the_same_structured_fact_summary():
+    event = {
+        "notification_topic": "fed",
+        "structured_fact": {
+            "subject": "聯準會",
+            "action": "表示",
+            "object": "若通膨過熱，可能延後降息",
+        },
+        "summary": "三名消息人士表示",
+    }
+    message = short_event_message(event)
+    assert message.startswith("🟡 Fed，聯準會表示")
+    assert "延後降息" in message
+    assert len(message) <= 60
+

@@ -574,6 +574,12 @@ def _event_record(
     views = _source_views(result, row)
     semantic = _semantic_projection(result, row)
     market = _market_intelligence(result, row, market_snapshot)
+    structured_fact: dict[str, Any] = {}
+    for view in views:
+        candidate_fact = view.get("structured_fact")
+        if isinstance(candidate_fact, dict) and candidate_fact:
+            structured_fact = candidate_fact
+            break
     semantic.update({
         "possible_linkage": market["possible_linkage"],
         "stock_observation": market["stock_observation"],
@@ -624,6 +630,7 @@ def _event_record(
         **semantic,
         "brief_summary": semantic["event"],
         "summary": semantic["possible_linkage"],
+        "structured_fact": structured_fact,
         "event_type": str(row.get("event_type") or row.get("category") or "unknown"),
         "classification": str(cluster.get("event_type") or row.get("event_type") or "unknown"),
         "event_cluster_key": cluster_key,
@@ -692,6 +699,7 @@ def _event_record(
         "public_safe": True,
     }
     from src.financialjuice_notification import financialjuice_public_short_message
+    from src.telegram_client import PUBLIC_SUMMARY_VERSION, structured_public_fact
 
     public_short_message = financialjuice_public_short_message(record)
     from src.telegram_client import is_valid_public_summary
@@ -714,6 +722,16 @@ def _event_record(
         record["delivery_eligible"] = False
     record["public_short_message"] = public_short_message
     record["brief_title"] = public_short_message
+    summary_projection = structured_public_fact(record)
+    record["public_summary_version"] = PUBLIC_SUMMARY_VERSION
+    record["public_summary_status"] = "ready" if public_summary_valid else "incomplete"
+    record["public_summary_reason"] = "" if public_summary_valid else "summary_semantics_incomplete"
+    evidence_fields = summary_projection.get("evidence_fields")
+    record["public_summary_evidence_fields"] = (
+        [str(value) for value in evidence_fields]
+        if isinstance(evidence_fields, (list, tuple)) and evidence_fields
+        else ["event"]
+    )
     record["public_signal_eligible"] = public_signal_eligible
     from src.financialjuice_notification import financialjuice_notification_key
 

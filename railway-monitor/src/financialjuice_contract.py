@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/financialjuice_contract.py
-# Canonical source SHA256: c7e8e43c1dfacb67ef65fc4aac89e4fd5ccc10720fbb6850bad90d5245b28f06
+# Canonical source SHA256: 504053b7d7d5c4e5411ef2ee20ee0bc28aba52b6d70cf95cd36a920b5f3f4d5e
 
 """FinancialJuice observation contract and conservative PRStK risk mapping.
 
@@ -218,6 +218,10 @@ def normalize_financialjuice(record: dict[str, Any]) -> dict[str, Any]:
         "vendor_importance_is_not_risk": True,
         "original_headline": headline,
         "chinese_translation": _text(record.get("chinese_translation") or record.get("vendor_translation")),
+        # Optional structured facts are carried through as parsed public data.
+        # The renderer validates them; missing or malformed values never
+        # become a guessed headline.
+        "structured_fact": record.get("structured_fact") if isinstance(record.get("structured_fact"), dict) else {},
         "ai_commentary": _text(record.get("ai_commentary") or record.get("vendor_analysis")),
         "possible_impact": _text(record.get("possible_impact") or record.get("vendor_possible_impact")),
         "prstk_risk": risk,

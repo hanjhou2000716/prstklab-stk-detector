@@ -517,13 +517,37 @@ def project_overview(assessment: dict[str, Any], limit: int = 140) -> str:
 
 
 def project_public_message(label: str, assessment: dict[str, Any], limit: int = 60) -> str:
+    """Render the shared scheduled-report summary from bounded market facts.
+
+    The conclusion and the strongest available quote are separate structured
+    inputs.  Keeping the quote as evidence (rather than a generic driver
+    label) makes the notification useful at a glance while the shared
+    formatter remains the only final 60-character boundary.
+    """
     raw_sections = assessment.get("summary_sections")
     sections: dict[str, Any] = raw_sections if isinstance(raw_sections, dict) else {}
     conclusion = _overview_clause(sections.get("summary"))
+    highlights = _overview_clause(sections.get("market_highlights"))
+    strongest_quote = next(
+        (part.strip() for part in re.split(r"[、,，]", highlights) if part.strip()),
+        "",
+    )
     driver = _overview_clause(assessment.get("dominant_driver"))
-    prefix = f"📊 {label}｜"
-    for body in (f"{conclusion}；{driver}。", f"{conclusion}。"):
-        result = prefix + body
-        if len(result) <= limit and "..." not in result and "…" not in result:
+    from src.telegram_client import canonical_short_message, is_valid_public_summary
+
+    for body in (
+        f"{conclusion}；{strongest_quote}。" if strongest_quote and "目前缺乏" not in strongest_quote else "",
+        f"{conclusion}；{driver}。" if driver else "",
+        f"{conclusion}。",
+    ):
+        if not body:
+            continue
+        result = canonical_short_message(
+            f"{label}｜{body}",
+            limit=limit,
+            message_kind="scheduled_brief",
+            label=label,
+        )
+        if is_valid_public_summary(result, source="scheduled_brief"):
             return result
     return ""
