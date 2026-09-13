@@ -32,13 +32,18 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
         run: |
           set -eu
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "CLOUDFLARE_API_TOKEN is not configured" >&2; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "CLOUDFLARE_ACCOUNT_ID is not configured" >&2; exit 1; }
+          test -n "$TELEGRAM_WEBHOOK_SECRET" || { echo "TELEGRAM_WEBHOOK_SECRET is not configured" >&2; exit 1; }
           # Wrangler v4 reads the account from CLOUDFLARE_ACCOUNT_ID; the
           # account is deliberately not committed to the Worker source.
           # Keep dashboard-managed vars while deploying the canonical bundle.
           # Expose the exact deployed source revision through /health so an
           # accepted Gmail push can be tied to the Worker actually serving it.
           npx wrangler deploy --keep-vars --var "VERSION:${GITHUB_SHA}"
+          # Keep the webhook credential out of source and synchronize it only
+          # through the authenticated deployment path.
+          printf '%s' "$TELEGRAM_WEBHOOK_SECRET" | npx wrangler secret put TELEGRAM_WEBHOOK_SECRET
