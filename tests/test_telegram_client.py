@@ -120,7 +120,7 @@ def test_rejects_blank_brief():
 
 def test_mini_app_button_uses_telegram_web_app_field():
     assert mini_app_button("https://example.github.io/app/") == {
-        "text": "📡D.iNV system",
+        "text": "📡 D.iNV System",
         "web_app": {"url": "https://example.github.io/app/"},
     }
 
