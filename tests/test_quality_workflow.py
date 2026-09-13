@@ -14,12 +14,13 @@ def test_quality_workflow_runs_tests_and_non_network_smoke_validation():
     assert "--send" not in workflow
 
 
-def test_notify_workflow_supports_an_explicit_single_recipient_smoke_test():
+def test_notify_workflow_uses_the_fixed_editor_for_controlled_smoke_test():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "notify.yml").read_text(encoding="utf-8")
-    assert "test_chat_id:" in workflow
-    assert "inputs.test_chat_id || secrets.TELEGRAM_CHAT_IDS" in workflow
+    assert "test_chat_id:" not in workflow
+    assert 'TELEGRAM_CHAT_IDS: "8869592162"' in workflow
+    assert "secrets.TELEGRAM_CHAT_IDS" not in workflow
     assert "photo_test:" in workflow
-    assert "text acceptance requires an explicit single test_chat_id" in workflow
+    assert "fixed editor channel" in workflow
 
 
 def test_scheduled_production_workflow_installs_renderer_browser():
@@ -37,10 +38,10 @@ def test_manual_scheduled_run_is_publish_only_by_default():
     assert "env.NOTIFY == 'true'" in workflow
 
 
-def test_manual_scheduled_acceptance_can_scope_one_recipient():
+def test_manual_scheduled_delivery_uses_subscription_source():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
-    assert "test_chat_id:" in workflow
-    assert "inputs.test_chat_id || secrets.TELEGRAM_CHAT_IDS" in workflow
+    assert "test_chat_id:" not in workflow
+    assert 'TELEGRAM_SUBSCRIPTIONS_ENABLED: "true"' in workflow
     assert "FAILED_RECIPIENT_HASHES: ${{ steps.send_brief.outputs.failed_recipient_hashes }}" in workflow
     assert "FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count || '0' }}" in workflow
 

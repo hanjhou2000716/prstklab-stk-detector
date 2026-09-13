@@ -10,7 +10,10 @@ from __future__ import annotations
 
 import hashlib
 import os
+import random
 import re
+import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import quote
@@ -80,29 +83,62 @@ def _semantic_quality(payload: dict[str, Any]) -> tuple[int, int, int]:
 class SupabaseEmailStore:
     """REST adapter with the same privacy and idempotency contract as EmailStore."""
 
-    def __init__(self, url: str | None = None, key: str | None = None, *, timeout: float = 15.0) -> None:
+    def __init__(
+        self,
+        url: str | None = None,
+        key: str | None = None,
+        *,
+        timeout: float = 15.0,
+        sleep_fn: Callable[[float], None] | None = None,
+    ) -> None:
         self.url = str(url or os.getenv("SUPABASE_URL") or "").strip().rstrip("/")
         self.key = str(key or os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
         self.timeout = max(1.0, min(30.0, float(timeout)))
+        self._sleep = sleep_fn or time.sleep
+        self.last_retry_count = 0
         if not self.url or not self.key:
             raise ValueError("supabase_store_not_configured")
         if not self.url.startswith("https://"):
             raise ValueError("supabase_url_must_use_https")
 
     def _request(self, method: str, table: str, query: str = "", body: Any = None, *, prefer: str = "return=representation") -> tuple[int, Any]:
-        response = requests.request(
-            method,
-            f"{self.url}/rest/v1/{table}{query}",
-            headers={
-                "apikey": self.key,
-                "Authorization": f"Bearer {self.key}",
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Prefer": prefer,
-            },
-            json=body,
-            timeout=self.timeout,
-        )
+        method = method.upper()
+        # Cursor reads are safe to retry; writes remain single-attempt unless
+        # the caller's explicit idempotent operation handles its own conflict.
+        retryable = method == "GET"
+        attempts = 4 if retryable else 1
+        deadline = time.monotonic() + 90.0 if retryable else None
+        response: requests.Response | None = None
+        for attempt in range(attempts):
+            try:
+                request_timeout = self.timeout
+                if deadline is not None:
+                    request_timeout = min(request_timeout, max(1.0, deadline - time.monotonic()))
+                response = requests.request(
+                    method,
+                    f"{self.url}/rest/v1/{table}{query}",
+                    headers={
+                        "apikey": self.key,
+                        "Authorization": f"Bearer {self.key}",
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                        "Prefer": prefer,
+                    },
+                    json=body,
+                    timeout=request_timeout,
+                )
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
+                if not retryable or attempt >= attempts - 1:
+                    raise RuntimeError("supabase_transport_error") from error
+                self._retry_after(attempt, deadline, None)
+                continue
+            if response.status_code not in {429, 502, 503, 504} or not retryable or attempt >= attempts - 1:
+                break
+            headers = getattr(response, "headers", {}) or {}
+            retry_after = headers.get("Retry-After") if hasattr(headers, "get") else None
+            self._retry_after(attempt, deadline, retry_after)
+        if response is None:  # defensive: every loop either returned or raised
+            raise RuntimeError("supabase_transport_error")
         payload: Any = None
         try:
             payload = response.json()
@@ -113,6 +149,24 @@ class SupabaseEmailStore:
             # database details.  Callers only receive a stable class label.
             raise RuntimeError(f"supabase_http_{response.status_code}")
         return int(response.status_code), payload
+
+    def _retry_after(self, attempt: int, deadline: float | None, header: str | None) -> None:
+        """Sleep within the bounded read retry window without exposing details."""
+        try:
+            requested = max(0.0, float(str(header).strip())) if header else 0.0
+        except (TypeError, ValueError):
+            requested = 0.0
+        backoff = (1.0, 3.0, 7.0)[min(attempt, 2)]
+        # A tiny bounded jitter prevents all five-minute workers from
+        # retrying a transient Supabase edge failure in lockstep.
+        delay = max(backoff, requested) + random.uniform(0.0, 0.25)
+        if deadline is not None:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return
+            delay = min(delay, remaining)
+        self.last_retry_count += 1
+        self._sleep(delay)
 
     def cursor(self) -> dict[str, Any]:
         _status, payload = self._request("GET", "gmail_watch_state", "?id=eq.primary&select=*&limit=1")

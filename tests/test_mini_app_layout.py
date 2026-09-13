@@ -7,7 +7,7 @@ def test_mini_app_uses_the_revised_briefing_structure():
     page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
 
     assert "D.inv System" in page
-    assert "稜量速報系統" in page
+    assert "市場新聞" in page
     assert 'id="market-focus"' in page
     assert 'id="briefing-report"' in page
     assert "session-grid" not in page
@@ -51,6 +51,14 @@ def test_mini_app_uses_strategy_drawers_and_places_source_health_after_sentiment
     assert ".research-drawer[open] summary" in styles
     assert "#risk > .panel:not(.source-health-panel) { order: 3; }" in styles
     assert ".source-health-panel { order: 4; }" in styles
+
+
+def test_news_source_metrics_are_collapsed_system_analysis_at_the_bottom():
+    page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    assert "鉅亨網公開頁面" not in page
+    assert page.count("系統分析資料") >= 3
+    assert page.index('id="taiwan-news"') < page.index('id="taiwan-news-source-status"')
+    assert page.index('id="us-news"') < page.index('id="us-news-source-status"')
 
 
 def test_strategy_drawers_keep_titles_clean_and_put_freshness_after_the_list():

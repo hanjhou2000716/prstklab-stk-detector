@@ -27,6 +27,7 @@ SYNC_RESULT_KEYS = (
     "material_candidate_count", "priority_candidate_count", "skipped", "history_gap",
     "failure_types", "latest_financialjuice_diagnostics", "candidate_diagnostics",
     "notification_requested", "sync_started_at", "sync_completed_at",
+    "storage_error", "diagnostic_reason", "supabase_retry_count",
 )
 
 
@@ -45,6 +46,13 @@ def build_safe_sync_result(
     return safe
 
 
+def _safe_storage_error(error: BaseException) -> str:
+    value = str(error).strip()
+    if value.startswith("supabase_http_") or value in {"supabase_transport_error", "supabase_store_not_configured"}:
+        return value[:80]
+    return "supabase_storage_error"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--max-messages", type=int, default=50)
@@ -53,12 +61,42 @@ def main() -> int:
     parser.add_argument("--latest-financialjuice", action="store_true", help="Reprocess only the newest FJ mail without moving the cursor")
     args = parser.parse_args()
     config = GmailWatchConfig.from_env()
-    store: Any = SupabaseEmailStore()
-    cursor = store.cursor()
+    sync_started_at = datetime.now(UTC).isoformat()
+    try:
+        store: Any = SupabaseEmailStore()
+        cursor = store.cursor()
+    except Exception as error:
+        # A cursor outage must remain a visible failed decision even though
+        # the database is unavailable for persisting the diagnostic itself.
+        # The workflow summary consumes this safe JSON and the next bounded
+        # run retries from the unchanged cursor.
+        safe = build_safe_sync_result(
+            {
+                "status": "cursor_read_failed",
+                "processed": 0,
+                "failed": 1,
+                "duplicate": 0,
+                "duplicate_count": 0,
+                "accepted_new_count": 0,
+                "material_candidate_count": 0,
+                "priority_candidate_count": 0,
+                "candidate_diagnostics": {
+                    "counts": {},
+                    "primary_reason": "gmail_cursor_read_failed",
+                },
+                "storage_error": _safe_storage_error(error),
+                "diagnostic_reason": "gmail_cursor_read_failed",
+                "supabase_retry_count": int(getattr(locals().get("store"), "last_retry_count", 0) or 0),
+            },
+            notification_requested=args.notify == "true",
+            sync_started_at=sync_started_at,
+            sync_completed_at=datetime.now(UTC).isoformat(),
+        )
+        print(json.dumps(safe, ensure_ascii=False, sort_keys=True))
+        return 1
     pending = str(args.history_id or cursor.get("pending_history_id") or "").strip()
     baseline = str(cursor.get("last_history_id") or "").strip()
     event_history_id = "" if args.latest_financialjuice else pending
-    sync_started_at = datetime.now(UTC).isoformat()
     update_event = getattr(store, "update_pubsub_event", None)
     if event_history_id and callable(update_event):
         update_event(event_history_id, dispatch_status="processing", sync_started_at=sync_started_at, dispatch_error=None)

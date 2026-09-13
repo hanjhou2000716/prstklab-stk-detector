@@ -38,8 +38,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     env:
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
       DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
       RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
       RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
@@ -161,8 +159,12 @@ jobs:
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true'
         id: send
         env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           PUBLIC_RELEASE_URL: ${{ steps.deployment.outputs.page_url }}
           RELEASE_ID: ${{ steps.release_gate.outputs.release_id }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TELEGRAM_SUBSCRIPTIONS_ENABLED: "true"
         run: python -m src.official_event_monitor --send --prepared --expected-key "${{ steps.status.outputs.key }}"
       - name: Publish official notification decision
         if: always()

@@ -7,12 +7,8 @@ on:
         description: "40 字內測試快報（留空使用預設訊息）"
         required: false
         type: string
-      test_chat_id:
-        description: "Optional single recipient for an explicitly requested smoke test"
-        required: false
-        type: string
       photo_test:
-        description: "Run one release-gated text acceptance to the scoped test recipient (legacy input name)"
+        description: "Run one release-gated text acceptance to the fixed editor channel"
         required: false
         type: boolean
         default: false
@@ -35,27 +31,20 @@ jobs:
 
       - name: 安裝相依套件
         run: pip install -r requirements.txt
-      - name: Mask scoped smoke-test recipient
-        if: ${{ inputs.test_chat_id != '' }}
-        run: echo "::add-mask::${{ inputs.test_chat_id }}"
-
       - name: 發送測試快報
         id: text_acceptance
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          # A supplied test_chat_id is scoped to this one run; otherwise use
-          # the normal plural broadcast configuration.
-          TELEGRAM_CHAT_IDS: ${{ inputs.test_chat_id || secrets.TELEGRAM_CHAT_IDS }}
+          # This workflow is a manual test surface, never a production
+          # broadcast. Keep every test message on the fixed editor channel.
+          TELEGRAM_CHAT_IDS: "8869592162"
           DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+          TEST_MESSAGE: ${{ inputs.message }}
         run: |
           if [ "${{ inputs.photo_test }}" = "true" ]; then
-            if [ -z "${{ inputs.test_chat_id }}" ]; then
-              echo "text acceptance requires an explicit single test_chat_id" >&2
-              exit 2
-            fi
             python -m src.production_text_acceptance --manifest site/data/release-manifest.json --public-url "$DASHBOARD_URL" --chat-id "$TELEGRAM_CHAT_IDS"
-          elif [ -n "${{ inputs.message }}" ]; then
-            python -m src.main --send --message "${{ inputs.message }}"
+          elif [ -n "${TEST_MESSAGE:-}" ]; then
+            python -m src.main --send --message "🧪 編輯者測試｜${TEST_MESSAGE}"
           else
             python -m src.main --send
           fi

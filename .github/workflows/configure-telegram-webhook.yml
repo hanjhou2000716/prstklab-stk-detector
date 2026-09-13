@@ -1,0 +1,32 @@
+name: Configure Telegram subscription webhook
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pinned workflow context
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Validate webhook configuration
+        env:
+          TELEGRAM_WEBHOOK_URL: ${{ vars.TELEGRAM_WEBHOOK_URL }}
+        run: |
+          test -n "$TELEGRAM_WEBHOOK_URL"
+          case "$TELEGRAM_WEBHOOK_URL" in https://*) ;; *) echo "TELEGRAM_WEBHOOK_URL must use HTTPS" >&2; exit 2 ;; esac
+      - name: Register the authenticated Telegram webhook
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
+          TELEGRAM_WEBHOOK_URL: ${{ vars.TELEGRAM_WEBHOOK_URL }}
+        run: |
+          test -n "$TELEGRAM_BOT_TOKEN"
+          test -n "$TELEGRAM_WEBHOOK_SECRET"
+          curl --fail-with-body --silent --show-error --request POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
+            --data-urlencode "url=${TELEGRAM_WEBHOOK_URL}" \
+            --data-urlencode "secret_token=${TELEGRAM_WEBHOOK_SECRET}" \
+            --data-urlencode "drop_pending_updates=false" | jq -e '.ok == true'
