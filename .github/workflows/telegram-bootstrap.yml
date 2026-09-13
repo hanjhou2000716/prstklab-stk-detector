@@ -1,0 +1,51 @@
+name: Bootstrap Telegram subscriptions and delivery configuration
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: telegram-production-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  deploy_worker:
+    name: Migrate subscriptions, then deploy Worker
+    uses: ./.github/workflows/deploy-worker.yml
+    secrets: inherit
+
+  configure_webhook:
+    name: Configure webhook after Worker deployment
+    needs: deploy_worker
+    if: needs.deploy_worker.result == 'success' && needs.deploy_worker.outputs.migration_status != 'blocked_prerequisite'
+    uses: ./.github/workflows/configure-telegram-webhook.yml
+    secrets: inherit
+
+  configure_menu:
+    name: Configure Mini App menu after Worker deployment
+    needs: deploy_worker
+    if: needs.deploy_worker.result == 'success' && needs.deploy_worker.outputs.migration_status != 'blocked_prerequisite'
+    uses: ./.github/workflows/configure-mini-app.yml
+    secrets: inherit
+
+  prerequisite_notice:
+    name: Report missing subscription prerequisite
+    needs: deploy_worker
+    if: needs.deploy_worker.result == 'success' && needs.deploy_worker.outputs.migration_status == 'blocked_prerequisite'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pinned workflow context
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Record safe prerequisite block
+        env:
+          MIGRATION_REASON: ${{ needs.deploy_worker.outputs.reason }}
+        run: |
+          {
+            echo "## Telegram production bootstrap"
+            echo ""
+            echo '- migration_status: `blocked_prerequisite`'
+            echo "- reason: \`${MIGRATION_REASON:-unknown}\`"
+            echo "- Worker, webhook and Mini App configuration were not changed."
+          } >> "$GITHUB_STEP_SUMMARY"

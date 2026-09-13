@@ -2,6 +2,17 @@ name: Deploy canonical Cloudflare Worker
 
 on:
   workflow_dispatch:
+  workflow_call:
+    outputs:
+      migration_status:
+        description: "Telegram subscription migration outcome"
+        value: ${{ jobs.migrate_subscriptions.outputs.migration_status }}
+      prerequisite_status:
+        description: "Telegram subscription schema prerequisite outcome"
+        value: ${{ jobs.migrate_subscriptions.outputs.prerequisite_status }}
+      reason:
+        description: "Telegram subscription migration reason"
+        value: ${{ jobs.migrate_subscriptions.outputs.reason }}
 
 permissions:
   contents: read
@@ -11,7 +22,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  migrate_subscriptions:
+    name: Verify and migrate Telegram subscribers
+    uses: ./.github/workflows/migrate-telegram-subscribers.yml
+    secrets: inherit
+
   deploy:
+    needs: migrate_subscriptions
+    if: needs.migrate_subscriptions.outputs.migration_status != 'blocked_prerequisite'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
