@@ -227,3 +227,35 @@ def test_store_requires_https_and_credentials() -> None:
         SupabaseEmailStore("", "")
     with pytest.raises(ValueError, match="https"):
         SupabaseEmailStore("http://example.supabase.co", "key")
+
+
+def test_cursor_retries_transient_supabase_reads_with_bounded_backoff(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[int] = []
+    sleeps: list[float] = []
+
+    def request(method: str, url: str, **_kwargs: Any) -> _Response:
+        assert method == "GET"
+        calls.append(1)
+        return _Response(504 if len(calls) < 3 else 200, [])
+
+    monkeypatch.setattr("supabase_email_store.requests.request", request)
+    monkeypatch.setattr("supabase_email_store.random.uniform", lambda _low, _high: 0.0)
+    store = SupabaseEmailStore("https://example.supabase.co", "key", sleep_fn=sleeps.append)
+    assert store.cursor()["last_history_id"] is None
+    assert len(calls) == 3
+    assert sleeps == [1.0, 3.0]
+    assert store.last_retry_count == 2
+
+
+def test_cursor_does_not_retry_authentication_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[int] = []
+
+    def request(*_args: Any, **_kwargs: Any) -> _Response:
+        calls.append(1)
+        return _Response(401, {"private": "must not be surfaced"})
+
+    monkeypatch.setattr("supabase_email_store.requests.request", request)
+    store = SupabaseEmailStore("https://example.supabase.co", "key", sleep_fn=lambda _delay: None)
+    with pytest.raises(RuntimeError, match="supabase_http_401"):
+        store.cursor()
+    assert len(calls) == 1

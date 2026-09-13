@@ -211,6 +211,16 @@ class _FailingIngress:
         raise RuntimeError("public_fact_lookup_failed")
 
 
+class _UnavailableCursorStore:
+    last_retry_count = 4
+
+    def save_cursor(self, **_values):
+        raise RuntimeError("supabase_http_504")
+
+    def cursor(self):
+        raise RuntimeError("supabase_http_504")
+
+
 def _config() -> GmailWatchConfig:
     return GmailWatchConfig(
         topic_name="projects/test/topics/gmail",
@@ -230,6 +240,16 @@ def test_message_record_extracts_only_parser_fields() -> None:
     assert "Oil supply update" in record["body"]
     assert record["source_published_at"] == "2026-08-24T02:15:42+00:00"
     assert "payload" not in record
+
+
+def test_cursor_storage_failure_returns_diagnostic_result_instead_of_crashing() -> None:
+    result = asyncio.run(sync_gmail_history(_config(), _UnavailableCursorStore(), object()))
+    assert result["status"] == "cursor_read_failed"
+    assert result["storage_error"] == "supabase_http_504"
+    assert result["diagnostic_reason"] == "gmail_cursor_read_failed"
+    assert result["supabase_retry_count"] == 4
+    assert result["failed"] == 1
+    assert result["candidate_diagnostics"]["primary_reason"] == "gmail_cursor_read_failed"
 
 
 def test_message_record_prefers_semantically_rich_html_over_plain_stub() -> None:

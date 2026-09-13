@@ -21,7 +21,8 @@ def test_scheduled_delivery_credentials_are_step_scoped() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     send_block = workflow.split("- name: Send Telegram brief", 1)[1].split("- name: Persist scheduled-brief delivery receipt", 1)[0]
     assert "secrets.TELEGRAM_BOT_TOKEN" in send_block
-    assert "secrets.TELEGRAM_CHAT_IDS" in send_block
+    assert "secrets.SUPABASE_URL" in send_block
+    assert "secrets.SUPABASE_SERVICE_ROLE_KEY" in send_block
     creator_block = workflow.split("- name: Send release-gated Creator notifications", 1)[1].split("- name: Summarize Creator notification decision", 1)[0]
     assert "secrets.TELEGRAM_BOT_TOKEN" in creator_block
     assert "secrets.DELIVERY_RECEIPT_SHARED_SECRET" in creator_block

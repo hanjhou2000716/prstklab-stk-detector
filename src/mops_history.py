@@ -19,6 +19,7 @@ from typing import Any
 import requests
 from bs4 import BeautifulSoup
 
+from src.atomic_file import replace_with_retry, write_bytes_with_retry
 from src.http_client import configure_public_source_tls
 
 MOPS_API = "https://mops.twse.com.tw/mops/api/redirectToOld"
@@ -539,8 +540,9 @@ def _save_cache(
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp")
     payload = {"schema": CACHE_SCHEMA, "records": records, "failures": failures, "progress": progress or {}}
-    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    temporary.replace(path)
+    serialized = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
+    write_bytes_with_retry(serialized, temporary)
+    replace_with_retry(temporary, path)
 
 
 def _fresh(record: dict[str, Any], now: datetime) -> bool:

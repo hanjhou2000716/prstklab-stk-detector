@@ -30,6 +30,8 @@ MAX_FAILED_RECIPIENT_RETRIES = 3
 # captions keep their separate 40-character layout contract in the photo
 # delivery modules.
 PUBLIC_TEXT_MAX_CHARS = 60
+MINI_APP_INLINE_BUTTON_TEXT = "📡D.iNV system"
+MINI_APP_MENU_BUTTON_TEXT = "📡D.iNV"
 PRSTK_RISK_LEVELS = frozenset({"R0", "R1", "R2", "R3", "R4"})
 _RISK_ICONS = {"R0": "🟢", "R1": "🟢", "R2": "🟡", "R3": "🟠", "R4": "🔴"}
 # This is intentionally a Unicode-range filter instead of a short list.  A
@@ -460,7 +462,7 @@ def mini_app_button(mini_app_url: str) -> dict[str, object]:
     if not mini_app_url.startswith("https://"):
         raise ValueError("Mini App 網址必須使用 HTTPS。")
     return {
-        "text": "📡稜量速報系統",
+        "text": MINI_APP_INLINE_BUTTON_TEXT,
         "web_app": {"url": mini_app_url},
     }
 
@@ -499,7 +501,7 @@ def mini_app_menu_button(mini_app_url: str) -> dict[str, object]:
         raise ValueError("Mini App 網址必須使用 HTTPS。")
     return {
         "type": "web_app",
-        "text": "稜量系統",
+        "text": MINI_APP_MENU_BUTTON_TEXT,
         "web_app": {"url": mini_app_url},
     }
 

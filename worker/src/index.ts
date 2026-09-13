@@ -16,6 +16,10 @@ interface Env {
   TG_TOKEN?: string;
   TG_SUBSCRIBERS?: string;
   TELEGRAM_CHAT_IDS?: string;
+  TELEGRAM_SUBSCRIPTIONS_ENABLED?: string;
+  TELEGRAM_EDITOR_CHAT_ID?: string;
+  TELEGRAM_WEBHOOK_SECRET?: string;
+  DASHBOARD_URL?: string;
   TG_ALLOWED_USERS?: string;
   ADMIN_KEY?: string;
   ALLOWED_ORIGINS?: string;
@@ -29,6 +33,9 @@ interface Env {
 }
 
 type Job = Record<string, unknown> & { id: string; status: string };
+
+const MINI_APP_INLINE_BUTTON_TEXT = "📡D.iNV system";
+const MINI_APP_MENU_BUTTON_TEXT = "📡D.iNV";
 
 const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), {
@@ -336,17 +343,144 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] || char);
 }
 
-function recipients(env: Env): string[] {
+async function recipients(env: Env): Promise<string[]> {
+  const subscriptionsEnabled = ["1", "true", "yes"].includes(String(env.TELEGRAM_SUBSCRIPTIONS_ENABLED || "").trim().toLowerCase());
+  if (subscriptionsEnabled) {
+    const rows = await supabase(
+      env,
+      "GET",
+      "telegram_subscriptions",
+      "?status=eq.active&chat_type=eq.private&select=chat_id&order=created_at.asc,chat_id.asc&limit=100",
+    );
+    const ids = rows.map((row) => row && typeof row === "object" ? String((row as Record<string, unknown>).chat_id || "").trim() : "");
+    return [...new Set(ids.filter((value) => /^-?\d+$/.test(value)))].slice(0, 30);
+  }
   return [...new Set(String(env.TG_SUBSCRIBERS || env.TELEGRAM_CHAT_IDS || "").split(/[\s,]+/).map((value) => value.trim()).filter((value) => /^-?\d+$/.test(value)))].slice(0, 30);
+}
+
+function telegramWebhookAuthorized(request: Request, env: Env): boolean {
+  const expected = String(env.TELEGRAM_WEBHOOK_SECRET || "").trim();
+  const supplied = String(request.headers.get("X-Telegram-Bot-Api-Secret-Token") || "").trim();
+  return Boolean(expected && supplied && supplied === expected);
+}
+
+async function telegramApi(env: Env, method: string, body: Record<string, unknown>): Promise<void> {
+  const token = telegramToken(env);
+  if (!token) throw new Error("telegram_not_configured");
+  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`telegram_http_${response.status}`);
+  const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
+  if (!payload?.ok) throw new Error("telegram_api_rejected");
+}
+
+function telegramPrivateCommand(body: unknown): { chatId: string; username?: string; command: string } | null {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const update = body as Record<string, unknown>;
+  const message = update.message;
+  if (!message || typeof message !== "object" || Array.isArray(message)) return null;
+  const value = message as Record<string, unknown>;
+  const chat = value.chat;
+  if (!chat || typeof chat !== "object" || Array.isArray(chat)) return null;
+  const chatValue = chat as Record<string, unknown>;
+  if (chatValue.type !== "private") return null;
+  const chatId = String(chatValue.id || "").trim();
+  if (!/^-?\d+$/.test(chatId)) return null;
+  const sender = value.from;
+  if (!sender || typeof sender !== "object" || Array.isArray(sender)) return null;
+  if (String((sender as Record<string, unknown>).id || "").trim() !== chatId) return null;
+  const text = typeof value.text === "string" ? value.text.trim() : "";
+  const token = text.split(/\s+/, 1)[0].toLowerCase().split("@", 1)[0];
+  if (token !== "/start" && token !== "/stop") return null;
+  const username = typeof (sender as Record<string, unknown>).username === "string"
+    ? String((sender as Record<string, unknown>).username).trim().slice(0, 64) || undefined : undefined;
+  return { chatId, username, command: token };
+}
+
+async function handleTelegramWebhook(request: Request, env: Env): Promise<Response> {
+  if (!String(env.TELEGRAM_WEBHOOK_SECRET || "").trim()) return json({ ok: false, error: "WEBHOOK_NOT_CONFIGURED" }, 503);
+  if (!telegramWebhookAuthorized(request, env)) return json({ ok: false, error: "UNAUTHORIZED" }, 401);
+  const body = await request.text();
+  if (body.length > 32768) return json({ ok: false, error: "PAYLOAD_TOO_LARGE" }, 413);
+  let parsed: unknown;
+  try { parsed = JSON.parse(body); } catch (_) { return json({ ok: false, error: "INVALID_JSON" }, 400); }
+  const command = telegramPrivateCommand(parsed);
+  if (!command) return json({ ok: true, ignored: true });
+  const now = new Date().toISOString();
+  const editorId = String(env.TELEGRAM_EDITOR_CHAT_ID || "8869592162").trim();
+  if (command.command === "/start") {
+    const existing = await supabase(
+      env,
+      "GET",
+      "telegram_subscriptions",
+      `?chat_id=eq.${encodeURIComponent(command.chatId)}&select=first_started_at&limit=1`,
+    );
+    const firstStartedAt = typeof existing[0]?.first_started_at === "string" ? existing[0].first_started_at : now;
+    await supabase(env, "POST", "telegram_subscriptions", "?on_conflict=chat_id", {
+      chat_id: command.chatId,
+      chat_type: "private",
+      status: "active",
+      username: command.username || null,
+      is_editor: command.chatId === editorId,
+      source: "telegram_start",
+      first_started_at: firstStartedAt,
+      last_started_at: now,
+      stopped_at: null,
+      last_error: null,
+      updated_at: now,
+    }, "resolution=merge-duplicates,return=minimal");
+    try {
+      const dashboardUrl = String(env.DASHBOARD_URL || "").trim();
+      if (dashboardUrl.startsWith("https://")) {
+        await telegramApi(env, "setChatMenuButton", {
+          chat_id: command.chatId,
+          menu_button: { type: "web_app", text: MINI_APP_MENU_BUTTON_TEXT, web_app: { url: dashboardUrl } },
+        });
+      }
+      await telegramApi(env, "sendMessage", {
+        chat_id: command.chatId,
+        text: "✅ 已訂閱全部正式速報。輸入 /stop 可退訂，輸入 /start 可恢復。",
+      });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "telegram_delivery_failed";
+      if (detail === "telegram_http_403") {
+        await supabase(env, "PATCH", "telegram_subscriptions", `?chat_id=eq.${encodeURIComponent(command.chatId)}`, { status: "blocked", last_error: "telegram_403", updated_at: now }, "return=minimal").catch(() => undefined);
+      }
+      throw error;
+    }
+  } else {
+    await supabase(env, "POST", "telegram_subscriptions", "?on_conflict=chat_id", {
+      chat_id: command.chatId,
+      chat_type: "private",
+      status: "stopped",
+      username: command.username || null,
+      is_editor: command.chatId === editorId,
+      source: "telegram_stop",
+      stopped_at: now,
+      last_error: null,
+      updated_at: now,
+    }, "resolution=merge-duplicates,return=minimal");
+    await telegramApi(env, "sendMessage", {
+      chat_id: command.chatId,
+      text: "🛑 已停止正式速報。輸入 /start 可恢復訂閱。",
+    });
+  }
+  return json({ ok: true, command: command.command });
 }
 
 async function sendTelegram(env: Env, report: string, provenance: { traceId: string; alertId?: string; releaseId?: string; snapshotId?: string }): Promise<{ sent: number; total: number; failed: number; receipts: Array<Record<string, unknown>> }> {
   const token = telegramToken(env);
   if (!token) throw new Error("Telegram is not configured");
-  const target = recipients(env);
+  const target = await recipients(env);
   if (!target.length) throw new Error("Telegram recipients are not configured");
   const text = escapeHtml(report);
   const chunks = text.match(/[\s\S]{1,4000}/g) || [text];
+  const dashboardUrl = String(env.DASHBOARD_URL || "").trim();
+  const replyMarkup = dashboardUrl.startsWith("https://")
+    ? { inline_keyboard: [[{ text: MINI_APP_INLINE_BUTTON_TEXT, web_app: { url: dashboardUrl } }]] } : undefined;
   let sent = 0;
   let failed = 0;
   const receipts: Array<Record<string, unknown>> = [];
@@ -356,13 +490,14 @@ async function sendTelegram(env: Env, report: string, provenance: { traceId: str
     let errorClass: string | undefined;
     let status = "failed";
     try {
-      for (const chunk of chunks) {
-        let response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chat_id: chatId, text: chunk, parse_mode: "HTML", disable_web_page_preview: true }) });
+      for (const [index, chunk] of chunks.entries()) {
+        const messageBody = { chat_id: chatId, text: chunk, parse_mode: "HTML", disable_web_page_preview: true, ...(index === 0 && replyMarkup ? { reply_markup: replyMarkup } : {}) };
+        let response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(messageBody) });
         if (response.status === 429) {
           const payload = await response.clone().json().catch(() => ({})) as Record<string, unknown>;
           const retryAfter = Math.min(10, Math.max(1, Number((payload.parameters as Record<string, unknown> | undefined)?.retry_after || 1)));
           await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
-          response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chat_id: chatId, text: chunk, parse_mode: "HTML", disable_web_page_preview: true }) });
+          response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(messageBody) });
         }
         if (!response.ok) {
           errorClass = response.status >= 500 ? "temporary_api" : response.status === 403 ? "blocked" : "telegram_api";
@@ -384,7 +519,7 @@ async function sendTelegram(env: Env, report: string, provenance: { traceId: str
 
 async function handle(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
-  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...cors(request, env), "access-control-allow-methods": "GET,POST,OPTIONS", "access-control-allow-headers": "content-type,authorization,x-admin-key,x-telegram-init-data" } });
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...cors(request, env), "access-control-allow-methods": "GET,POST,OPTIONS", "access-control-allow-headers": "content-type,authorization,x-admin-key,x-telegram-init-data,x-telegram-bot-api-secret-token" } });
   if (url.pathname === "/api/health" && request.method === "GET") {
     let database = "unknown";
     try { await supabase(env, "GET", "system_status", "?select=component,status&limit=1"); database = "ok"; } catch (_) { database = "unavailable"; }
@@ -414,6 +549,9 @@ async function handle(request: Request, env: Env): Promise<Response> {
     } catch (_) {
       return json({ ok: false, error: "OBSERVATIONS_UNAVAILABLE" }, 503);
     }
+  }
+  if (url.pathname === "/api/telegram-webhook" && request.method === "POST") {
+    return handleTelegramWebhook(request, env);
   }
   if (url.pathname === "/api/delivery-receipt" && request.method === "POST") {
     const secret = String(env.DELIVERY_RECEIPT_SHARED_SECRET || "").trim();

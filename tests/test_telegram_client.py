@@ -120,7 +120,7 @@ def test_rejects_blank_brief():
 
 def test_mini_app_button_uses_telegram_web_app_field():
     assert mini_app_button("https://example.github.io/app/") == {
-        "text": "📡稜量速報系統",
+        "text": "📡D.iNV system",
         "web_app": {"url": "https://example.github.io/app/"},
     }
 
@@ -208,7 +208,7 @@ def test_alert_mini_app_url_can_target_source_observation():
 def test_mini_app_menu_button_uses_persistent_web_app_shape():
     assert mini_app_menu_button("https://example.github.io/app/") == {
         "type": "web_app",
-        "text": "稜量系統",
+        "text": "📡D.iNV",
         "web_app": {"url": "https://example.github.io/app/"},
     }
 

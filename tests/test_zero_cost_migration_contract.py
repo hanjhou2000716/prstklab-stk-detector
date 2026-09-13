@@ -12,6 +12,15 @@ def test_supabase_migration_has_only_backend_tables_and_rls() -> None:
     assert "market_snapshots" not in sql
 
 
+def test_telegram_subscription_migration_is_private_and_idempotent() -> None:
+    sql = (ROOT / "supabase/migrations/202609130001_telegram_subscriptions.sql").read_text(encoding="utf-8")
+    assert "public.telegram_subscriptions" in sql
+    assert "chat_type = 'private'" in sql
+    assert "status in ('active', 'stopped', 'blocked')" in sql
+    assert "enable row level security" in sql
+    assert "chat_id text primary key" in sql
+
+
 def test_report_worker_workflow_is_dispatch_only_and_has_no_railway_dependency() -> None:
     workflow = (ROOT / ".github/workflows/report-worker.yml").read_text(encoding="utf-8")
     assert "workflow_dispatch" in workflow
@@ -32,7 +41,7 @@ def test_frontend_does_not_accept_caller_supplied_recipient() -> None:
 
 def test_worker_has_security_boundary_and_required_routes() -> None:
     worker = (ROOT / "worker/src/index.ts").read_text(encoding="utf-8")
-    for route in ('"/api/health"', '"/api/report"', '"/api/send"', '"/api/delivery-receipt"', '"/api/creator-delivery-history"'):
+    for route in ('"/api/health"', '"/api/report"', '"/api/send"', '"/api/delivery-receipt"', '"/api/creator-delivery-history"', '"/api/telegram-webhook"'):
         assert route in worker
     assert "verifyTelegramInitData" in worker
     assert "ALLOWED_ORIGINS" in worker
@@ -49,6 +58,9 @@ def test_worker_has_security_boundary_and_required_routes() -> None:
     assert 'backend: "supabase"' in worker
     assert "configured: Boolean" in worker
     assert "RECEIPT_HISTORY_UNAVAILABLE" in worker
+    assert "TELEGRAM_WEBHOOK_SECRET" in worker
+    assert "telegram_subscriptions" in worker
+    assert "📡D.iNV system" in worker
 
 
 def test_gmail_realtime_migration_and_worker_keep_push_separate_from_sync() -> None:

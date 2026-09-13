@@ -118,6 +118,9 @@ jobs:
           manual_replay="0"
           failed="0"
           status="unavailable"
+          storage_error=""
+          diagnostic_reason=""
+          retry_count="0"
           if [ -s gmail-sync-result.json ]; then
             processed="$(jq -r 'if (.processed | type) == "number" then .processed else 0 end' gmail-sync-result.json)"
             accepted_new="$(jq -r 'if (.accepted_new_count | type) == "number" then .accepted_new_count else 0 end' gmail-sync-result.json)"
@@ -128,10 +131,16 @@ jobs:
             manual_replay="$(jq -r 'if ((.candidate_diagnostics.counts.manual_replay // 0) | type) == "number" then (.candidate_diagnostics.counts.manual_replay // 0) else 0 end' gmail-sync-result.json)"
             failed="$(jq -r 'if (.failed | type) == "number" then .failed else 0 end' gmail-sync-result.json)"
             status="$(jq -r '.status // "unknown"' gmail-sync-result.json)"
+            storage_error="$(jq -r '.storage_error // ""' gmail-sync-result.json)"
+            diagnostic_reason="$(jq -r '.diagnostic_reason // ""' gmail-sync-result.json)"
+            retry_count="$(jq -r 'if (.supabase_retry_count | type) == "number" then .supabase_retry_count else 0 end' gmail-sync-result.json)"
           fi
           if [ "$RESULT_CONTRACT_OUTCOME" = "failure" ]; then
             notification_status="failed"
             notification_reason="sync_result_contract_invalid"
+          elif [ "$status" = "cursor_read_failed" ]; then
+            notification_status="failed"
+            notification_reason="${diagnostic_reason:-gmail_cursor_read_failed}:${storage_error:-unknown}"
           elif [ "$NOTIFY" != "true" ]; then
             notification_status="not_requested"
             notification_reason="manual_notification_opt_in_required"
@@ -180,6 +189,9 @@ jobs:
             echo "- material_candidate_count: ${material_candidates}"
             echo "- priority_candidate_count: ${priority_candidates}"
             echo "- duplicate_count: ${duplicate}"
+            echo "- supabase_retry_count: ${retry_count}"
+            echo "- storage_error: ${storage_error:-none}"
+            echo "- diagnostic_reason: ${diagnostic_reason:-none}"
             echo "- candidate_diagnostics: $(jq -c '.candidate_diagnostics // {}' gmail-sync-result.json 2>/dev/null || echo '{}')"
             echo "- delivered_count: unknown"
             echo "- failed_count: ${failed}"

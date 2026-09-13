@@ -108,6 +108,7 @@ def _sync_diagnostics_record(
         "priority_candidate_count": counter("priority_candidate_count"),
         "duplicate_count": counter("duplicate_count"),
         "failed": counter("failed"),
+        "supabase_retry_count": counter("supabase_retry_count"),
         "candidate_diagnostics": {
             "counts": safe_counts,
             "primary_reason": str(diagnostics.get("primary_reason") or "")[:80],
@@ -131,17 +132,19 @@ def _persist_sync_diagnostics(
     """Persist only counters/reasons; diagnostics must never contain mail data."""
     try:
         completed_at = datetime.now(UTC).isoformat() if complete else None
+        safe_result = dict(result)
+        safe_result.setdefault("supabase_retry_count", max(0, int(getattr(store, "last_retry_count", 0) or 0)))
         values: dict[str, Any] = {
             "last_sync_diagnostics": _sync_diagnostics_record(
-                result,
+                safe_result,
                 diagnostics,
                 sync_started_at=sync_started_at,
                 sync_completed_at=completed_at,
             ),
         }
         if complete:
-            status = str(result.get("status") or "unknown")
-            failed = int(result.get("failed") or 0)
+            status = str(safe_result.get("status") or "unknown")
+            failed = int(safe_result.get("failed") or 0)
             values.update({
                 "last_sync_completed_at": completed_at,
                 "last_sync_status": status,
@@ -167,6 +170,36 @@ def _mark_sync_started(store: EmailStore) -> str:
     except Exception:  # pragma: no cover - the sync itself will report the failure
         pass
     return started_at
+
+
+def _save_cursor_best_effort(store: EmailStore, **values: Any) -> bool:
+    """Never hide the sync decision behind a secondary diagnostic write."""
+    try:
+        store.save_cursor(**values)
+    except Exception:
+        return False
+    return True
+
+
+def _storage_error(error: BaseException) -> str:
+    """Reduce store failures to a stable, non-sensitive diagnostic class."""
+    value = str(error).strip()
+    if value.startswith("supabase_http_") or value in {"supabase_transport_error", "supabase_store_not_configured"}:
+        return value[:80]
+    return "supabase_storage_error"
+
+
+def _sync_result_base(status: str, *, failed: int = 1) -> dict[str, Any]:
+    return {
+        "status": status,
+        "processed": 0,
+        "accepted_new_count": 0,
+        "material_candidate_count": 0,
+        "priority_candidate_count": 0,
+        "failed": failed,
+        "duplicate": 0,
+        "duplicate_count": 0,
+    }
 
 
 def _manual_replay_result(
@@ -462,11 +495,23 @@ async def sync_gmail_history(
         result = {"status": "configuration_missing", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "duplicate": 0, "duplicate_count": 0, "failed": 0}
         _persist_sync_diagnostics(store, result, diagnostics, sync_started_at=sync_started_at, complete=True)
         return _with_candidate_diagnostics(result, diagnostics)
-    cursor = store.cursor()
+    try:
+        cursor = store.cursor()
+    except Exception as error:
+        # A transient Supabase cursor outage must still produce a valid sync
+        # result.  The store cannot persist its own diagnostic when the read
+        # endpoint is unavailable, so the workflow summary becomes the
+        # durable operator-visible evidence for this run.
+        result = _sync_result_base("cursor_read_failed")
+        result["storage_error"] = _storage_error(error)
+        result["diagnostic_reason"] = "gmail_cursor_read_failed"
+        result["supabase_retry_count"] = max(0, int(getattr(store, "last_retry_count", 0) or 0))
+        diagnostics["primary_reason"] = "gmail_cursor_read_failed"
+        return _with_candidate_diagnostics(result, diagnostics)
     history_id = str(cursor.get("last_history_id") or "").strip()
     if not history_id:
         result = {"status": "no_history_cursor", "processed": 0, "accepted_new_count": 0, "material_candidate_count": 0, "duplicate": 0, "duplicate_count": 0, "failed": 0}
-        store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
+        _save_cursor_best_effort(store, last_full_sync_at=datetime.now(UTC).isoformat())
         _persist_sync_diagnostics(store, result, diagnostics, sync_started_at=sync_started_at, complete=True)
         return _with_candidate_diagnostics(result, diagnostics)
 
@@ -565,7 +610,7 @@ async def sync_gmail_history(
                     result["failure_types"] = dict(sorted(failure_types.items()))
                 if history_pages > 1:
                     result["history_pages"] = history_pages
-                store.save_cursor(
+                _save_cursor_best_effort(store,
                     last_history_id=latest_history or history_id,
                     last_full_sync_at=datetime.now(UTC).isoformat(),
                 )
@@ -587,7 +632,7 @@ async def sync_gmail_history(
                     result["failure_types"] = dict(sorted(failure_types.items()))
                 if history_pages > 1:
                     result["history_pages"] = history_pages
-                store.save_cursor(
+                _save_cursor_best_effort(store,
                     last_full_sync_at=datetime.now(UTC).isoformat(),
                 )
                 _persist_sync_diagnostics(store, result, diagnostics, sync_started_at=sync_started_at, complete=True)
@@ -595,12 +640,18 @@ async def sync_gmail_history(
         result = {"status": type(error).__name__.lower(), "processed": processed, "accepted_new_count": accepted_new, "material_candidate_count": material_candidates, "priority_candidate_count": priority_candidates, "failed": failed + 1, "duplicate": duplicate, "duplicate_count": duplicate}
         if suppressed:
             result["suppressed"] = suppressed
-        store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
+        _save_cursor_best_effort(store, last_full_sync_at=datetime.now(UTC).isoformat())
         _persist_sync_diagnostics(store, result, diagnostics, sync_started_at=sync_started_at, complete=True)
         return _with_candidate_diagnostics(result, diagnostics)
     except GmailHistorySyncError as error:
         if str(error) == "http_404":
-            _recover_expired_cursor(store)
+            _save_cursor_best_effort(
+                store,
+                last_history_id=None,
+                watch_expiration=None,
+                watch_error="history_cursor_expired",
+                watch_error_at=datetime.now(UTC).isoformat(),
+            )
             result = {
                 "status": "history_cursor_expired",
                 "processed": processed,
@@ -619,7 +670,7 @@ async def sync_gmail_history(
         result = {"status": str(error), "processed": processed, "accepted_new_count": accepted_new, "material_candidate_count": material_candidates, "priority_candidate_count": priority_candidates, "failed": failed + 1, "duplicate": duplicate, "duplicate_count": duplicate}
         if suppressed:
             result["suppressed"] = suppressed
-        store.save_cursor(last_full_sync_at=datetime.now(UTC).isoformat())
+        _save_cursor_best_effort(store, last_full_sync_at=datetime.now(UTC).isoformat())
         _persist_sync_diagnostics(store, result, diagnostics, sync_started_at=sync_started_at, complete=True)
         return _with_candidate_diagnostics(result, diagnostics)
     return _with_candidate_diagnostics(result, diagnostics)
