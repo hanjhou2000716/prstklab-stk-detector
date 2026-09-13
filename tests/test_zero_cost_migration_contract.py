@@ -21,6 +21,34 @@ def test_telegram_subscription_migration_is_private_and_idempotent() -> None:
     assert "chat_id text primary key" in sql
 
 
+def test_telegram_migration_workflow_has_prerequisite_result_contract() -> None:
+    workflow = (ROOT / ".github/workflows/migrate-telegram-subscribers.yml").read_text(encoding="utf-8")
+    assert "workflow_call:" in workflow
+    for status in ("applied", "already_applied", "blocked_prerequisite", "failed"):
+        assert status in workflow or status in (ROOT / "src/migrate_telegram_subscribers.py").read_text(encoding="utf-8")
+    assert "migration_status" in workflow
+    assert "prerequisite_status" in workflow
+    assert "PRODUCTION_SHA" in workflow
+    assert "GITHUB_STEP_SUMMARY" in (ROOT / "src/migrate_telegram_subscribers.py").read_text(encoding="utf-8")
+    assert "telegram_subscription_table_missing" in (ROOT / "src/telegram_subscriptions.py").read_text(encoding="utf-8")
+    assert "telegram_subscription_request_failed" in (ROOT / "src/migrate_telegram_subscribers.py").read_text(encoding="utf-8")
+
+
+def test_worker_deploy_requires_safe_subscription_migration() -> None:
+    workflow = (ROOT / ".github/workflows/deploy-worker.yml").read_text(encoding="utf-8")
+    assert "migrate-telegram-subscribers.yml" in workflow
+    assert "needs: migrate_subscriptions" in workflow
+    assert "blocked_prerequisite" in workflow
+
+
+def test_telegram_bootstrap_orders_worker_before_webhook_and_menu() -> None:
+    workflow = (ROOT / ".github/workflows/telegram-bootstrap.yml").read_text(encoding="utf-8")
+    assert "deploy-worker.yml" in workflow
+    assert "configure-telegram-webhook.yml" in workflow
+    assert "configure-mini-app.yml" in workflow
+    assert "needs: deploy_worker" in workflow
+
+
 def test_report_worker_workflow_is_dispatch_only_and_has_no_railway_dependency() -> None:
     workflow = (ROOT / ".github/workflows/report-worker.yml").read_text(encoding="utf-8")
     assert "workflow_dispatch" in workflow
