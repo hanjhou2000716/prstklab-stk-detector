@@ -31,7 +31,7 @@ MAX_FAILED_RECIPIENT_RETRIES = 3
 # delivery modules.
 PUBLIC_TEXT_MAX_CHARS = 60
 PUBLIC_SUMMARY_VERSION = "public-summary-v2"
-MINI_APP_INLINE_BUTTON_TEXT = "📡D.iNV system"
+MINI_APP_INLINE_BUTTON_TEXT = "📡 D.iNV System"
 MINI_APP_MENU_BUTTON_TEXT = "📡D.iNV"
 PRSTK_RISK_LEVELS = frozenset({"R0", "R1", "R2", "R3", "R4"})
 _RISK_ICONS = {"R0": "🟢", "R1": "🟢", "R2": "🟡", "R3": "🟠", "R4": "🔴"}

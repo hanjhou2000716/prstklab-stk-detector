@@ -34,7 +34,7 @@ interface Env {
 
 type Job = Record<string, unknown> & { id: string; status: string };
 
-const MINI_APP_INLINE_BUTTON_TEXT = "📡D.iNV system";
+const MINI_APP_INLINE_BUTTON_TEXT = "📡 D.iNV System";
 const MINI_APP_MENU_BUTTON_TEXT = "📡D.iNV";
 
 const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
