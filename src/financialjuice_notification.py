@@ -25,6 +25,7 @@ from src.telegram_client import (
     canonical_prstk_risk_level,
     is_valid_public_summary,
     send_text_briefs_audited,
+    structured_public_fact,
 )
 
 MAX_FINANCIALJUICE_CAPTION = PUBLIC_TEXT_MAX_CHARS
@@ -129,11 +130,38 @@ def _compress_fj_sentence(value: str) -> str:
     return text
 
 
+def _complete_factual_clauses(headline: str) -> list[str]:
+    """Return only complete clauses that can safely be shown publicly.
+
+    Conditional headlines are atomic facts: emitting the clause before the
+    comma would reverse or erase the source's actual qualification.  Such a
+    headline therefore remains whole, or is suppressed until a shorter
+    structured fact is available.
+    """
+    from src.telegram_client import _is_usable_financialjuice_fact
+
+    candidates = [headline]
+    if not re.search(r"(?:如果|若|除非|\bif\b|\bunless\b)", headline, re.IGNORECASE):
+        candidates.extend(
+            part.strip(" ，,、；;。")
+            for part in re.split(r"(?<=[，,、；;])", headline)
+        )
+    return list(dict.fromkeys(
+        candidate for candidate in candidates
+        if candidate and _is_usable_financialjuice_fact(candidate)
+    ))
+
+
 def _financialjuice_headline(event: dict[str, Any]) -> str:
     """Select the best parsed event fact, excluding metadata-only labels."""
     from src.telegram_client import _clean_public_fragment
 
     generic = {"financialjuice 公開快訊", "fj 公開快訊", "公開快訊", "資訊待核對"}
+    structured = structured_public_fact(event)
+    if structured.get("complete") is True:
+        value = _compress_fj_sentence(str(structured.get("text") or ""))
+        if value and value.casefold() not in generic:
+            return value
     for field in (
         "event", "chinese_translation", "title", "brief_title",
         "vendor_original_headline", "original_headline",
@@ -231,14 +259,7 @@ def financialjuice_public_short_message(
         # summarizer considers an English word-boundary fallback.  This is
         # important for long relay text: the first clause can preserve the
         # actual event while the tail is only an embedded interview wrapper.
-        for clause in re.split(r"(?<=[，,、；;])", headline):
-            candidate = clause.strip(" ，,、；;。")
-            if not candidate or not re.search(
-                r"(?:表示|宣稱|指出|談|攻擊|上升|下降|簽|升|跌|維持|達|高於|低於|發射|宣布|supports|announces|says|claims|reports|raises|cuts)",
-                candidate,
-                flags=re.IGNORECASE,
-            ):
-                continue
+        for candidate in _complete_factual_clauses(headline):
             candidate_message = _bounded(canonical_short_message(prefix + candidate + "。"), limit)
             if is_valid_public_summary(candidate_message, source="financialjuice"):
                 return candidate_message
@@ -252,14 +273,7 @@ def financialjuice_public_short_message(
     # this is semantic compression, not a raw character cut.  A clause must
     # retain an action/fact verb so a noun fragment such as "直播影片" can
     # never become a public alert by itself.
-    for clause in re.split(r"(?<=[，,、；;])", headline):
-        candidate = clause.strip(" ，,、；;。")
-        if not candidate or not re.search(
-            r"(?:表示|宣稱|指出|談|攻擊|上升|下降|簽|升|跌|維持|達|高於|低於|發射|宣布|supports|announces|says|claims|reports|raises|cuts)",
-            candidate,
-            flags=re.IGNORECASE,
-        ):
-            continue
+    for candidate in _complete_factual_clauses(headline):
         candidate_message = _bounded(canonical_short_message(prefix + candidate + "。"), limit)
         if is_valid_public_summary(candidate_message, source="financialjuice"):
             return candidate_message

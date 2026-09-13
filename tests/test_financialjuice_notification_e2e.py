@@ -144,6 +144,32 @@ def test_financialjuice_waller_relay_keeps_the_event_fact_not_livestream_transpo
     assert len(message) <= 60
 
 
+def test_financialjuice_removes_generic_speaker_wrapper_but_keeps_event():
+    message = financialjuice_public_short_message({
+        "event": "三名消息人士表示：除非通膨降溫，否則聯準會可能維持高利率。",
+        "vendor_importance": 10,
+    })
+    assert message == "🟣 FJ 10/10｜除非通膨降溫，否則聯準會可能維持高利率。"
+    assert "消息人士" not in message
+
+
+def test_financialjuice_prefers_structured_fact_over_attribution_fragment():
+    message = financialjuice_public_short_message({
+        "title": "三名消息人士表示",
+        "structured_fact": {
+            "subject": "聯準會",
+            "action": "表示",
+            "object": "若通膨過熱，可能延後降息",
+            "key_numbers": ["2%目標"],
+        },
+        "vendor_importance": 9,
+    })
+    assert message.startswith("🟣 FJ 9/10｜聯準會表示")
+    assert "延後降息" in message
+    assert "2%目標" in message
+    assert len(message) <= 60
+
+
 def test_financialjuice_uses_complete_fallback_when_title_is_truncated() -> None:
     caption = financialjuice_caption({
         "title": "據《The...",

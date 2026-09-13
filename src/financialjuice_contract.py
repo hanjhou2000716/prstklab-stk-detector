@@ -213,6 +213,10 @@ def normalize_financialjuice(record: dict[str, Any]) -> dict[str, Any]:
         "vendor_importance_is_not_risk": True,
         "original_headline": headline,
         "chinese_translation": _text(record.get("chinese_translation") or record.get("vendor_translation")),
+        # Optional structured facts are carried through as parsed public data.
+        # The renderer validates them; missing or malformed values never
+        # become a guessed headline.
+        "structured_fact": record.get("structured_fact") if isinstance(record.get("structured_fact"), dict) else {},
         "ai_commentary": _text(record.get("ai_commentary") or record.get("vendor_analysis")),
         "possible_impact": _text(record.get("possible_impact") or record.get("vendor_possible_impact")),
         "prstk_risk": risk,

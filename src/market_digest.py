@@ -21,6 +21,7 @@ from src.market_assessment import (
     project_public_message,
     topic_label,
 )
+from src.telegram_client import PUBLIC_SUMMARY_VERSION
 
 PUBLIC_MESSAGE_MAX_CHARS = 60
 DASHBOARD_SUMMARY_MAX_CHARS = 140
@@ -703,6 +704,9 @@ def build_market_digest(
             "assessment_summary": "",
             "overview": "本輪公開市場證據不足，暫不形成判讀。",
             "public_short_message": "",
+            "public_summary_version": PUBLIC_SUMMARY_VERSION,
+            "public_summary_evidence_fields": [],
+            "public_summary_reason": "summary_semantics_incomplete",
             "themes": [],
             "primary_theme": None,
             "secondary_signals": [],
@@ -767,6 +771,9 @@ def build_market_digest(
             "assessment_summary": "",
             "overview": "本輪公開市場證據不足，暫不形成判讀。",
             "public_short_message": "",
+            "public_summary_version": PUBLIC_SUMMARY_VERSION,
+            "public_summary_evidence_fields": [],
+            "public_summary_reason": "summary_semantics_incomplete",
             "themes": [],
             "primary_theme": None,
             "secondary_signals": [],
@@ -803,6 +810,12 @@ def build_market_digest(
             risk=((assessment.get("summary_sections") or {}).get("risk") or ""),
         ),
         "public_short_message": public_message,
+        "public_summary_version": PUBLIC_SUMMARY_VERSION,
+        "public_summary_evidence_fields": [
+            "summary_sections.summary",
+            "summary_sections.market_highlights",
+        ] if public_message else [],
+        "public_summary_reason": "" if public_message else "summary_semantics_incomplete",
         # Quote hydration is release-bound evidence, not notification
         # identity.  Keep the values in the artifact, but exclude them from
         # the content hash so a refreshed quote cannot resend the same event.

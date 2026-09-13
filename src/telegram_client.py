@@ -30,6 +30,7 @@ MAX_FAILED_RECIPIENT_RETRIES = 3
 # captions keep their separate 40-character layout contract in the photo
 # delivery modules.
 PUBLIC_TEXT_MAX_CHARS = 60
+PUBLIC_SUMMARY_VERSION = "public-summary-v2"
 MINI_APP_INLINE_BUTTON_TEXT = "📡D.iNV system"
 MINI_APP_MENU_BUTTON_TEXT = "📡D.iNV"
 PRSTK_RISK_LEVELS = frozenset({"R0", "R1", "R2", "R3", "R4"})
@@ -210,12 +211,150 @@ def _clean_public_fragment(value: object) -> str:
     )
     if re.match(r"^(?:據|根據)\s*[《「\"']", source) and not re.search(r"[》」\"']", source):
         return ""
+    # A relay attribution is provenance, not the event itself.  Removing the
+    # generic speaker wrapper keeps the subject/action that follows visible;
+    # named institutions and people (for example ``聯準會表示``) are kept.
+    source = re.sub(
+        r"^(?:[0-9一二兩三四五六七八九十百多]+名)?(?:匿名)?消息人士\s*"
+        r"(?:表示|指出|稱|称|說|说|宣稱|宣称)\s*[:：,，]?\s*",
+        "",
+        source,
+    )
     return source.strip(" ｜|,，:：")
 
 
 def _strip_public_icons(value: object) -> str:
     """Remove caller decorations before the one canonical icon is rebuilt."""
     return _PUBLIC_ICON_RE.sub(" ", str(value or ""))
+
+
+_FACT_ACTION_RE = re.compile(
+    r"(?:表示|指出|宣稱|宣称|宣布|公布|發布|发布|更新|完成|組成|组成|影響|上漲|上升|下跌|下降|升息|降息|"
+    r"中斷|中断|供應|供给|簽署|簽約|簽|簽訂|達|高於|低於|發射|否認|否认|可能|擬|拟|"
+    r"said|says|announc|report|rise|fall|jump|drop|increase|decrease|disrupt|supply|rate|outlook|earnings|guidance|forecast|profit|revenue|policy)",
+    re.IGNORECASE,
+)
+_CONDITION_START_RE = re.compile(r"(如果|若|除非|if|unless)", re.IGNORECASE)
+def _structured_scalar(value: object) -> str:
+    """Render one already-parsed fact value without inventing text."""
+    if value in (None, "") or isinstance(value, bool):
+        return ""
+    if isinstance(value, dict):
+        direct = next(
+            (value.get(key) for key in ("text", "fact", "normalized_fact", "what_happened", "summary")
+             if value.get(key) not in (None, "")),
+            None,
+        )
+        if direct not in (None, ""):
+            return _structured_scalar(direct)
+        number = value.get("value", value.get("number"))
+        unit = value.get("unit")
+        if number not in (None, ""):
+            return "".join(part for part in (str(number).strip(), str(unit or "").strip()) if part)
+        return ""
+    if isinstance(value, (list, tuple, set)):
+        return "、".join(item for item in (_structured_scalar(item) for item in value) if item)
+    return _clean_public_fragment(value)
+
+
+def _join_fact_words(left: str, right: str) -> str:
+    if not left:
+        return right
+    if not right:
+        return left
+    if re.search(r"[A-Za-z0-9]$", left) and re.match(r"[A-Za-z0-9]", right):
+        return f"{left} {right}"
+    return left + right
+
+
+def structured_public_fact(record: object) -> dict[str, object]:
+    """Build a short-summary fact from parsed fields, never from clipped text.
+
+    Producers may supply ``structured_fact``/``fact`` as a mapping containing
+    subject, action, object, numbers, condition and result.  The helper is
+    deliberately conservative: a subject/action pair without an object or
+    result is incomplete and is not allowed to become a public fragment.
+    """
+    if not isinstance(record, dict):
+        return {"text": "", "complete": False, "reason": "missing_structured_fact", "evidence_fields": []}
+    candidates: list[tuple[str, dict[str, object]]] = []
+    for field in ("structured_fact", "fact", "summary_facts", "fact_projection"):
+        value = record.get(field)
+        if isinstance(value, dict):
+            candidates.append((field, value))
+        elif isinstance(value, list):
+            candidates.extend(
+                (f"{field}[{index}]", item)
+                for index, item in enumerate(value)
+                if isinstance(item, dict)
+            )
+    for source_field, candidate in candidates:
+        direct = _structured_scalar(candidate.get("text") or candidate.get("fact_text"))
+        if direct:
+            complete = bool(
+                _FACT_ACTION_RE.search(direct)
+                and _conditional_fact_is_complete(direct)
+                and len(direct.rstrip("。！？.!?")) >= 8
+            )
+            return {
+                "text": direct,
+                "complete": complete,
+                "reason": "" if complete else "structured_fact_incomplete",
+                "evidence_fields": [source_field],
+            }
+        subject = _structured_scalar(candidate.get("subject") or candidate.get("actor") or candidate.get("entity"))
+        action = _structured_scalar(candidate.get("action") or candidate.get("verb"))
+        target = _structured_scalar(candidate.get("object") or candidate.get("target") or candidate.get("topic"))
+        numbers = _structured_scalar(candidate.get("key_numbers") or candidate.get("numbers") or candidate.get("material_numbers"))
+        condition = _structured_scalar(candidate.get("condition") or candidate.get("conditions"))
+        result = _structured_scalar(candidate.get("result") or candidate.get("consequence") or candidate.get("outcome"))
+        certainty = _structured_scalar(candidate.get("certainty") or candidate.get("qualification"))
+        attribution = _structured_scalar(candidate.get("attribution"))
+        if attribution.casefold() in {"financialjuice", "fj", "source", "來源"}:
+            attribution = ""
+        composed = ""
+        for part in (certainty, attribution, subject, action, target):
+            composed = _join_fact_words(composed, part)
+        if condition and result:
+            condition_result = condition
+            if result not in condition_result:
+                condition_result = f"{condition_result}，{result}"
+            composed = _join_fact_words(composed, condition_result)
+        else:
+            composed = _join_fact_words(composed, numbers)
+            composed = _join_fact_words(composed, condition or result)
+        composed = _clean_public_fragment(composed)
+        complete = bool(
+            subject and action and (target or numbers or condition or result)
+            and _FACT_ACTION_RE.search(composed)
+            and _conditional_fact_is_complete(composed)
+            and len(composed.rstrip("。！？.!?")) >= 8
+        )
+        if composed or complete:
+            return {
+                "text": composed,
+                "complete": complete,
+                "reason": "" if complete else "structured_fact_incomplete",
+                "evidence_fields": [source_field, *[key for key, value in (
+                    ("subject", subject), ("action", action), ("object", target),
+                    ("key_numbers", numbers), ("condition", condition), ("result", result),
+                ) if value]],
+            }
+    return {"text": "", "complete": False, "reason": "missing_structured_fact", "evidence_fields": []}
+
+
+def _conditional_fact_is_complete(text: str) -> bool:
+    """Require both halves of 如果／若／除非 statements."""
+    for match in _CONDITION_START_RE.finditer(text):
+        tail = text[match.end():]
+        sentence = re.split(r"[。！？.!?;；]", tail, maxsplit=1)[0]
+        keyword = match.group(1).casefold()
+        if keyword in {"除非", "unless"}:
+            if not re.search(r"(?:，|,).*(?:否則|否则|不然|才會|才会|才將|才将|otherwise)", sentence, re.IGNORECASE):
+                return False
+        elif not re.search(r"(?:，|,).*(?:則|则|就|將|将|會|会|可能|因此|then|would|will)", sentence, re.IGNORECASE):
+            return False
+    return True
 
 
 def _is_usable_financialjuice_fact(value: object) -> bool:
@@ -231,14 +370,8 @@ def _is_usable_financialjuice_fact(value: object) -> bool:
         return False
     if any(pattern.search(text) for pattern in _FJ_INVALID_FACT_PATTERNS):
         return False
-    conditional = re.search(r"(?:如果|若)\s*([^。！？.!?]*)", text)
-    if conditional:
-        condition_tail = conditional.group(1)
-        consequent = re.split(r"[，,]", condition_tail, maxsplit=1)
-        if len(consequent) < 2 or not re.search(
-            r"(?:則|就|將|會|可能|would|will|then)", consequent[1], flags=re.IGNORECASE,
-        ):
-            return False
+    if not _conditional_fact_is_complete(text):
+        return False
     return bool(re.search(r"[\u4e00-\u9fffA-Za-z0-9]", text))
 
 
@@ -380,6 +513,8 @@ def summarize_public_message(
         body = _semantic_excerpt(body, limit - len(head), allow_char_cut=False)
     if not body or "…" in body or "..." in body:
         return ""
+    if not _conditional_fact_is_complete(body):
+        return ""
     if kind == "financialjuice" or fj_match:
         if not _is_usable_financialjuice_fact(body):
             return ""
@@ -427,11 +562,11 @@ def is_valid_public_summary(text: str, *, source: str = "") -> bool:
 
 def canonical_short_message(
     text: str, *, prstk_risk_level: str = "R2", message_kind: str = "risk_alert",
-    label: str | None = None,
+    label: str | None = None, limit: int = PUBLIC_TEXT_MAX_CHARS,
 ) -> str:
     """Backward-compatible entry point for the shared public summarizer."""
     return summarize_public_message(
-        text, prstk_risk_level=prstk_risk_level, message_kind=message_kind, label=label,
+        text, prstk_risk_level=prstk_risk_level, message_kind=message_kind, label=label, limit=limit,
     )
 
 
