@@ -94,6 +94,44 @@ def test_briefing_summary_keeps_two_fixed_rows_when_market_evidence_is_missing()
     assert "未取得可核對行情比較" in briefing["summary_facts"][1]["value"]
 
 
+def test_missing_quote_rows_are_publicly_omitted_but_kept_as_detailed_gaps():
+    briefing = build_briefing_snapshot({
+        "indices": [
+            {"ticker": "TAIEX", "price": 45862.52, "change_percent": -0.70, "quote_date": "2026-09-14"},
+            {"ticker": "NASDAQ", "price": 26333.03, "change_percent": 0.96, "quote_date": "2026-09-14"},
+            {"ticker": "SOX", "price": 11824.00, "change_percent": 1.81, "quote_date": "2026-09-14"},
+        ],
+        "quotes": [],
+        "macro_quotes": [],
+        "events": {"items": []},
+    }, "post_close")
+
+    taiwan = next(item for item in briefing["morning_analysis"]["sections"] if item["title"] == "台股總經與盤面")
+    external = next(item for item in briefing["morning_analysis"]["sections"] if item["title"] == "利率、匯率與外部風險")
+    assert any("加權指數" in fact for fact in taiwan["facts"])
+    assert all("櫃買指數" not in fact for fact in taiwan["facts"])
+    assert "櫃買指數" not in taiwan["market_observation"]
+    assert all("本輪未取得可核對資料" not in fact for section in briefing["morning_analysis"]["sections"] for fact in section["facts"])
+    gaps = briefing["morning_analysis"]["system_analysis"]["data_gaps"]
+    gap_by_ticker = {gap["ticker"]: gap for gap in gaps if gap.get("kind") == "quote"}
+    assert gap_by_ticker["TPEx"]["reason"] == "quote_missing"
+    assert gap_by_ticker["US10Y"]["reason"] == "quote_missing"
+    assert gap_by_ticker["TPEx"]["checked_at"] == briefing["morning_analysis"]["evidence_as_of"]
+    assert external["market_observation"] == ""
+
+
+def test_all_missing_quote_facts_do_not_leave_public_placeholder_or_observation():
+    briefing = build_briefing_snapshot({"events": {"items": []}}, "post_close")
+
+    for section in briefing["morning_analysis"]["sections"][1:]:
+        assert section["facts"] == []
+        assert section["facts_structured"] == []
+        assert section["market_observation"] == ""
+    assert {gap["ticker"] for gap in briefing["morning_analysis"]["system_analysis"]["data_gaps"] if gap.get("kind") == "quote"} >= {
+        "TAIEX", "TPEx", "US10Y"
+    }
+
+
 def test_observation_cards_follow_quote_led_digest_without_raw_publisher_tail():
     briefing = build_briefing_snapshot({
         "generated_at": "2026-09-07T07:00:00+00:00",

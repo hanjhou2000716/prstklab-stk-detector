@@ -331,10 +331,43 @@ def _market_observations(
     ]
 
 
-def _morning_quote_evidence(item: dict[str, Any] | None, name: str) -> tuple[str, dict[str, Any] | None]:
+def _quote_gap(item: dict[str, Any] | None, ticker: str, name: str) -> dict[str, Any]:
+    """Describe an omitted quote without exposing a public placeholder line."""
+    if not item:
+        reason = "quote_missing"
+        data_status = "unavailable"
+    else:
+        price = _finite_number(item.get("price"))
+        change_raw = item.get("change_percent")
+        if price is None:
+            reason = "invalid_or_missing_price"
+        elif change_raw in (None, ""):
+            reason = "missing_change_percent"
+        elif item.get("quote_delayed") is True:
+            reason = "quote_delayed"
+        elif str(item.get("freshness") or item.get("data_status") or "live").lower() in _UNUSABLE_FRESHNESS:
+            reason = "quote_unusable_freshness"
+        else:
+            try:
+                change = float(change_raw)
+            except (TypeError, ValueError):
+                change = None
+            reason = "invalid_or_missing_change_percent" if change is None or not math.isfinite(change) else "quote_unavailable"
+        data_status = str(item.get("data_status") or item.get("freshness") or "unavailable")
+    return {
+        "kind": "quote",
+        "ticker": ticker,
+        "name": name,
+        "reason": reason,
+        "data_status": data_status,
+        "observed_at": (item or {}).get("quote_time") or (item or {}).get("quote_date"),
+    }
+
+
+def _morning_quote_evidence(item: dict[str, Any] | None, ticker: str, name: str) -> tuple[str | None, dict[str, Any] | None]:
     """Return one factual quote line and a bounded evidence projection."""
     if not item or _finite_number(item.get("price")) is None or _usable_change(item) is None:
-        return f"{name}：本輪未取得可核對資料。", None
+        return None, None
     line = _price_move(item, name)
     evidence = {
         "ticker": item.get("ticker"),
@@ -409,7 +442,8 @@ def _morning_analysis(
     """Build the four evidence-driven morning sections.
 
     This is a projection of the existing quote, risk, event and digest data;
-    it intentionally emits an explicit gap when a requested factor is absent.
+    unavailable quote factors are retained as structured system-analysis gaps,
+    not public placeholder facts.
     """
     quote_specs = {
         "TAIEX": ("加權指數", "TAIEX"),
@@ -427,12 +461,12 @@ def _morning_analysis(
         "GOLD": ("黃金", "GOLD"),
     }
 
-    def quote(ticker: str) -> tuple[str, dict[str, Any] | None]:
+    def quote(ticker: str) -> tuple[str | None, dict[str, Any] | None]:
         name, _ = quote_specs[ticker]
         item = items.get(ticker)
         if ticker == "TPEx":
             item = item or items.get("TPEX")
-        return _morning_quote_evidence(item, name)
+        return _morning_quote_evidence(item, ticker, name)
 
     def structured_facts(
         facts: list[str], quote_facts: list[tuple[str, dict[str, Any]]],
@@ -470,15 +504,25 @@ def _morning_analysis(
             "confidence": _morning_confidence(len(evidence), missing),
         }
 
+    quote_gaps: list[dict[str, Any]] = []
     taiwan_lines: list[str] = []
     taiwan_quote_facts: list[tuple[str, dict[str, Any]]] = []
     taiwan_evidence: list[dict[str, Any]] = []
     for ticker in ("TAIEX", "TPEx"):
         line, evidence = quote(ticker)
-        taiwan_lines.append(line)
         if evidence:
+            assert line is not None
+            taiwan_lines.append(line)
             taiwan_quote_facts.append((line, evidence))
             taiwan_evidence.append(evidence)
+        else:
+            name, _ = quote_specs[ticker]
+            item = items.get(ticker)
+            if ticker == "TPEx":
+                item = item or items.get("TPEX")
+            gap = _quote_gap(item, ticker, name)
+            gap["checked_at"] = as_of
+            quote_gaps.append(gap)
     taipei = None
     try:
         taipei = datetime.fromisoformat(str(as_of).replace("Z", "+00:00")).astimezone(ZoneInfo("Asia/Taipei"))
@@ -527,29 +571,47 @@ def _morning_analysis(
     semiconductor_evidence: list[dict[str, Any]] = []
     for ticker in ("2330", "SOX", "NASDAQ"):
         line, evidence = quote(ticker)
-        semiconductor_lines.append(line)
         if evidence:
+            assert line is not None
+            semiconductor_lines.append(line)
             semiconductor_quote_facts.append((line, evidence))
             semiconductor_evidence.append(evidence)
+        else:
+            name, _ = quote_specs[ticker]
+            gap = _quote_gap(items.get(ticker), ticker, name)
+            gap["checked_at"] = as_of
+            quote_gaps.append(gap)
     primary_theme = themes[0] if themes and isinstance(themes[0], dict) else {}
     macro_lines: list[str] = []
     macro_quote_facts: list[tuple[str, dict[str, Any]]] = []
     macro_evidence: list[dict[str, Any]] = []
     for ticker in ("US10Y", "DXY", "USD/TWD"):
         line, evidence = quote(ticker)
-        macro_lines.append(line)
         if evidence:
+            assert line is not None
+            macro_lines.append(line)
             macro_quote_facts.append((line, evidence))
             macro_evidence.append(evidence)
+        else:
+            name, _ = quote_specs[ticker]
+            gap = _quote_gap(items.get(ticker), ticker, name)
+            gap["checked_at"] = as_of
+            quote_gaps.append(gap)
     commodity_lines: list[str] = []
     commodity_quote_facts: list[tuple[str, dict[str, Any]]] = []
     commodity_evidence: list[dict[str, Any]] = []
     for ticker in ("WTI", "BRENT", "GOLD"):
         line, evidence = quote(ticker)
-        commodity_lines.append(line)
         if evidence:
+            assert line is not None
+            commodity_lines.append(line)
             commodity_quote_facts.append((line, evidence))
             commodity_evidence.append(evidence)
+        else:
+            name, _ = quote_specs[ticker]
+            gap = _quote_gap(items.get(ticker), ticker, name)
+            gap["checked_at"] = as_of
+            quote_gaps.append(gap)
     external_lines = [*macro_lines, *commodity_lines]
     external_evidence = [*macro_evidence, *commodity_evidence]
 
@@ -614,7 +676,7 @@ def _morning_analysis(
         ),
     ]
     return {
-        "ruleset": "morning_analysis_evidence_v1",
+        "ruleset": "morning_analysis_evidence_v2",
         "evidence_as_of": as_of,
         # Kept as an additive field for old readers, but blank for current
         # releases so the UI cannot render a meaningless meta strip.  Real
@@ -625,10 +687,16 @@ def _morning_analysis(
         "sections": sections,
         "missing_evidence": [
             *dict.fromkeys(statistics_missing),
+            *[gap["name"] for gap in quote_gaps],
             "下一項已知總經或政策催化劑",
         ],
         "system_analysis": {
-            "data_gaps": list(dict.fromkeys(statistics_missing)),
+            "data_gaps": [
+                {"kind": "statistics", "name": name, "reason": "not_available_this_round", "checked_at": as_of}
+                for name in dict.fromkeys(statistics_missing)
+            ] + list({
+                str(gap.get("ticker")): gap for gap in quote_gaps
+            }.values()),
             "note": "公開卡片只呈現已核對事實；資料缺口保留於系統分析資料。",
             "market_session_state": market_session_state if "休市" in market_session_state else None,
             "joint_market_signal": {

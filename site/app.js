@@ -8,6 +8,24 @@ const signedPercent = (value) => value === null || value === undefined ? "—" :
 const marketName = (key) => key === "taiwan" ? "台股" : key === "us" ? "美股" : key;
 const PUBLIC_TEXT_MAX_CHARS = 60;
 
+const quoteMovement = (rawValue) => {
+  if (rawValue === null || rawValue === undefined || rawValue === "" || typeof rawValue === "boolean"
+    || (typeof rawValue === "string" && !rawValue.trim())) return { state: "flat", icon: "" };
+  const value = Number(rawValue);
+  if (!Number.isFinite(value)) return { state: "flat", icon: "" };
+  const state = value > 0 ? "market-up" : value < 0 ? "market-down" : "flat";
+  if (value >= 2.0) return { state, icon: "🐂" };
+  if (value >= 0.3) return { state, icon: "🌱" };
+  if (value > -0.3) return { state, icon: "🐢" };
+  if (value > -2.0) return { state, icon: "🍂" };
+  return { state, icon: "🐻" };
+};
+
+const quoteMovementPrefix = (rawValue) => {
+  const movement = quoteMovement(rawValue);
+  return movement.icon ? `${movement.icon} ` : "";
+};
+
 const renderMarkets = (markets) => {
   const text = ["taiwan", "us"].map((key) => {
     const market = markets[key];
@@ -46,9 +64,9 @@ const renderQuoteList = (id, items) => {
     return rank(a) - rank(b);
   });
   container.innerHTML = ordered.map((item) => {
-    const state = item.change_percent > 0 ? "market-up" : item.change_percent < 0 ? "market-down" : "flat";
+    const movement = quoteMovement(item.change_percent);
     const meta = compactQuoteMeta(item);
-    return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}</small></span><span class="quote-value ${state}"><b>${formatNumber(item.price)} ${escapeHtml(item.currency || "")}</b><small>${signedPercent(item.change_percent)}</small><em class="quote-meta">${escapeHtml(meta)}</em></span></li>`;
+    return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}</small></span><span class="quote-value ${movement.state}"><b>${quoteMovementPrefix(item.change_percent)}${formatNumber(item.price)} ${escapeHtml(item.currency || "")}</b><small>${signedPercent(item.change_percent)}</small><em class="quote-meta">${escapeHtml(meta)}</em></span></li>`;
   }).join("");
 };
 
@@ -88,9 +106,9 @@ const formatAlertQuote = (item) => {
     const title = rawStatus === "stale" ? "報價已過期" : rawStatus === "unavailable" || rawStatus === "failed" ? "報價無法取得" : "報價待取得";
     return `<div class="alert-quote"><b>${escapeHtml(name)}</b><strong class="flat">${escapeHtml(title)}</strong><small class="flat">${escapeHtml(status)}</small></div>`;
   }
-  const state = item.change_percent > 0 ? "market-up" : item.change_percent < 0 ? "market-down" : "flat";
+  const movement = quoteMovement(item.change_percent);
   const meta = compactQuoteMeta(item);
-  return `<div class="alert-quote"><b>${escapeHtml(name)}</b><strong class="${state}">${formatNumber(item.price)}${item.currency ? ` ${escapeHtml(item.currency)}` : ""}</strong><small class="${state}">${item.change === null || item.change === undefined ? "" : `${item.change > 0 ? "+" : ""}${formatNumber(item.change)}　`}${signedPercent(item.change_percent)}</small><em class="quote-meta">${escapeHtml(meta)}</em></div>`;
+  return `<div class="alert-quote"><b>${escapeHtml(name)}</b><strong class="${movement.state}">${quoteMovementPrefix(item.change_percent)}${formatNumber(item.price)}${item.currency ? ` ${escapeHtml(item.currency)}` : ""}</strong><small class="${movement.state}">${item.change === null || item.change === undefined ? "" : `${item.change > 0 ? "+" : ""}${formatNumber(item.change)}　`}${signedPercent(item.change_percent)}</small><em class="quote-meta">${escapeHtml(meta)}</em></div>`;
 };
 
 const alertLinkedMarketNames = {
@@ -1337,6 +1355,26 @@ const renderBriefing = (briefing, generatedAt) => {
     const summaryFacts = Array.isArray(report.summary_facts)
       ? report.summary_facts.filter((item) => item && typeof item === "object" && String(item.value || "").trim())
       : [];
+    const missingQuoteNames = new Set([
+      "加權指數", "櫃買指數", "台積電", "費半", "Nasdaq", "日經225", "韓國綜合",
+      "美國10年債殖利率", "美元指數", "美元兌台幣", "WTI油價", "Brent油價", "黃金",
+    ]);
+    const isMissingQuoteLine = (value) => {
+      const text = String(value || "").trim().replace(/[。．.]$/, "");
+      return [...missingQuoteNames].some((name) => (
+        text === `${name}資料暫時無法取得` || text === `${name}：本輪未取得可核對資料`
+      ));
+    };
+    const cleanQuoteFacts = (facts) => (Array.isArray(facts) ? facts : [])
+      .filter((fact) => fact && typeof fact === "object" && !isMissingQuoteLine(fact.text));
+    const cleanQuoteLines = (facts) => (Array.isArray(facts) ? facts : [])
+      .map((fact) => String(fact || "").trim())
+      .filter((fact) => fact && !isMissingQuoteLine(fact));
+    const cleanMarketObservation = (value) => String(value || "")
+      .split(/[；;]/)
+      .map((part) => part.trim())
+      .filter((part) => part && !isMissingQuoteLine(part))
+      .join("；");
     const renderSummaryFacts = () => summaryFacts.slice(0, 2).map((item, index) => {
       const value = item.key === "confidence" ? confidenceLabel(item.raw_value || item.value) : String(item.value || "");
       return `<p class="briefing-fact-row"><b class="briefing-analysis-label"><span class="briefing-analysis-index">${index + 1}.</span>${escapeHtml(String(item.label || "市場資料"))}：</b><span>${escapeHtml(value)}</span></p>`;
@@ -1346,26 +1384,26 @@ const renderBriefing = (briefing, generatedAt) => {
     const renderMorningSection = (item, index) => {
       const facts = Array.isArray(item.facts) ? item.facts : [];
       const structuredFacts = Array.isArray(item.facts_structured) ? item.facts_structured : [];
-      const renderStructuredFacts = () => structuredFacts.slice(0, 6).map((fact) => {
+      const visibleStructuredFacts = cleanQuoteFacts(structuredFacts);
+      const visibleFacts = cleanQuoteLines(facts);
+      const renderStructuredFacts = () => visibleStructuredFacts.slice(0, 6).map((fact) => {
         const quote = fact && fact.quote && typeof fact.quote === "object" ? fact.quote : null;
         const rawChange = quote?.change_percent;
-        const change = rawChange === null || rawChange === undefined || rawChange === "" ? NaN : Number(rawChange);
-        const movement = quote && Number.isFinite(change)
-          ? change > 0 ? "market-up" : change < 0 ? "market-down" : "flat"
-          : "flat";
-        const icon = movement === "market-up" ? "🚀 " : movement === "market-down" ? "🐻 " : "";
-        return `<p class="morning-analysis-fact ${movement}">${icon}${escapeHtml(String(fact?.text || ""))}</p>`;
+        const normalizedChange = rawChange === null || rawChange === undefined || rawChange === "" ? NaN : rawChange;
+        const movement = quoteMovement(quote ? normalizedChange : NaN);
+        return `<p class="morning-analysis-fact ${movement.state}">${quote ? quoteMovementPrefix(rawChange) : ""}${escapeHtml(String(fact?.text || ""))}</p>`;
       }).join("");
       const factsMarkup = index === 0 && summaryFacts.length
         ? renderSummaryFacts()
-        : structuredFacts.length ? renderStructuredFacts() : facts.slice(0, 5).map((fact) => `<p class="morning-analysis-fact">${escapeHtml(String(fact))}</p>`).join("");
-      const labelStart = index === 0 ? 3 : 1;
-      const labeledValues = [
+        : visibleStructuredFacts.length ? renderStructuredFacts() : visibleFacts.slice(0, 5).map((fact) => `<p class="morning-analysis-fact">${escapeHtml(String(fact))}</p>`).join("");
+      const labeledItems = [
         ["為何重要", item.why_it_matters],
         ["可能傳導", item.transmission],
-        ["市場觀察", item.market_observation],
+        ["市場觀察", cleanMarketObservation(item.market_observation)],
         ["下一項催化劑", item.next_catalyst],
-      ].map(([label, value], offset) => renderLabeledValue(label, value, labelStart + offset)).join("");
+      ].filter(([, value]) => String(value || "").trim());
+      let nextNumber = index === 0 ? 3 : 1;
+      const labeledValues = labeledItems.map(([label, value]) => renderLabeledValue(label, value, nextNumber++)).join("");
       return `<article class="morning-analysis-section"><div class="morning-analysis-section-heading"><h3>${escapeHtml(item.title || "市場判讀")}</h3></div>${factsMarkup}${labeledValues}${renderEvidence(item.evidence)}</article>`;
     };
     const sessionState = String(morningAnalysis.market_session_state || "").trim();
@@ -1373,10 +1411,38 @@ const renderBriefing = (briefing, generatedAt) => {
       ? `<div class="morning-analysis-meta">${escapeHtml(sessionState)}</div>` : "";
     const systemAnalysis = document.getElementById("briefing-morning-system-analysis");
     if (systemAnalysis) {
-      const gaps = [...new Set([
-        ...(Array.isArray(morningAnalysis.missing_evidence) ? morningAnalysis.missing_evidence : []),
+      const gapReasonLabels = {
+        quote_missing: "缺少行情",
+        invalid_or_missing_price: "價格缺少或無效",
+        missing_change_percent: "漲跌幅缺少",
+        quote_delayed: "行情延遲",
+        quote_unusable_freshness: "行情新鮮度不可用",
+        invalid_or_missing_change_percent: "漲跌幅缺少或無效",
+        quote_unavailable: "行情不可用",
+        not_available_this_round: "本輪未取得",
+      };
+      const formatDataGap = (item) => {
+        if (!item || typeof item !== "object") return String(item || "").trim();
+        const name = String(item.name || item.ticker || "資料").trim();
+        const reason = gapReasonLabels[String(item.reason || "").trim()] || String(item.reason || "資料缺口").trim();
+        const status = String(item.data_status || "").trim();
+        const observedAt = String(item.observed_at || item.checked_at || "").trim();
+        return [name, reason, status && `狀態 ${status}`, observedAt && `時間 ${observedAt}`]
+          .filter(Boolean).join("｜");
+      };
+      const rawGaps = [
         ...(Array.isArray(morningAnalysis.system_analysis?.data_gaps) ? morningAnalysis.system_analysis.data_gaps : []),
-      ].map((item) => String(item || "").trim()).filter(Boolean))];
+        ...(Array.isArray(morningAnalysis.missing_evidence) ? morningAnalysis.missing_evidence : []),
+      ];
+      const gapKeys = new Set();
+      const gaps = rawGaps.map((item) => {
+        const formatted = formatDataGap(item);
+        const key = item && typeof item === "object"
+          ? `name:${item.name || item.ticker || formatted}` : `name:${formatted}`;
+        if (!formatted || gapKeys.has(key)) return "";
+        gapKeys.add(key);
+        return formatted;
+      }).filter(Boolean);
       const note = String(morningAnalysis.system_analysis?.note || "").trim();
       const joint = morningAnalysis.system_analysis?.joint_market_signal;
       const jointMarkup = joint && typeof joint === "object"
