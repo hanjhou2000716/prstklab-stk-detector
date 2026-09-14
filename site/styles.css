@@ -322,13 +322,12 @@ h1 { font-size: clamp(1.1rem, 5.2vw, 1.55rem); }
 .briefing-subheading { margin: 7px 0 0; padding-top: 4px; color: var(--orange); font-size: .78rem; letter-spacing: .08em; }
 .research-drawer .research-list { padding: 0 15px; }
 
-/* Visual order inside the risk section: alert → scheduled report → sentiment → source health. */
+/* Visual order inside the risk section: alert → scheduled report → sentiment. */
 #risk { display: flex; flex-direction: column; }
 #risk > .section-heading { order: 0; }
 #alert-card { order: 1; }
 #briefing-report { order: 2; }
-#risk > .panel:not(.source-health-panel) { order: 3; }
-.source-health-panel { order: 4; }
+#risk > .panel { order: 3; }
 
 .news-tabs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 0 0 10px; }
 .news-tab { padding: 10px; border: 1px solid var(--line); border-radius: 11px; background: var(--card); color: var(--muted); font: inherit; font-size: .82rem; font-weight: 800; }

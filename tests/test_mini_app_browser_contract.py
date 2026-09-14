@@ -45,6 +45,10 @@ def test_mini_app_investor_shell_and_drawer_contract() -> None:
 
             assert page.locator("#briefing-report").get_attribute("open") == ""
             assert page.locator("#source-health").get_attribute("open") is None
+            assert page.locator("#source-health").locator("..").get_attribute("id") == "news"
+            assert page.locator("#source-health").evaluate(
+                "element => Boolean(element.compareDocumentPosition(document.querySelector('footer')) & Node.DOCUMENT_POSITION_FOLLOWING)",
+            )
             assert page.locator("#briefing-system-analysis").get_attribute("open") is None
             assert page.locator("#briefing-system-analysis").get_attribute("hidden") is None
             assert page.locator(".technical-details").count() >= 2
@@ -57,6 +61,8 @@ def test_mini_app_investor_shell_and_drawer_contract() -> None:
             technical = page.locator("#briefing-report > .technical-details")
             technical.locator("summary").click()
             assert technical.get_attribute("open") == ""
+            page.locator("#news .news-tab[data-market='us']").click()
+            assert page.locator("#source-health").is_visible()
             browser.close()
     except Exception as exc:
         if "Executable doesn't exist" in str(exc) or "executable doesn't exist" in str(exc):

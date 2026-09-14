@@ -41,7 +41,19 @@ def test_mini_app_hero_prefers_shared_public_headline():
     assert 'setText("market-focus", publicHeadline)' in app
 
 
-def test_mini_app_uses_strategy_drawers_and_places_source_health_after_sentiment():
+def test_mini_app_places_source_health_below_news_and_before_footer():
+    page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
+
+    assert page.count('id="source-health"') == 1
+    assert page.index('id="source-health"') > page.index('class="news-grid"')
+    assert page.index('id="source-health"') < page.index("<footer")
+    assert page.index('id="source-health"') > page.index('id="risk-list"')
+    assert 'id="source-health"' not in page[page.index('<section id="risk"'):page.index('<section id="market"')]
+    assert ".source-health-panel { order: 4; }" not in styles
+
+
+def test_mini_app_keeps_strategy_drawers_and_source_health_contract():
     page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
     styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
 
@@ -49,8 +61,7 @@ def test_mini_app_uses_strategy_drawers_and_places_source_health_after_sentiment
     assert "<details" in page
     assert "動能狙擊" in page
     assert ".research-drawer[open] summary" in styles
-    assert "#risk > .panel:not(.source-health-panel) { order: 3; }" in styles
-    assert ".source-health-panel { order: 4; }" in styles
+    assert "#risk > .panel { order: 3; }" in styles
 
 
 def test_news_source_metrics_are_collapsed_system_analysis_at_the_bottom():
