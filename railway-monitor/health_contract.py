@@ -98,6 +98,12 @@ def gmail_health_fields(diagnostics: Any) -> dict[str, Any]:
         "last_sync_at": "timestamp",
         "last_sync_status": "text",
         "last_sync_error": "text",
+        "recovery_status": "text",
+        "consecutive_failure_count": "counter",
+        "first_failure_at": "timestamp",
+        "last_failure_at": "timestamp",
+        "last_success_at": "timestamp",
+        "next_retry_at": "timestamp",
         "push_delivery_verified": "bool",
         "history_cursor_present": "bool",
         "history_cursor_hash": "hash",
@@ -160,8 +166,12 @@ def gmail_notification_health(result: Any, *, now: datetime | None = None) -> di
     candidate_count = counter("material_candidate_count") if has_candidate_count else max(0, processed - duplicate)
     new_items = counter("accepted_new_count") if "accepted_new_count" in values else max(0, processed - duplicate)
     status = str(values.get("status") or "unknown").strip()[:80] or "unknown"
+    recovery_status = str(values.get("recovery_status") or "").strip()[:40]
     timestamp = (now or datetime.now(UTC)).astimezone(UTC).isoformat()
-    if failed:
+    if recovery_status == "retry_pending":
+        notification_status = "degraded"
+        reason = "transient_sync_failure_retry_pending"
+    elif failed:
         notification_status = "failed" if not candidate_count else "dispatch_requested"
         reason = "gmail_sync_failed" if not candidate_count else "new_reviewed_email_with_sync_errors"
     elif candidate_count:
@@ -187,6 +197,8 @@ def gmail_notification_health(result: Any, *, now: datetime | None = None) -> di
         "last_receipt_status": None,
         "last_sync_status": status,
     }
+    if recovery_status:
+        projection["recovery_status"] = recovery_status
     if processed:
         projection["last_processed_at"] = timestamp
     if candidate_count:

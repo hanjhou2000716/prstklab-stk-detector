@@ -80,7 +80,12 @@ jobs:
             (.accepted_new_count | type) == "number" and
             (.material_candidate_count | type) == "number" and
             (.priority_candidate_count | type) == "number" and
-            (.candidate_diagnostics | type) == "object"
+            (.candidate_diagnostics | type) == "object" and
+            (.recovery_status | type) == "string" and
+            (.retryable | type) == "boolean" and
+            (.request_attempts | type) == "number" and
+            (.consecutive_failure_count | type) == "number" and
+            ((.cursor_preserved | type) == "boolean" or (.cursor_preserved == null))
           ' gmail-sync-result.json >/dev/null
       - name: Trigger realtime event monitor for new reviewed email
         if: success()
@@ -93,7 +98,8 @@ jobs:
           priority_candidates="$(jq -r 'if (.priority_candidate_count | type) == "number" then .priority_candidate_count else 0 end' gmail-sync-result.json)"
           candidate_ready="false"
           if [ "$material_candidates" -gt 0 ] || [ "$priority_candidates" -gt 0 ]; then candidate_ready="true"; fi
-          if [ "$candidate_ready" = "true" ] && [ "$NOTIFY" = "true" ] && [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" != "true" ]; then
+          recovery_status="$(jq -r '.recovery_status // "unknown"' gmail-sync-result.json)"
+          if [ "$candidate_ready" = "true" ] && [ "$recovery_status" != "retry_pending" ] && [ "$recovery_status" != "persistent_failure" ] && [ "$NOTIFY" = "true" ] && [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" != "true" ]; then
             gh api --method POST "repos/$GH_REPO/dispatches" \
               -f event_type=official-event-check \
               -f 'client_payload[reason]=gmail-reviewed-observation' \
@@ -121,6 +127,14 @@ jobs:
           storage_error=""
           diagnostic_reason=""
           retry_count="0"
+          recovery_status="unknown"
+          retryable="false"
+          request_attempts="0"
+          consecutive_failures="0"
+          first_failure_at=""
+          cursor_preserved="unknown"
+          next_retry_at=""
+          escalation_reason=""
           if [ -s gmail-sync-result.json ]; then
             processed="$(jq -r 'if (.processed | type) == "number" then .processed else 0 end' gmail-sync-result.json)"
             accepted_new="$(jq -r 'if (.accepted_new_count | type) == "number" then .accepted_new_count else 0 end' gmail-sync-result.json)"
@@ -134,13 +148,27 @@ jobs:
             storage_error="$(jq -r '.storage_error // ""' gmail-sync-result.json)"
             diagnostic_reason="$(jq -r '.diagnostic_reason // ""' gmail-sync-result.json)"
             retry_count="$(jq -r 'if (.supabase_retry_count | type) == "number" then .supabase_retry_count else 0 end' gmail-sync-result.json)"
+            recovery_status="$(jq -r '.recovery_status // "unknown"' gmail-sync-result.json)"
+            retryable="$(jq -r 'if (.retryable | type) == "boolean" then .retryable else false end' gmail-sync-result.json)"
+            request_attempts="$(jq -r 'if (.request_attempts | type) == "number" then .request_attempts else 0 end' gmail-sync-result.json)"
+            consecutive_failures="$(jq -r 'if (.consecutive_failure_count | type) == "number" then .consecutive_failure_count else 0 end' gmail-sync-result.json)"
+            first_failure_at="$(jq -r '.first_failure_at // ""' gmail-sync-result.json)"
+            cursor_preserved="$(jq -r 'if (.cursor_preserved | type) == "boolean" then .cursor_preserved else "unknown" end' gmail-sync-result.json)"
+            next_retry_at="$(jq -r '.next_retry_at // ""' gmail-sync-result.json)"
+            escalation_reason="$(jq -r '.escalation_reason // ""' gmail-sync-result.json)"
           fi
           if [ "$RESULT_CONTRACT_OUTCOME" = "failure" ]; then
             notification_status="failed"
             notification_reason="sync_result_contract_invalid"
-          elif [ "$status" = "cursor_read_failed" ]; then
+          elif [ ! -s gmail-sync-result.json ]; then
             notification_status="failed"
-            notification_reason="${diagnostic_reason:-gmail_cursor_read_failed}:${storage_error:-unknown}"
+            notification_reason="sync_result_missing"
+          elif [ "$recovery_status" = "retry_pending" ]; then
+            notification_status="degraded"
+            notification_reason="transient_sync_failure_retry_pending"
+          elif [ "$recovery_status" = "persistent_failure" ] || [ "$status" = "cursor_read_failed" ]; then
+            notification_status="failed"
+            notification_reason="${escalation_reason:-${diagnostic_reason:-gmail_cursor_read_failed}}:${storage_error:-unknown}"
           elif [ "$NOTIFY" != "true" ]; then
             notification_status="not_requested"
             notification_reason="manual_notification_opt_in_required"
@@ -190,6 +218,16 @@ jobs:
             echo "- priority_candidate_count: ${priority_candidates}"
             echo "- duplicate_count: ${duplicate}"
             echo "- supabase_retry_count: ${retry_count}"
+            echo "- recovery_status: ${recovery_status}"
+            echo "- retryable: ${retryable}"
+            echo "- request_attempts: ${request_attempts}"
+            echo "- consecutive_failure_count: ${consecutive_failures}"
+            echo "- first_failure_at: ${first_failure_at:-none}"
+            echo "- cursor_preserved: ${cursor_preserved}"
+            echo "- next_retry_at: ${next_retry_at:-none}"
+            echo "- escalation_reason: ${escalation_reason:-none}"
+            echo "- workflow_run_id: $GITHUB_RUN_ID"
+            echo "- workflow_sha: $GITHUB_SHA"
             echo "- storage_error: ${storage_error:-none}"
             echo "- diagnostic_reason: ${diagnostic_reason:-none}"
             echo "- candidate_diagnostics: $(jq -c '.candidate_diagnostics // {}' gmail-sync-result.json 2>/dev/null || echo '{}')"

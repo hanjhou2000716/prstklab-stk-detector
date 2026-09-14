@@ -92,3 +92,20 @@ def test_gmail_reconciliation_explains_accepted_but_stale_candidate() -> None:
     assert result["notification_status"] == "no_candidate"
     assert result["notification_reason"] == "accepted_new_but_candidate_rejected:stale_source_event"
     assert result["candidate_diagnostics"]["counts"]["stale_source_event"] == 1
+
+
+def test_gmail_reconciliation_marks_transient_failure_as_degraded_not_empty_mailbox() -> None:
+    module_path = Path(__file__).parents[1] / "railway-monitor" / "health_contract.py"
+    spec = importlib.util.spec_from_file_location("railway_health_contract_retry_pending", module_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    result = module.gmail_notification_health({
+        "status": "cursor_read_failed",
+        "processed": 0,
+        "failed": 1,
+        "recovery_status": "retry_pending",
+        "candidate_diagnostics": {"counts": {}, "primary_reason": "gmail_cursor_read_failed"},
+    }, now=datetime(2026, 9, 14, tzinfo=UTC))
+    assert result["notification_status"] == "degraded"
+    assert result["notification_reason"] == "transient_sync_failure_retry_pending"

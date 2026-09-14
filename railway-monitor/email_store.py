@@ -20,6 +20,10 @@ from typing import Any
 # keeping the value here prevents the ingress health projection from falling
 # back to the retired 8/10 lane when imported independently in the worker.
 FJ_VENDOR_PRIORITY_THRESHOLD = 9
+SYNC_HEALTH_FIELDS = (
+    "status", "first_failure_at", "consecutive_failure_count", "last_failure_at",
+    "last_error", "last_run_id", "last_run_sha", "last_success_at", "next_retry_at",
+)
 
 
 def _now() -> str:
@@ -145,6 +149,19 @@ class EmailStore:
                     candidate_decided_at TEXT,
                     dispatch_error TEXT
                 );
+                CREATE TABLE IF NOT EXISTS gmail_sync_health (
+                    id TEXT PRIMARY KEY CHECK (id = 'primary'),
+                    status TEXT NOT NULL DEFAULT 'healthy',
+                    first_failure_at TEXT,
+                    consecutive_failure_count INTEGER NOT NULL DEFAULT 0,
+                    last_failure_at TEXT,
+                    last_error TEXT,
+                    last_run_id TEXT,
+                    last_run_sha TEXT,
+                    last_success_at TEXT,
+                    next_retry_at TEXT,
+                    updated_at TEXT NOT NULL
+                );
                 """
             )
             # Existing Railway volumes predate the watch lease observability
@@ -248,6 +265,82 @@ class EmailStore:
                 (_now(), expected),
             )
             return result.rowcount == 1
+
+    def record_sync_failure(
+        self,
+        *,
+        error: str,
+        failed_at: str,
+        run_id: str | None = None,
+        run_sha: str | None = None,
+        next_retry_at: str | None = None,
+    ) -> dict[str, Any]:
+        """Atomically record one transient sync failure for local parity tests."""
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM gmail_sync_health WHERE id = 'primary'"
+            ).fetchone()
+            old_first = str(row["first_failure_at"] or "") if row else ""
+            old_count = int(row["consecutive_failure_count"] or 0) if row else 0
+            try:
+                age_seconds = (datetime.fromisoformat(failed_at) - datetime.fromisoformat(old_first)).total_seconds()
+            except (TypeError, ValueError):
+                age_seconds = -1.0
+            count = old_count + 1 if old_first and age_seconds >= 0 else 1
+            first = old_first or failed_at
+            status = "persistent_failure" if count >= 2 or age_seconds >= 600 else "retry_pending"
+            connection.execute(
+                """INSERT INTO gmail_sync_health(
+                   id, status, first_failure_at, consecutive_failure_count,
+                   last_failure_at, last_error, last_run_id, last_run_sha,
+                   next_retry_at, updated_at)
+                   VALUES('primary', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   ON CONFLICT(id) DO UPDATE SET status=excluded.status,
+                   first_failure_at=excluded.first_failure_at,
+                   consecutive_failure_count=excluded.consecutive_failure_count,
+                   last_failure_at=excluded.last_failure_at,
+                   last_error=excluded.last_error, last_run_id=excluded.last_run_id,
+                   last_run_sha=excluded.last_run_sha, next_retry_at=excluded.next_retry_at,
+                   updated_at=excluded.updated_at""",
+                (status, first, count, failed_at, str(error)[:80], run_id, run_sha, next_retry_at, _now()),
+            )
+        return {
+            "status": status,
+            "first_failure_at": first,
+            "consecutive_failure_count": count,
+            "last_failure_at": failed_at,
+            "last_error": str(error)[:80],
+            "last_run_id": run_id,
+            "last_run_sha": run_sha,
+            "next_retry_at": next_retry_at,
+        }
+
+    def clear_sync_failure(self, *, success_at: str) -> dict[str, Any]:
+        """Clear transient failure state and report whether a recovery occurred."""
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT consecutive_failure_count FROM gmail_sync_health WHERE id = 'primary'"
+            ).fetchone()
+            had_failure = bool(row and int(row["consecutive_failure_count"] or 0) > 0)
+            connection.execute(
+                """INSERT INTO gmail_sync_health(
+                   id, status, consecutive_failure_count, last_success_at, updated_at)
+                   VALUES('primary', 'healthy', 0, ?, ?)
+                   ON CONFLICT(id) DO UPDATE SET status='healthy',
+                   first_failure_at=NULL, consecutive_failure_count=0,
+                   last_failure_at=NULL, last_error=NULL, last_run_id=NULL,
+                   last_run_sha=NULL, last_success_at=excluded.last_success_at,
+                   next_retry_at=NULL, updated_at=excluded.updated_at""",
+                (success_at, _now()),
+            )
+        return {"status": "recovered_after_retry" if had_failure else "healthy", "had_failure": had_failure}
+
+    def sync_health(self) -> dict[str, Any]:
+        with self._connect() as connection:
+            row = connection.execute("SELECT * FROM gmail_sync_health WHERE id = 'primary'").fetchone()
+        if row is None:
+            return {key: None for key in SYNC_HEALTH_FIELDS}
+        return {key: row[key] for key in SYNC_HEALTH_FIELDS}
 
     def claim_observation(self, observation: dict[str, Any]) -> bool:
         """Atomically claim one Gmail message; return False on replay/dedupe."""
@@ -477,6 +570,12 @@ class EmailStore:
             else "healthy" if cursor.get("last_sync_completed_at")
             else "no_new_content"
         )
+        try:
+            sync_health = self.sync_health()
+        except Exception:
+            sync_health = {}
+        if str(sync_health.get("status") or "") in {"retry_pending", "persistent_failure"}:
+            sync_state = "degraded"
         sources = {
             "creator": {
                 "status": "not_checked", "received_count": 0,
@@ -516,6 +615,11 @@ class EmailStore:
                 "last_sync_status": sync_status or "not_checked",
                 "last_sync_error": sync_error or None,
                 "last_sync_at": None, "last_sync_diagnostics": None,
+                **{
+                    key: sync_health[key]
+                    for key in SYNC_HEALTH_FIELDS
+                    if sync_health.get(key) is not None
+                },
             },
         }
 

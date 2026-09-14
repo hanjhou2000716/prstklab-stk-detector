@@ -27,6 +27,11 @@ CURSOR_FIELDS = (
     "last_sync_completed_at", "last_sync_status", "last_sync_error",
     "last_full_sync_at", "last_message_id", "last_sync_diagnostics",
 )
+SYNC_HEALTH_FIELDS = (
+    "status", "first_failure_at", "consecutive_failure_count", "last_failure_at",
+    "last_error", "last_run_id", "last_run_sha", "last_success_at", "next_retry_at",
+)
+TRANSIENT_HTTP_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 DEFAULT_CURSOR = {key: None for key in CURSOR_FIELDS}
 BLOCKED_FIELDS = {
     "body", "raw_body", "attachments", "gmail_thread_id", "sender", "recipient",
@@ -96,6 +101,7 @@ class SupabaseEmailStore:
         self.timeout = max(1.0, min(30.0, float(timeout)))
         self._sleep = sleep_fn or time.sleep
         self.last_retry_count = 0
+        self.last_request_attempts = 0
         if not self.url or not self.key:
             raise ValueError("supabase_store_not_configured")
         if not self.url.startswith("https://"):
@@ -109,7 +115,10 @@ class SupabaseEmailStore:
         attempts = 4 if retryable else 1
         deadline = time.monotonic() + 90.0 if retryable else None
         response: requests.Response | None = None
+        self.last_retry_count = 0
+        self.last_request_attempts = 0
         for attempt in range(attempts):
+            self.last_request_attempts = attempt + 1
             try:
                 request_timeout = self.timeout
                 if deadline is not None:
@@ -132,7 +141,7 @@ class SupabaseEmailStore:
                     raise RuntimeError("supabase_transport_error") from error
                 self._retry_after(attempt, deadline, None)
                 continue
-            if response.status_code not in {429, 502, 503, 504} or not retryable or attempt >= attempts - 1:
+            if response.status_code not in TRANSIENT_HTTP_STATUS_CODES or not retryable or attempt >= attempts - 1:
                 break
             headers = getattr(response, "headers", {}) or {}
             retry_after = headers.get("Retry-After") if hasattr(headers, "get") else None
@@ -149,6 +158,30 @@ class SupabaseEmailStore:
             # database details.  Callers only receive a stable class label.
             raise RuntimeError(f"supabase_http_{response.status_code}")
         return int(response.status_code), payload
+
+    def _rpc(self, function: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Call one private state RPC without exposing provider details."""
+        response = requests.request(
+            "POST",
+            f"{self.url}/rest/v1/rpc/{function}",
+            headers={
+                "apikey": self.key,
+                "Authorization": f"Bearer {self.key}",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            json=arguments,
+            timeout=self.timeout,
+        )
+        self.last_request_attempts = 1
+        if response.status_code >= 400:
+            raise RuntimeError(f"supabase_http_{response.status_code}")
+        try:
+            payload = response.json()
+        except (ValueError, requests.exceptions.JSONDecodeError):
+            payload = None
+        row = payload[0] if isinstance(payload, list) and payload and isinstance(payload[0], dict) else payload
+        return row if isinstance(row, dict) else {}
 
     def _retry_after(self, attempt: int, deadline: float | None, header: str | None) -> None:
         """Sleep within the bounded read retry window without exposing details."""
@@ -200,6 +233,37 @@ class SupabaseEmailStore:
             prefer="return=representation",
         )
         return isinstance(payload, list) and bool(payload)
+
+    def record_sync_failure(
+        self,
+        *,
+        error: str,
+        failed_at: str,
+        run_id: str | None = None,
+        run_sha: str | None = None,
+        next_retry_at: str | None = None,
+    ) -> dict[str, Any]:
+        """Atomically record one transient sync failure in private state."""
+        return self._rpc(
+            "record_gmail_sync_failure",
+            {
+                "p_error": str(error)[:80],
+                "p_failed_at": failed_at,
+                "p_run_id": str(run_id or "")[:80] or None,
+                "p_run_sha": str(run_sha or "")[:80] or None,
+                "p_next_retry_at": next_retry_at,
+            },
+        )
+
+    def clear_sync_failure(self, *, success_at: str) -> dict[str, Any]:
+        """Clear transient failure state and return whether recovery occurred."""
+        return self._rpc("clear_gmail_sync_failure", {"p_success_at": success_at})
+
+    def sync_health(self) -> dict[str, Any]:
+        """Read bounded private sync health for diagnostics."""
+        _status, payload = self._request("GET", "gmail_sync_health", "?id=eq.primary&select=*&limit=1")
+        row = payload[0] if isinstance(payload, list) and payload and isinstance(payload[0], dict) else {}
+        return {key: row.get(key) for key in SYNC_HEALTH_FIELDS}
 
     def claim_observation(self, observation: dict[str, Any]) -> bool:
         message_id = str(observation.get("gmail_message_id") or "").strip()
@@ -402,6 +466,12 @@ class SupabaseEmailStore:
             else "healthy" if cursor.get("last_sync_completed_at")
             else "no_new_content"
         )
+        try:
+            sync_health = self.sync_health()
+        except Exception:
+            sync_health = {}
+        if str(sync_health.get("status") or "") in {"retry_pending", "persistent_failure"}:
+            status = "degraded"
         return {
             "financialjuice": {
                 "status": status,
@@ -413,6 +483,11 @@ class SupabaseEmailStore:
                 "last_sync_error": sync_error or None,
                 "push_delivery_verified": bool(cursor.get("last_push_received_at")),
                 "last_sync_diagnostics": diagnostics,
+                **{
+                    key: sync_health[key]
+                    for key in SYNC_HEALTH_FIELDS
+                    if sync_health.get(key) is not None
+                },
             }
         }
 

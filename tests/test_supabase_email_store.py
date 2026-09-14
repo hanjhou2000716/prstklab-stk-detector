@@ -247,6 +247,48 @@ def test_cursor_retries_transient_supabase_reads_with_bounded_backoff(monkeypatc
     assert store.last_retry_count == 2
 
 
+def test_cursor_retries_http_500_four_times_then_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[int] = []
+    sleeps: list[float] = []
+
+    def request(method: str, _url: str, **_kwargs: Any) -> _Response:
+        assert method == "GET"
+        calls.append(1)
+        return _Response(500, {"private": "hidden"})
+
+    monkeypatch.setattr("supabase_email_store.requests.request", request)
+    monkeypatch.setattr("supabase_email_store.random.uniform", lambda _low, _high: 0.0)
+    store = SupabaseEmailStore("https://example.supabase.co", "key", sleep_fn=sleeps.append)
+    with pytest.raises(RuntimeError, match="supabase_http_500"):
+        store.cursor()
+    assert len(calls) == 4
+    assert sleeps == [1.0, 3.0, 7.0]
+    assert store.last_retry_count == 3
+    assert store.last_request_attempts == 4
+
+
+def test_private_sync_health_uses_atomic_rpc_and_never_returns_response_body(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[tuple[str, str]] = []
+
+    def request(method: str, url: str, **kwargs: Any) -> _Response:
+        calls.append((method, url))
+        assert kwargs["json"]["p_error"] == "supabase_http_500"
+        return _Response(200, [{"status": "retry_pending", "consecutive_failure_count": 1}])
+
+    monkeypatch.setattr("supabase_email_store.requests.request", request)
+    store = SupabaseEmailStore("https://example.supabase.co", "key")
+    state = store.record_sync_failure(
+        error="supabase_http_500",
+        failed_at="2026-09-14T13:30:50+00:00",
+        run_id="123",
+        run_sha="abc",
+        next_retry_at="2026-09-14T13:35:50+00:00",
+    )
+    assert state["status"] == "retry_pending"
+    assert calls[0] == ("POST", "https://example.supabase.co/rest/v1/rpc/record_gmail_sync_failure")
+    assert "private" not in repr(state)
+
+
 def test_cursor_does_not_retry_authentication_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[int] = []
 
