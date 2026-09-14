@@ -1,0 +1,1850 @@
+{
+  "schema_version": "1.0",
+  "kind": "market_briefing",
+  "source": "PRStK 多來源市場判讀",
+  "source_key": "scheduled_brief",
+  "notification_id": "briefing-pre_open-5a59cd3916bbfa25221c",
+  "alert_id": "briefing-pre_open-5a59cd3916bbfa25221c",
+  "event_cluster_key": "briefing-pre_open-5a59cd3916bbfa25221c",
+  "release_id": "release-addd648dcf380dc2",
+  "snapshot_id": "2de67ffc389d6e2d",
+  "observation_id": "",
+  "created_at": "2026-09-14T00:48:34.002539+00:00",
+  "canonical_content_hash": "5a59cd3916bbfa25221c9488d9b13b4b169d2801410205b38d64873438b7d244",
+  "canonical_hash_version": 2,
+  "title": "📊 台股盤前｜台股分歧；最近收盤台指-1.61%。",
+  "brief_title": "📊 台股盤前｜台股分歧；最近收盤台指-1.61%。",
+  "public_short_message": "📊 台股盤前｜台股分歧；最近收盤台指-1.61%。",
+  "short_label": "市場判讀",
+  "event": "哈塞特力挺川普5,000美元發錢計畫，暗示若Fed升息川普勢將表態。",
+  "linked_markets": [
+    "TAIEX",
+    "NASDAQ"
+  ],
+  "why_important": "利率預期可能影響美元、美債殖利率與成長股評價，因此需核對後續價格反應。",
+  "possible_linkage": "可能連動 Nasdaq、費半、美元與美債；台股科技開盤反應應以實際報價確認。",
+  "stock_observation": "觀察利率預期變化後，科技與半導體權值是否同步或出現分歧。",
+  "market_assessment": {
+    "stance": "divergent",
+    "stance_label": "分歧",
+    "confidence": "medium",
+    "market_scope": "台股",
+    "dominant_driver": "台股核心指數偏弱",
+    "dominant_driver_key": null,
+    "supporting_theme_keys": [
+      "evt-82f69de9e896e3bb2f506b6f",
+      "evt-fbc91044273e61470f5f626b",
+      "evt-78c4b7ce14447fdbcc63a2ed"
+    ],
+    "conflict_flags": [],
+    "summary_sections": {
+      "summary": "台股分歧",
+      "market_highlights": "最近收盤台指-1.61%、最近收盤櫃買-7.02%、最近收盤費半+1.81%",
+      "risk": "留意利率、美元與能源變化是否改變目前市場傳導。"
+    },
+    "evidence_as_of": "2026-09-14T00:48:19.639394+00:00",
+    "factor_count": 9,
+    "evidence_dimensions": [
+      "commodity",
+      "rates_fx",
+      "taiwan_equity",
+      "us_equity"
+    ],
+    "evidence_groups": {
+      "taiwan_core": [
+        -1
+      ],
+      "us_tech": [
+        1
+      ],
+      "us_broad": [
+        1
+      ],
+      "rates_fx": [
+        1
+      ],
+      "commodities": [
+        1
+      ]
+    },
+    "score": 0.074,
+    "factor_source": "quote_factors+market_regime",
+    "weekend_market": false,
+    "directional_quote_count": 8
+  },
+  "market_evidence": [
+    {
+      "ticker": "TAIEX",
+      "name": "臺灣加權指數",
+      "market": "taiwan",
+      "instrument_id": "twse:taiex",
+      "instrument_master_id": "instrument-394114e9c8075a73",
+      "price": 46184.85,
+      "change": -755.64,
+      "change_percent": -1.61,
+      "currency": "點",
+      "quote_date": "2026-09-11",
+      "quote_time": null,
+      "fetched_at": "2026-09-14T00:46:08.339510+00:00",
+      "freshness": "recent_close",
+      "data_status": "最近收盤",
+      "source_label": "Yahoo",
+      "quote_source": "Yahoo Finance public daily quote",
+      "source_domain": "finance.yahoo.com",
+      "source_url": "https://finance.yahoo.com/quote/^TWII",
+      "cross_checked": false,
+      "stale_used": false
+    },
+    {
+      "ticker": "NASDAQ",
+      "name": "那斯達克綜合指數",
+      "market": "us",
+      "instrument_id": "us:nasdaq",
+      "instrument_master_id": "instrument-394114e9c8075a73",
+      "price": 26333.04,
+      "change": 251.32,
+      "change_percent": 0.96,
+      "currency": "點",
+      "quote_date": "2026-09-11",
+      "quote_time": null,
+      "fetched_at": "2026-09-14T00:46:08.593687+00:00",
+      "freshness": "recent_close",
+      "data_status": "最近收盤",
+      "source_label": "Yahoo",
+      "quote_source": "Yahoo Finance public daily quote",
+      "source_domain": "finance.yahoo.com",
+      "source_url": "https://finance.yahoo.com/quote/^IXIC",
+      "cross_checked": false,
+      "stale_used": false
+    }
+  ],
+  "source_evidence": [
+    {
+      "source": "Yahoo Taiwan Finance",
+      "source_key": "Yahoo Taiwan Finance",
+      "observation_id": null,
+      "notification_id": null,
+      "published_at": "2026-09-13T23:48:42+00:00",
+      "source_url": "https://tw.stock.yahoo.com/news/%E5%93%88%E5%A1%9E%E7%89%B9%E5%8A%9B%E6%8C%BA%E5%B7%9D%E6%99%AE5-000%E7%BE%8E%E5%85%83%E7%99%BC%E9%8C%A2%E8%A8%88%E7%95%AB-%E6%9A%97%E7%A4%BA%E8%8B%A5fed%E5%8D%87%E6%81%AF%E5%B7%9D%E6%99%AE%E5%8B%A2%E5%B0%87%E8%A1%A8%E6%85%8B-234842681.html",
+      "source_domain": "tw.stock.yahoo.com"
+    }
+  ],
+  "briefing": {
+    "slot": "pre_open",
+    "slot_context": {
+      "arrival_at": "2026-09-14T08:46:05.582041+08:00",
+      "contract_status": "valid",
+      "delay_seconds": "65",
+      "delivery_intent": "notify_candidate",
+      "dispatch_trace_id": "f481a8d4-2231-4d2e-aa37-aa808a237a92",
+      "dispatch_unix": "1789346644",
+      "effective_market_phase": "pre_open",
+      "effective_slot": "pre_open",
+      "requested_slot": "pre_open",
+      "resolution_reason": "dispatch_anchor_on_time",
+      "run_started_at": "2026-09-14T08:46:05.582041+08:00",
+      "schedule_contract_version": "3",
+      "scheduled_for_at": "2026-09-14T08:45:00+08:00",
+      "scheduled_slot": "pre_open",
+      "slot_date": "2026-09-14",
+      "time_zone": "Asia/Taipei",
+      "trigger_kind": "repository_dispatch"
+    },
+    "as_of": "2026-09-14T08:48:19.639394+08:00",
+    "themes": [
+      {
+        "title": "利率、通膨、美元與匯率",
+        "market_topic": "rates_fx",
+        "what_happened": "哈塞特力挺川普5,000美元發錢計畫，暗示若Fed升息川普勢將表態。",
+        "why_important": "利率預期可能影響美元、美債殖利率與成長股評價，因此需核對後續價格反應。",
+        "market_implication": "可能連動 Nasdaq、費半、美元與美債；台股科技開盤反應應以實際報價確認。",
+        "stock_observation": "觀察利率預期變化後，科技與半導體權值是否同步或出現分歧。",
+        "detail_eligible": true,
+        "evidence": [
+          {
+            "source": "Yahoo Taiwan Finance",
+            "source_key": "Yahoo Taiwan Finance",
+            "observation_id": null,
+            "notification_id": null,
+            "published_at": "2026-09-13T23:48:42+00:00",
+            "source_url": "https://tw.stock.yahoo.com/news/%E5%93%88%E5%A1%9E%E7%89%B9%E5%8A%9B%E6%8C%BA%E5%B7%9D%E6%99%AE5-000%E7%BE%8E%E5%85%83%E7%99%BC%E9%8C%A2%E8%A8%88%E7%95%AB-%E6%9A%97%E7%A4%BA%E8%8B%A5fed%E5%8D%87%E6%81%AF%E5%B7%9D%E6%99%AE%E5%8B%A2%E5%B0%87%E8%A1%A8%E6%85%8B-234842681.html",
+            "source_domain": "tw.stock.yahoo.com"
+          }
+        ],
+        "source_evidence": [
+          {
+            "source": "Yahoo Taiwan Finance",
+            "source_key": "Yahoo Taiwan Finance",
+            "observation_id": null,
+            "notification_id": null,
+            "published_at": "2026-09-13T23:48:42+00:00",
+            "source_url": "https://tw.stock.yahoo.com/news/%E5%93%88%E5%A1%9E%E7%89%B9%E5%8A%9B%E6%8C%BA%E5%B7%9D%E6%99%AE5-000%E7%BE%8E%E5%85%83%E7%99%BC%E9%8C%A2%E8%A8%88%E7%95%AB-%E6%9A%97%E7%A4%BA%E8%8B%A5fed%E5%8D%87%E6%81%AF%E5%B7%9D%E6%99%AE%E5%8B%A2%E5%B0%87%E8%A1%A8%E6%85%8B-234842681.html",
+            "source_domain": "tw.stock.yahoo.com"
+          }
+        ],
+        "quote_evidence": [
+          {
+            "ticker": "TAIEX",
+            "name": "臺灣加權指數",
+            "market": "taiwan",
+            "instrument_id": "twse:taiex",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 46184.85,
+            "change": -755.64,
+            "change_percent": -1.61,
+            "currency": "點",
+            "quote_date": "2026-09-11",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:08.339510+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^TWII",
+            "cross_checked": false,
+            "stale_used": false
+          },
+          {
+            "ticker": "NASDAQ",
+            "name": "那斯達克綜合指數",
+            "market": "us",
+            "instrument_id": "us:nasdaq",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 26333.04,
+            "change": 251.32,
+            "change_percent": 0.96,
+            "currency": "點",
+            "quote_date": "2026-09-11",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:08.593687+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^IXIC",
+            "cross_checked": false,
+            "stale_used": false
+          },
+          {
+            "ticker": "SOX",
+            "name": "費城半導體指數",
+            "market": "us",
+            "instrument_id": "us:sox",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 11824.0,
+            "change": 209.83,
+            "change_percent": 1.81,
+            "currency": "點",
+            "quote_date": "2026-09-11",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:08.833533+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^SOX",
+            "cross_checked": false,
+            "stale_used": false
+          }
+        ],
+        "event_key": "evt-82f69de9e896e3bb2f506b6f",
+        "canonical_event_key": "evt-82f69de9e896e3bb2f506b6f",
+        "source_event_keys": [
+          "evt-82f69de9e896e3bb2f506b6f"
+        ],
+        "source": "Yahoo Taiwan Finance",
+        "published_at": "2026-09-13T23:48:42+00:00",
+        "notification_status": "eligible",
+        "prstk_risk_level": "R2",
+        "vendor_importance": null,
+        "raw_title": "哈塞特力挺川普5,000美元發錢計畫，暗示若Fed升息川普勢將表態",
+        "normalized_fact": "哈塞特力挺川普5,000美元發錢計畫，暗示若Fed升息川普勢將表態。",
+        "linked_markets": [
+          "TAIEX",
+          "TXF"
+        ],
+        "linked_market_details": [
+          {
+            "ticker": "TAIEX",
+            "role": "market_index",
+            "match_basis": "explicit_market",
+            "matched_entity": "",
+            "market": "taiwan",
+            "quote_available": true,
+            "market_sync_confirmed": false
+          },
+          {
+            "ticker": "TXF",
+            "role": "futures",
+            "match_basis": "taiwan_market_baseline",
+            "matched_entity": "",
+            "market": "taiwan",
+            "quote_available": false,
+            "market_sync_confirmed": false
+          }
+        ],
+        "market_linkage_status": "resolved",
+        "actor_role": "",
+        "actor_name": "",
+        "headline_actor": "",
+        "byline_removed": false,
+        "publisher_removed": false,
+        "normalization_ruleset": "market_headline_normalizer_v1",
+        "normalization_complete": true,
+        "official_confirmed": false,
+        "market_sync_confirmed": false
+      },
+      {
+        "title": "美國與全球股市",
+        "market_topic": "global_market",
+        "what_happened": "Dow Jones Futures Fall, Techs Tumble As Anthropic Leads Call For AI Slowdown; Fed Meeting Ahead。",
+        "why_important": "已核對公開來源；請查看完整內容與市場後續反應。",
+        "market_implication": "",
+        "stock_observation": "",
+        "detail_eligible": false,
+        "evidence": [
+          {
+            "source": "Yahoo Finance",
+            "source_key": "Yahoo Finance",
+            "observation_id": null,
+            "notification_id": null,
+            "published_at": "2026-09-14T00:32:01+00:00",
+            "source_url": "https://finance.yahoo.com/m/75964091-0d57-3879-b55e-2c11b3225642/dow-jones-futures-fall%2C-techs.html?.tsrc=rss",
+            "source_domain": "finance.yahoo.com"
+          }
+        ],
+        "source_evidence": [
+          {
+            "source": "Yahoo Finance",
+            "source_key": "Yahoo Finance",
+            "observation_id": null,
+            "notification_id": null,
+            "published_at": "2026-09-14T00:32:01+00:00",
+            "source_url": "https://finance.yahoo.com/m/75964091-0d57-3879-b55e-2c11b3225642/dow-jones-futures-fall%2C-techs.html?.tsrc=rss",
+            "source_domain": "finance.yahoo.com"
+          }
+        ],
+        "quote_evidence": [
+          {
+            "ticker": "NASDAQ",
+            "name": "那斯達克綜合指數",
+            "market": "us",
+            "instrument_id": "us:nasdaq",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 26333.04,
+            "change": 251.32,
+            "change_percent": 0.96,
+            "currency": "點",
+            "quote_date": "2026-09-11",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:08.593687+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^IXIC",
+            "cross_checked": false,
+            "stale_used": false
+          },
+          {
+            "ticker": "SOX",
+            "name": "費城半導體指數",
+            "market": "us",
+            "instrument_id": "us:sox",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 11824.0,
+            "change": 209.83,
+            "change_percent": 1.81,
+            "currency": "點",
+            "quote_date": "2026-09-11",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:08.833533+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^SOX",
+            "cross_checked": false,
+            "stale_used": false
+          }
+        ],
+        "event_key": "evt-fbc91044273e61470f5f626b",
+        "canonical_event_key": "evt-fbc91044273e61470f5f626b",
+        "source_event_keys": [
+          "evt-fbc91044273e61470f5f626b"
+        ],
+        "source": "Yahoo Finance",
+        "published_at": "2026-09-14T00:32:01+00:00",
+        "notification_status": "eligible",
+        "prstk_risk_level": "R2",
+        "vendor_importance": null,
+        "raw_title": "Dow Jones Futures Fall, Techs Tumble As Anthropic Leads Call For AI Slowdown; Fed Meeting Ahead",
+        "normalized_fact": "Dow Jones Futures Fall, Techs Tumble As Anthropic Leads Call For AI Slowdown; Fed Meeting Ahead。",
+        "linked_markets": [],
+        "linked_market_details": [],
+        "market_linkage_status": "unresolved",
+        "actor_role": "",
+        "actor_name": "",
+        "headline_actor": "",
+        "byline_removed": false,
+        "publisher_removed": false,
+        "normalization_ruleset": "market_headline_normalizer_v1",
+        "normalization_complete": true,
+        "official_confirmed": false,
+        "market_sync_confirmed": false
+      },
+      {
+        "title": "能源、航運與地緣風險",
+        "market_topic": "energy_geopolitics",
+        "what_happened": "中東局勢緊張加劇供應風險 布蘭特原油單週飆漲逾8%。",
+        "why_important": "已核對公開來源；請查看完整內容與市場後續反應。",
+        "market_implication": "",
+        "stock_observation": "",
+        "detail_eligible": false,
+        "evidence": [
+          {
+            "source": "Yahoo Taiwan Finance",
+            "source_key": "Yahoo Taiwan Finance",
+            "observation_id": null,
+            "notification_id": null,
+            "published_at": "2026-09-13T23:46:07+00:00",
+            "source_url": "https://tw.stock.yahoo.com/news/%E4%B8%AD%E6%9D%B1%E5%B1%80%E5%8B%A2%E7%B7%8A%E5%BC%B5%E5%8A%A0%E5%8A%87%E4%BE%9B%E6%87%89%E9%A2%A8%E9%9A%AA-%E5%B8%83%E8%98%AD%E7%89%B9%E5%8E%9F%E6%B2%B9%E5%96%AE%E9%80%B1%E9%A3%86%E6%BC%B2%E9%80%BE8-234607279.html",
+            "source_domain": "tw.stock.yahoo.com"
+          }
+        ],
+        "source_evidence": [
+          {
+            "source": "Yahoo Taiwan Finance",
+            "source_key": "Yahoo Taiwan Finance",
+            "observation_id": null,
+            "notification_id": null,
+            "published_at": "2026-09-13T23:46:07+00:00",
+            "source_url": "https://tw.stock.yahoo.com/news/%E4%B8%AD%E6%9D%B1%E5%B1%80%E5%8B%A2%E7%B7%8A%E5%BC%B5%E5%8A%A0%E5%8A%87%E4%BE%9B%E6%87%89%E9%A2%A8%E9%9A%AA-%E5%B8%83%E8%98%AD%E7%89%B9%E5%8E%9F%E6%B2%B9%E5%96%AE%E9%80%B1%E9%A3%86%E6%BC%B2%E9%80%BE8-234607279.html",
+            "source_domain": "tw.stock.yahoo.com"
+          }
+        ],
+        "quote_evidence": [
+          {
+            "ticker": "TAIEX",
+            "name": "臺灣加權指數",
+            "market": "taiwan",
+            "instrument_id": "twse:taiex",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 46184.85,
+            "change": -755.64,
+            "change_percent": -1.61,
+            "currency": "點",
+            "quote_date": "2026-09-11",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:08.339510+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^TWII",
+            "cross_checked": false,
+            "stale_used": false
+          },
+          {
+            "ticker": "NASDAQ",
+            "name": "那斯達克綜合指數",
+            "market": "us",
+            "instrument_id": "us:nasdaq",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 26333.04,
+            "change": 251.32,
+            "change_percent": 0.96,
+            "currency": "點",
+            "quote_date": "2026-09-11",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:08.593687+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^IXIC",
+            "cross_checked": false,
+            "stale_used": false
+          },
+          {
+            "ticker": "SOX",
+            "name": "費城半導體指數",
+            "market": "us",
+            "instrument_id": "us:sox",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 11824.0,
+            "change": 209.83,
+            "change_percent": 1.81,
+            "currency": "點",
+            "quote_date": "2026-09-11",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:08.833533+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^SOX",
+            "cross_checked": false,
+            "stale_used": false
+          },
+          {
+            "ticker": "WTI",
+            "name": "WTI 原油",
+            "market": "global",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 102.79,
+            "change": 2.74,
+            "change_percent": 2.74,
+            "currency": "USD",
+            "quote_date": "2026-09-13",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:09.262413+00:00",
+            "freshness": "stale",
+            "data_status": "資料過期",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/CL=F",
+            "cross_checked": false,
+            "stale_used": false
+          },
+          {
+            "ticker": "BRENT",
+            "name": "Brent 原油",
+            "market": "global",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 107.72,
+            "change": 3.11,
+            "change_percent": 2.97,
+            "currency": "USD",
+            "quote_date": "2026-09-13",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:09.179574+00:00",
+            "freshness": "stale",
+            "data_status": "資料過期",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/BZ=F",
+            "cross_checked": false,
+            "stale_used": false
+          },
+          {
+            "ticker": "GOLD",
+            "name": "黃金期貨",
+            "market": "global",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 4377.6,
+            "change": 11.4,
+            "change_percent": 0.26,
+            "currency": "USD",
+            "quote_date": "2026-09-13",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:09.357479+00:00",
+            "freshness": "stale",
+            "data_status": "資料過期",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/GC=F",
+            "cross_checked": false,
+            "stale_used": false
+          }
+        ],
+        "event_key": "evt-78c4b7ce14447fdbcc63a2ed",
+        "canonical_event_key": "evt-78c4b7ce14447fdbcc63a2ed",
+        "source_event_keys": [
+          "evt-78c4b7ce14447fdbcc63a2ed"
+        ],
+        "source": "Yahoo Taiwan Finance",
+        "published_at": "2026-09-13T23:46:07+00:00",
+        "notification_status": "eligible",
+        "prstk_risk_level": "R2",
+        "vendor_importance": null,
+        "raw_title": "中東局勢緊張加劇供應風險 布蘭特原油單週飆漲逾8%",
+        "normalized_fact": "中東局勢緊張加劇供應風險 布蘭特原油單週飆漲逾8%。",
+        "linked_markets": [
+          "TAIEX",
+          "TXF"
+        ],
+        "linked_market_details": [
+          {
+            "ticker": "TAIEX",
+            "role": "market_index",
+            "match_basis": "explicit_market",
+            "matched_entity": "",
+            "market": "taiwan",
+            "quote_available": true,
+            "market_sync_confirmed": false
+          },
+          {
+            "ticker": "TXF",
+            "role": "futures",
+            "match_basis": "taiwan_market_baseline",
+            "matched_entity": "",
+            "market": "taiwan",
+            "quote_available": false,
+            "market_sync_confirmed": false
+          }
+        ],
+        "market_linkage_status": "resolved",
+        "actor_role": "",
+        "actor_name": "",
+        "headline_actor": "",
+        "byline_removed": false,
+        "publisher_removed": false,
+        "normalization_ruleset": "market_headline_normalizer_v1",
+        "normalization_complete": true,
+        "official_confirmed": false,
+        "market_sync_confirmed": false
+      }
+    ],
+    "primary_theme": {
+      "title": "利率、通膨、美元與匯率",
+      "market_topic": "rates_fx",
+      "what_happened": "哈塞特力挺川普5,000美元發錢計畫，暗示若Fed升息川普勢將表態。",
+      "why_important": "利率預期可能影響美元、美債殖利率與成長股評價，因此需核對後續價格反應。",
+      "market_implication": "可能連動 Nasdaq、費半、美元與美債；台股科技開盤反應應以實際報價確認。",
+      "stock_observation": "觀察利率預期變化後，科技與半導體權值是否同步或出現分歧。",
+      "detail_eligible": true,
+      "evidence": [
+        {
+          "source": "Yahoo Taiwan Finance",
+          "source_key": "Yahoo Taiwan Finance",
+          "observation_id": null,
+          "notification_id": null,
+          "published_at": "2026-09-13T23:48:42+00:00",
+          "source_url": "https://tw.stock.yahoo.com/news/%E5%93%88%E5%A1%9E%E7%89%B9%E5%8A%9B%E6%8C%BA%E5%B7%9D%E6%99%AE5-000%E7%BE%8E%E5%85%83%E7%99%BC%E9%8C%A2%E8%A8%88%E7%95%AB-%E6%9A%97%E7%A4%BA%E8%8B%A5fed%E5%8D%87%E6%81%AF%E5%B7%9D%E6%99%AE%E5%8B%A2%E5%B0%87%E8%A1%A8%E6%85%8B-234842681.html",
+          "source_domain": "tw.stock.yahoo.com"
+        }
+      ],
+      "source_evidence": [
+        {
+          "source": "Yahoo Taiwan Finance",
+          "source_key": "Yahoo Taiwan Finance",
+          "observation_id": null,
+          "notification_id": null,
+          "published_at": "2026-09-13T23:48:42+00:00",
+          "source_url": "https://tw.stock.yahoo.com/news/%E5%93%88%E5%A1%9E%E7%89%B9%E5%8A%9B%E6%8C%BA%E5%B7%9D%E6%99%AE5-000%E7%BE%8E%E5%85%83%E7%99%BC%E9%8C%A2%E8%A8%88%E7%95%AB-%E6%9A%97%E7%A4%BA%E8%8B%A5fed%E5%8D%87%E6%81%AF%E5%B7%9D%E6%99%AE%E5%8B%A2%E5%B0%87%E8%A1%A8%E6%85%8B-234842681.html",
+          "source_domain": "tw.stock.yahoo.com"
+        }
+      ],
+      "quote_evidence": [
+        {
+          "ticker": "TAIEX",
+          "name": "臺灣加權指數",
+          "market": "taiwan",
+          "instrument_id": "twse:taiex",
+          "instrument_master_id": "instrument-394114e9c8075a73",
+          "price": 46184.85,
+          "change": -755.64,
+          "change_percent": -1.61,
+          "currency": "點",
+          "quote_date": "2026-09-11",
+          "quote_time": null,
+          "fetched_at": "2026-09-14T00:46:08.339510+00:00",
+          "freshness": "recent_close",
+          "data_status": "最近收盤",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public daily quote",
+          "source_domain": "finance.yahoo.com",
+          "source_url": "https://finance.yahoo.com/quote/^TWII",
+          "cross_checked": false,
+          "stale_used": false
+        },
+        {
+          "ticker": "NASDAQ",
+          "name": "那斯達克綜合指數",
+          "market": "us",
+          "instrument_id": "us:nasdaq",
+          "instrument_master_id": "instrument-394114e9c8075a73",
+          "price": 26333.04,
+          "change": 251.32,
+          "change_percent": 0.96,
+          "currency": "點",
+          "quote_date": "2026-09-11",
+          "quote_time": null,
+          "fetched_at": "2026-09-14T00:46:08.593687+00:00",
+          "freshness": "recent_close",
+          "data_status": "最近收盤",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public daily quote",
+          "source_domain": "finance.yahoo.com",
+          "source_url": "https://finance.yahoo.com/quote/^IXIC",
+          "cross_checked": false,
+          "stale_used": false
+        },
+        {
+          "ticker": "SOX",
+          "name": "費城半導體指數",
+          "market": "us",
+          "instrument_id": "us:sox",
+          "instrument_master_id": "instrument-394114e9c8075a73",
+          "price": 11824.0,
+          "change": 209.83,
+          "change_percent": 1.81,
+          "currency": "點",
+          "quote_date": "2026-09-11",
+          "quote_time": null,
+          "fetched_at": "2026-09-14T00:46:08.833533+00:00",
+          "freshness": "recent_close",
+          "data_status": "最近收盤",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public daily quote",
+          "source_domain": "finance.yahoo.com",
+          "source_url": "https://finance.yahoo.com/quote/^SOX",
+          "cross_checked": false,
+          "stale_used": false
+        }
+      ],
+      "event_key": "evt-82f69de9e896e3bb2f506b6f",
+      "canonical_event_key": "evt-82f69de9e896e3bb2f506b6f",
+      "source_event_keys": [
+        "evt-82f69de9e896e3bb2f506b6f"
+      ],
+      "source": "Yahoo Taiwan Finance",
+      "published_at": "2026-09-13T23:48:42+00:00",
+      "notification_status": "eligible",
+      "prstk_risk_level": "R2",
+      "vendor_importance": null,
+      "raw_title": "哈塞特力挺川普5,000美元發錢計畫，暗示若Fed升息川普勢將表態",
+      "normalized_fact": "哈塞特力挺川普5,000美元發錢計畫，暗示若Fed升息川普勢將表態。",
+      "linked_markets": [
+        "TAIEX",
+        "TXF"
+      ],
+      "linked_market_details": [
+        {
+          "ticker": "TAIEX",
+          "role": "market_index",
+          "match_basis": "explicit_market",
+          "matched_entity": "",
+          "market": "taiwan",
+          "quote_available": true,
+          "market_sync_confirmed": false
+        },
+        {
+          "ticker": "TXF",
+          "role": "futures",
+          "match_basis": "taiwan_market_baseline",
+          "matched_entity": "",
+          "market": "taiwan",
+          "quote_available": false,
+          "market_sync_confirmed": false
+        }
+      ],
+      "market_linkage_status": "resolved",
+      "actor_role": "",
+      "actor_name": "",
+      "headline_actor": "",
+      "byline_removed": false,
+      "publisher_removed": false,
+      "normalization_ruleset": "market_headline_normalizer_v1",
+      "normalization_complete": true,
+      "official_confirmed": false,
+      "market_sync_confirmed": false
+    },
+    "secondary_signals": [
+      {
+        "canonical_event_key": "evt-fbc91044273e61470f5f626b",
+        "event_key": "evt-fbc91044273e61470f5f626b",
+        "title": "美國與全球股市",
+        "what_happened": "Dow Jones Futures Fall, Techs Tumble As Anthropic Leads Call For AI Slowdown; Fed Meeting Ahead。",
+        "public_short_message": "Dow Jones Futures Fall, Techs Tumble As Anthropic Leads Call For AI Slowdown; Fed Meeting Ahead。",
+        "source": "Yahoo Finance",
+        "published_at": "2026-09-14T00:32:01+00:00",
+        "prstk_risk_level": "R2",
+        "notification_status": "eligible",
+        "vendor_importance": null,
+        "detail_eligible": false,
+        "official_confirmed": false,
+        "market_sync_confirmed": false,
+        "source_event_keys": [
+          "evt-fbc91044273e61470f5f626b"
+        ],
+        "rank_reason": "重要度／核對狀態／發布時間／穩定事件鍵"
+      },
+      {
+        "canonical_event_key": "evt-78c4b7ce14447fdbcc63a2ed",
+        "event_key": "evt-78c4b7ce14447fdbcc63a2ed",
+        "title": "能源、航運與地緣風險",
+        "what_happened": "中東局勢緊張加劇供應風險 布蘭特原油單週飆漲逾8%。",
+        "public_short_message": "中東局勢緊張加劇供應風險 布蘭特原油單週飆漲逾8%。",
+        "source": "Yahoo Taiwan Finance",
+        "published_at": "2026-09-13T23:46:07+00:00",
+        "prstk_risk_level": "R2",
+        "notification_status": "eligible",
+        "vendor_importance": null,
+        "detail_eligible": false,
+        "official_confirmed": false,
+        "market_sync_confirmed": false,
+        "source_event_keys": [
+          "evt-78c4b7ce14447fdbcc63a2ed"
+        ],
+        "rank_reason": "重要度／核對狀態／發布時間／穩定事件鍵"
+      },
+      {
+        "canonical_event_key": "event-d13b94bebf6f6212aa5b",
+        "event_key": "event-d13b94bebf6f6212aa5b",
+        "title": "台積電、半導體與 AI 供應鏈",
+        "what_happened": "黃仁勳釋AI基建強勁訊號，供應瓶頸壓過需求疑慮。",
+        "public_short_message": "黃仁勳釋AI基建強勁訊號，供應瓶頸壓過需求疑慮。",
+        "source": "Yahoo Taiwan Finance",
+        "published_at": "2026-09-14T00:37:39+00:00",
+        "prstk_risk_level": null,
+        "notification_status": null,
+        "vendor_importance": null,
+        "detail_eligible": false,
+        "official_confirmed": false,
+        "market_sync_confirmed": false,
+        "source_event_keys": [
+          "event-d13b94bebf6f6212aa5b"
+        ],
+        "rank_reason": "重要度／核對狀態／發布時間／穩定事件鍵"
+      }
+    ],
+    "displayed_event_keys": [
+      "evt-82f69de9e896e3bb2f506b6f",
+      "evt-fbc91044273e61470f5f626b",
+      "evt-78c4b7ce14447fdbcc63a2ed",
+      "event-d13b94bebf6f6212aa5b"
+    ],
+    "observations": [
+      {
+        "title": "台股總經",
+        "event": "台指 46,184.85 點（-1.61%）；櫃買指數 378.44 點（-7.02%）。台股風險：恐慌 39.0；VIX 27.52。",
+        "importance": "加權指數代表大型權值股，櫃買指數較反映中小型股；同步代表盤面廣度較一致，分歧則要保留產業結構差異。",
+        "market_impact": "加權指數與櫃買指數同為下跌，可作為同向價格確認。",
+        "watch": "技術觀察：加權指數近20日區間 44,719.35–47,326.27；近60日 39,933.30–47,741.51，目前位於20日區間中段（區間位置 56%），資料截至 2026-09-11。 櫃買指數近20日區間 378.44–453.50；近25日 378.44–453.50，目前接近20日支撐區（區間位置 0%），資料截至 2026-07-17。 後續核對台指期是否與現貨收斂、成交量是否放大。",
+        "source_note": "資料來源：Yahoo | 2026-09-11；Yahoo | 2026-07-17"
+      },
+      {
+        "title": "台積電／半導體",
+        "event": "台積電 2,410.00 TWD（-1.63%）；費半 11,824.00 點（+1.81%）；Nasdaq 26,333.04 點（+0.96%）。",
+        "importance": "台積電、費半與 Nasdaq 同向時，較支持半導體／成長股風險偏好的共同變化；若只有單一市場變動，不足以推論產業趨勢。",
+        "market_impact": "費半上漲、台積電下跌，呈現分歧，暫不推論跨市場因果。 可能連動 Nasdaq、費半、美元與美債；台股科技開盤反應應以實際報價確認。",
+        "watch": "技術觀察：台積電近20日區間 2,350.00–2,470.00；近60日 2,200.00–2,510.00，目前位於20日區間中段（區間位置 50%），資料截至 2026-09-11。 費半近20日區間 11,288.61–12,621.00；近60日 10,447.49–14,634.72，目前位於20日區間中段（區間位置 40%），資料截至 2026-09-11。 後續核對台積電、AI 供應鏈財報展望與費半是否延續。",
+        "source_note": "資料來源：Yahoo | 2026-09-11"
+      },
+      {
+        "title": "科技產業",
+        "event": "Nasdaq 26,333.04 點（+0.96%）；費半 11,824.00 點（+1.81%）；日經225 62,927.21 點（-1.69%）；韓國綜合 6,909.91 點（-1.76%）。",
+        "importance": "美日韓科技市場同向時，較能反映區域風險偏好；若分歧，可能由匯率、產業權重或本地政策造成，不直接視為全球趨勢。",
+        "market_impact": "Nasdaq上漲、韓國綜合下跌，呈現分歧，暫不推論跨市場因果。",
+        "watch": "技術觀察：Nasdaq近20日區間 25,980.19–26,729.16；近60日 24,442.94–26,803.03，目前位於20日區間中段（區間位置 47%），資料截至 2026-09-11。 韓國綜合近20日區間 6,471.17–7,051.64；近60日 5,593.56–9,114.55，目前接近20日壓力區（區間位置 76%），資料截至 2026-09-11。 後續觀察日韓下一交易時段與台股電子權值是否延續或分歧。",
+        "source_note": "資料來源：Yahoo | 2026-09-11；Yahoo | 2026-09-14"
+      },
+      {
+        "title": "利率／匯率／黃金能源",
+        "event": "美元指數 99.18 點（+0.06%）；美國10年債殖利率 4.97 %（+0.61%）；美元兌台幣 31.66 TWD（+0.06%）；黃金 4,377.60 USD（+0.26%）；油價 102.79 USD（+2.74%）。",
+        "importance": "利率、美元、黃金與能源共同反映通膨及避險需求；只有同時觀察方向與資料時間，才能分辨利率重估或單一商品波動。",
+        "market_impact": "美元指數與黃金同為上漲，可作為同向價格確認。",
+        "watch": "技術觀察：核對美元與黃金是否同向、油價是否突破近20日區間，並觀察科技指數與台股權值是否同步或分歧。",
+        "source_note": "資料來源：Yahoo | 2026-09-13；Yahoo | 2026-09-11"
+      },
+      {
+        "title": "加密市場",
+        "event": "BTC 76,841.22 USD（-0.56%）；ETH 2,484.85 USD（-1.63%）。",
+        "importance": "BTC／ETH 是高波動風險偏好的補充觀察；需搭配 Nasdaq、美元與流動性資料，不把單一幣價變動當成股市方向。",
+        "market_impact": "BTC與ETH同為下跌，可作為同向價格確認。",
+        "watch": "技術觀察：BTC近20日區間 76,568.12–81,271.74；近60日 62,763.32–81,271.74，目前接近20日支撐區（區間位置 5%），資料截至 2026-09-14。 ETH近20日區間 2,391.50–2,525.94；近60日 1,840.99–2,525.94，目前位於20日區間中段（區間位置 68%），資料截至 2026-09-14。 後續核對兩者是否同步、波動是否放大，以及科技股是否同向。",
+        "source_note": "資料來源：Binance | 2026-09-14 00:48"
+      },
+      {
+        "title": "風險提醒",
+        "event": "本次焦點：利率、通膨、美元與匯率。哈塞特力挺川普5,000美元發錢計畫，暗示若Fed升息川普勢將表態。 美股風險：中立／偏恐慌 33.3；VIX 15.84（-11.21%）。",
+        "importance": "利率預期可能影響美元、美債殖利率與成長股評價，因此需核對後續價格反應。",
+        "market_impact": "可能連動 Nasdaq、費半、美元與美債；台股科技開盤反應應以實際報價確認。",
+        "watch": "觀察利率預期變化後，科技與半導體權值是否同步或出現分歧。"
+      }
+    ],
+    "morning_analysis": {
+      "ruleset": "morning_analysis_evidence_v1",
+      "evidence_as_of": null,
+      "market_session_state": "",
+      "overall_stance": "divergent",
+      "confidence": "medium",
+      "sections": [
+        {
+          "title": "今日風險判讀",
+          "facts": [
+            "市場狀態：分歧；信心：medium。",
+            "行情比較：最近收盤台指-1.61%、最近收盤櫃買-7.02%、最近收盤費半+1.81%。",
+            "美股風險情緒：中立／偏恐慌。",
+            "主要事件：哈塞特力挺川普5,000美元發錢計畫，暗示若Fed升息川普勢將表態。"
+          ],
+          "facts_structured": [
+            {
+              "text": "市場狀態：分歧；信心：medium。"
+            },
+            {
+              "text": "行情比較：最近收盤台指-1.61%、最近收盤櫃買-7.02%、最近收盤費半+1.81%。"
+            },
+            {
+              "text": "美股風險情緒：中立／偏恐慌。"
+            },
+            {
+              "text": "主要事件：哈塞特力挺川普5,000美元發錢計畫，暗示若Fed升息川普勢將表態。"
+            }
+          ],
+          "why_it_matters": "新聞只用於說明關注主因；市場方向仍須由至少兩個獨立價格面向核對。",
+          "transmission": "台股核心指數偏弱；行情與事件若未同步，維持待確認，不推論因果。",
+          "market_observation": "目前判讀為分歧，證據完整度為medium。",
+          "next_catalyst": "本輪未取得明確下一項催化劑資料，持續等待官方事件或價格核對。",
+          "evidence": [
+            {
+              "source": "Yahoo Taiwan Finance",
+              "source_key": "Yahoo Taiwan Finance",
+              "observation_id": null,
+              "notification_id": null,
+              "published_at": "2026-09-13T23:48:42+00:00",
+              "source_url": "https://tw.stock.yahoo.com/news/%E5%93%88%E5%A1%9E%E7%89%B9%E5%8A%9B%E6%8C%BA%E5%B7%9D%E6%99%AE5-000%E7%BE%8E%E5%85%83%E7%99%BC%E9%8C%A2%E8%A8%88%E7%95%AB-%E6%9A%97%E7%A4%BA%E8%8B%A5fed%E5%8D%87%E6%81%AF%E5%B7%9D%E6%99%AE%E5%8B%A2%E5%B0%87%E8%A1%A8%E6%85%8B-234842681.html",
+              "source_domain": "tw.stock.yahoo.com"
+            },
+            {
+              "ticker": "2330",
+              "name": "台積電",
+              "price": 2410.0,
+              "change": -40.0,
+              "change_percent": -1.63,
+              "currency": "TWD",
+              "freshness": "recent_close",
+              "quote_date": "2026-09-11",
+              "source": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/2330.TW"
+            },
+            {
+              "ticker": "TAIEX",
+              "name": "臺灣加權指數",
+              "price": 46184.85,
+              "change": -755.64,
+              "change_percent": -1.61,
+              "currency": "點",
+              "freshness": "recent_close",
+              "quote_date": "2026-09-11",
+              "source": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^TWII"
+            }
+          ],
+          "freshness": "本輪資料",
+          "confidence": "high"
+        },
+        {
+          "title": "台股總經與盤面",
+          "facts": [
+            "加權指數 46,184.85 點（-1.61%）",
+            "櫃買指數 378.44 點（-7.02%）"
+          ],
+          "facts_structured": [
+            {
+              "text": "加權指數 46,184.85 點（-1.61%）",
+              "quote": {
+                "ticker": "TAIEX",
+                "name": "臺灣加權指數",
+                "price": 46184.85,
+                "change": -755.64,
+                "change_percent": -1.61,
+                "currency": "點",
+                "freshness": "recent_close",
+                "quote_date": "2026-09-11",
+                "source": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/^TWII"
+              }
+            },
+            {
+              "text": "櫃買指數 378.44 點（-7.02%）",
+              "quote": {
+                "ticker": "TPEx",
+                "name": "臺灣櫃買指數",
+                "price": 378.44,
+                "change": -28.57,
+                "change_percent": -7.02,
+                "currency": "點",
+                "freshness": "stale",
+                "quote_date": "2026-07-17",
+                "source": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/^TWOII"
+              }
+            }
+          ],
+          "why_it_matters": "加權與櫃買可協助分辨權值股與中小型股是否同向；成交值、漲跌家數與法人資料僅採官方值。",
+          "transmission": "台股盤面需與美元兌台幣及外圍科技股交叉觀察，單一指數不足以形成市場結論。",
+          "market_observation": "加權指數 46,184.85 點（-1.61%）；櫃買指數 378.44 點（-7.02%）",
+          "next_catalyst": "本輪未取得可核對的成交量、廣度或三大法人下一項資料。",
+          "evidence": [
+            {
+              "ticker": "TAIEX",
+              "name": "臺灣加權指數",
+              "price": 46184.85,
+              "change": -755.64,
+              "change_percent": -1.61,
+              "currency": "點",
+              "freshness": "recent_close",
+              "quote_date": "2026-09-11",
+              "source": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^TWII"
+            },
+            {
+              "ticker": "TPEx",
+              "name": "臺灣櫃買指數",
+              "price": 378.44,
+              "change": -28.57,
+              "change_percent": -7.02,
+              "currency": "點",
+              "freshness": "stale",
+              "quote_date": "2026-07-17",
+              "source": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^TWOII"
+            }
+          ],
+          "freshness": "本輪資料",
+          "confidence": "medium"
+        },
+        {
+          "title": "台積電／半導體與 AI",
+          "facts": [
+            "台積電 2,410.00 TWD（-1.63%）",
+            "費半 11,824.00 點（+1.81%）",
+            "Nasdaq 26,333.04 點（+0.96%）"
+          ],
+          "facts_structured": [
+            {
+              "text": "台積電 2,410.00 TWD（-1.63%）",
+              "quote": {
+                "ticker": "2330",
+                "name": "台積電",
+                "price": 2410.0,
+                "change": -40.0,
+                "change_percent": -1.63,
+                "currency": "TWD",
+                "freshness": "recent_close",
+                "quote_date": "2026-09-11",
+                "source": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/2330.TW"
+              }
+            },
+            {
+              "text": "費半 11,824.00 點（+1.81%）",
+              "quote": {
+                "ticker": "SOX",
+                "name": "費城半導體指數",
+                "price": 11824.0,
+                "change": 209.83,
+                "change_percent": 1.81,
+                "currency": "點",
+                "freshness": "recent_close",
+                "quote_date": "2026-09-11",
+                "source": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/^SOX"
+              }
+            },
+            {
+              "text": "Nasdaq 26,333.04 點（+0.96%）",
+              "quote": {
+                "ticker": "NASDAQ",
+                "name": "那斯達克綜合指數",
+                "price": 26333.04,
+                "change": 251.32,
+                "change_percent": 0.96,
+                "currency": "點",
+                "freshness": "recent_close",
+                "quote_date": "2026-09-11",
+                "source": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/^IXIC"
+              }
+            }
+          ],
+          "why_it_matters": "台積電、費半與 Nasdaq 同步時，才較能支持科技風險偏好的共同變化。",
+          "transmission": "若台積電、費半與 Nasdaq 方向不一致，標示分歧，題材不能取代價格確認。",
+          "market_observation": "台積電 2,410.00 TWD（-1.63%）；費半 11,824.00 點（+1.81%）；Nasdaq 26,333.04 點（+0.96%）",
+          "next_catalyst": "本輪未取得可核對的半導體或 AI 產業催化劑資料。",
+          "evidence": [
+            {
+              "ticker": "2330",
+              "name": "台積電",
+              "price": 2410.0,
+              "change": -40.0,
+              "change_percent": -1.63,
+              "currency": "TWD",
+              "freshness": "recent_close",
+              "quote_date": "2026-09-11",
+              "source": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/2330.TW"
+            },
+            {
+              "ticker": "SOX",
+              "name": "費城半導體指數",
+              "price": 11824.0,
+              "change": 209.83,
+              "change_percent": 1.81,
+              "currency": "點",
+              "freshness": "recent_close",
+              "quote_date": "2026-09-11",
+              "source": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^SOX"
+            },
+            {
+              "ticker": "NASDAQ",
+              "name": "那斯達克綜合指數",
+              "price": 26333.04,
+              "change": 251.32,
+              "change_percent": 0.96,
+              "currency": "點",
+              "freshness": "recent_close",
+              "quote_date": "2026-09-11",
+              "source": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^IXIC"
+            }
+          ],
+          "freshness": "本輪資料",
+          "confidence": "high"
+        },
+        {
+          "title": "利率、匯率與外部風險",
+          "facts": [
+            "美國10年債殖利率 4.97 %（+0.61%）",
+            "美元指數 99.18 點（+0.06%）",
+            "美元兌台幣 31.66 TWD（+0.06%）",
+            "WTI油價 102.79 USD（+2.74%）",
+            "Brent油價 107.72 USD（+2.97%）",
+            "黃金 4,377.60 USD（+0.26%）"
+          ],
+          "facts_structured": [
+            {
+              "text": "美國10年債殖利率 4.97 %（+0.61%）",
+              "quote": {
+                "ticker": "US10Y",
+                "name": "美國10年債殖利率",
+                "price": 4.97,
+                "change": 0.03,
+                "change_percent": 0.61,
+                "currency": "%",
+                "freshness": "stale",
+                "quote_date": "2026-09-11",
+                "source": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/^TNX"
+              }
+            },
+            {
+              "text": "美元指數 99.18 點（+0.06%）",
+              "quote": {
+                "ticker": "DXY",
+                "name": "美元指數",
+                "price": 99.18,
+                "change": 0.06,
+                "change_percent": 0.06,
+                "currency": "點",
+                "freshness": "stale",
+                "quote_date": "2026-09-13",
+                "source": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/DX-Y.NYB"
+              }
+            },
+            {
+              "text": "美元兌台幣 31.66 TWD（+0.06%）",
+              "quote": {
+                "ticker": "USD/TWD",
+                "name": "美元兌台幣",
+                "price": 31.66,
+                "change": 0.02,
+                "change_percent": 0.06,
+                "currency": "TWD",
+                "freshness": "recent_close",
+                "quote_date": "2026-09-14",
+                "source": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/TWD=X"
+              }
+            },
+            {
+              "text": "WTI油價 102.79 USD（+2.74%）",
+              "quote": {
+                "ticker": "WTI",
+                "name": "WTI 原油",
+                "price": 102.79,
+                "change": 2.74,
+                "change_percent": 2.74,
+                "currency": "USD",
+                "freshness": "stale",
+                "quote_date": "2026-09-13",
+                "source": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/CL=F"
+              }
+            },
+            {
+              "text": "Brent油價 107.72 USD（+2.97%）",
+              "quote": {
+                "ticker": "BRENT",
+                "name": "Brent 原油",
+                "price": 107.72,
+                "change": 3.11,
+                "change_percent": 2.97,
+                "currency": "USD",
+                "freshness": "stale",
+                "quote_date": "2026-09-13",
+                "source": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/BZ=F"
+              }
+            },
+            {
+              "text": "黃金 4,377.60 USD（+0.26%）",
+              "quote": {
+                "ticker": "GOLD",
+                "name": "黃金期貨",
+                "price": 4377.6,
+                "change": 11.4,
+                "change_percent": 0.26,
+                "currency": "USD",
+                "freshness": "stale",
+                "quote_date": "2026-09-13",
+                "source": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/GC=F"
+              }
+            }
+          ],
+          "why_it_matters": "美債殖利率、美元、油價與黃金反映估值、通膨及避險條件，須以同次資料時間核對。",
+          "transmission": "利率或美元變化可能影響科技估值；能源與地緣事件只有在有價格或官方證據時才形成傳導觀察。",
+          "market_observation": "美國10年債殖利率 4.97 %（+0.61%）；美元指數 99.18 點（+0.06%）；美元兌台幣 31.66 TWD（+0.06%）；WTI油價 102.79 USD（+2.74%）；Brent油價 107.72 USD（+2.97%）；黃金 4,377.60 USD（+0.26%）",
+          "next_catalyst": "本輪未取得可核對的下一項總經或政策催化劑。",
+          "evidence": [
+            {
+              "ticker": "US10Y",
+              "name": "美國10年債殖利率",
+              "price": 4.97,
+              "change": 0.03,
+              "change_percent": 0.61,
+              "currency": "%",
+              "freshness": "stale",
+              "quote_date": "2026-09-11",
+              "source": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^TNX"
+            },
+            {
+              "ticker": "DXY",
+              "name": "美元指數",
+              "price": 99.18,
+              "change": 0.06,
+              "change_percent": 0.06,
+              "currency": "點",
+              "freshness": "stale",
+              "quote_date": "2026-09-13",
+              "source": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/DX-Y.NYB"
+            },
+            {
+              "ticker": "USD/TWD",
+              "name": "美元兌台幣",
+              "price": 31.66,
+              "change": 0.02,
+              "change_percent": 0.06,
+              "currency": "TWD",
+              "freshness": "recent_close",
+              "quote_date": "2026-09-14",
+              "source": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/TWD=X"
+            },
+            {
+              "ticker": "WTI",
+              "name": "WTI 原油",
+              "price": 102.79,
+              "change": 2.74,
+              "change_percent": 2.74,
+              "currency": "USD",
+              "freshness": "stale",
+              "quote_date": "2026-09-13",
+              "source": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/CL=F"
+            },
+            {
+              "ticker": "BRENT",
+              "name": "Brent 原油",
+              "price": 107.72,
+              "change": 3.11,
+              "change_percent": 2.97,
+              "currency": "USD",
+              "freshness": "stale",
+              "quote_date": "2026-09-13",
+              "source": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/BZ=F"
+            },
+            {
+              "ticker": "GOLD",
+              "name": "黃金期貨",
+              "price": 4377.6,
+              "change": 11.4,
+              "change_percent": 0.26,
+              "currency": "USD",
+              "freshness": "stale",
+              "quote_date": "2026-09-13",
+              "source": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/GC=F"
+            }
+          ],
+          "freshness": "本輪資料",
+          "confidence": "high"
+        }
+      ],
+      "missing_evidence": [
+        "成交值",
+        "市場廣度",
+        "三大法人",
+        "下一項已知總經或政策催化劑"
+      ],
+      "system_analysis": {
+        "data_gaps": [
+          "成交值",
+          "市場廣度",
+          "三大法人"
+        ],
+        "note": "公開卡片只呈現已核對事實；資料缺口保留於系統分析資料。",
+        "schedule_decisions": [
+          {
+            "anchor_key": "us:2026-09-13:us_premarket",
+            "scheduled_slot": "us_premarket",
+            "effective_market_phase": "us_premarket",
+            "slot_date": "2026-09-13",
+            "scheduled_for_at": "",
+            "dispatch_unix": "",
+            "dispatch_trace_id": "",
+            "arrival_at": "2026-09-13T21:15:21.954470+08:00",
+            "run_started_at": "2026-09-13T21:15:21.954470+08:00",
+            "production_started_at": "2026-09-13T13:15:22.192264+00:00",
+            "completed_at": "2026-09-13T13:16:47.948607+00:00",
+            "delay_seconds": 0,
+            "trigger_kind": "workflow_dispatch",
+            "schedule_contract_version": "3",
+            "time_zone": "Asia/Taipei",
+            "contract_status": "manual_compatibility",
+            "production_status": "ready",
+            "comparison_notification_key": "scheduled-anchor:us:2026-09-11:us_premarket",
+            "material_changes": [
+              "decision_fingerprint_changed"
+            ],
+            "delivery_eligible": false,
+            "notification_requested": false,
+            "delivery_policy": "scheduled_anchor",
+            "notification_status": "market_closed",
+            "suppression_reason": "closed_market_publish_only",
+            "decision_fingerprint": "a799e40d2d568aeb66ba8d2d0b1f3fd63f0bed82ece694d3e615e1927fd2636a",
+            "evidence_fingerprint": "6924c04bcfa8b4b55e4eb1c2361453ef982b97f0765b2c11b38dc817c4d33f3d"
+          },
+          {
+            "anchor_key": "taiwan:2026-09-14:morning",
+            "scheduled_slot": "morning",
+            "effective_market_phase": "morning",
+            "slot_date": "2026-09-14",
+            "scheduled_for_at": "2026-09-14T06:00:00+08:00",
+            "dispatch_unix": "1789336751",
+            "dispatch_trace_id": "9e30ad94-25cc-4c52-98af-9a93dd1293ab",
+            "arrival_at": "2026-09-14T06:01:36.336873+08:00",
+            "run_started_at": "2026-09-14T06:01:36.336873+08:00",
+            "production_started_at": "2026-09-13T22:01:36.662109+00:00",
+            "completed_at": "2026-09-13T22:03:15.276468+00:00",
+            "delay_seconds": 96,
+            "trigger_kind": "repository_dispatch",
+            "schedule_contract_version": "3",
+            "time_zone": "Asia/Taipei",
+            "contract_status": "valid",
+            "production_status": "ready",
+            "comparison_notification_key": "scheduled-anchor:taiwan:2026-09-11:post_close",
+            "material_changes": [
+              "decision_fingerprint_changed"
+            ],
+            "delivery_eligible": true,
+            "notification_requested": true,
+            "delivery_policy": "scheduled_anchor",
+            "notification_status": "notification_candidate",
+            "suppression_reason": "",
+            "decision_fingerprint": "c02b4a4be9a94d7ab04cfe92e148f23c0bb7709ae195bbee807a0dc726cc234b",
+            "evidence_fingerprint": "6924c04bcfa8b4b55e4eb1c2361453ef982b97f0765b2c11b38dc817c4d33f3d"
+          },
+          {
+            "anchor_key": "taiwan:2026-09-14:morning",
+            "scheduled_slot": "morning",
+            "effective_market_phase": "morning",
+            "slot_date": "2026-09-14",
+            "scheduled_for_at": "2026-09-14T06:00:00+08:00",
+            "dispatch_unix": "",
+            "dispatch_trace_id": "",
+            "arrival_at": "2026-09-14T07:55:31.916941+08:00",
+            "run_started_at": "2026-09-14T07:55:31.916941+08:00",
+            "production_started_at": "2026-09-13T23:55:32.117451+00:00",
+            "completed_at": "2026-09-13T23:56:57.070385+00:00",
+            "delay_seconds": 6931,
+            "trigger_kind": "schedule",
+            "schedule_contract_version": "3",
+            "time_zone": "Asia/Taipei",
+            "contract_status": "valid",
+            "production_status": "ready",
+            "comparison_notification_key": "scheduled-anchor:taiwan:2026-09-14:morning",
+            "material_changes": [],
+            "delivery_eligible": false,
+            "notification_requested": true,
+            "delivery_policy": "scheduled_anchor",
+            "notification_status": "already_delivered",
+            "suppression_reason": "anchor_already_delivered",
+            "decision_fingerprint": "00135929f95e9d25ffe13451cbbd6746f74d755b1585e20476faf8ee731fbbaf",
+            "evidence_fingerprint": "fa6b3b44363983446bf0c1189f7d1da071813032f4614c7e4d72c53f17453b3b"
+          },
+          {
+            "anchor_key": "taiwan:2026-09-14:pre_open",
+            "scheduled_slot": "pre_open",
+            "effective_market_phase": "pre_open",
+            "slot_date": "2026-09-14",
+            "scheduled_for_at": "2026-09-14T08:45:00+08:00",
+            "dispatch_unix": "1789346644",
+            "dispatch_trace_id": "f481a8d4-2231-4d2e-aa37-aa808a237a92",
+            "arrival_at": "2026-09-14T08:46:05.582041+08:00",
+            "run_started_at": "2026-09-14T08:46:05.582041+08:00",
+            "production_started_at": "2026-09-14T00:46:05.892362+00:00",
+            "completed_at": "2026-09-14T00:48:21.799626+00:00",
+            "delay_seconds": 65,
+            "trigger_kind": "repository_dispatch",
+            "schedule_contract_version": "3",
+            "time_zone": "Asia/Taipei",
+            "contract_status": "valid",
+            "production_status": "ready",
+            "comparison_notification_key": "scheduled-anchor:taiwan:2026-09-14:morning",
+            "material_changes": [
+              "decision_fingerprint_changed"
+            ],
+            "delivery_eligible": true,
+            "notification_requested": true,
+            "delivery_policy": "scheduled_anchor",
+            "notification_status": "notification_candidate",
+            "suppression_reason": "",
+            "decision_fingerprint": "932cf140cdabd2d31aa27e7e8665a605995460c6ca8f4247cc30e8f9adbb06b2",
+            "evidence_fingerprint": "2b817b51c8b1b2c59e406ba5a4e1c00f50d610b6c822de5d0a756b43187097b1"
+          }
+        ]
+      },
+      "source_health_notes": [
+        "本分析只使用本輪已載入的公開行情、風險與合格事件。",
+        "缺少的資料不以固定模板或推測補足。"
+      ]
+    },
+    "evidence": [
+      {
+        "source": "Yahoo Taiwan Finance",
+        "source_key": "Yahoo Taiwan Finance",
+        "observation_id": null,
+        "notification_id": null,
+        "published_at": "2026-09-13T23:48:42+00:00",
+        "source_url": "https://tw.stock.yahoo.com/news/%E5%93%88%E5%A1%9E%E7%89%B9%E5%8A%9B%E6%8C%BA%E5%B7%9D%E6%99%AE5-000%E7%BE%8E%E5%85%83%E7%99%BC%E9%8C%A2%E8%A8%88%E7%95%AB-%E6%9A%97%E7%A4%BA%E8%8B%A5fed%E5%8D%87%E6%81%AF%E5%B7%9D%E6%99%AE%E5%8B%A2%E5%B0%87%E8%A1%A8%E6%85%8B-234842681.html",
+        "source_domain": "tw.stock.yahoo.com"
+      },
+      {
+        "source": "Yahoo Finance",
+        "source_key": "Yahoo Finance",
+        "observation_id": null,
+        "notification_id": null,
+        "published_at": "2026-09-14T00:32:01+00:00",
+        "source_url": "https://finance.yahoo.com/m/75964091-0d57-3879-b55e-2c11b3225642/dow-jones-futures-fall%2C-techs.html?.tsrc=rss",
+        "source_domain": "finance.yahoo.com"
+      },
+      {
+        "source": "Yahoo Taiwan Finance",
+        "source_key": "Yahoo Taiwan Finance",
+        "observation_id": null,
+        "notification_id": null,
+        "published_at": "2026-09-13T23:46:07+00:00",
+        "source_url": "https://tw.stock.yahoo.com/news/%E4%B8%AD%E6%9D%B1%E5%B1%80%E5%8B%A2%E7%B7%8A%E5%BC%B5%E5%8A%A0%E5%8A%87%E4%BE%9B%E6%87%89%E9%A2%A8%E9%9A%AA-%E5%B8%83%E8%98%AD%E7%89%B9%E5%8E%9F%E6%B2%B9%E5%96%AE%E9%80%B1%E9%A3%86%E6%BC%B2%E9%80%BE8-234607279.html",
+        "source_domain": "tw.stock.yahoo.com"
+      }
+    ],
+    "source_evidence": [
+      {
+        "source": "Yahoo Taiwan Finance",
+        "source_key": "Yahoo Taiwan Finance",
+        "observation_id": null,
+        "notification_id": null,
+        "published_at": "2026-09-13T23:48:42+00:00",
+        "source_url": "https://tw.stock.yahoo.com/news/%E5%93%88%E5%A1%9E%E7%89%B9%E5%8A%9B%E6%8C%BA%E5%B7%9D%E6%99%AE5-000%E7%BE%8E%E5%85%83%E7%99%BC%E9%8C%A2%E8%A8%88%E7%95%AB-%E6%9A%97%E7%A4%BA%E8%8B%A5fed%E5%8D%87%E6%81%AF%E5%B7%9D%E6%99%AE%E5%8B%A2%E5%B0%87%E8%A1%A8%E6%85%8B-234842681.html",
+        "source_domain": "tw.stock.yahoo.com"
+      }
+    ],
+    "quote_evidence": [
+      {
+        "ticker": "TAIEX",
+        "name": "臺灣加權指數",
+        "market": "taiwan",
+        "instrument_id": "twse:taiex",
+        "instrument_master_id": "instrument-394114e9c8075a73",
+        "price": 46184.85,
+        "change": -755.64,
+        "change_percent": -1.61,
+        "currency": "點",
+        "quote_date": "2026-09-11",
+        "quote_time": null,
+        "fetched_at": "2026-09-14T00:46:08.339510+00:00",
+        "freshness": "recent_close",
+        "data_status": "最近收盤",
+        "source_label": "Yahoo",
+        "quote_source": "Yahoo Finance public daily quote",
+        "source_domain": "finance.yahoo.com",
+        "source_url": "https://finance.yahoo.com/quote/^TWII",
+        "cross_checked": false,
+        "stale_used": false
+      },
+      {
+        "ticker": "NASDAQ",
+        "name": "那斯達克綜合指數",
+        "market": "us",
+        "instrument_id": "us:nasdaq",
+        "instrument_master_id": "instrument-394114e9c8075a73",
+        "price": 26333.04,
+        "change": 251.32,
+        "change_percent": 0.96,
+        "currency": "點",
+        "quote_date": "2026-09-11",
+        "quote_time": null,
+        "fetched_at": "2026-09-14T00:46:08.593687+00:00",
+        "freshness": "recent_close",
+        "data_status": "最近收盤",
+        "source_label": "Yahoo",
+        "quote_source": "Yahoo Finance public daily quote",
+        "source_domain": "finance.yahoo.com",
+        "source_url": "https://finance.yahoo.com/quote/^IXIC",
+        "cross_checked": false,
+        "stale_used": false
+      }
+    ],
+    "market_assessment": {
+      "stance": "divergent",
+      "stance_label": "分歧",
+      "confidence": "medium",
+      "market_scope": "台股",
+      "dominant_driver": "台股核心指數偏弱",
+      "dominant_driver_key": null,
+      "supporting_theme_keys": [
+        "evt-82f69de9e896e3bb2f506b6f",
+        "evt-fbc91044273e61470f5f626b",
+        "evt-78c4b7ce14447fdbcc63a2ed"
+      ],
+      "conflict_flags": [],
+      "summary_sections": {
+        "summary": "台股分歧",
+        "market_highlights": "最近收盤台指-1.61%、最近收盤櫃買-7.02%、最近收盤費半+1.81%",
+        "risk": "留意利率、美元與能源變化是否改變目前市場傳導。"
+      },
+      "evidence_as_of": "2026-09-14T00:48:19.639394+00:00",
+      "factor_count": 9,
+      "evidence_dimensions": [
+        "commodity",
+        "rates_fx",
+        "taiwan_equity",
+        "us_equity"
+      ],
+      "evidence_groups": {
+        "taiwan_core": [
+          -1
+        ],
+        "us_tech": [
+          1
+        ],
+        "us_broad": [
+          1
+        ],
+        "rates_fx": [
+          1
+        ],
+        "commodities": [
+          1
+        ]
+      },
+      "score": 0.074,
+      "factor_source": "quote_factors+market_regime",
+      "weekend_market": false,
+      "directional_quote_count": 8
+    },
+    "decision_fingerprint": "932cf140cdabd2d31aa27e7e8665a605995460c6ca8f4247cc30e8f9adbb06b2",
+    "decision_material": {},
+    "evidence_fingerprint": "2b817b51c8b1b2c59e406ba5a4e1c00f50d610b6c822de5d0a756b43187097b1",
+    "evidence_material": {
+      "quotes": [
+        {
+          "ticker": "DJIA",
+          "price": 52573.29,
+          "change_percent": 0.98,
+          "quote_date": "2026-09-11",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public daily quote"
+        },
+        {
+          "ticker": "DXY",
+          "price": 99.18,
+          "change_percent": 0.06,
+          "quote_date": "2026-09-13",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public daily quote"
+        },
+        {
+          "ticker": "GOLD",
+          "price": 4377.6,
+          "change_percent": 0.26,
+          "quote_date": "2026-09-13",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public daily quote"
+        },
+        {
+          "ticker": "NASDAQ",
+          "price": 26333.04,
+          "change_percent": 0.96,
+          "quote_date": "2026-09-11",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public daily quote"
+        },
+        {
+          "ticker": "SOX",
+          "price": 11824.0,
+          "change_percent": 1.81,
+          "quote_date": "2026-09-11",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public daily quote"
+        },
+        {
+          "ticker": "TAIEX",
+          "price": 46184.85,
+          "change_percent": -1.61,
+          "quote_date": "2026-09-11",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public daily quote"
+        },
+        {
+          "ticker": "TPEx",
+          "price": 378.44,
+          "change_percent": -7.02,
+          "quote_date": "2026-07-17",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public daily quote"
+        },
+        {
+          "ticker": "US10Y",
+          "price": 4.97,
+          "change_percent": 0.61,
+          "quote_date": "2026-09-11",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public daily quote"
+        },
+        {
+          "ticker": "WTI",
+          "price": 102.79,
+          "change_percent": 2.74,
+          "quote_date": "2026-09-13",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public daily quote"
+        }
+      ],
+      "events": [
+        {
+          "canonical_event_key": "evt-82f69de9e896e3bb2f506b6f",
+          "published_at": "2026-09-13T23:48:42+00:00",
+          "source_evidence": [
+            {
+              "source": "Yahoo Taiwan Finance",
+              "source_key": "Yahoo Taiwan Finance",
+              "observation_id": null,
+              "notification_id": null,
+              "published_at": "2026-09-13T23:48:42+00:00",
+              "source_url": "https://tw.stock.yahoo.com/news/%E5%93%88%E5%A1%9E%E7%89%B9%E5%8A%9B%E6%8C%BA%E5%B7%9D%E6%99%AE5-000%E7%BE%8E%E5%85%83%E7%99%BC%E9%8C%A2%E8%A8%88%E7%95%AB-%E6%9A%97%E7%A4%BA%E8%8B%A5fed%E5%8D%87%E6%81%AF%E5%B7%9D%E6%99%AE%E5%8B%A2%E5%B0%87%E8%A1%A8%E6%85%8B-234842681.html",
+              "source_domain": "tw.stock.yahoo.com"
+            }
+          ]
+        }
+      ]
+    },
+    "summary_facts": [
+      {
+        "key": "market_status",
+        "label": "市場狀態",
+        "value": "分歧",
+        "evidence_refs": [
+          {
+            "ticker": "TAIEX",
+            "name": "臺灣加權指數",
+            "market": "taiwan",
+            "instrument_id": "twse:taiex",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 46184.85,
+            "change": -755.64,
+            "change_percent": -1.61,
+            "currency": "點",
+            "quote_date": "2026-09-11",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:08.339510+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^TWII",
+            "cross_checked": false,
+            "stale_used": false
+          },
+          {
+            "ticker": "NASDAQ",
+            "name": "那斯達克綜合指數",
+            "market": "us",
+            "instrument_id": "us:nasdaq",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 26333.04,
+            "change": 251.32,
+            "change_percent": 0.96,
+            "currency": "點",
+            "quote_date": "2026-09-11",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:08.593687+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^IXIC",
+            "cross_checked": false,
+            "stale_used": false
+          }
+        ]
+      },
+      {
+        "key": "confidence",
+        "label": "信心",
+        "value": "中",
+        "raw_value": "medium",
+        "evidence_refs": [
+          {
+            "ticker": "TAIEX",
+            "name": "臺灣加權指數",
+            "market": "taiwan",
+            "instrument_id": "twse:taiex",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 46184.85,
+            "change": -755.64,
+            "change_percent": -1.61,
+            "currency": "點",
+            "quote_date": "2026-09-11",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:08.339510+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^TWII",
+            "cross_checked": false,
+            "stale_used": false
+          },
+          {
+            "ticker": "NASDAQ",
+            "name": "那斯達克綜合指數",
+            "market": "us",
+            "instrument_id": "us:nasdaq",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 26333.04,
+            "change": 251.32,
+            "change_percent": 0.96,
+            "currency": "點",
+            "quote_date": "2026-09-11",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:08.593687+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^IXIC",
+            "cross_checked": false,
+            "stale_used": false
+          }
+        ]
+      },
+      {
+        "key": "quote_comparison",
+        "label": "行情比較",
+        "value": "最近收盤台指-1.61%、最近收盤櫃買-7.02%、最近收盤費半+1.81%",
+        "evidence_refs": [
+          {
+            "ticker": "TAIEX",
+            "name": "臺灣加權指數",
+            "market": "taiwan",
+            "instrument_id": "twse:taiex",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 46184.85,
+            "change": -755.64,
+            "change_percent": -1.61,
+            "currency": "點",
+            "quote_date": "2026-09-11",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:08.339510+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^TWII",
+            "cross_checked": false,
+            "stale_used": false
+          },
+          {
+            "ticker": "NASDAQ",
+            "name": "那斯達克綜合指數",
+            "market": "us",
+            "instrument_id": "us:nasdaq",
+            "instrument_master_id": "instrument-394114e9c8075a73",
+            "price": 26333.04,
+            "change": 251.32,
+            "change_percent": 0.96,
+            "currency": "點",
+            "quote_date": "2026-09-11",
+            "quote_time": null,
+            "fetched_at": "2026-09-14T00:46:08.593687+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^IXIC",
+            "cross_checked": false,
+            "stale_used": false
+          }
+        ]
+      },
+      {
+        "key": "us_risk_sentiment",
+        "label": "美股風險情緒",
+        "value": "中立／偏恐慌",
+        "evidence_refs": []
+      },
+      {
+        "key": "primary_event",
+        "label": "主要事件",
+        "value": "哈塞特力挺川普5,000美元發錢計畫，暗示若Fed升息川普勢將表態。",
+        "evidence_refs": [
+          {
+            "source": "Yahoo Taiwan Finance",
+            "source_key": "Yahoo Taiwan Finance",
+            "observation_id": null,
+            "notification_id": null,
+            "published_at": "2026-09-13T23:48:42+00:00",
+            "source_url": "https://tw.stock.yahoo.com/news/%E5%93%88%E5%A1%9E%E7%89%B9%E5%8A%9B%E6%8C%BA%E5%B7%9D%E6%99%AE5-000%E7%BE%8E%E5%85%83%E7%99%BC%E9%8C%A2%E8%A8%88%E7%95%AB-%E6%9A%97%E7%A4%BA%E8%8B%A5fed%E5%8D%87%E6%81%AF%E5%B7%9D%E6%99%AE%E5%8B%A2%E5%B0%87%E8%A1%A8%E6%85%8B-234842681.html",
+            "source_domain": "tw.stock.yahoo.com"
+          }
+        ]
+      }
+    ],
+    "comparison_notification_key": "scheduled-anchor:taiwan:2026-09-14:morning",
+    "material_changes": [
+      "decision_fingerprint_changed"
+    ],
+    "delivery_eligible": true,
+    "suppression_reason": ""
+  },
+  "notification_status": null,
+  "notification_reason": "candidate_ready"
+}
