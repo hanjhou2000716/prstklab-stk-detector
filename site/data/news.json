@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "cf5e0d601b73b6b2",
-  "snapshot_id": "news-25c50084567f24d9",
+  "market_snapshot_id": "3089da674e9a19d2",
+  "snapshot_id": "news-9e73c626bacd8440",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -617,6 +617,94 @@
           "ranking_score": 125
         },
         {
+          "story_id": "news-17359d82e6736a7ec3b9",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "台灣為全球AI供應鏈核心 與美共推APEC「AI與能源相互促進任務小組」 - 自由財經",
+          "raw_title": "台灣為全球AI供應鏈核心 與美共推APEC「AI與能源相互促進任務小組」 - 自由財經",
+          "normalized_fact": "台灣為全球AI供應鏈核心 與美共推APECAI與能源相互促進任務小組 - 自由財經。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE1zT2pya19wUFdoZExvOHloeXlQRk1zZEcySm44aFZYSmk1dENScExaSjJTS0dxaVVfTGhEY21WMWRaWmpkME5ZWkMxVUM4Y1VCaElGeFRGQXgxY2gwc3Q00gFkQVVfeXFMUHo0ZFQ0eHF5enVlMl9fRUJZQlRybXh0UHdEbUdOQmR4dGdJWUF4eHpTUUZVdzNVOGlOMUNxYTdpUkVCdllYTGNTcnVSNFlVWERHbWF4TGxwN1ZTWWdXS0RXTEhsUg",
+          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE1zT2pya19wUFdoZExvOHloeXlQRk1zZEcySm44aFZYSmk1dENScExaSjJTS0dxaVVfTGhEY21WMWRaWmpkME5ZWkMxVUM4Y1VCaElGeFRGQXgxY2gwc3Q00gFkQVVfeXFMUHo0ZFQ0eHF5enVlMl9fRUJZQlRybXh0UHdEbUdOQmR4dGdJWUF4eHpTUUZVdzNVOGlOMUNxYTdpUkVCdllYTGNTcnVSNFlVWERHbWF4TGxwN1ZTWWdXS0RXTEhsUg",
+          "published_at": "2026-09-14T06:31:17+00:00",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "energy"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "energy",
+            "reason": "energy_subject_action",
+            "matched_terms": [
+              "能源",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "能源",
+              "供應"
+            ],
+            "matched_subject": "能源",
+            "matched_action": "供應",
+            "matched_market_object": "能源",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "台灣為全球ai供應鏈核心與美共推apecai與能源相互促進任務小組自由財經",
+          "event_cluster_key": "event-588d74cce65ed2bb9f40",
+          "published_time_bucket": "2026-09-14T06:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "能源",
+            "供應"
+          ],
+          "matched_subject": "能源",
+          "matched_action": "供應",
+          "matched_market_object": "能源",
+          "decision_value_class": "energy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
           "story_id": "news-257ab3b02cf32457b3b5",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -791,93 +879,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
-        {
-          "story_id": "news-56069122cbc504206822",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "【行情快報】全球 AI 供應鏈深度解析| 部落格 - MacroMicro",
-          "raw_title": "【行情快報】全球 AI 供應鏈深度解析| 部落格 - MacroMicro",
-          "normalized_fact": "【行情快報】全球 AI 供應鏈深度解析| 部落格 - MacroMicro。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxOZ19RTmJZSF82OGJ5Q3Z0ZkpPNmp4c2FMM09xZk5MYno2RTM5TG9STFRzaVg0VEFEY21fRkJpUVJTaGpTLVZ6M1lpdy14NXNaanpydkxjYjV1U2poVlhSZzhfZWQ3TlhjN0g3c0JaekJEaGV4aUVaZEVEcUE2S2xBVVVFZUo2WlRpb3BQUnlCOHRfek8yVHc",
-          "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxOZ19RTmJZSF82OGJ5Q3Z0ZkpPNmp4c2FMM09xZk5MYno2RTM5TG9STFRzaVg0VEFEY21fRkJpUVJTaGpTLVZ6M1lpdy14NXNaanpydkxjYjV1U2poVlhSZzhfZWQ3TlhjN0g3c0JaekJEaGV4aUVaZEVEcUE2S2xBVVVFZUo2WlRpb3BQUnlCOHRfek8yVHc",
-          "published_at": "2026-09-14T10:31:44+00:00",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "行情快報全球ai供應鏈深度解析部落格macromicro",
-          "event_cluster_key": "event-560ceccf9dcc82662dca",
-          "published_time_bucket": "2026-09-14T10:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
         }
       ],
       "source_diversity": {
@@ -900,8 +901,8 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 14,
-          "TSM": 14,
+          "2330": 16,
+          "TSM": 16,
           "NVDA": 5
         },
         "sector_interest": {},
@@ -966,8 +967,8 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 14,
-            "TSM": 14,
+            "2330": 16,
+            "TSM": 16,
             "NVDA": 5
           },
           "research_candidate": {},
@@ -980,10 +981,8 @@
       },
       "excluded_count": 32,
       "exclusion_reasons": {
-        "incomplete_normalized_fact": 2,
-        "insufficient_market_relevance": 40,
+        "insufficient_market_relevance": 44,
         "listicle_or_selection": 1,
-        "market_scope_mismatch": 2,
         "missing_published_at": 1,
         "non_investment_content": 1
       },
@@ -1034,7 +1033,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 41,
-          "checked_at": "2026-09-14T12:27:59.565618+00:00"
+          "checked_at": "2026-09-14T12:37:04.996199+00:00"
         },
         {
           "provider": "twse",
@@ -1045,10 +1044,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-09-14T12:27:59.565618+00:00",
+          "checked_at": "2026-09-14T12:37:04.996199+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+          "last_success_at": "2026-09-14T12:37:04.996199+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -1073,10 +1072,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-09-14T12:27:59.565618+00:00",
+          "checked_at": "2026-09-14T12:37:04.996199+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+          "last_success_at": "2026-09-14T12:37:04.996199+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -1101,10 +1100,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 0,
-          "checked_at": "2026-09-14T12:27:59.565618+00:00",
+          "checked_at": "2026-09-14T12:37:04.996199+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+          "last_success_at": "2026-09-14T12:37:04.996199+00:00",
           "last_failure_at": null,
           "stories_ingested": 1,
           "stories_deduped": 0,
@@ -1132,23 +1131,23 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 0,
-          "checked_at": "2026-09-14T12:27:59.565618+00:00",
+          "checked_at": "2026-09-14T12:37:04.996199+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+          "last_success_at": "2026-09-14T12:37:04.996199+00:00",
           "last_failure_at": null,
-          "stories_ingested": 9,
+          "stories_ingested": 10,
           "stories_deduped": 0,
           "ranked_count": 0,
           "relevance_distribution": {
-            "market": 9
+            "market": 10
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 9,
-            "market_compatible_count": 9,
+            "normalized_count": 10,
+            "market_compatible_count": 10,
             "eligible_count": 0,
-            "excluded_count": 9,
+            "excluded_count": 10,
             "deduped_count": 0,
             "ranked_count": 0
           },
@@ -1163,17 +1162,17 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 5,
-          "checked_at": "2026-09-14T12:27:59.565618+00:00",
+          "checked_at": "2026-09-14T12:37:04.996199+00:00",
           "raw_item_count": 30,
           "filtered_item_count": 5,
-          "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+          "last_success_at": "2026-09-14T12:37:04.996199+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 9,
           "ranked_count": 5,
           "relevance_distribution": {
             "market": 30,
-            "tracked_ticker": 5
+            "tracked_ticker": 6
           },
           "funnel": {
             "fetched_count": 30,
@@ -1192,13 +1191,13 @@
         "ranked_count": 5,
         "relevance_distribution": {
           "market": 41,
-          "tracked_ticker": 5
+          "tracked_ticker": 6
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+            "last_success_at": "2026-09-14T12:37:04.996199+00:00",
             "last_failure_at": null,
             "stories_ingested": 1,
             "stories_deduped": 0,
@@ -1219,14 +1218,14 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+            "last_success_at": "2026-09-14T12:37:04.996199+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 9,
             "ranked_count": 5,
             "relevance_distribution": {
               "market": 30,
-              "tracked_ticker": 5
+              "tracked_ticker": 6
             },
             "funnel": {
               "fetched_count": 30,
@@ -1241,7 +1240,7 @@
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+            "last_success_at": "2026-09-14T12:37:04.996199+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -1260,7 +1259,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+            "last_success_at": "2026-09-14T12:37:04.996199+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -1277,43 +1276,22 @@
             }
           },
           {
-            "provider": "unknown",
-            "status": "healthy",
-            "last_success_at": null,
-            "last_failure_at": null,
-            "stories_ingested": 1,
-            "stories_deduped": 0,
-            "ranked_count": 0,
-            "relevance_distribution": {
-              "market": 1
-            },
-            "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
-              "market_compatible_count": 0,
-              "eligible_count": 0,
-              "excluded_count": 1,
-              "deduped_count": 0,
-              "ranked_count": 0
-            }
-          },
-          {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+            "last_success_at": "2026-09-14T12:37:04.996199+00:00",
             "last_failure_at": null,
-            "stories_ingested": 9,
+            "stories_ingested": 10,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 9
+              "market": 10
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 9,
-              "market_compatible_count": 9,
+              "normalized_count": 10,
+              "market_compatible_count": 10,
               "eligible_count": 0,
-              "excluded_count": 9,
+              "excluded_count": 10,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -1540,6 +1518,89 @@
       ],
       "stories": [
         {
+          "story_id": "news-694d476b6192ba6535a0",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Stock Market Today: Dow Falls On Rising Oil; Nvidia Sells Off On AI Warning (Live Coverage)",
+          "raw_title": "Stock Market Today: Dow Falls On Rising Oil; Nvidia Sells Off On AI Warning (Live Coverage)",
+          "normalized_fact": "Stock Market Today: Dow Falls On Rising Oil; Nvidia Sells Off On AI Warning (Live Coverage)。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/m/e8c0a567-addf-325b-8e69-657d5975fcc3/stock-market-today%3A-dow-falls.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/e8c0a567-addf-325b-8e69-657d5975fcc3/stock-market-today%3A-dow-falls.html?.tsrc=rss",
+          "published_at": "2026-09-14T12:11:34+00:00",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "energy"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "tracked_ticker:NVDA",
+            "active_event:oil"
+          ],
+          "freshness": "published",
+          "dedupe_key": "stockmarkettodaydowfallsonrisingoilnvidiasellsoffonaiwarninglivecoverage",
+          "event_cluster_key": "event-5af707466cc9e721d865",
+          "published_time_bucket": "2026-09-14T12:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
+        {
           "story_id": "news-c4f8c4b9f2e01f8e7e2c",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -1619,15 +1680,15 @@
           "ranking_score": 120
         },
         {
-          "story_id": "news-2015c52005f1d66976c0",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Economists think a rate hike is coming. Here’s what that could mean for the economy - news.northeastern.edu",
-          "raw_title": "Economists think a rate hike is coming. Here’s what that could mean for the economy - news.northeastern.edu",
-          "normalized_fact": "Economists think a rate hike is coming. Here’s what that could mean for the economy - news.northeastern.edu。",
-          "market_topic": "company_industry",
+          "story_id": "news-0c55cfb7dbc3eb3fc61f",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Stocks Fall Pre-Bell Amid AI Safety Warnings; Investors Await Fed Rate Decision",
+          "raw_title": "Stocks Fall Pre-Bell Amid AI Safety Warnings; Investors Await Fed Rate Decision",
+          "normalized_fact": "Stocks Fall Pre-Bell Amid AI Safety Warnings; Investors Await Fed Rate Decision。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -1637,28 +1698,35 @@
           "normalization_complete": true,
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMie0FVX3lxTFBwQ3BHUFg3c0VXdWFNSGFpR3JSaFBodUZxMmJHUzJZMTlhVldTMVZqbWEzSGFvckhhVGVJbWtlOVpPcHNxNW5GaWdWV0NYN09zVTBLMVJkdVcwUG1HdGkyOWZsZmx3akoyaEFxakIyQ25jY1pONldYanpwTQ",
-          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTFBwQ3BHUFg3c0VXdWFNSGFpR3JSaFBodUZxMmJHUzJZMTlhVldTMVZqbWEzSGFvckhhVGVJbWtlOVpPcHNxNW5GaWdWV0NYN09zVTBLMVJkdVcwUG1HdGkyOWZsZmx3akoyaEFxakIyQ25jY1pONldYanpwTQ",
-          "published_at": "2026-09-11T19:37:30+00:00",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/stocks-fall-pre-bell-amid-122514971.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/stocks-fall-pre-bell-amid-122514971.html?.tsrc=rss",
+          "published_at": "2026-09-14T12:25:14+00:00",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
           "entities": [],
           "sectors": [],
           "topics": [
+            "ai",
             "rates"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "rate"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "rate"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "rate",
+            "matched_market_object": "fed",
             "input_fields": [
               "description",
               "summary",
@@ -1669,23 +1737,26 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "economiststhinkaratehikeiscominghereswhatthatcouldmeanfortheeconomynewsnortheasternedu",
-          "event_cluster_key": "event-4249b3b3289da3739957",
-          "published_time_bucket": "2026-09-11T19:00:00+00:00",
+          "dedupe_key": "stocksfallprebellamidaisafetywarningsinvestorsawaitfedratedecision",
+          "event_cluster_key": "event-5ab557d89c33bb65ed33",
+          "published_time_bucket": "2026-09-14T12:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
+          "classification_evidence": [
+            "fed",
+            "rate"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "rate",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Google News｜美股線索",
+          "source": "Yahoo Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -1694,23 +1765,23 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 115
+          "ranking_score": 130
         },
         {
-          "story_id": "news-36d04a703a39669a3974",
+          "story_id": "news-1176920dc41fb246a370",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - Yahoo Finance",
-          "raw_title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - Yahoo Finance",
-          "normalized_fact": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways。",
+          "title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - finance.yahoo.com",
+          "raw_title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - finance.yahoo.com",
+          "normalized_fact": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - finance.yahoo.com。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
           "byline_removed": false,
-          "publisher_removed": true,
+          "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
           "summary": "",
@@ -1754,7 +1825,7 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "goldmansachssaysaiisdrivinghalfofsp500earningsgrowththatnumbercutsbothways",
+          "dedupe_key": "goldmansachssaysaiisdrivinghalfofsp500earningsgrowththatnumbercutsbothwaysfinanceyahoocom",
           "event_cluster_key": "event-00dfc2bbc1bbd154deba",
           "published_time_bucket": "2026-09-13T18:00:00+00:00",
           "public_safe": true,
@@ -1884,106 +1955,21 @@
               "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxNWmtfNTJxb3hXWW9zMV93MU5HWHdwRG10NDB0aTgwbE1yRjFQT2c4UUc2WVdnOG9IMHpmZ1JEd0s0ZWZrVzNUZC1RNm1STkFGV0txaEVZdDNEdmctdzNtOVRhVGgyWU5fN1lKVWVDek5HZUVJWkFmMlItZTdLN0lEbzhIcjZEZ9IBiwFBVV95cUxNdk9lelJkSi1mdXdGU2YxUWFRTDhFMGhjbGFZQklrOVFlR0hEcXJ4TFpNTC15N2tsdS1abFBqZGJGZDlZZTRVYk94ZFJvUlJVUThBZDhnZy1Fc1EyeWo1eEdNektvSTBvNUxmMVlxSjFjdk1yWm1zX001a21rV2UyREVDZEhNS0FHTzYw"
             }
           ]
-        },
-        {
-          "story_id": "news-5eeaa1218880ea666199",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Warsh and Trump on collision course as investors expect Fed to raise rates - Financial Times",
-          "raw_title": "Warsh and Trump on collision course as investors expect Fed to raise rates - Financial Times",
-          "normalized_fact": "Warsh and Trump on collision course as investors expect Fed to raise rates。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": true,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxQX1FlNm82dWhzNW1zVWg2YXU4bmtFeTVrcG90cGRXQXBFR3EzamFMOUpPMkpQUk1tM2VBTThrZWpRc0ZQcDljSjg1ZXo3anpHSjBFYlZzS0hGLVpzTUVhSkpPNzRRYWpqeW5DTmU3QnMzRmY5ZHJQS2JKS2pMR0lwT1c1ZEE",
-          "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxQX1FlNm82dWhzNW1zVWg2YXU4bmtFeTVrcG90cGRXQXBFR3EzamFMOUpPMkpQUk1tM2VBTThrZWpRc0ZQcDljSjg1ZXo3anpHSjBFYlZzS0hGLVpzTUVhSkpPNzRRYWpqeW5DTmU3QnMzRmY5ZHJQS2JKS2pMR0lwT1c1ZEE",
-          "published_at": "2026-09-14T08:24:46+00:00",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rates"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rates"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rates",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "warshandtrumponcollisioncourseasinvestorsexpectfedtoraiserates",
-          "event_cluster_key": "event-e3f7f2295babc8dcc160",
-          "published_time_bucket": "2026-09-14T08:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rates"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rates",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
         }
       ],
       "source_diversity": {
         "schema_version": "1.0",
-        "status": "single_source",
-        "cross_checked": false,
+        "status": "multi_source",
+        "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 1,
-        "provider_count": 1,
+        "independent_source_count": 2,
+        "provider_count": 2,
         "provider_ids": [
-          "google_news"
+          "google_news",
+          "yahoo_finance"
         ],
         "source_domains": [
+          "finance.yahoo.com",
           "news.google.com"
         ],
         "supporting_source_count": 3,
@@ -1993,20 +1979,19 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "NVDA": 11,
+          "NVDA": 13,
           "TSM": 2
         },
         "sector_interest": {},
         "topic_interest": {
           "伊朗": 1,
           "石油": 1,
-          "iran": 7,
-          "oil": 24,
-          "war": 4,
-          "hormuz": 1
+          "oil": 26,
+          "iran": 8,
+          "war": 4
         },
         "market_interest": {
-          "us": 138
+          "us": 135
         },
         "context": {
           "tracked_tickers": [
@@ -2063,7 +2048,7 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "NVDA": 11,
+            "NVDA": 13,
             "TSM": 2
           },
           "research_candidate": {},
@@ -2071,21 +2056,20 @@
           "active_event": {
             "伊朗": 1,
             "石油": 1,
-            "iran": 7,
-            "oil": 24,
-            "war": 4,
-            "hormuz": 1
+            "oil": 26,
+            "iran": 8,
+            "war": 4
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 47,
+      "excluded_count": 43,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 27,
+        "incomplete_normalized_fact": 25,
         "insufficient_market_relevance": 17,
         "listicle_or_selection": 1,
-        "market_scope_mismatch": 10,
+        "market_scope_mismatch": 4,
         "missing_published_at": 2
       },
       "status": "ready",
@@ -2096,33 +2080,33 @@
         "successful_provider_count": 4,
         "failed_provider_count": 1,
         "disabled_provider_count": 1,
-        "fetched": 58,
-        "normalized": 58,
-        "eligible": 11,
-        "excluded": 47,
-        "deduped": 8,
+        "fetched": 57,
+        "normalized": 57,
+        "eligible": 14,
+        "excluded": 43,
+        "deduped": 11,
         "publicly_ranked": 5,
-        "current_eligible": 11,
-        "inventory_considered": 80,
-        "inventory_eligible": 50,
+        "current_eligible": 14,
+        "inventory_considered": 78,
+        "inventory_eligible": 52,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 47,
-        "fetched_story_count": 58,
-        "normalized_story_count": 58,
-        "eligible_story_count": 11,
-        "deduped_story_count": 8,
+        "filtered_story_count": 43,
+        "fetched_story_count": 57,
+        "normalized_story_count": 57,
+        "eligible_story_count": 14,
+        "deduped_story_count": 11,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 80,
-        "eligible": 50,
+        "considered": 78,
+        "eligible": 52,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -2134,8 +2118,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 58,
-          "checked_at": "2026-09-14T12:27:59.565618+00:00"
+          "item_count": 57,
+          "checked_at": "2026-09-14T12:37:04.996199+00:00"
         },
         {
           "provider": "sec",
@@ -2146,10 +2130,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-09-14T12:27:59.565618+00:00",
+          "checked_at": "2026-09-14T12:37:04.996199+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+          "last_success_at": "2026-09-14T12:37:04.996199+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -2177,12 +2161,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-09-14T12:27:59.565618+00:00",
+          "checked_at": "2026-09-14T12:37:04.996199+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-09-14T12:27:59.565618+00:00",
+          "last_failure_at": "2026-09-14T12:37:04.996199+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -2205,10 +2189,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-09-14T12:27:59.565618+00:00",
+          "checked_at": "2026-09-14T12:37:04.996199+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+          "last_success_at": "2026-09-14T12:37:04.996199+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -2233,10 +2217,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 0,
-          "checked_at": "2026-09-14T12:27:59.565618+00:00",
+          "checked_at": "2026-09-14T12:37:04.996199+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+          "last_success_at": "2026-09-14T12:37:04.996199+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
           "stories_deduped": 0,
@@ -2261,32 +2245,32 @@
           "key": "news_us_yahoo_finance",
           "legacy_key": "official_news_us_yahoo_finance",
           "label": "yahoo_finance market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
-          "item_count": 0,
-          "checked_at": "2026-09-14T12:27:59.565618+00:00",
+          "item_count": 2,
+          "checked_at": "2026-09-14T12:37:04.996199+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-09-14T12:37:04.996199+00:00",
           "last_failure_at": null,
-          "stories_ingested": 1,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_ingested": 3,
+          "stories_deduped": 2,
+          "ranked_count": 2,
           "relevance_distribution": {
-            "market": 1,
-            "tracked_ticker": 1
+            "active_event": 1,
+            "market": 3,
+            "tracked_ticker": 2
           },
           "funnel": {
-            "fetched_count": 6,
-            "normalized_count": 1,
-            "market_compatible_count": 1,
-            "eligible_count": 0,
+            "fetched_count": 5,
+            "normalized_count": 3,
+            "market_compatible_count": 3,
+            "eligible_count": 2,
             "excluded_count": 1,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "deduped_count": 2,
+            "ranked_count": 2
+          }
         },
         {
           "provider": "google_news",
@@ -2296,15 +2280,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
-          "item_count": 5,
-          "checked_at": "2026-09-14T12:27:59.565618+00:00",
+          "item_count": 3,
+          "checked_at": "2026-09-14T12:37:04.996199+00:00",
           "raw_item_count": 40,
-          "filtered_item_count": 5,
-          "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+          "filtered_item_count": 3,
+          "last_success_at": "2026-09-14T12:37:04.996199+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
-          "stories_deduped": 8,
-          "ranked_count": 5,
+          "stories_deduped": 9,
+          "ranked_count": 3,
           "relevance_distribution": {
             "active_event": 10,
             "market": 40,
@@ -2314,27 +2298,27 @@
             "fetched_count": 40,
             "normalized_count": 40,
             "market_compatible_count": 40,
-            "eligible_count": 11,
-            "excluded_count": 29,
-            "deduped_count": 8,
-            "ranked_count": 5
+            "eligible_count": 12,
+            "excluded_count": 28,
+            "deduped_count": 9,
+            "ranked_count": 3
           }
         }
       ],
       "observability": {
-        "stories_ingested": 58,
-        "stories_deduped": 8,
+        "stories_ingested": 57,
+        "stories_deduped": 11,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 11,
-          "market": 58,
-          "tracked_ticker": 4
+          "active_event": 12,
+          "market": 57,
+          "tracked_ticker": 5
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+            "last_success_at": "2026-09-14T12:37:04.996199+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
             "stories_deduped": 0,
@@ -2357,7 +2341,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-09-14T12:27:59.565618+00:00",
+            "last_failure_at": "2026-09-14T12:37:04.996199+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -2375,11 +2359,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+            "last_success_at": "2026-09-14T12:37:04.996199+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
-            "stories_deduped": 8,
-            "ranked_count": 5,
+            "stories_deduped": 9,
+            "ranked_count": 3,
             "relevance_distribution": {
               "active_event": 10,
               "market": 40,
@@ -2389,16 +2373,16 @@
               "fetched_count": 40,
               "normalized_count": 40,
               "market_compatible_count": 40,
-              "eligible_count": 11,
-              "excluded_count": 29,
-              "deduped_count": 8,
-              "ranked_count": 5
+              "eligible_count": 12,
+              "excluded_count": 28,
+              "deduped_count": 9,
+              "ranked_count": 3
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+            "last_success_at": "2026-09-14T12:37:04.996199+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -2417,7 +2401,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+            "last_success_at": "2026-09-14T12:37:04.996199+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -2440,19 +2424,19 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 5,
+            "stories_ingested": 2,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 5,
+              "market": 2,
               "tracked_ticker": 2
             },
             "funnel": {
-              "fetched_count": 5,
-              "normalized_count": 5,
+              "fetched_count": 2,
+              "normalized_count": 2,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 5,
+              "excluded_count": 2,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -2460,23 +2444,24 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-09-14T12:27:59.565618+00:00",
+            "last_success_at": "2026-09-14T12:37:04.996199+00:00",
             "last_failure_at": null,
-            "stories_ingested": 1,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_ingested": 3,
+            "stories_deduped": 2,
+            "ranked_count": 2,
             "relevance_distribution": {
-              "market": 1,
-              "tracked_ticker": 1
+              "active_event": 1,
+              "market": 3,
+              "tracked_ticker": 2
             },
             "funnel": {
-              "fetched_count": 6,
-              "normalized_count": 1,
-              "market_compatible_count": 1,
-              "eligible_count": 0,
+              "fetched_count": 5,
+              "normalized_count": 3,
+              "market_compatible_count": 3,
+              "eligible_count": 2,
               "excluded_count": 1,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "deduped_count": 2,
+              "ranked_count": 2
             }
           }
         ]
