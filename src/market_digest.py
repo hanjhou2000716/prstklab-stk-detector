@@ -582,6 +582,7 @@ def build_market_digest(
     slot: str,
     *,
     intelligence: dict[str, Any] | None = None,
+    risk: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the shared dashboard/Telegram market assessment."""
     generated = str(snapshot.get("generated_at") or snapshot.get("fetched_at") or "")
@@ -791,6 +792,7 @@ def build_market_digest(
         themes=summary_themes,
         intelligence=intelligence,
         market_status=snapshot.get("markets") if isinstance(snapshot.get("markets"), dict) else None,
+        risk=risk,
     )
     overview = project_overview(assessment, DASHBOARD_SUMMARY_MAX_CHARS)
     public_message = project_public_message(label, assessment, PUBLIC_MESSAGE_MAX_CHARS)
@@ -828,6 +830,9 @@ def build_market_digest(
             if key not in {
                 "evidence_as_of", "factor_count", "evidence_dimensions",
                 "score", "factor_source", "directional_quote_count",
+                # This is a page-only projection.  It must not alter the
+                # notification identity when quote hydration changes.
+                "joint_market_signal",
             } and key != "summary_sections"
         } | {
             "summary_sections": {
