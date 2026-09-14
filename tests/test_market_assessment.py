@@ -240,6 +240,45 @@ def test_joint_market_signal_marks_taiwan_us_divergence_and_panic_downgrade():
     assert signal["risk_adjustments"] == ["us情緒：恐慌"]
 
 
+def test_joint_market_signal_accepts_valid_recent_close_marked_delayed():
+    signal = build_joint_market_signal([
+        {
+            "ticker": "TAIEX",
+            "price": 100,
+            "change_percent": -0.4,
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "quote_date": "2026-09-11",
+            "quote_delayed": True,
+            "stale_used": True,
+        },
+        {
+            "ticker": "NASDAQ",
+            "price": 100,
+            "change_percent": 0.6,
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "quote_date": "2026-09-11",
+            "quote_delayed": True,
+            "stale_used": True,
+        },
+        {
+            "ticker": "SOX",
+            "price": 100,
+            "change_percent": 0.8,
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "quote_date": "2026-09-11",
+            "quote_delayed": True,
+            "stale_used": True,
+        },
+    ])
+
+    assert signal["status"] == "complete"
+    assert signal["valid_factor_count"] == 3
+    assert signal["divergent"] is True
+
+
 def test_joint_market_signal_fails_closed_for_missing_or_invalid_prices():
     signal = build_joint_market_signal([
         {"ticker": "TAIEX", "price": 100, "change_percent": None},

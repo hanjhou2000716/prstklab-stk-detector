@@ -195,11 +195,24 @@ def _joint_ticker(value: Any) -> str:
 
 
 def _joint_quote_is_usable(item: dict[str, Any]) -> bool:
-    """Accept only a usable same-snapshot price movement for the joint signal."""
-    if item.get("quote_delayed") is True:
-        return False
-    freshness = _text(item.get("freshness") or item.get("data_status")).casefold()
+    """Accept live data or a validated recent close for the joint signal.
+
+    A recent close is intentionally usable even when the provider marks the
+    quote as delayed/stale relative to the current session.  The quote's
+    ``quote_date``/``data_status`` remain in the evidence so the UI can show
+    that it is historical rather than live.  Truly stale, expired, or
+    unavailable rows still fail closed.
+    """
+    freshness = _text(item.get("freshness")).casefold()
+    data_status = _text(item.get("data_status")).casefold()
+    recent_close = freshness in {"recent_close", "最近收盤"} or data_status in {"recent_close", "最近收盤"}
     if freshness in {"stale", "delayed", "unavailable", "unknown", "failed"}:
+        return False
+    if data_status in {"stale", "delayed", "unavailable", "unknown", "failed"}:
+        return False
+    if item.get("quote_delayed") is True and not recent_close:
+        return False
+    if item.get("stale_used") is True and not recent_close:
         return False
     price_value = item.get("price")
     if price_value is None:
