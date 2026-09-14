@@ -348,11 +348,8 @@ def _quote_gap(item: dict[str, Any] | None, ticker: str, name: str) -> dict[str,
         elif str(item.get("freshness") or item.get("data_status") or "live").lower() in _UNUSABLE_FRESHNESS:
             reason = "quote_unusable_freshness"
         else:
-            try:
-                change = float(change_raw)
-            except (TypeError, ValueError):
-                change = None
-            reason = "invalid_or_missing_change_percent" if change is None or not math.isfinite(change) else "quote_unavailable"
+            change = _finite_number(change_raw)
+            reason = "invalid_or_missing_change_percent" if change is None else "quote_unavailable"
         data_status = str(item.get("data_status") or item.get("freshness") or "unavailable")
     return {
         "kind": "quote",
