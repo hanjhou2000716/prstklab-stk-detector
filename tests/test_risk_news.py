@@ -1,5 +1,5 @@
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -251,28 +251,29 @@ def test_news_cache_prevents_empty_us_panel_after_transient_outage(monkeypatch, 
 
 def test_us_news_inventory_uses_trading_sessions_and_reaches_five(monkeypatch, tmp_path):
     cache_path = tmp_path / "news-cache.json"
+    inventory_published_at = (datetime.now(UTC) - timedelta(days=1)).replace(microsecond=0).isoformat()
     cache_path.write_text(json.dumps({
         "schema": 1,
         "markets": {"us": {"eligible_inventory": [
             {
                 "title": "Nasdaq falls after jobs data",
                 "url": "https://news.google.com/rss/articles/inv-1",
-                "published_at": "2026-09-04T12:00:00+00:00",
+                    "published_at": inventory_published_at,
             },
             {
                 "title": "NVIDIA earnings outlook supports semiconductor shares",
                 "url": "https://news.google.com/rss/articles/inv-2",
-                "published_at": "2026-09-04T12:00:00+00:00",
+                    "published_at": inventory_published_at,
             },
             {
                 "title": "Oil jumps after sanctions disrupt supply",
                 "url": "https://news.google.com/rss/articles/inv-3",
-                "published_at": "2026-09-04T12:00:00+00:00",
+                    "published_at": inventory_published_at,
             },
             {
                 "title": "US Treasury yields rise after payrolls data",
                 "url": "https://news.google.com/rss/articles/inv-4",
-                "published_at": "2026-09-04T12:00:00+00:00",
+                    "published_at": inventory_published_at,
             },
         ]}}}, ensure_ascii=False), encoding="utf-8")
     monkeypatch.setenv("NEWS_CACHE_PATH", str(cache_path))

@@ -80,9 +80,18 @@ def test_briefing_summary_facts_are_structured_and_quote_led_without_news_event(
     }, "morning")
 
     facts = briefing["summary_facts"]
-    assert [item["label"] for item in facts[:3]] == ["市場狀態", "信心", "行情比較"]
+    assert [item["label"] for item in facts[:2]] == ["台美市場狀態", "行情比較"]
     assert all(isinstance(item["evidence_refs"], list) for item in facts)
+    assert not {item["key"] for item in facts} & {"confidence", "us_risk_sentiment"}
     assert not any(item["key"] == "primary_event" for item in facts)
+
+
+def test_briefing_summary_keeps_two_fixed_rows_when_market_evidence_is_missing():
+    briefing = build_briefing_snapshot({"events": {"items": []}}, "morning")
+
+    assert [item["label"] for item in briefing["summary_facts"]] == ["台美市場狀態", "行情比較"]
+    assert briefing["summary_facts"][0]["value"] == "資料不足，台美狀態待確認"
+    assert "未取得可核對行情比較" in briefing["summary_facts"][1]["value"]
 
 
 def test_observation_cards_follow_quote_led_digest_without_raw_publisher_tail():

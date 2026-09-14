@@ -164,6 +164,17 @@ def test_briefing_cards_use_orange_structured_labels_and_expandable_source_summa
     assert "color: var(--orange)" in styles
 
 
+def test_briefing_cards_number_labels_and_quote_direction_are_structured():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
+
+    assert "briefing-analysis-index" in app
+    assert "rawChange === null || rawChange === undefined || rawChange === \"\"" in app
+    assert 'movement === "market-up" ? "🚀 "' in app
+    assert 'movement === "market-down" ? "🐻 "' in app
+    assert ".briefing-analysis-index" in styles
+
+
 def test_event_timeline_and_feedback_are_optional_and_non_policy_mutating():
     page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")

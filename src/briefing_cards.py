@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 from datetime import datetime
 from typing import Any
@@ -34,17 +35,26 @@ _MEDIA_CONTEXT_TAIL_RE = re.compile(
 )
 
 
+def _finite_number(value: Any) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
+
+
 def _usable_change(item: dict[str, Any] | None) -> float | None:
     """Return a change only when its quote is usable for regime evidence."""
-    if not item or item.get("change_percent") is None:
+    if not item or item.get("change_percent") in (None, ""):
         return None
     freshness = str(item.get("freshness") or item.get("data_status") or "live").lower()
     if freshness in _UNUSABLE_FRESHNESS or item.get("quote_delayed") is True:
         return None
     try:
-        return float(item["change_percent"])
+        value = float(item["change_percent"])
     except (TypeError, ValueError):
         return None
+    return value if math.isfinite(value) else None
 
 
 def _regime_factors(items: dict[str, dict[str, Any]], risk: dict[str, Any]) -> dict[str, float | int | None]:
@@ -106,11 +116,15 @@ def _move(item: dict[str, Any] | None) -> str:
 
 def _price_move(item: dict[str, Any] | None, name: str) -> str:
     """Format the observed price and daily move for an evidence line."""
-    if not item or item.get("price") is None:
+    if not item:
+        return f"{name}資料暫時無法取得"
+    price = _finite_number(item.get("price"))
+    change = _usable_change(item)
+    if price is None or change is None:
         return f"{name}資料暫時無法取得"
     currency = str(item.get("currency") or "").strip()
     suffix = f" {currency}" if currency and currency not in {"點", "TWD", "USD"} else (f" {currency}" if currency else "")
-    return f"{name} {float(item['price']):,.2f}{suffix}（{_move(item)}）"
+    return f"{name} {price:,.2f}{suffix}（{change:+.2f}%）"
 
 
 def _source_note(*items: dict[str, Any] | None) -> str:
@@ -191,12 +205,12 @@ def _card(title: str, event: str, importance: str, market_impact: str, watch: st
 
 def _direction(item: dict[str, Any] | None) -> str:
     """Return a neutral direction description only when a fresh change exists."""
-    change = (item or {}).get("change_percent")
+    change = _finite_number((item or {}).get("change_percent"))
     if change is None:
         return "資料未完整"
-    if float(change) > 0:
+    if change > 0:
         return "上漲"
-    if float(change) < 0:
+    if change < 0:
         return "下跌"
     return "持平"
 
@@ -319,7 +333,7 @@ def _market_observations(
 
 def _morning_quote_evidence(item: dict[str, Any] | None, name: str) -> tuple[str, dict[str, Any] | None]:
     """Return one factual quote line and a bounded evidence projection."""
-    if not item or item.get("price") is None or item.get("change_percent") is None:
+    if not item or _finite_number(item.get("price")) is None or _usable_change(item) is None:
         return f"{name}：本輪未取得可核對資料。", None
     line = _price_move(item, name)
     evidence = {
@@ -347,66 +361,38 @@ def _morning_confidence(evidence_count: int, missing: bool = False) -> str:
 
 
 def _briefing_summary_facts(
-    digest: dict[str, Any], risk: dict[str, Any],
+    digest: dict[str, Any],
 ) -> list[dict[str, Any]]:
     """Build the compact, structured facts shown above the briefing cards."""
     assessment_value = digest.get("market_assessment")
     assessment: dict[str, Any] = assessment_value if isinstance(assessment_value, dict) else {}
     sections_value = assessment.get("summary_sections")
     sections: dict[str, Any] = sections_value if isinstance(sections_value, dict) else {}
-    confidence = str(assessment.get("confidence") or "low").strip().casefold()
-    confidence_labels = {"high": "高", "medium": "中", "low": "低"}
     quote_evidence = [item for item in (digest.get("quote_evidence") or []) if isinstance(item, dict)]
-    primary = digest.get("primary_theme") if isinstance(digest.get("primary_theme"), dict) else {}
+    joint_value = assessment.get("joint_market_signal")
+    joint: dict[str, Any] = joint_value if isinstance(joint_value, dict) else {}
+    joint_evidence_value = joint.get("evidence")
+    joint_evidence_groups = joint_evidence_value if isinstance(joint_evidence_value, dict) else {}
+    joint_evidence = [
+        item for rows in joint_evidence_groups.values() if isinstance(rows, list)
+        for item in rows if isinstance(item, dict)
+    ]
+    joint_label = str(joint.get("label") or "資料不足，台美狀態待確認").strip()
     facts: list[dict[str, Any]] = [
         {
-            "key": "market_status",
-            "label": "市場狀態",
-            "value": str(assessment.get("stance_label") or "分歧"),
-            "evidence_refs": quote_evidence[:3],
-        },
-        {
-            "key": "confidence",
-            "label": "信心",
-            "value": confidence_labels.get(confidence, confidence or "低"),
-            "raw_value": confidence,
-            "evidence_refs": quote_evidence[:3],
+            "key": "joint_market_status",
+            "label": "台美市場狀態",
+            "value": joint_label,
+            "evidence_refs": joint_evidence[:4] or quote_evidence[:4],
         },
     ]
-    highlights = str(sections.get("market_highlights") or "").strip()
-    if highlights:
-        facts.append({
-            "key": "quote_comparison",
-            "label": "行情比較",
-            "value": highlights,
-            "evidence_refs": quote_evidence[:3],
-        })
-    risk_item = risk.get("us") if isinstance(risk, dict) else None
-    risk_sentiment = risk_item.get("sentiment") if isinstance(risk_item, dict) else None
-    risk_label = str(risk_sentiment.get("label") or "").strip() if isinstance(risk_sentiment, dict) else ""
-    if risk_label:
-        facts.append({
-            "key": "us_risk_sentiment",
-            "label": "美股風險情緒",
-            "value": risk_label,
-            "evidence_refs": [],
-        })
-    # A news headline is allowed into the compact summary only when the
-    # canonical theme carries complete decision context.  Quote-led reports
-    # therefore do not force an unrelated article into the reader's first
-    # screen.
-    if (
-        primary
-        and str(primary.get("title") or "") != "市場價格"
-        and primary.get("detail_eligible") is True
-        and str(primary.get("what_happened") or "").strip()
-    ):
-        facts.append({
-            "key": "primary_event",
-            "label": "主要事件",
-            "value": str(primary.get("what_happened") or "").strip(),
-            "evidence_refs": [item for item in (primary.get("source_evidence") or []) if isinstance(item, dict)][:3],
-        })
+    highlights = str(sections.get("market_highlights") or "").strip() or "本輪未取得可核對行情比較。"
+    facts.append({
+        "key": "quote_comparison",
+        "label": "行情比較",
+        "value": highlights,
+        "evidence_refs": quote_evidence[:3],
+    })
     return facts
 
 
@@ -443,7 +429,10 @@ def _morning_analysis(
 
     def quote(ticker: str) -> tuple[str, dict[str, Any] | None]:
         name, _ = quote_specs[ticker]
-        return _morning_quote_evidence(items.get(ticker), name)
+        item = items.get(ticker)
+        if ticker == "TPEx":
+            item = item or items.get("TPEX")
+        return _morning_quote_evidence(item, name)
 
     def structured_facts(
         facts: list[str], quote_facts: list[tuple[str, dict[str, Any]]],
@@ -517,8 +506,6 @@ def _morning_analysis(
     breadth = statistics.get("breadth") if isinstance(statistics.get("breadth"), dict) else None
     institution = statistics.get("institutional_flows") if isinstance(statistics.get("institutional_flows"), dict) else None
     if turnover and turnover.get("trade_value") is not None:
-        observed = turnover.get("observed_date") or "資料日未提供"
-        taiwan_facts.append(f"TWSE成交值 {float(turnover['trade_value']) / 1_000_000_000:.1f}億元（{observed}）。")
         taiwan_evidence.append({"kind": "turnover", **turnover})
     else:
         statistics_missing.append("成交值")
@@ -526,22 +513,15 @@ def _morning_analysis(
         breadth and breadth.get("scope_verified") is True
         and breadth.get("advancing") is not None and breadth.get("declining") is not None
     ):
-        observed = breadth.get("observed_date") or "資料日未提供"
-        taiwan_facts.append(f"TWSE漲跌家數 上漲{breadth['advancing']}、下跌{breadth['declining']}（{observed}）。")
         taiwan_evidence.append({"kind": "breadth", **breadth})
     else:
         statistics_missing.append(
             "市場廣度（統計範圍未確認）" if breadth else "市場廣度"
         )
     if institution and institution.get("total_net") is not None:
-        observed = institution.get("observed_date") or "資料日未提供"
-        taiwan_facts.append(f"三大法人合計買賣超 {float(institution['total_net']) / 100_000_000:+.1f}億元（{observed}）。")
         taiwan_evidence.append({"kind": "institutional_flows", **institution})
     else:
         statistics_missing.append("三大法人")
-    if market_session_state and "休市" in market_session_state:
-        taiwan_facts.insert(0, f"{market_session_state}。")
-
     semiconductor_lines: list[str] = []
     semiconductor_quote_facts: list[tuple[str, dict[str, Any]]] = []
     semiconductor_evidence: list[dict[str, Any]] = []
@@ -552,12 +532,6 @@ def _morning_analysis(
             semiconductor_quote_facts.append((line, evidence))
             semiconductor_evidence.append(evidence)
     primary_theme = themes[0] if themes and isinstance(themes[0], dict) else {}
-    theme_fact = str(primary_theme.get("what_happened") or primary_theme.get("normalized_fact") or "").strip()
-    if primary_theme.get("detail_eligible") is not True or str(primary_theme.get("title") or "") == "市場價格":
-        theme_fact = ""
-    if theme_fact and str(primary_theme.get("market_topic") or "") == "semiconductor_ai":
-        semiconductor_lines.append(f"合格事件：{theme_fact}")
-
     macro_lines: list[str] = []
     macro_quote_facts: list[tuple[str, dict[str, Any]]] = []
     macro_evidence: list[dict[str, Any]] = []
@@ -579,31 +553,27 @@ def _morning_analysis(
     external_lines = [*macro_lines, *commodity_lines]
     external_evidence = [*macro_evidence, *commodity_evidence]
 
-    stance_label = str(assessment.get("stance_label") or "分歧")
     confidence = str(assessment.get("confidence") or "low")
     market_highlights = str((assessment.get("summary_sections") or {}).get("market_highlights") or "").strip()
     dominant_driver = str(assessment.get("dominant_driver") or "市場主因仍待價格確認")
-    risk_item = (risk or {}).get("us") if isinstance(risk, dict) else None
-    risk_label = str((risk_item or {}).get("sentiment", {}).get("label") or "本輪未取得可核對風險情緒資料")
+    joint_value = assessment.get("joint_market_signal")
+    joint: dict[str, Any] = joint_value if isinstance(joint_value, dict) else {}
+    joint_label = str(joint.get("label") or "資料不足，台美狀態待確認").strip()
+    confidence_label = {"high": "高", "medium": "中等", "low": "低"}.get(confidence.casefold(), "低")
     event_evidence = [
         item for item in (primary_theme.get("source_evidence") or primary_theme.get("evidence") or [])
         if isinstance(item, dict)
     ][:3]
-    risk_facts = [f"市場狀態：{stance_label}；信心：{confidence}。"]
-    if market_highlights:
-        risk_facts.append(f"行情比較：{market_highlights}。")
-    if risk_label:
-        risk_facts.append(f"美股風險情緒：{risk_label}。")
-    if theme_fact:
-        risk_facts.append(f"主要事件：{theme_fact}")
+    risk_facts = [joint_label, market_highlights or "本輪未取得可核對行情比較。"]
     all_risk_evidence = [*event_evidence, *semiconductor_evidence[:1], *taiwan_evidence[:1]]
+    session_note = f"{market_session_state}；" if "休市" in market_session_state else ""
     sections = [
         section(
             "今日風險判讀",
             risk_facts,
             "新聞只用於說明關注主因；市場方向仍須由至少兩個獨立價格面向核對。",
             f"{dominant_driver}；行情與事件若未同步，維持待確認，不推論因果。",
-            f"目前判讀為{stance_label}，證據完整度為{confidence}。",
+            f"目前判讀為{joint_label}，證據完整度為{confidence_label}。",
             "本輪未取得明確下一項催化劑資料，持續等待官方事件或價格核對。",
             all_risk_evidence,
             missing=len(all_risk_evidence) < 2,
@@ -614,7 +584,7 @@ def _morning_analysis(
             taiwan_facts,
             "加權與櫃買可協助分辨權值股與中小型股是否同向；成交值、漲跌家數與法人資料僅採官方值。",
             "台股盤面需與美元兌台幣及外圍科技股交叉觀察，單一指數不足以形成市場結論。",
-            "；".join(taiwan_lines),
+            f"{session_note}{'；'.join(taiwan_lines)}",
             "本輪未取得可核對的成交量、廣度或三大法人下一項資料。",
             taiwan_evidence,
             missing=bool(statistics_missing) or len(taiwan_evidence) < 2,
@@ -660,6 +630,16 @@ def _morning_analysis(
         "system_analysis": {
             "data_gaps": list(dict.fromkeys(statistics_missing)),
             "note": "公開卡片只呈現已核對事實；資料缺口保留於系統分析資料。",
+            "market_session_state": market_session_state if "休市" in market_session_state else None,
+            "joint_market_signal": {
+                "status": joint.get("status"),
+                "label": joint_label,
+                "confidence": joint.get("confidence"),
+                "valid_factor_count": joint.get("valid_factor_count"),
+                "risk_adjustments": joint.get("risk_adjustments", []),
+                "excluded_factors": joint.get("excluded_factors", []),
+                "evidence": joint.get("evidence", {}),
+            },
         },
         "source_health_notes": [
             "本分析只使用本輪已載入的公開行情、風險與合格事件。",
@@ -846,7 +826,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         creator_release = creator_result["artifact"]
     from src.market_digest import build_market_digest
 
-    digest = build_market_digest(snapshot, slot or "morning", intelligence=intelligence)
+    digest = build_market_digest(snapshot, slot or "morning", intelligence=intelligence, risk=risk)
     # Re-project the fixed observation cards from the same digest used by
     # Telegram and the top summary.  Passing an empty theme intentionally
     # suppresses raw/unqualified events when the digest is unavailable.
@@ -876,7 +856,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         "assessment_summary": digest.get("assessment_summary", ""),
         "market_assessment": digest.get("market_assessment", {}),
         "morning_analysis": morning_analysis,
-        "summary_facts": _briefing_summary_facts(digest, risk),
+        "summary_facts": _briefing_summary_facts(digest),
         "public_short_message": digest.get("public_short_message", ""),
         "public_summary_version": digest.get("public_summary_version", "public-summary-v2"),
         "public_summary_evidence_fields": digest.get("public_summary_evidence_fields", []),

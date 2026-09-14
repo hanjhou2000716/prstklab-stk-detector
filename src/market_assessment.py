@@ -7,6 +7,7 @@ not fetch data, classify a source by its URL, or make an investment claim.
 
 from __future__ import annotations
 
+import math
 import re
 from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta, timezone
@@ -20,6 +21,10 @@ TOPIC_LABELS: dict[str, str] = {
     "energy_geopolitics": "能源、航運與地緣風險",
     "company_industry": "公司、產業與監管事件",
 }
+
+JOINT_MARKET_SIGNAL_VERSION = "joint-market-signal-v1"
+_JOINT_TAIWAN_TICKERS = ("TAIEX", "TPEX")
+_JOINT_US_TICKERS = ("NASDAQ", "SOX", "DJIA", "S&P 500", "SP500")
 
 _TOPIC_TERMS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("semiconductor_ai", ("半導體", "晶片", "芯片", "台積電", "臺積電", "tsmc", "nvidia", "輝達", "ai", "人工智慧", "矽光子")),
@@ -182,6 +187,143 @@ def _quote_move(item: dict[str, Any]) -> float | None:
     except (TypeError, ValueError):
         return None
     return value if value == value and abs(value) != float("inf") else None
+
+
+def _joint_ticker(value: Any) -> str:
+    ticker = _text(value).upper()
+    return {"TPEX": "TPEX", "TPEX.TW": "TPEX", "SPX": "S&P 500"}.get(ticker, ticker)
+
+
+def _joint_quote_is_usable(item: dict[str, Any]) -> bool:
+    """Accept only a usable same-snapshot price movement for the joint signal."""
+    if item.get("quote_delayed") is True:
+        return False
+    freshness = _text(item.get("freshness") or item.get("data_status")).casefold()
+    if freshness in {"stale", "delayed", "unavailable", "unknown", "failed"}:
+        return False
+    price_value = item.get("price")
+    if price_value is None:
+        return False
+    try:
+        price = float(price_value)
+    except (TypeError, ValueError):
+        return False
+    return math.isfinite(price) and _quote_move(item) is not None
+
+
+def _joint_market_direction(rows: list[dict[str, Any]]) -> tuple[str, float | None, list[int]]:
+    directions = [
+        1 if (move := _quote_move(item)) is not None and move > 0.25
+        else -1 if move is not None and move < -0.25
+        else 0
+        for item in rows
+    ]
+    if not directions:
+        return "資料不足", None, []
+    score = round(sum(directions) / len(directions), 3)
+    non_zero = {direction for direction in directions if direction}
+    if len(non_zero) > 1:
+        return "分歧", score, directions
+    if score > 0.25:
+        return "偏多", score, directions
+    if score < -0.25:
+        return "偏弱", score, directions
+    return "中性", score, directions
+
+
+def _joint_risk_adjustments(risk: dict[str, Any] | None) -> list[str]:
+    """Return panic evidence without converting risk labels into price factors."""
+    adjustments: list[str] = []
+    for market, item in (risk or {}).items() if isinstance(risk, dict) else ():
+        if not isinstance(item, dict):
+            continue
+        sentiment_value = item.get("sentiment")
+        sentiment: dict[str, Any] = sentiment_value if isinstance(sentiment_value, dict) else {}
+        sentiment_label = _text(sentiment.get("label"))
+        vix_value = item.get("vix")
+        vix: dict[str, Any] = vix_value if isinstance(vix_value, dict) else {}
+        vix_stage = _text(vix.get("stage"))
+        if sentiment_label in {"恐慌", "極度恐慌"}:
+            adjustments.append(f"{market}情緒：{sentiment_label}")
+        if vix_stage in {"恐慌", "極度恐慌"}:
+            adjustments.append(f"{market}波動：{vix_stage}")
+    return adjustments
+
+
+def build_joint_market_signal(
+    quotes: list[dict[str, Any]], risk: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build a page-only Taiwan/US composite from one validated snapshot.
+
+    This signal is descriptive presentation data. It does not replace the
+    existing assessment used by notification policy or delivery identity.
+    """
+    by_ticker: dict[str, dict[str, Any]] = {}
+    excluded: list[dict[str, str]] = []
+    for item in quotes:
+        if not isinstance(item, dict):
+            continue
+        ticker = _joint_ticker(item.get("ticker"))
+        if ticker not in {*_JOINT_TAIWAN_TICKERS, *_JOINT_US_TICKERS}:
+            continue
+        if ticker in by_ticker:
+            excluded.append({"ticker": ticker, "reason": "duplicate_underlying"})
+            continue
+        if not _joint_quote_is_usable(item):
+            excluded.append({"ticker": ticker, "reason": "quote_unusable"})
+            continue
+        by_ticker[ticker] = item
+
+    taiwan_rows = [by_ticker[ticker] for ticker in _JOINT_TAIWAN_TICKERS if ticker in by_ticker]
+    us_rows = [by_ticker[ticker] for ticker in _JOINT_US_TICKERS if ticker in by_ticker]
+    taiwan_label, taiwan_score, taiwan_directions = _joint_market_direction(taiwan_rows)
+    us_label, us_score, us_directions = _joint_market_direction(us_rows)
+    valid_factors = len(taiwan_rows) + len(us_rows)
+    evidence_sufficient = valid_factors >= 3 and bool(taiwan_rows) and bool(us_rows)
+    price_score = round((taiwan_score + us_score) / 2, 3) if taiwan_score is not None and us_score is not None else None
+    if not evidence_sufficient or price_score is None:
+        base_label = "資料不足，台美狀態待確認"
+    elif price_score > 0.25:
+        base_label = "偏多"
+    elif price_score < -0.25:
+        base_label = "中性偏謹慎"
+    else:
+        base_label = "中性"
+    divergent = (
+        taiwan_score is not None and us_score is not None
+        and ((taiwan_score > 0.25 and us_score < -0.25) or (taiwan_score < -0.25 and us_score > 0.25))
+    )
+    risk_adjustments = _joint_risk_adjustments(risk)
+    if evidence_sufficient and risk_adjustments and base_label in {"偏多", "中性"}:
+        base_label = "中性偏謹慎"
+    label = f"台美分歧，整體{base_label}" if divergent and evidence_sufficient else base_label
+
+    def evidence(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return [
+            {
+                key: item[key]
+                for key in ("ticker", "name", "price", "change_percent", "currency", "freshness", "data_status", "quote_date", "quote_time", "source_label", "source_url")
+                if key in item and item[key] not in (None, "")
+            }
+            for item in rows
+        ]
+
+    return {
+        "version": JOINT_MARKET_SIGNAL_VERSION,
+        "status": "complete" if evidence_sufficient else "insufficient_evidence",
+        "label": label,
+        "base_label": base_label,
+        "taiwan": {"label": taiwan_label, "score": taiwan_score, "directions": taiwan_directions, "valid_factors": len(taiwan_rows)},
+        "us": {"label": us_label, "score": us_score, "directions": us_directions, "valid_factors": len(us_rows)},
+        "price_score": price_score,
+        "valid_factor_count": valid_factors,
+        "minimum_factor_count": 3,
+        "risk_adjustments": risk_adjustments,
+        "divergent": divergent,
+        "evidence": {"taiwan": evidence(taiwan_rows), "us": evidence(us_rows)},
+        "excluded_factors": excluded,
+        "confidence": "medium" if evidence_sufficient else "low",
+    }
 
 
 def _parse_time(value: Any) -> datetime | None:
@@ -381,6 +523,7 @@ def build_market_assessment(
     themes: list[dict[str, Any]],
     intelligence: dict[str, Any] | None = None,
     market_status: dict[str, Any] | None = None,
+    risk: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a five-level stance with explicit evidence sufficiency."""
     factors, dimensions, directional, group_tickers, quote_tickers = _quote_factors(quotes, slot=slot)
@@ -451,17 +594,17 @@ def build_market_assessment(
     driver, dominant_key = _market_driver(slot, quotes, themes, group_tickers)
     highlights = _quote_highlights(quotes, slot)
     if conflict:
-        risk = "核心證據方向有衝突，等待下一次收盤或官方資料核對。"
+        risk_summary = "核心證據方向有衝突，等待下一次收盤或官方資料核對。"
     elif confidence == "low":
-        risk = "有效因子不足，暫不把新聞或單一行情視為方向確認。"
+        risk_summary = "有效因子不足，暫不把新聞或單一行情視為方向確認。"
     else:
-        risk = "留意利率、美元與能源變化是否改變目前市場傳導。"
+        risk_summary = "留意利率、美元與能源變化是否改變目前市場傳導。"
     quote_driven = driver in {
         "台股與半導體同步偏強", "台股核心指數偏強", "台股核心指數偏弱",
         "美股科技與大盤同步偏強", "美股科技股偏弱", "美股大盤偏弱",
     }
     if dominant_key is None and themes and not quote_driven:
-        risk = f"{driver}，仍待價格確認。"
+        risk_summary = f"{driver}，仍待價格確認。"
     return {
         "stance": stance,
         "stance_label": stance_label,
@@ -482,8 +625,9 @@ def build_market_assessment(
         "summary_sections": {
             "summary": market_summary,
             "market_highlights": highlights,
-            "risk": risk,
+            "risk": risk_summary,
         },
+        "joint_market_signal": build_joint_market_signal(quotes, risk),
         "evidence_as_of": as_of.isoformat(),
         "factor_count": factor_count,
         "evidence_dimensions": sorted(dimensions),

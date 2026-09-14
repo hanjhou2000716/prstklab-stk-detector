@@ -1,6 +1,6 @@
 import json
 
-from src.market_assessment import normalize_headline
+from src.market_assessment import build_joint_market_signal, normalize_headline
 from src.market_digest import build_market_digest
 
 
@@ -210,3 +210,43 @@ def test_public_message_is_bounded_without_ellipsis_or_multiple_event_facts():
     assert "..." not in result["public_short_message"]
     assert "…" not in result["public_short_message"]
     assert result["public_short_message"].count("；") <= 1
+
+
+def test_joint_market_signal_requires_three_factors_and_both_markets():
+    signal = build_joint_market_signal([
+        {"ticker": "TAIEX", "price": 100, "change_percent": 0.8, "freshness": "recent_close"},
+        {"ticker": "TPEx", "price": 100, "change_percent": 0.4, "freshness": "recent_close"},
+        {"ticker": "NASDAQ", "price": 100, "change_percent": 0.6, "freshness": "recent_close"},
+    ])
+
+    assert signal["status"] == "complete"
+    assert signal["label"] == "偏多"
+    assert signal["valid_factor_count"] == 3
+
+
+def test_joint_market_signal_marks_taiwan_us_divergence_and_panic_downgrade():
+    signal = build_joint_market_signal([
+        {"ticker": "TAIEX", "price": 100, "change_percent": -0.6, "freshness": "recent_close"},
+        {"ticker": "TPEx", "price": 100, "change_percent": -0.4, "freshness": "recent_close"},
+        {"ticker": "NASDAQ", "price": 100, "change_percent": 1.0, "freshness": "recent_close"},
+        {"ticker": "SOX", "price": 100, "change_percent": 1.2, "freshness": "recent_close"},
+    ], {
+        "us": {"sentiment": {"label": "恐慌"}},
+    })
+
+    assert signal["status"] == "complete"
+    assert signal["divergent"] is True
+    assert signal["label"].startswith("台美分歧，整體")
+    assert signal["risk_adjustments"] == ["us情緒：恐慌"]
+
+
+def test_joint_market_signal_fails_closed_for_missing_or_invalid_prices():
+    signal = build_joint_market_signal([
+        {"ticker": "TAIEX", "price": 100, "change_percent": None},
+        {"ticker": "TPEx", "price": 100, "change_percent": float("nan")},
+        {"ticker": "NASDAQ", "price": 100, "change_percent": 0.5, "freshness": "recent_close"},
+    ])
+
+    assert signal["status"] == "insufficient_evidence"
+    assert signal["label"] == "資料不足，台美狀態待確認"
+    assert signal["valid_factor_count"] == 1

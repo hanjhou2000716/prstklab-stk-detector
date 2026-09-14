@@ -1337,26 +1337,36 @@ const renderBriefing = (briefing, generatedAt) => {
     const summaryFacts = Array.isArray(report.summary_facts)
       ? report.summary_facts.filter((item) => item && typeof item === "object" && String(item.value || "").trim())
       : [];
-    const renderSummaryFacts = () => summaryFacts.map((item) => {
+    const renderSummaryFacts = () => summaryFacts.slice(0, 2).map((item, index) => {
       const value = item.key === "confidence" ? confidenceLabel(item.raw_value || item.value) : String(item.value || "");
-      return `<p class="briefing-fact-row"><b class="briefing-analysis-label">${escapeHtml(String(item.label || "市場資料"))}：</b><span>${escapeHtml(value)}</span></p>`;
+      return `<p class="briefing-fact-row"><b class="briefing-analysis-label"><span class="briefing-analysis-index">${index + 1}.</span>${escapeHtml(String(item.label || "市場資料"))}：</b><span>${escapeHtml(value)}</span></p>`;
     }).join("");
-    const renderLabeledValue = (label, value) => String(value || "").trim()
-      ? `<p><b class="briefing-analysis-label">${escapeHtml(label)}：</b>${escapeHtml(String(value))}</p>` : "";
+    const renderLabeledValue = (label, value, number) => String(value || "").trim()
+      ? `<p><b class="briefing-analysis-label"><span class="briefing-analysis-index">${number}.</span>${escapeHtml(label)}：</b>${escapeHtml(String(value))}</p>` : "";
     const renderMorningSection = (item, index) => {
       const facts = Array.isArray(item.facts) ? item.facts : [];
       const structuredFacts = Array.isArray(item.facts_structured) ? item.facts_structured : [];
       const renderStructuredFacts = () => structuredFacts.slice(0, 6).map((fact) => {
         const quote = fact && fact.quote && typeof fact.quote === "object" ? fact.quote : null;
-        const movement = quote && Number.isFinite(Number(quote.change_percent))
-          ? Number(quote.change_percent) > 0 ? "market-up" : Number(quote.change_percent) < 0 ? "market-down" : "flat"
+        const rawChange = quote?.change_percent;
+        const change = rawChange === null || rawChange === undefined || rawChange === "" ? NaN : Number(rawChange);
+        const movement = quote && Number.isFinite(change)
+          ? change > 0 ? "market-up" : change < 0 ? "market-down" : "flat"
           : "flat";
-        return `<p class="morning-analysis-fact ${movement}">${escapeHtml(String(fact?.text || ""))}</p>`;
+        const icon = movement === "market-up" ? "🚀 " : movement === "market-down" ? "🐻 " : "";
+        return `<p class="morning-analysis-fact ${movement}">${icon}${escapeHtml(String(fact?.text || ""))}</p>`;
       }).join("");
       const factsMarkup = index === 0 && summaryFacts.length
         ? renderSummaryFacts()
         : structuredFacts.length ? renderStructuredFacts() : facts.slice(0, 5).map((fact) => `<p class="morning-analysis-fact">${escapeHtml(String(fact))}</p>`).join("");
-      return `<article class="morning-analysis-section"><div class="morning-analysis-section-heading"><h3>${escapeHtml(item.title || "市場判讀")}</h3></div>${factsMarkup}${renderLabeledValue("為何重要", item.why_it_matters)}${renderLabeledValue("可能傳導", item.transmission)}${renderLabeledValue("市場觀察", item.market_observation)}${renderLabeledValue("下一項催化劑", item.next_catalyst)}${renderEvidence(item.evidence)}</article>`;
+      const labelStart = index === 0 ? 3 : 1;
+      const labeledValues = [
+        ["為何重要", item.why_it_matters],
+        ["可能傳導", item.transmission],
+        ["市場觀察", item.market_observation],
+        ["下一項催化劑", item.next_catalyst],
+      ].map(([label, value], offset) => renderLabeledValue(label, value, labelStart + offset)).join("");
+      return `<article class="morning-analysis-section"><div class="morning-analysis-section-heading"><h3>${escapeHtml(item.title || "市場判讀")}</h3></div>${factsMarkup}${labeledValues}${renderEvidence(item.evidence)}</article>`;
     };
     const sessionState = String(morningAnalysis.market_session_state || "").trim();
     const sessionMeta = sessionState && sessionState !== "本輪市場時段"
@@ -1368,6 +1378,9 @@ const renderBriefing = (briefing, generatedAt) => {
         ...(Array.isArray(morningAnalysis.system_analysis?.data_gaps) ? morningAnalysis.system_analysis.data_gaps : []),
       ].map((item) => String(item || "").trim()).filter(Boolean))];
       const note = String(morningAnalysis.system_analysis?.note || "").trim();
+      const joint = morningAnalysis.system_analysis?.joint_market_signal;
+      const jointMarkup = joint && typeof joint === "object"
+        ? `<p><b>台美訊號證據：</b>${escapeHtml(String(joint.label || "資料不足，台美狀態待確認"))}｜有效因子 ${escapeHtml(String(joint.valid_factor_count ?? "未知"))}｜${escapeHtml(String(joint.status || "未確認"))}</p>` : "";
       const decisionLabels = {
         notification_candidate: "可進入通知判定",
         no_material_change: "正常無實質變化",
@@ -1388,8 +1401,8 @@ const renderBriefing = (briefing, generatedAt) => {
           const reason = String(item.suppression_reason || (item.delivery_eligible ? "可進入通知判定" : "未取得通知資格"));
           return `${escapeHtml(`${slot}${date ? ` ${date}` : ""}：${label}（${reason}）`)}`;
         }).join("；")}</p>` : "";
-      systemAnalysis.innerHTML = gaps.length || note || scheduleMarkup
-        ? `${scheduleMarkup}${gaps.length ? `<p><b>資料缺口：</b>${escapeHtml(gaps.join("、"))}</p>` : ""}${note ? `<p>${escapeHtml(note)}</p>` : ""}`
+      systemAnalysis.innerHTML = gaps.length || note || scheduleMarkup || jointMarkup
+        ? `${jointMarkup}${scheduleMarkup}${gaps.length ? `<p><b>資料缺口：</b>${escapeHtml(gaps.join("、"))}</p>` : ""}${note ? `<p>${escapeHtml(note)}</p>` : ""}`
         : '<p class="empty">本輪沒有額外系統分析資料。</p>';
     }
     container.innerHTML = `<div class="morning-analysis">${sessionMeta}${morningSections.slice(0, 4).map(renderMorningSection).join("")}</div>`;
