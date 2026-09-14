@@ -6,7 +6,10 @@ from email.utils import format_datetime
 from pathlib import Path
 
 RAILWAY_MODULES = Path(__file__).parents[1] / "railway-monitor"
-sys.path.insert(0, str(RAILWAY_MODULES))
+# Keep the repository's root ``src`` package ahead of the standalone Railway
+# bundle; appending still makes the bundle's top-level modules importable
+# without shadowing root-only modules in the combined test run.
+sys.path.append(str(RAILWAY_MODULES))
 
 from email_router import route_source  # noqa: E402
 from email_store import EmailStore  # noqa: E402
@@ -19,7 +22,7 @@ from gmail_history_sync import (  # noqa: E402
 from gmail_watch import GmailWatchConfig  # noqa: E402
 
 from gmail_ingress import GmailIngressService  # noqa: E402
-from scripts.sync_gmail_supabase import build_safe_sync_result  # noqa: E402
+from scripts.sync_gmail_supabase import _apply_recovery_state, build_safe_sync_result  # noqa: E402
 
 
 def _candidate_diagnostics(primary: str = "", **counts: int) -> dict:
@@ -426,6 +429,97 @@ def test_sync_result_contract_preserves_priority_candidate_count() -> None:
     )
     assert result["priority_candidate_count"] == 1
     assert result["notification_requested"] is True
+
+
+def test_sync_result_contract_always_exposes_recovery_fields() -> None:
+    result = build_safe_sync_result(
+        {
+            "status": "retry_pending",
+            "processed": 0,
+            "failed": 1,
+            "accepted_new_count": 0,
+            "material_candidate_count": 0,
+            "priority_candidate_count": 0,
+            "candidate_diagnostics": _candidate_diagnostics("gmail_cursor_read_failed"),
+        },
+        notification_requested=True,
+        sync_started_at="2026-09-14T13:30:00+00:00",
+        sync_completed_at="2026-09-14T13:30:04+00:00",
+    )
+    for key in (
+        "recovery_status", "retryable", "request_attempts", "consecutive_failure_count",
+        "first_failure_at", "cursor_preserved", "next_retry_at", "escalation_reason",
+    ):
+        assert key in result
+
+
+def test_recovery_state_marks_first_transient_failure_pending_without_delivery() -> None:
+    class Store:
+        last_request_attempts = 4
+        last_retry_count = 3
+
+        def record_sync_failure(self, **_kwargs):
+            return {
+                "status": "retry_pending",
+                "consecutive_failure_count": 1,
+                "first_failure_at": "2026-09-14T13:30:50+00:00",
+                "next_retry_at": "2026-09-14T13:35:50+00:00",
+            }
+
+    result = _apply_recovery_state(
+        Store(),
+        {
+            "status": "cursor_read_failed",
+            "storage_error": "supabase_http_500",
+            "failed": 1,
+            "request_attempts": 4,
+            "supabase_retry_count": 3,
+        },
+    )
+    assert result["recovery_status"] == "retry_pending"
+    assert result["retryable"] is True
+    assert result["cursor_preserved"] is True
+    assert result["consecutive_failure_count"] == 1
+
+
+def test_recovery_state_escalates_second_transient_failure() -> None:
+    class Store:
+        last_request_attempts = 4
+        last_retry_count = 3
+
+        def record_sync_failure(self, **_kwargs):
+            return {
+                "status": "persistent_failure",
+                "consecutive_failure_count": 2,
+                "first_failure_at": "2026-09-14T13:30:50+00:00",
+                "next_retry_at": "2026-09-14T13:40:50+00:00",
+            }
+
+    result = _apply_recovery_state(
+        Store(),
+        {"status": "http_500", "failed": 1, "request_attempts": 4, "supabase_retry_count": 3},
+    )
+    assert result["recovery_status"] == "persistent_failure"
+    assert result["escalation_reason"] == "persistent_transient_failure"
+
+
+def test_local_sync_health_recovers_and_resets_failure_count(tmp_path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    first = store.record_sync_failure(
+        error="supabase_http_500",
+        failed_at="2026-09-14T13:30:50+00:00",
+        next_retry_at="2026-09-14T13:35:50+00:00",
+    )
+    assert first["status"] == "retry_pending"
+    second = store.record_sync_failure(
+        error="supabase_http_500",
+        failed_at="2026-09-14T13:35:50+00:00",
+        next_retry_at="2026-09-14T13:40:50+00:00",
+    )
+    assert second["status"] == "persistent_failure"
+    assert store.clear_sync_failure(success_at="2026-09-14T13:36:00+00:00")["had_failure"] is True
+    assert store.sync_health()["status"] == "healthy"
+    assert store.sync_health()["consecutive_failure_count"] == 0
 
 
 def test_pending_cursor_is_cleared_only_when_it_is_the_consumed_cursor(tmp_path) -> None:

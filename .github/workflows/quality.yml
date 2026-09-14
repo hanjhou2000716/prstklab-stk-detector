@@ -77,3 +77,14 @@ jobs:
         run: python -m src.system_dry_run
       - name: Offline production release-to-delivery acceptance
         run: python -m src.production_e2e
+      - name: Publish CI provenance
+        if: always()
+        run: |
+          {
+            echo "## CI provenance"
+            echo "- trigger: ${{ github.event_name }}"
+            echo "- run_id: ${{ github.run_id }}"
+            echo "- run_sha: ${{ github.sha }}"
+            echo "- ref: ${{ github.ref }}"
+            echo "- pull_request: ${{ github.event.pull_request.number || 'none' }}"
+          } >> "$GITHUB_STEP_SUMMARY"

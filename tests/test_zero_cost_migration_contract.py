@@ -108,6 +108,22 @@ def test_gmail_realtime_migration_and_worker_keep_push_separate_from_sync() -> N
     assert "last_push_received_at: receivedAt" in worker
 
 
+def test_gmail_sync_recovery_migration_is_private_and_bounded() -> None:
+    migration = (ROOT / "supabase/migrations/202609140001_gmail_sync_recovery.sql").read_text(encoding="utf-8")
+    assert "public.gmail_sync_health" in migration
+    assert "enable row level security" in migration
+    for status in ("healthy", "recovered_after_retry", "retry_pending", "persistent_failure"):
+        assert status in migration
+    assert "record_gmail_sync_failure" in migration
+    assert "clear_gmail_sync_failure" in migration
+    assert "interval '10 minutes'" in migration
+    assert "message_id" not in migration
+    workflow = (ROOT / ".github/workflows/gmail-history-sync.yml").read_text(encoding="utf-8")
+    for field in ("recovery_status", "request_attempts", "consecutive_failure_count", "cursor_preserved"):
+        assert field in workflow
+    assert "transient_sync_failure_retry_pending" in workflow
+
+
 def test_receipt_events_migration_is_idempotent_and_privacy_safe() -> None:
     migration = (ROOT / "supabase/migrations/202608280001_delivery_receipt_events.sql").read_text(encoding="utf-8")
     assert "public.delivery_receipt_events" in migration
