@@ -170,8 +170,8 @@ def test_briefing_cards_number_labels_and_quote_direction_are_structured():
 
     assert "briefing-analysis-index" in app
     assert "rawChange === null || rawChange === undefined || rawChange === \"\"" in app
-    assert 'movement === "market-up" ? "🚀 "' in app
-    assert 'movement === "market-down" ? "🐻 "' in app
+    assert "const movement = quoteMovement(quote ? normalizedChange : NaN);" in app
+    assert "quoteMovementPrefix(rawChange)" in app
     assert ".briefing-analysis-index" in styles
 
 
@@ -316,6 +316,24 @@ def test_mini_app_keeps_morning_data_gaps_in_system_analysis():
     assert 'id="briefing-morning-system-analysis"' in page
     assert "morningAnalysis.missing_evidence" in app
     assert "資料缺口" in app
+
+
+def test_mini_app_hides_legacy_missing_quote_placeholders_and_renumbers_rows():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert 'if (value >= 2.0) return { state, icon: "🐂" };' in app
+    assert 'if (value >= 0.3) return { state, icon: "🌱" };' in app
+    assert 'if (value > -0.3) return { state, icon: "🐢" };' in app
+    assert 'if (value > -2.0) return { state, icon: "🍂" };' in app
+    assert 'return { state, icon: "🐻" };' in app
+    assert 'rawValue === null || rawValue === undefined || rawValue === ""' in app
+    assert 'typeof rawValue === "boolean"' in app
+    assert "quoteMovement(item.change_percent)" in app
+    assert "const isMissingQuoteLine = (value)" in app
+    assert "const cleanMarketObservation = (value)" in app
+    assert "visibleStructuredFacts" in app
+    assert "let nextNumber = index === 0 ? 3 : 1;" in app
+    assert "gapReasonLabels" in app
 
 
 def test_mini_app_exposes_recent_anchor_decisions_in_system_analysis():
