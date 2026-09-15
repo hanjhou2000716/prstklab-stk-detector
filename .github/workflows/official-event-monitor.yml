@@ -218,7 +218,7 @@ jobs:
         # A failed recipient attempt must still reach the receipt backend so
         # the next run can retry only pending recipients and the dashboard can
         # distinguish a transport failure from a skipped send.
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped'
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.send.outputs.trace_id != '' && steps.send.outputs.delivery_status != ''
         continue-on-error: true
         env:
           RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}

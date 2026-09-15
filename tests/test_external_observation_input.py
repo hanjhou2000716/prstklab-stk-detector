@@ -47,6 +47,23 @@ def test_preserves_financialjuice_vendor_semantics_at_public_boundary(tmp_path):
     assert accepted[0]["vendor_possible_impact"] == "可能影響 AI 伺服器供應鏈"
 
 
+def test_preserves_financialjuice_identity_contract_at_public_boundary(tmp_path):
+    path = tmp_path / "external-identity.json"
+    path.write_text(json.dumps({"observations": [{
+        "observation_id": "fj-identity", "source": "financialjuice", "public_safe": True,
+        "original_headline": "Oil supply risk", "event_type": "energy",
+        "content_hash": "a" * 64,
+        "canonical_fact_key": "financialjuice-fact:identity",
+        "material_fact_version": "financialjuice-fact-version:identity",
+    }]}), encoding="utf-8")
+
+    accepted, rejected = load_external_observations(path)
+
+    assert rejected == 0
+    assert accepted[0]["canonical_fact_key"] == "financialjuice-fact:identity"
+    assert accepted[0]["material_fact_version"] == "financialjuice-fact-version:identity"
+
+
 def test_retired_creator_rows_are_suppressed_at_public_boundary(tmp_path):
     path = tmp_path / "creator.json"
     path.write_text(json.dumps({"observations": [{

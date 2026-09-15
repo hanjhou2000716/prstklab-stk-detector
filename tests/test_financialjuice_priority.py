@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from src.external_source_parsers import parse_financialjuice_email
 from src.financialjuice_priority import (
     bind_financialjuice_semantic_views,
+    is_financialjuice_priority_event,
     project_financialjuice_priority,
     public_financialjuice_observations,
 )
@@ -40,6 +41,44 @@ def test_qualifying_fj_item_becomes_release_bound_vendor_priority_event():
     assert event["observation_id_hash"] == hashlib.sha256(b"fj-observation-1").hexdigest()
     assert event["source_trace"]["observation_id_hash"] == event["observation_id_hash"]
     assert "fj-observation-1" not in event["source_trace"]["observation_id_hash"]
+    assert event["canonical_fact_key"].startswith("financialjuice-fact:")
+    assert event["material_fact_version"].startswith("financialjuice-fact-version:")
+    assert event["identity_contract_status"] == "valid"
+    assert is_financialjuice_priority_event(event) is True
+
+
+def test_missing_upstream_identity_is_rebuilt_from_sanitized_public_facts():
+    row = _row(9)
+    row.pop("canonical_fact_key", None)
+    row.pop("material_fact_version", None)
+
+    projection = project_financialjuice_priority([row])
+    event = projection["events"][0]
+    decision = projection["decisions"][0]
+
+    assert decision["notification_status"] == "eligible"
+    assert event["canonical_fact_key"].startswith("financialjuice-fact:")
+    assert decision["canonical_fact_key"] == event["canonical_fact_key"]
+    assert decision["material_fact_version"] == event["material_fact_version"]
+    assert decision["notification_key"] == event["notification_key"]
+    assert event["identity_contract_status"] == "valid"
+
+
+def test_conflicting_upstream_identity_is_blocked_from_priority_delivery():
+    row = _row(9)
+    row.update({
+        "canonical_fact_key": "financialjuice-fact:forged",
+        "material_fact_version": "financialjuice-fact-version:forged",
+    })
+
+    projection = project_financialjuice_priority([row])
+    event = projection["events"][0]
+
+    assert projection["decisions"][0]["notification_status"] == "identity_incomplete"
+    assert "fj_identity_mismatch" in projection["decisions"][0]["notification_reason"]
+    assert event["delivery_eligible"] is False
+    assert event["identity_contract_status"] == "invalid"
+    assert is_financialjuice_priority_event(event) is False
 
 
 def test_fj_freshness_uses_source_timestamp_and_fails_closed_when_missing_or_stale():

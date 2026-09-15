@@ -15,7 +15,11 @@ from datetime import UTC, datetime
 from typing import Any
 
 from src.external_event_pipeline import build_external_events
-from src.financialjuice_contract import VENDOR_PRIORITY_THRESHOLD
+from src.financialjuice_contract import (
+    VENDOR_PRIORITY_THRESHOLD,
+    financialjuice_canonical_fact_key,
+    financialjuice_material_fact_version,
+)
 
 _NEUTRAL_STOCK_OBSERVATION = "等待官方後續確認，並觀察相關市場是否同步反應。"
 _NEUTRAL_IMPORTANCE = "目前尚無額外重要性說明，等待後續公開資料核對。"
@@ -188,6 +192,51 @@ def _first_value(views: list[dict[str, Any]], *keys: str) -> Any:
             if value is not None and str(value).strip():
                 return value
     return None
+
+
+_IDENTITY_FIELDS = (
+    "original_headline", "vendor_original_headline", "headline", "title",
+    "material_numbers", "key_numbers", "content_hash",
+    "official_confirmed", "market_sync_confirmed",
+    "event_status", "material_status", "canonical_fact_key", "material_fact_version",
+)
+
+
+def _financialjuice_identity(views: list[dict[str, Any]]) -> tuple[str, str, list[str]]:
+    """Resolve and verify the factual FJ identity at the public boundary.
+
+    The canonical key is recalculated from public-safe factual fields. A key
+    supplied by an upstream parser is accepted only when it agrees with that
+    calculation; transport IDs, translations, commentary and URLs are never
+    identity inputs.
+    """
+    identity_view: dict[str, Any] = {}
+    for field in _IDENTITY_FIELDS:
+        value = _first_value(views, field)
+        if value is not None:
+            identity_view[field] = value
+    supplied_key = str(identity_view.get("canonical_fact_key") or "").strip()
+    supplied_version = str(identity_view.get("material_fact_version") or "").strip()
+    derived_key = financialjuice_canonical_fact_key(identity_view)
+    derived_version = financialjuice_material_fact_version(identity_view)
+    reasons: list[str] = []
+    if supplied_key and derived_key and supplied_key != derived_key:
+        reasons.append("fj_identity_mismatch")
+    if supplied_version and derived_version and supplied_version != derived_version:
+        reasons.append("fj_identity_mismatch")
+    if reasons:
+        # The recomputed identity is the only trustworthy fallback. Priority
+        # delivery still fails closed on the mismatch, while non-priority
+        # historical rows retain a stable audit key instead of falling back to
+        # a transport- or commentary-based identity.
+        return derived_key, derived_version or derived_key, list(dict.fromkeys(reasons))
+    canonical = derived_key or supplied_key
+    version = derived_version or supplied_version
+    if canonical and not version:
+        version = canonical
+    if not canonical:
+        reasons.append("identity_incomplete")
+    return canonical, version, list(dict.fromkeys(reasons))
 
 
 def _label_pattern(labels: tuple[str, ...]) -> re.Pattern[str]:
@@ -572,6 +621,7 @@ def _event_record(
     cluster = _mapping(result.get("cluster"))
     identity_verified = row.get("source_identity_verified") is not False
     views = _source_views(result, row)
+    canonical_fact_key, material_fact_version, identity_reasons = _financialjuice_identity(views)
     semantic = _semantic_projection(result, row)
     market = _market_intelligence(result, row, market_snapshot)
     structured_fact: dict[str, Any] = {}
@@ -678,6 +728,9 @@ def _event_record(
             "freshness_status": freshness["freshness_status"],
             "freshness_basis": freshness["freshness_basis"],
             "freshness_age_seconds": freshness["freshness_age_seconds"],
+            "canonical_fact_key": canonical_fact_key,
+            "material_fact_version": material_fact_version,
+            "identity_contract_status": "valid" if canonical_fact_key and not identity_reasons else "invalid",
         },
         "source_evidence": result.get("source_evidence") or [],
         "market_evidence": market["market_evidence"],
@@ -735,8 +788,22 @@ def _event_record(
     record["public_signal_eligible"] = public_signal_eligible
     from src.financialjuice_notification import financialjuice_notification_key
 
-    record["canonical_fact_key"] = _first_value(views, "canonical_fact_key") or ""
-    record["material_fact_version"] = _first_value(views, "material_fact_version") or record["canonical_fact_key"]
+    record["canonical_fact_key"] = canonical_fact_key
+    record["material_fact_version"] = material_fact_version
+    record["identity_contract_status"] = "valid" if canonical_fact_key and not identity_reasons else "invalid"
+    if identity_reasons and material_event_present and record.get("delivery_policy") == "fj_priority":
+        record["notification_status"] = "identity_incomplete"
+        record["vendor_priority_notification"] = False
+        record["alert_eligible"] = False
+        record["delivery_eligible"] = False
+        record["notification_reasons"] = list(dict.fromkeys([
+            *record.get("notification_reasons", []), *identity_reasons,
+        ]))
+        record["notification_reason"] = "、".join(record["notification_reasons"])
+        record["content_gate"] = {
+            **record.get("content_gate", {}),
+            "blocked_reason": "identity_incomplete",
+        }
     record["notification_key"] = financialjuice_notification_key(record)
     if record["freshness_status"] != "fresh":
         # Preserve a content failure as the primary audit state while still
@@ -837,6 +904,16 @@ def project_financialjuice_priority(
                 status, reasons = "already_cluster_notified", ["already_cluster_notified"]
                 vendor_notification = priority_qualifying
                 delivery_policy = "fj_priority" if priority_qualifying else "material_event"
+            elif priority_qualifying:
+                _, _, identity_reasons = _financialjuice_identity(_source_views(result, row))
+                if identity_reasons:
+                    status, reasons = "identity_incomplete", list(identity_reasons)
+                    vendor_notification = False
+                    delivery_policy = "fj_priority"
+                else:
+                    status, reasons = "eligible", ["vendor_priority_importance_ge_9"]
+                    vendor_notification = True
+                    delivery_policy = "fj_priority"
             else:
                 status, reasons = (
                     ("eligible", ["vendor_priority_importance_ge_9"])
@@ -883,6 +960,9 @@ def project_financialjuice_priority(
                 "observation_id": event["observation_id"],
                 "item_id": row.get("item_id"),
                 "notification_key": event.get("notification_key"),
+                "canonical_fact_key": event.get("canonical_fact_key") or "",
+                "material_fact_version": event.get("material_fact_version") or "",
+                "identity_contract_status": event.get("identity_contract_status") or "invalid",
                 "event_cluster_key": cluster_key or None,
                 "vendor_importance": event.get("vendor_importance"),
                 "vendor_priority_notification": vendor_notification,
@@ -959,8 +1039,12 @@ def bind_financialjuice_semantic_views(
             if isinstance(watch, str) and watch.strip():
                 view["stock_observation"] = watch
                 view["watch"] = watch
+            for key in (
+                "canonical_fact_key", "material_fact_version", "notification_key",
+                "identity_contract_status",
+            ):
+                view[key] = matched_event.get(key) or ""
             view["public_signal_eligible"] = matched_event.get("public_signal_eligible") is True
-            view["notification_key"] = matched_event.get("notification_key") or ""
             view["content_gate"] = matched_event.get("content_gate") or {}
             view["linked_markets"] = matched_event.get("linked_markets") or []
             view["market_evidence"] = matched_event.get("market_evidence") or []

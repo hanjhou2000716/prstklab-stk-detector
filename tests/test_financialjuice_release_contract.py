@@ -1,11 +1,23 @@
 from __future__ import annotations
 
+from src.financialjuice_notification import financialjuice_notification_key
 from src.financialjuice_release_contract import validate_financialjuice_release
 
 
 def _snapshot() -> dict:
+    canonical = "financialjuice-fact:fixture"
+    version = "financialjuice-fact-version:fixture"
+    notification_key = financialjuice_notification_key({
+        "canonical_fact_key": canonical,
+        "material_fact_version": version,
+    })
     return {
-        "financialjuice_observations": [{"observation_id": "fj-1"}],
+        "financialjuice_observations": [{
+            "observation_id": "fj-1",
+            "canonical_fact_key": canonical,
+            "material_fact_version": version,
+            "notification_key": notification_key,
+        }],
         "financialjuice_priority_decisions": [{
             "observation_id": "fj-1",
             "vendor_importance": 9,
@@ -15,6 +27,10 @@ def _snapshot() -> dict:
             "release_trace_required": True,
             "public_signal_eligible": True,
             "public_short_message": "🟣 FJ 9/10｜Oil supply risk。",
+            "canonical_fact_key": canonical,
+            "material_fact_version": version,
+            "notification_key": notification_key,
+            "identity_contract_status": "valid",
         }],
         "financialjuice_priority_events": [{
             "observation_id": "fj-1",
@@ -27,6 +43,10 @@ def _snapshot() -> dict:
             "public_signal_eligible": True,
             "public_short_message": "🟣 FJ 9/10｜Oil supply risk。",
             "source_trace": {"vendor_importance_is_not_risk": True},
+            "canonical_fact_key": canonical,
+            "material_fact_version": version,
+            "notification_key": notification_key,
+            "identity_contract_status": "valid",
         }],
     }
 
@@ -52,6 +72,16 @@ def test_financialjuice_release_contract_blocks_vendor_risk_mixup() -> None:
     result = validate_financialjuice_release(snapshot)
     assert result["ok"] is False
     assert "event[0]:vendor_risk_separation_missing" in result["errors"]
+
+
+def test_financialjuice_release_contract_blocks_identity_lineage_mismatch() -> None:
+    snapshot = _snapshot()
+    snapshot["financialjuice_priority_events"][0]["canonical_fact_key"] = "financialjuice-fact:other"
+
+    result = validate_financialjuice_release(snapshot)
+
+    assert result["ok"] is False
+    assert "event[0]:canonical_fact_key_mismatch" in result["errors"]
 
 
 def test_financialjuice_release_contract_allows_snapshot_without_fj() -> None:

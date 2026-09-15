@@ -67,9 +67,12 @@ def test_failed_notification_attempts_still_persist_receipts():
     assert "steps.send_brief.outcome != 'skipped'" in scheduled.split(
         "- name: Persist scheduled-brief delivery receipt", 1
     )[1].split("- name:", 1)[0]
-    assert "steps.send.outcome != 'skipped'" in official.split(
+    official_receipt = official.split(
         "- name: Persist Telegram delivery receipt", 1
     )[1].split("- name:", 1)[0]
+    assert "steps.send.outcome != 'skipped'" in official_receipt
+    assert "steps.send.outputs.trace_id != ''" in official_receipt
+    assert "steps.send.outputs.delivery_status != ''" in official_receipt
 
 
 def test_controlled_photo_input_is_text_only_and_fixed_to_editor():

@@ -29,6 +29,7 @@ from src.external_observation_input import (
 )
 from src.financialjuice_notification import deliver_financialjuice_event
 from src.financialjuice_priority import (
+    bind_financialjuice_semantic_views,
     is_financialjuice_priority_event,
     project_financialjuice_priority,
     public_financialjuice_observations,
@@ -107,7 +108,9 @@ def _attach_realtime_external_events(snapshot: dict[str, Any]) -> dict[str, Any]
         fj_rows, existing_events=existing_events, market_snapshot=snapshot,
     )
     snapshot["external_observations"] = public_financialjuice_observations(observations, projection["events"])
-    snapshot["financialjuice_observations"] = fj_rows
+    snapshot["financialjuice_observations"] = bind_financialjuice_semantic_views(
+        fj_rows, projection["events"],
+    )
     snapshot["financialjuice_priority_decisions"] = projection["decisions"]
     snapshot["financialjuice_priority_events"] = [
         item for item in projection["events"]
