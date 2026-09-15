@@ -12,7 +12,7 @@ import re
 from collections.abc import Iterable
 from typing import Any
 
-NARRATIVE_VERSION = "four-report-narrative-v1"
+NARRATIVE_VERSION = "four-report-narrative-v2"
 
 SLOT_FOCUS = {
     "morning": "隔夜美股與全球變化、主要事件及今日日程",
@@ -217,17 +217,19 @@ def build_narrative(
         "行情與事件未同步時維持待確認，單一指標不取代交叉核對。"
     )
     confirmation = theme_watch or _catalyst(relevant, slot, section)
-    market_reflection = "；".join(part for part in (reaction, impact) if part)
-    slot_confirmation = f"本報聚焦：{SLOT_FOCUS.get(slot, '本輪可核對市場資料')}；{confirmation}"
+    # The report focus is retained as structured metadata.  It is not copied
+    # into the public card text, where it would compete with the actual next
+    # confirmation condition.
+    slot_confirmation = confirmation
     limit_values = [value for value in (_text(item) for item in (limitations or [])) if value]
     if not evidence_refs:
         limit_values.append("本輪沒有可供展開的來源引用。")
     limit_values = list(dict.fromkeys(limit_values))
     details = [
         {"label": "發生什麼", "text": event_text, "evidence_refs": evidence_refs[:4]},
-        {"label": "市場反映", "text": market_reflection or "本輪沒有可用的價格或統計反映，暫不推論方向。", "evidence_refs": evidence_refs[:4]},
-        {"label": "為何值得注意", "text": why, "evidence_refs": evidence_refs[:4]},
-        {"label": "後續確認", "text": slot_confirmation, "evidence_refs": evidence_refs[:4]},
+        {"label": "為何重要", "text": why, "evidence_refs": evidence_refs[:4]},
+        {"label": "可能傳導", "text": impact, "evidence_refs": evidence_refs[:4]},
+        {"label": "下一項催化劑", "text": slot_confirmation, "evidence_refs": evidence_refs[:4]},
     ]
     highlights = [
         event_text,

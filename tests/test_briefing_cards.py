@@ -132,6 +132,32 @@ def test_all_missing_quote_facts_do_not_leave_public_placeholder_or_observation(
     }
 
 
+def test_public_observations_add_structure_without_repeating_quote_lines():
+    briefing = build_briefing_snapshot({
+        "indices": [
+            {"ticker": "TAIEX", "price": 45862.52, "change_percent": -0.70, "quote_date": "2026-09-14"},
+            {"ticker": "TPEx", "price": 394.41, "change_percent": -0.28, "quote_date": "2026-09-14"},
+            {"ticker": "NASDAQ", "price": 26333.04, "change_percent": 0.96, "quote_date": "2026-09-14"},
+            {"ticker": "SOX", "price": 11824.00, "change_percent": 1.81, "quote_date": "2026-09-14"},
+        ],
+        "quotes": [{"ticker": "2330", "price": 2380.0, "change_percent": -1.24, "quote_date": "2026-09-14"}],
+        "taiwan_market_statistics": {
+            "turnover": {"trade_value": 3210.5, "unit": "億元"},
+            "breadth": {"scope_verified": True, "advancing": 410, "declining": 720, "unchanged": 85},
+            "institutional_flows": {"total_net": -45.2, "unit": "億元"},
+        },
+        "events": {"items": []},
+    }, "post_close")
+
+    sections = briefing["morning_analysis"]["sections"]
+    taiwan = next(item for item in sections if item["title"] == "台股總經與盤面")
+    semiconductor = next(item for item in sections if item["title"] == "台積電／半導體與 AI")
+    assert "上漲 410 家、下跌 720 家" in taiwan["market_observation"]
+    assert "加權指數 45,862.52" not in taiwan["market_observation"]
+    assert "台積電 2,380.00" not in semiconductor["market_observation"]
+    assert "呈現分歧" in semiconductor["market_observation"]
+
+
 def test_observation_cards_follow_quote_led_digest_without_raw_publisher_tail():
     briefing = build_briefing_snapshot({
         "generated_at": "2026-09-07T07:00:00+00:00",

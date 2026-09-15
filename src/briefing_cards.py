@@ -231,6 +231,59 @@ def _pair_relation(
     return f"{left_name}{left_direction}、{right_name}{right_direction}，呈現分歧，暫不推論跨市場因果。"
 
 
+def _pair_observation(
+    left: dict[str, Any] | None, right: dict[str, Any] | None, *, left_name: str, right_name: str,
+) -> str:
+    """Return a useful comparison only when at least one quote is valid."""
+    left_valid = _usable_change(left) is not None
+    right_valid = _usable_change(right) is not None
+    if not left_valid and not right_valid:
+        return ""
+    if left_valid and not right_valid:
+        return f"{left_name}方向可供核對。"
+    if right_valid and not left_valid:
+        return f"{right_name}方向可供核對。"
+    return _pair_relation(left, right, left_name=left_name, right_name=right_name)
+
+
+def _statistics_observation(statistics: dict[str, Any]) -> str:
+    """Describe verified Taiwan statistics without repeating index quotes."""
+    parts: list[str] = []
+    turnover = statistics.get("turnover")
+    if isinstance(turnover, dict) and not isinstance(turnover.get("trade_value"), bool):
+        value = _finite_number(turnover.get("trade_value"))
+        if value is not None:
+            unit = str(turnover.get("unit") or turnover.get("currency") or "").strip()
+            parts.append(f"成交值 {value:,.2f}{unit}")
+    breadth = statistics.get("breadth")
+    if isinstance(breadth, dict) and breadth.get("scope_verified") is True:
+        values = [_finite_number(breadth.get(key)) for key in ("advancing", "declining")]
+        if all(value is not None for value in values):
+            text = f"上漲 {values[0]:.0f} 家、下跌 {values[1]:.0f} 家"
+            unchanged = _finite_number(breadth.get("unchanged"))
+            if unchanged is not None:
+                text += f"、平盤 {unchanged:.0f} 家"
+            parts.append(text)
+    flows = statistics.get("institutional_flows")
+    if isinstance(flows, dict) and not isinstance(flows.get("total_net"), bool):
+        value = _finite_number(flows.get("total_net"))
+        if value is not None:
+            unit = str(flows.get("unit") or flows.get("currency") or "").strip()
+            parts.append(f"三大法人合計淨額 {value:+,.2f}{unit}")
+    return "；".join(parts)
+
+
+def _narrative_detail(narrative: dict[str, Any], label: str) -> str:
+    """Read a generated detail for legacy card fields without rendering it twice."""
+    details = narrative.get("details")
+    if not isinstance(details, list):
+        return ""
+    for detail in details:
+        if isinstance(detail, dict) and str(detail.get("label") or "").strip() == label:
+            return str(detail.get("text") or "").strip()
+    return ""
+
+
 def _market_observations(
     items: dict[str, dict[str, Any]], risk: dict[str, Any] | None, events: list[dict[str, Any]],
     *, primary_theme: dict[str, Any] | None = None,
@@ -629,14 +682,12 @@ def _morning_analysis(
     joint_value = assessment.get("joint_market_signal")
     joint: dict[str, Any] = joint_value if isinstance(joint_value, dict) else {}
     joint_label = str(joint.get("label") or "資料不足，台美狀態待確認").strip()
-    confidence_label = {"high": "高", "medium": "中等", "low": "低"}.get(confidence.casefold(), "低")
     event_evidence = [
         item for item in (primary_theme.get("source_evidence") or primary_theme.get("evidence") or [])
         if isinstance(item, dict)
     ][:3]
     risk_facts = [joint_label, market_highlights or "本輪未取得可核對行情比較。"]
     all_risk_evidence = [*event_evidence, *semiconductor_evidence[:1], *taiwan_evidence[:1]]
-    session_note = f"{market_session_state}；" if "休市" in market_session_state else ""
     gap_names = {
         str(gap.get("ticker")): str(gap.get("name") or gap.get("ticker") or "資料")
         for gap in quote_gaps
@@ -684,14 +735,57 @@ def _morning_analysis(
             limitations=[gap_names[key] for key in ("US10Y", "DXY", "USD/TWD", "WTI", "BRENT", "GOLD") if key in gap_names],
         ),
     }
+    risk_observation = ""
+    if all_risk_evidence:
+        if "分歧" in joint_label or assessment.get("conflict_flags"):
+            risk_observation = "台美價格方向分歧，暫不推論跨市場因果。"
+        elif len(all_risk_evidence) >= 2:
+            risk_observation = "台美價格方向可作為初步確認，等待事件與下一個同口徑收盤。"
+        else:
+            risk_observation = "目前只有部分價格證據，等待另一個獨立面向確認。"
+    taiwan_observation = "；".join(
+        value for value in (
+            _pair_observation(
+                items.get("TAIEX"),
+                items.get("TPEx") or items.get("TPEX"),
+                left_name="加權指數",
+                right_name="櫃買指數",
+            ),
+            _statistics_observation(statistics),
+        ) if value
+    )
+    semiconductor_observation = _pair_observation(
+        items.get("SOX"), items.get("2330"), left_name="費半", right_name="台積電",
+    ) or _pair_observation(
+        items.get("NASDAQ"), items.get("SOX"), left_name="Nasdaq", right_name="費半",
+    )
+    external_observation = _pair_observation(
+        items.get("DXY"), items.get("GOLD"), left_name="美元指數", right_name="黃金",
+    ) or _pair_observation(
+        items.get("US10Y"), items.get("USD/TWD"), left_name="美國10年債殖利率", right_name="美元兌台幣",
+    )
+    risk_why = _narrative_detail(narratives["risk"], "為何重要") or "新聞只用於說明關注主因；市場方向仍須由至少兩個獨立價格面向核對。"
+    risk_transmission = _narrative_detail(narratives["risk"], "可能傳導") or f"{dominant_driver}；行情與事件若未同步，維持待確認，不推論因果。"
+    risk_next = _narrative_detail(narratives["risk"], "下一項催化劑") or "等待下一個同口徑收盤或官方資料核對。"
+    taiwan_why = _narrative_detail(narratives["taiwan"], "為何重要") or "加權與櫃買可分辨權值股與中小型股是否同向。"
+    taiwan_transmission = _narrative_detail(narratives["taiwan"], "可能傳導") or "台股盤面需與美元兌台幣及外圍科技股交叉觀察。"
+    taiwan_next = "等待下一次可核對的官方成交、廣度與法人資料。" if statistics_missing else (
+        _narrative_detail(narratives["taiwan"], "下一項催化劑") or "等待下一次同口徑台股盤面資料核對。"
+    )
+    semiconductor_why = _narrative_detail(narratives["semiconductor"], "為何重要") or "台積電、費半與 Nasdaq 的相對方向可交叉確認科技風險偏好。"
+    semiconductor_transmission = _narrative_detail(narratives["semiconductor"], "可能傳導") or "方向不一致時保留分歧，題材不能取代價格確認。"
+    semiconductor_next = _narrative_detail(narratives["semiconductor"], "下一項催化劑") or "等待下一次科技股收盤或公司公告核對。"
+    external_why = _narrative_detail(narratives["external"], "為何重要") or "利率、美元、能源與黃金提供估值、通膨及避險背景。"
+    external_transmission = _narrative_detail(narratives["external"], "可能傳導") or "只有在價格與資料時間一致時，才形成外部風險傳導觀察。"
+    external_next = _narrative_detail(narratives["external"], "下一項催化劑") or "等待下一次可核對的總經或政策資料。"
     sections = [
         section(
             "今日風險判讀",
             risk_facts,
-            "新聞只用於說明關注主因；市場方向仍須由至少兩個獨立價格面向核對。",
-            f"{dominant_driver}；行情與事件若未同步，維持待確認，不推論因果。",
-            f"目前判讀為{joint_label}，證據完整度為{confidence_label}。",
-            "本輪未取得明確下一項催化劑資料，持續等待官方事件或價格核對。",
+            risk_why,
+            risk_transmission,
+            risk_observation,
+            risk_next,
             all_risk_evidence,
             missing=len(all_risk_evidence) < 2,
             quote_facts=semiconductor_quote_facts[:1] + macro_quote_facts[:1],
@@ -700,10 +794,10 @@ def _morning_analysis(
         section(
             "台股總經與盤面",
             taiwan_facts,
-            "加權與櫃買可協助分辨權值股與中小型股是否同向；成交值、漲跌家數與法人資料僅採官方值。",
-            "台股盤面需與美元兌台幣及外圍科技股交叉觀察，單一指數不足以形成市場結論。",
-            f"{session_note}{'；'.join(taiwan_lines)}",
-            "本輪未取得可核對的成交量、廣度或三大法人下一項資料。",
+            taiwan_why,
+            taiwan_transmission,
+            taiwan_observation,
+            taiwan_next,
             taiwan_evidence,
             missing=bool(statistics_missing) or len(taiwan_evidence) < 2,
             quote_facts=taiwan_quote_facts,
@@ -712,10 +806,10 @@ def _morning_analysis(
         section(
             "台積電／半導體與 AI",
             semiconductor_lines,
-            "台積電、費半與 Nasdaq 同步時，才較能支持科技風險偏好的共同變化。",
-            "若台積電、費半與 Nasdaq 方向不一致，標示分歧，題材不能取代價格確認。",
-            "；".join(semiconductor_lines),
-            "本輪未取得可核對的半導體或 AI 產業催化劑資料。",
+            semiconductor_why,
+            semiconductor_transmission,
+            semiconductor_observation,
+            semiconductor_next,
             semiconductor_evidence,
             missing=len(semiconductor_evidence) < 2,
             quote_facts=semiconductor_quote_facts,
@@ -724,10 +818,10 @@ def _morning_analysis(
         section(
             "利率、匯率與外部風險",
             external_lines,
-            "美債殖利率、美元、油價與黃金反映估值、通膨及避險條件，須以同次資料時間核對。",
-            "利率或美元變化可能影響科技估值；能源與地緣事件只有在有價格或官方證據時才形成傳導觀察。",
-            "；".join(external_lines),
-            "本輪未取得可核對的下一項總經或政策催化劑。",
+            external_why,
+            external_transmission,
+            external_observation,
+            external_next,
             external_evidence,
             missing=len(external_evidence) < 2,
             quote_facts=macro_quote_facts + commodity_quote_facts,
@@ -735,7 +829,7 @@ def _morning_analysis(
         ),
     ]
     return {
-        "ruleset": "morning_analysis_evidence_v3",
+        "ruleset": "morning_analysis_evidence_v4",
         "narrative_version": NARRATIVE_VERSION,
         "evidence_as_of": as_of,
         # Kept as an additive field for old readers, but blank for current
