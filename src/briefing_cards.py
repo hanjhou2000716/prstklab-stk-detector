@@ -8,6 +8,8 @@ from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from src.briefing_narrative import NARRATIVE_VERSION, build_narrative
+
 SLOT_TITLES = {
     "morning": "投資晨報儀表板",
     "pre_open": "台股盤前儀表板",
@@ -487,8 +489,9 @@ def _morning_analysis(
         missing: bool = False,
         freshness: str = "本輪資料",
         quote_facts: list[tuple[str, dict[str, Any]]] | None = None,
+        narrative: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        return {
+        result: dict[str, Any] = {
             "title": title,
             "facts": facts,
             "facts_structured": structured_facts(facts, quote_facts or []),
@@ -500,6 +503,14 @@ def _morning_analysis(
             "freshness": freshness,
             "confidence": _morning_confidence(len(evidence), missing),
         }
+        if narrative is not None:
+            # Additive contract: legacy consumers continue to receive the
+            # original fields while new renderers use one shared narrative.
+            result["narrative"] = narrative
+            result["highlights"] = narrative.get("highlights", [])
+            result["details"] = narrative.get("details", [])
+            result["limitations"] = narrative.get("limitations", [])
+        return result
 
     quote_gaps: list[dict[str, Any]] = []
     taiwan_lines: list[str] = []
@@ -626,6 +637,53 @@ def _morning_analysis(
     risk_facts = [joint_label, market_highlights or "本輪未取得可核對行情比較。"]
     all_risk_evidence = [*event_evidence, *semiconductor_evidence[:1], *taiwan_evidence[:1]]
     session_note = f"{market_session_state}；" if "休市" in market_session_state else ""
+    gap_names = {
+        str(gap.get("ticker")): str(gap.get("name") or gap.get("ticker") or "資料")
+        for gap in quote_gaps
+    }
+    narratives = {
+        "risk": build_narrative(
+            slot=slot,
+            section="risk",
+            as_of=as_of,
+            facts=risk_facts,
+            quote_evidence=[*semiconductor_evidence[:1], *taiwan_evidence[:1], *macro_evidence[:1]],
+            themes=themes,
+            assessment=assessment,
+            limitations=[gap_names[key] for key in gap_names],
+        ),
+        "taiwan": build_narrative(
+            slot=slot,
+            section="taiwan",
+            as_of=as_of,
+            facts=taiwan_lines,
+            quote_evidence=taiwan_evidence,
+            themes=themes,
+            assessment=assessment,
+            statistics=statistics,
+            limitations=[*statistics_missing, *[gap_names[key] for key in ("TAIEX", "TPEx") if key in gap_names]],
+        ),
+        "semiconductor": build_narrative(
+            slot=slot,
+            section="semiconductor",
+            as_of=as_of,
+            facts=semiconductor_lines,
+            quote_evidence=semiconductor_evidence,
+            themes=themes,
+            assessment=assessment,
+            limitations=[gap_names[key] for key in ("2330", "SOX", "NASDAQ") if key in gap_names],
+        ),
+        "external": build_narrative(
+            slot=slot,
+            section="external",
+            as_of=as_of,
+            facts=external_lines,
+            quote_evidence=external_evidence,
+            themes=themes,
+            assessment=assessment,
+            limitations=[gap_names[key] for key in ("US10Y", "DXY", "USD/TWD", "WTI", "BRENT", "GOLD") if key in gap_names],
+        ),
+    }
     sections = [
         section(
             "今日風險判讀",
@@ -637,6 +695,7 @@ def _morning_analysis(
             all_risk_evidence,
             missing=len(all_risk_evidence) < 2,
             quote_facts=semiconductor_quote_facts[:1] + macro_quote_facts[:1],
+            narrative=narratives["risk"],
         ),
         section(
             "台股總經與盤面",
@@ -648,6 +707,7 @@ def _morning_analysis(
             taiwan_evidence,
             missing=bool(statistics_missing) or len(taiwan_evidence) < 2,
             quote_facts=taiwan_quote_facts,
+            narrative=narratives["taiwan"],
         ),
         section(
             "台積電／半導體與 AI",
@@ -659,6 +719,7 @@ def _morning_analysis(
             semiconductor_evidence,
             missing=len(semiconductor_evidence) < 2,
             quote_facts=semiconductor_quote_facts,
+            narrative=narratives["semiconductor"],
         ),
         section(
             "利率、匯率與外部風險",
@@ -670,10 +731,12 @@ def _morning_analysis(
             external_evidence,
             missing=len(external_evidence) < 2,
             quote_facts=macro_quote_facts + commodity_quote_facts,
+            narrative=narratives["external"],
         ),
     ]
     return {
-        "ruleset": "morning_analysis_evidence_v2",
+        "ruleset": "morning_analysis_evidence_v3",
+        "narrative_version": NARRATIVE_VERSION,
         "evidence_as_of": as_of,
         # Kept as an additive field for old readers, but blank for current
         # releases so the UI cannot render a meaningless meta strip.  Real
