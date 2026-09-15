@@ -43,6 +43,8 @@ SAFE_FIELDS = {
     "fetched_at", "source_url", "source_domain", "source_tier", "official_confirmed",
     "market_sync_confirmed", "cross_source_count", "market_evidence", "entities", "topics",
     "tickers", "parse_status", "parser_version", "event_cluster_key", "item_id", "content_hash",
+    "material_numbers", "key_numbers", "canonical_fact_key", "material_fact_version",
+    "event_status", "material_status",
     "candidate_event_type", "public_safe",
     "creator_id", "creator_name", "episode_key", "episode_id", "episode_title",
     "source_identity_verified",

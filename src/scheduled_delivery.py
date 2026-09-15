@@ -25,6 +25,7 @@ from src.external_observation_input import (
 )
 from src.financialjuice_notification import deliver_financialjuice_event, financialjuice_caption
 from src.financialjuice_priority import (
+    bind_financialjuice_semantic_views,
     is_financialjuice_priority_event,
     project_financialjuice_priority,
     public_financialjuice_observations,
@@ -681,7 +682,9 @@ def prepare(
     snapshot["financialjuice_priority_events"] = [
         event for event in fj_projection["events"] if event.get("notification_status") == "eligible"
     ]
-    snapshot["financialjuice_observations"] = financialjuice_observations
+    snapshot["financialjuice_observations"] = bind_financialjuice_semantic_views(
+        financialjuice_observations, fj_projection["events"],
+    )
     # Persist the contract result in the same release snapshot and stop before
     # publication if a qualifying FJ item is no longer aligned with its
     # decision/event lineage.  This prevents a partial or hand-edited bundle

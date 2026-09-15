@@ -13,6 +13,7 @@ import math
 from typing import Any
 
 from src.financialjuice_contract import VENDOR_PRIORITY_THRESHOLD
+from src.financialjuice_notification import financialjuice_notification_key
 from src.telegram_client import is_valid_public_summary
 
 _STATUSES = frozenset({
@@ -23,6 +24,7 @@ _STATUSES = frozenset({
     "stale_source_event",
     "invalid_future_source_timestamp",
     "missing_source_timestamp",
+    "identity_incomplete",
 })
 
 
@@ -45,6 +47,11 @@ def validate_financialjuice_release(snapshot: dict[str, Any]) -> dict[str, Any]:
 
     observation_ids = {
         str(row.get("observation_id") or "").strip()
+        for row in observations
+        if str(row.get("observation_id") or "").strip()
+    }
+    observation_by_id = {
+        str(row.get("observation_id") or "").strip(): row
         for row in observations
         if str(row.get("observation_id") or "").strip()
     }
@@ -85,6 +92,30 @@ def validate_financialjuice_release(snapshot: dict[str, Any]) -> dict[str, Any]:
                 errors.append(f"decision[{index}]:eligible_without_public_signal")
             if not is_valid_public_summary(str(decision.get("public_short_message") or ""), source="financialjuice"):
                 errors.append(f"decision[{index}]:invalid_public_summary")
+            decision_key = str(decision.get("canonical_fact_key") or "").strip()
+            decision_version = str(decision.get("material_fact_version") or "").strip()
+            decision_notification_key = str(decision.get("notification_key") or "").strip()
+            if decision.get("identity_contract_status") != "valid":
+                errors.append(f"decision[{index}]:identity_contract_invalid")
+            if not decision_key:
+                errors.append(f"decision[{index}]:missing_canonical_fact_key")
+            if not decision_version:
+                errors.append(f"decision[{index}]:missing_material_fact_version")
+            if not decision_notification_key:
+                errors.append(f"decision[{index}]:missing_notification_key")
+            elif decision_key and decision_version:
+                expected_key = financialjuice_notification_key({
+                    "canonical_fact_key": decision_key,
+                    "material_fact_version": decision_version,
+                })
+                if decision_notification_key != expected_key:
+                    errors.append(f"decision[{index}]:notification_key_mismatch")
+            observation = observation_by_id.get(observation_id)
+            for field in ("canonical_fact_key", "material_fact_version", "notification_key"):
+                if observation is None or not str(observation.get(field) or "").strip():
+                    errors.append(f"decision[{index}]:observation_missing_{field}")
+                elif str(observation.get(field)).strip() != str(decision.get(field)).strip():
+                    errors.append(f"decision[{index}]:observation_{field}_mismatch")
 
     if observation_ids and set(decision_ids) != observation_ids:
         missing = sorted(observation_ids.difference(decision_ids))
@@ -134,6 +165,24 @@ def validate_financialjuice_release(snapshot: dict[str, Any]) -> dict[str, Any]:
             public_message = event.get("public_short_message") or event.get("brief_title") or ""
             if not is_valid_public_summary(str(public_message), source="financialjuice"):
                 errors.append(f"event[{index}]:invalid_public_summary")
+            event_key = str(event.get("canonical_fact_key") or "").strip()
+            event_version = str(event.get("material_fact_version") or "").strip()
+            event_notification_key = str(event.get("notification_key") or "").strip()
+            if event.get("identity_contract_status") != "valid":
+                errors.append(f"event[{index}]:identity_contract_invalid")
+            for field, value in (
+                ("canonical_fact_key", event_key),
+                ("material_fact_version", event_version),
+                ("notification_key", event_notification_key),
+            ):
+                if not value:
+                    errors.append(f"event[{index}]:missing_{field}")
+            if event_key != str(event_decision.get("canonical_fact_key") or "").strip():
+                errors.append(f"event[{index}]:canonical_fact_key_mismatch")
+            if event_version != str(event_decision.get("material_fact_version") or "").strip():
+                errors.append(f"event[{index}]:material_fact_version_mismatch")
+            if event_notification_key != str(event_decision.get("notification_key") or "").strip():
+                errors.append(f"event[{index}]:notification_key_mismatch")
     eligible_ids = {
         observation_id
         for observation_id, decision in decision_by_id.items()
