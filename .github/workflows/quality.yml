@@ -76,7 +76,10 @@ jobs:
       - name: Offline release-to-delivery dry run
         run: python -m src.system_dry_run
       - name: Offline production release-to-delivery acceptance
-        run: python -m src.production_e2e
+        # Use the locked environment that installed Chromium above.  Running
+        # the system Python here can load a different Playwright version and
+        # fail to find the matching browser even though installation passed.
+        run: uv run python -m src.production_e2e
       - name: Publish CI provenance
         if: always()
         run: |
