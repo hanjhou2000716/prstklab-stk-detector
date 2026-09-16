@@ -20,7 +20,7 @@ from src.asset_contract import validate_assets
 from src.creator_artifact import validate_creator_artifact
 from src.creator_release import validate_creator_release
 from src.production_acceptance import validate_production_bundle
-from src.release_manifest import verify_release_files
+from src.release_manifest import PUBLISHABLE_RELEASE_STATUSES, verify_release_files
 
 
 def _external_observation_lineage_errors(market: dict[str, Any], manifest: dict[str, Any]) -> list[str]:
@@ -330,7 +330,7 @@ def verify_release_for_delivery(
         return ReleaseGateResult(False, errors=("manifest must be a JSON object",))
 
     errors: list[str] = []
-    if manifest.get("status") != "ready":
+    if manifest.get("status") not in PUBLISHABLE_RELEASE_STATUSES:
         errors.append("manifest status is not ready")
     release_id = str(manifest.get("release_id") or "")
     snapshot_id = str(manifest.get("market_snapshot_id") or "")
@@ -410,7 +410,7 @@ def verify_release_for_delivery(
                 remote = response.json()
                 if not isinstance(remote, dict):
                     public_error = "public manifest is not an object"
-                elif remote.get("status") != "ready":
+                elif remote.get("status") not in PUBLISHABLE_RELEASE_STATUSES:
                     public_error = "public manifest status is not ready"
                 elif str(remote.get("release_id") or "") != release_id:
                     public_error = "public manifest release_id does not match local release"

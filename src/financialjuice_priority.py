@@ -765,14 +765,15 @@ def _event_record(
         vendor_priority_notification = False
         record["alert_eligible"] = False
         # A low-score/non-priority item may already be correctly excluded by
-        # the ordinary policy.  Keep that decision while recording the
-        # semantic-summary defect for diagnosis.  It may remain visible in the
-        # non-delivery event lane, but it must never become a public FJ alert
-        # or reach the sender.  Only an otherwise eligible candidate is
-        # converted to the fail-closed content state.
+        # the ordinary delivery policy.  Keep that decision while recording
+        # the semantic-summary defect for diagnosis, but do not expose an
+        # incomplete sentence in any public FJ event lane.
         if status == "eligible":
             status = "content_incomplete"
-            public_signal_eligible = False
+        # An incomplete public summary is not safe for any public event lane,
+        # including a non-delivery observation.  Keep the semantic row only in
+        # the private/audit lineage so the release boundary can quarantine it.
+        public_signal_eligible = False
         record["notification_status"] = status
         record["notification_reasons"] = reasons
         record["notification_reason"] = "、".join(reasons)
@@ -1071,6 +1072,11 @@ def bind_financialjuice_semantic_views(
             ):
                 view[key] = matched_event.get(key) or ([] if key == "public_summary_evidence_fields" else "")
             view["public_signal_eligible"] = matched_event.get("public_signal_eligible") is True
+            for key in (
+                "alert_eligible", "vendor_priority_notification", "delivery_eligible",
+                "notification_status", "notification_reason",
+            ):
+                view[key] = matched_event.get(key)
             view["content_gate"] = matched_event.get("content_gate") or {}
             view["linked_markets"] = matched_event.get("linked_markets") or []
             view["market_evidence"] = matched_event.get("market_evidence") or []
@@ -1105,7 +1111,15 @@ def public_financialjuice_observations(
             None,
         )
         summary = row.get("public_short_message") or row.get("brief_title") or ""
-        if matched and row.get("public_signal_eligible") is True and is_valid_public_summary(summary, source="financialjuice"):
+        if (
+            matched
+            and matched.get("public_signal_eligible") is True
+            and (
+                str(matched.get("public_summary_version") or "").strip() != "public-summary-v3"
+                or matched.get("public_summary_status") == "ready"
+            )
+            and is_valid_public_summary(summary, source="financialjuice")
+        ):
             public.append(row)
     return public
 
@@ -1142,6 +1156,12 @@ def replace_financialjuice_event_lane(
     projected_keys: set[str] = set()
     for item in projected_events:
         if not isinstance(item, dict) or item.get("public_signal_eligible") is not True:
+            continue
+        if str(item.get("public_summary_version") or "").strip() == "public-summary-v3" and item.get("public_summary_status") != "ready":
+            continue
+        summary = str(item.get("public_short_message") or item.get("brief_title") or "").strip()
+        from src.telegram_client import is_valid_public_summary
+        if not is_valid_public_summary(summary, source="financialjuice"):
             continue
         notification_key = financialjuice_notification_key(item)
         if notification_key and notification_key in projected_keys:

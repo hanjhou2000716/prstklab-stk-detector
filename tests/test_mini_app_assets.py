@@ -190,7 +190,7 @@ def test_mini_app_loads_only_a_hash_verified_release():
     app = (root / "site" / "app.js").read_text(encoding="utf-8")
 
     assert 'data/release-manifest.json' in app
-    assert 'manifest.status !== "ready"' in app
+    assert 'PUBLISHABLE_RELEASE_STATUSES.has(manifest.status)' in app
     assert "artifact_hashes" in app
     assert "crypto.subtle.digest" in app
     assert "research snapshot does not match release" in app

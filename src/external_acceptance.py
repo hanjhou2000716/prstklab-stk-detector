@@ -25,6 +25,7 @@ import requests
 from src.artifact_contract import validate_news_release
 from src.creator_artifact import validate_creator_artifact
 from src.creator_release import validate_creator_release
+from src.release_manifest import PUBLISHABLE_RELEASE_STATUSES
 
 SAFE_HEALTH_KEYS = {
     "status", "service", "started_at", "last_success_at", "last_failure_at",
@@ -245,7 +246,7 @@ def _external_observation_lineage_reasons(
     This comparison closes the remaining gap: a healthy ingress alone cannot
     prove that the same approved observations were published.
     """
-    if evidence is None or manifest is None or manifest.get("status") != "ready":
+    if evidence is None or manifest is None or manifest.get("status") not in PUBLISHABLE_RELEASE_STATUSES:
         return []
     reasons: list[str] = []
     evidence_status = str(evidence.get("status") or "")
@@ -511,7 +512,7 @@ def _build_gate_summary(
     railway_reasons = reasons_for(("railway_",))
     pages_reasons = reasons_for(("pages_",))
     health_ready = railway_status == 200 and health is not None
-    manifest_ready = manifest_status == 200 and isinstance(manifest, dict) and manifest.get("status") == "ready"
+    manifest_ready = manifest_status == 200 and isinstance(manifest, dict) and manifest.get("status") in PUBLISHABLE_RELEASE_STATUSES
     artifact_checked = manifest_ready and artifact_audit.get("declared_count", 0) > 0
     artifact_ready = artifact_checked and not any(
         int(artifact_audit.get(field, 0) or 0) > 0
@@ -702,7 +703,7 @@ def capture(*, railway_url: str, public_url: str, worker_url: str | None = None,
     }
     if manifest_status != 200 or manifest is None:
         reasons.append(f"pages_manifest_unavailable:{manifest_error or manifest_status}")
-    elif manifest.get("status") != "ready":
+    elif manifest.get("status") not in PUBLISHABLE_RELEASE_STATUSES:
         reasons.append(f"pages_manifest_status:{manifest.get('status')}")
     else:
         artifact_audit, artifact_reasons = _artifact_hash_audit(

@@ -153,7 +153,7 @@ def test_realtime_external_projection_adds_eligible_fj_to_shared_event_lane(monk
     assert result["financialjuice_release_contract"]["ok"] is True
 
 
-def test_realtime_external_projection_keeps_below_threshold_visible_without_selection(monkeypatch, tmp_path):
+def test_realtime_external_projection_quarantines_incomplete_below_threshold_without_selection(monkeypatch, tmp_path):
     source = tmp_path / "observations.json"
     source.write_text("[]", encoding="utf-8")
     row = {
@@ -171,7 +171,10 @@ def test_realtime_external_projection_keeps_below_threshold_visible_without_sele
     result = monitor._attach_realtime_external_events({"events": {"items": []}})
     assert result["financialjuice_priority_decisions"][0]["notification_status"] == "not_eligible"
     assert result["financialjuice_priority_events"] == []
-    assert result["events"]["items"][0]["notification_status"] == "not_eligible"
+    assert result["events"]["items"] == []
+    assert result["external_observations"] == []
+    assert result["financialjuice_release_boundary"]["status"] == "ready_with_quarantine"
+    assert result["financialjuice_release_boundary"]["quarantined_alert_count"] == 1
 
 
 def test_realtime_external_projection_removes_stale_blocked_fj_rows(monkeypatch, tmp_path):

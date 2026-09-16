@@ -24,6 +24,7 @@ REQUIRED_RESEARCH_STRATEGIES = frozenset({
     ("us", "resonance"),
     ("us", "value"),
 })
+PUBLISHABLE_RELEASE_STATUSES = frozenset({"ready", "ready_with_quarantine"})
 
 
 @dataclass(frozen=True)
@@ -258,7 +259,7 @@ def validate_production_bundle(
     """Check cross-artifact invariants before Pages or Telegram delivery."""
 
     errors: list[str] = []
-    if manifest.get("status") != "ready":
+    if manifest.get("status") not in PUBLISHABLE_RELEASE_STATUSES:
         errors.append("manifest status is not ready")
     release_id = str(manifest.get("release_id") or "")
     if not release_id:

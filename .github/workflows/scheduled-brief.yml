@@ -174,6 +174,7 @@ jobs:
           key: scheduled-brief-${{ steps.window.outputs.key }}
       - name: Build release manifest
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true'
+        id: release_manifest
         run: |
           arguments=(
             --allow-stale-research
@@ -203,7 +204,42 @@ jobs:
           if [ "${{ steps.window.outputs.slot }}" = "morning" ]; then
             arguments+=(--creator-morning-batch)
           fi
+          set +e
           python -m src.release_manifest "${arguments[@]}"
+          manifest_status=$?
+          set -e
+          if [ -f "$MANIFEST_PATH" ]; then
+            python - "$MANIFEST_PATH" >> "$GITHUB_OUTPUT" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          manifest = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          print(f"manifest_status={manifest.get('status', 'invalid')}")
+          print(f"alert_projection_status={manifest.get('alert_projection_status', 'unknown')}")
+          print(f"quarantined_alert_count={manifest.get('quarantined_alert_count', 0)}")
+          print("quarantined_alert_reasons=" + ",".join(str(item) for item in manifest.get("quarantined_alert_reasons", []) if str(item).strip()))
+          print("fatal_alert_contract_errors=" + ";".join(str(item) for item in manifest.get("fatal_alert_contract_errors", []) if str(item).strip()))
+          PY
+          fi
+          exit "$manifest_status"
+      - name: Capture private release preflight diagnostics
+        if: always()
+        env:
+          PRODUCTION_SHA: ${{ steps.prepared_base.outputs.data_release_sha }}
+        run: >-
+          python -m src.release_diagnostics
+          --snapshot "$SNAPSHOT_PATH"
+          --manifest "$MANIFEST_PATH"
+          --output "/tmp/prstk-release-preflight-${GITHUB_RUN_ID}.json"
+          --slot "${{ steps.window.outputs.slot || env.SLOT }}"
+      - name: Upload private release preflight diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: scheduled-release-preflight-${{ github.run_id }}
+          path: /tmp/prstk-release-preflight-${{ github.run_id }}.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Resolve release publication policy
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true'
         id: release_policy
@@ -220,7 +256,7 @@ jobs:
           # while carrying an explicitly marked stale research fallback.  The
           # research policy below still blocks Telegram research delivery
           # unless the research artifact is fresh.
-          publish = manifest.get("status") == "ready"
+          publish = manifest.get("status") in {"ready", "ready_with_quarantine"}
           with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
               output.write(f"publish={'true' if publish else 'false'}\n")
           if not publish:
@@ -317,6 +353,11 @@ jobs:
           QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
           QUEUE_REASON: ${{ steps.writer_queue.outputs.reason || '' }}
           PREPARED_RELEASE_STATUS: ${{ steps.prepared_release.outputs.reason || 'not_required' }}
+          RELEASE_MANIFEST_OUTCOME: ${{ steps.release_manifest.outcome || 'not_run' }}
+          RELEASE_MANIFEST_STATUS: ${{ steps.release_manifest.outputs.manifest_status || '' }}
+          ALERT_PROJECTION_STATUS: ${{ steps.release_manifest.outputs.alert_projection_status || '' }}
+          QUARANTINED_ALERT_COUNT: ${{ steps.release_manifest.outputs.quarantined_alert_count || '0' }}
+          QUARANTINED_ALERT_REASONS: ${{ steps.release_manifest.outputs.quarantined_alert_reasons || '' }}
         run: |
           scan_status="unknown"
           if [ "$PREPARE_OUTCOME" = "success" ]; then
@@ -366,6 +407,20 @@ jobs:
               notification_reason="manual_notification_opt_in_required"
             fi
           fi
+          if [ "$RELEASE_MANIFEST_OUTCOME" = "failure" ]; then
+            scan_status="release_manifest_failed"
+            notification_status="failed"
+            if [ -n "$QUARANTINED_ALERT_REASONS" ] || [ "$ALERT_PROJECTION_STATUS" = "invalid" ]; then
+              notification_reason="fj_alert_contract_invalid"
+            else
+              notification_reason="release_manifest_failed"
+            fi
+          elif [ "$RELEASE_MANIFEST_STATUS" = "ready_with_quarantine" ]; then
+            echo "::warning::Optional FJ alert quarantined; core scheduled release continues (${QUARANTINED_ALERT_COUNT} row(s))."
+            if [ -z "$notification_reason" ] || [ "$notification_reason" = "not_attempted" ]; then
+              notification_reason="optional_fj_alert_quarantined"
+            fi
+          fi
           if [ "$QUEUE_STATUS" = "superseded" ]; then
             scan_status="not_run"
             notification_expected="false"
@@ -383,6 +438,10 @@ jobs:
             echo "- notification_expected: ${notification_expected:-false}"
             echo "- notification_status: ${notification_status}"
             echo "- notification_reason: ${notification_reason:-unknown}"
+            echo "- release_manifest_status: ${RELEASE_MANIFEST_STATUS:-unknown}"
+            echo "- alert_projection_status: ${ALERT_PROJECTION_STATUS:-unknown}"
+            echo "- quarantined_alert_count: ${QUARANTINED_ALERT_COUNT:-0}"
+            echo "- quarantined_alert_reasons: ${QUARANTINED_ALERT_REASONS:-none}"
             echo "- schedule_contract_status: ${WINDOW_CONTRACT_STATUS:-unknown}"
             echo "- schedule_contract_version: ${SCHEDULE_CONTRACT_VERSION:-unknown}"
             echo "- scheduled_slot: ${SCHEDULED_SLOT:-unknown}"

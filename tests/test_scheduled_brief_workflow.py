@@ -54,7 +54,7 @@ def test_release_policy_writes_outputs_without_corrupting_github_output():
     )[0]
 
     assert 'Path(os.environ["GITHUB_OUTPUT"]).open("a"' in policy
-    assert 'publish = manifest.get("status") == "ready"' in policy
+    assert 'publish = manifest.get("status") in {"ready", "ready_with_quarantine"}' in policy
     assert 'print("::warning::Release manifest is not ready; preserving the previous immutable release.")' in policy
     assert "Publication and research delivery are separate gates" in policy
     assert 'run: |\n          python - <<\'PY\' >> "$GITHUB_OUTPUT"' not in policy
@@ -87,9 +87,23 @@ def test_stale_research_fallback_does_not_block_market_pages_publication():
 
     # A stale fallback remains visible and auditable in Pages, while the
     # market delivery path remains eligible without research claims.
-    assert 'publish = manifest.get("status") == "ready"' in publication
+    assert 'publish = manifest.get("status") in {"ready", "ready_with_quarantine"}' in publication
     assert 'include_research = freshness == "fresh"' in research
     assert 'allow_telegram=true' in research
+
+
+def test_scheduled_release_quarantine_is_publishable_and_diagnostic_is_always_uploaded():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
+    ).read_text(encoding="utf-8")
+
+    assert 'publish = manifest.get("status") in {"ready", "ready_with_quarantine"}' in workflow
+    assert "id: release_manifest" in workflow
+    assert "python -m src.release_diagnostics" in workflow
+    assert "if: always()" in workflow.split("- name: Capture private release preflight diagnostics", 1)[1]
+    assert "scheduled-release-preflight-${{ github.run_id }}" in workflow
+    assert "optional_fj_alert_quarantined" in workflow
+    assert "fj_alert_contract_invalid" in workflow
 
 
 def test_delivery_claim_persistence_reconciles_the_public_release():

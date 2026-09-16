@@ -28,7 +28,7 @@ from src.creator_notification import deliver_creator_episode, deliver_creator_mo
 from src.creator_provider_registry import creator_ids
 from src.creator_release import validate_creator_release
 from src.railway_secret import delivery_shared_secret
-from src.release_manifest import verify_release_files
+from src.release_manifest import PUBLISHABLE_RELEASE_STATUSES, verify_release_files
 from src.scheduled_brief import _write_output
 
 
@@ -85,7 +85,7 @@ def _load_creator_release(manifest_path: Path) -> tuple[dict[str, Any] | None, d
         return None, None, ["manifest_unreadable"]
     site_root = manifest_path.parent.parent
     errors = verify_release_files(manifest, root=site_root)
-    if manifest.get("status") != "ready":
+    if manifest.get("status") not in PUBLISHABLE_RELEASE_STATUSES:
         errors.append("parent_release_not_ready")
     paths = cast(dict[str, Any], manifest.get("artifact_paths")) if isinstance(manifest.get("artifact_paths"), dict) else {}
     raw_creator_path = paths.get("creator-release.json")
