@@ -96,15 +96,27 @@ def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot
     source_key = str(event.get("source_key") or event.get("source") or "").strip().casefold()
     if source_key == "financialjuice":
         from src.financialjuice_notification import financialjuice_public_short_message
-        from src.telegram_client import is_valid_public_summary
+        from src.telegram_client import PUBLIC_SUMMARY_VERSION, is_valid_public_summary
 
-        generated_public_short_message = financialjuice_public_short_message(event)
         stored_public_short_message = str(event.get("public_short_message") or "").strip()
-        public_short_message = (
-            generated_public_short_message
-            if is_valid_public_summary(generated_public_short_message, source="financialjuice")
-            else stored_public_short_message
-        )
+        stored_version = str(event.get("public_summary_version") or "").strip()
+        if stored_version == PUBLIC_SUMMARY_VERSION:
+            # A v3 producer has already selected and audited the public fact.
+            # The release renderer must preserve that exact text; silently
+            # re-summarizing here would recreate the short-first-clause bug.
+            if event.get("public_summary_status") != "ready":
+                raise ValueError("financialjuice public summary is not ready")
+            public_short_message = stored_public_short_message
+        else:
+            # Historical artifacts do not carry the v3 contract.  Generate a
+            # compatible view for them, but never replace a valid v3 value
+            # with a legacy fallback.
+            generated_public_short_message = financialjuice_public_short_message(event)
+            public_short_message = (
+                generated_public_short_message
+                if is_valid_public_summary(generated_public_short_message, source="financialjuice")
+                else stored_public_short_message
+            )
         if not is_valid_public_summary(public_short_message, source="financialjuice"):
             raise ValueError("financialjuice event has no valid public summary")
         brief_title = public_short_message
@@ -149,6 +161,12 @@ def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot
         "title": title,
         "brief_title": brief_title,
         "public_short_message": public_short_message,
+        "public_summary_version": event.get("public_summary_version"),
+        "public_summary_status": event.get("public_summary_status"),
+        "public_summary_reason": event.get("public_summary_reason"),
+        "public_summary_source_field": event.get("public_summary_source_field"),
+        "public_summary_evidence_fields": event.get("public_summary_evidence_fields") or [],
+        "public_summary_char_count": event.get("public_summary_char_count") or len(public_short_message),
         "short_label": event.get("short_label") or event.get("source") or "公開事件",
         "event": event.get("event") or title,
         "linked_markets": linked_markets,
