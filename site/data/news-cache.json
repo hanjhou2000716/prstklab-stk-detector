@@ -2,8 +2,41 @@
   "schema": 2,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-09-16T18:52:18.562701+00:00",
+      "fetched_at": "2026-09-16T19:03:08.033522+00:00",
       "stories": [
+        {
+          "title": "4. 〈台股開盤〉升息壓力加劇、AI產業三巨頭籲放緩先進模型開發 台股跌逾700點摜破月線",
+          "url": "https://news.cnyes.com/news/id/6605464",
+          "source": "鉅亨網｜持股關聯",
+          "relevance": "holding",
+          "provider": "anue",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": null
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": null
+          }
+        },
         {
           "title": "NetApp與坦帕灣海盜隊達成合作，賦能資料驅動的卓越營運",
           "url": "https://tw.stock.yahoo.com/news/netapp%E8%88%87%E5%9D%A6%E5%B8%95%E7%81%A3%E6%B5%B7%E7%9B%9C%E9%9A%8A%E9%81%94%E6%88%90%E5%90%88%E4%BD%9C-%E8%B3%A6%E8%83%BD%E8%B3%87%E6%96%99%E9%A9%85%E5%8B%95%E7%9A%84%E5%8D%93%E8%B6%8A%E7%87%9F%E9%81%8B-184200771.html",
@@ -39,6 +72,124 @@
             "matched_term_count": 1,
             "source_market_hint": null
           }
+        },
+        {
+          "title": "Fed三年來首度升息 點狀圖暗示今年還將有一次升息",
+          "url": "https://tw.stock.yahoo.com/news/fed%E4%B8%89%E5%B9%B4%E4%BE%86%E9%A6%96%E5%BA%A6%E5%8D%87%E6%81%AF-%E9%BB%9E%E7%8B%80%E5%9C%96%E6%9A%97%E7%A4%BA%E4%BB%8A%E5%B9%B4%E9%82%84%E5%B0%87%E6%9C%89-%E6%AC%A1%E5%8D%87%E6%81%AF-180600929.html",
+          "source": "Yahoo Taiwan Finance",
+          "relevance": "market",
+          "published_at": "2026-09-16T18:06:00+00:00",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "provider": "yahoo_finance",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [
+              "fed"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "cross_market"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [
+            "fed"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "cross_market"
+          },
+          "story_id": "news-b8a1a3d5baac578deacb",
+          "provider_name": "Yahoo Taiwan Finance",
+          "raw_title": "Fed三年來首度升息 點狀圖暗示今年還將有一次升息",
+          "normalized_fact": "Fed三年來首度升息 點狀圖暗示今年還將有一次升息。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/fed%E4%B8%89%E5%B9%B4%E4%BE%86%E9%A6%96%E5%BA%A6%E5%8D%87%E6%81%AF-%E9%BB%9E%E7%8B%80%E5%9C%96%E6%9A%97%E7%A4%BA%E4%BB%8A%E5%B9%B4%E9%82%84%E5%B0%87%E6%9C%89-%E6%AC%A1%E5%8D%87%E6%81%AF-180600929.html",
+          "market": "cross_market",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "升息"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "升息"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "升息",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market"
+          ],
+          "freshness": "published",
+          "dedupe_key": "fed三年來首度升息點狀圖暗示今年還將有一次升息",
+          "event_cluster_key": "event-f2da38a7ac3ed5d33795",
+          "published_time_bucket": "2026-09-16T18:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "升息"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "升息",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "title": "伊朗議長自創「海峽泰勒法則」 諷Fed升息也打不通荷姆茲",
@@ -507,42 +658,6 @@
           }
         },
         {
-          "title": "美債殖利率升破5%！停留在高點多久比突破多少更危險 企業再融資與房市警報響起",
-          "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%82%B5%E6%AE%96%E5%88%A9%E7%8E%87%E5%8D%87%E7%A0%B45-%E5%81%9C%E7%95%99%E5%9C%A8%E9%AB%98%E9%BB%9E%E5%A4%9A%E4%B9%85%E6%AF%94%E7%AA%81%E7%A0%B4%E5%A4%9A%E5%B0%91%E6%9B%B4%E5%8D%B1%E9%9A%AA-%E4%BC%81%E6%A5%AD%E5%86%8D%E8%9E%8D%E8%B3%87%E8%88%87%E6%88%BF%E5%B8%82%E8%AD%A6%E5%A0%B1%E9%9F%BF%E8%B5%B7-160013137.html",
-          "source": "Yahoo Taiwan Finance",
-          "relevance": "market",
-          "published_at": "2026-09-16T16:00:13+00:00",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "provider": "yahoo_finance",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": null
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": null
-          }
-        },
-        {
           "title": "季線攻防怎麼看？8656億解凍就會反彈?? - Winner | 投資網誌 - 玩股網",
           "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE1nMFJGc3lHSVpnQVlrQ1Jpckh1MlpPbzFyZGMwamhwMFY4SlJzcDMwZjRXS3dLLVB0TkZJV3YwWDNxeUxxSEhJOEg2NmxpclNMVk9zM0xn?oc=5",
           "source": "Google News｜台股線索",
@@ -613,7 +728,7 @@
           }
         },
         {
-          "title": "台股收盤／下跌322點失守月線、46K 台積電跌30元 - TVBS新聞網",
+          "title": "台股收盤／下跌322點失守月線、46K 台積電跌30元 - news.tvbs.com.tw",
           "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTFBCYVB3ZHE2UDVLNmNhU0RNN2JEb1N6Z3hwdVhDR0ZVZEJXQzAteTNhb2l1YWkyb2JRVDJwUEtYVVlIbTZFSGF2a2NlQnc4RDA?oc=5",
           "source": "Google News｜台股線索",
           "relevance": "market",
@@ -719,11 +834,11 @@
           }
         },
         {
-          "title": "放量衝季線卻見一個月最大賣壓！電子股警戒線已到，第三季操作終極策略 - 鉅亨號",
-          "url": "https://news.google.com/rss/articles/CBMiSEFVX3lxTE5SLVd4V1F6VnI2QXRTVlpJc19JcWd6ek5ndENzcEpiYlAxR2sxbkpGR3pKd0FiQVFLOVdoNDhoZFFhQnI3blIzdA?oc=5",
+          "title": "大盤回測月線、選擇權打響保衛戰！何時是最佳低佈局機會？ - news.cnyes.com",
+          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE1yZExuU1JPWndtUGhmMVIzak1JbkVOSWhkeGR6S2hqdGYzTjNRWmxBY2pTOExEc05YNHE1cUJ2ZXhPZ1l6MWZoTW15QWdyMDg?oc=5",
           "source": "Google News｜台股線索",
           "relevance": "market",
-          "published_at": "2026-08-13T07:00:00+00:00",
+          "published_at": "2026-05-20T07:00:00+00:00",
           "provider": "google_news",
           "market_classification": {
             "market_scope": "taiwan",
@@ -861,38 +976,36 @@
           }
         },
         {
-          "title": "台股盤後｜股王股后領軍，加權指數收37,132點再創歷史新高 0416｜豐雲學堂 2026 年 09 月 - sinotrade.com.tw",
-          "url": "https://news.google.com/rss/articles/CBMilgNBVV95cUxPMnM3NWlCV2k4Q1M1cGlPOUJETWxxSE5USFdUbWtuODNZTE9Sa05jNmdranFDMXNiTXBkRzBlY24wQmdXRTNrT1FCSGJLMk9kYmJYUGpCVUstczFybXdYNEVuYUV3XzNldmI0SlJnNXlPUW9ydkRGRDlsUEhfUEc3TVFIRGEwQzJVeGlWMWxBeXgyYnMwQWJHczZDbUh4djRQdW9lQ25LdU1LRHo0bW5PU1VqRGptUHA5MmEwR19JREpjZVI1cVdHc1RTeVZmV1A2S1NPT1ZuMzBCLUF1NTY1d2VzVE1HQUcxM2Q0cnRKaFI4SlhUazUyQjAwLTBXM3hhb2hkRkpoS1dnb0FCUFlhaGZFVG5Xem84SGQ2aDZvQ0xQZE5IR2VRbWpCWl80ODJTMjRkbnVpNnVFNklnWEFGTUUzUDNkejJJVTdzc2ktOFBfVHZIMktnYjlnODEzYTFVZDZqRFR0YlZZeDRUcXpPWHAteHJsQ2haZl9fR2h3RmZlYmhfNzlKMmdydi15eTlrZkVkM2dB?oc=5",
+          "title": "放量衝季線卻見一個月最大賣壓！電子股警戒線已到，第三季操作終極策略 - 鉅亨號",
+          "url": "https://news.google.com/rss/articles/CBMiSEFVX3lxTE5SLVd4V1F6VnI2QXRTVlpJc19JcWd6ek5ndENzcEpiYlAxR2sxbkpGR3pKd0FiQVFLOVdoNDhoZFFhQnI3blIzdA?oc=5",
           "source": "Google News｜台股線索",
           "relevance": "market",
-          "published_at": "2026-04-16T07:46:03+00:00",
+          "published_at": "2026-08-13T07:00:00+00:00",
           "provider": "google_news",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
-              "台股",
-              "加權指數"
+              "台股"
             ],
             "us_matches": [],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 2,
+              "matched_term_count": 1,
               "source_market_hint": null
             }
           },
           "market_scope": "taiwan",
           "taiwan_matches": [
-            "台股",
-            "加權指數"
+            "台股"
           ],
           "us_matches": [],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 2,
+            "matched_term_count": 1,
             "source_market_hint": null
           }
         },
@@ -1510,6 +1623,120 @@
           "ranking_score": 115
         },
         {
+          "title": "瑞銀：AI算力仍短缺 硬體供應鏈旺到2027年 - 中央社 CNA",
+          "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTFBtaWMwQW9OY1plUnVmOGZUV0N2RXFDWHpHTS1HWThBa1YzZ0stbEpkQWZDVTZISlJWd0VOTGRYTnBUYkNSNmJaMWlsMDNmTXlJQ3NOaDJWSW9qa2tSSkE",
+          "source": "Google News｜台股線索",
+          "relevance": "market",
+          "published_at": "2026-09-16T08:15:00+00:00",
+          "provider": "google_news",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          },
+          "story_id": "news-ef7705abb104b1a4f642",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "raw_title": "瑞銀：AI算力仍短缺 硬體供應鏈旺到2027年 - 中央社 CNA",
+          "normalized_fact": "瑞銀：AI算力仍短缺 硬體供應鏈旺到2027年 - 中央社 CNA。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTFBtaWMwQW9OY1plUnVmOGZUV0N2RXFDWHpHTS1HWThBa1YzZ0stbEpkQWZDVTZISlJWd0VOTGRYTnBUYkNSNmJaMWlsMDNmTXlJQ3NOaDJWSW9qa2tSSkE",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "瑞銀ai算力仍短缺硬體供應鏈旺到2027年中央社cna",
+          "event_cluster_key": "event-78a681d3bb2621e3951d",
+          "published_time_bucket": "2026-09-16T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
           "title": "鄧白氏揭中小企業 AI 轉型趨勢 從工具導入邁向營運與決策 - cio.com.tw",
           "url": "https://news.google.com/rss/articles/CBMiREFVX3lxTE5KOTFvX0lWZ2p6cG5qc3hTNm9ZX0N1RFNNNlVjWTI0bHBjM0tFNTczLTI1MGlSc3Vwd09FRXMyb0NySmN3?oc=5",
           "source": "Google News｜台股線索",
@@ -1548,7 +1775,7 @@
           }
         },
         {
-          "title": "【半導體】Rubin Ultra 架構再傳降規！對供應鏈影響與趨勢為何？ | 財經Ｍ平方短評 - today.line.me",
+          "title": "【半導體】Rubin Ultra 架構再傳降規！對供應鏈影響與趨勢為何？ | 財經Ｍ平方短評 - LINE TODAY",
           "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE1XZTB0ZUtBNEtrcHBYZ2lqXzRLM2lmMzh5VFp3d3BIazhPRGRhY09fcU4xbEZqQTd5TmV2YjAxaUdIMi1PN0E4U1NvaEZHUmphajJjdDBn",
           "source": "Google News｜台股線索",
           "relevance": "market",
@@ -1580,12 +1807,12 @@
             "matched_term_count": 1,
             "source_market_hint": "taiwan"
           },
-          "story_id": "news-78a9a325607e6c21b611",
+          "story_id": "news-19b501bdedddcf9058c8",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "raw_title": "【半導體】Rubin Ultra 架構再傳降規！對供應鏈影響與趨勢為何？ | 財經Ｍ平方短評 - today.line.me",
-          "normalized_fact": "【半導體】Rubin Ultra 架構再傳降規，對供應鏈影響與趨勢為何？ | 財經Ｍ平方短評 - today.line.me。",
+          "raw_title": "【半導體】Rubin Ultra 架構再傳降規！對供應鏈影響與趨勢為何？ | 財經Ｍ平方短評 - LINE TODAY",
+          "normalized_fact": "【半導體】Rubin Ultra 架構再傳降規，對供應鏈影響與趨勢為何？ | 財經Ｍ平方短評 - LINE TODAY。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -1632,7 +1859,7 @@
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "半導體rubinultra架構再傳降規對供應鏈影響與趨勢為何財經ｍ平方短評todaylineme",
+          "dedupe_key": "半導體rubinultra架構再傳降規對供應鏈影響與趨勢為何財經ｍ平方短評linetoday",
           "event_cluster_key": "event-f769e289ffaec2549da0",
           "published_time_bucket": "2026-09-16T07:00:00+00:00",
           "public_safe": true,
@@ -1751,120 +1978,6 @@
           "dedupe_key": "ai供應鏈帶旺資金需求台灣銀行業放款與財管續成長digitimes",
           "event_cluster_key": "event-78a681d3bb2621e3951d",
           "published_time_bucket": "2026-09-16T08:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
-          "title": "【行情快報】全球 AI 供應鏈深度解析| 部落格 - macromicro.me",
-          "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxOZ19RTmJZSF82OGJ5Q3Z0ZkpPNmp4c2FMM09xZk5MYno2RTM5TG9STFRzaVg0VEFEY21fRkJpUVJTaGpTLVZ6M1lpdy14NXNaanpydkxjYjV1U2poVlhSZzhfZWQ3TlhjN0g3c0JaekJEaGV4aUVaZEVEcUE2S2xBVVVFZUo2WlRpb3BQUnlCOHRfek8yVHc",
-          "source": "Google News｜台股線索",
-          "relevance": "market",
-          "published_at": "2026-09-14T10:31:44+00:00",
-          "provider": "google_news",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          },
-          "story_id": "news-deb572a0f62e103f7c5e",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "raw_title": "【行情快報】全球 AI 供應鏈深度解析| 部落格 - macromicro.me",
-          "normalized_fact": "【行情快報】全球 AI 供應鏈深度解析| 部落格 - macromicro.me。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxOZ19RTmJZSF82OGJ5Q3Z0ZkpPNmp4c2FMM09xZk5MYno2RTM5TG9STFRzaVg0VEFEY21fRkJpUVJTaGpTLVZ6M1lpdy14NXNaanpydkxjYjV1U2poVlhSZzhfZWQ3TlhjN0g3c0JaekJEaGV4aUVaZEVEcUE2S2xBVVVFZUo2WlRpb3BQUnlCOHRfek8yVHc",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "行情快報全球ai供應鏈深度解析部落格macromicrome",
-          "event_cluster_key": "event-560ceccf9dcc82662dca",
-          "published_time_bucket": "2026-09-14T10:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
@@ -2072,7 +2185,7 @@
           }
         },
         {
-          "title": "台股跌220點，投信、外資卻同步搶進這兩大族群！ | 優分析 - today.line.me",
+          "title": "台股跌220點，投信、外資卻同步搶進這兩大族群！ | 優分析 - LINE TODAY",
           "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE5PNmR6bW1JRVgyT3RUNE01VDhHNzM0bGpScm5yNzNkMEZfRVFzT2t3emUtZDIzMHY1VkEydnZGWUxPenZjZ3p1bUJpMEp2RzRPRENiU1ln?oc=5",
           "source": "Google News｜台股線索",
           "relevance": "market",
@@ -2102,42 +2215,6 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 1,
-            "source_market_hint": null
-          }
-        },
-        {
-          "title": "00405A 主動富邦台灣龍耀 - 外資、投信、自營與法人買賣超總表 - 股市爆料同學會 - CMoney",
-          "url": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTE93WGROSkktdVVDTEdoZ2tWdjVpOTV1bmNHeHJRbDhjWGFabXJJSkp1UDlGSXVIdjJGRmlWZHNrOE1PaEt1cmZnNjFSVnR2VS1ZbU1mY1hVUUhKQzg2VEo3N0MxMmg0eG8?oc=5",
-          "source": "Google News｜台股線索",
-          "relevance": "market",
-          "published_at": "2026-09-08T07:00:00+00:00",
-          "provider": "google_news",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股",
-              "台灣"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": null
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股",
-            "台灣"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
             "source_market_hint": null
           }
         },
@@ -2250,9 +2327,131 @@
             "matched_term_count": 4,
             "source_market_hint": null
           }
+        },
+        {
+          "title": "外資狂賣台股還能漲？群益投信揭「它」接棒：錢沒有離開市場 - Yahoo股市",
+          "url": "https://news.google.com/rss/articles/CBMiqwNBVV95cUxPSmJlVG04SjZZdnBPTWFDOERxQlVNNU9EaGRuNThZMWxTMjVwM1ZKMmlDblZBenQzM2JNcFl5TTVrTDB1SDhGaVcwLXhRNllMaFhESjNrczhjNTUweVdpR3RRaGV2LWZtT1k4WmxlRGgyNGRvTHNtOU56dXE3M1VxWW9nanBNY1ByLXdnRFZTRW9UV0ZwZUtTUXR2ZUhiNXA4Y1ZBUTBmWXNGZmQ0NjVkVjBmbU5nVEhHT0I4NzF6MGRYc0YzX2lKdzVJSVlscm1nLWtKVmpDR18xVXFDc1hoVFVNRWZuTDlvMjNwQWFWdnlJS3lzTEwzRFNfel9qa0FmM2NSbUpmNG5EbG4weUNKamltVGRpNlhZUktBRU5FcUlSOEN2UHhhc2gweDA4TEVJYVE5NlpEUmlVY19DMmNUUFM5TlZoVDBWeTRQTENGYzNsb3RTSDZOM2VMTFA1TEtIUU1nWHhNM0ZuQ3FFYXBBWXU3aUhtY3YteFlXM0tkQXB3ckItbWw4WkxzT29CMkVzSFhBc2cxdENHdnh5b1BjdTh0ZDF5a1ZSS1NZ?oc=5",
+          "source": "Google News｜台股線索",
+          "relevance": "market",
+          "published_at": "2026-07-06T07:00:00+00:00",
+          "provider": "google_news",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": null
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": null
+          }
         }
       ],
       "eligible_inventory": [
+        {
+          "story_id": "news-b8a1a3d5baac578deacb",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Fed三年來首度升息 點狀圖暗示今年還將有一次升息",
+          "raw_title": "Fed三年來首度升息 點狀圖暗示今年還將有一次升息",
+          "normalized_fact": "Fed三年來首度升息 點狀圖暗示今年還將有一次升息。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/fed%E4%B8%89%E5%B9%B4%E4%BE%86%E9%A6%96%E5%BA%A6%E5%8D%87%E6%81%AF-%E9%BB%9E%E7%8B%80%E5%9C%96%E6%9A%97%E7%A4%BA%E4%BB%8A%E5%B9%B4%E9%82%84%E5%B0%87%E6%9C%89-%E6%AC%A1%E5%8D%87%E6%81%AF-180600929.html",
+          "url": "https://tw.stock.yahoo.com/news/fed%E4%B8%89%E5%B9%B4%E4%BE%86%E9%A6%96%E5%BA%A6%E5%8D%87%E6%81%AF-%E9%BB%9E%E7%8B%80%E5%9C%96%E6%9A%97%E7%A4%BA%E4%BB%8A%E5%B9%B4%E9%82%84%E5%B0%87%E6%9C%89-%E6%AC%A1%E5%8D%87%E6%81%AF-180600929.html",
+          "published_at": "2026-09-16T18:06:00+00:00",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "升息"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "升息"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "升息",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "fed三年來首度升息點狀圖暗示今年還將有一次升息",
+          "event_cluster_key": "event-f2da38a7ac3ed5d33795",
+          "published_time_bucket": "2026-09-16T18:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "升息"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "升息",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-09-16T19:03:08.033522+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
         {
           "story_id": "news-2faef88de4b482020149",
           "provider": "yahoo_finance",
@@ -2953,14 +3152,14 @@
           "ranking_score": 130
         },
         {
-          "story_id": "news-bdc9a8222b629f94d72a",
+          "story_id": "news-ef7705abb104b1a4f642",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "AI供應鏈帶旺資金需求 台灣銀行業放款與財管續成長 - DIGITIMES",
-          "raw_title": "AI供應鏈帶旺資金需求 台灣銀行業放款與財管續成長 - DIGITIMES",
-          "normalized_fact": "AI供應鏈帶旺資金需求 台灣銀行業放款與財管續成長 - DIGITIMES。",
+          "title": "瑞銀：AI算力仍短缺 硬體供應鏈旺到2027年 - 中央社 CNA",
+          "raw_title": "瑞銀：AI算力仍短缺 硬體供應鏈旺到2027年 - 中央社 CNA",
+          "normalized_fact": "瑞銀：AI算力仍短缺 硬體供應鏈旺到2027年 - 中央社 CNA。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -2971,8 +3170,8 @@
           "normalization_complete": true,
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxNRnQwODZSLURZV0MyNzE0T3ZTRVdPVmRsQVpVRmVnQ2dpcTk1ajE3Y2hTc1VTTGNqRlNqV21MTmhSRTkxemZzc0RxUWR1VWVkNWx2WTZGUFRvLVBQa2ppSUxDUHNXVlJ1TWNGUF9oQXgxQ3YyTWF2c1pfNV8wb1U3QXc1YWxyZ01LdFhnR1Bn",
-          "url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxNRnQwODZSLURZV0MyNzE0T3ZTRVdPVmRsQVpVRmVnQ2dpcTk1ajE3Y2hTc1VTTGNqRlNqV21MTmhSRTkxemZzc0RxUWR1VWVkNWx2WTZGUFRvLVBQa2ppSUxDUHNXVlJ1TWNGUF9oQXgxQ3YyTWF2c1pfNV8wb1U3QXc1YWxyZ01LdFhnR1Bn",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTFBtaWMwQW9OY1plUnVmOGZUV0N2RXFDWHpHTS1HWThBa1YzZ0stbEpkQWZDVTZISlJWd0VOTGRYTnBUYkNSNmJaMWlsMDNmTXlJQ3NOaDJWSW9qa2tSSkE",
+          "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTFBtaWMwQW9OY1plUnVmOGZUV0N2RXFDWHpHTS1HWThBa1YzZ0stbEpkQWZDVTZISlJWd0VOTGRYTnBUYkNSNmJaMWlsMDNmTXlJQ3NOaDJWSW9qa2tSSkE",
           "published_at": "2026-09-16T08:15:00+00:00",
           "market": "taiwan",
           "market_compatible": true,
@@ -3009,7 +3208,7 @@
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "ai供應鏈帶旺資金需求台灣銀行業放款與財管續成長digitimes",
+          "dedupe_key": "瑞銀ai算力仍短缺硬體供應鏈旺到2027年中央社cna",
           "event_cluster_key": "event-78a681d3bb2621e3951d",
           "published_time_bucket": "2026-09-16T08:00:00+00:00",
           "public_safe": true,
@@ -3037,7 +3236,13 @@
           "inventory_saved_at": "2026-09-16T09:25:14.981402+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 115
+          "ranking_score": 115,
+          "supporting_sources": [
+            {
+              "provider": "google_news",
+              "url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxNRnQwODZSLURZV0MyNzE0T3ZTRVdPVmRsQVpVRmVnQ2dpcTk1ajE3Y2hTc1VTTGNqRlNqV21MTmhSRTkxemZzc0RxUWR1VWVkNWx2WTZGUFRvLVBQa2ppSUxDUHNXVlJ1TWNGUF9oQXgxQ3YyTWF2c1pfNV8wb1U3QXc1YWxyZ01LdFhnR1Bn"
+            }
+          ]
         },
         {
           "story_id": "news-1fbe1bce7f2a31f845ae",
@@ -3214,14 +3419,14 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-78a9a325607e6c21b611",
+          "story_id": "news-19b501bdedddcf9058c8",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "【半導體】Rubin Ultra 架構再傳降規！對供應鏈影響與趨勢為何？ | 財經Ｍ平方短評 - today.line.me",
-          "raw_title": "【半導體】Rubin Ultra 架構再傳降規！對供應鏈影響與趨勢為何？ | 財經Ｍ平方短評 - today.line.me",
-          "normalized_fact": "【半導體】Rubin Ultra 架構再傳降規，對供應鏈影響與趨勢為何？ | 財經Ｍ平方短評 - today.line.me。",
+          "title": "【半導體】Rubin Ultra 架構再傳降規！對供應鏈影響與趨勢為何？ | 財經Ｍ平方短評 - LINE TODAY",
+          "raw_title": "【半導體】Rubin Ultra 架構再傳降規！對供應鏈影響與趨勢為何？ | 財經Ｍ平方短評 - LINE TODAY",
+          "normalized_fact": "【半導體】Rubin Ultra 架構再傳降規，對供應鏈影響與趨勢為何？ | 財經Ｍ平方短評 - LINE TODAY。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -3270,7 +3475,7 @@
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "半導體rubinultra架構再傳降規對供應鏈影響與趨勢為何財經ｍ平方短評todaylineme",
+          "dedupe_key": "半導體rubinultra架構再傳降規對供應鏈影響與趨勢為何財經ｍ平方短評linetoday",
           "event_cluster_key": "event-f769e289ffaec2549da0",
           "published_time_bucket": "2026-09-16T07:00:00+00:00",
           "public_safe": true,
@@ -6542,101 +6747,50 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
-        },
-        {
-          "story_id": "news-b67bfbf33829e81d8ae4",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "陸廠澄清未獲輝達認證 兩 PCB 供應商股價異常波動後警示風險",
-          "raw_title": "陸廠澄清未獲輝達認證 兩 PCB 供應商股價異常波動後警示風險",
-          "normalized_fact": "陸廠澄清未獲輝達認證 兩 PCB 供應商股價異常波動後警示風險。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E9%99%B8%E5%BB%A0%E6%BE%84%E6%B8%85%E6%9C%AA%E7%8D%B2%E8%BC%9D%E9%81%94%E8%AA%8D%E8%AD%89-%E5%85%A9-pcb-%E4%BE%9B%E6%87%89%E5%95%86%E8%82%A1%E5%83%B9%E7%95%B0%E5%B8%B8%E6%B3%A2%E5%8B%95%E5%BE%8C%E8%AD%A6%E7%A4%BA%E9%A2%A8%E9%9A%AA-050407741.html",
-          "url": "https://tw.stock.yahoo.com/news/%E9%99%B8%E5%BB%A0%E6%BE%84%E6%B8%85%E6%9C%AA%E7%8D%B2%E8%BC%9D%E9%81%94%E8%AA%8D%E8%AD%89-%E5%85%A9-pcb-%E4%BE%9B%E6%87%89%E5%95%86%E8%82%A1%E5%83%B9%E7%95%B0%E5%B8%B8%E6%B3%A2%E5%8B%95%E5%BE%8C%E8%AD%A6%E7%A4%BA%E9%A2%A8%E9%9A%AA-050407741.html",
-          "published_at": "2026-09-14T05:04:07+00:00",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "輝達",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "輝達",
-              "供應"
-            ],
-            "matched_subject": "輝達",
-            "matched_action": "供應",
-            "matched_market_object": "輝達",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:NVDA"
-          ],
-          "freshness": "published",
-          "dedupe_key": "陸廠澄清未獲輝達認證兩pcb供應商股價異常波動後警示風險",
-          "event_cluster_key": "event-cc09cb264d33432329d5",
-          "published_time_bucket": "2026-09-14T05:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "輝達",
-            "供應"
-          ],
-          "matched_subject": "輝達",
-          "matched_action": "供應",
-          "matched_market_object": "輝達",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 4,
-          "inventory_saved_at": "2026-09-14T05:29:01.744039+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 135
         }
       ],
-      "inventory_saved_at": "2026-09-16T18:52:18.562701+00:00"
+      "inventory_saved_at": "2026-09-16T19:03:08.033522+00:00"
     },
     "us": {
-      "fetched_at": "2026-09-16T18:52:18.562701+00:00",
+      "fetched_at": "2026-09-16T19:03:08.033522+00:00",
       "stories": [
+        {
+          "title": "8-K - EXPEDITORS INTERNATIONAL OF WASHINGTON INC (0000746515) (Filer)",
+          "url": "https://www.sec.gov/Archives/edgar/data/746515/000119312526392952/0001193125-26-392952-index.htm",
+          "published_at": "2026-09-16T19:00:55+00:00",
+          "source": "SEC",
+          "provider": "sec",
+          "source_tier": "official",
+          "authority_tier": "official",
+          "market": "us",
+          "relevance": "official",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "sec"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "sec"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
+        },
         {
           "title": "8-K/A - Gaucho Group Holdings, Inc. (0001559998) (Filer)",
           "url": "https://www.sec.gov/Archives/edgar/data/1559998/000149315226042876/0001493152-26-042876-index.htm",
@@ -6971,43 +7125,6 @@
           }
         },
         {
-          "title": "8-K - Core University Living Real Estate Income Trust (0002119505) (Filer)",
-          "url": "https://www.sec.gov/Archives/edgar/data/2119505/000119312526392667/0001193125-26-392667-index.htm",
-          "published_at": "2026-09-16T14:39:59+00:00",
-          "source": "SEC",
-          "provider": "sec",
-          "source_tier": "official",
-          "authority_tier": "official",
-          "market": "us",
-          "relevance": "official",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "sec"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "sec"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
           "title": "2. 川普稱「不擔心」習近平取消訪美！傳美對台140億美元軍售成美中峰會變數",
           "url": "https://news.cnyes.com/news/id/6605322",
           "source": "鉅亨網｜市場焦點",
@@ -7123,11 +7240,11 @@
           }
         },
         {
-          "title": "The Fed Just Hiked And It Isn't Done. S&P 500 Wavers As Warsh Speaks. (Live Coverage)",
+          "title": "The Fed Just Hiked And It Isn't Done. S&P 500 Falls As Warsh Speaks. (Live Coverage)",
           "url": "https://finance.yahoo.com/m/371d943b-ed80-3fee-8721-4e1980308671/the-fed-just-hiked-and-it.html?.tsrc=rss",
           "source": "Yahoo Finance",
           "relevance": "market",
-          "published_at": "2026-09-16T18:43:09+00:00",
+          "published_at": "2026-09-16T18:56:23+00:00",
           "source_tier": "market",
           "authority_tier": "market",
           "provider": "yahoo_finance",
@@ -7145,7 +7262,7 @@
             "routing_evidence": {
               "title_summary_scanned": true,
               "matched_term_count": 3,
-              "source_market_hint": null
+              "source_market_hint": "us"
             }
           },
           "market_scope": "us",
@@ -7161,8 +7278,191 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 3,
-            "source_market_hint": null
-          }
+            "source_market_hint": "us"
+          },
+          "story_id": "news-682ee2d3d4bbc687b9af",
+          "provider_name": "Yahoo Taiwan Finance",
+          "raw_title": "The Fed Just Hiked And It Isn't Done. S&P 500 Falls As Warsh Speaks. (Live Coverage)",
+          "normalized_fact": "The Fed Just Hiked And It Isn't Done. S&P 500 Falls As Warsh Speaks. (Live Coverage)。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/m/371d943b-ed80-3fee-8721-4e1980308671/the-fed-just-hiked-and-it.html?.tsrc=rss",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "thefedjusthikedanditisntdonesp500fallsaswarshspeakslivecoverage",
+          "event_cluster_key": "event-188d229a658d1279ccf4",
+          "published_time_bucket": "2026-09-16T18:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "title": "Stock Market Today: Index Gains Get Shaved After Fed Hikes Rates By Quarter Point (Live Coverage)",
+          "url": "https://finance.yahoo.com/m/127b3c0b-f974-36dd-8852-5793b5347c93/stock-market-today%3A-index.html?.tsrc=rss",
+          "source": "Yahoo Finance",
+          "relevance": "market",
+          "published_at": "2026-09-16T18:50:52+00:00",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "provider": "yahoo_finance",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "fed"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "fed"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          },
+          "story_id": "news-6725f8d77cae210d83d2",
+          "provider_name": "Yahoo Taiwan Finance",
+          "raw_title": "Stock Market Today: Index Gains Get Shaved After Fed Hikes Rates By Quarter Point (Live Coverage)",
+          "normalized_fact": "Stock Market Today: Index Gains Get Shaved After Fed Hikes Rates By Quarter Point (Live Coverage)。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/m/127b3c0b-f974-36dd-8852-5793b5347c93/stock-market-today%3A-index.html?.tsrc=rss",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "rates"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "rates"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "rates",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "stockmarkettodayindexgainsgetshavedafterfedhikesratesbyquarterpointlivecoverage",
+          "event_cluster_key": "event-f2da38a7ac3ed5d33795",
+          "published_time_bucket": "2026-09-16T18:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "rates"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "rates",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "title": "Nvidia Stock Forecast: Where Investors Could Stand in 5 Years",
@@ -7277,124 +7577,6 @@
             "matched_term_count": 3,
             "source_market_hint": null
           }
-        },
-        {
-          "title": "Stock Market Today: Nasdaq Keeps Gain After Fed Hikes Rates By Quarter Point (Live Coverage)",
-          "url": "https://finance.yahoo.com/m/127b3c0b-f974-36dd-8852-5793b5347c93/stock-market-today%3A-nasdaq.html?.tsrc=rss",
-          "source": "Yahoo Finance",
-          "relevance": "market",
-          "published_at": "2026-09-16T18:26:15+00:00",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "provider": "yahoo_finance",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "nasdaq",
-              "fed"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "nasdaq",
-            "fed"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          },
-          "story_id": "news-9b132824aaacda387ba6",
-          "provider_name": "Yahoo Taiwan Finance",
-          "raw_title": "Stock Market Today: Nasdaq Keeps Gain After Fed Hikes Rates By Quarter Point (Live Coverage)",
-          "normalized_fact": "Stock Market Today: Nasdaq Keeps Gain After Fed Hikes Rates By Quarter Point (Live Coverage)。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/m/127b3c0b-f974-36dd-8852-5793b5347c93/stock-market-today%3A-nasdaq.html?.tsrc=rss",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NASDAQ"
-          ],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rates"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rates"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rates",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "stockmarkettodaynasdaqkeepsgainafterfedhikesratesbyquarterpointlivecoverage",
-          "event_cluster_key": "event-e410f871b0d0bade7121",
-          "published_time_bucket": "2026-09-16T18:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rates"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rates",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
         },
         {
           "title": "Worried About a Market Crash? This Dividend Stock Outperformed as the S&P 500 Sank in Both 2008 and 2022",
@@ -7741,7 +7923,7 @@
           "ranking_score": 115
         },
         {
-          "title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - 24/7 Wall St.",
+          "title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - 247wallst.com",
           "url": "https://news.google.com/rss/articles/CBMizwFBVV95cUxPcnljOE9mY0FrVENpMkxpd2JoMWlBY0RoalpCNEhva3hCUW80MFgyby0zZld4SXFiSmNSaEdRbkg0YW1WR09vX1cyNUtSZTNGZVNVSWEtbkk3WVFBeTloenRYWF9sZmpvekJYU3pkWW1DYjBycGxGR0R3MzZjUHBzRDg0cldvNV8xekhvcVpCQ3dHcld6aFk4T2tqN2YxeUtiRHhQa2JrQVA1dGgxVlBGNkJsb0ZWbXA5NTRTNHVzNTBMSzNWNHBVMk9YcGx3U00",
           "source": "Google News｜美股線索",
           "relevance": "market",
@@ -7779,12 +7961,12 @@
             "matched_term_count": 3,
             "source_market_hint": "us"
           },
-          "story_id": "news-9f2ccf4f0a7acde97904",
+          "story_id": "news-dd8536719a0ccdcd32a6",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "raw_title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - 24/7 Wall St.",
-          "normalized_fact": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - 24/7 Wall St。",
+          "raw_title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - 247wallst.com",
+          "normalized_fact": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - 247wallst.com。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -7832,7 +8014,7 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "goldmansachssaysaiisdrivinghalfofsp500earningsgrowththatnumbercutsbothways247wallst",
+          "dedupe_key": "goldmansachssaysaiisdrivinghalfofsp500earningsgrowththatnumbercutsbothways247wallstcom",
           "event_cluster_key": "event-00dfc2bbc1bbd154deba",
           "published_time_bucket": "2026-09-13T18:00:00+00:00",
           "public_safe": true,
@@ -8213,7 +8395,7 @@
           }
         },
         {
-          "title": "The S&P 500 is back at a record high and the Dow just hit 54,000 - cnn.com",
+          "title": "The S&P 500 is back at a record high and the Dow just hit 54,000 - CNN",
           "url": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTE9sNTR6eTFUS1JYX1lnaWVIZGxJeVhmbENJMHN3SUc4TTlSaHpweUdwNUNLejJtSmIwb0x0SEQxalc2OVN1X2s1WFhPSWt2X2VrcFFVeXhVVVpxYVVnaUFjRDR3SUFxbzA?oc=5",
           "source": "Google News｜美股線索",
           "relevance": "market",
@@ -8319,122 +8501,6 @@
             "matched_term_count": 1,
             "source_market_hint": null
           }
-        },
-        {
-          "title": "10-year Treasury yield falls as traders bet Fed rate increase can tamp down inflation - cnbc.com",
-          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPLWNMNkM5UnZJSXIwQzNCWU1aUmlROWRBNGJ3bW1YaFlCaWJFckNzN21VTG5zWHQ1ZU0wR2NXcjZxanJuMFIyVWpEY1dxWVlxZ29hdlpUMVFTNnhnM1NYSk9yb2tiZFdOUllwakZRdEtXdFBLWmJFanBVbjdMblpPMEtn",
-          "source": "Google News｜美股線索",
-          "relevance": "market",
-          "published_at": "2026-09-16T08:58:16+00:00",
-          "provider": "google_news",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股",
-              "fed"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股",
-            "fed"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          },
-          "story_id": "news-b7e6748bf7d5e7a7c92f",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "raw_title": "10-year Treasury yield falls as traders bet Fed rate increase can tamp down inflation - cnbc.com",
-          "normalized_fact": "10-year Treasury yield falls as traders bet Fed rate increase can tamp down inflation - cnbc.com。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPLWNMNkM5UnZJSXIwQzNCWU1aUmlROWRBNGJ3bW1YaFlCaWJFckNzN21VTG5zWHQ1ZU0wR2NXcjZxanJuMFIyVWpEY1dxWVlxZ29hdlpUMVFTNnhnM1NYSk9yb2tiZFdOUllwakZRdEtXdFBLWmJFanBVbjdMblpPMEtn",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rate"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rate",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "10yeartreasuryyieldfallsastradersbetfedrateincreasecantampdowninflationcnbccom",
-          "event_cluster_key": "event-715cbb5f31133a0a9625",
-          "published_time_bucket": "2026-09-16T08:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rate"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rate",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
         },
         {
           "title": "US Federal Reserve raises interest rates for the first time since 2023 - The Guardian",
@@ -8785,6 +8851,238 @@
           "ranking_score": 115
         },
         {
+          "title": "Fed Raises Rates for First Time in Three Years - WSJ",
+          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxNSnY3TVFMMUNHQklOdVhJV2JyYzZwRVhSZVJCNTFsZkdMR3Z5dmM4TGlxR3FqYUlhUEgwTlpXR25pNC1PdXF6bHJ1NHpLVzl5Q3NBanFRcnNjMFZhS01HMzFZZ0dzVzFvX0xZeTZxd0gwaUZpOFZIcUpvdzA3NkpXTlN3U0tVZFpXbWJZZ3FkUENBd1lsSTRacFBKeHl1c2JT",
+          "source": "Google News｜美股線索",
+          "relevance": "market",
+          "published_at": "2026-09-16T18:19:00+00:00",
+          "provider": "google_news",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股",
+              "fed"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "fed"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          },
+          "story_id": "news-44b7fb82e01387ca268e",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "raw_title": "Fed Raises Rates for First Time in Three Years - WSJ",
+          "normalized_fact": "Fed Raises Rates for First Time in Three Years - WSJ。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxNSnY3TVFMMUNHQklOdVhJV2JyYzZwRVhSZVJCNTFsZkdMR3Z5dmM4TGlxR3FqYUlhUEgwTlpXR25pNC1PdXF6bHJ1NHpLVzl5Q3NBanFRcnNjMFZhS01HMzFZZ0dzVzFvX0xZeTZxd0gwaUZpOFZIcUpvdzA3NkpXTlN3U0tVZFpXbWJZZ3FkUENBd1lsSTRacFBKeHl1c2JT",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "rates"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "rates"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "rates",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "fedraisesratesforfirsttimeinthreeyearswsj",
+          "event_cluster_key": "event-f2da38a7ac3ed5d33795",
+          "published_time_bucket": "2026-09-16T18:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "rates"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "rates",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
+          "title": "10-year Treasury yield falls as traders bet Fed rate increase can tamp down inflation - CNBC",
+          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPLWNMNkM5UnZJSXIwQzNCWU1aUmlROWRBNGJ3bW1YaFlCaWJFckNzN21VTG5zWHQ1ZU0wR2NXcjZxanJuMFIyVWpEY1dxWVlxZ29hdlpUMVFTNnhnM1NYSk9yb2tiZFdOUllwakZRdEtXdFBLWmJFanBVbjdMblpPMEtn",
+          "source": "Google News｜美股線索",
+          "relevance": "market",
+          "published_at": "2026-09-16T08:58:16+00:00",
+          "provider": "google_news",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股",
+              "fed"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "fed"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          },
+          "story_id": "news-988c0b8805d514129f18",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "raw_title": "10-year Treasury yield falls as traders bet Fed rate increase can tamp down inflation - CNBC",
+          "normalized_fact": "10-year Treasury yield falls as traders bet Fed rate increase can tamp down inflation。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": true,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPLWNMNkM5UnZJSXIwQzNCWU1aUmlROWRBNGJ3bW1YaFlCaWJFckNzN21VTG5zWHQ1ZU0wR2NXcjZxanJuMFIyVWpEY1dxWVlxZ29hdlpUMVFTNnhnM1NYSk9yb2tiZFdOUllwakZRdEtXdFBLWmJFanBVbjdMblpPMEtn",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "rate"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "rate"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "rate",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "10yeartreasuryyieldfallsastradersbetfedrateincreasecantampdowninflation",
+          "event_cluster_key": "event-715cbb5f31133a0a9625",
+          "published_time_bucket": "2026-09-16T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "rate"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "rate",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
           "title": "The Fed raises interest rates for the first time in over three years - NPR",
           "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxOVTl2UWxwMkg4QzNVNll6b0ZoSlhSNlVzOV9sd2Z6bWd0Vm5rS0U5Ni1XTmplTVlNamhVV1d3RDA2ckxWTVJIakVpNnlscEc3b29xRklzRGhwSmVlMmJ5d0dpcDE4eENtYXUtUEU2a3g5MlFNZXI0UkVHeHY3a2tWNU5Fd2dITUtWRnNwQ19Qdy1oS0p3Vkhleg",
           "source": "Google News｜美股線索",
@@ -9017,6 +9315,44 @@
           "ranking_score": 115
         },
         {
+          "title": "Warsh: US inflation remains high - LiveNOW from FOX",
+          "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE0wWWZhMjFUeFFITzBxWm1ZRjZjS0tnbE00bWxvTUVtem0zMEVGVTBYMW1zZG55MjFWQWxweE9rZnoyOWNKZ0hmZnVqMFh1bzBrOGxLOUwxaEZnT1pUYVBPZ0ZObVNYQUVWNzBfZFB1VEZRSUYtVmxTamZuTjLSAYIBQVVfeXFMT2hrOThNRFpobHE3dlZ0YVVjVkljUzFsaWZFUGFydlVWS1Zmb0RIUGJJaEFpOWRlZnJEUDNCckRHbXhGak1CY016dlF3X2N5NHVTeG54djZtMWlLcXNkUDNjVUEyTjlqSzR5aFl2Zm9pN3B4R25ibEVmNU1LWEN2aEthZw?oc=5",
+          "source": "Google News｜美股線索",
+          "relevance": "market",
+          "published_at": "2026-09-16T18:08:49+00:00",
+          "provider": "google_news",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [
+              "war"
+            ],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": null
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [
+            "war"
+          ],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": null
+          }
+        },
+        {
           "title": "Federal Reserve hikes interest rates for first time since 2023 amid stubborn inflation - Fox Business",
           "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNTkNGQWZwRUllRWhwM29vZGhCd0Z1TjVzSGtnUXZibzlBNnNNX0hobXRaempWb1k1bndFR0xaTk5yTllrRWFWQk00b3NDYVhQTDI2bUZWQW0xV3lCeUNuOFhEaVVQdnJGc3ZCQUY3MzN3ZWpqb3A1ZG1HT2dMNGdieEw0R0ZsZ2pYTlJMOVdMeVhkVFFWQ2o40gGcAUFVX3lxTE5zT2pObGszWGx6dXo3VjdyQnlDN0U2N1ROcFp1NW81amlLVGJ2b3Nmb19Ca2RxcVpISHdhdTdfdXppX1JJV2RUTEwyYm9MdDRucDdMNEY5Y1M5d1IweWZSbUVseGYydldTNm91OWVVdDFvT1BJQUVXa0lpLTY4OUwtVTUwUHZBWlNQaDN2VW9kSzFmSGQ1bWtzT001bA",
           "source": "Google News｜美股線索",
@@ -9133,47 +9469,11 @@
           "ranking_score": 115
         },
         {
-          "title": "Higher Treasury yields may present opportunities - BNY",
-          "url": "https://news.google.com/rss/articles/CBMi0gFBVV95cUxPS2t5NGh1a3JjMTU4dGhTV0NDS2kxaHZzYkNIenJ0emJWN2xubEVFOUVrUFU4TVRzM2NNcmZPUjlXSDRGOVJ2bTR4ell1cmJhSW1Tc2xTLVE2NDNaR3VGeENwQ1RtSWRQcFV6a2xnamdSX1prZnA5WDIzRGZpa3gxM09WWWJTNVN3R1ZheFlia2Z6VHBBSW5YWmdUcFlSREhia2lCcWNVTGVtVG54MVMwS3JTS0xaYW0tS0NxZUV4SXozQ1hTbkhiYTByOGhiWXZZb2c?oc=5",
+          "title": "US Fed raises interest rates as inflation weighs on economy - Al Jazeera",
+          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxQMkVyU1l1M3VEcEg2TUZuemNacHp6X2hGbjdwYXlGV1FZdzhEbGtjdzlkd3BUS1RzUkVjNkZ1d3lMRl9TTUlMdFhuQlg5cnZKT1FCT2FyMXNzSzRsRzFtMVZIU1o1YURKTzRKUHdlOUxJdWdrRDYwS0JFTFd4WEhMRlpWRl9oWXRKUEJCVVdJM2xJemZCbEJ3eEw0WWExelctR2NLTXJR0gGrAUFVX3lxTE9pUXRTYm84MEp3U2xNby01Zm54cTNhSVNoaDRCRUdPNlNuN1B4NDFDV3FGcDU4M185c01LdnczeG43UFFHRUdSNndFS0k1NHlISW84MUJmSUV3R05mWnJDWC1iV2piUjB1dFZnNURjMi1nNUtLU1p1VjNsWkVFNHZsaktNd3pZMUdhWERQRlVmQjBHUVFDREluUkdPM2ZuTmlzWlh4M3NoTG51Yw",
           "source": "Google News｜美股線索",
           "relevance": "market",
-          "published_at": "2026-09-16T15:18:49+00:00",
-          "provider": "google_news",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股",
-              "amd"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": null
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股",
-            "amd"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": null
-          }
-        },
-        {
-          "title": "Fed raises rates: What it means for your credit cards, mortgages, savings accounts and auto loans - cnbc.com",
-          "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxNM3BpOUtrNUtaaHQ1TGtGczdqZTNwcDhZRW14UHpzRkN1TTJweWdpbFNXT3QxSzBjX0RhakozV1FZcmpiSFFmX1UzeG9xczJudm5GeEkxblhvc3JFb09jYXNURDFyNTR1ZnlBM2p0Ri1tekNpUDhJVG5KTnJvQVJLclVlSnQzWUpsRUR1SHY4eGvSAZYBQVVfeXFMUHhBalNuXzlpdFd3UWRGRXZYQU9wbjJCTGQwUlBCbTJIbHhBRzZscWpDRnh5SFNoOGVkeXhMNDhGbWxkY3k5dXlMSFRSbjJKdkloNjVnVmU0WFJFalVZQkxUSThzb1l1b0lHd2pKdnZLOXc4OVFNQkhsUC1jQmVtTzQwN3pJMEQzc3VtNzQ2MDZnUFlnaVNR",
-          "source": "Google News｜美股線索",
-          "relevance": "market",
-          "published_at": "2026-09-16T18:01:45+00:00",
+          "published_at": "2026-09-16T18:35:02+00:00",
           "provider": "google_news",
           "market_classification": {
             "market_scope": "us",
@@ -9203,12 +9503,12 @@
             "matched_term_count": 2,
             "source_market_hint": "us"
           },
-          "story_id": "news-e36b92006ddddc197aca",
+          "story_id": "news-b37736be733d33e8a62d",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "raw_title": "Fed raises rates: What it means for your credit cards, mortgages, savings accounts and auto loans - cnbc.com",
-          "normalized_fact": "Fed raises rates: What it means for your credit cards, mortgages, savings accounts and auto loans - cnbc.com。",
+          "raw_title": "US Fed raises interest rates as inflation weighs on economy - Al Jazeera",
+          "normalized_fact": "US Fed raises interest rates as inflation weighs on economy - Al Jazeera。",
           "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
@@ -9219,7 +9519,7 @@
           "normalization_complete": true,
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxNM3BpOUtrNUtaaHQ1TGtGczdqZTNwcDhZRW14UHpzRkN1TTJweWdpbFNXT3QxSzBjX0RhakozV1FZcmpiSFFmX1UzeG9xczJudm5GeEkxblhvc3JFb09jYXNURDFyNTR1ZnlBM2p0Ri1tekNpUDhJVG5KTnJvQVJLclVlSnQzWUpsRUR1SHY4eGvSAZYBQVVfeXFMUHhBalNuXzlpdFd3UWRGRXZYQU9wbjJCTGQwUlBCbTJIbHhBRzZscWpDRnh5SFNoOGVkeXhMNDhGbWxkY3k5dXlMSFRSbjJKdkloNjVnVmU0WFJFalVZQkxUSThzb1l1b0lHd2pKdnZLOXc4OVFNQkhsUC1jQmVtTzQwN3pJMEQzc3VtNzQ2MDZnUFlnaVNR",
+          "canonical_url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxQMkVyU1l1M3VEcEg2TUZuemNacHp6X2hGbjdwYXlGV1FZdzhEbGtjdzlkd3BUS1RzUkVjNkZ1d3lMRl9TTUlMdFhuQlg5cnZKT1FCT2FyMXNzSzRsRzFtMVZIU1o1YURKTzRKUHdlOUxJdWdrRDYwS0JFTFd4WEhMRlpWRl9oWXRKUEJCVVdJM2xJemZCbEJ3eEw0WWExelctR2NLTXJR0gGrAUFVX3lxTE9pUXRTYm84MEp3U2xNby01Zm54cTNhSVNoaDRCRUdPNlNuN1B4NDFDV3FGcDU4M185c01LdnczeG43UFFHRUdSNndFS0k1NHlISW84MUJmSUV3R05mWnJDWC1iV2piUjB1dFZnNURjMi1nNUtLU1p1VjNsWkVFNHZsaktNd3pZMUdhWERQRlVmQjBHUVFDREluUkdPM2ZuTmlzWlh4M3NoTG51Yw",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
@@ -9255,7 +9555,7 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "fedraisesrateswhatitmeansforyourcreditcardsmortgagessavingsaccountsandautoloanscnbccom",
+          "dedupe_key": "usfedraisesinterestratesasinflationweighsoneconomyaljazeera",
           "event_cluster_key": "event-f2da38a7ac3ed5d33795",
           "published_time_bucket": "2026-09-16T18:00:00+00:00",
           "public_safe": true,
@@ -9268,124 +9568,6 @@
           "matched_subject": "fed",
           "matched_action": "rates",
           "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
-          "title": "Stocks Edge Higher as the Federal Reserve Raises Key Interest Rate - WSJ",
-          "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxPczAxbFRYYU1qN0lvd0FyaWUyX3BKTVc0OThtOXk2MS0wU1Vwb1hjTEE4WFNyVkpnS216RENLTHh3bXFXeWRTSEd0SWpXbEpmUjBFV09YdHNRZDFiZER6a3J5VW5oaVhqMUF5cFpKZENNZFZ2TUtvSU5ZN0F1WS12NXNTNUV1ejJUOGhxMjNUTExnLXlXaEp5VjNPbmVhWWFUenBYSWxOYmpoWmVfNXNMMDVqaXdFdTJm",
-          "source": "Google News｜美股線索",
-          "relevance": "market",
-          "published_at": "2026-09-16T18:38:12+00:00",
-          "provider": "google_news",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股",
-              "federal reserve",
-              "fed"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 3,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股",
-            "federal reserve",
-            "fed"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 3,
-            "source_market_hint": "us"
-          },
-          "story_id": "news-a3b353ccc821e0150144",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "raw_title": "Stocks Edge Higher as the Federal Reserve Raises Key Interest Rate - WSJ",
-          "normalized_fact": "Stocks Edge Higher as the Federal Reserve Raises Key Interest Rate - WSJ。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxPczAxbFRYYU1qN0lvd0FyaWUyX3BKTVc0OThtOXk2MS0wU1Vwb1hjTEE4WFNyVkpnS216RENLTHh3bXFXeWRTSEd0SWpXbEpmUjBFV09YdHNRZDFiZER6a3J5VW5oaVhqMUF5cFpKZENNZFZ2TUtvSU5ZN0F1WS12NXNTNUV1ejJUOGhxMjNUTExnLXlXaEp5VjNPbmVhWWFUenBYSWxOYmpoWmVfNXNMMDVqaXdFdTJm",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "federal reserve",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "federal reserve",
-              "rate"
-            ],
-            "matched_subject": "federal reserve",
-            "matched_action": "rate",
-            "matched_market_object": "federal reserve",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "stocksedgehigherasthefederalreserveraiseskeyinterestratewsj",
-          "event_cluster_key": "event-f2da38a7ac3ed5d33795",
-          "published_time_bucket": "2026-09-16T18:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "federal reserve",
-            "rate"
-          ],
-          "matched_subject": "federal reserve",
-          "matched_action": "rate",
-          "matched_market_object": "federal reserve",
           "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -9471,7 +9653,7 @@
           }
         },
         {
-          "title": "U.S. Plans Sanctions on Chinese AI Distillation Practices - chosun.com",
+          "title": "U.S. Plans Sanctions on Chinese AI Distillation Practices - 조선일보",
           "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQbndfUXJvZkZUc0p3ODVtMjJnakQ5VDhfdk9HeWUwUVZGWHYyaHJBNXVob1c2ZlhhZkpTT09RdUFfYXhxWElVajVBWHF5NlFsR3BzT083dkJJTGNNbFEzZF8za2dqMkc3YkkzX1hIQWI0Y2M4SkEzNlJ6RXFnVnJKbnFLVEk5bWxG?oc=5",
           "source": "Google News｜美股線索",
           "relevance": "market",
@@ -10221,6 +10403,84 @@
       ],
       "eligible_inventory": [
         {
+          "story_id": "news-682ee2d3d4bbc687b9af",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "The Fed Just Hiked And It Isn't Done. S&P 500 Falls As Warsh Speaks. (Live Coverage)",
+          "raw_title": "The Fed Just Hiked And It Isn't Done. S&P 500 Falls As Warsh Speaks. (Live Coverage)",
+          "normalized_fact": "The Fed Just Hiked And It Isn't Done. S&P 500 Falls As Warsh Speaks. (Live Coverage)。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/m/371d943b-ed80-3fee-8721-4e1980308671/the-fed-just-hiked-and-it.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/371d943b-ed80-3fee-8721-4e1980308671/the-fed-just-hiked-and-it.html?.tsrc=rss",
+          "published_at": "2026-09-16T18:56:23+00:00",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "thefedjusthikedanditisntdonesp500fallsaswarshspeakslivecoverage",
+          "event_cluster_key": "event-188d229a658d1279ccf4",
+          "published_time_bucket": "2026-09-16T18:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-09-16T19:03:08.033522+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
           "story_id": "news-9b132824aaacda387ba6",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -10409,14 +10669,14 @@
           ]
         },
         {
-          "story_id": "news-e36b92006ddddc197aca",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Fed raises rates: What it means for your credit cards, mortgages, savings accounts and auto loans - cnbc.com",
-          "raw_title": "Fed raises rates: What it means for your credit cards, mortgages, savings accounts and auto loans - cnbc.com",
-          "normalized_fact": "Fed raises rates: What it means for your credit cards, mortgages, savings accounts and auto loans - cnbc.com。",
+          "story_id": "news-6725f8d77cae210d83d2",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Stock Market Today: Index Gains Get Shaved After Fed Hikes Rates By Quarter Point (Live Coverage)",
+          "raw_title": "Stock Market Today: Index Gains Get Shaved After Fed Hikes Rates By Quarter Point (Live Coverage)",
+          "normalized_fact": "Stock Market Today: Index Gains Get Shaved After Fed Hikes Rates By Quarter Point (Live Coverage)。",
           "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
@@ -10427,8 +10687,8 @@
           "normalization_complete": true,
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxNM3BpOUtrNUtaaHQ1TGtGczdqZTNwcDhZRW14UHpzRkN1TTJweWdpbFNXT3QxSzBjX0RhakozV1FZcmpiSFFmX1UzeG9xczJudm5GeEkxblhvc3JFb09jYXNURDFyNTR1ZnlBM2p0Ri1tekNpUDhJVG5KTnJvQVJLclVlSnQzWUpsRUR1SHY4eGvSAZYBQVVfeXFMUHhBalNuXzlpdFd3UWRGRXZYQU9wbjJCTGQwUlBCbTJIbHhBRzZscWpDRnh5SFNoOGVkeXhMNDhGbWxkY3k5dXlMSFRSbjJKdkloNjVnVmU0WFJFalVZQkxUSThzb1l1b0lHd2pKdnZLOXc4OVFNQkhsUC1jQmVtTzQwN3pJMEQzc3VtNzQ2MDZnUFlnaVNR",
-          "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxNM3BpOUtrNUtaaHQ1TGtGczdqZTNwcDhZRW14UHpzRkN1TTJweWdpbFNXT3QxSzBjX0RhakozV1FZcmpiSFFmX1UzeG9xczJudm5GeEkxblhvc3JFb09jYXNURDFyNTR1ZnlBM2p0Ri1tekNpUDhJVG5KTnJvQVJLclVlSnQzWUpsRUR1SHY4eGvSAZYBQVVfeXFMUHhBalNuXzlpdFd3UWRGRXZYQU9wbjJCTGQwUlBCbTJIbHhBRzZscWpDRnh5SFNoOGVkeXhMNDhGbWxkY3k5dXlMSFRSbjJKdkloNjVnVmU0WFJFalVZQkxUSThzb1l1b0lHd2pKdnZLOXc4OVFNQkhsUC1jQmVtTzQwN3pJMEQzc3VtNzQ2MDZnUFlnaVNR",
+          "canonical_url": "https://finance.yahoo.com/m/127b3c0b-f974-36dd-8852-5793b5347c93/stock-market-today%3A-index.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/127b3c0b-f974-36dd-8852-5793b5347c93/stock-market-today%3A-index.html?.tsrc=rss",
           "published_at": "2026-09-16T18:01:45+00:00",
           "market": "us",
           "market_compatible": true,
@@ -10465,7 +10725,7 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "fedraisesrateswhatitmeansforyourcreditcardsmortgagessavingsaccountsandautoloanscnbccom",
+          "dedupe_key": "stockmarkettodayindexgainsgetshavedafterfedhikesratesbyquarterpointlivecoverage",
           "event_cluster_key": "event-f2da38a7ac3ed5d33795",
           "published_time_bucket": "2026-09-16T18:00:00+00:00",
           "public_safe": true,
@@ -10484,7 +10744,7 @@
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Google News｜美股線索",
+          "source": "Yahoo Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "inventory",
@@ -10493,11 +10753,15 @@
           "inventory_saved_at": "2026-09-16T18:47:16.904189+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 115,
+          "ranking_score": 130,
           "supporting_sources": [
             {
               "provider": "google_news",
-              "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxPczAxbFRYYU1qN0lvd0FyaWUyX3BKTVc0OThtOXk2MS0wU1Vwb1hjTEE4WFNyVkpnS216RENLTHh3bXFXeWRTSEd0SWpXbEpmUjBFV09YdHNRZDFiZER6a3J5VW5oaVhqMUF5cFpKZENNZFZ2TUtvSU5ZN0F1WS12NXNTNUV1ejJUOGhxMjNUTExnLXlXaEp5VjNPbmVhWWFUenBYSWxOYmpoWmVfNXNMMDVqaXdFdTJm"
+              "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxNSnY3TVFMMUNHQklOdVhJV2JyYzZwRVhSZVJCNTFsZkdMR3Z5dmM4TGlxR3FqYUlhUEgwTlpXR25pNC1PdXF6bHJ1NHpLVzl5Q3NBanFRcnNjMFZhS01HMzFZZ0dzVzFvX0xZeTZxd0gwaUZpOFZIcUpvdzA3NkpXTlN3U0tVZFpXbWJZZ3FkUENBd1lsSTRacFBKeHl1c2JT"
+            },
+            {
+              "provider": "google_news",
+              "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxQMkVyU1l1M3VEcEg2TUZuemNacHp6X2hGbjdwYXlGV1FZdzhEbGtjdzlkd3BUS1RzUkVjNkZ1d3lMRl9TTUlMdFhuQlg5cnZKT1FCT2FyMXNzSzRsRzFtMVZIU1o1YURKTzRKUHdlOUxJdWdrRDYwS0JFTFd4WEhMRlpWRl9oWXRKUEJCVVdJM2xJemZCbEJ3eEw0WWExelctR2NLTXJR0gGrAUFVX3lxTE9pUXRTYm84MEp3U2xNby01Zm54cTNhSVNoaDRCRUdPNlNuN1B4NDFDV3FGcDU4M185c01LdnczeG43UFFHRUdSNndFS0k1NHlISW84MUJmSUV3R05mWnJDWC1iV2piUjB1dFZnNURjMi1nNUtLU1p1VjNsWkVFNHZsaktNd3pZMUdhWERQRlVmQjBHUVFDREluUkdPM2ZuTmlzWlh4M3NoTG51Yw"
             }
           ]
         },
@@ -11443,20 +11707,20 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-b7e6748bf7d5e7a7c92f",
+          "story_id": "news-988c0b8805d514129f18",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "10-year Treasury yield falls as traders bet Fed rate increase can tamp down inflation - cnbc.com",
-          "raw_title": "10-year Treasury yield falls as traders bet Fed rate increase can tamp down inflation - cnbc.com",
-          "normalized_fact": "10-year Treasury yield falls as traders bet Fed rate increase can tamp down inflation - cnbc.com。",
+          "title": "10-year Treasury yield falls as traders bet Fed rate increase can tamp down inflation - CNBC",
+          "raw_title": "10-year Treasury yield falls as traders bet Fed rate increase can tamp down inflation - CNBC",
+          "normalized_fact": "10-year Treasury yield falls as traders bet Fed rate increase can tamp down inflation。",
           "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
           "byline_removed": false,
-          "publisher_removed": false,
+          "publisher_removed": true,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
           "summary": "",
@@ -11499,7 +11763,7 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "10yeartreasuryyieldfallsastradersbetfedrateincreasecantampdowninflationcnbccom",
+          "dedupe_key": "10yeartreasuryyieldfallsastradersbetfedrateincreasecantampdowninflation",
           "event_cluster_key": "event-715cbb5f31133a0a9625",
           "published_time_bucket": "2026-09-16T08:00:00+00:00",
           "public_safe": true,
@@ -14438,96 +14702,9 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 135
-        },
-        {
-          "story_id": "news-5a67677872bac58562b5",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "What Wednesday’s Fed Decision Could Mean For Mortgage Rates - National Mortgage Professional",
-          "raw_title": "What Wednesday’s Fed Decision Could Mean For Mortgage Rates - National Mortgage Professional",
-          "normalized_fact": "What Wednesday’s Fed Decision Could Mean For Mortgage Rates - National Mortgage Professional。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxNSW1GRkQtbWpsWVR2NEgwNHowNHNrenlwM1VoM0RrNURCTEFtREFCNk5hSTk2RnU4c0FnTEZ0WHdLVmp0RGF6RkZ1ZzJ4QzBwdndnYlRRQnVOYzczQkEtMG9PWTRCamczVkhKSEEzNFloeEZBTkxhT3V5ZG9KRUhuNENHYzlIUmU4UENXdTFRMmVYQlAtQlBiVm1RUXlTcDh2aVE",
-          "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxNSW1GRkQtbWpsWVR2NEgwNHowNHNrenlwM1VoM0RrNURCTEFtREFCNk5hSTk2RnU4c0FnTEZ0WHdLVmp0RGF6RkZ1ZzJ4QzBwdndnYlRRQnVOYzczQkEtMG9PWTRCamczVkhKSEEzNFloeEZBTkxhT3V5ZG9KRUhuNENHYzlIUmU4UENXdTFRMmVYQlAtQlBiVm1RUXlTcDh2aVE",
-          "published_at": "2026-09-14T12:32:28+00:00",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rates"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rates"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rates",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "whatwednesdaysfeddecisioncouldmeanformortgageratesnationalmortgageprofessional",
-          "event_cluster_key": "event-e9d0378b75555377c4ff",
-          "published_time_bucket": "2026-09-14T12:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rates"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rates",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-09-14T14:12:29.857866+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
         }
       ],
-      "inventory_saved_at": "2026-09-16T18:52:18.562701+00:00"
+      "inventory_saved_at": "2026-09-16T19:03:08.033522+00:00"
     }
   }
 }
