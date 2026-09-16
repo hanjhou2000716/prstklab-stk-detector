@@ -61,6 +61,7 @@ def test_mini_app_renders_event_text_without_injecting_untrusted_links():
     assert "renderEvents" in app
     assert "event.title" in app
     assert "同步市場訊號" in app
+    assert "同步市場訊號（最多三則）" not in app
     assert "signal-card" in app
 
 

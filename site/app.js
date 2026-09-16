@@ -986,7 +986,7 @@ const renderEvents = (events, briefing = null) => {
     return source !== "financialjuice" || isCanonicalFjSummary(event);
   });
   if (!validSecondary.length) { container.innerHTML = '<li class="empty">目前沒有其他同步市場訊號</li>'; }
-  else container.innerHTML = `<li class="signal-list-title">同步市場訊號（最多三則）</li>${validSecondary.map((event) => {
+  else container.innerHTML = `<li class="signal-list-title">同步市場訊號</li>${validSecondary.map((event) => {
     const source = String(event?.source_key || event?.source || event?.content_origin || "").toLowerCase();
     const title = source === "financialjuice"
       ? canonicalFjSummary(event)
