@@ -34,7 +34,7 @@ def test_narrative_contract_is_schema_valid_and_keeps_event_context() -> None:
     assert narrative["version"] == NARRATIVE_VERSION
     assert narrative["focus"] == SLOT_FOCUS["post_close"]
     assert [item["label"] for item in narrative["details"]] == [
-        "發生什麼", "市場反映", "為何值得注意", "後續確認",
+        "發生什麼", "為何重要", "可能傳導", "下一項催化劑",
     ]
     assert "資本支出展望" in narrative["highlights"][0]
     assert "買進" not in json.dumps(narrative, ensure_ascii=False)
@@ -63,6 +63,21 @@ def test_taiwan_narrative_uses_available_statistics_without_filling_missing_valu
     assert "三大法人合計淨額 -45.20億元" in joined
     assert "櫃買指數" in narrative["limitations"]
     assert "資料暫時無法取得" not in joined
+
+
+def test_narrative_focus_is_metadata_and_not_repeated_in_public_text() -> None:
+    narrative = build_narrative(
+        slot="pre_open",
+        section="risk",
+        as_of="2026-09-15",
+        facts=["台指 +0.40%"],
+        quote_evidence=[],
+        themes=[],
+    )
+
+    assert narrative["focus"] == SLOT_FOCUS["pre_open"]
+    assert all("本報聚焦" not in value for value in narrative["highlights"])
+    assert all("本報聚焦" not in item["text"] for item in narrative["details"])
 
 
 def test_briefing_snapshot_exposes_narrative_for_each_report_slot() -> None:
