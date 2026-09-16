@@ -751,19 +751,28 @@ def _event_record(
         },
         "public_safe": True,
     }
-    from src.financialjuice_notification import financialjuice_public_short_message
-    from src.telegram_client import PUBLIC_SUMMARY_VERSION, structured_public_fact
+    from src.financialjuice_notification import financialjuice_public_summary
+    from src.telegram_client import PUBLIC_SUMMARY_VERSION, is_valid_public_summary
 
-    public_short_message = financialjuice_public_short_message(record)
-    from src.telegram_client import is_valid_public_summary
-
-    public_summary_valid = is_valid_public_summary(public_short_message, source="financialjuice")
+    summary_result = financialjuice_public_summary(record)
+    public_short_message = str(summary_result.get("text") or "")
+    public_summary_valid = (
+        summary_result.get("status") == "ready"
+        and is_valid_public_summary(public_short_message, source="financialjuice")
+    )
     if not public_summary_valid:
         reasons = list(dict.fromkeys([*reasons, "content_incomplete"]))
-        status = "content_incomplete"
         vendor_priority_notification = False
-        public_signal_eligible = False
         record["alert_eligible"] = False
+        # A low-score/non-priority item may already be correctly excluded by
+        # the ordinary policy.  Keep that decision while recording the
+        # semantic-summary defect for diagnosis.  It may remain visible in the
+        # non-delivery event lane, but it must never become a public FJ alert
+        # or reach the sender.  Only an otherwise eligible candidate is
+        # converted to the fail-closed content state.
+        if status == "eligible":
+            status = "content_incomplete"
+            public_signal_eligible = False
         record["notification_status"] = status
         record["notification_reasons"] = reasons
         record["notification_reason"] = "、".join(reasons)
@@ -775,11 +784,16 @@ def _event_record(
         record["delivery_eligible"] = False
     record["public_short_message"] = public_short_message
     record["brief_title"] = public_short_message
-    summary_projection = structured_public_fact(record)
     record["public_summary_version"] = PUBLIC_SUMMARY_VERSION
     record["public_summary_status"] = "ready" if public_summary_valid else "incomplete"
-    record["public_summary_reason"] = "" if public_summary_valid else "summary_semantics_incomplete"
-    evidence_fields = summary_projection.get("evidence_fields")
+    record["public_summary_reason"] = (
+        str(summary_result.get("reason") or "")
+        if public_summary_valid
+        else "summary_semantics_incomplete"
+    )
+    record["public_summary_char_count"] = int(summary_result.get("char_count") or 0)
+    record["public_summary_source_field"] = str(summary_result.get("source_field") or "")
+    evidence_fields = summary_result.get("evidence_fields")
     record["public_summary_evidence_fields"] = (
         [str(value) for value in evidence_fields]
         if isinstance(evidence_fields, (list, tuple)) and evidence_fields
@@ -971,6 +985,12 @@ def project_financialjuice_priority(
                 "notification_status": status,
                 "notification_reason": event["notification_reason"],
                 "public_short_message": event.get("public_short_message") or "",
+                "public_summary_version": event.get("public_summary_version") or "",
+                "public_summary_status": event.get("public_summary_status") or "incomplete",
+                "public_summary_reason": event.get("public_summary_reason") or "",
+                "public_summary_source_field": event.get("public_summary_source_field") or "",
+                "public_summary_evidence_fields": event.get("public_summary_evidence_fields") or [],
+                "public_summary_char_count": event.get("public_summary_char_count") or 0,
                 "content_gate": event["content_gate"],
                 "public_signal_eligible": event["public_signal_eligible"],
                 "linked_markets": event["linked_markets"],
@@ -1044,6 +1064,12 @@ def bind_financialjuice_semantic_views(
                 "identity_contract_status",
             ):
                 view[key] = matched_event.get(key) or ""
+            for key in (
+                "public_summary_version", "public_summary_status", "public_summary_reason",
+                "public_summary_source_field", "public_summary_evidence_fields",
+                "public_summary_char_count",
+            ):
+                view[key] = matched_event.get(key) or ([] if key == "public_summary_evidence_fields" else "")
             view["public_signal_eligible"] = matched_event.get("public_signal_eligible") is True
             view["content_gate"] = matched_event.get("content_gate") or {}
             view["linked_markets"] = matched_event.get("linked_markets") or []

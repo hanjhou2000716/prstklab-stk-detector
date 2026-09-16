@@ -14,7 +14,7 @@ from typing import Any
 
 from src.financialjuice_contract import VENDOR_PRIORITY_THRESHOLD
 from src.financialjuice_notification import financialjuice_notification_key
-from src.telegram_client import is_valid_public_summary
+from src.telegram_client import PUBLIC_SUMMARY_VERSION, is_valid_public_summary
 
 _STATUSES = frozenset({
     "eligible",
@@ -92,6 +92,12 @@ def validate_financialjuice_release(snapshot: dict[str, Any]) -> dict[str, Any]:
                 errors.append(f"decision[{index}]:eligible_without_public_signal")
             if not is_valid_public_summary(str(decision.get("public_short_message") or ""), source="financialjuice"):
                 errors.append(f"decision[{index}]:invalid_public_summary")
+            summary_version = str(decision.get("public_summary_version") or "").strip()
+            if summary_version:
+                if summary_version != PUBLIC_SUMMARY_VERSION:
+                    errors.append(f"decision[{index}]:unsupported_public_summary_version")
+                if decision.get("public_summary_status") != "ready":
+                    errors.append(f"decision[{index}]:public_summary_not_ready")
             decision_key = str(decision.get("canonical_fact_key") or "").strip()
             decision_version = str(decision.get("material_fact_version") or "").strip()
             decision_notification_key = str(decision.get("notification_key") or "").strip()
@@ -143,6 +149,16 @@ def validate_financialjuice_release(snapshot: dict[str, Any]) -> dict[str, Any]:
             continue
         if event.get("notification_status") != event_decision.get("notification_status"):
             errors.append(f"event[{index}]:decision_status_mismatch")
+        if event.get("notification_status") == "eligible":
+            if str(event.get("public_short_message") or event.get("brief_title") or "").strip() != str(
+                event_decision.get("public_short_message") or ""
+            ).strip():
+                errors.append(f"event[{index}]:public_summary_mismatch")
+            for field in ("public_summary_version", "public_summary_status"):
+                decision_value = str(event_decision.get(field) or "").strip()
+                event_value = str(event.get(field) or "").strip()
+                if decision_value and decision_value != event_value:
+                    errors.append(f"event[{index}]:{field}_mismatch")
         if event.get("source_trace", {}).get("vendor_importance_is_not_risk") is not True:
             errors.append(f"event[{index}]:vendor_risk_separation_missing")
         if event.get("notification_status") == "eligible":
@@ -165,6 +181,12 @@ def validate_financialjuice_release(snapshot: dict[str, Any]) -> dict[str, Any]:
             public_message = event.get("public_short_message") or event.get("brief_title") or ""
             if not is_valid_public_summary(str(public_message), source="financialjuice"):
                 errors.append(f"event[{index}]:invalid_public_summary")
+            summary_version = str(event.get("public_summary_version") or "").strip()
+            if summary_version:
+                if summary_version != PUBLIC_SUMMARY_VERSION:
+                    errors.append(f"event[{index}]:unsupported_public_summary_version")
+                if event.get("public_summary_status") != "ready":
+                    errors.append(f"event[{index}]:public_summary_not_ready")
             event_key = str(event.get("canonical_fact_key") or "").strip()
             event_version = str(event.get("material_fact_version") or "").strip()
             event_notification_key = str(event.get("notification_key") or "").strip()

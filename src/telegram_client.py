@@ -30,7 +30,7 @@ MAX_FAILED_RECIPIENT_RETRIES = 3
 # captions keep their separate 40-character layout contract in the photo
 # delivery modules.
 PUBLIC_TEXT_MAX_CHARS = 60
-PUBLIC_SUMMARY_VERSION = "public-summary-v2"
+PUBLIC_SUMMARY_VERSION = "public-summary-v3"
 MINI_APP_INLINE_BUTTON_TEXT = "📡 D.iNV System"
 MINI_APP_MENU_BUTTON_TEXT = "📡D.iNV"
 PRSTK_RISK_LEVELS = frozenset({"R0", "R1", "R2", "R3", "R4"})
@@ -231,6 +231,7 @@ def _strip_public_icons(value: object) -> str:
 _FACT_ACTION_RE = re.compile(
     r"(?:表示|指出|宣稱|宣称|宣布|公布|發布|发布|更新|完成|組成|组成|影響|上漲|上升|下跌|下降|升息|降息|"
     r"中斷|中断|供應|供给|簽署|簽約|簽|簽訂|達|高於|低於|發射|否認|否认|可能|擬|拟|"
+    r"考慮|考虑|評估|评估|攻擊|攻击|會面|会面|討論|讨论|發表|发表|推出|部署|"
     r"said|says|announc|report|rise|fall|jump|drop|increase|decrease|disrupt|supply|rate|outlook|earnings|guidance|forecast|profit|revenue|policy)",
     re.IGNORECASE,
 )
@@ -278,6 +279,7 @@ def structured_public_fact(record: object) -> dict[str, object]:
     if not isinstance(record, dict):
         return {"text": "", "complete": False, "reason": "missing_structured_fact", "evidence_fields": []}
     candidates: list[tuple[str, dict[str, object]]] = []
+    direct_candidates: list[tuple[str, str]] = []
     for field in ("structured_fact", "fact", "summary_facts", "fact_projection"):
         value = record.get(field)
         if isinstance(value, dict):
@@ -288,20 +290,49 @@ def structured_public_fact(record: object) -> dict[str, object]:
                 for index, item in enumerate(value)
                 if isinstance(item, dict)
             )
-    for source_field, candidate in candidates:
-        direct = _structured_scalar(candidate.get("text") or candidate.get("fact_text"))
-        if direct:
-            complete = bool(
-                _FACT_ACTION_RE.search(direct)
-                and _conditional_fact_is_complete(direct)
-                and len(direct.rstrip("。！？.!?")) >= 8
-            )
-            return {
+    # Parsed event text is a source fact, not a pre-clipped notification.  It
+    # is a fallback only after an explicitly structured projection, but all
+    # candidates are evaluated before selecting one.  The previous
+    # first-match behavior allowed a short title such as "更節能" to win over
+    # the complete event stored in ``event``.
+    for field in (
+        "event", "what_happened", "chinese_translation", "vendor_translation",
+        "headline", "original_headline", "vendor_original_headline",
+    ):
+        value = _structured_scalar(record.get(field))
+        if value:
+            direct_candidates.append((field, value))
+
+    evaluated: list[tuple[int, int, str, dict[str, object]]] = []
+
+    def add_evaluated(
+        source_field: str,
+        direct: str,
+        projection: dict[str, object],
+        *,
+        complete_override: bool | None = None,
+    ) -> None:
+        complete = _fact_text_is_complete(direct) if complete_override is None else complete_override
+        evidence = projection.get("evidence_fields")
+        if not isinstance(evidence, list):
+            evidence = [source_field]
+        evaluated.append((
+            1 if complete else 0,
+            _fact_text_quality(direct),
+            source_field,
+            {
                 "text": direct,
                 "complete": complete,
                 "reason": "" if complete else "structured_fact_incomplete",
-                "evidence_fields": [source_field],
-            }
+                "evidence_fields": [str(item) for item in evidence],
+            },
+        ))
+
+    for source_field, candidate in candidates:
+        direct = _structured_scalar(candidate.get("text") or candidate.get("fact_text"))
+        if direct:
+            add_evaluated(source_field, direct, {"evidence_fields": [source_field]})
+            continue
         subject = _structured_scalar(candidate.get("subject") or candidate.get("actor") or candidate.get("entity"))
         action = _structured_scalar(candidate.get("action") or candidate.get("verb"))
         target = _structured_scalar(candidate.get("object") or candidate.get("target") or candidate.get("topic"))
@@ -324,23 +355,64 @@ def structured_public_fact(record: object) -> dict[str, object]:
             composed = _join_fact_words(composed, numbers)
             composed = _join_fact_words(composed, condition or result)
         composed = _clean_public_fragment(composed)
-        complete = bool(
-            subject and action and (target or numbers or condition or result)
-            and _FACT_ACTION_RE.search(composed)
-            and _conditional_fact_is_complete(composed)
-            and len(composed.rstrip("。！？.!?")) >= 8
-        )
-        if composed or complete:
-            return {
-                "text": composed,
-                "complete": complete,
-                "reason": "" if complete else "structured_fact_incomplete",
-                "evidence_fields": [source_field, *[key for key, value in (
-                    ("subject", subject), ("action", action), ("object", target),
-                    ("key_numbers", numbers), ("condition", condition), ("result", result),
-                ) if value]],
-            }
+        if composed:
+            structured_complete = bool(
+                subject and action and (target or numbers or condition or result)
+                and len(composed.rstrip("。！？.!?")) >= 8
+                and _conditional_fact_is_complete(composed)
+                and not any(pattern.search(composed) for pattern in _FJ_INVALID_FACT_PATTERNS)
+            )
+            add_evaluated(source_field, composed, {"evidence_fields": [source_field, *[key for key, value in (
+                ("subject", subject), ("action", action), ("object", target),
+                ("key_numbers", numbers), ("condition", condition), ("result", result),
+            ) if value]]}, complete_override=structured_complete)
+
+    for source_field, direct in direct_candidates:
+        add_evaluated(source_field, direct, {"evidence_fields": [source_field]})
+
+    if evaluated:
+        # Completeness dominates brevity.  Quality then favors a concrete
+        # object, named subject and material number over a generic verb-only
+        # clause while retaining deterministic behavior.
+        _, _, _, projection = max(evaluated, key=lambda item: (item[0], item[1], -len(str(item[3].get("text") or ""))))
+        return projection
     return {"text": "", "complete": False, "reason": "missing_structured_fact", "evidence_fields": []}
+
+
+def _fact_text_is_complete(text: str) -> bool:
+    """Return whether a source fact can stand alone as a public sentence."""
+    value = _clean_public_fragment(text).strip()
+    if not value or len(value.rstrip("。！？.!?")) < 8:
+        return False
+    if not _FACT_ACTION_RE.search(value) or not _conditional_fact_is_complete(value):
+        return False
+    if any(pattern.search(value) for pattern in _FJ_INVALID_FACT_PATTERNS):
+        return False
+    # These are unresolved references when no qualifying object follows.  A
+    # longer source sentence containing the concrete proposal is evaluated as
+    # a separate candidate and can still pass.
+    if re.search(r"(?:考慮|考虑|評估|评估)\s*(?:一項|一项)?\s*(?:提議|提议|提案|proposal)\s*[。.!！]?$", value, re.IGNORECASE):
+        return False
+    if re.fullmatch(r"(?:更|較為|更加)?(?:省錢|省钱|節能|节能|有效率|efficient)\s*[。.!！]?", value, re.IGNORECASE):
+        return False
+    return bool(re.search(r"[\u4e00-\u9fffA-Za-z0-9]", value))
+
+
+def _fact_text_quality(text: str) -> int:
+    """Score specificity without using an opaque model or external service."""
+    value = _clean_public_fragment(text)
+    score = 0
+    if re.search(r"[\u4e00-\u9fffA-Za-z]{2,}", value):
+        score += 1
+    if re.search(r"[\u4e00-\u9fffA-Za-z]+\s*(?:表示|指出|宣布|公布|考慮|考虑|擬|拟|將|将|下跌|上漲|上升|下降)", value):
+        score += 2
+    if re.search(r"\d+(?:\.\d+)?\s*(?:%|％|億|億美元|美元|萬|點|家|年|月|日)?", value):
+        score += 3
+    if re.search(r"(?:因|由於|由于|較|比|相較|超過|觸及|觸|對|与|和|以及|並|並且)", value):
+        score += 2
+    if re.search(r"(?:標普|道瓊|Nasdaq|費半|聯準會|美國|台灣|Meta|Nvidia|輝達|伊朗|荷姆茲|油輪|晶片)", value, re.IGNORECASE):
+        score += 2
+    return score
 
 
 def _conditional_fact_is_complete(text: str) -> bool:
@@ -370,9 +442,7 @@ def _is_usable_financialjuice_fact(value: object) -> bool:
         return False
     if any(pattern.search(text) for pattern in _FJ_INVALID_FACT_PATTERNS):
         return False
-    if not _conditional_fact_is_complete(text):
-        return False
-    return bool(re.search(r"[\u4e00-\u9fffA-Za-z0-9]", text))
+    return _fact_text_is_complete(text)
 
 
 def _semantic_excerpt(value: str, limit: int, *, allow_char_cut: bool = True) -> str:
@@ -515,9 +585,8 @@ def summarize_public_message(
         return ""
     if not _conditional_fact_is_complete(body):
         return ""
-    if kind == "financialjuice" or fj_match:
-        if not _is_usable_financialjuice_fact(body):
-            return ""
+    if kind == "financialjuice" and not _is_usable_financialjuice_fact(body):
+        return ""
     return head + body
 
 
@@ -779,9 +848,16 @@ def send_briefs(
     """
     if not chat_ids:
         raise ValueError("至少需要一個 Telegram 收件人。")
-    text = canonical_short_message(
-        text, prstk_risk_level=prstk_risk_level, message_kind=message_kind, label=label,
-    )
+    # FJ producers persist one already-selected semantic summary.  Re-running
+    # the generic formatter here used to select a shorter first clause and
+    # erase the event's subject/object.  The sender is a transport boundary:
+    # normalize whitespace, then validate; it must not rewrite content.
+    if str(message_kind or "").casefold() == "financialjuice":
+        text = " ".join(str(text or "").split()).strip()
+    else:
+        text = canonical_short_message(
+            text, prstk_risk_level=prstk_risk_level, message_kind=message_kind, label=label,
+        )
     if not is_valid_public_summary(text, source=message_kind):
         raise ValueError("公開訊息內容不完整，已停止發送。")
     deliveries: list[TelegramDelivery] = []
@@ -838,9 +914,12 @@ def send_text_briefs_audited(
         raise ValueError("Telegram recipient list is empty")
     if prstk_risk_level not in PRSTK_RISK_LEVELS:
         raise ValueError("PRStK risk level must be one of R0-R4")
-    text = canonical_short_message(
-        text, prstk_risk_level=prstk_risk_level, message_kind=message_kind, label=label,
-    )
+    if str(message_kind or "").casefold() == "financialjuice":
+        text = " ".join(str(text or "").split()).strip()
+    else:
+        text = canonical_short_message(
+            text, prstk_risk_level=prstk_risk_level, message_kind=message_kind, label=label,
+        )
     if not is_valid_public_summary(text, source=message_kind):
         raise ValueError("公開訊息內容不完整，已停止發送。")
     receipts: list[TextDeliveryReceipt] = []

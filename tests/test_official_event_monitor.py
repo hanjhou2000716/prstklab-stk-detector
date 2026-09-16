@@ -159,7 +159,7 @@ def test_realtime_external_projection_keeps_below_threshold_visible_without_sele
     row = {
         "observation_id": "fj-realtime-7",
         "source": "financialjuice",
-        "original_headline": "Routine market note",
+            "original_headline": "Routine market note published",
         "importance": 7,
         "source_url": "https://financialjuice.com/item/7",
         "source_published_at": datetime.now(UTC).isoformat(),

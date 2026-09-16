@@ -571,6 +571,24 @@ def test_audited_text_delivery_records_success_and_failure_without_fail_fast(mon
     assert receipts[1].error_class == "temporary_transport"
 
 
+def test_audited_fj_sender_preserves_producer_selected_summary(monkeypatch):
+    captured = {}
+
+    def fake_send_brief(**kwargs):
+        captured.update(kwargs)
+        return telegram_client.TelegramResult(message_id=7)
+
+    monkeypatch.setattr("src.telegram_client.send_brief", fake_send_brief)
+    text = "🟣 FJ 9/10｜標普500近350家公司下跌；聯準會決策前避險；10年債殖利率觸5%。"
+    receipts = send_text_briefs_audited(
+        token="token", chat_ids=("online",), text=text,
+        dashboard_url="https://example.test/app", alert_id="alert",
+        release_id="release", snapshot_id="snapshot", message_kind="financialjuice",
+    )
+    assert receipts[0].status == "delivered"
+    assert captured["text"] == text
+
+
 def test_audited_text_delivery_rejects_empty_recipients_invalid_risk_and_bad_summary():
     with pytest.raises(ValueError, match="recipient list"):
         send_text_briefs_audited(

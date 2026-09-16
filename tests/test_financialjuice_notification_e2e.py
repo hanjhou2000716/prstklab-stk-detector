@@ -5,6 +5,7 @@ from src.financialjuice_notification import (
     deliver_financialjuice_event,
     financialjuice_caption,
     financialjuice_public_short_message,
+    financialjuice_public_summary,
 )
 from src.financialjuice_notification_e2e import run_financialjuice_notification_e2e
 from src.telegram_client import TextDeliveryReceipt, alert_mini_app_url
@@ -59,6 +60,41 @@ def test_financialjuice_public_message_removes_embedded_risk_icon() -> None:
     })
     assert caption == "🟣 FJ 10/10｜聯準會理事沃勒表示通膨數據將影響利率決策。"
     assert "🔴" not in caption
+
+
+def test_fj_summary_prefers_complete_policy_fact_over_generic_proposal() -> None:
+    result = financialjuice_public_summary({
+        "event": "美國政府正考慮一項提議，擬與伊朗安排「石油休戰」，基於為油輪開闢安全通道以通過荷姆茲海峽——引述外交消息人士。",
+        "vendor_importance": 9,
+    })
+    assert result["status"] == "ready"
+    assert result["text"] == "🟣 FJ 9/10｜美國考慮與伊朗安排「石油休戰」，為油輪開闢通過荷姆茲海峽的安全通道。"
+    assert result["char_count"] == len(result["text"])
+    assert result["source_field"] == "event"
+
+
+def test_fj_summary_keeps_company_comparison_and_market_evidence() -> None:
+    company = financialjuice_public_short_message({
+        "event": "Meta 將於 2027 年底推出下一代 Astrid 晶片。Meta 將於 2027 上半年部署新款自研 Arke 晶片。Meta：這些晶片將比輝達晶片更省錢、更節能。",
+        "vendor_importance": 9,
+    })
+    market = financialjuice_public_short_message({
+        "event": "美國股市下跌，因投資人在聯準會政策決定前避開風險性資產，同時油價上漲加劇通膨疑慮。標普500指數中近350家企業下跌，基準10年期公債殖利率觸及5%。",
+        "vendor_importance": 9,
+    })
+    assert company == "🟣 FJ 9/10｜Meta擬2027上半年部署自研Arke晶片，稱較輝達省錢節能。"
+    assert market == "🟣 FJ 9/10｜標普500近350家公司下跌，聯準會決策前避險；10年債殖利率觸5%。"
+    assert len(company) <= 60 and len(market) <= 60
+
+
+def test_fj_summary_suppresses_contextless_fragment() -> None:
+    result = financialjuice_public_summary({
+        "title": "更節能",
+        "vendor_importance": 9,
+    })
+    assert result["status"] == "incomplete"
+    assert result["text"] == ""
+    assert financialjuice_public_short_message({"title": "更節能", "vendor_importance": 9}) == ""
 
 
 def test_financialjuice_caption_prefers_projected_event_over_generic_title() -> None:
@@ -260,6 +296,73 @@ def test_financialjuice_delivery_reaches_text_sender_with_alert_deep_link() -> N
     )
 
 
+def test_versioned_summary_is_authoritative_at_delivery_boundary() -> None:
+    captured: dict[str, object] = {}
+    expected = "🟣 FJ 9/10｜Meta擬2027上半年部署自研Arke晶片，稱較輝達省錢節能。"
+
+    def sender(**kwargs: object) -> tuple[TextDeliveryReceipt, ...]:
+        captured.update(kwargs)
+        return (TextDeliveryReceipt(
+            "alert", kwargs["release_id"], kwargs["snapshot_id"],
+            "recipient-hash", "delivered", message_id=1,
+        ),)
+
+    result = deliver_financialjuice_event(
+        {
+            "source_key": "financialjuice",
+            "event_cluster_key": "fj-versioned",
+            "vendor_importance": 9,
+            "vendor_priority_notification": True,
+            "delivery_policy": "fj_priority",
+            "notification_status": "eligible",
+            "freshness_status": "fresh",
+            "public_summary_version": "public-summary-v3",
+            "public_summary_status": "ready",
+            "public_short_message": expected,
+            "title": "更節能。",
+        },
+        release_id="release-1",
+        snapshot_id="snapshot-1",
+        mini_app_url="https://example.test/app",
+        release_ready=True,
+        token="token",
+        chat_ids=("recipient",),
+        text_sender=sender,
+    )
+    assert result["status"] == "delivered"
+    assert captured["text"] == expected
+
+
+def test_versioned_incomplete_summary_cannot_reach_sender() -> None:
+    calls: list[dict[str, object]] = []
+
+    result = deliver_financialjuice_event(
+        {
+            "source_key": "financialjuice",
+            "event_cluster_key": "fj-incomplete-v3",
+            "vendor_importance": 9,
+            "vendor_priority_notification": True,
+            "delivery_policy": "fj_priority",
+            "notification_status": "eligible",
+            "freshness_status": "fresh",
+            "public_summary_version": "public-summary-v3",
+            "public_summary_status": "incomplete",
+            "public_short_message": "",
+            "event": "更節能",
+        },
+        release_id="release-1",
+        snapshot_id="snapshot-1",
+        mini_app_url="https://example.test/app",
+        release_ready=True,
+        token="token",
+        chat_ids=("recipient",),
+        text_sender=lambda **kwargs: (calls.append(kwargs) or ()),
+    )
+    assert result["status"] == "blocked"
+    assert "summary_semantics_incomplete" in result["reasons"]
+    assert calls == []
+
+
 def test_financialjuice_eight_score_does_not_enter_priority_sender_lane() -> None:
     calls: list[dict[str, object]] = []
 
@@ -368,5 +471,8 @@ def test_rich_email_to_priority_to_telegram_preserves_semantics() -> None:
     assert event["possible_linkage"].startswith("可能影響 AI 伺服器")
     assert "某公司據報" in telegram_text
     assert "FinancialJuice 公開快訊" not in telegram_text
+    assert event["public_summary_version"] == "public-summary-v3"
+    assert event["public_summary_status"] == "ready"
+    assert event["public_short_message"] == telegram_text
     assert event["prstk_risk_level"] == "R0"
     assert event["vendor_priority_notification"] is True

@@ -110,14 +110,14 @@ def test_scheduled_selection_skips_fj_without_release_alert_and_uses_next_candid
     first = {
         "source_key": "financialjuice", "notification_status": "eligible",
         "vendor_priority_notification": True, "vendor_importance": 9,
-        "notification_id": "missing-alert", "event": "First FJ event。",
+            "notification_id": "missing-alert", "event": "First FJ event announced。",
     }
     second = {
         "source_key": "financialjuice", "notification_status": "eligible",
         "vendor_priority_notification": True, "vendor_importance": 9,
         "delivery_policy": "fj_priority", "canonical_fact_key": "financialjuice-fact:second",
         "source_identity_verified": True, "public_signal_eligible": True, "freshness_status": "fresh",
-        "notification_id": "published-alert", "event": "Second FJ event。",
+            "notification_id": "published-alert", "event": "Second FJ event announced。",
     }
     candidates = iter((first, second))
     monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args, **_kwargs: next(candidates, None))
@@ -155,14 +155,14 @@ def test_scheduled_selection_skips_claimed_fj_and_uses_next_candidate(monkeypatc
     first = {
         "source_key": "financialjuice", "notification_status": "eligible",
         "vendor_priority_notification": True, "vendor_importance": 10,
-        "notification_id": "already-delivered", "event": "First FJ event。",
+            "notification_id": "already-delivered", "event": "First FJ event announced。",
     }
     second = {
         "source_key": "financialjuice", "notification_status": "eligible",
         "vendor_priority_notification": True, "vendor_importance": 9,
         "delivery_policy": "fj_priority", "canonical_fact_key": "financialjuice-fact:next",
         "source_identity_verified": True, "public_signal_eligible": True, "freshness_status": "fresh",
-        "notification_id": "next-event", "event": "Second FJ event。",
+            "notification_id": "next-event", "event": "Second FJ event announced。",
     }
     candidates = iter((first, second))
     monkeypatch.setattr(scheduled_delivery, "_pick_event", lambda *_args, **_kwargs: next(candidates, None))
