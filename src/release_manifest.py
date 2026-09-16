@@ -27,6 +27,14 @@ from src.external_observability_contract import (
     EXTERNAL_OBSERVABILITY_FIELDS,
     normalize_external_observability,
 )
+from src.financialjuice_release_contract import (
+    apply_financialjuice_release_boundary,
+    attach_financialjuice_release_diagnostic,
+    financialjuice_event_fingerprint,
+    financialjuice_quarantine_fingerprints,
+    is_financialjuice_row,
+    validate_financialjuice_release,
+)
 from src.production_acceptance import (
     production_research_contract_errors,
     validate_production_bundle,
@@ -46,6 +54,7 @@ ALERT_RETENTION_DAYS = 30
 CANONICAL_HASH_VERSION = 2
 
 SOURCE_HEALTH_ARTIFACT = "source-health.json"
+PUBLISHABLE_RELEASE_STATUSES = frozenset({"ready", "ready_with_quarantine"})
 
 
 def _canonical_json(value: Any) -> bytes:
@@ -319,6 +328,7 @@ def _publish_alert_artifacts(
     alert_dir.mkdir(parents=True, exist_ok=True)
     index_path = root / "site" / "data" / ALERT_INDEX_NAME
     rows: dict[tuple[str, str], dict[str, Any]] = {}
+    quarantined_fingerprints = financialjuice_quarantine_fingerprints(market)
     # The retained immutable files are the source of truth.  Reusing a stale
     # index row can keep a deleted/moved artifact addressable and was the
     # reason historical files existed without a matching current index row.
@@ -328,7 +338,15 @@ def _publish_alert_artifacts(
             item = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, UnicodeError, json.JSONDecodeError):
             continue
-        if isinstance(item, dict) and item.get("notification_id") and item.get("release_id"):
+        if (
+            isinstance(item, dict)
+            and item.get("notification_id")
+            and item.get("release_id")
+            and not (
+                is_financialjuice_row(item)
+                and financialjuice_event_fingerprint(item) in quarantined_fingerprints
+            )
+        ):
             rows[(str(item["notification_id"]), str(item["release_id"]))] = {
                 "notification_id": item["notification_id"],
                 "release_id": item["release_id"],
@@ -911,6 +929,34 @@ def build_release_manifest(
             fallback_reason = reason
 
     normalization_notes = _normalize_artifacts(loaded)
+    financialjuice_boundary: dict[str, Any] = {
+        "status": "ready",
+        "alert_projection_status": "ready",
+        "quarantined_alert_count": 0,
+        "quarantined_alert_reasons": [],
+        "quarantined_summary_versions": [],
+        "fatal_alert_contract_errors": [],
+    }
+    if isinstance(loaded.get("market.json"), dict):
+        # Defense in depth for restored or legacy snapshots.  The scheduled
+        # producer applies the same boundary, but manifest construction must
+        # never project an explicitly suppressed incomplete FJ row into an
+        # immutable public alert.
+        market_candidate = loaded["market.json"]
+        financialjuice_boundary = apply_financialjuice_release_boundary(market_candidate)
+        attach_financialjuice_release_diagnostic(market_candidate, financialjuice_boundary)
+        if financialjuice_boundary["fatal_alert_contract_errors"]:
+            errors.extend(financialjuice_boundary["fatal_alert_contract_errors"])
+        if financialjuice_boundary["quarantined_alert_count"]:
+            normalization_notes.append(
+                "market: optional_fj_alert_quarantined="
+                + str(financialjuice_boundary["quarantined_alert_count"])
+            )
+        contract = validate_financialjuice_release(market_candidate)
+        if not contract["ok"]:
+            errors.extend("financialjuice_release_contract:" + error for error in contract["errors"])
+        contract.update(financialjuice_boundary)
+        market_candidate["financialjuice_release_contract"] = contract
     # Publish source health after legacy normalization so its bound market
     # snapshot ID always points at the exact bytes used by the release.
     market = loaded.get("market.json")
@@ -1026,10 +1072,11 @@ def build_release_manifest(
     # core release identity.  Keeping them out of ``release_material`` avoids
     # a circular hash (the artifact itself carries its release_id), while the
     # resulting paths/hashes are still covered by the manifest gate.
-    _publish_alert_artifacts(
-        root=root, market=market, release_id=release_id, created_at=created_at,
-        resolved=resolved, hashes=hashes,
-    )
+    if not financialjuice_boundary["fatal_alert_contract_errors"]:
+        _publish_alert_artifacts(
+            root=root, market=market, release_id=release_id, created_at=created_at,
+            resolved=resolved, hashes=hashes,
+        )
     if creator_artifact is None and creator_records is not None:
         # Records are expected to be sanitized at ingress. The pipeline still
         # rechecks privacy/source rules before writing a public artifact.
@@ -1153,6 +1200,10 @@ def build_release_manifest(
         "creator_public_validation_errors": sorted(set(creator_public_errors)),
         "creator_snapshot_id": (creator_public_artifact or {}).get("snapshot_id") if isinstance(creator_public_artifact, dict) else None,
         "creator_public_artifact_hash": creator_public_hash,
+        "alert_projection_status": financialjuice_boundary["alert_projection_status"],
+        "quarantined_alert_count": financialjuice_boundary["quarantined_alert_count"],
+        "quarantined_alert_reasons": financialjuice_boundary["quarantined_alert_reasons"],
+        "fatal_alert_contract_errors": financialjuice_boundary["fatal_alert_contract_errors"],
         "news_snapshot_id": news_snapshot_id,
         "news_status": news_status,
         "external_observation_count": external_metadata["count"] if external_metadata is not None else None,
@@ -1231,7 +1282,11 @@ def build_release_manifest(
                 manifest["research_freshness"] = "unverified"
     manifest["validation_errors"] = sorted(set(errors))
     if not errors:
-        manifest["status"] = "ready"
+        manifest["status"] = (
+            "ready_with_quarantine"
+            if financialjuice_boundary["quarantined_alert_count"]
+            else "ready"
+        )
     return manifest
 
 
@@ -1341,7 +1396,7 @@ def main() -> int:
     )
     write_release_manifest(manifest, args.output)
     print(json.dumps({"status": manifest["status"], "release_id": manifest["release_id"], "validation_errors": manifest["validation_errors"]}, ensure_ascii=False))
-    return 0 if manifest["status"] == "ready" else 1
+    return 0 if manifest["status"] in {"ready", "ready_with_quarantine"} else 1
 
 
 if __name__ == "__main__":

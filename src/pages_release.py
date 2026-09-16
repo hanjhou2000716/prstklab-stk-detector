@@ -28,7 +28,7 @@ from typing import Any
 
 import requests
 
-from .release_manifest import verify_release_files
+from .release_manifest import PUBLISHABLE_RELEASE_STATUSES, verify_release_files
 
 
 class PagesReleaseError(RuntimeError):
@@ -106,7 +106,7 @@ def _validate(root: Path, *, require_production_research: bool) -> tuple[bool, d
         if isinstance(candidate, dict):
             payload = candidate
             break
-    ready = result.returncode == 0 and payload.get("status") == "ready"
+    ready = result.returncode == 0 and payload.get("status") in PUBLISHABLE_RELEASE_STATUSES
 
     # ``release_manifest`` compares the research snapshot with the market
     # snapshot.  That is useful for generation-level consistency, but it does
@@ -179,7 +179,7 @@ def _fetch_public_manifest(*, public_url: str, timeout: float = 15.0) -> dict[st
         manifest = response.json()
     except (requests.RequestException, ValueError, TypeError) as exc:
         raise PagesReleaseError(f"public manifest unavailable: {type(exc).__name__}") from exc
-    if not isinstance(manifest, dict) or manifest.get("status") != "ready":
+    if not isinstance(manifest, dict) or manifest.get("status") not in PUBLISHABLE_RELEASE_STATUSES:
         raise PagesReleaseError("public manifest status is not ready")
     return manifest
 
@@ -202,7 +202,7 @@ def _restore_matching_data_release(
         local_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError, TypeError):
         return None
-    if not isinstance(local_manifest, dict) or local_manifest.get("status") != "ready":
+    if not isinstance(local_manifest, dict) or local_manifest.get("status") not in PUBLISHABLE_RELEASE_STATUSES:
         return None
     try:
         public_manifest = _fetch_public_manifest(public_url=public_url, timeout=timeout)
@@ -517,7 +517,7 @@ def restore_latest_valid(
 
         if ready:
             selected_manifest = manifest
-            if isinstance(immutable_manifest, dict) and immutable_manifest.get("status") == "ready":
+            if isinstance(immutable_manifest, dict) and immutable_manifest.get("status") in PUBLISHABLE_RELEASE_STATUSES:
                 try:
                     immutable_manifest_path.write_bytes(immutable_manifest_bytes or b"")
                     selected_manifest = immutable_manifest

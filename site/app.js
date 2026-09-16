@@ -7,6 +7,7 @@ const formatNumber = (value) => typeof value === "number" ? value.toLocaleString
 const signedPercent = (value) => value === null || value === undefined ? "—" : `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
 const marketName = (key) => key === "taiwan" ? "台股" : key === "us" ? "美股" : key;
 const PUBLIC_TEXT_MAX_CHARS = 60;
+const PUBLISHABLE_RELEASE_STATUSES = new Set(["ready", "ready_with_quarantine"]);
 
 const quoteMovement = (rawValue) => {
   if (rawValue === null || rawValue === undefined || rawValue === "" || typeof rawValue === "boolean"
@@ -2221,7 +2222,7 @@ const saveLastGoodRelease = (manifest, artifactTexts) => {
 const readLastGoodRelease = async () => {
   try {
     const saved = JSON.parse(localStorage.getItem(LAST_GOOD_RELEASE_KEY) || "null");
-    if (!saved?.manifest || saved.manifest.status !== "ready" || !saved.manifest.release_id) return null;
+    if (!saved?.manifest || !PUBLISHABLE_RELEASE_STATUSES.has(saved.manifest.status) || !saved.manifest.release_id) return null;
     if (!saved.artifactTexts?.["market.json"]) return null;
     for (const [name, expectedHash] of Object.entries(saved.manifest.artifact_hashes || {})) {
       const text = saved.artifactTexts[name];
@@ -2274,7 +2275,7 @@ const readLastGoodRelease = async () => {
 
 const loadPublishedRelease = async () => {
   const manifest = await fetchJson("data/release-manifest.json");
-  if (!manifest || manifest.status !== "ready" || !manifest.release_id) {
+  if (!manifest || !PUBLISHABLE_RELEASE_STATUSES.has(manifest.status) || !manifest.release_id) {
     throw new Error("published release is incomplete");
   }
   const hashes = manifest.artifact_hashes || {};

@@ -18,7 +18,7 @@ def test_public_artifacts_keep_separate_statuses():
 
 def test_release_manifest_is_ready_and_has_artifacts():
     manifest = json.loads(Path("site/data/release-manifest.json").read_text(encoding="utf-8"))
-    assert manifest.get("status") in {"ready", "invalid"}
-    if manifest.get("status") == "ready":
+    assert manifest.get("status") in {"ready", "ready_with_quarantine", "invalid"}
+    if manifest.get("status") in {"ready", "ready_with_quarantine"}:
         assert manifest.get("release_id")
         assert manifest.get("artifact_hashes")

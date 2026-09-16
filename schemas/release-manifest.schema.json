@@ -53,7 +53,11 @@
     "external_observation_sources": {"type": "array", "items": {"type": "string"}},
     "external_observation_status": {"enum": ["ready", "no_event", "not_available"]},
     "rollback_release_id": {"type": "string", "minLength": 8},
-    "status": {"enum": ["ready", "rolled_back", "invalid"]}
+    "status": {"enum": ["ready", "ready_with_quarantine", "rolled_back", "invalid"]},
+    "alert_projection_status": {"enum": ["ready", "ready_with_quarantine", "invalid"]},
+    "quarantined_alert_count": {"type": "integer", "minimum": 0},
+    "quarantined_alert_reasons": {"type": "array", "items": {"type": "string"}},
+    "fatal_alert_contract_errors": {"type": "array", "items": {"type": "string"}}
   },
   "$defs": {
     "strategy_release": {

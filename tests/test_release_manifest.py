@@ -366,6 +366,54 @@ def test_manifest_rebuilds_alert_index_from_retained_immutable_files(tmp_path):
     assert "alert-index.json" in manifest["artifact_paths"]
 
 
+def test_manifest_excludes_quarantined_fj_from_index_but_keeps_immutable_file(tmp_path):
+    _artifacts(tmp_path)
+    alert_dir = tmp_path / "site" / "data" / "alerts"
+    alert_dir.mkdir()
+    retained = {
+        "notification_id": "fj-quarantined-1",
+        "release_id": "release-0aeca92fe754083e",
+        "snapshot_id": "snapshot-retained",
+        "observation_id": "observation-quarantined",
+        "source_key": "financialjuice",
+        "public_short_message": "🟣 FJ 9/10｜伊朗攻擊電信基礎設施。",
+        "canonical_content_hash": "b" * 64,
+        "canonical_hash_version": 1,
+        "created_at": "2026-09-04T10:00:00+00:00",
+    }
+    retained_path = alert_dir / "fj-quarantined-1-release-0aeca92fe754083e.json"
+    retained_path.write_text(json.dumps(retained, ensure_ascii=False), encoding="utf-8")
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    quarantined = {
+        "notification_id": retained["notification_id"],
+        "observation_id": retained["observation_id"],
+        "source": "FinancialJuice",
+        "source_key": "financialjuice",
+        "public_short_message": retained["public_short_message"],
+        "notification_status": "not_eligible",
+        "public_signal_eligible": False,
+        "alert_eligible": False,
+        "vendor_priority_notification": False,
+        "delivery_eligible": False,
+    }
+    market["events"] = {"items": [quarantined]}
+    market["financialjuice_observations"] = [quarantined]
+    market["financialjuice_priority_decisions"] = [{
+        "observation_id": retained["observation_id"],
+        "notification_status": "not_eligible",
+        "release_trace_required": True,
+    }]
+    market_path.write_text(json.dumps(market, ensure_ascii=False), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+
+    index = json.loads((tmp_path / "site" / "data" / "alert-index.json").read_text(encoding="utf-8"))
+    assert not any(item["notification_id"] == retained["notification_id"] for item in index["alerts"])
+    assert retained_path.is_file()
+    assert manifest["status"] == "ready_with_quarantine"
+
+
 def test_immutable_alert_projection_keeps_mini_app_headline_aliases():
     artifact = _alert_projection(
         {
@@ -404,6 +452,36 @@ def test_v3_incomplete_fj_summary_is_blocked_at_release_projection():
             market_snapshot_id="market-test",
             created_at="2026-09-16T00:00:00+00:00",
         )
+
+
+def test_manifest_quarantines_explicitly_suppressed_incomplete_fj_without_blocking_core_release(tmp_path):
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market.setdefault("events", {}).setdefault("items", []).append({
+        "observation_id": "fj-incomplete-release",
+        "source": "FinancialJuice",
+        "source_key": "financialjuice",
+        "public_summary_version": "public-summary-v3",
+        "public_summary_status": "incomplete",
+        "public_short_message": "🟣 FJ 9/10｜更節能。",
+        "notification_status": "content_incomplete",
+        "public_signal_eligible": False,
+        "alert_eligible": False,
+        "vendor_priority_notification": False,
+    })
+    market_path.write_text(json.dumps(market, ensure_ascii=False), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+
+    assert manifest["status"] == "ready_with_quarantine"
+    assert manifest["alert_projection_status"] == "ready_with_quarantine"
+    assert manifest["quarantined_alert_count"] == 1
+    published_market = json.loads(market_path.read_text(encoding="utf-8"))
+    assert not any(
+        item.get("observation_id") == "fj-incomplete-release"
+        for item in published_market["events"]["items"]
+    )
 
 
 def test_immutable_alert_projection_preserves_market_linkage_contract():

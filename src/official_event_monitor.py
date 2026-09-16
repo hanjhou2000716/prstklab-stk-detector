@@ -35,7 +35,12 @@ from src.financialjuice_priority import (
     public_financialjuice_observations,
     replace_financialjuice_event_lane,
 )
-from src.financialjuice_release_contract import validate_financialjuice_release
+from src.financialjuice_release_contract import (
+    apply_financialjuice_release_boundary,
+    attach_financialjuice_release_diagnostic,
+    is_financialjuice_row,
+    validate_financialjuice_release,
+)
 from src.market_data import build_market_snapshot
 from src.notification_observability import decision_summary, merge_decision_health, write_summary
 from src.railway_observation_client import load_railway_observations
@@ -107,15 +112,35 @@ def _attach_realtime_external_events(snapshot: dict[str, Any]) -> dict[str, Any]
     projection = project_financialjuice_priority(
         fj_rows, existing_events=existing_events, market_snapshot=snapshot,
     )
-    snapshot["external_observations"] = public_financialjuice_observations(observations, projection["events"])
-    snapshot["financialjuice_observations"] = bind_financialjuice_semantic_views(
-        fj_rows, projection["events"],
-    )
     snapshot["financialjuice_priority_decisions"] = projection["decisions"]
     snapshot["financialjuice_priority_events"] = [
         item for item in projection["events"]
         if str(item.get("notification_status") or "") == "eligible"
     ]
+    snapshot["financialjuice_observations"] = bind_financialjuice_semantic_views(
+        fj_rows, projection["events"],
+    )
+    # Apply the same public event boundary as scheduled releases so an
+    # incomplete, explicitly suppressed FJ row cannot leak into the realtime
+    # selector or abort unrelated market publication.
+    events_container["items"] = replace_financialjuice_event_lane(
+        existing_events, projection["events"],
+    )
+    boundary = apply_financialjuice_release_boundary(snapshot)
+    snapshot["financialjuice_release_boundary"] = boundary
+    # Use the same post-boundary event set for the public observation lane;
+    # otherwise a quarantined row could be removed from events.items and then
+    # reintroduced through the external-observation projection.
+    surviving_projection = [
+        item for item in projection["events"]
+        if any(
+            isinstance(public_item, dict)
+            and str(public_item.get("observation_id") or public_item.get("item_id") or "").strip()
+            == str(item.get("observation_id") or item.get("item_id") or "").strip()
+            for public_item in events_container.get("items", [])
+        )
+    ]
+    snapshot["external_observations"] = public_financialjuice_observations(observations, surviving_projection)
     rejected = local_rejected + int(remote_health.get("rejected_count") or 0)
     if _external_observations_configured():
         health = external_source_health_from_remote(
@@ -129,13 +154,16 @@ def _attach_realtime_external_events(snapshot: dict[str, Any]) -> dict[str, Any]
         snapshot["source_health"] = merge_external_source_health(snapshot.get("source_health") or {}, health)
         snapshot["external_source_health"] = health
     contract = validate_financialjuice_release(snapshot)
+    contract.update(boundary)
     snapshot["financialjuice_release_contract"] = contract
-    if contract["ok"]:
-        # Preserve non-FJ producers and replace the stale FJ slice with the
-        # current release-bound public projection.
-        events_container["items"] = replace_financialjuice_event_lane(
-            existing_events, projection["events"],
-        )
+    attach_financialjuice_release_diagnostic(snapshot, boundary)
+    if not contract["ok"] or boundary["fatal_alert_contract_errors"]:
+        # Keep the snapshot auditable, but never let a contradictory FJ row
+        # become a realtime notification candidate.
+        events_container["items"] = [
+            item for item in events_container.get("items", [])
+            if not isinstance(item, dict) or not is_financialjuice_row(item)
+        ]
     return snapshot
 
 

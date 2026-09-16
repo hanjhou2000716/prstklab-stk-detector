@@ -31,7 +31,11 @@ from src.financialjuice_priority import (
     public_financialjuice_observations,
     replace_financialjuice_event_lane,
 )
-from src.financialjuice_release_contract import validate_financialjuice_release
+from src.financialjuice_release_contract import (
+    apply_financialjuice_release_boundary,
+    attach_financialjuice_release_diagnostic,
+    validate_financialjuice_release,
+)
 from src.market_data import build_market_snapshot
 from src.notification_observability import decision_summary, merge_decision_health, write_summary
 from src.railway_observation_client import load_railway_observations
@@ -685,18 +689,28 @@ def prepare(
     snapshot["financialjuice_observations"] = bind_financialjuice_semantic_views(
         financialjuice_observations, fj_projection["events"],
     )
+    # Keep the direct alert projector fail-closed, but quarantine explicitly
+    # non-public FJ rows before they can abort the core scheduled release.
+    fj_boundary = apply_financialjuice_release_boundary(snapshot)
+    snapshot["financialjuice_release_boundary"] = fj_boundary
     # Persist the contract result in the same release snapshot and stop before
     # publication if a qualifying FJ item is no longer aligned with its
     # decision/event lineage.  This prevents a partial or hand-edited bundle
     # from reaching Pages or the Telegram gate.
     financialjuice_contract = validate_financialjuice_release(snapshot)
     snapshot["financialjuice_release_contract"] = financialjuice_contract
-    if not financialjuice_contract["ok"]:
+    financialjuice_contract.update(fj_boundary)
+    if not financialjuice_contract["ok"] or fj_boundary["fatal_alert_contract_errors"]:
         _write_decision_output({
             "prepared": "false",
             "sent": "false",
             "reason": "financialjuice_release_contract_blocked",
-            "financialjuice_contract_errors": ";".join(financialjuice_contract["errors"]),
+            "financialjuice_release_status": "invalid",
+            "quarantined_alert_count": fj_boundary["quarantined_alert_count"],
+            "quarantined_alert_reasons": ",".join(fj_boundary["quarantined_alert_reasons"]),
+            "financialjuice_contract_errors": ";".join(
+                [*financialjuice_contract["errors"], *fj_boundary["fatal_alert_contract_errors"]]
+            ),
         }, notification_status="blocked", notification_reason="financialjuice_release_contract_blocked")
         return snapshot
     remote_rejected = remote_health.get("rejected_count")
@@ -748,6 +762,7 @@ def prepare(
     if creator_records:
         snapshot["creator_insights"] = creator_records
     snapshot["briefing"] = build_briefing_snapshot(snapshot, slot)
+    attach_financialjuice_release_diagnostic(snapshot, fj_boundary)
     snapshot["briefing"]["delivery_policy"] = "scheduled_anchor"
     effective_context = _closed_market_slot_context(snapshot, slot, slot_context)
     if isinstance(effective_context, dict):
@@ -929,6 +944,9 @@ def prepare(
             "delivery_eligible": schedule_decision["delivery_eligible"],
             "suppression_reason": schedule_decision["suppression_reason"],
             "delivery_policy": schedule_decision["delivery_policy"],
+            "financialjuice_release_status": fj_boundary["alert_projection_status"],
+            "quarantined_alert_count": fj_boundary["quarantined_alert_count"],
+            "quarantined_alert_reasons": ",".join(fj_boundary["quarantined_alert_reasons"]),
             **metadata,
         },
         event=decision_event,
