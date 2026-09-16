@@ -104,6 +104,8 @@ def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot
             # A v3 producer has already selected and audited the public fact.
             # The release renderer must preserve that exact text; silently
             # re-summarizing here would recreate the short-first-clause bug.
+            if event.get("public_summary_status") != "ready":
+                raise ValueError("financialjuice public summary is not ready")
             public_short_message = stored_public_short_message
         else:
             # Historical artifacts do not carry the v3 contract.  Generate a

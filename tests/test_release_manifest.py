@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from src.news_intelligence import build_news_intelligence
 from src.release_manifest import (
     _alert_projection,
@@ -385,6 +387,23 @@ def test_immutable_alert_projection_keeps_mini_app_headline_aliases():
     assert artifact["brief_title"].startswith("🟣 FJ")
     assert artifact["public_short_message"] == artifact["brief_title"]
     assert artifact["linked_markets"] == ["US10Y", "SOX"]
+
+
+def test_v3_incomplete_fj_summary_is_blocked_at_release_projection():
+    with pytest.raises(ValueError, match="public summary is not ready"):
+        _alert_projection(
+            {
+                "kind": "external_event",
+                "source": "FinancialJuice",
+                "source_key": "financialjuice",
+                "public_summary_version": "public-summary-v3",
+                "public_summary_status": "incomplete",
+                "public_short_message": "🟣 FJ 9/10｜更節能。",
+            },
+            release_id="release-test",
+            market_snapshot_id="market-test",
+            created_at="2026-09-16T00:00:00+00:00",
+        )
 
 
 def test_immutable_alert_projection_preserves_market_linkage_contract():
