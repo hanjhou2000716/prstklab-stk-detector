@@ -24,7 +24,7 @@ def main() -> int:
         if frame is None or len(frame) < 120 or "Close" not in frame.columns:
             errors.append(f"{symbol}:insufficient_official_history")
             continue
-        rows = 0
+        quotes: list[dict[str, object]] = []
         for observed, values in frame.iterrows():
             close_value = values.get("Close")
             if close_value is None:
@@ -60,13 +60,15 @@ def main() -> int:
             }
             if symbol == "^TWII" and values.get("Volume") is not None:
                 quote["volume"] = float(values["Volume"])
-            try:
-                store.upsert_quote(quote)
-            except Exception as exc:
-                errors.append(f"{ticker}:{type(exc).__name__}")
-                continue
-            rows += 1
-        counts[ticker] = rows
+            quotes.append(quote)
+        if not quotes:
+            continue
+        try:
+            store.upsert_quotes(quotes)
+        except Exception as exc:
+            errors.append(f"{ticker}:{type(exc).__name__}")
+            continue
+        counts[ticker] = len(quotes)
     result = {
         "status": "complete" if not errors else "partial",
         "counts": counts,
