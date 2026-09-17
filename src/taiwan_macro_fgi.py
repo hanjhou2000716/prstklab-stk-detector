@@ -63,11 +63,20 @@ def _validated_component(symbol: str, frame: Any, *, minimum_rows: int = 120) ->
         normalized.index = pd.to_datetime(normalized.index, errors="coerce")
     except (TypeError, ValueError):
         return None, "invalid_dates"
-    normalized = normalized[~normalized.index.isna()].sort_index()
-    normalized = normalized[~normalized.index.duplicated(keep="last")]
+    if normalized.index.isna().any():
+        return None, "invalid_dates"
+    if normalized.index.duplicated().any():
+        return None, "duplicate_dates"
+    normalized = normalized.sort_index()
     for column in required:
+        if any(isinstance(value, bool) for value in normalized[column].tolist()):
+            return None, "invalid_type"
         normalized[column] = pd.to_numeric(normalized[column], errors="coerce")
     normalized = normalized.replace([float("inf"), float("-inf")], pd.NA).dropna(subset=list(required))
+    if (normalized["Close"] <= 0).any():
+        return None, "invalid_value"
+    if "Volume" in required and (normalized["Volume"] < 0).any():
+        return None, "invalid_value"
     if len(normalized) < minimum_rows:
         return normalized, "insufficient_history"
     return normalized, None
