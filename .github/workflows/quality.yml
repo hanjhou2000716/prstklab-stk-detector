@@ -12,6 +12,7 @@ permissions:
 jobs:
   test-and-dry-run:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       # Deliberate non-secret values used only by the local validation.
       TELEGRAM_CHAT_IDS: ci-recipient-a,ci-recipient-b
@@ -37,22 +38,13 @@ jobs:
         # remain in the project-wide 80% floor configured in pyproject.toml.
         run: uv run pytest -q --cov=src --cov-report=term-missing --cov-report=xml --cov-fail-under=80
       - name: Enforce core release and delivery coverage gate
+        # The full pytest run above already populated .coverage for every
+        # source module.  Reporting a filtered subset enforces the stricter
+        # core floor without executing the complete suite a second time.
         run: >-
-          uv run pytest -q
-          --cov=src.alert_budget
-          --cov=src.alert_caption
-          --cov=src.alert_contract
-          --cov=src.alert_lifecycle
-          --cov=src.material_change
-          --cov=src.alert_card_renderer
-          --cov=src.telegram_client
-          --cov=src.deep_link_router
-          --cov=src.artifact_contract
-          --cov=src.release_manifest
-          --cov=src.release_gate
-          --cov=src.system_dry_run
-          --cov-report=term-missing
-          --cov-fail-under=90
+          uv run coverage report
+          --include=src/alert_budget.py,src/alert_caption.py,src/alert_contract.py,src/alert_lifecycle.py,src/material_change.py,src/alert_card_renderer.py,src/telegram_client.py,src/deep_link_router.py,src/artifact_contract.py,src/release_manifest.py,src/release_gate.py,src/system_dry_run.py
+          --fail-under=90
       - name: Ruff full source and test gate
         run: uv run ruff check src tests
       - name: Verify Railway shared classifier bundle
