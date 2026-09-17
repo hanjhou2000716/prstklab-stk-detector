@@ -7,10 +7,10 @@ back to the existing public adapter.
 
 from __future__ import annotations
 
-from datetime import date, datetime
-from io import StringIO
 import math
 import re
+from datetime import date, datetime
+from io import StringIO
 from typing import Any
 from urllib.parse import urljoin
 
