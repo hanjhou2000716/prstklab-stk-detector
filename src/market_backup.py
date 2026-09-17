@@ -90,7 +90,7 @@ class SupabaseMarketObservationStore:
             return None
         return response.json()
 
-    def _quote_row(self, quote: dict[str, Any], *, fetched_at: datetime | None = None) -> dict[str, Any]:
+    def upsert_quote(self, quote: dict[str, Any], *, fetched_at: datetime | None = None) -> dict[str, Any]:
         ticker = str(quote.get("ticker") or "").strip()
         market_date = str(quote.get("quote_date") or "").strip()
         instrument_id = str(quote.get("instrument_id") or f"market:{ticker.casefold()}").strip()
@@ -104,7 +104,7 @@ class SupabaseMarketObservationStore:
         captured = fetched_at or datetime.now(UTC)
         if captured.tzinfo is None:
             captured = captured.replace(tzinfo=UTC)
-        return {
+        row = {
             "instrument_id": instrument_id,
             "ticker": ticker,
             "provider": provider[:120],
@@ -125,46 +125,13 @@ class SupabaseMarketObservationStore:
             "fetched_at": captured.isoformat(),
             "expires_at": (captured + timedelta(days=548)).isoformat(),
         }
-
-    def upsert_quote(self, quote: dict[str, Any], *, fetched_at: datetime | None = None) -> dict[str, Any]:
-        """Idempotently write one normalized observation."""
-        result = self.upsert_quotes([quote], fetched_at=fetched_at)
-        return result[0]
-
-    def upsert_quotes(
-        self,
-        quotes: list[dict[str, Any]],
-        *,
-        fetched_at: datetime | None = None,
-        batch_size: int = 100,
-    ) -> list[dict[str, Any]]:
-        """Idempotently write observations in bounded REST batches.
-
-        Backfills can contain hundreds of daily rows.  Sending one request per
-        row makes a GitHub runner appear hung and needlessly increases the
-        chance of a transient failure.  Supabase/PostgREST upsert accepts an
-        array, and the migration's unique key keeps reruns idempotent.
-        """
-        rows = [self._quote_row(quote, fetched_at=fetched_at) for quote in quotes]
-        if not rows:
-            return []
-        results: list[dict[str, Any]] = []
-        size = max(1, min(int(batch_size), 100))
-        for start in range(0, len(rows), size):
-            batch = rows[start:start + size]
-            self._request(
-                "POST",
-                "market_observations",
-                params={"on_conflict": "instrument_id,provider,market_date,quote_basis"},
-                payload=batch,
-            )
-            results.extend({
-                "stored": True,
-                "ticker": str(row["ticker"]),
-                "market_date": str(row["market_date"]),
-                "provider": str(row["provider"]),
-            } for row in batch)
-        return results
+        self._request(
+            "POST",
+            "market_observations",
+            params={"on_conflict": "instrument_id,provider,market_date,quote_basis"},
+            payload=row,
+        )
+        return {"stored": True, "ticker": ticker, "market_date": market_date, "provider": provider}
 
     def latest_quote(self, ticker: str, *, before_or_on: str, provider: str | None = None) -> dict[str, Any] | None:
         params: dict[str, Any] = {
