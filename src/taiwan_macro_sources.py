@@ -8,10 +8,15 @@ back to the existing public adapter.
 from __future__ import annotations
 
 from datetime import date, datetime
+from io import StringIO
+import math
+import re
 from typing import Any
+from urllib.parse import urljoin
 
 import pandas as pd
 import requests
+from bs4 import BeautifulSoup
 
 TWSE_INDEX_HISTORY_URL = "https://www.twse.com.tw/indicesReport/MI_5MINS_HIST"
 TWSE_MARKET_HISTORY_URL = "https://www.twse.com.tw/rwd/zh/afterTrading/FMTQIK"
@@ -21,7 +26,15 @@ HEADERS = {"User-Agent": "PRStK-Lab-public-research/1.0"}
 
 
 def _date_value(value: Any) -> str | None:
-    raw = str(value or "").strip().replace("/", "").replace("-", "")
+    text = str(value or "").strip()
+    parts = re.split(r"[/-]", text)
+    if len(parts) == 3 and all(part.isdigit() for part in parts):
+        year, month, day = (int(part) for part in parts)
+        if year < 1911:
+            year += 1911
+        raw = f"{year:04d}{month:02d}{day:02d}"
+    else:
+        raw = text.replace("/", "").replace("-", "")
     if len(raw) == 7 and raw.isdigit():
         raw = f"{int(raw[:3]) + 1911}{raw[3:]}"
     if len(raw) != 8 or not raw.isdigit():
@@ -47,6 +60,19 @@ def _rows(payload: Any) -> tuple[list[str], list[list[Any]]]:
         return [], []
     fields = [str(item) for item in (payload.get("fields") or payload.get("Fields") or [])]
     data = payload.get("data") or payload.get("Data") or []
+    if not fields or not data:
+        # TPEx's current endpoint wraps the selected table in ``tables`` while
+        # TWSE still returns fields/data at the top level.  Accept both shapes
+        # without weakening the field-based parser below.
+        for table in payload.get("tables") or payload.get("Tables") or []:
+            if not isinstance(table, dict):
+                continue
+            candidate_fields = table.get("fields") or table.get("Fields") or []
+            candidate_data = table.get("data") or table.get("Data") or []
+            if candidate_fields and candidate_data:
+                fields = [str(item) for item in candidate_fields]
+                data = candidate_data
+                break
     return fields, [row for row in data if isinstance(row, list)]
 
 
@@ -57,7 +83,7 @@ def parse_official_index_history(payload: Any, *, label: str = "index") -> pd.Da
     close_index = next(
         (
             i for i, name in enumerate(fields)
-            if any(token in name for token in ("收盤", "Close", "Index", "加權股價", "指數"))
+            if any(token in name for token in ("收盤", "收市", "Close", "Index", "加權股價", "指數"))
             and not any(token in name for token in ("日期", "Date", "date"))
         ),
         None,
@@ -123,7 +149,9 @@ def parse_cbc_usd_twd_history(payload: Any) -> pd.DataFrame:
 def parse_cbc_html_history(html: str) -> pd.DataFrame:
     """Extract a CBC table when the official page exposes an HTML export."""
     try:
-        tables = pd.read_html(html)
+        # pandas 3 treats a raw HTML string as a filename; StringIO keeps this
+        # parser compatible with both pandas 2 and 3.
+        tables = pd.read_html(StringIO(html))
     except (ValueError, ImportError):
         return pd.DataFrame(columns=["Close"])
     for table in tables:
@@ -135,6 +163,22 @@ def parse_cbc_html_history(html: str) -> pd.DataFrame:
         if len(parsed) >= 2:
             return parsed
     return pd.DataFrame(columns=["Close"])
+
+
+def _cbc_year_links(html: str, *, base_url: str) -> dict[int, str]:
+    """Return official CBC annual detail pages keyed by calendar year."""
+    soup = BeautifulSoup(html, "html.parser")
+    links: dict[int, str] = {}
+    for anchor in soup.select("section.lp .list a[href]"):
+        label = " ".join(
+            part.strip()
+            for part in (anchor.get_text(" ", strip=True), anchor.get("title", ""))
+            if part
+        )
+        match = re.search(r"\b(20\d{2})\s*年", label)
+        if match:
+            links[int(match.group(1))] = urljoin(base_url, str(anchor["href"]))
+    return links
 
 
 def _month_values(months: int) -> list[str]:
@@ -192,7 +236,38 @@ def fetch_official_taiwan_components(
     try:
         response = client.get(CBC_HISTORY_URL, headers=HEADERS, timeout=20)
         response.raise_for_status()
-        twd = parse_cbc_html_history(response.text)
+        # CBC publishes the daily series as one HTML page per calendar year.
+        # The index page is the stable discovery endpoint; fetch only the
+        # years needed for the requested history window.
+        raw_content = getattr(response, "content", None)
+        encoding = getattr(response, "apparent_encoding", None) or "utf-8"
+        index_html = (
+            raw_content.decode(encoding, errors="replace")
+            if isinstance(raw_content, (bytes, bytearray))
+            else str(getattr(response, "text", ""))
+        )
+        year_links = _cbc_year_links(index_html, base_url=CBC_HISTORY_URL)
+        target_years = set(range(date.today().year, date.today().year - max(2, math.ceil(months / 12) + 1), -1))
+        annual_frames: list[pd.DataFrame] = []
+        for year in sorted(target_years & year_links.keys(), reverse=True):
+            try:
+                annual = client.get(year_links[year], headers=HEADERS, timeout=20)
+                annual.raise_for_status()
+                annual_content = getattr(annual, "content", None)
+                annual_encoding = getattr(annual, "apparent_encoding", None) or "utf-8"
+                annual_html = (
+                    annual_content.decode(annual_encoding, errors="replace")
+                    if isinstance(annual_content, (bytes, bytearray))
+                    else str(getattr(annual, "text", ""))
+                )
+                parsed = parse_cbc_html_history(annual_html)
+                if not parsed.empty:
+                    annual_frames.append(parsed)
+            except (OSError, ValueError, requests.RequestException):
+                continue
+        if annual_frames:
+            twd = pd.concat(annual_frames).sort_index()
+            twd = twd[~twd.index.duplicated(keep="last")]
     except (OSError, ValueError, requests.RequestException):
         pass
     def combine(frames: list[pd.DataFrame], columns: list[str]) -> pd.DataFrame:
