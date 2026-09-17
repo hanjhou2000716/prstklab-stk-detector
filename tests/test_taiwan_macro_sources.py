@@ -4,6 +4,7 @@ import pandas as pd
 
 from src.taiwan_macro_sources import (
     fetch_official_taiwan_components,
+    parse_cbc_html_history,
     parse_official_index_history,
 )
 
@@ -64,3 +65,31 @@ def test_official_component_fetch_runs_tpex_and_market_history_for_each_month():
     assert len(result["TAIEX_VOLUME"]) == 1
     assert sum("indexInfo/inx" in url for method, url, _ in session.calls if method == "POST") == 2
     assert sum("FMTQIK" in url for method, url, _ in session.calls if method == "GET") == 2
+
+
+def test_official_index_parser_accepts_current_tpex_nested_table_and_close_field():
+    frame = parse_official_index_history({
+        "date": "20260901",
+        "tables": [{
+            "fields": ["日期", "開市", "最高", "最低", "收市", "漲/跌"],
+            "data": [["2026/09/16", "390.02", "399.80", "390.02", "399.21", "10.48"]],
+        }],
+    })
+
+    assert list(frame.index) == [pd.Timestamp("2026-09-16")]
+    assert frame.iloc[0]["Close"] == 399.21
+
+
+def test_cbc_annual_html_parser_accepts_date_and_ntd_usd_table():
+    frame = parse_cbc_html_history("""
+        <table>
+          <thead><tr><th>Date</th><th>NTD/USD</th></tr></thead>
+          <tbody>
+            <tr><td>2025/1/2</td><td>32.868</td></tr>
+            <tr><td>2025/1/3</td><td>32.917</td></tr>
+          </tbody>
+        </table>
+    """)
+
+    assert len(frame) == 2
+    assert frame.iloc[0]["Close"] == 32.868

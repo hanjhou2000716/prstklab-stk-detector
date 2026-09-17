@@ -65,3 +65,41 @@ def test_supabase_upsert_sends_idempotent_private_row():
     assert calls[0][0] == "POST"
     assert calls[0][2]["params"]["on_conflict"] == "instrument_id,provider,market_date,quote_basis"
     assert "resolution=merge-duplicates" in calls[0][2]["headers"]["Prefer"]
+
+
+def test_supabase_batch_upsert_sends_one_bounded_array_request():
+    calls = []
+
+    class Response:
+        content = b"[]"
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return []
+
+    class Session:
+        def request(self, method, url, **kwargs):
+            calls.append((method, url, kwargs))
+            return Response()
+
+    store = SupabaseMarketObservationStore("https://example.supabase.co", "secret", session=Session())
+    quotes = [{
+        "instrument_id": "twse:006208",
+        "ticker": "006208",
+        "source_label": "TWSE",
+        "source_tier": "official",
+        "quote_date": f"2026-09-{16 - index:02d}",
+        "price": 244.6 - index,
+        "quote_basis": "TWSE 官方日線收盤",
+        "currency": "TWD",
+        "freshness": "recent_close",
+    } for index in range(2)]
+
+    result = store.upsert_quotes(quotes)
+
+    assert len(result) == 2
+    assert len(calls) == 1
+    assert isinstance(calls[0][2]["json"], list)
+    assert len(calls[0][2]["json"]) == 2
