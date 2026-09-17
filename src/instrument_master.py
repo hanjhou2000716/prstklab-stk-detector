@@ -25,6 +25,9 @@ class Instrument:
     sec_cik: str | None = None
     listed_from: date | None = None
     listed_until: date | None = None
+    session_policy: str = "weekday"
+    calendar: str | None = None
+    close_cutoff: str | None = None
 
     def matches(self, query: str) -> bool:
         normalized = "".join(str(query).casefold().split())
@@ -48,6 +51,8 @@ class Instrument:
 DEFAULT_INSTRUMENTS = (
     Instrument("twse:taiex", "TAIEX", "TAIEX", "taiwan", "index", "TWD", "Asia/Taipei", ("^TWII",), ("台股加權",)),
     Instrument("tpex:index", "TPEx", "TPEx", "taiwan", "index", "TWD", "Asia/Taipei", ("^TWOII",), ("臺灣櫃買指數",)),
+    Instrument("twse:006208", "006208", "富邦台50", "taiwan", "etf", "TWD", "Asia/Taipei", ("006208.TW",), (), session_policy="taiwan", calendar="XTAI"),
+    Instrument("twse:00685l", "00685L", "群益臺灣加權正二", "taiwan", "etf", "TWD", "Asia/Taipei", ("00685L.TW",), (), session_policy="taiwan", calendar="XTAI"),
     Instrument("twse:2330", "2330", "台積電", "taiwan", "equity", "TWD", "Asia/Taipei", ("2330.TW",), ("TSMC", "台積")),
     Instrument("us:tsm", "TSM", "Taiwan Semiconductor ADR", "us", "equity", "USD", "America/New_York", ("TSM",), ("台積電ADR",)),
     Instrument("us:nvda", "NVDA", "NVIDIA", "us", "equity", "USD", "America/New_York", ("NVDA",)),
@@ -150,6 +155,8 @@ class InstrumentMaster:
                 symbols=tuple(dict.fromkeys(value for value in symbols if value)),
                 aliases=(),
                 sec_cik=str(row.get("cik") or "") or None,
+                session_policy="taiwan" if market == "taiwan" else "us",
+                calendar="XTAI" if market == "taiwan" else "NYSE",
             ))
             existing.add(instrument_id)
         return InstrumentMaster((*self._instruments, *additions))

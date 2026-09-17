@@ -415,13 +415,15 @@ def validate_source_health(document: dict[str, Any]) -> list[str]:
         "degraded_with_fallback", "secondary_unavailable", "configuration_missing",
         "configuration_required", "warming", "stale", "partial", "optional_degraded",
         "parse_failed", "provider_failed", "failed", "scan_failed", "critical",
-        "pending", "pending_confirmation", "release_blocked",
+        "pending", "pending_confirmation", "release_blocked", "stale_last_good",
+        "insufficient_history", "unavailable", "contract_invalid",
     }
     gap_states = {
         "fallback_active", "degraded_with_fallback", "secondary_unavailable",
         "configuration_missing", "configuration_required", "stale", "partial",
         "optional_degraded", "parse_failed", "provider_failed", "failed",
         "scan_failed", "critical", "pending_confirmation", "release_blocked",
+        "stale_last_good", "insufficient_history", "unavailable", "contract_invalid",
     }
     declared_missing = document.get("missing_source_count")
     if isinstance(declared_missing, int) and declared_missing >= 0:

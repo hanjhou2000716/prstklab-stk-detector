@@ -101,6 +101,7 @@ def apply_monitor_health(snapshot: dict[str, Any], payload: dict[str, Any]) -> d
         "configuration_missing", "configuration_required", "stale", "partial",
         "optional_degraded", "parse_failed", "provider_failed", "failed",
         "scan_failed", "critical", "pending_confirmation", "release_blocked",
+        "stale_last_good", "insufficient_history", "unavailable", "contract_invalid",
     }
     configuration_states = {"configuration_missing", "configuration_required"}
 

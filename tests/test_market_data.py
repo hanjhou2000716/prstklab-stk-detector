@@ -9,6 +9,7 @@ from src.market_data import (
     WATCHLIST,
     _daily_quote,
     _intraday_quote,
+    _replace_with_official_taiwan_close,
     annotate_quote_freshness,
     apply_taiwan_intraday_crosscheck,
     change_percent,
@@ -61,6 +62,42 @@ def test_macro_quote_freshness_accepts_a_current_us10y_close():
 
     assert annotated[0]["freshness"] == "recent_close"
     assert annotated[0]["data_status"] == "最近收盤"
+
+
+def test_us_close_assets_use_us_session_after_taipei_midnight():
+    annotated = annotate_quote_freshness(
+        [{
+            "ticker": "US10Y",
+            "market": "global",
+            "price": 4.2,
+            "quote_date": "2026-09-16",
+        }],
+        now=datetime(2026, 9, 17, 8, 28, tzinfo=ZoneInfo("Asia/Taipei")),
+    )
+    assert annotated[0]["freshness"] == "recent_close"
+
+
+def test_official_twse_close_replaces_stale_etf_without_changing_context():
+    item = {
+        "ticker": "006208",
+        "market": "taiwan",
+        "price": 240,
+        "quote_date": "2026-09-15",
+        "quote_basis": "日線收盤",
+        "technical_context": {"status": "ok"},
+    }
+    official = {
+        "006208": {
+            "ticker": "006208",
+            "price": 244.6,
+            "quote_date": "2026-09-16",
+            "quote_source": "TWSE OpenAPI official daily quote",
+        }
+    }
+    merged = _replace_with_official_taiwan_close([item], official)[0]
+    assert merged["price"] == 244.6
+    assert merged["quote_date"] == "2026-09-16"
+    assert merged["technical_context"] == {"status": "ok"}
 
 
 def test_intraday_quote_uses_latest_daily_close_when_today_daily_bar_is_not_available():

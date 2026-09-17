@@ -48,10 +48,12 @@ def classify_failure(record: dict[str, Any] | None) -> str:
     if status in _PROVIDER_FAILURE or provider_status in _PROVIDER_FAILURE or record.get("error"):
         return "provider_failed"
     freshness = str(record.get("freshness") or "").strip().lower()
-    if status == "stale" or freshness in {"stale", "expired", "recent_close_stale"}:
+    if status in {"stale", "stale_last_good"} or freshness in {"stale", "expired", "recent_close_stale"}:
         return "stale"
-    if status in {"partial", "degraded", "optional_degraded", "data_gap"}:
+    if status in {"partial", "degraded", "optional_degraded", "data_gap", "insufficient_history"}:
         return "partial"
+    if status in {"unavailable", "contract_invalid"}:
+        return "provider_failed"
     if status in {"no_event", "no_events", "empty", "none", "no_new_content"}:
         return "no_new_content"
     if status in {"healthy", "ok", "success", "complete", "completed"}:

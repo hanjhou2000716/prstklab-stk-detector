@@ -639,7 +639,14 @@ def _market_risk(
     if sentiment is None:
         result["summary"] = "波動率觀察"
     else:
-        result["summary"] = f"情緒：{sentiment['label']}"
+        historical_only = str(sentiment.get("calculation_state") or "").strip().lower() in {
+            "backup_history", "stale_last_good", "stale",
+        }
+        result["sentiment_signal_eligible"] = not historical_only
+        result["summary"] = (
+            f"情緒：{sentiment['label']}（歷史備援，僅供參考）"
+            if historical_only else f"情緒：{sentiment['label']}"
+        )
     return result
 
 

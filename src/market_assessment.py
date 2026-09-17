@@ -252,6 +252,13 @@ def _joint_risk_adjustments(risk: dict[str, Any] | None) -> list[str]:
             continue
         sentiment_value = item.get("sentiment")
         sentiment: dict[str, Any] = sentiment_value if isinstance(sentiment_value, dict) else {}
+        # A last-known-good Macro FGI is useful for historical context only.
+        # It must never lower the current composite market conclusion as if it
+        # were a fresh risk observation.
+        if str(sentiment.get("calculation_state") or "").strip().lower() in {
+            "backup_history", "stale_last_good", "stale",
+        }:
+            continue
         sentiment_label = _text(sentiment.get("label"))
         vix_value = item.get("vix")
         vix: dict[str, Any] = vix_value if isinstance(vix_value, dict) else {}

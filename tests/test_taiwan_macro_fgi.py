@@ -53,3 +53,23 @@ def test_macro_fgi_fails_closed_when_no_component_or_cache_exists(tmp_path):
     with pytest.raises(FGIUnavailableError) as error:
         calculate_taiwan_macro_fgi(lambda symbol: pd.DataFrame(), cache_path=tmp_path / "missing.json")
     assert error.value.component_health["^TWII"]["status"] == "failed"
+
+
+def test_macro_fgi_rejects_duplicate_dates_and_boolean_values(tmp_path):
+    valid = _frame(1)
+    duplicate = pd.concat([valid, valid.iloc[:1]])
+    with pytest.raises(FGIUnavailableError) as duplicate_error:
+        calculate_taiwan_macro_fgi(
+            lambda symbol: duplicate if symbol == "^TWOII" else valid,
+            cache_path=tmp_path / "duplicate.json",
+        )
+    assert duplicate_error.value.component_health["^TWOII"]["status"] == "duplicate_dates"
+
+    boolean_frame = valid.astype(object)
+    boolean_frame.iloc[0, 0] = True
+    with pytest.raises(FGIUnavailableError) as boolean_error:
+        calculate_taiwan_macro_fgi(
+            lambda symbol: boolean_frame if symbol == "^TWII" else valid,
+            cache_path=tmp_path / "boolean.json",
+        )
+    assert boolean_error.value.component_health["^TWII"]["status"] == "invalid_type"
