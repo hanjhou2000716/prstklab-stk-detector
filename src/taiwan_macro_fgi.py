@@ -56,9 +56,15 @@ def _validated_component(symbol: str, frame: Any, *, minimum_rows: int = 120) ->
     if not isinstance(frame, pd.DataFrame) or frame.empty:
         return None, "empty"
     required = {"^TWII": ("Close", "Volume"), "^TWOII": ("Close",), "TWD=X": ("Close",)}[symbol]
-    if any(column not in frame.columns for column in required):
-        return None, "missing_column"
     normalized = frame.copy()
+    if isinstance(normalized.columns, pd.MultiIndex):
+        # yfinance returns one-symbol downloads with a two-level column index.
+        # Flatten it before validation so Close/Volume remain Series rather
+        # than one-column DataFrame.
+        normalized.columns = [str(column[0]) for column in normalized.columns]
+        normalized = normalized.loc[:, ~normalized.columns.duplicated(keep="first")]
+    if any(column not in normalized.columns for column in required):
+        return None, "missing_column"
     try:
         normalized.index = pd.to_datetime(normalized.index, errors="coerce")
     except (TypeError, ValueError):
@@ -69,9 +75,10 @@ def _validated_component(symbol: str, frame: Any, *, minimum_rows: int = 120) ->
         return None, "duplicate_dates"
     normalized = normalized.sort_index()
     for column in required:
-        if any(isinstance(value, bool) for value in normalized[column].tolist()):
+        values = normalized[column]
+        if any(isinstance(value, bool) for value in values.tolist()):
             return None, "invalid_type"
-        normalized[column] = pd.to_numeric(normalized[column], errors="coerce")
+        normalized[column] = pd.to_numeric(values, errors="coerce")
     normalized = normalized.replace([float("inf"), float("-inf")], pd.NA).dropna(subset=list(required))
     if (normalized["Close"] <= 0).any():
         return None, "invalid_value"

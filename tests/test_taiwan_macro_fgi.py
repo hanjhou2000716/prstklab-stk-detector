@@ -31,6 +31,18 @@ def test_macro_fgi_returns_all_five_public_components():
     assert set(result["component_health"]) == {"^TWII", "^TWOII", "TWD=X"}
 
 
+def test_macro_fgi_accepts_yfinance_single_symbol_multiindex(tmp_path):
+    base = _frame(1)
+    multi = base.copy()
+    multi.columns = pd.MultiIndex.from_tuples([("Close", "^TWII"), ("Volume", "^TWII")])
+    frames = {"^TWII": multi, "^TWOII": _frame(2, 0.1), "TWD=X": _frame(3, 0.3)}
+
+    result = calculate_taiwan_macro_fgi(lambda symbol: frames[symbol], cache_path=tmp_path / "multiindex.json")
+
+    assert result["calculation_state"] == "fresh"
+    assert result["component_health"]["^TWII"]["status"] == "ok"
+
+
 def test_macro_fgi_reports_component_failure_and_uses_legitimate_last_good(tmp_path):
     frames = {"^TWII": _frame(1), "^TWOII": _frame(2, 0.1), "TWD=X": _frame(3, 0.3)}
     cache = tmp_path / "fgi.json"
