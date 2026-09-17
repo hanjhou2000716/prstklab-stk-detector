@@ -14,6 +14,7 @@ import requests
 TWSE_FMTQIK_URL = "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK"
 TWSE_BREADTH_URL = "https://openapi.twse.com.tw/v1/opendata/twtazu_od"
 TWSE_INSTITUTION_URL = "https://www.twse.com.tw/rwd/zh/fund/BFI82U"
+TWSE_MI_INDEX_URL = "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
 HEADERS = {"User-Agent": "PRStK-Lab-public-research/1.0"}
 
 
@@ -79,7 +80,7 @@ def _breadth_scope(row: dict[str, Any]) -> tuple[str, bool]:
     raw = " ".join(
         str(row.get(key) or "").strip()
         for key in ("統計範圍", "統計口徑", "證券種類", "市場範圍", "類型", "Type")
-    )
+    ).strip()
     if "股票" in raw and not any(term in raw for term in ("權證", "受益證券", "債券")):
         return raw, True
     # TWSE's ``整體市場`` row is the stock-market breadth row in this
@@ -149,8 +150,8 @@ def parse_twse_market_statistics(
                 **values,
                 "scope": scope,
                 "scope_verified": scope_verified,
-                "source": "TWSE official market breadth",
-                "source_url": TWSE_BREADTH_URL,
+                "source": "TWSE MI_INDEX official stock breadth" if breadth_row.get("_source_url") == TWSE_MI_INDEX_URL else "TWSE official market breadth",
+                "source_url": str(breadth_row.get("_source_url") or TWSE_BREADTH_URL),
                 "is_proxy": False,
             }
         else:
@@ -210,23 +211,77 @@ def parse_twse_market_statistics(
     }
 
 
+
+def parse_twse_mi_index_breadth(payload: Any, *, target_date: str | None = None) -> list[dict[str, Any]]:
+    """Extract stock breadth from the official TWSE MI_INDEX summary table."""
+    if not isinstance(payload, dict):
+        return []
+    normalized_target = _date(target_date) if target_date else _date(payload.get("date"))
+    for table in payload.get("tables") or []:
+        if not isinstance(table, dict):
+            continue
+        title = str(table.get("title") or "")
+        if "\u6f32\u8dcc\u8b49\u5238\u6578\u5408\u8a08" not in title:
+            continue
+        fields = [str(item) for item in (table.get("fields") or [])]
+        rows = table.get("data") or []
+        category_index = next((i for i, name in enumerate(fields) if name == "\u985e\u578b"), None)
+        stock_index = next((i for i, name in enumerate(fields) if name in {"\u80a1\u7968", "Stock"}), None)
+        if category_index is None or stock_index is None:
+            continue
+
+        def count(value: Any) -> int | None:
+            match = re.search(r"\d[\d,]*", str(value or ""))
+            return _number(match.group(0)) if match else None
+
+        def limit_count(value: Any) -> int | None:
+            match = re.search(r"\((\d[\d,]*)\)", str(value or ""))
+            return _number(match.group(1)) if match else None
+
+        values: dict[str, int | None] = {}
+        for row in rows:
+            if not isinstance(row, list) or category_index >= len(row) or stock_index >= len(row):
+                continue
+            label = str(row[category_index] or "").strip()
+            if label.startswith("\u4e0a\u6f32"):
+                values["advancing"] = count(row[stock_index])
+                values["limit_up"] = limit_count(row[stock_index])
+            elif label.startswith("\u4e0b\u8dcc"):
+                values["declining"] = count(row[stock_index])
+                values["limit_down"] = limit_count(row[stock_index])
+            elif label.startswith("\u6301\u5e73"):
+                values["unchanged"] = count(row[stock_index])
+            elif label.startswith("\u672a\u6210\u4ea4"):
+                values["untraded"] = count(row[stock_index])
+        if values.get("advancing") is not None and values.get("declining") is not None:
+            return [{
+                "\u985e\u578b": "\u6574\u9ad4\u5e02\u5834",
+                "\u51fa\u8868\u65e5\u671f": normalized_target,
+                "\u4e0a\u6f32": values.get("advancing"),
+                "\u6f32\u505c": values.get("limit_up"),
+                "\u4e0b\u8dcc": values.get("declining"),
+                "\u8dcc\u505c": values.get("limit_down"),
+                "\u6301\u5e73": values.get("unchanged"),
+                "\u672a\u6210\u4ea4": values.get("untraded"),
+                "_source_url": TWSE_MI_INDEX_URL,
+            }]
+    return []
+
+
 def fetch_twse_market_statistics(
     *, now: datetime | None = None, session: requests.Session | None = None,
 ) -> dict[str, Any]:
-    """Fetch official statistics; optionally retry the post-close gap window.
+    """Fetch official daily statistics for the latest completed Taiwan session.
 
-    Production sets ``TWSE_STATS_RETRY_ATTEMPTS=3`` for the 14:20 post-close
-    anchor.  The default remains one pass so library callers and tests never
-    sleep unexpectedly.  Each retry is a new read of all three official
-    endpoints and stops as soon as a complete payload is available.
+    The turnover feed is used to resolve the latest completed market date, so
+    intraday runs do not ask breadth and institution endpoints for today's
+    unfinished session.  MI_INDEX supplies current stock breadth when the
+    legacy OpenAPI feed is stale.
     """
     client = session or requests.Session()
-    target = (now or datetime.now(ZoneInfo("Asia/Taipei"))).date().strftime("%Y%m%d")
-    requests_to_make: tuple[tuple[str, str, dict[str, str]], ...] = (
-        ("turnover", TWSE_FMTQIK_URL, {}),
-        ("breadth", TWSE_BREADTH_URL, {}),
-        ("institution", TWSE_INSTITUTION_URL, {"dayDate": target, "response": "json"}),
-    )
+    anchor = now or datetime.now(ZoneInfo("Asia/Taipei"))
+    requested_target = anchor.date().isoformat()
+
     def _nonnegative_int(name: str) -> int:
         try:
             return max(0, int(os.getenv(name, "0")))
@@ -238,27 +293,81 @@ def fetch_twse_market_statistics(
         retry_wait_seconds = max(0.0, float(os.getenv("TWSE_STATS_RETRY_WAIT_SECONDS", "600")))
     except (TypeError, ValueError):
         retry_wait_seconds = 600.0
+
     last_result: dict[str, Any] = {}
     for attempt in range(retry_attempts + 1):
         payloads: dict[str, Any] = {}
         errors: list[str] = []
-        for key, url, params in requests_to_make:
-            try:
-                response = client.get(url, params=params, headers=HEADERS, timeout=15)
-                response.raise_for_status()
-                payloads[key] = response.json()
-            except (OSError, ValueError, requests.RequestException) as exc:
-                errors.append(f"{key}:{type(exc).__name__}")
+
+        try:
+            response = client.get(TWSE_FMTQIK_URL, params={}, headers=HEADERS, timeout=15)
+            response.raise_for_status()
+            payloads["turnover"] = response.json()
+        except (OSError, ValueError, requests.RequestException) as exc:
+            errors.append(f"turnover:{type(exc).__name__}")
+
+        resolved_target = requested_target
+        latest_turnover = _dated_row(payloads.get("turnover"), ("Date", "日期"), None)
+        if latest_turnover:
+            observed = _date(latest_turnover.get("Date") or latest_turnover.get("日期"))
+            if observed and observed <= requested_target:
+                resolved_target = observed
+
+        try:
+            response = client.get(TWSE_BREADTH_URL, params={}, headers=HEADERS, timeout=15)
+            response.raise_for_status()
+            payloads["breadth"] = response.json()
+        except (OSError, ValueError, requests.RequestException) as exc:
+            errors.append(f"breadth:{type(exc).__name__}")
+
+        try:
+            response = client.get(
+                TWSE_INSTITUTION_URL,
+                params={"dayDate": resolved_target.replace("-", ""), "response": "json"},
+                headers=HEADERS,
+                timeout=15,
+            )
+            response.raise_for_status()
+            payloads["institution"] = response.json()
+        except (OSError, ValueError, requests.RequestException) as exc:
+            errors.append(f"institution:{type(exc).__name__}")
+
         parsed = parse_twse_market_statistics(
             turnover_rows=payloads.get("turnover"),
             breadth_rows=payloads.get("breadth"),
             institution_payload=payloads.get("institution"),
-            target_date=target,
+            target_date=resolved_target,
         )
+        if parsed.get("breadth") is None:
+            try:
+                response = client.get(
+                    TWSE_MI_INDEX_URL,
+                    params={
+                        "date": resolved_target.replace("-", ""),
+                        "type": "MS",
+                        "response": "json",
+                    },
+                    headers=HEADERS,
+                    timeout=15,
+                )
+                response.raise_for_status()
+                mi_rows = parse_twse_mi_index_breadth(response.json(), target_date=resolved_target)
+            except (OSError, ValueError, requests.RequestException) as exc:
+                mi_rows = []
+                errors.append(f"breadth_mi_index:{type(exc).__name__}")
+            if mi_rows:
+                parsed = parse_twse_market_statistics(
+                    turnover_rows=payloads.get("turnover"),
+                    breadth_rows=[*mi_rows, *(payloads.get("breadth") or [])],
+                    institution_payload=payloads.get("institution"),
+                    target_date=resolved_target,
+                )
+
         parsed["errors"] = list(dict.fromkeys([*parsed.get("errors", []), *errors]))
         parsed["retry_attempt"] = attempt
         parsed["retry_attempts_configured"] = retry_attempts
         parsed["retry_wait_seconds"] = retry_wait_seconds
+        parsed["resolved_target_date"] = resolved_target
         last_result = parsed
         if parsed.get("status") == "complete" or attempt >= retry_attempts:
             return parsed
@@ -266,4 +375,4 @@ def fetch_twse_market_statistics(
     return last_result
 
 
-__all__ = ["fetch_twse_market_statistics", "parse_twse_market_statistics"]
+__all__ = ["fetch_twse_market_statistics", "parse_twse_market_statistics", "parse_twse_mi_index_breadth"]
