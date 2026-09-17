@@ -170,11 +170,10 @@ def _cbc_year_links(html: str, *, base_url: str) -> dict[int, str]:
     soup = BeautifulSoup(html, "html.parser")
     links: dict[int, str] = {}
     for anchor in soup.select("section.lp .list a[href]"):
-        label = " ".join(
-            part.strip()
-            for part in (anchor.get_text(" ", strip=True), anchor.get("title", ""))
-            if part
-        )
+        label = anchor.get_text(" ", strip=True)
+        title = anchor.get("title")
+        if isinstance(title, str) and title.strip():
+            label = f"{label} {title.strip()}"
         match = re.search(r"\b(20\d{2})\s*年", label)
         if match:
             links[int(match.group(1))] = urljoin(base_url, str(anchor["href"]))
