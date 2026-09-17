@@ -20,7 +20,7 @@ def test_quality_workflow_runs_full_quality_and_coverage_gates():
         "uv sync --locked --all-groups",
         "--cov=src",
         "--cov-fail-under=80",
-        "--cov-fail-under=90",
+        "--fail-under=90",
         "uv run ruff check src tests",
         "uv run mypy src",
         "python -m compileall -q src railway-monitor",
