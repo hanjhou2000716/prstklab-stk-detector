@@ -24,7 +24,10 @@
           "isin": {"type": ["string", "null"]},
           "sec_cik": {"type": ["string", "null"]},
           "listed_from": {"type": ["string", "null"], "format": "date"},
-          "listed_until": {"type": ["string", "null"], "format": "date"}
+          "listed_until": {"type": ["string", "null"], "format": "date"},
+          "session_policy": {"type": "string", "minLength": 1},
+          "calendar": {"type": ["string", "null"]},
+          "close_cutoff": {"type": ["string", "null"]}
         },
         "additionalProperties": false
       }

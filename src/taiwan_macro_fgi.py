@@ -51,12 +51,63 @@ def _column(frame: pd.DataFrame, name: str) -> pd.Series:
     return result.dropna()
 
 
+def _validated_component(symbol: str, frame: Any, *, minimum_rows: int = 120) -> tuple[pd.DataFrame | None, str | None]:
+    """Normalize one component and report a safe, machine-readable gap."""
+    if not isinstance(frame, pd.DataFrame) or frame.empty:
+        return None, "empty"
+    required = {"^TWII": ("Close", "Volume"), "^TWOII": ("Close",), "TWD=X": ("Close",)}[symbol]
+    if any(column not in frame.columns for column in required):
+        return None, "missing_column"
+    normalized = frame.copy()
+    try:
+        normalized.index = pd.to_datetime(normalized.index, errors="coerce")
+    except (TypeError, ValueError):
+        return None, "invalid_dates"
+    normalized = normalized[~normalized.index.isna()].sort_index()
+    normalized = normalized[~normalized.index.duplicated(keep="last")]
+    for column in required:
+        normalized[column] = pd.to_numeric(normalized[column], errors="coerce")
+    normalized = normalized.replace([float("inf"), float("-inf")], pd.NA).dropna(subset=list(required))
+    if len(normalized) < minimum_rows:
+        return normalized, "insufficient_history"
+    return normalized, None
+
+
+def _backup_component_frame(store: Any, symbol: str) -> pd.DataFrame:
+    """Load historical normalized observations without exposing raw payloads."""
+    ticker = {"^TWII": "TAIEX", "^TWOII": "TPEx", "TWD=X": "USD/TWD"}.get(symbol)
+    if not ticker or store is None:
+        return pd.DataFrame()
+    try:
+        rows = store.history_quotes(ticker, limit=500)
+    except Exception:
+        return pd.DataFrame()
+    values: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        observed = row.get("market_date")
+        price = row.get("price")
+        if observed in (None, "") or price is None:
+            continue
+        values.append({"date": observed, "Close": price, "Volume": row.get("volume")})
+    if not values:
+        return pd.DataFrame()
+    frame = pd.DataFrame(values).drop_duplicates("date").set_index("date")
+    frame.index = pd.to_datetime(frame.index, errors="coerce")
+    frame["Close"] = pd.to_numeric(frame["Close"], errors="coerce")
+    if symbol == "^TWII":
+        frame["Volume"] = pd.to_numeric(frame["Volume"], errors="coerce")
+    return frame.sort_index()
+
+
 def calculate_taiwan_macro_fgi(
     downloader: Callable[[str], pd.DataFrame] | None = None,
     *,
     cache_path: str | os.PathLike[str] | None = None,
 ) -> dict[str, Any]:
     """Calculate the five-component Taiwan Macro FGI from the supplied formula."""
+    use_default_downloader = downloader is None
     if downloader is None:
         import yfinance as yf
 
@@ -90,7 +141,58 @@ def calculate_taiwan_macro_fgi(
                 cached = candidate
         except (OSError, ValueError, TypeError):
             cached = None
-    if len(raw) != len(SYMBOLS):
+    invalid_components: list[str] = []
+    for symbol in SYMBOLS:
+        if symbol not in raw:
+            invalid_components.append(symbol)
+            continue
+        normalized, reason = _validated_component(symbol, raw[symbol])
+        if normalized is not None:
+            raw[symbol] = normalized
+        if reason:
+            invalid_components.append(symbol)
+            component_health[symbol] = {"status": reason, "source": component_health[symbol].get("source", "primary")}
+
+    # Yahoo's ^TWOII series has occasionally returned a single ancient row.
+    # Retry only the invalid components with the official Taiwan history
+    # adapters, preserving Yahoo as a bounded public fallback when official
+    # transport is unavailable.
+    if invalid_components and use_default_downloader:
+        try:
+            from src.taiwan_macro_sources import fetch_official_taiwan_components
+
+            official = fetch_official_taiwan_components(months=18)
+        except Exception:
+            official = {}
+        official_twii = official.get("^TWII") if isinstance(official, dict) else None
+        official_volume = official.get("TAIEX_VOLUME") if isinstance(official, dict) else None
+        if isinstance(official_twii, pd.DataFrame) and isinstance(official_volume, pd.DataFrame):
+            if "Volume" not in official_twii.columns and not official_volume.empty:
+                official["^TWII"] = official_twii.join(official_volume, how="left")
+        for symbol in list(invalid_components):
+            candidate = official.get(symbol)
+            normalized, reason = _validated_component(symbol, candidate)
+            if normalized is not None and reason is None:
+                raw[symbol] = normalized
+                component_health[symbol] = {"status": "ok", "source": "official"}
+                invalid_components.remove(symbol)
+
+    if invalid_components and use_default_downloader:
+        try:
+            from src.market_backup import from_environment as market_backup_from_environment
+
+            backup_store = market_backup_from_environment()
+        except Exception:
+            backup_store = None
+        for symbol in list(invalid_components):
+            candidate = _backup_component_frame(backup_store, symbol)
+            normalized, reason = _validated_component(symbol, candidate)
+            if normalized is not None and reason is None:
+                raw[symbol] = normalized
+                component_health[symbol] = {"status": "ok", "source": "supabase_backup"}
+                invalid_components.remove(symbol)
+
+    if len(raw) != len(SYMBOLS) or invalid_components:
         if cached is not None:
             result = dict(cached)
             result["component_health"] = component_health
@@ -101,10 +203,7 @@ def calculate_taiwan_macro_fgi(
             return result
         raise FGIUnavailableError("台股 Macro FGI 必要公開資料暫時無法取得", component_health=component_health)
     required_columns = {"^TWII": ("Close", "Volume"), "^TWOII": ("Close",), "TWD=X": ("Close",)}
-    malformed = [
-        symbol for symbol, columns in required_columns.items()
-        if any(column not in raw[symbol] for column in columns)
-    ]
+    malformed = [symbol for symbol, columns in required_columns.items() if any(column not in raw[symbol] for column in columns)]
     if malformed:
         for symbol in malformed:
             component_health[symbol] = {"status": "malformed", "error_type": "missing_column"}
@@ -136,12 +235,19 @@ def calculate_taiwan_macro_fgi(
     if len(frame) < 120:
         if cached is not None:
             result = dict(cached)
-            result["component_health"] = {symbol: {"status": "insufficient_history"} for symbol in SYMBOLS}
+            result["component_health"] = {
+                symbol: component_health.get(symbol, {"status": "insufficient_history"})
+                for symbol in SYMBOLS
+            }
             result["stale_components"] = list(SYMBOLS)
             result["data_quality"] = "stale_last_good"
             result["calculation_state"] = "stale_last_good"
             result["cache_as_of"] = cached.get("date")
             return result
+        for symbol in SYMBOLS:
+            component_health.setdefault(symbol, {})
+            if component_health[symbol].get("status") == "ok":
+                component_health[symbol]["status"] = "insufficient_history"
         raise FGIUnavailableError("台股 Macro FGI 歷史資料不足 120 個交易日", component_health=component_health)
 
     sub_scores = {
@@ -158,6 +264,11 @@ def calculate_taiwan_macro_fgi(
         + sub_scores["外資流向"] * 0.15
         + sub_scores["量能"] * 0.15
     )
+    uses_backup_history = any(
+        str(value.get("source") or "") == "supabase_backup"
+        for value in component_health.values()
+        if isinstance(value, dict)
+    )
     result = {
         "score": round(score, 1),
         "label": fgi_label(score),
@@ -168,8 +279,8 @@ def calculate_taiwan_macro_fgi(
         "method": "加權、櫃買、成交量、歷史波動率、美元兌台幣匯率的 120 日百分位模型",
         "component_health": component_health,
         "stale_components": [],
-        "data_quality": "primary",
-        "calculation_state": "fresh",
+        "data_quality": "backup_history" if uses_backup_history else "primary",
+        "calculation_state": "backup_history" if uses_backup_history else "fresh",
         "calculated_at": datetime.now(UTC).isoformat(),
     }
     _LAST_GOOD = result

@@ -25,6 +25,9 @@ jobs:
     env:
       MONITOR_HEALTH_PAYLOAD: ${{ toJson(github.event.client_payload) }}
       DATA_RELEASE_BRANCH: data-release
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      MARKET_BACKUP_ENABLED: 'true'
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

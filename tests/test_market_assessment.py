@@ -4,6 +4,17 @@ from src.market_assessment import build_joint_market_signal, normalize_headline
 from src.market_digest import build_market_digest
 
 
+def test_historical_backup_fgi_does_not_modify_current_risk_adjustments():
+    from src.market_assessment import _joint_risk_adjustments
+
+    assert _joint_risk_adjustments({
+        "台股": {
+            "sentiment": {"label": "極度恐慌", "calculation_state": "backup_history"},
+            "vix": None,
+        }
+    }) == []
+
+
 def test_storm_headline_removes_byline_publisher_and_normalizes_fact():
     result = normalize_headline({
         "title": "台積電、日月光等30家巨頭共組「矽光子聯盟」！經濟部：供應鏈完全掌握在台灣手上｜張大任 新聞 - Storm.mg",

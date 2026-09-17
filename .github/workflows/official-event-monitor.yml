@@ -46,6 +46,9 @@ jobs:
       NEWS_CACHE_PATH: site/data/news-cache.json
       MANIFEST_PATH: site/data/release-manifest.json
       DATA_RELEASE_BRANCH: data-release
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      MARKET_BACKUP_ENABLED: 'true'
       NOTIFY: ${{ github.event_name == 'workflow_dispatch' && (inputs.notify == true && 'true' || 'false') || github.event_name == 'repository_dispatch' && (github.event.client_payload.notify == false || github.event.client_payload.notify == 'false') && 'false' || 'true' }}
     steps:
       - name: Checkout

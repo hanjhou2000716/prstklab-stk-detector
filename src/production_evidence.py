@@ -153,6 +153,9 @@ def bind_quote_evidence(
         item["instrument_id"] = instrument.instrument_id
         item["asset_type"] = instrument.asset_type
         item["instrument_timezone"] = instrument.timezone
+        item["instrument_session_policy"] = instrument.session_policy
+        item["instrument_calendar"] = instrument.calendar
+        item["instrument_close_cutoff"] = instrument.close_cutoff
         item["instrument_resolution"] = "resolved"
     # Bind the exact public symbol registry used for resolution.  Unknown
     # tickers still carry the registry ID but remain explicitly unresolved.

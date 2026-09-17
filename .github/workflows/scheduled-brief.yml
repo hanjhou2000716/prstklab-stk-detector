@@ -97,6 +97,11 @@ jobs:
       # bundle. Raw mail and transport identifiers are rejected by the
       # scheduled publisher and never enter site/data.
       EXTERNAL_OBSERVATIONS_PATH: ${{ vars.EXTERNAL_OBSERVATIONS_PATH }}
+      # Private market last-known-good store. Collection may read/write only
+      # normalized observations; it is never uploaded to Pages.
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      MARKET_BACKUP_ENABLED: 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683

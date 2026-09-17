@@ -10,6 +10,16 @@ from zoneinfo import ZoneInfo
 
 from src.intel_contract import normalize_quote_record
 
+SESSION_POLICIES = {
+    "taiwan": {"calendar": "XTAI", "timezone": "Asia/Taipei"},
+    "us": {"calendar": "NYSE", "timezone": "America/New_York"},
+    "asia_japan": {"calendar": "JPX", "timezone": "Asia/Tokyo"},
+    "asia_korea": {"calendar": "XKRX", "timezone": "Asia/Seoul"},
+    "us_close": {"calendar": "NYSE", "timezone": "America/New_York"},
+    "futures_energy": {"calendar": "CMEGlobex_Energy", "timezone": "America/Chicago"},
+    "usd_twd": {"calendar": "XTAI", "timezone": "Asia/Taipei"},
+}
+
 MARKETS = {
     "taiwan": {"calendar": "XTAI", "label": "台股", "timezone": "Asia/Taipei"},
     "us": {"calendar": "NYSE", "label": "美股", "timezone": "America/New_York"},
@@ -242,7 +252,17 @@ def _latest_completed_session_date(quote: dict[str, Any], reference: datetime) -
         # market health label.
         return reference.astimezone(ZoneInfo("UTC")).date()
 
-    market_config = MARKETS.get(market)
+    ticker_policy = {
+        "NIKKEI": "asia_japan",
+        "KOSPI": "asia_korea",
+        "DXY": "us_close",
+        "US10Y": "us_close",
+        "BRENT": "futures_energy",
+        "WTI": "futures_energy",
+        "GOLD": "futures_energy",
+        "USD/TWD": "usd_twd",
+    }.get(ticker)
+    market_config = MARKETS.get(market) or SESSION_POLICIES.get(ticker_policy or "")
     if market_config:
         import pandas_market_calendars as mcal
 
@@ -260,8 +280,8 @@ def _latest_completed_session_date(quote: dict[str, Any], reference: datetime) -
                 return schedule.index[-2].date()
             return latest
 
-    # Japan, Korea, futures and cash references use the most recent weekday
-    # when an official exchange calendar is not available in this project.
+    # Unknown references use the most recent weekday, but never silently use
+    # the Taipei calendar for a known global instrument.
     local_day = reference.astimezone(ZoneInfo("Asia/Taipei")).date()
     while local_day.weekday() >= 5:
         local_day -= timedelta(days=1)
@@ -315,6 +335,8 @@ def annotate_quote_freshness(quotes: list[dict[str, Any]], *, now: datetime | No
             "stale": "資料過期",
             "unavailable": "暫無資料",
         }.get(freshness, "時間待核對")
+        if item.get("backup_used") is True:
+            item["data_status"] = "備援資料"
         # A delayed or close-only quote can remain visible, but cannot create a
         # high-risk alert.  This is the hard freshness gate from the TXT.
         if freshness != "live" or item.get("stale_used") is True or item.get("quote_delayed") is True:
@@ -363,6 +385,209 @@ def market_data_status(summary: dict[str, Any]) -> str:
         "degraded": "部分缺漏",
         "unavailable": "無法取得",
     }.get(str(summary.get("overall_state") or ""), "無法取得")
+
+
+def _replace_with_official_taiwan_close(
+    items: list[dict[str, Any]], official_quotes: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Promote a newer verified TWSE close over an old Yahoo daily bar."""
+    merged: list[dict[str, Any]] = []
+    for item in items:
+        ticker = str(item.get("ticker") or "")
+        official = official_quotes.get(ticker)
+        if not official or str(item.get("quote_basis") or "").startswith("盤中"):
+            merged.append(item)
+            continue
+        try:
+            current_date = date.fromisoformat(str(item.get("quote_date") or ""))
+            official_date = date.fromisoformat(str(official.get("quote_date") or ""))
+        except ValueError:
+            current_date = None
+            official_date = None
+        if item.get("price") is None or (official_date is not None and (current_date is None or official_date >= current_date)):
+            merged.append({**item, **official, "technical_context": item.get("technical_context")})
+        else:
+            merged.append(item)
+    return merged
+
+
+def _completed_session_gap(quote: dict[str, Any], observed: date, expected: date) -> int:
+    """Count completed exchange sessions, not calendar days, for cache age."""
+    if observed > expected:
+        return 10_000
+    ticker = str(quote.get("ticker") or "")
+    market = str(quote.get("market") or "global")
+    policy = {
+        "NIKKEI": "asia_japan", "KOSPI": "asia_korea", "DXY": "us_close",
+        "US10Y": "us_close", "BRENT": "futures_energy", "WTI": "futures_energy",
+        "GOLD": "futures_energy", "USD/TWD": "usd_twd",
+    }.get(ticker)
+    config = MARKETS.get(market) or SESSION_POLICIES.get(policy or "")
+    if not config:
+        return (expected - observed).days
+    try:
+        import pandas_market_calendars as mcal
+
+        schedule = mcal.get_calendar(config["calendar"]).schedule(
+            start_date=observed, end_date=expected,
+        )
+        sessions = [session.date() for session in schedule.index]
+        return sum(session > observed for session in sessions)
+    except Exception:
+        return (expected - observed).days
+
+
+def _needs_official_taiwan_close(items: list[dict[str, Any]], *, now: datetime | None = None) -> bool:
+    watched = {"006208", "00685L", "2330"}
+    return any(
+        str(item.get("ticker") or "") in watched
+        and quote_freshness(item, now=now) in {"stale", "unavailable", "unknown"}
+        for item in items
+    )
+
+
+def _append_official_missing_rows(
+    items: list[dict[str, Any]], official_quotes: dict[str, dict[str, Any]], definitions: tuple[dict[str, str], ...],
+) -> list[dict[str, Any]]:
+    existing = {str(item.get("ticker") or "") for item in items}
+    additions = [
+        dict(official_quotes[str(definition.get("ticker"))])
+        for definition in definitions
+        if str(definition.get("ticker") or "") not in existing
+        and str(definition.get("ticker") or "") in official_quotes
+    ]
+    return [*items, *additions]
+
+
+def _apply_supabase_backup(
+    items: list[dict[str, Any]], store: Any, *, now: datetime | None = None,
+) -> list[dict[str, Any]]:
+    """Use a bounded last-known-good row only for display continuity."""
+    if store is None:
+        return items
+    reference = now or datetime.now(ZoneInfo("Asia/Taipei"))
+    result: list[dict[str, Any]] = []
+    for item in items:
+        freshness = quote_freshness(item, now=reference)
+        if freshness not in {"stale", "unavailable", "unknown"}:
+            result.append(item)
+            continue
+        try:
+            expected = _latest_completed_session_date(item, reference)
+            row = store.latest_quote(str(item.get("ticker") or ""), before_or_on=expected.isoformat())
+            if not isinstance(row, dict):
+                result.append(item)
+                continue
+            observed_date = date.fromisoformat(str(row.get("market_date") or ""))
+            # A bounded calendar guard is intentionally supplemented by the
+            # source's expected date; never use a future or unknown row.
+            if _completed_session_gap(item, observed_date, expected) > 3:
+                result.append(item)
+                continue
+            result.append({
+                **item,
+                "price": row.get("price"),
+                "previous_close": row.get("previous_close"),
+                "change": row.get("change"),
+                "change_percent": row.get("change_percent"),
+                "quote_date": row.get("market_date"),
+                "quote_time": row.get("observed_at"),
+                "quote_source": "Supabase last-known-good market observation",
+                "source_label": "Supabase備援",
+                "quote_basis": "Supabase 最後有效資料",
+                "backup_used": True,
+                "stale_used": True,
+                "quote_delayed": True,
+                "fallback_reason": "primary_source_unavailable_or_stale",
+            })
+        except Exception:
+            # A backup outage remains a visible source gap; it must not block
+            # unrelated instruments or turn an old value into a healthy quote.
+            result.append(item)
+    return result
+
+
+def _append_supabase_backup_missing(
+    items: list[dict[str, Any]], definitions: tuple[dict[str, str], ...], store: Any, *, now: datetime | None = None,
+) -> list[dict[str, Any]]:
+    """Restore a missing provider row from the bounded private backup."""
+    if store is None:
+        return items
+    reference = now or datetime.now(ZoneInfo("Asia/Taipei"))
+    existing = {str(item.get("ticker") or "") for item in items}
+    result = list(items)
+    for definition in definitions:
+        ticker = str(definition.get("ticker") or "")
+        if not ticker or ticker in existing:
+            continue
+        try:
+            expected = _latest_completed_session_date(definition, reference)
+            row = store.latest_quote(ticker, before_or_on=expected.isoformat())
+            if not isinstance(row, dict):
+                continue
+            observed = date.fromisoformat(str(row.get("market_date") or ""))
+            if _completed_session_gap(definition, observed, expected) > 3:
+                continue
+            result.append({
+                **definition,
+                "price": row.get("price"),
+                "previous_close": row.get("previous_close"),
+                "change": row.get("change"),
+                "change_percent": row.get("change_percent"),
+                "quote_date": row.get("market_date"),
+                "quote_time": row.get("observed_at"),
+                "quote_source": "Supabase last-known-good market observation",
+                "source_label": "Supabase備援",
+                "quote_basis": "Supabase 最後有效資料",
+                "backup_used": True,
+                "stale_used": True,
+                "quote_delayed": True,
+                "fallback_reason": "primary_source_unavailable",
+            })
+            existing.add(ticker)
+        except Exception:
+            continue
+    return result
+
+
+def _persist_market_backup(items: list[dict[str, Any]], store: Any) -> list[str]:
+    if store is None:
+        return []
+    errors: list[str] = []
+    for item in items:
+        try:
+            instrument_id = str(item.get("instrument_id") or f"market:{str(item.get('ticker') or '').casefold()}")
+            state_time = str(item.get("fetched_at") or datetime.now(ZoneInfo("Asia/Taipei")).isoformat())
+            freshness = str(item.get("freshness") or "unavailable")
+            usable = item.get("price") is not None and freshness in {"live", "recent_close"}
+            if not item.get("backup_used") and usable:
+                store.upsert_quote(item)
+            if item.get("price") is None:
+                store.update_source_state(instrument_id, {
+                    "status": "unavailable",
+                    "active_provider": item.get("source_label") or item.get("quote_source"),
+                    "last_failure_at": state_time,
+                    "consecutive_failures": 1,
+                    "last_error_code": "quote_unavailable",
+                    "fallback_used": False,
+                    "circuit_state": "open",
+                })
+                continue
+            degraded = bool(item.get("backup_used") or not usable)
+            store.update_source_state(instrument_id, {
+                "status": "stale_last_good" if degraded else "healthy",
+                "active_provider": item.get("source_label") or item.get("quote_source"),
+                "last_success_at": state_time if not degraded else None,
+                "last_failure_at": state_time if degraded else None,
+                "last_error_code": item.get("fallback_reason") if degraded else None,
+                "consecutive_failures": 1 if degraded else 0,
+                "fallback_used": bool(item.get("backup_used")),
+                "fallback_market_date": item.get("quote_date") if item.get("backup_used") else None,
+                "circuit_state": "open" if degraded else "closed",
+            })
+        except Exception as exc:
+            errors.append(f"market_backup_write:{item.get('ticker', 'unknown')}:{type(exc).__name__}")
+    return errors
 
 
 def get_quote(item: dict[str, str], session: str | None = None) -> dict[str, Any]:
@@ -659,6 +884,8 @@ def build_market_snapshot() -> dict[str, Any]:
     from src.source_health import build_source_health
 
     scan_started_at = datetime.now(ZoneInfo("Asia/Taipei"))
+    from src.market_backup import from_environment as market_backup_from_environment
+    backup_store = market_backup_from_environment()
     markets = {key: get_market_status(key) for key in MARKETS}
     errors: list[dict[str, str]] = []
     quotes: list[dict[str, Any]] = []
@@ -673,6 +900,37 @@ def build_market_snapshot() -> dict[str, Any]:
             indices.append(get_quote(item, markets.get(item["market"], {}).get("session")))
         except Exception as exc:
             errors.append({"ticker": item["ticker"], "message": str(exc), "scope": "index"})
+    # TWSE's official daily feed repairs the known Yahoo gap for listed ETFs
+    # and securities.  Fetch it only when the first pass actually exposes a
+    # stale/unavailable Taiwan row, keeping local tests and healthy refreshes
+    # free of an unnecessary provider call.
+    missing_taiwan_watch = any(
+        str(item.get("ticker") or "") in {"006208", "00685L", "2330"}
+        and str(item.get("ticker") or "") not in {str(row.get("ticker") or "") for row in quotes}
+        for item in WATCHLIST
+    )
+    if _needs_official_taiwan_close([*quotes, *indices], now=scan_started_at) or missing_taiwan_watch:
+        try:
+            from src.twse_quotes import fetch_twse_stock_day_all
+
+            official_target = next(
+                (
+                    _latest_completed_session_date(item, scan_started_at).isoformat()
+                    for item in [*quotes, *indices]
+                    if str(item.get("ticker") or "") in {"006208", "00685L", "2330"}
+                ),
+                scan_started_at.date().isoformat(),
+            )
+            official_rows = fetch_twse_stock_day_all(observed_date=official_target)
+            quotes = _replace_with_official_taiwan_close(quotes, official_rows)
+            indices = _replace_with_official_taiwan_close(indices, official_rows)
+            quotes = _append_official_missing_rows(quotes, official_rows, WATCHLIST)
+        except Exception as exc:
+            errors.append({
+                "ticker": "TWSE官方日線",
+                "message": f"官方台股日線備援暫時無法取得：{type(exc).__name__}",
+                "scope": "index",
+            })
     from src.tpex_index import fetch_tpex_recent_close_fallback
     indices, crosscheck_errors = apply_taiwan_intraday_crosscheck(
         indices,
@@ -701,6 +959,15 @@ def build_market_snapshot() -> dict[str, Any]:
             {"ticker": "台股盤面統計", "message": issue, "scope": "taiwan_market_statistics"}
             for issue in taiwan_market_statistics.get("errors", [])
         )
+    turnover_record = taiwan_market_statistics.get("turnover")
+    if isinstance(turnover_record, dict) and turnover_record.get("trade_volume") is not None:
+        for item in indices:
+            if item.get("ticker") == "TAIEX":
+                try:
+                    row: dict[str, Any] = item
+                    row["volume"] = float(turnover_record["trade_volume"])
+                except (TypeError, ValueError):
+                    pass
     # A Yahoo failure is informational only when TPEx has been restored by
     # any validated fallback (TWSE MIS official close or a labelled public
     # recent close).  Do not retain the original provider error as a health
@@ -713,6 +980,12 @@ def build_market_snapshot() -> dict[str, Any]:
         errors = [error for error in errors if error.get("ticker") != "TPEx"]
     quotes = annotate_quote_freshness(quotes)
     indices = annotate_quote_freshness(indices)
+    quotes = _append_supabase_backup_missing(quotes, WATCHLIST, backup_store, now=scan_started_at)
+    indices = _append_supabase_backup_missing(indices, MARKET_INDICES, backup_store, now=scan_started_at)
+    quotes = _apply_supabase_backup(quotes, backup_store, now=scan_started_at)
+    indices = _apply_supabase_backup(indices, backup_store, now=scan_started_at)
+    quotes = annotate_quote_freshness(quotes, now=scan_started_at)
+    indices = annotate_quote_freshness(indices, now=scan_started_at)
     from src.instrument_master import InstrumentMaster
     from src.production_evidence import (
         bind_market_evidence,
@@ -731,7 +1004,11 @@ def build_market_snapshot() -> dict[str, Any]:
                 "message": (
                     f"{item.get('ticker', '公開報價')} 官方／公開報價暫時無法取得"
                     if item.get("freshness") == "unavailable"
-                    else f"{item.get('ticker', '公開報價')} 報價已逾三日，已標示為過期資料"
+                    else (
+                        f"{item.get('ticker', '公開報價')} 尚未更新至最近已完成交易日；"
+                        f"觀測日 {item.get('quote_date') or '未知'}，預期日 "
+                        f"{_latest_completed_session_date(item, scan_started_at).isoformat()}"
+                    )
                 ),
                 "scope": "index" if item in indices else "",
             })
@@ -744,6 +1021,8 @@ def build_market_snapshot() -> dict[str, Any]:
     macro_quotes = annotate_quote_freshness(
         [normalize_quote_record(item) for item in macro_quotes]
     )
+    macro_quotes = _apply_supabase_backup(macro_quotes, backup_store, now=scan_started_at)
+    macro_quotes = annotate_quote_freshness(macro_quotes, now=scan_started_at)
     official_events = fetch_official_events()
     risk = build_risk_snapshot()
     # Bind the current official event scan into news ranking before the
@@ -765,6 +1044,10 @@ def build_market_snapshot() -> dict[str, Any]:
     # contract needed by the FJ market-linkage and release gates.
     macro_quotes = annotate_quote_freshness(macro_quotes)
     indices = bind_market_evidence(annotate_quote_freshness(indices))
+    errors.extend(
+        {"ticker": "市場備援庫", "message": message, "scope": "macro_quote"}
+        for message in _persist_market_backup([*quotes, *indices, *macro_quotes], backup_store)
+    )
     events = build_event_snapshot(news, quotes, official_events, indices=indices)
     try:
         program = fetch_yutinghao_latest_program()

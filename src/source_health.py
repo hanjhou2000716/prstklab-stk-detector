@@ -9,7 +9,7 @@ from typing import Any
 from src.health_observability import aggregate_source_health, summarize_health_history
 
 SOURCE_DEFINITIONS = (
-    ("market_quotes", "市場報價", {"", "index", "macro_quote", "taiwan_crosscheck"}),
+    ("market_quotes", "市場報價", {"", "index", "macro_quote", "taiwan_crosscheck", "taiwan_market_statistics"}),
     ("official_events", "官方重大事件", {"official_event"}),
     ("market_news", "市場新聞", {"news"}),
     ("risk", "情緒／波動", {"risk"}),
@@ -25,6 +25,10 @@ CANONICAL_STATES = {
     "warming",
     "no_event",
     "pending_confirmation",
+    "stale_last_good",
+    "insufficient_history",
+    "unavailable",
+    "contract_invalid",
 }
 
 # Stable semantic labels consumed by the investor summary.  The legacy
@@ -56,6 +60,12 @@ def _semantic_state(item: dict[str, Any]) -> str:
     if status == "partial" or status == "data_gap":
         return "partial"
     if status in {"failed", "scan_failed", "掃描失敗"}:
+        return "failed"
+    if status in {"stale_last_good", "stale", "expired"}:
+        return "stale"
+    if status in {"insufficient_history", "unavailable", "partial", "data_gap"}:
+        return "partial"
+    if status in {"contract_invalid", "invalid"}:
         return "failed"
     legacy = _canonical_state(item)
     if legacy == "degraded_with_fallback":
@@ -105,6 +115,7 @@ def _canonical_state(item: dict[str, Any]) -> str:
 
 
 def _source_item(key: str, label: str, issues: list[str], checked_at: str) -> dict[str, Any]:
+    unique_issues = list(dict.fromkeys(str(issue) for issue in issues if str(issue).strip()))
     item = {
         "key": key,
         "label": label,
@@ -114,7 +125,8 @@ def _source_item(key: str, label: str, issues: list[str], checked_at: str) -> di
         "state": "no_event" if not issues else "failed",
         "role": "required_for_core" if key in {"market_quotes", "official_events"} else "required_for_alert",
         "checked_at": checked_at,
-        "issues": issues[:2],
+        "issues": unique_issues,
+        "issue_count": len(unique_issues),
     }
     item["semantic_state"] = "no_event" if not issues else "failed"
     return item
@@ -309,6 +321,7 @@ def build_source_health(
         if official["data_gaps"] and official["status"] == "healthy":
             official["status"] = "partial"
             official["issues"] = ["部分官方來源暫時無法取得"]
+            official["issue_count"] = len(official["issues"])
     if news_sources:
         news = next(item for item in sources if item["key"] == "market_news")
         news["source_details"] = news_sources
@@ -377,7 +390,12 @@ def build_source_health(
         stale = sum(int((value or {}).get("stale_count") or 0) for value in quote_evidence.values() if isinstance(value, dict))
         if stale and market["status"] == "healthy":
             market["status"] = "partial"
-            market["issues"] = [f"{stale} 筆報價過期或不可用，僅供顯示"]
+        if stale:
+            market["issues"] = list(dict.fromkeys([
+                *market.get("issues", []),
+                f"{stale} 筆報價過期或不可用，僅供顯示",
+            ]))
+        market["issue_count"] = len(market.get("issues", []))
 
     event_dependencies = {"market_quotes", "official_events", "market_news"}
     dependency_failed = any(
@@ -435,7 +453,12 @@ def build_source_health(
         "所有來源本輪可用"
     )
     data_gaps = [
-        {"source": source["label"], "key": source["key"], "issues": source.get("issues", [])}
+        {
+            "source": source["label"],
+            "key": source["key"],
+            "issues": source.get("issues", []),
+            "issue_count": source.get("issue_count", len(source.get("issues", []))),
+        }
         for source in gap_sources
     ]
     observability = aggregate_source_health(sources)
