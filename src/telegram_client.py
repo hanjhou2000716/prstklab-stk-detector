@@ -232,7 +232,7 @@ _FACT_ACTION_RE = re.compile(
     r"(?:表示|指出|宣稱|宣称|宣布|公布|發布|发布|更新|完成|組成|组成|影響|上漲|上升|下跌|下降|升息|降息|"
     r"中斷|中断|供應|供给|簽署|簽約|簽|簽訂|達|高於|低於|發射|发射|擊落|击落|攔截|拦截|"
     r"摧毀|摧毁|扣押|封鎖|封锁|撤離|撤离|否認|否认|可能|擬|拟|"
-    r"考慮|考虑|評估|评估|攻擊|攻击|會面|会面|討論|讨论|發表|发表|推出|部署|"
+    r"考慮|考虑|評估|评估|計劃|計畫|计划|擁有|拥有|具備|具备|達到|达到|容量|攻擊|攻击|會面|会面|討論|讨论|發表|发表|推出|部署|"
     r"said|says|announc|report|rise|fall|jump|drop|increase|decrease|disrupt|supply|rate|outlook|earnings|guidance|forecast|profit|revenue|policy)",
     re.IGNORECASE,
 )

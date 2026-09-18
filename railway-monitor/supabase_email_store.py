@@ -410,6 +410,63 @@ class SupabaseEmailStore:
                 return True
         return False
 
+    def upsert_priority_pending(self, event: dict[str, Any], *, now: datetime | None = None) -> dict[str, Any]:
+        """Atomically persist one private FJ summary-recovery state."""
+        key = str(event.get("canonical_fact_key") or "").strip()
+        version = str(event.get("material_fact_version") or "").strip()
+        source_at = str(event.get("source_published_at") or "").strip()
+        if not key or not version or not source_at:
+            raise ValueError("priority_pending_identity_incomplete")
+        checked = (now or datetime.now(UTC)).astimezone(UTC).isoformat()
+        event_ref = _hash(f"{key}:{version}")[:32]
+        status = str(event.get("public_summary_status") or "pending").strip() or "pending"
+        if status not in {"pending", "ready", "expired", "contract_failed"}:
+            status = "pending"
+        result = self._rpc(
+            "upsert_financialjuice_priority_pending",
+            {
+                "p_canonical_fact_key": key,
+                "p_material_fact_version": version,
+                "p_event_ref": event_ref,
+                "p_summary_contract_version": str(event.get("summary_contract_version") or "")[:80],
+                "p_summary_status": status,
+                "p_summary_reason": str(event.get("public_summary_reason") or "summary_semantics_incomplete")[:120],
+                "p_source_published_at": source_at,
+                "p_checked_at": checked,
+                "p_last_run_id": str(os.getenv("GITHUB_RUN_ID") or "")[:80] or None,
+                "p_last_run_sha": str(os.getenv("GITHUB_SHA") or "")[:80] or None,
+            },
+        )
+        return result if isinstance(result, dict) else {"event_ref": event_ref, "summary_status": status}
+
+    def priority_pending_events(self, *, now: datetime | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        """Read only active, identifier-only private pending state."""
+        current = (now or datetime.now(UTC)).astimezone(UTC).isoformat()
+        bounded = max(1, min(500, int(limit)))
+        encoded = quote(current, safe="")
+        _status, payload = self._request(
+            "GET", "financialjuice_priority_pending",
+            f"?summary_status=in.(pending,ready)&expires_at=gt.{encoded}&order=source_published_at.asc&limit={bounded}",
+        )
+        rows = payload if isinstance(payload, list) else []
+        return [row for row in rows if isinstance(row, dict)]
+
+    def mark_priority_pending(self, event: dict[str, Any], *, status: str, reason: str = "") -> bool:
+        key = str(event.get("canonical_fact_key") or "").strip()
+        version = str(event.get("material_fact_version") or "").strip()
+        if not key or not version or status not in {"ready", "expired", "contract_failed"}:
+            return False
+        encoded_key = quote(key, safe="")
+        encoded_version = quote(version, safe="")
+        _status, payload = self._request(
+            "PATCH", "financialjuice_priority_pending",
+            f"?canonical_fact_key=eq.{encoded_key}&material_fact_version=eq.{encoded_version}",
+            {"summary_status": status, "summary_reason": str(reason or "")[:120],
+             "last_checked_at": _now(), "updated_at": _now()},
+            prefer="return=representation",
+        )
+        return isinstance(payload, list) and bool(payload)
+
     def health(self) -> dict[str, Any]:
         cursor = self.cursor()
         observation_count = 0

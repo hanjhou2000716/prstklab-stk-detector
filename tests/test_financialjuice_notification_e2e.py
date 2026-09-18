@@ -144,6 +144,20 @@ def test_financialjuice_public_short_message_is_the_release_headline_contract() 
     assert "據《The" not in message
 
 
+def test_fj_summary_compacts_company_capacity_plan_with_metric_and_deadline() -> None:
+    result = financialjuice_public_summary({
+        "event": "Anthropic計劃在年底前擁有5GW的運算能力－紐約時報。",
+        "vendor_importance": 9,
+    })
+    assert result["status"] == "ready"
+    assert result["reason"] == "complete_fact_selected"
+    assert result["text"] == "🟣 FJ 9/10｜Anthropic計劃年底前具備5GW運算能力，紐時報導。"
+    assert result["char_count"] <= 60
+    assert summary_contract_status({
+        "event": "Anthropic計劃在年底前擁有5GW的運算能力－紐約時報。",
+    })["reason"] == "complete_capacity_fact"
+
+
 def test_financialjuice_incomplete_attribution_is_not_deliverable() -> None:
     assert financialjuice_caption({"title": "據《The...", "vendor_importance": 9}) == ""
 
