@@ -13,7 +13,12 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 RAILWAY = ROOT / "railway-monitor"
-for path in (ROOT, RAILWAY):
+# Put the canonical application package first.  The Railway directory still
+# supplies its standalone top-level adapters (gmail_history_sync, email_store,
+# etc.), but ``src`` must resolve to the same summary/priority producer used by
+# the monitor; otherwise Gmail ingress can wake the monitor on a looser copy of
+# the contract.
+for path in (RAILWAY, ROOT):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 

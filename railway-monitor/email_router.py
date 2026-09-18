@@ -110,6 +110,7 @@ _PUBLIC_FIELDS = {
     "provider_fields", "provider_fields_missing", "required_fields_present",
     "attribution", "event_cluster_key", "compound", "item_count",
     "source_identity_verified",
+    "summary_contract_version",
 }
 
 

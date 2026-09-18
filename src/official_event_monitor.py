@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from datetime import datetime, time
+from datetime import UTC, datetime, time
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -116,6 +116,26 @@ def _attach_realtime_external_events(snapshot: dict[str, Any]) -> dict[str, Any]
     snapshot["financialjuice_priority_events"] = [
         item for item in projection["events"]
         if str(item.get("notification_status") or "") == "eligible"
+    ]
+    # The monitor only needs a bounded age/count signal to retry a pending
+    # summary.  Keep the pending marker public-safe: event text, source IDs,
+    # canonical keys and mail-derived fields stay in the private observation
+    # lineage rather than entering the Pages snapshot.
+    snapshot["financialjuice_priority_pending_events"] = [
+        {
+            "source_key": "financialjuice",
+            "vendor_importance": item.get("vendor_importance"),
+            "notification_status": "content_incomplete",
+            "notification_reason": "summary_semantics_incomplete",
+            "freshness_status": item.get("freshness_status"),
+            "source_published_at": item.get("source_published_at"),
+            "received_at": item.get("received_at"),
+            "candidate_at": item.get("candidate_at"),
+        }
+        for item in projection["events"]
+        if str(item.get("notification_status") or "") == "content_incomplete"
+        and str(item.get("freshness_status") or "") == "fresh"
+        and _safe_vendor_importance(item) >= 9
     ]
     snapshot["financialjuice_observations"] = bind_financialjuice_semantic_views(
         fj_rows, projection["events"],
@@ -406,14 +426,46 @@ def write_status_output(
             excluded.add(event_key(next_event))
             if should_send:
                 break
-    reason = "candidate_ready" if should_send else "no_new_eligible_candidate" if event else "no_event"
+    pending_value = (
+        snapshot.get("financialjuice_priority_pending_events")
+        if isinstance(snapshot, dict) else []
+    )
+    pending_events = [item for item in pending_value if isinstance(item, dict)] if isinstance(pending_value, list) else []
+    dispatch_detected = _safe_nonnegative_int(os.getenv("DISPATCH_PRIORITY_CANDIDATE_DETECTED"))
+    pending_age_seconds = max(
+        (_event_age_seconds(item) for item in pending_events),
+        default=0,
+    )
+    contract_mismatch = bool(
+        not event and dispatch_detected > 0 and not pending_events
+    )
+    pending_timeout = bool(pending_events and pending_age_seconds > 600)
+    diagnostic_event = event
+    if not diagnostic_event and pending_events:
+        # Only expose the provider category in bounded diagnostics.  The
+        # pending event's identifiers and source text never enter this row.
+        diagnostic_event = {"source_key": "financialjuice"}
+    if pending_events:
+        reason = "priority_candidate_contract_mismatch_timeout" if pending_timeout else "summary_semantics_incomplete"
+        status = "contract_mismatch" if pending_timeout else "summary_pending"
+    elif contract_mismatch:
+        reason = "priority_candidate_contract_mismatch"
+        status = "contract_mismatch"
+    else:
+        reason = "candidate_ready" if should_send else "no_new_eligible_candidate" if event else "no_event"
+        status = "candidate_ready" if should_send else "suppressed" if event else "no_event"
+    last_candidate_event = pending_events[0] if pending_events else event
+    last_candidate_at = (
+        last_candidate_event.get("candidate_at")
+        if isinstance(last_candidate_event, dict) else None
+    )
     summary = decision_summary(
-        event=event,
+        event=diagnostic_event,
         scan_status="completed",
-        notification_expected=bool(event),
-        notification_status="candidate_ready" if should_send else "suppressed" if event else "no_event",
+        notification_expected=bool(event or pending_events or contract_mismatch),
+        notification_status=status,
         notification_reason=reason,
-        last_candidate_at=(event or {}).get("candidate_at") if isinstance(event, dict) else None,
+        last_candidate_at=last_candidate_at,
     )
     if suppressed_candidates:
         summary["notification_reason"] = "top_candidate_suppressed_later_candidate_considered"
@@ -425,6 +477,9 @@ def write_status_output(
         f"notification_expected={'true' if summary['notification_expected'] else 'false'}",
         f"notification_status={summary['notification_status']}",
         f"notification_reason={summary['notification_reason']}",
+        f"priority_pending_count={len(pending_events)}",
+        f"priority_pending_age_seconds={pending_age_seconds}",
+        f"hard_failure={'true' if contract_mismatch or pending_timeout else 'false'}",
         f"last_processed_at={summary['last_processed_at']}",
         f"last_candidate_at={summary['last_candidate_at'] or ''}",
     ]
@@ -435,6 +490,32 @@ def write_status_output(
     else:
         print("\n".join(lines + [f"ledger_changed={'true' if ledger_record.get('changed') else 'false'}"]))
     write_summary("Official event / price notification decision", summary)
+
+
+def _safe_nonnegative_int(value: Any) -> int:
+    try:
+        return max(0, int(value or 0))
+    except (TypeError, ValueError, OverflowError):
+        return 0
+
+
+def _safe_vendor_importance(event: dict[str, Any]) -> float:
+    try:
+        return float(event.get("vendor_importance") or 0)
+    except (TypeError, ValueError, OverflowError):
+        return 0.0
+
+
+def _event_age_seconds(event: dict[str, Any]) -> float:
+    raw = event.get("source_published_at") or event.get("published_at") or event.get("received_at")
+    if not raw:
+        return 0.0
+    try:
+        published = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        published = published.replace(tzinfo=published.tzinfo or UTC).astimezone(UTC)
+        return max(0.0, (datetime.now(UTC) - published).total_seconds())
+    except (TypeError, ValueError, OverflowError):
+        return 0.0
 
 
 def write_send_output(

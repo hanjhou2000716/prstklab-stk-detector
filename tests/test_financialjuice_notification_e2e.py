@@ -8,6 +8,7 @@ from src.financialjuice_notification import (
     financialjuice_public_summary,
 )
 from src.financialjuice_notification_e2e import run_financialjuice_notification_e2e
+from src.financialjuice_summary_contract import summary_contract_status
 from src.telegram_client import TextDeliveryReceipt, alert_mini_app_url
 
 
@@ -95,6 +96,25 @@ def test_fj_summary_suppresses_contextless_fragment() -> None:
     assert result["status"] == "incomplete"
     assert result["text"] == ""
     assert financialjuice_public_short_message({"title": "更節能", "vendor_importance": 9}) == ""
+
+
+def test_fj_summary_compacts_complete_military_event_without_losing_required_facts() -> None:
+    result = financialjuice_public_summary({
+        "event": "伊朗革命衛隊（IRGC）表示，在荷姆茲海峽附近擊落三架美軍MQ-9無人機，導致該地區緊張局勢進一步升級。",
+        "vendor_importance": 9,
+    })
+    assert result["status"] == "ready"
+    assert result["text"] == "🟣 FJ 9/10｜伊朗革命衛隊稱在荷姆茲海峽附近擊落3架美軍MQ-9無人機，區域緊張升級。"
+    assert result["char_count"] == len(result["text"]) <= 60
+    assert summary_contract_status({
+        "event": "伊朗革命衛隊（IRGC）表示，在荷姆茲海峽附近擊落三架美軍MQ-9無人機，導致該地區緊張局勢進一步升級。",
+    })["status"] == "ready"
+
+
+def test_shared_fj_summary_contract_rejects_contextless_military_fragment() -> None:
+    result = summary_contract_status({"event": "擊落。"})
+    assert result["status"] == "incomplete"
+    assert result["reason"] == "summary_semantics_incomplete"
 
 
 def test_financialjuice_caption_prefers_projected_event_over_generic_title() -> None:

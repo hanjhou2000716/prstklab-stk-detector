@@ -46,6 +46,7 @@ SAFE_FIELDS = {
     "material_numbers", "key_numbers", "canonical_fact_key", "material_fact_version",
     "event_status", "material_status",
     "candidate_event_type", "public_safe",
+    "summary_contract_version",
     "creator_id", "creator_name", "episode_key", "episode_id", "episode_title",
     "source_identity_verified",
     "key_takeaways", "creator_market_view", "creator_strategy_view", "creator_risk_view",

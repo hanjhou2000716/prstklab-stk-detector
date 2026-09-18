@@ -786,6 +786,12 @@ def _event_record(
     record["public_short_message"] = public_short_message
     record["brief_title"] = public_short_message
     record["public_summary_version"] = PUBLIC_SUMMARY_VERSION
+    record["summary_contract_version"] = str(
+        summary_result.get("summary_contract_version")
+        or row.get("summary_contract_version")
+        or result.get("summary_contract_version")
+        or ""
+    )
     record["public_summary_status"] = "ready" if public_summary_valid else "incomplete"
     record["public_summary_reason"] = (
         str(summary_result.get("reason") or "")
@@ -987,6 +993,7 @@ def project_financialjuice_priority(
                 "notification_reason": event["notification_reason"],
                 "public_short_message": event.get("public_short_message") or "",
                 "public_summary_version": event.get("public_summary_version") or "",
+                "summary_contract_version": event.get("summary_contract_version") or "",
                 "public_summary_status": event.get("public_summary_status") or "incomplete",
                 "public_summary_reason": event.get("public_summary_reason") or "",
                 "public_summary_source_field": event.get("public_summary_source_field") or "",
@@ -1068,7 +1075,7 @@ def bind_financialjuice_semantic_views(
             for key in (
                 "public_summary_version", "public_summary_status", "public_summary_reason",
                 "public_summary_source_field", "public_summary_evidence_fields",
-                "public_summary_char_count",
+                "public_summary_char_count", "summary_contract_version",
             ):
                 view[key] = matched_event.get(key) or ([] if key == "public_summary_evidence_fields" else "")
             view["public_signal_eligible"] = matched_event.get("public_signal_eligible") is True

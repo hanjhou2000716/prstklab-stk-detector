@@ -43,6 +43,7 @@ _CANDIDATE_DIAGNOSTIC_KEYS = (
     "new_event_eligible", "duplicate_message", "duplicate_fact", "stale_source_event",
     "missing_source_time", "invalid_source_time", "future_source_time", "incomplete_parse",
     "below_notification_gate", "below_priority_gate", "priority_event_eligible",
+    "priority_candidate_detected", "summary_semantics_incomplete",
     "manual_replay", "downstream_dispatch_failure",
 )
 

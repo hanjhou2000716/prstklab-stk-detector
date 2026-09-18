@@ -29,6 +29,7 @@ def test_bundle_contains_only_canonical_parser_dependencies() -> None:
         "external_event_risk.py",
         "external_source_parsers.py",
         "financialjuice_contract.py",
+        "financialjuice_summary_contract.py",
     }
     actual = {path.name for path in (ROOT / "railway-monitor" / "src").glob("*.py")}
     assert actual == expected

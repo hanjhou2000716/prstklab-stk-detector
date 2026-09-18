@@ -96,14 +96,16 @@ jobs:
         run: |
           material_candidates="$(jq -r 'if (.material_candidate_count | type) == "number" then .material_candidate_count else 0 end' gmail-sync-result.json)"
           priority_candidates="$(jq -r 'if (.priority_candidate_count | type) == "number" then .priority_candidate_count else 0 end' gmail-sync-result.json)"
+          priority_detected="$(jq -r 'if ((.candidate_diagnostics.counts.priority_candidate_detected // 0) | type) == "number" then (.candidate_diagnostics.counts.priority_candidate_detected // 0) else 0 end' gmail-sync-result.json)"
           candidate_ready="false"
-          if [ "$material_candidates" -gt 0 ] || [ "$priority_candidates" -gt 0 ]; then candidate_ready="true"; fi
+          if [ "$material_candidates" -gt 0 ] || [ "$priority_candidates" -gt 0 ] || [ "$priority_detected" -gt 0 ]; then candidate_ready="true"; fi
           recovery_status="$(jq -r '.recovery_status // "unknown"' gmail-sync-result.json)"
           if [ "$candidate_ready" = "true" ] && [ "$recovery_status" != "retry_pending" ] && [ "$recovery_status" != "persistent_failure" ] && [ "$NOTIFY" = "true" ] && [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" != "true" ]; then
             gh api --method POST "repos/$GH_REPO/dispatches" \
               -f event_type=official-event-check \
               -f 'client_payload[reason]=gmail-reviewed-observation' \
-              -f 'client_payload[notify]=true'
+              -f 'client_payload[notify]=true' \
+              -f "client_payload[priority_candidate_detected]=$priority_detected"
             echo "triggered=true" >> "$GITHUB_OUTPUT"
           else
             echo "triggered=false" >> "$GITHUB_OUTPUT"
@@ -216,6 +218,8 @@ jobs:
             echo "- accepted_new_count: ${accepted_new}"
             echo "- material_candidate_count: ${material_candidates}"
             echo "- priority_candidate_count: ${priority_candidates}"
+            echo "- priority_candidate_detected: $(jq -r '.candidate_diagnostics.counts.priority_candidate_detected // 0' gmail-sync-result.json 2>/dev/null || echo 0)"
+            echo "- summary_semantics_incomplete: $(jq -r '.candidate_diagnostics.counts.summary_semantics_incomplete // 0' gmail-sync-result.json 2>/dev/null || echo 0)"
             echo "- duplicate_count: ${duplicate}"
             echo "- supabase_retry_count: ${retry_count}"
             echo "- recovery_status: ${recovery_status}"
