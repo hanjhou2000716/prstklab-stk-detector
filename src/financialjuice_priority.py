@@ -50,6 +50,15 @@ _MARKET_RULES: tuple[tuple[str, tuple[str, ...], frozenset[str], int], ...] = (
     ("NASDAQ", ("nasdaq", "那斯達克", "科技股", "tech stocks"), frozenset({"fed", "macro", "semiconductor", "policy", "market", "conflict"}), 10),
     ("TAIEX", ("taiex", "台股", "台灣加權", "台灣股市"), frozenset({"market", "semiconductor", "policy", "conflict"}), 11),
 )
+
+
+def financialjuice_priority_pending_ref(canonical_fact_key: str, material_fact_version: str) -> str:
+    """Return the non-reversible correlation token used across workflows."""
+    key = str(canonical_fact_key or "").strip()
+    version = str(material_fact_version or "").strip()
+    if not key or not version:
+        return ""
+    return hashlib.sha256(f"{key}:{version}".encode()).hexdigest()[:32]
 _TRANSLATION_LABELS = (
     "chinese translation", "translation", "繁體中文翻譯", "中文翻譯", "翻譯",
 )
@@ -811,6 +820,11 @@ def _event_record(
 
     record["canonical_fact_key"] = canonical_fact_key
     record["material_fact_version"] = material_fact_version
+    importance_value = financialjuice_vendor_importance(importance)
+    if importance_value is not None and importance_value >= FJ_PRIORITY_MIN_IMPORTANCE and record.get("public_summary_status") != "ready":
+        record["priority_pending_ref"] = financialjuice_priority_pending_ref(
+            canonical_fact_key, material_fact_version,
+        )
     record["identity_contract_status"] = "valid" if canonical_fact_key and not identity_reasons else "invalid"
     if identity_reasons and material_event_present and record.get("delivery_policy") == "fj_priority":
         record["notification_status"] = "identity_incomplete"
@@ -1069,7 +1083,7 @@ def bind_financialjuice_semantic_views(
                 view["watch"] = watch
             for key in (
                 "canonical_fact_key", "material_fact_version", "notification_key",
-                "identity_contract_status",
+                "identity_contract_status", "priority_pending_ref",
             ):
                 view[key] = matched_event.get(key) or ""
             for key in (
@@ -1189,4 +1203,5 @@ __all__ = [
     "financialjuice_vendor_importance", "is_financialjuice_priority_event",
     "project_financialjuice_priority",
     "public_financialjuice_observations", "replace_financialjuice_event_lane",
+    "financialjuice_priority_pending_ref",
 ]

@@ -10,13 +10,13 @@ from __future__ import annotations
 import re
 from typing import Any
 
-SUMMARY_CONTRACT_VERSION = "fj-summary-contract-v1"
+SUMMARY_CONTRACT_VERSION = "fj-summary-contract-v2"
 PUBLIC_SUMMARY_MAX_CHARS = 60
 
 _ACTION_RE = re.compile(
     r"(?:表示|指出|宣稱|宣称|宣布|公布|發布|发布|更新|完成|組成|组成|影響|上漲|上升|下跌|下降|升息|降息|"
     r"中斷|中断|供應|供给|簽署|簽約|簽|簽訂|達|高於|低於|發射|否認|否认|可能|擬|拟|"
-    r"考慮|考虑|評估|评估|攻擊|攻击|擊落|击落|攔截|拦截|摧毀|摧毁|扣押|封鎖|封锁|撤離|撤离|部署|"
+    r"考慮|考虑|評估|评估|計劃|计划|擁有|拥有|具備|具备|達到|达到|容量|攻擊|攻击|擊落|击落|攔截|拦截|摧毀|摧毁|扣押|封鎖|封锁|撤離|撤离|部署|"
     r"會面|会面|討論|讨论|發表|发表|推出|said|says|announc|report|rise|fall|jump|drop|"
     r"increase|decrease|disrupt|supply|rate|outlook|earnings|guidance|forecast|profit|revenue|policy)",
     re.IGNORECASE,
@@ -121,6 +121,42 @@ def compact_military_fact(value: Any) -> str:
     return result + "。" if is_complete_fact(result + "。") else ""
 
 
+def compact_capacity_fact(value: Any) -> str:
+    """Compress a company capacity or infrastructure plan without guessing.
+
+    The output keeps the actor, the commitment/target modality, the deadline
+    when present, and the numeric capacity with its subject.  It deliberately
+    does not infer cost, demand, market impact, or whether the plan will be
+    achieved.
+    """
+    text = _clean(value).rstrip("。！？.!?")
+    if not text:
+        return ""
+    match = re.search(
+        r"(?P<actor>[A-Za-z][A-Za-z0-9 ._-]{1,40}|[\u4e00-\u9fff][^，,。；;]{0,24}?)"
+        r"(?:計劃|計畫|计划|拟|擬|預計|预計|目標|目标)"
+        r"(?:在)?(?P<when>年底前|年末前|年內|年内|\d{4}\s*年(?:底|末)?前?)?"
+        r"(?:擁有|拥有|具備|具备|部署|上線|上线|達到|达到|取得)"
+        r"(?P<amount>\d+(?:\.\d+)?\s*(?:GW|MW|TW|億|万億|萬億|%))"
+        r"(?:的)?(?P<object>運算能力|運算容量|算力|資料中心容量|数据中心容量|產能|产能|能源容量|容量)",
+        text,
+        re.IGNORECASE,
+    )
+    if not match:
+        return ""
+    actor = re.sub(r"\s+", "", match.group("actor")).strip(" ：:")
+    when = re.sub(r"\s+", "", match.group("when") or "")
+    amount = re.sub(r"\s+", "", match.group("amount"))
+    object_name = match.group("object")
+    if not actor or not amount or not object_name:
+        return ""
+    result = f"{actor}計劃{when}具備{amount}{object_name}"
+    if "紐約時報" in text or "紐時" in text:
+        result += "，紐時報導"
+    result += "。"
+    return result if is_complete_fact(result) else ""
+
+
 def summary_contract_status(event: dict[str, Any]) -> dict[str, Any]:
     """Return a bounded readiness result for ingress and monitor alignment."""
     fields = (
@@ -138,10 +174,13 @@ def summary_contract_status(event: dict[str, Any]) -> dict[str, Any]:
         value = raw
         if field == "structured_fact" and isinstance(raw, dict):
             value = raw.get("text") or raw.get("fact_text") or raw.get("what_happened")
-        compact = compact_military_fact(value)
+        military = compact_military_fact(value)
+        capacity = compact_capacity_fact(value)
+        compact = military or capacity
         if compact:
             return {
-                "status": "ready", "reason": "complete_military_fact",
+                "status": "ready",
+                "reason": "complete_military_fact" if military else "complete_capacity_fact",
                 "source_field": field, "text": compact,
                 "version": SUMMARY_CONTRACT_VERSION,
             }
@@ -158,6 +197,7 @@ def summary_contract_status(event: dict[str, Any]) -> dict[str, Any]:
 
 
 __all__ = [
-    "PUBLIC_SUMMARY_MAX_CHARS", "SUMMARY_CONTRACT_VERSION", "compact_military_fact",
+    "PUBLIC_SUMMARY_MAX_CHARS", "SUMMARY_CONTRACT_VERSION", "compact_capacity_fact",
+    "compact_military_fact",
     "is_complete_fact", "summary_contract_status",
 ]

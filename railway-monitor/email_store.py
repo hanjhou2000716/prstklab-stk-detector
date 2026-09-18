@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import sqlite3
 from datetime import UTC, datetime
@@ -162,6 +163,25 @@ class EmailStore:
                     next_retry_at TEXT,
                     updated_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS financialjuice_priority_pending (
+                    canonical_fact_key TEXT NOT NULL,
+                    material_fact_version TEXT NOT NULL,
+                    event_ref TEXT NOT NULL UNIQUE,
+                    summary_contract_version TEXT NOT NULL,
+                    summary_status TEXT NOT NULL,
+                    summary_reason TEXT NOT NULL,
+                    source_published_at TEXT NOT NULL,
+                    first_detected_at TEXT NOT NULL,
+                    last_checked_at TEXT NOT NULL,
+                    expires_at TEXT NOT NULL,
+                    attempt_count INTEGER NOT NULL DEFAULT 0,
+                    last_run_id TEXT,
+                    last_run_sha TEXT,
+                    updated_at TEXT NOT NULL,
+                    PRIMARY KEY (canonical_fact_key, material_fact_version)
+                );
+                CREATE INDEX IF NOT EXISTS idx_fj_priority_pending_active
+                    ON financialjuice_priority_pending(summary_status, expires_at, source_published_at);
                 """
             )
             # Existing Railway volumes predate the watch lease observability
@@ -503,6 +523,93 @@ class EmailStore:
             if isinstance(payload, dict) and str(payload.get("canonical_fact_key") or "").strip() == key:
                 return True
         return False
+
+    def upsert_priority_pending(self, event: dict[str, Any], *, now: datetime | None = None) -> dict[str, Any]:
+        """Persist one fresh FJ summary-recovery state without raw mail."""
+        key = str(event.get("canonical_fact_key") or "").strip()
+        version = str(event.get("material_fact_version") or "").strip()
+        source_at = str(event.get("source_published_at") or "").strip()
+        if not key or not version or not source_at:
+            raise ValueError("priority_pending_identity_incomplete")
+        checked = now or datetime.now(UTC)
+        try:
+            source_dt = datetime.fromisoformat(source_at.replace("Z", "+00:00"))
+        except ValueError as error:
+            raise ValueError("priority_pending_source_time_invalid") from error
+        source_dt = source_dt.replace(tzinfo=source_dt.tzinfo or UTC).astimezone(UTC)
+        event_ref = _hash(f"{key}:{version}")[:32]
+        expires_at = source_dt.timestamp() + 30 * 60
+        checked_text = checked.astimezone(UTC).isoformat()
+        expires_text = datetime.fromtimestamp(expires_at, UTC).isoformat()
+        run_id = str(os.getenv("GITHUB_RUN_ID") or "").strip()[:80] or None
+        run_sha = str(os.getenv("GITHUB_SHA") or "").strip()[:80] or None
+        status = str(event.get("public_summary_status") or "pending").strip() or "pending"
+        reason = str(event.get("public_summary_reason") or "summary_semantics_incomplete").strip()[:120]
+        contract = str(event.get("summary_contract_version") or "").strip()[:80]
+        if status not in {"pending", "ready", "expired", "contract_failed"}:
+            status = "pending"
+        with self._connect() as connection:
+            existing = connection.execute(
+                "SELECT first_detected_at, source_published_at, expires_at, attempt_count FROM financialjuice_priority_pending WHERE canonical_fact_key = ? AND material_fact_version = ?",
+                (key, version),
+            ).fetchone()
+            first = str(existing[0]) if existing else checked_text
+            existing_source = str(existing[1]) if existing else source_dt.isoformat()
+            existing_expires = str(existing[2]) if existing else expires_text
+            attempts = int(existing[3]) + 1 if existing else 1
+            connection.execute(
+                """INSERT INTO financialjuice_priority_pending(
+                    canonical_fact_key, material_fact_version, event_ref,
+                    summary_contract_version, summary_status, summary_reason,
+                    source_published_at, first_detected_at, last_checked_at,
+                    expires_at, attempt_count, last_run_id, last_run_sha, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(canonical_fact_key, material_fact_version) DO UPDATE SET
+                    summary_contract_version=excluded.summary_contract_version,
+                    summary_status=excluded.summary_status,
+                    summary_reason=excluded.summary_reason,
+                    last_checked_at=excluded.last_checked_at,
+                    attempt_count=excluded.attempt_count,
+                    last_run_id=COALESCE(excluded.last_run_id, financialjuice_priority_pending.last_run_id),
+                    last_run_sha=COALESCE(excluded.last_run_sha, financialjuice_priority_pending.last_run_sha),
+                    updated_at=excluded.updated_at""",
+                (key, version, event_ref, contract, status, reason, existing_source,
+                 first, checked_text, existing_expires, attempts, run_id, run_sha, checked_text),
+            )
+        return {"event_ref": event_ref, "summary_status": status, "summary_reason": reason,
+                "source_published_at": existing_source, "expires_at": existing_expires,
+                "attempt_count": attempts}
+
+    def priority_pending_events(self, *, now: datetime | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        """Return bounded, identifier-only pending state for monitor recovery."""
+        current = (now or datetime.now(UTC)).astimezone(UTC).isoformat()
+        bounded = max(1, min(500, int(limit)))
+        with self._connect() as connection:
+            rows = connection.execute(
+                """SELECT event_ref, canonical_fact_key, material_fact_version,
+                          summary_contract_version, summary_status, summary_reason,
+                          source_published_at, first_detected_at, last_checked_at,
+                          expires_at, attempt_count, last_run_id, last_run_sha
+                   FROM financialjuice_priority_pending
+                   WHERE summary_status IN ('pending', 'ready') AND expires_at > ?
+                   ORDER BY source_published_at ASC LIMIT ?""",
+                (current, bounded),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def mark_priority_pending(self, event: dict[str, Any], *, status: str, reason: str = "") -> bool:
+        key = str(event.get("canonical_fact_key") or "").strip()
+        version = str(event.get("material_fact_version") or "").strip()
+        if not key or not version or status not in {"ready", "expired", "contract_failed"}:
+            return False
+        with self._connect() as connection:
+            cursor = connection.execute(
+                """UPDATE financialjuice_priority_pending
+                   SET summary_status = ?, summary_reason = ?, last_checked_at = ?, updated_at = ?
+                   WHERE canonical_fact_key = ? AND material_fact_version = ?""",
+                (status, str(reason or "")[:120], _now(), _now(), key, version),
+            )
+            return cursor.rowcount > 0
 
     def public_observations(self, *, limit: int = 100) -> list[dict[str, Any]]:
         """Return bounded sanitized observations for the scheduled publisher."""

@@ -95,7 +95,7 @@ _CANDIDATE_DIAGNOSTIC_KEYS = (
     "missing_source_time", "invalid_source_time", "future_source_time", "incomplete_parse",
     "below_notification_gate", "below_priority_gate", "priority_event_eligible",
     "priority_candidate_detected", "summary_semantics_incomplete",
-    "manual_replay", "downstream_dispatch_failure",
+    "manual_replay", "downstream_dispatch_failure", "priority_pending_state_error",
 )
 
 
@@ -120,6 +120,7 @@ def _candidate_diagnostics(
 ) -> dict[str, Any]:
     """Return bounded per-message candidate counts and a primary reason."""
     counts = {key: 0 for key in _CANDIDATE_DIAGNOSTIC_KEYS}
+    pending_refs: list[str] = []
     batch_fact_keys: set[str] = set()
     saw_financialjuice = False
     for row in rows:
@@ -130,6 +131,18 @@ def _candidate_diagnostics(
         saw_financialjuice = True
         freshness_reason = _financialjuice_candidate_reason(row, now=now)
         if freshness_reason:
+            if freshness_reason == "stale_source_event":
+                try:
+                    importance = float(row.get("vendor_importance"))
+                except (TypeError, ValueError, OverflowError):
+                    importance = 0.0
+                if importance >= FJ_VENDOR_PRIORITY_THRESHOLD:
+                    mark_pending = getattr(store, "mark_priority_pending", None)
+                    if callable(mark_pending):
+                        try:
+                            mark_pending(dict(row), status="expired", reason=freshness_reason)
+                        except (TypeError, ValueError, RuntimeError):
+                            counts["priority_pending_state_error"] += 1
             counts[freshness_reason] += 1
             continue
         if row.get("source_identity_verified") is False:
@@ -167,22 +180,45 @@ def _candidate_diagnostics(
             if importance >= FJ_VENDOR_PRIORITY_THRESHOLD:
                 counts["priority_candidate_detected"] += 1
             if not _summary_ready(row):
+                try:
+                    pending = store.upsert_priority_pending(dict(row))
+                    event_ref = str(pending.get("event_ref") or "").strip()
+                    if event_ref and event_ref not in pending_refs:
+                        pending_refs.append(event_ref)
+                except (TypeError, ValueError, RuntimeError):
+                    counts["priority_pending_state_error"] += 1
                 counts["summary_semantics_incomplete"] += 1
                 continue
             if importance >= FJ_VENDOR_PRIORITY_THRESHOLD:
+                try:
+                    mark_pending = getattr(store, "mark_priority_pending", None)
+                    if callable(mark_pending):
+                        mark_pending(dict(row), status="ready", reason="summary_ready")
+                except (TypeError, ValueError, RuntimeError):
+                    counts["priority_pending_state_error"] += 1
+                    continue
                 counts["priority_event_eligible"] += 1
             counts["new_event_eligible"] += 1
             batch_fact_keys.add(fact_key)
     if source_is_financialjuice and not saw_financialjuice:
         counts["incomplete_parse"] += 1
     priority = (
+        "priority_pending_state_error",
         "stale_source_event", "missing_source_time", "invalid_source_time",
         "incomplete_parse", "duplicate_fact", "future_source_time",
         "below_notification_gate", "below_priority_gate", "manual_replay",
         "summary_semantics_incomplete", "downstream_dispatch_failure",
     )
     primary = next((key for key in priority if counts[key]), "")
-    return {"counts": counts, "primary_reason": primary}
+    if counts.get("priority_pending_state_error") == 0:
+        # Keep the pre-pending diagnostic JSON shape byte-compatible for
+        # readers that compare the bounded result exactly.  The new field is
+        # emitted whenever a durable pending-state failure actually occurs.
+        counts.pop("priority_pending_state_error", None)
+    result: dict[str, Any] = {"counts": counts, "primary_reason": primary}
+    if pending_refs:
+        result["priority_pending_refs"] = pending_refs
+    return result
 
 
 def _normalize_service_account(value: str) -> str:

@@ -299,6 +299,8 @@ def test_high_score_contextless_fact_is_pending_not_eligible(tmp_path: Path) -> 
         "vendor_importance": 9,
         "source_published_at": datetime.now(UTC).isoformat(),
         "canonical_fact_key": "financialjuice-fact:pending",
+        "material_fact_version": "v1",
+        "summary_contract_version": "fj-summary-contract-v2",
         "vendor_translation": "更節能。$META $NVDA",
     }], store)
     counts = diagnostics["counts"]
@@ -306,6 +308,28 @@ def test_high_score_contextless_fact_is_pending_not_eligible(tmp_path: Path) -> 
     assert counts["summary_semantics_incomplete"] == 1
     assert counts["priority_event_eligible"] == 0
     assert diagnostics["primary_reason"] == "summary_semantics_incomplete"
+
+
+def test_high_score_incomplete_fact_persists_private_pending_state(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    row = {
+        "source": "financialjuice",
+        "vendor_importance": 9,
+        "source_published_at": datetime.now(UTC).isoformat(),
+        "canonical_fact_key": "financialjuice-fact:anthropic-capacity",
+        "material_fact_version": "v1",
+        "summary_contract_version": "fj-summary-contract-v2",
+        "public_summary_status": "incomplete",
+        "public_summary_reason": "summary_semantics_incomplete",
+        "vendor_translation": "更節能。$META $NVDA",
+    }
+    diagnostics = _candidate_diagnostics([row], store)
+    assert diagnostics["counts"]["summary_semantics_incomplete"] == 1
+    assert len(diagnostics["priority_pending_refs"]) == 1
+    pending = store.priority_pending_events()
+    assert len(pending) == 1
+    assert pending[0]["summary_status"] == "pending"
+    assert pending[0]["canonical_fact_key"] == row["canonical_fact_key"]
 
 
 def test_duplicate_replay_enriches_public_projection_without_second_event(tmp_path: Path) -> None:

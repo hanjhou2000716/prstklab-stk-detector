@@ -81,6 +81,7 @@ jobs:
         env:
           OFFICIAL_EVENT_BASELINE_READY: ${{ steps.baseline.outputs.cache-hit == 'true' }}
           DISPATCH_PRIORITY_CANDIDATE_DETECTED: ${{ github.event.client_payload.priority_candidate_detected || '0' }}
+          DISPATCH_PRIORITY_PENDING_REFS: ${{ github.event.client_payload.priority_pending_refs || '[]' }}
         run: python -m src.official_event_monitor --write-status
       - name: Fail on priority candidate contract mismatch
         if: steps.status.outputs.hard_failure == 'true'

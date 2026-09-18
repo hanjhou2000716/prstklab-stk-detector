@@ -313,6 +313,28 @@ def test_monitor_hard_fails_when_dispatch_claims_priority_but_no_pending_event(m
     assert "hard_failure=true" in text
 
 
+def test_monitor_does_not_mask_priority_ref_mismatch_with_unrelated_event(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setenv("DISPATCH_PRIORITY_CANDIDATE_DETECTED", "1")
+    monkeypatch.setenv("DISPATCH_PRIORITY_PENDING_REFS", '["fj-ref-missing"]')
+    pending = {
+        "source_key": "financialjuice",
+        "priority_pending_ref": "fj-ref-different",
+        "vendor_importance": 9,
+        "notification_status": "content_incomplete",
+        "freshness_status": "fresh",
+        "source_published_at": (datetime.now(UTC) - timedelta(minutes=2)).isoformat(),
+    }
+    monitor.write_status_output({"source": "disaster", "title": "unrelated event"}, {
+        "financialjuice_priority_pending_events": [pending],
+    })
+    text = output.read_text(encoding="utf-8")
+    assert "notification_status=contract_mismatch" in text
+    assert "notification_reason=priority_candidate_contract_mismatch" in text
+    assert "hard_failure=true" in text
+
+
 def test_monitor_escalates_pending_summary_after_ten_minutes(monkeypatch, tmp_path):
     output = tmp_path / "github-output.txt"
     monkeypatch.setenv("GITHUB_OUTPUT", str(output))

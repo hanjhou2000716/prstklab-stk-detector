@@ -44,7 +44,7 @@ _CANDIDATE_DIAGNOSTIC_KEYS = (
     "missing_source_time", "invalid_source_time", "future_source_time", "incomplete_parse",
     "below_notification_gate", "below_priority_gate", "priority_event_eligible",
     "priority_candidate_detected", "summary_semantics_incomplete",
-    "manual_replay", "downstream_dispatch_failure",
+    "manual_replay", "downstream_dispatch_failure", "priority_pending_state_error",
 )
 
 
@@ -66,10 +66,24 @@ def _merge_candidate_diagnostics(total: dict[str, Any], value: Any) -> None:
     reason = str(value.get("primary_reason") or "").strip()
     if reason and not str(total.get("primary_reason") or "").strip():
         total["primary_reason"] = reason
+    refs = value.get("priority_pending_refs")
+    if isinstance(refs, (list, tuple)):
+        target = total.setdefault("priority_pending_refs", [])
+        if isinstance(target, list):
+            for ref in refs:
+                safe = str(ref or "").strip()
+                if safe and safe not in target and len(target) < 100:
+                    target.append(safe)
 
 
 def _with_candidate_diagnostics(result: dict[str, Any], diagnostics: dict[str, Any]) -> dict[str, Any]:
+    counts = diagnostics.get("counts")
+    if isinstance(counts, dict) and counts.get("priority_pending_state_error") == 0:
+        counts.pop("priority_pending_state_error", None)
     result["candidate_diagnostics"] = diagnostics
+    pending_refs = list(diagnostics.get("priority_pending_refs") or [])[:100]
+    if pending_refs:
+        result["priority_pending_refs"] = pending_refs
     counts = diagnostics.get("counts") if isinstance(diagnostics, Mapping) else None
     if "priority_candidate_count" not in result:
         try:
@@ -113,6 +127,7 @@ def _sync_diagnostics_record(
         "candidate_diagnostics": {
             "counts": safe_counts,
             "primary_reason": str(diagnostics.get("primary_reason") or "")[:80],
+            "priority_pending_count": len(diagnostics.get("priority_pending_refs") or []) if isinstance(diagnostics.get("priority_pending_refs"), list) else 0,
         },
     }
     if sync_started_at:

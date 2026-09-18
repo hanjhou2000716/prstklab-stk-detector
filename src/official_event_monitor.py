@@ -127,6 +127,7 @@ def _attach_realtime_external_events(snapshot: dict[str, Any]) -> dict[str, Any]
             "vendor_importance": item.get("vendor_importance"),
             "notification_status": "content_incomplete",
             "notification_reason": "summary_semantics_incomplete",
+            "priority_pending_ref": item.get("priority_pending_ref"),
             "freshness_status": item.get("freshness_status"),
             "source_published_at": item.get("source_published_at"),
             "received_at": item.get("received_at"),
@@ -432,12 +433,20 @@ def write_status_output(
     )
     pending_events = [item for item in pending_value if isinstance(item, dict)] if isinstance(pending_value, list) else []
     dispatch_detected = _safe_nonnegative_int(os.getenv("DISPATCH_PRIORITY_CANDIDATE_DETECTED"))
+    dispatch_refs = _dispatch_pending_refs()
+    pending_refs = {
+        str(item.get("priority_pending_ref") or "").strip()
+        for item in pending_events
+        if str(item.get("priority_pending_ref") or "").strip()
+    }
+    missing_dispatch_refs = [ref for ref in dispatch_refs if ref not in pending_refs]
     pending_age_seconds = max(
         (_event_age_seconds(item) for item in pending_events),
         default=0,
     )
     contract_mismatch = bool(
-        not event and dispatch_detected > 0 and not pending_events
+        (dispatch_detected > 0 and (not dispatch_refs or bool(missing_dispatch_refs)))
+        or missing_dispatch_refs
     )
     pending_timeout = bool(pending_events and pending_age_seconds > 600)
     diagnostic_event = event
@@ -445,12 +454,12 @@ def write_status_output(
         # Only expose the provider category in bounded diagnostics.  The
         # pending event's identifiers and source text never enter this row.
         diagnostic_event = {"source_key": "financialjuice"}
-    if pending_events:
-        reason = "priority_candidate_contract_mismatch_timeout" if pending_timeout else "summary_semantics_incomplete"
-        status = "contract_mismatch" if pending_timeout else "summary_pending"
-    elif contract_mismatch:
+    if contract_mismatch:
         reason = "priority_candidate_contract_mismatch"
         status = "contract_mismatch"
+    elif pending_events:
+        reason = "priority_candidate_contract_mismatch_timeout" if pending_timeout else "summary_semantics_incomplete"
+        status = "contract_mismatch" if pending_timeout else "summary_pending"
     else:
         reason = "candidate_ready" if should_send else "no_new_eligible_candidate" if event else "no_event"
         status = "candidate_ready" if should_send else "suppressed" if event else "no_event"
@@ -478,6 +487,8 @@ def write_status_output(
         f"notification_status={summary['notification_status']}",
         f"notification_reason={summary['notification_reason']}",
         f"priority_pending_count={len(pending_events)}",
+        f"priority_dispatch_ref_count={len(dispatch_refs)}",
+        f"priority_dispatch_missing_ref_count={len(missing_dispatch_refs)}",
         f"priority_pending_age_seconds={pending_age_seconds}",
         f"hard_failure={'true' if contract_mismatch or pending_timeout else 'false'}",
         f"last_processed_at={summary['last_processed_at']}",
@@ -497,6 +508,23 @@ def _safe_nonnegative_int(value: Any) -> int:
         return max(0, int(value or 0))
     except (TypeError, ValueError, OverflowError):
         return 0
+
+
+def _dispatch_pending_refs() -> list[str]:
+    """Parse only bounded, non-reversible event references from dispatch."""
+    raw = os.getenv("DISPATCH_PRIORITY_PENDING_REFS", "[]")
+    try:
+        value = json.loads(raw)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+    if not isinstance(value, list):
+        return []
+    refs: list[str] = []
+    for item in value[:100]:
+        ref = str(item or "").strip()
+        if ref and ref not in refs:
+            refs.append(ref[:64])
+    return refs
 
 
 def _safe_vendor_importance(event: dict[str, Any]) -> float:

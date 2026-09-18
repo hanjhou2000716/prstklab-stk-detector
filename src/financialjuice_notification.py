@@ -18,7 +18,11 @@ from src.financialjuice_priority import (
     FJ_PRIORITY_MIN_IMPORTANCE,
     financialjuice_vendor_importance,
 )
-from src.financialjuice_summary_contract import SUMMARY_CONTRACT_VERSION, compact_military_fact
+from src.financialjuice_summary_contract import (
+    SUMMARY_CONTRACT_VERSION,
+    compact_capacity_fact,
+    compact_military_fact,
+)
 from src.telegram_client import (
     PUBLIC_SUMMARY_VERSION,
     PUBLIC_TEXT_MAX_CHARS,
@@ -426,6 +430,7 @@ def _summary_variants(text: str) -> list[str]:
     values: list[str] = []
     for value in (
         compact_military_fact(text),
+        compact_capacity_fact(text),
         _compress_fj_sentence(text),
         *_compact_policy_fact(text),
         *_compact_company_fact(text),
