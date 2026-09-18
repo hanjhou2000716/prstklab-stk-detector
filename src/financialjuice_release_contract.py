@@ -16,6 +16,7 @@ from typing import Any
 
 from src.financialjuice_contract import VENDOR_PRIORITY_THRESHOLD
 from src.financialjuice_notification import financialjuice_notification_key
+from src.financialjuice_summary_contract import SUMMARY_CONTRACT_VERSION
 from src.telegram_client import PUBLIC_SUMMARY_VERSION, is_valid_public_summary
 
 _STATUSES = frozenset({
@@ -382,6 +383,9 @@ def validate_financialjuice_release(snapshot: dict[str, Any]) -> dict[str, Any]:
                     errors.append(f"decision[{index}]:unsupported_public_summary_version")
                 if decision.get("public_summary_status") != "ready":
                     errors.append(f"decision[{index}]:public_summary_not_ready")
+            summary_contract_version = str(decision.get("summary_contract_version") or "").strip()
+            if summary_contract_version and summary_contract_version != SUMMARY_CONTRACT_VERSION:
+                errors.append(f"decision[{index}]:unsupported_summary_contract_version")
             decision_key = str(decision.get("canonical_fact_key") or "").strip()
             decision_version = str(decision.get("material_fact_version") or "").strip()
             decision_notification_key = str(decision.get("notification_key") or "").strip()
@@ -438,7 +442,7 @@ def validate_financialjuice_release(snapshot: dict[str, Any]) -> dict[str, Any]:
                 event_decision.get("public_short_message") or ""
             ).strip():
                 errors.append(f"event[{index}]:public_summary_mismatch")
-            for field in ("public_summary_version", "public_summary_status"):
+            for field in ("public_summary_version", "public_summary_status", "summary_contract_version"):
                 decision_value = str(event_decision.get(field) or "").strip()
                 event_value = str(event.get(field) or "").strip()
                 if decision_value and decision_value != event_value:
@@ -471,6 +475,9 @@ def validate_financialjuice_release(snapshot: dict[str, Any]) -> dict[str, Any]:
                     errors.append(f"event[{index}]:unsupported_public_summary_version")
                 if event.get("public_summary_status") != "ready":
                     errors.append(f"event[{index}]:public_summary_not_ready")
+            summary_contract_version = str(event.get("summary_contract_version") or "").strip()
+            if summary_contract_version and summary_contract_version != SUMMARY_CONTRACT_VERSION:
+                errors.append(f"event[{index}]:unsupported_summary_contract_version")
             event_key = str(event.get("canonical_fact_key") or "").strip()
             event_version = str(event.get("material_fact_version") or "").strip()
             event_notification_key = str(event.get("notification_key") or "").strip()

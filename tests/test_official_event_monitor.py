@@ -282,6 +282,56 @@ def test_official_monitor_suppresses_budgeted_event_before_renderer(monkeypatch,
     assert "reason=alert_budget:cooldown" in text
 
 
+def test_monitor_exposes_fresh_fj_summary_pending_without_delivery(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    pending = {
+        "source_key": "financialjuice",
+        "vendor_importance": 9,
+        "notification_status": "content_incomplete",
+        "freshness_status": "fresh",
+        "source_published_at": (datetime.now(UTC) - timedelta(minutes=2)).isoformat(),
+    }
+    monitor.write_status_output(None, {
+        "financialjuice_priority_pending_events": [pending],
+    })
+    text = output.read_text(encoding="utf-8")
+    assert "notification_status=summary_pending" in text
+    assert "notification_reason=summary_semantics_incomplete" in text
+    assert "priority_pending_count=1" in text
+    assert "hard_failure=false" in text
+
+
+def test_monitor_hard_fails_when_dispatch_claims_priority_but_no_pending_event(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setenv("DISPATCH_PRIORITY_CANDIDATE_DETECTED", "1")
+    monitor.write_status_output(None, {})
+    text = output.read_text(encoding="utf-8")
+    assert "notification_status=contract_mismatch" in text
+    assert "notification_reason=priority_candidate_contract_mismatch" in text
+    assert "hard_failure=true" in text
+
+
+def test_monitor_escalates_pending_summary_after_ten_minutes(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    pending = {
+        "source_key": "financialjuice",
+        "vendor_importance": 9,
+        "notification_status": "content_incomplete",
+        "freshness_status": "fresh",
+        "source_published_at": (datetime.now(UTC) - timedelta(minutes=11)).isoformat(),
+    }
+    monitor.write_status_output(None, {
+        "financialjuice_priority_pending_events": [pending],
+    })
+    text = output.read_text(encoding="utf-8")
+    assert "notification_status=contract_mismatch" in text
+    assert "notification_reason=priority_candidate_contract_mismatch_timeout" in text
+    assert "hard_failure=true" in text
+
+
 def test_financialjuice_event_uses_immediate_text_lane_and_records_receipt(monkeypatch, tmp_path):
     output = tmp_path / "github-output.txt"
     monkeypatch.setenv("GITHUB_OUTPUT", str(output))

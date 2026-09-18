@@ -19,6 +19,7 @@ from src.creator_source_adapters import parse_creator_template
 from src.email_intelligence import normalize_creator_insight, route_email_source
 from src.event_classifier import classify_event_fields
 from src.financialjuice_contract import FINANCIALJUICE_SOURCE_URL, normalize_financialjuice_item
+from src.financialjuice_summary_contract import SUMMARY_CONTRACT_VERSION
 
 MAX_FIELD_CHARS = 600
 DLQ_STATES = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
@@ -262,6 +263,7 @@ def parse_financialjuice_compound_email(
                 "vendor_impact": record["possible_impact"],
                 "entities": record["entities"],
                 "candidate_event_type": record["candidate_event_type"],
+                "summary_contract_version": SUMMARY_CONTRACT_VERSION,
             }
         )
         cluster_key = _compound_cluster_key(record, normalized)
@@ -365,6 +367,7 @@ def parse_financialjuice_email(
         "transport_received_at": identity["transport_received_at"],
         "ingested_at": identity["ingested_at"],
         "event_cluster_key": cluster_key,
+        "summary_contract_version": SUMMARY_CONTRACT_VERSION,
         "public_safe": True,
     }
 

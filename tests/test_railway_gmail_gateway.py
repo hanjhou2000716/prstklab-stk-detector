@@ -14,7 +14,7 @@ from email_router import route_source  # noqa: E402
 from email_store import EmailStore  # noqa: E402
 from gmail_watch import GmailWatchConfig, GmailWatchManager, health, renewal_due  # noqa: E402
 
-from gmail_ingress import GmailIngressError, GmailIngressService  # noqa: E402
+from gmail_ingress import GmailIngressError, GmailIngressService, _candidate_diagnostics  # noqa: E402
 
 
 def _config() -> GmailWatchConfig:
@@ -290,6 +290,22 @@ def test_existing_public_high_score_fact_still_wakes_priority_candidate(tmp_path
     assert replay["priority_candidate"] is True
     assert replay["candidate_diagnostics"]["counts"]["duplicate_fact"] == 1
     assert replay["candidate_diagnostics"]["counts"]["priority_event_eligible"] == 1
+
+
+def test_high_score_contextless_fact_is_pending_not_eligible(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    diagnostics = _candidate_diagnostics([{
+        "source": "financialjuice",
+        "vendor_importance": 9,
+        "source_published_at": datetime.now(UTC).isoformat(),
+        "canonical_fact_key": "financialjuice-fact:pending",
+        "vendor_translation": "更節能。$META $NVDA",
+    }], store)
+    counts = diagnostics["counts"]
+    assert counts["priority_candidate_detected"] == 1
+    assert counts["summary_semantics_incomplete"] == 1
+    assert counts["priority_event_eligible"] == 0
+    assert diagnostics["primary_reason"] == "summary_semantics_incomplete"
 
 
 def test_duplicate_replay_enriches_public_projection_without_second_event(tmp_path: Path) -> None:

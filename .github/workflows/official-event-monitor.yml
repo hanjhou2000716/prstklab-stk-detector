@@ -80,7 +80,13 @@ jobs:
         id: status
         env:
           OFFICIAL_EVENT_BASELINE_READY: ${{ steps.baseline.outputs.cache-hit == 'true' }}
+          DISPATCH_PRIORITY_CANDIDATE_DETECTED: ${{ github.event.client_payload.priority_candidate_detected || '0' }}
         run: python -m src.official_event_monitor --write-status
+      - name: Fail on priority candidate contract mismatch
+        if: steps.status.outputs.hard_failure == 'true'
+        run: |
+          echo "Priority candidate contract mismatch: no safe delivery decision was produced."
+          exit 1
       - name: Wait for production writer queue
         id: writer_queue
         if: steps.status.outputs.ledger_changed == 'true' || steps.status.outputs.should_send == 'true'

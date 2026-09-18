@@ -15,6 +15,16 @@ from email_store import FJ_VENDOR_PRIORITY_THRESHOLD, EmailStore
 from gmail_watch import GmailWatchConfig, GmailWatchManager
 from gmail_watch import health as watch_health
 
+try:
+    # GitHub Actions runs with the full repository checkout.  Reuse the exact
+    # producer used by the monitor so ingress and delivery cannot disagree on
+    # whether a public summary is ready.
+    from src.financialjuice_notification import financialjuice_public_summary
+except ModuleNotFoundError:  # pragma: no cover - standalone Railway image
+    from src.financialjuice_summary_contract import summary_contract_status
+
+    financialjuice_public_summary = None  # type: ignore[assignment]
+
 MAX_BODY_BYTES = 256 * 1024
 
 
@@ -84,8 +94,21 @@ _CANDIDATE_DIAGNOSTIC_KEYS = (
     "new_event_eligible", "duplicate_message", "duplicate_fact", "stale_source_event",
     "missing_source_time", "invalid_source_time", "future_source_time", "incomplete_parse",
     "below_notification_gate", "below_priority_gate", "priority_event_eligible",
+    "priority_candidate_detected", "summary_semantics_incomplete",
     "manual_replay", "downstream_dispatch_failure",
 )
+
+
+def _summary_ready(row: Mapping[str, Any]) -> bool:
+    """Apply the canonical summary contract before waking downstream work."""
+    try:
+        if financialjuice_public_summary is not None:
+            result = financialjuice_public_summary(dict(row))
+        else:
+            result = summary_contract_status(dict(row))
+    except (TypeError, ValueError, RuntimeError):
+        return False
+    return isinstance(result, Mapping) and str(result.get("status") or "").casefold() == "ready"
 
 
 def _candidate_diagnostics(
@@ -142,6 +165,11 @@ def _candidate_diagnostics(
             if already_observed:
                 counts["duplicate_fact"] += 1
             if importance >= FJ_VENDOR_PRIORITY_THRESHOLD:
+                counts["priority_candidate_detected"] += 1
+            if not _summary_ready(row):
+                counts["summary_semantics_incomplete"] += 1
+                continue
+            if importance >= FJ_VENDOR_PRIORITY_THRESHOLD:
                 counts["priority_event_eligible"] += 1
             counts["new_event_eligible"] += 1
             batch_fact_keys.add(fact_key)
@@ -151,7 +179,7 @@ def _candidate_diagnostics(
         "stale_source_event", "missing_source_time", "invalid_source_time",
         "incomplete_parse", "duplicate_fact", "future_source_time",
         "below_notification_gate", "below_priority_gate", "manual_replay",
-        "downstream_dispatch_failure",
+        "summary_semantics_incomplete", "downstream_dispatch_failure",
     )
     primary = next((key for key in priority if counts[key]), "")
     return {"counts": counts, "primary_reason": primary}
