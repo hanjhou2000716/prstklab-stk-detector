@@ -8,6 +8,17 @@ const signedPercent = (value) => value === null || value === undefined ? "—" :
 const marketName = (key) => key === "taiwan" ? "台股" : key === "us" ? "美股" : key;
 const PUBLIC_TEXT_MAX_CHARS = 60;
 const PUBLISHABLE_RELEASE_STATUSES = new Set(["ready", "ready_with_quarantine"]);
+const performanceMark = (name) => {
+  try { window.performance?.mark?.(`prstk:${name}`); } catch (_) { /* metrics are non-critical */ }
+};
+const recordLoadMetric = (name, value) => {
+  try {
+    const key = "prstk.loadMetrics.v1";
+    const rows = JSON.parse(window.localStorage?.getItem(key) || "[]");
+    rows.push({ name, value: Math.round(Number(value) || 0), at: new Date().toISOString() });
+    window.localStorage?.setItem(key, JSON.stringify(rows.slice(-40)));
+  } catch (_) { /* metrics are best effort and contain no user identity */ }
+};
 
 const quoteMovement = (rawValue) => {
   if (rawValue === null || rawValue === undefined || rawValue === "" || typeof rawValue === "boolean"
@@ -1987,8 +1998,19 @@ const render = (snapshot, { deferAlert = false } = {}) => {
 // Telegram buttons carry the release and alert identity.  Resolve that
 // identity only after the manifest/hash boundary has succeeded; never fall
 // back to an unrelated current event when a deep link is stale or unknown.
+const ensureAlertIndex = async (snapshot) => {
+  if (Array.isArray(snapshot?.alert_index?.alerts) && snapshot.alert_index.alerts.length) return snapshot.alert_index;
+  const manifest = window.releaseManifest;
+  if (!manifest?.artifact_hashes?.["alert-index.json"]) throw new Error("immutable alert index is not available");
+  const text = await loadVerifiedArtifactText(manifest, "alert-index.json", { timeoutMs: 8000 });
+  const index = JSON.parse(text);
+  if (!Array.isArray(index.alerts)) throw new Error("alert index is invalid");
+  snapshot.alert_index = index;
+  return index;
+};
+
 const loadArchivedAlert = async (snapshot, notificationId, releaseId, snapshotId, observationId) => {
-  const index = snapshot?.alert_index;
+  const index = await ensureAlertIndex(snapshot);
   const rows = Array.isArray(index?.alerts) ? index.alerts : [];
   const row = rows.find((item) => String(item?.notification_id || "") === notificationId && String(item?.release_id || "") === releaseId);
   if (!row || !row.path || !row.sha256) throw new Error("immutable alert artifact is not indexed");
@@ -2176,20 +2198,30 @@ const applyDeepLink = async (snapshot) => {
 // The manifest is the release boundary.  Fetching an artifact directly could
 // otherwise combine a new market file with an older research/event file when
 // GitHub Pages or Telegram's WebView serves different cache generations.
-const cacheBust = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
-const fetchResponseWithRetry = (url, attempt = 0) => fetch(`${url}${url.includes("?") ? "&" : "?"}v=${cacheBust()}`, {
-  cache: "no-store",
-  headers: { "Cache-Control": "no-cache" },
-}).then((response) => {
-  if (response.ok) return response;
-  throw new Error(`HTTP ${response.status}`);
-}).catch((error) => {
-  if (attempt < 2) return sleep(250 * (attempt + 1)).then(() => fetchResponseWithRetry(url, attempt + 1));
-  throw new Error(`artifact unavailable: ${url} (${error.message})`);
-});
+const fetchResponseWithRetry = (url, options = {}, attempt = 0) => {
+  const revalidate = options.revalidate === true;
+  const timeoutMs = Number(options.timeoutMs || (revalidate ? 8000 : 12000));
+  const controller = typeof AbortController === "function" ? new AbortController() : null;
+  const timer = controller ? window.setTimeout(() => controller.abort(), timeoutMs) : null;
+  const headers = revalidate ? { "Cache-Control": "no-cache", Accept: "application/json" } : { Accept: "application/json" };
+  return fetch(url, {
+    cache: revalidate ? "no-cache" : "default",
+    headers,
+    signal: controller?.signal,
+  }).then((response) => {
+    if (response.ok) return response;
+    throw new Error(`HTTP ${response.status}`);
+  }).catch((error) => {
+    if (attempt < 2) return sleep(200 * (attempt + 1)).then(() => fetchResponseWithRetry(url, options, attempt + 1));
+    throw new Error(`artifact unavailable: ${url} (${error.name === "AbortError" ? "timeout" : error.message})`);
+  }).finally(() => {
+    if (timer) window.clearTimeout(timer);
+  });
+};
 
 const fetchJson = (url) => fetchResponseWithRetry(url).then((response) => response.json());
+const fetchJsonWithOptions = (url, options = {}) => fetchResponseWithRetry(url, options).then((response) => response.json());
 
 const sha256Hex = async (text) => {
   if (!window.crypto?.subtle) throw new Error("integrity verification unavailable");
@@ -2229,14 +2261,69 @@ const saveLastGoodRelease = (manifest, artifactTexts) => {
   }
 };
 
+const LAST_GOOD_BOOTSTRAP_KEY = "prstk.lastGoodBootstrap.v1";
+
+const safeArtifactPath = (manifest, name) => {
+  const paths = manifest?.artifact_paths || {};
+  const relativePath = String(paths[name] || "");
+  if (!relativePath || relativePath.startsWith("/") || relativePath.includes("..")) {
+    throw new Error(`invalid artifact path: ${name}`);
+  }
+  return `data/${relativePath.replace(/^data\//, "")}`;
+};
+
+const loadVerifiedArtifactText = async (manifest, name, options = {}) => {
+  const hashes = manifest?.artifact_hashes || {};
+  const expectedHash = String(hashes[name] || "");
+  if (!expectedHash) throw new Error(`artifact hash missing: ${name}`);
+  const response = await fetchResponseWithRetry(safeArtifactPath(manifest, name), options);
+  const text = await response.text();
+  if (await sha256Hex(text) !== expectedHash) throw new Error(`artifact hash mismatch: ${name}`);
+  return text;
+};
+
+const saveLastGoodBootstrap = (manifest, bootstrapText) => {
+  try {
+    localStorage.setItem(LAST_GOOD_BOOTSTRAP_KEY, JSON.stringify({
+      manifest,
+      bootstrapText,
+      saved_at: new Date().toISOString(),
+    }));
+  } catch (_error) {
+    // Private mode or quota exhaustion must not block the network release.
+  }
+};
+
+const readLastGoodBootstrap = async () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LAST_GOOD_BOOTSTRAP_KEY) || "null");
+    const manifest = saved?.manifest;
+    const text = saved?.bootstrapText;
+    if (!manifest || !PUBLISHABLE_RELEASE_STATUSES.has(manifest.status) || !manifest.release_id || typeof text !== "string") return null;
+    const expectedHash = String(manifest.artifact_hashes?.["bootstrap.json"] || "");
+    if (!expectedHash || await sha256Hex(text) !== expectedHash) return null;
+    const bootstrap = JSON.parse(text);
+    if (bootstrap.schema_version !== "1.0" || String(bootstrap.release_id || "") !== String(manifest.release_id)) return null;
+    if (String(bootstrap.snapshot_id || "") !== String(manifest.market_snapshot_id || "")) return null;
+    return { manifest, bootstrap, saved_at: saved.saved_at };
+  } catch (_error) {
+    return null;
+  }
+};
+
 const readLastGoodRelease = async () => {
   try {
     const saved = JSON.parse(localStorage.getItem(LAST_GOOD_RELEASE_KEY) || "null");
     if (!saved?.manifest || !PUBLISHABLE_RELEASE_STATUSES.has(saved.manifest.status) || !saved.manifest.release_id) return null;
     if (!saved.artifactTexts?.["market.json"]) return null;
-    for (const [name, expectedHash] of Object.entries(saved.manifest.artifact_hashes || {})) {
-      const text = saved.artifactTexts[name];
-      if (typeof text !== "string" || await sha256Hex(text) !== String(expectedHash)) return null;
+    for (const [name, text] of Object.entries(saved.artifactTexts)) {
+      const expectedHash = saved.manifest.artifact_hashes?.[name];
+      if (!expectedHash || typeof text !== "string" || await sha256Hex(text) !== String(expectedHash)) return null;
+    }
+    const requiredNames = ["market.json", "research-report.json", "event-ledger.json"]
+      .filter((name) => name === "market.json" || Object.prototype.hasOwnProperty.call(saved.manifest.artifact_hashes || {}, name));
+    for (const required of requiredNames) {
+      if (typeof saved.artifactTexts[required] !== "string") return null;
     }
     const snapshot = JSON.parse(saved.artifactTexts["market.json"]);
     if (String(snapshot.snapshot_id || "") !== String(saved.manifest.market_snapshot_id || "")) return null;
@@ -2283,8 +2370,60 @@ const readLastGoodRelease = async () => {
   }
 };
 
-const loadPublishedRelease = async () => {
-  const manifest = await fetchJson("data/release-manifest.json");
+const loadFullRelease = async (manifest, { includeImmutableAlerts = false } = {}) => {
+  const hashes = manifest.artifact_hashes || {};
+  const names = Object.keys(hashes).filter((name) => includeImmutableAlerts || !name.startsWith("alerts/"));
+  const artifactEntries = await Promise.all(names.map(async (name) => [
+    name,
+    await loadVerifiedArtifactText(manifest, name),
+  ]));
+  const artifactTexts = Object.fromEntries(artifactEntries);
+  const marketText = artifactTexts["market.json"];
+  if (!marketText) throw new Error("market artifact missing from release");
+  const snapshot = JSON.parse(marketText);
+  if (String(snapshot.snapshot_id || "") !== String(manifest.market_snapshot_id || "")) {
+    throw new Error("market snapshot does not match release");
+  }
+  const researchText = artifactTexts["research-report.json"];
+  if (manifest.research_snapshot_id && researchText) {
+    const research = JSON.parse(researchText);
+    if (String(research.snapshot_id || "") !== String(manifest.research_snapshot_id)) throw new Error("research snapshot does not match release");
+    snapshot.research_report = research;
+  } else if (researchText) snapshot.research_report = JSON.parse(researchText);
+  const eventText = artifactTexts["event-ledger.json"];
+  if (manifest.event_snapshot_id && eventText) {
+    const events = JSON.parse(eventText);
+    if (String(events.snapshot_id || "") !== String(manifest.event_snapshot_id)) throw new Error("event snapshot does not match release");
+  }
+  const newsText = artifactTexts["news.json"];
+  if (newsText) {
+    const news = JSON.parse(newsText);
+    if (String(news.market_snapshot_id || "") !== String(manifest.market_snapshot_id || "")) throw new Error("news market snapshot does not match release");
+    if (manifest.news_snapshot_id && String(news.snapshot_id || "") !== String(manifest.news_snapshot_id)) throw new Error("news snapshot does not match release");
+    snapshot.news = news;
+  }
+  const creatorText = artifactTexts["creator-release.json"];
+  if (creatorText) snapshot.creator_release = JSON.parse(creatorText);
+  const creatorPublicText = artifactTexts["creator-insights.json"];
+  if (creatorPublicText) snapshot.creator_public_artifact = JSON.parse(creatorPublicText);
+  const healthText = artifactTexts["source-health.json"];
+  if (healthText) {
+    const healthEnvelope = JSON.parse(healthText);
+    if (String(healthEnvelope.market_snapshot_id || "") !== String(manifest.market_snapshot_id || "")) throw new Error("source-health snapshot does not match release");
+    if (!healthEnvelope.source_health || !Array.isArray(healthEnvelope.source_health.sources)) throw new Error("source-health artifact is invalid");
+    snapshot.source_health = healthEnvelope.source_health;
+  }
+  const alertIndexText = artifactTexts["alert-index.json"];
+  if (alertIndexText) {
+    const alertIndex = JSON.parse(alertIndexText);
+    if (!Array.isArray(alertIndex.alerts)) throw new Error("alert index is invalid");
+    snapshot.alert_index = alertIndex;
+  }
+  saveLastGoodRelease(manifest, artifactTexts);
+  return snapshot;
+};
+
+const loadLegacyPublishedRelease = async (manifest) => {
   if (!manifest || !PUBLISHABLE_RELEASE_STATUSES.has(manifest.status) || !manifest.release_id) {
     throw new Error("published release is incomplete");
   }
@@ -2397,18 +2536,85 @@ const loadPublishedRelease = async () => {
   return snapshot;
 };
 
-loadPublishedRelease()
-  .then((snapshot) => {
-    const hasAlertDeepLink = Boolean(new URLSearchParams(window.location.search).get("alert"));
-    render(snapshot, { deferAlert: hasAlertDeepLink });
-    applyDeepLink(snapshot).catch((error) => {
-      if (hasAlertDeepLink) renderDeepLinkUnavailable(snapshot);
-      setReleaseHealth(`訊息連結載入失敗；已安全停止（${error.message}）。`, "error");
-    });
-    // Healthy is the normal state; keep engineering metadata out of the hero.
-    setReleaseHealth("", "ready");
-  })
-  .catch(async (error) => {
+const loadPublishedRelease = async () => {
+  const manifest = await fetchJsonWithOptions("data/release-manifest.json", { revalidate: true, timeoutMs: 8000 });
+  performanceMark("manifest-verified");
+  if (!manifest || !PUBLISHABLE_RELEASE_STATUSES.has(manifest.status) || !manifest.release_id) {
+    throw new Error("published release is incomplete");
+  }
+  const bootstrapName = Array.isArray(manifest.bootstrap_artifacts) && manifest.bootstrap_artifacts.includes("bootstrap.json")
+    ? "bootstrap.json" : "";
+  if (!bootstrapName) {
+    return { manifest, snapshot: await loadLegacyPublishedRelease(manifest), legacy: true };
+  }
+  const bootstrapText = await loadVerifiedArtifactText(manifest, bootstrapName, { timeoutMs: 8000 });
+  performanceMark("bootstrap-verified");
+  const bootstrap = JSON.parse(bootstrapText);
+  if (bootstrap.schema_version !== "1.0" || String(bootstrap.release_id || "") !== String(manifest.release_id)) {
+    throw new Error("bootstrap release identity mismatch");
+  }
+  if (String(bootstrap.snapshot_id || "") !== String(manifest.market_snapshot_id || "")) {
+    throw new Error("bootstrap snapshot does not match release");
+  }
+  const maxBytes = Number(manifest.bootstrap_contract?.max_bytes || 150 * 1024);
+  if (new TextEncoder().encode(bootstrapText).byteLength > maxBytes) throw new Error("bootstrap artifact exceeds performance budget");
+  saveLastGoodBootstrap(manifest, bootstrapText);
+  window.releaseManifest = manifest;
+  return {
+    manifest,
+    snapshot: bootstrap,
+    legacy: false,
+    deferred: loadFullRelease(manifest).then((snapshot) => {
+      performanceMark("full-release-verified");
+      return { snapshot };
+    }).catch((error) => ({ error })),
+  };
+};
+
+const renderLoadedSnapshot = async (snapshot, { historical = false } = {}) => {
+  const hasAlertDeepLink = Boolean(new URLSearchParams(window.location.search).get("alert"));
+  render(snapshot, { deferAlert: hasAlertDeepLink });
+  performanceMark(hasAlertDeepLink ? "alert-shell-rendered" : "bootstrap-rendered");
+  const navigationStart = window.performance?.timeOrigin || Date.now();
+  recordLoadMetric(hasAlertDeepLink ? "alert-shell" : "bootstrap", Date.now() - navigationStart);
+  if (hasAlertDeepLink) await applyDeepLink(snapshot);
+  if (hasAlertDeepLink) performanceMark("alert-rendered");
+  if (!historical) setReleaseHealth("", "ready");
+};
+
+const startPublishedRelease = async () => {
+  // Local storage is only used after a previous SHA-256 verification.  It is
+  // a fast paint source, never a notification-eligibility or delivery source.
+  const cached = await readLastGoodBootstrap();
+  let cachedRendered = false;
+  if (cached) {
+    window.releaseManifest = cached.manifest;
+    await renderLoadedSnapshot(cached.bootstrap);
+    cachedRendered = true;
+    const savedAt = cached.saved_at ? new Date(cached.saved_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "未知";
+    setText("data-status", "已驗證快取");
+    setReleaseHealth(`已顯示最後驗證版本（${savedAt}）；正在核對最新資料。`, "degraded");
+  }
+  try {
+    const loaded = await loadPublishedRelease();
+    // A cached release remains visible while the manifest is checked.  Avoid
+    // replacing it with the same bytes and causing a visible layout flash.
+    if (!cachedRendered || String(loaded.manifest.release_id) !== String(cached?.manifest?.release_id || "")) {
+      await renderLoadedSnapshot(loaded.snapshot);
+    }
+    if (loaded.deferred) {
+      const completed = await loaded.deferred;
+      if (completed.error) {
+        setReleaseHealth(`首屏已載入；其餘資料背景更新失敗（${completed.error.message}）。`, "degraded");
+        return;
+      }
+      await renderLoadedSnapshot(completed.snapshot);
+    }
+  } catch (error) {
+    if (cachedRendered) {
+      setReleaseHealth("目前沿用最後驗證版本；最新資料暫時無法取得。", "degraded");
+      return;
+    }
     const saved = await readLastGoodRelease();
     if (saved) {
       window.releaseManifest = saved.manifest;
@@ -2423,4 +2629,7 @@ loadPublishedRelease()
     setText("data-status", "來源失敗");
     setText("market-focus", "本輪資料無法取得，暫不判斷市場風險。");
     setReleaseHealth(`發布資料不完整｜${error.message}｜目前不可觸發高風險快訊`, "error");
-  });
+  }
+};
+
+startPublishedRelease();

@@ -162,6 +162,9 @@ jobs:
             --manifest "$MANIFEST_PATH" \
             --expected-snapshot-id "${{ steps.status.outputs.snapshot_id }}" \
             --public-url "${{ steps.deployment.outputs.page_url }}" \
+            --expected-notification-id "${{ steps.status.outputs.notification_id }}" \
+            --expected-alert-snapshot-id "${{ steps.status.outputs.snapshot_id }}" \
+            --expected-alert-observation-id "${{ steps.status.outputs.observation_id }}" \
             --public-attempts 12 \
             --public-delay 5 \
             >> "$GITHUB_OUTPUT"
