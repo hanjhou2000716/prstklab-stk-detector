@@ -1,37 +1,37 @@
 # PRStK Investment System
 
-> 文件版本：2026-09-01｜本文件以 `main` 分支目前實際程式碼與 GitHub Actions 設定為準。
+> 文件版本：2026-09-20｜本文件只描述已由 repository、workflow、部署契約或正式 evidence 支持的能力。`IMPLEMENTED`、`TESTED`、`MERGED`、`DEPLOYED` 與 `PRODUCTION VERIFIED` 分開記錄；合併不等於部署，部署不等於正式驗收。完整對帳見 [`docs/README_TRUTH_RECONCILIATION.md`](docs/README_TRUTH_RECONCILIATION.md)。
 
 PRStK 是部署於 GitHub 的公開市場資訊整理、風險監測與量化研究系統。它以繁體中文產生 Apple Watch 友善的 Telegram 快報，並以 GitHub Pages 提供 Telegram Mini App 儀表板。
 
 > 僅整理公開或已授權資料、模型研究及教育性風險觀察，不構成投資建議。本系統不讀取券商、銀行、錢包或其他私人帳戶，不要求密碼、OTP 或憑證，亦不會自動交易。
 
-## 最近交付與驗收狀態（2026-09-01）
+## 最近交付與驗收狀態（2026-09-20）
 
 本版本已把即時通知、來源品質、發布安全與公開頁面驗收串回同一條
 lineage；以下狀態以目前 `main` 的程式與 Actions evidence 為準：
 
 | 交付 | 狀態 | 可追溯內容 |
 |---|---|---|
-| 即時價格／新聞／FinancialJuice 通知 lane | 已整合 | watchlist 門檻、provider funnel、canonical 風險與 Alert Budget 共用同一條事件流程 |
+| 即時價格／新聞／FinancialJuice 通知 lane | 已整合／分別驗證 | watchlist 門檻、provider funnel、canonical 風險與 Alert Budget 共用同一條事件流程；FJ高分恢復仍須以事件級receipt驗收 |
 | Telegram 文字與圖卡安全 | 已整合 | release gate、單一訊息、逐收件人 retry、renderer 失敗即停止送圖；不寄黑色 placeholder |
-| Pages／Mini App 公開版本 | 已驗收 | `ready` manifest、7/7 artifact hash、一致的 market／research／event snapshot，以及美股新聞頁與 release-bound deep link |
-| Cloudflare Worker／Supabase 零成本路徑 | canary 可用 | Worker health 與 Supabase contract 已驗證；Railway 仍保留為可選 rollback |
-| Gmail Watch 持久化 | canary 已驗證 | OAuth／Pub/Sub 設定已以加密 GitHub Secrets 保存；Supabase Watch 續期與跨 runner restart continuity 已驗證，Railway 僅保留為可選 rollback |
+| Pages／Mini App 公開版本 | 已部署（目前公開版本早於最新 main） | `ready` manifest、bootstrap、artifact hash、market／research／event snapshot與release-bound deep link；目前公開SHA為 PR #990版本，PR #991尚待部署 |
+| Cloudflare Worker／Supabase 零成本路徑 | canary／待外部驗證 | Worker health與Supabase contract已存在；未取得primary切換證據前，Railway仍是可選rollback |
+| Gmail Watch 持久化 | canary／同步路徑已測試 | OAuth／Pub/Sub設定以加密GitHub Secrets保存；PR #991新增的FJ事件級持久追蹤已合併，但migration與自然事件投遞仍待正式驗證 |
 
 公開頁面的檢查結果、release ID、snapshot ID 與 hash 會記錄在
 [`docs/evidence/postmerge-acceptance-2026-09-01.json`](docs/evidence/postmerge-acceptance-2026-09-01.json)。
-這份 evidence 不包含 Bot token、OAuth secret、refresh token 或原始收件人識別碼。
+這份 evidence 不包含 Bot token、OAuth secret、refresh token 或原始收件人識別碼。PR #991的migration套用、無通知重播及自然高分事件receipt另需新的正式證據，不由舊版Pages驗收推論。
 
 ## 服務範圍
 
-- **Telegram 快報**：固定報告與符合門檻的速報；公開文字保留依風險等級選出的彩色圓點與人類可讀狀態，不顯示內部 `R0`～`R4` 代碼，caption 限制 40 字內，並附對應 Mini App deep link 按鈕。原始風險等級仍保留在回執與稽核資料。
+- **Telegram 快報**：固定報告與符合門檻的速報；一般公開文字與 FinancialJuice摘要最多 60 字，照片 caption維持40字，不顯示內部 `R0`～`R4` 代碼，並附對應 Mini App deep link 按鈕。原始風險等級仍保留在回執與稽核資料。
 - **Telegram Mini App**：GitHub Pages 儀表板顯示完整市場卡、風控、研究清單、已核對事件與資料時間。
 - **公開市場快照**：台股、日股、韓股、美股、半導體、能源、黃金與加密資產的公開報價、交易日與資料新鮮度。
 - **重大事件流程**：官方一手來源、金十 MCP 授權快訊，及「多來源交叉核對」的探索訊號，皆經去重與市場資料核對才可能推播。
 - **研究選股**：台美股的動能狙擊、三維共振、裸 K 結構與獨立璞玉價值池；結果僅是可重現的研究排序。
 - **台股 Macro FGI**：以公開日資料計算台股市場情緒的五因子百分位模型。
-- **可靠性機制**：GitHub Actions 主排程、cron-job.org Repository Dispatch 備援、推播去重、來源失敗隔離、Telegram 逐一送達重試。
+- **可靠性機制**：GitHub Actions 主排程、cron-job.org Repository Dispatch 備援、FJ事件級持久追蹤、推播去重、來源失敗隔離、Telegram逐一送達重試與recipient receipt。
 
 ## 這次整體增加了什麼
 
@@ -50,6 +50,10 @@ Pages／Worker／Telegram evidence 才能宣稱正式生產完成。
 | Creator／財經內容 | Gmail Watch／Pub/Sub ingress、Creator 內容解析、FinancialJuice compound parser 與 vendor importance 優先級 | `railway-monitor/gmail_watch.py`、`src/financialjuice_*`、`src/external_*`；來源分數不改寫 PRStK risk，原始郵件不進公開頁面 |
 | 發布安全 | release manifest、snapshot／artifact hash、schema validation、data-release、Pages release gate、last-known-good rollback | `src/release_gate.py`、`src/pages_release.py`、`.github/workflows/`；invalid／hash mismatch 不覆蓋公開版本 |
 | Telegram 送達 | canonical text contract、Mini App deep link、Alert Budget、事件／投資主題去重、2 小時 material-state re-alert、逐收件人 retry、429 backoff、delivery receipt | `src/telegram_client.py`、`src/event_ledger.py`、`src/delivery_callback.py`；公開訊息只顯示彩色提示與事件摘要，不輸出 R0–R4 或原始 Chat ID |
+| FJ高分事件恢復 | 事件級 `priority_event_refs`、摘要與投遞生命週期、游標後獨立重試 | `railway-monitor/email_store.py`、`src/official_event_monitor.py`、`supabase/migrations/202609200001_financialjuice_priority_delivery.sql`；已合併／測試，正式migration與自然事件receipt待驗 |
+| Mini App快速首屏 | bootstrap、Deep Link指定警報、hash／release identity驗證、延後載入 | `src/bootstrap_release.py`、`site/app.js`、`src/release_gate.py`；bootstrap上限150KB，延後資料不得阻塞指定通知 |
+| 原生市場速報 | 官方／價格門檻候選與事件級去重 | `src/event_alerts.py`、`src/event_alert_policy.py`、`src/official_event_monitor.py`；已實作與測試，不保證每日固定訊息數 |
+| 市場資料備援 | 官方來源、交易日與Supabase最後有效觀測 | `src/market_backup.py`、`supabase/migrations/202609170001_market_observation_backup.sql`；正式migration與來源恢復證據依環境另驗 |
 | 零成本替代 | Cloudflare Worker、Supabase job／report／receipt contract、GitHub Actions worker；Railway 保留為 rollback | `worker/`、`supabase/`、`docs/zero-cost-production-migration.md`；正式切換仍以外部 canary evidence 為準 |
 
 ### 我們可以一起補強的地方
@@ -72,7 +76,7 @@ Pages／Worker／Telegram evidence 才能宣稱正式生產完成。
 Telegram dry-run；外部服務未提供證據時，README 只標示「待驗證」，不把離線測試寫成
 正式生產驗收。
 
-## 目前功能總覽（2026-09-01）
+## 目前功能總覽（2026-09-20）
 
 這一節是系統能力的導覽，不把「程式已存在」誤寫成「外部服務已驗收」。凡是需要 Supabase、Cloudflare、GitHub Pages 或 Telegram 帳號設定的項目，仍以部署後的 release／delivery evidence 為準。
 
@@ -92,7 +96,8 @@ Telegram dry-run；外部服務未提供證據時，README 只標示「待驗證
 
 | 介面 | 公開呈現 | 不應期待的內容 |
 |---|---|---|
-| Telegram 文字 | 彩色圓點、事件／市場／狀態、最多 40 字、對應按鈕 | 不顯示內部 `R0`～`R4` 代碼；不顯示未核對方向或虛構百分比 |
+| Telegram 文字 | 彩色圓點、事件／市場／狀態；一般文字與FJ摘要最多60字 | 不顯示內部 `R0`～`R4` 代碼；不顯示未核對方向或虛構百分比 |
+| Telegram 圖片 caption | 既有照片路徑最多40字 | 不把照片caption限制誤套到一般文字或FJ摘要 |
 | Telegram 圖卡 | 僅限通過 renderer 與 release gate 的指定照片路徑；caption 與按鈕指向同一事件 | renderer 失敗時停止送圖，不寄出黑色／單色 placeholder |
 | Mini App | 完整事件脈絡、來源 URL、published／fetched time、freshness、release lineage、事件時間線與研究狀態 | 不把來源失敗當成「本輪無事件」，不混用新舊 release；公開分析欄位可保留內部風險等級供稽核 |
 | `/health`、delivery receipt | source health、classification、trace、成功／失敗數、重試與錯誤類型 | 不回傳 Bot token、原始 Chat ID 或其他 Secret |
@@ -109,12 +114,12 @@ Telegram dry-run；外部服務未提供證據時，README 只標示「待驗證
 - **報價與來源可追溯**：市場卡保留來源、報價／抓取時間、盤中或最近收盤、交叉核對狀態；逾時資料仍可顯示，但必須標示「最近收盤」，不可被價格警報使用。
 - **Telegram 顯示與內部稽核分層**：所有非 Creator 文字通知在送出邊界移除內部 `R0`～`R4` 顯示，只保留彩色圓點、主題與 evidence-grounded 摘要；同一投資主題在兩小時內只於 material state change 時重發。原始等級、suppression reason 與 supporting sources 仍寫入 EventLedger、delivery receipt、release lineage 與 Mini App 稽核欄位。
 - **零成本路徑可回滾**：Cloudflare Worker／Pages、Supabase job contract、Gmail Watch renewal 與 GitHub Actions worker 已有正式契約與離線驗證；在外部 canary 證據完整前，Railway 不刪除且維持可選 rollback。
-- **頁尾與 Mini App 入口**：頁尾為 `@2026 PRStK Lab & D.INV | All right reserved.`；Telegram 快報按鈕為「📡 開啟稜量速報系統」，固定選單為「稜量系統」。
+- **頁尾與 Mini App 入口**：頁尾為 `@2026 PRStK Lab & D.INV | All right reserved.`；目前程式與首頁品牌使用 `D.iNV Detector`。Telegram inline按鈕為 `📡 D.iNV Detector`；固定選單仍須以實際Telegram設定與驗收證據為準，不把舊版「稜量系統」文字寫成已更新。
 
 ## 一頁式使用流程
 
-1. **先看 Telegram 短訊息**：只把「彩色圓點＋主題｜發生的新資訊」送到手錶／手機（文字最多 40 字、圖卡 caption 最多 40 字）；完整風險等級、去重決策與證據留在回執、圖卡與 Mini App。
-2. **點擊 `📡 開啟稜量速報系統`**：在 Telegram 內開啟 GitHub Pages Mini App，閱讀四段事件脈絡、來源 URL、交叉核對時間、研究候選與資料健康度。
+1. **先看 Telegram 短訊息**：一般文字與FJ摘要最多60字；照片caption最多40字。內容只保留「彩色圓點＋主題｜發生的新資訊」，完整風險等級、去重決策與證據留在回執、圖卡與 Mini App。
+2. **點擊 `📡 D.iNV Detector`**：在 Telegram 內開啟GitHub Pages Mini App，閱讀四段事件脈絡、來源 URL、交叉核對時間、研究候選與資料健康度。指定Deep Link只載入該事件必要檔案，其他大型資料延後載入。
 3. **先看來源健康狀態**：區分「本輪無重大事件」與「部分來源失敗」；看到資料缺口時，不把空白或舊候選解讀成市場沒有訊號。
 4. **再看市場脈動**：先看台指／台積電與全球指數，再看 TPEx、日韓、Nasdaq、費半、BTC／ETH 等卡片的來源與新鮮度。
 5. **最後看研究**：在台股／美股切換後展開四個策略抽屜。不同策略分數不可互比，也不是買賣建議。
@@ -133,11 +138,16 @@ flowchart LR
   D --> H[事件去重、時效與市場快照核對]
   B --> I[site/data JSON]
   H --> I
-  I --> J[GitHub Pages / Telegram Mini App]
-  H --> K[Telegram 40 字 caption + 圖卡]
+  I --> R[release manifest、snapshot、artifact hash]
+  R --> J[GitHub Pages / Telegram Mini App]
+  R --> S[bootstrap + Deep Link指定警報]
+  H --> K[Telegram 60 字文字／40 字照片 caption + 圖卡]
   B --> K
   L[cron-job.org] -->|備援 dispatch| B
   L -->|備援 dispatch| D
+  M[Gmail高分事件] --> N[priority_event_refs / pending lifecycle]
+  N --> D
+  S --> K
 ```
 
 ## 資料更新、掃描與推播時間
@@ -149,13 +159,13 @@ flowchart LR
 | 晨報 | 工作日 06:00 | 隔夜市場、總經／風險脈絡與代表標的公開快照 |
 | 台股盤前 | 工作日 08:45 | 依台股開盤前最新證據檢視台指／台股盤勢與其連動市場 |
 | 台股盤後 | 工作日 14:20 | 依官方收盤資料檢視台股盤面與其連動市場 |
-| 全市場量化研究 | 工作日 13:30 | 掃描台美研究母體；工作流程最長容許 55 分鐘 |
+| 全市場量化研究 | 台灣收盤 15:30；美股時段依交易日及UTC排程執行 | 掃描台美研究母體；工作流程最長容許 55 分鐘，實際時段以 `unified-research-report.yml` 及交易日解析為準 |
 | 美股盤前 | 工作日 21:00，全年固定 | 台股回顧、美股盤前與國際風險快照；不因夏令時間改名或移到 22:00 |
 | 官方／價格訊號 | 工作日每 5 分鐘 | 官方事件候選與固定價格門檻；只有符合規則才推播 |
 | 金十 MCP | Railway 預設每 120 秒 | 已授權 `list_flash` 快訊去重與簽章觸發；同一事件統一 30 分鐘冷卻 |
 | GDELT 交叉核對 | Railway 預設每 15 分鐘 | 只作候選線索；需兩個可信媒體網域與同一事件錨點才可觸發 |
 
-市場休市或公開來源未提供新盤中列時，系統保留最近可核對收盤並標示資料日期／狀態；延遲報價不應觸發價格速報。Mini App 是靜態 Pages：它在「資料刷新或事件推播成功後」更新，不會因使用者單純開啟頁面而自行向交易所重新取價。
+市場休市或公開來源未提供新盤中列時，系統保留最近可核對收盤並標示資料日期／狀態；延遲報價不應觸發價格速報。Mini App 是靜態 Pages：它在「資料刷新或事件推播成功後」更新，不會因使用者單純開啟頁面而自行向交易所重新取價。開啟時先讀取已驗證的bootstrap與指定Deep Link，市場明細、新聞、研究及診斷在背景或展開時載入。
 
 ## 重大事件與快訊規則
 
@@ -184,6 +194,42 @@ GDELT 首次成功讀取只建立基線，不補發舊聞；成功快取 15 分�
 工作日 08:45–13:30 的價格速報優先台指／台股盤勢。單一商品或加密資產的日內變動通常只更新 Mini App；只有已核對的重大政策、總經、戰爭或重要公司事件才會取代台股優先訊號進入短訊息。
 
 同一事件以 canonical key、來源 URL 正規化及人物／地點／動作指紋去重；Jin10、GDELT、官方事件與事件帳本統一採 30 分鐘冷卻，只有風險升級或新事實可提前提醒。台指高風險／高波動狀態仍必須有新鮮報價、風險階段跨越或明顯反轉。所有詳細內容採「事件／為何重要／可能連動／股市觀察」四段結構，明示教育性用途，沒有買賣、目標價、進出場或部位指令。
+
+## FinancialJuice 高分事件生命週期
+
+FinancialJuice 是外部快訊來源，不改寫 PRStK 自己的風險等級。重要度 9/10 以上、來源與 canonical identity 有效且摘要完整的事件，才可進入既有獨立投遞政策。
+
+目前正式程式的事件級交接為：
+
+```text
+Gmail cursor
+  -> priority_event_refs
+  -> summary_pending / ready
+  -> delivery_pending
+  -> existing release gate and sender
+  -> recipient receipt
+  -> delivered / expired / contract_failed
+```
+
+規則：
+
+- `priority_event_refs`同時涵蓋摘要ready與摘要pending的合格高分事件；舊版`priority_pending_refs`只作相容讀取。
+- 事件身份只使用canonical fact key與material fact version，不使用郵件ID、摘要措辭或重試時間。
+- 來源時間與30分鐘到期時間不可在重試時刷新；過期事件不補發、不使用`force`。
+- 每筆事件必須逐階段留下收錄、摘要、monitor、release、Pages、sender與receipt結果；其他事件成功不得覆寫FJ結果。
+- recipient receipt是正式投遞去重權威；已成功收件人不得因重跑再次收到同一事件。
+- PR #991已合併並通過離線／CI測試；Supabase migration、production部署與自然高分事件receipt必須另有正式證據，不能由合併或workflow綠燈推論。
+
+## Mini App 啟動與發布契約
+
+Mini App採兩階段載入。首屏只依賴同一個immutable release內的manifest、bootstrap及Deep Link指定警報；完整市場、新聞、研究與系統診斷在背景或使用者展開時載入。
+
+- `bootstrap.json`是版本化首屏投影，最大150KB，保存通知、時間、Priority、必要行情、來源與資料健康摘要。
+- 每個artifact都必須通過release、snapshot與SHA-256驗證；不一致時保留最後有效bootstrap，不顯示未驗證新資料。
+- Deep Link只下載指定事件必要檔案，不預載全部歷史警報。
+- Pages部署完成後，sender仍須通過`click_target_ready`，確認manifest、bootstrap、指定警報與正式SHA一致才可發送。
+- 延後資料失敗不能清空已顯示的通知首屏；核心bootstrap或指定警報缺失時則禁止通知。
+- 正式部署前應使用`notify=false`、`force=false`驗證，確認零新增claim、attempt及receipt。
 
 ## 量化研究策略
 
@@ -319,11 +365,15 @@ Pages，不會為了增加訊息數發送 Telegram。
 | **Refresh market dashboard** | 只想重新抓行情、修正 Mini App 快照 | 否 |
 | **Scheduled market brief** | 測試晨報／台股盤前／台股盤後／美股盤前；僅四個固定錨點 | 測試及正式流程共用同一報別規則 |
 | **Official macro and price monitor** | 立即檢查官方事件與價格門檻 | 只有新事件或新價格級距且通過去重才會送 |
-| **Unified Taiwan-US research report** | 全市場量化掃描；正式排程為工作日 13:30 | 否，會更新研究與行情快照 |
+| **Gmail history sync (Supabase)** | 每5分鐘核對Gmail游標；必要時保存FJ事件級待處理狀態 | 只有`NOTIFY=true`且下游release gate通過才可能送 |
+| **Public release smoke check** | 只驗證公開manifest、artifact、Deep Link與頁面契約 | 否 |
+| **Production acceptance text (single recipient)** | 僅做隔離的單收件人文字驗收 | 會送測試訊息；必須明確指定測試收件人 |
+| **Receipt-only recovery** | 查核或補寫既有送達回執，不重新建立Telegram投遞 | 否 |
+| **Unified Taiwan-US research report** | 台灣收盤排程為15:30台北時間；美股時段依UTC排程與交易日解析 | 否，會更新研究與行情快照 |
 | **Configure Telegram Mini App** | 首次設定或變更 Bot 選單 | 否 |
 | **Four-strategy walk-forward backtest** | 使用 point-in-time 資料驗證策略 | 否，僅產生回測報告 |
 
-建議驗證順序：先跑 `Refresh market dashboard`，確認 `site/data/market.json` 有新的 `updated_at`；再跑研究工作流程，確認研究報表狀態；最後才用 `Scheduled market brief` 的 `notify=false` 驗證產製與決策。`force` 也不能繞過實質變化、排程時效或投遞鎖。
+建議驗證順序：先跑 `Refresh market dashboard`，確認 `site/data/market.json` 有新的 `updated_at`；再跑研究工作流程，確認研究報表狀態；最後用`notify=false`、`force=false`的隔離流程驗證產製與決策。`force`不能繞過實質變化、排程時效、release gate或投遞鎖。
 
 ## 快速驗收指令
 
@@ -348,7 +398,10 @@ python -m src.scheduled_brief --slot pre_open --print-window
 
 本機快報要真的送出，`.env` 需有 `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_IDS`、`DASHBOARD_URL`；研究與行情指令不需要交易帳戶。若只想檢查輸出，先不設定 Token，系統應明確回報「未設定 Telegram」，而不是假裝已送達。
 
-## 第 4～6 階段：事件帳本、行情核對與通知輸出（2026-08）
+## 歷史規格摘要：第 4～6 階段事件、行情與通知（2026-08）
+
+以下內容保留作為歷史契約摘要；目前狀態以前文的能力表、程式與對帳附錄為準，
+詳細設計請依連結文件，不把歷史階段文字當成最新部署證據。
 
 ### 第 4 階段：事件去重與永久帳本
 
@@ -387,7 +440,21 @@ Binance／CoinGecko、油價／黃金 Yahoo／EIA 或公開市場來源、VIX Ya
 7. **成分股與財務資料的新鮮度（中）**：0050／0051／VOO 成分與財報發布存在更新週期、欄位缺漏或網站結構變化。建議保存每次母體快照、申報期、資料覆蓋率與缺失名單，避免把資料不足誤解為不符合價值條件。
 8. **首輪基線與狀態持久化（已完成第一版）**：官方與探索來源仍會建立首輪基線避免舊聞洗版；事件帳本現在可提交到 GitHub 快照，Railway 可用持久化 Volume 保存，Actions Cache 僅作短期備援。
 9. **Telegram 送達稽核（中）**：目前能隔離單一收件人失敗，但尚無可讀的日／週送達率、重試次數與未啟動名單摘要。建議增加不含個人內容的送達健康報告。
-10. **Mini App 更新模式（中）**：Pages 是靜態部署，開啟頁面不會即時拉行情。若未來需要「開啟即刷新」，需另建不含私密憑證的後端快照 API、CORS／快取策略與資料延遲保護，而不是讓前端直連交易來源。
+10. **Mini App 即時性（中）**：Pages仍是靜態部署，開啟頁面不會直接拉交易所行情；目前已提供release-bound bootstrap與背景延後載入，不能把bootstrap更新速度誤稱為即時行情。若未來需要開啟即刷新，仍需另建不含私密憑證的後端快照API、CORS／快取策略與資料延遲保護。
+
+## 目前能力狀態
+
+| 狀態 | 定義 | 本版本代表 |
+|---|---|---|
+| `IMPLEMENTED` | 程式或設定存在 | 可在repository找到實作 |
+| `TESTED` | 有自動測試或隔離fixture | 不代表外部服務已運作 |
+| `MERGED` | 已進入main | 不代表正式環境已採用 |
+| `DEPLOYED` | 指定SHA已部署到外部服務 | 需有workflow、release或服務證據 |
+| `PRODUCTION VERIFIED` | 以目前版本完成外部驗收 | 需有Pages、receipt或其他可追溯證據 |
+| `EXPERIMENTAL` | canary、optional或尚未完成外部gate | 不得寫成primary |
+| `RETIRED` | 不再是作用中的正式能力 | 相容程式可暫時保留 |
+
+PR #991目前狀態為 `IMPLEMENTED／TESTED／MERGED`。其migration、正式部署、`notify=false`隔離驗收及自然高分事件receipt完成前，不升級為`DEPLOYED`或`PRODUCTION VERIFIED`。
 
 ## 常見狀況排查
 
@@ -413,6 +480,32 @@ Binance／CoinGecko、油價／黃金 Yahoo／EIA 或公開市場來源、VIX Ya
 
 檢查三件事：`TELEGRAM_BOT_TOKEN` 是否仍有效、`TELEGRAM_CHAT_IDS` 是否包含收件人且以逗號／換行正確分隔、每位收件人是否曾按 Bot 的 **Start**。另外，官方事件與價格訊號即使 workflow 成功，也可能因「沒有新事件、未跨過級距、來源未交叉核對或仍在冷卻」而安全跳過推播；完整原因會寫在 workflow log 與 Mini App 事件卡。
 
+### Gmail 有高分 FinancialJuice 但沒有 Telegram
+
+依序查核：
+
+1. Gmail sync 是否有 `priority_event_refs`、canonical identity、摘要狀態與`recovery_status`。
+2. 是否通過`Fail when FJ pending state cannot be saved`；若失敗，先視為持久化／權限／schema問題，不視為Telegram傳輸問題。
+3. Official monitor 是否以相同事件ref載入，而不是只依候選數量或前幾筆候選判斷。
+4. 事件是否處於`summary_pending`、`ready`、`delivery_pending`、`delivered`或`expired`。
+5. release manifest、Pages指定Deep Link及`click_target_ready`是否一致。
+6. 只以recipient receipt判斷正式送達；workflow success、dispatch success或Pages deploy success都不是Telegram送達證據。
+
+若來源仍在30分鐘期限內，交由五分鐘monitor從持久pending集合恢復；過期事件不得刷新時間、不得`force`重送，也不得補發正式收件人。若事件ref遺失、身份矛盾或狀態無法可靠保存，應保留診斷並讓workflow明確失敗，不能顯示成一般`no_event`。
+
+### FJ pending／event ref不一致
+
+這是交接契約問題，不是一般每日額度問題。確認`priority_event_refs`與Supabase
+持久列的canonical key、material version、summary version及來源時間一致；再查
+migration是否已套用且service role可執行必要RPC。若只有舊版`priority_pending_refs`，
+只能走相容讀取與診斷，不能由候選數量授予投遞資格。
+
+### Mini App首屏慢或Deep Link錯誤
+
+先檢查manifest的release／snapshot／hash，再檢查bootstrap是否存在且小於150KB，最後檢查
+指定alert artifact。bootstrap可用時應先顯示已驗證通知；新聞、研究、完整市場明細或來源健康
+失敗不得清空首屏。release身份或hash不一致時保留last-known-good並顯示資料時間，不接受半套新版。
+
 ### Railway 監測器看不到新事件
 
 確認 Service 已部署且 `/health` 可開啟；`jin10`／`gdelt` 需各自顯示最近成功時間與 item count。`JIN10_MCP_TOKEN` 權限、`GITHUB_DISPATCH_TOKEN` 的 repository scope、HMAC 共用密鑰三者任一錯誤，都會只記錄來源失敗，不會繞過 GitHub 驗證。建議在 Railway 掛載 `/data` Volume，讓 SQLite 事件帳本與 GDELT 快取跨重啟保留。
@@ -425,13 +518,15 @@ Binance／CoinGecko、油價／黃金 Yahoo／EIA 或公開市場來源、VIX Ya
 | `src/risk_news.py`、`src/news_intelligence.py`、`src/news_feed_adapters.py` | FGI、VIX、台美新聞、provider funnel、Cnyes／Google／Yahoo／SEC／Fed 分流與來源健康 |
 | `src/event_alerts.py`、`src/official_event_monitor.py` | 價格級距、重大事件四段內容、官方確認與市場同步升級 |
 | `src/event_ledger.py` | canonical key、URL／人物／地點／動作指紋、30 天帳本 |
-| `src/scheduled_brief.py` | 時段解析、台股優先、40 字 caption 與同時段防重複 |
+| `src/scheduled_brief.py` | 時段解析、台股優先、定時報告與同時段防重複 |
 | `src/momentum_*`、`src/taiwan_momentum_scan.py` | 動能狙擊與台股成交額門檻 |
 | `src/resonance_*` | 三維共振與 Smart Money 四項條件排序 |
 | `src/price_action.py` | 四種裸 K 結構與嚴格訂單塊 |
 | `src/pristine_value.py`、`src/mops_history.py`、`src/value_universe.py` | 璞玉價值六項規則、0050＋0051／VOO 母體、MOPS 分批快取 |
 | `src/source_health.py`、`src/research_report.py` | 研究逾時、資料缺口、掃描失敗與「本次無候選」分流 |
-| `src/telegram_client.py`、`src/financialjuice_notification.py` | Telegram 顯示清理、40 字限制、FinancialJuice 來源標記與送達回執 |
+| `src/telegram_client.py`、`src/financialjuice_notification.py` | Telegram顯示清理、一般／FJ文字60字契約、照片caption獨立40字契約、來源標記與送達回執 |
+| `src/bootstrap_release.py`、`src/release_manifest.py`、`src/release_gate.py` | bootstrap、Deep Link artifact、release identity、hash與通知前可用性閘門 |
+| `railway-monitor/email_store.py`、`railway-monitor/supabase_email_store.py` | FJ事件級持久追蹤、狀態轉移與Supabase服務端邊界 |
 | `src/alert_card_renderer.py`、`src/release_gate.py`、`src/pages_release.py` | 1080×1350 圖卡、renderer fail-closed、manifest／hash／Pages 發布閘門 |
 | `worker/src/index.ts`、`supabase/migrations/` | 零成本 job／report API、Gmail Pub/Sub ingress、驗證與 Supabase 持久化契約 |
 | `site/index.html`、`site/app.js`、`site/styles.css` | Telegram Mini App UI、卡片、來源追溯與市場切換 |
@@ -497,7 +592,15 @@ The monitor now connects independently to KOFIA Korea-wide credit financing, Bin
 
 ### Phase 3: GDELT discovery and cross-check gate
 
-The Railway monitor polls the public GDELT DOC endpoint every 15 minutes by default. A successful response is cached for 15 minutes; during a temporary failure or rate limit, the most recent successful cache may be used for up to 120 minutes and is labelled with its original fetch time. Only discovery articles published within the last 45 minutes can enter the current candidate set. Set `GDELT_DISCOVERY_ENABLED=false` to pause this layer without disabling official monitors.
+The Railway monitor polls the public GDELT DOC endpoint every 15 minutes when
+`GDELT_DISCOVERY_ENABLED=true` (the runtime default). A successful response is
+cached for 15 minutes; during a temporary failure or rate limit, the most recent
+successful cache may be used for up to 120 minutes and is labelled with its
+original fetch time. Only discovery articles published within the last 45 minutes
+can enter the current candidate set. The public release provider catalog and the
+Railway runtime health are separate contracts; a public catalog row marked
+disabled must not be described as a production GDELT success. Set
+`GDELT_DISCOVERY_ENABLED=false` to pause this layer without disabling official monitors.
 
 GDELT is never treated as final proof. A candidate must have at least two trusted publisher domains and a shared concrete entity/place/action intersection. Black-swan, war and major-disaster candidates are not dispatched from GDELT alone; they require a matching first-party official source and related-market synchronization. The first successful poll creates a baseline and does not replay historical headlines; the existing SQLite ledger applies event deduplication and the shared 30-minute cooldown.
 GDELT 交叉核對會同時使用可取得的標題與摘要／描述欄位；伊朗／川普談判事件補充 `talks`、`negotiations`、`deadline`、`談判`、`未談妥`、`談判破裂` 等動作別名，避免標題只有「美國與伊朗局勢」而把實際事件內容遺漏。
@@ -692,3 +795,8 @@ complete last-known-good release from local storage, labels the page
 「資料降級」 with its last-success time and disables high-risk interpretation.
 If no verified release is available it distinguishes 「來源失敗」 from a
 normal 「本輪無事件」 result.
+### Documentation truth and release status
+
+README的能力狀態、PR #991 FJ恢復契約、目前Pages版本與正式驗收待辦，集中記錄於
+[README Truth Reconciliation](docs/README_TRUTH_RECONCILIATION.md)。該文件只保存
+安全的版本、狀態與證據索引，不保存郵件全文、地址、Bot token、Chat ID或其他私人資料。
