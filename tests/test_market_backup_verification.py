@@ -35,6 +35,8 @@ class Session:
                 "service_role_market_update", "service_role_state_select", "service_role_state_insert",
                 "service_role_state_update", "purge_public_roles_revoked", "purge_service_role_execute",
                 "fj_delivery_function_exists", "fj_delivery_status_exists",
+                "service_role_canary_function_exists", "service_role_canary_public_roles_revoked",
+                "service_role_canary_execute",
             )
         }
         self.history = [{"version": version} for version in EXPECTED_MIGRATIONS] if history is None else history
@@ -50,6 +52,8 @@ class Session:
 
     def post(self, url, **kwargs):
         self.calls.append(("POST", url, kwargs))
+        if "/rest/v1/rpc/verify_market_backup_canary" in url:
+            return Response({"status": "rolled_back"})
         query = str(kwargs.get("json", {}).get("query") or "")
         if "schema_migrations" in query:
             return Response(self.history)
@@ -77,9 +81,10 @@ def test_verification_returns_safe_statuses_and_uses_read_only_schema_query():
     assert result["canary_cleanup_status"] == "rolled_back"
     assert "pat-value" not in json.dumps(result)
     assert "service-role-value" not in json.dumps(result)
-    query_calls = [call for call in session.calls if call[0] == "POST"]
+    query_calls = [call for call in session.calls if call[0] == "POST" and "/database/query" in call[1]]
     assert query_calls[0][2]["json"]["read_only"] is True
-    assert query_calls[-1][2]["json"]["read_only"] is False
+    assert all(call[2]["json"]["read_only"] is True for call in query_calls)
+    assert any("/rest/v1/rpc/verify_market_backup_canary" in call[1] for call in session.calls)
     assert "rollback to savepoint" in TRANSACTION_SMOKE_QUERY
 
 

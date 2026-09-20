@@ -21,6 +21,7 @@ EXPECTED_MIGRATIONS = (
     "202609180001",
     "202609200001",
     "202609210001",
+    "202609210002",
 )
 
 
@@ -153,13 +154,20 @@ select
     select 1 from information_schema.columns
     where table_schema = 'public' and table_name = 'financialjuice_priority_pending'
       and column_name = 'delivery_status'
-  ) as fj_delivery_status_exists
+  ) as fj_delivery_status_exists,
+  to_regprocedure('public.verify_market_backup_canary()') is not null
+    as service_role_canary_function_exists,
+  not has_function_privilege('anon', 'public.verify_market_backup_canary()', 'EXECUTE')
+    and not has_function_privilege('authenticated', 'public.verify_market_backup_canary()', 'EXECUTE')
+    as service_role_canary_public_roles_revoked,
+  has_function_privilege('service_role', 'public.verify_market_backup_canary()', 'EXECUTE')
+    as service_role_canary_execute
 """
 
 HISTORY_QUERY = """
 select version::text as version
 from supabase_migrations.schema_migrations
-where version in ('202609170001', '202609180001', '202609200001', '202609210001')
+where version in ('202609170001', '202609180001', '202609200001', '202609210001', '202609210002')
 order by version
 """
 
@@ -279,6 +287,34 @@ def _service_role_rest_read(url: str, service_role_key: str, *, session: request
     return True
 
 
+def _service_role_transaction_canary(
+    url: str, service_role_key: str, *, session: requests.Session
+) -> bool:
+    """Run the rollback canary through PostgREST as the actual service_role."""
+    endpoint = f"{url.rstrip('/')}/rest/v1/rpc/verify_market_backup_canary"
+    try:
+        response = session.post(
+            endpoint,
+            headers={
+                "apikey": service_role_key,
+                "Authorization": f"Bearer {service_role_key}",
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            json={},
+            timeout=30,
+        )
+    except requests.RequestException as exc:
+        raise VerificationError(
+            "backup_smoke_failed", failed_checks=("transaction_canary_rpc",)
+        ) from exc
+    if response.status_code in {401, 403} or not response.ok:
+        raise VerificationError(
+            "backup_smoke_failed", failed_checks=("transaction_canary_rpc",)
+        )
+    return True
+
+
 def verify_market_backup(
     *, project_ref: str, access_token: str, supabase_url: str, service_role_key: str,
     session: requests.Session | None = None,
@@ -332,20 +368,7 @@ def verify_market_backup(
 
     http_session = session or requests.Session()
     _service_role_rest_read(supabase_url, service_role_key, session=http_session)
-    transaction_stages = (
-        ("transaction_role", TRANSACTION_ROLE_QUERY),
-        ("transaction_market_observation", TRANSACTION_MARKET_QUERY),
-        ("transaction_market_source_state", TRANSACTION_STATE_QUERY),
-        ("transaction_canary", TRANSACTION_SMOKE_QUERY),
-    )
-    for stage, query in transaction_stages:
-        try:
-            client.query(query, read_only=False)
-        except VerificationError as exc:
-            raise VerificationError(
-                "backup_smoke_failed",
-                failed_checks=(stage,),
-            ) from exc
+    _service_role_transaction_canary(supabase_url, service_role_key, session=http_session)
     verified_at = datetime.now(UTC).isoformat()
     return {
         "migration_status": "verified",
