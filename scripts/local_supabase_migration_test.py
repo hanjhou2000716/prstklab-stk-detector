@@ -225,7 +225,8 @@ def run(repo_root: Path) -> dict[str, Any]:
         root = Path(raw_dir)
         _check([cli, "init", "--force"], root)
         target = root / "supabase" / "migrations"
-        shutil.rmtree(target)
+        if target.exists():
+            shutil.rmtree(target)
         shutil.copytree(migration_source, target)
         started = False
         try:
