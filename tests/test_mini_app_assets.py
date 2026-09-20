@@ -196,3 +196,14 @@ def test_mini_app_loads_only_a_hash_verified_release():
     assert "research snapshot does not match release" in app
     assert "event snapshot does not match release" in app
     assert "發布資料不完整" in app
+
+
+def test_mini_app_bootstraps_first_paint_and_defers_large_artifacts():
+    root = Path(__file__).resolve().parents[1]
+    app = (root / "site" / "app.js").read_text(encoding="utf-8")
+    assert "bootstrap_artifacts" in app
+    assert "LAST_GOOD_BOOTSTRAP_KEY" in app
+    assert "loadFullRelease(manifest)" in app
+    assert "full-release-verified" in app
+    assert "cache: revalidate ? \"no-cache\" : \"default\"" in app
+    assert "cacheBust" not in app

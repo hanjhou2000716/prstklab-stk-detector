@@ -491,7 +491,9 @@ def write_status_output(
     lines = [
         f"should_send={'true' if should_send else 'false'}",
         f"key={event_key(event) if event else ''}",
+        f"notification_id={event.get('notification_id', '') if event else ''}",
         f"snapshot_id={event.get('snapshot_id', '') if event else ''}",
+        f"observation_id={event.get('observation_id', '') if event else ''}",
         f"candidate_type={summary['candidate_type']}",
         f"notification_expected={'true' if summary['notification_expected'] else 'false'}",
         f"notification_status={summary['notification_status']}",

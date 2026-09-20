@@ -4,6 +4,8 @@ from pathlib import Path
 from src.release_gate import (
     _fetch_public_release_artifacts,
     _load_release_artifacts,
+    _validate_bootstrap_artifact,
+    _validate_public_alert_target,
     verify_release_for_delivery,
 )
 from src.release_manifest import build_release_manifest, sha256_file, write_release_manifest
@@ -622,3 +624,85 @@ def test_release_gate_defensive_artifact_loaders_fail_closed(tmp_path):
         timeout=1,
     )
     assert errors == ["public release URL must use HTTPS"]
+
+
+def test_bootstrap_release_gate_rejects_invalid_contract_and_identity():
+    manifest = {
+        "release_id": "release-current",
+        "market_snapshot_id": "market-current",
+        "bootstrap_contract": {"max_bytes": 0},
+    }
+    errors = _validate_bootstrap_artifact(
+        {"schema_version": "0.9", "release_id": "release-old", "snapshot_id": "market-old"},
+        manifest,
+    )
+    assert errors == [
+        "bootstrap contract max_bytes is invalid",
+        "bootstrap first-paint fields are missing",
+        "bootstrap release_id does not match manifest",
+        "bootstrap schema version is invalid",
+        "bootstrap snapshot_id does not match manifest",
+    ]
+
+
+def test_public_alert_target_gate_covers_missing_tampered_and_matching_alerts(monkeypatch):
+    manifest = {"release_id": "release-current"}
+    assert _validate_public_alert_target({}, manifest, public_url="https://example.test", notification_id="a") == [
+        "click target alert index is unavailable"
+    ]
+    assert _validate_public_alert_target(
+        {"alert-index.json": {"alerts": []}}, manifest,
+        public_url="https://example.test", notification_id="a",
+    ) == ["click target alert is not indexed in the published release"]
+    assert _validate_public_alert_target(
+        {"alert-index.json": {"alerts": [{"notification_id": "a", "release_id": "release-current", "path": "../x", "sha256": "bad"}]}},
+        manifest, public_url="https://example.test", notification_id="a",
+    ) == ["click target alert index row is invalid"]
+
+    class Response:
+        def __init__(self, content):
+            self.content = content
+
+        def raise_for_status(self):
+            return None
+
+    row = {"notification_id": "a", "release_id": "release-current", "path": "alerts/a.json"}
+    good = json.dumps({
+        "notification_id": "a", "release_id": "release-current", "snapshot_id": "market-current",
+        "observation_id": "observation-current",
+    }).encode("utf-8")
+    import hashlib
+
+    row["sha256"] = hashlib.sha256(good).hexdigest()
+    loaded = {"alert-index.json": {"alerts": [row]}}
+    monkeypatch.setattr("src.release_gate.requests.get", lambda *_args, **_kwargs: Response(good))
+    assert _validate_public_alert_target(
+        loaded, manifest, public_url="https://example.test", notification_id="a",
+        snapshot_id="market-current", observation_id="observation-current",
+    ) == []
+    assert _validate_public_alert_target(
+        loaded, manifest, public_url="https://example.test", notification_id="a",
+        snapshot_id="market-other", observation_id="observation-other",
+    ) == ["click target alert observation mismatch", "click target alert snapshot mismatch"]
+
+    monkeypatch.setattr("src.release_gate.requests.get", lambda *_args, **_kwargs: Response(b"{}"))
+    assert _validate_public_alert_target(loaded, manifest, public_url="https://example.test", notification_id="a") == [
+        "click target alert hash mismatch"
+    ]
+    monkeypatch.setattr("src.release_gate.requests.get", lambda *_args, **_kwargs: Response(b"not-json"))
+    row["sha256"] = hashlib.sha256(b"not-json").hexdigest()
+    assert _validate_public_alert_target(loaded, manifest, public_url="https://example.test", notification_id="a") == [
+        "click target alert is invalid JSON"
+    ]
+    monkeypatch.setattr("src.release_gate.requests.get", lambda *_args, **_kwargs: Response(b"[]"))
+    row["sha256"] = hashlib.sha256(b"[]").hexdigest()
+    assert _validate_public_alert_target(loaded, manifest, public_url="https://example.test", notification_id="a") == [
+        "click target alert is not an object"
+    ]
+    def fail_get(*_args, **_kwargs):
+        raise TypeError("unexpected")
+
+    monkeypatch.setattr("src.release_gate.requests.get", fail_get)
+    assert _validate_public_alert_target(loaded, manifest, public_url="https://example.test", notification_id="a") == [
+        "click target alert unavailable: TypeError"
+    ]
