@@ -1,15 +1,39 @@
-name: Apply market observation backup migration
+name: Supabase market migration / ${{ inputs.mode || 'preflight' }} / ${{ github.sha }}
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Run a read-only preflight or a confirmed production apply"
+        type: choice
+        options:
+          - preflight
+          - apply
+        default: preflight
+        required: true
+      preflight_run_id:
+        description: "Required for apply: a ready preflight run on this exact main SHA"
+        type: string
+        required: false
+      confirmation:
+        description: "Required for apply: type APPLY"
+        type: string
+        required: false
+
+run-name: Supabase market migration / ${{ inputs.mode || 'preflight' }} / ${{ github.sha }}
 
 permissions:
+  actions: read
   contents: read
+
+concurrency:
+  group: supabase-market-migration-production
+  cancel-in-progress: false
 
 jobs:
   migrate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -17,102 +41,129 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       PYTHONPATH: .
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        continue-on-error: true
         with:
           fetch-depth: 0
-      - name: Prepare redacted migration diagnostics
-        run: |
-          set -euo pipefail
-          mkdir -p migration-diagnostics
-          printf '{"status":"started"}\n' > migration-diagnostics/verification.json
-      - name: Validate migration credentials and project access
-        run: |
-          set -euo pipefail
-          missing=0
-          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_ID SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY; do
-            if [ -n "${!name:-}" ]; then
-              echo "${name}=present"
-            else
-              echo "${name}=missing"
-              missing=1
-            fi
-          done
-          if [ "$missing" -ne 0 ]; then
-            printf '{"status":"failed","error_code":"credential_missing"}\n' > migration-diagnostics/verification.json
-            exit 1
-          fi
-          if ! [[ "$SUPABASE_PROJECT_ID" =~ ^[a-z0-9]{20}$ ]]; then
-            printf '{"status":"failed","error_code":"project_ref_mismatch"}\n' > migration-diagnostics/verification.json
-            exit 1
-          fi
-          status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
-            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
-            "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_ID}" || true)"
-          if [ "$status" != "200" ]; then
-            printf '{"status":"failed","error_code":"token_unauthorized"}\n' > migration-diagnostics/verification.json
-            echo "project_access=failed_http_${status}"
-            exit 1
-          fi
-          echo "project_access=verified"
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        continue-on-error: true
+        with:
+          python-version: "3.11"
+
+      - name: Install runtime dependencies
+        continue-on-error: true
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
+
       - uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520
+        continue-on-error: true
         with:
           version: latest
-      - name: Link project without exposing credentials
+
+      - name: Download referenced preflight evidence
+        if: inputs.mode == 'apply'
+        continue-on-error: true
+        env:
+          PREFLIGHT_RUN_ID: ${{ inputs.preflight_run_id }}
         run: |
-          set -euo pipefail
-          if ! supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"; then
-            printf '{"status":"failed","error_code":"database_password_invalid"}\n' > migration-diagnostics/verification.json
-            exit 1
+          set -u
+          mkdir -p preflight-input
+          if [[ "$PREFLIGHT_RUN_ID" =~ ^[0-9]+$ ]]; then
+            gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${PREFLIGHT_RUN_ID}" \
+              --jq '{headSha,conclusion,workflowName,createdAt}' > preflight-input/run-metadata.json || true
+            gh run download "$PREFLIGHT_RUN_ID" \
+              --name "market-observation-migration-diagnostics-${PREFLIGHT_RUN_ID}" \
+              --dir preflight-input || true
           fi
-      - name: Check migration history
+
+      - name: Run migration preflight or confirmed apply
+        id: migration
+        continue-on-error: true
+        env:
+          MIGRATION_MODE: ${{ inputs.mode || 'preflight' }}
+          PREFLIGHT_RUN_ID: ${{ inputs.preflight_run_id }}
+          MIGRATION_CONFIRMATION: ${{ inputs.confirmation }}
         run: |
-          set -euo pipefail
-          if ! supabase migration list --linked > migration-diagnostics/migration-list.txt 2>&1; then
-            printf '{"status":"failed","error_code":"migration_history_diverged"}\n' > migration-diagnostics/verification.json
-            exit 1
-          fi
-          python scripts/validate_supabase_migrations.py \
-            --root . --remote-file migration-diagnostics/migration-list.txt \
-            | tee migration-diagnostics/migration-comparison.json
-      - name: Validate migration dry run
-        run: |
-          set -euo pipefail
-          if ! supabase db push --dry-run > migration-diagnostics/migration-dry-run.txt 2>&1; then
-            printf '{"status":"failed","error_code":"migration_dry_run_failed"}\n' > migration-diagnostics/verification.json
-            exit 1
-          fi
-      - name: Apply migrations
-        run: |
-          set -euo pipefail
-          if ! supabase db push > migration-diagnostics/migration-apply.txt 2>&1; then
-            printf '{"status":"failed","error_code":"migration_apply_failed"}\n' > migration-diagnostics/verification.json
-            exit 1
-          fi
-      - name: Verify schema, RLS and transactional backup read-write
-        run: |
-          set -euo pipefail
-          if ! python -m src.market_backup_verification > migration-diagnostics/verification.json; then
-            exit 1
-          fi
+          python -m scripts.market_migration_runner \
+            --mode "$MIGRATION_MODE" \
+            --repo-root . \
+            --artifact-dir migration-diagnostics \
+            --head-sha "$GITHUB_SHA" \
+            --ref "$GITHUB_REF" \
+            --run-id "$GITHUB_RUN_ID" \
+            --preflight-run-id "$PREFLIGHT_RUN_ID" \
+            --confirmation "$MIGRATION_CONFIRMATION"
+
       - name: Publish migration summary
         if: always()
+        continue-on-error: true
         run: |
           {
-            echo "## Market observation backup migration"
+            echo "## Supabase market migration"
             if [ -f migration-diagnostics/verification.json ]; then
-              jq -r '"- status: \(.status // "unknown")", "- error_code: \(.error_code // "none")", "- migration_status: \(.migration_status // "not_verified")", "- schema_status: \(.schema_status // "not_verified")", "- rls_status: \(.rls_status // "not_verified")", "- service_role_write_status: \(.service_role_write_status // "not_verified")", "- service_role_read_status: \(.service_role_read_status // "not_verified")", "- canary_cleanup_status: \(.canary_cleanup_status // "not_verified")", "- verified_at: \(.verified_at // "none")"' migration-diagnostics/verification.json || echo '- status: invalid_diagnostic'
+              jq -r '
+                "- mode: \(.mode // "unknown")",
+                "- status: \(.status // "unknown")",
+                "- alert_class: \(.alert_class // "unknown")",
+                "- stage: \(.stage // "unknown")",
+                "- error_code: \(.error_code // "none")",
+                "- head_sha: \(.head_sha // "unknown")",
+                "- pending_migrations: \((.pending_migrations // []) | join(", ") // "none")",
+                "- registered_migrations: \((.registered_migrations // []) | join(", ") // "none")",
+                "- schema_status: \(.schema_status // "not_verified")",
+                "- rls_status: \(.rls_status // "not_verified")",
+                "- service_role_read_status: \(.service_role_read_status // "not_verified")",
+                "- service_role_write_status: \(.service_role_write_status // "not_verified")",
+                "- canary_cleanup_status: \(.canary_cleanup_status // "not_verified")",
+                "- verified_at: \(.verified_at // "none")"
+              ' migration-diagnostics/verification.json || echo '- status: invalid_diagnostic'
             else
               echo '- status: failed_before_diagnostic'
             fi
+            echo '- production write policy: preflight never writes; apply writes only after matching preflight and confirmation=APPLY'
+            echo '- recovery policy: no migration repair, reset, seed, or blind retry'
             echo '- secrets: values redacted'
-            echo '- recovery policy: no migration repair, reset, or production seed'
           } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload redacted migration diagnostics
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: market-observation-migration-diagnostics-${{ github.run_id }}
           path: migration-diagnostics
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Final migration gate
+        if: always()
+        env:
+          MIGRATION_MODE: ${{ inputs.mode || 'preflight' }}
+        run: |
+          set -u
+          if [ ! -f migration-diagnostics/verification.json ]; then
+            if [ "$MIGRATION_MODE" = "preflight" ]; then
+              echo "::warning::preflight did not produce a diagnostic artifact"
+              exit 0
+            fi
+            echo "production apply failed before a diagnostic artifact was produced"
+            exit 1
+          fi
+          status="$(jq -r '.status // "unknown"' migration-diagnostics/verification.json)"
+          error_code="$(jq -r '.error_code // "none"' migration-diagnostics/verification.json)"
+          if [ "$MIGRATION_MODE" = "preflight" ]; then
+            if [ "$status" = "warning_blocked" ]; then
+              echo "::warning::preflight blocked: ${error_code}"
+            else
+              echo "preflight completed: ${status}"
+            fi
+            exit 0
+          fi
+          if [ "$status" = "already_verified" ] || [ "$status" = "applied" ]; then
+            echo "production apply completed: ${status}"
+            exit 0
+          fi
+          echo "production apply failed: ${error_code}"
+          exit 1

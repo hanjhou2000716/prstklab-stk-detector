@@ -315,9 +315,20 @@ def _service_role_transaction_canary(
     return True
 
 
+def _history_query(expected_migrations: tuple[str, ...]) -> str:
+    versions = ", ".join(f"'{version}'" for version in expected_migrations)
+    return f"""
+select version::text as version
+from supabase_migrations.schema_migrations
+where version in ({versions})
+order by version
+"""
+
+
 def verify_market_backup(
     *, project_ref: str, access_token: str, supabase_url: str, service_role_key: str,
     session: requests.Session | None = None,
+    expected_migrations: tuple[str, ...] = EXPECTED_MIGRATIONS,
 ) -> dict[str, Any]:
     """Verify project identity, schema, RLS, migration history and rollback smoke."""
     if not project_ref.strip() or not access_token.strip():
@@ -354,14 +365,14 @@ def verify_market_backup(
             failed_checks=_failed_checks(schema_row, rls_keys),
         )
 
-    history_rows = _rows(client.query(HISTORY_QUERY, read_only=True))
+    history_rows = _rows(client.query(_history_query(expected_migrations), read_only=True))
     registered = {str(row.get("version")) for row in history_rows}
-    if not set(EXPECTED_MIGRATIONS).issubset(registered):
+    if not set(expected_migrations).issubset(registered):
         raise VerificationError(
             "schema_verification_failed",
             failed_checks=tuple(
                 f"missing_migration:{version}"
-                for version in EXPECTED_MIGRATIONS
+                for version in expected_migrations
                 if version not in registered
             ),
         )
