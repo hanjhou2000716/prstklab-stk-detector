@@ -7,8 +7,12 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-EVENT_MIN_GAP_SECONDS = 90 * 60
-EVENT_DAILY_MAX = 2
+# Native market alerts have their own bounded lane.  FinancialJuice priority
+# delivery bypasses this policy and remains governed by its recipient-level
+# contract; scheduled briefs are a different lane as well.
+NATIVE_EVENT_POLICY_VERSION = "native-event-v2"
+EVENT_MIN_GAP_SECONDS = 10 * 60
+EVENT_DAILY_MAX = 6
 TAIPEI = ZoneInfo("Asia/Taipei")
 
 # These are the fixed floors from the delivery contract.  A producer may also
@@ -110,6 +114,13 @@ def _successful_event_rows(history: Iterable[dict[str, Any]]) -> list[dict[str, 
             continue
         if str(row.get("delivery_status") or "delivered").casefold() not in {"delivered", "partial"}:
             continue
+        # FJ priority and scheduled briefing deliveries must not consume the
+        # native realtime quota. Their own contracts already provide replay
+        # protection and cadence controls.
+        if str(row.get("source_key") or row.get("source") or "").strip().casefold() == "financialjuice":
+            continue
+        if row.get("vendor_priority_notification") is True:
+            continue
         if _time(row.get("sent_at")) is not None:
             rows.append(row)
     return rows
@@ -131,7 +142,10 @@ def decide_event_alert_policy(
         for key in ("classification", "event_type", "market_topic", "market_scope", "canonical_fact_key", "source_published_at")
     )
     if not structured:
-        return {"allowed": True, "reason": "legacy_event_shape", "market_scope": "global", "daily_count": 0}
+        return {
+            "allowed": True, "reason": "legacy_event_shape", "market_scope": "global", "daily_count": 0,
+            "policy_version": NATIVE_EVENT_POLICY_VERSION,
+        }
 
     rows = _successful_event_rows(history)
     scope = event_market_scope(event)
@@ -139,6 +153,8 @@ def decide_event_alert_policy(
     today = current.astimezone(TAIPEI).date()
     today_rows = [row for row in rows if (_time(row.get("sent_at")) or current).astimezone(TAIPEI).date() == today]
     r4 = _is_r4(event)
+    native_priority = str(event.get("native_priority") or event.get("priority") or "").strip().upper()
+    urgent_native = native_priority == "P1"
     if len(today_rows) >= EVENT_DAILY_MAX:
         return {
             "allowed": False,
@@ -146,18 +162,21 @@ def decide_event_alert_policy(
             "market_scope": scope,
             "daily_count": len(today_rows),
             "daily_max": EVENT_DAILY_MAX,
+            "policy_version": NATIVE_EVENT_POLICY_VERSION,
             "r4_override": False,
         }
     sent_times = [sent_at for row in scoped if (sent_at := _time(row.get("sent_at"))) is not None]
     latest = max(sent_times) if sent_times else None
-    if latest is not None and current - latest < timedelta(seconds=EVENT_MIN_GAP_SECONDS) and not r4:
+    if latest is not None and current - latest < timedelta(seconds=EVENT_MIN_GAP_SECONDS) and not r4 and not urgent_native:
         return {
             "allowed": False,
             "reason": "event_market_cooldown",
             "market_scope": scope,
             "daily_count": len(today_rows),
             "min_gap_seconds": EVENT_MIN_GAP_SECONDS,
+            "policy_version": NATIVE_EVENT_POLICY_VERSION,
             "last_sent_at": latest.isoformat(),
+            "native_priority": native_priority or "P2",
             "r4_override": False,
         }
 
@@ -178,6 +197,7 @@ def decide_event_alert_policy(
                 "change_percent": move,
                 "effective_threshold": threshold,
                 "fixed_floor": fixed_floor,
+                "policy_version": NATIVE_EVENT_POLICY_VERSION,
                 "daily_count": len(today_rows),
             }
     return {
@@ -187,5 +207,9 @@ def decide_event_alert_policy(
         "daily_count": len(today_rows),
         "effective_threshold": threshold,
         "fixed_floor": fixed_floor,
+        "daily_max": EVENT_DAILY_MAX,
+        "min_gap_seconds": EVENT_MIN_GAP_SECONDS,
+        "policy_version": NATIVE_EVENT_POLICY_VERSION,
+        "native_priority": native_priority or "P2",
         "r4_override": r4,
     }

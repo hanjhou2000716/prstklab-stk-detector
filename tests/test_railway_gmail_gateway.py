@@ -3,6 +3,7 @@ import json
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 from urllib.parse import parse_qs
 
 import pytest
@@ -308,6 +309,27 @@ def test_high_score_contextless_fact_is_pending_not_eligible(tmp_path: Path) -> 
     assert counts["summary_semantics_incomplete"] == 1
     assert counts["priority_event_eligible"] == 0
     assert diagnostics["primary_reason"] == "summary_semantics_incomplete"
+
+
+def test_low_score_incomplete_fact_does_not_use_priority_pending_state() -> None:
+    class Store:
+        def public_fact_exists(self, _key: str) -> bool:
+            return False
+
+        def upsert_priority_pending(self, _event: dict[str, Any]) -> dict[str, Any]:
+            raise AssertionError("low-score facts must not enter priority recovery")
+
+    diagnostics = _candidate_diagnostics([{
+        "source": "financialjuice",
+        "vendor_importance": 8,
+        "source_published_at": datetime.now(UTC).isoformat(),
+        "canonical_fact_key": "financialjuice-fact:low-score",
+        "material_fact_version": "v1",
+        "summary_contract_version": "fj-summary-contract-v2",
+        "vendor_translation": "資訊待核對。",
+    }], Store())
+    assert diagnostics["counts"]["summary_semantics_incomplete"] == 1
+    assert diagnostics["counts"].get("priority_pending_state_error", 0) == 0
 
 
 def test_high_score_incomplete_fact_persists_private_pending_state(tmp_path: Path) -> None:

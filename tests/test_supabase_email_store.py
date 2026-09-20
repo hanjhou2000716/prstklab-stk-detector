@@ -301,3 +301,29 @@ def test_cursor_does_not_retry_authentication_failure(monkeypatch: pytest.Monkey
     with pytest.raises(RuntimeError, match="supabase_http_401"):
         store.cursor()
     assert len(calls) == 1
+
+
+def test_priority_pending_uses_idempotent_table_fallback_when_rpc_is_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[tuple[str, str]] = []
+
+    def request(method: str, url: str, **_kwargs: Any) -> _Response:
+        calls.append((method, url))
+        if "/rpc/upsert_financialjuice_priority_pending" in url:
+            return _Response(404, {"private": "not exposed"})
+        if method == "GET":
+            return _Response(200, [])
+        return _Response(201, [{"event_ref": "ref-1", "summary_status": "pending"}])
+
+    monkeypatch.setattr("supabase_email_store.requests.request", request)
+    store = SupabaseEmailStore("https://example.supabase.co", "key")
+    result = store.upsert_priority_pending({
+        "canonical_fact_key": "fj:fact-1",
+        "material_fact_version": "v1",
+        "source_published_at": "2026-09-20T01:00:00+00:00",
+        "summary_contract_version": "public-summary-v3",
+        "public_summary_status": "incomplete",
+    })
+    assert result["event_ref"] == "ref-1"
+    assert calls[0][0] == "POST"
+    assert calls[1][0] == "GET"
+    assert calls[2][0] == "POST"

@@ -88,7 +88,7 @@ def test_worker_has_security_boundary_and_required_routes() -> None:
     assert "RECEIPT_HISTORY_UNAVAILABLE" in worker
     assert "TELEGRAM_WEBHOOK_SECRET" in worker
     assert "telegram_subscriptions" in worker
-    assert "📡 D.iNV System" in worker
+    assert "📡 D.iNV Detector" in worker
 
 
 def test_gmail_realtime_migration_and_worker_keep_push_separate_from_sync() -> None:

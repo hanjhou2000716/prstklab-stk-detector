@@ -121,6 +121,7 @@ def _candidate_diagnostics(
     """Return bounded per-message candidate counts and a primary reason."""
     counts = {key: 0 for key in _CANDIDATE_DIAGNOSTIC_KEYS}
     pending_refs: list[str] = []
+    pending_error_reasons: list[str] = []
     batch_fact_keys: set[str] = set()
     saw_financialjuice = False
     for row in rows:
@@ -141,8 +142,13 @@ def _candidate_diagnostics(
                     if callable(mark_pending):
                         try:
                             mark_pending(dict(row), status="expired", reason=freshness_reason)
-                        except (TypeError, ValueError, RuntimeError):
+                        except (TypeError, ValueError, RuntimeError) as error:
                             counts["priority_pending_state_error"] += 1
+                            reason = str(error).strip()
+                            if reason.startswith("supabase_http_") or reason == "supabase_transport_error":
+                                pending_error_reasons.append(reason[:80])
+                            else:
+                                pending_error_reasons.append("priority_pending_state_error")
             counts[freshness_reason] += 1
             continue
         if row.get("source_identity_verified") is False:
@@ -180,13 +186,25 @@ def _candidate_diagnostics(
             if importance >= FJ_VENDOR_PRIORITY_THRESHOLD:
                 counts["priority_candidate_detected"] += 1
             if not _summary_ready(row):
+                # Only fresh high-score FJ facts get a durable priority
+                # recovery record.  Lower-score observations remain ordinary
+                # content diagnostics and must never fail because the
+                # high-score migration is unavailable.
+                if importance < FJ_VENDOR_PRIORITY_THRESHOLD:
+                    counts["summary_semantics_incomplete"] += 1
+                    continue
                 try:
                     pending = store.upsert_priority_pending(dict(row))
                     event_ref = str(pending.get("event_ref") or "").strip()
                     if event_ref and event_ref not in pending_refs:
                         pending_refs.append(event_ref)
-                except (TypeError, ValueError, RuntimeError):
+                except (TypeError, ValueError, RuntimeError) as error:
                     counts["priority_pending_state_error"] += 1
+                    reason = str(error).strip()
+                    if reason.startswith("supabase_http_") or reason == "supabase_transport_error":
+                        pending_error_reasons.append(reason[:80])
+                    else:
+                        pending_error_reasons.append("priority_pending_state_error")
                 counts["summary_semantics_incomplete"] += 1
                 continue
             if importance >= FJ_VENDOR_PRIORITY_THRESHOLD:
@@ -194,8 +212,13 @@ def _candidate_diagnostics(
                     mark_pending = getattr(store, "mark_priority_pending", None)
                     if callable(mark_pending):
                         mark_pending(dict(row), status="ready", reason="summary_ready")
-                except (TypeError, ValueError, RuntimeError):
+                except (TypeError, ValueError, RuntimeError) as error:
                     counts["priority_pending_state_error"] += 1
+                    reason = str(error).strip()
+                    if reason.startswith("supabase_http_") or reason == "supabase_transport_error":
+                        pending_error_reasons.append(reason[:80])
+                    else:
+                        pending_error_reasons.append("priority_pending_state_error")
                     continue
                 counts["priority_event_eligible"] += 1
             counts["new_event_eligible"] += 1
@@ -218,6 +241,8 @@ def _candidate_diagnostics(
     result: dict[str, Any] = {"counts": counts, "primary_reason": primary}
     if pending_refs:
         result["priority_pending_refs"] = pending_refs
+    if pending_error_reasons:
+        result["priority_pending_error_reasons"] = list(dict.fromkeys(pending_error_reasons))[:8]
     return result
 
 

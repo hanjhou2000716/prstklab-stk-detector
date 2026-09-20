@@ -47,6 +47,17 @@ def test_us_index_daily_thresholds_are_two_percent():
         assert taiwan_session is False
 
 
+def test_taiwan_session_threshold_converts_quote_timezone_before_classification():
+    # 01:00 UTC is 09:00 in Taipei.  The old naive comparison treated it as
+    # outside the Taiwan session and incorrectly used the 1.5% daily floor.
+    daily, intraday, taiwan_session = _price_signal_thresholds({
+        "ticker": "TAIEX", "quote_time": "2026-09-21T01:00:00+00:00",
+    })
+    assert daily == 0.5
+    assert intraday == 1.0
+    assert taiwan_session is True
+
+
 def test_sox_at_two_percent_is_a_market_signal():
     below = build_event_snapshot({"taiwan": [], "us": []}, [], indices=[{
         "ticker": "SOX", "name": "費城半導體指數", "price": 100,
@@ -59,6 +70,7 @@ def test_sox_at_two_percent_is_a_market_signal():
     assert below["items"] == []
     assert below["suppressed_signals"][0]["reason"] == "below_threshold"
     assert at_threshold["items"][0]["instrument"]["ticker"] == "SOX"
+    assert at_threshold["items"][0]["native_priority"] == "P2"
 
 
 def test_djia_and_nasdaq_at_two_percent_are_market_signals():

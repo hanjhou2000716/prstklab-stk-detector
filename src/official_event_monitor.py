@@ -414,7 +414,17 @@ def write_status_output(
     # rest of the same queue (especially a previously delivered FJ item).
     if event and not should_send and isinstance(snapshot, dict):
         excluded = {event_key(event)}
-        for _ in range(8):
+        # Consider every candidate in this immutable snapshot.  A stale or
+        # suppressed first row must not starve a later native signal or an
+        # eligible FJ row merely because the old compatibility loop stopped
+        # after eight attempts.
+        candidate_limit = max(
+            1,
+            len(snapshot.get("events", {}).get("items", []))
+            if isinstance(snapshot.get("events"), dict)
+            else 1,
+        ) + 1
+        for _ in range(candidate_limit):
             next_event = select_official_event(snapshot, excluded_event_keys=excluded)
             if next_event is None:
                 break

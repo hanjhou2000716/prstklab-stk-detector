@@ -11,7 +11,10 @@ on:
   repository_dispatch:
     types: [official-event-check]
   schedule:
-    - cron: "*/5 * * * 1-5"
+    # FJ recovery and 24-hour assets must not stop at the Taiwan Friday UTC
+    # boundary; market-specific freshness gates decide whether a row is
+    # actually eligible.
+    - cron: "*/5 * * * *"
 
 permissions:
   actions: read

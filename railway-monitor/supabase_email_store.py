@@ -14,7 +14,7 @@ import random
 import re
 import time
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import quote
 
@@ -417,27 +417,113 @@ class SupabaseEmailStore:
         source_at = str(event.get("source_published_at") or "").strip()
         if not key or not version or not source_at:
             raise ValueError("priority_pending_identity_incomplete")
+        try:
+            source_dt = datetime.fromisoformat(source_at.replace("Z", "+00:00"))
+        except (TypeError, ValueError) as error:
+            raise ValueError("priority_pending_source_time_invalid") from error
+        source_dt = source_dt.replace(tzinfo=source_dt.tzinfo or UTC).astimezone(UTC)
         checked = (now or datetime.now(UTC)).astimezone(UTC).isoformat()
         event_ref = _hash(f"{key}:{version}")[:32]
         status = str(event.get("public_summary_status") or "pending").strip() or "pending"
         if status not in {"pending", "ready", "expired", "contract_failed"}:
             status = "pending"
-        result = self._rpc(
-            "upsert_financialjuice_priority_pending",
-            {
-                "p_canonical_fact_key": key,
-                "p_material_fact_version": version,
-                "p_event_ref": event_ref,
-                "p_summary_contract_version": str(event.get("summary_contract_version") or "")[:80],
-                "p_summary_status": status,
-                "p_summary_reason": str(event.get("public_summary_reason") or "summary_semantics_incomplete")[:120],
-                "p_source_published_at": source_at,
-                "p_checked_at": checked,
-                "p_last_run_id": str(os.getenv("GITHUB_RUN_ID") or "")[:80] or None,
-                "p_last_run_sha": str(os.getenv("GITHUB_SHA") or "")[:80] or None,
-            },
+        arguments = {
+            "p_canonical_fact_key": key,
+            "p_material_fact_version": version,
+            "p_event_ref": event_ref,
+            "p_summary_contract_version": str(event.get("summary_contract_version") or "")[:80],
+            "p_summary_status": status,
+            "p_summary_reason": str(event.get("public_summary_reason") or "summary_semantics_incomplete")[:120],
+            "p_source_published_at": source_dt.isoformat(),
+            "p_checked_at": checked,
+            "p_last_run_id": str(os.getenv("GITHUB_RUN_ID") or "")[:80] or None,
+            "p_last_run_sha": str(os.getenv("GITHUB_SHA") or "")[:80] or None,
+        }
+        try:
+            result = self._rpc("upsert_financialjuice_priority_pending", arguments)
+            return result if isinstance(result, dict) else {"event_ref": event_ref, "summary_status": status}
+        except RuntimeError as error:
+            # Older Supabase deployments may have the table but not the RPC
+            # in PostgREST's schema cache.  The table has a composite primary
+            # key, so this single-attempt REST upsert is idempotent and safe
+            # as a compatibility fallback.  Other errors, especially a 5xx
+            # with unknown write outcome, remain hard failures and are never
+            # blindly retried.
+            if str(error) not in {"supabase_http_400", "supabase_http_404"}:
+                raise
+            return self._upsert_priority_pending_rest(
+                key=key,
+                version=version,
+                event_ref=event_ref,
+                status=status,
+                reason=str(arguments["p_summary_reason"]),
+                contract=str(arguments["p_summary_contract_version"]),
+                source_published_at=source_dt.isoformat(),
+                checked_at=checked,
+                run_id=arguments["p_last_run_id"],
+                run_sha=arguments["p_last_run_sha"],
+            )
+
+    def _upsert_priority_pending_rest(
+        self,
+        *,
+        key: str,
+        version: str,
+        event_ref: str,
+        status: str,
+        reason: str,
+        contract: str,
+        source_published_at: str,
+        checked_at: str,
+        run_id: str | None,
+        run_sha: str | None,
+    ) -> dict[str, Any]:
+        """Use the private table directly when the compatibility RPC is absent."""
+        encoded_key = quote(key, safe="")
+        encoded_version = quote(version, safe="")
+        _status, payload = self._request(
+            "GET",
+            "financialjuice_priority_pending",
+            f"?canonical_fact_key=eq.{encoded_key}&material_fact_version=eq.{encoded_version}&select=first_detected_at,expires_at,attempt_count&limit=1",
         )
-        return result if isinstance(result, dict) else {"event_ref": event_ref, "summary_status": status}
+        existing = payload[0] if isinstance(payload, list) and payload and isinstance(payload[0], dict) else {}
+        first_detected_at = str(existing.get("first_detected_at") or checked_at)
+        try:
+            source_value = datetime.fromisoformat(source_published_at.replace("Z", "+00:00"))
+            source_value = source_value.replace(tzinfo=source_value.tzinfo or UTC).astimezone(UTC)
+            calculated_expiry = (source_value + timedelta(minutes=30)).isoformat()
+        except (TypeError, ValueError) as error:
+            raise ValueError("priority_pending_source_time_invalid") from error
+        expires_at = str(existing.get("expires_at") or calculated_expiry)
+        try:
+            attempts = max(0, int(existing.get("attempt_count") or 0)) + 1
+        except (TypeError, ValueError, OverflowError):
+            attempts = 1
+        body = {
+            "canonical_fact_key": key,
+            "material_fact_version": version,
+            "event_ref": event_ref,
+            "summary_contract_version": contract,
+            "summary_status": status,
+            "summary_reason": reason[:120],
+            "source_published_at": source_published_at,
+            "first_detected_at": first_detected_at,
+            "last_checked_at": checked_at,
+            "expires_at": expires_at,
+            "attempt_count": attempts,
+            "last_run_id": run_id,
+            "last_run_sha": run_sha,
+            "updated_at": checked_at,
+        }
+        _status, payload = self._request(
+            "POST",
+            "financialjuice_priority_pending",
+            "?on_conflict=canonical_fact_key%2Cmaterial_fact_version",
+            body,
+            prefer="resolution=merge-duplicates,return=representation",
+        )
+        row = payload[0] if isinstance(payload, list) and payload and isinstance(payload[0], dict) else {}
+        return row or {"event_ref": event_ref, "summary_status": status, "summary_reason": reason, "expires_at": expires_at, "attempt_count": attempts}
 
     def priority_pending_events(self, *, now: datetime | None = None, limit: int = 100) -> list[dict[str, Any]]:
         """Read only active, identifier-only private pending state."""

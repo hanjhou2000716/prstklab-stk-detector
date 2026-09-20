@@ -215,6 +215,25 @@ class _FailingIngress:
         raise RuntimeError("public_fact_lookup_failed")
 
 
+class _PendingStateErrorIngress:
+    def accept_email(self, _record):
+        return {
+            "accepted": True,
+            "status": "parsed",
+            "material_candidate": True,
+            "priority_candidate": True,
+            "candidate_diagnostics": {
+                "counts": {
+                    "priority_pending_state_error": 1,
+                    "priority_candidate_detected": 1,
+                    "summary_semantics_incomplete": 1,
+                },
+                "primary_reason": "priority_pending_state_error",
+                "priority_pending_error_reasons": ["supabase_http_500"],
+            },
+        }
+
+
 class _UnavailableCursorStore:
     last_retry_count = 4
 
@@ -254,6 +273,24 @@ def test_cursor_storage_failure_returns_diagnostic_result_instead_of_crashing() 
     assert result["supabase_retry_count"] == 4
     assert result["failed"] == 1
     assert result["candidate_diagnostics"]["primary_reason"] == "gmail_cursor_read_failed"
+
+
+def test_priority_pending_state_failure_keeps_history_cursor_retryable(tmp_path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(last_history_id="h0")
+    result = asyncio.run(
+        sync_gmail_history(
+            _config(),
+            store,
+            _PendingStateErrorIngress(),
+            client_factory=_Client,
+        )
+    )
+    assert result["status"] == "degraded"
+    assert result["storage_error"] == "priority_pending_state_error"
+    assert result["priority_pending_error_reasons"] == ["supabase_http_500"]
+    assert result["cursor_preserved"] is True
+    assert store.cursor()["last_history_id"] == "h0"
 
 
 def test_message_record_prefers_semantically_rich_html_over_plain_stub() -> None:

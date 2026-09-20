@@ -74,6 +74,14 @@ def _merge_candidate_diagnostics(total: dict[str, Any], value: Any) -> None:
                 safe = str(ref or "").strip()
                 if safe and safe not in target and len(target) < 100:
                     target.append(safe)
+    reasons = value.get("priority_pending_error_reasons")
+    if isinstance(reasons, (list, tuple)):
+        target = total.setdefault("priority_pending_error_reasons", [])
+        if isinstance(target, list):
+            for reason in reasons:
+                safe = str(reason or "").strip()[:80]
+                if safe and safe not in target and len(target) < 8:
+                    target.append(safe)
 
 
 def _with_candidate_diagnostics(result: dict[str, Any], diagnostics: dict[str, Any]) -> dict[str, Any]:
@@ -84,6 +92,9 @@ def _with_candidate_diagnostics(result: dict[str, Any], diagnostics: dict[str, A
     pending_refs = list(diagnostics.get("priority_pending_refs") or [])[:100]
     if pending_refs:
         result["priority_pending_refs"] = pending_refs
+    pending_errors = list(diagnostics.get("priority_pending_error_reasons") or [])[:8]
+    if pending_errors:
+        result["priority_pending_error_reasons"] = pending_errors
     counts = diagnostics.get("counts") if isinstance(diagnostics, Mapping) else None
     if "priority_candidate_count" not in result:
         try:
@@ -114,6 +125,11 @@ def _sync_diagnostics_record(
             safe_counts[key] = max(0, min(1_000_000_000, int(counts.get(key) or 0))) if isinstance(counts, Mapping) else 0
         except (TypeError, ValueError, OverflowError):
             safe_counts[key] = 0
+    diagnostic_projection: dict[str, Any] = {
+        "counts": safe_counts,
+        "primary_reason": str(diagnostics.get("primary_reason") or "")[:80],
+        "priority_pending_count": len(diagnostics.get("priority_pending_refs") or []) if isinstance(diagnostics.get("priority_pending_refs"), list) else 0,
+    }
     record = {
         "recorded_at": datetime.now(UTC).isoformat(),
         "status": str(result.get("status") or "unknown")[:80],
@@ -124,12 +140,13 @@ def _sync_diagnostics_record(
         "duplicate_count": counter("duplicate_count"),
         "failed": counter("failed"),
         "supabase_retry_count": counter("supabase_retry_count"),
-        "candidate_diagnostics": {
-            "counts": safe_counts,
-            "primary_reason": str(diagnostics.get("primary_reason") or "")[:80],
-            "priority_pending_count": len(diagnostics.get("priority_pending_refs") or []) if isinstance(diagnostics.get("priority_pending_refs"), list) else 0,
-        },
+        "candidate_diagnostics": diagnostic_projection,
     }
+    reasons = diagnostics.get("priority_pending_error_reasons")
+    if isinstance(reasons, (list, tuple)):
+        diagnostic_projection["priority_pending_error_reasons"] = [
+            str(item)[:80] for item in reasons[:8] if str(item).strip()
+        ]
     if sync_started_at:
         record["sync_started_at"] = str(sync_started_at)
     if sync_completed_at:
@@ -584,7 +601,16 @@ async def sync_gmail_history(
                     record["body"] = await _message_body(client, token, message_id, payload)
                     result = ingress.accept_email(record)
                     processed += 1
-                    _merge_candidate_diagnostics(diagnostics, result.get("candidate_diagnostics"))
+                    message_diagnostics = result.get("candidate_diagnostics")
+                    _merge_candidate_diagnostics(diagnostics, message_diagnostics)
+                    message_counts = message_diagnostics.get("counts") if isinstance(message_diagnostics, Mapping) else {}
+                    if isinstance(message_counts, Mapping) and int(message_counts.get("priority_pending_state_error") or 0) > 0:
+                        # The observation may already be idempotently stored,
+                        # but the high-score recovery state is not durable.
+                        # Keep the Gmail history cursor unchanged so the
+                        # message is retried instead of being silently lost.
+                        failed += 1
+                        failure_types["priority_pending_state_error"] = failure_types.get("priority_pending_state_error", 0) + 1
                     if result.get("status") == "duplicate":
                         duplicate += 1
                         material_candidates += int(result.get("material_candidate") is True)
@@ -639,7 +665,12 @@ async def sync_gmail_history(
                     "priority_candidate_count": priority_candidates,
                     "failed": failed, "duplicate": duplicate,
                     "duplicate_count": duplicate,
+                    "cursor_preserved": True,
                 }
+                if diagnostics.get("priority_pending_error_reasons"):
+                    result["storage_error"] = "priority_pending_state_error"
+                    result["diagnostic_reason"] = "priority_pending_state_error"
+                    result["priority_pending_error_reasons"] = diagnostics["priority_pending_error_reasons"]
                 if skipped:
                     result["skipped"] = skipped
                 if suppressed:
