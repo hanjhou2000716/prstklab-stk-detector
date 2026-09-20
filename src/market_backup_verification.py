@@ -134,50 +134,17 @@ select
       and table_name in ('market_observations', 'market_source_state')
       and grantee in ('anon', 'authenticated')
   ) as public_roles_revoked,
-  exists (
-    select 1 from information_schema.role_table_grants
-    where table_schema = 'public' and table_name = 'market_observations'
-      and grantee = 'service_role' and privilege_type = 'SELECT'
-  ) as service_role_market_select,
-  exists (
-    select 1 from information_schema.role_table_grants
-    where table_schema = 'public' and table_name = 'market_observations'
-      and grantee = 'service_role' and privilege_type = 'INSERT'
-  ) as service_role_market_insert,
-  exists (
-    select 1 from information_schema.role_table_grants
-    where table_schema = 'public' and table_name = 'market_observations'
-      and grantee = 'service_role' and privilege_type = 'UPDATE'
-  ) as service_role_market_update,
-  exists (
-    select 1 from information_schema.role_table_grants
-    where table_schema = 'public' and table_name = 'market_source_state'
-      and grantee = 'service_role' and privilege_type = 'SELECT'
-  ) as service_role_state_select,
-  exists (
-    select 1 from information_schema.role_table_grants
-    where table_schema = 'public' and table_name = 'market_source_state'
-      and grantee = 'service_role' and privilege_type = 'INSERT'
-  ) as service_role_state_insert,
-  exists (
-    select 1 from information_schema.role_table_grants
-    where table_schema = 'public' and table_name = 'market_source_state'
-      and grantee = 'service_role' and privilege_type = 'UPDATE'
-  ) as service_role_state_update,
-  not exists (
-    select 1 from information_schema.routine_privileges
-    where specific_schema = 'public'
-      and routine_name = 'purge_expired_market_observations'
-      and grantee in ('PUBLIC', 'anon', 'authenticated')
-      and privilege_type = 'EXECUTE'
-  ) as purge_public_roles_revoked,
-  exists (
-    select 1 from information_schema.routine_privileges
-    where specific_schema = 'public'
-      and routine_name = 'purge_expired_market_observations'
-      and grantee = 'service_role'
-      and privilege_type = 'EXECUTE'
-  ) as purge_service_role_execute,
+  has_table_privilege('service_role', 'public.market_observations', 'SELECT') as service_role_market_select,
+  has_table_privilege('service_role', 'public.market_observations', 'INSERT') as service_role_market_insert,
+  has_table_privilege('service_role', 'public.market_observations', 'UPDATE') as service_role_market_update,
+  has_table_privilege('service_role', 'public.market_source_state', 'SELECT') as service_role_state_select,
+  has_table_privilege('service_role', 'public.market_source_state', 'INSERT') as service_role_state_insert,
+  has_table_privilege('service_role', 'public.market_source_state', 'UPDATE') as service_role_state_update,
+  not has_function_privilege('anon', 'public.purge_expired_market_observations()', 'EXECUTE')
+    and not has_function_privilege('authenticated', 'public.purge_expired_market_observations()', 'EXECUTE')
+    as purge_public_roles_revoked,
+  has_function_privilege('service_role', 'public.purge_expired_market_observations()', 'EXECUTE')
+    as purge_service_role_execute,
   to_regprocedure('public.transition_financialjuice_priority_delivery(text, text, text, text, timestamptz, timestamptz)')
     is not null as fj_delivery_function_exists,
   exists (
