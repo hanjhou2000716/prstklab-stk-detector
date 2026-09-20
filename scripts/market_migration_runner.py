@@ -50,6 +50,7 @@ ERROR_CODES = {
     "preflight_reference_expired",
     "confirmation_required",
     "apply_requires_main",
+    "main_ref_changed",
     "supabase_cli_unavailable",
     "runner_internal_error",
 }
@@ -148,6 +149,7 @@ class MigrationRunner:
         run_id: str,
         preflight_run_id: str = "",
         confirmation: str = "",
+        current_main_sha_file: Path | None = None,
         environment: dict[str, str] | None = None,
         command_runner: CommandRunner = _run_command,
         session: requests.Session | None = None,
@@ -162,6 +164,7 @@ class MigrationRunner:
         self.run_id = run_id
         self.preflight_run_id = preflight_run_id.strip()
         self.confirmation = confirmation
+        self.current_main_sha_file = current_main_sha_file
         self.env = dict(environment or os.environ)
         self.command_runner = command_runner
         self.session = session or requests.Session()
@@ -284,13 +287,42 @@ class MigrationRunner:
 
         reference_dir = self.preflight_dir
         metadata_path = reference_dir / "run-metadata.json"
-        if metadata_path.exists():
+        if not metadata_path.exists():
+            return False, "preflight_reference_missing"
+        try:
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return False, "preflight_reference_invalid"
+        if not isinstance(metadata, dict):
+            return False, "preflight_reference_invalid"
+        if (
+            str(metadata.get("run_id") or "") != self.preflight_run_id
+            or str(metadata.get("repository") or "") != "hanjhou2000716/prstklab-stk-detector"
+            or str(metadata.get("workflow_path") or "") != ".github/workflows/migrate-market-observations.yml"
+            or str(metadata.get("head_sha") or "") != self.head_sha
+            or str(metadata.get("head_branch") or "") != "main"
+            or str(metadata.get("event") or "") != "workflow_dispatch"
+            or str(metadata.get("conclusion") or "") != "success"
+        ):
+            return False, "preflight_reference_invalid"
+        try:
+            if int(metadata.get("run_attempt") or 0) < 1:
+                return False, "preflight_reference_invalid"
+        except (TypeError, ValueError):
+            return False, "preflight_reference_invalid"
+        created_at = _parse_iso(metadata.get("created_at"))
+        if created_at is None or created_at > self.current_time + timedelta(minutes=5):
+            return False, "preflight_reference_invalid"
+        if self.current_time - created_at > timedelta(hours=2):
+            return False, "preflight_reference_expired"
+
+        if self.current_main_sha_file is not None:
             try:
-                metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError):
+                current_main_sha = self.current_main_sha_file.read_text(encoding="utf-8").strip()
+            except OSError:
                 return False, "preflight_reference_invalid"
-            if metadata.get("headSha") != self.head_sha or metadata.get("conclusion") != "success":
-                return False, "preflight_reference_invalid"
+            if not current_main_sha or current_main_sha != self.head_sha:
+                return False, "main_ref_changed"
 
         candidates = list(reference_dir.rglob("verification.json")) if reference_dir.exists() else []
         if not candidates:
@@ -304,6 +336,8 @@ class MigrationRunner:
         if str(reference.get("run_id") or "") != self.preflight_run_id:
             return False, "preflight_reference_invalid"
         if reference.get("head_sha") != self.head_sha:
+            return False, "preflight_reference_invalid"
+        if reference.get("project_ref_fingerprint") != self.diagnostic.get("project_ref_fingerprint"):
             return False, "preflight_reference_invalid"
         if reference.get("status") not in {"ready_no_changes", "ready_apply_required"}:
             return False, "preflight_reference_invalid"
@@ -426,6 +460,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--run-id", default=os.getenv("GITHUB_RUN_ID", ""))
     parser.add_argument("--preflight-run-id", default=os.getenv("PREFLIGHT_RUN_ID", ""))
     parser.add_argument("--confirmation", default=os.getenv("MIGRATION_CONFIRMATION", ""))
+    parser.add_argument("--current-main-sha-file", type=Path, default=None)
     return parser
 
 
@@ -441,6 +476,7 @@ def main() -> int:
         run_id=args.run_id,
         preflight_run_id=args.preflight_run_id,
         confirmation=args.confirmation,
+        current_main_sha_file=(args.current_main_sha_file.resolve() if args.current_main_sha_file else None),
     )
     return runner.run()
 

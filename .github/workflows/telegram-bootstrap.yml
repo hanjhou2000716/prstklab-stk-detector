@@ -45,7 +45,7 @@ jobs:
           {
             echo "## Telegram production bootstrap"
             echo ""
-            echo '- migration_status: `blocked_prerequisite`'
+            echo "- migration_status: \`blocked_prerequisite\`"
             echo "- reason: \`${MIGRATION_REASON:-unknown}\`"
             echo "- Worker, webhook and Mini App configuration were not changed."
           } >> "$GITHUB_STEP_SUMMARY"

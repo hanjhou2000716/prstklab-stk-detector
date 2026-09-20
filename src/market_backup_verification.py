@@ -312,6 +312,48 @@ def _service_role_transaction_canary(
         raise VerificationError(
             "backup_smoke_failed", failed_checks=("transaction_canary_rpc",)
         )
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise VerificationError(
+            "backup_smoke_failed", failed_checks=("transaction_canary_rpc_payload",)
+        ) from exc
+    if not isinstance(payload, dict) or any(
+        payload.get(key) != expected
+        for key, expected in {
+            "status": "rolled_back",
+            "market_observation": "verified",
+            "market_source_state": "verified",
+        }.items()
+    ):
+        raise VerificationError(
+            "backup_smoke_failed", failed_checks=("transaction_canary_rpc_payload",)
+        )
+    for table in ("market_observations", "market_source_state"):
+        try:
+            cleanup = session.get(
+                f"{url.rstrip('/')}/rest/v1/{table}",
+                headers={
+                    "apikey": service_role_key,
+                    "Authorization": f"Bearer {service_role_key}",
+                    "Accept": "application/json",
+                },
+                params={"instrument_id": "eq.healthcheck:market-backup", "select": "instrument_id", "limit": "10"},
+                timeout=30,
+            )
+            if cleanup.status_code in {401, 403} or not cleanup.ok:
+                raise VerificationError(
+                    "backup_smoke_failed", failed_checks=(f"canary_cleanup_{table}",)
+                )
+            rows = cleanup.json()
+        except (requests.RequestException, ValueError) as exc:
+            raise VerificationError(
+                "backup_smoke_failed", failed_checks=(f"canary_cleanup_{table}",)
+            ) from exc
+        if not isinstance(rows, list) or rows:
+            raise VerificationError(
+                "backup_smoke_failed", failed_checks=(f"canary_cleanup_{table}",)
+            )
     return True
 
 
@@ -353,6 +395,8 @@ def verify_market_backup(
         "service_role_market_select", "service_role_market_insert", "service_role_market_update",
         "service_role_state_select", "service_role_state_insert", "service_role_state_update",
         "purge_public_roles_revoked", "purge_service_role_execute",
+        "service_role_canary_function_exists", "service_role_canary_public_roles_revoked",
+        "service_role_canary_execute",
     )
     if not _all_true(schema_row, schema_keys):
         raise VerificationError(
