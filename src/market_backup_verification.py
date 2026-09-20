@@ -222,9 +222,9 @@ def _service_role_rest_read(url: str, service_role_key: str, *, session: request
             timeout=30,
         )
     except requests.RequestException as exc:
-        raise VerificationError("backup_smoke_failed") from exc
+        raise VerificationError("backup_smoke_failed", failed_checks=("service_role_rest_read",)) from exc
     if response.status_code in {401, 403} or not response.ok:
-        raise VerificationError("backup_smoke_failed")
+        raise VerificationError("backup_smoke_failed", failed_checks=("service_role_rest_read",))
     return True
 
 
@@ -281,7 +281,13 @@ def verify_market_backup(
 
     http_session = session or requests.Session()
     _service_role_rest_read(supabase_url, service_role_key, session=http_session)
-    client.query(TRANSACTION_SMOKE_QUERY, read_only=False)
+    try:
+        client.query(TRANSACTION_SMOKE_QUERY, read_only=False)
+    except VerificationError as exc:
+        raise VerificationError(
+            "backup_smoke_failed",
+            failed_checks=("transaction_canary",),
+        ) from exc
     verified_at = datetime.now(UTC).isoformat()
     return {
         "migration_status": "verified",
