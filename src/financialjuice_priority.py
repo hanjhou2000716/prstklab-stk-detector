@@ -821,7 +821,11 @@ def _event_record(
     record["canonical_fact_key"] = canonical_fact_key
     record["material_fact_version"] = material_fact_version
     importance_value = financialjuice_vendor_importance(importance)
-    if importance_value is not None and importance_value >= FJ_PRIORITY_MIN_IMPORTANCE and record.get("public_summary_status") != "ready":
+    if importance_value is not None and importance_value >= FJ_PRIORITY_MIN_IMPORTANCE and canonical_fact_key and material_fact_version:
+        # Every qualifying FJ event needs the same stable hand-off token,
+        # including summaries that were already ready at Gmail ingress.  The
+        # token is identity-derived only; summary text and retry timing must
+        # never change delivery correlation.
         record["priority_pending_ref"] = financialjuice_priority_pending_ref(
             canonical_fact_key, material_fact_version,
         )

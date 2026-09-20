@@ -313,6 +313,45 @@ def test_monitor_hard_fails_when_dispatch_claims_priority_but_no_pending_event(m
     assert "hard_failure=true" in text
 
 
+def test_monitor_accepts_ready_priority_event_ref_without_pending_marker(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setenv("DISPATCH_PRIORITY_CANDIDATE_DETECTED", "1")
+    monkeypatch.setenv("DISPATCH_PRIORITY_EVENT_REFS", '["fj-ref-ready"]')
+    snapshot = {
+        "financialjuice_priority_event_refs": ["fj-ref-ready"],
+        "financialjuice_priority_events": [
+            {
+                "priority_pending_ref": "fj-ref-ready",
+                "vendor_importance": 9,
+                "notification_status": "eligible",
+                "freshness_status": "fresh",
+            },
+        ],
+    }
+
+    monitor.write_status_output(None, snapshot)
+
+    text = output.read_text(encoding="utf-8")
+    assert "priority_dispatch_event_ref_count=1" in text
+    assert "priority_dispatch_missing_ref_count=0" in text
+    assert "notification_status=contract_mismatch" not in text
+    assert "hard_failure=false" in text
+
+
+def test_monitor_legacy_count_dispatch_rescans_durable_ready_projection(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setenv("DISPATCH_PRIORITY_CANDIDATE_DETECTED", "1")
+    snapshot = {"financialjuice_priority_event_refs": ["fj-ref-ready"]}
+
+    monitor.write_status_output(None, snapshot)
+
+    text = output.read_text(encoding="utf-8")
+    assert "priority_dispatch_legacy_rescan=true" in text
+    assert "hard_failure=false" in text
+
+
 def test_monitor_does_not_mask_priority_ref_mismatch_with_unrelated_event(monkeypatch, tmp_path):
     output = tmp_path / "github-output.txt"
     monkeypatch.setenv("GITHUB_OUTPUT", str(output))

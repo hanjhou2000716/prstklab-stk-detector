@@ -38,6 +38,7 @@ SYNC_RESULT_KEYS = (
     "first_failure_at", "cursor_preserved", "next_retry_at", "escalation_reason",
     "priority_pending_error_reasons",
     "priority_pending_refs",
+    "priority_event_refs",
 )
 
 TRANSIENT_STORAGE_ERRORS = frozenset({

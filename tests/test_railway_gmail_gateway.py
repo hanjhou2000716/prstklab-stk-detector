@@ -15,6 +15,7 @@ from email_router import route_source  # noqa: E402
 from email_store import EmailStore  # noqa: E402
 from gmail_watch import GmailWatchConfig, GmailWatchManager, health, renewal_due  # noqa: E402
 
+import gmail_ingress as gmail_ingress_module  # noqa: E402
 from gmail_ingress import GmailIngressError, GmailIngressService, _candidate_diagnostics  # noqa: E402
 
 
@@ -352,6 +353,37 @@ def test_high_score_incomplete_fact_persists_private_pending_state(tmp_path: Pat
     assert len(pending) == 1
     assert pending[0]["summary_status"] == "pending"
     assert pending[0]["canonical_fact_key"] == row["canonical_fact_key"]
+
+
+def test_high_score_ready_fact_creates_event_ref_and_ready_state(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    monkeypatch.setattr(
+        gmail_ingress_module,
+        "financialjuice_public_summary",
+        lambda _row: {"status": "ready", "char_count": 24},
+    )
+    row = {
+        "source": "financialjuice",
+        "vendor_importance": 10,
+        "source_published_at": datetime.now(UTC).isoformat(),
+        "canonical_fact_key": "financialjuice-fact:ready-first-pass",
+        "material_fact_version": "financialjuice-fact-version:v1",
+        "summary_contract_version": "public-summary-v3",
+        "public_summary_status": "ready",
+        "public_summary_reason": "summary_ready",
+    }
+
+    diagnostics = _candidate_diagnostics([row], store)
+
+    assert diagnostics["counts"]["priority_candidate_detected"] == 1
+    assert diagnostics["counts"]["priority_event_eligible"] == 1
+    assert len(diagnostics["priority_event_refs"]) == 1
+    assert "priority_pending_refs" not in diagnostics
+    pending = store.priority_pending_events()
+    assert pending[0]["delivery_status"] == "ready"
+    assert pending[0]["event_ref"] == diagnostics["priority_event_refs"][0]
 
 
 def test_duplicate_replay_enriches_public_projection_without_second_event(tmp_path: Path) -> None:

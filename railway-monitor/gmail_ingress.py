@@ -121,6 +121,7 @@ def _candidate_diagnostics(
     """Return bounded per-message candidate counts and a primary reason."""
     counts = {key: 0 for key in _CANDIDATE_DIAGNOSTIC_KEYS}
     pending_refs: list[str] = []
+    event_refs: list[str] = []
     pending_error_reasons: list[str] = []
     batch_fact_keys: set[str] = set()
     saw_financialjuice = False
@@ -141,7 +142,12 @@ def _candidate_diagnostics(
                     mark_pending = getattr(store, "mark_priority_pending", None)
                     if callable(mark_pending):
                         try:
-                            mark_pending(dict(row), status="expired", reason=freshness_reason)
+                            updated = mark_pending(dict(row), status="expired", reason=freshness_reason)
+                            if updated is False:
+                                expired = dict(row)
+                                expired["public_summary_status"] = "expired"
+                                expired["public_summary_reason"] = freshness_reason
+                                store.upsert_priority_pending(expired)
                         except (TypeError, ValueError, RuntimeError) as error:
                             counts["priority_pending_state_error"] += 1
                             reason = str(error).strip()
@@ -185,6 +191,16 @@ def _candidate_diagnostics(
                 counts["duplicate_fact"] += 1
             if importance >= FJ_VENDOR_PRIORITY_THRESHOLD:
                 counts["priority_candidate_detected"] += 1
+                material_version = str(row.get("material_fact_version") or "").strip()
+                if material_version:
+                    # This is the stable hand-off token shared by Gmail and
+                    # the monitor.  It deliberately excludes mail IDs,
+                    # summary wording and retry timestamps.
+                    event_ref = hashlib.sha256(
+                        f"{fact_key}:{material_version}".encode()
+                    ).hexdigest()[:32]
+                else:
+                    event_ref = ""
             if not _summary_ready(row):
                 # Only fresh high-score FJ facts get a durable priority
                 # recovery record.  Lower-score observations remain ordinary
@@ -195,9 +211,13 @@ def _candidate_diagnostics(
                     continue
                 try:
                     pending = store.upsert_priority_pending(dict(row))
-                    event_ref = str(pending.get("event_ref") or "").strip()
-                    if event_ref and event_ref not in pending_refs:
-                        pending_refs.append(event_ref)
+                    persisted_ref = str(pending.get("event_ref") or event_ref).strip()
+                    if not persisted_ref:
+                        raise RuntimeError("priority_event_ref_missing")
+                    if persisted_ref not in event_refs:
+                        event_refs.append(persisted_ref)
+                    if persisted_ref not in pending_refs:
+                        pending_refs.append(persisted_ref)
                 except (TypeError, ValueError, RuntimeError) as error:
                     counts["priority_pending_state_error"] += 1
                     reason = str(error).strip()
@@ -209,9 +229,15 @@ def _candidate_diagnostics(
                 continue
             if importance >= FJ_VENDOR_PRIORITY_THRESHOLD:
                 try:
-                    mark_pending = getattr(store, "mark_priority_pending", None)
-                    if callable(mark_pending):
-                        mark_pending(dict(row), status="ready", reason="summary_ready")
+                    # Ready events must be durable too.  The previous code
+                    # only PATCHed an existing pending row, so a first-pass
+                    # complete summary had no event ref for monitor hand-off.
+                    persisted = store.upsert_priority_pending(dict(row))
+                    persisted_ref = str(persisted.get("event_ref") or event_ref).strip()
+                    if not persisted_ref:
+                        raise RuntimeError("priority_event_ref_missing")
+                    if persisted_ref not in event_refs:
+                        event_refs.append(persisted_ref)
                 except (TypeError, ValueError, RuntimeError) as error:
                     counts["priority_pending_state_error"] += 1
                     reason = str(error).strip()
@@ -241,6 +267,8 @@ def _candidate_diagnostics(
     result: dict[str, Any] = {"counts": counts, "primary_reason": primary}
     if pending_refs:
         result["priority_pending_refs"] = pending_refs
+    if event_refs:
+        result["priority_event_refs"] = event_refs
     if pending_error_reasons:
         result["priority_pending_error_reasons"] = list(dict.fromkeys(pending_error_reasons))[:8]
     return result

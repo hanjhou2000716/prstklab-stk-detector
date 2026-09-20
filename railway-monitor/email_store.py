@@ -177,6 +177,11 @@ class EmailStore:
                     attempt_count INTEGER NOT NULL DEFAULT 0,
                     last_run_id TEXT,
                     last_run_sha TEXT,
+                    delivery_status TEXT NOT NULL DEFAULT 'summary_pending',
+                    next_retry_at TEXT,
+                    last_progress_at TEXT,
+                    last_blocking_reason TEXT,
+                    delivered_at TEXT,
                     updated_at TEXT NOT NULL,
                     PRIMARY KEY (canonical_fact_key, material_fact_version)
                 );
@@ -195,6 +200,32 @@ class EmailStore:
             ):
                 if name not in columns:
                     connection.execute(f"ALTER TABLE gmail_cursor ADD COLUMN {name} TEXT")
+            priority_columns = {
+                str(row[1])
+                for row in connection.execute("PRAGMA table_info(financialjuice_priority_pending)")
+            }
+            priority_column_definitions = {
+                "delivery_status": "TEXT NOT NULL DEFAULT 'summary_pending'",
+                "next_retry_at": "TEXT",
+                "last_progress_at": "TEXT",
+                "last_blocking_reason": "TEXT",
+                "delivered_at": "TEXT",
+            }
+            for name, definition in priority_column_definitions.items():
+                if name not in priority_columns:
+                    connection.execute(
+                        f"ALTER TABLE financialjuice_priority_pending ADD COLUMN {name} {definition}"
+                    )
+            connection.execute(
+                """UPDATE financialjuice_priority_pending
+                   SET delivery_status = CASE summary_status
+                     WHEN 'ready' THEN 'ready'
+                     WHEN 'expired' THEN 'expired'
+                     WHEN 'contract_failed' THEN 'contract_failed'
+                     ELSE 'summary_pending'
+                   END
+                   WHERE delivery_status = 'summary_pending'"""
+            )
 
     def cursor(self) -> dict[str, Any]:
         with self._connect() as connection:
@@ -562,39 +593,73 @@ class EmailStore:
                     canonical_fact_key, material_fact_version, event_ref,
                     summary_contract_version, summary_status, summary_reason,
                     source_published_at, first_detected_at, last_checked_at,
-                    expires_at, attempt_count, last_run_id, last_run_sha, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    expires_at, attempt_count, last_run_id, last_run_sha,
+                    delivery_status, next_retry_at, last_progress_at,
+                    last_blocking_reason, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(canonical_fact_key, material_fact_version) DO UPDATE SET
                     summary_contract_version=excluded.summary_contract_version,
-                    summary_status=excluded.summary_status,
+                    summary_status=CASE
+                      WHEN financialjuice_priority_pending.delivery_status IN ('delivered', 'expired', 'contract_failed')
+                        THEN financialjuice_priority_pending.summary_status
+                      ELSE excluded.summary_status
+                    END,
                     summary_reason=excluded.summary_reason,
                     last_checked_at=excluded.last_checked_at,
                     attempt_count=excluded.attempt_count,
                     last_run_id=COALESCE(excluded.last_run_id, financialjuice_priority_pending.last_run_id),
                     last_run_sha=COALESCE(excluded.last_run_sha, financialjuice_priority_pending.last_run_sha),
+                    delivery_status=CASE
+                      WHEN financialjuice_priority_pending.delivery_status IN ('delivered', 'expired', 'contract_failed')
+                        THEN financialjuice_priority_pending.delivery_status
+                      ELSE excluded.delivery_status
+                    END,
+                    next_retry_at=CASE
+                      WHEN financialjuice_priority_pending.delivery_status IN ('delivered', 'expired', 'contract_failed')
+                        THEN financialjuice_priority_pending.next_retry_at
+                      ELSE excluded.next_retry_at
+                    END,
+                    last_progress_at=CASE
+                      WHEN financialjuice_priority_pending.delivery_status IN ('delivered', 'expired', 'contract_failed')
+                        THEN financialjuice_priority_pending.last_progress_at
+                      ELSE excluded.last_progress_at
+                    END,
+                    last_blocking_reason=CASE
+                      WHEN financialjuice_priority_pending.delivery_status IN ('delivered', 'expired', 'contract_failed')
+                        THEN financialjuice_priority_pending.last_blocking_reason
+                      ELSE excluded.last_blocking_reason
+                    END,
                     updated_at=excluded.updated_at""",
                 (key, version, event_ref, contract, status, reason, existing_source,
-                 first, checked_text, existing_expires, attempts, run_id, run_sha, checked_text),
+                 first, checked_text, existing_expires, attempts, run_id, run_sha,
+                 "ready" if status == "ready" else "expired" if status == "expired" else "contract_failed" if status == "contract_failed" else "summary_pending",
+                 None if status in {"ready", "expired", "contract_failed"} else datetime.fromtimestamp(expires_at, UTC).isoformat(),
+                 checked_text,
+                 None if status == "ready" else reason,
+                 checked_text),
             )
         return {"event_ref": event_ref, "summary_status": status, "summary_reason": reason,
                 "source_published_at": existing_source, "expires_at": existing_expires,
                 "attempt_count": attempts}
 
-    def priority_pending_events(self, *, now: datetime | None = None, limit: int = 100) -> list[dict[str, Any]]:
-        """Return bounded, identifier-only pending state for monitor recovery."""
-        current = (now or datetime.now(UTC)).astimezone(UTC).isoformat()
-        bounded = max(1, min(500, int(limit)))
+    def priority_pending_events(self, *, now: datetime | None = None, limit: int | None = None) -> list[dict[str, Any]]:
+        """Return all non-terminal identifier-only state for monitor recovery."""
+        bounded = None if limit is None else max(1, min(10_000, int(limit)))
         with self._connect() as connection:
-            rows = connection.execute(
-                """SELECT event_ref, canonical_fact_key, material_fact_version,
-                          summary_contract_version, summary_status, summary_reason,
-                          source_published_at, first_detected_at, last_checked_at,
-                          expires_at, attempt_count, last_run_id, last_run_sha
-                   FROM financialjuice_priority_pending
-                   WHERE summary_status IN ('pending', 'ready') AND expires_at > ?
-                   ORDER BY source_published_at ASC LIMIT ?""",
-                (current, bounded),
-            ).fetchall()
+            query = """SELECT event_ref, canonical_fact_key, material_fact_version,
+                              summary_contract_version, summary_status, summary_reason,
+                              source_published_at, first_detected_at, last_checked_at,
+                              expires_at, attempt_count, last_run_id, last_run_sha,
+                              delivery_status, next_retry_at, last_progress_at,
+                              last_blocking_reason, delivered_at
+                       FROM financialjuice_priority_pending
+                       WHERE delivery_status IN ('summary_pending', 'ready', 'delivery_pending')
+                       ORDER BY source_published_at ASC"""
+            params: tuple[Any, ...] = ()
+            if bounded is not None:
+                query += " LIMIT ?"
+                params += (bounded,)
+            rows = connection.execute(query, params).fetchall()
         return [dict(row) for row in rows]
 
     def mark_priority_pending(self, event: dict[str, Any], *, status: str, reason: str = "") -> bool:
@@ -602,12 +667,46 @@ class EmailStore:
         version = str(event.get("material_fact_version") or "").strip()
         if not key or not version or status not in {"ready", "expired", "contract_failed"}:
             return False
+        delivery_status = status
         with self._connect() as connection:
             cursor = connection.execute(
                 """UPDATE financialjuice_priority_pending
-                   SET summary_status = ?, summary_reason = ?, last_checked_at = ?, updated_at = ?
-                   WHERE canonical_fact_key = ? AND material_fact_version = ?""",
-                (status, str(reason or "")[:120], _now(), _now(), key, version),
+                   SET summary_status = ?, summary_reason = ?, delivery_status = ?,
+                       last_blocking_reason = ?, last_checked_at = ?, last_progress_at = ?,
+                       next_retry_at = NULL, updated_at = ?
+                   WHERE canonical_fact_key = ? AND material_fact_version = ?
+                     AND delivery_status NOT IN ('delivered', 'expired', 'contract_failed')""",
+                (status, str(reason or "")[:120], delivery_status, str(reason or "")[:120],
+                 _now(), _now(), _now(), key, version),
+            )
+            return cursor.rowcount > 0
+
+    def transition_priority_delivery(
+        self,
+        event_ref: str,
+        *,
+        expected_status: str,
+        next_status: str,
+        reason: str = "",
+        next_retry_at: str | None = None,
+    ) -> bool:
+        """Conditionally advance a durable delivery state without regressions."""
+        if not event_ref or expected_status == next_status:
+            return False
+        allowed = {"summary_pending", "ready", "delivery_pending", "delivered", "expired", "contract_failed"}
+        if expected_status not in allowed or next_status not in allowed:
+            return False
+        with self._connect() as connection:
+            cursor = connection.execute(
+                """UPDATE financialjuice_priority_pending
+                   SET delivery_status = ?, last_checked_at = ?, last_progress_at = ?,
+                       last_blocking_reason = ?, next_retry_at = ?,
+                       delivered_at = CASE WHEN ? = 'delivered' THEN COALESCE(delivered_at, ?) ELSE delivered_at END,
+                       updated_at = ?
+                   WHERE event_ref = ? AND delivery_status = ?""",
+                (next_status, _now(), _now(), str(reason or "")[:120] if next_status in {"summary_pending", "contract_failed"} else None,
+                 next_retry_at if next_status in {"summary_pending", "delivery_pending"} else None,
+                 next_status, _now(), _now(), event_ref, expected_status),
             )
             return cursor.rowcount > 0
 
