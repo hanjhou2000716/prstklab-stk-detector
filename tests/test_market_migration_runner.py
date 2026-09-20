@@ -4,7 +4,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
-from scripts.market_migration_runner import CommandResult, MigrationRunner
+from scripts.market_migration_runner import CommandResult, MigrationRunner, project_ref_fingerprint
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT_REF = "jpsohtutyaondeyvcjls"
@@ -169,7 +169,17 @@ def test_apply_with_ready_preflight_reports_already_verified_without_db_push(mon
     reference_dir = tmp_path / "preflight"
     reference_dir.mkdir()
     (reference_dir / "run-metadata.json").write_text(
-        json.dumps({"headSha": "abc123", "conclusion": "success"}),
+        json.dumps({
+            "run_id": "100",
+            "repository": "hanjhou2000716/prstklab-stk-detector",
+            "workflow_path": ".github/workflows/migrate-market-observations.yml",
+            "head_sha": "abc123",
+            "head_branch": "main",
+            "event": "workflow_dispatch",
+            "run_attempt": 1,
+            "conclusion": "success",
+            "created_at": now.isoformat(),
+        }),
         encoding="utf-8",
     )
     (reference_dir / "verification.json").write_text(
@@ -179,6 +189,7 @@ def test_apply_with_ready_preflight_reports_already_verified_without_db_push(mon
             "alert_class": "diagnostic_only",
             "run_id": "100",
             "head_sha": "abc123",
+            "project_ref_fingerprint": project_ref_fingerprint(PROJECT_REF),
             "verified_at": now.isoformat(),
         }),
         encoding="utf-8",
@@ -210,3 +221,42 @@ def test_apply_with_ready_preflight_reports_already_verified_without_db_push(mon
     assert payload["status"] == "already_verified"
     assert ["supabase", "db", "push"] not in calls
     assert ["supabase", "db", "push", "--dry-run"] in calls
+
+
+def test_apply_rejects_preflight_when_current_main_changed(tmp_path):
+    now = datetime(2026, 9, 21, 12, 0, tzinfo=UTC)
+    reference_dir = tmp_path / "preflight"
+    reference_dir.mkdir()
+    (reference_dir / "run-metadata.json").write_text(json.dumps({
+        "run_id": "100",
+        "repository": "hanjhou2000716/prstklab-stk-detector",
+        "workflow_path": ".github/workflows/migrate-market-observations.yml",
+        "head_sha": "abc123",
+        "head_branch": "main",
+        "event": "workflow_dispatch",
+        "run_attempt": 1,
+        "conclusion": "success",
+        "created_at": now.isoformat(),
+    }), encoding="utf-8")
+    (reference_dir / "verification.json").write_text(json.dumps({
+        "mode": "preflight",
+        "status": "ready_no_changes",
+        "run_id": "100",
+        "head_sha": "abc123",
+        "project_ref_fingerprint": project_ref_fingerprint(PROJECT_REF),
+        "verified_at": now.isoformat(),
+    }), encoding="utf-8")
+    current_main = tmp_path / "current-main-sha.txt"
+    current_main.write_text("different", encoding="utf-8")
+    runner = MigrationRunner(
+        mode="apply", repo_root=ROOT, artifact_dir=tmp_path / "output",
+        preflight_dir=reference_dir, head_sha="abc123", ref="refs/heads/main",
+        run_id="104", preflight_run_id="100", confirmation="APPLY",
+        current_main_sha_file=current_main, environment=_environment(),
+        command_runner=lambda *_args: (_ for _ in ()).throw(AssertionError("CLI must not run")),
+        session=Session(), now=now,
+    )
+
+    assert runner.run() == 1
+    payload = json.loads((tmp_path / "output" / "verification.json").read_text(encoding="utf-8"))
+    assert payload["error_code"] == "main_ref_changed"

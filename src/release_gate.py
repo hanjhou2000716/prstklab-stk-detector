@@ -140,9 +140,14 @@ def _validate_public_alert_target(
         return ["click target alert is not indexed in the published release"]
     path = str(row.get("path") or "").strip()
     digest = str(row.get("sha256") or "").strip()
-    if not path.startswith("alerts/") or ".." in path.split("/") or len(digest) != 64:
+    if not (path.startswith("alerts/") or path.startswith("data/alerts/")) or ".." in path.split("/") or len(digest) != 64:
         return ["click target alert index row is invalid"]
-    url = urljoin(public_url.rstrip("/") + "/", path)
+    # Alert-index paths are relative to the immutable data root.  The Pages
+    # site itself is rooted at ``site/``, so ``alerts/x.json`` is published at
+    # ``data/alerts/x.json``.  Keep the index format backward compatible while
+    # making the public URL resolution explicit and shared with the publisher.
+    public_path = path if path.startswith("data/") else f"data/{path}"
+    url = urljoin(public_url.rstrip("/") + "/", public_path)
     errors: list[str] = []
     try:
         response = requests.get(url, timeout=timeout, headers={"Accept": "application/json", "Cache-Control": "no-cache", "User-Agent": "PRStK-release-gate"})

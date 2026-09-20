@@ -22,8 +22,18 @@ def test_migration_workflow_has_preflight_dry_run_verification_and_redacted_arti
         "Final migration gate",
         "actions/upload-artifact",
         "retention-days: 14",
+        "run-name: Supabase market migration / ${{ inputs.mode || 'preflight' }} / ${{ github.sha }}",
+        "workflow_path:.path",
+        "head_sha",
+        "created_at",
+        "Verify apply still targets current main",
+        "--current-main-sha-file",
+        "workflow_path:.path",
     ):
         assert marker in workflow
+
+    assert not workflow.startswith("name: Supabase market migration / ${{")
+    assert "--jq '{headSha,conclusion,workflowName,createdAt}'" not in workflow
 
     assert "supabase migration repair" not in workflow
     assert "supabase db reset" not in workflow
@@ -50,3 +60,20 @@ def test_refresh_dashboard_enables_private_market_backup_without_delivery_secret
     assert "SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" in workflow
     assert 'MARKET_BACKUP_ENABLED: "true"' in workflow
     assert "TELEGRAM_BOT_TOKEN" not in workflow
+
+
+def test_quality_requires_actions_syntax_and_real_local_supabase_integration():
+    workflow = (ROOT / ".github/workflows/quality.yml").read_text(encoding="utf-8")
+
+    assert "rhysd/actionlint:1.7.7" in workflow
+    assert "scripts/local_supabase_migration_test.py" in workflow
+    assert "supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520" in workflow
+
+
+def test_scheduled_brief_preserves_release_gate_diagnostics_after_failure():
+    workflow = (ROOT / ".github/workflows/scheduled-brief.yml").read_text(encoding="utf-8")
+
+    assert "Record release gate diagnostics" in workflow
+    assert "Save release gate diagnostics" in workflow
+    assert "Upload release gate diagnostics" in workflow
+    assert "retention-days: 14" in workflow

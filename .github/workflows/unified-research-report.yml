@@ -18,13 +18,6 @@ on:
         description: Per-strategy worker timeout before recording a data gap
         required: true
         default: '240'
-      mops_max_refresh:
-        description: Legacy compatibility input; Taiwan current-quality v2 does not call MOPS
-        required: true
-        # A bounded batch is required in production.  Zero means "verify the
-        # complete pool" and can spend the entire job timeout on a cold cache;
-        # scheduled runs must advance the cache without blocking publication.
-        default: '50'
       scan_mode:
         description: production publishes; smoke/debug only upload an isolated artifact
         required: true
@@ -57,10 +50,6 @@ on:
         type: choice
         options: [scan, resume_incomplete, repair_state]
         default: scan
-      repair_source_run_id:
-        description: Validated historical research run used only by repair_state
-        required: false
-        default: '33953751631'
   repository_dispatch:
     types: [unified-research-report]
   schedule:
@@ -96,14 +85,14 @@ jobs:
       TAIWAN_LIMIT: ${{ inputs.taiwan_limit || github.event.client_payload.taiwan_limit || '0' }}
       US_LIMIT: ${{ inputs.us_limit || github.event.client_payload.us_limit || '0' }}
       BATCH_SIZE: ${{ inputs.batch_size || github.event.client_payload.batch_size || '50' }}
-      MOPS_MAX_REFRESH: ${{ inputs.mops_max_refresh || github.event.client_payload.mops_max_refresh || '50' }}
+      MOPS_MAX_REFRESH: ${{ github.event.client_payload.mops_max_refresh || '50' }}
       SCAN_MODE: ${{ inputs.scan_mode || github.event.client_payload.scan_mode || 'production' }}
       BACKTEST_RELEASE_PATH: ${{ inputs.backtest_release_path || github.event.client_payload.backtest_release_path || '' }}
       TARGET_MARKET: ${{ inputs.target_market || github.event.client_payload.target_market || 'auto' }}
       TRADING_DATE: ${{ inputs.trading_date || github.event.client_payload.trading_date || '' }}
       TARGET_STRATEGY: ${{ inputs.target_strategy || github.event.client_payload.target_strategy || 'all' }}
       RESEARCH_ACTION: ${{ inputs.research_action || github.event.client_payload.research_action || (github.event_name == 'schedule' && 'resume_incomplete') || 'scan' }}
-      REPAIR_SOURCE_RUN_ID: ${{ inputs.repair_source_run_id || github.event.client_payload.repair_source_run_id || '33953751631' }}
+      REPAIR_SOURCE_RUN_ID: ${{ github.event.client_payload.repair_source_run_id || '33953751631' }}
       SCHEDULE_CRON: ${{ github.event.schedule || '' }}
       NEWS_CACHE_PATH: site/data/news-cache.json
       SEC_FACTS_CACHE_PATH: data/sec-companyfacts-cache.json

@@ -318,6 +318,57 @@ jobs:
         run: |
           arguments=(--manifest "$MANIFEST_PATH" --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --public-url "${{ steps.deployment.outputs.page_url }}" --expected-notification-id "${{ steps.prepare.outputs.notification_id }}" --expected-alert-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --expected-alert-observation-id "${{ steps.prepare.outputs.observation_id }}" --public-attempts 12 --public-delay 5)
           python -m src.release_gate "${arguments[@]}" >> "$GITHUB_OUTPUT"
+      - name: Record release gate diagnostics
+        if: always()
+        env:
+          RELEASE_GATE_OUTCOME: ${{ steps.release_gate.outcome || 'not_run' }}
+          RELEASE_GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
+          RELEASE_GATE_ERRORS: ${{ steps.release_gate.outputs.errors || '' }}
+        run: |
+          {
+            echo "## Release gate diagnostics"
+            echo "- outcome: ${RELEASE_GATE_OUTCOME}"
+            echo "- allowed: ${RELEASE_GATE_ALLOWED}"
+            echo "- errors: ${RELEASE_GATE_ERRORS:-none}"
+            echo "- delivery policy: claim and sender require allowed=true"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Save release gate diagnostics
+        if: always()
+        env:
+          RELEASE_GATE_OUTCOME: ${{ steps.release_gate.outcome || 'not_run' }}
+          RELEASE_GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
+          RELEASE_GATE_ERRORS: ${{ steps.release_gate.outputs.errors || '' }}
+          RELEASE_GATE_RELEASE_ID: ${{ steps.release_gate.outputs.release_id || '' }}
+          RELEASE_GATE_SNAPSHOT_ID: ${{ steps.release_gate.outputs.snapshot_id || '' }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          payload = {
+              "schema_version": "1",
+              "stage": "release_gate",
+              "outcome": os.environ.get("RELEASE_GATE_OUTCOME", "not_run"),
+              "allowed": os.environ.get("RELEASE_GATE_ALLOWED", "false") == "true",
+              "errors": [item for item in os.environ.get("RELEASE_GATE_ERRORS", "").split(";") if item],
+              "release_id": os.environ.get("RELEASE_GATE_RELEASE_ID", ""),
+              "snapshot_id": os.environ.get("RELEASE_GATE_SNAPSHOT_ID", ""),
+              "delivery_policy": "claim_and_sender_require_allowed",
+          }
+          Path("release-gate-diagnostics.json").write_text(
+              json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+      - name: Upload release gate diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-gate-diagnostics-${{ github.run_id }}
+          path: release-gate-diagnostics.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: Record delivery gate when Pages is unavailable
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && (steps.release_policy.outputs.publish != 'true' || steps.deployment.outputs.available != 'true')
         run: echo "Release is not fresh or Pages is unavailable; Telegram delivery intentionally skipped (fail closed)."

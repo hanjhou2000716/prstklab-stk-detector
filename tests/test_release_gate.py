@@ -680,6 +680,25 @@ def test_public_alert_target_gate_covers_missing_tampered_and_matching_alerts(mo
         loaded, manifest, public_url="https://example.test", notification_id="a",
         snapshot_id="market-current", observation_id="observation-current",
     ) == []
+
+    requested_urls: list[str] = []
+
+    def record_get(url, **_kwargs):
+        requested_urls.append(url)
+        return Response(good)
+
+    monkeypatch.setattr("src.release_gate.requests.get", record_get)
+    assert _validate_public_alert_target(
+        loaded, manifest, public_url="https://example.test/prstklab-stk-detector/", notification_id="a",
+    ) == []
+    assert requested_urls == ["https://example.test/prstklab-stk-detector/data/alerts/a.json"]
+
+    row["path"] = "data/alerts/a.json"
+    requested_urls.clear()
+    assert _validate_public_alert_target(
+        loaded, manifest, public_url="https://example.test/prstklab-stk-detector/", notification_id="a",
+    ) == []
+    assert requested_urls == ["https://example.test/prstklab-stk-detector/data/alerts/a.json"]
     assert _validate_public_alert_target(
         loaded, manifest, public_url="https://example.test", notification_id="a",
         snapshot_id="market-other", observation_id="observation-other",

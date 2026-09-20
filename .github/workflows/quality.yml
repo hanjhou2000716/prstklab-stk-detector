@@ -12,7 +12,7 @@ permissions:
 jobs:
   test-and-dry-run:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       # Deliberate non-secret values used only by the local validation.
       TELEGRAM_CHAT_IDS: ci-recipient-a,ci-recipient-b
@@ -31,6 +31,10 @@ jobs:
           python -m pip install uv
           uv sync --locked --all-groups
           uv run python -m playwright install --with-deps chromium
+      - name: Install pinned Supabase CLI
+        uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v2
+        with:
+          version: 2.39.2
       - name: Reset coverage data
         run: uv run coverage erase
       - name: Run full unit tests and publish coverage report
@@ -57,6 +61,10 @@ jobs:
         run: python scripts/verify_gate_evidence.py
       - name: Verify offline Supabase migration contract without production credentials
         run: python scripts/validate_local_migration_contract.py
+      - name: Validate GitHub Actions workflow syntax
+        run: docker run --rm -w /repo -v "$GITHUB_WORKSPACE:/repo" rhysd/actionlint:1.7.7 .github/workflows/*.yml
+      - name: Run disposable local Supabase migration integration test
+        run: python scripts/local_supabase_migration_test.py
       - name: Verify Creator, FinancialJuice and news intelligence contracts
         run: python scripts/verify_intelligence_contracts.py
       - name: Mypy full source gate

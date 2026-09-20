@@ -53,7 +53,11 @@ class Session:
     def post(self, url, **kwargs):
         self.calls.append(("POST", url, kwargs))
         if "/rest/v1/rpc/verify_market_backup_canary" in url:
-            return Response({"status": "rolled_back"})
+            return Response({
+                "status": "rolled_back",
+                "market_observation": "verified",
+                "market_source_state": "verified",
+            })
         query = str(kwargs.get("json", {}).get("query") or "")
         if "schema_migrations" in query:
             return Response(self.history)
