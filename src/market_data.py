@@ -553,7 +553,7 @@ def _append_supabase_backup_missing(
 def _persist_market_backup(items: list[dict[str, Any]], store: Any) -> list[str]:
     if store is None:
         return []
-    errors: list[str] = []
+    error_groups: dict[tuple[str, str], int] = {}
     for item in items:
         try:
             instrument_id = str(item.get("instrument_id") or f"market:{str(item.get('ticker') or '').casefold()}")
@@ -586,8 +586,17 @@ def _persist_market_backup(items: list[dict[str, Any]], store: Any) -> list[str]
                 "circuit_state": "open" if degraded else "closed",
             })
         except Exception as exc:
-            errors.append(f"market_backup_write:{item.get('ticker', 'unknown')}:{type(exc).__name__}")
-    return errors
+            provider = str(
+                item.get("source_label")
+                or item.get("quote_source")
+                or "unknown"
+            ).strip()[:80] or "unknown"
+            key = (provider, type(exc).__name__)
+            error_groups[key] = error_groups.get(key, 0) + 1
+    return [
+        f"market_backup_write:{provider}:{error_type}:count={count}"
+        for (provider, error_type), count in sorted(error_groups.items())
+    ]
 
 
 def get_quote(item: dict[str, str], session: str | None = None) -> dict[str, Any]:

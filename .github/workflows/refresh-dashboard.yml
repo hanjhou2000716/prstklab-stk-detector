@@ -28,6 +28,9 @@ jobs:
       DATA_RELEASE_BRANCH: data-release
       RAW_OBSERVATION_ROOT: data/raw-observations
       RAW_OBSERVATION_REQUIRED: "true"
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      MARKET_BACKUP_ENABLED: "true"
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

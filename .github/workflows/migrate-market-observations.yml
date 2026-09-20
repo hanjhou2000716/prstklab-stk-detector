@@ -9,33 +9,110 @@ permissions:
 jobs:
   migrate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       SUPABASE_PROJECT_ID: ${{ vars.SUPABASE_PROJECT_ID }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      PYTHONPATH: .
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
-      - name: Validate migration credentials
+      - name: Prepare redacted migration diagnostics
         run: |
-          test -n "$SUPABASE_ACCESS_TOKEN"
-          test -n "$SUPABASE_DB_PASSWORD"
-          test -n "$SUPABASE_PROJECT_ID"
+          set -euo pipefail
+          mkdir -p migration-diagnostics
+          printf '{"status":"started"}\n' > migration-diagnostics/verification.json
+      - name: Validate migration credentials and project access
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_ID SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY; do
+            if [ -n "${!name:-}" ]; then
+              echo "${name}=present"
+            else
+              echo "${name}=missing"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            printf '{"status":"failed","error_code":"credential_missing"}\n' > migration-diagnostics/verification.json
+            exit 1
+          fi
+          if ! [[ "$SUPABASE_PROJECT_ID" =~ ^[a-z0-9]{20}$ ]]; then
+            printf '{"status":"failed","error_code":"project_ref_mismatch"}\n' > migration-diagnostics/verification.json
+            exit 1
+          fi
+          status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_ID}" || true)"
+          if [ "$status" != "200" ]; then
+            printf '{"status":"failed","error_code":"token_unauthorized"}\n' > migration-diagnostics/verification.json
+            echo "project_access=failed_http_${status}"
+            exit 1
+          fi
+          echo "project_access=verified"
       - uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520
         with:
           version: latest
-      - name: Link project and apply migrations
+      - name: Link project without exposing credentials
         run: |
-          supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
-          supabase db push
+          set -euo pipefail
+          if ! supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"; then
+            printf '{"status":"failed","error_code":"database_password_invalid"}\n' > migration-diagnostics/verification.json
+            exit 1
+          fi
+      - name: Check migration history
+        run: |
+          set -euo pipefail
+          if ! supabase migration list --linked > migration-diagnostics/migration-list.txt 2>&1; then
+            printf '{"status":"failed","error_code":"migration_history_diverged"}\n' > migration-diagnostics/verification.json
+            exit 1
+          fi
+          python scripts/validate_supabase_migrations.py \
+            --root . --remote-file migration-diagnostics/migration-list.txt \
+            | tee migration-diagnostics/migration-comparison.json
+      - name: Validate migration dry run
+        run: |
+          set -euo pipefail
+          if ! supabase db push --dry-run > migration-diagnostics/migration-dry-run.txt 2>&1; then
+            printf '{"status":"failed","error_code":"migration_dry_run_failed"}\n' > migration-diagnostics/verification.json
+            exit 1
+          fi
+      - name: Apply migrations
+        run: |
+          set -euo pipefail
+          if ! supabase db push > migration-diagnostics/migration-apply.txt 2>&1; then
+            printf '{"status":"failed","error_code":"migration_apply_failed"}\n' > migration-diagnostics/verification.json
+            exit 1
+          fi
+      - name: Verify schema, RLS and transactional backup read-write
+        run: |
+          set -euo pipefail
+          if ! python -m src.market_backup_verification > migration-diagnostics/verification.json; then
+            exit 1
+          fi
       - name: Publish migration summary
+        if: always()
         run: |
           {
             echo "## Market observation backup migration"
-            echo "- migration_status: applied"
-            echo "- tables: market_observations, market_source_state"
-            echo "- public_access: denied"
-            echo "- retention: 18 months normalized observations"
+            if [ -f migration-diagnostics/verification.json ]; then
+              jq -r '"- status: \(.status // "unknown")", "- error_code: \(.error_code // "none")", "- migration_status: \(.migration_status // "not_verified")", "- schema_status: \(.schema_status // "not_verified")", "- rls_status: \(.rls_status // "not_verified")", "- service_role_write_status: \(.service_role_write_status // "not_verified")", "- service_role_read_status: \(.service_role_read_status // "not_verified")", "- canary_cleanup_status: \(.canary_cleanup_status // "not_verified")", "- verified_at: \(.verified_at // "none")"' migration-diagnostics/verification.json || echo '- status: invalid_diagnostic'
+            else
+              echo '- status: failed_before_diagnostic'
+            fi
+            echo '- secrets: values redacted'
+            echo '- recovery policy: no migration repair, reset, or production seed'
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload redacted migration diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: market-observation-migration-diagnostics-${{ github.run_id }}
+          path: migration-diagnostics
+          if-no-files-found: warn
+          retention-days: 14

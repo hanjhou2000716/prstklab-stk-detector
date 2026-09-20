@@ -18,6 +18,26 @@ import requests
 BACKUP_MAX_COMPLETED_SESSIONS = 3
 BACKUP_SCHEMA_VERSION = "market-observations-v1"
 
+_SESSION_POLICIES = {
+    "taiwan": "XTAI",
+    "us": "NYSE",
+    "asia_japan": "JPX",
+    "asia_korea": "XKRX",
+    "us_close": "NYSE",
+    "futures_energy": "CMEGlobex_Energy",
+    "usd_twd": "XTAI",
+}
+_TICKER_POLICIES = {
+    "NIKKEI": "asia_japan",
+    "KOSPI": "asia_korea",
+    "DXY": "us_close",
+    "US10Y": "us_close",
+    "BRENT": "futures_energy",
+    "WTI": "futures_energy",
+    "GOLD": "futures_energy",
+    "USD/TWD": "usd_twd",
+}
+
 
 def _number(value: Any) -> float | None:
     if value is None or isinstance(value, bool):
@@ -227,12 +247,39 @@ def from_environment(*, session: requests.Session | None = None) -> SupabaseMark
 def backup_quote_within_limit(
     quote: dict[str, Any], *, expected_market_date: date, max_completed_sessions: int = BACKUP_MAX_COMPLETED_SESSIONS,
 ) -> bool:
+    """Accept only a bounded number of completed sessions of last-known-good data.
+
+    The old implementation used calendar-day subtraction, which made a Friday
+    close look four days old on a Monday and applied Taiwan weekends to global
+    assets.  A quote with a known market policy is now measured against that
+    exchange's completed sessions.  Unknown instruments retain a conservative
+    weekday fallback for backwards compatibility.
+    """
     try:
         observed = date.fromisoformat(str(quote.get("market_date") or quote.get("quote_date") or ""))
     except ValueError:
         return False
-    age = (expected_market_date - observed).days
-    return 0 <= age <= max(0, int(max_completed_sessions)) and _number(quote.get("price")) is not None
+    if observed > expected_market_date or _number(quote.get("price")) is None:
+        return False
+    market = str(quote.get("market") or "").strip()
+    ticker = str(quote.get("ticker") or "").strip()
+    policy = _TICKER_POLICIES.get(ticker)
+    calendar_name = _SESSION_POLICIES.get(market) or _SESSION_POLICIES.get(policy or "")
+    if calendar_name:
+        try:
+            import pandas_market_calendars as mcal
+
+            schedule = mcal.get_calendar(calendar_name).schedule(
+                start_date=observed, end_date=expected_market_date,
+            )
+            age = sum(session.date() > observed for session in schedule.index)
+        except Exception:
+            # Falling back to calendar days is safer than silently accepting an
+            # unknown age, and the caller still marks the result stale.
+            age = (expected_market_date - observed).days
+    else:
+        age = (expected_market_date - observed).days
+    return 0 <= age <= max(0, int(max_completed_sessions))
 
 
 __all__ = [
