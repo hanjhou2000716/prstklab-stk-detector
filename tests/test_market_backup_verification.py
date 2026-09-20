@@ -53,7 +53,7 @@ class Session:
         query = str(kwargs.get("json", {}).get("query") or "")
         if "schema_migrations" in query:
             return Response(self.history)
-        if "savepoint market_backup_canary" in query:
+        if "begin;" in query or "savepoint market_backup_canary" in query:
             return Response(self.smoke)
         assert query == SCHEMA_QUERY
         return Response([self.schema])
