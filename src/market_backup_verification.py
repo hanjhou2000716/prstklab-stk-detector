@@ -20,6 +20,7 @@ EXPECTED_MIGRATIONS = (
     "202609170001",
     "202609180001",
     "202609200001",
+    "202609210001",
 )
 
 
@@ -158,7 +159,7 @@ select
 HISTORY_QUERY = """
 select version::text as version
 from supabase_migrations.schema_migrations
-where version in ('202609170001', '202609180001', '202609200001')
+where version in ('202609170001', '202609180001', '202609200001', '202609210001')
 order by version
 """
 
