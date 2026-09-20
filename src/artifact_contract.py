@@ -118,9 +118,17 @@ def _quote_contract_errors(quote: dict[str, Any], path: str) -> list[str]:
                 if basis != required_basis:
                     errors.append(f"{path}: comparison_basis conflicts with crosscheck_policy")
 
-    fetched = _parse_time(quote.get("fetched_at"))
-    published = _parse_time(quote.get("published_at"))
-    if fetched and published and published > fetched:
+    fetched_raw = str(quote.get("fetched_at") or "").strip()
+    published_raw = str(quote.get("published_at") or "").strip()
+    fetched = _parse_time(fetched_raw)
+    published = _parse_time(published_raw)
+    # A daily quote_date is a market-session label, not an instant.  Treating
+    # ``2026-09-21`` as midnight UTC makes a valid Asia/Taipei close appear
+    # later than a 23:xx UTC fetch from the previous calendar day.  Compare
+    # publication order only when both values carry an explicit time.
+    published_has_time = "T" in published_raw or " " in published_raw
+    fetched_has_time = "T" in fetched_raw or " " in fetched_raw
+    if fetched and published and published_has_time and fetched_has_time and published > fetched:
         errors.append(f"{path}: published_at is later than fetched_at")
 
     quote_date = _parse_time(quote.get("quote_date"))

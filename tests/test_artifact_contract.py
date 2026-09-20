@@ -606,6 +606,13 @@ def test_market_audit_normalizes_naive_and_aware_timestamps():
     assert validate_market(market) == []
 
 
+def test_market_audit_does_not_compare_date_only_quote_label_as_utc_instant():
+    market = _market()
+    market["indices"][0]["published_at"] = "2026-09-21"
+    market["indices"][0]["fetched_at"] = "2026-09-20T23:48:00+00:00"
+    assert validate_market(market) == []
+
+
 def _events():
     return {
         "schema_version": 1,
