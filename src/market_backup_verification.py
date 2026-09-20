@@ -26,9 +26,10 @@ EXPECTED_MIGRATIONS = (
 class VerificationError(RuntimeError):
     """A safe, stable verification failure code."""
 
-    def __init__(self, code: str) -> None:
+    def __init__(self, code: str, *, failed_checks: tuple[str, ...] = ()) -> None:
         super().__init__(code)
         self.code = code
+        self.failed_checks = failed_checks
 
 
 class SupabaseManagementClient:
@@ -201,6 +202,11 @@ def _all_true(row: dict[str, Any], keys: tuple[str, ...]) -> bool:
     return all(row.get(key) is True for key in keys)
 
 
+def _failed_checks(row: dict[str, Any], keys: tuple[str, ...]) -> tuple[str, ...]:
+    """Return only safe check names; never include SQL results or credentials."""
+    return tuple(key for key in keys if row.get(key) is not True)
+
+
 def _service_role_rest_read(url: str, service_role_key: str, *, session: requests.Session) -> bool:
     endpoint = f"{url.rstrip('/')}/rest/v1/market_source_state"
     try:
@@ -250,14 +256,27 @@ def verify_market_backup(
         "purge_public_roles_revoked", "purge_service_role_execute",
     )
     if not _all_true(schema_row, schema_keys):
-        raise VerificationError("schema_verification_failed")
+        raise VerificationError(
+            "schema_verification_failed",
+            failed_checks=_failed_checks(schema_row, schema_keys),
+        )
     if not _all_true(schema_row, rls_keys):
-        raise VerificationError("rls_verification_failed")
+        raise VerificationError(
+            "rls_verification_failed",
+            failed_checks=_failed_checks(schema_row, rls_keys),
+        )
 
     history_rows = _rows(client.query(HISTORY_QUERY, read_only=True))
     registered = {str(row.get("version")) for row in history_rows}
     if not set(EXPECTED_MIGRATIONS).issubset(registered):
-        raise VerificationError("schema_verification_failed")
+        raise VerificationError(
+            "schema_verification_failed",
+            failed_checks=tuple(
+                f"missing_migration:{version}"
+                for version in EXPECTED_MIGRATIONS
+                if version not in registered
+            ),
+        )
 
     http_session = session or requests.Session()
     _service_role_rest_read(supabase_url, service_role_key, session=http_session)
@@ -294,7 +313,11 @@ def main() -> int:
             service_role_key=args.service_role_key,
         )
     except VerificationError as exc:
-        print(json.dumps({"status": "failed", "error_code": exc.code}, ensure_ascii=False))
+        print(json.dumps({
+            "status": "failed",
+            "error_code": exc.code,
+            "failed_checks": list(exc.failed_checks),
+        }, ensure_ascii=False))
         return 1
     print(json.dumps({"status": "complete", **result}, ensure_ascii=False))
     return 0
