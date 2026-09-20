@@ -117,6 +117,17 @@ def _attach_realtime_external_events(snapshot: dict[str, Any]) -> dict[str, Any]
         item for item in projection["events"]
         if str(item.get("notification_status") or "") == "eligible"
     ]
+    priority_event_refs: list[str] = []
+    for item in projection["events"]:
+        if _safe_vendor_importance(item) < 9:
+            continue
+        ref = str(item.get("priority_pending_ref") or "").strip()
+        if ref and ref not in priority_event_refs:
+            priority_event_refs.append(ref[:64])
+    # This is a safe correlation-only projection.  It lets the monitor
+    # distinguish a ready event from a missing dispatch without exposing
+    # message text, canonical keys or private mail identifiers.
+    snapshot["financialjuice_priority_event_refs"] = priority_event_refs
     # The monitor only needs a bounded age/count signal to retry a pending
     # summary.  Keep the pending marker public-safe: event text, source IDs,
     # canonical keys and mail-derived fields stay in the private observation
@@ -444,19 +455,50 @@ def write_status_output(
     pending_events = [item for item in pending_value if isinstance(item, dict)] if isinstance(pending_value, list) else []
     dispatch_detected = _safe_nonnegative_int(os.getenv("DISPATCH_PRIORITY_CANDIDATE_DETECTED"))
     dispatch_refs = _dispatch_pending_refs()
+    dispatch_event_refs = _dispatch_event_refs()
     pending_refs = {
         str(item.get("priority_pending_ref") or "").strip()
         for item in pending_events
         if str(item.get("priority_pending_ref") or "").strip()
     }
-    missing_dispatch_refs = [ref for ref in dispatch_refs if ref not in pending_refs]
+    raw_projected_refs = snapshot.get("financialjuice_priority_event_refs", []) if isinstance(snapshot, dict) else []
+    projected_event_refs = {
+        str(ref or "").strip()
+        for ref in raw_projected_refs
+        if str(ref or "").strip()
+    } if isinstance(raw_projected_refs, (list, tuple)) else set()
+    if isinstance(snapshot, dict):
+        for item in snapshot.get("financialjuice_priority_events", []) or []:
+            if isinstance(item, dict) and str(item.get("priority_pending_ref") or "").strip():
+                projected_event_refs.add(str(item["priority_pending_ref"]).strip())
+    projected_event_refs.update(pending_refs)
+    missing_pending_refs = [ref for ref in dispatch_refs if ref not in pending_refs]
+    missing_event_refs = [ref for ref in dispatch_event_refs if ref not in projected_event_refs]
+    # New dispatches carry all high-score event refs.  During the compatibility
+    # window, an old count-only dispatch may be rescued only when the monitor
+    # can independently re-scan a durable projected FJ event; the count alone
+    # never grants delivery eligibility.
+    if dispatch_event_refs:
+        missing_dispatch_refs = [*missing_event_refs, *missing_pending_refs]
+    elif dispatch_refs:
+        missing_dispatch_refs = missing_pending_refs
+    else:
+        missing_dispatch_refs = []
     pending_age_seconds = max(
         (_event_age_seconds(item) for item in pending_events),
         default=0,
     )
     contract_mismatch = bool(
-        (dispatch_detected > 0 and (not dispatch_refs or bool(missing_dispatch_refs)))
-        or missing_dispatch_refs
+        (dispatch_detected > 0 and not projected_event_refs)
+        or (dispatch_event_refs and dispatch_detected > len(dispatch_event_refs))
+        or bool(missing_dispatch_refs)
+    )
+    legacy_dispatch_rescued = bool(
+        dispatch_detected > 0
+        and not dispatch_event_refs
+        and not dispatch_refs
+        and projected_event_refs
+        and not contract_mismatch
     )
     pending_timeout = bool(pending_events and pending_age_seconds > 600)
     diagnostic_event = event
@@ -486,6 +528,7 @@ def write_status_output(
         notification_reason=reason,
         last_candidate_at=last_candidate_at,
     )
+    summary["priority_dispatch_legacy_rescan"] = legacy_dispatch_rescued
     if suppressed_candidates:
         summary["notification_reason"] = "top_candidate_suppressed_later_candidate_considered"
     lines = [
@@ -500,7 +543,10 @@ def write_status_output(
         f"notification_reason={summary['notification_reason']}",
         f"priority_pending_count={len(pending_events)}",
         f"priority_dispatch_ref_count={len(dispatch_refs)}",
+        f"priority_event_ref_count={len(projected_event_refs)}",
+        f"priority_dispatch_event_ref_count={len(dispatch_event_refs)}",
         f"priority_dispatch_missing_ref_count={len(missing_dispatch_refs)}",
+        f"priority_dispatch_legacy_rescan={'true' if legacy_dispatch_rescued else 'false'}",
         f"priority_pending_age_seconds={pending_age_seconds}",
         f"hard_failure={'true' if contract_mismatch or pending_timeout else 'false'}",
         f"last_processed_at={summary['last_processed_at']}",
@@ -533,6 +579,23 @@ def _dispatch_pending_refs() -> list[str]:
         return []
     refs: list[str] = []
     for item in value[:100]:
+        ref = str(item or "").strip()
+        if ref and ref not in refs:
+            refs.append(ref[:64])
+    return refs
+
+
+def _dispatch_event_refs() -> list[str]:
+    """Parse the versioned all-state event refs from repository dispatch."""
+    raw = os.getenv("DISPATCH_PRIORITY_EVENT_REFS", "[]")
+    try:
+        value = json.loads(raw)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+    if not isinstance(value, list):
+        return []
+    refs: list[str] = []
+    for item in value[:500]:
         ref = str(item or "").strip()
         if ref and ref not in refs:
             refs.append(ref[:64])

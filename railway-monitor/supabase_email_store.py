@@ -484,7 +484,7 @@ class SupabaseEmailStore:
         _status, payload = self._request(
             "GET",
             "financialjuice_priority_pending",
-            f"?canonical_fact_key=eq.{encoded_key}&material_fact_version=eq.{encoded_version}&select=first_detected_at,expires_at,attempt_count&limit=1",
+            f"?canonical_fact_key=eq.{encoded_key}&material_fact_version=eq.{encoded_version}&select=first_detected_at,expires_at,attempt_count,delivery_status,last_blocking_reason,summary_status&limit=1",
         )
         existing = payload[0] if isinstance(payload, list) and payload and isinstance(payload[0], dict) else {}
         first_detected_at = str(existing.get("first_detected_at") or checked_at)
@@ -499,12 +499,28 @@ class SupabaseEmailStore:
             attempts = max(0, int(existing.get("attempt_count") or 0)) + 1
         except (TypeError, ValueError, OverflowError):
             attempts = 1
+        existing_delivery = str(existing.get("delivery_status") or "").strip()
+        if existing_delivery in {"delivered", "expired", "contract_failed"}:
+            delivery_status = existing_delivery
+            summary_status = str(existing.get("summary_status") or status)
+            next_retry_at = None
+            blocking_reason = str(existing.get("last_blocking_reason") or "") or None
+        else:
+            summary_status = status
+            delivery_status = (
+                "ready" if status == "ready" else
+                "expired" if status == "expired" else
+                "contract_failed" if status == "contract_failed" else
+                "summary_pending"
+            )
+            next_retry_at = None if status in {"ready", "expired", "contract_failed"} else checked_at
+            blocking_reason = None if status == "ready" else reason[:120]
         body = {
             "canonical_fact_key": key,
             "material_fact_version": version,
             "event_ref": event_ref,
             "summary_contract_version": contract,
-            "summary_status": status,
+            "summary_status": summary_status,
             "summary_reason": reason[:120],
             "source_published_at": source_published_at,
             "first_detected_at": first_detected_at,
@@ -513,6 +529,10 @@ class SupabaseEmailStore:
             "attempt_count": attempts,
             "last_run_id": run_id,
             "last_run_sha": run_sha,
+            "delivery_status": delivery_status,
+            "next_retry_at": next_retry_at,
+            "last_progress_at": checked_at,
+            "last_blocking_reason": blocking_reason,
             "updated_at": checked_at,
         }
         _status, payload = self._request(
@@ -525,17 +545,42 @@ class SupabaseEmailStore:
         row = payload[0] if isinstance(payload, list) and payload and isinstance(payload[0], dict) else {}
         return row or {"event_ref": event_ref, "summary_status": status, "summary_reason": reason, "expires_at": expires_at, "attempt_count": attempts}
 
-    def priority_pending_events(self, *, now: datetime | None = None, limit: int = 100) -> list[dict[str, Any]]:
-        """Read only active, identifier-only private pending state."""
-        current = (now or datetime.now(UTC)).astimezone(UTC).isoformat()
-        bounded = max(1, min(500, int(limit)))
-        encoded = quote(current, safe="")
+    def priority_pending_events(self, *, now: datetime | None = None, limit: int | None = None) -> list[dict[str, Any]]:
+        """Read all non-terminal, identifier-only private recovery state."""
+        bounded = None if limit is None else max(1, min(10_000, int(limit)))
+        suffix = f"&limit={bounded}" if bounded is not None else ""
         _status, payload = self._request(
             "GET", "financialjuice_priority_pending",
-            f"?summary_status=in.(pending,ready)&expires_at=gt.{encoded}&order=source_published_at.asc&limit={bounded}",
+            f"?delivery_status=in.(summary_pending,ready,delivery_pending)&order=source_published_at.asc{suffix}",
         )
         rows = payload if isinstance(payload, list) else []
         return [row for row in rows if isinstance(row, dict)]
+
+    def transition_priority_delivery(
+        self,
+        event_ref: str,
+        *,
+        expected_status: str,
+        next_status: str,
+        reason: str = "",
+        next_retry_at: str | None = None,
+    ) -> bool:
+        """Conditionally advance private delivery state without regressions."""
+        allowed = {"summary_pending", "ready", "delivery_pending", "delivered", "expired", "contract_failed"}
+        if not event_ref or expected_status not in allowed or next_status not in allowed:
+            return False
+        result = self._rpc(
+            "transition_financialjuice_priority_delivery",
+            {
+                "p_event_ref": str(event_ref)[:64],
+                "p_expected_status": expected_status,
+                "p_next_status": next_status,
+                "p_reason": str(reason or "")[:120] or None,
+                "p_checked_at": _now(),
+                "p_next_retry_at": next_retry_at if next_status in {"summary_pending", "delivery_pending"} else None,
+            },
+        )
+        return isinstance(result, dict) and bool(result.get("event_ref"))
 
     def mark_priority_pending(self, event: dict[str, Any], *, status: str, reason: str = "") -> bool:
         key = str(event.get("canonical_fact_key") or "").strip()
@@ -544,11 +589,15 @@ class SupabaseEmailStore:
             return False
         encoded_key = quote(key, safe="")
         encoded_version = quote(version, safe="")
+        lifecycle_filter = "&delivery_status=not.in.(delivered,expired,contract_failed)"
         _status, payload = self._request(
             "PATCH", "financialjuice_priority_pending",
-            f"?canonical_fact_key=eq.{encoded_key}&material_fact_version=eq.{encoded_version}",
+            f"?canonical_fact_key=eq.{encoded_key}&material_fact_version=eq.{encoded_version}{lifecycle_filter}",
             {"summary_status": status, "summary_reason": str(reason or "")[:120],
-             "last_checked_at": _now(), "updated_at": _now()},
+             "delivery_status": status,
+             "last_blocking_reason": str(reason or "")[:120] or None,
+             "last_checked_at": _now(), "last_progress_at": _now(),
+             "next_retry_at": None, "updated_at": _now()},
             prefer="return=representation",
         )
         return isinstance(payload, list) and bool(payload)

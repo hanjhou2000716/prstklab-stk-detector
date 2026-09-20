@@ -74,6 +74,14 @@ def _merge_candidate_diagnostics(total: dict[str, Any], value: Any) -> None:
                 safe = str(ref or "").strip()
                 if safe and safe not in target and len(target) < 100:
                     target.append(safe)
+    event_refs = value.get("priority_event_refs")
+    if isinstance(event_refs, (list, tuple)):
+        target = total.setdefault("priority_event_refs", [])
+        if isinstance(target, list):
+            for ref in event_refs:
+                safe = str(ref or "").strip()
+                if safe and safe not in target and len(target) < 500:
+                    target.append(safe[:64])
     reasons = value.get("priority_pending_error_reasons")
     if isinstance(reasons, (list, tuple)):
         target = total.setdefault("priority_pending_error_reasons", [])
@@ -92,6 +100,9 @@ def _with_candidate_diagnostics(result: dict[str, Any], diagnostics: dict[str, A
     pending_refs = list(diagnostics.get("priority_pending_refs") or [])[:100]
     if pending_refs:
         result["priority_pending_refs"] = pending_refs
+    event_refs = list(diagnostics.get("priority_event_refs") or [])[:500]
+    if event_refs:
+        result["priority_event_refs"] = event_refs
     pending_errors = list(diagnostics.get("priority_pending_error_reasons") or [])[:8]
     if pending_errors:
         result["priority_pending_error_reasons"] = pending_errors
@@ -129,6 +140,7 @@ def _sync_diagnostics_record(
         "counts": safe_counts,
         "primary_reason": str(diagnostics.get("primary_reason") or "")[:80],
         "priority_pending_count": len(diagnostics.get("priority_pending_refs") or []) if isinstance(diagnostics.get("priority_pending_refs"), list) else 0,
+        "priority_event_count": len(diagnostics.get("priority_event_refs") or []) if isinstance(diagnostics.get("priority_event_refs"), list) else 0,
     }
     record = {
         "recorded_at": datetime.now(UTC).isoformat(),
