@@ -22,6 +22,28 @@ def test_backup_age_is_bounded_and_never_accepts_future_or_invalid_rows():
     )
 
 
+def test_backup_age_counts_taiwan_sessions_across_weekends():
+    friday = {"quote_date": "2026-09-18", "market": "taiwan", "price": 100}
+    thursday = {"quote_date": "2026-09-17", "market": "taiwan", "price": 100}
+
+    assert backup_quote_within_limit(
+        friday, expected_market_date=date(2026, 9, 21), max_completed_sessions=1,
+    )
+    assert not backup_quote_within_limit(
+        thursday, expected_market_date=date(2026, 9, 21), max_completed_sessions=1,
+    )
+
+
+def test_backup_age_uses_global_policy_for_us_close_assets():
+    friday = {"quote_date": "2026-09-04", "ticker": "DXY", "market": "global", "price": 100}
+
+    # 2026-09-07 is the NYSE Labor Day holiday; Friday's close is the
+    # immediately preceding completed US session for Tuesday's observation.
+    assert backup_quote_within_limit(
+        friday, expected_market_date=date(2026, 9, 8), max_completed_sessions=1,
+    )
+
+
 def test_payload_hash_uses_normalized_public_fields_only():
     first = {"ticker": "006208", "price": 244.6, "quote_date": "2026-09-16", "private": "a"}
     second = {"ticker": "006208", "price": 244.6, "quote_date": "2026-09-16", "private": "b"}

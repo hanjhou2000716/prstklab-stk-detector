@@ -7,7 +7,12 @@ import sys
 from datetime import UTC, datetime
 
 from src.market_backup import from_environment
-from src.taiwan_macro_sources import fetch_official_taiwan_components
+from src.taiwan_macro_sources import (
+    CBC_HISTORY_URL,
+    TPEX_INDEX_HISTORY_URL,
+    TWSE_INDEX_HISTORY_URL,
+    fetch_official_taiwan_components,
+)
 
 
 def main() -> int:
@@ -16,10 +21,27 @@ def main() -> int:
         print(json.dumps({"status": "blocked", "reason": "market_backup_not_configured"}))
         return 2
     components = fetch_official_taiwan_components(months=18)
-    mapping = {"^TWII": "TAIEX", "^TWOII": "TPEx", "TWD=X": "USD/TWD"}
+    mapping = {
+        "^TWII": {
+            "ticker": "TAIEX",
+            "provider": "TWSE",
+            "source_url": TWSE_INDEX_HISTORY_URL,
+        },
+        "^TWOII": {
+            "ticker": "TPEx",
+            "provider": "TPEx",
+            "source_url": TPEX_INDEX_HISTORY_URL,
+        },
+        "TWD=X": {
+            "ticker": "USD/TWD",
+            "provider": "CBC",
+            "source_url": CBC_HISTORY_URL,
+        },
+    }
     counts: dict[str, int] = {}
     errors: list[str] = []
-    for symbol, ticker in mapping.items():
+    for symbol, metadata in mapping.items():
+        ticker = str(metadata["ticker"])
         frame = components.get(symbol)
         if frame is None or len(frame) < 120 or "Close" not in frame.columns:
             errors.append(f"{symbol}:insufficient_official_history")
@@ -50,13 +72,13 @@ def main() -> int:
                 "change": change,
                 "change_percent": percent,
                 "quote_date": observed.date().isoformat(),
-                "quote_source": "TWSE/TPEx official historical backfill",
-                "source_label": "TWSE/TPEx",
+                "quote_source": f"{metadata['provider']} official historical backfill",
+                "source_label": str(metadata["provider"]),
                 "source_tier": "official",
                 "quote_basis": "官方歷史收盤",
                 "currency": "TWD",
                 "freshness": "recent_close",
-                "source_url": "https://openapi.twse.com.tw/",
+                "source_url": str(metadata["source_url"]),
             }
             if symbol == "^TWII" and values.get("Volume") is not None:
                 quote["volume"] = float(values["Volume"])
