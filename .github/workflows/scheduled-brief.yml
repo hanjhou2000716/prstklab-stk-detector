@@ -205,7 +205,6 @@ jobs:
           elif [ -n "${CREATOR_RECORDS_PATH:-}" ] && [ -f "$CREATOR_RECORDS_PATH" ]; then
             arguments+=(--creator-records "$CREATOR_RECORDS_PATH")
           fi
-          creator_schedule="${{ github.event.schedule }}"
           if [ "${{ steps.window.outputs.slot }}" = "morning" ]; then
             arguments+=(--creator-morning-batch)
           fi
@@ -388,7 +387,7 @@ jobs:
         env:
           PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
           CANDIDATE_TYPE: ${{ steps.prepare.outputs.candidate_type || 'none' }}
-          NOTIFICATION_EXPECTED: ${{ steps.prepare.outputs.notification_expected || 'false' }}
+          NOTIFICATION_EXPECTED_VALUE: ${{ steps.prepare.outputs.notification_expected || 'false' }}
           NOTIFICATION_REQUESTED: ${{ env.NOTIFY }}
           SEND_STATUS: ${{ steps.send_brief.outputs.notification_status || '' }}
           SEND_REASON: ${{ steps.send_brief.outputs.reason || '' }}
@@ -427,7 +426,7 @@ jobs:
           fi
           notification_status="$SEND_STATUS"
           notification_reason="$SEND_REASON"
-          notification_expected="$NOTIFICATION_EXPECTED"
+          notification_expected="$NOTIFICATION_EXPECTED_VALUE"
           if [ "$NOTIFICATION_REQUESTED" != "true" ]; then
             notification_expected="false"
           fi
