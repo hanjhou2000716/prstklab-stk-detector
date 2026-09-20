@@ -711,8 +711,18 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
   setText("alert-headline", headline);
   const headlineNode = document.getElementById("alert-headline");
   if (headlineNode) headlineNode.className = `market-signal-title ${movementClass(headline)}`;
-  setText("alert-summary", event.event || event.summary || event.title || "公開市場事件更新。");
-  setText("alert-trigger", event.importance_detail || event.why_important || event.ai_commentary || event.trigger || "已核對公開訊號，等待後續市場反應。");
+  const isNativeMarketSignal = event.kind === "market_signal";
+  const nativeMove = String(event.market_move || "").trim();
+  const nativePattern = String(event.pattern || "").trim();
+  const nativePriority = String(event.native_priority || "P2").trim();
+  const nativeShortFact = isNativeMarketSignal
+    ? [String(event.market_direction || "市場波動").trim(), nativeMove, nativePattern].filter(Boolean).join("｜")
+    : "";
+  const nativeTrigger = isNativeMarketSignal
+    ? `${nativePriority} 原生行情門檻已觸發${event.instrument?.change_15m_percent != null ? `；15分鐘 ${Number(event.instrument.change_15m_percent).toFixed(2)}%` : ""}。`
+    : "";
+  setText("alert-summary", nativeShortFact || event.event || event.summary || event.title || "公開市場事件更新。");
+  setText("alert-trigger", nativeTrigger || event.importance_detail || event.why_important || event.ai_commentary || event.trigger || "已核對公開訊號，等待後續市場反應。");
   setText("alert-context", event.market_impact || event.market_context || event.possible_linkage || event.possible_impact || "已連動市場待後續公開報價確認。");
   setText("alert-stock-observation", event.watch || event.stock_observation || event.follow_up_observation || "觀察已連動市場是否出現可核對的同步變化。");
   setText("alert-reminder", event.friendly_reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");

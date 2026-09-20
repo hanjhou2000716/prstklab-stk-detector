@@ -36,6 +36,8 @@ SYNC_RESULT_KEYS = (
     "storage_error", "diagnostic_reason", "supabase_retry_count",
     "recovery_status", "retryable", "request_attempts", "consecutive_failure_count",
     "first_failure_at", "cursor_preserved", "next_retry_at", "escalation_reason",
+    "priority_pending_error_reasons",
+    "priority_pending_refs",
 )
 
 TRANSIENT_STORAGE_ERRORS = frozenset({

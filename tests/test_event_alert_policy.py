@@ -3,28 +3,28 @@ from datetime import UTC, datetime, timedelta
 from src.event_alert_policy import decide_event_alert_policy, event_market_scope
 
 
-def test_event_alert_policy_uses_market_scope_and_ninety_minute_cooldown():
+def test_event_alert_policy_uses_market_scope_and_ten_minute_cooldown():
     event = {"event_type": "global_market", "market_topic": "global_market", "title": "US market update"}
     now = datetime(2026, 9, 7, 2, 0, tzinfo=UTC)
     history = [{
         "alert_lane": "event",
         "market_scope": "us",
         "delivery_status": "delivered",
-        "sent_at": (now - timedelta(minutes=30)).isoformat(),
+        "sent_at": (now - timedelta(minutes=5)).isoformat(),
     }]
     decision = decide_event_alert_policy(event, history, now=now)
     assert decision["allowed"] is False
     assert decision["reason"] == "event_market_cooldown"
 
 
-def test_event_alert_policy_allows_a_new_market_after_cooldown():
+def test_event_alert_policy_allows_a_new_market_after_ten_minute_cooldown():
     event = {"event_type": "global_market", "market_topic": "global_market", "title": "US market update"}
     now = datetime(2026, 9, 7, 4, 0, tzinfo=UTC)
     history = [{
         "alert_lane": "event",
         "market_scope": "us",
         "delivery_status": "delivered",
-        "sent_at": (now - timedelta(minutes=91)).isoformat(),
+        "sent_at": (now - timedelta(minutes=11)).isoformat(),
     }]
     assert decide_event_alert_policy(event, history, now=now)["allowed"] is True
 
@@ -32,16 +32,29 @@ def test_event_alert_policy_allows_a_new_market_after_cooldown():
 def test_event_alert_policy_keeps_daily_event_cap_even_for_r4():
     event = {"event_type": "energy", "classification": "energy", "prstk_risk_level": "R4", "title": "Supply disruption"}
     now = datetime(2026, 9, 7, 8, 0, tzinfo=UTC)
-    history = [{
-        "alert_lane": "event", "market_scope": "global", "delivery_status": "delivered",
-        "sent_at": (now - timedelta(hours=1)).isoformat(),
-    }, {
-        "alert_lane": "event", "market_scope": "taiwan", "delivery_status": "delivered",
-        "sent_at": (now - timedelta(hours=3)).isoformat(),
-    }]
+    history = [
+        {
+            "alert_lane": "event", "market_scope": "global", "delivery_status": "delivered",
+            "sent_at": (now - timedelta(hours=1, minutes=index)).isoformat(),
+        }
+        for index in range(6)
+    ]
     decision = decide_event_alert_policy(event, history, now=now)
     assert decision["allowed"] is False
     assert decision["reason"] == "event_daily_budget_exhausted"
+
+
+def test_fj_priority_does_not_consume_native_daily_budget():
+    event = {"event_type": "energy", "classification": "energy", "title": "Supply disruption"}
+    now = datetime(2026, 9, 7, 8, 0, tzinfo=UTC)
+    history = [
+        {
+            "alert_lane": "event", "source": "financialjuice", "market_scope": "global",
+            "delivery_status": "delivered", "sent_at": (now - timedelta(minutes=index + 1)).isoformat(),
+        }
+        for index in range(6)
+    ]
+    assert decide_event_alert_policy(event, history, now=now)["allowed"] is True
 
 
 def test_market_signal_uses_fixed_floor_and_rolling_volatility():

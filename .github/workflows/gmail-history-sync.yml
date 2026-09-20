@@ -251,6 +251,7 @@ jobs:
             echo "- storage_error: ${storage_error:-none}"
             echo "- diagnostic_reason: ${diagnostic_reason:-none}"
             echo "- priority_pending_state_errors: ${pending_state_errors}"
+            echo "- priority_pending_error_reasons: $(jq -c '.priority_pending_error_reasons // []' gmail-sync-result.json 2>/dev/null || echo '[]')"
             echo "- candidate_diagnostics: $(jq -c '.candidate_diagnostics // {}' gmail-sync-result.json 2>/dev/null || echo '{}')"
             echo "- delivered_count: unknown"
             echo "- failed_count: ${failed}"

@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_mini_app_uses_the_revised_briefing_structure():
     page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
 
-    assert "D.inv System" in page
+    assert "D.iNV Detector" in page
     assert "市場新聞" in page
     assert 'id="market-focus"' in page
     assert 'id="briefing-report"' in page

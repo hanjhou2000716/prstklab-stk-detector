@@ -6,6 +6,7 @@ import re
 from datetime import UTC, datetime, time
 from typing import Any
 from urllib.parse import urlparse
+from zoneinfo import ZoneInfo
 
 from src.event_classifier import classify_event_fields, notification_gate
 from src.event_crosscheck import cross_check_event_records
@@ -25,6 +26,7 @@ SEMICONDUCTOR_EVENT_TERMS = EARNINGS_TERMS + (
     "export control", "export controls", "restriction", "restrictions",
     "capex", "capacity", "供應鏈", "出口管制", "限制", "產能",
 )
+TAIPEI = ZoneInfo("Asia/Taipei")
 
 # Corporate disclosures have a narrower market scope than macro events. A
 # routine board-meeting date must never inherit the generic Nasdaq/SOX
@@ -440,6 +442,7 @@ def _price_signal_thresholds(index: dict[str, Any]) -> tuple[float, float, bool]
     if ticker == "TAIEX" and quote_time:
         try:
             observed = datetime.fromisoformat(quote_time.replace("Z", "+00:00"))
+            observed = observed.replace(tzinfo=observed.tzinfo or UTC).astimezone(TAIPEI)
             taiwan_intraday = observed.weekday() < 5 and time(8, 45) <= observed.timetz().replace(tzinfo=None) <= time(13, 30)
         except ValueError:
             pass
@@ -559,6 +562,7 @@ def _price_signal(
     if ticker == "TAIEX" and quote_time:
         try:
             observed = datetime.fromisoformat(quote_time.replace("Z", "+00:00"))
+            observed = observed.replace(tzinfo=observed.tzinfo or UTC).astimezone(TAIPEI)
             taiwan_intraday = observed.weekday() < 5 and time(8, 45) <= observed.timetz().replace(tzinfo=None) <= time(13, 30)
         except ValueError:
             taiwan_intraday = False
@@ -650,8 +654,17 @@ def _price_signal(
         if domain and domain not in verified_domains:
             verified_domains.append(domain)
     prstk_risk_level = _price_risk_code(risk, market_sync=bool(impact_confirmation.get("confirmed")))
+    priority_level = (
+        "P1"
+        if abs(percent) >= minimum_daily_move * 2
+        or (move_15m is not None and abs(move_15m) >= minimum_15m_move * 2)
+        else "P2"
+    )
     return {
         "kind": "market_signal",
+        "alert_lane": "event",
+        "trigger_version": "native-price-v2",
+        "native_priority": priority_level,
         "short_label": label,
         "pattern": pattern,
         "risk_level": risk,
