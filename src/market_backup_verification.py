@@ -198,6 +198,57 @@ release savepoint market_backup_canary;
 commit;
 """
 
+TRANSACTION_ROLE_QUERY = """
+begin;
+set local role service_role;
+select current_user;
+rollback;
+"""
+
+TRANSACTION_MARKET_QUERY = """
+begin;
+savepoint market_backup_canary;
+set local role service_role;
+insert into public.market_observations (
+  instrument_id, ticker, provider, source_tier, market_date, price,
+  quote_basis, quality_status, payload_hash, parser_version, expires_at
+) values (
+  'healthcheck:market-backup', 'HEALTHCHECK', 'healthcheck', 'backup',
+  current_date, 1, 'healthcheck', 'verified',
+  'healthcheck-payload-hash', 'healthcheck-v1', now() + interval '1 hour'
+);
+select 1 from public.market_observations
+ where instrument_id = 'healthcheck:market-backup'
+   and provider = 'healthcheck'
+   and quote_basis = 'healthcheck';
+update public.market_observations
+   set price = 2
+ where instrument_id = 'healthcheck:market-backup'
+   and provider = 'healthcheck'
+   and quote_basis = 'healthcheck';
+rollback to savepoint market_backup_canary;
+release savepoint market_backup_canary;
+commit;
+"""
+
+TRANSACTION_STATE_QUERY = """
+begin;
+savepoint market_backup_canary;
+set local role service_role;
+insert into public.market_source_state (
+  instrument_id, status, consecutive_failures, fallback_used, circuit_state
+) values ('healthcheck:market-backup', 'healthy', 0, false, 'closed')
+on conflict (instrument_id) do update set status = excluded.status;
+select 1 from public.market_source_state
+ where instrument_id = 'healthcheck:market-backup';
+update public.market_source_state
+   set status = 'unavailable'
+ where instrument_id = 'healthcheck:market-backup';
+rollback to savepoint market_backup_canary;
+release savepoint market_backup_canary;
+commit;
+"""
+
 
 def _all_true(row: dict[str, Any], keys: tuple[str, ...]) -> bool:
     return all(row.get(key) is True for key in keys)
@@ -281,13 +332,20 @@ def verify_market_backup(
 
     http_session = session or requests.Session()
     _service_role_rest_read(supabase_url, service_role_key, session=http_session)
-    try:
-        client.query(TRANSACTION_SMOKE_QUERY, read_only=False)
-    except VerificationError as exc:
-        raise VerificationError(
-            "backup_smoke_failed",
-            failed_checks=("transaction_canary",),
-        ) from exc
+    transaction_stages = (
+        ("transaction_role", TRANSACTION_ROLE_QUERY),
+        ("transaction_market_observation", TRANSACTION_MARKET_QUERY),
+        ("transaction_market_source_state", TRANSACTION_STATE_QUERY),
+        ("transaction_canary", TRANSACTION_SMOKE_QUERY),
+    )
+    for stage, query in transaction_stages:
+        try:
+            client.query(query, read_only=False)
+        except VerificationError as exc:
+            raise VerificationError(
+                "backup_smoke_failed",
+                failed_checks=(stage,),
+            ) from exc
     verified_at = datetime.now(UTC).isoformat()
     return {
         "migration_status": "verified",
