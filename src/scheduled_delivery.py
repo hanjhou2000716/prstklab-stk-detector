@@ -917,6 +917,7 @@ def prepare(
         "trace_id": correlation["trace_id"],
         "snapshot_id": correlation["snapshot_id"],
         "observation_id": correlation["observation_id"],
+        "notification_id": str((decision_event or {}).get("notification_id") or ""),
     }
     snapshot.setdefault("briefing", {}).update(metadata)
     if not merge_published_metadata(metadata, destination=snapshot_path, expected_snapshot_id=correlation["snapshot_id"]):

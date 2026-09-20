@@ -97,6 +97,76 @@ def _validate_creator_artifact(artifact: dict[str, Any], manifest: dict[str, Any
     return sorted(set(errors))
 
 
+def _validate_bootstrap_artifact(artifact: dict[str, Any], manifest: dict[str, Any]) -> list[str]:
+    """Validate the small first-paint projection before Telegram delivery."""
+    errors: list[str] = []
+    if str(artifact.get("schema_version") or "") != "1.0":
+        errors.append("bootstrap schema version is invalid")
+    if str(artifact.get("release_id") or "") != str(manifest.get("release_id") or ""):
+        errors.append("bootstrap release_id does not match manifest")
+    if str(artifact.get("snapshot_id") or "") != str(manifest.get("market_snapshot_id") or ""):
+        errors.append("bootstrap snapshot_id does not match manifest")
+    contract = manifest.get("bootstrap_contract")
+    if isinstance(contract, dict):
+        max_bytes = int(contract.get("max_bytes") or 0)
+        if max_bytes <= 0:
+            errors.append("bootstrap contract max_bytes is invalid")
+    if not isinstance(artifact.get("indices"), list) or not isinstance(artifact.get("events"), dict):
+        errors.append("bootstrap first-paint fields are missing")
+    return sorted(set(errors))
+
+
+def _validate_public_alert_target(
+    loaded: dict[str, dict[str, Any]], manifest: dict[str, Any], *,
+    public_url: str, notification_id: str, snapshot_id: str = "", observation_id: str = "",
+    timeout: float = 15.0,
+) -> list[str]:
+    """Verify the exact immutable alert that a Telegram Deep Link will open."""
+    requested = str(notification_id or "").strip()
+    if not requested:
+        return []
+    index = loaded.get("alert-index.json")
+    rows = index.get("alerts") if isinstance(index, dict) else None
+    if not isinstance(rows, list):
+        return ["click target alert index is unavailable"]
+    release_id = str(manifest.get("release_id") or "")
+    row = next(
+        (item for item in rows if isinstance(item, dict)
+         and str(item.get("notification_id") or "") == requested
+         and str(item.get("release_id") or "") == release_id),
+        None,
+    )
+    if not isinstance(row, dict):
+        return ["click target alert is not indexed in the published release"]
+    path = str(row.get("path") or "").strip()
+    digest = str(row.get("sha256") or "").strip()
+    if not path.startswith("alerts/") or ".." in path.split("/") or len(digest) != 64:
+        return ["click target alert index row is invalid"]
+    url = urljoin(public_url.rstrip("/") + "/", path)
+    errors: list[str] = []
+    try:
+        response = requests.get(url, timeout=timeout, headers={"Accept": "application/json", "Cache-Control": "no-cache", "User-Agent": "PRStK-release-gate"})
+        response.raise_for_status()
+        body = bytes(response.content)
+    except (requests.RequestException, TypeError, ValueError) as exc:
+        return [f"click target alert unavailable: {type(exc).__name__}"]
+    if hashlib.sha256(body).hexdigest() != digest:
+        return ["click target alert hash mismatch"]
+    try:
+        alert = json.loads(body.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError):
+        return ["click target alert is invalid JSON"]
+    if not isinstance(alert, dict):
+        return ["click target alert is not an object"]
+    if str(alert.get("notification_id") or "") != requested or str(alert.get("release_id") or "") != release_id:
+        errors.append("click target alert identity mismatch")
+    if snapshot_id and str(alert.get("snapshot_id") or "") != str(snapshot_id):
+        errors.append("click target alert snapshot mismatch")
+    if observation_id and str(alert.get("observation_id") or "") != str(observation_id):
+        errors.append("click target alert observation mismatch")
+    return sorted(set(errors))
+
+
 def _validate_creator_public_artifact(artifact: dict[str, Any], manifest: dict[str, Any]) -> list[str]:
     """Validate the bounded public Creator artifact without trusting its status."""
     errors = validate_creator_artifact(artifact)
@@ -138,8 +208,8 @@ def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tup
         return {}, ["manifest artifact paths are missing"]
     loaded: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
-    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json", "creator-release.json", "creator-insights.json", "news.json"):
-        if name in {"source-health.json", "creator-release.json", "creator-insights.json", "news.json"} and name not in paths:
+    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json", "creator-release.json", "creator-insights.json", "news.json", "bootstrap.json", "alert-index.json"):
+        if name in {"source-health.json", "creator-release.json", "creator-insights.json", "news.json", "bootstrap.json", "alert-index.json"} and name not in paths:
             continue
         raw_path = paths.get(name)
         if not isinstance(raw_path, str):
@@ -164,6 +234,9 @@ def _load_release_artifacts(manifest: dict[str, Any], *, site_root: Path) -> tup
     news = loaded.get("news.json")
     if news is not None:
         errors.extend(_validate_news_artifact(news, manifest))
+    bootstrap = loaded.get("bootstrap.json")
+    if bootstrap is not None:
+        errors.extend(_validate_bootstrap_artifact(bootstrap, manifest))
     return loaded, errors
 
 
@@ -194,8 +267,8 @@ def _fetch_public_release_artifacts(
     }
     loaded: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
-    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json", "creator-release.json", "creator-insights.json", "news.json"):
-        if name in {"source-health.json", "creator-release.json", "creator-insights.json", "news.json"} and name not in paths:
+    for name in ("market.json", "research-report.json", "event-ledger.json", "source-health.json", "creator-release.json", "creator-insights.json", "news.json", "bootstrap.json", "alert-index.json"):
+        if name in {"source-health.json", "creator-release.json", "creator-insights.json", "news.json", "bootstrap.json", "alert-index.json"} and name not in paths:
             continue
         raw_path = paths.get(name)
         expected_hash = hashes.get(name)
@@ -239,6 +312,9 @@ def _fetch_public_release_artifacts(
     news = loaded.get("news.json")
     if news is not None:
         errors.extend(_validate_news_artifact(news, manifest))
+    bootstrap = loaded.get("bootstrap.json")
+    if bootstrap is not None:
+        errors.extend(_validate_bootstrap_artifact(bootstrap, manifest))
     if errors:
         return loaded, errors
     if "source-health.json" in paths:
@@ -319,6 +395,9 @@ def verify_release_for_delivery(
     public_delay: float = 5.0,
     require_production_research: bool = False,
     max_research_age_hours: float = 24.0,
+    expected_notification_id: str | None = None,
+    expected_alert_snapshot_id: str | None = None,
+    expected_alert_observation_id: str | None = None,
 ) -> ReleaseGateResult:
     """Verify readiness, local hashes and optionally the deployed Pages copy."""
     path = Path(manifest_path)
@@ -427,6 +506,19 @@ def verify_release_for_delivery(
                     if bundle_errors:
                         public_error = "; ".join(sorted(set(bundle_errors)))
                     else:
+                        target_errors = _validate_public_alert_target(
+                            _, remote,
+                            public_url=public_url,
+                            notification_id=str(expected_notification_id or ""),
+                            snapshot_id=str(expected_alert_snapshot_id or ""),
+                            observation_id=str(expected_alert_observation_id or ""),
+                            timeout=timeout,
+                        )
+                        if target_errors:
+                            public_error = "; ".join(sorted(set(target_errors)))
+                            if attempt < attempts - 1 and public_delay > 0:
+                                time.sleep(public_delay)
+                            continue
                         public_error = ""
                         break
             except (requests.RequestException, ValueError) as exc:
@@ -458,6 +550,9 @@ def main() -> int:
         help="require a fresh production/full research artifact for delivery",
     )
     parser.add_argument("--max-research-age-hours", type=float, default=24.0)
+    parser.add_argument("--expected-notification-id", default=None)
+    parser.add_argument("--expected-alert-snapshot-id", default=None)
+    parser.add_argument("--expected-alert-observation-id", default=None)
     args = parser.parse_args()
     result = verify_release_for_delivery(
         manifest_path=args.manifest,
@@ -467,6 +562,9 @@ def main() -> int:
         public_delay=args.public_delay,
         require_production_research=args.require_production_research,
         max_research_age_hours=args.max_research_age_hours,
+        expected_notification_id=args.expected_notification_id,
+        expected_alert_snapshot_id=args.expected_alert_snapshot_id,
+        expected_alert_observation_id=args.expected_alert_observation_id,
     )
     values = {
         "allowed": result.allowed,

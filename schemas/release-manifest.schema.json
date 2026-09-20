@@ -32,6 +32,18 @@
         "event-ledger.json": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"}
       }
     },
+    "bootstrap_artifacts": {"type": "array", "items": {"type": "string"}},
+    "deep_link_artifacts": {"type": "array", "items": {"type": "string"}},
+    "deferred_artifacts": {"type": "array", "items": {"type": "string"}},
+    "bootstrap_contract": {
+      "type": "object",
+      "properties": {
+        "schema_version": {"type": "string", "minLength": 1},
+        "max_bytes": {"type": "integer", "minimum": 1},
+        "verified_before_delivery": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    },
     "research_freshness": {"enum": ["fresh", "stale_fallback", "unverified", "unknown"]},
     "research_fallback_used": {"type": "boolean"},
     "research_fallback_reason": {"type": ["string", "null"]},

@@ -20,6 +20,7 @@ from urllib.parse import urlparse
 
 from src.artifact_contract import validate_release, validate_source_health
 from src.atomic_file import replace_with_retry
+from src.bootstrap_release import BOOTSTRAP_MAX_BYTES, BOOTSTRAP_NAME, build_bootstrap_snapshot
 from src.creator_artifact import validate_creator_artifact
 from src.creator_release import validate_creator_release
 from src.external_observability_contract import (
@@ -1160,6 +1161,48 @@ def build_release_manifest(
             creator_public_errors.append(
                 f"cannot persist/hash public creator artifact {creator_public_path.as_posix()}: {type(exc).__name__}"
             )
+    # Build the small first-paint projection only after the release identity
+    # and current-release immutable alert rows are known.  The bootstrap is
+    # intentionally excluded from release_material above to avoid a circular
+    # hash; it is still covered by the manifest hash/path boundary below.
+    bootstrap_path = root / "site" / "data" / BOOTSTRAP_NAME
+    bootstrap_rows: list[dict[str, Any]] = []
+    alert_index_path = resolved.get(ALERT_INDEX_NAME)
+    if alert_index_path and alert_index_path.is_file():
+        try:
+            alert_index = json.loads(alert_index_path.read_text(encoding="utf-8"))
+            rows = alert_index.get("alerts") if isinstance(alert_index, dict) else []
+            if isinstance(rows, list):
+                bootstrap_rows = [
+                    dict(row) for row in rows
+                    if isinstance(row, dict) and str(row.get("release_id") or "") == release_id
+                ]
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            errors.append("cannot read current alert index for bootstrap")
+    bootstrap_paths = {
+        name: (
+            path.relative_to(root / "site").as_posix()
+            if path.is_relative_to(root / "site") else path.as_posix()
+        )
+        for name, path in resolved.items()
+    }
+    bootstrap = build_bootstrap_snapshot(
+        market,
+        release_id=release_id,
+        created_at=created_at,
+        artifact_paths=bootstrap_paths,
+        artifact_hashes=hashes,
+        alert_index_rows=bootstrap_rows,
+    )
+    try:
+        _write_normalized_artifact(bootstrap_path, bootstrap)
+        if bootstrap_path.stat().st_size > BOOTSTRAP_MAX_BYTES:
+            errors.append(f"bootstrap artifact exceeds {BOOTSTRAP_MAX_BYTES} bytes")
+        resolved[BOOTSTRAP_NAME] = bootstrap_path
+        loaded[BOOTSTRAP_NAME] = bootstrap
+        hashes[BOOTSTRAP_NAME] = sha256_file(bootstrap_path)
+    except OSError as exc:
+        errors.append(f"cannot persist/hash bootstrap artifact {bootstrap_path.as_posix()}: {type(exc).__name__}")
     # Do not add optional creator validation errors to the core release
     # errors.  The creator lane is fail-closed independently at delivery time.
     public_paths = {
@@ -1187,6 +1230,14 @@ def build_release_manifest(
         # Paths are relative to the Pages root so the browser never needs to
         # know the repository checkout layout.
         "artifact_paths": public_paths,
+        "bootstrap_artifacts": [BOOTSTRAP_NAME],
+        "deep_link_artifacts": [ALERT_INDEX_NAME, "alerts/*"],
+        "deferred_artifacts": sorted(name for name in public_paths if name != BOOTSTRAP_NAME),
+        "bootstrap_contract": {
+            "schema_version": "1.0",
+            "max_bytes": BOOTSTRAP_MAX_BYTES,
+            "verified_before_delivery": True,
+        },
         "normalization_notes": normalization_notes,
         "research_freshness": "unknown",
         "research_fallback_used": fallback_applied,
