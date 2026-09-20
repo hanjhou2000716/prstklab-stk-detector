@@ -18,7 +18,7 @@ def test_migration_workflow_has_preflight_dry_run_verification_and_redacted_arti
         "concurrency:",
         "supabase-market-migration-production",
         "cancel-in-progress: false",
-        "scripts/market_migration_runner.py",
+        "scripts.market_migration_runner",
         "Final migration gate",
         "actions/upload-artifact",
         "retention-days: 14",
