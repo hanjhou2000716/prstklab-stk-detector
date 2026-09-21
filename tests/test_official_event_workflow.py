@@ -17,8 +17,12 @@ def test_official_event_workflow_is_dispatchable_and_idempotent():
     assert "PUBLIC_OBSERVATIONS_URL" in workflow
     assert "PUBLIC_OBSERVATIONS_SHARED_SECRET" in workflow
     assert "DISPATCH_PRIORITY_EVENT_REFS" in workflow
+    assert "priority_summary_timeout" in (Path(__file__).resolve().parents[1] / "src" / "official_event_monitor.py").read_text(encoding="utf-8")
     assert "Prepare reconciled Pages artifact" in workflow
     assert "artifact_name: github-pages-reconciled" in workflow
+    assert "Save official event diagnostic" in workflow
+    assert "official-event-diagnostic-${{ github.run_id }}" in workflow
+    assert "retention-days: 14" in workflow
 
 
 def test_gmail_history_dispatches_realtime_monitor_after_new_reviewed_rows():
@@ -32,6 +36,8 @@ def test_gmail_history_dispatches_realtime_monitor_after_new_reviewed_rows():
     assert "priority_candidate_count" in workflow
     assert "priority_event_refs" in workflow
     assert "client_payload[priority_event_refs]" in workflow
+    assert "priority_recovery_scan_status" in workflow
+    assert "gmail-reviewed-observation-or-recovery" in workflow
 
 
 def test_worker_deploy_publishes_revision_for_health_reconciliation():

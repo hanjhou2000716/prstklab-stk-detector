@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/financialjuice_summary_contract.py
-# Canonical source SHA256: 1ad18594eac1c9193c654ea49219ad346933f4b98ff6feb555028fa410555179
+# Canonical source SHA256: 1e0f08ab1db8eb1df4aac850f76813c05cc68baa48a6892c8cd0d17f9b35ccaa
 
 """Shared, privacy-safe FinancialJuice summary readiness helpers.
 
@@ -29,6 +29,22 @@ _ACTION_RE = re.compile(
 _INVALID_RE = (
     re.compile(r"(?:關聯市場|資料待更新|報價待取得|資訊待核對)", re.IGNORECASE),
     re.compile(r"[-–—]\s*\.?$"),
+)
+
+_ATTRIBUTION_MARKERS = (
+    "表示", "稱", "称", "指出", "宣稱", "宣称", "宣布", "公布", "发布", "發布",
+    "否認", "否认", "說", "说",
+)
+_ATTRIBUTED_CLAIM_RE = re.compile(
+    r"(?:接觸|接触|會談|会谈|談判|谈判|合作|協議|协议|進展|进展|成功|失敗|失败|"
+    r"達成|达成|同意|拒絕|拒绝|可能|將|将|會|会|據報|据报|計劃|计划|政策|"
+    r"上升|下降|增加|減少|减少|維持|维持|支持|反對|反对|攻擊|攻击|否認|否认)",
+    re.IGNORECASE,
+)
+_ATTRIBUTION_NOISE_RE = re.compile(
+    r"^(?:financialjuice|fj|重要性|重要度|可能影響|可能影响|ai評論|ai评论|ai分析|分析|"
+    r"原始標題|原始标题|繁體中文翻譯|繁体中文翻译)\b",
+    re.IGNORECASE,
 )
 
 
@@ -71,6 +87,54 @@ def is_complete_fact(value: Any) -> bool:
     if re.fullmatch(r"(?:更|較為|更加)?(?:省錢|省钱|節能|节能|有效率|efficient)\s*[。.!！]?", text, re.IGNORECASE):
         return False
     return bool(re.search(r"[\u4e00-\u9fffA-Za-z0-9]", text))
+
+
+def compact_attributed_statement(value: Any) -> str:
+    """Keep a complete speaker-attributed statement without adding meaning.
+
+    FJ often emits a compact relay such as ``Speaker：claim``.  The claim is
+    already a complete fact, but it may contain no verb from the ordinary
+    event-action vocabulary.  Require both a non-metadata speaker and a
+    substantive claim; preserve the original uncertainty and punctuation.
+    """
+    text = _clean(value).rstrip("。！？.!?")
+    if not text or any(pattern.search(text) for pattern in _INVALID_RE):
+        return ""
+
+    actor = ""
+    claim = ""
+    marker = ""
+    colon = re.match(r"^(?P<actor>[^：:]{2,48})\s*[：:]\s*(?P<claim>.+)$", text)
+    if colon:
+        actor = colon.group("actor").strip()
+        claim = colon.group("claim").strip()
+        marker = "："
+    else:
+        verb_pattern = "|".join(re.escape(item) for item in _ATTRIBUTION_MARKERS)
+        spoken = re.match(
+            rf"^(?P<actor>[\u4e00-\u9fffA-Za-z][^，,。；;]{{1,40}}?)"
+            rf"(?P<marker>{verb_pattern})[：:]?\s*(?P<claim>.+)$",
+            text,
+        )
+        if spoken:
+            actor = spoken.group("actor").strip()
+            claim = spoken.group("claim").strip()
+            marker = spoken.group("marker")
+    if not actor or not claim or _ATTRIBUTION_NOISE_RE.search(actor):
+        return ""
+    if len(claim) < 6 or not re.search(r"[\u4e00-\u9fffA-Za-z0-9]", claim):
+        return ""
+    if "…" in claim or "..." in claim or _ATTRIBUTION_NOISE_RE.search(claim):
+        return ""
+    if not _ATTRIBUTED_CLAIM_RE.search(claim):
+        return ""
+    normalized_claim = re.sub(r"\s+", " ", claim).strip()
+    return f"{actor}{marker}{normalized_claim}。"
+
+
+def is_complete_attributed_statement(value: Any) -> bool:
+    """Return whether a speaker-attributed statement is safe to publish."""
+    return bool(compact_attributed_statement(value))
 
 
 def _compact_number(value: str) -> str:
@@ -181,11 +245,16 @@ def summary_contract_status(event: dict[str, Any]) -> dict[str, Any]:
             value = raw.get("text") or raw.get("fact_text") or raw.get("what_happened")
         military = compact_military_fact(value)
         capacity = compact_capacity_fact(value)
-        compact = military or capacity
+        attributed = compact_attributed_statement(value)
+        compact = military or capacity or attributed
         if compact:
             return {
                 "status": "ready",
-                "reason": "complete_military_fact" if military else "complete_capacity_fact",
+                "reason": (
+                    "complete_military_fact" if military
+                    else "complete_capacity_fact" if capacity
+                    else "complete_attributed_statement"
+                ),
                 "source_field": field, "text": compact,
                 "version": SUMMARY_CONTRACT_VERSION,
             }
@@ -202,7 +271,7 @@ def summary_contract_status(event: dict[str, Any]) -> dict[str, Any]:
 
 
 __all__ = [
-    "PUBLIC_SUMMARY_MAX_CHARS", "SUMMARY_CONTRACT_VERSION", "compact_capacity_fact",
-    "compact_military_fact",
+    "PUBLIC_SUMMARY_MAX_CHARS", "SUMMARY_CONTRACT_VERSION", "compact_attributed_statement",
+    "compact_capacity_fact", "compact_military_fact", "is_complete_attributed_statement",
     "is_complete_fact", "summary_contract_status",
 ]

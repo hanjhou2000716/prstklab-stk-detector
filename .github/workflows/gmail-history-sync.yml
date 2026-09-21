@@ -86,6 +86,8 @@ jobs:
             (.request_attempts | type) == "number" and
             (.consecutive_failure_count | type) == "number" and
             (.priority_event_refs == null or (.priority_event_refs | type) == "array") and
+            (.priority_pending_refs == null or (.priority_pending_refs | type) == "array") and
+            ((.priority_recovery_scan_status == null) or (.priority_recovery_scan_status | type) == "string") and
             ((.cursor_preserved | type) == "boolean" or (.cursor_preserved == null))
           ' gmail-sync-result.json >/dev/null
       - name: Fail when FJ pending state cannot be saved
@@ -94,6 +96,11 @@ jobs:
           pending_state_errors="$(jq -r 'if ((.candidate_diagnostics.counts.priority_pending_state_error // 0) | type) == "number" then (.candidate_diagnostics.counts.priority_pending_state_error // 0) else 0 end' gmail-sync-result.json)"
           if [ "$pending_state_errors" -gt 0 ]; then
             echo "FinancialJuice pending state could not be saved; refusing silent loss."
+            exit 1
+          fi
+          recovery_scan_status="$(jq -r '.priority_recovery_scan_status // "unknown"' gmail-sync-result.json)"
+          if [ "$recovery_scan_status" = "failed" ]; then
+            echo "FinancialJuice durable recovery scan failed; refusing silent loss."
             exit 1
           fi
       - name: Trigger realtime event monitor for new reviewed email
@@ -110,11 +117,10 @@ jobs:
           event_refs="$(jq -c '.priority_event_refs // .candidate_diagnostics.priority_event_refs // []' gmail-sync-result.json)"
           candidate_ready="false"
           if [ "$material_candidates" -gt 0 ] || [ "$priority_candidates" -gt 0 ] || [ "$priority_detected" -gt 0 ] || [ "$pending_refs" != "[]" ] || [ "$event_refs" != "[]" ]; then candidate_ready="true"; fi
-          recovery_status="$(jq -r '.recovery_status // "unknown"' gmail-sync-result.json)"
-          if [ "$candidate_ready" = "true" ] && [ "$recovery_status" != "retry_pending" ] && [ "$recovery_status" != "persistent_failure" ] && [ "$NOTIFY" = "true" ] && [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" != "true" ]; then
+          if [ "$candidate_ready" = "true" ] && [ "$NOTIFY" = "true" ] && [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" != "true" ]; then
             gh api --method POST "repos/$GH_REPO/dispatches" \
               -f event_type=official-event-check \
-              -f 'client_payload[reason]=gmail-reviewed-observation' \
+              -f "client_payload[reason]=gmail-reviewed-observation-or-recovery" \
               -f 'client_payload[notify]=true' \
               -f "client_payload[priority_candidate_detected]=$priority_detected" \
               -f "client_payload[priority_pending_refs]=$pending_refs" \
@@ -142,8 +148,12 @@ jobs:
           storage_error=""
           diagnostic_reason=""
           pending_state_errors="0"
+          recovery_scan_status="unknown"
+          recovery_scan_error=""
+          pending_count="0"
           retry_count="0"
           recovery_status="unknown"
+          priority_recovery_status="unknown"
           retryable="false"
           request_attempts="0"
           consecutive_failures="0"
@@ -164,8 +174,12 @@ jobs:
             storage_error="$(jq -r '.storage_error // ""' gmail-sync-result.json)"
             diagnostic_reason="$(jq -r '.diagnostic_reason // ""' gmail-sync-result.json)"
             pending_state_errors="$(jq -r 'if ((.candidate_diagnostics.counts.priority_pending_state_error // 0) | type) == "number" then (.candidate_diagnostics.counts.priority_pending_state_error // 0) else 0 end' gmail-sync-result.json)"
+            recovery_scan_status="$(jq -r '.priority_recovery_scan_status // "unknown"' gmail-sync-result.json)"
+            recovery_scan_error="$(jq -r '.priority_recovery_error // ""' gmail-sync-result.json)"
+            pending_count="$(jq -r 'if (.priority_pending_count | type) == "number" then .priority_pending_count else ((.priority_pending_refs // []) | length) end' gmail-sync-result.json)"
             retry_count="$(jq -r 'if (.supabase_retry_count | type) == "number" then .supabase_retry_count else 0 end' gmail-sync-result.json)"
             recovery_status="$(jq -r '.recovery_status // "unknown"' gmail-sync-result.json)"
+            priority_recovery_status="$(jq -r '.priority_recovery_status // "unknown"' gmail-sync-result.json)"
             retryable="$(jq -r 'if (.retryable | type) == "boolean" then .retryable else false end' gmail-sync-result.json)"
             request_attempts="$(jq -r 'if (.request_attempts | type) == "number" then .request_attempts else 0 end' gmail-sync-result.json)"
             consecutive_failures="$(jq -r 'if (.consecutive_failure_count | type) == "number" then .consecutive_failure_count else 0 end' gmail-sync-result.json)"
@@ -180,12 +194,9 @@ jobs:
           elif [ ! -s gmail-sync-result.json ]; then
             notification_status="failed"
             notification_reason="sync_result_missing"
-          elif [ "$recovery_status" = "retry_pending" ]; then
-            notification_status="degraded"
-            notification_reason="transient_sync_failure_retry_pending"
-          elif [ "$pending_state_errors" -gt 0 ]; then
+          elif [ "$pending_state_errors" -gt 0 ] || [ "$recovery_scan_status" = "failed" ]; then
             notification_status="failed"
-            notification_reason="priority_pending_state_error"
+            notification_reason="${diagnostic_reason:-priority_recovery_scan_failed}:${storage_error:-unknown}"
           elif [ "$recovery_status" = "persistent_failure" ] || [ "$status" = "cursor_read_failed" ]; then
             notification_status="failed"
             notification_reason="${escalation_reason:-${diagnostic_reason:-gmail_cursor_read_failed}}:${storage_error:-unknown}"
@@ -197,7 +208,10 @@ jobs:
             notification_reason="manual_replay"
           elif [ "$DISPATCH_TRIGGERED" = true ]; then
             notification_status="dispatch_requested"
-            notification_reason="new_reviewed_email_accepted"
+            notification_reason="reviewed_email_or_durable_recovery_pending"
+          elif [ "$recovery_status" = "retry_pending" ]; then
+            notification_status="degraded"
+            notification_reason="transient_sync_failure_retry_pending"
           elif [ "$failed" -gt 0 ]; then
             notification_status="failed"
             notification_reason="gmail_sync_failed"
@@ -219,8 +233,8 @@ jobs:
             notification_status="no_new_content"
             notification_reason="no_new_reviewed_email"
           fi
-          if [ "$material_candidates" -gt 0 ] || [ "$priority_candidates" -gt 0 ]; then
-            candidate_type="financialjuice_or_creator"
+          if [ "$material_candidates" -gt 0 ] || [ "$priority_candidates" -gt 0 ] || [ "$pending_count" -gt 0 ]; then
+            candidate_type="financialjuice_or_durable_recovery"
             notification_expected="true"
           else
             candidate_type="none"
@@ -239,11 +253,16 @@ jobs:
             echo "- priority_candidate_count: ${priority_candidates}"
             echo "- priority_candidate_detected: $(jq -r '.candidate_diagnostics.counts.priority_candidate_detected // 0' gmail-sync-result.json 2>/dev/null || echo 0)"
             echo "- summary_semantics_incomplete: $(jq -r '.candidate_diagnostics.counts.summary_semantics_incomplete // 0' gmail-sync-result.json 2>/dev/null || echo 0)"
-            echo "- priority_pending_count: $(jq -r '(.priority_pending_refs // .candidate_diagnostics.priority_pending_refs // []) | length' gmail-sync-result.json 2>/dev/null || echo 0)"
+            echo "- priority_pending_count: $(jq -r 'if (.priority_pending_count | type) == \"number\" then .priority_pending_count else ((.priority_pending_refs // .candidate_diagnostics.priority_pending_refs // []) | length) end' gmail-sync-result.json 2>/dev/null || echo 0)"
             echo "- priority_event_count: $(jq -r '(.priority_event_refs // .candidate_diagnostics.priority_event_refs // []) | length' gmail-sync-result.json 2>/dev/null || echo 0)"
+            echo "- durable_recovery_scan_status: ${recovery_scan_status}"
+            echo "- durable_recovery_pending_count: ${pending_count}"
+            echo "- durable_recovery_error: ${recovery_scan_error:-none}"
+            echo "- durable_recovery_checked_at: $(jq -r '.priority_recovery_checked_at // \"unknown\"' gmail-sync-result.json 2>/dev/null || echo unknown)"
             echo "- duplicate_count: ${duplicate}"
             echo "- supabase_retry_count: ${retry_count}"
             echo "- recovery_status: ${recovery_status}"
+            echo "- priority_recovery_status: ${priority_recovery_status}"
             echo "- retryable: ${retryable}"
             echo "- request_attempts: ${request_attempts}"
             echo "- consecutive_failure_count: ${consecutive_failures}"

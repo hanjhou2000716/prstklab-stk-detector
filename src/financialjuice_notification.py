@@ -20,6 +20,7 @@ from src.financialjuice_priority import (
 )
 from src.financialjuice_summary_contract import (
     SUMMARY_CONTRACT_VERSION,
+    compact_attributed_statement,
     compact_capacity_fact,
     compact_military_fact,
 )
@@ -429,6 +430,7 @@ def _summary_variants(text: str) -> list[str]:
 
     values: list[str] = []
     for value in (
+        compact_attributed_statement(text),
         compact_military_fact(text),
         compact_capacity_fact(text),
         _compress_fj_sentence(text),

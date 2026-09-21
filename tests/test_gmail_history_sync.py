@@ -16,6 +16,7 @@ from email_store import EmailStore  # noqa: E402
 from gmail_history_sync import (  # noqa: E402
     _decode_header_value,
     message_record,
+    reconcile_priority_pending,
     sync_gmail_history,
     sync_latest_financialjuice,
 )
@@ -489,6 +490,75 @@ def test_sync_result_contract_always_exposes_recovery_fields() -> None:
         "first_failure_at", "cursor_preserved", "next_retry_at", "escalation_reason",
     ):
         assert key in result
+
+
+def test_priority_recovery_scan_returns_durable_item_without_new_gmail_mail(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    now = datetime.now(UTC)
+    store.upsert_priority_pending({
+        "source": "financialjuice",
+        "vendor_importance": 9,
+        "source_published_at": (now - timedelta(minutes=3)).isoformat(),
+        "canonical_fact_key": "financialjuice-fact:recovery-only",
+        "material_fact_version": "v1",
+        "summary_contract_version": "fj-summary-contract-v2",
+        "public_summary_status": "incomplete",
+        "public_summary_reason": "summary_semantics_incomplete",
+    }, now=now)
+
+    result = reconcile_priority_pending(store, now=now)
+
+    assert result["priority_recovery_scan_status"] == "healthy"
+    assert result["priority_recovery_status"] == "retry_pending"
+    assert result["priority_pending_count"] == 1
+    assert len(result["priority_pending_refs"]) == 1
+    assert result["priority_event_refs"] == result["priority_pending_refs"]
+
+
+def test_priority_recovery_scan_expires_item_without_new_gmail_mail(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    now = datetime.now(UTC)
+    row = {
+        "source": "financialjuice",
+        "vendor_importance": 10,
+        "source_published_at": (now - timedelta(minutes=31)).isoformat(),
+        "canonical_fact_key": "financialjuice-fact:expired-recovery",
+        "material_fact_version": "v1",
+        "summary_contract_version": "fj-summary-contract-v2",
+        "public_summary_status": "incomplete",
+        "public_summary_reason": "summary_semantics_incomplete",
+    }
+    store.upsert_priority_pending(row, now=now - timedelta(minutes=31))
+
+    result = reconcile_priority_pending(store, now=now)
+
+    assert result["priority_recovery_scan_status"] == "healthy"
+    assert result["priority_pending_expired_count"] == 1
+    assert result["priority_pending_count"] == 0
+    assert store.priority_pending_events() == []
+
+
+def test_priority_recovery_scan_does_not_truncate_active_backlog(tmp_path: Path) -> None:
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    now = datetime.now(UTC)
+    for index in range(121):
+        store.upsert_priority_pending({
+            "source": "financialjuice",
+            "vendor_importance": 9,
+            "source_published_at": (now - timedelta(minutes=3)).isoformat(),
+            "canonical_fact_key": f"financialjuice-fact:backlog-{index}",
+            "material_fact_version": "v1",
+            "summary_contract_version": "fj-summary-contract-v2",
+            "public_summary_status": "incomplete",
+            "public_summary_reason": "summary_semantics_incomplete",
+        }, now=now)
+
+    result = reconcile_priority_pending(store, now=now)
+
+    assert result["priority_recovery_scan_status"] == "healthy"
+    assert result["priority_pending_count"] == 121
+    assert len(result["priority_pending_refs"]) == 121
+    assert len(result["priority_event_refs"]) == 121
 
 
 def test_recovery_state_marks_first_transient_failure_pending_without_delivery() -> None:

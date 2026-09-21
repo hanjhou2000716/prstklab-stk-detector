@@ -299,3 +299,81 @@ jobs:
         with:
           path: .official-event-lock
           key: official-event-${{ steps.status.outputs.key }}
+      - name: Save official event diagnostic
+        if: always()
+        env:
+          EVENT_KEY: ${{ steps.status.outputs.key || '' }}
+          SCAN_OUTCOME: ${{ steps.status.outcome || 'not_run' }}
+          HARD_FAILURE: ${{ steps.status.outputs.hard_failure || 'false' }}
+          NOTIFICATION_EXPECTED: ${{ steps.status.outputs.notification_expected || 'false' }}
+          NOTIFICATION_STATUS: ${{ steps.send.outputs.notification_status || steps.status.outputs.notification_status || 'not_attempted' }}
+          NOTIFICATION_REASON: ${{ steps.send.outputs.reason || steps.status.outputs.notification_reason || 'not_attempted' }}
+          PENDING_COUNT: ${{ steps.status.outputs.priority_pending_count || '0' }}
+          DISPATCH_REF_COUNT: ${{ steps.status.outputs.priority_dispatch_ref_count || '0' }}
+          EVENT_REF_COUNT: ${{ steps.status.outputs.priority_event_ref_count || '0' }}
+          MISSING_REF_COUNT: ${{ steps.status.outputs.priority_dispatch_missing_ref_count || '0' }}
+          DEPLOYMENT_AVAILABLE: ${{ steps.deployment.outputs.available || 'false' }}
+          RELEASE_GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
+          SEND_OUTCOME: ${{ steps.send.outcome || 'skipped' }}
+          DELIVERED_COUNT: ${{ steps.send.outputs.delivered_count || '' }}
+          FAILED_COUNT: ${{ steps.send.outputs.failed_count || '' }}
+        run: |
+          python - <<'PY'
+          from datetime import UTC, datetime
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def value(name: str, default: str = "") -> str:
+              return str(os.environ.get(name, default) or default)[:160]
+
+          def count(name: str) -> int | None:
+              raw = value(name)
+              try:
+                  return max(0, int(raw))
+              except (TypeError, ValueError):
+                  return None
+
+          event_key = value("EVENT_KEY")
+          diagnostic = {
+              "schema_version": "official-event-diagnostic-v1",
+              "workflow_run_id": value("GITHUB_RUN_ID"),
+              "workflow_sha": value("GITHUB_SHA"),
+              "event_name": value("GITHUB_EVENT_NAME"),
+              "recorded_at": datetime.now(UTC).isoformat(),
+              "event_key_fingerprint": hashlib.sha256(event_key.encode("utf-8")).hexdigest()[:16] if event_key else "",
+              "scan": {
+                  "outcome": value("SCAN_OUTCOME", "not_run"),
+                  "hard_failure": value("HARD_FAILURE", "false"),
+              },
+              "priority": {
+                  "notification_expected": value("NOTIFICATION_EXPECTED", "false"),
+                  "notification_status": value("NOTIFICATION_STATUS", "not_attempted"),
+                  "notification_reason": value("NOTIFICATION_REASON", "not_attempted"),
+                  "pending_count": count("PENDING_COUNT"),
+                  "dispatch_ref_count": count("DISPATCH_REF_COUNT"),
+                  "event_ref_count": count("EVENT_REF_COUNT"),
+                  "missing_ref_count": count("MISSING_REF_COUNT"),
+              },
+              "delivery": {
+                  "deployment_available": value("DEPLOYMENT_AVAILABLE", "false"),
+                  "release_gate_allowed": value("RELEASE_GATE_ALLOWED", "false"),
+                  "sender_outcome": value("SEND_OUTCOME", "skipped"),
+                  "delivered_count": count("DELIVERED_COUNT"),
+                  "failed_count": count("FAILED_COUNT"),
+              },
+          }
+          Path("official-event-diagnostic.json").write_text(
+              json.dumps(diagnostic, ensure_ascii=False, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+      - name: Upload official event diagnostic
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: official-event-diagnostic-${{ github.run_id }}
+          path: official-event-diagnostic.json
+          if-no-files-found: error
+          retention-days: 14

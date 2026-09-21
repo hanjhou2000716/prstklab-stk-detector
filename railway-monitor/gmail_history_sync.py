@@ -115,6 +115,108 @@ def _with_candidate_diagnostics(result: dict[str, Any], diagnostics: dict[str, A
     return result
 
 
+def _parse_utc(value: Any) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return parsed.replace(tzinfo=parsed.tzinfo or UTC).astimezone(UTC)
+
+
+def reconcile_priority_pending(
+    store: EmailStore,
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Reconcile every durable FJ recovery item, even with no new Gmail mail.
+
+    Gmail history is an ingestion cursor, not a delivery queue.  This scan is
+    intentionally called by the five-minute sync entrypoint after cursor
+    processing so a cursor that already advanced cannot strand a pending FJ
+    event.  It returns identifiers and bounded state only; no message text or
+    transport identifiers leave the store.
+    """
+    checked_at = (now or datetime.now(UTC)).astimezone(UTC)
+    try:
+        rows = store.priority_pending_events(now=checked_at, limit=None)
+    except (TypeError, ValueError, RuntimeError) as error:
+        return {
+            "priority_recovery_scan_status": "failed",
+            "priority_recovery_error": _storage_error(error),
+            "priority_pending_count": 0,
+            "priority_pending_expired_count": 0,
+            "priority_pending_refs": [],
+            "priority_event_refs": [],
+            "priority_recovery_status": "failed",
+        }
+
+    pending_refs: list[str] = []
+    event_refs: list[str] = []
+    expired_count = 0
+    for row in rows if isinstance(rows, list) else []:
+        if not isinstance(row, Mapping):
+            continue
+        event_ref = str(row.get("event_ref") or "").strip()[:64]
+        if not event_ref:
+            continue
+        expires_at = _parse_utc(row.get("expires_at"))
+        if expires_at is not None and expires_at <= checked_at:
+            mark_expired = getattr(store, "mark_priority_pending", None)
+            if not callable(mark_expired):
+                return {
+                    "priority_recovery_scan_status": "failed",
+                    "priority_recovery_error": "priority_expiry_transition_unavailable",
+                    "priority_pending_count": 0,
+                    "priority_pending_expired_count": expired_count,
+                    "priority_pending_refs": pending_refs,
+                    "priority_event_refs": event_refs,
+                    "priority_recovery_status": "failed",
+                }
+            try:
+                if not mark_expired(dict(row), status="expired", reason="source_event_expired"):
+                    return {
+                        "priority_recovery_scan_status": "failed",
+                        "priority_recovery_error": "priority_expiry_transition_failed",
+                        "priority_pending_count": 0,
+                        "priority_pending_expired_count": expired_count,
+                        "priority_pending_refs": pending_refs,
+                        "priority_event_refs": event_refs,
+                        "priority_recovery_status": "failed",
+                    }
+            except (TypeError, ValueError, RuntimeError) as error:
+                return {
+                    "priority_recovery_scan_status": "failed",
+                    "priority_recovery_error": _storage_error(error),
+                    "priority_pending_count": 0,
+                    "priority_pending_expired_count": expired_count,
+                    "priority_pending_refs": pending_refs,
+                    "priority_event_refs": event_refs,
+                    "priority_recovery_status": "failed",
+                }
+            expired_count += 1
+            continue
+        if event_ref not in event_refs:
+            event_refs.append(event_ref)
+        status = str(row.get("delivery_status") or row.get("summary_status") or "").strip()
+        if status == "summary_pending" and event_ref not in pending_refs:
+            pending_refs.append(event_ref)
+
+    return {
+        "priority_recovery_scan_status": "healthy",
+        "priority_recovery_error": "",
+        "priority_pending_count": len(event_refs),
+        "priority_pending_expired_count": expired_count,
+        # This is the durable recovery queue, not the UI candidate preview.
+        # Do not truncate it: every active event must have an explicit outcome
+        # even when an old backlog exceeds the normal dashboard page size.
+        "priority_pending_refs": pending_refs,
+        "priority_event_refs": event_refs,
+        "priority_recovery_status": "retry_pending" if event_refs else "healthy",
+    }
+
+
 def _sync_diagnostics_record(
     result: Mapping[str, Any],
     diagnostics: Mapping[str, Any],
@@ -141,6 +243,11 @@ def _sync_diagnostics_record(
         "primary_reason": str(diagnostics.get("primary_reason") or "")[:80],
         "priority_pending_count": len(diagnostics.get("priority_pending_refs") or []) if isinstance(diagnostics.get("priority_pending_refs"), list) else 0,
         "priority_event_count": len(diagnostics.get("priority_event_refs") or []) if isinstance(diagnostics.get("priority_event_refs"), list) else 0,
+        "priority_recovery_scan_status": str(result.get("priority_recovery_scan_status") or "not_run")[:40],
+        "priority_recovery_error": str(result.get("priority_recovery_error") or "")[:80],
+        "priority_recovery_checked_at": str(result.get("priority_recovery_checked_at") or "")[:40],
+        "priority_recovery_pending_count": counter("priority_pending_count"),
+        "priority_recovery_expired_count": counter("priority_pending_expired_count"),
     }
     record = {
         "recorded_at": datetime.now(UTC).isoformat(),
