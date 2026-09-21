@@ -23,7 +23,7 @@ import httpx
 from email_store import EmailStore
 from gmail_watch import GmailWatchConfig
 
-from gmail_ingress import GmailIngressService
+from gmail_ingress import GmailIngressService, _summary_result
 
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 HISTORY_URL = "https://gmail.googleapis.com/gmail/v1/users/me/history"
@@ -45,6 +45,7 @@ _CANDIDATE_DIAGNOSTIC_KEYS = (
     "below_notification_gate", "below_priority_gate", "priority_event_eligible",
     "priority_candidate_detected", "summary_semantics_incomplete",
     "manual_replay", "downstream_dispatch_failure", "priority_pending_state_error",
+    "priority_summary_contract_error",
 )
 
 
@@ -96,6 +97,8 @@ def _with_candidate_diagnostics(result: dict[str, Any], diagnostics: dict[str, A
     counts = diagnostics.get("counts")
     if isinstance(counts, dict) and counts.get("priority_pending_state_error") == 0:
         counts.pop("priority_pending_state_error", None)
+    if isinstance(counts, dict) and counts.get("priority_summary_contract_error") == 0:
+        counts.pop("priority_summary_contract_error", None)
     result["candidate_diagnostics"] = diagnostics
     pending_refs = list(diagnostics.get("priority_pending_refs") or [])[:100]
     if pending_refs:
@@ -197,9 +200,40 @@ def reconcile_priority_pending(
                 }
             expired_count += 1
             continue
+        status = str(row.get("delivery_status") or row.get("summary_status") or "").strip()
+        if status == "summary_pending":
+            # Retry the current summary contract from the durable sanitized
+            # observation even when Gmail has no new history.  This is the
+            # missing bridge that previously allowed a cursor to advance and
+            # leave a recoverable item depending on another copy of the mail.
+            source_loader = getattr(store, "priority_pending_source", None)
+            source = source_loader(dict(row)) if callable(source_loader) else None
+            if isinstance(source, Mapping):
+                summary = _summary_result(source)
+                refreshed = dict(source)
+                refreshed["public_summary_status"] = (
+                    "ready" if summary["status"] == "ready"
+                    else "contract_failed" if summary["status"] == "error"
+                    else "pending"
+                )
+                refreshed["public_summary_reason"] = summary["reason"]
+                if summary["version"]:
+                    refreshed["summary_contract_version"] = summary["version"]
+                try:
+                    store.upsert_priority_pending(refreshed, now=checked_at)
+                    status = "ready" if summary["status"] == "ready" else "contract_failed" if summary["status"] == "error" else "summary_pending"
+                except (TypeError, ValueError, RuntimeError) as error:
+                    return {
+                        "priority_recovery_scan_status": "failed",
+                        "priority_recovery_error": _storage_error(error),
+                        "priority_pending_count": len(event_refs),
+                        "priority_pending_expired_count": expired_count,
+                        "priority_pending_refs": pending_refs,
+                        "priority_event_refs": event_refs,
+                        "priority_recovery_status": "failed",
+                    }
         if event_ref not in event_refs:
             event_refs.append(event_ref)
-        status = str(row.get("delivery_status") or row.get("summary_status") or "").strip()
         if status == "summary_pending" and event_ref not in pending_refs:
             pending_refs.append(event_ref)
 

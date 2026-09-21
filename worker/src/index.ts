@@ -199,6 +199,104 @@ async function supabase(env: Env, method: string, table: string, query = "", bod
   return Array.isArray(payload) ? payload : payload && typeof payload === "object" ? [payload] : [];
 }
 
+async function supabaseRpc(env: Env, name: string, body: Record<string, unknown>): Promise<any[]> {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) throw new Error("database is not configured");
+  const response = await fetch(`${env.SUPABASE_URL.replace(/\/$/, "")}/rest/v1/rpc/${name}`, {
+    method: "POST",
+    headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, "content-type": "application/json", Prefer: "return=representation" },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`database rpc failed (${response.status})`);
+  const payload: unknown = await response.json().catch(() => []);
+  return Array.isArray(payload) ? payload : payload && typeof payload === "object" ? [payload] : [];
+}
+
+function safeFinancialJuiceTrace(value: unknown, releaseId: string, snapshotId: string, deliveryStatus: string): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const input = value as Record<string, unknown>;
+  const trace: Record<string, unknown> = {};
+  for (const key of ["observation_id_hash", "item_id", "event_cluster_key", "vendor_importance", "prstk_risk", "notification_reason"]) {
+    if (input[key] !== undefined) trace[key] = input[key];
+  }
+  const ref = boundedString(input.priority_pending_ref, 64);
+  if (!ref || !/^[A-Za-z0-9:_-]+$/.test(ref)) return null;
+  if (input.release_id !== undefined && String(input.release_id) !== releaseId) return null;
+  if (input.snapshot_id !== undefined && String(input.snapshot_id) !== snapshotId) return null;
+  trace.priority_pending_ref = ref;
+  trace.release_id = releaseId;
+  trace.snapshot_id = snapshotId;
+  trace.delivery_status = deliveryStatus;
+  return trace;
+}
+
+async function reconcileFinancialJuicePriorityDelivery(env: Env, receipt: Record<string, unknown>): Promise<void> {
+  const trace = receipt.financialjuice_delivery_trace;
+  if (!trace || typeof trace !== "object" || Array.isArray(trace)) return;
+  const value = trace as Record<string, unknown>;
+  const eventRef = boundedString(value.priority_pending_ref, 64);
+  if (!eventRef) throw new Error("priority delivery reference missing");
+  const encoded = encodeURIComponent(eventRef);
+  const currentRows = await supabase(env, "GET", "financialjuice_priority_pending", `?event_ref=eq.${encoded}&select=delivery_status&limit=1`);
+  const current = String(currentRows[0]?.delivery_status || "");
+  if (!current) throw new Error("priority delivery state missing");
+  if (["delivered", "expired", "contract_failed"].includes(current)) return;
+  let state = current;
+  if (state === "ready") {
+    const moved = await supabaseRpc(env, "transition_financialjuice_priority_delivery", {
+      p_event_ref: eventRef,
+      p_expected_status: "ready",
+      p_next_status: "delivery_pending",
+      p_reason: "recipient_attempt_recorded",
+    });
+    if (moved.length === 0) {
+      const reread = await supabase(env, "GET", "financialjuice_priority_pending", `?event_ref=eq.${encoded}&select=delivery_status&limit=1`);
+      state = String(reread[0]?.delivery_status || "");
+    } else {
+      state = "delivery_pending";
+    }
+  }
+  if (state !== "delivery_pending") throw new Error("priority delivery transition unavailable");
+  if (String(receipt.delivery_status) !== "delivered") return;
+  const finalized = await supabaseRpc(env, "transition_financialjuice_priority_delivery", {
+    p_event_ref: eventRef,
+    p_expected_status: "delivery_pending",
+    p_next_status: "delivered",
+    p_reason: "recipient_receipt_delivered",
+  });
+  if (finalized.length === 0) {
+    const reread = await supabase(env, "GET", "financialjuice_priority_pending", `?event_ref=eq.${encoded}&select=delivery_status&limit=1`);
+    if (String(reread[0]?.delivery_status || "") !== "delivered") throw new Error("priority delivery finalization unavailable");
+  }
+}
+
+async function loadPriorityRecovery(env: Env): Promise<Record<string, unknown>[]> {
+  const rows: Record<string, unknown>[] = [];
+  let offset = 0;
+  const pageSize = 500;
+  while (true) {
+    const page = await supabase(
+      env,
+      "GET",
+      "financialjuice_priority_pending",
+      `?delivery_status=in.(summary_pending,ready,delivery_pending)&select=event_ref,delivery_status,summary_status,summary_reason,source_published_at,expires_at,last_blocking_reason&order=source_published_at.asc,event_ref.asc&limit=${pageSize}&offset=${offset}`,
+    );
+    const safe = page.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object" && !Array.isArray(item)))
+      .map((item) => ({
+        event_ref: String(item.event_ref || "").slice(0, 64),
+        delivery_status: String(item.delivery_status || "").slice(0, 40),
+        summary_status: String(item.summary_status || "").slice(0, 40),
+        summary_reason: String(item.summary_reason || "").slice(0, 120),
+        source_published_at: String(item.source_published_at || "").slice(0, 80),
+        expires_at: String(item.expires_at || "").slice(0, 80),
+        last_blocking_reason: String(item.last_blocking_reason || "").slice(0, 120),
+      }));
+    rows.push(...safe.filter((item) => Boolean(item.event_ref) && ["summary_pending", "ready", "delivery_pending"].includes(String(item.delivery_status))));
+    if (safe.length < pageSize) break;
+    offset += safe.length;
+  }
+  return rows;
+}
+
 function boundedString(value: unknown, max = 240): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -259,6 +357,8 @@ function normalizeReceipt(input: unknown): Record<string, unknown> | null {
   if (failed === 0 && failedHashes.length > 0) return null;
   if (status === "delivered" && failed > 0) return null;
   if (status === "failed" && delivered > 0) return null;
+  const financialjuiceTrace = safeFinancialJuiceTrace(value.financialjuice_delivery_trace, releaseId, snapshotId, status);
+  if (value.financialjuice_delivery_trace !== null && value.financialjuice_delivery_trace !== undefined && !financialjuiceTrace) return null;
   return {
     trace_id: traceId,
     receipt_kind: kind,
@@ -273,7 +373,7 @@ function normalizeReceipt(input: unknown): Record<string, unknown> | null {
     failed_recipient_hashes: failedHashes,
     notification_keys: notificationKeys,
     renderer_error_type: value.renderer_error_type == null ? null : boundedString(value.renderer_error_type, 160),
-    financialjuice_delivery_trace: value.financialjuice_delivery_trace && typeof value.financialjuice_delivery_trace === "object" && !Array.isArray(value.financialjuice_delivery_trace) ? value.financialjuice_delivery_trace : null,
+    financialjuice_delivery_trace: financialjuiceTrace,
     reported_at: value.reported_at == null ? null : boundedString(value.reported_at, 64),
   };
 }
@@ -542,10 +642,24 @@ async function handle(request: Request, env: Env): Promise<Response> {
     if (!Number.isInteger(limit)) return json({ ok: false, error: "INVALID_LIMIT" }, 400);
     try {
       const rows = await supabase(env, "GET", "gmail_public_observations", `?select=payload_json&order=created_at.desc,observation_id.desc&limit=${limit}`);
-      const observations = rows
+      let observations = rows
         .map((row) => row && typeof row === "object" ? (row as Record<string, unknown>).payload_json : null)
         .filter((row): row is Record<string, unknown> => Boolean(row && typeof row === "object" && !Array.isArray(row) && (row as Record<string, unknown>).public_safe === true));
-      return json({ status: observations.length ? "ready" : "no_event", observations, count: observations.length });
+      let priorityRecovery: Record<string, unknown>[] = [];
+      if (url.searchParams.get("include_priority_recovery") === "true") {
+        priorityRecovery = await loadPriorityRecovery(env);
+        const refs = priorityRecovery.map((item) => String(item.event_ref || "")).filter(Boolean);
+        if (refs.length) {
+          const encodedRefs = refs.map((ref) => `"${ref.replaceAll('"', '')}"`).join(",");
+          const sourceRows = await supabase(env, "GET", "gmail_public_observations", `?payload_json->>priority_pending_ref=in.(${encodeURIComponent(encodedRefs)})&select=payload_json&limit=500`);
+          const exact = sourceRows
+            .map((row) => row && typeof row === "object" ? (row as Record<string, unknown>).payload_json : null)
+            .filter((row): row is Record<string, unknown> => Boolean(row && typeof row === "object" && !Array.isArray(row) && (row as Record<string, unknown>).public_safe === true));
+          const seen = new Set(observations.map((item) => String(item.observation_id || "")));
+          observations = [...observations, ...exact.filter((item) => !seen.has(String(item.observation_id || "")))];
+        }
+      }
+      return json({ status: observations.length ? "ready" : "no_event", observations, count: observations.length, priority_recovery: priorityRecovery });
     } catch (_) {
       return json({ ok: false, error: "OBSERVATIONS_UNAVAILABLE" }, 503);
     }
@@ -565,6 +679,7 @@ async function handle(request: Request, env: Env): Promise<Response> {
     if (!receipt) return json({ ok: false, error: "INVALID_RECEIPT" }, 400);
     try {
       await supabase(env, "POST", "delivery_receipt_events", "?on_conflict=trace_id", receipt, "resolution=merge-duplicates,return=representation");
+      await reconcileFinancialJuicePriorityDelivery(env, receipt);
     } catch (_) {
       return json({ ok: false, error: "RECEIPT_PERSISTENCE_FAILED" }, 503);
     }

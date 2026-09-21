@@ -96,19 +96,52 @@ _CANDIDATE_DIAGNOSTIC_KEYS = (
     "below_notification_gate", "below_priority_gate", "priority_event_eligible",
     "priority_candidate_detected", "summary_semantics_incomplete",
     "manual_replay", "downstream_dispatch_failure", "priority_pending_state_error",
+    "priority_summary_contract_error",
 )
 
 
-def _summary_ready(row: Mapping[str, Any]) -> bool:
-    """Apply the canonical summary contract before waking downstream work."""
+def _summary_result(row: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the one canonical summary result used by every downstream step.
+
+    The old boolean helper discarded the producer result and the persistence
+    adapter consequently defaulted a ready event back to ``pending``.  Keep
+    the result bounded and metadata-only here; the public text is produced by
+    the existing release path and is never replaced by a second summary pass.
+    """
     try:
         if financialjuice_public_summary is not None:
             result = financialjuice_public_summary(dict(row))
         else:
             result = summary_contract_status(dict(row))
     except (TypeError, ValueError, RuntimeError):
-        return False
-    return isinstance(result, Mapping) and str(result.get("status") or "").casefold() == "ready"
+        return {
+            "status": "error",
+            "reason": "summary_contract_error",
+            "version": str(row.get("summary_contract_version") or "")[:80],
+            "text": "",
+        }
+    if not isinstance(result, Mapping):
+        return {
+            "status": "error",
+            "reason": "summary_contract_result_invalid",
+            "version": str(row.get("summary_contract_version") or "")[:80],
+            "text": "",
+        }
+    status = str(result.get("status") or "").strip().casefold()
+    if status not in {"ready", "incomplete"}:
+        status = "error"
+    return {
+        "status": status,
+        "reason": str(result.get("reason") or ("summary_ready" if status == "ready" else "summary_semantics_incomplete"))[:120],
+        "version": str(result.get("summary_contract_version") or result.get("version") or row.get("summary_contract_version") or "")[:80],
+        "text": str(result.get("text") or "")[:120],
+        "source_field": str(result.get("source_field") or "")[:80],
+    }
+
+
+def _summary_ready(row: Mapping[str, Any]) -> bool:
+    """Apply the canonical summary contract before waking downstream work."""
+    return _summary_result(row).get("status") == "ready"
 
 
 def _candidate_diagnostics(
@@ -201,7 +234,20 @@ def _candidate_diagnostics(
                     ).hexdigest()[:32]
                 else:
                     event_ref = ""
-            if not _summary_ready(row):
+            summary = _summary_result(row)
+            prepared_row = dict(row)
+            prepared_row["public_summary_status"] = (
+                "ready" if summary["status"] == "ready"
+                else "contract_failed" if summary["status"] == "error"
+                else "pending"
+            )
+            prepared_row["public_summary_reason"] = summary["reason"]
+            if summary["version"]:
+                prepared_row["summary_contract_version"] = summary["version"]
+            prepared_row["public_summary_text"] = summary["text"]
+            if summary["status"] == "error":
+                counts["priority_summary_contract_error"] += 1
+            if summary["status"] != "ready":
                 # Only fresh high-score FJ facts get a durable priority
                 # recovery record.  Lower-score observations remain ordinary
                 # content diagnostics and must never fail because the
@@ -210,13 +256,13 @@ def _candidate_diagnostics(
                     counts["summary_semantics_incomplete"] += 1
                     continue
                 try:
-                    pending = store.upsert_priority_pending(dict(row))
+                    pending = store.upsert_priority_pending(prepared_row)
                     persisted_ref = str(pending.get("event_ref") or event_ref).strip()
                     if not persisted_ref:
                         raise RuntimeError("priority_event_ref_missing")
                     if persisted_ref not in event_refs:
                         event_refs.append(persisted_ref)
-                    if persisted_ref not in pending_refs:
+                    if summary["status"] in {"pending", "incomplete"} and persisted_ref not in pending_refs:
                         pending_refs.append(persisted_ref)
                 except (TypeError, ValueError, RuntimeError) as error:
                     counts["priority_pending_state_error"] += 1
@@ -225,14 +271,15 @@ def _candidate_diagnostics(
                         pending_error_reasons.append(reason[:80])
                     else:
                         pending_error_reasons.append("priority_pending_state_error")
-                counts["summary_semantics_incomplete"] += 1
+                if summary["status"] in {"pending", "incomplete"}:
+                    counts["summary_semantics_incomplete"] += 1
                 continue
             if importance >= FJ_VENDOR_PRIORITY_THRESHOLD:
                 try:
                     # Ready events must be durable too.  The previous code
                     # only PATCHed an existing pending row, so a first-pass
                     # complete summary had no event ref for monitor hand-off.
-                    persisted = store.upsert_priority_pending(dict(row))
+                    persisted = store.upsert_priority_pending(prepared_row)
                     persisted_ref = str(persisted.get("event_ref") or event_ref).strip()
                     if not persisted_ref:
                         raise RuntimeError("priority_event_ref_missing")
@@ -253,6 +300,7 @@ def _candidate_diagnostics(
         counts["incomplete_parse"] += 1
     priority = (
         "priority_pending_state_error",
+        "priority_summary_contract_error",
         "stale_source_event", "missing_source_time", "invalid_source_time",
         "incomplete_parse", "duplicate_fact", "future_source_time",
         "below_notification_gate", "below_priority_gate", "manual_replay",
@@ -264,6 +312,8 @@ def _candidate_diagnostics(
         # readers that compare the bounded result exactly.  The new field is
         # emitted whenever a durable pending-state failure actually occurs.
         counts.pop("priority_pending_state_error", None)
+    if counts.get("priority_summary_contract_error") == 0:
+        counts.pop("priority_summary_contract_error", None)
     result: dict[str, Any] = {"counts": counts, "primary_reason": primary}
     if pending_refs:
         result["priority_pending_refs"] = pending_refs

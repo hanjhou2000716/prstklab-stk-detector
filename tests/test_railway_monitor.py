@@ -59,6 +59,51 @@ def test_health_history_survives_store_reopen_without_private_fields(tmp_path):
     assert monitor.snapshot_health()["observability"]["history"]["samples"] == [sample]
 
 
+def test_fj_receipt_advances_gmail_priority_state_after_delivery(tmp_path, monkeypatch):
+    class PriorityStore:
+        def __init__(self):
+            self.transitions = []
+
+        def priority_pending_events(self, *, limit=None):
+            assert limit is None
+            return [{"event_ref": "fj-ref-1", "delivery_status": "ready"}]
+
+        def transition_priority_delivery(self, event_ref, *, expected_status, next_status, reason="", next_retry_at=None):
+            self.transitions.append((event_ref, expected_status, next_status, reason))
+            return True
+
+    class Ingress:
+        def __init__(self):
+            self.store = PriorityStore()
+
+    store = monitor.SeenStore(tmp_path / "state.sqlite3")
+    ingress = Ingress()
+    monkeypatch.setattr(monitor, "EMAIL_INGRESS", ingress)
+    accepted = store.record_delivery_status({
+        "receipt_origin": "github_actions",
+        "receipt_kind": "production",
+        "trace_id": "trace-fj-1",
+        "release_id": "release-1",
+        "snapshot_id": "snapshot-1",
+        "alert_id": "alert-fj-1",
+        "delivery_mode": "text",
+        "delivery_status": "delivered",
+        "delivered_count": 1,
+        "failed_count": 0,
+        "failed_recipient_hashes": [],
+        "financialjuice_delivery_trace": {
+            "priority_pending_ref": "fj-ref-1",
+            "release_id": "release-1",
+            "snapshot_id": "snapshot-1",
+        },
+    })
+    assert accepted is True
+    assert ingress.store.transitions == [
+        ("fj-ref-1", "ready", "delivery_pending", "recipient_attempt_recorded"),
+        ("fj-ref-1", "delivery_pending", "delivered", "recipient_receipt_delivered"),
+    ]
+
+
 def test_monitor_imports_shared_classifier_from_railway_root_without_repository_src_package():
     """The root-only Railway image must use the generated canonical bundle."""
     environment = os.environ.copy()
