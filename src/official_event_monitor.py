@@ -510,8 +510,8 @@ def write_status_output(
         reason = "priority_candidate_contract_mismatch"
         status = "contract_mismatch"
     elif pending_events:
-        reason = "priority_candidate_contract_mismatch_timeout" if pending_timeout else "summary_semantics_incomplete"
-        status = "contract_mismatch" if pending_timeout else "summary_pending"
+        reason = "priority_summary_timeout" if pending_timeout else "summary_semantics_incomplete"
+        status = "summary_timeout" if pending_timeout else "summary_pending"
     else:
         reason = "candidate_ready" if should_send else "no_new_eligible_candidate" if event else "no_event"
         status = "candidate_ready" if should_send else "suppressed" if event else "no_event"

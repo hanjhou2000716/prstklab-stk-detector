@@ -117,6 +117,36 @@ def test_shared_fj_summary_contract_rejects_contextless_military_fragment() -> N
     assert result["reason"] == "summary_semantics_incomplete"
 
 
+def test_fj_summary_accepts_complete_attributed_official_statement() -> None:
+    event = {
+        "event": "美國財政部長貝森特：與中方在貿易和AI方面的接觸非常成功。",
+        "vendor_importance": 9,
+    }
+    result = financialjuice_public_summary(event)
+    assert result["status"] == "ready"
+    assert result["reason"] == "complete_fact_selected"
+    assert result["text"] == "🟣 FJ 9/10｜美國財政部長貝森特：與中方在貿易和AI方面的接觸非常成功。"
+    assert result["char_count"] == len(result["text"]) <= 60
+    contract = summary_contract_status(event)
+    assert contract["status"] == "ready"
+    assert contract["reason"] == "complete_attributed_statement"
+
+
+def test_fj_attributed_statement_does_not_invent_agreement() -> None:
+    message = financialjuice_public_short_message({
+        "event": "美國財政部長貝森特：與中方在貿易和AI方面的接觸非常成功。",
+        "vendor_importance": 9,
+    })
+    assert "達成協議" not in message
+    assert "取消關稅" not in message
+
+
+def test_fj_attributed_statement_requires_speaker_and_substantive_claim() -> None:
+    for value in ("：接觸非常成功。", "AI評論：資料待更新。", "AI分析：接觸非常成功。", "美國財政部長貝森特：…"):
+        result = summary_contract_status({"event": value})
+        assert result["status"] == "incomplete"
+
+
 def test_financialjuice_caption_prefers_projected_event_over_generic_title() -> None:
     caption = financialjuice_caption({
         "title": "FinancialJuice 公開快訊",

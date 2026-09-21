@@ -388,8 +388,8 @@ def test_monitor_escalates_pending_summary_after_ten_minutes(monkeypatch, tmp_pa
         "financialjuice_priority_pending_events": [pending],
     })
     text = output.read_text(encoding="utf-8")
-    assert "notification_status=contract_mismatch" in text
-    assert "notification_reason=priority_candidate_contract_mismatch_timeout" in text
+    assert "notification_status=summary_timeout" in text
+    assert "notification_reason=priority_summary_timeout" in text
     assert "hard_failure=true" in text
 
 

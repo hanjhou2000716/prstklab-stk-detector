@@ -22,7 +22,11 @@ for path in (RAILWAY, ROOT):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from gmail_history_sync import sync_gmail_history, sync_latest_financialjuice  # noqa: E402
+from gmail_history_sync import (  # noqa: E402
+    reconcile_priority_pending,
+    sync_gmail_history,
+    sync_latest_financialjuice,
+)
 from gmail_watch import GmailWatchConfig  # noqa: E402
 from supabase_email_store import SupabaseEmailStore  # noqa: E402
 
@@ -39,6 +43,10 @@ SYNC_RESULT_KEYS = (
     "priority_pending_error_reasons",
     "priority_pending_refs",
     "priority_event_refs",
+    "priority_recovery_scan_status", "priority_recovery_error",
+    "priority_recovery_status",
+    "priority_recovery_checked_at",
+    "priority_pending_count", "priority_pending_expired_count",
 )
 
 TRANSIENT_STORAGE_ERRORS = frozenset({
@@ -95,6 +103,28 @@ def _result_error(result: dict[str, Any]) -> str:
 
 def _next_retry_at() -> str:
     return (datetime.now(UTC) + timedelta(minutes=5)).isoformat()
+
+
+def _attach_priority_recovery(store: Any, result: dict[str, Any]) -> dict[str, Any]:
+    """Attach the durable FJ scan to every regular five-minute sync result."""
+    recovery = reconcile_priority_pending(store)
+    result["priority_recovery_checked_at"] = datetime.now(UTC).isoformat()
+    for key in (
+        "priority_recovery_scan_status", "priority_recovery_error",
+        "priority_recovery_status",
+        "priority_recovery_checked_at",
+        "priority_pending_count", "priority_pending_expired_count",
+        "priority_pending_refs", "priority_event_refs",
+    ):
+        if key in recovery:
+            result[key] = recovery[key]
+    if recovery.get("priority_recovery_scan_status") == "failed":
+        result["failed"] = max(1, _safe_int(result.get("failed")))
+        result["status"] = "priority_recovery_scan_failed"
+        result["storage_error"] = str(recovery.get("priority_recovery_error") or "priority_recovery_scan_failed")[:80]
+        result["diagnostic_reason"] = "priority_recovery_scan_failed"
+        result["cursor_preserved"] = True
+    return result
 
 
 def _safe_int(value: Any) -> int:
@@ -256,6 +286,7 @@ def main() -> int:
             diagnostics["primary_reason"] = "manual_replay"
     else:
         result = asyncio.run(sync_gmail_history(config, store, ingress, max_messages=args.max_messages))
+    result = _attach_priority_recovery(store, result)
     result = _apply_recovery_state(store, result)
     result["notification_requested"] = args.notify == "true"
     sync_completed_at = datetime.now(UTC).isoformat()

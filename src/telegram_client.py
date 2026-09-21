@@ -385,7 +385,16 @@ def _fact_text_is_complete(text: str) -> bool:
     value = _clean_public_fragment(text).strip()
     if not value or len(value.rstrip("。！？.!?")) < 8:
         return False
-    if not _FACT_ACTION_RE.search(value) or not _conditional_fact_is_complete(value):
+    attributed_statement = False
+    if not _FACT_ACTION_RE.search(value):
+        # A speaker-attributed relay can be complete even when its claim does
+        # not contain one of the generic action verbs (for example, a minister
+        # saying that talks were successful).  Keep the structural validation
+        # in the shared FJ contract so ingress, monitor and sender agree.
+        from src.financialjuice_summary_contract import is_complete_attributed_statement
+
+        attributed_statement = is_complete_attributed_statement(value)
+    if (not attributed_statement and not _FACT_ACTION_RE.search(value)) or not _conditional_fact_is_complete(value):
         return False
     if any(pattern.search(value) for pattern in _FJ_INVALID_FACT_PATTERNS):
         return False
