@@ -21627,7 +21627,7 @@
       "location_fingerprint": "",
       "action_fingerprint": "",
       "first_discovered_at": "2026-09-21T11:09:19.151622+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-09-21T11:09:49.912015+00:00",
       "escalated": false,
       "risk_level": "持續觀察",
       "risk_rank": 0,
@@ -21637,9 +21637,72 @@
       "last_title": "2881 富邦金：富邦金控代子公司富邦銀行(香港)有限公司公告取得資產基礎證券",
       "compound_item_id": null,
       "compound_event_cluster_key": null,
-      "last_decision": null,
-      "decision_history": [],
-      "updated_at": "2026-09-21T11:09:19.151622+00:00"
+      "last_decision": {
+        "recorded_at": "2026-09-21T11:09:47.903405+00:00",
+        "allowed": true,
+        "status": "eligible",
+        "reason": "new_theme",
+        "reasons": [],
+        "notification_theme_key": "mops-3e31a67aaa",
+        "event_key": "89418eaa3beb8266a77e81421ebd0a23",
+        "risk": "R1",
+        "theme_window": 7200,
+        "material_state_changed": true,
+        "last_notified_at": null,
+        "taiwan_priority": 4
+      },
+      "decision_history": [
+        {
+          "recorded_at": "2026-09-21T11:09:47.903405+00:00",
+          "allowed": true,
+          "status": "eligible",
+          "reason": "new_theme",
+          "reasons": [],
+          "notification_theme_key": "mops-3e31a67aaa",
+          "event_key": "89418eaa3beb8266a77e81421ebd0a23",
+          "risk": "R1",
+          "theme_window": 7200,
+          "material_state_changed": true,
+          "last_notified_at": null,
+          "taiwan_priority": 4
+        }
+      ],
+      "updated_at": "2026-09-21T11:09:49.912015+00:00",
+      "delivery_history": [
+        {
+          "event_key": "89418eaa3beb8266a77e81421ebd0a23",
+          "notification_id": "89418eaa3beb8266a77e81421ebd0a23",
+          "sent_at": "2026-09-21T11:09:49.912015+00:00",
+          "importance": "normal",
+          "alert_type": "macro",
+          "lifecycle_state": "confirmed",
+          "reason": "official_event_monitor",
+          "notification_theme_key": "mops-3e31a67aaa",
+          "risk": "R1",
+          "taiwan_priority": 4,
+          "material_state_changed": true,
+          "release_id": "release-d72a97e24198e336",
+          "snapshot_id": "1193b3c25473bb9d",
+          "delivery_status": "delivered",
+          "event_cluster_key": "evt-6bae525bb28b9b0de355d418",
+          "prstk_risk": {
+            "prstk_risk_level": "R1",
+            "source": "event_alerts"
+          },
+          "release_ready_at": "2026-09-21T11:09:48.308030+00:00",
+          "telegram_attempted_at": "2026-09-21T11:09:48.362771+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "source_url": "https://mops.twse.com.tw/mops/#/web/t05st02",
+          "source_domain": "mops.twse.com.tw",
+          "alert_lane": "event",
+          "market_scope": "global",
+          "event_policy_reason": "event_materiality_available",
+          "trace_id": "official-75cab415619c26fe"
+        }
+      ],
+      "last_theme_notification_at": "2026-09-21T11:09:49.912015+00:00",
+      "last_notified_at": "2026-09-21T11:09:49.912015+00:00"
     }
   },
   "delivery_claims": {
@@ -24202,6 +24265,32 @@
       "updated_at": "2026-09-21T06:25:11.363786+00:00",
       "failed_recipient_hashes": [],
       "delivered_at": "2026-09-21T06:25:11.363786+00:00"
+    },
+    "89418eaa3beb8266a77e81421ebd0a23": {
+      "notification_key": "89418eaa3beb8266a77e81421ebd0a23",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d"
+      ],
+      "delivered_recipient_hashes": [
+        "5b1d66aae79d",
+        "7a30574fc065",
+        "d36bbcc2cd2d"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d"
+      ],
+      "claimed_at": "2026-09-21T11:09:48.316430+00:00",
+      "lease_until": null,
+      "run_id_hash": "d7b1ee50b166",
+      "updated_at": "2026-09-21T11:09:49.866717+00:00",
+      "failed_recipient_hashes": [],
+      "delivered_at": "2026-09-21T11:09:49.866717+00:00"
     }
   }
 }
