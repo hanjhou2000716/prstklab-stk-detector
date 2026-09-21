@@ -200,6 +200,8 @@ def reconcile_priority_pending(
                 }
             expired_count += 1
             continue
+        if event_ref not in event_refs:
+            event_refs.append(event_ref)
         status = str(row.get("delivery_status") or row.get("summary_status") or "").strip()
         if status == "summary_pending":
             # Retry the current summary contract from the durable sanitized
@@ -232,8 +234,6 @@ def reconcile_priority_pending(
                         "priority_event_refs": event_refs,
                         "priority_recovery_status": "failed",
                     }
-        if event_ref not in event_refs:
-            event_refs.append(event_ref)
         if status == "summary_pending" and event_ref not in pending_refs:
             pending_refs.append(event_ref)
 
