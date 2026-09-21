@@ -484,7 +484,7 @@ class SupabaseEmailStore:
         _status, payload = self._request(
             "GET",
             "financialjuice_priority_pending",
-            f"?canonical_fact_key=eq.{encoded_key}&material_fact_version=eq.{encoded_version}&select=first_detected_at,expires_at,attempt_count,delivery_status,last_blocking_reason,summary_status&limit=1",
+            f"?canonical_fact_key=eq.{encoded_key}&material_fact_version=eq.{encoded_version}&select=event_ref,first_detected_at,expires_at,attempt_count,delivery_status,last_blocking_reason,summary_status&limit=1",
         )
         existing = payload[0] if isinstance(payload, list) and payload and isinstance(payload[0], dict) else {}
         first_detected_at = str(existing.get("first_detected_at") or checked_at)
@@ -500,7 +500,9 @@ class SupabaseEmailStore:
         except (TypeError, ValueError, OverflowError):
             attempts = 1
         existing_delivery = str(existing.get("delivery_status") or "").strip()
-        if existing_delivery in {"delivered", "expired", "contract_failed"}:
+        if existing_delivery in {"delivered", "expired", "contract_failed", "delivery_pending"} or (
+            existing_delivery == "ready" and status == "pending"
+        ):
             delivery_status = existing_delivery
             summary_status = str(existing.get("summary_status") or status)
             next_retry_at = None
@@ -518,7 +520,7 @@ class SupabaseEmailStore:
         body = {
             "canonical_fact_key": key,
             "material_fact_version": version,
-            "event_ref": event_ref,
+            "event_ref": str(existing.get("event_ref") or event_ref)[:64],
             "summary_contract_version": contract,
             "summary_status": summary_status,
             "summary_reason": reason[:120],
@@ -546,15 +548,48 @@ class SupabaseEmailStore:
         return row or {"event_ref": event_ref, "summary_status": status, "summary_reason": reason, "expires_at": expires_at, "attempt_count": attempts}
 
     def priority_pending_events(self, *, now: datetime | None = None, limit: int | None = None) -> list[dict[str, Any]]:
-        """Read all non-terminal, identifier-only private recovery state."""
-        bounded = None if limit is None else max(1, min(10_000, int(limit)))
-        suffix = f"&limit={bounded}" if bounded is not None else ""
+        """Read every non-terminal recovery row with deterministic pagination.
+
+        PostgREST applies a server-side maximum even when ``limit`` is omitted.
+        The previous implementation therefore silently hid older work items
+        from the recovery scan. Offset pages are safe here because this is a
+        read-only ordered snapshot and the caller performs CAS transitions;
+        stop only when a page is short or empty.
+        """
+        requested = None if limit is None else max(1, min(10_000, int(limit)))
+        page_size = 500
+        rows: list[dict[str, Any]] = []
+        offset = 0
+        while requested is None or len(rows) < requested:
+            page_limit = page_size if requested is None else min(page_size, requested - len(rows))
+            _status, payload = self._request(
+                "GET", "financialjuice_priority_pending",
+                "?delivery_status=in.(summary_pending,ready,delivery_pending)"
+                f"&order=source_published_at.asc,event_ref.asc&limit={page_limit}&offset={offset}",
+            )
+            page = [row for row in payload if isinstance(row, dict)] if isinstance(payload, list) else []
+            if not page:
+                break
+            rows.extend(page)
+            if len(page) < page_limit:
+                break
+            offset += len(page)
+        return rows[:requested] if requested is not None else rows
+
+    def priority_pending_source(self, pending: dict[str, Any]) -> dict[str, Any] | None:
+        """Read one sanitized source row for a durable summary retry."""
+        key = quote(str(pending.get("canonical_fact_key") or "").strip(), safe="")
+        version = quote(str(pending.get("material_fact_version") or "").strip(), safe="")
+        if not key or not version:
+            return None
         _status, payload = self._request(
-            "GET", "financialjuice_priority_pending",
-            f"?delivery_status=in.(summary_pending,ready,delivery_pending)&order=source_published_at.asc{suffix}",
+            "GET", "gmail_public_observations",
+            f"?payload_json->>canonical_fact_key=eq.{key}&payload_json->>material_fact_version=eq.{version}&select=payload_json&limit=1",
         )
-        rows = payload if isinstance(payload, list) else []
-        return [row for row in rows if isinstance(row, dict)]
+        if isinstance(payload, list) and payload and isinstance(payload[0], dict):
+            value = payload[0].get("payload_json")
+            return value if isinstance(value, dict) else None
+        return None
 
     def transition_priority_delivery(
         self,
@@ -566,8 +601,15 @@ class SupabaseEmailStore:
         next_retry_at: str | None = None,
     ) -> bool:
         """Conditionally advance private delivery state without regressions."""
-        allowed = {"summary_pending", "ready", "delivery_pending", "delivered", "expired", "contract_failed"}
-        if not event_ref or expected_status not in allowed or next_status not in allowed:
+        allowed_transitions = {
+            ("summary_pending", "ready"), ("summary_pending", "expired"),
+            ("summary_pending", "contract_failed"),
+            ("ready", "delivery_pending"), ("ready", "expired"),
+            ("ready", "contract_failed"),
+            ("delivery_pending", "delivered"), ("delivery_pending", "expired"),
+            ("delivery_pending", "contract_failed"),
+        }
+        if not event_ref or (expected_status, next_status) not in allowed_transitions:
             return False
         result = self._rpc(
             "transition_financialjuice_priority_delivery",

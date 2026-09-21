@@ -97,7 +97,7 @@ def _attach_realtime_external_events(snapshot: dict[str, Any]) -> dict[str, Any]
     remote_health: dict[str, Any] = {}
     health: dict[str, Any] | None
     if _external_observations_configured():
-        remote_rows, remote_health = load_railway_observations()
+        remote_rows, remote_health = load_railway_observations(include_priority_recovery=True)
     observations = _merge_observations(local_rows, remote_rows)
     fj_rows = [
         row for row in observations
@@ -124,15 +124,45 @@ def _attach_realtime_external_events(snapshot: dict[str, Any]) -> dict[str, Any]
         ref = str(item.get("priority_pending_ref") or "").strip()
         if ref and ref not in priority_event_refs:
             priority_event_refs.append(ref[:64])
+    durable_recovery = [
+        item for item in (remote_health.get("priority_recovery") or [])
+        if isinstance(item, dict) and str(item.get("event_ref") or "").strip()
+    ] if isinstance(remote_health, dict) else []
+    durable_by_ref = {
+        str(item["event_ref"]).strip(): item for item in durable_recovery
+    }
+    projected_by_ref = {
+        str(item.get("priority_pending_ref") or "").strip(): item
+        for item in projection["events"]
+        if isinstance(item, dict) and str(item.get("priority_pending_ref") or "").strip()
+    }
+    durable_source_missing_refs: list[str] = []
+    for ref in durable_by_ref:
+        if ref not in priority_event_refs:
+            priority_event_refs.append(ref[:64])
+        if ref not in projected_by_ref:
+            durable_source_missing_refs.append(ref[:64])
     # This is a safe correlation-only projection.  It lets the monitor
     # distinguish a ready event from a missing dispatch without exposing
     # message text, canonical keys or private mail identifiers.
     snapshot["financialjuice_priority_event_refs"] = priority_event_refs
+    snapshot["financialjuice_priority_durable_recovery"] = [
+        {
+            "priority_pending_ref": str(item.get("event_ref") or "")[:64],
+            "delivery_status": str(item.get("delivery_status") or "")[:40],
+            "summary_status": str(item.get("summary_status") or "")[:40],
+            "summary_reason": str(item.get("summary_reason") or "")[:120],
+            "source_published_at": str(item.get("source_published_at") or "")[:80],
+            "expires_at": str(item.get("expires_at") or "")[:80],
+        }
+        for item in durable_recovery
+    ]
+    snapshot["financialjuice_priority_durable_source_missing_refs"] = durable_source_missing_refs
     # The monitor only needs a bounded age/count signal to retry a pending
     # summary.  Keep the pending marker public-safe: event text, source IDs,
     # canonical keys and mail-derived fields stay in the private observation
     # lineage rather than entering the Pages snapshot.
-    snapshot["financialjuice_priority_pending_events"] = [
+    projected_pending = [
         {
             "source_key": "financialjuice",
             "vendor_importance": item.get("vendor_importance"),
@@ -149,6 +179,32 @@ def _attach_realtime_external_events(snapshot: dict[str, Any]) -> dict[str, Any]
         and str(item.get("freshness_status") or "") == "fresh"
         and _safe_vendor_importance(item) >= 9
     ]
+    pending_by_ref = {
+        str(item.get("priority_pending_ref") or "").strip(): item
+        for item in projected_pending
+        if str(item.get("priority_pending_ref") or "").strip()
+    }
+    for ref, durable in durable_by_ref.items():
+        if str(durable.get("delivery_status") or "") != "summary_pending":
+            continue
+        if ref in pending_by_ref:
+            pending_by_ref[ref]["summary_reason"] = str(durable.get("summary_reason") or "summary_semantics_incomplete")[:120]
+            continue
+        source = projected_by_ref.get(ref)
+        if not isinstance(source, dict):
+            continue
+        pending_by_ref[ref] = {
+            "source_key": "financialjuice",
+            "vendor_importance": source.get("vendor_importance"),
+            "notification_status": "content_incomplete",
+            "notification_reason": str(durable.get("summary_reason") or "summary_semantics_incomplete")[:120],
+            "priority_pending_ref": ref,
+            "freshness_status": source.get("freshness_status"),
+            "source_published_at": durable.get("source_published_at") or source.get("source_published_at"),
+            "received_at": source.get("received_at"),
+            "candidate_at": source.get("candidate_at"),
+        }
+    snapshot["financialjuice_priority_pending_events"] = list(pending_by_ref.values())
     snapshot["financialjuice_observations"] = bind_financialjuice_semantic_views(
         fj_rows, projection["events"],
     )
@@ -472,7 +528,10 @@ def write_status_output(
             if isinstance(item, dict) and str(item.get("priority_pending_ref") or "").strip():
                 projected_event_refs.add(str(item["priority_pending_ref"]).strip())
     projected_event_refs.update(pending_refs)
-    missing_pending_refs = [ref for ref in dispatch_refs if ref not in pending_refs]
+    # The legacy list is a delivery hint, not a claim that the row must still
+    # be in summary_pending. A ready row is valid after the same event moves
+    # forward in the durable lifecycle.
+    missing_pending_refs = [ref for ref in dispatch_refs if ref not in projected_event_refs]
     missing_event_refs = [ref for ref in dispatch_event_refs if ref not in projected_event_refs]
     # New dispatches carry all high-score event refs.  During the compatibility
     # window, an old count-only dispatch may be rescued only when the monitor
@@ -506,9 +565,19 @@ def write_status_output(
         # Only expose the provider category in bounded diagnostics.  The
         # pending event's identifiers and source text never enter this row.
         diagnostic_event = {"source_key": "financialjuice"}
+    durable_source_missing = bool(
+        isinstance(snapshot, dict)
+        and snapshot.get("financialjuice_priority_durable_source_missing_refs")
+    )
     if contract_mismatch:
         reason = "priority_candidate_contract_mismatch"
         status = "contract_mismatch"
+    elif durable_source_missing:
+        reason = "priority_durable_observation_missing"
+        status = "contract_mismatch"
+    elif should_send and event:
+        reason = "candidate_ready"
+        status = "candidate_ready"
     elif pending_events:
         reason = "priority_summary_timeout" if pending_timeout else "summary_semantics_incomplete"
         status = "summary_timeout" if pending_timeout else "summary_pending"
@@ -529,7 +598,7 @@ def write_status_output(
         last_candidate_at=last_candidate_at,
     )
     summary["priority_dispatch_legacy_rescan"] = legacy_dispatch_rescued
-    if suppressed_candidates:
+    if suppressed_candidates and not contract_mismatch and not durable_source_missing and not pending_timeout:
         summary["notification_reason"] = "top_candidate_suppressed_later_candidate_considered"
     lines = [
         f"should_send={'true' if should_send else 'false'}",
@@ -548,7 +617,7 @@ def write_status_output(
         f"priority_dispatch_missing_ref_count={len(missing_dispatch_refs)}",
         f"priority_dispatch_legacy_rescan={'true' if legacy_dispatch_rescued else 'false'}",
         f"priority_pending_age_seconds={pending_age_seconds}",
-        f"hard_failure={'true' if contract_mismatch or pending_timeout else 'false'}",
+        f"hard_failure={'true' if contract_mismatch or durable_source_missing or (pending_timeout and not should_send) else 'false'}",
         f"last_processed_at={summary['last_processed_at']}",
         f"last_candidate_at={summary['last_candidate_at'] or ''}",
     ]
@@ -716,6 +785,29 @@ def _write_delivery_output(
             f"delivery_result={event.get('delivery_result') or delivery_status or ''}",
             f"delay_reason={event.get('delay_reason') or 'none'}",
         ])
+        if str(event.get("source_key") or event.get("source") or "").strip().casefold() == "financialjuice":
+            # This is the only FJ state hand-off that crosses the workflow
+            # boundary.  It contains a stable private-store reference and
+            # release-bound safe fields; the callback allow-list strips
+            # everything else before persistence.
+            priority_ref = str(event.get("priority_pending_ref") or "").strip()[:64]
+            if priority_ref:
+                trace = {
+                    "priority_pending_ref": priority_ref,
+                    "observation_id_hash": event.get("observation_id_hash"),
+                    "item_id": event.get("item_id"),
+                    "event_cluster_key": event.get("event_cluster_key"),
+                    "vendor_importance": event.get("vendor_importance"),
+                    "prstk_risk": event.get("prstk_risk"),
+                    "notification_reason": event.get("notification_reason"),
+                    "release_id": os.environ.get("RELEASE_ID", ""),
+                    "snapshot_id": event.get("snapshot_id"),
+                    "delivery_status": delivery_status or computed_status,
+                }
+                lines.append(
+                    "financialjuice_delivery_trace="
+                    + json.dumps(trace, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+                )
     if budget is not None:
         lines.extend([
             f"alert_budget_allowed={'true' if budget.get('allowed') else 'false'}",

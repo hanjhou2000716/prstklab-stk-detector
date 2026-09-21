@@ -59,7 +59,11 @@ def _safe_sync_diagnostics(value: Any) -> dict[str, Any] | None:
     }
 
 
-def observation_export_url(configured_url: str | None = None) -> str:
+def observation_export_url(
+    configured_url: str | None = None,
+    *,
+    include_priority_recovery: bool = False,
+) -> str:
     """Return the configured sanitized export endpoint.
 
     ``PUBLIC_OBSERVATIONS_URL`` is the zero-cost Worker replacement for the
@@ -77,6 +81,8 @@ def observation_export_url(configured_url: str | None = None) -> str:
     query = parsed.query or "limit=100"
     if "limit=" not in query:
         query = f"{query}&limit=100" if query else "limit=100"
+    if include_priority_recovery and "include_priority_recovery=" not in query:
+        query = f"{query}&include_priority_recovery=true"
     return urlunparse((parsed.scheme, parsed.netloc, path, "", query, ""))
 
 
@@ -96,6 +102,7 @@ def load_railway_observations(
     secret: str | None = None,
     timeout: float = 8.0,
     max_attempts: int = 2,
+    include_priority_recovery: bool = False,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Return sanitized observations and an explicit source-health result.
 
@@ -104,7 +111,7 @@ def load_railway_observations(
     as a degraded source so the release can fail closed without inventing
     events.
     """
-    endpoint = observation_export_url(url)
+    endpoint = observation_export_url(url, include_priority_recovery=include_priority_recovery)
     # The scheduled collection step receives this narrowly scoped secret only
     # when the canonical Worker export is enabled.  Keep it separate from the
     # legacy Railway helper so Telegram tokens never enter the job.
@@ -183,6 +190,27 @@ def load_railway_observations(
     status_value = payload.get("status") or ("ready" if safe else "no_event")
     status = str(status_value)
     health: dict[str, Any] = {"status": status, "count": len(safe), "rejected_count": rejected, "attempts": retry_count + 1, "retry_count": retry_count}
+    if include_priority_recovery:
+        raw_recovery = payload.get("priority_recovery") if isinstance(payload, dict) else None
+        recovery: list[dict[str, Any]] = []
+        if isinstance(raw_recovery, list):
+            for item in raw_recovery:
+                if not isinstance(item, dict):
+                    continue
+                ref = str(item.get("event_ref") or "").strip()
+                status_value = str(item.get("delivery_status") or "").strip()
+                if not ref or status_value not in {"summary_pending", "ready", "delivery_pending"}:
+                    continue
+                recovery.append({
+                    "event_ref": ref[:64],
+                    "delivery_status": status_value,
+                    "summary_status": str(item.get("summary_status") or "")[:40],
+                    "summary_reason": str(item.get("summary_reason") or "")[:120],
+                    "source_published_at": str(item.get("source_published_at") or "")[:80],
+                    "expires_at": str(item.get("expires_at") or "")[:80],
+                    "last_blocking_reason": str(item.get("last_blocking_reason") or "")[:120],
+                })
+        health["priority_recovery"] = recovery
     sync_diagnostics = _safe_sync_diagnostics(payload.get("sync_diagnostics")) if isinstance(payload, dict) else None
     if sync_diagnostics is not None:
         health["sync_diagnostics"] = sync_diagnostics

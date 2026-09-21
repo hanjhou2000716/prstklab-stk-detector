@@ -386,6 +386,41 @@ def test_high_score_ready_fact_creates_event_ref_and_ready_state(
     assert pending[0]["event_ref"] == diagnostics["priority_event_refs"][0]
 
 
+def test_ready_summary_result_is_persisted_when_input_has_no_status_field(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    """Eligibility and durable state must use the same computed result."""
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    monkeypatch.setattr(
+        gmail_ingress_module,
+        "financialjuice_public_summary",
+        lambda _row: {
+            "status": "ready",
+            "version": "public-summary-v3",
+            "summary_contract_version": "fj-summary-contract-v2",
+            "reason": "complete_fact_selected",
+            "text": "🟣 FJ 9/10｜官方表示：接觸成功。",
+        },
+    )
+    row = {
+        "source": "financialjuice",
+        "vendor_importance": 9,
+        "source_published_at": datetime.now(UTC).isoformat(),
+        "canonical_fact_key": "financialjuice-fact:ready-without-status",
+        "material_fact_version": "v1",
+        "vendor_translation": "官方表示：接觸成功。",
+    }
+
+    diagnostics = _candidate_diagnostics([row], store)
+
+    assert diagnostics["counts"]["priority_event_eligible"] == 1
+    assert diagnostics["counts"].get("priority_pending_state_error", 0) == 0
+    assert "priority_pending_refs" not in diagnostics
+    pending = store.priority_pending_events()
+    assert pending[0]["summary_status"] == "ready"
+    assert pending[0]["delivery_status"] == "ready"
+
+
 def test_duplicate_replay_enriches_public_projection_without_second_event(tmp_path: Path) -> None:
     store = EmailStore(tmp_path / "mail.sqlite3")
     service = GmailIngressService(store, _config())

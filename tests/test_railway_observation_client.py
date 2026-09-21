@@ -40,6 +40,48 @@ def test_loader_keeps_only_public_safe_rows(monkeypatch) -> None:
     assert seen["headers"]["X-PRSTK-Signature"].startswith("sha256=")
 
 
+def test_loader_reads_safe_durable_priority_state_when_requested(monkeypatch) -> None:
+    class Response:
+        status_code = 200
+
+        def json(self):
+            return {
+                "status": "ready",
+                "observations": [],
+                "priority_recovery": [{
+                    "event_ref": "fj-ref-ready",
+                    "delivery_status": "ready",
+                    "summary_status": "ready",
+                    "summary_reason": "complete_fact_selected",
+                    "canonical_fact_key": "must-not-cross-boundary",
+                }],
+            }
+
+    seen = {}
+
+    def fake_get(url, **kwargs):
+        seen.update({"url": url, **kwargs})
+        return Response()
+
+    monkeypatch.setattr(client.httpx, "get", fake_get)
+    rows, health = client.load_railway_observations(
+        url="https://railway.example/health",
+        secret="secret",
+        include_priority_recovery=True,
+    )
+    assert rows == []
+    assert "include_priority_recovery=true" in seen["url"]
+    assert health["priority_recovery"] == [{
+        "event_ref": "fj-ref-ready",
+        "delivery_status": "ready",
+        "summary_status": "ready",
+        "summary_reason": "complete_fact_selected",
+        "source_published_at": "",
+        "expires_at": "",
+        "last_blocking_reason": "",
+    }]
+
+
 def test_loader_preserves_bounded_fj_sync_diagnostics(monkeypatch) -> None:
     class Response:
         status_code = 200

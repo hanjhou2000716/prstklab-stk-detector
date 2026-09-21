@@ -54,6 +54,22 @@ def test_delivery_callback_preserves_release_bound_financialjuice_trace(monkeypa
     assert "fj-observation" not in str(trace)
 
 
+def test_delivery_callback_preserves_priority_reference(monkeypatch):
+    monkeypatch.setenv("TRACE_ID", "fj-priority-trace")
+    monkeypatch.setenv("DELIVERY_STATUS", "delivered")
+    monkeypatch.setenv("DELIVERED_COUNT", "1")
+    monkeypatch.setenv("FAILED_COUNT", "0")
+    monkeypatch.setenv("RELEASE_ID", "release-fj-2")
+    monkeypatch.setenv("SNAPSHOT_ID", "market-fj-2")
+    monkeypatch.setenv("FINANCIALJUICE_TRACE", json.dumps({
+        "priority_pending_ref": "fj-ref-2",
+        "release_id": "release-fj-2",
+        "snapshot_id": "market-fj-2",
+    }))
+    payload = build_payload()
+    assert payload["financialjuice_delivery_trace"]["priority_pending_ref"] == "fj-ref-2"
+
+
 def test_delivery_callback_rejects_mismatched_financialjuice_release(monkeypatch):
     monkeypatch.setenv("TRACE_ID", "brief-fj-trace")
     monkeypatch.setenv("RELEASE_ID", "release-real")

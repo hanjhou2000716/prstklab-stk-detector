@@ -84,7 +84,8 @@ def _financialjuice_trace() -> dict[str, object] | None:
         raise ValueError("invalid FinancialJuice delivery trace")
     allowed = {
         "observation_id_hash", "item_id", "event_cluster_key", "vendor_importance",
-        "prstk_risk", "notification_reason", "release_id", "snapshot_id", "delivery_status",
+        "priority_pending_ref", "prstk_risk", "notification_reason", "release_id",
+        "snapshot_id", "delivery_status",
     }
     trace = {key: value[key] for key in allowed if key in value}
     digest = str(trace.get("observation_id_hash") or "")
@@ -93,6 +94,11 @@ def _financialjuice_trace() -> dict[str, object] | None:
     for field in ("release_id", "snapshot_id", "delivery_status"):
         if field in trace and not str(trace[field]).strip():
             raise ValueError(f"invalid FinancialJuice {field}")
+    if "priority_pending_ref" in trace:
+        pending_ref = str(trace["priority_pending_ref"] or "").strip()
+        if not pending_ref or len(pending_ref) > 64:
+            raise ValueError("invalid FinancialJuice priority reference")
+        trace["priority_pending_ref"] = pending_ref
     if not trace:
         raise ValueError("empty FinancialJuice delivery trace")
     return trace

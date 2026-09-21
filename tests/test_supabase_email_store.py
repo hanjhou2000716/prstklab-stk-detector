@@ -327,3 +327,27 @@ def test_priority_pending_uses_idempotent_table_fallback_when_rpc_is_missing(mon
     assert calls[0][0] == "POST"
     assert calls[1][0] == "GET"
     assert calls[2][0] == "POST"
+
+
+def test_priority_pending_events_reads_all_server_pages(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+
+    def request(method: str, url: str, **_kwargs: Any) -> _Response:
+        assert method == "GET"
+        calls.append(url)
+        offset = int(url.split("offset=")[-1])
+        if offset == 0:
+            return _Response(200, [{"event_ref": f"ref-{index}"} for index in range(500)])
+        if offset == 500:
+            return _Response(200, [{"event_ref": f"ref-{index}"} for index in range(500, 1001)])
+        return _Response(200, [])
+
+    monkeypatch.setattr("supabase_email_store.requests.request", request)
+    store = SupabaseEmailStore("https://example.supabase.co", "key")
+
+    rows = store.priority_pending_events()
+
+    assert len(rows) == 1001
+    assert rows[0]["event_ref"] == "ref-0"
+    assert rows[-1]["event_ref"] == "ref-1000"
+    assert len(calls) == 3

@@ -551,7 +551,11 @@ class EmailStore:
                 payload = json.loads(str(row[0]))
             except (TypeError, ValueError, json.JSONDecodeError):
                 continue
-            if isinstance(payload, dict) and str(payload.get("canonical_fact_key") or "").strip() == key:
+            if (
+                isinstance(payload, dict)
+                and payload.get("public_safe") is True
+                and str(payload.get("canonical_fact_key") or "").strip() == key
+            ):
                 return True
         return False
 
@@ -600,7 +604,10 @@ class EmailStore:
                 ON CONFLICT(canonical_fact_key, material_fact_version) DO UPDATE SET
                     summary_contract_version=excluded.summary_contract_version,
                     summary_status=CASE
-                      WHEN financialjuice_priority_pending.delivery_status IN ('delivered', 'expired', 'contract_failed')
+                      WHEN financialjuice_priority_pending.delivery_status IN ('delivered', 'expired', 'contract_failed', 'delivery_pending')
+                        THEN financialjuice_priority_pending.summary_status
+                      WHEN financialjuice_priority_pending.delivery_status = 'ready'
+                           AND excluded.summary_status = 'pending'
                         THEN financialjuice_priority_pending.summary_status
                       ELSE excluded.summary_status
                     END,
@@ -610,22 +617,25 @@ class EmailStore:
                     last_run_id=COALESCE(excluded.last_run_id, financialjuice_priority_pending.last_run_id),
                     last_run_sha=COALESCE(excluded.last_run_sha, financialjuice_priority_pending.last_run_sha),
                     delivery_status=CASE
-                      WHEN financialjuice_priority_pending.delivery_status IN ('delivered', 'expired', 'contract_failed')
+                      WHEN financialjuice_priority_pending.delivery_status IN ('delivered', 'expired', 'contract_failed', 'delivery_pending')
+                        THEN financialjuice_priority_pending.delivery_status
+                      WHEN financialjuice_priority_pending.delivery_status = 'ready'
+                           AND excluded.delivery_status = 'summary_pending'
                         THEN financialjuice_priority_pending.delivery_status
                       ELSE excluded.delivery_status
                     END,
                     next_retry_at=CASE
-                      WHEN financialjuice_priority_pending.delivery_status IN ('delivered', 'expired', 'contract_failed')
+                      WHEN financialjuice_priority_pending.delivery_status IN ('delivered', 'expired', 'contract_failed', 'delivery_pending', 'ready')
                         THEN financialjuice_priority_pending.next_retry_at
                       ELSE excluded.next_retry_at
                     END,
                     last_progress_at=CASE
-                      WHEN financialjuice_priority_pending.delivery_status IN ('delivered', 'expired', 'contract_failed')
+                      WHEN financialjuice_priority_pending.delivery_status IN ('delivered', 'expired', 'contract_failed', 'delivery_pending', 'ready')
                         THEN financialjuice_priority_pending.last_progress_at
                       ELSE excluded.last_progress_at
                     END,
                     last_blocking_reason=CASE
-                      WHEN financialjuice_priority_pending.delivery_status IN ('delivered', 'expired', 'contract_failed')
+                      WHEN financialjuice_priority_pending.delivery_status IN ('delivered', 'expired', 'contract_failed', 'delivery_pending', 'ready')
                         THEN financialjuice_priority_pending.last_blocking_reason
                       ELSE excluded.last_blocking_reason
                     END,
@@ -662,6 +672,27 @@ class EmailStore:
             rows = connection.execute(query, params).fetchall()
         return [dict(row) for row in rows]
 
+    def priority_pending_source(self, pending: dict[str, Any]) -> dict[str, Any] | None:
+        """Find the sanitized source row needed for a summary retry."""
+        key = str(pending.get("canonical_fact_key") or "").strip()
+        version = str(pending.get("material_fact_version") or "").strip()
+        if not key or not version:
+            return None
+        with self._connect() as connection:
+            rows = connection.execute("SELECT payload_json FROM public_observations").fetchall()
+        for row in rows:
+            try:
+                payload = json.loads(str(row[0]))
+            except (TypeError, ValueError, json.JSONDecodeError):
+                continue
+            if (
+                isinstance(payload, dict)
+                and str(payload.get("canonical_fact_key") or "").strip() == key
+                and str(payload.get("material_fact_version") or "").strip() == version
+            ):
+                return payload
+        return None
+
     def mark_priority_pending(self, event: dict[str, Any], *, status: str, reason: str = "") -> bool:
         key = str(event.get("canonical_fact_key") or "").strip()
         version = str(event.get("material_fact_version") or "").strip()
@@ -693,8 +724,15 @@ class EmailStore:
         """Conditionally advance a durable delivery state without regressions."""
         if not event_ref or expected_status == next_status:
             return False
-        allowed = {"summary_pending", "ready", "delivery_pending", "delivered", "expired", "contract_failed"}
-        if expected_status not in allowed or next_status not in allowed:
+        allowed_transitions = {
+            ("summary_pending", "ready"), ("summary_pending", "expired"),
+            ("summary_pending", "contract_failed"),
+            ("ready", "delivery_pending"), ("ready", "expired"),
+            ("ready", "contract_failed"),
+            ("delivery_pending", "delivered"), ("delivery_pending", "expired"),
+            ("delivery_pending", "contract_failed"),
+        }
+        if (expected_status, next_status) not in allowed_transitions:
             return False
         with self._connect() as connection:
             cursor = connection.execute(

@@ -1289,11 +1289,72 @@ class SeenStore:
         db, callback_connection = self._connection_for_thread()
         try:
             accepted = store_record_delivery_status(db, payload)
+            if accepted:
+                self._reconcile_financialjuice_priority_delivery(payload)
             update_health("delivery", **store_delivery_diagnostics(db, age_seconds_fn=_age_seconds))
             return accepted
         finally:
             if callback_connection:
                 db.close()
+
+    def _reconcile_financialjuice_priority_delivery(self, payload: dict[str, Any]) -> None:
+        """Join a recipient receipt to the Gmail durable FJ state.
+
+        The delivery store and Gmail ingress intentionally use separate
+        SQLite files.  Reconcile only by the bounded, stable event reference
+        carried in the signed receipt; never copy message bodies or transport
+        identifiers between stores.  Receipt status remains authoritative:
+        only a complete recipient delivery may reach ``delivered``.
+        """
+        trace = payload.get("financialjuice_delivery_trace")
+        if not isinstance(trace, dict):
+            return
+        event_ref = str(trace.get("priority_pending_ref") or "").strip()
+        ingress = EMAIL_INGRESS
+        ingress_store = getattr(ingress, "store", None) if ingress is not None else None
+        transition = getattr(ingress_store, "transition_priority_delivery", None)
+        pending_events = getattr(ingress_store, "priority_pending_events", None)
+        if not event_ref or not callable(transition) or not callable(pending_events):
+            update_health("financialjuice", priority_delivery_state="state_store_unavailable")
+            return
+        rows = [
+            row for row in pending_events(limit=None)
+            if isinstance(row, dict) and str(row.get("event_ref") or "").strip() == event_ref
+        ]
+        if not rows:
+            # A terminal row is intentionally absent from the active query;
+            # do not downgrade a receipt or invent a second delivery record.
+            update_health("financialjuice", priority_delivery_state="event_not_active")
+            return
+        current = str(rows[0].get("delivery_status") or "").strip()
+        receipt_status = str(payload.get("delivery_status") or "").strip()
+        if current in {"delivered", "expired", "contract_failed"}:
+            update_health("financialjuice", priority_delivery_state=f"already_{current}")
+            return
+        if current == "ready":
+            moved = transition(
+                event_ref,
+                expected_status="ready",
+                next_status="delivery_pending",
+                reason="recipient_attempt_recorded",
+            )
+            if not moved:
+                update_health("financialjuice", priority_delivery_state="delivery_pending_transition_failed")
+                return
+            current = "delivery_pending"
+        if receipt_status == "delivered":
+            moved = transition(
+                event_ref,
+                expected_status="delivery_pending",
+                next_status="delivered",
+                reason="recipient_receipt_delivered",
+            )
+            update_health(
+                "financialjuice",
+                priority_delivery_state="delivered" if moved else "delivery_finalize_race",
+            )
+            return
+        update_health("financialjuice", priority_delivery_state="delivery_pending")
 
     def release_classification(self, event_id: str, error: str) -> None:
         """Return a failed dispatch to the retryable state."""
@@ -2020,8 +2081,35 @@ class HealthHandler(BaseHTTPRequestHandler):
             try:
                 values = dict(parse_qsl(parsed_target.query, keep_blank_values=True))
                 limit = max(1, min(500, int(values.get("limit", "100"))))
+                include_priority_recovery = values.get("include_priority_recovery", "false").casefold() == "true"
                 store = getattr(EMAIL_INGRESS, "store", None)
                 rows = store.public_observations(limit=limit) if store is not None else []
+                priority_recovery: list[dict[str, Any]] = []
+                if include_priority_recovery and store is not None:
+                    for item in store.priority_pending_events(limit=None):
+                        if not isinstance(item, dict):
+                            continue
+                        event_ref = str(item.get("event_ref") or "").strip()
+                        delivery_status = str(item.get("delivery_status") or "").strip()
+                        if not event_ref or delivery_status not in {"summary_pending", "ready", "delivery_pending"}:
+                            continue
+                        # This endpoint is authenticated but still public-safe:
+                        # never expose canonical keys, mail IDs, recipients or
+                        # private provider payloads.
+                        priority_recovery.append({
+                            "event_ref": event_ref[:64],
+                            "delivery_status": delivery_status,
+                            "summary_status": str(item.get("summary_status") or "")[:40],
+                            "summary_reason": str(item.get("summary_reason") or "")[:120],
+                            "source_published_at": str(item.get("source_published_at") or "")[:80],
+                            "expires_at": str(item.get("expires_at") or "")[:80],
+                            "last_blocking_reason": str(item.get("last_blocking_reason") or "")[:120],
+                        })
+                        source = store.priority_pending_source(item)
+                        if isinstance(source, dict):
+                            source_id = str(source.get("observation_id") or "").strip()
+                            if source_id and not any(str(row.get("observation_id") or "").strip() == source_id for row in rows if isinstance(row, dict)):
+                                rows.append(source)
                 cursor = store.cursor() if store is not None else {}
                 sync_diagnostics = _public_sync_diagnostics(cursor.get("last_sync_diagnostics")) if isinstance(cursor, dict) else None
                 sync_status = sync_diagnostics.get("status") if isinstance(sync_diagnostics, dict) else ""
@@ -2037,6 +2125,7 @@ class HealthHandler(BaseHTTPRequestHandler):
                     "observations": rows,
                     "count": len(rows),
                     "sync_diagnostics": sync_diagnostics,
+                    "priority_recovery": priority_recovery,
                 }, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
