@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "70e1b1ebe5f4b3b1",
-  "snapshot_id": "news-38b5b6b8a79ffb50",
+  "market_snapshot_id": "1c55f04fc81c6839",
+  "snapshot_id": "news-d74ec106242186d0",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,15 +437,15 @@
       ],
       "stories": [
         {
-          "story_id": "news-b9edd2d9d6022ca0a075",
+          "story_id": "news-422a862778a834cc58b8",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "美國聯準會升息股市未崩跌 投資人信心成關鍵",
-          "raw_title": "美國聯準會升息股市未崩跌 投資人信心成關鍵",
-          "normalized_fact": "美國聯準會升息股市未崩跌 投資人信心成關鍵。",
-          "market_topic": "rates_fx",
+          "title": "能源應變小組會議召開！經濟部：油氣供應無虞 呼籲支持追加預算",
+          "raw_title": "能源應變小組會議召開！經濟部：油氣供應無虞 呼籲支持追加預算",
+          "normalized_fact": "能源應變小組會議召開，經濟部表示油氣供應無虞 呼籲支持追加預算。",
+          "market_topic": "energy_geopolitics",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -455,32 +455,34 @@
           "normalization_complete": true,
           "summary": "",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B%E8%81%AF%E6%BA%96%E6%9C%83%E5%8D%87%E6%81%AF%E8%82%A1%E5%B8%82%E6%9C%AA%E5%B4%A9%E8%B7%8C-%E6%8A%95%E8%B3%87%E4%BA%BA%E4%BF%A1%E5%BF%83%E6%88%90%E9%97%9C%E9%8D%B5-115608901.html",
-          "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B%E8%81%AF%E6%BA%96%E6%9C%83%E5%8D%87%E6%81%AF%E8%82%A1%E5%B8%82%E6%9C%AA%E5%B4%A9%E8%B7%8C-%E6%8A%95%E8%B3%87%E4%BA%BA%E4%BF%A1%E5%BF%83%E6%88%90%E9%97%9C%E9%8D%B5-115608901.html",
-          "published_at": "2026-09-22T11:56:08+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E8%83%BD%E6%BA%90%E6%87%89%E8%AE%8A%E5%B0%8F%E7%B5%84%E6%9C%83%E8%AD%B0%E5%8F%AC%E9%96%8B-%E7%B6%93%E6%BF%9F%E9%83%A8-%E6%B2%B9%E6%B0%A3%E4%BE%9B%E6%87%89%E7%84%A1%E8%99%9E-%E5%91%BC%E7%B1%B2%E6%94%AF%E6%8C%81%E8%BF%BD%E5%8A%A0%E9%A0%90%E7%AE%97-113513597.html",
+          "url": "https://tw.stock.yahoo.com/news/%E8%83%BD%E6%BA%90%E6%87%89%E8%AE%8A%E5%B0%8F%E7%B5%84%E6%9C%83%E8%AD%B0%E5%8F%AC%E9%96%8B-%E7%B6%93%E6%BF%9F%E9%83%A8-%E6%B2%B9%E6%B0%A3%E4%BE%9B%E6%87%89%E7%84%A1%E8%99%9E-%E5%91%BC%E7%B1%B2%E6%94%AF%E6%8C%81%E8%BF%BD%E5%8A%A0%E9%A0%90%E7%AE%97-113513597.html",
+          "published_at": "2026-09-22T11:35:13+00:00",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
           "entities": [],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "energy"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
+            "category": "energy",
+            "reason": "energy_subject_action",
             "matched_terms": [
-              "聯準會",
-              "升息"
+              "能源",
+              "供應"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "聯準會",
-              "升息"
+              "能源",
+              "供應"
             ],
-            "matched_subject": "聯準會",
-            "matched_action": "升息",
-            "matched_market_object": "聯準會",
+            "matched_subject": "能源",
+            "matched_action": "供應",
+            "matched_market_object": "能源",
             "input_fields": [
               "description",
               "summary",
@@ -488,24 +490,23 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market",
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "美國聯準會升息股市未崩跌投資人信心成關鍵",
-          "event_cluster_key": "event-9d8878b0d3a703d945e7",
+          "dedupe_key": "能源應變小組會議召開經濟部表示油氣供應無虞呼籲支持追加預算",
+          "event_cluster_key": "event-2768d0b77e08fd9cc1df",
           "published_time_bucket": "2026-09-22T11:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "聯準會",
-            "升息"
+            "能源",
+            "供應"
           ],
-          "matched_subject": "聯準會",
-          "matched_action": "升息",
-          "matched_market_object": "聯準會",
-          "decision_value_class": "macro",
+          "matched_subject": "能源",
+          "matched_action": "供應",
+          "matched_market_object": "能源",
+          "decision_value_class": "energy",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -520,13 +521,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 130,
-          "supporting_sources": [
-            {
-              "provider": "yahoo_finance",
-              "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B%E7%B6%93%E6%BF%9F%E9%9D%A2%E8%87%A8-%E9%9B%99%E9%87%8D%E6%89%93%E6%93%8A-%E5%8B%9E%E5%8B%95%E5%B8%82%E5%A0%B4%E7%B7%8A%E4%BF%8F%E8%88%87%E8%81%AF%E6%BA%96%E6%9C%83%E5%8D%87%E6%81%AF%E5%A3%93%E5%8A%9B-113726765.html"
-            }
-          ]
+          "ranking_score": 130
         },
         {
           "story_id": "news-905439aa661ed9d31b4b",
@@ -620,6 +615,98 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
+        },
+        {
+          "story_id": "news-b9edd2d9d6022ca0a075",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "美國聯準會升息股市未崩跌 投資人信心成關鍵",
+          "raw_title": "美國聯準會升息股市未崩跌 投資人信心成關鍵",
+          "normalized_fact": "美國聯準會升息股市未崩跌 投資人信心成關鍵。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B%E8%81%AF%E6%BA%96%E6%9C%83%E5%8D%87%E6%81%AF%E8%82%A1%E5%B8%82%E6%9C%AA%E5%B4%A9%E8%B7%8C-%E6%8A%95%E8%B3%87%E4%BA%BA%E4%BF%A1%E5%BF%83%E6%88%90%E9%97%9C%E9%8D%B5-115608901.html",
+          "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B%E8%81%AF%E6%BA%96%E6%9C%83%E5%8D%87%E6%81%AF%E8%82%A1%E5%B8%82%E6%9C%AA%E5%B4%A9%E8%B7%8C-%E6%8A%95%E8%B3%87%E4%BA%BA%E4%BF%A1%E5%BF%83%E6%88%90%E9%97%9C%E9%8D%B5-115608901.html",
+          "published_at": "2026-09-22T11:56:08+00:00",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "聯準會",
+              "升息"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "聯準會",
+              "升息"
+            ],
+            "matched_subject": "聯準會",
+            "matched_action": "升息",
+            "matched_market_object": "聯準會",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國聯準會升息股市未崩跌投資人信心成關鍵",
+          "event_cluster_key": "event-9d8878b0d3a703d945e7",
+          "published_time_bucket": "2026-09-22T11:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "聯準會",
+            "升息"
+          ],
+          "matched_subject": "聯準會",
+          "matched_action": "升息",
+          "matched_market_object": "聯準會",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130,
+          "supporting_sources": [
+            {
+              "provider": "yahoo_finance",
+              "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B%E7%B6%93%E6%BF%9F%E9%9D%A2%E8%87%A8-%E9%9B%99%E9%87%8D%E6%89%93%E6%93%8A-%E5%8B%9E%E5%8B%95%E5%B8%82%E5%A0%B4%E7%B7%8A%E4%BF%8F%E8%88%87%E8%81%AF%E6%BA%96%E6%9C%83%E5%8D%87%E6%81%AF%E5%A3%93%E5%8A%9B-113726765.html"
+            }
+          ]
         },
         {
           "story_id": "news-c147dd602b9a515c5f32",
@@ -797,94 +884,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
-        {
-          "story_id": "news-480ac4049bb9c853a522",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "資訊廠再添新兵！盛大資訊受惠AI半導體供應鏈擴張帶動需求 9/30登錄興櫃 - 知新聞",
-          "raw_title": "資訊廠再添新兵！盛大資訊受惠AI半導體供應鏈擴張帶動需求 9/30登錄興櫃 - 知新聞",
-          "normalized_fact": "資訊廠再添新兵，盛大資訊受惠AI半導體供應鏈擴張帶動需求 9/30登錄興櫃 - 知。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": true,
-          "publisher_removed": true,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE9TM2Q3a0cxdUt1OTVaclNrbVNnaGdsUUl5Q25nWHg4d2N3TlVQcjFBUzFiY21RcThjMG5LY05xVW5TZDRxdVlhd01oUWV6QkpDWG1jQXpMVFJMQUFNeksyZkpDYmZoRUY5VTh4bGVuOA",
-          "url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE9TM2Q3a0cxdUt1OTVaclNrbVNnaGdsUUl5Q25nWHg4d2N3TlVQcjFBUzFiY21RcThjMG5LY05xVW5TZDRxdVlhd01oUWV6QkpDWG1jQXpMVFJMQUFNeksyZkpDYmZoRUY5VTh4bGVuOA",
-          "published_at": "2026-09-22T08:42:10+00:00",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "資訊廠再添新兵盛大資訊受惠ai半導體供應鏈擴張帶動需求930登錄興櫃知",
-          "event_cluster_key": "event-7e4d32967b201850e0d0",
-          "published_time_bucket": "2026-09-22T08:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
         }
       ],
       "source_diversity": {
@@ -909,8 +908,8 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 16,
-          "TSM": 16
+          "2330": 15,
+          "TSM": 15
         },
         "sector_interest": {},
         "topic_interest": {
@@ -918,7 +917,7 @@
           "荷姆茲": 1
         },
         "market_interest": {
-          "taiwan": 109
+          "taiwan": 107
         },
         "context": {
           "tracked_tickers": [
@@ -998,8 +997,8 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 16,
-            "TSM": 16
+            "2330": 15,
+            "TSM": 15
           },
           "research_candidate": {},
           "tracked_sector": {},
@@ -1010,10 +1009,10 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 31,
+      "excluded_count": 30,
       "exclusion_reasons": {
         "incomplete_normalized_fact": 2,
-        "insufficient_market_relevance": 39,
+        "insufficient_market_relevance": 37,
         "listicle_or_selection": 2,
         "market_scope_mismatch": 4,
         "non_investment_content": 1
@@ -1028,31 +1027,31 @@
         "disabled_provider_count": 0,
         "fetched": 40,
         "normalized": 40,
-        "eligible": 9,
-        "excluded": 31,
-        "deduped": 8,
+        "eligible": 10,
+        "excluded": 30,
+        "deduped": 9,
         "publicly_ranked": 5,
-        "current_eligible": 9,
-        "inventory_considered": 69,
-        "inventory_eligible": 52,
+        "current_eligible": 10,
+        "inventory_considered": 67,
+        "inventory_eligible": 51,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 31,
+        "filtered_story_count": 30,
         "fetched_story_count": 40,
         "normalized_story_count": 40,
-        "eligible_story_count": 9,
-        "deduped_story_count": 8,
+        "eligible_story_count": 10,
+        "deduped_story_count": 9,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 69,
-        "eligible": 52,
+        "considered": 67,
+        "eligible": 51,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -1065,7 +1064,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 40,
-          "checked_at": "2026-09-22T12:04:11.546173+00:00"
+          "checked_at": "2026-09-22T12:08:49.869919+00:00"
         },
         {
           "provider": "twse",
@@ -1076,10 +1075,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-09-22T12:04:11.546173+00:00",
+          "checked_at": "2026-09-22T12:08:49.869919+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+          "last_success_at": "2026-09-22T12:08:49.869919+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -1104,10 +1103,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-09-22T12:04:11.546173+00:00",
+          "checked_at": "2026-09-22T12:08:49.869919+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+          "last_success_at": "2026-09-22T12:08:49.869919+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -1132,11 +1131,11 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 0,
-          "checked_at": "2026-09-22T12:04:11.546173+00:00",
+          "checked_at": "2026-09-22T12:08:49.869919+00:00",
           "data_gap": "filtered_no_market_match",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+          "last_success_at": "2026-09-22T12:08:49.869919+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -1160,15 +1159,15 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
-          "item_count": 1,
-          "checked_at": "2026-09-22T12:04:11.546173+00:00",
+          "item_count": 2,
+          "checked_at": "2026-09-22T12:08:49.869919+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 1,
-          "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-09-22T12:08:49.869919+00:00",
           "last_failure_at": null,
           "stories_ingested": 8,
-          "stories_deduped": 1,
-          "ranked_count": 1,
+          "stories_deduped": 2,
+          "ranked_count": 2,
           "relevance_distribution": {
             "market": 8
           },
@@ -1176,10 +1175,10 @@
             "fetched_count": 10,
             "normalized_count": 8,
             "market_compatible_count": 8,
-            "eligible_count": 2,
-            "excluded_count": 6,
-            "deduped_count": 1,
-            "ranked_count": 1
+            "eligible_count": 3,
+            "excluded_count": 5,
+            "deduped_count": 2,
+            "ranked_count": 2
           }
         },
         {
@@ -1190,15 +1189,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 4,
-          "checked_at": "2026-09-22T12:04:11.546173+00:00",
+          "item_count": 3,
+          "checked_at": "2026-09-22T12:08:49.869919+00:00",
           "raw_item_count": 30,
-          "filtered_item_count": 4,
-          "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+          "filtered_item_count": 3,
+          "last_success_at": "2026-09-22T12:08:49.869919+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 7,
-          "ranked_count": 4,
+          "ranked_count": 3,
           "relevance_distribution": {
             "market": 30,
             "tracked_ticker": 3
@@ -1210,13 +1209,13 @@
             "eligible_count": 7,
             "excluded_count": 23,
             "deduped_count": 7,
-            "ranked_count": 4
+            "ranked_count": 3
           }
         }
       ],
       "observability": {
         "stories_ingested": 40,
-        "stories_deduped": 8,
+        "stories_deduped": 9,
         "ranked_count": 5,
         "relevance_distribution": {
           "market": 40,
@@ -1226,7 +1225,7 @@
           {
             "provider": "anue",
             "status": "no_event",
-            "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+            "last_success_at": "2026-09-22T12:08:49.869919+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -1245,11 +1244,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+            "last_success_at": "2026-09-22T12:08:49.869919+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 7,
-            "ranked_count": 4,
+            "ranked_count": 3,
             "relevance_distribution": {
               "market": 30,
               "tracked_ticker": 3
@@ -1261,13 +1260,13 @@
               "eligible_count": 7,
               "excluded_count": 23,
               "deduped_count": 7,
-              "ranked_count": 4
+              "ranked_count": 3
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+            "last_success_at": "2026-09-22T12:08:49.869919+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -1286,7 +1285,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+            "last_success_at": "2026-09-22T12:08:49.869919+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -1326,11 +1325,11 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+            "last_success_at": "2026-09-22T12:08:49.869919+00:00",
             "last_failure_at": null,
             "stories_ingested": 8,
-            "stories_deduped": 1,
-            "ranked_count": 1,
+            "stories_deduped": 2,
+            "ranked_count": 2,
             "relevance_distribution": {
               "market": 8
             },
@@ -1338,10 +1337,10 @@
               "fetched_count": 10,
               "normalized_count": 8,
               "market_compatible_count": 8,
-              "eligible_count": 2,
-              "excluded_count": 6,
-              "deduped_count": 1,
-              "ranked_count": 1
+              "eligible_count": 3,
+              "excluded_count": 5,
+              "deduped_count": 2,
+              "ranked_count": 2
             }
           }
         ]
@@ -2033,7 +2032,7 @@
         "topic_interest": {
           "gold": 3,
           "伊朗": 2,
-          "荷姆茲": 1,
+          "荷姆茲": 2,
           "iran": 9,
           "war": 5,
           "oil": 23,
@@ -2041,7 +2040,7 @@
           "hormuz": 1
         },
         "market_interest": {
-          "us": 138
+          "us": 137
         },
         "context": {
           "tracked_tickers": [
@@ -2131,7 +2130,7 @@
           "active_event": {
             "gold": 3,
             "伊朗": 2,
-            "荷姆茲": 1,
+            "荷姆茲": 2,
             "iran": 9,
             "war": 5,
             "oil": 23,
@@ -2141,14 +2140,14 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 47,
+      "excluded_count": 46,
       "exclusion_reasons": {
         "generic_official_filing": 20,
         "incomplete_normalized_fact": 25,
         "insufficient_market_relevance": 19,
         "listicle_or_selection": 1,
         "market_scope_mismatch": 8,
-        "missing_published_at": 4
+        "missing_published_at": 3
       },
       "status": "ready",
       "collection_state": "degraded",
@@ -2158,10 +2157,10 @@
         "successful_provider_count": 4,
         "failed_provider_count": 1,
         "disabled_provider_count": 1,
-        "fetched": 58,
-        "normalized": 58,
+        "fetched": 57,
+        "normalized": 57,
         "eligible": 11,
-        "excluded": 47,
+        "excluded": 46,
         "deduped": 11,
         "publicly_ranked": 5,
         "current_eligible": 11,
@@ -2172,9 +2171,9 @@
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 47,
-        "fetched_story_count": 58,
-        "normalized_story_count": 58,
+        "filtered_story_count": 46,
+        "fetched_story_count": 57,
+        "normalized_story_count": 57,
         "eligible_story_count": 11,
         "deduped_story_count": 11,
         "ranked_story_count": 5
@@ -2196,8 +2195,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 58,
-          "checked_at": "2026-09-22T12:04:11.546173+00:00"
+          "item_count": 57,
+          "checked_at": "2026-09-22T12:08:49.869919+00:00"
         },
         {
           "provider": "sec",
@@ -2208,10 +2207,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-09-22T12:04:11.546173+00:00",
+          "checked_at": "2026-09-22T12:08:49.869919+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+          "last_success_at": "2026-09-22T12:08:49.869919+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -2240,12 +2239,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-09-22T12:04:11.546173+00:00",
+          "checked_at": "2026-09-22T12:08:49.869919+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-09-22T12:04:11.546173+00:00",
+          "last_failure_at": "2026-09-22T12:08:49.869919+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -2268,10 +2267,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-09-22T12:04:11.546173+00:00",
+          "checked_at": "2026-09-22T12:08:49.869919+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+          "last_success_at": "2026-09-22T12:08:49.869919+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -2296,24 +2295,24 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 0,
-          "checked_at": "2026-09-22T12:04:11.546173+00:00",
+          "checked_at": "2026-09-22T12:08:49.869919+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+          "last_success_at": "2026-09-22T12:08:49.869919+00:00",
           "last_failure_at": null,
-          "stories_ingested": 4,
+          "stories_ingested": 3,
           "stories_deduped": 0,
           "ranked_count": 0,
           "relevance_distribution": {
             "active_event": 3,
-            "market": 4
+            "market": 3
           },
           "funnel": {
-            "fetched_count": 4,
-            "normalized_count": 4,
-            "market_compatible_count": 4,
+            "fetched_count": 3,
+            "normalized_count": 3,
+            "market_compatible_count": 3,
             "eligible_count": 0,
-            "excluded_count": 4,
+            "excluded_count": 3,
             "deduped_count": 0,
             "ranked_count": 0
           },
@@ -2328,10 +2327,10 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 0,
-          "checked_at": "2026-09-22T12:04:11.546173+00:00",
+          "checked_at": "2026-09-22T12:08:49.869919+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+          "last_success_at": "2026-09-22T12:08:49.869919+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -2357,10 +2356,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 5,
-          "checked_at": "2026-09-22T12:04:11.546173+00:00",
+          "checked_at": "2026-09-22T12:08:49.869919+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 5,
-          "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+          "last_success_at": "2026-09-22T12:08:49.869919+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 11,
@@ -2383,12 +2382,12 @@
         }
       ],
       "observability": {
-        "stories_ingested": 58,
+        "stories_ingested": 57,
         "stories_deduped": 11,
         "ranked_count": 5,
         "relevance_distribution": {
           "active_event": 17,
-          "market": 58,
+          "market": 57,
           "research_candidate": 10,
           "tracked_ticker": 2
         },
@@ -2396,21 +2395,21 @@
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+            "last_success_at": "2026-09-22T12:08:49.869919+00:00",
             "last_failure_at": null,
-            "stories_ingested": 4,
+            "stories_ingested": 3,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
               "active_event": 3,
-              "market": 4
+              "market": 3
             },
             "funnel": {
-              "fetched_count": 4,
-              "normalized_count": 4,
-              "market_compatible_count": 4,
+              "fetched_count": 3,
+              "normalized_count": 3,
+              "market_compatible_count": 3,
               "eligible_count": 0,
-              "excluded_count": 4,
+              "excluded_count": 3,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -2419,7 +2418,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-09-22T12:04:11.546173+00:00",
+            "last_failure_at": "2026-09-22T12:08:49.869919+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -2437,7 +2436,7 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+            "last_success_at": "2026-09-22T12:08:49.869919+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 11,
@@ -2461,7 +2460,7 @@
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+            "last_success_at": "2026-09-22T12:08:49.869919+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -2480,7 +2479,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+            "last_success_at": "2026-09-22T12:08:49.869919+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -2524,7 +2523,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-09-22T12:04:11.546173+00:00",
+            "last_success_at": "2026-09-22T12:08:49.869919+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
