@@ -23940,7 +23940,7 @@
       "location_fingerprint": "",
       "action_fingerprint": "",
       "first_discovered_at": "2026-09-23T16:29:25.048925+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-09-23T16:30:03.537651+00:00",
       "escalated": false,
       "risk_level": "持續觀察",
       "risk_rank": 0,
@@ -23950,9 +23950,72 @@
       "last_title": "臺灣期貨交易所於115年9月24日調高全新期貨契約(GUF)保證金為現行所屬級距適用比例之2倍。",
       "compound_item_id": null,
       "compound_event_cluster_key": null,
-      "last_decision": null,
-      "decision_history": [],
-      "updated_at": "2026-09-23T16:29:25.048925+00:00"
+      "last_decision": {
+        "recorded_at": "2026-09-23T16:29:59.924521+00:00",
+        "allowed": true,
+        "status": "eligible",
+        "reason": "new_theme",
+        "reasons": [],
+        "notification_theme_key": "taifex-9e70a92143",
+        "event_key": "89d657e5ef273b8c30284bef5e47a000",
+        "risk": "R1",
+        "theme_window": 7200,
+        "material_state_changed": true,
+        "last_notified_at": null,
+        "taiwan_priority": 4
+      },
+      "decision_history": [
+        {
+          "recorded_at": "2026-09-23T16:29:59.924521+00:00",
+          "allowed": true,
+          "status": "eligible",
+          "reason": "new_theme",
+          "reasons": [],
+          "notification_theme_key": "taifex-9e70a92143",
+          "event_key": "89d657e5ef273b8c30284bef5e47a000",
+          "risk": "R1",
+          "theme_window": 7200,
+          "material_state_changed": true,
+          "last_notified_at": null,
+          "taiwan_priority": 4
+        }
+      ],
+      "updated_at": "2026-09-23T16:30:03.537651+00:00",
+      "delivery_history": [
+        {
+          "event_key": "89d657e5ef273b8c30284bef5e47a000",
+          "notification_id": "89d657e5ef273b8c30284bef5e47a000",
+          "sent_at": "2026-09-23T16:30:03.537651+00:00",
+          "importance": "normal",
+          "alert_type": "macro",
+          "lifecycle_state": "confirmed",
+          "reason": "official_event_monitor",
+          "notification_theme_key": "taifex-9e70a92143",
+          "risk": "R1",
+          "taiwan_priority": 4,
+          "material_state_changed": true,
+          "release_id": "release-3e50fec858766793",
+          "snapshot_id": "25dbeb591db06d9e",
+          "delivery_status": "delivered",
+          "event_cluster_key": "evt-1f03a7c911c1cf6df8d569a6",
+          "prstk_risk": {
+            "prstk_risk_level": "R1",
+            "source": "event_alerts"
+          },
+          "release_ready_at": "2026-09-23T16:30:01.775953+00:00",
+          "telegram_attempted_at": "2026-09-23T16:30:01.837866+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "source_url": "https://www.taifex.com.tw/file/taifex/CHINESE/11/attach/新聞稿_處置股票(41).pdf",
+          "source_domain": "taifex.com.tw",
+          "alert_lane": "event",
+          "market_scope": "global",
+          "event_policy_reason": "event_materiality_available",
+          "trace_id": "official-cea045167207c1d3"
+        }
+      ],
+      "last_theme_notification_at": "2026-09-23T16:30:03.537651+00:00",
+      "last_notified_at": "2026-09-23T16:30:03.537651+00:00"
     }
   },
   "delivery_claims": {
@@ -27086,6 +27149,32 @@
       "updated_at": "2026-09-23T16:05:38.409885+00:00",
       "failed_recipient_hashes": [],
       "delivered_at": "2026-09-23T16:05:38.409885+00:00"
+    },
+    "89d657e5ef273b8c30284bef5e47a000": {
+      "notification_key": "89d657e5ef273b8c30284bef5e47a000",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d"
+      ],
+      "delivered_recipient_hashes": [
+        "5b1d66aae79d",
+        "7a30574fc065",
+        "d36bbcc2cd2d"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d"
+      ],
+      "claimed_at": "2026-09-23T16:30:01.783740+00:00",
+      "lease_until": null,
+      "run_id_hash": "b946b331e3ec",
+      "updated_at": "2026-09-23T16:30:03.484207+00:00",
+      "failed_recipient_hashes": [],
+      "delivered_at": "2026-09-23T16:30:03.484207+00:00"
     }
   }
 }
