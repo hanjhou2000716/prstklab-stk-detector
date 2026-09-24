@@ -69,6 +69,49 @@ def _cache_busted_url(url: str, *, release_id: str, attempt: int) -> str:
     return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
 
 
+def _http_status(exc: BaseException) -> int | None:
+    response = getattr(exc, "response", None)
+    status = getattr(response, "status_code", None)
+    try:
+        return int(status) if status is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _is_retryable_http_error(exc: BaseException) -> bool:
+    if not isinstance(exc, requests.RequestException):
+        return False
+    status = _http_status(exc)
+    # A missing response usually means DNS, TLS, connection, or read timeout.
+    # Those can recover during Pages propagation; permanent 4xx responses cannot.
+    return status is None or status in {404, 408, 425, 429} or status >= 500
+
+
+def _utc_timestamp(value: Any) -> datetime | None:
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00")) if value else None
+    except (TypeError, ValueError):
+        return None
+    if parsed is None:
+        return None
+    return parsed.replace(tzinfo=UTC) if parsed.tzinfo is None else parsed.astimezone(UTC)
+
+
+def _is_newer_manifest(remote: dict[str, Any], local: dict[str, Any]) -> bool:
+    remote_created = _utc_timestamp(remote.get("created_at"))
+    local_created = _utc_timestamp(local.get("created_at"))
+    return remote_created is not None and local_created is not None and remote_created > local_created
+
+
+def _request_timeout(timeout: float, deadline: float | None) -> float:
+    if deadline is None:
+        return timeout
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise requests.Timeout("release gate total deadline reached")
+    return min(timeout, remaining)
+
+
 @dataclass(frozen=True)
 class ReleaseGateResult:
     allowed: bool
@@ -76,6 +119,19 @@ class ReleaseGateResult:
     snapshot_id: str = ""
     errors: tuple[str, ...] = field(default_factory=tuple)
     manifest: dict[str, Any] = field(default_factory=dict)
+    gate_status: str = "blocked"
+    error_category: str = "contract_mismatch"
+    expected_release_id: str = ""
+    actual_release_id: str = ""
+    expected_snapshot_id: str = ""
+    actual_snapshot_id: str = ""
+    deployment_id: str = ""
+    manifest_url: str = ""
+    http_status: int | None = None
+    attempts: tuple[dict[str, Any], ...] = field(default_factory=tuple)
+    elapsed_seconds: float = 0.0
+    retryable: bool = False
+    superseded: bool = False
 
 
 def _validate_creator_artifact(artifact: dict[str, Any], manifest: dict[str, Any]) -> list[str]:
@@ -119,7 +175,7 @@ def _validate_bootstrap_artifact(artifact: dict[str, Any], manifest: dict[str, A
 def _validate_public_alert_target(
     loaded: dict[str, dict[str, Any]], manifest: dict[str, Any], *,
     public_url: str, notification_id: str, snapshot_id: str = "", observation_id: str = "",
-    timeout: float = 15.0,
+    timeout: float = 15.0, deadline: float | None = None,
 ) -> list[str]:
     """Verify the exact immutable alert that a Telegram Deep Link will open."""
     requested = str(notification_id or "").strip()
@@ -150,11 +206,21 @@ def _validate_public_alert_target(
     url = urljoin(public_url.rstrip("/") + "/", public_path)
     errors: list[str] = []
     try:
-        response = requests.get(url, timeout=timeout, headers={"Accept": "application/json", "Cache-Control": "no-cache", "User-Agent": "PRStK-release-gate"})
+        response = requests.get(
+            url,
+            timeout=_request_timeout(timeout, deadline),
+            headers={"Accept": "application/json", "Cache-Control": "no-cache", "User-Agent": "PRStK-release-gate"},
+        )
         response.raise_for_status()
         body = bytes(response.content)
     except (requests.RequestException, TypeError, ValueError) as exc:
-        return [f"click target alert unavailable: {type(exc).__name__}"]
+        if _is_retryable_http_error(exc):
+            status = _http_status(exc)
+            suffix = f" HTTP {status}" if status is not None else ""
+            return [f"transient click target alert unavailable:{type(exc).__name__}{suffix}"]
+        status = _http_status(exc)
+        suffix = f" HTTP {status}" if status is not None else ""
+        return [f"click target alert request rejected:{type(exc).__name__}{suffix}"]
     if hashlib.sha256(body).hexdigest() != digest:
         return ["click target alert hash mismatch"]
     try:
@@ -249,6 +315,7 @@ def _fetch_public_release_artifacts(
     manifest: dict[str, Any], *, public_url: str, timeout: float,
     require_production_research: bool = False,
     max_research_age_hours: float = 24.0,
+    deadline: float | None = None,
 ) -> tuple[dict[str, dict[str, Any]], list[str]]:
     """Fetch and verify the immutable bundle advertised by a Pages manifest.
 
@@ -289,11 +356,20 @@ def _fetch_public_release_artifacts(
             errors.append(f"public artifact URL leaves release host: {name}")
             continue
         try:
-            response = requests.get(url, timeout=timeout, headers=headers)
+            response = requests.get(
+                url,
+                timeout=_request_timeout(timeout, deadline),
+                headers=headers,
+            )
             response.raise_for_status()
             body = bytes(response.content)
         except (requests.RequestException, TypeError, ValueError) as exc:
-            errors.append(f"public artifact unavailable {name}: {type(exc).__name__}")
+            status = _http_status(exc)
+            suffix = f" HTTP {status}" if status is not None else ""
+            if _is_retryable_http_error(exc):
+                errors.append(f"transient public artifact unavailable {name}: {type(exc).__name__}{suffix}")
+            else:
+                errors.append(f"public artifact request rejected {name}: {type(exc).__name__}{suffix}")
             continue
         actual_hash = hashlib.sha256(body).hexdigest()
         if actual_hash != expected_hash:
@@ -390,36 +466,82 @@ def _strict_research_freshness_errors(
     return errors
 
 
+def _classify_gate_errors(errors: list[str]) -> str:
+    joined = ";".join(errors).casefold()
+    if "expected release_id" in joined:
+        return "local_release_identity_mismatch"
+    if "transient public" in joined or "transient click target" in joined:
+        return "pages_unavailable"
+    if "public manifest release_id" in joined:
+        return "public_manifest_stale"
+    if "public artifact hash mismatch" in joined or "identity mismatch" in joined:
+        return "deployed_artifact_mismatch"
+    if "public" in joined or "click target" in joined:
+        return "public_content_mismatch"
+    if "hash mismatch" in joined or "artifact" in joined:
+        return "local_artifact_mismatch"
+    return "contract_mismatch"
+
+
 def verify_release_for_delivery(
     *,
     manifest_path: Path | str = Path("site/data/release-manifest.json"),
     expected_snapshot_id: str | None = None,
+    expected_release_id: str | None = None,
     public_url: str | None = None,
     timeout: float = 15.0,
-    public_attempts: int = 12,
-    public_delay: float = 5.0,
+    public_attempts: int = 0,
+    public_delay: float = 2.0,
+    public_max_delay: float = 20.0,
+    public_timeout_seconds: float = 180.0,
     require_production_research: bool = False,
     max_research_age_hours: float = 24.0,
     expected_notification_id: str | None = None,
     expected_alert_snapshot_id: str | None = None,
     expected_alert_observation_id: str | None = None,
+    deployment_id: str | None = None,
 ) -> ReleaseGateResult:
-    """Verify readiness, local hashes and optionally the deployed Pages copy."""
+    """Verify one immutable release locally and on Pages before delivery.
+
+    Public verification retries only stale propagation reads and transient
+    transport failures.  Permanent identity, schema, hash, and contract
+    mismatches fail immediately.  The wall-clock deadline also bounds each
+    HTTP request, so the complete gate cannot spend 180 seconds per artifact.
+    """
+    started = time.monotonic()
     path = Path(manifest_path)
     try:
         manifest = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        return ReleaseGateResult(False, errors=(f"manifest unreadable: {type(exc).__name__}",))
+        return ReleaseGateResult(
+            False,
+            errors=(f"manifest unreadable: {type(exc).__name__}",),
+            gate_status="blocked",
+            error_category="local_artifact_mismatch",
+            deployment_id=str(deployment_id or ""),
+            elapsed_seconds=max(0.0, time.monotonic() - started),
+        )
     if not isinstance(manifest, dict):
-        return ReleaseGateResult(False, errors=("manifest must be a JSON object",))
+        return ReleaseGateResult(
+            False,
+            errors=("manifest must be a JSON object",),
+            gate_status="blocked",
+            error_category="contract_mismatch",
+            deployment_id=str(deployment_id or ""),
+            elapsed_seconds=max(0.0, time.monotonic() - started),
+        )
 
     errors: list[str] = []
     if manifest.get("status") not in PUBLISHABLE_RELEASE_STATUSES:
         errors.append("manifest status is not ready")
     release_id = str(manifest.get("release_id") or "")
     snapshot_id = str(manifest.get("market_snapshot_id") or "")
+    expected_release = str(expected_release_id or release_id)
+    expected_snapshot = str(expected_snapshot_id or snapshot_id)
     if not release_id:
         errors.append("release_id is missing")
+    elif expected_release_id and release_id != str(expected_release_id):
+        errors.append("local release_id does not match expected release_id")
     if not snapshot_id:
         errors.append("market_snapshot_id is missing")
     if expected_snapshot_id and snapshot_id != str(expected_snapshot_id):
@@ -469,20 +591,44 @@ def verify_release_for_delivery(
                 )
             )
 
-    if public_url:
-        remote_url = public_url.rstrip("/") + "/data/release-manifest.json"
-        public_error = "public manifest unavailable: UnknownError"
-        attempts = max(1, int(public_attempts))
-        for attempt in range(attempts):
+    public_attempt_records: list[dict[str, Any]] = []
+    public_error = ""
+    error_category = _classify_gate_errors(errors) if errors else "none"
+    final_retryable = False
+    actual_release_id = ""
+    actual_snapshot_id = ""
+    http_status: int | None = None
+    superseded = False
+    manifest_url = public_url.rstrip("/") + "/data/release-manifest.json" if public_url else ""
+
+    # Do not spend network time when the local release is already invalid.
+    if public_url and not errors:
+        deadline = started + max(0.0, float(public_timeout_seconds))
+        max_attempts = max(1, int(public_attempts)) if int(public_attempts) > 0 else None
+        attempt_number = 0
+        while max_attempts is None or attempt_number < max_attempts:
+            if attempt_number and time.monotonic() >= deadline:
+                break
+            attempt_number += 1
+            # Per-attempt diagnostics must never inherit a previously served
+            # manifest identity after a later timeout or malformed response.
+            actual_release_id = ""
+            actual_snapshot_id = ""
+            request_url = _cache_busted_url(
+                manifest_url,
+                release_id=expected_release,
+                attempt=attempt_number,
+            )
+            attempt_error = ""
+            attempt_category = "none"
+            attempt_retryable = False
+            attempt_http_status: int | None = None
+            attempt_superseded = False
+            remote: dict[str, Any] | None = None
             try:
-                request_url = _cache_busted_url(
-                    remote_url,
-                    release_id=release_id,
-                    attempt=attempt + 1,
-                )
                 response = requests.get(
                     request_url,
-                    timeout=timeout,
+                    timeout=_request_timeout(timeout, deadline),
                     headers={
                         "Accept": "application/json",
                         "Cache-Control": "no-cache, no-store",
@@ -490,55 +636,172 @@ def verify_release_for_delivery(
                         "User-Agent": "PRStK-release-gate",
                     },
                 )
+                attempt_http_status = getattr(response, "status_code", None)
                 response.raise_for_status()
-                remote = response.json()
-                if not isinstance(remote, dict):
-                    public_error = "public manifest is not an object"
-                elif remote.get("status") not in PUBLISHABLE_RELEASE_STATUSES:
-                    public_error = "public manifest status is not ready"
-                elif str(remote.get("release_id") or "") != release_id:
-                    public_error = "public manifest release_id does not match local release"
-                elif expected_snapshot_id and str(remote.get("market_snapshot_id") or "") != str(expected_snapshot_id):
-                    public_error = "public manifest market snapshot does not match prepared snapshot"
-                else:
-                    _, bundle_errors = _fetch_public_release_artifacts(
-                        remote,
-                        public_url=public_url,
-                        timeout=timeout,
-                        require_production_research=require_production_research,
-                        max_research_age_hours=max_research_age_hours,
-                    )
-                    if bundle_errors:
-                        public_error = "; ".join(sorted(set(bundle_errors)))
+                try:
+                    candidate = response.json()
+                except (ValueError, UnicodeError):
+                    candidate = None
+                    attempt_error = "public manifest is invalid JSON"
+                    attempt_category = "public_content_mismatch"
+                if not attempt_error and not isinstance(candidate, dict):
+                    attempt_error = "public manifest is not an object"
+                    attempt_category = "public_content_mismatch"
+                elif not attempt_error:
+                    remote = candidate
+                    actual_release_id = str(remote.get("release_id") or "")
+                    actual_snapshot_id = str(remote.get("market_snapshot_id") or "")
+                    if remote.get("status") not in PUBLISHABLE_RELEASE_STATUSES:
+                        attempt_error = "public manifest status is not ready"
+                        attempt_category = "public_content_mismatch"
+                    elif actual_release_id != expected_release:
+                        if _is_newer_manifest(remote, manifest):
+                            _, newer_errors = _fetch_public_release_artifacts(
+                                remote,
+                                public_url=public_url,
+                                timeout=timeout,
+                                require_production_research=require_production_research,
+                                max_research_age_hours=max_research_age_hours,
+                                deadline=deadline,
+                            )
+                            if newer_errors:
+                                attempt_error = "; ".join(sorted(set(newer_errors)))
+                                attempt_retryable = any(
+                                    item.startswith("transient ") for item in newer_errors
+                                )
+                                attempt_category = (
+                                    "pages_unavailable" if attempt_retryable
+                                    else "public_content_mismatch"
+                                )
+                            else:
+                                attempt_error = "public release was superseded by a newer valid release"
+                                attempt_category = "parallel_publish_superseded"
+                                attempt_superseded = True
+                        elif _is_newer_manifest(manifest, remote):
+                            attempt_error = "public manifest release_id does not match local release"
+                            attempt_category = "public_manifest_stale"
+                            attempt_retryable = True
+                        else:
+                            attempt_error = "public manifest release_id does not match expected release"
+                            attempt_category = "deployed_artifact_mismatch"
+                    elif actual_snapshot_id != expected_snapshot:
+                        attempt_error = "public manifest market snapshot does not match prepared snapshot"
+                        attempt_category = "public_content_mismatch"
                     else:
-                        target_errors = _validate_public_alert_target(
-                            _, remote,
+                        loaded, bundle_errors = _fetch_public_release_artifacts(
+                            remote,
                             public_url=public_url,
-                            notification_id=str(expected_notification_id or ""),
-                            snapshot_id=str(expected_alert_snapshot_id or ""),
-                            observation_id=str(expected_alert_observation_id or ""),
                             timeout=timeout,
+                            require_production_research=require_production_research,
+                            max_research_age_hours=max_research_age_hours,
+                            deadline=deadline,
                         )
-                        if target_errors:
-                            public_error = "; ".join(sorted(set(target_errors)))
-                            if attempt < attempts - 1 and public_delay > 0:
-                                time.sleep(public_delay)
-                            continue
-                        public_error = ""
-                        break
-            except (requests.RequestException, ValueError) as exc:
-                public_error = f"public manifest unavailable: {type(exc).__name__}"
-            if attempt < attempts - 1 and public_delay > 0:
-                time.sleep(public_delay)
+                        if bundle_errors:
+                            attempt_error = "; ".join(sorted(set(bundle_errors)))
+                            attempt_retryable = any(
+                                item.startswith("transient ") for item in bundle_errors
+                            )
+                            attempt_category = (
+                                "pages_unavailable" if attempt_retryable
+                                else "deployed_artifact_mismatch"
+                            )
+                        else:
+                            target_errors = _validate_public_alert_target(
+                                loaded,
+                                remote,
+                                public_url=public_url,
+                                notification_id=str(expected_notification_id or ""),
+                                snapshot_id=str(expected_alert_snapshot_id or ""),
+                                observation_id=str(expected_alert_observation_id or ""),
+                                timeout=timeout,
+                                deadline=deadline,
+                            )
+                            if target_errors:
+                                attempt_error = "; ".join(sorted(set(target_errors)))
+                                attempt_retryable = any(
+                                    item.startswith("transient ") for item in target_errors
+                                )
+                                attempt_category = (
+                                    "pages_unavailable" if attempt_retryable
+                                    else "deployed_artifact_mismatch"
+                                )
+            except (requests.RequestException, TypeError) as exc:
+                attempt_http_status = _http_status(exc)
+                suffix = f" HTTP {attempt_http_status}" if attempt_http_status is not None else ""
+                if _is_retryable_http_error(exc):
+                    attempt_error = f"transient public manifest unavailable: {type(exc).__name__}{suffix}"
+                    attempt_category = "pages_unavailable"
+                    attempt_retryable = True
+                else:
+                    attempt_error = f"public manifest request rejected: {type(exc).__name__}{suffix}"
+                    attempt_category = "public_content_mismatch"
+
+            http_status = attempt_http_status
+            public_error = attempt_error
+            error_category = attempt_category
+            final_retryable = attempt_retryable
+            public_attempt_records.append({
+                "attempt": attempt_number,
+                "at": datetime.now(UTC).isoformat(),
+                "manifest_url": manifest_url,
+                "http_status": attempt_http_status,
+                "expected_release_id": expected_release,
+                "actual_release_id": actual_release_id,
+                "expected_snapshot_id": expected_snapshot,
+                "actual_snapshot_id": actual_snapshot_id,
+                "error_category": attempt_category,
+                "error": attempt_error,
+                "retryable": attempt_retryable,
+                "superseded": attempt_superseded,
+                "deployment_id": str(deployment_id or ""),
+            })
+            if not attempt_error:
+                break
+            if attempt_superseded:
+                superseded = True
+                break
+            if not attempt_retryable:
+                break
+            if max_attempts is not None and attempt_number >= max_attempts:
+                break
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            delay = min(
+                max(0.0, float(public_max_delay)),
+                max(0.0, float(public_delay)) * (2 ** min(attempt_number - 1, 8)),
+                remaining,
+            )
+            if delay > 0:
+                time.sleep(delay)
         if public_error:
             errors.append(public_error)
+        elif public_attempt_records and public_attempt_records[-1].get("superseded"):
+            errors.append("public release was superseded by a newer valid release")
 
+    allowed = not errors
+    gate_status = "allowed" if allowed else "superseded" if superseded else "blocked"
+    if errors and error_category == "none":
+        error_category = _classify_gate_errors(errors)
     return ReleaseGateResult(
-        not errors,
+        allowed=allowed,
         release_id=release_id,
         snapshot_id=snapshot_id,
         errors=tuple(sorted(set(errors))),
         manifest=manifest,
+        gate_status=gate_status,
+        error_category=error_category,
+        expected_release_id=expected_release,
+        actual_release_id=actual_release_id,
+        expected_snapshot_id=expected_snapshot,
+        actual_snapshot_id=actual_snapshot_id,
+        deployment_id=str(deployment_id or ""),
+        manifest_url=manifest_url,
+        http_status=http_status,
+        attempts=tuple(public_attempt_records),
+        elapsed_seconds=max(0.0, time.monotonic() - started),
+        retryable=final_retryable,
+        superseded=superseded,
     )
 
 
@@ -546,9 +809,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Verify a public release before delivery")
     parser.add_argument("--manifest", type=Path, default=Path("site/data/release-manifest.json"))
     parser.add_argument("--expected-snapshot-id", default=None)
+    parser.add_argument("--expected-release-id", default=None)
     parser.add_argument("--public-url", default=None)
-    parser.add_argument("--public-attempts", type=int, default=12)
-    parser.add_argument("--public-delay", type=float, default=5.0)
+    parser.add_argument("--public-attempts", type=int, default=0, help="optional attempt cap; deadline is authoritative")
+    parser.add_argument("--public-delay", type=float, default=2.0, help="initial propagation retry delay")
+    parser.add_argument("--public-max-delay", type=float, default=20.0)
+    parser.add_argument("--public-timeout-seconds", type=float, default=180.0)
+    parser.add_argument("--deployment-id", default=None)
     parser.add_argument(
         "--require-production-research",
         action="store_true",
@@ -562,9 +829,13 @@ def main() -> int:
     result = verify_release_for_delivery(
         manifest_path=args.manifest,
         expected_snapshot_id=args.expected_snapshot_id,
+        expected_release_id=args.expected_release_id,
         public_url=args.public_url,
         public_attempts=args.public_attempts,
         public_delay=args.public_delay,
+        public_max_delay=args.public_max_delay,
+        public_timeout_seconds=args.public_timeout_seconds,
+        deployment_id=args.deployment_id,
         require_production_research=args.require_production_research,
         max_research_age_hours=args.max_research_age_hours,
         expected_notification_id=args.expected_notification_id,
@@ -573,18 +844,36 @@ def main() -> int:
     )
     values = {
         "allowed": result.allowed,
+        "gate_status": result.gate_status,
+        "error_category": result.error_category,
         "release_id": result.release_id,
         "snapshot_id": result.snapshot_id,
+        "expected_release_id": result.expected_release_id,
+        "actual_release_id": result.actual_release_id,
+        "expected_snapshot_id": result.expected_snapshot_id,
+        "actual_snapshot_id": result.actual_snapshot_id,
+        "deployment_id": result.deployment_id,
+        "manifest_url": result.manifest_url,
+        "http_status": result.http_status if result.http_status is not None else "",
+        "attempts": json.dumps(result.attempts, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+        "elapsed_seconds": f"{result.elapsed_seconds:.3f}",
+        "retryable": result.retryable,
+        "superseded": result.superseded,
         "errors": ";".join(result.errors),
     }
-    lines = [f"{key}={str(value).lower() if isinstance(value, bool) else value}" for key, value in values.items()]
+    lines = [
+        f"{key}={str(value).lower() if isinstance(value, bool) else str(value).replace(chr(10), ' ').replace(chr(13), ' ')}"
+        for key, value in values.items()
+    ]
     destination = os.getenv("GITHUB_OUTPUT")
     if destination:
         with Path(destination).open("a", encoding="utf-8") as handle:
             handle.write("\n".join(lines) + "\n")
     else:
         print("\n".join(lines))
-    return 0 if result.allowed else 1
+    # A valid newer public release is an expected supersession race.  It must
+    # never enable a sender, but it is not a failed workflow requiring repair.
+    return 0 if result.allowed or result.superseded else 1
 
 
 if __name__ == "__main__":

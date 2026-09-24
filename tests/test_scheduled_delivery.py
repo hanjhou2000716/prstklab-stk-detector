@@ -267,6 +267,43 @@ def test_scheduled_delivery_blocks_when_manifest_is_not_ready(tmp_path, monkeypa
     assert "reason=release_gate_blocked" in text
 
 
+def test_scheduled_delivery_never_sends_when_public_release_is_superseded(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / "market.json"
+    manifest_path = tmp_path / "release-manifest.json"
+    snapshot_path.write_text(
+        json.dumps({"snapshot_id": "market-12345678", "quotes": [], "indices": []}),
+        encoding="utf-8",
+    )
+    manifest_path.write_text("{}", encoding="utf-8")
+    output = tmp_path / "output"
+    _patch_ready(monkeypatch, output)
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "verify_release_for_delivery",
+        lambda **_kwargs: ReleaseGateResult(
+            False,
+            release_id="release-old",
+            snapshot_id="market-12345678",
+            errors=("public release was superseded by a newer valid release",),
+            gate_status="superseded",
+            error_category="parallel_publish_superseded",
+            superseded=True,
+        ),
+    )
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "send_text_briefs_audited",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("sender must not run for superseded release")),
+    )
+
+    scheduled_delivery.send(snapshot_path, "morning", manifest_path)
+
+    text = output.read_text(encoding="utf-8")
+    assert "sent=false" in text
+    assert "delivery_status=blocked" in text
+    assert "notification_status=blocked" in text
+
+
 def test_scheduled_delivery_never_falls_back_to_event_on_publish_only_snapshot(tmp_path, monkeypatch):
     snapshot_path = tmp_path / "market.json"
     manifest_path = tmp_path / "release-manifest.json"

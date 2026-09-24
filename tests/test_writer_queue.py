@@ -22,6 +22,14 @@ def test_blocking_runs_only_returns_older_active_production_writers():
     assert [row["id"] for row in rows] == [10, 11]
 
 
+def test_pages_deployment_is_serialized_with_data_release_writers():
+    rows = blocking_runs(
+        [_run(10, name="Deploy dashboard to GitHub Pages")],
+        current_run_id=11,
+    )
+    assert [row["name"] for row in rows] == ["Deploy dashboard to GitHub Pages"]
+
+
 def test_wait_for_slot_waits_until_older_writer_finishes():
     responses = [[_run(10)], []]
     sleeps: list[int] = []

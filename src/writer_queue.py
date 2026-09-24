@@ -27,6 +27,10 @@ WRITER_WORKFLOW_NAMES = frozenset(
         "Railway monitor health",
         "Official macro and price monitor",
         "Unified Taiwan-US research report",
+        # Static Pages publishers can overwrite a just-published data release
+        # even though they do not write data-release themselves.  They share
+        # the same single-writer fence so release-gate reads cannot race them.
+        "Deploy dashboard to GitHub Pages",
     }
 )
 ACTIVE_STATUSES = frozenset({"queued", "in_progress", "waiting", "pending"})
