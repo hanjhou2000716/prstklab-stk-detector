@@ -31,6 +31,12 @@ outputs:
   reason:
     description: Stable reason when Pages is temporarily unavailable.
     value: ${{ steps.select-url.outputs.reason }}
+  error_code:
+    description: Stable Pages API or transport failure category.
+    value: ${{ steps.select-url.outputs.error_code }}
+  error:
+    description: Sanitized Pages API diagnostic for workflow summaries.
+    value: ${{ steps.select-url.outputs.error }}
   deployment_id:
     description: Deployment ID returned by the GitHub Pages create API.
     value: ${{ steps.select-url.outputs.deployment_id }}
@@ -78,6 +84,7 @@ runs:
         DEPLOY_BUILD_VERSION: ${{ steps.deployment.outputs.deployment_build_version || inputs.build_version || github.sha }}
         DEPLOY_SOURCE_REVISION: ${{ steps.deployment.outputs.source_revision || github.sha }}
         DEPLOY_ERROR: ${{ steps.deployment.outputs.error || '' }}
+        DEPLOY_ERROR_CODE: ${{ steps.deployment.outputs.error_code || '' }}
         FALLBACK_URL: ${{ inputs.fallback_url }}
       run: |
         set -euo pipefail
@@ -87,12 +94,14 @@ runs:
         else
           deployed_url=""
           reason="pages_deployment_unavailable"
-          echo "::warning::Pages deployment identity was not verified; notification delivery remains blocked. ${DEPLOY_ERROR}"
+          echo "::warning::Pages deployment identity was not verified; notification delivery remains blocked (${DEPLOY_ERROR_CODE:-pages_deployment_unavailable}). ${DEPLOY_ERROR}"
         fi
         page_url="${deployed_url:-$FALLBACK_URL}"
         printf 'page_url=%s\n' "$page_url" >> "$GITHUB_OUTPUT"
         printf 'available=%s\n' "$([ -n "$deployed_url" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
         printf 'reason=%s\n' "$reason" >> "$GITHUB_OUTPUT"
+        printf 'error_code=%s\n' "$([ -n "$deployed_url" ] && echo '' || echo "${DEPLOY_ERROR_CODE:-pages_deployment_unavailable}")" >> "$GITHUB_OUTPUT"
+        printf 'error=%s\n' "${DEPLOY_ERROR:-}" >> "$GITHUB_OUTPUT"
         printf 'deployment_id=%s\n' "$DEPLOY_ID" >> "$GITHUB_OUTPUT"
         printf 'deployment_status_url=%s\n' "$DEPLOY_STATUS_URL" >> "$GITHUB_OUTPUT"
         printf 'artifact_id=%s\n' "$DEPLOY_ARTIFACT_ID" >> "$GITHUB_OUTPUT"

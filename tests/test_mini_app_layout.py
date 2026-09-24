@@ -118,6 +118,16 @@ def test_dashboard_sections_share_card_chrome_and_news_uses_full_width_switching
     assert ".news-panel[hidden]" in styles
 
 
+def test_market_sentiment_card_defaults_open_without_changing_other_panel_defaults():
+    page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert '<details id="market-sentiment-card" class="panel collapsible-card" open>' in page
+    assert 'getElementById("market-sentiment-card")' not in app
+    assert 'class="panel index-panel collapsible-card">' in page
+    assert 'class="panel collapsible-card">' in page
+
+
 def test_empty_briefing_market_containers_do_not_leave_visual_placeholder_blocks():
     styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
 

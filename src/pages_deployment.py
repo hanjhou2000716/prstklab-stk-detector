@@ -12,16 +12,58 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 
 class PagesDeploymentError(RuntimeError):
     """Raised when the completed Pages deployment cannot be identified safely."""
 
-    def __init__(self, message: str, *, retryable: bool = False) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        retryable: bool = False,
+        error_code: str = "pages_deployment_error",
+        request_outcome: str = "not_started",
+    ) -> None:
         super().__init__(message)
         self.retryable = retryable
+        self.error_code = error_code
+        self.request_outcome = request_outcome
+
+
+def _safe_error_detail(raw: bytes, secrets: tuple[str, ...] = ()) -> str:
+    """Keep short, non-secret GitHub API error details for workflow diagnostics."""
+    try:
+        payload = json.loads(raw[:8192].decode("utf-8", errors="replace"))
+    except (ValueError, UnicodeError):
+        return ""
+    if not isinstance(payload, dict):
+        return ""
+    parts: list[str] = []
+    message = payload.get("message")
+    if isinstance(message, str):
+        parts.append(message)
+    errors = payload.get("errors")
+    if isinstance(errors, list):
+        for item in errors[:3]:
+            if not isinstance(item, dict):
+                continue
+            allowed = [item.get(key) for key in ("resource", "field", "code")]
+            fields = [str(value) for value in allowed if isinstance(value, str) and value]
+            if fields:
+                parts.append("/".join(fields))
+    detail = "; ".join(parts)
+    for secret in secrets:
+        if secret and len(secret) >= 6:
+            detail = detail.replace(secret, "[redacted]")
+    detail = re.sub(r"(?i)bearer\s+\S+", "[redacted]", detail)
+    detail = re.sub(r"\b[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b", "[redacted]", detail)
+    detail = re.sub(r"https?://\S+", "[url]", detail)
+    detail = re.sub(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", "[email]", detail)
+    detail = re.sub(r"\s+", " ", detail).strip()
+    return detail[:240]
 
 
 @dataclass(frozen=True)
@@ -74,12 +116,25 @@ def _request_json(
     except HTTPError as exc:
         status = int(exc.code)
         retryable = status in {404, 408, 425, 429} or status >= 500
+        request_secrets = (token, *(str(value) for value in (payload or {}).values()))
+        detail = _safe_error_detail(exc.read(8192), request_secrets)
+        request_outcome = "rejected" if 400 <= status < 500 and status not in {408, 425, 429} else "unknown"
+        error_code = f"pages_http_{status}"
+        message = f"GitHub Pages request returned HTTP {status}"
+        if detail:
+            message = f"{message}: {detail}"
         raise PagesDeploymentError(
-            f"GitHub Pages deployment lookup failed: HTTP {status}", retryable=retryable,
+            message,
+            retryable=retryable,
+            error_code=error_code,
+            request_outcome=request_outcome,
         ) from exc
     except (URLError, TimeoutError, OSError) as exc:
         raise PagesDeploymentError(
-            f"GitHub Pages deployment lookup failed: {type(exc).__name__}", retryable=True,
+            f"GitHub Pages request failed: {type(exc).__name__}",
+            retryable=True,
+            error_code="pages_network_error",
+            request_outcome="unknown",
         ) from exc
     except ValueError as exc:
         raise PagesDeploymentError("GitHub Pages deployment response is invalid JSON") from exc
@@ -156,14 +211,12 @@ def _get_oidc_token(
     *,
     request_url: str,
     request_token: str,
-    audience: str,
     request_json: Callable[..., Any] = _request_json,
 ) -> str:
     if not request_url or not request_token:
         raise PagesDeploymentError("GitHub Actions OIDC request context is unavailable")
-    separator = "&" if "?" in request_url else "?"
     payload = request_json(
-        f"{request_url}{separator}{urlencode({'audience': audience})}",
+        request_url,
         token=request_token,
     )
     token = str(payload.get("value") or "").strip() if isinstance(payload, dict) else ""
@@ -245,7 +298,6 @@ def create_deployment(
     oidc = _get_oidc_token(
         request_url=oidc_request_url,
         request_token=oidc_request_token,
-        audience=f"https://github.com/{repository}",
         request_json=request_json,
     )
     deployment_url = f"{api_url.rstrip('/')}/repos/{repository}/pages/deployments"
@@ -256,14 +308,22 @@ def create_deployment(
             method="POST",
             payload={
                 "artifact_id": int(artifact_id),
-                "environment": "github-pages",
                 "pages_build_version": build_version,
                 "oidc_token": oidc,
             },
         )
     except PagesDeploymentError as exc:
+        if exc.request_outcome == "rejected":
+            raise PagesDeploymentError(
+                f"Pages deployment create was rejected ({exc.error_code}): {exc}",
+                retryable=False,
+                error_code=exc.error_code,
+                request_outcome="rejected",
+            ) from exc
         raise PagesDeploymentError(
-            f"Pages deployment create result is unknown; refusing a duplicate create ({exc})"
+            f"Pages deployment create result is unknown; refusing a duplicate create ({exc})",
+            error_code=exc.error_code,
+            request_outcome="unknown",
         ) from exc
     if not isinstance(created, dict):
         raise PagesDeploymentError("Pages deployment create response is invalid")
@@ -421,6 +481,7 @@ def main() -> int:
             "verified": False,
             "deployment_status": "unknown",
             "error": str(exc),
+            "error_code": exc.error_code,
         })
         return 1
     return 0

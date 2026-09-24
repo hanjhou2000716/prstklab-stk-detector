@@ -23,6 +23,31 @@ def test_official_event_workflow_is_dispatchable_and_idempotent():
     assert "Save official event diagnostic" in workflow
     assert "official-event-diagnostic-${{ github.run_id }}" in workflow
     assert "retention-days: 14" in workflow
+    assert "Fail expected official notification without delivered receipt" in workflow
+    assert "steps.status.outputs.should_send == 'true'" in workflow
+    assert "DEPLOYMENT_ERROR_CODE" in workflow
+    assert "expected_delivery_or_recipient_receipt_missing" in workflow
+    assert "Do not resend this event" in workflow
+
+
+def test_expected_official_notification_only_skips_for_existing_successful_receipt():
+    workflow = (
+        Path(__file__).resolve().parents[1]
+        / ".github"
+        / "workflows"
+        / "official-event-monitor.yml"
+    ).read_text(encoding="utf-8")
+    guard = workflow.split(
+        "- name: Fail expected official notification without delivered receipt", 1
+    )[1]
+
+    assert guard.index('if [ "$CACHE_HIT" = "true" ]') < guard.index(
+        'if [ "$QUEUE_STATUS" = "superseded" ] || [ "$PREPARED_CURRENT" != "true" ]'
+    )
+    assert 'notification_terminal_status: failed' in guard
+    assert "expected_notification_superseded_or_stale_without_prior_receipt" in guard
+    assert 'echo "::error::Expected official notification was not delivered;' in guard
+    assert "exit 1" in guard
 
 
 def test_gmail_history_dispatches_realtime_monitor_after_new_reviewed_rows():

@@ -1,4 +1,6 @@
 import json
+from io import BytesIO
+from urllib.error import HTTPError
 
 import pytest
 
@@ -219,13 +221,14 @@ def test_create_selects_one_run_artifact_and_uses_deployment_response_identity()
                 {"id": 202, "name": "github-pages", "expired": False},
             ]}
         if "oidc.actions.test" in url:
-            assert "audience=https%3A%2F%2Fgithub.com%2Fowner%2Frepo" in url
+            assert url == "https://oidc.actions.test/token"
             return {"value": "sensitive-oidc-token"}
         if url.endswith("/pages/deployments"):
             assert kwargs["method"] == "POST"
             assert kwargs["payload"]["artifact_id"] == 202
             assert kwargs["payload"]["pages_build_version"] == BUILD_VERSION
             assert kwargs["payload"]["oidc_token"] == "sensitive-oidc-token"
+            assert "environment" not in kwargs["payload"]
             return {"id": DEPLOYMENT_ID, "status_url": STATUS_URL, "page_url": "https://dashboard.example.test"}
         if url == STATUS_URL:
             return {"status": "succeed"}
@@ -301,4 +304,67 @@ def test_create_does_not_repeat_an_ambiguous_create_request():
             oidc_request_token="request-token",
             request_json=request_json,
         )
+    assert len(creates) == 1
+
+
+def test_pages_http_error_keeps_safe_diagnostic_without_secrets(monkeypatch):
+    body = json.dumps({
+        "message": "Invalid audience secret-token eyJhbGciOiJIUzI1NiJ9.payload.signature https://host.test/path?token=secret",
+        "errors": [{"resource": "PagesDeployment", "field": "oidc_token", "code": "invalid"}],
+    }).encode("utf-8")
+
+    def fail_request(_request, timeout):
+        raise HTTPError("https://api.github.test/pages/deployments", 400, "Bad Request", {}, BytesIO(body))
+
+    monkeypatch.setattr("src.pages_deployment.urlopen", fail_request)
+    with pytest.raises(PagesDeploymentError) as captured:
+        _request_json(
+            "https://api.github.test/repos/owner/repo/pages/deployments",
+            token="secret-token",
+            method="POST",
+            payload={"oidc_token": "secret-token"},
+        )
+
+    error = captured.value
+    assert error.error_code == "pages_http_400"
+    assert error.request_outcome == "rejected"
+    assert "Invalid audience" in str(error)
+    assert "PagesDeployment/oidc_token/invalid" in str(error)
+    assert "secret-token" not in str(error)
+    assert "[url]" in str(error)
+
+
+def test_definitive_http_400_create_is_classified_as_rejected_without_retry():
+    creates = []
+
+    def request_json(url, **_kwargs):
+        if "actions/runs/17/artifacts" in url:
+            return {"artifacts": [{"id": 202, "name": "github-pages", "expired": False}]}
+        if url == "https://oidc.actions.test/token":
+            return {"value": "oidc"}
+        if url.endswith("/pages/deployments"):
+            creates.append(True)
+            raise PagesDeploymentError(
+                "GitHub Pages request returned HTTP 400: invalid audience",
+                error_code="pages_http_400",
+                request_outcome="rejected",
+            )
+        raise AssertionError(url)
+
+    with pytest.raises(PagesDeploymentError, match="was rejected") as captured:
+        create_deployment(
+            api_url="https://api.github.test",
+            repository="owner/repo",
+            token="token",
+            run_id="17",
+            artifact_name="github-pages",
+            source_revision=BUILD_VERSION,
+            build_version=BUILD_VERSION,
+            oidc_request_url="https://oidc.actions.test/token",
+            oidc_request_token="request-token",
+            request_json=request_json,
+        )
+
+    assert captured.value.error_code == "pages_http_400"
+    assert captured.value.request_outcome == "rejected"
     assert len(creates) == 1

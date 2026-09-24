@@ -192,15 +192,45 @@ jobs:
           NOTIFICATION_EXPECTED: ${{ steps.status.outputs.notification_expected || 'false' }}
           NOTIFICATION_STATUS: ${{ steps.send.outputs.notification_status || steps.status.outputs.notification_status || 'not_attempted' }}
           NOTIFICATION_REASON: ${{ steps.send.outputs.reason || steps.status.outputs.notification_reason || 'not_attempted' }}
-          DELIVERED_COUNT: ${{ steps.send.outputs.delivered_count || '' }}
-          FAILED_COUNT: ${{ steps.send.outputs.failed_count || '' }}
           QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
           QUEUE_REASON: ${{ steps.writer_queue.outputs.reason || '' }}
           PREPARED_RELEASE_STATUS: ${{ steps.prepared_release.outputs.reason || 'not_required' }}
+          SHOULD_SEND: ${{ steps.status.outputs.should_send || 'false' }}
+          IDEMPOTENCY_CACHE_HIT: ${{ steps.idempotency.outputs.cache-hit || 'false' }}
+          DEPLOYMENT_AVAILABLE: ${{ steps.deployment.outputs.available || 'false' }}
+          DEPLOYMENT_ERROR_CODE: ${{ steps.deployment.outputs.error_code || '' }}
+          RELEASE_GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
+          SEND_OUTCOME: ${{ steps.send.outcome || 'skipped' }}
+          SEND_STATUS: ${{ steps.send.outputs.notification_status || '' }}
+          DELIVERY_STATUS: ${{ steps.send.outputs.delivery_status || '' }}
+          DELIVERED_COUNT: ${{ steps.send.outputs.delivered_count || '0' }}
+          FAILED_COUNT: ${{ steps.send.outputs.failed_count || '0' }}
         run: |
           scan_status="${SCAN_STATUS:-unknown}"
           if [ "${QUEUE_STATUS:-}" = "superseded" ]; then
             scan_status="not_run"
+          fi
+          notification_status="${NOTIFICATION_STATUS:-not_attempted}"
+          notification_reason="${NOTIFICATION_REASON:-not_attempted}"
+          if [ "${NOTIFICATION_REQUESTED:-false}" = "true" ] && [ "${SHOULD_SEND:-false}" = "true" ] \
+            && [ "${QUEUE_STATUS:-}" != "superseded" ] && [ "${PREPARED_RELEASE_STATUS:-}" = "prepared_release_current" ]; then
+            if [ "${IDEMPOTENCY_CACHE_HIT:-false}" = "true" ]; then
+              notification_status="already_delivered"
+              notification_reason="successful_prior_idempotency_receipt"
+            elif [ "${DEPLOYMENT_AVAILABLE:-false}" != "true" ]; then
+              notification_status="failed"
+              notification_reason="pages_deployment_${DEPLOYMENT_ERROR_CODE:-unavailable}"
+            elif [ "${RELEASE_GATE_ALLOWED:-false}" != "true" ]; then
+              notification_status="failed"
+              notification_reason="public_release_gate_blocked"
+            elif [ "${SEND_OUTCOME:-skipped}" != "success" ] || [ "${DELIVERY_STATUS:-}" != "delivered" ] \
+              || [ "${DELIVERED_COUNT:-0}" -le 0 ] || [ "${FAILED_COUNT:-0}" -ne 0 ]; then
+              notification_status="failed"
+              notification_reason="expected_delivery_or_recipient_receipt_missing"
+            else
+              notification_status="delivery_submitted"
+              notification_reason="telegram_delivery_waiting_for_persistent_receipt"
+            fi
           fi
           {
             echo "## Official event / price notification decision"
@@ -221,8 +251,8 @@ jobs:
                 echo "- notification_reason: stale_prepared_release"
               else
                 echo "- notification_expected: ${NOTIFICATION_EXPECTED:-false}"
-                echo "- notification_status: ${NOTIFICATION_STATUS:-not_attempted}"
-                echo "- notification_reason: ${NOTIFICATION_REASON:-not_attempted}"
+                echo "- notification_status: ${notification_status}"
+                echo "- notification_reason: ${notification_reason}"
               fi
             fi
             echo "- delivered_count: ${DELIVERED_COUNT:-unknown}"
@@ -232,6 +262,7 @@ jobs:
             echo "- prepared_release_status: ${PREPARED_RELEASE_STATUS:-not_required}"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Persist Telegram delivery receipt
+        id: persist_receipt
         # A failed recipient attempt must still reach the receipt backend so
         # the next run can retry only pending recipients and the dashboard can
         # distinguish a transport failure from a skipped send.
@@ -283,6 +314,7 @@ jobs:
           artifact_name: github-pages-reconciled
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Verify reconciled public release
+        id: reconciled_release_gate
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success' && steps.reconciled_deployment.outputs.available == 'true'
         run: >-
           python -m src.release_gate
@@ -309,15 +341,27 @@ jobs:
           NOTIFICATION_EXPECTED: ${{ steps.status.outputs.notification_expected || 'false' }}
           NOTIFICATION_STATUS: ${{ steps.send.outputs.notification_status || steps.status.outputs.notification_status || 'not_attempted' }}
           NOTIFICATION_REASON: ${{ steps.send.outputs.reason || steps.status.outputs.notification_reason || 'not_attempted' }}
+          NOTIFICATION_REQUESTED: ${{ env.NOTIFY }}
+          SHOULD_SEND: ${{ steps.status.outputs.should_send || 'false' }}
+          QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
+          PREPARED_RELEASE_STATUS: ${{ steps.prepared_release.outputs.reason || 'not_required' }}
+          IDEMPOTENCY_CACHE_HIT: ${{ steps.idempotency.outputs.cache-hit || 'false' }}
           PENDING_COUNT: ${{ steps.status.outputs.priority_pending_count || '0' }}
           DISPATCH_REF_COUNT: ${{ steps.status.outputs.priority_dispatch_ref_count || '0' }}
           EVENT_REF_COUNT: ${{ steps.status.outputs.priority_event_ref_count || '0' }}
           MISSING_REF_COUNT: ${{ steps.status.outputs.priority_dispatch_missing_ref_count || '0' }}
           DEPLOYMENT_AVAILABLE: ${{ steps.deployment.outputs.available || 'false' }}
+          DEPLOYMENT_ERROR_CODE: ${{ steps.deployment.outputs.error_code || '' }}
           RELEASE_GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
           SEND_OUTCOME: ${{ steps.send.outcome || 'skipped' }}
+          DELIVERY_STATUS: ${{ steps.send.outputs.delivery_status || '' }}
           DELIVERED_COUNT: ${{ steps.send.outputs.delivered_count || '' }}
           FAILED_COUNT: ${{ steps.send.outputs.failed_count || '' }}
+          RECEIPT_OUTCOME: ${{ steps.persist_receipt.outcome || 'skipped' }}
+          SEND_SENT: ${{ steps.send.outputs.sent || 'false' }}
+          LEDGER_OUTCOME: ${{ steps.persist_notification_ledger.outcome || 'skipped' }}
+          RECONCILED_DEPLOYMENT_AVAILABLE: ${{ steps.reconciled_deployment.outputs.available || 'false' }}
+          RECONCILED_RELEASE_GATE_OUTCOME: ${{ steps.reconciled_release_gate.outcome || 'skipped' }}
         run: |
           python - <<'PY'
           from datetime import UTC, datetime
@@ -334,7 +378,42 @@ jobs:
               try:
                   return max(0, int(raw))
               except (TypeError, ValueError):
-                  return None
+                return None
+
+          notification_status = value("NOTIFICATION_STATUS", "not_attempted")
+          notification_reason = value("NOTIFICATION_REASON", "not_attempted")
+          if value("NOTIFICATION_REQUESTED") == "true" and value("SHOULD_SEND") == "true":
+              if value("QUEUE_STATUS") == "superseded" or value("PREPARED_RELEASE_STATUS") != "prepared_release_current":
+                  notification_status = "suppressed_or_deferred"
+                  notification_reason = "writer_queue_or_prepared_release_guard"
+              elif value("IDEMPOTENCY_CACHE_HIT") == "true":
+                  notification_status = "already_delivered"
+                  notification_reason = "successful_prior_idempotency_receipt"
+              elif value("DEPLOYMENT_AVAILABLE") != "true":
+                  notification_status = "failed"
+                  notification_reason = f"pages_deployment_{value('DEPLOYMENT_ERROR_CODE', 'unavailable')}"
+              elif value("RELEASE_GATE_ALLOWED") != "true":
+                  notification_status = "failed"
+                  notification_reason = "public_release_gate_blocked"
+              elif (
+                  value("SEND_OUTCOME", "skipped") != "success"
+                  or value("DELIVERY_STATUS") != "delivered"
+                  or (count("DELIVERED_COUNT") or 0) <= 0
+                  or (count("FAILED_COUNT") or 0) != 0
+                  or value("RECEIPT_OUTCOME", "skipped") != "success"
+              ):
+                  notification_status = "failed"
+                  notification_reason = "expected_delivery_or_recipient_receipt_missing"
+              elif value("SEND_SENT") == "true" and (
+                  value("LEDGER_OUTCOME", "skipped") != "success"
+                  or value("RECONCILED_DEPLOYMENT_AVAILABLE") != "true"
+                  or value("RECONCILED_RELEASE_GATE_OUTCOME", "skipped") != "success"
+              ):
+                  notification_status = "delivered_reconciliation_incomplete"
+                  notification_reason = "post_send_public_release_not_reconciled_do_not_resend"
+              else:
+                  notification_status = "delivered"
+                  notification_reason = "recipient_receipt_and_public_release_reconciled"
 
           event_key = value("EVENT_KEY")
           diagnostic = {
@@ -350,8 +429,8 @@ jobs:
               },
               "priority": {
                   "notification_expected": value("NOTIFICATION_EXPECTED", "false"),
-                  "notification_status": value("NOTIFICATION_STATUS", "not_attempted"),
-                  "notification_reason": value("NOTIFICATION_REASON", "not_attempted"),
+                  "notification_status": notification_status,
+                  "notification_reason": notification_reason,
                   "pending_count": count("PENDING_COUNT"),
                   "dispatch_ref_count": count("DISPATCH_REF_COUNT"),
                   "event_ref_count": count("EVENT_REF_COUNT"),
@@ -363,6 +442,8 @@ jobs:
                   "sender_outcome": value("SEND_OUTCOME", "skipped"),
                   "delivered_count": count("DELIVERED_COUNT"),
                   "failed_count": count("FAILED_COUNT"),
+                  "pages_error_code": value("DEPLOYMENT_ERROR_CODE"),
+                  "receipt_callback_outcome": value("RECEIPT_OUTCOME", "skipped"),
               },
           }
           Path("official-event-diagnostic.json").write_text(
@@ -378,3 +459,56 @@ jobs:
           path: official-event-diagnostic.json
           if-no-files-found: error
           retention-days: 14
+      - name: Fail expected official notification without delivered receipt
+        if: always() && env.NOTIFY == 'true' && steps.status.outputs.should_send == 'true'
+        env:
+          QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
+          PREPARED_CURRENT: ${{ steps.prepared_release.outputs.current || 'false' }}
+          CACHE_HIT: ${{ steps.idempotency.outputs.cache-hit || 'false' }}
+          DEPLOYMENT_AVAILABLE: ${{ steps.deployment.outputs.available || 'false' }}
+          DEPLOYMENT_ERROR_CODE: ${{ steps.deployment.outputs.error_code || 'pages_deployment_unavailable' }}
+          GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
+          SEND_OUTCOME: ${{ steps.send.outcome || 'skipped' }}
+          DELIVERY_STATUS: ${{ steps.send.outputs.delivery_status || '' }}
+          DELIVERED_COUNT: ${{ steps.send.outputs.delivered_count || '0' }}
+          FAILED_COUNT: ${{ steps.send.outputs.failed_count || '0' }}
+          RECEIPT_OUTCOME: ${{ steps.persist_receipt.outcome || 'skipped' }}
+          SEND_SENT: ${{ steps.send.outputs.sent || 'false' }}
+          LEDGER_OUTCOME: ${{ steps.persist_notification_ledger.outcome || 'skipped' }}
+          RECONCILED_AVAILABLE: ${{ steps.reconciled_deployment.outputs.available || 'false' }}
+          RECONCILED_GATE_OUTCOME: ${{ steps.reconciled_release_gate.outcome || 'skipped' }}
+        run: |
+          set -euo pipefail
+          if [ "$CACHE_HIT" = "true" ]; then
+            echo "- notification_terminal_status: already_delivered" >> "$GITHUB_STEP_SUMMARY"
+            echo "A prior successful delivery lock exists; no additional send was made."
+            exit 0
+          fi
+          if [ "$QUEUE_STATUS" = "superseded" ] || [ "$PREPARED_CURRENT" != "true" ]; then
+            echo "- notification_terminal_status: failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "- notification_terminal_reason: expected_notification_superseded_or_stale_without_prior_receipt" >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Expected official notification was not delivered; this run was superseded or its prepared release became stale."
+            exit 1
+          fi
+          if [ "$DEPLOYMENT_AVAILABLE" != "true" ] || [ "$GATE_ALLOWED" != "true" ]; then
+            echo "- notification_terminal_status: failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "- notification_terminal_reason: pages_deployment_or_release_gate_failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Expected official notification was not delivered: Pages deployment or release verification failed (${DEPLOYMENT_ERROR_CODE})."
+            exit 1
+          fi
+          if [ "$SEND_OUTCOME" != "success" ] || [ "$DELIVERY_STATUS" != "delivered" ] \
+            || [ "$DELIVERED_COUNT" -le 0 ] || [ "$FAILED_COUNT" -ne 0 ] \
+            || [ "$RECEIPT_OUTCOME" != "success" ]; then
+            echo "- notification_terminal_status: failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "- notification_terminal_reason: missing_delivery_or_persistent_recipient_receipt" >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Expected official notification has no complete delivered recipient receipt."
+            exit 1
+          fi
+          if [ "$SEND_SENT" = "true" ] && { [ "$LEDGER_OUTCOME" != "success" ] || [ "$RECONCILED_AVAILABLE" != "true" ] || [ "$RECONCILED_GATE_OUTCOME" != "success" ]; }; then
+            echo "- notification_terminal_status: delivered_reconciliation_incomplete" >> "$GITHUB_STEP_SUMMARY"
+            echo "- notification_terminal_reason: post_send_public_release_not_reconciled_do_not_resend" >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Telegram delivered, but the post-send public release was not reconciled. Do not resend this event."
+            exit 1
+          fi
+          echo "- notification_terminal_status: delivered" >> "$GITHUB_STEP_SUMMARY"
+          echo "- notification_terminal_reason: recipient_receipt_and_public_release_reconciled" >> "$GITHUB_STEP_SUMMARY"

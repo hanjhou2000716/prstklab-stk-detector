@@ -187,7 +187,8 @@ jobs:
           PUBLIC_GATE_MANIFEST_URL: ${{ steps.public_release_gate.outputs.manifest_url || '' }}
           PUBLIC_GATE_HTTP_STATUS: ${{ steps.public_release_gate.outputs.http_status || '' }}
           PUBLIC_GATE_ATTEMPTS: ${{ steps.public_release_gate.outputs.attempts || '[]' }}
-          DEPLOYMENT_ERROR: ${{ steps.deployment_identity.outputs.error || '' }}
+          DEPLOYMENT_ERROR: ${{ steps.deployment_identity.outputs.error || steps.deployment.outputs.error || '' }}
+          DEPLOYMENT_ERROR_CODE: ${{ steps.deployment.outputs.error_code || steps.deployment_identity.outputs.error_code || '' }}
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
           {
@@ -205,6 +206,12 @@ jobs:
             echo "- http_status: ${PUBLIC_GATE_HTTP_STATUS:-unknown}"
             echo "- attempts: ${PUBLIC_GATE_ATTEMPTS}"
             echo "- deployment_error: ${DEPLOYMENT_ERROR:-none}"
+            echo "- deployment_error_code: ${DEPLOYMENT_ERROR_CODE:-none}"
+            if [ "${DEPLOYMENT_VERIFIED}" = "true" ] && [ "${PUBLIC_GATE_ALLOWED}" = "true" ]; then
+              echo "- pages_publication_status: published_and_verified"
+            else
+              echo "- pages_publication_status: not_published_or_unverified"
+            fi
             echo "- expected_release_id: ${PUBLIC_GATE_EXPECTED_RELEASE_ID:-unknown}"
             echo "- actual_release_id: ${PUBLIC_GATE_ACTUAL_RELEASE_ID:-unknown}"
           } >> "$GITHUB_STEP_SUMMARY"

@@ -175,3 +175,18 @@ def test_scheduled_release_gate_is_identity_bound_bounded_and_fail_closed():
     )[0]
     assert "steps.reconciled_release_gate.outputs.allowed == 'true'" in creator
     assert "id: reconciled_release_gate" in workflow
+
+
+def test_scheduled_brief_reports_pages_publish_only_failure_and_blocks_expected_delivery():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
+    ).read_text(encoding="utf-8")
+    decision = workflow.split("- name: Publish scheduled notification decision", 1)[1].split(
+        "- name: Persist scheduled-brief delivery receipt", 1
+    )[0]
+
+    assert "PUBLISH_REQUESTED: ${{ steps.release_policy.outputs.publish || 'false' }}" in decision
+    assert "pages_deployment_${PAGES_DEPLOYMENT_ERROR_CODE:-unavailable}" in decision
+    assert "scan_status=\"published_unverified\"" in decision
+    assert "pages_publication_status:" in decision
+    assert 'if: always() && env.NOTIFY == \'true\' && steps.window.outputs.delivery_intent == \'notify_candidate\'' in workflow
