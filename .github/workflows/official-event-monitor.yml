@@ -205,7 +205,6 @@ jobs:
           DELIVERY_STATUS: ${{ steps.send.outputs.delivery_status || '' }}
           DELIVERED_COUNT: ${{ steps.send.outputs.delivered_count || '0' }}
           FAILED_COUNT: ${{ steps.send.outputs.failed_count || '0' }}
-          RECEIPT_OUTCOME: ${{ steps.persist_receipt.outcome || 'skipped' }}
         run: |
           scan_status="${SCAN_STATUS:-unknown}"
           if [ "${QUEUE_STATUS:-}" = "superseded" ]; then
