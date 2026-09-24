@@ -368,4 +368,3 @@ def test_definitive_http_400_create_is_classified_as_rejected_without_retry():
     assert captured.value.error_code == "pages_http_400"
     assert captured.value.request_outcome == "rejected"
     assert len(creates) == 1
-

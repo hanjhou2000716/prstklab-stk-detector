@@ -69,4 +69,3 @@ def test_worker_deploy_publishes_revision_for_health_reconciliation():
     root = Path(__file__).resolve().parents[1]
     workflow = (root / ".github" / "workflows" / "deploy-worker.yml").read_text(encoding="utf-8")
     assert '--var "VERSION:${GITHUB_SHA}"' in workflow
-

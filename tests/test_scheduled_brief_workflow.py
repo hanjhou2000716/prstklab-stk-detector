@@ -190,4 +190,3 @@ def test_scheduled_brief_reports_pages_publish_only_failure_and_blocks_expected_
     assert "scan_status=\"published_unverified\"" in decision
     assert "pages_publication_status:" in decision
     assert 'if: always() && env.NOTIFY == \'true\' && steps.window.outputs.delivery_intent == \'notify_candidate\'' in workflow
-

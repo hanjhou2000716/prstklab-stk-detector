@@ -375,4 +375,3 @@ def test_value_research_cards_reuse_explainability_renderer():
     marker = 'const explanation = researchExplainability(item);'
     assert marker in app
     assert app.index(marker) > app.index("const renderValueResearch")
-
