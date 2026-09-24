@@ -9,16 +9,22 @@ on:
       # Pages must redeploy when the last-good data restore logic changes;
       # otherwise a merged pages_release fix cannot reach the static app.
       - src/pages_release.py
+      - src/release_gate.py
+      - src/pages_deployment.py
+      - .github/actions/deploy-pages-retry/action.yml
       - .github/workflows/deploy-pages.yml
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
   pages: write
   id-token: write
 
 concurrency:
-  group: pages
+  # The shared run queue serializes every Pages/data writer.  Unique groups
+  # prevent GitHub's one-pending-run behavior from dropping a queued publish.
+  group: main-data-writer-${{ github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -35,13 +41,21 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
+      - name: Wait for the production writer queue
+        id: writer_queue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -m src.writer_queue --settle-seconds 0 --poll-seconds 10
       - name: Set up Python
+        if: steps.writer_queue.outputs.should_continue == 'true'
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.11"
       - name: Install release-gate dependencies
+        if: steps.writer_queue.outputs.should_continue == 'true'
         run: python -m pip install -r requirements-production.txt
       - name: Restore newest valid immutable data release
+        if: steps.writer_queue.outputs.should_continue == 'true'
         id: release
         run: |
           # Explicitly refresh the remote-tracking ref and restore the data
@@ -64,12 +78,23 @@ jobs:
             --require-production-research \
             --preserve-public-url "${{ vars.DASHBOARD_URL || 'https://hanjhou2000716.github.io/prstklab-stk-detector' }}"
       - name: Report preserved Pages release
-        if: steps.release.outputs.publish != 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish != 'true'
         run: |
           echo "::warning::no_valid_production_release; preserving the currently published Pages release"
           echo "pages_publish=skipped"
+      - name: Derive Pages build identity from code and data release
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
+        id: pages_version
+        env:
+          RELEASE_ID: ${{ steps.release.outputs.release_id }}
+        run: >-
+          python -m src.pages_deployment
+          --mode derive-version
+          --source-revision "$GITHUB_SHA"
+          --release-id "$RELEASE_ID"
+          >> "$GITHUB_OUTPUT"
       - name: Build cache-busted static assets
-        if: steps.release.outputs.publish == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
         env:
           # Keep the Pages→Worker boundary usable when the optional repository
           # variable has not been added yet.  An explicitly configured value
@@ -78,11 +103,11 @@ jobs:
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
       - name: Validate static asset contract
-        if: steps.release.outputs.publish == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
         run: |
           python -m src.asset_contract --root site
       - name: Validate release before Pages upload
-        if: steps.release.outputs.publish == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
         run: |
           # GITHUB_OUTPUT makes release_gate intentionally quiet; unset it in
           # this diagnostic step so a failed gate leaves actionable errors in
@@ -96,7 +121,7 @@ jobs:
             env -u GITHUB_OUTPUT python -m src.release_gate --manifest site/data/release-manifest.json --require-production-research
           fi
       - name: Audit production artifacts before Pages upload
-        if: steps.release.outputs.publish == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
         run: |
           if [ "${{ steps.release.outputs.preserved_public }}" = "true" ]; then
             python -m src.runtime_audit
@@ -104,18 +129,134 @@ jobs:
             python -m src.runtime_audit --require-production
           fi
       - name: 設定 GitHub Pages
-        if: steps.release.outputs.publish == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
         with:
           enablement: true
       - name: 上傳儀表板
-        if: steps.release.outputs.publish == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           path: site
       - name: 部署
         id: deployment
-        if: steps.release.outputs.publish == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
         uses: ./.github/actions/deploy-pages-retry
         with:
+          build_version: ${{ steps.pages_version.outputs.pages_build_version }}
           fallback_url: ${{ vars.DASHBOARD_URL }}
+      - name: Verify completed Pages deployment identity
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true' && steps.deployment.outputs.available == 'true'
+        id: deployment_identity
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python -m src.pages_deployment
+          --mode verify
+          --expected-build-version "${{ steps.pages_version.outputs.pages_build_version }}"
+          >> "$GITHUB_OUTPUT"
+      - name: Verify exact public release after deployment
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true' && steps.deployment.outputs.available == 'true' && steps.deployment_identity.outputs.verified == 'true'
+        id: public_release_gate
+        run: >-
+          python -m src.release_gate
+          --manifest site/data/release-manifest.json
+          --expected-release-id "${{ steps.release.outputs.release_id }}"
+          --expected-snapshot-id "${{ steps.release.outputs.snapshot_id }}"
+          --public-url "${{ steps.deployment.outputs.page_url }}"
+          --deployment-id "${{ steps.deployment_identity.outputs.deployment_id }}"
+          --public-timeout-seconds 180
+          --public-delay 2
+          --public-max-delay 20
+          >> "$GITHUB_OUTPUT"
+      - name: Record public release gate
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
+        env:
+          DEPLOYMENT_VERIFIED: ${{ steps.deployment_identity.outputs.verified || 'false' }}
+          DEPLOYMENT_ID: ${{ steps.deployment_identity.outputs.deployment_id || steps.pages_version.outputs.pages_build_version || '' }}
+          PUBLIC_GATE_OUTCOME: ${{ steps.public_release_gate.outcome || 'not_run' }}
+          PUBLIC_GATE_ALLOWED: ${{ steps.public_release_gate.outputs.allowed || 'false' }}
+          PUBLIC_GATE_STATUS: ${{ steps.public_release_gate.outputs.gate_status || 'not_run' }}
+          PUBLIC_GATE_ERROR_CATEGORY: ${{ steps.public_release_gate.outputs.error_category || '' }}
+          PUBLIC_GATE_EXPECTED_RELEASE_ID: ${{ steps.public_release_gate.outputs.expected_release_id || steps.release.outputs.release_id || '' }}
+          PUBLIC_GATE_ACTUAL_RELEASE_ID: ${{ steps.public_release_gate.outputs.actual_release_id || '' }}
+          PUBLIC_GATE_EXPECTED_SNAPSHOT_ID: ${{ steps.public_release_gate.outputs.expected_snapshot_id || steps.release.outputs.snapshot_id || '' }}
+          PUBLIC_GATE_ACTUAL_SNAPSHOT_ID: ${{ steps.public_release_gate.outputs.actual_snapshot_id || '' }}
+          PUBLIC_GATE_MANIFEST_URL: ${{ steps.public_release_gate.outputs.manifest_url || '' }}
+          PUBLIC_GATE_HTTP_STATUS: ${{ steps.public_release_gate.outputs.http_status || '' }}
+          PUBLIC_GATE_ATTEMPTS: ${{ steps.public_release_gate.outputs.attempts || '[]' }}
+          DEPLOYMENT_ERROR: ${{ steps.deployment_identity.outputs.error || '' }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          {
+            echo "## Pages release verification"
+            echo "- workflow_run_id: ${GITHUB_RUN_ID}"
+            echo "- deployment_verified: ${DEPLOYMENT_VERIFIED}"
+            echo "- pages_build_version: ${DEPLOYMENT_ID}"
+            echo "- gate_outcome: ${PUBLIC_GATE_OUTCOME}"
+            echo "- gate_status: ${PUBLIC_GATE_STATUS}"
+            echo "- gate_allowed: ${PUBLIC_GATE_ALLOWED}"
+            echo "- error_category: ${PUBLIC_GATE_ERROR_CATEGORY:-none}"
+            echo "- expected_snapshot_id: ${PUBLIC_GATE_EXPECTED_SNAPSHOT_ID:-unknown}"
+            echo "- actual_snapshot_id: ${PUBLIC_GATE_ACTUAL_SNAPSHOT_ID:-unknown}"
+            echo "- manifest_url: ${PUBLIC_GATE_MANIFEST_URL:-unknown}"
+            echo "- http_status: ${PUBLIC_GATE_HTTP_STATUS:-unknown}"
+            echo "- attempts: ${PUBLIC_GATE_ATTEMPTS}"
+            echo "- deployment_error: ${DEPLOYMENT_ERROR:-none}"
+            echo "- expected_release_id: ${PUBLIC_GATE_EXPECTED_RELEASE_ID:-unknown}"
+            echo "- actual_release_id: ${PUBLIC_GATE_ACTUAL_RELEASE_ID:-unknown}"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Write Pages release gate diagnostics
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
+        env:
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          DEPLOYMENT_ID: ${{ steps.deployment_identity.outputs.deployment_id || steps.pages_version.outputs.pages_build_version || '' }}
+          DEPLOYMENT_VERIFIED: ${{ steps.deployment_identity.outputs.verified || 'false' }}
+          DEPLOYMENT_ERROR: ${{ steps.deployment_identity.outputs.error || '' }}
+          GATE_OUTCOME: ${{ steps.public_release_gate.outcome || 'not_run' }}
+          GATE_ALLOWED: ${{ steps.public_release_gate.outputs.allowed || 'false' }}
+          GATE_STATUS: ${{ steps.public_release_gate.outputs.gate_status || 'not_run' }}
+          GATE_ERROR_CATEGORY: ${{ steps.public_release_gate.outputs.error_category || '' }}
+          GATE_EXPECTED_RELEASE: ${{ steps.public_release_gate.outputs.expected_release_id || steps.release.outputs.release_id || '' }}
+          GATE_ACTUAL_RELEASE: ${{ steps.public_release_gate.outputs.actual_release_id || '' }}
+          GATE_EXPECTED_SNAPSHOT: ${{ steps.public_release_gate.outputs.expected_snapshot_id || steps.release.outputs.snapshot_id || '' }}
+          GATE_ACTUAL_SNAPSHOT: ${{ steps.public_release_gate.outputs.actual_snapshot_id || '' }}
+          GATE_MANIFEST_URL: ${{ steps.public_release_gate.outputs.manifest_url || '' }}
+          GATE_HTTP_STATUS: ${{ steps.public_release_gate.outputs.http_status || '' }}
+          GATE_ATTEMPTS: ${{ steps.public_release_gate.outputs.attempts || '[]' }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          payload = {
+              "workflow_run_id": os.environ.get("GITHUB_RUN_ID", ""),
+              "deployment_id": os.environ.get("DEPLOYMENT_ID", ""),
+              "deployment_verified": os.environ.get("DEPLOYMENT_VERIFIED") == "true",
+              "deployment_error": os.environ.get("DEPLOYMENT_ERROR", ""),
+              "outcome": os.environ.get("GATE_OUTCOME", "not_run"),
+              "allowed": os.environ.get("GATE_ALLOWED") == "true",
+              "gate_status": os.environ.get("GATE_STATUS", "not_run"),
+              "error_category": os.environ.get("GATE_ERROR_CATEGORY", ""),
+              "expected_release_id": os.environ.get("GATE_EXPECTED_RELEASE", ""),
+              "actual_release_id": os.environ.get("GATE_ACTUAL_RELEASE", ""),
+              "expected_snapshot_id": os.environ.get("GATE_EXPECTED_SNAPSHOT", ""),
+              "actual_snapshot_id": os.environ.get("GATE_ACTUAL_SNAPSHOT", ""),
+              "manifest_url": os.environ.get("GATE_MANIFEST_URL", ""),
+              "http_status": os.environ.get("GATE_HTTP_STATUS", ""),
+              "attempts": json.loads(os.environ.get("GATE_ATTEMPTS", "[]")),
+          }
+          Path("pages-release-gate-diagnostics.json").write_text(
+              json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+      - name: Upload Pages release gate diagnostics
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pages-release-gate-diagnostics-${{ github.run_id }}
+          path: pages-release-gate-diagnostics.json
+          if-no-files-found: error
+          retention-days: 14

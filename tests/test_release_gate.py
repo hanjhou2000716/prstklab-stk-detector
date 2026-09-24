@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import requests
+
 from src.release_gate import (
     _fetch_public_release_artifacts,
     _load_release_artifacts,
@@ -401,7 +403,9 @@ def test_release_gate_retries_pages_propagation_until_release_matches(tmp_path, 
             self.content = json.dumps({
                 "status": "ready", "release_id": release_id,
                 "market_snapshot_id": "market-12345678",
+                "created_at": "2026-08-01T00:00:00Z" if release_id == "release-old" else manifest["created_at"],
             }).encode("utf-8")
+            self.status_code = 200
 
         def raise_for_status(self):
             return None
@@ -411,6 +415,7 @@ def test_release_gate_retries_pages_propagation_until_release_matches(tmp_path, 
                 "status": "ready",
                 "release_id": self.release_id,
                 "market_snapshot_id": "market-12345678",
+                "created_at": "2026-08-01T00:00:00Z" if self.release_id == "release-old" else manifest["created_at"],
             }
 
     calls = {"manifest": 0}
@@ -435,6 +440,82 @@ def test_release_gate_retries_pages_propagation_until_release_matches(tmp_path, 
     )
 
     assert result.allowed is True
+    assert result.gate_status == "allowed"
+    assert len(result.attempts) == 2
+    assert result.attempts[0]["error_category"] == "public_manifest_stale"
+
+
+def test_release_gate_retries_transient_transport_failure_without_stale_diagnostic_leak(tmp_path, monkeypatch):
+    path, manifest = _ready_release(tmp_path)
+    data = path.parent
+    calls = {"manifest": 0}
+
+    class Response:
+        status_code = 200
+
+        def __init__(self, release_id):
+            self.release_id = release_id
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "status": "ready",
+                "release_id": self.release_id,
+                "market_snapshot_id": "market-12345678",
+                "created_at": "2026-08-01T00:00:00Z" if self.release_id == "release-old" else manifest["created_at"],
+            }
+
+    def get(url, **_kwargs):
+        if url.split("?", 1)[0].endswith("release-manifest.json"):
+            calls["manifest"] += 1
+            if calls["manifest"] == 1:
+                return Response("release-old")
+            if calls["manifest"] == 2:
+                raise requests.ConnectionError("temporary network failure")
+        return _public_artifact_response(manifest, data, url)
+
+    monkeypatch.setattr("src.release_gate.requests.get", get)
+    monkeypatch.setattr("src.release_gate.time.sleep", lambda *_args: None)
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_snapshot_id="market-12345678",
+        public_url="https://example.test/",
+        public_attempts=3,
+        public_delay=0,
+    )
+
+    assert result.allowed is True
+    assert len(result.attempts) == 3
+    assert result.attempts[0]["actual_release_id"] == "release-old"
+    assert result.attempts[1]["actual_release_id"] == ""
+    assert result.attempts[1]["retryable"] is True
+    assert result.attempts[2]["actual_release_id"] == manifest["release_id"]
+
+
+def test_release_gate_does_not_retry_permanent_http_contract_failure(tmp_path, monkeypatch):
+    path, _ = _ready_release(tmp_path)
+
+    def reject(*_args, **_kwargs):
+        response = type("Response", (), {"status_code": 403})()
+        error = requests.HTTPError("forbidden")
+        error.response = response
+        raise error
+
+    monkeypatch.setattr("src.release_gate.requests.get", reject)
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        public_url="https://example.test/",
+        public_attempts=6,
+        public_delay=0,
+    )
+
+    assert result.allowed is False
+    assert result.error_category == "public_content_mismatch"
+    assert result.http_status == 403
+    assert result.retryable is False
+    assert len(result.attempts) == 1
 
 
 def test_release_gate_blocks_public_snapshot_mismatch(tmp_path, monkeypatch):
@@ -567,7 +648,65 @@ def test_release_gate_writes_actions_output_as_key_value_lines(tmp_path, monkeyp
     text = Path(output).read_text(encoding="utf-8")
     assert "allowed=true" in text
     assert "release_id=" in text
-    assert text.count("{") == 0
+    assert "gate_status=allowed" in text
+    assert "attempts=[]" in text
+
+
+def test_release_gate_fails_fast_when_local_release_identity_changes(tmp_path, monkeypatch):
+    path, manifest = _ready_release(tmp_path)
+    calls = []
+    monkeypatch.setattr("src.release_gate.requests.get", lambda *args, **kwargs: calls.append(args))
+
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_release_id="release-from-preflight",
+        expected_snapshot_id="market-12345678",
+        public_url="https://example.test/",
+    )
+
+    assert result.allowed is False
+    assert result.error_category == "local_release_identity_mismatch"
+    assert result.expected_release_id == "release-from-preflight"
+    assert result.actual_release_id == ""
+    assert calls == []
+
+
+def test_release_gate_marks_a_valid_newer_public_release_as_superseded(tmp_path, monkeypatch):
+    path, manifest = _ready_release(tmp_path)
+    newer_root = tmp_path / "newer-release"
+    newer_path, _ = _ready_release(newer_root)
+    newer_market_path = newer_path.parent / "market.json"
+    newer_market = json.loads(newer_market_path.read_text(encoding="utf-8"))
+    newer_market["generated_at"] = "2026-08-05T10:00:00+08:00"
+    newer_market_path.write_text(json.dumps(newer_market), encoding="utf-8")
+    newer = build_release_manifest(root=newer_root, require_production_research=True)
+    write_release_manifest(newer, newer_path)
+    assert newer["release_id"] != manifest["release_id"]
+    data = newer_path.parent
+    calls = {"manifest": 0}
+
+    def get(url, **_kwargs):
+        if url.split("?", 1)[0].endswith("release-manifest.json"):
+            calls["manifest"] += 1
+            return _public_response(json.dumps(newer).encode("utf-8"), newer)
+        return _public_artifact_response(newer, data, url)
+
+    monkeypatch.setattr("src.release_gate.requests.get", get)
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_release_id=manifest["release_id"],
+        expected_snapshot_id="market-12345678",
+        public_url="https://example.test/",
+        public_attempts=3,
+        public_delay=0,
+    )
+
+    assert result.allowed is False
+    assert result.superseded is True
+    assert result.gate_status == "superseded"
+    assert result.error_category == "parallel_publish_superseded"
+    assert result.actual_release_id == newer["release_id"]
+    assert calls["manifest"] == 1
 
 
 def test_release_gate_blocks_unreadable_and_invalid_manifest(tmp_path):
@@ -723,5 +862,5 @@ def test_public_alert_target_gate_covers_missing_tampered_and_matching_alerts(mo
 
     monkeypatch.setattr("src.release_gate.requests.get", fail_get)
     assert _validate_public_alert_target(loaded, manifest, public_url="https://example.test", notification_id="a") == [
-        "click target alert unavailable: TypeError"
+        "click target alert request rejected:TypeError"
     ]

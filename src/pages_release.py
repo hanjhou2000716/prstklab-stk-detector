@@ -546,6 +546,7 @@ def restore_latest_valid(
                 "publish": True,
                 "selected_commit": commit,
                 "release_id": str(selected_manifest.get("release_id") or ""),
+                "snapshot_id": str(selected_manifest.get("market_snapshot_id") or ""),
                 "rejected_count": len(rejected),
             }
         rejected.append({

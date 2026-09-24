@@ -219,6 +219,8 @@ jobs:
           from pathlib import Path
           manifest = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
           print(f"manifest_status={manifest.get('status', 'invalid')}")
+          print(f"release_id={manifest.get('release_id', '')}")
+          print(f"market_snapshot_id={manifest.get('market_snapshot_id', '')}")
           print(f"alert_projection_status={manifest.get('alert_projection_status', 'unknown')}")
           print(f"quarantined_alert_count={manifest.get('quarantined_alert_count', 0)}")
           print("quarantined_alert_reasons=" + ",".join(str(item) for item in manifest.get("quarantined_alert_reasons", []) if str(item).strip()))
@@ -268,9 +270,19 @@ jobs:
           PY
       - name: Publish snapshot and manifest
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
+        id: publish_snapshot
+        env:
+          RELEASE_ID: ${{ steps.release_manifest.outputs.release_id }}
         run: |
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
             --message "chore: refresh public market snapshot"
+          git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          printf 'data_release_sha=%s\n' "$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")" >> "$GITHUB_OUTPUT"
+          python -m src.pages_deployment \
+            --mode derive-version \
+            --source-revision "$GITHUB_SHA" \
+            --release-id "$RELEASE_ID" \
+            >> "$GITHUB_OUTPUT"
       - name: Build and validate cache-busted static assets
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
         run: |
@@ -289,7 +301,18 @@ jobs:
         id: deployment
         uses: ./.github/actions/deploy-pages-retry
         with:
+          build_version: ${{ steps.publish_snapshot.outputs.pages_build_version }}
           fallback_url: ${{ env.DASHBOARD_URL }}
+      - name: Verify completed Pages deployment identity
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment.outputs.available == 'true'
+        id: deployment_identity
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python -m src.pages_deployment
+          --mode verify
+          --expected-build-version "${{ steps.publish_snapshot.outputs.pages_build_version }}"
+          >> "$GITHUB_OUTPUT"
       - name: Resolve research delivery policy
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
         id: research_policy
@@ -312,22 +335,44 @@ jobs:
               print("::warning::Research is stale or unverified; market delivery continues without research claims.")
           PY
       - name: Verify deployed release before delivery
-        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment.outputs.available == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment.outputs.available == 'true' && steps.deployment_identity.outputs.verified == 'true'
         id: release_gate
         run: |
-          arguments=(--manifest "$MANIFEST_PATH" --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --public-url "${{ steps.deployment.outputs.page_url }}" --expected-notification-id "${{ steps.prepare.outputs.notification_id }}" --expected-alert-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --expected-alert-observation-id "${{ steps.prepare.outputs.observation_id }}" --public-attempts 12 --public-delay 5)
+          arguments=(--manifest "$MANIFEST_PATH" --expected-release-id "${{ steps.release_manifest.outputs.release_id }}" --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --public-url "${{ steps.deployment.outputs.page_url }}" --deployment-id "${{ steps.deployment_identity.outputs.deployment_id }}" --expected-notification-id "${{ steps.prepare.outputs.notification_id }}" --expected-alert-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --expected-alert-observation-id "${{ steps.prepare.outputs.observation_id }}" --public-timeout-seconds 180 --public-delay 2 --public-max-delay 20)
           python -m src.release_gate "${arguments[@]}" >> "$GITHUB_OUTPUT"
       - name: Record release gate diagnostics
         if: always()
         env:
           RELEASE_GATE_OUTCOME: ${{ steps.release_gate.outcome || 'not_run' }}
           RELEASE_GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
+          RELEASE_GATE_STATUS: ${{ steps.release_gate.outputs.gate_status || 'not_run' }}
+          RELEASE_GATE_ERROR_CATEGORY: ${{ steps.release_gate.outputs.error_category || '' }}
           RELEASE_GATE_ERRORS: ${{ steps.release_gate.outputs.errors || '' }}
+          RELEASE_GATE_EXPECTED_RELEASE_ID: ${{ steps.release_gate.outputs.expected_release_id || '' }}
+          RELEASE_GATE_ACTUAL_RELEASE_ID: ${{ steps.release_gate.outputs.actual_release_id || '' }}
+          RELEASE_GATE_EXPECTED_SNAPSHOT_ID: ${{ steps.release_gate.outputs.expected_snapshot_id || '' }}
+          RELEASE_GATE_ACTUAL_SNAPSHOT_ID: ${{ steps.release_gate.outputs.actual_snapshot_id || '' }}
+          RELEASE_GATE_DEPLOYMENT_ID: ${{ steps.release_gate.outputs.deployment_id || steps.deployment_identity.outputs.deployment_id || '' }}
+          RELEASE_GATE_MANIFEST_URL: ${{ steps.release_gate.outputs.manifest_url || '' }}
+          RELEASE_GATE_HTTP_STATUS: ${{ steps.release_gate.outputs.http_status || '' }}
+          RELEASE_GATE_ATTEMPTS: ${{ steps.release_gate.outputs.attempts || '[]' }}
+          RELEASE_GATE_ELAPSED_SECONDS: ${{ steps.release_gate.outputs.elapsed_seconds || '0' }}
         run: |
           {
             echo "## Release gate diagnostics"
             echo "- outcome: ${RELEASE_GATE_OUTCOME}"
             echo "- allowed: ${RELEASE_GATE_ALLOWED}"
+            echo "- gate_status: ${RELEASE_GATE_STATUS}"
+            echo "- error_category: ${RELEASE_GATE_ERROR_CATEGORY:-none}"
+            echo "- expected_release_id: ${RELEASE_GATE_EXPECTED_RELEASE_ID:-unknown}"
+            echo "- actual_release_id: ${RELEASE_GATE_ACTUAL_RELEASE_ID:-unknown}"
+            echo "- expected_snapshot_id: ${RELEASE_GATE_EXPECTED_SNAPSHOT_ID:-unknown}"
+            echo "- actual_snapshot_id: ${RELEASE_GATE_ACTUAL_SNAPSHOT_ID:-unknown}"
+            echo "- pages_deployment_id: ${RELEASE_GATE_DEPLOYMENT_ID:-unknown}"
+            echo "- manifest_url: ${RELEASE_GATE_MANIFEST_URL:-unknown}"
+            echo "- http_status: ${RELEASE_GATE_HTTP_STATUS:-unknown}"
+            echo "- attempts: ${RELEASE_GATE_ATTEMPTS}"
+            echo "- elapsed_seconds: ${RELEASE_GATE_ELAPSED_SECONDS}"
             echo "- errors: ${RELEASE_GATE_ERRORS:-none}"
             echo "- delivery policy: claim and sender require allowed=true"
           } >> "$GITHUB_STEP_SUMMARY"
@@ -336,9 +381,23 @@ jobs:
         env:
           RELEASE_GATE_OUTCOME: ${{ steps.release_gate.outcome || 'not_run' }}
           RELEASE_GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
+          RELEASE_GATE_STATUS: ${{ steps.release_gate.outputs.gate_status || 'not_run' }}
+          RELEASE_GATE_ERROR_CATEGORY: ${{ steps.release_gate.outputs.error_category || '' }}
           RELEASE_GATE_ERRORS: ${{ steps.release_gate.outputs.errors || '' }}
           RELEASE_GATE_RELEASE_ID: ${{ steps.release_gate.outputs.release_id || '' }}
           RELEASE_GATE_SNAPSHOT_ID: ${{ steps.release_gate.outputs.snapshot_id || '' }}
+          RELEASE_GATE_EXPECTED_RELEASE_ID: ${{ steps.release_gate.outputs.expected_release_id || '' }}
+          RELEASE_GATE_ACTUAL_RELEASE_ID: ${{ steps.release_gate.outputs.actual_release_id || '' }}
+          RELEASE_GATE_EXPECTED_SNAPSHOT_ID: ${{ steps.release_gate.outputs.expected_snapshot_id || '' }}
+          RELEASE_GATE_ACTUAL_SNAPSHOT_ID: ${{ steps.release_gate.outputs.actual_snapshot_id || '' }}
+          RELEASE_GATE_DEPLOYMENT_ID: ${{ steps.release_gate.outputs.deployment_id || steps.deployment_identity.outputs.deployment_id || '' }}
+          RELEASE_GATE_MANIFEST_URL: ${{ steps.release_gate.outputs.manifest_url || '' }}
+          RELEASE_GATE_HTTP_STATUS: ${{ steps.release_gate.outputs.http_status || '' }}
+          RELEASE_GATE_ATTEMPTS: ${{ steps.release_gate.outputs.attempts || '[]' }}
+          RELEASE_GATE_ELAPSED_SECONDS: ${{ steps.release_gate.outputs.elapsed_seconds || '0' }}
+          RELEASE_GATE_RETRYABLE: ${{ steps.release_gate.outputs.retryable || 'false' }}
+          RELEASE_GATE_SUPERSEDED: ${{ steps.release_gate.outputs.superseded || 'false' }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
         run: |
           python - <<'PY'
           import json
@@ -350,9 +409,23 @@ jobs:
               "stage": "release_gate",
               "outcome": os.environ.get("RELEASE_GATE_OUTCOME", "not_run"),
               "allowed": os.environ.get("RELEASE_GATE_ALLOWED", "false") == "true",
+              "gate_status": os.environ.get("RELEASE_GATE_STATUS", "not_run"),
+              "error_category": os.environ.get("RELEASE_GATE_ERROR_CATEGORY", ""),
               "errors": [item for item in os.environ.get("RELEASE_GATE_ERRORS", "").split(";") if item],
               "release_id": os.environ.get("RELEASE_GATE_RELEASE_ID", ""),
               "snapshot_id": os.environ.get("RELEASE_GATE_SNAPSHOT_ID", ""),
+              "expected_release_id": os.environ.get("RELEASE_GATE_EXPECTED_RELEASE_ID", ""),
+              "actual_release_id": os.environ.get("RELEASE_GATE_ACTUAL_RELEASE_ID", ""),
+              "expected_snapshot_id": os.environ.get("RELEASE_GATE_EXPECTED_SNAPSHOT_ID", ""),
+              "actual_snapshot_id": os.environ.get("RELEASE_GATE_ACTUAL_SNAPSHOT_ID", ""),
+              "deployment_id": os.environ.get("RELEASE_GATE_DEPLOYMENT_ID", ""),
+              "manifest_url": os.environ.get("RELEASE_GATE_MANIFEST_URL", ""),
+              "http_status": os.environ.get("RELEASE_GATE_HTTP_STATUS", ""),
+              "attempts": json.loads(os.environ.get("RELEASE_GATE_ATTEMPTS", "[]")),
+              "elapsed_seconds": os.environ.get("RELEASE_GATE_ELAPSED_SECONDS", "0"),
+              "retryable": os.environ.get("RELEASE_GATE_RETRYABLE", "false") == "true",
+              "superseded": os.environ.get("RELEASE_GATE_SUPERSEDED", "false") == "true",
+              "workflow_run_id": os.environ.get("WORKFLOW_RUN_ID", ""),
               "delivery_policy": "claim_and_sender_require_allowed",
           }
           Path("release-gate-diagnostics.json").write_text(
@@ -408,6 +481,17 @@ jobs:
           QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
           QUEUE_REASON: ${{ steps.writer_queue.outputs.reason || '' }}
           PREPARED_RELEASE_STATUS: ${{ steps.prepared_release.outputs.reason || 'not_required' }}
+          PAGES_DEPLOYMENT_AVAILABLE: ${{ steps.deployment.outputs.available || 'false' }}
+          PAGES_DEPLOYMENT_VERIFIED: ${{ steps.deployment_identity.outputs.verified || 'false' }}
+          PAGES_DEPLOYMENT_ID: ${{ steps.deployment_identity.outputs.deployment_id || '' }}
+          PAGES_DEPLOYMENT_RUN_ID: ${{ steps.deployment_identity.outputs.workflow_run_id || github.run_id }}
+          PAGES_DEPLOYMENT_ERROR: ${{ steps.deployment_identity.outputs.error || '' }}
+          RELEASE_GATE_OUTCOME: ${{ steps.release_gate.outcome || 'not_run' }}
+          RELEASE_GATE_STATUS: ${{ steps.release_gate.outputs.gate_status || 'not_run' }}
+          RELEASE_GATE_ERROR_CATEGORY: ${{ steps.release_gate.outputs.error_category || '' }}
+          RELEASE_GATE_EXPECTED_RELEASE_ID: ${{ steps.release_gate.outputs.expected_release_id || steps.release_manifest.outputs.release_id || '' }}
+          RELEASE_GATE_ACTUAL_RELEASE_ID: ${{ steps.release_gate.outputs.actual_release_id || '' }}
+          RELEASE_GATE_DEPLOYMENT_ID: ${{ steps.release_gate.outputs.deployment_id || steps.deployment_identity.outputs.deployment_id || '' }}
           RELEASE_MANIFEST_OUTCOME: ${{ steps.release_manifest.outcome || 'not_run' }}
           RELEASE_MANIFEST_STATUS: ${{ steps.release_manifest.outputs.manifest_status || '' }}
           ALERT_PROJECTION_STATUS: ${{ steps.release_manifest.outputs.alert_projection_status || '' }}
@@ -476,6 +560,22 @@ jobs:
               notification_reason="optional_fj_alert_quarantined"
             fi
           fi
+          if [ "$PAGES_DEPLOYMENT_AVAILABLE" = "true" ] && [ "$PAGES_DEPLOYMENT_VERIFIED" != "true" ]; then
+            scan_status="release_gate_failed"
+            notification_expected="false"
+            notification_status="blocked"
+            notification_reason="pages_deployment_identity_unverified"
+          elif [ "$RELEASE_GATE_STATUS" = "superseded" ]; then
+            scan_status="published_superseded"
+            notification_expected="false"
+            notification_status="suppressed"
+            notification_reason="release_superseded_by_newer_valid_version"
+          elif [ "$RELEASE_GATE_OUTCOME" = "failure" ]; then
+            scan_status="release_gate_failed"
+            notification_expected="false"
+            notification_status="blocked"
+            notification_reason="release_gate_${RELEASE_GATE_ERROR_CATEGORY:-verification_failed}"
+          fi
           if [ "$QUEUE_STATUS" = "superseded" ]; then
             scan_status="not_run"
             notification_expected="false"
@@ -510,6 +610,16 @@ jobs:
             echo "- writer_queue_status: ${QUEUE_STATUS:-not_required}"
             echo "- writer_queue_reason: ${QUEUE_REASON:-none}"
             echo "- prepared_release_status: ${PREPARED_RELEASE_STATUS:-not_required}"
+            echo "- pages_deployment_verified: ${PAGES_DEPLOYMENT_VERIFIED}"
+            echo "- pages_deployment_id: ${PAGES_DEPLOYMENT_ID:-unknown}"
+            echo "- pages_deployment_run_id: ${PAGES_DEPLOYMENT_RUN_ID:-unknown}"
+            echo "- pages_deployment_error: ${PAGES_DEPLOYMENT_ERROR:-none}"
+            echo "- release_gate_outcome: ${RELEASE_GATE_OUTCOME}"
+            echo "- release_gate_status: ${RELEASE_GATE_STATUS}"
+            echo "- release_gate_error_category: ${RELEASE_GATE_ERROR_CATEGORY:-none}"
+            echo "- expected_release_id: ${RELEASE_GATE_EXPECTED_RELEASE_ID:-unknown}"
+            echo "- actual_release_id: ${RELEASE_GATE_ACTUAL_RELEASE_ID:-unknown}"
+            echo "- release_gate_deployment_id: ${RELEASE_GATE_DEPLOYMENT_ID:-unknown}"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Persist scheduled-brief delivery receipt
         # Persist failed attempts as well as successful attempts.  This keeps
@@ -552,6 +662,22 @@ jobs:
           python -m src.release_manifest "${arguments[@]}"
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
             --message "chore: persist scheduled notification ledger state"
+          git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          data_release_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
+          python - "$MANIFEST_PATH" >> "$GITHUB_OUTPUT" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          manifest = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          print(f"reconciled_release_id={manifest.get('release_id', '')}")
+          print(f"reconciled_snapshot_id={manifest.get('market_snapshot_id', '')}")
+          PY
+          printf 'reconciled_data_release_sha=%s\n' "$data_release_sha" >> "$GITHUB_OUTPUT"
+          python -m src.pages_deployment \
+            --mode derive-version \
+            --source-revision "$GITHUB_SHA" \
+            --manifest "$MANIFEST_PATH" \
+            >> "$GITHUB_OUTPUT"
       - name: Prepare reconciled Pages artifact
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success'
         run: |
@@ -569,18 +695,34 @@ jobs:
         uses: ./.github/actions/deploy-pages-retry
         with:
           artifact_name: github-pages-reconciled
+          build_version: ${{ steps.persist_notification_ledger.outputs.pages_build_version }}
           fallback_url: ${{ env.DASHBOARD_URL }}
-      - name: Verify reconciled public release
+      - name: Verify reconciled Pages deployment identity
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && steps.reconciled_deployment.outputs.available == 'true'
+        id: reconciled_deployment_identity
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python -m src.pages_deployment
+          --mode verify
+          --expected-build-version "${{ steps.persist_notification_ledger.outputs.pages_build_version }}"
+          >> "$GITHUB_OUTPUT"
+      - name: Verify reconciled public release
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && steps.reconciled_deployment.outputs.available == 'true' && steps.reconciled_deployment_identity.outputs.verified == 'true'
+        id: reconciled_release_gate
         run: >-
           python -m src.release_gate
           --manifest "$MANIFEST_PATH"
+          --expected-release-id "${{ steps.persist_notification_ledger.outputs.reconciled_release_id }}"
           --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}"
           --public-url "${{ steps.reconciled_deployment.outputs.page_url }}"
-          --public-attempts 12
-          --public-delay 5
+          --deployment-id "${{ steps.reconciled_deployment_identity.outputs.deployment_id }}"
+          --public-timeout-seconds 180
+          --public-delay 2
+          --public-max-delay 20
+          >> "$GITHUB_OUTPUT"
       - name: Send release-gated Creator notifications
-        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true' && steps.window.outputs.delivery_intent == 'notify_candidate'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.reconciled_release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true' && steps.window.outputs.delivery_intent == 'notify_candidate'
         id: creator_dispatch
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -606,6 +748,9 @@ jobs:
           CREATOR_REMOTE_HISTORY: ${{ steps.creator_dispatch.outputs.creator_remote_history_status || 'unknown' }}
           CREATOR_DELIVERY_STATUS: ${{ steps.creator_dispatch.outputs.creator_delivery_status || 'not_recorded' }}
           CREATOR_RELEASE_ID: ${{ steps.creator_dispatch.outputs.creator_release_id || '' }}
+          RECONCILED_GATE_STATUS: ${{ steps.reconciled_release_gate.outputs.gate_status || 'not_run' }}
+          RECONCILED_GATE_ERROR_CATEGORY: ${{ steps.reconciled_release_gate.outputs.error_category || '' }}
+          RECONCILED_GATE_ALLOWED: ${{ steps.reconciled_release_gate.outputs.allowed || 'false' }}
         run: |
           {
             echo "## Creator notification decision"
@@ -614,6 +759,8 @@ jobs:
             echo "- blocked episodes: ${CREATOR_BLOCKED}"
             echo "- delivery status: ${CREATOR_DELIVERY_STATUS}"
             echo "- remote history: ${CREATOR_REMOTE_HISTORY}"
+            echo "- reconciled release gate: ${RECONCILED_GATE_STATUS} (allowed=${RECONCILED_GATE_ALLOWED})"
+            echo "- reconciled release gate error category: ${RECONCILED_GATE_ERROR_CATEGORY:-none}"
             if [ -n "${CREATOR_RELEASE_ID}" ]; then echo "- creator release: ${CREATOR_RELEASE_ID}"; fi
             if [ -n "${CREATOR_REASON}" ]; then echo "- blocking reason: ${CREATOR_REASON}"; fi
             if [ "${CREATOR_SENT}" = "0" ]; then
@@ -621,7 +768,7 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Persist Creator delivery receipt
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.creator_dispatch.outcome == 'success' && steps.creator_dispatch.outputs.creator_delivery_status != '' && steps.creator_dispatch.outputs.creator_sent != '0'
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.reconciled_release_gate.outputs.allowed == 'true' && steps.creator_dispatch.outcome == 'success' && steps.creator_dispatch.outputs.creator_delivery_status != '' && steps.creator_dispatch.outputs.creator_sent != '0'
         continue-on-error: true
         env:
           RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}

@@ -115,3 +115,60 @@ def test_delivery_claim_persistence_reconciles_the_public_release():
     assert "name: github-pages-reconciled" in workflow
     assert "artifact_name: github-pages-reconciled" in workflow
     assert "Verify reconciled public release" in workflow
+
+
+def test_pages_only_publisher_uses_the_shared_single_writer_queue():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "deploy-pages.yml"
+    ).read_text(encoding="utf-8")
+    assert "group: main-data-writer-${{ github.run_id }}" in workflow
+    assert "python -m src.writer_queue --settle-seconds 0 --poll-seconds 10" in workflow
+    assert '"Deploy dashboard to GitHub Pages"' in (
+        Path(__file__).resolve().parents[1] / "src" / "writer_queue.py"
+    ).read_text(encoding="utf-8")
+    assert "Derive Pages build identity from code and data release" in workflow
+    assert "--mode derive-version" in workflow
+    assert "steps.pages_version.outputs.pages_build_version" in workflow
+    assert "Verify completed Pages deployment identity" in workflow
+    assert "Verify exact public release after deployment" in workflow
+    assert "--expected-release-id" in workflow
+    assert "--expected-snapshot-id" in workflow
+    assert "pages-release-gate-diagnostics-${{ github.run_id }}" in workflow
+
+
+def test_scheduled_release_gate_is_identity_bound_bounded_and_fail_closed():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
+    ).read_text(encoding="utf-8")
+    gate = workflow.split("- name: Verify deployed release before delivery", 1)[1].split(
+        "- name: Record release gate diagnostics", 1
+    )[0]
+    assert "--expected-release-id" in gate
+    assert "--deployment-id" in gate
+    assert "--public-timeout-seconds 180" in gate
+    assert "--public-max-delay 20" in gate
+    assert "steps.deployment_identity.outputs.verified == 'true'" in gate
+    assert "steps.publish_snapshot.outputs.pages_build_version" in workflow
+    assert "steps.persist_notification_ledger.outputs.pages_build_version" in workflow
+    assert "reconciled_data_release_sha" in workflow
+    assert "--manifest \"$MANIFEST_PATH\"" in workflow
+    sender = workflow.split("- name: Send Telegram brief after successful publication", 1)[1].split(
+        "- name: Publish scheduled notification decision", 1
+    )[0]
+    assert "steps.release_gate.outputs.allowed == 'true'" in sender
+    assert "release_superseded_by_newer_valid_version" in workflow
+    assert "release_gate_error_category" in workflow
+    assert "pages_deployment_run_id" in workflow
+    action = (
+        Path(__file__).resolve().parents[1]
+        / ".github"
+        / "actions"
+        / "deploy-pages-retry"
+        / "action.yml"
+    ).read_text(encoding="utf-8")
+    assert action.count("GITHUB_SHA: ${{ inputs.build_version || github.sha }}") == 2
+    creator = workflow.split("- name: Send release-gated Creator notifications", 1)[1].split(
+        "- name: Summarize Creator notification decision", 1
+    )[0]
+    assert "steps.reconciled_release_gate.outputs.allowed == 'true'" in creator
+    assert "id: reconciled_release_gate" in workflow

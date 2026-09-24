@@ -1,6 +1,10 @@
 name: Deploy GitHub Pages with retry
 description: Deploy a Pages artifact, retry transient queued/timeout failures, and report degraded availability without failing the workflow.
 inputs:
+  build_version:
+    description: Unique SHA-256 Pages identity derived from the source revision and public release identity.
+    required: false
+    default: ""
   timeout:
     description: Maximum time in milliseconds for each Pages deployment attempt.
     required: false
@@ -34,6 +38,8 @@ runs:
     - name: Deploy Pages (first attempt)
       id: first
       continue-on-error: true
+      env:
+        GITHUB_SHA: ${{ inputs.build_version || github.sha }}
       uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
       with:
         timeout: ${{ inputs.timeout }}
@@ -50,6 +56,8 @@ runs:
       id: retry_attempt
       if: steps.first.outcome == 'failure'
       continue-on-error: true
+      env:
+        GITHUB_SHA: ${{ inputs.build_version || github.sha }}
       uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
       with:
         timeout: ${{ inputs.timeout }}
