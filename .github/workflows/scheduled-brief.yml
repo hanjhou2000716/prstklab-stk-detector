@@ -492,6 +492,7 @@ jobs:
           CANDIDATE_TYPE: ${{ steps.prepare.outputs.candidate_type || 'none' }}
           NOTIFICATION_EXPECTED_VALUE: ${{ steps.prepare.outputs.notification_expected || 'false' }}
           NOTIFICATION_REQUESTED: ${{ env.NOTIFY }}
+          PUBLISH_REQUESTED: ${{ steps.release_policy.outputs.publish || 'false' }}
           SEND_STATUS: ${{ steps.send_brief.outputs.notification_status || '' }}
           SEND_REASON: ${{ steps.send_brief.outputs.reason || '' }}
           WINDOW_CONTRACT_STATUS: ${{ steps.window.outputs.contract_status || 'not_applicable' }}
@@ -516,6 +517,7 @@ jobs:
           PAGES_DEPLOYMENT_ID: ${{ steps.deployment_identity.outputs.deployment_id || steps.deployment.outputs.deployment_id || '' }}
           PAGES_DEPLOYMENT_RUN_ID: ${{ steps.deployment_identity.outputs.workflow_run_id || github.run_id }}
           PAGES_DEPLOYMENT_ERROR: ${{ steps.deployment_identity.outputs.error || '' }}
+          PAGES_DEPLOYMENT_ERROR_CODE: ${{ steps.deployment.outputs.error_code || steps.deployment_identity.outputs.error_code || '' }}
           RELEASE_GATE_OUTCOME: ${{ steps.release_gate.outcome || 'not_run' }}
           RELEASE_GATE_STATUS: ${{ steps.release_gate.outputs.gate_status || 'not_run' }}
           RELEASE_GATE_ERROR_CATEGORY: ${{ steps.release_gate.outputs.error_category || '' }}
@@ -593,10 +595,20 @@ jobs:
               notification_reason="optional_fj_alert_quarantined"
             fi
           fi
-          if [ "$PAGES_DEPLOYMENT_AVAILABLE" = "true" ] && [ "$PAGES_DEPLOYMENT_VERIFIED" != "true" ]; then
+          if [ "$NOTIFICATION_REQUESTED" = "true" ] && [ "$WINDOW_DELIVERY_INTENT" = "notify_candidate" ] && [ "$PAGES_DEPLOYMENT_AVAILABLE" != "true" ]; then
+            scan_status="delivery_blocked"
+            notification_status="failed"
+            notification_reason="pages_deployment_${PAGES_DEPLOYMENT_ERROR_CODE:-unavailable}"
+          elif [ "$NOTIFICATION_REQUESTED" = "true" ] && [ "$WINDOW_DELIVERY_INTENT" = "notify_candidate" ] && [ "$PAGES_DEPLOYMENT_VERIFIED" != "true" ]; then
             scan_status="release_gate_failed"
             notification_status="failed"
             notification_reason="pages_deployment_identity_unverified"
+          elif [ "$PUBLISH_REQUESTED" = "true" ] && [ "$PAGES_DEPLOYMENT_AVAILABLE" != "true" ]; then
+            scan_status="published_unverified"
+            if [ "$notification_expected" != "true" ]; then
+              notification_status="not_applicable"
+              notification_reason="pages_publication_${PAGES_DEPLOYMENT_ERROR_CODE:-unavailable}"
+            fi
           elif [ "$RELEASE_GATE_STATUS" = "superseded" ]; then
             scan_status="published_superseded"
             notification_status="superseded"
@@ -643,6 +655,8 @@ jobs:
             echo "- pages_deployment_id: ${PAGES_DEPLOYMENT_ID:-unknown}"
             echo "- pages_deployment_run_id: ${PAGES_DEPLOYMENT_RUN_ID:-unknown}"
             echo "- pages_deployment_error: ${PAGES_DEPLOYMENT_ERROR:-none}"
+            echo "- pages_deployment_error_code: ${PAGES_DEPLOYMENT_ERROR_CODE:-none}"
+            echo "- pages_publication_status: $([ "$PAGES_DEPLOYMENT_VERIFIED" = "true" ] && echo published_and_verified || echo not_published_or_unverified)"
             echo "- release_gate_outcome: ${RELEASE_GATE_OUTCOME}"
             echo "- release_gate_status: ${RELEASE_GATE_STATUS}"
             echo "- release_gate_error_category: ${RELEASE_GATE_ERROR_CATEGORY:-none}"
@@ -871,3 +885,4 @@ jobs:
           exit 1
 
 # - name: 設定 GitHub Pages
+
