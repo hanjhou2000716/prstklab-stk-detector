@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -42,6 +42,7 @@ from src.railway_observation_client import load_railway_observations
 from src.railway_secret import delivery_shared_secret
 from src.refresh_market_data import merge_published_metadata, write_snapshot
 from src.release_gate import verify_release_for_delivery
+from src.schedule_contract import NEW_YORK, fixed_scheduled_for, us_session_bounds
 from src.scheduled_brief import (
     _pick_event,
     _write_output,
@@ -62,6 +63,19 @@ _DEFAULT_CREATOR_RECORDS_PATH = Path("creator/public-records.json")
 
 def _briefing_evidence_ready(briefing: dict[str, Any]) -> bool:
     """Require scheduled Telegram briefs to meet the market evidence floor."""
+    if (
+        briefing.get("scheduled_report") is True
+        and briefing.get("market_scope_key") in {"taiwan", "us"}
+    ):
+        # Routine slot reports remain useful without a major headline or a
+        # high-confidence directional read. Their scoped projection already
+        # identifies the market and exposes every missing quote explicitly.
+        return (
+            briefing.get("digest_status") == "ready"
+            and bool(str(briefing.get("public_short_message") or "").strip())
+            and bool(str(briefing.get("briefing_id") or "").strip())
+            and not str(briefing.get("public_summary_reason") or "").strip()
+        )
     assessment = briefing.get("market_assessment")
     if not isinstance(assessment, dict):
         return False
@@ -73,6 +87,44 @@ def _briefing_evidence_ready(briefing: dict[str, Any]) -> bool:
         factor_count = 0
     dimensions = assessment.get("evidence_dimensions")
     return factor_count >= 3 and isinstance(dimensions, list) and len(dimensions) >= 2
+
+
+def _is_routine_market_report(briefing: dict[str, Any]) -> bool:
+    return bool(
+        briefing.get("scheduled_report") is True
+        and briefing.get("market_scope_key") in {"taiwan", "us"}
+    )
+
+
+def _scheduled_send_window(slot: str, context: dict[str, Any], now: datetime) -> tuple[bool, str]:
+    """Require a scheduled send to remain inside its immutable market window."""
+    slot_name = str(context.get("effective_slot") or slot or "").strip()
+    slot_date = str(context.get("slot_date") or "").strip()
+    raw_anchor = str(context.get("scheduled_for_at") or "").strip()
+    try:
+        if not slot_name or not slot_date or not raw_anchor:
+            return False, "scheduled_anchor_missing"
+        expected = fixed_scheduled_for(slot_name, slot_date)
+        declared = datetime.fromisoformat(raw_anchor.replace("Z", "+00:00"))
+        if declared.tzinfo is None or declared.utcoffset() is None:
+            return False, "scheduled_anchor_invalid"
+        declared = declared.astimezone(expected.tzinfo)
+        if abs((declared - expected).total_seconds()) > 300:
+            return False, "scheduled_anchor_mismatch"
+        instant = now.astimezone(UTC)
+        anchor_utc = expected.astimezone(UTC)
+        if instant < anchor_utc - timedelta(minutes=5):
+            return False, "delivery_before_anchor"
+        if slot_name == "us_premarket":
+            market_open, _market_close = us_session_bounds(expected.astimezone(NEW_YORK).date())
+            deadline = market_open.astimezone(UTC)
+        else:
+            deadline = (expected + timedelta(minutes=30)).astimezone(UTC)
+        if instant >= deadline:
+            return False, "delivery_deadline_passed"
+    except (TypeError, ValueError, OverflowError, OSError):
+        return False, "scheduled_anchor_unverifiable"
+    return True, "within_delivery_window"
 
 
 def _briefing_delivery_event(snapshot: dict[str, Any], slot: str) -> dict[str, Any] | None:
@@ -836,10 +888,12 @@ def prepare(
             comparison_material_changes = list(comparison.get("material_changes") or [])
             comparison_delivery_eligible = comparison.get("delivery_eligible") is True
             comparison_reason = str(comparison.get("suppression_reason") or "")
+            routine_report = _is_routine_market_report(briefing_for_comparison)
             if (
                 notification_requested is not False
                 and str(effective_context.get("delivery_intent") or "") == "notify_candidate"
                 and comparison.get("delivery_eligible") is not True
+                and not routine_report
             ):
                 briefing_for_comparison["notification_eligible"] = False
                 briefing_for_comparison["status"] = "suppressed"
@@ -871,9 +925,11 @@ def prepare(
         if decision_event
         else str((snapshot.get("briefing") or {}).get("notification_reason") or "no_eligible_candidate")
     )
+    routine_report = _is_routine_market_report(briefing_record)
     delivery_eligible = bool(
         comparison_delivery_eligible
         or briefing_record.get("delivery_eligible") is True
+        or routine_report
     )
     if str((effective_context or {}).get("delivery_intent") or "") != "notify_candidate":
         delivery_eligible = False
@@ -983,6 +1039,16 @@ def send(
         )
         return
     snapshot_id = str(snapshot.get("snapshot_id") or "")
+    briefing_value = snapshot.get("briefing")
+    briefing: dict[str, Any] = briefing_value if isinstance(briefing_value, dict) else {}
+    context_value = briefing.get("slot_context")
+    slot_context: dict[str, Any] = context_value if isinstance(context_value, dict) else {}
+    schedule_decision_value = briefing.get("schedule_decision")
+    schedule_decision = schedule_decision_value if isinstance(schedule_decision_value, dict) else {}
+    notification_expected = bool(
+        str(slot_context.get("delivery_intent") or "") == "notify_candidate"
+        and schedule_decision.get("notification_requested") is not False
+    )
     gate = verify_release_for_delivery(
         manifest_path=manifest_path,
         expected_snapshot_id=snapshot_id,
@@ -997,20 +1063,20 @@ def send(
             "release_id": gate.release_id,
             "snapshot_id": snapshot_id,
             "release_gate_errors": ";".join(gate.errors),
-            "notification_expected": "false",
-            "notification_status": "blocked",
+            "notification_expected": "true" if notification_expected else "false",
+            "notification_status": "failed" if notification_expected else "blocked",
             "notification_reason": "release_gate_blocked",
-        }, notification_status="blocked", notification_reason="release_gate_blocked")
+        }, notification_status="failed" if notification_expected else "blocked",
+            notification_reason="release_gate_blocked",
+            notification_expected=notification_expected,
+            last_receipt_status="not_attempted",
+        )
         print("Release gate blocked Telegram delivery: " + "; ".join(gate.errors))
         return
 
     ledger = EventLedger()
     history = ledger.delivery_history()
     release_alert_ids = _release_alert_ids(manifest_path, gate.manifest)
-    briefing_raw = snapshot.get("briefing")
-    briefing: dict[str, Any] = briefing_raw if isinstance(briefing_raw, dict) else {}
-    raw_slot_context = briefing.get("slot_context")
-    slot_context: dict[str, Any] = raw_slot_context if isinstance(raw_slot_context, dict) else {}
     delivery_intent = str(slot_context.get("delivery_intent") or "").strip()
     if delivery_intent and delivery_intent != "notify_candidate":
         reason = str(slot_context.get("resolution_reason") or "delivery_intent_not_notify")
@@ -1030,6 +1096,25 @@ def send(
             last_receipt_status="not_attempted",
         )
         return
+    if delivery_intent == "notify_candidate":
+        window_open, window_reason = _scheduled_send_window(slot, slot_context, datetime.now(UTC))
+        if not window_open:
+            _write_decision_output(
+                {
+                    "sent": "false",
+                    "delivery_status": "blocked",
+                    "reason": window_reason,
+                    "notification_expected": "true",
+                    "notification_status": "failed",
+                    "notification_reason": window_reason,
+                    "last_receipt_status": "not_attempted",
+                },
+                notification_status="failed",
+                notification_reason=window_reason,
+                notification_expected=True,
+                last_receipt_status="not_attempted",
+            )
+            return
     if briefing.get("briefing_id") and briefing.get("notification_eligible") is not True:
         reason = str(briefing.get("notification_reason") or "briefing_not_eligible")
         _write_decision_output(
@@ -1180,18 +1265,25 @@ def send(
             # claim API. The real EventLedger always takes one of the paths.
             claim = {"status": "claimed", "pending_recipient_hashes": []}
         if claim.get("status") != "claimed":
+            already_delivered = str(claim.get("status") or "") == "already_delivered"
             _write_decision_output(
                 {
                     "sent": "false",
-                    "delivery_status": "suppressed",
-                    "reason": f"notification_{claim.get('status', 'blocked')}",
+                    "delivery_status": "already_delivered" if already_delivered else "suppressed",
+                    "reason": "already_delivered" if already_delivered else f"notification_{claim.get('status', 'blocked')}",
                     "notification_key": notification_key,
                     "comparison_notification_key": claim.get("comparison_notification_key") or "",
                     "material_changes": claim.get("material_changes") or [],
                     "delivery_eligible": False,
                     "suppression_reason": claim.get("suppression_reason") or f"notification_{claim.get('status', 'blocked')}",
+                    "notification_expected": "true" if already_delivered else "false",
+                    "last_receipt_status": "already_delivered" if already_delivered else str(claim.get("status") or "blocked"),
                 },
-                event=event, notification_status="suppressed", notification_reason=f"notification_{claim.get('status', 'blocked')}", last_receipt_status=str(claim.get("status") or "blocked"),
+                event=event,
+                notification_status="already_delivered" if already_delivered else "suppressed",
+                notification_reason="already_delivered" if already_delivered else f"notification_{claim.get('status', 'blocked')}",
+                notification_expected=already_delivered,
+                last_receipt_status="already_delivered" if already_delivered else str(claim.get("status") or "blocked"),
             )
             return
         pending_hashes = set(str(item) for item in claim.get("pending_recipient_hashes") or [])
@@ -1254,18 +1346,18 @@ def send(
             # this branch only handles a race between selection and delivery.
             _write_decision_output({
                 "sent": "false",
-                "delivery_status": "suppressed",
+                "delivery_status": "already_delivered",
                 "reason": "already_delivered",
                 "notification_key": fj_delivery.get("notification_key", notification_key),
                 "release_id": gate.release_id,
                 "snapshot_id": snapshot_id,
                 "trace_id": trace_id,
-                "notification_expected": "false",
-                "notification_status": "suppressed",
+                "notification_expected": "true",
+                "notification_status": "already_delivered",
                 "notification_reason": "already_delivered",
                 "risk": event_risk,
                 "last_receipt_status": "already_delivered",
-            }, event=event, notification_status="suppressed", notification_reason="already_delivered", notification_expected=False, last_receipt_status="already_delivered")
+            }, event=event, notification_status="already_delivered", notification_reason="already_delivered", notification_expected=True, last_receipt_status="already_delivered")
             return
         if fj_status == "blocked" and not fj_receipts:
             _write_decision_output({

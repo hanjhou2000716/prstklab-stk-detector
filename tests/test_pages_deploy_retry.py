@@ -4,28 +4,25 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 
 
-def test_pages_deploy_wrapper_retries_and_reports_degraded_status():
+def test_pages_deploy_wrapper_uses_exact_identity_and_fails_closed():
     action = (ROOT / ".github" / "actions" / "deploy-pages-retry" / "action.yml").read_text(encoding="utf-8")
 
-    assert "actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e" in action
+    assert "Deploy GitHub Pages with identity verification" in action
+    assert "python -m src.pages_deployment" in action
+    assert "--mode deploy" in action
     assert "continue-on-error: true" in action
-    assert "steps.first.outcome == 'failure'" in action
-    assert 'default: "120000"' in action
-    assert "retry_delay_seconds" in action
-    assert "Neither Pages deployment attempt returned a public URL" in action
+    assert 'default: "180000"' in action
     assert "FALLBACK_URL" in action
     assert "fallback_url" in action
     assert "artifact_name" in action
     assert 'default: "github-pages"' in action
     assert "available:" in action
     assert "pages_deployment_unavailable" in action
-    assert 'if [ "${RETRY_OUTCOME:-}" = "success" ]; then' in action
-    assert 'elif [ "${FIRST_OUTCOME:-}" = "success" ]; then' in action
-    assert 'deployed_url="$RETRY_URL"' in action
-    assert 'deployed_url="$FIRST_URL"' in action
-    assert 'available=%s' in action
-    assert 'deployed_url" ] && echo true || echo false' in action
-    assert "exit 1" not in action
+    assert "deployment_id" in action
+    assert "deployment_status_url" in action
+    assert "source_revision" in action
+    assert "GITHUB_SHA:" not in action
+    assert "actions/deploy-pages@" not in action
 
 
 def test_all_pages_workflows_use_the_retry_wrapper_and_gate_delivery():

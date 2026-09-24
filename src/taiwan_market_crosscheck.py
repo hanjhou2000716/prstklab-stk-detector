@@ -8,7 +8,8 @@ for TAIEX or compared point-for-point.
 
 from __future__ import annotations
 
-from datetime import datetime
+import re
+from datetime import date, datetime, time, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -62,25 +63,71 @@ def parse_twse_taiex(payload: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
-def parse_taifex_txf(payload: dict[str, Any]) -> dict[str, Any] | None:
-    """Parse the current-session TXF quote exposed by TAIFEX public MIS."""
+def _month_code(row: dict[str, Any]) -> str:
+    for key in ("ContractMonth", "contractMonth", "contract_month", "CMonth", "DeliveryMonth", "DeliveryMonthCode"):
+        value = str(row.get(key) or "").strip()
+        match = re.fullmatch(r"(20\d{2})[-/]?(0[1-9]|1[0-2])", value)
+        if match:
+            return f"{match.group(1)}{match.group(2)}"
+    return ""
+
+
+def _monthly_settlement_day(year: int, month: int) -> date:
+    third_wednesday = date(year, month, 1) + timedelta(days=(2 - date(year, month, 1).weekday()) % 7 + 14)
+    import pandas_market_calendars as mcal
+
+    calendar = mcal.get_calendar("XTAI")
+    schedule = calendar.schedule(start_date=third_wednesday - timedelta(days=7), end_date=third_wednesday)
+    sessions = [day.date() for day in schedule.index]
+    if not sessions:
+        raise ValueError("Taiwan exchange calendar unavailable")
+    return max((day for day in sessions if day <= third_wednesday), default=sessions[-1])
+
+
+def parse_taifex_txf(payload: dict[str, Any], *, observed_on: date | None = None) -> dict[str, Any] | None:
+    """Parse a regular-session TXF quote only when the source names its month."""
     try:
         rows = payload["RtData"]["QuoteList"]
     except (KeyError, TypeError):
         return None
-    row = next((item for item in rows if isinstance(item, dict) and item.get("SymbolID") == "TXF-S"), None)
-    if row is None:
+    candidates = [
+        item for item in rows
+        if isinstance(item, dict) and item.get("SymbolID") == "TXF-S" and _month_code(item)
+    ]
+    if not candidates:
         return None
+    row = candidates[0]
     price, previous = _number(row.get("CLastPrice")), _number(row.get("CRefPrice"))
     raw_date, raw_time = str(row.get("CDate") or ""), str(row.get("CTime") or "").zfill(6)
     try:
         observed = datetime.strptime(f"{raw_date}{raw_time}", "%Y%m%d%H%M%S").replace(tzinfo=TAIPEI)
     except ValueError:
         observed = None
-    if price is None or previous is None or observed is None:
+    month = _month_code(row)
+    if price is None or previous is None or observed is None or not month:
+        return None
+    if observed.time() < time(8, 45) or observed.time() > time(13, 45):
+        return None
+    reference_day = observed_on or observed.date()
+    if observed_on is not None and observed.date() != observed_on:
+        return None
+    current_month = reference_day.strftime("%Y%m")
+    try:
+        settlement_day = _monthly_settlement_day(reference_day.year, reference_day.month)
+    except Exception:
+        return None
+    if reference_day >= settlement_day:
+        next_month = reference_day.month + 1
+        next_year = reference_day.year + (1 if next_month > 12 else 0)
+        next_month = 1 if next_month > 12 else next_month
+        current_month = f"{next_year:04d}{next_month:02d}"
+    if month != current_month:
         return None
     return {
         "ticker": "TXF",
+        "name": "台指期近月",
+        "market": "taiwan",
+        "currency": "點",
         "price": round(price, 2),
         "previous_close": round(previous, 2),
         "change": round(price - previous, 2),
@@ -88,6 +135,15 @@ def parse_taifex_txf(payload: dict[str, Any]) -> dict[str, Any] | None:
         "quote_date": observed.date().isoformat(),
         "quote_time": observed.isoformat(),
         "source": "TAIFEX 公開市況",
+        "source_label": "TAIFEX",
+        "quote_source": "TAIFEX 公開市況",
+        "source_url": TAIFEX_QUOTE_URL,
+        "quote_basis": "TAIFEX近月指定契約日盤觀測",
+        "session": "regular",
+        "freshness": "recent_close",
+        "data_status": "recent_close",
+        "contract_month": month,
+        "contract_basis": "named_month_contract",
     }
 
 
@@ -112,7 +168,7 @@ def fetch_taifex_txf(session: requests.Session | None = None) -> dict[str, Any] 
         timeout=15,
     )
     response.raise_for_status()
-    return parse_taifex_txf(response.json())
+    return parse_taifex_txf(response.json(), observed_on=datetime.now(TAIPEI).date())
 
 
 def _same_direction(first: float | None, second: float | None) -> bool:

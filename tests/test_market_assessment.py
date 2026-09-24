@@ -77,14 +77,17 @@ def test_unrelated_events_do_not_get_joined_into_market_title():
         ],
     }, "us_premarket")
 
-    assert "；" in result["public_short_message"]
+    assert result["public_short_message"].startswith("🟡 美股盤前")
     assert "半導體出口管制更新" not in result["public_short_message"]
     assert "原油供應中斷" not in result["public_short_message"]
-    assert result["market_assessment"]["stance"] == "divergent"
+    assert result["market_scope_key"] == "us"
+    assert "半導體出口管制更新" not in json.dumps(result, ensure_ascii=False)
+    assert "原油供應中斷" not in json.dumps(result, ensure_ascii=False)
 
 
 def test_same_event_cluster_keeps_supporting_source_evidence_once():
     common = {
+        "market_scope": "us",
         "event_cluster_key": "cluster-semi-1",
         "event": "半導體出口管制更新，供應鏈等待後續細節",
         "published_at": "2026-09-04T23:00:00+00:00",
@@ -116,8 +119,8 @@ def test_market_assessment_uses_fixed_three_section_overview_and_weekend_status(
             "published_at": "2026-09-04T23:00:00+00:00",
         }]},
         "indices": [
-            {"ticker": "NASDAQ", "price": 26586, "change_percent": 0.1, "freshness": "recent_close"},
-            {"ticker": "SOX", "price": 11735, "change_percent": 2.0, "freshness": "recent_close"},
+            {"ticker": "TAIEX", "price": 26586, "change_percent": 0.1, "freshness": "recent_close", "quote_date": "2026-09-04"},
+            {"ticker": "TXF", "price": 11735, "change_percent": 2.0, "freshness": "recent_close", "quote_date": "2026-09-04", "contract_month": "202609"},
         ],
     }, "post_close")
 
@@ -126,51 +129,58 @@ def test_market_assessment_uses_fixed_three_section_overview_and_weekend_status(
     assert "風險｜" in result["overview"]
     assert "台股休市" in result["overview"]
     assert len(result["overview"]) <= 140
-    assert result["public_short_message"].startswith("📊 台股盤後｜")
+    assert result["public_short_message"].startswith("🟡 台股盤後")
 
 
 def test_taiwan_stance_does_not_call_nasdaq_softness_a_generic_conflict():
     result = build_market_digest({
         "indices": [
-            {"ticker": "TAIEX", "price": 100, "change_percent": 1.2, "freshness": "recent_close"},
-            {"ticker": "TPEx", "price": 100, "change_percent": 1.0, "freshness": "recent_close"},
-            {"ticker": "SOX", "price": 100, "change_percent": 1.1, "freshness": "recent_close"},
-            {"ticker": "NASDAQ", "price": 100, "change_percent": -0.4, "freshness": "recent_close"},
-            {"ticker": "US10Y", "price": 4.0, "change_percent": 0.1, "freshness": "recent_close"},
+            {"ticker": "TAIEX", "price": 100, "change_percent": 1.2, "freshness": "recent_close", "quote_date": "2026-09-04"},
+            {"ticker": "TPEx", "price": 100, "change_percent": 1.0, "freshness": "recent_close", "quote_date": "2026-09-04"},
+            {"ticker": "TXF", "price": 101, "change_percent": 0.9, "freshness": "recent_close", "quote_date": "2026-09-04", "contract_month": "202609"},
+            {"ticker": "SOX", "price": 100, "change_percent": 1.1, "freshness": "recent_close", "quote_date": "2026-09-04"},
+            {"ticker": "NASDAQ", "price": 100, "change_percent": -0.4, "freshness": "recent_close", "quote_date": "2026-09-04"},
+            {"ticker": "US10Y", "price": 4.0, "change_percent": 0.1, "freshness": "recent_close", "quote_date": "2026-09-04"},
         ],
     }, "post_close")
 
     assert result["market_assessment"]["stance"] != "divergent"
+    assert result["market_assessment"]["factor_count"] == 2
     assert "directional_quote_conflict" not in result["market_assessment"]["conflict_flags"]
 
 
 def test_quote_only_briefing_is_not_suppressed_but_empty_inputs_are():
     quote_only = build_market_digest({
         "indices": [
-            {"ticker": "NASDAQ", "price": 100, "change_percent": 1.0, "freshness": "recent_close"},
-            {"ticker": "SOX", "price": 100, "change_percent": 1.5, "freshness": "recent_close"},
-            {"ticker": "US10Y", "price": 4.0, "change_percent": -0.5, "freshness": "recent_close"},
+            {"ticker": "NASDAQ", "price": 100, "change_percent": 1.0, "freshness": "recent_close", "quote_date": "2026-09-04"},
+            {"ticker": "SOX", "price": 100, "change_percent": 1.5, "freshness": "recent_close", "quote_date": "2026-09-04"},
+            {"ticker": "ES", "price": 6000, "change_percent": 0.5, "freshness": "live", "quote_time": "2026-09-05T12:00:00Z", "contract_month": "202609"},
+            {"ticker": "US10Y", "price": 4.0, "change_percent": -0.5, "freshness": "recent_close", "quote_date": "2026-09-04"},
         ],
     }, "us_premarket")
     empty = build_market_digest({}, "us_premarket")
 
     assert quote_only["notification_eligible"] is True
     assert quote_only["overview"].startswith("總結｜")
-    assert empty["notification_eligible"] is False
-    assert empty["public_short_message"] == ""
+    assert empty["notification_eligible"] is True
+    assert "行情資料不足" in empty["public_short_message"]
 
 
-def test_tpex_is_counted_as_a_taiwan_core_factor_after_ticker_normalization():
+def test_tpex_does_not_replace_weighted_index_and_txf_in_taiwan_core_projection():
     result = build_market_digest({
         "indices": [
-            {"ticker": "TAIEX", "price": 100, "change_percent": 1.0, "freshness": "recent_close"},
-            {"ticker": "TPEx", "price": 100, "change_percent": 0.8, "freshness": "recent_close"},
-            {"ticker": "SOX", "price": 100, "change_percent": 1.0, "freshness": "recent_close"},
+            {"ticker": "TAIEX", "price": 100, "change_percent": 1.0, "freshness": "recent_close", "quote_date": "2026-09-04"},
+            {"ticker": "TPEx", "price": 100, "change_percent": 0.8, "freshness": "recent_close", "quote_date": "2026-09-04"},
+            {"ticker": "TXF", "price": 101, "change_percent": 0.7, "freshness": "recent_close", "quote_date": "2026-09-04", "contract_month": "202609"},
+            {"ticker": "SOX", "price": 100, "change_percent": 1.0, "freshness": "recent_close", "quote_date": "2026-09-04"},
         ],
     }, "post_close")
 
-    assert result["market_assessment"]["factor_count"] == 3
-    assert "櫃買" in result["market_assessment"]["summary_sections"]["market_highlights"]
+    assert result["market_assessment"]["factor_count"] == 2
+    taiwan_evidence = result["market_assessment"]["joint_market_signal"]["evidence"]["taiwan"]
+    assert {row["ticker"] for row in taiwan_evidence} >= {"TAIEX", "TXF"}
+    assert all(row["ticker"] != "TPEx" for row in taiwan_evidence)
+    assert all(row["ticker"] != "SOX" for row in taiwan_evidence)
 
 
 def test_market_assessment_is_json_serializable_for_snapshot_publication():
@@ -226,7 +236,7 @@ def test_public_message_is_bounded_without_ellipsis_or_multiple_event_facts():
 def test_joint_market_signal_requires_three_factors_and_both_markets():
     signal = build_joint_market_signal([
         {"ticker": "TAIEX", "price": 100, "change_percent": 0.8, "freshness": "recent_close"},
-        {"ticker": "TPEx", "price": 100, "change_percent": 0.4, "freshness": "recent_close"},
+        {"ticker": "TXF", "price": 100, "change_percent": 0.4, "freshness": "recent_close"},
         {"ticker": "NASDAQ", "price": 100, "change_percent": 0.6, "freshness": "recent_close"},
     ])
 
@@ -238,7 +248,7 @@ def test_joint_market_signal_requires_three_factors_and_both_markets():
 def test_joint_market_signal_marks_taiwan_us_divergence_and_panic_downgrade():
     signal = build_joint_market_signal([
         {"ticker": "TAIEX", "price": 100, "change_percent": -0.6, "freshness": "recent_close"},
-        {"ticker": "TPEx", "price": 100, "change_percent": -0.4, "freshness": "recent_close"},
+        {"ticker": "TXF", "price": 100, "change_percent": -0.4, "freshness": "recent_close"},
         {"ticker": "NASDAQ", "price": 100, "change_percent": 1.0, "freshness": "recent_close"},
         {"ticker": "SOX", "price": 100, "change_percent": 1.2, "freshness": "recent_close"},
     ], {

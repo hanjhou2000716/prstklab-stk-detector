@@ -1,14 +1,14 @@
-name: Deploy GitHub Pages with retry
-description: Deploy a Pages artifact, retry transient queued/timeout failures, and report degraded availability without failing the workflow.
+name: Deploy GitHub Pages with identity verification
+description: Select this run's Pages artifact, create one official Pages deployment, and verify its returned deployment identity.
 inputs:
   build_version:
-    description: Unique SHA-256 Pages identity derived from the source revision and public release identity.
+    description: Compatibility input; Pages build identity is the reserved source GITHUB_SHA.
     required: false
     default: ""
   timeout:
-    description: Maximum time in milliseconds for each Pages deployment attempt.
+    description: Maximum time in milliseconds to observe the identity-bound Pages deployment.
     required: false
-    default: "120000"
+    default: "180000"
   retry_delay_seconds:
     description: Seconds to wait before retrying a transient Pages deployment failure.
     required: false
@@ -31,68 +31,74 @@ outputs:
   reason:
     description: Stable reason when Pages is temporarily unavailable.
     value: ${{ steps.select-url.outputs.reason }}
+  deployment_id:
+    description: Deployment ID returned by the GitHub Pages create API.
+    value: ${{ steps.select-url.outputs.deployment_id }}
+  deployment_status_url:
+    description: Status URL returned by the GitHub Pages create API.
+    value: ${{ steps.select-url.outputs.deployment_status_url }}
+  artifact_id:
+    description: Unique Pages artifact ID selected from this workflow run.
+    value: ${{ steps.select-url.outputs.artifact_id }}
+  build_version:
+    description: Pages build version sent to the GitHub Pages deployment API.
+    value: ${{ steps.select-url.outputs.build_version }}
+  source_revision:
+    description: Source commit used to build the Pages artifact.
+    value: ${{ steps.select-url.outputs.source_revision }}
 runs:
   using: composite
-  # actions/deploy-pages@v4 (pinned SHA below)
   steps:
-    - name: Deploy Pages (first attempt)
-      id: first
-      continue-on-error: true
-      env:
-        GITHUB_SHA: ${{ inputs.build_version || github.sha }}
-      uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
-      with:
-        timeout: ${{ inputs.timeout }}
-        artifact_name: ${{ inputs.artifact_name }}
-
-    - name: Deploy Pages (retry)
-      id: retry
-      if: steps.first.outcome == 'failure'
+    - name: Create and verify the exact run artifact deployment
+      id: deployment
       continue-on-error: true
       shell: bash
-      run: sleep "${{ inputs.retry_delay_seconds }}"
-
-    - name: Deploy Pages (retry attempt)
-      id: retry_attempt
-      if: steps.first.outcome == 'failure'
-      continue-on-error: true
       env:
-        GITHUB_SHA: ${{ inputs.build_version || github.sha }}
-      uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
-      with:
-        timeout: ${{ inputs.timeout }}
-        artifact_name: ${{ inputs.artifact_name }}
+        GITHUB_TOKEN: ${{ github.token }}
+        PAGES_ARTIFACT_NAME: ${{ inputs.artifact_name }}
+        PAGES_BUILD_VERSION: ${{ inputs.build_version || github.sha }}
+      run: |
+        set -euo pipefail
+        timeout_seconds="$(( ${{ inputs.timeout }} / 1000 ))"
+        python -m src.pages_deployment \
+          --mode deploy \
+          --expected-build-version "$PAGES_BUILD_VERSION" \
+          --timeout-seconds "$timeout_seconds" >> "$GITHUB_OUTPUT"
 
-    - name: Select successful deployment URL
+    - name: Select trusted deployment outputs
       id: select-url
       shell: bash
       env:
-        FIRST_URL: ${{ steps.first.outputs.page_url }}
-        RETRY_URL: ${{ steps.retry_attempt.outputs.page_url }}
-        FIRST_OUTCOME: ${{ steps.first.outcome }}
-        RETRY_OUTCOME: ${{ steps.retry_attempt.outcome }}
+        DEPLOY_OUTCOME: ${{ steps.deployment.outcome }}
+        DEPLOY_AVAILABLE: ${{ steps.deployment.outputs.available || 'false' }}
+        DEPLOY_URL: ${{ steps.deployment.outputs.page_url || '' }}
+        DEPLOY_ID: ${{ steps.deployment.outputs.deployment_id || '' }}
+        DEPLOY_STATUS_URL: ${{ steps.deployment.outputs.deployment_status_url || '' }}
+        DEPLOY_ARTIFACT_ID: ${{ steps.deployment.outputs.artifact_id || '' }}
+        DEPLOY_BUILD_VERSION: ${{ steps.deployment.outputs.deployment_build_version || inputs.build_version || github.sha }}
+        DEPLOY_SOURCE_REVISION: ${{ steps.deployment.outputs.source_revision || github.sha }}
+        DEPLOY_ERROR: ${{ steps.deployment.outputs.error || '' }}
         FALLBACK_URL: ${{ inputs.fallback_url }}
       run: |
         set -euo pipefail
-        if [ "${RETRY_OUTCOME:-}" = "success" ]; then
-          deployed_url="$RETRY_URL"
-        elif [ "${FIRST_OUTCOME:-}" = "success" ]; then
-          deployed_url="$FIRST_URL"
+        if [ "${DEPLOY_OUTCOME:-}" = "success" ] && [ "$DEPLOY_AVAILABLE" = "true" ] && [ -n "$DEPLOY_ID" ] && [ -n "$DEPLOY_STATUS_URL" ]; then
+          deployed_url="$DEPLOY_URL"
+          reason="available"
         else
           deployed_url=""
+          reason="pages_deployment_unavailable"
+          echo "::warning::Pages deployment identity was not verified; notification delivery remains blocked. ${DEPLOY_ERROR}"
         fi
         page_url="${deployed_url:-$FALLBACK_URL}"
-        if [ -z "$deployed_url" ]; then
-          reason="pages_deployment_unavailable"
-          echo "::warning::Neither Pages deployment attempt returned a public URL; downstream delivery is gated."
-        else
-          reason="available"
-        fi
         printf 'page_url=%s\n' "$page_url" >> "$GITHUB_OUTPUT"
         printf 'available=%s\n' "$([ -n "$deployed_url" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
         printf 'reason=%s\n' "$reason" >> "$GITHUB_OUTPUT"
-        echo "pages_deploy_first_outcome=${FIRST_OUTCOME}"
-        echo "pages_deploy_retry_outcome=${RETRY_OUTCOME:-skipped}"
+        printf 'deployment_id=%s\n' "$DEPLOY_ID" >> "$GITHUB_OUTPUT"
+        printf 'deployment_status_url=%s\n' "$DEPLOY_STATUS_URL" >> "$GITHUB_OUTPUT"
+        printf 'artifact_id=%s\n' "$DEPLOY_ARTIFACT_ID" >> "$GITHUB_OUTPUT"
+        printf 'build_version=%s\n' "$DEPLOY_BUILD_VERSION" >> "$GITHUB_OUTPUT"
+        printf 'source_revision=%s\n' "$DEPLOY_SOURCE_REVISION" >> "$GITHUB_OUTPUT"
+        echo "pages_deploy_outcome=${DEPLOY_OUTCOME:-unknown}"
         echo "pages_deploy_available=$([ -n "$deployed_url" ] && echo true || echo false)"
 
     - name: Record degraded Pages status

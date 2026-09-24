@@ -13,6 +13,7 @@ from src.release_manifest import (
     build_release_manifest,
     content_snapshot_id,
     sha256_file,
+    verify_local_release_bundle,
     verify_release_files,
     write_release_manifest,
 )
@@ -63,6 +64,32 @@ def test_manifest_is_ready_and_hashes_are_verifiable(tmp_path):
     assert manifest["status"] == "ready"
     assert manifest["artifact_paths"]["market.json"] == "data/market.json"
     assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
+def test_local_release_bundle_requires_identity_and_all_local_hashes(tmp_path):
+    _artifacts(tmp_path)
+    manifest = build_release_manifest(root=tmp_path)
+    assert manifest["status"] == "ready"
+    manifest_path = tmp_path / "site" / "data" / "release-manifest.json"
+    write_release_manifest(manifest, manifest_path)
+    assert verify_local_release_bundle(root=tmp_path) == []
+
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["as_of"] = "changed-after-manifest"
+    market_path.write_text(json.dumps(market), encoding="utf-8")
+    errors = verify_local_release_bundle(root=tmp_path)
+    assert "artifact hash mismatch: market.json" in errors
+
+
+def test_local_release_bundle_fails_closed_on_snapshot_identity_mismatch(tmp_path):
+    _artifacts(tmp_path)
+    manifest = build_release_manifest(root=tmp_path)
+    manifest["market_snapshot_id"] = "market-wrong-version"
+    manifest_path = tmp_path / "site" / "data" / "release-manifest.json"
+    write_release_manifest(manifest, manifest_path)
+    errors = verify_local_release_bundle(root=tmp_path)
+    assert "market snapshot identity does not match the manifest" in errors
 
 
 def test_manifest_publishes_release_specific_immutable_alert_details(tmp_path):

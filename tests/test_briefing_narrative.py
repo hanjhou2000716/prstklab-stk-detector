@@ -91,6 +91,7 @@ def test_briefing_snapshot_exposes_narrative_for_each_report_slot() -> None:
         ],
         "quotes": [{"ticker": "2330", "price": 2380.0, "change_percent": -1.24, "quote_date": "2026-09-14"}],
         "events": {"items": []},
+        "taiwan_market_statistics": {},
     }
 
     focuses = set()

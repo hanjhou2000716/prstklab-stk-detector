@@ -9,6 +9,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from src.briefing_narrative import NARRATIVE_VERSION, build_narrative
+from src.market_scope import market_scope_for_slot, scope_snapshot
 
 SLOT_TITLES = {
     "morning": "投資晨報儀表板",
@@ -25,6 +26,10 @@ SLOT_TITLES = {
 # benchmarks.  The Mini App uses ``market_topics`` below for the grouped
 # layout and can add event-related instruments separately.
 GLOBAL_TICKERS = ("TAIEX", "2330", "NIKKEI", "KOSPI", "NASDAQ", "SOX", "DJIA", "BRENT", "WTI", "GOLD", "BTC", "ETH")
+SCOPED_TICKER_ORDER = {
+    "taiwan": ("TAIEX", "TXF"),
+    "us": ("S&P 500", "NASDAQ", "DJIA", "ES", "NQ", "YM", "SOX"),
+}
 _UNUSABLE_FRESHNESS = frozenset({"stale", "delayed", "unavailable", "unknown", "failed"})
 _GENERIC_EVENT_CONTEXT = frozenset({
     "此公開事件可能影響市場預期",
@@ -462,13 +467,21 @@ def _briefing_summary_facts(
         item for rows in joint_evidence_groups.values() if isinstance(rows, list)
         for item in rows if isinstance(item, dict)
     ]
-    joint_label = str(joint.get("label") or "資料不足，台美狀態待確認").strip()
+    scope = str(assessment.get("market_scope_key") or "")
+    if scope in {"taiwan", "us"}:
+        label = "台股市場狀態" if scope == "taiwan" else "美股市場狀態"
+        value = str(sections.get("summary") or "資料不足，暫不判讀").strip()
+        status_evidence = quote_evidence[:4]
+    else:
+        label = "台美市場狀態"
+        value = str(joint.get("label") or "資料不足，台美狀態待確認").strip()
+        status_evidence = joint_evidence[:4] or quote_evidence[:4]
     facts: list[dict[str, Any]] = [
         {
-            "key": "joint_market_status",
-            "label": "台美市場狀態",
-            "value": joint_label,
-            "evidence_refs": joint_evidence[:4] or quote_evidence[:4],
+            "key": "market_status",
+            "label": label,
+            "value": value,
+            "evidence_refs": status_evidence,
         },
     ]
     highlights = str(sections.get("market_highlights") or "").strip() or "本輪未取得可核對行情比較。"
@@ -882,6 +895,7 @@ def _topic_quote(items: dict[str, dict[str, Any]], ticker: str, name: str, curre
 
 def _market_topics(items: dict[str, dict[str, Any]], events: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Build fixed market themes plus event-driven extras."""
+    events = events if isinstance(events, list) else []
     taiwan = _topic_quote(items, "TAIEX", "台股加權", "點")
     txf = _topic_quote(items, "TXF", "台指期", "點")
     ai_second = items.get("NVDA") or _topic_quote(items, "SOX", "半導體（費半）", "點")
@@ -912,36 +926,358 @@ def _market_topics(items: dict[str, dict[str, Any]], events: list[dict[str, Any]
     return topics, dynamic
 
 
+def _scoped_quote_detail(
+    item: dict[str, Any] | None, ticker: str, name: str, *, scope: str,
+) -> tuple[str, dict[str, Any], dict[str, Any] | None]:
+    row = item if isinstance(item, dict) else {}
+    price = _finite_number(row.get("price"))
+    change = _finite_number(row.get("change_percent"))
+    point_change = _finite_number(row.get("change"))
+    observed = str(row.get("quote_time") or row.get("quote_date") or "").strip()
+    freshness = str(row.get("freshness") or row.get("data_status") or "unknown")
+    missing_reason = "quote_missing" if not row else "quote_unusable_or_time_unverified"
+    if ticker == "TXF" and row and not str(row.get("contract_month") or "").strip():
+        missing_reason = "official_contract_month_unverified"
+    usable = (
+        price is not None and change is not None and bool(observed)
+        and freshness.casefold() not in _UNUSABLE_FRESHNESS
+    )
+    if scope == "taiwan" and ticker == "TXF" and missing_reason == "official_contract_month_unverified":
+        usable = False
+    if not usable:
+        label = f"{name}資料未取得或口徑未核實"
+        evidence = {
+            "ticker": ticker,
+            "name": name,
+            "data_status": "unavailable",
+            "quote_date": row.get("quote_date"),
+            "quote_time": row.get("quote_time"),
+            "source": row.get("source_label") or row.get("quote_source") or row.get("source"),
+            "contract_month": row.get("contract_month"),
+        }
+        return label, evidence, {"ticker": ticker, "name": name, "reason": missing_reason}
+    basis = str(row.get("quote_basis") or "").strip()
+    contract_note = ""
+    if ticker == "TXF":
+        contract_note = f"，契約月份 {row['contract_month']}，日盤"
+    elif ticker in {"ES", "NQ", "YM"}:
+        contract_basis = str(row.get("contract_basis") or "continuous_contract")
+        contract_note = "，連續合約，未標示特定到期月" if contract_basis == "continuous_contract" else f"，{contract_basis}"
+    date_note = observed.replace("T", " ")[:19]
+    point_note = f"漲跌 {point_change:+,.2f} 點；" if point_change is not None else "漲跌點數未提供；"
+    quote_label = f"{name}{contract_note} 行情 {price:,.2f}；{point_note}{change:+.2f}%；觀測 {date_note}；{freshness}"
+    if row.get("quote_delayed") is True:
+        quote_label += "；來源延遲"
+    if basis:
+        quote_label += f"；{basis}"
+    evidence = {
+        key: row.get(key)
+        for key in (
+            "ticker", "name", "price", "change_percent", "quote_date", "quote_time",
+            "freshness", "data_status", "quote_basis", "quote_source", "source_label",
+            "source_url", "session", "contract_month", "contract_basis",
+        )
+        if row.get(key) not in (None, "")
+    }
+    return quote_label, evidence, None
+
+
+def _scoped_morning_analysis(
+    items: dict[str, dict[str, Any]], scope: str, as_of: Any, slot: str,
+    taiwan_market_statistics: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build only the market-specific explanations required for these slots."""
+    specs = (
+        [("TAIEX", "加權指數現貨"), ("TXF", "台指期近月日盤")]
+        if scope == "taiwan" else
+        [("S&P 500", "標普500現貨收盤"), ("NASDAQ", "Nasdaq Composite現貨收盤"),
+         ("DJIA", "道瓊現貨收盤"), ("ES", "ES（S&P 500 E-mini 指數期貨）"),
+         ("NQ", "NQ（Nasdaq-100 指數期貨，與 Nasdaq Composite 不同）"),
+         ("YM", "YM（道瓊 E-mini 指數期貨）"), ("SOX", "費半最近收盤（輔助）")]
+    )
+    data_gaps: list[dict[str, Any]] = []
+    facts: list[dict[str, Any]] = []
+    for ticker, name in specs:
+        text, evidence, gap = _scoped_quote_detail(items.get(ticker), ticker, name, scope=scope)
+        facts.append({"ticker": ticker, "name": name, "text": text, "quote": evidence})
+        if gap:
+            data_gaps.append({"kind": "quote", **gap, "checked_at": as_of})
+    supplementary_section: dict[str, Any] | None = None
+    supplementary_gaps: list[dict[str, Any]] = []
+    if scope == "taiwan":
+        statistics = taiwan_market_statistics if isinstance(taiwan_market_statistics, dict) else {}
+        turnover_value = statistics.get("turnover")
+        breadth_value = statistics.get("breadth")
+        institutions_value = statistics.get("institutional_flows")
+        turnover: dict[str, Any] = turnover_value if isinstance(turnover_value, dict) else {}
+        breadth: dict[str, Any] = breadth_value if isinstance(breadth_value, dict) else {}
+        institutions: dict[str, Any] = institutions_value if isinstance(institutions_value, dict) else {}
+
+        def amount_fact(
+            label: str, record: dict[str, Any], value_key: str, *,
+            source_default: str, source_url_default: str,
+        ) -> tuple[str, dict[str, Any] | None]:
+            value = _finite_number(record.get(value_key))
+            if value is None:
+                supplementary_gaps.append({"kind": "supplementary_statistic", "name": label, "reason": "not_published_or_not_obtained"})
+                return f"{label}：尚未公布或本輪未取得；不延後簡報。", None
+            # The TWSE endpoints report currency amounts in NT dollars. Show
+            # the human-readable amount in hundred-million NT dollars while
+            # retaining the raw source value and unit in structured evidence.
+            amount = value / 100_000_000
+            observed = str(record.get("observed_date") or "日期未提供")
+            source = str(record.get("source") or source_default)
+            source_url = str(record.get("source_url") or source_url_default)
+            evidence = {
+                **record,
+                "raw_value": value,
+                "raw_unit": str(record.get("unit") or "元"),
+                "display_unit": "億元",
+                "display_value": amount,
+                "source": source,
+                "source_url": source_url,
+            }
+            return f"{label}：{amount:,.2f} 億元；資料日 {observed}；來源 {source}。", evidence
+
+        turnover_text, turnover_evidence = amount_fact(
+            "上市市場成交金額", turnover, "trade_value",
+            source_default="TWSE FMTQIK 官方每日市場成交資訊",
+            source_url_default="https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK",
+        )
+        institution_text, institution_evidence = amount_fact(
+            "三大法人合計買賣超", institutions, "total_net",
+            source_default="TWSE BFI82U 官方三大法人買賣金額統計",
+            source_url_default="https://www.twse.com.tw/rwd/zh/fund/BFI82U",
+        )
+        advancing = _finite_number(breadth.get("advancing"))
+        declining = _finite_number(breadth.get("declining"))
+        if breadth.get("scope_verified") is True and advancing is not None and declining is not None:
+            unchanged = _finite_number(breadth.get("unchanged"))
+            breadth_text = f"市場廣度：上漲 {advancing:.0f} 家、下跌 {declining:.0f} 家"
+            if unchanged is not None:
+                breadth_text += f"、平盤 {unchanged:.0f} 家"
+            breadth_source = str(breadth.get("source") or "TWSE 官方上市市場漲跌家數統計")
+            breadth_date = str(breadth.get("observed_date") or "日期未提供")
+            breadth_text += f"；資料日 {breadth_date}；來源 {breadth_source}。"
+            breadth_evidence = {
+                **breadth,
+                "source": breadth_source,
+                "source_url": str(breadth.get("source_url") or "https://openapi.twse.com.tw/v1/opendata/twtazu_od"),
+            }
+        else:
+            breadth_text = "市場廣度：尚未公布或本輪未取得／統計範圍未核實；不延後簡報。"
+            breadth_evidence = None
+            supplementary_gaps.append({"kind": "supplementary_statistic", "name": "市場廣度", "reason": "not_published_not_obtained_or_scope_unverified"})
+        stat_facts = [
+            ("turnover", "成交金額", turnover_text, turnover_evidence),
+            ("breadth", "市場廣度", breadth_text, breadth_evidence),
+            ("institutions", "三大法人", institution_text, institution_evidence),
+        ]
+        supplementary_section = {
+            "title": "台股輔助統計（官方）",
+            "facts": [entry[2] for entry in stat_facts],
+            "facts_structured": [
+                {"ticker": f"TW_STATS_{key.upper()}", "name": name, "text": text, "quote": evidence or {}}
+                for key, name, text, evidence in stat_facts
+            ],
+            "why_it_matters": "成交金額、市場漲跌家數與三大法人僅作加權指數／台指期的輔助脈絡，不取代兩項主體行情。",
+            "transmission": "各欄保留資料日與官方來源；未公布或未取得即標示缺漏，不估算、不等待後續更新。",
+            "market_observation": "；".join(entry[2] for entry in stat_facts),
+            "next_catalyst": "後續資料更新只更新資訊卡，不因此對同一時段再次發送 Telegram。",
+            "evidence": [entry[3] for entry in stat_facts if isinstance(entry[3], dict)],
+            "freshness": "各統計欄逐項標示資料日與來源",
+            "confidence": "low" if supplementary_gaps else "medium",
+        }
+        sections = [
+            {
+                "title": "台股加權指數（現貨）",
+                "facts": [facts[0]["text"]], "facts_structured": [facts[0]],
+                "why_it_matters": "加權指數描述台灣上市股票現貨市場，不等同於期貨契約。",
+                "transmission": "現貨指數與期貨分列；不以期貨點位替代現貨，也不計算不同觀測時間的即時基差。",
+                "market_observation": facts[0]["text"] if not any(g.get("ticker") == "TAIEX" for g in data_gaps) else "本輪加權指數資料缺漏。",
+                "next_catalyst": "等待下一個可核對的台股現貨交易日收盤。",
+                "evidence": [facts[0]["quote"]] if facts[0]["quote"].get("price") is not None else [],
+                "freshness": facts[0]["quote"].get("freshness", "unavailable"),
+                "confidence": "low" if any(g.get("ticker") == "TAIEX" for g in data_gaps) else "medium",
+            },
+            {
+                "title": "台指期近月（日盤）",
+                "facts": [facts[1]["text"]], "facts_structured": [facts[1]],
+                "why_it_matters": "台指期是獨立的期貨契約；必須確認近月契約月份與日盤資料口徑。",
+                "transmission": "僅說明期貨自身漲跌，不與不同收盤時間的加權指數計算即時基差。",
+                "market_observation": facts[1]["text"] if not any(g.get("ticker") == "TXF" for g in data_gaps) else "近月契約月份或日盤行情未核實，故不列期貨方向。",
+                "next_catalyst": "結算日後由官方契約月份切換規則確認近月；未核實月份時維持缺漏。",
+                "evidence": [facts[1]["quote"]] if facts[1]["quote"].get("price") is not None else [],
+                "freshness": facts[1]["quote"].get("freshness", "unavailable"),
+                "confidence": "low" if any(g.get("ticker") == "TXF" for g in data_gaps) else "medium",
+            },
+            supplementary_section,
+        ]
+    else:
+        sections = [
+            {
+                "title": "美股主要現貨最近收盤",
+                "facts": [fact["text"] for fact in facts[:3]], "facts_structured": facts[:3],
+                "why_it_matters": "標普500、Nasdaq Composite 與道瓊是三項分開標示的美股現貨基準。",
+                "transmission": "現貨欄只採各指數最近已完成交易日；不以期貨替代現貨收盤。",
+                "market_observation": "；".join(fact["text"] for fact in facts[:3]),
+                "next_catalyst": "核對美股當日開盤後現貨走勢是否延續或背離盤前期貨。",
+                "evidence": [fact["quote"] for fact in facts[:3] if fact["quote"].get("price") is not None],
+                "freshness": "逐項標示觀測日期與資料狀態",
+                "confidence": "low" if any(g.get("ticker") in {"S&P 500", "NASDAQ", "DJIA"} for g in data_gaps) else "medium",
+            },
+            {
+                "title": "美股指數期貨盤前",
+                "facts": [fact["text"] for fact in facts[3:6]], "facts_structured": facts[3:6],
+                "why_it_matters": "ES、NQ、YM 分別對應標普500、Nasdaq-100、道瓊指數期貨；NQ 不是 Nasdaq Composite。",
+                "transmission": "期貨按自身來源、觀測時間與連續／指定合約口徑呈現，不與現貨點位混算。",
+                "market_observation": "；".join(fact["text"] for fact in facts[3:6]),
+                "next_catalyst": "美股開盤時停止盤前通知；開盤後行情不回填為盤前即時資料。",
+                "evidence": [fact["quote"] for fact in facts[3:6] if fact["quote"].get("price") is not None],
+                "freshness": "逐項標示來源觀測時間、延遲與合約口徑",
+                "confidence": "low" if any(g.get("ticker") in {"ES", "NQ", "YM"} for g in data_gaps) else "medium",
+            },
+            {
+                "title": "費城半導體指數（輔助）",
+                "facts": [facts[6]["text"]], "facts_structured": [facts[6]],
+                "why_it_matters": "費半作為美國半導體產業背景，不替代三大現貨指數或指數期貨。",
+                "transmission": "只作為獨立輔助觀察，不將台股／台積電行情塞入美股卡。",
+                "market_observation": facts[6]["text"],
+                "next_catalyst": "以最近完成交易日資料更新。",
+                "evidence": [facts[6]["quote"]] if facts[6]["quote"].get("price") is not None else [],
+                "freshness": facts[6]["quote"].get("freshness", "unavailable"),
+                "confidence": "low" if any(g.get("ticker") == "SOX" for g in data_gaps) else "medium",
+            },
+        ]
+    narrative_section = "taiwan" if scope == "taiwan" else "us_market"
+    for section in sections:
+        section_evidence = [
+            row for row in section.get("evidence", []) if isinstance(row, dict)
+        ]
+        section_facts = [str(value) for value in section.get("facts", []) if value]
+        section_rows = [
+            item for item in section.get("facts_structured", [])
+            if isinstance(item, dict)
+        ]
+        missing = [
+            str(gap.get("name") or gap.get("ticker") or "行情資料")
+            for gap in data_gaps
+            if any(str(gap.get("ticker") or "") == str(item.get("ticker") or "") for item in section_rows)
+        ]
+        section["narrative"] = build_narrative(
+            slot=slot,
+            section=narrative_section,
+            as_of=as_of,
+            facts=section_facts,
+            quote_evidence=section_evidence,
+            themes=[],
+            statistics=(taiwan_market_statistics or {}) if section is supplementary_section else None,
+            limitations=missing,
+        )
+        section["highlights"] = section["narrative"].get("highlights", [])
+        section["details"] = section["narrative"].get("details", [])
+        section["limitations"] = section["narrative"].get("limitations", [])
+    return {
+        "ruleset": "market_scoped_card_v1",
+        "narrative_version": NARRATIVE_VERSION,
+        "market_scope": scope,
+        "evidence_as_of": as_of,
+        "overall_stance": "insufficient_evidence" if data_gaps else "market_specific_observation",
+        "confidence": "low" if data_gaps else "medium",
+        "sections": sections,
+        "missing_evidence": [gap["name"] if "name" in gap else gap["ticker"] for gap in [*data_gaps, *supplementary_gaps]],
+        "system_analysis": {
+            "data_gaps": [*data_gaps, *supplementary_gaps],
+            "note": "行情缺漏逐項揭露；不以舊值或其他市場替代。",
+        },
+    }
+
+
+def _scoped_observations(analysis: dict[str, Any]) -> list[dict[str, str]]:
+    sections = analysis.get("sections")
+    if not isinstance(sections, list):
+        return []
+    cards: list[dict[str, str]] = []
+    for section in sections:
+        if not isinstance(section, dict):
+            continue
+        facts = [str(item).strip() for item in section.get("facts", []) if str(item).strip()]
+        source_parts = []
+        for fact in section.get("facts_structured", []):
+            quote = fact.get("quote") if isinstance(fact, dict) else None
+            if isinstance(quote, dict):
+                source = quote.get("source_url") or quote.get("source") or quote.get("quote_source")
+                if source:
+                    source_parts.append(str(source))
+        cards.append(_card(
+            str(section.get("title") or "市場觀察"),
+            "；".join(facts) or "本輪未取得可核對資料。",
+            str(section.get("why_it_matters") or "僅以目標市場可核對資料說明。"),
+            str(section.get("transmission") or "不以其他市場行情替代。"),
+            str(section.get("next_catalyst") or "等待下一筆目標市場可核對資料。"),
+            source_note="；".join(source_parts),
+        ))
+    return cards
+
+
 def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -> dict[str, Any]:
     """Create one detailed card payload for the Mini App, without advice."""
-    events = (snapshot.get("events") or {}).get("items", [])
+    slot = slot or "morning"
+    market_scope = market_scope_for_slot(slot)
+    snapshot = scope_snapshot(snapshot, slot)
+    event_block = snapshot.get("events")
+    event_rows = event_block.get("items") if isinstance(event_block, dict) else []
+    events = [item for item in event_rows if isinstance(item, dict)] if isinstance(event_rows, list) else []
     indices = snapshot.get("indices") or []
     quotes = snapshot.get("quotes") or []
     macro_quotes = snapshot.get("macro_quotes") or []
     risk = snapshot.get("risk") or {}
     all_items = {item.get("ticker"): item for item in [*indices, *quotes, *macro_quotes] if item.get("ticker")}
-    taiex = all_items.get("TAIEX") or {}
-    raw_crosscheck = taiex.get("crosscheck_sources") or []
-    if isinstance(raw_crosscheck, dict):
-        taifex = raw_crosscheck.get("taifex")
+    if market_scope:
+        names = {
+            "TAIEX": ("加權指數現貨", "點"), "TXF": ("台指期近月", "點"),
+            "S&P 500": ("標普500現貨", "點"), "NASDAQ": ("Nasdaq Composite現貨", "點"),
+            "DJIA": ("道瓊現貨", "點"), "ES": ("S&P 500 E-mini期貨", "點"),
+            "NQ": ("Nasdaq-100指數期貨", "點"), "YM": ("道瓊E-mini期貨", "點"),
+            "SOX": ("費半輔助指數", "點"),
+        }
+        cards = []
+        for ticker in SCOPED_TICKER_ORDER[market_scope]:
+            item = all_items.get(ticker)
+            if item is None:
+                name, currency = names[ticker]
+                item = _placeholder(ticker, name, currency)
+                item["market"] = market_scope
+            cards.append(item)
     else:
-        taifex = next((item for item in raw_crosscheck if isinstance(item, dict) and str(item.get("label", "")).upper() == "TAIFEX"), None)
-    if isinstance(taifex, dict) and taifex.get("price") is not None:
-        all_items["TXF"] = {**taifex, "ticker": "TXF", "name": "台指期", "market": "taiwan", "currency": "點"}
-    cards = [all_items[ticker] for ticker in GLOBAL_TICKERS if all_items.get(ticker)]
+        cards = [all_items[ticker] for ticker in GLOBAL_TICKERS if all_items.get(ticker)]
     observations = _market_observations(all_items, risk, events)
     briefing_data_as_of = snapshot.get("as_of") or snapshot.get("fetched_at") or snapshot.get("created_at")
     if briefing_data_as_of:
         for observation in observations:
             observation["data_as_of"] = briefing_data_as_of
     market_topics, dynamic_markets = _market_topics(all_items, events)
-    lead = events[0] if events else observations[0]
+    if market_scope == "taiwan":
+        market_topics = [{"title": "台股盤後", "items": cards}]
+        dynamic_markets = []
+    elif market_scope == "us":
+        market_topics = [
+            {"title": "美股現貨最近收盤", "items": cards[:3]},
+            {"title": "美股指數期貨盤前", "items": cards[3:6]},
+            {"title": "美股半導體輔助", "items": cards[6:]},
+        ]
+        dynamic_markets = []
+    lead = events[0] if events else (observations[0] if observations else {"title": "市場資料狀態"})
     from src.intelligence_pipeline import build_intelligence_context
 
     observed_quotes = [*indices, *quotes, *macro_quotes]
-    watchlist = [ticker for ticker in ("TAIEX", "NASDAQ", "SOX", "DJIA") if ticker in all_items]
+    watchlist = (
+        [ticker for ticker in SCOPED_TICKER_ORDER[market_scope] if ticker in all_items]
+        if market_scope else
+        [ticker for ticker in ("TAIEX", "NASDAQ", "SOX", "DJIA") if ticker in all_items]
+    )
     public_watchlist = {ticker: round(1 / len(watchlist), 6) for ticker in watchlist} if watchlist else {}
-    raw_macro = snapshot.get("macro")
+    raw_macro = None if market_scope else snapshot.get("macro")
     macro_input = None
     if isinstance(raw_macro, dict):
         # Forward partial macro observations so the surprise engine can expose
@@ -985,7 +1321,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
     from src.event_feedback import build_feedback_contract
     from src.paper_portfolio import build_paper_portfolio_snapshot, update_paper_observations
 
-    research = snapshot.get("research_report") or {}
+    research = {} if market_scope else (snapshot.get("research_report") or {})
     paper_portfolio = build_paper_portfolio_snapshot(
         research.get("candidates", []) if isinstance(research, dict) else [],
         observed_quotes,
@@ -1022,7 +1358,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
     if not feedback_events:
         feedback_events = [build_feedback_contract({"event_type": "briefing"})]
     creator_release = None
-    creator_records = snapshot.get("creator_insights")
+    creator_records = None if market_scope else snapshot.get("creator_insights")
     if isinstance(creator_records, list):
         creator_result = build_creator_intelligence_release(
             [item for item in creator_records if isinstance(item, dict)],
@@ -1057,7 +1393,10 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
     digest_overview = digest.get("overview")
     if not digest_overview and digest.get("status") != "ready":
         digest_overview = "本輪公開市場證據不足，暫不形成判讀。"
-    morning_analysis = _morning_analysis(
+    morning_analysis = _scoped_morning_analysis(
+        all_items, market_scope, briefing_data_as_of, slot,
+        snapshot.get("taiwan_market_statistics") if market_scope == "taiwan" else None,
+    ) if market_scope else _morning_analysis(
         all_items,
         risk,
         digest.get("market_assessment") or {},
@@ -1067,13 +1406,18 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         snapshot.get("taiwan_market_statistics"),
         snapshot.get("markets") if isinstance(snapshot.get("markets"), dict) else None,
     )
+    if market_scope:
+        observations = _scoped_observations(morning_analysis)
+        if briefing_data_as_of:
+            for observation in observations:
+                observation["data_as_of"] = str(briefing_data_as_of)
     return {
-        "slot": slot or "live",
+        "slot": slot,
         "title": SLOT_TITLES.get(slot or "", "即時市場儀表板"),
         "overview": digest_overview or (
-            f"{lead.get('brief_title') or lead['title']}｜"
-            f"{lead.get('summary') or lead['event']} "
-            f"{lead.get('market_context') or lead['market_impact']}"
+            f"{lead.get('brief_title') or lead.get('title') or '市場資料狀態'}｜"
+            f"{lead.get('summary') or lead.get('event') or '指定市場行情缺漏，不以其他市場替代'} "
+            f"{lead.get('market_context') or lead.get('market_impact') or ''}"
         ),
         "assessment_summary": digest.get("assessment_summary", ""),
         "market_assessment": digest.get("market_assessment", {}),
@@ -1102,6 +1446,11 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         "quote_evidence": digest.get("quote_evidence", []),
         "lookback_hours": digest.get("lookback_hours", 24),
         "as_of": digest.get("as_of"),
+        "market_scope": market_scope,
+        "market_projection_version": snapshot.get("market_projection_version"),
+        "quote_gaps": digest.get("quote_gaps", []),
+        "data_gap_status": digest.get("data_gap_status", "unknown"),
+        "scheduled_report": digest.get("scheduled_report") is True,
         "markets": cards,
         "market_topics": market_topics,
         "dynamic_markets": dynamic_markets,

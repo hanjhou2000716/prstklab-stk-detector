@@ -33,6 +33,9 @@ _TOPIC_GROUPS = {
     "taiwan": frozenset({"taiwan_market"}),
     "semiconductor": frozenset({"semiconductor_ai", "company_industry"}),
     "external": frozenset({"rates_fx", "energy_geopolitics"}),
+    "us_market": frozenset({
+        "global_market", "semiconductor_ai", "rates_fx", "energy_geopolitics",
+    }),
 }
 
 _GENERIC = frozenset({
@@ -158,6 +161,7 @@ def _fallback_why(section: str) -> str:
         "taiwan": "加權與櫃買的相對方向，搭配成交值、廣度與法人資料，可分辨權值股與中小型股是否同向。",
         "semiconductor": "台積電、費半與 Nasdaq 的同向或分歧，是科技供應鏈與成長股風險偏好的交叉確認。",
         "external": "利率、美元、能源與黃金提供估值、通膨及避險背景，必須以同次資料時間核對。",
+        "us_market": "美股現貨與指數期貨各自代表不同交易工具，需分開核對來源、日期與合約口徑。",
     }.get(section, "本輪判讀只採用可追溯的價格、事件與官方資料。")
 
 
@@ -214,6 +218,8 @@ def build_narrative(
     impact = theme_impact or (
         "本輪價格與事件若同向，只能描述同步；若方向不同，保留分歧，不推論因果。"
         if section == "risk" else
+        "美股現貨、指數期貨與費半各自依自身資料時間判讀，不混用點位或推論因果。"
+        if section == "us_market" else
         "行情與事件未同步時維持待確認，單一指標不取代交叉核對。"
     )
     confirmation = theme_watch or _catalyst(relevant, slot, section)

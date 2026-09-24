@@ -44,6 +44,7 @@ def test_digest_prefers_complete_event_over_fragment_title():
         {
             "events": {"items": [{
                 "source_key": "financialjuice",
+                "market_scope": "us",
                 "title": "據《The...",
                 "event": "沃勒表示通膨與勞動市場仍是利率判斷的重要依據",
                 "observation_id": "fj-waller",
@@ -63,6 +64,7 @@ def test_digest_drops_conditional_only_waller_fragment_for_complete_fact():
     result = build_market_digest(
         {"events": {"items": [{
             "source_key": "financialjuice",
+            "market_scope": "us",
             "event": "如果8月通膨數據過熱。",
             "summary": "沃勒表示通膨與勞動市場仍是利率判斷的重要依據。",
             "vendor_importance": 10,
@@ -197,6 +199,7 @@ def test_digest_does_not_hard_cut_an_overlong_single_fact():
 def test_digest_keeps_structured_quote_evidence_separate_from_source_evidence():
     event = {
         "source_key": "financialjuice",
+        "market_scope": "us",
         "event": "官方公布半導體出口管制更新，市場等待後續細節",
         "observation_id": "fj-semi-1",
         "published_at": "2026-09-04T20:00:00+00:00",
@@ -241,6 +244,7 @@ def test_digest_keeps_structured_quote_evidence_separate_from_source_evidence():
                 "price": 11735.26,
                 "change_percent": 3.37,
                 "freshness": "recent_close",
+                "quote_date": "2026-09-04",
                 "source_url": "https://finance.yahoo.com/quote/%5ESOX",
             }],
         },
@@ -263,6 +267,7 @@ def test_digest_does_not_attach_unrelated_snapshot_quotes_to_an_event():
             "generated_at": "2026-09-05T00:00:00+00:00",
             "events": {"items": [{
                 "source_key": "financialjuice",
+                "market_scope": "us",
                 "event": "巴林國防軍表示防空系統攔截多次空中攻擊",
                 "vendor_importance": 10,
                 "published_at": "2026-09-04T23:00:00+00:00",
@@ -270,8 +275,8 @@ def test_digest_does_not_attach_unrelated_snapshot_quotes_to_an_event():
                 "freshness_status": "fresh",
             }]},
             "indices": [
-                {"ticker": "NASDAQ", "price": 26586.58, "change_percent": 0.01, "freshness": "recent_close"},
-                {"ticker": "SOX", "price": 11657.87, "change_percent": 2.69, "freshness": "recent_close"},
+                {"ticker": "NASDAQ", "price": 26586.58, "change_percent": 0.01, "freshness": "recent_close", "quote_date": "2026-09-04"},
+                {"ticker": "SOX", "price": 11657.87, "change_percent": 2.69, "freshness": "recent_close", "quote_date": "2026-09-04"},
             ],
         },
         "us_premarket",
@@ -291,6 +296,7 @@ def test_digest_only_hydrates_quotes_for_structured_event_tickers():
             "generated_at": "2026-09-05T00:00:00+00:00",
             "events": {"items": [{
                 "source_key": "official",
+                "market_scope": "us",
                 "event": "半導體出口資料完成官方更新並等待後續核對",
                 "market_evidence": [{"ticker": "費半"}],
                 "published_at": "2026-09-04T23:00:00+00:00",
@@ -300,6 +306,7 @@ def test_digest_only_hydrates_quotes_for_structured_event_tickers():
                 "price": 11657.87,
                 "change_percent": 2.69,
                 "freshness": "recent_close",
+                "quote_date": "2026-09-04",
             }],
         },
         "us_premarket",
@@ -347,12 +354,14 @@ def test_digest_deduplicates_public_themes_by_market_topic():
             "events": {"items": [
                 {
                     "source_key": "official",
+                    "market_scope": "us",
                     "event": "台積電與半導體供應鏈公布資本支出展望，市場等待後續核對",
                     "published_at": "2026-09-04T23:00:00+00:00",
                     "observation_id": "semi-1",
                 },
                 {
                     "source_key": "news",
+                    "market_scope": "us",
                     "event": "AI半導體需求展望更新，供應鏈等待後續細節",
                     "public_news_eligible": True,
                     "normalization_complete": True,
@@ -362,6 +371,7 @@ def test_digest_deduplicates_public_themes_by_market_topic():
                 },
                 {
                     "source_key": "official",
+                    "market_scope": "us",
                     "event": "聯準會公布利率政策聲明，市場等待後續核對",
                     "published_at": "2026-09-04T21:00:00+00:00",
                     "observation_id": "rates-1",

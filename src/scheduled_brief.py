@@ -16,7 +16,15 @@ from src.market_data import build_market_snapshot
 from src.refresh_market_data import merge_published_metadata, write_snapshot
 from src.schedule_contract import ANCHOR_SLOTS as CONTRACT_ANCHOR_SLOTS
 from src.schedule_contract import MAX_SCHEDULE_DELAY_SECONDS as CONTRACT_MAX_SCHEDULE_DELAY_SECONDS
-from src.schedule_contract import SCHEDULE_CONTRACT_VERSION, SCHEDULE_TIMEZONE, validate_scheduled_context
+from src.schedule_contract import (
+    NEW_YORK,
+    SCHEDULE_CONTRACT_VERSION,
+    SCHEDULE_TIMEZONE,
+    timezone_for_slot,
+    us_premarket_anchor,
+    us_session_bounds,
+    validate_scheduled_context,
+)
 from src.telegram_client import PUBLIC_TEXT_MAX_CHARS, alert_mini_app_url, send_briefs, summarize_public_message
 
 SLOT_LABELS = {
@@ -36,6 +44,7 @@ CRON_SLOT_MAP = {
     "45 0 * * 1-5": "pre_open",
     "20 6 * * 1-5": "post_close",
     "0 13 * * 1-5": "us_premarket",
+    "0 14 * * 1-5": "us_premarket",
 }
 
 
@@ -84,7 +93,6 @@ STRICT_SLOT_WINDOWS = {
     "midday": (11 * 60 + 15, 12 * 60 + 15),
     "afternoon": (12 * 60 + 45, 13 * 60 + 45),
     "post_close": (14 * 60 + 15, 15 * 60 + 15),
-    "us_premarket": (20 * 60 + 30, 21 * 60 + 30),
 }
 
 # Manual runs are named from the most recent fixed report boundary.  These
@@ -98,7 +106,6 @@ MANUAL_SLOT_BOUNDARIES = (
     (11 * 60 + 30, "midday"),
     (12 * 60 + 45, "afternoon"),
     (13 * 60 + 30, "post_close"),
-    (21 * 60, "us_premarket"),
 )
 
 ANCHOR_SLOTS = CONTRACT_ANCHOR_SLOTS
@@ -130,10 +137,20 @@ def _scheduled_time_for_cron(local_now: datetime, cron: str) -> datetime | None:
 
 
 def _phase_at(local_now: datetime) -> tuple[str, str]:
-    """Resolve the actual Taipei market phase and its slot date."""
+    """Resolve the current market phase without treating after-open as premarket."""
+    try:
+        new_york_now = local_now.astimezone(NEW_YORK)
+        day = new_york_now.date()
+        market_open, market_close = us_session_bounds(day)
+        if market_open - timedelta(minutes=30) <= new_york_now < market_open:
+            return "us_premarket", day.isoformat()
+        if market_open <= new_york_now < market_close:
+            return "us_open", day.isoformat()
+    except (ImportError, ValueError, OSError):
+        # Failure to load the calendar must never grant a US notification
+        # window. Taiwan display phases can still be rendered independently.
+        pass
     minute = local_now.hour * 60 + local_now.minute
-    if minute < 6 * 60:
-        return "us_premarket", (local_now.date() - timedelta(days=1)).isoformat()
     selected = "morning"
     for start, candidate in MANUAL_SLOT_BOUNDARIES:
         if minute >= start:
@@ -144,6 +161,13 @@ def _phase_at(local_now: datetime) -> tuple[str, str]:
 def _strict_slot_at(now: datetime) -> str | None:
     """Return the one external-scheduler slot permitted at this local time."""
     minute = now.hour * 60 + now.minute
+    try:
+        ny_day = now.astimezone(NEW_YORK).date()
+        anchor = us_premarket_anchor(ny_day)
+        if abs((now - anchor.astimezone(now.tzinfo)).total_seconds()) <= 5 * 60:
+            return "us_premarket"
+    except ValueError:
+        pass
     for slot, (start, end) in STRICT_SLOT_WINDOWS.items():
         if start <= minute <= end:
             return slot
@@ -151,17 +175,15 @@ def _strict_slot_at(now: datetime) -> str | None:
 
 
 def _us_premarket_cron_matches(now: datetime, scheduled_cron: str) -> bool:
-    """Accept the one fixed 21:00 Asia/Taipei production slot.
-
-    The report is intentionally fixed at 21:00 Taiwan time.  It remains a
-    pre-market report in both New York daylight and standard time, but the
-    message must use the actual exchange calendar rather than claiming a
-    fixed number of minutes before the cash open.
-    """
-    if scheduled_cron != "0 13 * * 1-5":
-        return True
-    taipei_now = now.astimezone(ZoneInfo("Asia/Taipei"))
-    return taipei_now.weekday() < 5
+    """Accept only the UTC candidate matching today's NYSE open minus 30m."""
+    candidate = _scheduled_time_for_cron(now, scheduled_cron)
+    if candidate is None:
+        return False
+    try:
+        expected = us_premarket_anchor(candidate.astimezone(NEW_YORK).date())
+    except ValueError:
+        return False
+    return abs((candidate - expected).total_seconds()) <= 5 * 60
 
 
 def _manual_slot_context(now: datetime) -> dict[str, str]:
@@ -182,7 +204,7 @@ def _manual_slot_context(now: datetime) -> dict[str, str]:
         "resolution_reason": "manual_actual_market_phase",
         "trigger_kind": "workflow_dispatch",
         "schedule_contract_version": SCHEDULE_CONTRACT_VERSION,
-        "time_zone": SCHEDULE_TIMEZONE,
+        "time_zone": timezone_for_slot(selected_slot),
         "contract_status": "manual_compatibility",
     }
 
@@ -216,7 +238,7 @@ def _invalid_dispatch_context(
         "suppression_reason": reason,
         "trigger_kind": trigger_kind,
         "schedule_contract_version": SCHEDULE_CONTRACT_VERSION,
-        "time_zone": SCHEDULE_TIMEZONE,
+        "time_zone": timezone_for_slot(requested if requested in SLOT_LABELS else effective_slot),
         "contract_status": "invalid",
     }
 
@@ -264,7 +286,7 @@ def resolve_schedule_diagnostic(
             scheduled_for_at=scheduled_for_at,
             now=now,
             contract_version=SCHEDULE_CONTRACT_VERSION if contract_version is None else contract_version,
-            time_zone=SCHEDULE_TIMEZONE if time_zone is None else time_zone,
+            time_zone=timezone_for_slot(declared) if not str(time_zone or "").strip() else time_zone,
             dispatch_unix=dispatch_unix,
             dispatch_trace_id=dispatch_trace_id,
         )
@@ -302,8 +324,9 @@ def resolve_slot_context(
     cron_text = str(scheduled_cron or "").strip()
     cron_slot = CRON_SLOT_MAP.get(cron_text)
     if cron_slot:
-        if cron_slot == "us_premarket" and not _us_premarket_cron_matches(local_now, str(scheduled_cron).strip()):
-            return None
+        if cron_slot == "us_premarket":
+            if not _us_premarket_cron_matches(local_now, cron_text):
+                return None
         scheduled_at = _scheduled_time_for_cron(local_now, cron_text)
         if scheduled_for_at:
             try:
@@ -313,8 +336,14 @@ def resolve_slot_context(
                 pass
         if scheduled_at is None:
             scheduled_at = local_now
+        if cron_slot == "us_premarket":
+            try:
+                scheduled_at = us_premarket_anchor(scheduled_at.astimezone(NEW_YORK).date())
+            except ValueError:
+                return None
         delay_seconds = max(0, int((local_now - scheduled_at).total_seconds()))
         late = delay_seconds > MAX_SCHEDULE_DELAY_SECONDS
+        market_closed = cron_slot == "us_premarket" and local_now.astimezone(NEW_YORK) >= scheduled_at + timedelta(minutes=30)
         actual_phase, actual_date = _phase_at(local_now)
         slot_date = local_now.date()
         # The 13:00 UTC weekday cron is the 21:00 Taipei report.  If GitHub
@@ -323,8 +352,10 @@ def resolve_slot_context(
         # the new calendar day.
         if cron_slot == "us_premarket" and local_now.hour < 6:
             slot_date -= timedelta(days=1)
-        resolved_slot = actual_phase if late else cron_slot
-        resolved_date = actual_date if late else slot_date.isoformat()
+        if cron_slot == "us_premarket":
+            slot_date = scheduled_at.astimezone(NEW_YORK).date()
+        resolved_slot = actual_phase if late and cron_slot != "us_premarket" else cron_slot
+        resolved_date = actual_date if late and cron_slot != "us_premarket" else slot_date.isoformat()
         return {
             "requested_slot": requested,
             "scheduled_slot": cron_slot,
@@ -335,11 +366,15 @@ def resolve_slot_context(
             "run_started_at": local_now.isoformat(),
             "arrival_at": local_now.isoformat(),
             "delay_seconds": str(delay_seconds),
-            "delivery_intent": "publish_only" if late else "notify_candidate",
-            "resolution_reason": "late_schedule_publish_only" if late else "scheduled_anchor_on_time",
+            "delivery_intent": "publish_only" if late or market_closed else "notify_candidate",
+            "resolution_reason": (
+                "market_closed" if market_closed
+                else "late_schedule_publish_only" if late
+                else "scheduled_anchor_on_time"
+            ),
             "trigger_kind": "schedule" if trigger == "compatibility" else trigger,
             "schedule_contract_version": SCHEDULE_CONTRACT_VERSION,
-            "time_zone": SCHEDULE_TIMEZONE,
+            "time_zone": timezone_for_slot(cron_slot),
             "contract_status": "valid",
         }
     if trigger == "repository_dispatch":
@@ -349,7 +384,7 @@ def resolve_slot_context(
             scheduled_for_at=scheduled_for_at,
             now=local_now,
             contract_version=SCHEDULE_CONTRACT_VERSION if contract_version is None else contract_version,
-            time_zone=SCHEDULE_TIMEZONE if time_zone is None else time_zone,
+            time_zone=timezone_for_slot(declared) if not str(time_zone or "").strip() else time_zone,
             dispatch_unix=dispatch_unix,
             dispatch_trace_id=dispatch_trace_id,
         )
@@ -358,24 +393,29 @@ def resolve_slot_context(
         scheduled_at = check["scheduled"]
         delay_seconds = max(0, int((local_now - scheduled_at).total_seconds()))
         late = delay_seconds > MAX_SCHEDULE_DELAY_SECONDS
+        market_closed = declared == "us_premarket" and check.get("reason") == "market_closed"
         actual_phase, actual_date = _phase_at(local_now)
         return {
             "requested_slot": requested,
             "scheduled_slot": declared,
-            "effective_slot": actual_phase if late else declared,
-            "effective_market_phase": actual_phase if late else declared,
-            "slot_date": actual_date if late else scheduled_at.date().isoformat(),
+            "effective_slot": actual_phase if late and declared != "us_premarket" else declared,
+            "effective_market_phase": actual_phase if late and declared != "us_premarket" else declared,
+            "slot_date": actual_date if late and declared != "us_premarket" else check.get("slot_date", scheduled_at.date().isoformat()),
             "scheduled_for_at": scheduled_at.isoformat(),
             "dispatch_unix": str(dispatch_unix or ""),
             "dispatch_trace_id": str(dispatch_trace_id or ""),
             "run_started_at": local_now.isoformat(),
             "arrival_at": local_now.isoformat(),
             "delay_seconds": str(delay_seconds),
-            "delivery_intent": "publish_only" if late else "notify_candidate",
-            "resolution_reason": "late_dispatch_publish_only" if late else "dispatch_anchor_on_time",
+            "delivery_intent": "publish_only" if late or market_closed else "notify_candidate",
+            "resolution_reason": (
+                "market_closed" if market_closed
+                else "late_dispatch_publish_only" if late
+                else "dispatch_anchor_on_time"
+            ),
             "trigger_kind": trigger,
             "schedule_contract_version": SCHEDULE_CONTRACT_VERSION,
-            "time_zone": SCHEDULE_TIMEZONE,
+            "time_zone": timezone_for_slot(declared),
             "contract_status": "valid",
         }
     if trigger == "compatibility":
@@ -424,9 +464,17 @@ def resolve_slot_context(
             (11 * 60 + 15, 12 * 60 + 15, "midday"),
             (12 * 60 + 45, 13 * 60 + 45, "afternoon"),
             (14 * 60 + 15, 15 * 60 + 15, "post_close"),
-            (20 * 60 + 30, 21 * 60 + 30, "us_premarket"),
         )
         selected = next((slot for start, end, slot in legacy_windows if start <= minute <= end), None)
+        if selected is None:
+            try:
+                anchor = us_premarket_anchor(local_now.astimezone(NEW_YORK).date()).astimezone(TAIPEI)
+                if anchor <= local_now <= anchor + timedelta(minutes=30):
+                    selected = "us_premarket"
+            except ValueError:
+                # A calendar miss must not turn a US holiday into a sendable
+                # weekday-only premarket slot.
+                selected = None
         if not selected:
             return None
         return {
@@ -611,7 +659,7 @@ def build_brief(snapshot: dict, slot: str) -> str:
         instrument = prepared.get("instrument") or quote
         ticker = str(instrument.get("ticker") or quote.get("ticker") or "市場")
         if ticker == "TAIEX":
-            ticker = "台指"
+            ticker = "加權指數"
         prepared.setdefault("short_label", prepared.get("pattern") or ticker)
         prepared.setdefault("market_direction", "上漲" if float(pct) > 0 else "下跌" if float(pct) < 0 else "持平")
         prepared.setdefault("market_move", f"{float(pct):+.1f}%")

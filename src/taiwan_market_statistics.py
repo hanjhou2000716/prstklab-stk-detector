@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import re
 import time
 from datetime import date, datetime
@@ -115,6 +114,8 @@ def parse_twse_market_statistics(
                 "observed_date": observed,
                 "trade_volume": _number(row.get("TradeVolume")),
                 "trade_value": trade_value,
+                "unit": "元",
+                "currency": "TWD",
                 "transactions": _number(row.get("Transaction")),
                 "taiex": row.get("TAIEX"),
                 "change": row.get("Change"),
@@ -181,6 +182,8 @@ def parse_twse_market_statistics(
                 "investment_trust_net": row_value("投信"),
                 "dealer_net": row_value("自營商(自行買賣)"),
                 "total_net": row_value("合計"),
+                "unit": "元",
+                "currency": "TWD",
                 "source": "TWSE BFI82U official institution trading statistics",
                 "source_url": f"{TWSE_INSTITUTION_URL}?dayDate={institution_payload.get('date')}&response=json",
                 "is_proxy": False,
@@ -282,17 +285,12 @@ def fetch_twse_market_statistics(
     anchor = now or datetime.now(ZoneInfo("Asia/Taipei"))
     requested_target = anchor.date().isoformat()
 
-    def _nonnegative_int(name: str) -> int:
-        try:
-            return max(0, int(os.getenv(name, "0")))
-        except (TypeError, ValueError):
-            return 0
-
-    retry_attempts = _nonnegative_int("TWSE_STATS_RETRY_ATTEMPTS")
-    try:
-        retry_wait_seconds = max(0.0, float(os.getenv("TWSE_STATS_RETRY_WAIT_SECONDS", "600")))
-    except (TypeError, ValueError):
-        retry_wait_seconds = 600.0
+    # These statistics are supplementary and may not delay the fixed report
+    # slot. Fetch once, preserve partial provenance, and let a later snapshot
+    # refresh the data without creating another Telegram notification.
+    retry_attempts = 0
+    retry_wait_seconds = 0.0
+    request_timeout_seconds = 5
 
     last_result: dict[str, Any] = {}
     for attempt in range(retry_attempts + 1):
@@ -300,7 +298,7 @@ def fetch_twse_market_statistics(
         errors: list[str] = []
 
         try:
-            response = client.get(TWSE_FMTQIK_URL, params={}, headers=HEADERS, timeout=15)
+            response = client.get(TWSE_FMTQIK_URL, params={}, headers=HEADERS, timeout=request_timeout_seconds)
             response.raise_for_status()
             payloads["turnover"] = response.json()
         except (OSError, ValueError, requests.RequestException) as exc:
@@ -314,7 +312,7 @@ def fetch_twse_market_statistics(
                 resolved_target = observed
 
         try:
-            response = client.get(TWSE_BREADTH_URL, params={}, headers=HEADERS, timeout=15)
+            response = client.get(TWSE_BREADTH_URL, params={}, headers=HEADERS, timeout=request_timeout_seconds)
             response.raise_for_status()
             payloads["breadth"] = response.json()
         except (OSError, ValueError, requests.RequestException) as exc:
@@ -325,7 +323,7 @@ def fetch_twse_market_statistics(
                 TWSE_INSTITUTION_URL,
                 params={"dayDate": resolved_target.replace("-", ""), "response": "json"},
                 headers=HEADERS,
-                timeout=15,
+                timeout=request_timeout_seconds,
             )
             response.raise_for_status()
             payloads["institution"] = response.json()
@@ -348,7 +346,7 @@ def fetch_twse_market_statistics(
                         "response": "json",
                     },
                     headers=HEADERS,
-                    timeout=15,
+                    timeout=request_timeout_seconds,
                 )
                 response.raise_for_status()
                 mi_rows = parse_twse_mi_index_breadth(response.json(), target_date=resolved_target)

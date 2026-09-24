@@ -23,7 +23,7 @@ TOPIC_LABELS: dict[str, str] = {
 }
 
 JOINT_MARKET_SIGNAL_VERSION = "joint-market-signal-v1"
-_JOINT_TAIWAN_TICKERS = ("TAIEX", "TPEX")
+_JOINT_TAIWAN_TICKERS = ("TAIEX", "TXF")
 _JOINT_US_TICKERS = ("NASDAQ", "SOX", "DJIA", "S&P 500", "SP500")
 
 _TOPIC_TERMS: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -376,9 +376,10 @@ def _quote_factors(
         return 1.0 if move > threshold else -1.0 if move < -threshold else 0.0
 
     groups: dict[str, tuple[str, ...]] = {
-        "taiwan_core": ("TAIEX", "TPEX", "2330"),
+        "taiwan_core": ("TAIEX", "TXF", "TPEX", "2330"),
         "us_tech": ("SOX", "NASDAQ"),
         "us_broad": ("S&P 500", "DJIA"),
+        "us_futures": ("ES", "NQ", "YM"),
         "asia_tech": ("NIKKEI", "KOSPI"),
         "rates_fx": ("US10Y", "DXY", "USD/TWD"),
         "commodities": ("WTI", "BRENT", "GOLD"),
@@ -426,6 +427,8 @@ def _quote_factors(
             valid_dimensions.add("taiwan_equity")
         elif group in {"us_tech", "us_broad", "asia_tech"}:
             valid_dimensions.add("us_equity" if group != "asia_tech" else "asia_equity")
+        elif group == "us_futures":
+            valid_dimensions.add("us_index_futures")
         elif group == "rates_fx":
             valid_dimensions.add("rates_fx")
         else:
@@ -440,8 +443,10 @@ def _quote_factors(
 
 
 def _stance(score: float, factor_count: int, dimensions: set[str], conflict: bool) -> tuple[str, str, str]:
-    if conflict or factor_count < 3 or len(dimensions) < 2:
-        return "divergent", "分歧", "low" if factor_count < 3 or len(dimensions) < 2 else "medium"
+    if conflict:
+        return "divergent", "分歧", "medium"
+    if factor_count < 3 or len(dimensions) < 2:
+        return "insufficient_evidence", "資料不足", "low"
     if score >= 2:
         return "bullish", "偏多", "high" if factor_count >= 4 else "medium"
     if score >= 0.5:
@@ -468,12 +473,17 @@ def _topic_driver(theme: dict[str, Any] | None) -> str:
 
 
 def _quote_highlights(quotes: list[dict[str, Any]], slot: str = "") -> str:
-    names = {"TAIEX": "台指", "TPEX": "櫃買", "NASDAQ": "Nasdaq", "SOX": "費半", "DJIA": "道瓊", "NIKKEI": "日經", "KOSPI": "韓股"}
+    names = {
+        "TAIEX": "加權指數", "TXF": "台指期", "TPEX": "櫃買",
+        "S&P 500": "標普500", "NASDAQ": "那斯達克綜合", "SOX": "費半", "DJIA": "道瓊",
+        "ES": "ES期貨", "NQ": "NQ期貨（Nasdaq-100）", "YM": "YM期貨",
+        "NIKKEI": "日經", "KOSPI": "韓股",
+    }
     parts: list[str] = []
     preferred = (
-        ("TAIEX", "TPEX", "2330", "SOX", "NASDAQ", "US10Y", "DXY", "WTI", "GOLD")
+        ("TAIEX", "TXF", "TPEX", "2330", "SOX", "NASDAQ", "US10Y", "DXY", "WTI", "GOLD")
         if slot in {"pre_open", "intraday", "midday", "afternoon", "post_close"}
-        else ("NASDAQ", "SOX", "S&P 500", "DJIA", "TAIEX", "US10Y", "DXY", "WTI", "GOLD")
+        else ("S&P 500", "NASDAQ", "DJIA", "ES", "NQ", "YM", "SOX", "US10Y", "DXY", "WTI", "GOLD")
     )
     ordered = sorted(quotes, key=lambda item: preferred.index(_text(item.get("ticker")).upper()) if _text(item.get("ticker")).upper() in preferred else len(preferred))
     for item in ordered:
@@ -504,9 +514,9 @@ def _market_driver(
         ]
         return sum(values) / len(values) if values else None
 
-    taiwan = average(("TAIEX", "TPEX", "2330"))
-    tech = average(("SOX", "NASDAQ"))
-    broad = average(("S&P 500", "DJIA"))
+    taiwan = average(("TAIEX", "TXF", "TPEX", "2330"))
+    tech = average(("SOX", "NASDAQ", "NQ"))
+    broad = average(("S&P 500", "DJIA", "ES", "YM"))
     if slot in {"pre_open", "intraday", "midday", "afternoon", "post_close"}:
         if taiwan is not None and tech is not None and taiwan > 0.25 and tech > 0.25:
             return "台股與半導體同步偏強", None
@@ -565,7 +575,7 @@ def build_market_assessment(
         # a cross-market relationship to explain, not a Taiwan-core conflict.
         relevant_groups = {"taiwan_core"}
     elif slot in {"us_premarket", "us_open"}:
-        relevant_groups = {"us_tech", "us_broad"}
+        relevant_groups = {"us_tech", "us_broad", "us_futures"}
     else:
         relevant_groups = set(group_signs)
     conflict_groups = [
@@ -606,7 +616,7 @@ def build_market_assessment(
     else:
         market_scope = "台美市場"
     if (weekend or taiwan_closed) and slot != "us_premarket":
-        market_summary = "台股休市、外圍訊號分歧"
+        market_summary = "台股休市，以下為最近可核對資料"
     elif (us_closed or (weekend and slot == "us_premarket")) and slot == "us_premarket":
         market_summary = "美股休市、使用最近收盤資料"
     else:

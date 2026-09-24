@@ -9,14 +9,17 @@ the existing briefing evidence and EventLedger gates.
 from __future__ import annotations
 
 from datetime import UTC, date, datetime, time, timedelta
+from functools import lru_cache
 from typing import Any
 from zoneinfo import ZoneInfo
 
-SCHEDULE_CONTRACT_VERSION = "3"
-LEGACY_SCHEDULE_CONTRACT_VERSION = "2"
+SCHEDULE_CONTRACT_VERSION = "4"
+LEGACY_SCHEDULE_CONTRACT_VERSION = "3"
+EXPLICIT_TIMESTAMP_SCHEDULE_CONTRACT_VERSION = "2"
 SCHEDULE_TIMEZONE = "Asia/Taipei"
 TAIPEI_TIMEZONE = SCHEDULE_TIMEZONE
 TAIPEI = ZoneInfo(SCHEDULE_TIMEZONE)
+NEW_YORK = ZoneInfo("America/New_York")
 MAX_SCHEDULE_DELAY_SECONDS = 30 * 60
 MAX_CLOCK_SKEW_SECONDS = 5 * 60
 CRON_JOB_ORG_DISPATCH_FIELD = "dispatch_unix"
@@ -88,6 +91,34 @@ def parse_scheduled_for(value: Any) -> datetime | None:
     return parsed.astimezone(TAIPEI)
 
 
+@lru_cache(maxsize=256)
+def us_session_bounds(day: date) -> tuple[datetime, datetime]:
+    """Resolve a real NYSE session's open and close; never infer weekdays."""
+    import pandas_market_calendars as mcal
+
+    schedule = mcal.get_calendar("NYSE").schedule(start_date=day, end_date=day)
+    if schedule.empty:
+        raise ValueError("market_closed")
+    session = schedule.iloc[0]
+    return (
+        session["market_open"].to_pydatetime().astimezone(NEW_YORK),
+        session["market_close"].to_pydatetime().astimezone(NEW_YORK),
+    )
+
+
+def _exchange_session_open(day: date) -> datetime:
+    return us_session_bounds(day)[0]
+
+
+def us_premarket_anchor(day: date) -> datetime:
+    """Canonical US premarket send time: NYSE open minus thirty minutes."""
+    return _exchange_session_open(day) - timedelta(minutes=30)
+
+
+def timezone_for_slot(slot: str) -> str:
+    return "America/New_York" if str(slot).strip() == "us_premarket" else SCHEDULE_TIMEZONE
+
+
 def parse_dispatch_unix(value: Any) -> datetime | None:
     """Parse cron-job.org's execution timestamp as an aware Taipei time.
 
@@ -109,11 +140,13 @@ def parse_dispatch_unix(value: Any) -> datetime | None:
 
 
 def fixed_scheduled_for(slot: str, slot_date: date | str) -> datetime:
-    """Return the canonical Taipei timestamp for an anchor/date."""
+    """Return the canonical exchange-local timestamp for an anchor/date."""
     name = str(slot).strip()
     if name not in FIXED_ANCHORS:
         raise ValueError(f"unknown scheduled anchor: {name}")
     day = date.fromisoformat(str(slot_date)) if not isinstance(slot_date, date) else slot_date
+    if name == "us_premarket":
+        return us_premarket_anchor(day)
     hour, minute, _ = FIXED_ANCHORS[name]
     return datetime.combine(day, time(hour, minute), tzinfo=TAIPEI)
 
@@ -125,9 +158,7 @@ def _anchor_date_for_us_premarket(at: datetime) -> date:
 
 
 def slot_date_for(slot: str, at: datetime) -> str:
-    local = at.astimezone(TAIPEI)
-    day = _anchor_date_for_us_premarket(local) if slot == "us_premarket" else local.date()
-    return day.isoformat()
+    return at.astimezone(NEW_YORK if slot == "us_premarket" else TAIPEI).date().isoformat()
 
 
 def live_market_phase_at(at: datetime) -> tuple[str, str]:
@@ -155,6 +186,7 @@ def _next_anchor_after(slot: str, scheduled: datetime) -> datetime:
     ordered = sorted(
         (time(hour, minute), name)
         for name, (hour, minute, _market) in FIXED_ANCHORS.items()
+        if name != "us_premarket"
     )
     current = scheduled.timetz().replace(tzinfo=None)
     for anchor_time, _name in ordered:
@@ -171,15 +203,16 @@ def validate_scheduled_context(
     scheduled_for_at: Any,
     now: datetime,
     contract_version: Any = SCHEDULE_CONTRACT_VERSION,
-    time_zone: Any = SCHEDULE_TIMEZONE,
+    time_zone: Any = None,
     dispatch_unix: Any = None,
     dispatch_trace_id: Any = None,
 ) -> dict[str, Any]:
     """Validate a backup/dispatch schedule context without making it sendable."""
     name = str(slot or "").strip()
+    resolved_timezone = str(time_zone or timezone_for_slot(name))
     result: dict[str, Any] = {
         "contract_version": str(contract_version or ""),
-        "time_zone": str(time_zone or ""),
+        "time_zone": resolved_timezone,
         "contract_status": "invalid",
         "reason": "",
         "scheduled_slot": name,
@@ -193,15 +226,26 @@ def validate_scheduled_context(
         result["reason"] = "invalid_schedule_context:unknown_scheduled_slot"
         return result
     version = str(contract_version or "")
-    if version not in {SCHEDULE_CONTRACT_VERSION, LEGACY_SCHEDULE_CONTRACT_VERSION}:
+    if version not in {
+        SCHEDULE_CONTRACT_VERSION,
+        LEGACY_SCHEDULE_CONTRACT_VERSION,
+        EXPLICIT_TIMESTAMP_SCHEDULE_CONTRACT_VERSION,
+    }:
         result["reason"] = "invalid_schedule_context:unsupported_contract_version"
         return result
-    if str(time_zone or "") != SCHEDULE_TIMEZONE:
+    expected_timezone = timezone_for_slot(name)
+    supported_timezones = {expected_timezone}
+    # v2/v3 were published with a Taiwan timezone field for every anchor.
+    # Keep reading those payloads, but still validate their instant against
+    # today's real exchange-local anchor below.
+    if version in {LEGACY_SCHEDULE_CONTRACT_VERSION, EXPLICIT_TIMESTAMP_SCHEDULE_CONTRACT_VERSION}:
+        supported_timezones.add(SCHEDULE_TIMEZONE)
+    if resolved_timezone not in supported_timezones:
         result["reason"] = "invalid_schedule_context:invalid_time_zone"
         return result
     dispatch_at = parse_dispatch_unix(dispatch_unix)
     scheduled: datetime
-    if version == SCHEDULE_CONTRACT_VERSION:
+    if version in {SCHEDULE_CONTRACT_VERSION, LEGACY_SCHEDULE_CONTRACT_VERSION}:
         if dispatch_at is None:
             result["reason"] = (
                 "invalid_schedule_context:missing_dispatch_unix"
@@ -213,7 +257,7 @@ def validate_scheduled_context(
             result["reason"] = "invalid_schedule_context:missing_trace_id"
             return result
         scheduled = fixed_scheduled_for(name, slot_date_for(name, dispatch_at))
-    elif version == LEGACY_SCHEDULE_CONTRACT_VERSION:
+    elif version == EXPLICIT_TIMESTAMP_SCHEDULE_CONTRACT_VERSION:
         parsed_scheduled = parse_scheduled_for(scheduled_for_at)
         if parsed_scheduled is None:
             result["reason"] = (
@@ -229,18 +273,28 @@ def validate_scheduled_context(
     if scheduled - local_now > timedelta(seconds=MAX_CLOCK_SKEW_SECONDS):
         result["reason"] = "invalid_schedule_context:future_scheduled_for_at"
         return result
-    expected = fixed_scheduled_for(name, scheduled.date())
-    if version == SCHEDULE_CONTRACT_VERSION:
+    anchor_day = scheduled.astimezone(NEW_YORK).date() if name == "us_premarket" else scheduled.astimezone(TAIPEI).date()
+    try:
+        expected = fixed_scheduled_for(name, anchor_day)
+    except ValueError:
+        result["reason"] = "invalid_schedule_context:market_closed"
+        return result
+    if version in {SCHEDULE_CONTRACT_VERSION, LEGACY_SCHEDULE_CONTRACT_VERSION}:
         assert dispatch_at is not None
         if dispatch_at - local_now > timedelta(seconds=MAX_CLOCK_SKEW_SECONDS):
             result["reason"] = "invalid_schedule_context:future_dispatch_unix"
             return result
-        if dispatch_at < expected - timedelta(seconds=MAX_CLOCK_SKEW_SECONDS):
-            result["reason"] = "invalid_schedule_context:dispatch_before_anchor"
-            return result
-        if dispatch_at > _next_anchor_after(name, expected) - timedelta(seconds=MAX_CLOCK_SKEW_SECONDS):
-            result["reason"] = "invalid_schedule_context:dispatch_outside_anchor_window"
-            return result
+        if name == "us_premarket":
+            if abs((dispatch_at - expected).total_seconds()) > MAX_CLOCK_SKEW_SECONDS:
+                result["reason"] = "invalid_schedule_context:slot_mismatch"
+                return result
+        else:
+            if dispatch_at < expected - timedelta(seconds=MAX_CLOCK_SKEW_SECONDS):
+                result["reason"] = "invalid_schedule_context:dispatch_before_anchor"
+                return result
+            if dispatch_at > _next_anchor_after(name, expected) - timedelta(seconds=MAX_CLOCK_SKEW_SECONDS):
+                result["reason"] = "invalid_schedule_context:dispatch_outside_anchor_window"
+                return result
         if scheduled_for_at not in (None, ""):
             declared = parse_scheduled_for(scheduled_for_at)
             if declared is None or abs((declared - expected).total_seconds()) > MAX_CLOCK_SKEW_SECONDS:
@@ -250,13 +304,23 @@ def validate_scheduled_context(
         result["reason"] = "invalid_schedule_context:slot_mismatch"
         return result
     delay = max(0, int((local_now - scheduled).total_seconds()))
+    if name == "us_premarket" and local_now.astimezone(NEW_YORK) >= expected + timedelta(minutes=30):
+        result.update({
+            "contract_status": "valid",
+            "reason": "market_closed",
+            "scheduled": expected,
+            "dispatch_at": dispatch_at,
+            "delay_seconds": delay,
+            "slot_date": expected.date().isoformat(),
+        })
+        return result
     result.update({
         "contract_status": "valid",
         "reason": "late_schedule_publish_only" if delay > MAX_SCHEDULE_DELAY_SECONDS else "dispatch_anchor_on_time",
         "scheduled": scheduled,
         "dispatch_at": dispatch_at,
         "delay_seconds": delay,
-        "slot_date": slot_date_for(name, scheduled),
+        "slot_date": slot_date_for(name, expected),
     })
     return result
 
@@ -277,8 +341,8 @@ def build_scheduled_dispatch_payload(
         slot=slot,
         scheduled_for_at=scheduled_for_at,
         now=parsed,
-        contract_version=LEGACY_SCHEDULE_CONTRACT_VERSION,
-        time_zone=SCHEDULE_TIMEZONE,
+        contract_version=EXPLICIT_TIMESTAMP_SCHEDULE_CONTRACT_VERSION,
+        time_zone=timezone_for_slot(slot),
     )
     if check["contract_status"] != "valid":
         raise ValueError(str(check["reason"]))
@@ -286,11 +350,11 @@ def build_scheduled_dispatch_payload(
         "slot": slot,
         "scheduled_slot": slot,
         "scheduled_for_at": parsed.isoformat(),
-        "time_zone": SCHEDULE_TIMEZONE,
+        "time_zone": timezone_for_slot(slot),
         # This helper preserves the explicit-timestamp v2 wire format for
         # callers that already have the original anchor.  New cron-job.org
         # jobs should use build_cron_job_dispatch_payload below.
-        "schedule_contract_version": LEGACY_SCHEDULE_CONTRACT_VERSION,
+        "schedule_contract_version": EXPLICIT_TIMESTAMP_SCHEDULE_CONTRACT_VERSION,
         "trigger_kind": trigger_kind,
         "force": bool(force),
     }
@@ -306,7 +370,7 @@ def build_cron_job_dispatch_payload(
     notify: bool = True,
     trace_placeholder: str = "%cjo:uuid4%",
 ) -> dict[str, Any]:
-    """Build the v3 body to paste into a cron-job.org request.
+    """Build the v4 body to paste into a cron-job.org request.
 
     The timestamp placeholder is expanded by cron-job.org at send time, so
     this function intentionally returns a template rather than pretending to
@@ -321,7 +385,7 @@ def build_cron_job_dispatch_payload(
             "scheduled_slot": str(slot).strip(),
             "dispatch_unix": "%cjo:unixtime%",
             "trace_id": trace_placeholder,
-            "time_zone": SCHEDULE_TIMEZONE,
+            "time_zone": timezone_for_slot(slot),
             "schedule_contract_version": SCHEDULE_CONTRACT_VERSION,
             "trigger_kind": "cron-job.org",
             "notify": bool(notify),
@@ -338,6 +402,7 @@ __all__ = [
     "CRON_JOB_ORG_DISPATCH_FIELD",
     "FIXED_ANCHORS",
     "LEGACY_SCHEDULE_CONTRACT_VERSION",
+    "EXPLICIT_TIMESTAMP_SCHEDULE_CONTRACT_VERSION",
     "MAX_CLOCK_SKEW_SECONDS",
     "MAX_SCHEDULE_DELAY_SECONDS",
     "RETIRED_ROUTINE_SLOTS",
@@ -352,5 +417,7 @@ __all__ = [
     "parse_scheduled_for",
     "parse_dispatch_unix",
     "slot_date_for",
+    "timezone_for_slot",
+    "us_premarket_anchor",
     "validate_scheduled_context",
 ]

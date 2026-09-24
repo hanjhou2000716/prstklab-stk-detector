@@ -21,6 +21,7 @@ from src.market_assessment import (
     project_public_message,
     topic_label,
 )
+from src.market_scope import SCOPE_TICKERS, market_scope_for_slot, scope_snapshot
 from src.telegram_client import PUBLIC_SUMMARY_VERSION
 
 PUBLIC_MESSAGE_MAX_CHARS = 60
@@ -37,7 +38,7 @@ _SLOT_LABELS = {
     "us_open": "美股開盤",
 }
 _TICKER_NAMES = {
-    "TAIEX": "台指",
+    "TAIEX": "加權指數",
     "TPEx": "櫃買",
     "TXF": "台指期",
     "NASDAQ": "那斯達克",
@@ -52,6 +53,9 @@ _TICKER_NAMES = {
     "BRENT": "布蘭特油",
     "BTC": "BTC",
     "ETH": "ETH",
+    "ES": "S&P 500 E-mini期貨",
+    "NQ": "Nasdaq-100期貨",
+    "YM": "道瓊期貨",
 }
 _TICKER_ALIASES = {
     "TPEX": "TPEx",
@@ -193,7 +197,7 @@ _QUOTE_EVIDENCE_FIELDS = (
     "price", "change", "change_percent", "currency", "quote_date",
     "quote_time", "fetched_at", "freshness", "data_status", "source_label",
     "quote_source", "source_domain", "source_url", "cross_checked",
-    "quote_delayed", "stale_used",
+    "quote_delayed", "stale_used", "session", "contract_month", "contract_basis",
 )
 
 
@@ -365,6 +369,13 @@ def _usable_quote(item: dict[str, Any]) -> bool:
         return math.isfinite(float(item["price"])) and math.isfinite(float(item["change_percent"]))
     except (TypeError, ValueError):
         return False
+
+
+def _usable_scoped_quote(item: dict[str, Any]) -> bool:
+    if not _usable_quote(item) or item.get("stale_used") is True:
+        return False
+    freshness = str(item.get("freshness") or item.get("data_status") or "").casefold()
+    return freshness not in _UNUSABLE_FRESHNESS and bool(item.get("quote_time") or item.get("quote_date"))
 
 
 def _theme_for_event(event: dict[str, Any], fact: str, snapshot_quotes: list[dict[str, Any]] | None = None) -> dict[str, Any]:
@@ -585,6 +596,18 @@ def build_market_digest(
     risk: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the shared dashboard/Telegram market assessment."""
+    market_scope_key = market_scope_for_slot(slot)
+    scoped_source = dict(snapshot)
+    if risk is not None and market_scope_key:
+        scoped_source["risk"] = risk
+    snapshot = scope_snapshot(scoped_source, slot)
+    if market_scope_key:
+        # Aggregate regime/risk arguments do not carry a market-scoped proof;
+        # routine market slots derive conclusions from their target projection.
+        risk = snapshot.get("risk") if isinstance(snapshot.get("risk"), dict) else {}
+        intelligence = None
+    elif risk is None:
+        risk = snapshot.get("risk") if isinstance(snapshot.get("risk"), dict) else None
     generated = str(snapshot.get("generated_at") or snapshot.get("fetched_at") or "")
     try:
         as_of = datetime.fromisoformat(generated.replace("Z", "+00:00"))
@@ -661,7 +684,12 @@ def build_market_digest(
         item for item in [*(snapshot.get("indices") or []), *(snapshot.get("quotes") or []), *(snapshot.get("macro_quotes") or [])]
         if isinstance(item, dict)
     ]
-    quote_priority = ["NASDAQ", "SOX", "DJIA", "TAIEX", "TPEx", "US10Y", "DXY", "GOLD", "WTI"]
+    if market_scope_key:
+        all_quotes = [item for item in all_quotes if _usable_scoped_quote(item)]
+    quote_priority = [
+        "TAIEX", "TXF", "S&P 500", "NASDAQ", "DJIA", "ES", "NQ", "YM", "SOX",
+        "TPEx", "US10Y", "DXY", "GOLD", "WTI",
+    ]
     quote_items = sorted(
         [item for item in all_quotes if _normalise_ticker(item.get("ticker")) in quote_priority],
         key=lambda item: quote_priority.index(_normalise_ticker(item.get("ticker"))),
@@ -697,6 +725,25 @@ def build_market_digest(
         None,
     )
     primary_theme = lead_event_themes[0] if lead_event_themes else quote_theme or fallback_event
+    if primary_theme is None and market_scope_key:
+        scope_label = "台股" if market_scope_key == "taiwan" else "美股"
+        data_gap_key = f"scheduled-data-gap:{market_scope_key}:{as_of.date().isoformat()}"
+        primary_theme = {
+            "title": "市場資料狀態",
+            "market_topic": "taiwan_market" if market_scope_key == "taiwan" else "global_market",
+            "normalization_complete": True,
+            "what_happened": f"{scope_label}指定行情本輪缺漏，不以其他市場或舊值代替。",
+            "why_important": "市場資料缺漏時，先標示來源未提供；不據此推論市場方向。",
+            "market_implication": "本輪無可核對價格，暫不形成方向或跨市場因果判讀。",
+            "stock_observation": "待目標市場的同口徑行情可用後再更新。",
+            "evidence": [],
+            "source_evidence": [],
+            "quote_evidence": [],
+            "canonical_event_key": data_gap_key,
+            "event_key": data_gap_key,
+            "source": "市場資料狀態",
+            "detail_eligible": False,
+        }
     if primary_theme is None:
         return {
             "status": "suppressed",
@@ -794,10 +841,72 @@ def build_market_digest(
         market_status=snapshot.get("markets") if isinstance(snapshot.get("markets"), dict) else None,
         risk=risk,
     )
+    assessment["market_scope_key"] = market_scope_key or (
+        "taiwan" if assessment.get("market_scope") == "台股" else
+        "us" if assessment.get("market_scope") == "美股" else "global"
+    )
+    assessment["scheduled_report"] = slot in {"morning", "pre_open", "post_close", "us_premarket"}
+    required_tickers = sorted(SCOPE_TICKERS[market_scope_key]) if market_scope_key else []
+    present_tickers = {_normalise_ticker(item.get("ticker")) for item in all_quotes}
+    quote_gaps = [
+        {"ticker": ticker, "reason": "quote_missing_or_unusable"}
+        for ticker in required_tickers
+        if ticker not in present_tickers or not any(
+            _normalise_ticker(item.get("ticker")) == ticker and _usable_scoped_quote(item)
+            for item in all_quotes
+        )
+    ]
+    assessment["quote_gaps"] = quote_gaps
     overview = project_overview(assessment, DASHBOARD_SUMMARY_MAX_CHARS)
     public_message = project_public_message(label, assessment, PUBLIC_MESSAGE_MAX_CHARS)
     if public_message and not len(public_message) <= PUBLIC_MESSAGE_MAX_CHARS:
         public_message = ""
+    if market_scope_key and required_tickers and len(quote_gaps) == len(required_tickers):
+        from src.telegram_client import canonical_short_message
+
+        scope_label = "台股盤後" if market_scope_key == "taiwan" else "美股盤前"
+        assessment["summary_sections"].update({
+            "summary": f"{scope_label}行情資料不足",
+            "market_highlights": "指定行情本輪缺漏，未使用其他市場或舊值替代",
+            "risk": "資料不足，不推論市場方向",
+        })
+        overview = project_overview(assessment, DASHBOARD_SUMMARY_MAX_CHARS)
+        public_message = canonical_short_message(
+            f"{scope_label}｜行情資料不足，本輪明確列示缺漏。",
+            limit=PUBLIC_MESSAGE_MAX_CHARS,
+        )
+    elif market_scope_key:
+        # Routine market reports are useful even without a major headline or
+        # a high-confidence directional conclusion. Keep the Telegram text a
+        # compact projection of this scoped snapshot, and leave missing rows
+        # explicit in the linked card instead of suppressing the slot.
+        from src.telegram_client import canonical_short_message
+
+        scope_label = "台股盤後" if market_scope_key == "taiwan" else "美股盤前"
+        available = []
+        for item in quote_items:
+            if not _usable_scoped_quote(item):
+                continue
+            ticker = _normalise_ticker(item.get("ticker"))
+            name = _TICKER_NAMES.get(ticker, ticker)
+            available.append(f"{name}{float(item['change_percent']):+.2f}%")
+        missing = [
+            _TICKER_NAMES.get(str(item.get("ticker") or ""), str(item.get("ticker") or ""))
+            for item in quote_gaps
+        ]
+        compact = "、".join(available[:3]) if available else "行情資料不足"
+        if missing:
+            compact += "；缺漏 " + "、".join(missing[:3])
+        public_message = canonical_short_message(
+            f"{scope_label}｜{compact}", limit=PUBLIC_MESSAGE_MAX_CHARS,
+        )
+        if missing:
+            existing_highlights = str(assessment["summary_sections"].get("market_highlights") or "").strip()
+            missing_text = "缺漏 " + "、".join(missing[:3])
+            assessment["summary_sections"]["market_highlights"] = "；".join(
+                value for value in (existing_highlights, missing_text) if value
+            )
+        overview = project_overview(assessment, DASHBOARD_SUMMARY_MAX_CHARS)
 
     canonical_material = {
         # Slot labels are presentation metadata.  Cross-anchor delivery
@@ -933,6 +1042,13 @@ def build_market_digest(
         "assessment_summary": overview,
         "overview": overview,
         "market_assessment": assessment,
+        "market_scope_key": market_scope_key or assessment.get("market_scope_key"),
+        "scheduled_report": assessment.get("scheduled_report") is True,
+        "quote_gaps": quote_gaps,
+        "data_gap_status": (
+            "unavailable" if required_tickers and len(quote_gaps) == len(required_tickers)
+            else "partial" if quote_gaps else "complete"
+        ),
         "public_short_message": public_message,
         "themes": themes,
         "primary_theme": primary_theme,

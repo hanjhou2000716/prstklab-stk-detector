@@ -1398,6 +1398,52 @@ def verify_release_files(manifest: dict[str, Any], *, root: Path | str = Path(".
     return errors
 
 
+def verify_local_release_bundle(
+    *, root: Path | str = Path("."), manifest_path: Path | str = Path("site/data/release-manifest.json"),
+) -> list[str]:
+    """Fail closed before upload unless this exact local release is coherent."""
+    root_path = Path(root)
+    path = Path(manifest_path)
+    if not path.is_absolute():
+        path = root_path / path
+    try:
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        return [f"release manifest unavailable: {type(exc).__name__}"]
+    if not isinstance(manifest, dict):
+        return ["release manifest is not an object"]
+    errors: list[str] = []
+    if manifest.get("status") not in PUBLISHABLE_RELEASE_STATUSES:
+        errors.append("release manifest is not publishable")
+    if not str(manifest.get("release_id") or "").strip():
+        errors.append("release identity is missing")
+    if manifest.get("validation_errors"):
+        errors.append("release manifest contains validation errors")
+    errors.extend(verify_release_files(manifest, root=root_path / "site"))
+    paths = manifest.get("artifact_paths")
+    market_rel = paths.get("market.json") if isinstance(paths, dict) else None
+    if isinstance(market_rel, str) and market_rel:
+        market_path = root_path / "site" / market_rel
+        try:
+            market = json.loads(market_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            errors.append(f"market snapshot unavailable: {type(exc).__name__}")
+        else:
+            if not isinstance(market, dict):
+                errors.append("market snapshot is not an object")
+            elif content_snapshot_id(market, "market") != str(manifest.get("market_snapshot_id") or ""):
+                errors.append("market snapshot identity does not match the manifest")
+            else:
+                briefing = market.get("briefing")
+                if isinstance(briefing, dict):
+                    message = str(briefing.get("public_short_message") or "").strip()
+                    if briefing.get("notification_eligible") is True and (
+                        not message or len(message) > 60 or "..." in message or "…" in message
+                    ):
+                        errors.append("scheduled public summary violates the message contract")
+    return sorted(set(errors))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build the public release manifest")
     parser.add_argument("--root", type=Path, default=Path("."))
@@ -1418,7 +1464,22 @@ def main() -> int:
         action="store_true",
         help="bind the Creator 10:30 Asia/Taipei batch to the market snapshot timestamp",
     )
+    parser.add_argument(
+        "--verify-only", action="store_true",
+        help="verify an existing manifest and its referenced artifacts without rebuilding",
+    )
     args = parser.parse_args()
+    if args.verify_only:
+        errors = verify_local_release_bundle(root=args.root, manifest_path=args.output)
+        for error in errors:
+            print(f"release_bundle_error={error}")
+        if not errors:
+            manifest_path = args.output if args.output.is_absolute() else args.root / args.output
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            print(f"release_bundle_status={manifest.get('status', 'unknown')}")
+            print(f"release_id={manifest.get('release_id', '')}")
+            print(f"market_snapshot_id={manifest.get('market_snapshot_id', '')}")
+        return 1 if errors else 0
     creator_records: list[dict[str, Any]] | None = None
     if args.creator_records is not None:
         creator_path = args.creator_records.resolve()
